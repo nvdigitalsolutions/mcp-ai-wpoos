@@ -53,6 +53,33 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 		}
 
 		/**
+		 * Build the standard HTTP request headers for the Hugging Face Inference API.
+		 *
+		 * @param string $api_key      Hugging Face API key.
+		 * @param string $content_type Optional content type (default: application/json).
+		 * @return array Associative array of HTTP headers.
+		 */
+		public function build_request_headers( $api_key, $content_type = 'application/json' ) {
+			$headers = array(
+				'Content-Type'  => $content_type,
+				'Authorization' => 'Bearer ' . $api_key,
+			);
+
+			/**
+			 * Filter the Hugging Face request headers before sending.
+			 *
+			 * Allows third-party plugins to inject or modify headers for all
+			 * Hugging Face API requests.
+			 *
+			 * @since 2.7.0
+			 *
+			 * @param array  $headers  Associative array of HTTP headers.
+			 * @param string $api_key  The API key being used.
+			 */
+			return apply_filters( 'wp_mcp_ai_huggingface_request_headers', $headers, $api_key );
+		}
+
+		/**
 		 * Test the connection to the Hugging Face Inference API.
 		 *
 		 * @return array|WP_Error
@@ -282,34 +309,37 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 
 			$model = $this->resolve_model( $options );
 
-			if ( empty( $model ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_huggingface_model',
-					__( 'No Hugging Face model has been configured.', 'mcp-ai-wpoos' ),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'configure_huggingface_model' => __( 'Choose a Hugging Face model in the NV oOS settings.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
-			}
+				if ( empty( $model ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_missing_huggingface_model',
+						__( 'No Hugging Face model has been configured.', 'mcp-ai-wpoos' ),
+						array(
+							'status'  => 400,
+							'actions' => array(
+								'configure_huggingface_model' => __( 'Choose a Hugging Face model in the NV oOS settings.', 'mcp-ai-wpoos' ),
+							),
+						)
+					);
+				}
 
-			$payload = $this->build_payload( $messages, $options, $model );
+				// Filter orphaned tool messages before building the payload.
+				// Hugging Face's OpenAI-compatible API rejects requests where
+				// tool messages lack a matching assistant tool_call.
+				$messages = $this->filter_tool_messages_for_payload( $messages );
+
+				$payload = $this->build_payload( $messages, $options, $model );
 
 			if ( is_wp_error( $payload ) ) {
 				return $payload;
 			}
 
-			$url = untrailingslashit( $endpoint_url ) . '/chat/completions';
+			$url     = untrailingslashit( $endpoint_url ) . '/chat/completions';
+			$timeout = max( 60, $this->resolve_timeout( $options ) );
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'  => 'application/json',
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
-				'timeout' => max( 60, $this->resolve_timeout( $options ) ),
+				'timeout' => $timeout,
 			);
 
 			WP_MCP_AI_Logger::log_event( 'huggingface_request', 'Sending request to Hugging Face.', array( 'model' => $model ) );
@@ -349,24 +379,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Hugging Face.', 'mcp-ai-wpoos' );
-
-				WP_MCP_AI_Logger::log_error(
-					'Hugging Face returned an error response.',
-					array(
-						'code' => $code,
-						'body' => $decoded,
-					)
-				);
-
-				return new WP_Error(
-					'wp_mcp_ai_api_error',
-					$error_message,
-					array(
-						'status' => $code,
-						'body'   => $decoded,
-					)
-				);
+				return $this->handle_api_error( $code, $decoded, $response );
 			}
 
 			// Hugging Face returns OpenAI-compatible format, so we can use it directly.
@@ -400,6 +413,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			$sse_buffer          = '';
 			$http_status         = 0;
 			$accumulated_content = '';
+			$accumulated_reason  = '';
 			$tool_calls_by_idx   = array();
 			$response_id         = '';
 			$finish_reason       = null;
@@ -425,7 +439,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 						}
 						return strlen( $header );
 					},
-					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
 						$sse_buffer .= $data;
 						while ( false !== ( $pos = strpos(
 							$sse_buffer,
@@ -455,6 +469,12 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 							if ( ! empty( $delta['content'] ) ) {
 								$accumulated_content .= $delta['content'];
 								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'content' => $delta['content'] ) ) ) ) );
+							}
+
+							// Handle reasoning/thinking content from reasoning models (e.g. DeepSeek-R1, Qwen3).
+							if ( ! empty( $delta['reasoning_content'] ) ) {
+								$accumulated_reason .= $delta['reasoning_content'];
+								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'reasoning_content' => $delta['reasoning_content'] ) ) ) ) );
 							}
 							if ( ! empty( $delta['tool_calls'] ) ) {
 								foreach ( $delta['tool_calls'] as $tc ) {
@@ -512,10 +532,16 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 				'role'    => 'assistant',
 				'content' => $accumulated_content,
 			);
+
+			if ( '' !== $accumulated_reason ) {
+				$message['reasoning_content'] = $accumulated_reason;
+			}
+
 			if ( ! empty( $tool_calls_by_idx ) ) {
 				ksort( $tool_calls_by_idx );
 				$message['tool_calls'] = array_values( $tool_calls_by_idx );
 			}
+
 			$assembled = array(
 				'id'      => $response_id,
 				'object'  => 'chat.completion',
@@ -527,13 +553,16 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 					),
 				),
 			);
+
 			if ( null !== $usage ) {
 				$assembled['usage'] = $usage;
 			}
+
 			if ( ! empty( $model ) ) {
 				$assembled['model'] = $model;
 			}
-			return $assembled;
+
+			return $this->normalize_response( $assembled, $model );
 		}
 
 
@@ -940,6 +969,191 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			}
 
 			return $response;
+		}
+
+		/**
+		 * Build a structured WP_Error from an HTTP error response.
+		 *
+		 * Provides action-level guidance and retry-after parsing for
+		 * rate-limited requests, matching the pattern used by OpenAI,
+		 * Anthropic, and DeepSeek clients.
+		 *
+		 * @param int   $code     HTTP status code.
+		 * @param array $decoded  Decoded JSON response body.
+		 * @param array $response Raw WP HTTP response array.
+		 * @return WP_Error
+		 */
+		protected function handle_api_error( $code, array $decoded, $response ) {
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Hugging Face.', 'mcp-ai-wpoos' );
+			$error_data    = array(
+				'status' => $code,
+				'body'   => $decoded,
+			);
+
+			$error_code = 'wp_mcp_ai_huggingface_api_error';
+
+			if ( 401 === $code ) {
+				$error_code            = 'wp_mcp_ai_huggingface_auth_error';
+				$error_data['actions'] = array(
+					'auth_info' => __( 'Verify your Hugging Face API key in NV oOS → Providers → Hugging Face.', 'mcp-ai-wpoos' ),
+				);
+			} elseif ( 429 === $code ) {
+				$error_code  = 'wp_mcp_ai_rate_limit_exceeded';
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				if ( ! empty( $retry_after ) ) {
+					$error_data['retry_after'] = absint( $retry_after );
+				}
+				$error_data['actions'] = array(
+					'rate_limit_info' => __( 'The Hugging Face API rate limit has been exceeded. Try again in a few moments.', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			WP_MCP_AI_Logger::log_error(
+				'Hugging Face returned an error response.',
+				array(
+					'code' => $code,
+					'body' => $decoded,
+				)
+			);
+
+			return new WP_Error( $error_code, $error_message, $error_data );
+		}
+
+		/**
+		 * Drop tool role messages that are not associated with the most recent
+		 * assistant tool call.
+		 *
+		 * The Hugging Face Inference API requires tool responses to immediately
+		 * follow the assistant message that emitted the corresponding tool call.
+		 * When intervening messages appear between those entries the request
+		 * may be rejected. This normaliser filters out any tool messages that
+		 * no longer have a matching pending call so the payload remains valid.
+		 *
+		 * Copied from the OpenAI / DeepSeek client pattern.
+		 *
+		 * @param array $messages Messages to sanitize.
+		 * @return array
+		 */
+		protected function filter_tool_messages_for_payload( array $messages ) {
+			if ( empty( $messages ) ) {
+				return $messages;
+			}
+
+			$filtered                = array();
+			$pending_calls           = array();
+			$awaiting_tool_responses = false;
+			$incomplete_group_start  = null;
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+				if ( '' === $role ) {
+					continue;
+				}
+
+				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					// If the previous assistant message had tool_calls that were never
+					// fully answered, drop the entire incomplete group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						WP_MCP_AI_Logger::log_event(
+							'huggingface_dropped_incomplete_tool_group',
+							'Dropped assistant message with unresolved tool_calls before user/system message.',
+							array(
+								'pending_call_ids' => array_keys( $pending_calls ),
+							)
+						);
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+					$filtered[]              = $message;
+					continue;
+				}
+
+				if ( 'assistant' === $role ) {
+					// If the PREVIOUS assistant had unresolved tool_calls, drop that group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						WP_MCP_AI_Logger::log_event(
+							'huggingface_dropped_incomplete_tool_group',
+							'Dropped assistant message with unresolved tool_calls before next assistant message.',
+							array(
+								'pending_call_ids' => array_keys( $pending_calls ),
+							)
+						);
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						foreach ( $message['tool_calls'] as $tool_call ) {
+							if ( ! is_array( $tool_call ) ) {
+								continue;
+							}
+
+							$call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
+							if ( '' === $call_id ) {
+								continue;
+							}
+
+							$pending_calls[ $call_id ] = true;
+						}
+					}
+
+					if ( ! empty( $pending_calls ) ) {
+						$awaiting_tool_responses = true;
+						$incomplete_group_start  = count( $filtered );
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				if ( 'tool' === $role ) {
+					$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
+
+					if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'huggingface_dropped_orphan_tool_message',
+							'Dropping tool message without matching tool call before Hugging Face request.',
+							array(
+								'tool_call_id' => $tool_call_id,
+								'reason'       => '' === $tool_call_id
+									? 'missing_tool_call_id'
+									: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+							)
+						);
+
+						continue;
+					}
+
+					unset( $pending_calls[ $tool_call_id ] );
+
+					if ( empty( $pending_calls ) ) {
+						$awaiting_tool_responses = false;
+						$incomplete_group_start  = null;
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				$pending_calls           = array();
+				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
+				$filtered[]              = $message;
+			}
+
+			return array_values( $filtered );
 		}
 
 		/**
