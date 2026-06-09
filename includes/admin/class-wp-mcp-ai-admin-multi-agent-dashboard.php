@@ -207,6 +207,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 				'restUrl'             => esc_url_raw( trailingslashit( rest_url( $rest_namespace ) ) ),
 				'uploadEndpoint'      => esc_url_raw( rest_url( 'wp/v2/media' ) ),
 				'prepareEndpoint'     => esc_url_raw( rest_url( $rest_namespace . '/attachments/prepare' ) ),
+				'messagesEndpoint'    => esc_url_raw( rest_url( $rest_namespace . '/chat-client' ) ),
 				'filesEndpoint'       => esc_url_raw( trailingslashit( rest_url( $rest_namespace . '/files' ) ) ),
 				'toolsEndpoint'       => esc_url_raw( rest_url( $rest_namespace . '/tools' ) ),
 				'transcriptsEndpoint' => esc_url_raw( rest_url( $rest_namespace . '/chat-transcripts' ) ),

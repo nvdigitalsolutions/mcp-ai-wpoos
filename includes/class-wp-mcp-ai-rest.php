@@ -7878,7 +7878,43 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$chat_provider = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : 'openai';
 
 			$tools_payload = array();
-			foreach ( $allowed_tool_slugs as $slug ) {
+
+				/**
+				 * Maximum number of tools to include in a single chat request payload.
+				 *
+				 * OpenAI and most providers support up to 128 functions per request, but
+				 * sending that many tools bloats the payload and can exhaust PHP memory
+				 * during schema generation for complex tool definitions.  This guard
+				 * prevents crashes when an assistant has too many tools assigned and
+				 * logs a warning so the site owner can adjust the limit or reduce the
+				 * assigned tools.
+				 *
+				 * @since 2.4.0
+				 *
+				 * @param int $max_tools Maximum number of tools to include (default 50).
+				 */
+				$max_tools = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 50 );
+				$max_tools = max( 1, min( 128, $max_tools ) ); // Clamp to 1-128.
+
+				if ( count( $allowed_tool_slugs ) > $max_tools ) {
+					WP_MCP_AI_Logger::log_event(
+						'tools_truncated_for_chat',
+						sprintf(
+							'Assistant has %d tools but the chat payload is capped at %d. Only the first %d tools will be sent to the LLM. Reduce the number of assigned tools to avoid this.',
+							count( $allowed_tool_slugs ),
+							$max_tools,
+							$max_tools
+						),
+						array(
+							'total_tools'  => count( $allowed_tool_slugs ),
+							'max_allowed'  => $max_tools,
+							'assistant_id' => isset( $assistant_config['id'] ) ? $assistant_config['id'] : null,
+						)
+					);
+					$allowed_tool_slugs = array_slice( $allowed_tool_slugs, 0, $max_tools );
+				}
+
+				foreach ( $allowed_tool_slugs as $slug ) {
 				$tool = $this->registry->get_tool( $slug );
 				if ( ! $tool ) {
 					WP_MCP_AI_Admin_Settings::log( 'Assistant references missing tool.', array( 'tool' => $slug ) );

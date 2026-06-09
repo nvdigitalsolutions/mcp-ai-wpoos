@@ -371,15 +371,17 @@ class WP_MCP_AI_Shortcode {
 
 		// Overwrite the nonce and current user ID that were set (with user 0)
 		// during register_assets() on init.
-		wp_localize_script(
-			self::SCRIPT_HANDLE,
-			'wpMcpAiChat',
-			array(
-				'nonce'         => wp_create_nonce( 'wp_rest' ),
-				'currentUserId' => $user_id,
-				'chatDebugMode' => $chat_debug_mode,
-			)
-		);
+		//
+		// Use wp_add_inline_script to merge individual properties onto the
+		// existing window.wpMcpAiChat object instead of calling
+		// wp_localize_script, which would create a new `var wpMcpAiChat = ...`
+		// declaration that strips every other key (messagesEndpoint, restUrl,
+		// etc.) that was set during register_assets().
+		$update_script  = 'window.wpMcpAiChat = window.wpMcpAiChat || {};';
+		$update_script .= 'window.wpMcpAiChat.nonce = ' . wp_json_encode( wp_create_nonce( 'wp_rest' ) ) . ';';
+		$update_script .= 'window.wpMcpAiChat.currentUserId = ' . wp_json_encode( $user_id ) . ';';
+		$update_script .= 'window.wpMcpAiChat.chatDebugMode = ' . wp_json_encode( $chat_debug_mode ) . ';';
+		wp_add_inline_script( self::SCRIPT_HANDLE, $update_script, 'after' );
 
 		// Inject the chat-memory bridge endpoints now that we know the user.
 		$memory_endpoints = self::get_chat_memory_endpoints_inline_script();
