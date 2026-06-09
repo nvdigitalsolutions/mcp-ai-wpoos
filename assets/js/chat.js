@@ -142,8 +142,10 @@
     const ASYNC_TOOL_TIMEOUT_MIN_MS = 60000; // 1 minute minimum
     
     // Performance optimization settings - can be disabled for debugging
-    // Set window.wpMcpAiChatDebugMode = true to disable optimizations
-    const DEBUG_MODE = window.wpMcpAiChatDebugMode === true || ( typeof globalConfig !== 'undefined' && globalConfig.chatDebugMode === true );
+    // Set window.wpMcpAiChatDebugMode = true to disable optimizations.
+    // WordPress wp_localize_script casts PHP booleans to strings (true → '1'),
+    // so we use loose equality to support both true and '1'.
+    const DEBUG_MODE = window.wpMcpAiChatDebugMode === true || ( typeof globalConfig !== 'undefined' && globalConfig.chatDebugMode == true );
     const OPTIMIZATIONS_ENABLED = !DEBUG_MODE;
 
     /**
