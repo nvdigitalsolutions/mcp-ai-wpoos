@@ -73,6 +73,12 @@ class WP_MCP_AI_Shortcode {
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_assets' ) );
 
+		// Defer user-dependent localisation (nonce, currentUserId, memory
+		// endpoints) until after WordPress has determined the current user.
+		// On init, get_current_user_id() returns 0, producing a nonce that
+		// fails rest_cookie_check_errors for logged-in users.
+		add_action( 'wp', array( $this, 'localize_user_dependent_data' ) );
+
 		// Only register the legacy [mcp_ai_chat] shortcode when legacy mode is
 		// active. Set define( 'WP_MCP_AI_LEGACY_CHAT_JS', false ) in wp-config.php
 		// to disable legacy mode and use [nvoos_chat_spa] instead.
@@ -215,13 +221,10 @@ class WP_MCP_AI_Shortcode {
 			true
 		);
 
-		// Inject the chat-memory bridge endpoints so chat-memory-service.js can find them.
-		// Runs once per page (after each wp_localize_script call on this handle), so the data
-		// is available no matter which surface enqueued the bundle (block, shortcode, widget).
-		$memory_endpoints = self::get_chat_memory_endpoints_inline_script();
-		if ( '' !== $memory_endpoints ) {
-			wp_add_inline_script( self::SCRIPT_HANDLE, $memory_endpoints, 'after' );
-		}
+		// Memory endpoints are injected after user authentication via the
+		// localize_user_dependent_data() method (hooked to 'wp'). Calling
+		// get_chat_memory_endpoints_inline_script() here on 'init' would
+		// return empty because get_current_user_id() is still 0.
 
 		// Register chat bubble assets (floating chat widget).
 		$bubble_script_relative = 'assets/js/chat-bubble.js';
@@ -325,6 +328,56 @@ class WP_MCP_AI_Shortcode {
 				'strings'             => $this->get_strings(),
 			)
 		);
+	}
+
+	/**
+	 * Overwrite user-dependent localisation keys (nonce, currentUserId) with
+	 * values generated after WordPress has authenticated the current user.
+	 *
+	 * Also injects the chat-memory bridge endpoints so that
+	 * chat-memory-service.js can locate the REST routes. Both operations
+	 * must happen after user authentication because:
+	 *   - wp_create_nonce('wp_rest') uses the current user's session token.
+	 *     On init the user is still 0, producing a nonce that fails
+	 *     rest_cookie_check_errors for logged-in users ("Cookie check failed").
+	 *   - get_chat_memory_endpoints_inline_script() skips guests, but on
+	 *     init every user appears to be a guest.
+	 *
+	 * Hooked to 'wp' so that determine_current_user has already run.
+	 * For admin pages the enqueue_chat_assets() path in the test-page base
+	 * class also calls wp_localize_script later (on admin_enqueue_scripts),
+	 * but the 'wp' hook provides a single safe correction point for the
+	 * frontend shortcode, block, and Elementor widget surfaces.
+	 *
+	 * @since 1.1.29
+	 *
+	 * @return void
+	 */
+	public function localize_user_dependent_data() {
+		// Only localise when the handle is registered (should always be true
+		// after init, but defensive).
+		if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
+			return;
+		}
+
+		$user_id = get_current_user_id();
+
+		// Overwrite the nonce and current user ID that were set (with user 0)
+		// during register_assets() on init.
+		wp_localize_script(
+			self::SCRIPT_HANDLE,
+			'wpMcpAiChat',
+			array(
+				'nonce'         => wp_create_nonce( 'wp_rest' ),
+				'currentUserId' => $user_id,
+			)
+		);
+
+		// Inject the chat-memory bridge endpoints now that we know the user.
+		$memory_endpoints = self::get_chat_memory_endpoints_inline_script();
+		if ( '' !== $memory_endpoints ) {
+			wp_add_inline_script( self::SCRIPT_HANDLE, $memory_endpoints, 'after' );
+		}
 	}
 
 	/**
