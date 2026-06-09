@@ -294,10 +294,23 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 
 		// --- Step 7: Schedule follow-up ---
 		if ( $contact_id ) {
+			// Include lead name in the activity title for clarity.
+			$contact_post = get_post( $contact_id );
+			if ( $contact_post && 'mcp_ai_lead' === $contact_post->post_type ) {
+				$follow_up_title = sprintf(
+					/* translators: 1: lead name, 2: lead ID */
+					__( 'Follow up with %1$s (Lead #%2$d)', 'mcp-ai-wpoos-pro' ),
+					get_the_title( $contact_post ),
+					$contact_id
+				);
+			} else {
+				$follow_up_title = sprintf( __( 'Follow up with lead #%d', 'mcp-ai-wpoos-pro' ), $contact_id );
+			}
+
 			$follow_up_id = wp_insert_post(
 				array(
 					'post_type'   => 'mcp_ai_crm_activity',
-					'post_title'  => sprintf( __( 'Follow up with lead #%d', 'mcp-ai-wpoos-pro' ), $contact_id ),
+					'post_title'  => $follow_up_title,
 					'post_status' => 'publish',
 				),
 				true
@@ -306,7 +319,7 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 				update_post_meta( $follow_up_id, 'activity_type', 'task' );
 				update_post_meta( $follow_up_id, 'related_type', 'lead' );
 				update_post_meta( $follow_up_id, 'related_id', $contact_id );
-				update_post_meta( $follow_up_id, 'due_date', gmdate( 'Y-m-d', strtotime( '+2 business days' ) ) );
+				update_post_meta( $follow_up_id, 'due_date', gmdate( 'Y-m-d', strtotime( '+2 days' ) ) );
 				$result['pipeline']['follow_up_activity_id'] = $follow_up_id;
 			}
 		}

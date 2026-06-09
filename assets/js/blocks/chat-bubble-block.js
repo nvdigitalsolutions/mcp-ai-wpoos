@@ -39,6 +39,7 @@
 	}
 
 	blocks.registerBlockType( 'mcp-ai-wpoos/chat-bubble', {
+		apiVersion: 3,
 		title: __( 'AI Chat Bubble', 'mcp-ai-wpoos' ),
 		description: __( 'Display a floating chat bubble powered by WP oOS.', 'mcp-ai-wpoos' ),
 		icon: 'format-chat',

@@ -46,11 +46,25 @@ class WP_MCP_AI_Tool_Schedule_Follow_Up implements WP_MCP_AI_Tool_Interface, WP_
 		$lead_id     = absint( $arguments['lead_id'] );
 		$days        = min( 30, max( 1, absint( $arguments['days'] ?? 2 ) ) );
 		$notes       = sanitize_textarea_field( $arguments['notes'] ?? '' );
-		$due         = gmdate( 'Y-m-d', strtotime( "+{$days} weekdays" ) );
+		$due         = gmdate( 'Y-m-d', strtotime( "+{$days} days" ) );
+
+		// Include lead name in the activity title for clarity.
+		$lead_post = get_post( $lead_id );
+		if ( $lead_post && 'mcp_ai_lead' === $lead_post->post_type ) {
+			$title = sprintf(
+				/* translators: 1: lead name, 2: lead ID */
+				__( 'Follow up with %1$s (Lead #%2$d)', 'mcp-ai-wpoos-pro' ),
+				get_the_title( $lead_post ),
+				$lead_id
+			);
+		} else {
+			$title = sprintf( __( 'Follow up with lead #%d', 'mcp-ai-wpoos-pro' ), $lead_id );
+		}
+
 		$activity_id = wp_insert_post(
 			array(
 				'post_type'    => 'mcp_ai_crm_activity',
-				'post_title'   => sprintf( __( 'Follow up with lead #%d', 'mcp-ai-wpoos-pro' ), $lead_id ),
+				'post_title'   => $title,
 				'post_content' => $notes,
 				'post_status'  => 'publish',
 			),

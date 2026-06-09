@@ -55,6 +55,7 @@
 	   ========================================================================= */
 
 	blocks.registerBlockType( 'mcp-ai-wpoos/chat', {
+		apiVersion: 3,
 		title: __( 'AI Chat', 'mcp-ai-wpoos' ),
 		description: __( 'Display an AI chat interface powered by WP oOS.', 'mcp-ai-wpoos' ),
 		icon: 'format-chat',
@@ -174,6 +175,7 @@
 	   ========================================================================= */
 
 	blocks.registerBlockType( 'mcp-ai-wpoos/assistant-selector', {
+		apiVersion: 3,
 		title: __( 'Assistant Selector', 'mcp-ai-wpoos' ),
 		description: __( 'A dropdown to select from available AI assistants.', 'mcp-ai-wpoos' ),
 		icon: 'admin-users',
@@ -251,6 +253,7 @@
 	   ========================================================================= */
 
 	blocks.registerBlockType( 'mcp-ai-wpoos/tools-grid', {
+		apiVersion: 3,
 		title: __( 'AI Tools Grid', 'mcp-ai-wpoos' ),
 		description: __( 'Display a grid of available AI tools that users can enable/disable.', 'mcp-ai-wpoos' ),
 		icon: 'admin-tools',
@@ -334,6 +337,7 @@
 	   ========================================================================= */
 
 	blocks.registerBlockType( 'mcp-ai-wpoos/knowledge-base', {
+		apiVersion: 3,
 		title: __( 'Knowledge Base Upload', 'mcp-ai-wpoos' ),
 		description: __( 'Upload files to include in an AI assistant\'s knowledge base.', 'mcp-ai-wpoos' ),
 		icon: 'media-document',
@@ -430,6 +434,7 @@
 	   ========================================================================= */
 
 	blocks.registerBlockType( 'mcp-ai-wpoos/assistant-builder', {
+		apiVersion: 3,
 		title: __( 'AI Assistant Builder', 'mcp-ai-wpoos' ),
 		description: __( 'A complete interface for building new AI assistants.', 'mcp-ai-wpoos' ),
 		icon: 'hammer',
