@@ -239,8 +239,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 
 			switch ( $data['schedule_type'] ) {
 				case 'task':
+					// Accept both 'hook' and legacy 'task_hook' key.
 					if ( isset( $schedule_data['hook'] ) ) {
 						$data['hook'] = $schedule_data['hook'];
+					} elseif ( isset( $schedule_data['task_hook'] ) ) {
+						$data['hook'] = $schedule_data['task_hook'];
+					}
+					// Accept both 'args' and legacy 'task_args' key.
+					if ( isset( $schedule_data['args'] ) ) {
+						$data['args'] = $schedule_data['args'];
+					} elseif ( isset( $schedule_data['task_args'] ) ) {
+						$data['args'] = $schedule_data['task_args'];
 					}
 					break;
 
@@ -2224,8 +2233,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'schedule'      => 'daily',
 					'tags'          => array( 'crm', 'renewals', 'contracts', 'retention' ),
 					'schedule_data' => array(
-						'assistant_config' => array(
-							'message' => 'Run a daily contract renewal scan. Identify all active contracts with end dates at the 90-day, 60-day, and 30-day milestones. For each renewal, compile: account name, contract value, renewal date, assigned account manager, and current account health status. Format the results as a concise Slack message organised by urgency tier (30-day, 60-day, 90-day). Tag the relevant account managers. Include a summary count of renewals due in each tier.',
+						'broadcast_config' => array(
+							'message'  => 'Run a daily contract renewal scan. Identify all active contracts with end dates at the 90-day, 60-day, and 30-day milestones. For each renewal, compile: account name, contract value, renewal date, assigned account manager, and current account health status. Format the results as a concise Slack message organised by urgency tier (30-day, 60-day, 90-day). Tag the relevant account managers. Include a summary count of renewals due in each tier.',
+							'channels' => array( 'slack' ),
 						),
 					),
 				),
@@ -2315,8 +2325,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'schedule'      => 'wp_mcp_ai_every_15_minutes',
 					'tags'          => array( 'crm', 'support', 'sla', 'monitoring' ),
 					'schedule_data' => array(
-						'task_hook' => 'wp_mcp_ai_crm_ticket_sla_check',
-						'task_args' => array(),
+						'hook' => 'wp_mcp_ai_crm_ticket_sla_check',
+						'args' => array(),
 					),
 				),
 				'support_ticket_daily_report' => array(
@@ -2344,8 +2354,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'schedule'      => 'wp_mcp_ai_every_15_minutes',
 					'tags'          => array( 'crm', 'support', 'cleanup', 'automation' ),
 					'schedule_data' => array(
-						'task_hook' => 'wp_mcp_ai_crm_ticket_sla_check',
-						'task_args' => array(),
+						'hook' => 'wp_mcp_ai_crm_ticket_sla_check',
+						'args' => array(),
 					),
 				),
 			);
