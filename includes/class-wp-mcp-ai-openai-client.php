@@ -3268,6 +3268,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$payload['prompt_cache_retention'] = $options['prompt_cache_retention'];
 			}
 
+			// Streaming flag — must be set before the real-time cURL guard below.
+			if ( ! empty( $options['stream'] ) ) {
+				$payload['stream'] = true;
+			}
+
 			// Apply resource-aware max_tokens if not explicitly set.
 			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_completion_tokens'] ) && ! isset( $options['max_output_tokens'] ) ) {
 				$max_tokens = $resource_mgr->get_max_tokens();
@@ -3422,6 +3427,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$sse_buffer          = '';
 			$http_status         = 0;
 			$accumulated_content = '';
+			$accumulated_reason  = '';
 			$tool_calls_by_idx   = array();
 			$response_id         = '';
 			$finish_reason       = null;
@@ -3447,7 +3453,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						}
 						return strlen( $header );
 					},
-					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
 						$sse_buffer .= $data;
 						while ( false !== ( $pos = strpos(
 							$sse_buffer,
@@ -3478,6 +3484,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 								$accumulated_content .= $delta['content'];
 								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'content' => $delta['content'] ) ) ) ) );
 							}
+							if ( isset( $delta['reasoning_content'] ) && is_string( $delta['reasoning_content'] ) && '' !== $delta['reasoning_content'] ) {
+								$accumulated_reason .= $delta['reasoning_content'];
+								call_user_func(
+									$stream_callback,
+									array(
+										'choices' => array(
+											array( 'delta' => array( 'reasoning_content' => $delta['reasoning_content'] ) ),
+										),
+									)
+								);
+							}
 							if ( ! empty( $delta['tool_calls'] ) ) {
 								foreach ( $delta['tool_calls'] as $tc ) {
 									if ( ! isset( $tc['index'] ) ) {
@@ -3496,7 +3513,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 										);
 									}
 									if ( isset( $tc['id'] ) ) {
-										$tool_calls_by_idx[ $idx ]['id'] .= $tc['id'];
+										$tool_calls_by_idx[ $idx ]['id'] = (string) $tc['id'];
 									}
 									if ( isset( $tc['function']['name'] ) ) {
 										$tool_calls_by_idx[ $idx ]['function']['name'] .= $tc['function']['name'];
@@ -3524,16 +3541,44 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// phpcs:enable
 
 			if ( $curl_errno ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'OpenAI real-time streaming failed.',
+						array(
+							'error' => $curl_error,
+							'errno' => $curl_errno,
+						)
+					);
+				}
 				return new WP_Error( 'wp_mcp_ai_http_error', $curl_error ? $curl_error : __( 'cURL streaming request failed.', 'mcp-ai-wpoos' ) );
 			}
 			if ( $http_status >= 400 ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'OpenAI real-time streaming returned HTTP error.',
+						array( 'code' => $http_status )
+					);
+				}
 				return new WP_Error( 'wp_mcp_ai_api_error', __( 'OpenAI returned an error during streaming.', 'mcp-ai-wpoos' ), array( 'status' => $http_status ) );
+			}
+
+			if ( ! $found_done ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'openai_realtime_stream',
+						'Real-time SSE stream ended without [DONE] sentinel (model may have been interrupted).',
+						array( 'model' => $model )
+					);
+				}
 			}
 
 			$message = array(
 				'role'    => 'assistant',
 				'content' => $accumulated_content,
 			);
+			if ( '' !== $accumulated_reason ) {
+				$message['reasoning_content'] = $accumulated_reason;
+			}
 			if ( ! empty( $tool_calls_by_idx ) ) {
 				ksort( $tool_calls_by_idx );
 				$message['tool_calls'] = array_values( $tool_calls_by_idx );
@@ -3555,6 +3600,33 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( ! empty( $model ) ) {
 				$assembled['model'] = $model;
 			}
+
+			// Normalise the response to match the non-streaming path shape.
+			$assembled['provider'] = 'openai';
+			if ( ! empty( $message['content'] ) ) {
+				$assembled['content'] = $message['content'];
+			}
+			if ( null !== $finish_reason ) {
+				$assembled['finish_reason'] = $finish_reason;
+			}
+			if ( ! empty( $message['tool_calls'] ) ) {
+				$assembled['tool_calls'] = $message['tool_calls'];
+			}
+			if ( ! empty( $message['reasoning_content'] ) ) {
+				$assembled['reasoning_content'] = $message['reasoning_content'];
+			}
+			// Extract cached tokens from prompt_tokens_details.
+			if ( isset( $assembled['usage']['prompt_tokens_details']['cached_tokens'] ) ) {
+				if ( ! isset( $assembled['usage'] ) || ! is_array( $assembled['usage'] ) ) {
+					$assembled['usage'] = array();
+				}
+				$assembled['usage']['cached_tokens'] = (int) $assembled['usage']['prompt_tokens_details']['cached_tokens'];
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'openai_realtime_stream', 'Real-time streaming response assembled.', array( 'model' => $model ) );
+			}
+
 			return $assembled;
 		}
 
