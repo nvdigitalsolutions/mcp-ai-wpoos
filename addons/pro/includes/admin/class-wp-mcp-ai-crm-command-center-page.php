@@ -301,7 +301,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
-		$valid_tabs  = array( 'overview', 'leads', 'pipeline', 'support', 'activities', 'sequences', 'analytics', 'configuration' );
+		$valid_tabs  = array( 'overview', 'leads', 'pipeline', 'support', 'activities', 'sequences', 'analytics', 'top_customers', 'top_clients', 'configuration' );
 		if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
 			$current_tab = 'overview';
 		}
@@ -333,6 +333,8 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						'activities'    => __( 'Activities', 'mcp-ai-wpoos-pro' ),
 						'sequences'     => __( 'Sequences', 'mcp-ai-wpoos-pro' ),
 						'analytics'     => __( 'Analytics', 'mcp-ai-wpoos-pro' ),
+						'top_customers' => __( 'Top Customers', 'mcp-ai-wpoos-pro' ),
+						'top_clients'   => __( 'Top Clients', 'mcp-ai-wpoos-pro' ),
 						'configuration' => __( 'Configuration', 'mcp-ai-wpoos-pro' ),
 					);
 
@@ -369,6 +371,12 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						break;
 					case 'analytics':
 						self::render_analytics_tab();
+						break;
+					case 'top_customers':
+						self::render_top_customers_tab();
+						break;
+					case 'top_clients':
+						self::render_top_clients_tab();
 						break;
 					case 'configuration':
 						self::render_configuration_tab();
@@ -1716,6 +1724,427 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					</div>
 				<?php endforeach; ?>
 			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Top Customers tab.
+	 *
+	 * Displays a ranked list of top customers identified by composite scoring
+	 * across lead qualification, deal pipeline value, activity volume, and
+	 * lifecycle stage progression.
+	 *
+	 * @since 2.7.0
+	 */
+	private static function render_top_customers_tab() {
+		// Use the identify_top_customers tool if available.
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-identify-top-customers.php';
+		$has_tool  = file_exists( $tool_file );
+
+		if ( $has_tool && ! class_exists( 'WP_MCP_AI_Tool_Identify_Top_Customers' ) ) {
+			require_once $tool_file;
+		}
+
+		$results     = null;
+		$error_msg   = '';
+		$total_leads = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
+		$total_customers = self::get_cpt_count( 'mcp_ai_customer', 'publish' );
+
+		if ( $has_tool && class_exists( 'WP_MCP_AI_Tool_Identify_Top_Customers' ) ) {
+			$tool    = new WP_MCP_AI_Tool_Identify_Top_Customers();
+			$context = array( 'user_id' => get_current_user_id() );
+			$result  = $tool->execute(
+				array(
+					'limit' => 20,
+				),
+				$context
+			);
+
+			if ( ! is_wp_error( $result ) ) {
+				$results = isset( $result['data']['customers'] ) ? $result['data']['customers'] : array();
+			} else {
+				$error_msg = $result->get_error_message();
+			}
+		}
+
+		$customers_count = is_array( $results ) ? count( $results ) : 0;
+		?>
+		<div class="crm-cc-kpi-grid">
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Total Leads', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_leads ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'In database', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Converted Customers', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_customers ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Lead → Customer', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Top Customers Ranked', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value win"><?php echo esc_html( number_format_i18n( $customers_count ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'By composite score', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Scoring Model', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value" style="font-size: 16px;">
+					<?php esc_html_e( 'Lead 40% · Deal 35% · Activity 15% · Stage 10%', 'mcp-ai-wpoos-pro' ); ?>
+				</div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Composite weighting', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2>
+				<?php esc_html_e( 'Top Customers by Composite Value', 'mcp-ai-wpoos-pro' ); ?>
+			</h2>
+			<p class="description">
+				<?php esc_html_e( 'Leads ranked by a composite score that weights lead qualification (40%), associated deal pipeline value (35%), activity volume (15%), and lifecycle stage progression (10%). Higher scores indicate stronger customer relationships.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<?php if ( $error_msg ) : ?>
+				<div class="notice notice-error inline"><p><?php echo esc_html( $error_msg ); ?></p></div>
+			<?php elseif ( empty( $results ) ) : ?>
+				<p><?php esc_html_e( 'No leads found. Import leads to start identifying top customers.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th style="width: 40px;">#</th>
+							<th><?php esc_html_e( 'Lead', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Company', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Lifecycle', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Lead Score', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Composite', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Deals', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Activities', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Owner', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php $rank = 1; ?>
+						<?php foreach ( $results as $customer ) : ?>
+							<?php
+							$title          = isset( $customer['title'] ) ? esc_html( $customer['title'] ) : '—';
+							$company        = isset( $customer['company'] ) ? esc_html( $customer['company'] ) : '—';
+							$lifecycle      = isset( $customer['lifecycle_stage'] ) ? esc_html( $customer['lifecycle_stage'] ) : 'lead';
+							$lead_score     = isset( $customer['lead_score'] ) ? (int) $customer['lead_score'] : 0;
+							$composite      = isset( $customer['composite_score'] ) ? (float) $customer['composite_score'] : 0;
+							$score_label    = isset( $customer['score_label'] ) ? $customer['score_label'] : 'cold';
+							$deal_count     = isset( $customer['deal_count'] ) ? (int) $customer['deal_count'] : 0;
+							$activity_count = isset( $customer['activity_count'] ) ? (int) $customer['activity_count'] : 0;
+							$owner          = isset( $customer['contact_owner'] ) ? esc_html( $customer['contact_owner'] ) : '—';
+							$lead_id        = isset( $customer['lead_id'] ) ? (int) $customer['lead_id'] : 0;
+							$is_customer    = ! empty( $customer['is_customer'] );
+
+							$score_color = 'cold' === $score_label ? '#d63638' : ( 'warm' === $score_label ? '#dba617' : '#00a32a' );
+							?>
+							<tr>
+								<td style="font-weight: 600; color: #646970;"><?php echo esc_html( $rank ); ?></td>
+								<td>
+									<strong>
+										<?php if ( $lead_id ) : ?>
+											<a href="<?php echo esc_url( get_edit_post_link( $lead_id, 'raw' ) ); ?>">
+												<?php echo esc_html( $title ); ?>
+											</a>
+										<?php else : ?>
+											<?php echo esc_html( $title ); ?>
+										<?php endif; ?>
+									</strong>
+									<?php if ( $is_customer ) : ?>
+										<span class="crm-cc-badge" style="background: #00a32a;"><?php esc_html_e( 'Customer', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td><?php echo esc_html( $company ); ?></td>
+								<td>
+									<span style="text-transform: uppercase; font-size: 11px; font-weight: 600; color: #2271b1;">
+										<?php echo esc_html( $lifecycle ); ?>
+									</span>
+								</td>
+								<td>
+									<span style="color: <?php echo esc_attr( $score_color ); ?>; font-weight: 600;">
+										<?php echo esc_html( $lead_score ); ?>
+									</span>
+								</td>
+								<td>
+									<span style="color: <?php echo esc_attr( $score_color ); ?>; font-weight: 700; font-size: 14px;">
+										<?php echo esc_html( number_format_i18n( $composite, 1 ) ); ?>
+									</span>
+									<span style="font-size: 10px; color: #646970; display: block;"><?php echo esc_html( $score_label ); ?></span>
+								</td>
+								<td><?php echo esc_html( number_format_i18n( $deal_count ) ); ?></td>
+								<td><?php echo esc_html( number_format_i18n( $activity_count ) ); ?></td>
+								<td><?php echo esc_html( $owner ); ?></td>
+							</tr>
+							<?php ++$rank; ?>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2><?php esc_html_e( 'How Composite Scoring Works', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<div style="max-width: 700px;">
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Factor', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Weight', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'What It Measures', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td><strong><?php esc_html_e( 'Lead Qualification', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>40%</td>
+							<td><?php esc_html_e( 'BANT/MEDDIC lead score (0–100) from CRM engine', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Deal Pipeline Value', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>35%</td>
+							<td><?php esc_html_e( 'Total associated deal value, with won deals weighted highest', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Activity Volume', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>15%</td>
+							<td><?php esc_html_e( 'Number of calls, emails, meetings, tasks logged (logarithmic scale)', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Lifecycle Stage', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>10%</td>
+							<td><?php esc_html_e( 'Progression from lead → MQL → SQL → opportunity → customer', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Top Clients tab.
+	 *
+	 * Displays a ranked list of most-engaged contacts based on activity
+	 * volume, recency, channel diversity, and completion rates.
+	 *
+	 * @since 2.7.0
+	 */
+	private static function render_top_clients_tab() {
+		// Use the identify_top_clients tool if available.
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-identify-top-clients.php';
+		$has_tool  = file_exists( $tool_file );
+
+		if ( $has_tool && ! class_exists( 'WP_MCP_AI_Tool_Identify_Top_Clients' ) ) {
+			require_once $tool_file;
+		}
+
+		$results          = null;
+		$error_msg        = '';
+		$total_activities = self::get_cpt_count( 'mcp_ai_crm_activity', 'publish' );
+		$total_leads      = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
+
+		if ( $has_tool && class_exists( 'WP_MCP_AI_Tool_Identify_Top_Clients' ) ) {
+			$tool    = new WP_MCP_AI_Tool_Identify_Top_Clients();
+			$context = array( 'user_id' => get_current_user_id() );
+			$result  = $tool->execute(
+				array(
+					'limit' => 20,
+				),
+				$context
+			);
+
+			if ( ! is_wp_error( $result ) ) {
+				$results = isset( $result['data']['clients'] ) ? $result['data']['clients'] : array();
+			} else {
+				$error_msg = $result->get_error_message();
+			}
+		}
+
+		$clients_count = is_array( $results ) ? count( $results ) : 0;
+		?>
+		<div class="crm-cc-kpi-grid">
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Total Activities', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_activities ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Calls, emails, meetings, tasks', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Contacts Tracked', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_leads ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'With activity history', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Top Clients Ranked', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value win"><?php echo esc_html( number_format_i18n( $clients_count ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'By engagement score', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Scoring Model', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value" style="font-size: 16px;">
+					<?php esc_html_e( 'Volume 40% · Recency 25% · Channels 20% · Completion 15%', 'mcp-ai-wpoos-pro' ); ?>
+				</div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Engagement weighting', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2>
+				<?php esc_html_e( 'Top Clients by Engagement', 'mcp-ai-wpoos-pro' ); ?>
+			</h2>
+			<p class="description">
+				<?php esc_html_e( 'Contacts ranked by engagement score — a composite of total interaction volume (40%), recency of last contact (25%), channel diversity (20%), and task completion rate (15%). Higher scores indicate frequent, recent, multi-channel engagement.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<?php if ( $error_msg ) : ?>
+				<div class="notice notice-error inline"><p><?php echo esc_html( $error_msg ); ?></p></div>
+			<?php elseif ( empty( $results ) ) : ?>
+				<p><?php esc_html_e( 'No activities found. Log calls, emails, or meetings to start identifying top clients.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th style="width: 40px;">#</th>
+							<th><?php esc_html_e( 'Contact', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Company', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Interactions', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'By Type', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Last Contact', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Engagement', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Owner', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php $rank = 1; ?>
+						<?php foreach ( $results as $client ) : ?>
+							<?php
+							$title          = isset( $client['title'] ) ? esc_html( $client['title'] ) : '—';
+							$company        = isset( $client['company'] ) ? esc_html( $client['company'] ) : '—';
+							$interactions   = isset( $client['total_interactions'] ) ? (int) $client['total_interactions'] : 0;
+							$by_type        = isset( $client['interactions_by_type'] ) ? $client['interactions_by_type'] : array();
+							$last_date      = isset( $client['last_activity_date'] ) ? $client['last_activity_date'] : '';
+							$days_since     = isset( $client['days_since_last'] ) && '' !== $client['days_since_last'] ? (int) $client['days_since_last'] : null;
+							$engagement     = isset( $client['engagement_score'] ) ? (float) $client['engagement_score'] : 0;
+							$completion_pct = isset( $client['completion_rate_pct'] ) ? (float) $client['completion_rate_pct'] : 0;
+							$owner          = isset( $client['contact_owner'] ) ? esc_html( $client['contact_owner'] ) : '—';
+							$lead_id        = isset( $client['lead_id'] ) ? (int) $client['lead_id'] : 0;
+							$is_customer    = ! empty( $client['is_customer'] );
+
+							// Engagement color.
+							$eng_color = $engagement >= 70 ? '#00a32a' : ( $engagement >= 40 ? '#dba617' : '#d63638' );
+
+							// Build by-type summary.
+							$type_parts = array();
+							$type_icons = array(
+								'call'    => '📞',
+								'email'   => '✉️',
+								'meeting' => '📅',
+								'task'    => '✅',
+								'note'    => '📝',
+							);
+							foreach ( $by_type as $type => $count ) {
+								if ( $count > 0 ) {
+									$icon = isset( $type_icons[ $type ] ) ? $type_icons[ $type ] : '';
+									$type_parts[] = $icon . ' ' . (int) $count;
+								}
+							}
+
+							// Days since formatting.
+							if ( null !== $days_since ) {
+								if ( 0 === $days_since ) {
+									$days_label = __( 'Today', 'mcp-ai-wpoos-pro' );
+								} elseif ( 1 === $days_since ) {
+									$days_label = __( 'Yesterday', 'mcp-ai-wpoos-pro' );
+								} else {
+									$days_label = sprintf(
+										/* translators: %d: number of days */
+										__( '%d days ago', 'mcp-ai-wpoos-pro' ),
+										$days_since
+									);
+								}
+							} else {
+								$days_label = '—';
+							}
+							?>
+							<tr>
+								<td style="font-weight: 600; color: #646970;"><?php echo esc_html( $rank ); ?></td>
+								<td>
+									<strong>
+										<?php if ( $lead_id ) : ?>
+											<a href="<?php echo esc_url( get_edit_post_link( $lead_id, 'raw' ) ); ?>">
+												<?php echo esc_html( $title ); ?>
+											</a>
+										<?php else : ?>
+											<?php echo esc_html( $title ); ?>
+										<?php endif; ?>
+									</strong>
+									<?php if ( $is_customer ) : ?>
+										<span class="crm-cc-badge" style="background: #00a32a;"><?php esc_html_e( 'Customer', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td><?php echo esc_html( $company ); ?></td>
+								<td style="font-weight: 600;"><?php echo esc_html( number_format_i18n( $interactions ) ); ?></td>
+								<td style="font-size: 12px;">
+									<?php echo ! empty( $type_parts ) ? wp_kses_post( implode( ' ', $type_parts ) ) : '—'; ?>
+								</td>
+								<td>
+									<span style="color: <?php echo null !== $days_since && $days_since <= 7 ? '#00a32a' : '#646970'; ?>;">
+										<?php echo esc_html( $days_label ); ?>
+									</span>
+								</td>
+								<td>
+									<span style="color: <?php echo esc_attr( $eng_color ); ?>; font-weight: 700; font-size: 14px;">
+										<?php echo esc_html( number_format_i18n( $engagement, 1 ) ); ?>
+									</span>
+									<span style="font-size: 10px; color: #646970; display: block;">
+										<?php echo esc_html( round( $completion_pct ) ); ?>% <?php esc_html_e( 'complete', 'mcp-ai-wpoos-pro' ); ?>
+									</span>
+								</td>
+								<td><?php echo esc_html( $owner ); ?></td>
+							</tr>
+							<?php ++$rank; ?>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2><?php esc_html_e( 'How Engagement Scoring Works', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<div style="max-width: 700px;">
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Factor', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Weight', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'What It Measures', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td><strong><?php esc_html_e( 'Interaction Volume', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>40%</td>
+							<td><?php esc_html_e( 'Total number of activities logged (logarithmic scale — 50+ interactions = max)', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Recency', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>25%</td>
+							<td><?php esc_html_e( 'How recently the last interaction occurred (today = max, 365+ days = 0)', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Channel Diversity', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>20%</td>
+							<td><?php esc_html_e( 'Number of unique contact channels used (calls, emails, meetings, tasks, notes)', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Completion Rate', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>15%</td>
+							<td><?php esc_html_e( 'Percentage of activities marked as completed (vs. snoozed or pending)', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 		</div>
 		<?php
 	}

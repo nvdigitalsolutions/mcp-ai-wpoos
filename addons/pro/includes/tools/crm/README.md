@@ -68,6 +68,8 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | `WP_MCP_AI_Tool_Score_Upwork_Job` | `upwork/class-wp-mcp-ai-tool-score-upwork-job.php` | tool registry |
 | `WP_MCP_AI_Tool_Search_Upwork_Jobs` | `upwork/class-wp-mcp-ai-tool-search-upwork-jobs.php` | tool registry |
 | `WP_MCP_AI_Tool_Import_CRM_Blueprint` | `examples/class-wp-mcp-ai-tool-import-crm-blueprint.php` | tool registry |
+| `WP_MCP_AI_Tool_Identify_Top_Customers` | `analytics/class-wp-mcp-ai-tool-identify-top-customers.php` | tool registry |
+| `WP_MCP_AI_Tool_Identify_Top_Clients` | `analytics/class-wp-mcp-ai-tool-identify-top-clients.php` | tool registry |
 
 ## Shared Infrastructure (engine classes + installer)
 

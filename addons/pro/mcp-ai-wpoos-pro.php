@@ -998,10 +998,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Complete_CRM_Activity'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/activities/class-wp-mcp-ai-tool-complete-crm-activity.php',
 				'WP_MCP_AI_Tool_Snooze_CRM_Activity'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/activities/class-wp-mcp-ai-tool-snooze-crm-activity.php',
 
-				// ── Phase B: Pipeline Analytics (3) ──
+				// ── Phase B: Pipeline Analytics (5) ──
 				'WP_MCP_AI_Tool_Get_Pipeline_View'         => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-get-pipeline-view.php',
 				'WP_MCP_AI_Tool_Get_Conversion_Funnel'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-get-conversion-funnel.php',
 				'WP_MCP_AI_Tool_Forecast_Pipeline_Revenue' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-forecast-pipeline-revenue.php',
+				'WP_MCP_AI_Tool_Identify_Top_Customers'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-identify-top-customers.php',
+				'WP_MCP_AI_Tool_Identify_Top_Clients'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-identify-top-clients.php',
 
 				// ── Phase B: Routing (2) ──
 				'WP_MCP_AI_Tool_Assign_Lead_To_Owner'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/routing/class-wp-mcp-ai-tool-assign-lead-to-owner.php',

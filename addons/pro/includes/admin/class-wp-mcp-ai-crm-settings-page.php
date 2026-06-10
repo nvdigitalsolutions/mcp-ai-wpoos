@@ -482,6 +482,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'get_pipeline_view'         => __( 'Pipeline Kanban View', 'mcp-ai-wpoos-pro' ),
 			'get_conversion_funnel'     => __( 'Conversion Funnel', 'mcp-ai-wpoos-pro' ),
 			'forecast_pipeline_revenue' => __( 'Forecast Pipeline Revenue', 'mcp-ai-wpoos-pro' ),
+			'identify_top_customers'    => __( 'Identify Top Customers', 'mcp-ai-wpoos-pro' ),
+			'identify_top_clients'      => __( 'Identify Top Clients', 'mcp-ai-wpoos-pro' ),
 			'assign_lead_to_owner'      => __( 'Assign Lead to Owner', 'mcp-ai-wpoos-pro' ),
 			'rotate_leads'              => __( 'Rotate Leads', 'mcp-ai-wpoos-pro' ),
 		);

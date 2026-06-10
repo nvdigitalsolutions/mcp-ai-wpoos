@@ -129,6 +129,8 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 				'get_pipeline_view',
 				'forecast_pipeline_revenue',
 				'get_conversion_funnel',
+				'identify_top_customers',
+				'identify_top_clients',
 				// Inbound triage.
 				'evaluate_inbound_message',
 				'classify_message_intent',
