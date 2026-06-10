@@ -54,6 +54,8 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_get_dashboard', array( __CLASS__, 'ajax_get_dashboard' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_get_pipeline', array( __CLASS__, 'ajax_get_pipeline' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_refresh_all_sources', array( __CLASS__, 'ajax_refresh_all_sources' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_hygiene_add', array( __CLASS__, 'ajax_hygiene_add' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_hygiene_remove', array( __CLASS__, 'ajax_hygiene_remove' ) );
 	}
 
 	/**
@@ -1657,6 +1659,201 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		$refresh_js = ob_get_clean();
 		wp_print_inline_script_tag( $refresh_js );
 		?>
+
+		<!-- Email Hygiene Management -->
+		<div class="crm-cc-section" style="border-left: 3px solid #dba617; margin-top: 24px;">
+			<h2 style="display: flex; align-items: center; gap: 8px;">
+				<span class="dashicons dashicons-shield" style="color:#dba617;"></span>
+				<?php esc_html_e( 'Email Hygiene Lists', 'mcp-ai-wpoos-pro' ); ?>
+				<span style="font-weight: 400; font-size: 13px; color: #646970;">
+					— <?php esc_html_e( 'manage exclude and priority lists inline', 'mcp-ai-wpoos-pro' ); ?>
+				</span>
+			</h2>
+			<p class="description" style="margin-bottom: 16px;">
+				<?php esc_html_e( 'Quickly add senders to your exclude list (always skip) or priority list (always fast-track) without leaving the Command Center. Changes apply instantly to the Gmail import pipeline.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<?php
+			// Load current hygiene settings.
+			$hygiene         = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
+			$exclude_entries = isset( $hygiene['exclude_list'] ) ? (array) $hygiene['exclude_list'] : array();
+			$priority_entries = isset( $hygiene['priority_list'] ) ? (array) $hygiene['priority_list'] : array();
+			$hygiene_nonce   = wp_create_nonce( 'wp_mcp_ai_crm_hygiene_action' );
+			?>
+
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+				<!-- Exclude List -->
+				<div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 16px;">
+					<h3 style="margin: 0 0 12px; color: #d63638;">
+						<span class="dashicons dashicons-dismiss" style="color:#d63638;"></span>
+						<?php esc_html_e( 'Exclude List', 'mcp-ai-wpoos-pro' ); ?>
+						<span style="font-weight: 400; font-size: 12px; color: #646970;">
+							(<?php echo esc_html( count( $exclude_entries ) ); ?>)
+						</span>
+					</h3>
+
+					<div id="crm-cc-exclude-list">
+						<?php if ( empty( $exclude_entries ) ) : ?>
+							<p style="color: #646970; font-style: italic;"><?php esc_html_e( 'No entries yet. Add senders to skip during import.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<ul style="margin: 0; padding: 0; list-style: none; max-height: 200px; overflow-y: auto;">
+								<?php foreach ( $exclude_entries as $entry ) : ?>
+									<li style="padding: 4px 0; border-bottom: 1px solid #f0f0f1; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+										<code style="background: #f6f7f7; padding: 2px 6px; border-radius: 3px;"><?php echo esc_html( $entry ); ?></code>
+										<button type="button" class="button button-small crm-cc-hygiene-remove"
+											data-entry="<?php echo esc_attr( $entry ); ?>"
+											data-list="exclude"
+											style="color: #d63638; border-color: #d63638;">
+											<?php esc_html_e( 'Remove', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+						<?php endif; ?>
+					</div>
+
+					<div style="margin-top: 12px; display: flex; gap: 6px;">
+						<input type="text" id="crm-cc-exclude-input" class="regular-text"
+							placeholder="spammer@x.com or @domain.com"
+							style="flex: 1; font-size: 13px;" />
+						<button type="button" class="button button-small crm-cc-hygiene-add"
+							data-list="exclude"
+							style="background: #d63638; color: #fff; border-color: #d63638;">
+							<?php esc_html_e( 'Add to Exclude', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</div>
+				</div>
+
+				<!-- Priority List -->
+				<div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 16px;">
+					<h3 style="margin: 0 0 12px; color: #00a32a;">
+						<span class="dashicons dashicons-star-filled" style="color:#00a32a;"></span>
+						<?php esc_html_e( 'Priority List', 'mcp-ai-wpoos-pro' ); ?>
+						<span style="font-weight: 400; font-size: 12px; color: #646970;">
+							(<?php echo esc_html( count( $priority_entries ) ); ?>)
+						</span>
+					</h3>
+
+					<div id="crm-cc-priority-list">
+						<?php if ( empty( $priority_entries ) ) : ?>
+							<p style="color: #646970; font-style: italic;"><?php esc_html_e( 'No entries yet. Add VIP senders to always fast-track.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<ul style="margin: 0; padding: 0; list-style: none; max-height: 200px; overflow-y: auto;">
+								<?php foreach ( $priority_entries as $entry ) : ?>
+									<li style="padding: 4px 0; border-bottom: 1px solid #f0f0f1; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+										<code style="background: #f6f7f7; padding: 2px 6px; border-radius: 3px;"><?php echo esc_html( $entry ); ?></code>
+										<button type="button" class="button button-small crm-cc-hygiene-remove"
+											data-entry="<?php echo esc_attr( $entry ); ?>"
+											data-list="priority"
+											style="color: #d63638; border-color: #d63638;">
+											<?php esc_html_e( 'Remove', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+						<?php endif; ?>
+					</div>
+
+					<div style="margin-top: 12px; display: flex; gap: 6px;">
+						<input type="text" id="crm-cc-priority-input" class="regular-text"
+							placeholder="vip@client.com or @partner.com"
+							style="flex: 1; font-size: 13px;" />
+						<button type="button" class="button button-small crm-cc-hygiene-add"
+							data-list="priority"
+							style="background: #00a32a; color: #fff; border-color: #00a32a;">
+							<?php esc_html_e( 'Add to Priority', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<div id="crm-cc-hygiene-message" class="notice" style="display: none; margin-top: 12px;">
+				<p></p>
+			</div>
+
+			<script>
+			(function() {
+				var nonce = <?php echo wp_json_encode( $hygiene_nonce ); ?>;
+
+				function refreshLists() {
+					// Reload the page support tab to refresh both lists.
+					location.reload();
+				}
+
+				function showMessage(type, text) {
+					var msg = document.getElementById('crm-cc-hygiene-message');
+					msg.style.display = 'block';
+					msg.className = 'notice notice-' + type + ' inline';
+					msg.querySelector('p').textContent = text;
+					setTimeout(function() { msg.style.display = 'none'; }, 4000);
+				}
+
+				// Add buttons.
+				document.querySelectorAll('.crm-cc-hygiene-add').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						var listType = this.dataset.list;
+						var inputId  = 'crm-cc-' + listType + '-input';
+						var input    = document.getElementById(inputId);
+						var entry    = input.value.trim();
+
+						if (!entry) {
+							showMessage('error', 'Please enter an email address or @domain pattern.');
+							return;
+						}
+
+						var formData = new FormData();
+						formData.append('action', 'wp_mcp_ai_crm_cc_hygiene_add');
+						formData.append('_ajax_nonce', nonce);
+						formData.append('list_type', listType);
+						formData.append('entry', entry);
+
+						fetch(ajaxurl, { method: 'POST', body: formData, credentials: 'same-origin' })
+							.then(function(r) { return r.json(); })
+							.then(function(data) {
+								if (data.success) {
+									showMessage('success', entry + ' added to ' + listType + ' list.');
+									input.value = '';
+									setTimeout(refreshLists, 800);
+								} else {
+									showMessage('error', data.data && data.data.message ? data.data.message : 'Failed to add entry.');
+								}
+							})
+							.catch(function() { showMessage('error', 'Network error.'); });
+					});
+				});
+
+				// Remove buttons.
+				document.querySelectorAll('.crm-cc-hygiene-remove').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						var entry    = this.dataset.entry;
+						var listType = this.dataset.list;
+
+						if (!confirm('Remove ' + entry + ' from the ' + listType + ' list?')) {
+							return;
+						}
+
+						var formData = new FormData();
+						formData.append('action', 'wp_mcp_ai_crm_cc_hygiene_remove');
+						formData.append('_ajax_nonce', nonce);
+						formData.append('list_type', listType);
+						formData.append('entry', entry);
+
+						fetch(ajaxurl, { method: 'POST', body: formData, credentials: 'same-origin' })
+							.then(function(r) { return r.json(); })
+							.then(function(data) {
+								if (data.success) {
+									showMessage('success', entry + ' removed from ' + listType + ' list.');
+									setTimeout(refreshLists, 800);
+								} else {
+									showMessage('error', data.data && data.data.message ? data.data.message : 'Failed to remove entry.');
+								}
+							})
+							.catch(function() { showMessage('error', 'Network error.'); });
+					});
+				});
+			})();
+			</script>
+		</div>
 		<?php
 	}
 
@@ -3046,5 +3243,118 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		}
 
 		return date_i18n( 'M j, Y', $timestamp );
+		}
+
+		/**
+		 * AJAX handler: add an entry to the exclude or priority list.
+		 *
+		 * @since 2.8.0
+		 */
+		public static function ajax_hygiene_add() {
+			check_ajax_referer( 'wp_mcp_ai_crm_hygiene_action', '_ajax_nonce' );
+
+			if ( ! current_user_can( 'edit_posts' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			$list_type = isset( $_POST['list_type'] ) ? sanitize_key( wp_unslash( $_POST['list_type'] ) ) : '';
+			$entry     = isset( $_POST['entry'] ) ? sanitize_text_field( wp_unslash( $_POST['entry'] ) ) : '';
+
+			if ( ! in_array( $list_type, array( 'exclude', 'priority' ), true ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid list type.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			$entry = strtolower( trim( $entry ) );
+
+			if ( empty( $entry ) ) {
+				wp_send_json_error( array( 'message' => __( 'Entry is required.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			// Validate format.
+			if ( 0 === strpos( $entry, '@' ) ) {
+				$domain = substr( $entry, 1 );
+				if ( empty( $domain ) || false === strpos( $domain, '.' ) ) {
+					wp_send_json_error( array( 'message' => __( 'Domain pattern must include a dot (e.g. @example.com).', 'mcp-ai-wpoos-pro' ) ) );
+				}
+			} elseif ( false === strpos( $entry, '@' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Entry must be an email address or @domain pattern.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			// Use the manage_email_hygiene tool's logic.
+			$settings  = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
+			$list_key  = 'exclude' === $list_type ? 'exclude_list' : 'priority_list';
+			$list      = isset( $settings[ $list_key ] ) ? (array) $settings[ $list_key ] : array();
+
+			if ( in_array( $entry, $list, true ) ) {
+				wp_send_json_error( array( 'message' => sprintf( __( '%s is already in the %s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
+			}
+
+			$list[] = $entry;
+			$list   = array_unique( $list );
+			sort( $list );
+
+			$settings[ $list_key ] = $list;
+			update_option( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION, $settings, false );
+
+			if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+				WP_MCP_AI_CRM_Engine::flush_settings_cache();
+			}
+
+			wp_send_json_success( array( 'message' => sprintf( __( '%s added to %s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ), 'count' => count( $list ) ) );
+		}
+
+		/**
+		 * AJAX handler: remove an entry from the exclude or priority list.
+		 *
+		 * @since 2.8.0
+		 */
+		public static function ajax_hygiene_remove() {
+			check_ajax_referer( 'wp_mcp_ai_crm_hygiene_action', '_ajax_nonce' );
+
+			if ( ! current_user_can( 'edit_posts' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			$list_type = isset( $_POST['list_type'] ) ? sanitize_key( wp_unslash( $_POST['list_type'] ) ) : '';
+			$entry     = isset( $_POST['entry'] ) ? sanitize_text_field( wp_unslash( $_POST['entry'] ) ) : '';
+
+			if ( ! in_array( $list_type, array( 'exclude', 'priority' ), true ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid list type.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			$entry = strtolower( trim( $entry ) );
+
+			if ( empty( $entry ) ) {
+				wp_send_json_error( array( 'message' => __( 'Entry is required.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			$settings  = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
+			$list_key  = 'exclude' === $list_type ? 'exclude_list' : 'priority_list';
+			$list      = isset( $settings[ $list_key ] ) ? (array) $settings[ $list_key ] : array();
+
+			$found = false;
+			$list  = array_values( array_filter(
+				$list,
+				function ( $item ) use ( $entry, &$found ) {
+					if ( strtolower( trim( $item ) ) === $entry ) {
+						$found = true;
+						return false;
+					}
+					return true;
+				}
+			) );
+
+			if ( ! $found ) {
+				wp_send_json_error( array( 'message' => sprintf( __( '%s was not found in the %s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
+			}
+
+			$settings[ $list_key ] = $list;
+			update_option( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION, $settings, false );
+
+			if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+				WP_MCP_AI_CRM_Engine::flush_settings_cache();
+			}
+
+			wp_send_json_success( array( 'message' => sprintf( __( '%s removed from %s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ), 'count' => count( $list ) ) );
+		}
 	}
-}
