@@ -56,6 +56,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_refresh_all_sources', array( __CLASS__, 'ajax_refresh_all_sources' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_hygiene_add', array( __CLASS__, 'ajax_hygiene_add' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_hygiene_remove', array( __CLASS__, 'ajax_hygiene_remove' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_merge_duplicate', array( __CLASS__, 'ajax_merge_duplicate' ) );
 	}
 
 	/**
@@ -303,7 +304,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
-		$valid_tabs  = array( 'overview', 'leads', 'pipeline', 'support', 'activities', 'sequences', 'analytics', 'top_customers', 'top_clients', 'configuration' );
+		$valid_tabs  = array( 'overview', 'leads', 'pipeline', 'support', 'activities', 'sequences', 'analytics', 'top_customers', 'top_clients', 'duplicates', 'configuration' );
 		if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
 			$current_tab = 'overview';
 		}
@@ -337,6 +338,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						'analytics'     => __( 'Analytics', 'mcp-ai-wpoos-pro' ),
 						'top_customers' => __( 'Top Customers', 'mcp-ai-wpoos-pro' ),
 						'top_clients'   => __( 'Top Clients', 'mcp-ai-wpoos-pro' ),
+						'duplicates'    => __( 'Duplicates', 'mcp-ai-wpoos-pro' ),
 						'configuration' => __( 'Configuration', 'mcp-ai-wpoos-pro' ),
 					);
 
@@ -379,6 +381,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						break;
 					case 'top_clients':
 						self::render_top_clients_tab();
+						break;
+					case 'duplicates':
+						self::render_duplicates_tab();
 						break;
 					case 'configuration':
 						self::render_configuration_tab();
@@ -2353,6 +2358,410 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	}
 
 	/**
+	 * Render the Duplicates tab.
+	 *
+	 * Shows potential duplicate leads detected by the detect_duplicates tool
+	 * with one-click merge buttons and a bulk merge option for high-confidence pairs.
+	 *
+	 * @since 2.8.0
+	 */
+	private static function render_duplicates_tab() {
+		// Load the detect_duplicates tool.
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-detect-duplicates.php';
+		$has_tool  = file_exists( $tool_file );
+
+		if ( $has_tool && ! class_exists( 'WP_MCP_AI_Tool_Detect_Duplicates' ) ) {
+			require_once $tool_file;
+		}
+
+		$results   = null;
+		$error_msg = '';
+		$total_leads = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
+		$merged_count = self::get_cpt_count_by_meta( 'mcp_ai_lead', 'publish', '_is_merged', '1' );
+
+		if ( $has_tool && class_exists( 'WP_MCP_AI_Tool_Detect_Duplicates' ) ) {
+			$tool    = new WP_MCP_AI_Tool_Detect_Duplicates();
+			$context = array( 'user_id' => get_current_user_id() );
+			$result  = $tool->execute(
+				array(
+					'strategy'   => 'all',
+					'max_results' => 50,
+				),
+				$context
+			);
+
+			if ( ! is_wp_error( $result ) ) {
+				$results = isset( $result['data']['duplicates'] ) ? $result['data']['duplicates'] : array();
+			} else {
+				$error_msg = $result->get_error_message();
+			}
+		}
+
+		$pairs_count   = is_array( $results ) ? count( $results ) : 0;
+		$high_conf      = 0;
+		$email_dupes    = 0;
+		$phone_dupes    = 0;
+		$fuzzy_dupes    = 0;
+
+		if ( is_array( $results ) ) {
+			foreach ( $results as $pair ) {
+				if ( $pair['confidence'] >= 0.95 ) {
+					++$high_conf;
+				}
+				if ( 'exact_email' === ( $pair['strategy'] ?? '' ) ) {
+					++$email_dupes;
+				} elseif ( 'phone' === ( $pair['strategy'] ?? '' ) ) {
+					++$phone_dupes;
+				} else {
+					++$fuzzy_dupes;
+				}
+			}
+		}
+
+		$merge_nonce = wp_create_nonce( self::NONCE_ACTION );
+		?>
+
+		<div class="crm-cc-kpi-grid">
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Total Leads', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_leads ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'In database', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Potential Duplicates', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value <?php echo $pairs_count > 0 ? 'warn' : 'win'; ?>"><?php echo esc_html( number_format_i18n( $pairs_count ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Pairs found', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'High Confidence', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value <?php echo $high_conf > 0 ? 'warn' : ''; ?>"><?php echo esc_html( number_format_i18n( $high_conf ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( '≥ 95% — safe to auto-merge', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Already Merged', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $merged_count ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Leads flagged as merged', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2>
+				<?php esc_html_e( 'Potential Duplicate Leads', 'mcp-ai-wpoos-pro' ); ?>
+				<span style="font-weight: 400; font-size: 13px; color: #646970; margin-left: 8px;">
+					— <?php esc_html_e( 'exact email, phone, and fuzzy name+company matching', 'mcp-ai-wpoos-pro' ); ?>
+				</span>
+			</h2>
+
+			<?php if ( $high_conf > 0 ) : ?>
+				<p style="margin-bottom: 12px;">
+					<button type="button" class="button button-primary" id="crm-cc-bulk-merge-btn"
+						data-nonce="<?php echo esc_attr( $merge_nonce ); ?>"
+						<?php echo 0 === $high_conf ? 'disabled' : ''; ?>>
+						<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+						<?php
+						printf(
+							/* translators: %d: number of high-confidence pairs */
+							esc_html__( 'Bulk Merge %d High-Confidence Pairs', 'mcp-ai-wpoos-pro' ),
+							$high_conf
+						);
+						?>
+					</button>
+					<span class="description" style="margin-left: 8px;">
+						<?php esc_html_e( 'Auto-merges all pairs with ≥ 95% confidence. Safe — these are exact email matches.', 'mcp-ai-wpoos-pro' ); ?>
+					</span>
+				</p>
+			<?php endif; ?>
+
+			<div id="crm-cc-merge-message" class="notice" style="display: none; margin-bottom: 12px;">
+				<p></p>
+			</div>
+
+			<?php if ( $error_msg ) : ?>
+				<div class="notice notice-error inline"><p><?php echo esc_html( $error_msg ); ?></p></div>
+			<?php elseif ( empty( $results ) ) : ?>
+				<p style="color: #00a32a;">
+					<span class="dashicons dashicons-yes-alt" style="color:#00a32a;"></span>
+					<?php esc_html_e( 'No duplicates detected. Your lead database is clean!', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+			<?php else : ?>
+				<table class="wp-list-table widefat fixed striped" id="crm-cc-duplicates-table">
+					<thead>
+						<tr>
+							<th style="width: 60px;"><?php esc_html_e( 'Confidence', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Lead A (Survivor)', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Lead B (Duplicate)', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th style="width: 100px;"><?php esc_html_e( 'Strategy', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th style="width: 100px;"><?php esc_html_e( 'Evidence', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th style="width: 80px;"><?php esc_html_e( 'Action', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $results as $pair ) : ?>
+							<?php
+							$a = isset( $pair['lead_a_summary'] ) ? $pair['lead_a_summary'] : array();
+							$b = isset( $pair['lead_b_summary'] ) ? $pair['lead_b_summary'] : array();
+
+							$a_id      = isset( $pair['lead_a'] ) ? (int) $pair['lead_a'] : 0;
+							$b_id      = isset( $pair['lead_b'] ) ? (int) $pair['lead_b'] : 0;
+							$confidence = isset( $pair['confidence'] ) ? (float) $pair['confidence'] : 0;
+							$strategy   = isset( $pair['strategy'] ) ? $pair['strategy'] : '';
+							$evidence   = isset( $pair['evidence'] ) ? $pair['evidence'] : array();
+
+							$a_title = isset( $a['title'] ) ? esc_html( $a['title'] ) : '—';
+							$b_title = isset( $b['title'] ) ? esc_html( $b['title'] ) : '—';
+							$a_email = isset( $a['email'] ) ? esc_html( $a['email'] ) : '';
+							$b_email = isset( $b['email'] ) ? esc_html( $b['email'] ) : '';
+							$a_deals = isset( $a['deal_count'] ) ? (int) $a['deal_count'] : 0;
+							$b_deals = isset( $b['deal_count'] ) ? (int) $b['deal_count'] : 0;
+							$a_acts  = isset( $a['activity_count'] ) ? (int) $a['activity_count'] : 0;
+							$b_acts  = isset( $b['activity_count'] ) ? (int) $b['activity_count'] : 0;
+
+							// Survivor: the one with most data (deals + activities), or older.
+							$a_rich = $a_deals + $a_acts + ( isset( $a['is_customer'] ) && $a['is_customer'] ? 5 : 0 );
+							$b_rich = $b_deals + $b_acts + ( isset( $b['is_customer'] ) && $b['is_customer'] ? 5 : 0 );
+
+							if ( $a_rich >= $b_rich ) {
+								$survivor_id = $a_id;
+								$duplicate_id = $b_id;
+							} else {
+								$survivor_id = $b_id;
+								$duplicate_id = $a_id;
+							}
+
+							$conf_pct = round( $confidence * 100 );
+							$conf_color = $confidence >= 0.95 ? '#00a32a' : ( $confidence >= 0.80 ? '#dba617' : '#d63638' );
+
+							$strategy_labels = array(
+								'exact_email'         => __( 'Email', 'mcp-ai-wpoos-pro' ),
+								'phone'               => __( 'Phone', 'mcp-ai-wpoos-pro' ),
+								'fuzzy_name_company'  => __( 'Fuzzy Name', 'mcp-ai-wpoos-pro' ),
+							);
+							$strategy_label = isset( $strategy_labels[ $strategy ] ) ? $strategy_labels[ $strategy ] : $strategy;
+							$evidence_text  = isset( $evidence['detail'] ) ? esc_html( $evidence['detail'] ) : '';
+							?>
+							<tr data-survivor="<?php echo esc_attr( $survivor_id ); ?>" data-duplicate="<?php echo esc_attr( $duplicate_id ); ?>">
+								<td style="text-align: center;">
+									<span style="display: inline-block; width: 50px; height: 50px; border-radius: 50%; background: conic-gradient(<?php echo esc_attr( $conf_color ); ?> <?php echo esc_attr( $conf_pct ); ?>%, #f0f0f1 <?php echo esc_attr( $conf_pct ); ?>%); position: relative;">
+										<span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 11px; font-weight: 700; color: <?php echo esc_attr( $conf_color ); ?>;"><?php echo esc_html( $conf_pct ); ?>%</span>
+									</span>
+								</td>
+								<td>
+									<strong><?php echo esc_html( $a_title ); ?></strong>
+									<?php if ( $a_email ) : ?><br><small style="color: #646970;"><?php echo esc_html( $a_email ); ?></small><?php endif; ?>
+									<br><small style="color: #646970;">
+										<?php echo esc_html( $a_deals ); ?> <?php esc_html_e( 'deals', 'mcp-ai-wpoos-pro' ); ?> ·
+										<?php echo esc_html( $a_acts ); ?> <?php esc_html_e( 'activities', 'mcp-ai-wpoos-pro' ); ?>
+										<?php if ( ! empty( $a['is_customer'] ) ) : ?>
+											· <span style="color: #00a32a;"><?php esc_html_e( 'Customer', 'mcp-ai-wpoos-pro' ); ?></span>
+										<?php endif; ?>
+										<?php if ( ! empty( $a['is_merged'] ) ) : ?>
+											· <span style="color: #d63638;"><?php esc_html_e( 'Merged', 'mcp-ai-wpoos-pro' ); ?></span>
+										<?php endif; ?>
+									</small>
+								</td>
+								<td>
+									<strong><?php echo esc_html( $b_title ); ?></strong>
+									<?php if ( $b_email ) : ?><br><small style="color: #646970;"><?php echo esc_html( $b_email ); ?></small><?php endif; ?>
+									<br><small style="color: #646970;">
+										<?php echo esc_html( $b_deals ); ?> <?php esc_html_e( 'deals', 'mcp-ai-wpoos-pro' ); ?> ·
+										<?php echo esc_html( $b_acts ); ?> <?php esc_html_e( 'activities', 'mcp-ai-wpoos-pro' ); ?>
+										<?php if ( ! empty( $b['is_customer'] ) ) : ?>
+											· <span style="color: #00a32a;"><?php esc_html_e( 'Customer', 'mcp-ai-wpoos-pro' ); ?></span>
+										<?php endif; ?>
+										<?php if ( ! empty( $b['is_merged'] ) ) : ?>
+											· <span style="color: #d63638;"><?php esc_html_e( 'Merged', 'mcp-ai-wpoos-pro' ); ?></span>
+										<?php endif; ?>
+									</small>
+								</td>
+								<td><span class="crm-cc-badge" style="background: #2271b1; font-size: 11px;"><?php echo esc_html( $strategy_label ); ?></span></td>
+								<td style="font-size: 12px; color: #646970;"><?php echo esc_html( $evidence_text ); ?></td>
+								<td>
+									<button type="button" class="button button-small crm-cc-merge-btn"
+										data-survivor="<?php echo esc_attr( $survivor_id ); ?>"
+										data-duplicate="<?php echo esc_attr( $duplicate_id ); ?>"
+										data-nonce="<?php echo esc_attr( $merge_nonce ); ?>"
+										style="background: #2271b1; color: #fff; border-color: #2271b1;">
+										<?php esc_html_e( 'Merge', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2><?php esc_html_e( 'How Duplicate Detection Works', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Three matching strategies run against all published leads. The survivor (lead with most deals + activities) is auto-selected. Merges fill empty fields, reassign child records, and take the max score.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			<table class="wp-list-table widefat fixed striped" style="max-width: 700px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Strategy', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Confidence', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'How It Matches', 'mcp-ai-wpoos-pro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><strong><?php esc_html_e( 'Exact Email', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+						<td style="color: #00a32a;">99%</td>
+						<td><?php esc_html_e( 'Identical email address (case-insensitive). Safe to auto-merge.', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Phone Match', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+						<td style="color: #dba617;">70–90%</td>
+						<td><?php esc_html_e( 'Same phone number after stripping formatting. 90% if names also match.', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Fuzzy Name + Company', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+						<td style="color: #d63638;">50–85%</td>
+						<td><?php esc_html_e( 'Levenshtein distance on names (≥75% similar) at same company. Review before merging.', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<script>
+		(function() {
+			function showMessage(type, text) {
+				var msg = document.getElementById('crm-cc-merge-message');
+				msg.style.display = 'block';
+				msg.className = 'notice notice-' + type + ' inline';
+				msg.querySelector('p').textContent = text;
+				setTimeout(function() { msg.style.display = 'none'; }, 5000);
+			}
+
+			function mergePair(survivorId, duplicateId, nonce, button) {
+				if (!confirm('Merge lead #' + duplicateId + ' into lead #' + survivorId + '?\n\nThis will fill empty fields, reassign all child records, and flag the duplicate as merged. This cannot be undone.')) {
+					return;
+				}
+
+				var origText = button.textContent;
+				button.disabled = true;
+				button.textContent = '...';
+
+				var formData = new FormData();
+				formData.append('action', 'wp_mcp_ai_crm_cc_merge_duplicate');
+				formData.append('_ajax_nonce', nonce);
+				formData.append('survivor_id', survivorId);
+				formData.append('duplicate_id', duplicateId);
+
+				fetch(ajaxurl, { method: 'POST', body: formData, credentials: 'same-origin' })
+					.then(function(r) { return r.json(); })
+					.then(function(data) {
+						if (data.success) {
+							showMessage('success', data.data.message || 'Merged successfully.');
+							// Hide the merged row.
+							var row = button.closest('tr');
+							if (row) {
+								row.style.opacity = '0.3';
+								row.querySelector('.crm-cc-merge-btn').textContent = 'Merged';
+								row.querySelector('.crm-cc-merge-btn').disabled = true;
+							}
+						} else {
+							showMessage('error', data.data && data.data.message ? data.data.message : 'Merge failed.');
+							button.disabled = false;
+							button.textContent = origText;
+						}
+					})
+					.catch(function() {
+						showMessage('error', 'Network error.');
+						button.disabled = false;
+						button.textContent = origText;
+					});
+			}
+
+			// Individual merge buttons.
+			document.querySelectorAll('.crm-cc-merge-btn').forEach(function(btn) {
+				btn.addEventListener('click', function() {
+					mergePair(this.dataset.survivor, this.dataset.duplicate, this.dataset.nonce, this);
+				});
+			});
+
+			// Bulk merge button.
+			var bulkBtn = document.getElementById('crm-cc-bulk-merge-btn');
+			if (bulkBtn) {
+				bulkBtn.addEventListener('click', function() {
+					if (!confirm('Bulk merge all pairs with ≥ 95% confidence?\n\nThis will auto-merge exact email duplicates. Review remaining pairs afterwards.')) {
+						return;
+					}
+
+					var nonce = this.dataset.nonce;
+					var rows = document.querySelectorAll('#crm-cc-duplicates-table tbody tr');
+					var toMerge = [];
+
+					rows.forEach(function(row) {
+						var confEl = row.querySelector('td:first-child span span');
+						if (confEl) {
+							var conf = parseInt(confEl.textContent);
+							if (conf >= 95) {
+								toMerge.push({
+									survivor: row.dataset.survivor,
+									duplicate: row.dataset.duplicate,
+									row: row,
+									btn: row.querySelector('.crm-cc-merge-btn')
+								});
+							}
+						}
+					});
+
+					if (toMerge.length === 0) {
+						showMessage('warning', 'No high-confidence pairs to merge.');
+						return;
+					}
+
+					var completed = 0;
+					var failed = 0;
+
+					function processNext(index) {
+						if (index >= toMerge.length) {
+							showMessage('success', 'Bulk merge complete: ' + completed + ' merged, ' + failed + ' failed.');
+							if (completed > 0) {
+								setTimeout(function() { location.reload(); }, 1500);
+							}
+							return;
+						}
+
+						var pair = toMerge[index];
+						var formData = new FormData();
+						formData.append('action', 'wp_mcp_ai_crm_cc_merge_duplicate');
+						formData.append('_ajax_nonce', nonce);
+						formData.append('survivor_id', pair.survivor);
+						formData.append('duplicate_id', pair.duplicate);
+
+						fetch(ajaxurl, { method: 'POST', body: formData, credentials: 'same-origin' })
+							.then(function(r) { return r.json(); })
+							.then(function(data) {
+								if (data.success) {
+									completed++;
+									pair.row.style.opacity = '0.3';
+									if (pair.btn) {
+										pair.btn.textContent = 'Merged';
+										pair.btn.disabled = true;
+									}
+								} else {
+									failed++;
+								}
+								processNext(index + 1);
+							})
+							.catch(function() {
+								failed++;
+								processNext(index + 1);
+							});
+					}
+
+					processNext(0);
+				});
+			}
+		})();
+		</script>
+		<?php
+	}
+
+	/**
 	 * Render the Configuration tab.
 	 */
 	private static function render_configuration_tab() {
@@ -3356,5 +3765,55 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			}
 
 			wp_send_json_success( array( 'message' => sprintf( __( '%s removed from %s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ), 'count' => count( $list ) ) );
+		}
+
+		/**
+		 * AJAX handler: merge a duplicate lead into a survivor.
+		 *
+		 * @since 2.8.0
+		 */
+		public static function ajax_merge_duplicate() {
+			check_ajax_referer( self::NONCE_ACTION, '_ajax_nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			$survivor_id  = isset( $_POST['survivor_id'] ) ? absint( wp_unslash( $_POST['survivor_id'] ) ) : 0;
+			$duplicate_id = isset( $_POST['duplicate_id'] ) ? absint( wp_unslash( $_POST['duplicate_id'] ) ) : 0;
+
+			if ( $survivor_id < 1 || $duplicate_id < 1 || $survivor_id === $duplicate_id ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid lead IDs.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			// Use the merge_duplicates tool.
+			$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-merge-duplicates.php';
+			if ( ! file_exists( $tool_file ) ) {
+				wp_send_json_error( array( 'message' => __( 'Merge tool not available.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			require_once $tool_file;
+
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Merge_Duplicates' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Merge tool class not found.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			$tool    = new WP_MCP_AI_Tool_Merge_Duplicates();
+			$context = array( 'user_id' => get_current_user_id() );
+			$result  = $tool->execute(
+				array(
+					'survivor_id'  => $survivor_id,
+					'duplicate_id' => $duplicate_id,
+					'dry_run'      => false,
+				),
+				$context
+			);
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+			}
+
+			$message = isset( $result['message'] ) ? $result['message'] : __( 'Merge completed successfully.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_success( array( 'message' => $message ) );
 		}
 	}
