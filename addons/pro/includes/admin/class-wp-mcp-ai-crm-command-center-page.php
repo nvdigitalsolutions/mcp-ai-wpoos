@@ -54,6 +54,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_get_dashboard', array( __CLASS__, 'ajax_get_dashboard' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_get_pipeline', array( __CLASS__, 'ajax_get_pipeline' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_refresh_all_sources', array( __CLASS__, 'ajax_refresh_all_sources' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_hygiene_add', array( __CLASS__, 'ajax_hygiene_add' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_hygiene_remove', array( __CLASS__, 'ajax_hygiene_remove' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_merge_duplicate', array( __CLASS__, 'ajax_merge_duplicate' ) );
 	}
 
 	/**
@@ -301,7 +304,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
-		$valid_tabs  = array( 'overview', 'leads', 'pipeline', 'support', 'activities', 'sequences', 'analytics', 'configuration' );
+		$valid_tabs  = array( 'overview', 'leads', 'pipeline', 'support', 'activities', 'sequences', 'analytics', 'top_customers', 'top_clients', 'duplicates', 'configuration' );
 		if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
 			$current_tab = 'overview';
 		}
@@ -333,6 +336,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						'activities'    => __( 'Activities', 'mcp-ai-wpoos-pro' ),
 						'sequences'     => __( 'Sequences', 'mcp-ai-wpoos-pro' ),
 						'analytics'     => __( 'Analytics', 'mcp-ai-wpoos-pro' ),
+						'top_customers' => __( 'Top Customers', 'mcp-ai-wpoos-pro' ),
+						'top_clients'   => __( 'Top Clients', 'mcp-ai-wpoos-pro' ),
+						'duplicates'    => __( 'Duplicates', 'mcp-ai-wpoos-pro' ),
 						'configuration' => __( 'Configuration', 'mcp-ai-wpoos-pro' ),
 					);
 
@@ -369,6 +375,15 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						break;
 					case 'analytics':
 						self::render_analytics_tab();
+						break;
+					case 'top_customers':
+						self::render_top_customers_tab();
+						break;
+					case 'top_clients':
+						self::render_top_clients_tab();
+						break;
+					case 'duplicates':
+						self::render_duplicates_tab();
 						break;
 					case 'configuration':
 						self::render_configuration_tab();
@@ -1649,6 +1664,201 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		$refresh_js = ob_get_clean();
 		wp_print_inline_script_tag( $refresh_js );
 		?>
+
+		<!-- Email Hygiene Management -->
+		<div class="crm-cc-section" style="border-left: 3px solid #dba617; margin-top: 24px;">
+			<h2 style="display: flex; align-items: center; gap: 8px;">
+				<span class="dashicons dashicons-shield" style="color:#dba617;"></span>
+				<?php esc_html_e( 'Email Hygiene Lists', 'mcp-ai-wpoos-pro' ); ?>
+				<span style="font-weight: 400; font-size: 13px; color: #646970;">
+					— <?php esc_html_e( 'manage exclude and priority lists inline', 'mcp-ai-wpoos-pro' ); ?>
+				</span>
+			</h2>
+			<p class="description" style="margin-bottom: 16px;">
+				<?php esc_html_e( 'Quickly add senders to your exclude list (always skip) or priority list (always fast-track) without leaving the Command Center. Changes apply instantly to the Gmail import pipeline.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<?php
+			// Load current hygiene settings.
+			$hygiene          = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
+			$exclude_entries  = isset( $hygiene['exclude_list'] ) ? (array) $hygiene['exclude_list'] : array();
+			$priority_entries = isset( $hygiene['priority_list'] ) ? (array) $hygiene['priority_list'] : array();
+			$hygiene_nonce    = wp_create_nonce( 'wp_mcp_ai_crm_hygiene_action' );
+			?>
+
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+				<!-- Exclude List -->
+				<div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 16px;">
+					<h3 style="margin: 0 0 12px; color: #d63638;">
+						<span class="dashicons dashicons-dismiss" style="color:#d63638;"></span>
+						<?php esc_html_e( 'Exclude List', 'mcp-ai-wpoos-pro' ); ?>
+						<span style="font-weight: 400; font-size: 12px; color: #646970;">
+							(<?php echo esc_html( count( $exclude_entries ) ); ?>)
+						</span>
+					</h3>
+
+					<div id="crm-cc-exclude-list">
+						<?php if ( empty( $exclude_entries ) ) : ?>
+							<p style="color: #646970; font-style: italic;"><?php esc_html_e( 'No entries yet. Add senders to skip during import.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<ul style="margin: 0; padding: 0; list-style: none; max-height: 200px; overflow-y: auto;">
+								<?php foreach ( $exclude_entries as $entry ) : ?>
+									<li style="padding: 4px 0; border-bottom: 1px solid #f0f0f1; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+										<code style="background: #f6f7f7; padding: 2px 6px; border-radius: 3px;"><?php echo esc_html( $entry ); ?></code>
+										<button type="button" class="button button-small crm-cc-hygiene-remove"
+											data-entry="<?php echo esc_attr( $entry ); ?>"
+											data-list="exclude"
+											style="color: #d63638; border-color: #d63638;">
+											<?php esc_html_e( 'Remove', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+						<?php endif; ?>
+					</div>
+
+					<div style="margin-top: 12px; display: flex; gap: 6px;">
+						<input type="text" id="crm-cc-exclude-input" class="regular-text"
+							placeholder="spammer@x.com or @domain.com"
+							style="flex: 1; font-size: 13px;" />
+						<button type="button" class="button button-small crm-cc-hygiene-add"
+							data-list="exclude"
+							style="background: #d63638; color: #fff; border-color: #d63638;">
+							<?php esc_html_e( 'Add to Exclude', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</div>
+				</div>
+
+				<!-- Priority List -->
+				<div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 16px;">
+					<h3 style="margin: 0 0 12px; color: #00a32a;">
+						<span class="dashicons dashicons-star-filled" style="color:#00a32a;"></span>
+						<?php esc_html_e( 'Priority List', 'mcp-ai-wpoos-pro' ); ?>
+						<span style="font-weight: 400; font-size: 12px; color: #646970;">
+							(<?php echo esc_html( count( $priority_entries ) ); ?>)
+						</span>
+					</h3>
+
+					<div id="crm-cc-priority-list">
+						<?php if ( empty( $priority_entries ) ) : ?>
+							<p style="color: #646970; font-style: italic;"><?php esc_html_e( 'No entries yet. Add VIP senders to always fast-track.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<ul style="margin: 0; padding: 0; list-style: none; max-height: 200px; overflow-y: auto;">
+								<?php foreach ( $priority_entries as $entry ) : ?>
+									<li style="padding: 4px 0; border-bottom: 1px solid #f0f0f1; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+										<code style="background: #f6f7f7; padding: 2px 6px; border-radius: 3px;"><?php echo esc_html( $entry ); ?></code>
+										<button type="button" class="button button-small crm-cc-hygiene-remove"
+											data-entry="<?php echo esc_attr( $entry ); ?>"
+											data-list="priority"
+											style="color: #d63638; border-color: #d63638;">
+											<?php esc_html_e( 'Remove', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+						<?php endif; ?>
+					</div>
+
+					<div style="margin-top: 12px; display: flex; gap: 6px;">
+						<input type="text" id="crm-cc-priority-input" class="regular-text"
+							placeholder="vip@client.com or @partner.com"
+							style="flex: 1; font-size: 13px;" />
+						<button type="button" class="button button-small crm-cc-hygiene-add"
+							data-list="priority"
+							style="background: #00a32a; color: #fff; border-color: #00a32a;">
+							<?php esc_html_e( 'Add to Priority', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<div id="crm-cc-hygiene-message" class="notice" style="display: none; margin-top: 12px;">
+				<p></p>
+			</div>
+
+			<script>
+			(function() {
+				var nonce = <?php echo wp_json_encode( $hygiene_nonce ); ?>;
+
+				function refreshLists() {
+					// Reload the page support tab to refresh both lists.
+					location.reload();
+				}
+
+				function showMessage(type, text) {
+					var msg = document.getElementById('crm-cc-hygiene-message');
+					msg.style.display = 'block';
+					msg.className = 'notice notice-' + type + ' inline';
+					msg.querySelector('p').textContent = text;
+					setTimeout(function() { msg.style.display = 'none'; }, 4000);
+				}
+
+				// Add buttons.
+				document.querySelectorAll('.crm-cc-hygiene-add').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						var listType = this.dataset.list;
+						var inputId  = 'crm-cc-' + listType + '-input';
+						var input    = document.getElementById(inputId);
+						var entry    = input.value.trim();
+
+						if (!entry) {
+							showMessage('error', 'Please enter an email address or @domain pattern.');
+							return;
+						}
+
+						var formData = new FormData();
+						formData.append('action', 'wp_mcp_ai_crm_cc_hygiene_add');
+						formData.append('_ajax_nonce', nonce);
+						formData.append('list_type', listType);
+						formData.append('entry', entry);
+
+						fetch(ajaxurl, { method: 'POST', body: formData, credentials: 'same-origin' })
+							.then(function(r) { return r.json(); })
+							.then(function(data) {
+								if (data.success) {
+									showMessage('success', entry + ' added to ' + listType + ' list.');
+									input.value = '';
+									setTimeout(refreshLists, 800);
+								} else {
+									showMessage('error', data.data && data.data.message ? data.data.message : 'Failed to add entry.');
+								}
+							})
+							.catch(function() { showMessage('error', 'Network error.'); });
+					});
+				});
+
+				// Remove buttons.
+				document.querySelectorAll('.crm-cc-hygiene-remove').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						var entry    = this.dataset.entry;
+						var listType = this.dataset.list;
+
+						if (!confirm('Remove ' + entry + ' from the ' + listType + ' list?')) {
+							return;
+						}
+
+						var formData = new FormData();
+						formData.append('action', 'wp_mcp_ai_crm_cc_hygiene_remove');
+						formData.append('_ajax_nonce', nonce);
+						formData.append('list_type', listType);
+						formData.append('entry', entry);
+
+						fetch(ajaxurl, { method: 'POST', body: formData, credentials: 'same-origin' })
+							.then(function(r) { return r.json(); })
+							.then(function(data) {
+								if (data.success) {
+									showMessage('success', entry + ' removed from ' + listType + ' list.');
+									setTimeout(refreshLists, 800);
+								} else {
+									showMessage('error', data.data && data.data.message ? data.data.message : 'Failed to remove entry.');
+								}
+							})
+							.catch(function() { showMessage('error', 'Network error.'); });
+					});
+				});
+			})();
+			</script>
+		</div>
 		<?php
 	}
 
@@ -1717,6 +1927,843 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				<?php endforeach; ?>
 			<?php endif; ?>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Top Customers tab.
+	 *
+	 * Displays a ranked list of top customers identified by composite scoring
+	 * across lead qualification, deal pipeline value, activity volume, and
+	 * lifecycle stage progression.
+	 *
+	 * @since 2.7.0
+	 */
+	private static function render_top_customers_tab() {
+		// Use the identify_top_customers tool if available.
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-identify-top-customers.php';
+		$has_tool  = file_exists( $tool_file );
+
+		if ( $has_tool && ! class_exists( 'WP_MCP_AI_Tool_Identify_Top_Customers' ) ) {
+			require_once $tool_file;
+		}
+
+		$results         = null;
+		$error_msg       = '';
+		$total_leads     = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
+		$total_customers = self::get_cpt_count( 'mcp_ai_customer', 'publish' );
+
+		if ( $has_tool && class_exists( 'WP_MCP_AI_Tool_Identify_Top_Customers' ) ) {
+			$tool    = new WP_MCP_AI_Tool_Identify_Top_Customers();
+			$context = array( 'user_id' => get_current_user_id() );
+			$result  = $tool->execute(
+				array(
+					'limit' => 20,
+				),
+				$context
+			);
+
+			if ( ! is_wp_error( $result ) ) {
+				$results = isset( $result['data']['customers'] ) ? $result['data']['customers'] : array();
+			} else {
+				$error_msg = $result->get_error_message();
+			}
+		}
+
+		$customers_count = is_array( $results ) ? count( $results ) : 0;
+		?>
+		<div class="crm-cc-kpi-grid">
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Total Leads', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_leads ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'In database', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Converted Customers', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_customers ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Lead → Customer', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Top Customers Ranked', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value win"><?php echo esc_html( number_format_i18n( $customers_count ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'By composite score', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Scoring Model', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value" style="font-size: 16px;">
+					<?php esc_html_e( 'Lead 40% · Deal 35% · Activity 15% · Stage 10%', 'mcp-ai-wpoos-pro' ); ?>
+				</div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Composite weighting', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2>
+				<?php esc_html_e( 'Top Customers by Composite Value', 'mcp-ai-wpoos-pro' ); ?>
+				<span style="font-weight: 400; font-size: 13px; color: #646970; margin-left: 8px;">
+					— <?php esc_html_e( 'ranks by revenue potential (who is worth the most)', 'mcp-ai-wpoos-pro' ); ?>
+				</span>
+			</h2>
+			<p class="description">
+				<?php esc_html_e( 'Leads ranked by a composite score that weights lead qualification (40%), associated deal pipeline value (35%), activity volume (15%), and lifecycle stage progression (10%). Higher scores indicate stronger customer relationships.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<?php if ( $error_msg ) : ?>
+				<div class="notice notice-error inline"><p><?php echo esc_html( $error_msg ); ?></p></div>
+			<?php elseif ( empty( $results ) ) : ?>
+				<p><?php esc_html_e( 'No leads found. Import leads to start identifying top customers.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th style="width: 40px;">#</th>
+							<th><?php esc_html_e( 'Lead', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Company', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Lifecycle', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Lead Score', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Composite', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Deals', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Activities', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Owner', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php $rank = 1; ?>
+						<?php foreach ( $results as $customer ) : ?>
+							<?php
+							$title          = isset( $customer['title'] ) ? esc_html( $customer['title'] ) : '—';
+							$company        = isset( $customer['company'] ) ? esc_html( $customer['company'] ) : '—';
+							$lifecycle      = isset( $customer['lifecycle_stage'] ) ? esc_html( $customer['lifecycle_stage'] ) : 'lead';
+							$lead_score     = isset( $customer['lead_score'] ) ? (int) $customer['lead_score'] : 0;
+							$composite      = isset( $customer['composite_score'] ) ? (float) $customer['composite_score'] : 0;
+							$score_label    = isset( $customer['score_label'] ) ? $customer['score_label'] : 'cold';
+							$deal_count     = isset( $customer['deal_count'] ) ? (int) $customer['deal_count'] : 0;
+							$activity_count = isset( $customer['activity_count'] ) ? (int) $customer['activity_count'] : 0;
+							$owner          = isset( $customer['contact_owner'] ) ? esc_html( $customer['contact_owner'] ) : '—';
+							$lead_id        = isset( $customer['lead_id'] ) ? (int) $customer['lead_id'] : 0;
+							$is_customer    = ! empty( $customer['is_customer'] );
+
+							$score_color = 'cold' === $score_label ? '#d63638' : ( 'warm' === $score_label ? '#dba617' : '#00a32a' );
+							?>
+							<tr>
+								<td style="font-weight: 600; color: #646970;"><?php echo esc_html( $rank ); ?></td>
+								<td>
+									<strong>
+										<?php if ( $lead_id ) : ?>
+											<a href="<?php echo esc_url( get_edit_post_link( $lead_id, 'raw' ) ); ?>">
+												<?php echo esc_html( $title ); ?>
+											</a>
+										<?php else : ?>
+											<?php echo esc_html( $title ); ?>
+										<?php endif; ?>
+									</strong>
+									<?php if ( $is_customer ) : ?>
+										<span class="crm-cc-badge" style="background: #00a32a;"><?php esc_html_e( 'Customer', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td><?php echo esc_html( $company ); ?></td>
+								<td>
+									<span style="text-transform: uppercase; font-size: 11px; font-weight: 600; color: #2271b1;">
+										<?php echo esc_html( $lifecycle ); ?>
+									</span>
+								</td>
+								<td>
+									<span style="color: <?php echo esc_attr( $score_color ); ?>; font-weight: 600;">
+										<?php echo esc_html( $lead_score ); ?>
+									</span>
+								</td>
+								<td>
+									<span style="color: <?php echo esc_attr( $score_color ); ?>; font-weight: 700; font-size: 14px;">
+										<?php echo esc_html( number_format_i18n( $composite, 1 ) ); ?>
+									</span>
+									<span style="font-size: 10px; color: #646970; display: block;"><?php echo esc_html( $score_label ); ?></span>
+								</td>
+								<td><?php echo esc_html( number_format_i18n( $deal_count ) ); ?></td>
+								<td><?php echo esc_html( number_format_i18n( $activity_count ) ); ?></td>
+								<td><?php echo esc_html( $owner ); ?></td>
+							</tr>
+							<?php ++$rank; ?>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2><?php esc_html_e( 'How Composite Scoring Works', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<div style="max-width: 700px;">
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Factor', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Weight', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'What It Measures', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td><strong><?php esc_html_e( 'Lead Qualification', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>40%</td>
+							<td><?php esc_html_e( 'BANT/MEDDIC lead score (0–100) from CRM engine', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Deal Pipeline Value', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>35%</td>
+							<td><?php esc_html_e( 'Total associated deal value, with won deals weighted highest', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Activity Volume', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>15%</td>
+							<td><?php esc_html_e( 'Number of calls, emails, meetings, tasks logged (logarithmic scale)', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Lifecycle Stage', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>10%</td>
+							<td><?php esc_html_e( 'Progression from lead → MQL → SQL → opportunity → customer', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Top Clients tab.
+	 *
+	 * Displays a ranked list of most-engaged contacts based on activity
+	 * volume, recency, channel diversity, and completion rates.
+	 *
+	 * @since 2.7.0
+	 */
+	private static function render_top_clients_tab() {
+		// Use the identify_top_clients tool if available.
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-identify-top-clients.php';
+		$has_tool  = file_exists( $tool_file );
+
+		if ( $has_tool && ! class_exists( 'WP_MCP_AI_Tool_Identify_Top_Clients' ) ) {
+			require_once $tool_file;
+		}
+
+		$results          = null;
+		$error_msg        = '';
+		$total_activities = self::get_cpt_count( 'mcp_ai_crm_activity', 'publish' );
+		$total_leads      = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
+
+		if ( $has_tool && class_exists( 'WP_MCP_AI_Tool_Identify_Top_Clients' ) ) {
+			$tool    = new WP_MCP_AI_Tool_Identify_Top_Clients();
+			$context = array( 'user_id' => get_current_user_id() );
+			$result  = $tool->execute(
+				array(
+					'limit' => 20,
+				),
+				$context
+			);
+
+			if ( ! is_wp_error( $result ) ) {
+				$results = isset( $result['data']['clients'] ) ? $result['data']['clients'] : array();
+			} else {
+				$error_msg = $result->get_error_message();
+			}
+		}
+
+		$clients_count = is_array( $results ) ? count( $results ) : 0;
+		?>
+		<div class="crm-cc-kpi-grid">
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Total Activities', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_activities ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Calls, emails, meetings, tasks', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Contacts Tracked', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_leads ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'With activity history', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Top Clients Ranked', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value win"><?php echo esc_html( number_format_i18n( $clients_count ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'By engagement score', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Scoring Model', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value" style="font-size: 16px;">
+					<?php esc_html_e( 'Volume 40% · Recency 25% · Channels 20% · Completion 15%', 'mcp-ai-wpoos-pro' ); ?>
+				</div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Engagement weighting', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2>
+				<?php esc_html_e( 'Top Clients by Engagement', 'mcp-ai-wpoos-pro' ); ?>
+				<span style="font-weight: 400; font-size: 13px; color: #646970; margin-left: 8px;">
+					— <?php esc_html_e( 'ranks by contact frequency (who do I talk to the most)', 'mcp-ai-wpoos-pro' ); ?>
+				</span>
+			</h2>
+			<p class="description">
+				<?php esc_html_e( 'Contacts ranked by engagement score — a composite of total interaction volume (40%), recency of last contact (25%), channel diversity (20%), and task completion rate (15%). Higher scores indicate frequent, recent, multi-channel engagement.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<?php if ( $error_msg ) : ?>
+				<div class="notice notice-error inline"><p><?php echo esc_html( $error_msg ); ?></p></div>
+			<?php elseif ( empty( $results ) ) : ?>
+				<p><?php esc_html_e( 'No activities found. Log calls, emails, or meetings to start identifying top clients.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th style="width: 40px;">#</th>
+							<th><?php esc_html_e( 'Contact', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Company', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Interactions', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'By Type', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Last Contact', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Engagement', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Owner', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php $rank = 1; ?>
+						<?php foreach ( $results as $client ) : ?>
+							<?php
+							$title          = isset( $client['title'] ) ? esc_html( $client['title'] ) : '—';
+							$company        = isset( $client['company'] ) ? esc_html( $client['company'] ) : '—';
+							$interactions   = isset( $client['total_interactions'] ) ? (int) $client['total_interactions'] : 0;
+							$by_type        = isset( $client['interactions_by_type'] ) ? $client['interactions_by_type'] : array();
+							$last_date      = isset( $client['last_activity_date'] ) ? $client['last_activity_date'] : '';
+							$days_since     = isset( $client['days_since_last'] ) && '' !== $client['days_since_last'] ? (int) $client['days_since_last'] : null;
+							$engagement     = isset( $client['engagement_score'] ) ? (float) $client['engagement_score'] : 0;
+							$completion_pct = isset( $client['completion_rate_pct'] ) ? (float) $client['completion_rate_pct'] : 0;
+							$owner          = isset( $client['contact_owner'] ) ? esc_html( $client['contact_owner'] ) : '—';
+							$lead_id        = isset( $client['lead_id'] ) ? (int) $client['lead_id'] : 0;
+							$is_customer    = ! empty( $client['is_customer'] );
+
+							// Engagement color.
+							$eng_color = $engagement >= 70 ? '#00a32a' : ( $engagement >= 40 ? '#dba617' : '#d63638' );
+
+							// Build by-type summary.
+							$type_parts = array();
+							$type_icons = array(
+								'call'    => '📞',
+								'email'   => '✉️',
+								'meeting' => '📅',
+								'task'    => '✅',
+								'note'    => '📝',
+							);
+							foreach ( $by_type as $type => $count ) {
+								if ( $count > 0 ) {
+									$icon         = isset( $type_icons[ $type ] ) ? $type_icons[ $type ] : '';
+									$type_parts[] = $icon . ' ' . (int) $count;
+								}
+							}
+
+							// Days since formatting.
+							if ( null !== $days_since ) {
+								if ( 0 === $days_since ) {
+									$days_label = __( 'Today', 'mcp-ai-wpoos-pro' );
+								} elseif ( 1 === $days_since ) {
+									$days_label = __( 'Yesterday', 'mcp-ai-wpoos-pro' );
+								} else {
+									$days_label = sprintf(
+										/* translators: %d: number of days */
+										__( '%d days ago', 'mcp-ai-wpoos-pro' ),
+										$days_since
+									);
+								}
+							} else {
+								$days_label = '—';
+							}
+							?>
+							<tr>
+								<td style="font-weight: 600; color: #646970;"><?php echo esc_html( $rank ); ?></td>
+								<td>
+									<strong>
+										<?php if ( $lead_id ) : ?>
+											<a href="<?php echo esc_url( get_edit_post_link( $lead_id, 'raw' ) ); ?>">
+												<?php echo esc_html( $title ); ?>
+											</a>
+										<?php else : ?>
+											<?php echo esc_html( $title ); ?>
+										<?php endif; ?>
+									</strong>
+									<?php if ( $is_customer ) : ?>
+										<span class="crm-cc-badge" style="background: #00a32a;"><?php esc_html_e( 'Customer', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td><?php echo esc_html( $company ); ?></td>
+								<td style="font-weight: 600;"><?php echo esc_html( number_format_i18n( $interactions ) ); ?></td>
+								<td style="font-size: 12px;">
+									<?php echo ! empty( $type_parts ) ? wp_kses_post( implode( ' ', $type_parts ) ) : '—'; ?>
+								</td>
+								<td>
+									<span style="color: <?php echo null !== $days_since && $days_since <= 7 ? '#00a32a' : '#646970'; ?>;">
+										<?php echo esc_html( $days_label ); ?>
+									</span>
+								</td>
+								<td>
+									<span style="color: <?php echo esc_attr( $eng_color ); ?>; font-weight: 700; font-size: 14px;">
+										<?php echo esc_html( number_format_i18n( $engagement, 1 ) ); ?>
+									</span>
+									<span style="font-size: 10px; color: #646970; display: block;">
+										<?php echo esc_html( round( $completion_pct ) ); ?>% <?php esc_html_e( 'complete', 'mcp-ai-wpoos-pro' ); ?>
+									</span>
+								</td>
+								<td><?php echo esc_html( $owner ); ?></td>
+							</tr>
+							<?php ++$rank; ?>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2><?php esc_html_e( 'How Engagement Scoring Works', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<div style="max-width: 700px;">
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Factor', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Weight', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'What It Measures', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td><strong><?php esc_html_e( 'Interaction Volume', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>40%</td>
+							<td><?php esc_html_e( 'Total number of activities logged (logarithmic scale — 50+ interactions = max)', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Recency', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>25%</td>
+							<td><?php esc_html_e( 'How recently the last interaction occurred (today = max, 365+ days = 0)', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Channel Diversity', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>20%</td>
+							<td><?php esc_html_e( 'Number of unique contact channels used (calls, emails, meetings, tasks, notes)', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Completion Rate', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+							<td>15%</td>
+							<td><?php esc_html_e( 'Percentage of activities marked as completed (vs. snoozed or pending)', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Duplicates tab.
+	 *
+	 * Shows potential duplicate leads detected by the detect_duplicates tool
+	 * with one-click merge buttons and a bulk merge option for high-confidence pairs.
+	 *
+	 * @since 2.8.0
+	 */
+	private static function render_duplicates_tab() {
+		// Load the detect_duplicates tool.
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-detect-duplicates.php';
+		$has_tool  = file_exists( $tool_file );
+
+		if ( $has_tool && ! class_exists( 'WP_MCP_AI_Tool_Detect_Duplicates' ) ) {
+			require_once $tool_file;
+		}
+
+		$results      = null;
+		$error_msg    = '';
+		$total_leads  = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
+		$merged_count = self::get_cpt_count_by_meta( 'mcp_ai_lead', 'publish', '_is_merged', '1' );
+
+		if ( $has_tool && class_exists( 'WP_MCP_AI_Tool_Detect_Duplicates' ) ) {
+			$tool    = new WP_MCP_AI_Tool_Detect_Duplicates();
+			$context = array( 'user_id' => get_current_user_id() );
+			$result  = $tool->execute(
+				array(
+					'strategy'    => 'all',
+					'max_results' => 50,
+				),
+				$context
+			);
+
+			if ( ! is_wp_error( $result ) ) {
+				$results = isset( $result['data']['duplicates'] ) ? $result['data']['duplicates'] : array();
+			} else {
+				$error_msg = $result->get_error_message();
+			}
+		}
+
+		$pairs_count = is_array( $results ) ? count( $results ) : 0;
+		$high_conf   = 0;
+		$email_dupes = 0;
+		$phone_dupes = 0;
+		$fuzzy_dupes = 0;
+
+		if ( is_array( $results ) ) {
+			foreach ( $results as $pair ) {
+				if ( $pair['confidence'] >= 0.95 ) {
+					++$high_conf;
+				}
+				if ( 'exact_email' === ( $pair['strategy'] ?? '' ) ) {
+					++$email_dupes;
+				} elseif ( 'phone' === ( $pair['strategy'] ?? '' ) ) {
+					++$phone_dupes;
+				} else {
+					++$fuzzy_dupes;
+				}
+			}
+		}
+
+		$merge_nonce = wp_create_nonce( self::NONCE_ACTION );
+		?>
+
+		<div class="crm-cc-kpi-grid">
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Total Leads', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_leads ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'In database', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Potential Duplicates', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value <?php echo $pairs_count > 0 ? 'warn' : 'win'; ?>"><?php echo esc_html( number_format_i18n( $pairs_count ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Pairs found', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'High Confidence', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value <?php echo $high_conf > 0 ? 'warn' : ''; ?>"><?php echo esc_html( number_format_i18n( $high_conf ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( '≥ 95% — safe to auto-merge', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Already Merged', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $merged_count ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Leads flagged as merged', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2>
+				<?php esc_html_e( 'Potential Duplicate Leads', 'mcp-ai-wpoos-pro' ); ?>
+				<span style="font-weight: 400; font-size: 13px; color: #646970; margin-left: 8px;">
+					— <?php esc_html_e( 'exact email, phone, and fuzzy name+company matching', 'mcp-ai-wpoos-pro' ); ?>
+				</span>
+			</h2>
+
+			<?php if ( $high_conf > 0 ) : ?>
+				<p style="margin-bottom: 12px;">
+					<button type="button" class="button button-primary" id="crm-cc-bulk-merge-btn"
+						data-nonce="<?php echo esc_attr( $merge_nonce ); ?>"
+						<?php echo 0 === $high_conf ? 'disabled' : ''; ?>>
+						<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+						<?php
+						printf(
+							/* translators: %d: number of high-confidence pairs */
+							esc_html__( 'Bulk Merge %d High-Confidence Pairs', 'mcp-ai-wpoos-pro' ),
+							absint( $high_conf )
+						);
+						?>
+					</button>
+					<span class="description" style="margin-left: 8px;">
+						<?php esc_html_e( 'Auto-merges all pairs with ≥ 95% confidence. Safe — these are exact email matches.', 'mcp-ai-wpoos-pro' ); ?>
+					</span>
+				</p>
+			<?php endif; ?>
+
+			<div id="crm-cc-merge-message" class="notice" style="display: none; margin-bottom: 12px;">
+				<p></p>
+			</div>
+
+			<?php if ( $error_msg ) : ?>
+				<div class="notice notice-error inline"><p><?php echo esc_html( $error_msg ); ?></p></div>
+			<?php elseif ( empty( $results ) ) : ?>
+				<p style="color: #00a32a;">
+					<span class="dashicons dashicons-yes-alt" style="color:#00a32a;"></span>
+					<?php esc_html_e( 'No duplicates detected. Your lead database is clean!', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+			<?php else : ?>
+				<table class="wp-list-table widefat fixed striped" id="crm-cc-duplicates-table">
+					<thead>
+						<tr>
+							<th style="width: 60px;"><?php esc_html_e( 'Confidence', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Lead A (Survivor)', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Lead B (Duplicate)', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th style="width: 100px;"><?php esc_html_e( 'Strategy', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th style="width: 100px;"><?php esc_html_e( 'Evidence', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th style="width: 80px;"><?php esc_html_e( 'Action', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $results as $pair ) : ?>
+							<?php
+							$a = isset( $pair['lead_a_summary'] ) ? $pair['lead_a_summary'] : array();
+							$b = isset( $pair['lead_b_summary'] ) ? $pair['lead_b_summary'] : array();
+
+							$a_id       = isset( $pair['lead_a'] ) ? (int) $pair['lead_a'] : 0;
+							$b_id       = isset( $pair['lead_b'] ) ? (int) $pair['lead_b'] : 0;
+							$confidence = isset( $pair['confidence'] ) ? (float) $pair['confidence'] : 0;
+							$strategy   = isset( $pair['strategy'] ) ? $pair['strategy'] : '';
+							$evidence   = isset( $pair['evidence'] ) ? $pair['evidence'] : array();
+
+							$a_title = isset( $a['title'] ) ? esc_html( $a['title'] ) : '—';
+							$b_title = isset( $b['title'] ) ? esc_html( $b['title'] ) : '—';
+							$a_email = isset( $a['email'] ) ? esc_html( $a['email'] ) : '';
+							$b_email = isset( $b['email'] ) ? esc_html( $b['email'] ) : '';
+							$a_deals = isset( $a['deal_count'] ) ? (int) $a['deal_count'] : 0;
+							$b_deals = isset( $b['deal_count'] ) ? (int) $b['deal_count'] : 0;
+							$a_acts  = isset( $a['activity_count'] ) ? (int) $a['activity_count'] : 0;
+							$b_acts  = isset( $b['activity_count'] ) ? (int) $b['activity_count'] : 0;
+
+							// Survivor: the one with most data (deals + activities), or older.
+							$a_rich = $a_deals + $a_acts + ( isset( $a['is_customer'] ) && $a['is_customer'] ? 5 : 0 );
+							$b_rich = $b_deals + $b_acts + ( isset( $b['is_customer'] ) && $b['is_customer'] ? 5 : 0 );
+
+							if ( $a_rich >= $b_rich ) {
+								$survivor_id  = $a_id;
+								$duplicate_id = $b_id;
+							} else {
+								$survivor_id  = $b_id;
+								$duplicate_id = $a_id;
+							}
+
+							$conf_pct   = round( $confidence * 100 );
+							$conf_color = $confidence >= 0.95 ? '#00a32a' : ( $confidence >= 0.80 ? '#dba617' : '#d63638' );
+
+							$strategy_labels = array(
+								'exact_email'        => __( 'Email', 'mcp-ai-wpoos-pro' ),
+								'phone'              => __( 'Phone', 'mcp-ai-wpoos-pro' ),
+								'fuzzy_name_company' => __( 'Fuzzy Name', 'mcp-ai-wpoos-pro' ),
+							);
+							$strategy_label  = isset( $strategy_labels[ $strategy ] ) ? $strategy_labels[ $strategy ] : $strategy;
+							$evidence_text   = isset( $evidence['detail'] ) ? esc_html( $evidence['detail'] ) : '';
+							?>
+							<tr data-survivor="<?php echo esc_attr( $survivor_id ); ?>" data-duplicate="<?php echo esc_attr( $duplicate_id ); ?>">
+								<td style="text-align: center;">
+									<span style="display: inline-block; width: 50px; height: 50px; border-radius: 50%; background: conic-gradient(<?php echo esc_attr( $conf_color ); ?> <?php echo esc_attr( $conf_pct ); ?>%, #f0f0f1 <?php echo esc_attr( $conf_pct ); ?>%); position: relative;">
+										<span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 11px; font-weight: 700; color: <?php echo esc_attr( $conf_color ); ?>;"><?php echo esc_html( $conf_pct ); ?>%</span>
+									</span>
+								</td>
+								<td>
+									<strong><?php echo esc_html( $a_title ); ?></strong>
+									<?php
+									if ( $a_email ) :
+										?>
+										<br><small style="color: #646970;"><?php echo esc_html( $a_email ); ?></small><?php endif; ?>
+									<br><small style="color: #646970;">
+										<?php echo esc_html( $a_deals ); ?> <?php esc_html_e( 'deals', 'mcp-ai-wpoos-pro' ); ?> ·
+										<?php echo esc_html( $a_acts ); ?> <?php esc_html_e( 'activities', 'mcp-ai-wpoos-pro' ); ?>
+										<?php if ( ! empty( $a['is_customer'] ) ) : ?>
+											· <span style="color: #00a32a;"><?php esc_html_e( 'Customer', 'mcp-ai-wpoos-pro' ); ?></span>
+										<?php endif; ?>
+										<?php if ( ! empty( $a['is_merged'] ) ) : ?>
+											· <span style="color: #d63638;"><?php esc_html_e( 'Merged', 'mcp-ai-wpoos-pro' ); ?></span>
+										<?php endif; ?>
+									</small>
+								</td>
+								<td>
+									<strong><?php echo esc_html( $b_title ); ?></strong>
+									<?php
+									if ( $b_email ) :
+										?>
+										<br><small style="color: #646970;"><?php echo esc_html( $b_email ); ?></small><?php endif; ?>
+									<br><small style="color: #646970;">
+										<?php echo esc_html( $b_deals ); ?> <?php esc_html_e( 'deals', 'mcp-ai-wpoos-pro' ); ?> ·
+										<?php echo esc_html( $b_acts ); ?> <?php esc_html_e( 'activities', 'mcp-ai-wpoos-pro' ); ?>
+										<?php if ( ! empty( $b['is_customer'] ) ) : ?>
+											· <span style="color: #00a32a;"><?php esc_html_e( 'Customer', 'mcp-ai-wpoos-pro' ); ?></span>
+										<?php endif; ?>
+										<?php if ( ! empty( $b['is_merged'] ) ) : ?>
+											· <span style="color: #d63638;"><?php esc_html_e( 'Merged', 'mcp-ai-wpoos-pro' ); ?></span>
+										<?php endif; ?>
+									</small>
+								</td>
+								<td><span class="crm-cc-badge" style="background: #2271b1; font-size: 11px;"><?php echo esc_html( $strategy_label ); ?></span></td>
+								<td style="font-size: 12px; color: #646970;"><?php echo esc_html( $evidence_text ); ?></td>
+								<td>
+									<button type="button" class="button button-small crm-cc-merge-btn"
+										data-survivor="<?php echo esc_attr( $survivor_id ); ?>"
+										data-duplicate="<?php echo esc_attr( $duplicate_id ); ?>"
+										data-nonce="<?php echo esc_attr( $merge_nonce ); ?>"
+										style="background: #2271b1; color: #fff; border-color: #2271b1;">
+										<?php esc_html_e( 'Merge', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+
+		<div class="crm-cc-section">
+			<h2><?php esc_html_e( 'How Duplicate Detection Works', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Three matching strategies run against all published leads. The survivor (lead with most deals + activities) is auto-selected. Merges fill empty fields, reassign child records, and take the max score.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			<table class="wp-list-table widefat fixed striped" style="max-width: 700px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Strategy', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Confidence', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'How It Matches', 'mcp-ai-wpoos-pro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><strong><?php esc_html_e( 'Exact Email', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+						<td style="color: #00a32a;">99%</td>
+						<td><?php esc_html_e( 'Identical email address (case-insensitive). Safe to auto-merge.', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Phone Match', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+						<td style="color: #dba617;">70–90%</td>
+						<td><?php esc_html_e( 'Same phone number after stripping formatting. 90% if names also match.', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Fuzzy Name + Company', 'mcp-ai-wpoos-pro' ); ?></strong></td>
+						<td style="color: #d63638;">50–85%</td>
+						<td><?php esc_html_e( 'Levenshtein distance on names (≥75% similar) at same company. Review before merging.', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<script>
+		(function() {
+			function showMessage(type, text) {
+				var msg = document.getElementById('crm-cc-merge-message');
+				msg.style.display = 'block';
+				msg.className = 'notice notice-' + type + ' inline';
+				msg.querySelector('p').textContent = text;
+				setTimeout(function() { msg.style.display = 'none'; }, 5000);
+			}
+
+			function mergePair(survivorId, duplicateId, nonce, button) {
+				if (!confirm('Merge lead #' + duplicateId + ' into lead #' + survivorId + '?\n\nThis will fill empty fields, reassign all child records, and flag the duplicate as merged. This cannot be undone.')) {
+					return;
+				}
+
+				var origText = button.textContent;
+				button.disabled = true;
+				button.textContent = '...';
+
+				var formData = new FormData();
+				formData.append('action', 'wp_mcp_ai_crm_cc_merge_duplicate');
+				formData.append('_ajax_nonce', nonce);
+				formData.append('survivor_id', survivorId);
+				formData.append('duplicate_id', duplicateId);
+
+				fetch(ajaxurl, { method: 'POST', body: formData, credentials: 'same-origin' })
+					.then(function(r) { return r.json(); })
+					.then(function(data) {
+						if (data.success) {
+							showMessage('success', data.data.message || 'Merged successfully.');
+							// Hide the merged row.
+							var row = button.closest('tr');
+							if (row) {
+								row.style.opacity = '0.3';
+								row.querySelector('.crm-cc-merge-btn').textContent = 'Merged';
+								row.querySelector('.crm-cc-merge-btn').disabled = true;
+							}
+						} else {
+							showMessage('error', data.data && data.data.message ? data.data.message : 'Merge failed.');
+							button.disabled = false;
+							button.textContent = origText;
+						}
+					})
+					.catch(function() {
+						showMessage('error', 'Network error.');
+						button.disabled = false;
+						button.textContent = origText;
+					});
+			}
+
+			// Individual merge buttons.
+			document.querySelectorAll('.crm-cc-merge-btn').forEach(function(btn) {
+				btn.addEventListener('click', function() {
+					mergePair(this.dataset.survivor, this.dataset.duplicate, this.dataset.nonce, this);
+				});
+			});
+
+			// Bulk merge button.
+			var bulkBtn = document.getElementById('crm-cc-bulk-merge-btn');
+			if (bulkBtn) {
+				bulkBtn.addEventListener('click', function() {
+					if (!confirm('Bulk merge all pairs with ≥ 95% confidence?\n\nThis will auto-merge exact email duplicates. Review remaining pairs afterwards.')) {
+						return;
+					}
+
+					var nonce = this.dataset.nonce;
+					var rows = document.querySelectorAll('#crm-cc-duplicates-table tbody tr');
+					var toMerge = [];
+
+					rows.forEach(function(row) {
+						var confEl = row.querySelector('td:first-child span span');
+						if (confEl) {
+							var conf = parseInt(confEl.textContent);
+							if (conf >= 95) {
+								toMerge.push({
+									survivor: row.dataset.survivor,
+									duplicate: row.dataset.duplicate,
+									row: row,
+									btn: row.querySelector('.crm-cc-merge-btn')
+								});
+							}
+						}
+					});
+
+					if (toMerge.length === 0) {
+						showMessage('warning', 'No high-confidence pairs to merge.');
+						return;
+					}
+
+					var completed = 0;
+					var failed = 0;
+
+					function processNext(index) {
+						if (index >= toMerge.length) {
+							showMessage('success', 'Bulk merge complete: ' + completed + ' merged, ' + failed + ' failed.');
+							if (completed > 0) {
+								setTimeout(function() { location.reload(); }, 1500);
+							}
+							return;
+						}
+
+						var pair = toMerge[index];
+						var formData = new FormData();
+						formData.append('action', 'wp_mcp_ai_crm_cc_merge_duplicate');
+						formData.append('_ajax_nonce', nonce);
+						formData.append('survivor_id', pair.survivor);
+						formData.append('duplicate_id', pair.duplicate);
+
+						fetch(ajaxurl, { method: 'POST', body: formData, credentials: 'same-origin' })
+							.then(function(r) { return r.json(); })
+							.then(function(data) {
+								if (data.success) {
+									completed++;
+									pair.row.style.opacity = '0.3';
+									if (pair.btn) {
+										pair.btn.textContent = 'Merged';
+										pair.btn.disabled = true;
+									}
+								} else {
+									failed++;
+								}
+								processNext(index + 1);
+							})
+							.catch(function() {
+								failed++;
+								processNext(index + 1);
+							});
+					}
+
+					processNext(0);
+				});
+			}
+		})();
+		</script>
 		<?php
 	}
 
@@ -2611,5 +3658,180 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		}
 
 		return date_i18n( 'M j, Y', $timestamp );
+	}
+
+		/**
+		 * AJAX handler: add an entry to the exclude or priority list.
+		 *
+		 * @since 2.8.0
+		 */
+	public static function ajax_hygiene_add() {
+		check_ajax_referer( 'wp_mcp_ai_crm_hygiene_action', '_ajax_nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$list_type = isset( $_POST['list_type'] ) ? sanitize_key( wp_unslash( $_POST['list_type'] ) ) : '';
+		$entry     = isset( $_POST['entry'] ) ? sanitize_text_field( wp_unslash( $_POST['entry'] ) ) : '';
+
+		if ( ! in_array( $list_type, array( 'exclude', 'priority' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid list type.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$entry = strtolower( trim( $entry ) );
+
+		if ( empty( $entry ) ) {
+			wp_send_json_error( array( 'message' => __( 'Entry is required.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Validate format.
+		if ( 0 === strpos( $entry, '@' ) ) {
+			$domain = substr( $entry, 1 );
+			if ( empty( $domain ) || false === strpos( $domain, '.' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Domain pattern must include a dot (e.g. @example.com).', 'mcp-ai-wpoos-pro' ) ) );
+			}
+		} elseif ( false === strpos( $entry, '@' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Entry must be an email address or @domain pattern.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Use the manage_email_hygiene tool's logic.
+		$settings = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
+		$list_key = 'exclude' === $list_type ? 'exclude_list' : 'priority_list';
+		$list     = isset( $settings[ $list_key ] ) ? (array) $settings[ $list_key ] : array();
+
+		if ( in_array( $entry, $list, true ) ) {
+			wp_send_json_error( array( 'message' => sprintf( __( '%1$s is already in the %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
+		}
+
+		$list[] = $entry;
+		$list   = array_unique( $list );
+		sort( $list );
+
+		$settings[ $list_key ] = $list;
+		update_option( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION, $settings, false );
+
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			WP_MCP_AI_CRM_Engine::flush_settings_cache();
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf( __( '%1$s added to %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ),
+				'count'   => count( $list ),
+			)
+		);
+	}
+
+		/**
+		 * AJAX handler: remove an entry from the exclude or priority list.
+		 *
+		 * @since 2.8.0
+		 */
+	public static function ajax_hygiene_remove() {
+		check_ajax_referer( 'wp_mcp_ai_crm_hygiene_action', '_ajax_nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$list_type = isset( $_POST['list_type'] ) ? sanitize_key( wp_unslash( $_POST['list_type'] ) ) : '';
+		$entry     = isset( $_POST['entry'] ) ? sanitize_text_field( wp_unslash( $_POST['entry'] ) ) : '';
+
+		if ( ! in_array( $list_type, array( 'exclude', 'priority' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid list type.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$entry = strtolower( trim( $entry ) );
+
+		if ( empty( $entry ) ) {
+			wp_send_json_error( array( 'message' => __( 'Entry is required.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$settings = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
+		$list_key = 'exclude' === $list_type ? 'exclude_list' : 'priority_list';
+		$list     = isset( $settings[ $list_key ] ) ? (array) $settings[ $list_key ] : array();
+
+		$found = false;
+		$list  = array_values(
+			array_filter(
+				$list,
+				function ( $item ) use ( $entry, &$found ) {
+					if ( strtolower( trim( $item ) ) === $entry ) {
+						$found = true;
+						return false;
+					}
+					return true;
+				}
+			)
+		);
+
+		if ( ! $found ) {
+			wp_send_json_error( array( 'message' => sprintf( __( '%1$s was not found in the %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
+		}
+
+		$settings[ $list_key ] = $list;
+		update_option( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION, $settings, false );
+
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			WP_MCP_AI_CRM_Engine::flush_settings_cache();
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf( __( '%1$s removed from %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ),
+				'count'   => count( $list ),
+			)
+		);
+	}
+
+		/**
+		 * AJAX handler: merge a duplicate lead into a survivor.
+		 *
+		 * @since 2.8.0
+		 */
+	public static function ajax_merge_duplicate() {
+		check_ajax_referer( self::NONCE_ACTION, '_ajax_nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$survivor_id  = isset( $_POST['survivor_id'] ) ? absint( wp_unslash( $_POST['survivor_id'] ) ) : 0;
+		$duplicate_id = isset( $_POST['duplicate_id'] ) ? absint( wp_unslash( $_POST['duplicate_id'] ) ) : 0;
+
+		if ( $survivor_id < 1 || $duplicate_id < 1 || $survivor_id === $duplicate_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid lead IDs.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Use the merge_duplicates tool.
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-merge-duplicates.php';
+		if ( ! file_exists( $tool_file ) ) {
+			wp_send_json_error( array( 'message' => __( 'Merge tool not available.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		require_once $tool_file;
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Merge_Duplicates' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Merge tool class not found.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$tool    = new WP_MCP_AI_Tool_Merge_Duplicates();
+		$context = array( 'user_id' => get_current_user_id() );
+		$result  = $tool->execute(
+			array(
+				'survivor_id'  => $survivor_id,
+				'duplicate_id' => $duplicate_id,
+				'dry_run'      => false,
+			),
+			$context
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		$message = isset( $result['message'] ) ? $result['message'] : __( 'Merge completed successfully.', 'mcp-ai-wpoos-pro' );
+		wp_send_json_success( array( 'message' => $message ) );
 	}
 }

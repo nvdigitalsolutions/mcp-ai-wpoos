@@ -138,6 +138,7 @@ class WP_MCP_AI_Lead_CPT {
 		$columns['contact_owner'] = __( 'Owner', 'mcp-ai-wpoos-pro' );
 		$columns['source']        = __( 'Source', 'mcp-ai-wpoos-pro' );
 		$columns['channel_link']  = __( 'Channel', 'mcp-ai-wpoos-pro' );
+		$columns['merged_flag']   = __( 'Merged', 'mcp-ai-wpoos-pro' );
 
 		if ( $date ) {
 			$columns['date'] = $date;
@@ -199,6 +200,17 @@ class WP_MCP_AI_Lead_CPT {
 				break;
 			case 'channel_link':
 				self::render_channel_column( $post_id );
+				break;
+			case 'merged_flag':
+				$is_merged   = get_post_meta( $post_id, '_is_merged', true );
+				$merged_into = get_post_meta( $post_id, '_merged_into', true );
+				if ( $is_merged ) {
+					echo '<span style="color: #d63638; font-weight: 600;" title="';
+					echo $merged_into ? esc_attr( sprintf( __( 'Merged into lead #%d', 'mcp-ai-wpoos-pro' ), (int) $merged_into ) ) : esc_attr__( 'Merged', 'mcp-ai-wpoos-pro' );
+					echo '">' . esc_html__( 'Merged', 'mcp-ai-wpoos-pro' ) . '</span>';
+				} else {
+					echo '—';
+				}
 				break;
 		}
 	}
@@ -335,6 +347,15 @@ class WP_MCP_AI_Lead_CPT {
 			);
 		}
 		echo '</select>';
+
+		// Merged status filter.
+		$selected_merged = isset( $_GET['lead_merged_filter'] ) ? sanitize_key( $_GET['lead_merged_filter'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		echo '<select name="lead_merged_filter">';
+		echo '<option value="">' . esc_html__( 'All Leads', 'mcp-ai-wpoos-pro' ) . '</option>';
+		echo '<option value="active" ' . selected( $selected_merged, 'active', false ) . '>' . esc_html__( 'Active Only', 'mcp-ai-wpoos-pro' ) . '</option>';
+		echo '<option value="merged" ' . selected( $selected_merged, 'merged', false ) . '>' . esc_html__( 'Merged Only', 'mcp-ai-wpoos-pro' ) . '</option>';
+		echo '</select>';
 	}
 
 	/**
@@ -368,6 +389,32 @@ class WP_MCP_AI_Lead_CPT {
 				'key'   => 'lead_status',
 				'value' => sanitize_key( $_GET['lead_status_filter'] ),
 			);
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		// Merged status filter.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		if ( ! empty( $_GET['lead_merged_filter'] ) ) {
+			$merged_filter = sanitize_key( $_GET['lead_merged_filter'] );
+			if ( 'active' === $merged_filter ) {
+				$meta_query[] = array(
+					'relation' => 'OR',
+					array(
+						'key'     => '_is_merged',
+						'compare' => 'NOT EXISTS',
+					),
+					array(
+						'key'     => '_is_merged',
+						'value'   => '1',
+						'compare' => '!=',
+					),
+				);
+			} elseif ( 'merged' === $merged_filter ) {
+				$meta_query[] = array(
+					'key'   => '_is_merged',
+					'value' => '1',
+				);
+			}
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
@@ -482,14 +529,14 @@ class WP_MCP_AI_Lead_CPT {
 		}
 
 		// Determine if this is a Gmail-sourced lead.
-		$is_gmail = false;
+		$is_gmail  = false;
 		$gmail_url = '';
 
 		if ( $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 			if ( $connection && isset( $connection['connection_type'] ) && 'gmail' === $connection['connection_type'] ) {
 				$is_gmail = true;
-				// Gmail message URL: https://mail.google.com/mail/u/0/#inbox/<message_id>
+				// Gmail message URL: https://mail.google.com/mail/u/0/#inbox/<message_id>.
 				$gmail_url = 'https://mail.google.com/mail/u/0/#inbox/' . rawurlencode( $message_id );
 			}
 		}

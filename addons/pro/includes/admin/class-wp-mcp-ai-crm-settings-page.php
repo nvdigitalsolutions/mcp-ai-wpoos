@@ -411,6 +411,74 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					</td>
 				</tr>
 
+				<!-- Email Hygiene -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Email Hygiene &amp; List Management', 'mcp-ai-wpoos-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Exclude List', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$hygiene          = class_exists( 'WP_MCP_AI_CRM_Engine' )
+							? WP_MCP_AI_CRM_Engine::get_hygiene_settings()
+							: array();
+						$exclude_list     = isset( $hygiene['exclude_list'] ) ? (array) $hygiene['exclude_list'] : array();
+						$priority_list    = isset( $hygiene['priority_list'] ) ? (array) $hygiene['priority_list'] : array();
+						$spam_domains     = isset( $hygiene['spam_domains'] ) ? (array) $hygiene['spam_domains'] : array();
+						$promo_domains    = isset( $hygiene['promotional_domains'] ) ? (array) $hygiene['promotional_domains'] : array();
+						$priority_domains = isset( $hygiene['priority_domains'] ) ? (array) $hygiene['priority_domains'] : array();
+						$promo_keywords   = isset( $hygiene['promotional_keywords'] ) ? (array) $hygiene['promotional_keywords'] : array();
+						?>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[exclude_list]" rows="5" class="large-text code" placeholder="spammer@example.com&#10;@newsletters.spammy.net&#10;@unwanted-domain.com"><?php echo esc_textarea( implode( "\n", $exclude_list ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Email addresses or domains to ALWAYS skip during import. One per line. Use @domain.com to block an entire domain.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Priority List', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[priority_list]" rows="5" class="large-text code" placeholder="vip@client.com&#10;@important-partner.com"><?php echo esc_textarea( implode( "\n", $priority_list ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Email addresses or domains to ALWAYS fast-track. One per line. Use @domain.com to prioritise an entire domain.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Spam Domains', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[spam_domains]" rows="3" class="large-text code" placeholder="seo-spam.com&#10;cheap-meds.example"><?php echo esc_textarea( implode( "\n", $spam_domains ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Known spam domains. Any email from these domains is automatically classified as spam. Substring match (e.g. "spam" matches "super-spam.net").', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Promotional Domains', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[promotional_domains]" rows="3" class="large-text code" placeholder="mailchimp.app&#10;sendgrid.net"><?php echo esc_textarea( implode( "\n", $promo_domains ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Domains that send bulk marketing/newsletters. Substring match. Overlaps with exclude list — entries here help the classifier detect promotional content even from new addresses.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Priority Domains', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[priority_domains]" rows="3" class="large-text code" placeholder="@client-corp.com&#10;@partner.org"><?php echo esc_textarea( implode( "\n", $priority_domains ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Domains that should always be treated as priority. Substring match against sender domain.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Promotional Keywords', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[promotional_keywords]" rows="3" class="large-text code" placeholder="flash sale&#10;weekly newsletter&#10;limited time offer"><?php echo esc_textarea( implode( "\n", $promo_keywords ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Keywords/phrases that indicate promotional or newsletter content. Case-insensitive substring match. One per line.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
 				<!-- Research Assistant -->
 				<tr><td colspan="2"><h3><?php esc_html_e( 'AI Integration', 'mcp-ai-wpoos-pro' ); ?></h3></td></tr>
 				<tr>
@@ -482,6 +550,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'get_pipeline_view'         => __( 'Pipeline Kanban View', 'mcp-ai-wpoos-pro' ),
 			'get_conversion_funnel'     => __( 'Conversion Funnel', 'mcp-ai-wpoos-pro' ),
 			'forecast_pipeline_revenue' => __( 'Forecast Pipeline Revenue', 'mcp-ai-wpoos-pro' ),
+			'identify_top_customers'    => __( 'Identify Top Customers', 'mcp-ai-wpoos-pro' ),
+			'identify_top_clients'      => __( 'Identify Top Clients', 'mcp-ai-wpoos-pro' ),
 			'assign_lead_to_owner'      => __( 'Assign Lead to Owner', 'mcp-ai-wpoos-pro' ),
 			'rotate_leads'              => __( 'Rotate Leads', 'mcp-ai-wpoos-pro' ),
 		);
@@ -523,7 +593,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 		);
 
 		// ---- Phase E: Compliance + Interop (8 tools) ----
-		$tools[ __( 'Phase E — Compliance & Interop (8 tools)', 'mcp-ai-wpoos-pro' ) ] = array(
+		$tools[ __( 'Phase E — Compliance &amp; Interop (11 tools)', 'mcp-ai-wpoos-pro' ) ] = array(
 			'record_consent'          => __( 'Record Consent', 'mcp-ai-wpoos-pro' ),
 			'revoke_consent'          => __( 'Revoke Consent', 'mcp-ai-wpoos-pro' ),
 			'process_opt_out'         => __( 'Process Opt-Out', 'mcp-ai-wpoos-pro' ),
@@ -532,6 +602,12 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'import_crm_csv'          => __( 'Import CRM CSV', 'mcp-ai-wpoos-pro' ),
 			'connect_to_external_crm' => __( 'Connect to External CRM', 'mcp-ai-wpoos-pro' ),
 			'import_crm_blueprint'    => __( 'Import CRM Blueprint', 'mcp-ai-wpoos-pro' ),
+			'classify_email_hygiene'  => __( 'Classify Email Hygiene', 'mcp-ai-wpoos-pro' ),
+			'manage_email_hygiene'    => __( 'Manage Email Hygiene', 'mcp-ai-wpoos-pro' ),
+			'prune_crm_messages'      => __( 'Prune CRM Messages', 'mcp-ai-wpoos-pro' ),
+			'repair_crm_data'         => __( 'Repair CRM Data', 'mcp-ai-wpoos-pro' ),
+			'detect_duplicates'       => __( 'Detect Duplicate Leads', 'mcp-ai-wpoos-pro' ),
+			'merge_duplicates'        => __( 'Merge Duplicate Leads', 'mcp-ai-wpoos-pro' ),
 		);
 
 		// ---- Phase F: Support Ticket Management (10 tools) ----
@@ -782,6 +858,53 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 		// Clear engine static cache so next read picks up the new values.
 		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
 			WP_MCP_AI_CRM_Engine::flush_settings_cache();
+		}
+
+		// --- Email Hygiene Settings ---
+		// These are posted under their own option key and sanitised separately.
+		$hygiene_key = WP_MCP_AI_CRM_Engine::HYGIENE_OPTION;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by WordPress settings API.
+		if ( isset( $_POST[ $hygiene_key ] ) && is_array( $_POST[ $hygiene_key ] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing
+			$hygiene_input     = wp_unslash( $_POST[ $hygiene_key ] );
+			$hygiene_sanitized = array();
+
+			// List-type fields (textarea → array via newline split).
+			$list_fields = array( 'exclude_list', 'priority_list', 'spam_domains', 'promotional_domains', 'priority_domains', 'promotional_keywords' );
+			foreach ( $list_fields as $field ) {
+				if ( isset( $hygiene_input[ $field ] ) ) {
+					$raw = is_array( $hygiene_input[ $field ] )
+						? implode( "\n", $hygiene_input[ $field ] )
+						: (string) $hygiene_input[ $field ];
+
+					// Split on newlines, trim, filter empty.
+					$lines = explode( "\n", $raw );
+					$lines = array_map( 'sanitize_text_field', $lines );
+					$lines = array_map( 'trim', $lines );
+					$lines = array_filter(
+						$lines,
+						function ( $l ) {
+							return '' !== $l;
+						}
+					);
+					$lines = array_values( $lines );
+
+					$hygiene_sanitized[ $field ] = $lines;
+				}
+			}
+
+			// Boolean fields.
+			$bool_fields = array( 'auto_prune_spam', 'auto_prune_excluded' );
+			foreach ( $bool_fields as $field ) {
+				$hygiene_sanitized[ $field ] = ! empty( $hygiene_input[ $field ] );
+			}
+
+			// Numeric fields.
+			if ( isset( $hygiene_input['auto_prune_stale_days'] ) ) {
+				$hygiene_sanitized['auto_prune_stale_days'] = absint( $hygiene_input['auto_prune_stale_days'] );
+			}
+
+			update_option( $hygiene_key, $hygiene_sanitized, false );
 		}
 
 		return $sanitized;

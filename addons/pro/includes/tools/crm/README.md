@@ -68,6 +68,34 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | `WP_MCP_AI_Tool_Score_Upwork_Job` | `upwork/class-wp-mcp-ai-tool-score-upwork-job.php` | tool registry |
 | `WP_MCP_AI_Tool_Search_Upwork_Jobs` | `upwork/class-wp-mcp-ai-tool-search-upwork-jobs.php` | tool registry |
 | `WP_MCP_AI_Tool_Import_CRM_Blueprint` | `examples/class-wp-mcp-ai-tool-import-crm-blueprint.php` | tool registry |
+| `WP_MCP_AI_Tool_Identify_Top_Customers` | `analytics/class-wp-mcp-ai-tool-identify-top-customers.php` | tool registry |
+| `WP_MCP_AI_Tool_Identify_Top_Clients` | `analytics/class-wp-mcp-ai-tool-identify-top-clients.php` | tool registry |
+| `WP_MCP_AI_Tool_Classify_Email_Hygiene` | `compliance/class-wp-mcp-ai-tool-classify-email-hygiene.php` | tool registry |
+| `WP_MCP_AI_Tool_Manage_Email_Hygiene` | `compliance/class-wp-mcp-ai-tool-manage-email-hygiene.php` | tool registry |
+| `WP_MCP_AI_Tool_Prune_CRM_Messages` | `compliance/class-wp-mcp-ai-tool-prune-crm-messages.php` | tool registry |
+
+### Email Hygiene Module
+
+Three new Phase E tools (v2.8.0) provide email list hygiene for WordPress plugin environments:
+
+| Tool | Purpose |
+|---|---|
+| `classify_email_hygiene` | Multi-layer heuristic classifier: spam, promotional/newsletter, notification, priority. Returns hygiene score 0–100 + recommended action per CAN-SPAM and Google/Yahoo 2024–2025 guidelines |
+| `manage_email_hygiene` | CRUD over exclude list and priority list. Supports exact emails, @domain patterns, and substring matching. Changes propagate instantly to the import pipeline |
+| `prune_crm_messages` | Batch-clean leads by spam flag, excluded domains, staleness (configurable age threshold), and zero-engagement. Dry-run mode for safe preview. Industry recommendation: remove unengaged after 90–180 days |
+
+Both lists are managed through **NV CRM → Settings → Configuration → Email Hygiene & List Management** with textarea-based editing.
+
+### Top Customers vs Top Clients — what's the difference?
+
+| Aspect | `identify_top_customers` | `identify_top_clients` |
+|---|---|---|
+| **Question it answers** | "Who is worth the most to my business?" | "Who do I talk to the most?" |
+| **Primary data sources** | `mcp_ai_lead` + `mcp_ai_deal` + `mcp_ai_customer` | `mcp_ai_crm_activity` (calls, emails, meetings, tasks, notes) |
+| **Scoring model** | Lead quality (40%) + deal pipeline (35%) + activity volume (15%) + lifecycle stage (10%) | Interaction volume (40%) + recency (25%) + channel diversity (20%) + completion rate (15%) |
+| **What high score means** | This contact has strong BANT qualification, high-value deals, and is far along the sales funnel — a prime *conversion/revenue* target | This contact has the most logged interactions across the most channels within the shortest time — your most *actively managed* relationship |
+| **Typical use case** | "Show me my top 10 accounts by deal value" — prioritise who to upsell or nurture | "Who haven't I contacted this month?" — audit coverage gaps, rebalance workloads |
+| **Considers revenue?** | Yes — deal amounts, won deals, lifecycle stage | No — strictly activity-based; a lead with zero deals can still rank #1 if contacted daily |
 
 ## Shared Infrastructure (engine classes + installer)
 
