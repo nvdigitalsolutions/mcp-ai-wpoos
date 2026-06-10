@@ -156,6 +156,14 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $payload;
 			}
 
+			// Pre-flight context-window validation (shared with all providers).
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'gemini', $options, $messages );
+				if ( is_wp_error( $preflight ) ) {
+					return $preflight;
+				}
+			}
+
 			$endpoint = $this->resolve_endpoint( sprintf( self::API_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 

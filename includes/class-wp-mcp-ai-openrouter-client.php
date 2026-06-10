@@ -281,18 +281,18 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			$model = $this->resolve_model( $options );
 
-				if ( empty( $model ) ) {
-					return new WP_Error(
-						'wp_mcp_ai_missing_openrouter_model',
-						__( 'No OpenRouter model has been configured.', 'mcp-ai-wpoos' ),
-						array(
-							'status'  => 400,
-							'actions' => array(
-								'configure_openrouter_model' => __( 'Choose an OpenRouter model in the NV oOS settings.', 'mcp-ai-wpoos' ),
-							),
-						)
-					);
-				}
+			if ( empty( $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_openrouter_model',
+					__( 'No OpenRouter model has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openrouter_model' => __( 'Choose an OpenRouter model in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
 
 				// Filter orphaned tool messages before building the payload.
 				// OpenRouter forwards to upstream providers that may reject
@@ -305,7 +305,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				return $payload;
 			}
 
-			$url     = $this->get_base_url() . self::API_ENDPOINT;
+				// Pre-flight context-window validation (shared with all providers).
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'openrouter', $options, $messages );
+				if ( is_wp_error( $preflight ) ) {
+					return $preflight;
+				}
+			}
+
+				$url = $this->get_base_url() . self::API_ENDPOINT;
 			$timeout = max( 60, $this->resolve_timeout( $options ) );
 
 			$request_args = array(

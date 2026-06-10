@@ -262,6 +262,14 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 				return $payload;
 			}
 
+			// Pre-flight context-window validation (shared with all providers).
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'deepseek', $options, $messages );
+				if ( is_wp_error( $preflight ) ) {
+					return $preflight;
+				}
+			}
+
 			$url          = $this->get_base_url() . self::API_ENDPOINT;
 			$is_streaming = ! empty( $payload['stream'] );
 
@@ -379,8 +387,8 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		 */
 		protected function do_realtime_curl_stream( $url, array $payload, $model, $timeout, $stream_callback ) {
 			// Build cURL-style header list.
-			$api_key = $this->get_api_key();
-			$headers = $this->build_request_headers( $api_key );
+			$api_key      = $this->get_api_key();
+			$headers      = $this->build_request_headers( $api_key );
 			$curl_headers = array();
 			foreach ( $headers as $header_name => $header_value ) {
 				$curl_headers[] = $header_name . ': ' . $header_value;
@@ -508,7 +516,7 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 											'id'       => '',
 											'type'     => 'function',
 											'function' => array(
-												'name'      => '',
+												'name' => '',
 												'arguments' => '',
 											),
 										);
@@ -1115,15 +1123,15 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			return $normalised;
 		}
 
-	/**
-	 * Translate a DeepSeek HTTP error into a WP_Error.
-	 * Handle a non-2xx API response and return an appropriate WP_Error.
-	 *
-	 * @param int          $code     HTTP status code.
-	 * @param array        $decoded  Decoded JSON response body.
-	 * @param array|object $response Full WP HTTP response.
-	 * @return WP_Error
-	 */
+		/**
+		 * Translate a DeepSeek HTTP error into a WP_Error.
+		 * Handle a non-2xx API response and return an appropriate WP_Error.
+		 *
+		 * @param int          $code     HTTP status code.
+		 * @param array        $decoded  Decoded JSON response body.
+		 * @param array|object $response Full WP HTTP response.
+		 * @return WP_Error
+		 */
 		protected function handle_api_error( $code, array $decoded, $response ) {
 			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from DeepSeek.', 'mcp-ai-wpoos' );
 			$error_data    = array(
@@ -1180,15 +1188,15 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			$raw_usage = isset( $decoded['usage'] ) ? $decoded['usage'] : array();
 			// Extract DeepSeek disk cache metrics.
 			if ( isset( $raw_usage['prompt_cache_hit_tokens'] ) ) {
-			$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_cache_hit_tokens'];
+				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_cache_hit_tokens'];
 			} elseif ( isset( $raw_usage['prompt_tokens_details']['cached_tokens'] ) ) {
-			$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_tokens_details']['cached_tokens'];
+				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_tokens_details']['cached_tokens'];
 			}
 
 			$normalized = array(
 				'choices'       => array(
 					array(
-						'message'      => $message,
+						'message'       => $message,
 						'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
 					),
 				),

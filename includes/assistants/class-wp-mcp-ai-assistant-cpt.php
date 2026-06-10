@@ -1936,6 +1936,16 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return;
 			}
 
+			// Prompt Window Estimator: shows context window usage at the top of the edit page.
+			add_meta_box(
+				'wp-mcp-ai-prompt-window',
+				__( 'Context Window Estimator', 'mcp-ai-wpoos' ),
+				array( $this, 'render_prompt_window_estimator_meta_box' ),
+				self::POST_TYPE,
+				'normal',
+				'high'
+			);
+
 			add_meta_box(
 				'wp-mcp-ai-tools',
 				__( 'Available Tools', 'mcp-ai-wpoos' ),
@@ -2077,6 +2087,375 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$metabox->get_priority()
 				);
 			}
+		}
+
+		/**
+		 * Render the context window estimator meta box.
+		 *
+		 * Shows estimated token usage for the assistant's prompt components
+		 * (system prompt, tools, primary roles, skills, memory files) against
+		 * the selected model's context window. Helps prevent silent failures
+		 * when the prompt exceeds the model's capacity.
+		 *
+		 * @since 2.7.0
+		 *
+		 * @param WP_Post $post Post object.
+		 */
+		public function render_prompt_window_estimator_meta_box( $post ) {
+			if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+				return;
+			}
+
+			// -----------------------------------------------------------------
+			// 1. Gather the assistant's current configuration.
+			// -----------------------------------------------------------------
+			$model         = trim( (string) get_post_meta( $post->ID, self::META_MODEL, true ) );
+			$system_prompt = trim( (string) get_post_meta( $post->ID, self::META_SYSTEM_PROMPT, true ) );
+			$provider      = trim( (string) get_post_meta( $post->ID, self::META_PROVIDER, true ) );
+
+			$selected_tools = get_post_meta( $post->ID, self::META_TOOLS, true );
+			if ( ! is_array( $selected_tools ) ) {
+				$selected_tools = array();
+			}
+			$tool_count = count( $selected_tools );
+
+			$primary_roles = get_post_meta( $post->ID, self::META_PRIMARY_ROLES, true );
+			if ( ! is_array( $primary_roles ) ) {
+				$primary_roles = array();
+			}
+
+			$skills = get_post_meta( $post->ID, self::META_SKILLS, true );
+			if ( ! is_array( $skills ) ) {
+				$skills = array();
+			}
+
+			$memory_files = get_post_meta( $post->ID, self::META_MEMORY_FILES, true );
+			if ( ! is_array( $memory_files ) ) {
+				$memory_files = array();
+			}
+
+			$mcp_apps = get_post_meta( $post->ID, self::META_MCP_APPS, true );
+			if ( ! is_array( $mcp_apps ) ) {
+				$mcp_apps = array();
+			}
+
+			// Resolve model label for display.
+			$model_display = '' !== $model ? $model : __( '(not set — using global default)', 'mcp-ai-wpoos' );
+
+			// -----------------------------------------------------------------
+			// 2. Resolve the effective context window size.
+			// -----------------------------------------------------------------
+			$context_window = 0;
+			$model_source   = '';
+
+			if ( '' !== $model && class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$context_window = WP_MCP_AI_Token_Budget_Manager::get_model_limit( $model );
+				$model_source   = __( 'Known model', 'mcp-ai-wpoos' );
+			} elseif ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				// Fall back to the global default model.
+				$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+				$default_model  = isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o-mini';
+				$context_window = WP_MCP_AI_Token_Budget_Manager::get_model_limit( $default_model );
+				$model_source   = sprintf(
+					/* translators: %s: default model slug */
+					__( 'Global default (%s)', 'mcp-ai-wpoos' ),
+					$default_model
+				);
+			}
+
+			if ( $context_window <= 0 ) {
+				$context_window = 128000; // Safe fallback for GPT-4o class.
+				$model_source   = __( 'Assumed (128K)', 'mcp-ai-wpoos' );
+			}
+
+			// -----------------------------------------------------------------
+			// 3. Estimate token consumption per component.
+			// -----------------------------------------------------------------
+			$estimator = class_exists( 'WP_MCP_AI_Token_Budget_Manager' )
+				? array( 'WP_MCP_AI_Token_Budget_Manager', 'estimate_tokens' )
+				: null;
+
+			$estimate = function ( $text ) use ( $estimator ) {
+				if ( null !== $estimator ) {
+					return (int) call_user_func( $estimator, $text );
+				}
+				$len = function_exists( 'mb_strlen' ) ? mb_strlen( $text, 'UTF-8' ) : strlen( $text );
+				return (int) ceil( $len / 4 );
+			};
+
+			// System prompt.
+			$system_tokens = $estimate( $system_prompt );
+
+			// Primary roles prompt (preview the built prompt).
+			$roles_tokens = 0;
+			if ( ! empty( $primary_roles ) ) {
+				$roles_prompt = self::build_prompt_from_primary_roles( $primary_roles );
+				$roles_tokens = $estimate( $roles_prompt );
+			}
+
+			// Skills prompt.
+			$skills_tokens = 0;
+			if ( ! empty( $skills ) && class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
+				$registry      = WP_MCP_AI_Skill_Registry::instance();
+				$skills_prompt = $registry->build_skills_prompt( $skills );
+				$skills_tokens = $estimate( $skills_prompt );
+			}
+
+			// Tool definitions — sum the serialized schema for each selected tool.
+			$tools_tokens      = 0;
+			$tools_with_errors = 0;
+			foreach ( $selected_tools as $slug ) {
+				$tool = $this->registry->get_tool( $slug );
+				if ( ! $tool ) {
+					continue;
+				}
+				try {
+					$schema        = $tool->get_parameters_schema();
+					$desc          = $tool->get_description();
+					$tool_def      = wp_json_encode(
+						array(
+							'type'     => 'function',
+							'function' => array(
+								'name'        => $slug,
+								'description' => $desc,
+								'parameters'  => is_array( $schema ) ? $schema : array(),
+							),
+						)
+					);
+					$tools_tokens += $estimate( $tool_def );
+				} catch ( Exception $e ) {
+					++$tools_with_errors;
+				}
+			}
+
+			// Memory files — rough estimate by file count (each contributes ~500 tokens on average).
+			$memory_tokens = count( $memory_files ) * 500;
+
+			// MCP Apps — rough estimate (each app definition ~200 tokens).
+			$mcp_tokens = count( $mcp_apps ) * 200;
+
+			// Conversation overhead: system framing, turn markers, function-call response format ~200 tokens.
+			$overhead_tokens = 200;
+
+			// Recommended output budget (10% of context, min 1K).
+			$output_budget = max( 1000, (int) ( $context_window * 0.1 ) );
+
+			// Total estimated usage.
+			$total_estimated = $system_tokens + $roles_tokens + $skills_tokens + $tools_tokens + $memory_tokens + $mcp_tokens + $overhead_tokens + $output_budget;
+			$usage_pct       = $context_window > 0 ? round( ( $total_estimated / $context_window ) * 100, 1 ) : 0;
+
+			// -----------------------------------------------------------------
+			// 4. Determine warning level.
+			// -----------------------------------------------------------------
+			$severity = 'ok';     // Green.
+			if ( $usage_pct > 90 || $tool_count > 128 ) {
+				$severity = 'critical'; // Red.
+			} elseif ( $usage_pct > 80 || $tool_count > 50 ) {
+				$severity = 'warning';  // Orange / red.
+			} elseif ( $usage_pct > 50 ) {
+				$severity = 'caution';  // Yellow.
+			}
+
+			$severity_colors = array(
+				'ok'       => array(
+					'bg'     => '#d4edda',
+					'border' => '#c3e6cb',
+					'text'   => '#155724',
+					'icon'   => '✅',
+				),
+				'caution'  => array(
+					'bg'     => '#fff3cd',
+					'border' => '#ffeeba',
+					'text'   => '#856404',
+					'icon'   => '⚠️',
+				),
+				'warning'  => array(
+					'bg'     => '#f8d7da',
+					'border' => '#f5c6cb',
+					'text'   => '#721c24',
+					'icon'   => '🔴',
+				),
+				'critical' => array(
+					'bg'     => '#f8d7da',
+					'border' => '#dc3545',
+					'text'   => '#721c24',
+					'icon'   => '🚫',
+				),
+			);
+			$c               = $severity_colors[ $severity ];
+			?>
+
+		<div class="wp-mcp-ai-prompt-window" style="margin: 0 0 1rem 0; padding: 1rem; background: <?php echo esc_attr( $c['bg'] ); ?>; border: 2px solid <?php echo esc_attr( $c['border'] ); ?>; border-radius: 4px;">
+			<h3 style="margin-top: 0;"><?php echo esc_html( $c['icon'] ); ?> <?php esc_html_e( 'Prompt Window Estimate', 'mcp-ai-wpoos' ); ?></h3>
+
+			<?php if ( 'critical' === $severity ) : ?>
+				<div style="padding: 0.75rem; background: #fff; border: 1px solid #dc3545; border-radius: 4px; margin-bottom: 1rem;">
+					<strong><?php esc_html_e( 'Critical: This configuration is likely to cause chat failures.', 'mcp-ai-wpoos' ); ?></strong>
+					<?php if ( $usage_pct > 90 ) : ?>
+						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'The estimated prompt size exceeds 90% of the model context window, leaving almost no room for conversation history. Reduce the system prompt, remove some tools, or switch to a model with a larger context window.', 'mcp-ai-wpoos' ); ?></p>
+					<?php elseif ( $tool_count > 128 ) : ?>
+						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'OpenAI has a hard limit of 128 tools per request. Reduce the number of selected tools to 128 or fewer.', 'mcp-ai-wpoos' ); ?></p>
+					<?php endif; ?>
+				</div>
+			<?php elseif ( 'warning' === $severity ) : ?>
+				<div style="padding: 0.75rem; background: #fff; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 1rem;">
+					<strong><?php esc_html_e( 'Warning: You may experience issues with this configuration.', 'mcp-ai-wpoos' ); ?></strong>
+					<?php if ( $tool_count > 50 ) : ?>
+						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'More than 50 tools are selected. The server caps tool payloads at 50 by default, so tools beyond that limit will be silently dropped. Consider reducing to 50 or fewer tools for reliable operation.', 'mcp-ai-wpoos' ); ?></p>
+					<?php endif; ?>
+					<?php if ( $usage_pct > 80 ) : ?>
+						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'The estimated prompt uses over 80% of the context window. Long conversations may exceed the limit and cause errors.', 'mcp-ai-wpoos' ); ?></p>
+					<?php endif; ?>
+				</div>
+			<?php elseif ( 'caution' === $severity ) : ?>
+				<div style="padding: 0.75rem; background: #fff; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 1rem;">
+					<strong><?php esc_html_e( 'Heads-up: Prompt window usage is above 50%.', 'mcp-ai-wpoos' ); ?></strong>
+					<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'Your configuration should work, but very long conversations or large tool results could push you toward the limit. Monitor chat performance and reduce components if you see errors.', 'mcp-ai-wpoos' ); ?></p>
+				</div>
+			<?php else : ?>
+				<p style="margin: 0.5rem 0 1rem 0;"><?php esc_html_e( 'Your configuration fits comfortably within the model context window.', 'mcp-ai-wpoos' ); ?></p>
+			<?php endif; ?>
+
+			<!-- Model info bar -->
+			<div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+				<div style="flex: 1; min-width: 200px;">
+					<strong><?php esc_html_e( 'Model:', 'mcp-ai-wpoos' ); ?></strong>
+					<code><?php echo esc_html( $model_display ); ?></code>
+				</div>
+				<div style="flex: 1; min-width: 200px;">
+					<strong><?php esc_html_e( 'Context Window:', 'mcp-ai-wpoos' ); ?></strong>
+					<?php echo esc_html( number_format_i18n( $context_window ) ); ?> <?php esc_html_e( 'tokens', 'mcp-ai-wpoos' ); ?>
+					<span style="color: #666; font-size: 0.9em;">(<?php echo esc_html( $model_source ); ?>)</span>
+				</div>
+				<div style="flex: 1; min-width: 200px;">
+					<strong><?php esc_html_e( 'Tools Selected:', 'mcp-ai-wpoos' ); ?></strong>
+					<strong style="color: <?php echo $tool_count > 50 ? '#721c24' : ( $tool_count > 30 ? '#856404' : '#155724' ); ?>;">
+						<?php echo esc_html( number_format_i18n( $tool_count ) ); ?>
+					</strong>
+					<?php if ( $tool_count > 50 ) : ?>
+						<span style="color: #721c24;">⚠️ <?php esc_html_e( '(capped at 50)', 'mcp-ai-wpoos' ); ?></span>
+					<?php endif; ?>
+				</div>
+			</div>
+
+			<!-- Usage bar -->
+			<div style="margin-bottom: 1rem;">
+				<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+					<span><strong><?php esc_html_e( 'Estimated Usage:', 'mcp-ai-wpoos' ); ?></strong> ~<?php echo esc_html( number_format_i18n( $total_estimated ) ); ?> / <?php echo esc_html( number_format_i18n( $context_window ) ); ?> <?php esc_html_e( 'tokens', 'mcp-ai-wpoos' ); ?></span>
+					<span style="font-weight: bold; color: <?php echo esc_attr( $c['text'] ); ?>;"><?php echo esc_html( $usage_pct ); ?>%</span>
+				</div>
+				<div style="background: #e9ecef; border-radius: 4px; height: 20px; overflow: hidden; position: relative;">
+					<?php
+					$bar_color = '#28a745';
+					if ( $usage_pct > 90 ) {
+						$bar_color = '#dc3545';
+					} elseif ( $usage_pct > 80 ) {
+						$bar_color = '#fd7e14';
+					} elseif ( $usage_pct > 50 ) {
+						$bar_color = '#ffc107';
+					}
+					$bar_pct = min( 100, $usage_pct );
+					?>
+					<div style="width: <?php echo esc_attr( $bar_pct ); ?>%; background: <?php echo esc_attr( $bar_color ); ?>; height: 100%; border-radius: 4px; transition: width 0.3s;"></div>
+				</div>
+				<div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #666; margin-top: 0.25rem;">
+					<span>0</span>
+					<span>50% (<?php echo esc_html( number_format_i18n( (int) ( $context_window * 0.5 ) ) ); ?>)</span>
+					<span>100% (<?php echo esc_html( number_format_i18n( $context_window ) ); ?>)</span>
+				</div>
+			</div>
+
+			<!-- Breakdown table -->
+			<table class="widefat striped" style="margin-bottom: 0;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Component', 'mcp-ai-wpoos' ); ?></th>
+						<th style="text-align: right;"><?php esc_html_e( 'Est. Tokens', 'mcp-ai-wpoos' ); ?></th>
+						<th style="text-align: right;"><?php esc_html_e( '% of Window', 'mcp-ai-wpoos' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><?php esc_html_e( 'System Prompt', 'mcp-ai-wpoos' ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $system_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $system_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php if ( $roles_tokens > 0 ) : ?>
+					<tr>
+						<td><?php esc_html_e( 'Primary Roles', 'mcp-ai-wpoos' ); ?> (<?php echo esc_html( count( $primary_roles ) ); ?>)</td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $roles_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $roles_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php endif; ?>
+					<?php if ( $skills_tokens > 0 ) : ?>
+					<tr>
+						<td><?php esc_html_e( 'Agent Skills', 'mcp-ai-wpoos' ); ?> (<?php echo esc_html( count( $skills ) ); ?>)</td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $skills_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $skills_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php endif; ?>
+					<tr>
+						<td><?php esc_html_e( 'Tool Definitions', 'mcp-ai-wpoos' ); ?> (<?php echo esc_html( $tool_count ); ?>)</td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $tools_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $tools_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php if ( $memory_tokens > 0 ) : ?>
+					<tr>
+						<td><?php esc_html_e( 'Memory Files', 'mcp-ai-wpoos' ); ?> (<?php echo esc_html( count( $memory_files ) ); ?>)</td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $memory_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $memory_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php endif; ?>
+					<?php if ( $mcp_tokens > 0 ) : ?>
+					<tr>
+						<td><?php esc_html_e( 'MCP Apps', 'mcp-ai-wpoos' ); ?> (<?php echo esc_html( count( $mcp_apps ) ); ?>)</td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $mcp_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $mcp_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php endif; ?>
+					<tr style="background: #f0f0f0;">
+						<td><em><?php esc_html_e( 'Overhead + Output Budget', 'mcp-ai-wpoos' ); ?></em></td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $overhead_tokens + $output_budget ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( ( $overhead_tokens + $output_budget ) / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<tr style="font-weight: bold; background: <?php echo esc_attr( $c['bg'] ); ?>;">
+						<td><?php esc_html_e( 'Total Estimated', 'mcp-ai-wpoos' ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $total_estimated ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $usage_pct ); ?>%</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<?php if ( $tools_with_errors > 0 ) : ?>
+				<p style="color: #856404; margin: 0.5rem 0 0 0;">
+					<?php
+					echo esc_html(
+						sprintf(
+						/* translators: %d: number of tools with schema errors */
+							_n(
+								'%d tool had a schema error and was excluded from the estimate.',
+								'%d tools had schema errors and were excluded from the estimate.',
+								$tools_with_errors,
+								'mcp-ai-wpoos'
+							),
+							$tools_with_errors
+						)
+					);
+					?>
+				</p>
+			<?php endif; ?>
+
+			<p style="font-size: 0.85em; color: #666; margin: 0.75rem 0 0 0;">
+				<?php esc_html_e( 'Estimates use the chars/4 heuristic. Actual token counts vary by model and tokenizer. The server caps tool payloads at 50 tools by default (configurable via the wp_mcp_ai_max_chat_tools filter). Reduce system prompt length, unselect tools, or choose a model with a larger context window if you see chat errors.', 'mcp-ai-wpoos' ); ?>
+			</p>
+
+			<p style="font-size: 0.85em; color: #666; margin: 0.25rem 0 0 0;">
+				<strong><?php esc_html_e( 'Industry best practice:', 'mcp-ai-wpoos' ); ?></strong>
+				<?php esc_html_e( 'Keep total prompt under 50% of the context window for reliable multi-turn conversations. Reserve at least 10-25% headroom for conversation history and tool results. OpenAI allows up to 128 tools, but 30-50 is the practical sweet spot for performance and cost.', 'mcp-ai-wpoos' ); ?>
+			</p>
+		</div>
+
+			<?php
 		}
 
 		/**
@@ -4845,7 +5224,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			// Load MCP Apps configuration if available.
-			$mcp_apps          = get_post_meta( $assistant_id, self::META_MCP_APPS, true );
+			$mcp_apps           = get_post_meta( $assistant_id, self::META_MCP_APPS, true );
 			$config['mcp_apps'] = is_array( $mcp_apps ) ? $mcp_apps : array();
 
 			return $config;

@@ -329,11 +329,19 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 
 				$payload = $this->build_payload( $messages, $options, $model );
 
-			if ( is_wp_error( $payload ) ) {
-				return $payload;
-			}
+				if ( is_wp_error( $payload ) ) {
+					return $payload;
+				}
 
-			$url     = untrailingslashit( $endpoint_url ) . '/chat/completions';
+				// Pre-flight context-window validation (shared with all providers).
+				if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+					$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'huggingface', $options, $messages );
+					if ( is_wp_error( $preflight ) ) {
+						return $preflight;
+					}
+				}
+
+				$url     = untrailingslashit( $endpoint_url ) . '/chat/completions';
 			$timeout = max( 60, $this->resolve_timeout( $options ) );
 
 			$request_args = array(

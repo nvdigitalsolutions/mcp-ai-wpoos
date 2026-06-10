@@ -7896,25 +7896,56 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$max_tools = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 50 );
 				$max_tools = max( 1, min( 128, $max_tools ) ); // Clamp to 1-128.
 
-				if ( count( $allowed_tool_slugs ) > $max_tools ) {
-					WP_MCP_AI_Logger::log_event(
-						'tools_truncated_for_chat',
-						sprintf(
-							'Assistant has %d tools but the chat payload is capped at %d. Only the first %d tools will be sent to the LLM. Reduce the number of assigned tools to avoid this.',
-							count( $allowed_tool_slugs ),
-							$max_tools,
-							$max_tools
-						),
-						array(
-							'total_tools'  => count( $allowed_tool_slugs ),
-							'max_allowed'  => $max_tools,
-							'assistant_id' => isset( $assistant_config['id'] ) ? $assistant_config['id'] : null,
-						)
-					);
-					$allowed_tool_slugs = array_slice( $allowed_tool_slugs, 0, $max_tools );
-				}
+				/**
+				 * Maximum combined token budget for tool definitions within a chat payload.
+				 *
+				 * Tool definitions are serialised JSON schemas that consume context-window
+				 * tokens. Complex tools with large parameter schemas can consume thousands
+				 * of tokens each. This budget provides a token-aware safety cap that
+				 * supplements the count-based cap above — tools are included until either
+				 * limit is reached.
+				 *
+				 * Default of 32000 tokens ≈ 25% of a 128K context window, following the
+				 * industry guidance of keeping tool overhead under 25-33% of the window.
+				 *
+				 * @since 2.7.0
+				 *
+				 * @param int $max_tool_tokens Maximum combined tokens for tool definitions (default 32000).
+				 */
+				$max_tool_tokens = (int) apply_filters( 'wp_mcp_ai_max_chat_tool_tokens', 32000 );
+				$max_tool_tokens = max( 1000, $max_tool_tokens );
 
-				foreach ( $allowed_tool_slugs as $slug ) {
+			if ( count( $allowed_tool_slugs ) > $max_tools ) {
+				WP_MCP_AI_Logger::log_event(
+					'tools_truncated_for_chat',
+					sprintf(
+						'Assistant has %d tools but the chat payload is capped at %d. Only the first %d tools will be sent to the LLM. Reduce the number of assigned tools to avoid this.',
+						count( $allowed_tool_slugs ),
+						$max_tools,
+						$max_tools
+					),
+					array(
+						'total_tools'  => count( $allowed_tool_slugs ),
+						'max_allowed'  => $max_tools,
+						'assistant_id' => isset( $assistant_config['id'] ) ? $assistant_config['id'] : null,
+					)
+				);
+				$allowed_tool_slugs = array_slice( $allowed_tool_slugs, 0, $max_tools );
+			}
+
+				// Track cumulative token consumption to enforce the token budget.
+				$cumulative_tool_tokens          = 0;
+				$tools_truncated_by_token_budget = false;
+				$truncated_tool_count            = 0;
+
+			foreach ( $allowed_tool_slugs as $slug ) {
+				// Enforce the token budget: stop adding tools once the cumulative
+				// token count exceeds the configured maximum.
+				if ( $cumulative_tool_tokens >= $max_tool_tokens ) {
+					$tools_truncated_by_token_budget = true;
+					++$truncated_tool_count;
+					continue;
+				}
 				$tool = $this->registry->get_tool( $slug );
 				if ( ! $tool ) {
 					WP_MCP_AI_Admin_Settings::log( 'Assistant references missing tool.', array( 'tool' => $slug ) );
@@ -7968,6 +7999,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'parameters'  => $schema,
 						),
 					);
+
+					// Track cumulative token consumption for the token budget cap.
+					if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+						$tool_def_json           = wp_json_encode( end( $tools_payload ) );
+						$cumulative_tool_tokens += WP_MCP_AI_Token_Budget_Manager::estimate_tokens( $tool_def_json );
+					}
 				} catch ( Exception $e ) {
 					// Log the error and skip this tool.
 					WP_MCP_AI_Logger::log_event(
@@ -7993,6 +8030,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 					continue;
 				}
+			}
+
+			// Log token-budget truncation when tools were dropped.
+			if ( $tools_truncated_by_token_budget ) {
+				WP_MCP_AI_Logger::log_event(
+					'tools_truncated_by_token_budget',
+					sprintf(
+						'Tool definitions reached the %d token budget after %d tools (%d dropped). Increase wp_mcp_ai_max_chat_tool_tokens filter or reduce tool schema complexity.',
+						$max_tool_tokens,
+						count( $tools_payload ),
+						$truncated_tool_count
+					),
+					array(
+						'max_token_budget'  => $max_tool_tokens,
+						'tools_included'    => count( $tools_payload ),
+						'tools_dropped'     => $truncated_tool_count,
+						'cumulative_tokens' => $cumulative_tool_tokens,
+						'assistant_id'      => isset( $assistant_config['id'] ) ? $assistant_config['id'] : null,
+					)
+				);
 			}
 
 			return $tools_payload;

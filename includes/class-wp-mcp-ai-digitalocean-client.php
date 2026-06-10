@@ -257,6 +257,14 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 				return $payload;
 			}
 
+			// Pre-flight context-window validation (shared with all providers).
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'digitalocean', $options, $messages );
+				if ( is_wp_error( $preflight ) ) {
+					return $preflight;
+				}
+			}
+
 			$url = $this->get_base_url() . self::API_ENDPOINT;
 
 			$request_args = array(
