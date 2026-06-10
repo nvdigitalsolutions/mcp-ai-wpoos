@@ -71,6 +71,17 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | `WP_MCP_AI_Tool_Identify_Top_Customers` | `analytics/class-wp-mcp-ai-tool-identify-top-customers.php` | tool registry |
 | `WP_MCP_AI_Tool_Identify_Top_Clients` | `analytics/class-wp-mcp-ai-tool-identify-top-clients.php` | tool registry |
 
+### Top Customers vs Top Clients — what's the difference?
+
+| Aspect | `identify_top_customers` | `identify_top_clients` |
+|---|---|---|
+| **Question it answers** | "Who is worth the most to my business?" | "Who do I talk to the most?" |
+| **Primary data sources** | `mcp_ai_lead` + `mcp_ai_deal` + `mcp_ai_customer` | `mcp_ai_crm_activity` (calls, emails, meetings, tasks, notes) |
+| **Scoring model** | Lead quality (40%) + deal pipeline (35%) + activity volume (15%) + lifecycle stage (10%) | Interaction volume (40%) + recency (25%) + channel diversity (20%) + completion rate (15%) |
+| **What high score means** | This contact has strong BANT qualification, high-value deals, and is far along the sales funnel — a prime *conversion/revenue* target | This contact has the most logged interactions across the most channels within the shortest time — your most *actively managed* relationship |
+| **Typical use case** | "Show me my top 10 accounts by deal value" — prioritise who to upsell or nurture | "Who haven't I contacted this month?" — audit coverage gaps, rebalance workloads |
+| **Considers revenue?** | Yes — deal amounts, won deals, lifecycle stage | No — strictly activity-based; a lead with zero deals can still rank #1 if contacted daily |
+
 ## Shared Infrastructure (engine classes + installer)
 
 | Symbol | File | Purpose |

@@ -1,13 +1,27 @@
 <?php
 /**
- * Identify Top Customers Tool — Cross-references leads, deals, and activities
- * to rank the most valuable customer relationships.
+ * Identify Top Customers Tool — Ranks leads by business value, answering
+ * "who is worth the most to my business?"
+ *
+ * ═══════════════════════════════════════════════════════════════════════
+ * TOP CUSTOMERS vs TOP CLIENTS
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ *   Top Customers (this tool) → ranks by BUSINESS VALUE
+ *     Sources: lead scores, deal pipeline, won deals, lifecycle stage
+ *     Use:   "Which accounts should I prioritise for revenue?"
+ *
+ *   Top Clients (sibling tool)  → ranks by ENGAGEMENT VOLUME
+ *     Sources: activity logs (calls, emails, meetings, tasks, notes)
+ *     Use:   "Who am I contacting the most? Who am I neglecting?"
+ *
+ * ═══════════════════════════════════════════════════════════════════════
  *
  * Uses a composite scoring model that weights:
- *   - Lead qualification score (BANT/MEDDIC via CRM engine)
- *   - Associated deal pipeline value (won deals weighted most)
- *   - Activity volume (calls, emails, meetings)
- *   - Lifecycle progression (customer > opportunity > SQL > ...)
+ *   - Lead qualification score (BANT/MEDDIC via CRM engine) — 40%
+ *   - Associated deal pipeline value (won deals weighted most) — 35%
+ *   - Activity volume (calls, emails, meetings) — 15%
+ *   - Lifecycle progression (customer > opportunity > SQL > ...) — 10%
  *
  * Returns a ranked, paginated list suitable for the CRM Command Center
  * "Top Customers" tab and for AI assistants orchestrating CRM analysis.
@@ -71,7 +85,7 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Cross-reference leads, deals, and activities to identify and rank your top customers by composite value. Weights lead score, deal pipeline, activity volume, and lifecycle progression. Returns ranked results with enrichment data.', 'mcp-ai-wpoos-pro' );
+		return __( 'Identify your most valuable customer relationships by cross-referencing lead quality, deal pipeline value, activity volume, and lifecycle progression. Answers the question "who is worth the most to my business?" — ranks by revenue potential, not contact frequency. For contact-frequency ranking, use identify_top_clients instead.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**

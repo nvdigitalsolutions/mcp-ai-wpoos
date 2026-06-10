@@ -1,11 +1,28 @@
 <?php
 /**
- * Identify Top Clients Tool — Ranks contacts by engagement volume across
- * all CRM activity types: calls, emails, meetings, tasks, and notes.
+ * Identify Top Clients Tool — Ranks contacts by engagement volume, answering
+ * "who do I talk to the most?"
+ *
+ * ═══════════════════════════════════════════════════════════════════════
+ * TOP CLIENTS vs TOP CUSTOMERS
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ *   Top Clients (this tool)     → ranks by ENGAGEMENT VOLUME
+ *     Sources: activity logs (calls, emails, meetings, tasks, notes)
+ *     Use:   "Who am I contacting the most? Who am I neglecting?"
+ *
+ *   Top Customers (sibling tool) → ranks by BUSINESS VALUE
+ *     Sources: lead scores, deal pipeline, won deals, lifecycle stage
+ *     Use:   "Which accounts should I prioritise for revenue?"
+ *
+ * ═══════════════════════════════════════════════════════════════════════
  *
  * Designed to answer "who have I been contacting the most?" by aggregating
  * activity records per lead/contact and ranking by total interaction count,
  * recent engagement, and diversity of contact channels.
+ *
+ * A lead with zero deals can still rank #1 here if contacted daily — this
+ * tool is about relationship management, not revenue.
  *
  * Returns a ranked, paginated list suitable for the CRM Command Center
  * "Top Clients" tab and for AI assistants auditing client engagement.
@@ -69,7 +86,7 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Rank contacts by engagement volume across calls, emails, meetings, and tasks. Identifies who you contact most often with activity breakdowns, recency metrics, and response-rate analysis. Filters by activity type, date range, and owner.', 'mcp-ai-wpoos-pro' );
+		return __( 'Identify your most-contacted relationships by aggregating activity volume, recency, channel diversity, and completion rates across calls, emails, meetings, and tasks. Answers the question "who do I talk to the most?" — ranks by engagement frequency, not revenue. For revenue-based ranking, use identify_top_customers instead.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**

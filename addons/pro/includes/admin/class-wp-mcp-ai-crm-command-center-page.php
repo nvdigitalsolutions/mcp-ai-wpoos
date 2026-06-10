@@ -1798,6 +1798,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		<div class="crm-cc-section">
 			<h2>
 				<?php esc_html_e( 'Top Customers by Composite Value', 'mcp-ai-wpoos-pro' ); ?>
+				<span style="font-weight: 400; font-size: 13px; color: #646970; margin-left: 8px;">
+					— <?php esc_html_e( 'ranks by revenue potential (who is worth the most)', 'mcp-ai-wpoos-pro' ); ?>
+				</span>
 			</h2>
 			<p class="description">
 				<?php esc_html_e( 'Leads ranked by a composite score that weights lead qualification (40%), associated deal pipeline value (35%), activity volume (15%), and lifecycle stage progression (10%). Higher scores indicate stronger customer relationships.', 'mcp-ai-wpoos-pro' ); ?>
@@ -1992,6 +1995,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		<div class="crm-cc-section">
 			<h2>
 				<?php esc_html_e( 'Top Clients by Engagement', 'mcp-ai-wpoos-pro' ); ?>
+				<span style="font-weight: 400; font-size: 13px; color: #646970; margin-left: 8px;">
+					— <?php esc_html_e( 'ranks by contact frequency (who do I talk to the most)', 'mcp-ai-wpoos-pro' ); ?>
+				</span>
 			</h2>
 			<p class="description">
 				<?php esc_html_e( 'Contacts ranked by engagement score — a composite of total interaction volume (40%), recency of last contact (25%), channel diversity (20%), and task completion rate (15%). Higher scores indicate frequent, recent, multi-channel engagement.', 'mcp-ai-wpoos-pro' ); ?>
