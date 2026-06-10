@@ -288,6 +288,14 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				return $payload;
 			}
 
+			// Pre-flight context-window validation (shared with all providers).
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'cloudflare', $options, $messages );
+				if ( is_wp_error( $preflight ) ) {
+					return $preflight;
+				}
+			}
+
 			// Cloudflare Workers AI expects model IDs like @cf/meta/llama-3.1-8b-instruct
 			// to be part of the URL path with forward slashes intact, not URL-encoded.
 			// Validate model ID format and escape properly for URL path.
