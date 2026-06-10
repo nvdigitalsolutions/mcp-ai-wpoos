@@ -107,14 +107,14 @@ class WP_MCP_AI_Token_Budget_Manager {
 	protected static $default_tpm_limits = array(
 		// Anthropic Claude models — Tier 1 defaults.
 		'claude-mythos-preview' => 40000,
-		'claude-opus-4-6'   => 40000,
-		'claude-sonnet-4-6' => 80000,
-		'claude-opus-4-5'   => 40000,
-		'claude-sonnet-4-5' => 80000,
-		'claude-haiku-4-5'  => 50000,
-		'claude-3-5-sonnet' => 80000,
-		'claude-3-opus'     => 40000,
-		'claude-3-haiku'    => 50000,
+		'claude-opus-4-6'       => 40000,
+		'claude-sonnet-4-6'     => 80000,
+		'claude-opus-4-5'       => 40000,
+		'claude-sonnet-4-5'     => 80000,
+		'claude-haiku-4-5'      => 50000,
+		'claude-3-5-sonnet'     => 80000,
+		'claude-3-opus'         => 40000,
+		'claude-3-haiku'        => 50000,
 	);
 
 	/**
@@ -127,35 +127,93 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 */
 	protected static $model_max_output_tokens = array(
 		'claude-mythos-preview' => 128000,
-		'claude-opus-4-6'   => 128000,
-		'claude-sonnet-4-6' => 64000,
-		'claude-opus-4-5'   => 128000,
-		'claude-sonnet-4-5' => 64000,
-		'claude-haiku-4-5'  => 64000,
-		'claude-3-5-sonnet' => 8192,
-		'claude-3-opus'     => 4096,
-		'claude-3-haiku'    => 4096,
+		'claude-opus-4-6'       => 128000,
+		'claude-sonnet-4-6'     => 64000,
+		'claude-opus-4-5'       => 128000,
+		'claude-sonnet-4-5'     => 64000,
+		'claude-haiku-4-5'      => 64000,
+		'claude-3-5-sonnet'     => 8192,
+		'claude-3-opus'         => 4096,
+		'claude-3-haiku'        => 4096,
 	);
 
 	/**
 	 * Estimate token count for text.
 	 *
-	 * Uses a simple heuristic: ~4 characters per token on average.
-	 * For more accurate counting, consider using a tokenizer library.
+	 * When the tiktoken-php library is available, uses OpenAI's byte-pair
+	 * encoding tokenizer (o200k_base for GPT-4o family, cl100k_base for
+	 * GPT-4/GPT-3.5, p50k_base for Davinci). Falls back to the chars/4
+	 * heuristic when tiktoken is not installed.
 	 *
-	 * @param string $text Text to estimate.
+	 * @since 1.0.0
+	 * @since 2.7.0 Added tiktoken-backed accurate counting with heuristic fallback.
+	 *
+	 * @param string      $text  Text to estimate.
+	 * @param string|null $model Optional model slug for encoding selection (default: 'gpt-4o').
 	 *
 	 * @return int Estimated token count.
 	 */
-	public static function estimate_tokens( $text ) {
+	public static function estimate_tokens( $text, $model = null ) {
 		if ( ! is_string( $text ) || '' === $text ) {
 			return 0;
 		}
 
-		// Simple heuristic: 4 characters per token on average.
-		// This is a rough estimate; actual token counts vary by model.
+		// Try tiktoken-php for accurate, model-aware counting.
+		if ( class_exists( 'Rahul900day\Tiktoken\Tiktoken' ) ) {
+			try {
+				$encoding = self::resolve_tiktoken_encoding( $model );
+				$encoder  = \Rahul900day\Tiktoken\Tiktoken::getEncoding( $encoding );
+				$tokens   = $encoder->encode( $text );
+				return count( $tokens );
+			} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Intentional fallback to heuristic.
+			}
+		}
+
+		// Fallback heuristic: 4 characters per token on average.
 		$char_count = function_exists( 'mb_strlen' ) ? mb_strlen( $text, 'UTF-8' ) : strlen( $text );
 		return (int) ceil( $char_count / 4 );
+	}
+
+	/**
+	 * Resolve the tiktoken encoding name for a model slug.
+	 *
+	 * Maps model families to OpenAI encoding schemes:
+	 *   - GPT-4o family → o200k_base (most efficient for newer models)
+	 *   - GPT-4, GPT-3.5 → cl100k_base
+	 *   - Davinci, text-* → p50k_base
+	 *   - Unknown → cl100k_base (safe default)
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string|null $model Model slug.
+	 * @return string Encoding name.
+	 */
+	protected static function resolve_tiktoken_encoding( $model ) {
+		$model = is_string( $model ) ? strtolower( trim( $model ) ) : '';
+
+		$encoding_map = array(
+			'gpt-4o'         => 'o200k_base',
+			'gpt-4.1'        => 'o200k_base',
+			'gpt-5'          => 'o200k_base',
+			'o1'             => 'o200k_base',
+			'o3'             => 'o200k_base',
+			'o4'             => 'o200k_base',
+			'gpt-4'          => 'cl100k_base',
+			'gpt-3.5'        => 'cl100k_base',
+			'text-davinci'   => 'p50k_base',
+			'text-embedding' => 'cl100k_base',
+		);
+
+		if ( '' !== $model ) {
+			foreach ( $encoding_map as $prefix => $encoding ) {
+				if ( 0 === strpos( $model, $prefix ) ) {
+					return $encoding;
+				}
+			}
+		}
+
+		// Safe default for unknown models.
+		return 'cl100k_base';
 	}
 
 	/**
