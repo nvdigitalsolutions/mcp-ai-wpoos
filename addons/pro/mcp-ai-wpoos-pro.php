@@ -413,7 +413,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 				// Phase 7 — dedicated admin page for Toolkit MCP Server management.
 						require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-toolkit-mcp-servers-page.php';
 						new WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page();
-					}
+			}
 
 					// Unified Blueprints Browser — browse and install curated assistants from all toolkits.
 					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-unified-blueprints-page.php';
@@ -673,20 +673,20 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		}
 
 		// Load Extended Cognition Toolkit if enabled (Pro feature).
-			if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/init.php';
+		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/init.php';
 
-				// Load Product Brand Taxonomy for vision recognition (1.8.0).
-				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-product-brand-taxonomy.php';
-				WP_MCP_AI_Product_Brand_Taxonomy::init();
+			// Load Product Brand Taxonomy for vision recognition (1.8.0).
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-product-brand-taxonomy.php';
+			WP_MCP_AI_Product_Brand_Taxonomy::init();
 
-				// Load HF Vision Inference Service (1.8.0).
-				require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-hf-vision-inference-service.php';
+			// Load HF Vision Inference Service (1.8.0).
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-hf-vision-inference-service.php';
 
-				// Load Action Scheduler callbacks for video analysis (1.8.0).
-								require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/as-callbacks.php';
-								add_action( 'init', 'wp_mcp_ai_ext_cog_register_as_hooks', 30 );
-			}
+			// Load Action Scheduler callbacks for video analysis (1.8.0).
+							require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/as-callbacks.php';
+							add_action( 'init', 'wp_mcp_ai_ext_cog_register_as_hooks', 30 );
+		}
 
 		// ========================================================================
 		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
@@ -1059,8 +1059,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Prune_CRM_Messages'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-prune-crm-messages.php',
 				'WP_MCP_AI_Tool_Repair_CRM_Data'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-repair-crm-data.php',
 				// ── Phase E: Deduplication (2) — v2.8.0 ──
-				'WP_MCP_AI_Tool_Detect_Duplicates'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-detect-duplicates.php',
-				'WP_MCP_AI_Tool_Merge_Duplicates'         => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-merge-duplicates.php',
+				'WP_MCP_AI_Tool_Detect_Duplicates'         => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-detect-duplicates.php',
+				'WP_MCP_AI_Tool_Merge_Duplicates'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-merge-duplicates.php',
 
 				// ── Phase E: Blueprint (1) ──
 				'WP_MCP_AI_Tool_Import_CRM_Blueprint'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/examples/class-wp-mcp-ai-tool-import-crm-blueprint.php',
@@ -1300,10 +1300,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add Healthcare Interoperability tools (Phase E) — gated on health & wellness toggle.
 		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
 			$interop_tools = array(
-				'WP_MCP_AI_Tool_Import_FHIR_Bundle'        => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-fhir-bundle.php',
-				'WP_MCP_AI_Tool_Export_CCDA_Document'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-export-ccda-document.php',
-				'WP_MCP_AI_Tool_Import_HL7v2_Message'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-hl7v2-message.php',
-				'WP_MCP_AI_Tool_Connect_To_EHR'            => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-connect-to-ehr.php',
+				'WP_MCP_AI_Tool_Import_FHIR_Bundle'   => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-fhir-bundle.php',
+				'WP_MCP_AI_Tool_Export_CCDA_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-export-ccda-document.php',
+				'WP_MCP_AI_Tool_Import_HL7v2_Message' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-hl7v2-message.php',
+				'WP_MCP_AI_Tool_Connect_To_EHR'       => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-connect-to-ehr.php',
 				// Phase E: Blueprint import.
 				'WP_MCP_AI_Tool_Import_Healthcare_Blueprint' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/examples/class-wp-mcp-ai-tool-import-healthcare-blueprint.php',
 			);
@@ -1426,78 +1426,78 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Shipping_Rate_Estimator'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-shipping-rate-estimator.php',
 			);
 			$pro_tools               = array_merge( $pro_tools, $ecommerce_toolkit_tools );
-			}
+		}
 
 			// Add Cloudways Pro Toolkit tools if enabled (Phase 1-4 — server/application management).
-			if ( ! empty( $settings['enable_cloudways_toolkit'] ) ) {
-				$cloudways_toolkit_tools = array(
-					// Phase 1 - Read tools.
-					'WP_MCP_AI_Tool_Cloudways_List_Servers'              => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-list-servers.php',
-					'WP_MCP_AI_Tool_Cloudways_Get_Server'                => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-get-server.php',
-					'WP_MCP_AI_Tool_Cloudways_List_Apps'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-list-apps.php',
-					'WP_MCP_AI_Tool_Cloudways_Get_App'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-get-app.php',
-					'WP_MCP_AI_Tool_Cloudways_Service_Status'            => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-service-status.php',
-					'WP_MCP_AI_Tool_Cloudways_Server_Monitor_Summary'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-monitor-summary.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Monitor_Summary'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-monitor-summary.php',
-					'WP_MCP_AI_Tool_Cloudways_Server_Settings_Get'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-settings-get.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Traffic_Analytics'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-traffic-analytics.php',
-					'WP_MCP_AI_Tool_Cloudways_App_PHP_Analytics'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-php-analytics.php',
-					'WP_MCP_AI_Tool_Cloudways_App_MySQL_Analytics'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-mysql-analytics.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Vulnerabilities_List'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-vulnerabilities-list.php',
-					'WP_MCP_AI_Tool_Cloudways_List_Projects'             => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-list-projects.php',
-					'WP_MCP_AI_Tool_Cloudways_Get_Operation_Status'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-get-operation-status.php',
-					// Phase 2 - Safe action tools.
-					'WP_MCP_AI_Tool_Cloudways_Purge_App_Cache'           => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-purge-app-cache.php',
-					'WP_MCP_AI_Tool_Cloudways_Restart_Service'           => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-restart-service.php',
-					'WP_MCP_AI_Tool_Cloudways_Create_App_Backup'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-create-app-backup.php',
-					'WP_MCP_AI_Tool_Cloudways_Create_Server_Backup'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-create-server-backup.php',
-					'WP_MCP_AI_Tool_Cloudways_Update_Server_Label'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-update-server-label.php',
-					'WP_MCP_AI_Tool_Cloudways_Update_App_Label'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-update-app-label.php',
-					'WP_MCP_AI_Tool_Cloudways_Git_Pull'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-pull.php',
-					'WP_MCP_AI_Tool_Cloudways_Git_History_Get'           => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-history-get.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Cron_List_Get'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-cron-list-get.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Credentials'           => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-credentials.php',
-					// Phase 3 - Provisioning & destructive tools.
-					'WP_MCP_AI_Tool_Cloudways_Server_Start'              => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-start.php',
-					'WP_MCP_AI_Tool_Cloudways_Server_Stop'               => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-stop.php',
-					'WP_MCP_AI_Tool_Cloudways_Server_Restart'            => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-restart.php',
-					'WP_MCP_AI_Tool_Cloudways_Server_Scale'              => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-scale.php',
-					'WP_MCP_AI_Tool_Cloudways_Server_Clone'              => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-clone.php',
-					'WP_MCP_AI_Tool_Cloudways_Server_Create'             => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-create.php',
-					'WP_MCP_AI_Tool_Cloudways_Server_Delete'             => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-delete.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Create'                => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-create.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Clone'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-clone.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Clone_To_Server'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-clone-to-server.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Delete'                => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-delete.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Restore'               => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-restore.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Restore_Rollback'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-restore-rollback.php',
-					'WP_MCP_AI_Tool_Cloudways_App_CNAME_Update'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-cname-update.php',
-					'WP_MCP_AI_Tool_Cloudways_Server_Scale_Volume'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-scale-volume.php',
-					// Phase 4 - Add-ons, DNS, Cloudflare, SSH, Git, Copilot, Advanced.
-					'WP_MCP_AI_Tool_Cloudways_Addon_List'                => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-addon-list.php',
-					'WP_MCP_AI_Tool_Cloudways_Addon_Activate'            => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-addon-activate.php',
-					'WP_MCP_AI_Tool_Cloudways_Cloudflare_Details'        => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-cloudflare-details.php',
-					'WP_MCP_AI_Tool_Cloudways_Cloudflare_Add_Domain'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-cloudflare-add-domain.php',
-					'WP_MCP_AI_Tool_Cloudways_DNS_List_Domains'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-dns-list-domains.php',
-					'WP_MCP_AI_Tool_Cloudways_DNS_List_Records'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-dns-list-records.php',
-					'WP_MCP_AI_Tool_Cloudways_DNS_Add_Record'            => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-dns-add-record.php',
-					'WP_MCP_AI_Tool_Cloudways_DNS_Delete_Record'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-dns-delete-record.php',
-					'WP_MCP_AI_Tool_Cloudways_SSH_Key_Create'            => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-ssh-key-create.php',
-					'WP_MCP_AI_Tool_Cloudways_SSH_Key_Delete'            => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-ssh-key-delete.php',
-					'WP_MCP_AI_Tool_Cloudways_SSH_Key_List'              => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-ssh-key-list.php',
-					'WP_MCP_AI_Tool_Cloudways_Git_Generate_Key'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-generate-key.php',
-					'WP_MCP_AI_Tool_Cloudways_Git_Key_Get'               => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-key-get.php',
-					'WP_MCP_AI_Tool_Cloudways_Git_Branches_Get'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-branches-get.php',
-					'WP_MCP_AI_Tool_Cloudways_Git_Clone'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-clone.php',
-					'WP_MCP_AI_Tool_Cloudways_Copilot_Insights_List'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-copilot-insights-list.php',
-					'WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Get'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-fpm-settings-get.php',
-					'WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Update'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-fpm-settings-update.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Varnish_Settings_Get'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-varnish-settings-get.php',
-					'WP_MCP_AI_Tool_Cloudways_App_Varnish_Settings_Update' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-varnish-settings-update.php',
-					'WP_MCP_AI_Tool_Cloudways_App_CORS_Headers_Update'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-cors-headers-update.php',
-				);
-				$pro_tools = array_merge( $pro_tools, $cloudways_toolkit_tools );
-			}
+		if ( ! empty( $settings['enable_cloudways_toolkit'] ) ) {
+			$cloudways_toolkit_tools = array(
+				// Phase 1 - Read tools.
+				'WP_MCP_AI_Tool_Cloudways_List_Servers'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-list-servers.php',
+				'WP_MCP_AI_Tool_Cloudways_Get_Server'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-get-server.php',
+				'WP_MCP_AI_Tool_Cloudways_List_Apps'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-list-apps.php',
+				'WP_MCP_AI_Tool_Cloudways_Get_App'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-get-app.php',
+				'WP_MCP_AI_Tool_Cloudways_Service_Status'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-service-status.php',
+				'WP_MCP_AI_Tool_Cloudways_Server_Monitor_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-monitor-summary.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Monitor_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-monitor-summary.php',
+				'WP_MCP_AI_Tool_Cloudways_Server_Settings_Get' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-settings-get.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Traffic_Analytics' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-traffic-analytics.php',
+				'WP_MCP_AI_Tool_Cloudways_App_PHP_Analytics' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-php-analytics.php',
+				'WP_MCP_AI_Tool_Cloudways_App_MySQL_Analytics' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-mysql-analytics.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Vulnerabilities_List' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-vulnerabilities-list.php',
+				'WP_MCP_AI_Tool_Cloudways_List_Projects'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-list-projects.php',
+				'WP_MCP_AI_Tool_Cloudways_Get_Operation_Status' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-get-operation-status.php',
+				// Phase 2 - Safe action tools.
+				'WP_MCP_AI_Tool_Cloudways_Purge_App_Cache' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-purge-app-cache.php',
+				'WP_MCP_AI_Tool_Cloudways_Restart_Service' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-restart-service.php',
+				'WP_MCP_AI_Tool_Cloudways_Create_App_Backup' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-create-app-backup.php',
+				'WP_MCP_AI_Tool_Cloudways_Create_Server_Backup' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-create-server-backup.php',
+				'WP_MCP_AI_Tool_Cloudways_Update_Server_Label' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-update-server-label.php',
+				'WP_MCP_AI_Tool_Cloudways_Update_App_Label' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-update-app-label.php',
+				'WP_MCP_AI_Tool_Cloudways_Git_Pull'        => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-pull.php',
+				'WP_MCP_AI_Tool_Cloudways_Git_History_Get' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-history-get.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Cron_List_Get' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-cron-list-get.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Credentials' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-credentials.php',
+				// Phase 3 - Provisioning & destructive tools.
+				'WP_MCP_AI_Tool_Cloudways_Server_Start'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-start.php',
+				'WP_MCP_AI_Tool_Cloudways_Server_Stop'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-stop.php',
+				'WP_MCP_AI_Tool_Cloudways_Server_Restart'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-restart.php',
+				'WP_MCP_AI_Tool_Cloudways_Server_Scale'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-scale.php',
+				'WP_MCP_AI_Tool_Cloudways_Server_Clone'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-clone.php',
+				'WP_MCP_AI_Tool_Cloudways_Server_Create'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-create.php',
+				'WP_MCP_AI_Tool_Cloudways_Server_Delete'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-delete.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Create'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-create.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Clone'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-clone.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Clone_To_Server' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-clone-to-server.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Delete'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-delete.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Restore'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-restore.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Restore_Rollback' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-restore-rollback.php',
+				'WP_MCP_AI_Tool_Cloudways_App_CNAME_Update' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-cname-update.php',
+				'WP_MCP_AI_Tool_Cloudways_Server_Scale_Volume' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-server-scale-volume.php',
+				// Phase 4 - Add-ons, DNS, Cloudflare, SSH, Git, Copilot, Advanced.
+				'WP_MCP_AI_Tool_Cloudways_Addon_List'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-addon-list.php',
+				'WP_MCP_AI_Tool_Cloudways_Addon_Activate'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-addon-activate.php',
+				'WP_MCP_AI_Tool_Cloudways_Cloudflare_Details' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-cloudflare-details.php',
+				'WP_MCP_AI_Tool_Cloudways_Cloudflare_Add_Domain' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-cloudflare-add-domain.php',
+				'WP_MCP_AI_Tool_Cloudways_DNS_List_Domains' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-dns-list-domains.php',
+				'WP_MCP_AI_Tool_Cloudways_DNS_List_Records' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-dns-list-records.php',
+				'WP_MCP_AI_Tool_Cloudways_DNS_Add_Record'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-dns-add-record.php',
+				'WP_MCP_AI_Tool_Cloudways_DNS_Delete_Record' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-dns-delete-record.php',
+				'WP_MCP_AI_Tool_Cloudways_SSH_Key_Create'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-ssh-key-create.php',
+				'WP_MCP_AI_Tool_Cloudways_SSH_Key_Delete'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-ssh-key-delete.php',
+				'WP_MCP_AI_Tool_Cloudways_SSH_Key_List'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-ssh-key-list.php',
+				'WP_MCP_AI_Tool_Cloudways_Git_Generate_Key' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-generate-key.php',
+				'WP_MCP_AI_Tool_Cloudways_Git_Key_Get'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-key-get.php',
+				'WP_MCP_AI_Tool_Cloudways_Git_Branches_Get' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-branches-get.php',
+				'WP_MCP_AI_Tool_Cloudways_Git_Clone'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-git-clone.php',
+				'WP_MCP_AI_Tool_Cloudways_Copilot_Insights_List' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-copilot-insights-list.php',
+				'WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Get' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-fpm-settings-get.php',
+				'WP_MCP_AI_Tool_Cloudways_App_FPM_Settings_Update' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-fpm-settings-update.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Varnish_Settings_Get' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-varnish-settings-get.php',
+				'WP_MCP_AI_Tool_Cloudways_App_Varnish_Settings_Update' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-varnish-settings-update.php',
+				'WP_MCP_AI_Tool_Cloudways_App_CORS_Headers_Update' => WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/class-wp-mcp-ai-tool-cloudways-app-cors-headers-update.php',
+			);
+			$pro_tools               = array_merge( $pro_tools, $cloudways_toolkit_tools );
+		}
 
 			// Add Social Media Toolkit tools if enabled (Phase 3 - New Pro Toolkits).
 		if ( ! empty( $settings['enable_social_media_toolkit'] ) ) {
@@ -1909,21 +1909,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		}
 
 		// Extended Cognition Toolkit.
-			if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
-				$ext_cog_tools = array(
-					'WP_MCP_AI_Tool_Ext_Cog_Manage_Sensor_Permissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-manage-sensor-permissions.php',
-					'WP_MCP_AI_Tool_Ext_Cog_Capture_Visual' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-visual.php',
-					'WP_MCP_AI_Tool_Ext_Cog_Capture_Audio'  => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-audio.php',
-					'WP_MCP_AI_Tool_Ext_Cog_Capture_Screen' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-screen.php',
-					'WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-get-motion-context.php',
-					'WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-analyze-sensory-input.php',
-					'WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-remember-sensory-context.php',
-					'WP_MCP_AI_Tool_Ext_Cog_Detect_Objects' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-detect-objects.php',
-					'WP_MCP_AI_Tool_Ext_Cog_Recognize_Products' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-recognize-products.php',
-					'WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-analyze-video-feed.php',
-				);
-				$pro_tools     = array_merge( $pro_tools, $ext_cog_tools );
-			}
+		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
+			$ext_cog_tools = array(
+				'WP_MCP_AI_Tool_Ext_Cog_Manage_Sensor_Permissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-manage-sensor-permissions.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Capture_Visual' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-visual.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Capture_Audio'  => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-audio.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Capture_Screen' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-screen.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-get-motion-context.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-analyze-sensory-input.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-remember-sensory-context.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Detect_Objects' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-detect-objects.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Recognize_Products' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-recognize-products.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-analyze-video-feed.php',
+			);
+			$pro_tools     = array_merge( $pro_tools, $ext_cog_tools );
+		}
 
 		/**
 		 * Filter the list of Pro tools to register.
