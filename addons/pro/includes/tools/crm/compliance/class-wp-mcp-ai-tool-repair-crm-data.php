@@ -449,7 +449,7 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 				}
 
 				// All-caps short name is likely not a real person.
-				if ( ! $is_generic && strlen( $title ) > 5 && $title === strtoupper( $title ) && false === strpos( $title, ' ' ) ) {
+				if ( ! $is_generic && strlen( $title ) > 5 && strtoupper( $title ) === $title && false === strpos( $title, ' ' ) ) {
 					$is_generic = true;
 					$reason     = 'all_caps_short_name';
 				}

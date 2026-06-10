@@ -865,6 +865,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 		$hygiene_key = WP_MCP_AI_CRM_Engine::HYGIENE_OPTION;
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by WordPress settings API.
 		if ( isset( $_POST[ $hygiene_key ] ) && is_array( $_POST[ $hygiene_key ] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing
 			$hygiene_input     = wp_unslash( $_POST[ $hygiene_key ] );
 			$hygiene_sanitized = array();
 

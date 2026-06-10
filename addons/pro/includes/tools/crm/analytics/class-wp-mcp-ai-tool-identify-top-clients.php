@@ -365,8 +365,10 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 			// Sort activity dates to get recency/frequency.
 			$dates = $aggregate['activity_dates'];
 			sort( $dates );
-			$aggregate['last_activity_date']  = end( $dates ) ?: '';
-			$aggregate['first_activity_date'] = reset( $dates ) ?: '';
+			$last                             = end( $dates );
+			$aggregate['last_activity_date']  = ( false !== $last ) ? $last : '';
+			$first                            = reset( $dates );
+			$aggregate['first_activity_date'] = ( false !== $first ) ? $first : '';
 
 			// Calculate days since last activity.
 			$days_since_last = '';
@@ -396,7 +398,7 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 			// - Total interactions: 40% (logarithmic)
 			// - Recency (inverse days since last): 25%
 			// - Channel diversity: 20%
-			// - Completion rate: 15%
+			// - Completion rate: 15%.
 			$interaction_score = min( 40, round( log( $aggregate['total_interactions'] + 1, 100 ) * 40, 1 ) );
 
 			$recency_score = 0;
@@ -453,7 +455,7 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 				'email'                => $email,
 				'phone'                => $phone,
 				'company'              => $company,
-				'lifecycle_stage'      => $lifecycle ?: 'lead',
+				'lifecycle_stage'      => ( ! empty( $lifecycle ) ? $lifecycle : 'lead' ),
 				'is_customer'          => $is_customer,
 				'customer_id'          => $customer_id,
 				'contact_owner_id'     => $owner_id,

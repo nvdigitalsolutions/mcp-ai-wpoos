@@ -536,7 +536,7 @@ class WP_MCP_AI_Lead_CPT {
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 			if ( $connection && isset( $connection['connection_type'] ) && 'gmail' === $connection['connection_type'] ) {
 				$is_gmail = true;
-				// Gmail message URL: https://mail.google.com/mail/u/0/#inbox/<message_id>
+				// Gmail message URL: https://mail.google.com/mail/u/0/#inbox/<message_id>.
 				$gmail_url = 'https://mail.google.com/mail/u/0/#inbox/' . rawurlencode( $message_id );
 			}
 		}

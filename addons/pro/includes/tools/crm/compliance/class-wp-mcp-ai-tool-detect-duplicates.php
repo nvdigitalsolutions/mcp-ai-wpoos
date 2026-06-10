@@ -648,7 +648,7 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 			'email'           => $email,
 			'phone'           => $phone,
 			'company'         => $company,
-			'lifecycle_stage' => $lifecycle ?: 'lead',
+			'lifecycle_stage' => ( ! empty( $lifecycle ) ? $lifecycle : 'lead' ),
 			'lead_score'      => $score,
 			'deal_count'      => $deal_count,
 			'activity_count'  => $activity_count,

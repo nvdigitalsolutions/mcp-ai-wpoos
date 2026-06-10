@@ -2462,7 +2462,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						printf(
 							/* translators: %d: number of high-confidence pairs */
 							esc_html__( 'Bulk Merge %d High-Confidence Pairs', 'mcp-ai-wpoos-pro' ),
-							$high_conf
+							absint( $high_conf )
 						);
 						?>
 					</button>
