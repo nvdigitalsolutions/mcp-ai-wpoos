@@ -162,6 +162,7 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 				'classify_email_hygiene',
 				'manage_email_hygiene',
 				'prune_crm_messages',
+				'repair_crm_data',
 			)
 		);
 	}

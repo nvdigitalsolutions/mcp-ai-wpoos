@@ -1053,10 +1053,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Consent_Audit'         => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-get-consent-audit.php',
 				'WP_MCP_AI_Tool_Import_CRM_Csv'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-import-crm-csv.php',
 				'WP_MCP_AI_Tool_Connect_To_External_Crm'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-connect-to-external-crm.php',
-				// ── Phase E: Email Hygiene (3) — v2.8.0 ──
+				// ── Phase E: Email Hygiene (3→4) — v2.8.0 ──
 				'WP_MCP_AI_Tool_Classify_Email_Hygiene'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-classify-email-hygiene.php',
 				'WP_MCP_AI_Tool_Manage_Email_Hygiene'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-manage-email-hygiene.php',
 				'WP_MCP_AI_Tool_Prune_CRM_Messages'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-prune-crm-messages.php',
+				'WP_MCP_AI_Tool_Repair_CRM_Data'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-repair-crm-data.php',
 
 				// ── Phase E: Blueprint (1) ──
 				'WP_MCP_AI_Tool_Import_CRM_Blueprint'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/examples/class-wp-mcp-ai-tool-import-crm-blueprint.php',
