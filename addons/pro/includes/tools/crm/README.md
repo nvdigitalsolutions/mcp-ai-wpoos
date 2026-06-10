@@ -70,6 +70,21 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | `WP_MCP_AI_Tool_Import_CRM_Blueprint` | `examples/class-wp-mcp-ai-tool-import-crm-blueprint.php` | tool registry |
 | `WP_MCP_AI_Tool_Identify_Top_Customers` | `analytics/class-wp-mcp-ai-tool-identify-top-customers.php` | tool registry |
 | `WP_MCP_AI_Tool_Identify_Top_Clients` | `analytics/class-wp-mcp-ai-tool-identify-top-clients.php` | tool registry |
+| `WP_MCP_AI_Tool_Classify_Email_Hygiene` | `compliance/class-wp-mcp-ai-tool-classify-email-hygiene.php` | tool registry |
+| `WP_MCP_AI_Tool_Manage_Email_Hygiene` | `compliance/class-wp-mcp-ai-tool-manage-email-hygiene.php` | tool registry |
+| `WP_MCP_AI_Tool_Prune_CRM_Messages` | `compliance/class-wp-mcp-ai-tool-prune-crm-messages.php` | tool registry |
+
+### Email Hygiene Module
+
+Three new Phase E tools (v2.8.0) provide email list hygiene for WordPress plugin environments:
+
+| Tool | Purpose |
+|---|---|
+| `classify_email_hygiene` | Multi-layer heuristic classifier: spam, promotional/newsletter, notification, priority. Returns hygiene score 0–100 + recommended action per CAN-SPAM and Google/Yahoo 2024–2025 guidelines |
+| `manage_email_hygiene` | CRUD over exclude list and priority list. Supports exact emails, @domain patterns, and substring matching. Changes propagate instantly to the import pipeline |
+| `prune_crm_messages` | Batch-clean leads by spam flag, excluded domains, staleness (configurable age threshold), and zero-engagement. Dry-run mode for safe preview. Industry recommendation: remove unengaged after 90–180 days |
+
+Both lists are managed through **NV CRM → Settings → Configuration → Email Hygiene & List Management** with textarea-based editing.
 
 ### Top Customers vs Top Clients — what's the difference?
 

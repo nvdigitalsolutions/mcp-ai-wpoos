@@ -1045,7 +1045,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Auto_Route_Inbound_Message' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-auto-route-inbound-message.php',
 				'WP_MCP_AI_Tool_Get_Owner_Workload'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-get-owner-workload.php',
 
-				// ── Phase E: Compliance (7) ──
+				// ── Phase E: Compliance (7→10) ──
 				'WP_MCP_AI_Tool_Record_Consent'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-record-consent.php',
 				'WP_MCP_AI_Tool_Revoke_Consent'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-revoke-consent.php',
 				'WP_MCP_AI_Tool_Process_Opt_Out'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-process-opt-out.php',
@@ -1053,6 +1053,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Consent_Audit'         => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-get-consent-audit.php',
 				'WP_MCP_AI_Tool_Import_CRM_Csv'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-import-crm-csv.php',
 				'WP_MCP_AI_Tool_Connect_To_External_Crm'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-connect-to-external-crm.php',
+				// ── Phase E: Email Hygiene (3) — v2.8.0 ──
+				'WP_MCP_AI_Tool_Classify_Email_Hygiene'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-classify-email-hygiene.php',
+				'WP_MCP_AI_Tool_Manage_Email_Hygiene'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-manage-email-hygiene.php',
+				'WP_MCP_AI_Tool_Prune_CRM_Messages'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-prune-crm-messages.php',
 
 				// ── Phase E: Blueprint (1) ──
 				'WP_MCP_AI_Tool_Import_CRM_Blueprint'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/examples/class-wp-mcp-ai-tool-import-crm-blueprint.php',

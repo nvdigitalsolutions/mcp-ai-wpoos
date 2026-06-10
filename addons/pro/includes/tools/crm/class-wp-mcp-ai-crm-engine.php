@@ -204,6 +204,72 @@ class WP_MCP_AI_CRM_Engine {
 	 */
 	public static function flush_settings_cache() {
 		self::$settings_cache = null;
+		self::$hygiene_cache = null;
+	}
+
+	/*
+	---------------------------------------------------------------------
+	* Email Hygiene Settings
+	* ------------------------------------------------------------------
+	*/
+
+	/**
+	 * Hygiene settings option key.
+	 *
+	 * @var string
+	 */
+	const HYGIENE_OPTION = 'wp_mcp_ai_crm_hygiene_settings';
+
+	/**
+	 * Cached hygiene settings.
+	 *
+	 * @var array|null
+	 */
+	private static $hygiene_cache = null;
+
+	/**
+	 * Get resolved email hygiene settings.
+	 *
+	 * @since 2.8.0
+	 * @return array
+	 */
+	public static function get_hygiene_settings() {
+		if ( null !== self::$hygiene_cache ) {
+			return self::$hygiene_cache;
+		}
+
+		$defaults = array(
+			'exclude_list'          => array(),
+			'priority_list'         => array(),
+			'spam_domains'          => array(),
+			'promotional_domains'   => array(),
+			'priority_domains'      => array(),
+			'promotional_keywords'  => array(),
+			'auto_prune_spam'       => true,
+			'auto_prune_stale_days' => 0, // 0 = disabled.
+			'auto_prune_excluded'   => true,
+		);
+
+		$stored = get_option( self::HYGIENE_OPTION, array() );
+		if ( ! is_array( $stored ) ) {
+			$stored = array();
+		}
+
+		$settings = array_merge( $defaults, $stored );
+
+		/**
+		 * Filter: override resolved email hygiene settings.
+		 *
+		 * @since 2.8.0
+		 * @param array $settings Merged hygiene settings.
+		 */
+		$settings = apply_filters( 'wp_mcp_ai_crm_hygiene_settings', $settings );
+		if ( ! is_array( $settings ) ) {
+			$settings = $defaults;
+		}
+
+		self::$hygiene_cache = $settings;
+		return self::$hygiene_cache;
 	}
 
 	/*

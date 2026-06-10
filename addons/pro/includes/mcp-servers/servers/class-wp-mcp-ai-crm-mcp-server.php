@@ -158,6 +158,10 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 				'record_consent',
 				'revoke_consent',
 				'check_dnc_status',
+				// Email hygiene.
+				'classify_email_hygiene',
+				'manage_email_hygiene',
+				'prune_crm_messages',
 			)
 		);
 	}
