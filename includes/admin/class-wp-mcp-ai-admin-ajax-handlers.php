@@ -3584,6 +3584,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 * - Attachment lacks _wp_mcp_ai_playbook_profession_id meta (orphaned)
 		 * - File is in the wp-mcp-ai/profession-playbooks directory
 		 *
+		 * Processes in batches of 200 (max 1,000 per request) to avoid timeouts.
+		 *
 		 * @since 1.7.0
 		 */
 		private function handle_delete_old_playbooks() {
@@ -3603,22 +3605,71 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
 			}
 
-			// Delete orphaned system playbooks in batches (safe method with hash + directory checks).
-			$total_deleted = 0;
-			$max_batches   = 10; // Process up to 500 orphaned attachments (10 batches × 50).
-			$batch_limit   = 50;
+			// ---------- Primary path: safe deletion via seeder (hash-marker + file-path checks) ----------
+			$batch_limit       = 200;
+			$max_batches       = 5; // Safety valve: 5 × 200 = 1,000 max per request.
+			$total_deleted     = 0;
+			$batches_processed = 0;
 
-			for ( $i = 0; $i < $max_batches; $i++ ) {
+			do {
 				$result = WP_MCP_AI_Profession_Playbook_Seeder::delete_orphaned_system_playbooks( $batch_limit );
-				$total_deleted += $result['deleted_count'];
 
-				// Stop if no more orphans found.
+				$total_deleted     += $result['deleted_count'];
+				++$batches_processed;
+
 				if ( $result['deleted_count'] < $batch_limit ) {
 					break;
 				}
+			} while ( $batches_processed < $max_batches );
+
+			// ---------- Fallback: legacy attachments lacking the hash meta marker ----------
+			// Older plugin versions may have created playbook attachments without
+			// _wp_mcp_ai_playbook_hash.  If the primary path found nothing, try a
+			// broader (but still guarded) sweep limited to a reasonable batch.
+			if ( $total_deleted === 0 ) {
+				global $wpdb;
+
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
+				$legacy_ids = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT p.ID
+						FROM {$wpdb->posts} p
+						WHERE p.post_type = 'attachment'
+						AND p.post_mime_type = 'text/plain'
+						AND p.post_title LIKE %s
+						AND p.post_status = 'inherit'
+						AND NOT EXISTS (
+							SELECT 1 FROM {$wpdb->postmeta} pm
+							WHERE pm.post_id = p.ID
+							AND pm.meta_key = '_wp_mcp_ai_playbook_profession_id'
+						)
+						AND NOT EXISTS (
+							SELECT 1 FROM {$wpdb->postmeta} pm2
+							WHERE pm2.post_id = p.ID
+							AND pm2.meta_key = '_wp_mcp_ai_playbook_hash'
+						)
+						LIMIT %d",
+						'%' . $wpdb->esc_like( 'playbook' ) . '%',
+						$batch_limit
+					)
+				);
+
+				if ( ! empty( $legacy_ids ) ) {
+					foreach ( $legacy_ids as $legacy_id ) {
+						$legacy_id  = absint( $legacy_id );
+						$file_path  = get_attached_file( $legacy_id );
+
+						// Guard: only delete if the physical file lives in our directory.
+						if ( $file_path && false !== strpos( $file_path, 'wp-mcp-ai/profession-playbooks' ) ) {
+							if ( wp_delete_attachment( $legacy_id, true ) ) {
+								++$total_deleted;
+							}
+						}
+					}
+				}
 			}
 
-			if ( 0 === $total_deleted ) {
+			if ( $total_deleted === 0 ) {
 				wp_send_json_success(
 					array(
 						'message' => __( 'No orphaned playbook attachments found to delete.', 'mcp-ai-wpoos' ),
@@ -3637,6 +3688,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				),
 				$total_deleted
 			);
+
+			// If the safety valve stopped us, suggest another run.
+			if ( $batches_processed >= $max_batches ) {
+				$message .= ' ' . __( 'More may remain — click Delete again to continue cleanup.', 'mcp-ai-wpoos' );
+			}
 
 			wp_send_json_success(
 				array(

@@ -736,6 +736,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							<?php if ( $playbook_stats['last_sync'] ) : ?>
 								<li><strong><?php esc_html_e( 'Last Sync:', 'mcp-ai-wpoos' ); ?></strong> <?php echo esc_html( $playbook_stats['last_sync'] ); ?></li>
 							<?php endif; ?>
+							<?php if ( $playbook_stats['orphaned_playbooks'] > 0 ) : ?>
+								<li style="color: #a00;"><strong><?php esc_html_e( 'Orphaned Playbooks:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $playbook_stats['orphaned_playbooks'] ); ?>
+									<span class="description"><?php esc_html_e( '(old attachments no longer in use — use Delete button below to clean up)', 'mcp-ai-wpoos' ); ?></span>
+								</li>
+							<?php endif; ?>
 						</ul>
 					</div>
 
@@ -2604,7 +2609,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			return array(
 				'total_attachments'          => absint( $total_attachments ),
 				'professions_with_playbooks' => absint( $professions_with_playbooks ),
-				'orphaned_attachments'       => WP_MCP_AI_Profession_Playbook_Seeder::count_orphaned_system_playbooks(),
+				'orphaned_playbooks'         => WP_MCP_AI_Profession_Playbook_Seeder::count_orphaned_system_playbooks(),
 				'seeded'                     => $playbooks_seeded,
 				'last_sync'                  => $last_sync,
 			);
