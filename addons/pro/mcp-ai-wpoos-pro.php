@@ -1058,6 +1058,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Manage_Email_Hygiene'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-manage-email-hygiene.php',
 				'WP_MCP_AI_Tool_Prune_CRM_Messages'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-prune-crm-messages.php',
 				'WP_MCP_AI_Tool_Repair_CRM_Data'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-repair-crm-data.php',
+				// ── Phase E: Deduplication (2) — v2.8.0 ──
+				'WP_MCP_AI_Tool_Detect_Duplicates'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-detect-duplicates.php',
+				'WP_MCP_AI_Tool_Merge_Duplicates'         => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-merge-duplicates.php',
 
 				// ── Phase E: Blueprint (1) ──
 				'WP_MCP_AI_Tool_Import_CRM_Blueprint'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/examples/class-wp-mcp-ai-tool-import-crm-blueprint.php',

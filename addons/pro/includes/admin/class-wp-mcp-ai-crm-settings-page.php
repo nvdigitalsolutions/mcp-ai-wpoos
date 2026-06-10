@@ -606,6 +606,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'manage_email_hygiene'    => __( 'Manage Email Hygiene', 'mcp-ai-wpoos-pro' ),
 			'prune_crm_messages'      => __( 'Prune CRM Messages', 'mcp-ai-wpoos-pro' ),
 			'repair_crm_data'         => __( 'Repair CRM Data', 'mcp-ai-wpoos-pro' ),
+			'detect_duplicates'       => __( 'Detect Duplicate Leads', 'mcp-ai-wpoos-pro' ),
+			'merge_duplicates'        => __( 'Merge Duplicate Leads', 'mcp-ai-wpoos-pro' ),
 		);
 
 		// ---- Phase F: Support Ticket Management (10 tools) ----
