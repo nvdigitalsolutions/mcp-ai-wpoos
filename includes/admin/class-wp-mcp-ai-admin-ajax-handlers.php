@@ -3579,6 +3579,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 * Handle delete old playbooks AJAX request.
 		 *
 		 * Permanently deletes orphaned playbook attachments from the media library.
+		 * Uses the safe delete_orphaned_system_playbooks() method which verifies:
+		 * - Attachment has _wp_mcp_ai_playbook_hash meta (system-created marker)
+		 * - Attachment lacks _wp_mcp_ai_playbook_profession_id meta (orphaned)
+		 * - File is in the wp-mcp-ai/profession-playbooks directory
 		 *
 		 * @since 1.7.0
 		 */
@@ -3594,25 +3598,27 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			global $wpdb;
+			// Load playbook seeder.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+			}
 
-			// Find all playbook attachments that are NOT associated with any profession.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
-			$orphaned_attachments = $wpdb->get_col(
-				"SELECT p.ID
-				FROM {$wpdb->posts} p
-				WHERE p.post_type = 'attachment'
-				AND p.post_mime_type = 'text/plain'
-				AND p.post_title LIKE '%playbook%'
-				AND NOT EXISTS (
-					SELECT 1
-					FROM {$wpdb->postmeta} pm
-					WHERE pm.post_id = p.ID
-					AND pm.meta_key = '_wp_mcp_ai_playbook_profession_id'
-				)"
-			);
+			// Delete orphaned system playbooks in batches (safe method with hash + directory checks).
+			$total_deleted = 0;
+			$max_batches   = 10; // Process up to 500 orphaned attachments (10 batches × 50).
+			$batch_limit   = 50;
 
-			if ( empty( $orphaned_attachments ) ) {
+			for ( $i = 0; $i < $max_batches; $i++ ) {
+				$result = WP_MCP_AI_Profession_Playbook_Seeder::delete_orphaned_system_playbooks( $batch_limit );
+				$total_deleted += $result['deleted_count'];
+
+				// Stop if no more orphans found.
+				if ( $result['deleted_count'] < $batch_limit ) {
+					break;
+				}
+			}
+
+			if ( 0 === $total_deleted ) {
 				wp_send_json_success(
 					array(
 						'message' => __( 'No orphaned playbook attachments found to delete.', 'mcp-ai-wpoos' ),
@@ -3621,25 +3627,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			$deleted_count = 0;
-
-			// Delete each orphaned attachment permanently.
-			foreach ( $orphaned_attachments as $attachment_id ) {
-				// Use wp_delete_attachment with force_delete = true to permanently delete.
-				if ( wp_delete_attachment( $attachment_id, true ) ) {
-					++$deleted_count;
-				}
-			}
-
 			$message = sprintf(
 				/* translators: %d: number of deleted playbook attachments */
 				_n(
 					'Successfully deleted %d orphaned playbook attachment from media library.',
 					'Successfully deleted %d orphaned playbook attachments from media library.',
-					$deleted_count,
+					$total_deleted,
 					'mcp-ai-wpoos'
 				),
-				$deleted_count
+				$total_deleted
 			);
 
 			wp_send_json_success(
