@@ -184,21 +184,21 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$max_repairs            = min( 500, max( 1, $max_repairs ) );
 
 		$stats = array(
-			'dry_run'                     => $dry_run,
-			'dates_checked'               => 0,
-			'dates_fixed'                 => 0,
-			'lead_titles_checked'         => 0,
-			'lead_titles_fixed'           => 0,
-			'activity_titles_checked'     => 0,
-			'activity_titles_fixed'       => 0,
-			'sender_names_fixed'          => 0,
-			'total_repaired'              => 0,
-			'repairs'                     => array(),
+			'dry_run'                 => $dry_run,
+			'dates_checked'           => 0,
+			'dates_fixed'             => 0,
+			'lead_titles_checked'     => 0,
+			'lead_titles_fixed'       => 0,
+			'activity_titles_checked' => 0,
+			'activity_titles_fixed'   => 0,
+			'sender_names_fixed'      => 0,
+			'total_repaired'          => 0,
+			'repairs'                 => array(),
 		);
 
 		// --- Repair 1: Broken dates on activities ---
 		if ( $repair_broken_dates ) {
-			$date_results = $this->repair_broken_dates( $max_repairs, $dry_run );
+			$date_results             = $this->repair_broken_dates( $max_repairs, $dry_run );
 			$stats['dates_checked']   = $date_results['checked'];
 			$stats['dates_fixed']     = $date_results['fixed'];
 			$stats['total_repaired'] += $date_results['fixed'];
@@ -209,11 +209,11 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( $repair_lead_titles ) {
 			$remaining = $max_repairs - $stats['total_repaired'];
 			if ( $remaining > 0 ) {
-				$title_results = $this->repair_lead_titles( $remaining, $dry_run );
-				$stats['lead_titles_checked']   = $title_results['checked'];
-				$stats['lead_titles_fixed']     = $title_results['fixed'];
-				$stats['total_repaired']       += $title_results['fixed'];
-				$stats['repairs']               = array_merge( $stats['repairs'], $title_results['repairs'] );
+				$title_results                = $this->repair_lead_titles( $remaining, $dry_run );
+				$stats['lead_titles_checked'] = $title_results['checked'];
+				$stats['lead_titles_fixed']   = $title_results['fixed'];
+				$stats['total_repaired']     += $title_results['fixed'];
+				$stats['repairs']             = array_merge( $stats['repairs'], $title_results['repairs'] );
 			}
 		}
 
@@ -221,11 +221,11 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( $repair_activity_titles ) {
 			$remaining = $max_repairs - $stats['total_repaired'];
 			if ( $remaining > 0 ) {
-				$act_results = $this->repair_activity_titles( $remaining, $dry_run );
-				$stats['activity_titles_checked']   = $act_results['checked'];
-				$stats['activity_titles_fixed']     = $act_results['fixed'];
-				$stats['total_repaired']           += $act_results['fixed'];
-				$stats['repairs']                   = array_merge( $stats['repairs'], $act_results['repairs'] );
+				$act_results                      = $this->repair_activity_titles( $remaining, $dry_run );
+				$stats['activity_titles_checked'] = $act_results['checked'];
+				$stats['activity_titles_fixed']   = $act_results['fixed'];
+				$stats['total_repaired']         += $act_results['fixed'];
+				$stats['repairs']                 = array_merge( $stats['repairs'], $act_results['repairs'] );
 			}
 		}
 
@@ -233,7 +233,7 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( $repair_sender_names ) {
 			$remaining = $max_repairs - $stats['total_repaired'];
 			if ( $remaining > 0 ) {
-				$sender_results = $this->repair_sender_names( $remaining, $dry_run );
+				$sender_results              = $this->repair_sender_names( $remaining, $dry_run );
 				$stats['sender_names_fixed'] = $sender_results['fixed'];
 				$stats['total_repaired']    += $sender_results['fixed'];
 				$stats['repairs']            = array_merge( $stats['repairs'], $sender_results['repairs'] );
@@ -263,7 +263,7 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return $this->format_success_response(
 			sprintf(
 				/* translators: %d: number of records */
-				__( '%d records %s.', 'mcp-ai-wpoos-pro' ),
+				__( '%1$d records %2$s.', 'mcp-ai-wpoos-pro' ),
 				$stats['total_repaired'],
 				$action_word
 			),
@@ -310,9 +310,9 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 				continue;
 			}
 
-			$timestamp  = strtotime( $due_date );
-			$is_broken  = false;
-			$reason     = '';
+			$timestamp = strtotime( $due_date );
+			$is_broken = false;
+			$reason    = '';
 
 			// Empty or epoch default.
 			if ( false === $timestamp || '1970-01-01' === substr( $due_date, 0, 10 ) ) {
@@ -396,11 +396,11 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 			}
 
 			++$checked;
-			$title       = get_the_title( $lead_id );
-			$email       = strtolower( trim( (string) get_post_meta( $lead_id, '_email', true ) ) );
-			$is_generic  = false;
-			$reason      = '';
-			$new_title   = '';
+			$title      = get_the_title( $lead_id );
+			$email      = strtolower( trim( (string) get_post_meta( $lead_id, '_email', true ) ) );
+			$is_generic = false;
+			$reason     = '';
+			$new_title  = '';
 
 			// Check: "Inbound Lead" default.
 			if ( 'Inbound Lead' === $title || 'inbound lead' === strtolower( $title ) ) {
@@ -416,12 +416,25 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 			// Check: title looks like a company/team name (all caps, contains Inc/LLC/Team/Group, etc.).
 			if ( ! $is_generic ) {
-				$lower_title = strtolower( $title );
+				$lower_title     = strtolower( $title );
 				$company_signals = array(
-					'team', ' group', ' inc', ' llc', ' ltd', ' corp',
-					'corporation', ' limited', ' department', ' support',
-					' sales', ' marketing', 'admin', 'noreply', 'no-reply',
-					'google workspace', 'microsoft teams',
+					'team',
+					' group',
+					' inc',
+					' llc',
+					' ltd',
+					' corp',
+					'corporation',
+					' limited',
+					' department',
+					' support',
+					' sales',
+					' marketing',
+					'admin',
+					'noreply',
+					'no-reply',
+					'google workspace',
+					'microsoft teams',
 				);
 
 				// Strong signals: title starts with "The " + has a company word.
@@ -547,7 +560,7 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 			}
 
 			++$checked;
-			$title   = get_the_title( $activity_id );
+			$title      = get_the_title( $activity_id );
 			$is_generic = false;
 
 			foreach ( $generic_patterns as $pattern ) {
@@ -562,14 +575,14 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 			}
 
 			// Look for related lead.
-			$lead_id    = (int) get_post_meta( $activity_id, '_lead_id', true );
-			$new_title  = '';
+			$lead_id   = (int) get_post_meta( $activity_id, '_lead_id', true );
+			$new_title = '';
 
 			if ( $lead_id > 0 ) {
 				$lead_post = get_post( $lead_id );
 				if ( $lead_post && 'publish' === $lead_post->post_status ) {
-					$lead_title = get_the_title( $lead_id );
-					$lead_email = get_post_meta( $lead_id, '_email', true );
+					$lead_title   = get_the_title( $lead_id );
+					$lead_email   = get_post_meta( $lead_id, '_email', true );
 					$lead_company = get_post_meta( $lead_id, '_company', true );
 
 					// Build enriched title.
@@ -591,7 +604,7 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 							'task'    => __( 'Task:', 'mcp-ai-wpoos-pro' ),
 							'note'    => __( 'Note on', 'mcp-ai-wpoos-pro' ),
 						);
-						$prefix = isset( $type_labels[ $activity_type ] ) ? $type_labels[ $activity_type ] : '';
+						$prefix      = isset( $type_labels[ $activity_type ] ) ? $type_labels[ $activity_type ] : '';
 						if ( ! empty( $prefix ) ) {
 							$new_title = $prefix . ' ' . $new_title;
 						}
@@ -660,11 +673,29 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 		);
 
 		$impersonal_signals = array(
-			'team', 'group', 'department', 'support', 'sales',
-			'marketing', 'info', 'admin', 'noreply', 'no-reply',
-			'help', 'contact', 'hello', 'office', 'service',
-			'billing', 'accounts', 'hr', 'careers', 'jobs',
-			'newsletter', 'notifications', 'alerts',
+			'team',
+			'group',
+			'department',
+			'support',
+			'sales',
+			'marketing',
+			'info',
+			'admin',
+			'noreply',
+			'no-reply',
+			'help',
+			'contact',
+			'hello',
+			'office',
+			'service',
+			'billing',
+			'accounts',
+			'hr',
+			'careers',
+			'jobs',
+			'newsletter',
+			'notifications',
+			'alerts',
 		);
 
 		foreach ( $query->posts as $lead_id ) {
@@ -672,9 +703,9 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 				break;
 			}
 
-			$title = get_the_title( $lead_id );
-			$lower = strtolower( $title );
-			$email = strtolower( trim( (string) get_post_meta( $lead_id, '_email', true ) ) );
+			$title   = get_the_title( $lead_id );
+			$lower   = strtolower( $title );
+			$email   = strtolower( trim( (string) get_post_meta( $lead_id, '_email', true ) ) );
 			$company = trim( (string) get_post_meta( $lead_id, '_company', true ) );
 
 			$is_impersonal = false;
@@ -778,9 +809,14 @@ class WP_MCP_AI_Tool_Repair_CRM_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$with_spaces = preg_replace( '/\b(mr|ms|mrs|dr|prof)\.?\b/i', '', $with_spaces );
 
 		// Title-case each segment.
-		$parts  = explode( ' ', $with_spaces );
-		$parts  = array_filter( $parts, function ( $p ) { return '' !== trim( $p ); } );
-		$parts  = array_map( 'ucfirst', $parts );
+		$parts = explode( ' ', $with_spaces );
+		$parts = array_filter(
+			$parts,
+			function ( $p ) {
+				return '' !== trim( $p );
+			}
+		);
+		$parts = array_map( 'ucfirst', $parts );
 
 		$name = implode( ' ', $parts );
 		$name = trim( $name );

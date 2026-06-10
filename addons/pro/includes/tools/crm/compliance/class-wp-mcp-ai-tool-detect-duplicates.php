@@ -84,27 +84,27 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'strategy'           => array(
+				'strategy'       => array(
 					'type'        => 'string',
 					'description' => __( 'Matching strategy: exact_email (fast, high confidence), phone (normalised), fuzzy (name+company), all (every strategy).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'exact_email', 'phone', 'fuzzy', 'all' ),
 					'default'     => 'all',
 				),
-				'min_confidence'     => array(
+				'min_confidence' => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum confidence threshold (0.0–1.0) to include a pair. 0.70 is a good default.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0.70,
 					'minimum'     => 0,
 					'maximum'     => 1,
 				),
-				'max_results'        => array(
+				'max_results'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum duplicate pairs to return.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 50,
 					'minimum'     => 1,
 					'maximum'     => 200,
 				),
-				'include_merged'     => array(
+				'include_merged' => array(
 					'type'        => 'boolean',
 					'description' => __( 'If false, skip leads already flagged as merged.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -176,8 +176,8 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// --- Gate 1: Sanitise at entry ---
 
-		$strategy       = isset( $arguments['strategy'] ) ? sanitize_key( $arguments['strategy'] ) : 'all';
-		$allowed        = array( 'exact_email', 'phone', 'fuzzy', 'all' );
+		$strategy = isset( $arguments['strategy'] ) ? sanitize_key( $arguments['strategy'] ) : 'all';
+		$allowed  = array( 'exact_email', 'phone', 'fuzzy', 'all' );
 		if ( ! in_array( $strategy, $allowed, true ) ) {
 			$strategy = 'all';
 		}
@@ -185,8 +185,8 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 		$min_confidence = isset( $arguments['min_confidence'] ) ? (float) $arguments['min_confidence'] : 0.70;
 		$min_confidence = max( 0, min( 1.0, $min_confidence ) );
 
-		$max_results    = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 50;
-		$max_results    = min( 200, max( 1, $max_results ) );
+		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 50;
+		$max_results = min( 200, max( 1, $max_results ) );
 
 		$include_merged = ! empty( $arguments['include_merged'] );
 
@@ -197,8 +197,8 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 			return $this->format_success_response(
 				__( 'Not enough leads to detect duplicates (need at least 2).', 'mcp-ai-wpoos-pro' ),
 				array(
-					'duplicates' => array(),
-					'count'      => 0,
+					'duplicates'  => array(),
+					'count'       => 0,
 					'total_leads' => count( $leads ),
 				)
 			);
@@ -225,14 +225,14 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 
 		foreach ( $pairs as $pair ) {
 			// Canonical sort: smaller ID first.
-			$a = min( $pair['lead_a'], $pair['lead_b'] );
-			$b = max( $pair['lead_a'], $pair['lead_b'] );
+			$a   = min( $pair['lead_a'], $pair['lead_b'] );
+			$b   = max( $pair['lead_a'], $pair['lead_b'] );
 			$key = $a . '_' . $b;
 
 			if ( isset( $seen[ $key ] ) ) {
 				// Keep the higher-confidence version.
 				if ( $pair['confidence'] > $unique[ $seen[ $key ] ]['confidence'] ) {
-					$unique[ $seen[ $key ] ] = $pair;
+					$unique[ $seen[ $key ] ]           = $pair;
 					$unique[ $seen[ $key ] ]['lead_a'] = $a;
 					$unique[ $seen[ $key ] ]['lead_b'] = $b;
 				}
@@ -335,8 +335,8 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		$query  = new WP_Query( $args );
-		$leads  = array();
+		$query = new WP_Query( $args );
+		$leads = array();
 
 		foreach ( $query->posts as $lead_id ) {
 			$email   = strtolower( trim( (string) get_post_meta( $lead_id, '_email', true ) ) );
@@ -380,8 +380,9 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 
 			// Generate all pairs within this email group.
-			for ( $i = 0; $i < count( $ids ); $i++ ) {
-				for ( $j = $i + 1; $j < count( $ids ); $j++ ) {
+			$count = count( $ids );
+			for ( $i = 0; $i < $count; $i++ ) {
+				for ( $j = $i + 1; $j < $count; $j++ ) {
 					// Older record = survivor candidate.
 					$a_id = min( $ids[ $i ], $ids[ $j ] );
 					$b_id = max( $ids[ $i ], $ids[ $j ] );
@@ -427,8 +428,9 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 
 			// Skip if also matched by email (higher confidence already).
-			for ( $i = 0; $i < count( $ids ); $i++ ) {
-				for ( $j = $i + 1; $j < count( $ids ); $j++ ) {
+			$count = count( $ids );
+			for ( $i = 0; $i < $count; $i++ ) {
+				for ( $j = $i + 1; $j < $count; $j++ ) {
 					$a_id = min( $ids[ $i ], $ids[ $j ] );
 					$b_id = max( $ids[ $i ], $ids[ $j ] );
 
@@ -485,8 +487,9 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 				continue;
 			}
 
-			for ( $i = 0; $i < count( $ids ); $i++ ) {
-				for ( $j = $i + 1; $j < count( $ids ); $j++ ) {
+			$count = count( $ids );
+			for ( $i = 0; $i < $count; $i++ ) {
+				for ( $j = $i + 1; $j < $count; $j++ ) {
 					$a_id = $ids[ $i ];
 					$b_id = $ids[ $j ];
 
@@ -521,7 +524,7 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 							'value'  => $company,
 							'detail' => sprintf(
 								/* translators: 1: name similarity ratio, 2: same domain flag */
-								__( 'Similar name (%.0f%% match) at same company%s.', 'mcp-ai-wpoos-pro' ),
+								__( 'Similar name (%1$.0f%% match) at same company%2$s.', 'mcp-ai-wpoos-pro' ),
 								$ratio * 100,
 								$same_dom ? ' + same email domain' : ''
 							),
@@ -608,20 +611,20 @@ class WP_MCP_AI_Tool_Detect_Duplicates implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		$email       = get_post_meta( $lead_id, '_email', true );
-		$phone       = get_post_meta( $lead_id, '_phone', true );
-		$company     = get_post_meta( $lead_id, '_company', true );
-		$lifecycle   = get_post_meta( $lead_id, '_lifecycle_stage', true );
-		$score       = (int) get_post_meta( $lead_id, '_lead_score', true );
-		$created     = get_the_date( 'Y-m-d', $lead_id );
-		$is_merged   = (bool) get_post_meta( $lead_id, '_is_merged', true );
+		$email     = get_post_meta( $lead_id, '_email', true );
+		$phone     = get_post_meta( $lead_id, '_phone', true );
+		$company   = get_post_meta( $lead_id, '_company', true );
+		$lifecycle = get_post_meta( $lead_id, '_lifecycle_stage', true );
+		$score     = (int) get_post_meta( $lead_id, '_lead_score', true );
+		$created   = get_the_date( 'Y-m-d', $lead_id );
+		$is_merged = (bool) get_post_meta( $lead_id, '_is_merged', true );
 
 		// Count children.
-		$deal_count = $this->count_children( 'mcp_ai_deal', '_lead_id', $lead_id );
+		$deal_count     = $this->count_children( 'mcp_ai_deal', '_lead_id', $lead_id );
 		$activity_count = $this->count_children( 'mcp_ai_crm_activity', '_lead_id', $lead_id );
 
 		// Check if converted to customer.
-		$customer_q = new WP_Query(
+		$customer_q  = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_customer',
 				'post_status'    => 'publish',

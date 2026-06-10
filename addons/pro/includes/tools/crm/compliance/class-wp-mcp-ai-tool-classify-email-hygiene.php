@@ -96,28 +96,28 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'subject'            => array(
+				'subject'             => array(
 					'type'        => 'string',
 					'description' => __( 'Email subject line.', 'mcp-ai-wpoos-pro' ),
 				),
-				'body'               => array(
+				'body'                => array(
 					'type'        => 'string',
 					'description' => __( 'Email body text (plain text or stripped HTML).', 'mcp-ai-wpoos-pro' ),
 				),
-				'from_email'         => array(
+				'from_email'          => array(
 					'type'        => 'string',
 					'description' => __( 'Sender email address for domain-based filtering.', 'mcp-ai-wpoos-pro' ),
 				),
-				'from_name'          => array(
+				'from_name'           => array(
 					'type'        => 'string',
 					'description' => __( 'Sender display name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'gmail_labels'       => array(
+				'gmail_labels'        => array(
 					'type'        => 'array',
 					'description' => __( 'Gmail label/category IDs if available (CATEGORY_PROMOTIONS, CATEGORY_SOCIAL, etc.).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'headers'            => array(
+				'headers'             => array(
 					'type'        => 'object',
 					'description' => __( 'Email headers for additional signals: List-Unsubscribe, Precedence, X-Mailer, etc.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -188,12 +188,12 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 
 		// --- Gate 1: Sanitise at entry ---
 
-		$subject            = isset( $arguments['subject'] ) ? sanitize_text_field( $arguments['subject'] ) : '';
-		$body               = isset( $arguments['body'] ) ? sanitize_textarea_field( $arguments['body'] ) : '';
-		$from_email         = isset( $arguments['from_email'] ) ? sanitize_email( $arguments['from_email'] ) : '';
-		$from_name          = isset( $arguments['from_name'] ) ? sanitize_text_field( $arguments['from_name'] ) : '';
-		$gmail_labels       = isset( $arguments['gmail_labels'] ) ? (array) $arguments['gmail_labels'] : array();
-		$headers            = isset( $arguments['headers'] ) ? (array) $arguments['headers'] : array();
+		$subject             = isset( $arguments['subject'] ) ? sanitize_text_field( $arguments['subject'] ) : '';
+		$body                = isset( $arguments['body'] ) ? sanitize_textarea_field( $arguments['body'] ) : '';
+		$from_email          = isset( $arguments['from_email'] ) ? sanitize_email( $arguments['from_email'] ) : '';
+		$from_name           = isset( $arguments['from_name'] ) ? sanitize_text_field( $arguments['from_name'] ) : '';
+		$gmail_labels        = isset( $arguments['gmail_labels'] ) ? (array) $arguments['gmail_labels'] : array();
+		$headers             = isset( $arguments['headers'] ) ? (array) $arguments['headers'] : array();
 		$contact_is_customer = ! empty( $arguments['contact_is_customer'] );
 
 		if ( empty( $body ) ) {
@@ -288,12 +288,15 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 			'from_domain'        => $from_domain,
 			'classification'     => array(
 				'intent'            => $hygiene_class,
-				'intent_confidence' => round( max(
-					$spam_result['probability'],
-					$promo_result['probability'],
-					$notif_result['probability'],
-					$is_priority ? 0.95 : 0.5
-				), 2 ),
+				'intent_confidence' => round(
+					max(
+						$spam_result['probability'],
+						$promo_result['probability'],
+						$notif_result['probability'],
+						$is_priority ? 0.95 : 0.5
+					),
+					2
+				),
 				'sentiment'         => 'neutral',
 			),
 		);
@@ -357,10 +360,21 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 
 		// Hard spam keywords (high-confidence).
 		$hard_spam = array(
-			'viagra', 'cialis', 'casino', 'lottery', 'you won',
-			'nigerian prince', 'wire transfer', 'click here to claim',
-			'work from home earn', 'make money fast', 'guaranteed income',
-			'seo services', 'buy now', 'limited offer', 'act now',
+			'viagra',
+			'cialis',
+			'casino',
+			'lottery',
+			'you won',
+			'nigerian prince',
+			'wire transfer',
+			'click here to claim',
+			'work from home earn',
+			'make money fast',
+			'guaranteed income',
+			'seo services',
+			'buy now',
+			'limited offer',
+			'act now',
 			'congratulations you have been selected',
 		);
 
@@ -373,17 +387,22 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( $hard_hits >= 2 ) {
-			$is_spam      = true;
-			$probability  = 0.95;
+			$is_spam     = true;
+			$probability = 0.95;
 		} elseif ( 1 === $hard_hits ) {
 			$probability = 0.60;
 		}
 
 		// Phishing patterns.
 		$phish_patterns = array(
-			'verify your account', 'confirm your identity', 'suspended',
-			'security alert', 'unusual activity', 'login attempt',
-			'urgent action required', 'your account will be',
+			'verify your account',
+			'confirm your identity',
+			'suspended',
+			'security alert',
+			'unusual activity',
+			'login attempt',
+			'urgent action required',
+			'your account will be',
 			'click the link below to restore',
 		);
 
@@ -433,8 +452,8 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 	 * @return array
 	 */
 	private function detect_promotional( $combined, $from_domain, array $headers, array $hygiene ) {
-		$reasons     = array();
-		$probability = 0;
+		$reasons        = array();
+		$probability    = 0;
 		$is_promotional = false;
 
 		// List-Unsubscribe header (strongest promotional signal per CAN-SPAM).
@@ -443,23 +462,23 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 			$lower_headers = array_change_key_case( $headers, CASE_LOWER );
 			if ( isset( $lower_headers['list-unsubscribe'] ) && ! empty( $lower_headers['list-unsubscribe'] ) ) {
 				$has_unsubscribe_header = true;
-				$reasons[]  = 'list_unsubscribe_header';
-				$probability += 0.30;
+				$reasons[]              = 'list_unsubscribe_header';
+				$probability           += 0.30;
 			}
 
 			// Precedence: bulk header.
 			if ( isset( $lower_headers['precedence'] ) && 'bulk' === strtolower( trim( $lower_headers['precedence'] ) ) ) {
-				$reasons[]  = 'precedence_bulk';
+				$reasons[]    = 'precedence_bulk';
 				$probability += 0.25;
 			}
 
 			// X-Mailer with known bulk senders.
 			if ( isset( $lower_headers['x-mailer'] ) ) {
-				$mailer = strtolower( $lower_headers['x-mailer'] );
+				$mailer       = strtolower( $lower_headers['x-mailer'] );
 				$bulk_mailers = array( 'mailchimp', 'constantcontact', 'sendgrid', 'mailgun', 'campaign', 'aweber', 'getresponse', 'activecampaign' );
 				foreach ( $bulk_mailers as $bm ) {
 					if ( false !== strpos( $mailer, $bm ) ) {
-						$reasons[]  = 'bulk_mailer:' . $bm;
+						$reasons[]    = 'bulk_mailer:' . $bm;
 						$probability += 0.20;
 						break;
 					}
@@ -469,10 +488,16 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 
 		// Unsubscribe links in body.
 		$unsub_patterns = array(
-			'unsubscribe', 'opt-out', 'opt out', 'manage your preferences',
-			'update your email preferences', 'email preferences',
-			'you are receiving this email because', 'if you no longer wish',
-			'to stop receiving', 'received this email',
+			'unsubscribe',
+			'opt-out',
+			'opt out',
+			'manage your preferences',
+			'update your email preferences',
+			'email preferences',
+			'you are receiving this email because',
+			'if you no longer wish',
+			'to stop receiving',
+			'received this email',
 		);
 
 		$unsub_hits = 0;
@@ -483,7 +508,7 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( $unsub_hits >= 2 ) {
-			$reasons[]  = 'unsubscribe_language';
+			$reasons[]    = 'unsubscribe_language';
 			$probability += 0.25;
 		} elseif ( 1 === $unsub_hits ) {
 			$probability += 0.15;
@@ -491,12 +516,28 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 
 		// Promotional language.
 		$promo_keywords = array(
-			'sale', 'discount', 'offer ends', 'save', 'free shipping',
-			'shop now', 'buy one get', 'clearance', 'coupon code',
-			'promo code', 'exclusive deal', 'flash sale', 'limited time',
-			'special offer', 'new arrivals', 'best sellers',
-			'newsletter', 'weekly digest', 'monthly roundup',
-			'this week in', 'top stories', 'latest updates',
+			'sale',
+			'discount',
+			'offer ends',
+			'save',
+			'free shipping',
+			'shop now',
+			'buy one get',
+			'clearance',
+			'coupon code',
+			'promo code',
+			'exclusive deal',
+			'flash sale',
+			'limited time',
+			'special offer',
+			'new arrivals',
+			'best sellers',
+			'newsletter',
+			'weekly digest',
+			'monthly roundup',
+			'this week in',
+			'top stories',
+			'latest updates',
 		);
 
 		// Configurable promotional keywords from settings.
@@ -511,8 +552,8 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( $promo_hits >= 3 ) {
-			$reasons[]  = 'promotional_language';
-			$probability += 0.30;
+			$reasons[]      = 'promotional_language';
+			$probability   += 0.30;
 			$is_promotional = true;
 		} elseif ( $promo_hits >= 1 ) {
 			$probability += 0.15;
@@ -520,13 +561,13 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 
 		// "View in browser" link — strong newsletter signal.
 		if ( false !== strpos( $combined, 'view in browser' ) || false !== strpos( $combined, 'view this email in' ) ) {
-			$reasons[]  = 'view_in_browser';
+			$reasons[]    = 'view_in_browser';
 			$probability += 0.20;
 		}
 
 		// Physical address in footer (CAN-SPAM compliance signal).
 		if ( preg_match( '/\d+\s+[\w\s]+\s+(street|st|avenue|ave|road|rd|blvd|drive|dr|lane|ln|way|place|pl|court|ct)/i', $combined ) ) {
-			$reasons[]  = 'physical_address';
+			$reasons[]    = 'physical_address';
 			$probability += 0.10;
 		}
 
@@ -536,8 +577,8 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 			foreach ( $promo_domains as $pd ) {
 				$pd = trim( strtolower( $pd ) );
 				if ( '' !== $pd && false !== strpos( $from_domain, $pd ) ) {
-					$reasons[]  = 'promotional_domain:' . $pd;
-					$probability += 0.35;
+					$reasons[]      = 'promotional_domain:' . $pd;
+					$probability   += 0.35;
 					$is_promotional = true;
 					break;
 				}
@@ -570,15 +611,32 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 		$is_notif    = false;
 
 		$notif_patterns = array(
-			'order confirmation', 'order confirmed', 'your order',
-			'receipt', 'invoice', 'payment received',
-			'shipping confirmation', 'your package', 'tracking number',
-			'account statement', 'your bill', 'payment due',
-			'password reset', 'password changed',
-			'new sign-in', 'new login', 'logged in',
-			'delivery notification', 'delivery status',
-			'automatic reply', 'out of office', 'vacation',
-			'do not reply', 'do-not-reply', 'noreply@', 'no-reply@',
+			'order confirmation',
+			'order confirmed',
+			'your order',
+			'receipt',
+			'invoice',
+			'payment received',
+			'shipping confirmation',
+			'your package',
+			'tracking number',
+			'account statement',
+			'your bill',
+			'payment due',
+			'password reset',
+			'password changed',
+			'new sign-in',
+			'new login',
+			'logged in',
+			'delivery notification',
+			'delivery status',
+			'automatic reply',
+			'out of office',
+			'vacation',
+			'do not reply',
+			'do-not-reply',
+			'noreply@',
+			'no-reply@',
 		);
 
 		$hits = 0;
@@ -598,7 +656,7 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 
 		// No-reply sender address.
 		if ( false !== strpos( $from_domain, 'noreply' ) || false !== strpos( $from_domain, 'no-reply' ) ) {
-			$reasons[] = 'noreply_domain';
+			$reasons[]    = 'noreply_domain';
 			$probability += 0.30;
 		}
 
@@ -626,7 +684,7 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 	 * @return array
 	 */
 	private function detect_priority( $combined, $from_domain, $from_email, $contact_is_customer, array $hygiene ) {
-		$reasons  = array();
+		$reasons     = array();
 		$is_priority = false;
 
 		// Existing customer always priority.
@@ -637,9 +695,19 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 
 		// High-intent keywords.
 		$high_intent = array(
-			'demo', 'pricing', 'quote', 'proposal', 'contract',
-			'urgent', 'asap', 'immediately', 'today',
-			'sign up', 'get started', 'trial', 'purchase',
+			'demo',
+			'pricing',
+			'quote',
+			'proposal',
+			'contract',
+			'urgent',
+			'asap',
+			'immediately',
+			'today',
+			'sign up',
+			'get started',
+			'trial',
+			'purchase',
 		);
 
 		foreach ( $high_intent as $kw ) {
@@ -684,7 +752,7 @@ class WP_MCP_AI_Tool_Classify_Email_Hygiene implements WP_MCP_AI_Tool_Interface,
 			return false;
 		}
 
-		$from_email_lower = strtolower( trim( $from_email ) );
+		$from_email_lower  = strtolower( trim( $from_email ) );
 		$from_domain_lower = strtolower( trim( $from_domain ) );
 
 		foreach ( $exclude_list as $entry ) {

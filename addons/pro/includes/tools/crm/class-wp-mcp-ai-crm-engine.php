@@ -204,7 +204,7 @@ class WP_MCP_AI_CRM_Engine {
 	 */
 	public static function flush_settings_cache() {
 		self::$settings_cache = null;
-		self::$hygiene_cache = null;
+		self::$hygiene_cache  = null;
 	}
 
 	/*

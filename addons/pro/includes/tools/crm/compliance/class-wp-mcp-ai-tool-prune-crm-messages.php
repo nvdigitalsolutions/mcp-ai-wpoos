@@ -74,22 +74,22 @@ class WP_MCP_AI_Tool_Prune_CRM_Messages implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'dry_run'            => array(
+				'dry_run'             => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, preview what would be pruned without actually deleting anything.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'prune_spam'         => array(
+				'prune_spam'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Remove leads flagged as spam (is_spam meta = 1).', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'prune_excluded'     => array(
+				'prune_excluded'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Remove leads whose email domain matches the exclude list.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'prune_stale_days'   => array(
+				'prune_stale_days'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Remove leads older than this many days that are still in the "lead" lifecycle stage (never progressed). 0 = skip stale pruning. Industry recommendation: 90–180.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
@@ -101,7 +101,7 @@ class WP_MCP_AI_Tool_Prune_CRM_Messages implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Remove leads with zero associated activities and zero deals.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'max_prune'          => array(
+				'max_prune'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of leads to prune in a single run (safety limit).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 100,
@@ -176,14 +176,14 @@ class WP_MCP_AI_Tool_Prune_CRM_Messages implements WP_MCP_AI_Tool_Interface, WP_
 
 		// --- Gate 1: Sanitise at entry ---
 
-		$dry_run            = isset( $arguments['dry_run'] ) ? (bool) $arguments['dry_run'] : true;
-		$prune_spam         = isset( $arguments['prune_spam'] ) ? (bool) $arguments['prune_spam'] : true;
-		$prune_excluded     = isset( $arguments['prune_excluded'] ) ? (bool) $arguments['prune_excluded'] : true;
-		$prune_stale_days   = isset( $arguments['prune_stale_days'] ) ? absint( $arguments['prune_stale_days'] ) : 0;
-		$prune_stale_days   = max( 0, min( 730, $prune_stale_days ) );
+		$dry_run             = isset( $arguments['dry_run'] ) ? (bool) $arguments['dry_run'] : true;
+		$prune_spam          = isset( $arguments['prune_spam'] ) ? (bool) $arguments['prune_spam'] : true;
+		$prune_excluded      = isset( $arguments['prune_excluded'] ) ? (bool) $arguments['prune_excluded'] : true;
+		$prune_stale_days    = isset( $arguments['prune_stale_days'] ) ? absint( $arguments['prune_stale_days'] ) : 0;
+		$prune_stale_days    = max( 0, min( 730, $prune_stale_days ) );
 		$prune_never_engaged = isset( $arguments['prune_never_engaged'] ) ? (bool) $arguments['prune_never_engaged'] : false;
-		$max_prune          = isset( $arguments['max_prune'] ) ? absint( $arguments['max_prune'] ) : 100;
-		$max_prune          = min( 500, max( 1, $max_prune ) );
+		$max_prune           = isset( $arguments['max_prune'] ) ? absint( $arguments['max_prune'] ) : 100;
+		$max_prune           = min( 500, max( 1, $max_prune ) );
 
 		// Load hygiene settings for exclude list.
 		$hygiene = class_exists( 'WP_MCP_AI_CRM_Engine' )
@@ -191,15 +191,15 @@ class WP_MCP_AI_Tool_Prune_CRM_Messages implements WP_MCP_AI_Tool_Interface, WP_
 			: array();
 
 		$stats = array(
-			'dry_run'           => $dry_run,
-			'spam_removed'      => 0,
-			'excluded_removed'  => 0,
-			'stale_removed'     => 0,
+			'dry_run'               => $dry_run,
+			'spam_removed'          => 0,
+			'excluded_removed'      => 0,
+			'stale_removed'         => 0,
 			'never_engaged_removed' => 0,
-			'total_removed'     => 0,
-			'errors'            => 0,
-			'pruned_ids'        => array(),
-			'details'           => array(),
+			'total_removed'         => 0,
+			'errors'                => 0,
+			'pruned_ids'            => array(),
+			'details'               => array(),
 		);
 
 		$all_prune_ids = array();
@@ -208,8 +208,8 @@ class WP_MCP_AI_Tool_Prune_CRM_Messages implements WP_MCP_AI_Tool_Interface, WP_
 		if ( $prune_spam ) {
 			$spam_ids = $this->find_spam_leads( $max_prune - count( $all_prune_ids ) );
 			foreach ( $spam_ids as $id ) {
-				$all_prune_ids[]        = $id;
-				$stats['details'][]     = array(
+				$all_prune_ids[]    = $id;
+				$stats['details'][] = array(
 					'id'     => $id,
 					'reason' => 'spam',
 					'title'  => get_the_title( $id ),
@@ -376,7 +376,7 @@ class WP_MCP_AI_Tool_Prune_CRM_Messages implements WP_MCP_AI_Tool_Interface, WP_
 				break;
 			}
 
-			$email  = strtolower( trim( (string) get_post_meta( $lead_id, '_email', true ) ) );
+			$email = strtolower( trim( (string) get_post_meta( $lead_id, '_email', true ) ) );
 			if ( empty( $email ) ) {
 				continue;
 			}
@@ -444,8 +444,8 @@ class WP_MCP_AI_Tool_Prune_CRM_Messages implements WP_MCP_AI_Tool_Interface, WP_
 				'meta_query'     => array(
 					'relation' => 'OR',
 					array(
-						'key'     => '_lifecycle_stage',
-						'value'   => 'lead',
+						'key'   => '_lifecycle_stage',
+						'value' => 'lead',
 					),
 					array(
 						'key'     => '_lifecycle_stage',

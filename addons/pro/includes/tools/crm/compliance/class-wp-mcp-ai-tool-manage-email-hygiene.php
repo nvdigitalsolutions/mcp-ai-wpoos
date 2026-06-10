@@ -81,23 +81,23 @@ class WP_MCP_AI_Tool_Manage_Email_Hygiene implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'             => array(
+				'action'    => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: view, add, remove.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'view', 'add', 'remove' ),
 					'default'     => 'view',
 				),
-				'list_type'          => array(
+				'list_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Which list to manage: exclude, priority.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'exclude', 'priority' ),
 					'default'     => 'exclude',
 				),
-				'entry'              => array(
+				'entry'     => array(
 					'type'        => 'string',
 					'description' => __( 'Email address or domain pattern to add/remove. Use @domain.com to match an entire domain (e.g. @newsletters.example.com, @spammy.net). Required for add and remove actions.', 'mcp-ai-wpoos-pro' ),
 				),
-				'reason'             => array(
+				'reason'    => array(
 					'type'        => 'string',
 					'description' => __( 'Optional note explaining why this entry was added/removed. Stored for audit.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -168,10 +168,10 @@ class WP_MCP_AI_Tool_Manage_Email_Hygiene implements WP_MCP_AI_Tool_Interface, W
 
 		// --- Gate 1: Sanitise at entry ---
 
-		$action   = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'view';
+		$action    = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'view';
 		$list_type = isset( $arguments['list_type'] ) ? sanitize_key( $arguments['list_type'] ) : 'exclude';
-		$entry    = isset( $arguments['entry'] ) ? sanitize_text_field( $arguments['entry'] ) : '';
-		$reason   = isset( $arguments['reason'] ) ? sanitize_text_field( $arguments['reason'] ) : '';
+		$entry     = isset( $arguments['entry'] ) ? sanitize_text_field( $arguments['entry'] ) : '';
+		$reason    = isset( $arguments['reason'] ) ? sanitize_text_field( $arguments['reason'] ) : '';
 
 		if ( ! in_array( $action, array( 'view', 'add', 'remove' ), true ) ) {
 			$action = 'view';
@@ -230,7 +230,7 @@ class WP_MCP_AI_Tool_Manage_Email_Hygiene implements WP_MCP_AI_Tool_Interface, W
 					return $this->format_success_response(
 						sprintf(
 							/* translators: %s: entry */
-							__( '%s is already in the %s list.', 'mcp-ai-wpoos-pro' ),
+							__( '%1$s is already in the %2$s list.', 'mcp-ai-wpoos-pro' ),
 							$entry_clean,
 							$list_type
 						),
@@ -293,23 +293,25 @@ class WP_MCP_AI_Tool_Manage_Email_Hygiene implements WP_MCP_AI_Tool_Interface, W
 				$entry_clean = strtolower( trim( $entry ) );
 				$found       = false;
 
-				$list = array_values( array_filter(
-					$list,
-					function ( $item ) use ( $entry_clean, &$found ) {
-						if ( strtolower( trim( $item ) ) === $entry_clean ) {
-							$found = true;
-							return false;
+				$list = array_values(
+					array_filter(
+						$list,
+						function ( $item ) use ( $entry_clean, &$found ) {
+							if ( strtolower( trim( $item ) ) === $entry_clean ) {
+								$found = true;
+								return false;
+							}
+							return true;
 						}
-						return true;
-					}
-				) );
+					)
+				);
 
 				if ( ! $found ) {
 					return new WP_Error(
 						'not_found',
 						sprintf(
 							/* translators: %s: entry */
-							__( '%s was not found in the %s list.', 'mcp-ai-wpoos-pro' ),
+							__( '%1$s was not found in the %2$s list.', 'mcp-ai-wpoos-pro' ),
 							$entry_clean,
 							$list_type
 						),

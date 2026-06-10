@@ -95,24 +95,24 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'limit'              => array(
+				'limit'                  => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of top customers to return.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'min_score'          => array(
+				'min_score'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Minimum composite score threshold (0–100).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
-				'lifecycle_stage'    => array(
+				'lifecycle_stage'        => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by lifecycle stage (e.g. customer, opportunity, sql).', 'mcp-ai-wpoos-pro' ),
 				),
-				'contact_owner'      => array(
+				'contact_owner'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by assigned owner WordPress user ID.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -121,11 +121,11 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 					'description' => __( 'If true, only include leads that have been converted to customers.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'date_from'          => array(
+				'date_from'              => array(
 					'type'        => 'string',
 					'description' => __( 'Only include leads created on or after this date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_to'            => array(
+				'date_to'                => array(
 					'type'        => 'string',
 					'description' => __( 'Only include leads created on or before this date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -274,8 +274,8 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 			$lead_args['meta_query'] = $meta_query;
 		}
 
-		$lead_query  = new WP_Query( $lead_args );
-		$lead_ids    = $lead_query->posts;
+		$lead_query = new WP_Query( $lead_args );
+		$lead_ids   = $lead_query->posts;
 
 		if ( empty( $lead_ids ) ) {
 			return $this->format_success_response(
@@ -354,16 +354,16 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 				count( $top_customers )
 			),
 			array(
-				'customers'    => $top_customers,
-				'count'        => count( $top_customers ),
-				'limit'        => $limit,
-				'total_leads'  => count( $lead_ids ),
-				'ranked_by'    => 'composite_score',
+				'customers'     => $top_customers,
+				'count'         => count( $top_customers ),
+				'limit'         => $limit,
+				'total_leads'   => count( $lead_ids ),
+				'ranked_by'     => 'composite_score',
 				'scoring_model' => array(
-					'lead_score_weight'    => 0.40,
-					'deal_value_weight'    => 0.35,
-					'activity_weight'      => 0.15,
-					'lifecycle_weight'     => 0.10,
+					'lead_score_weight' => 0.40,
+					'deal_value_weight' => 0.35,
+					'activity_weight'   => 0.15,
+					'lifecycle_weight'  => 0.10,
 				),
 			)
 		);
@@ -436,13 +436,13 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 		$composite = round( $lead_sub + $deal_sub + $activity_sub + $lifecycle_sub, 1 );
 
 		// --- Enrichment data ---
-		$lead_title   = get_the_title( $lead_id );
-		$email        = sanitize_text_field( (string) get_post_meta( $lead_id, '_email', true ) );
-		$phone        = sanitize_text_field( (string) get_post_meta( $lead_id, '_phone', true ) );
-		$company      = sanitize_text_field( (string) get_post_meta( $lead_id, '_company', true ) );
-		$lifecycle    = sanitize_key( (string) get_post_meta( $lead_id, '_lifecycle_stage', true ) );
-		$owner_id     = (int) get_post_meta( $lead_id, '_contact_owner', true );
-		$owner_name   = '';
+		$lead_title = get_the_title( $lead_id );
+		$email      = sanitize_text_field( (string) get_post_meta( $lead_id, '_email', true ) );
+		$phone      = sanitize_text_field( (string) get_post_meta( $lead_id, '_phone', true ) );
+		$company    = sanitize_text_field( (string) get_post_meta( $lead_id, '_company', true ) );
+		$lifecycle  = sanitize_key( (string) get_post_meta( $lead_id, '_lifecycle_stage', true ) );
+		$owner_id   = (int) get_post_meta( $lead_id, '_contact_owner', true );
+		$owner_name = '';
 		if ( $owner_id > 0 ) {
 			$owner_user = get_userdata( $owner_id );
 			$owner_name = $owner_user ? $owner_user->display_name : '';
@@ -455,39 +455,39 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 		$timeline  = sanitize_text_field( (string) get_post_meta( $lead_id, '_timeline', true ) );
 
 		// Get associated deal count and total value.
-		$deal_data   = $this->get_lead_deal_data( $lead_id );
+		$deal_data      = $this->get_lead_deal_data( $lead_id );
 		$activity_count = $this->get_lead_activity_count( $lead_id );
 
 		return array(
-			'lead_id'           => $lead_id,
-			'title'             => $lead_title,
-			'email'             => $email,
-			'phone'             => $phone,
-			'company'           => $company,
-			'lifecycle_stage'   => $lifecycle ?: 'lead',
-			'is_customer'       => $is_customer,
-			'customer_id'       => $customer_id,
-			'contact_owner_id'  => $owner_id,
-			'contact_owner'     => $owner_name,
-			'lead_score'        => $lead_score,
-			'composite_score'   => $composite,
-			'score_breakdown'   => array(
+			'lead_id'          => $lead_id,
+			'title'            => $lead_title,
+			'email'            => $email,
+			'phone'            => $phone,
+			'company'          => $company,
+			'lifecycle_stage'  => $lifecycle ?: 'lead',
+			'is_customer'      => $is_customer,
+			'customer_id'      => $customer_id,
+			'contact_owner_id' => $owner_id,
+			'contact_owner'    => $owner_name,
+			'lead_score'       => $lead_score,
+			'composite_score'  => $composite,
+			'score_breakdown'  => array(
 				'lead_score' => round( $lead_sub, 1 ),
 				'deal_value' => round( $deal_sub, 1 ),
 				'activity'   => round( $activity_sub, 1 ),
 				'lifecycle'  => round( $lifecycle_sub, 1 ),
 			),
-			'bant'              => array(
+			'bant'             => array(
 				'budget'    => $budget,
 				'authority' => $authority,
 				'need'      => $need,
 				'timeline'  => $timeline,
 			),
-			'deal_count'        => $deal_data['count'],
-			'total_deal_value'  => $deal_data['total_value'],
-			'won_deal_count'    => $deal_data['won_count'],
-			'activity_count'    => $activity_count,
-			'created_at'        => get_the_date( 'Y-m-d H:i:s', $lead_id ),
+			'deal_count'       => $deal_data['count'],
+			'total_deal_value' => $deal_data['total_value'],
+			'won_deal_count'   => $deal_data['won_count'],
+			'activity_count'   => $activity_count,
+			'created_at'       => get_the_date( 'Y-m-d H:i:s', $lead_id ),
 		);
 	}
 
@@ -537,9 +537,9 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 
 		// Won deals contribute fully; open deals contribute at stage probability.
 		// Cap at reasonable maximum for scoring (e.g. $100k = full 35 points).
-		$max_value   = 100000;
-		$raw_score   = min( $won_value + ( $total_value - $won_value ) * 0.5, $max_value );
-		$normalized  = ( $raw_score / $max_value ) * 35;
+		$max_value  = 100000;
+		$raw_score  = min( $won_value + ( $total_value - $won_value ) * 0.5, $max_value );
+		$normalized = ( $raw_score / $max_value ) * 35;
 
 		return round( min( 35, $normalized ), 1 );
 	}
@@ -594,14 +594,14 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 
 		// Stage weights: higher stages = more valuable.
 		$stage_weights = array(
-			'subscriber'   => 0,
-			'lead'         => 2,
-			'mql'          => 4,
-			'sal'          => 5,
-			'sql'          => 7,
-			'opportunity'  => 8,
-			'customer'     => 10,
-			'evangelist'   => 10,
+			'subscriber'  => 0,
+			'lead'        => 2,
+			'mql'         => 4,
+			'sal'         => 5,
+			'sql'         => 7,
+			'opportunity' => 8,
+			'customer'    => 10,
+			'evangelist'  => 10,
 		);
 
 		$weight = isset( $stage_weights[ $stage ] ) ? $stage_weights[ $stage ] : 0;
@@ -634,13 +634,13 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 			)
 		);
 
-		$total_value  = 0;
-		$won_count    = 0;
-		$count        = count( $deal_query->posts );
+		$total_value = 0;
+		$won_count   = 0;
+		$count       = count( $deal_query->posts );
 
 		foreach ( $deal_query->posts as $deal_id ) {
-			$amount = (float) get_post_meta( $deal_id, '_deal_amount', true );
-			$stage  = sanitize_key( (string) get_post_meta( $deal_id, '_deal_stage', true ) );
+			$amount       = (float) get_post_meta( $deal_id, '_deal_amount', true );
+			$stage        = sanitize_key( (string) get_post_meta( $deal_id, '_deal_stage', true ) );
 			$total_value += $amount;
 
 			if ( 'closed_won' === $stage ) {

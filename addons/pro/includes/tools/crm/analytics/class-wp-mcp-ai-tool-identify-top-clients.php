@@ -96,41 +96,41 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'limit'              => array(
+				'limit'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of top clients to return.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'activity_type'      => array(
+				'activity_type'     => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by activity type: call, email, meeting, task, note. Leave empty for all.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'call', 'email', 'meeting', 'task', 'note' ),
 				),
-				'min_interactions'   => array(
+				'min_interactions'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Minimum number of interactions required.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'contact_owner'      => array(
+				'contact_owner'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by assigned owner WordPress user ID.', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_from'          => array(
+				'date_from'         => array(
 					'type'        => 'string',
 					'description' => __( 'Only include activities on or after this date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_to'            => array(
+				'date_to'           => array(
 					'type'        => 'string',
 					'description' => __( 'Only include activities on or before this date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_sequences'  => array(
+				'include_sequences' => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, also include sequence enrolment data in the engagement score.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'sort_by'            => array(
+				'sort_by'           => array(
 					'type'        => 'string',
 					'description' => __( 'Sort results by this metric.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'total_interactions', 'recent_activity', 'unique_channels', 'engagement_score' ),
@@ -226,10 +226,10 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 		$limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 20;
 		$limit = min( 100, max( 1, $limit ) );
 
-		$min_interactions   = isset( $arguments['min_interactions'] ) ? absint( $arguments['min_interactions'] ) : 0;
-		$include_sequences  = ! empty( $arguments['include_sequences'] );
-		$sort_by            = isset( $arguments['sort_by'] ) ? sanitize_key( $arguments['sort_by'] ) : 'engagement_score';
-		$allowed_sort       = array( 'total_interactions', 'recent_activity', 'unique_channels', 'engagement_score' );
+		$min_interactions  = isset( $arguments['min_interactions'] ) ? absint( $arguments['min_interactions'] ) : 0;
+		$include_sequences = ! empty( $arguments['include_sequences'] );
+		$sort_by           = isset( $arguments['sort_by'] ) ? sanitize_key( $arguments['sort_by'] ) : 'engagement_score';
+		$allowed_sort      = array( 'total_interactions', 'recent_activity', 'unique_channels', 'engagement_score' );
 		if ( ! in_array( $sort_by, $allowed_sort, true ) ) {
 			$sort_by = 'engagement_score';
 		}
@@ -280,8 +280,8 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 			return $this->format_success_response(
 				__( 'No activities found matching the criteria.', 'mcp-ai-wpoos-pro' ),
 				array(
-					'clients'       => array(),
-					'count'         => 0,
+					'clients'          => array(),
+					'count'            => 0,
 					'total_activities' => 0,
 				)
 			);
@@ -308,20 +308,20 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 
 			if ( ! isset( $contact_aggregates[ $lead_id ] ) ) {
 				$contact_aggregates[ $lead_id ] = array(
-					'lead_id'          => $lead_id,
-					'total_interactions' => 0,
-					'by_type'           => array(
+					'lead_id'             => $lead_id,
+					'total_interactions'  => 0,
+					'by_type'             => array(
 						'call'    => 0,
 						'email'   => 0,
 						'meeting' => 0,
 						'task'    => 0,
 						'note'    => 0,
 					),
-					'last_activity_date' => '',
+					'last_activity_date'  => '',
 					'first_activity_date' => '',
-					'activity_dates'     => array(),
-					'completed_count'    => 0,
-					'snoozed_count'      => 0,
+					'activity_dates'      => array(),
+					'completed_count'     => 0,
+					'snoozed_count'       => 0,
 				);
 			}
 
@@ -371,16 +371,16 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 			// Calculate days since last activity.
 			$days_since_last = '';
 			if ( ! empty( $aggregate['last_activity_date'] ) ) {
-				$last_date        = new DateTime( $aggregate['last_activity_date'] );
-				$now              = new DateTime( current_time( 'Y-m-d' ) );
-				$days_since_last  = (int) $now->diff( $last_date )->days;
+				$last_date       = new DateTime( $aggregate['last_activity_date'] );
+				$now             = new DateTime( current_time( 'Y-m-d' ) );
+				$days_since_last = (int) $now->diff( $last_date )->days;
 			}
 
 			// Calculate days between first and last (engagement span).
 			$engagement_span_days = 0;
 			if ( ! empty( $aggregate['first_activity_date'] ) && ! empty( $aggregate['last_activity_date'] ) ) {
-				$first_date = new DateTime( $aggregate['first_activity_date'] );
-				$last_date  = new DateTime( $aggregate['last_activity_date'] );
+				$first_date           = new DateTime( $aggregate['first_activity_date'] );
+				$last_date            = new DateTime( $aggregate['last_activity_date'] );
 				$engagement_span_days = (int) $first_date->diff( $last_date )->days;
 			}
 
@@ -393,10 +393,10 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 			}
 
 			// Engagement score (0–100):
-			//   - Total interactions: 40% (logarithmic)
-			//   - Recency (inverse days since last): 25%
-			//   - Channel diversity: 20%
-			//   - Completion rate: 15%
+			// - Total interactions: 40% (logarithmic)
+			// - Recency (inverse days since last): 25%
+			// - Channel diversity: 20%
+			// - Completion rate: 15%
 			$interaction_score = min( 40, round( log( $aggregate['total_interactions'] + 1, 100 ) * 40, 1 ) );
 
 			$recency_score = 0;
@@ -407,7 +407,7 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 
 			$channel_score = round( ( $unique_channels / 5 ) * 20, 1 ); // 5 possible types.
 
-			$completion_rate = $aggregate['total_interactions'] > 0
+			$completion_rate  = $aggregate['total_interactions'] > 0
 				? $aggregate['completed_count'] / $aggregate['total_interactions']
 				: 0;
 			$completion_score = round( $completion_rate * 15, 1 );
@@ -444,8 +444,8 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 					),
 				)
 			);
-			$is_customer  = ! empty( $customer_query->posts );
-			$customer_id  = $is_customer ? $customer_query->posts[0] : null;
+			$is_customer    = ! empty( $customer_query->posts );
+			$customer_id    = $is_customer ? $customer_query->posts[0] : null;
 
 			$ranked_clients[] = array(
 				'lead_id'              => $lead_id,
@@ -458,7 +458,7 @@ class WP_MCP_AI_Tool_Identify_Top_Clients implements WP_MCP_AI_Tool_Interface, W
 				'customer_id'          => $customer_id,
 				'contact_owner_id'     => $owner_id,
 				'contact_owner'        => $owner_name,
-				'total_interactions'    => $aggregate['total_interactions'],
+				'total_interactions'   => $aggregate['total_interactions'],
 				'interactions_by_type' => $aggregate['by_type'],
 				'unique_channels'      => $unique_channels,
 				'completed_count'      => $aggregate['completed_count'],

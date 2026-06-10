@@ -1680,10 +1680,10 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 			<?php
 			// Load current hygiene settings.
-			$hygiene         = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
-			$exclude_entries = isset( $hygiene['exclude_list'] ) ? (array) $hygiene['exclude_list'] : array();
+			$hygiene          = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
+			$exclude_entries  = isset( $hygiene['exclude_list'] ) ? (array) $hygiene['exclude_list'] : array();
 			$priority_entries = isset( $hygiene['priority_list'] ) ? (array) $hygiene['priority_list'] : array();
-			$hygiene_nonce   = wp_create_nonce( 'wp_mcp_ai_crm_hygiene_action' );
+			$hygiene_nonce    = wp_create_nonce( 'wp_mcp_ai_crm_hygiene_action' );
 			?>
 
 			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -1948,9 +1948,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			require_once $tool_file;
 		}
 
-		$results     = null;
-		$error_msg   = '';
-		$total_leads = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
+		$results         = null;
+		$error_msg       = '';
+		$total_leads     = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
 		$total_customers = self::get_cpt_count( 'mcp_ai_customer', 'publish' );
 
 		if ( $has_tool && class_exists( 'WP_MCP_AI_Tool_Identify_Top_Customers' ) ) {
@@ -2253,7 +2253,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 							);
 							foreach ( $by_type as $type => $count ) {
 								if ( $count > 0 ) {
-									$icon = isset( $type_icons[ $type ] ) ? $type_icons[ $type ] : '';
+									$icon         = isset( $type_icons[ $type ] ) ? $type_icons[ $type ] : '';
 									$type_parts[] = $icon . ' ' . (int) $count;
 								}
 							}
@@ -2374,9 +2374,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			require_once $tool_file;
 		}
 
-		$results   = null;
-		$error_msg = '';
-		$total_leads = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
+		$results      = null;
+		$error_msg    = '';
+		$total_leads  = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
 		$merged_count = self::get_cpt_count_by_meta( 'mcp_ai_lead', 'publish', '_is_merged', '1' );
 
 		if ( $has_tool && class_exists( 'WP_MCP_AI_Tool_Detect_Duplicates' ) ) {
@@ -2384,7 +2384,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			$context = array( 'user_id' => get_current_user_id() );
 			$result  = $tool->execute(
 				array(
-					'strategy'   => 'all',
+					'strategy'    => 'all',
 					'max_results' => 50,
 				),
 				$context
@@ -2397,11 +2397,11 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			}
 		}
 
-		$pairs_count   = is_array( $results ) ? count( $results ) : 0;
-		$high_conf      = 0;
-		$email_dupes    = 0;
-		$phone_dupes    = 0;
-		$fuzzy_dupes    = 0;
+		$pairs_count = is_array( $results ) ? count( $results ) : 0;
+		$high_conf   = 0;
+		$email_dupes = 0;
+		$phone_dupes = 0;
+		$fuzzy_dupes = 0;
 
 		if ( is_array( $results ) ) {
 			foreach ( $results as $pair ) {
@@ -2501,8 +2501,8 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 							$a = isset( $pair['lead_a_summary'] ) ? $pair['lead_a_summary'] : array();
 							$b = isset( $pair['lead_b_summary'] ) ? $pair['lead_b_summary'] : array();
 
-							$a_id      = isset( $pair['lead_a'] ) ? (int) $pair['lead_a'] : 0;
-							$b_id      = isset( $pair['lead_b'] ) ? (int) $pair['lead_b'] : 0;
+							$a_id       = isset( $pair['lead_a'] ) ? (int) $pair['lead_a'] : 0;
+							$b_id       = isset( $pair['lead_b'] ) ? (int) $pair['lead_b'] : 0;
 							$confidence = isset( $pair['confidence'] ) ? (float) $pair['confidence'] : 0;
 							$strategy   = isset( $pair['strategy'] ) ? $pair['strategy'] : '';
 							$evidence   = isset( $pair['evidence'] ) ? $pair['evidence'] : array();
@@ -2521,23 +2521,23 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 							$b_rich = $b_deals + $b_acts + ( isset( $b['is_customer'] ) && $b['is_customer'] ? 5 : 0 );
 
 							if ( $a_rich >= $b_rich ) {
-								$survivor_id = $a_id;
+								$survivor_id  = $a_id;
 								$duplicate_id = $b_id;
 							} else {
-								$survivor_id = $b_id;
+								$survivor_id  = $b_id;
 								$duplicate_id = $a_id;
 							}
 
-							$conf_pct = round( $confidence * 100 );
+							$conf_pct   = round( $confidence * 100 );
 							$conf_color = $confidence >= 0.95 ? '#00a32a' : ( $confidence >= 0.80 ? '#dba617' : '#d63638' );
 
 							$strategy_labels = array(
-								'exact_email'         => __( 'Email', 'mcp-ai-wpoos-pro' ),
-								'phone'               => __( 'Phone', 'mcp-ai-wpoos-pro' ),
-								'fuzzy_name_company'  => __( 'Fuzzy Name', 'mcp-ai-wpoos-pro' ),
+								'exact_email'        => __( 'Email', 'mcp-ai-wpoos-pro' ),
+								'phone'              => __( 'Phone', 'mcp-ai-wpoos-pro' ),
+								'fuzzy_name_company' => __( 'Fuzzy Name', 'mcp-ai-wpoos-pro' ),
 							);
-							$strategy_label = isset( $strategy_labels[ $strategy ] ) ? $strategy_labels[ $strategy ] : $strategy;
-							$evidence_text  = isset( $evidence['detail'] ) ? esc_html( $evidence['detail'] ) : '';
+							$strategy_label  = isset( $strategy_labels[ $strategy ] ) ? $strategy_labels[ $strategy ] : $strategy;
+							$evidence_text   = isset( $evidence['detail'] ) ? esc_html( $evidence['detail'] ) : '';
 							?>
 							<tr data-survivor="<?php echo esc_attr( $survivor_id ); ?>" data-duplicate="<?php echo esc_attr( $duplicate_id ); ?>">
 								<td style="text-align: center;">
@@ -2547,7 +2547,10 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 								</td>
 								<td>
 									<strong><?php echo esc_html( $a_title ); ?></strong>
-									<?php if ( $a_email ) : ?><br><small style="color: #646970;"><?php echo esc_html( $a_email ); ?></small><?php endif; ?>
+									<?php
+									if ( $a_email ) :
+										?>
+										<br><small style="color: #646970;"><?php echo esc_html( $a_email ); ?></small><?php endif; ?>
 									<br><small style="color: #646970;">
 										<?php echo esc_html( $a_deals ); ?> <?php esc_html_e( 'deals', 'mcp-ai-wpoos-pro' ); ?> ·
 										<?php echo esc_html( $a_acts ); ?> <?php esc_html_e( 'activities', 'mcp-ai-wpoos-pro' ); ?>
@@ -2561,7 +2564,10 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 								</td>
 								<td>
 									<strong><?php echo esc_html( $b_title ); ?></strong>
-									<?php if ( $b_email ) : ?><br><small style="color: #646970;"><?php echo esc_html( $b_email ); ?></small><?php endif; ?>
+									<?php
+									if ( $b_email ) :
+										?>
+										<br><small style="color: #646970;"><?php echo esc_html( $b_email ); ?></small><?php endif; ?>
 									<br><small style="color: #646970;">
 										<?php echo esc_html( $b_deals ); ?> <?php esc_html_e( 'deals', 'mcp-ai-wpoos-pro' ); ?> ·
 										<?php echo esc_html( $b_acts ); ?> <?php esc_html_e( 'activities', 'mcp-ai-wpoos-pro' ); ?>
@@ -3652,97 +3658,103 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		}
 
 		return date_i18n( 'M j, Y', $timestamp );
-		}
+	}
 
 		/**
 		 * AJAX handler: add an entry to the exclude or priority list.
 		 *
 		 * @since 2.8.0
 		 */
-		public static function ajax_hygiene_add() {
-			check_ajax_referer( 'wp_mcp_ai_crm_hygiene_action', '_ajax_nonce' );
+	public static function ajax_hygiene_add() {
+		check_ajax_referer( 'wp_mcp_ai_crm_hygiene_action', '_ajax_nonce' );
 
-			if ( ! current_user_can( 'edit_posts' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
-			}
-
-			$list_type = isset( $_POST['list_type'] ) ? sanitize_key( wp_unslash( $_POST['list_type'] ) ) : '';
-			$entry     = isset( $_POST['entry'] ) ? sanitize_text_field( wp_unslash( $_POST['entry'] ) ) : '';
-
-			if ( ! in_array( $list_type, array( 'exclude', 'priority' ), true ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid list type.', 'mcp-ai-wpoos-pro' ) ) );
-			}
-
-			$entry = strtolower( trim( $entry ) );
-
-			if ( empty( $entry ) ) {
-				wp_send_json_error( array( 'message' => __( 'Entry is required.', 'mcp-ai-wpoos-pro' ) ) );
-			}
-
-			// Validate format.
-			if ( 0 === strpos( $entry, '@' ) ) {
-				$domain = substr( $entry, 1 );
-				if ( empty( $domain ) || false === strpos( $domain, '.' ) ) {
-					wp_send_json_error( array( 'message' => __( 'Domain pattern must include a dot (e.g. @example.com).', 'mcp-ai-wpoos-pro' ) ) );
-				}
-			} elseif ( false === strpos( $entry, '@' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Entry must be an email address or @domain pattern.', 'mcp-ai-wpoos-pro' ) ) );
-			}
-
-			// Use the manage_email_hygiene tool's logic.
-			$settings  = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
-			$list_key  = 'exclude' === $list_type ? 'exclude_list' : 'priority_list';
-			$list      = isset( $settings[ $list_key ] ) ? (array) $settings[ $list_key ] : array();
-
-			if ( in_array( $entry, $list, true ) ) {
-				wp_send_json_error( array( 'message' => sprintf( __( '%s is already in the %s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
-			}
-
-			$list[] = $entry;
-			$list   = array_unique( $list );
-			sort( $list );
-
-			$settings[ $list_key ] = $list;
-			update_option( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION, $settings, false );
-
-			if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
-				WP_MCP_AI_CRM_Engine::flush_settings_cache();
-			}
-
-			wp_send_json_success( array( 'message' => sprintf( __( '%s added to %s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ), 'count' => count( $list ) ) );
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
+
+		$list_type = isset( $_POST['list_type'] ) ? sanitize_key( wp_unslash( $_POST['list_type'] ) ) : '';
+		$entry     = isset( $_POST['entry'] ) ? sanitize_text_field( wp_unslash( $_POST['entry'] ) ) : '';
+
+		if ( ! in_array( $list_type, array( 'exclude', 'priority' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid list type.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$entry = strtolower( trim( $entry ) );
+
+		if ( empty( $entry ) ) {
+			wp_send_json_error( array( 'message' => __( 'Entry is required.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Validate format.
+		if ( 0 === strpos( $entry, '@' ) ) {
+			$domain = substr( $entry, 1 );
+			if ( empty( $domain ) || false === strpos( $domain, '.' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Domain pattern must include a dot (e.g. @example.com).', 'mcp-ai-wpoos-pro' ) ) );
+			}
+		} elseif ( false === strpos( $entry, '@' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Entry must be an email address or @domain pattern.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Use the manage_email_hygiene tool's logic.
+		$settings = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
+		$list_key = 'exclude' === $list_type ? 'exclude_list' : 'priority_list';
+		$list     = isset( $settings[ $list_key ] ) ? (array) $settings[ $list_key ] : array();
+
+		if ( in_array( $entry, $list, true ) ) {
+			wp_send_json_error( array( 'message' => sprintf( __( '%1$s is already in the %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
+		}
+
+		$list[] = $entry;
+		$list   = array_unique( $list );
+		sort( $list );
+
+		$settings[ $list_key ] = $list;
+		update_option( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION, $settings, false );
+
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			WP_MCP_AI_CRM_Engine::flush_settings_cache();
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf( __( '%1$s added to %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ),
+				'count'   => count( $list ),
+			)
+		);
+	}
 
 		/**
 		 * AJAX handler: remove an entry from the exclude or priority list.
 		 *
 		 * @since 2.8.0
 		 */
-		public static function ajax_hygiene_remove() {
-			check_ajax_referer( 'wp_mcp_ai_crm_hygiene_action', '_ajax_nonce' );
+	public static function ajax_hygiene_remove() {
+		check_ajax_referer( 'wp_mcp_ai_crm_hygiene_action', '_ajax_nonce' );
 
-			if ( ! current_user_can( 'edit_posts' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
-			}
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
 
-			$list_type = isset( $_POST['list_type'] ) ? sanitize_key( wp_unslash( $_POST['list_type'] ) ) : '';
-			$entry     = isset( $_POST['entry'] ) ? sanitize_text_field( wp_unslash( $_POST['entry'] ) ) : '';
+		$list_type = isset( $_POST['list_type'] ) ? sanitize_key( wp_unslash( $_POST['list_type'] ) ) : '';
+		$entry     = isset( $_POST['entry'] ) ? sanitize_text_field( wp_unslash( $_POST['entry'] ) ) : '';
 
-			if ( ! in_array( $list_type, array( 'exclude', 'priority' ), true ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid list type.', 'mcp-ai-wpoos-pro' ) ) );
-			}
+		if ( ! in_array( $list_type, array( 'exclude', 'priority' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid list type.', 'mcp-ai-wpoos-pro' ) ) );
+		}
 
-			$entry = strtolower( trim( $entry ) );
+		$entry = strtolower( trim( $entry ) );
 
-			if ( empty( $entry ) ) {
-				wp_send_json_error( array( 'message' => __( 'Entry is required.', 'mcp-ai-wpoos-pro' ) ) );
-			}
+		if ( empty( $entry ) ) {
+			wp_send_json_error( array( 'message' => __( 'Entry is required.', 'mcp-ai-wpoos-pro' ) ) );
+		}
 
-			$settings  = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
-			$list_key  = 'exclude' === $list_type ? 'exclude_list' : 'priority_list';
-			$list      = isset( $settings[ $list_key ] ) ? (array) $settings[ $list_key ] : array();
+		$settings = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_hygiene_settings() : array();
+		$list_key = 'exclude' === $list_type ? 'exclude_list' : 'priority_list';
+		$list     = isset( $settings[ $list_key ] ) ? (array) $settings[ $list_key ] : array();
 
-			$found = false;
-			$list  = array_values( array_filter(
+		$found = false;
+		$list  = array_values(
+			array_filter(
 				$list,
 				function ( $item ) use ( $entry, &$found ) {
 					if ( strtolower( trim( $item ) ) === $entry ) {
@@ -3751,69 +3763,75 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					}
 					return true;
 				}
-			) );
+			)
+		);
 
-			if ( ! $found ) {
-				wp_send_json_error( array( 'message' => sprintf( __( '%s was not found in the %s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
-			}
-
-			$settings[ $list_key ] = $list;
-			update_option( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION, $settings, false );
-
-			if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
-				WP_MCP_AI_CRM_Engine::flush_settings_cache();
-			}
-
-			wp_send_json_success( array( 'message' => sprintf( __( '%s removed from %s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ), 'count' => count( $list ) ) );
+		if ( ! $found ) {
+			wp_send_json_error( array( 'message' => sprintf( __( '%1$s was not found in the %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
 		}
+
+		$settings[ $list_key ] = $list;
+		update_option( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION, $settings, false );
+
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			WP_MCP_AI_CRM_Engine::flush_settings_cache();
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf( __( '%1$s removed from %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ),
+				'count'   => count( $list ),
+			)
+		);
+	}
 
 		/**
 		 * AJAX handler: merge a duplicate lead into a survivor.
 		 *
 		 * @since 2.8.0
 		 */
-		public static function ajax_merge_duplicate() {
-			check_ajax_referer( self::NONCE_ACTION, '_ajax_nonce' );
+	public static function ajax_merge_duplicate() {
+		check_ajax_referer( self::NONCE_ACTION, '_ajax_nonce' );
 
-			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
-			}
-
-			$survivor_id  = isset( $_POST['survivor_id'] ) ? absint( wp_unslash( $_POST['survivor_id'] ) ) : 0;
-			$duplicate_id = isset( $_POST['duplicate_id'] ) ? absint( wp_unslash( $_POST['duplicate_id'] ) ) : 0;
-
-			if ( $survivor_id < 1 || $duplicate_id < 1 || $survivor_id === $duplicate_id ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid lead IDs.', 'mcp-ai-wpoos-pro' ) ) );
-			}
-
-			// Use the merge_duplicates tool.
-			$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-merge-duplicates.php';
-			if ( ! file_exists( $tool_file ) ) {
-				wp_send_json_error( array( 'message' => __( 'Merge tool not available.', 'mcp-ai-wpoos-pro' ) ) );
-			}
-
-			require_once $tool_file;
-
-			if ( ! class_exists( 'WP_MCP_AI_Tool_Merge_Duplicates' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Merge tool class not found.', 'mcp-ai-wpoos-pro' ) ) );
-			}
-
-			$tool    = new WP_MCP_AI_Tool_Merge_Duplicates();
-			$context = array( 'user_id' => get_current_user_id() );
-			$result  = $tool->execute(
-				array(
-					'survivor_id'  => $survivor_id,
-					'duplicate_id' => $duplicate_id,
-					'dry_run'      => false,
-				),
-				$context
-			);
-
-			if ( is_wp_error( $result ) ) {
-				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
-			}
-
-			$message = isset( $result['message'] ) ? $result['message'] : __( 'Merge completed successfully.', 'mcp-ai-wpoos-pro' );
-			wp_send_json_success( array( 'message' => $message ) );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
+
+		$survivor_id  = isset( $_POST['survivor_id'] ) ? absint( wp_unslash( $_POST['survivor_id'] ) ) : 0;
+		$duplicate_id = isset( $_POST['duplicate_id'] ) ? absint( wp_unslash( $_POST['duplicate_id'] ) ) : 0;
+
+		if ( $survivor_id < 1 || $duplicate_id < 1 || $survivor_id === $duplicate_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid lead IDs.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Use the merge_duplicates tool.
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-merge-duplicates.php';
+		if ( ! file_exists( $tool_file ) ) {
+			wp_send_json_error( array( 'message' => __( 'Merge tool not available.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		require_once $tool_file;
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Merge_Duplicates' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Merge tool class not found.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$tool    = new WP_MCP_AI_Tool_Merge_Duplicates();
+		$context = array( 'user_id' => get_current_user_id() );
+		$result  = $tool->execute(
+			array(
+				'survivor_id'  => $survivor_id,
+				'duplicate_id' => $duplicate_id,
+				'dry_run'      => false,
+			),
+			$context
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		$message = isset( $result['message'] ) ? $result['message'] : __( 'Merge completed successfully.', 'mcp-ai-wpoos-pro' );
+		wp_send_json_success( array( 'message' => $message ) );
 	}
+}

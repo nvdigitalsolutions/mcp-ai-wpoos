@@ -104,20 +104,20 @@ class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'survivor_id'        => array(
+				'survivor_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the lead to keep (the survivor). This record will receive the duplicate\'s data and children.', 'mcp-ai-wpoos-pro' ),
 				),
-				'duplicate_id'       => array(
+				'duplicate_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the lead to merge away. Its data will fill empty fields and its children will be reassigned.', 'mcp-ai-wpoos-pro' ),
 				),
-				'dry_run'            => array(
+				'dry_run'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, preview the merge plan without making changes.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'trash_duplicate'    => array(
+				'trash_duplicate' => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, move the duplicate to trash after merging. If false, flag it as merged but keep published.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -243,13 +243,13 @@ class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MC
 					'lead',
 					$survivor_id,
 					array(
-						'survivor_id'  => $survivor_id,
-						'duplicate_id' => $duplicate_id,
-						'fields_filled' => count( $plan['fields_to_copy'] ),
-						'deals_moved'   => $plan['deal_count'],
+						'survivor_id'      => $survivor_id,
+						'duplicate_id'     => $duplicate_id,
+						'fields_filled'    => count( $plan['fields_to_copy'] ),
+						'deals_moved'      => $plan['deal_count'],
 						'activities_moved' => $plan['activity_count'],
 						'customers_moved'  => $plan['customer_count'],
-						'trashed'       => $trash_dup,
+						'trashed'          => $trash_dup,
 					)
 				);
 			}
@@ -267,10 +267,10 @@ class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MC
 				$action_word
 			),
 			array(
-				'survivor_id'       => $survivor_id,
-				'duplicate_id'      => $duplicate_id,
-				'dry_run'           => $dry_run,
-				'merge_plan'        => $plan,
+				'survivor_id'  => $survivor_id,
+				'duplicate_id' => $duplicate_id,
+				'dry_run'      => $dry_run,
+				'merge_plan'   => $plan,
 			)
 		);
 	}
@@ -284,14 +284,14 @@ class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	private function build_merge_plan( $survivor_id, $duplicate_id ) {
 		$plan = array(
-			'survivor_title'    => get_the_title( $survivor_id ),
-			'duplicate_title'   => get_the_title( $duplicate_id ),
-			'fields_to_copy'    => array(),
-			'fields_conflict'   => array(),
-			'score_action'      => '',
-			'deal_count'        => 0,
-			'activity_count'    => 0,
-			'customer_count'    => 0,
+			'survivor_title'  => get_the_title( $survivor_id ),
+			'duplicate_title' => get_the_title( $duplicate_id ),
+			'fields_to_copy'  => array(),
+			'fields_conflict' => array(),
+			'score_action'    => '',
+			'deal_count'      => 0,
+			'activity_count'  => 0,
+			'customer_count'  => 0,
 		);
 
 		// ── Compare meta fields ──
@@ -306,7 +306,7 @@ class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MC
 			if ( $surv_empty && ! $dup_empty ) {
 				// Duplicate has data, survivor doesn't — copy over.
 				$plan['fields_to_copy'][] = array(
-					'key'        => $meta_key,
+					'key'             => $meta_key,
 					'duplicate_value' => $dup_value,
 				);
 			} elseif ( ! $surv_empty && ! $dup_empty && $surv_value !== $dup_value ) {
@@ -347,11 +347,11 @@ class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// ── Count child records to reassign ──
-		$plan['deal_count'] = $this->count_children( 'mcp_ai_deal', '_lead_id', $duplicate_id );
+		$plan['deal_count']     = $this->count_children( 'mcp_ai_deal', '_lead_id', $duplicate_id );
 		$plan['activity_count'] = $this->count_children( 'mcp_ai_crm_activity', '_lead_id', $duplicate_id );
 
 		// Count customers linked to duplicate.
-		$customer_q = new WP_Query(
+		$customer_q             = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_customer',
 				'post_status'    => 'publish',
@@ -430,8 +430,8 @@ class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 
 		// Append source note to survivor.
-		$surv_content  = get_post_field( 'post_content', $survivor_id );
-		$source_note   = sprintf(
+		$surv_content = get_post_field( 'post_content', $survivor_id );
+		$source_note  = sprintf(
 			/* translators: 1: date, 2: duplicate ID, 3: duplicate title */
 			__( "\n\n--- Absorbed lead #%2\$d (%3\$s) on %1\$s ---", 'mcp-ai-wpoos-pro' ),
 			current_time( 'Y-m-d H:i:s' ),

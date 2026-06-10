@@ -417,15 +417,15 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					<th scope="row"><?php esc_html_e( 'Exclude List', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<?php
-						$hygiene = class_exists( 'WP_MCP_AI_CRM_Engine' )
+						$hygiene          = class_exists( 'WP_MCP_AI_CRM_Engine' )
 							? WP_MCP_AI_CRM_Engine::get_hygiene_settings()
 							: array();
-						$exclude_list = isset( $hygiene['exclude_list'] ) ? (array) $hygiene['exclude_list'] : array();
-						$priority_list = isset( $hygiene['priority_list'] ) ? (array) $hygiene['priority_list'] : array();
-						$spam_domains = isset( $hygiene['spam_domains'] ) ? (array) $hygiene['spam_domains'] : array();
-						$promo_domains = isset( $hygiene['promotional_domains'] ) ? (array) $hygiene['promotional_domains'] : array();
+						$exclude_list     = isset( $hygiene['exclude_list'] ) ? (array) $hygiene['exclude_list'] : array();
+						$priority_list    = isset( $hygiene['priority_list'] ) ? (array) $hygiene['priority_list'] : array();
+						$spam_domains     = isset( $hygiene['spam_domains'] ) ? (array) $hygiene['spam_domains'] : array();
+						$promo_domains    = isset( $hygiene['promotional_domains'] ) ? (array) $hygiene['promotional_domains'] : array();
 						$priority_domains = isset( $hygiene['priority_domains'] ) ? (array) $hygiene['priority_domains'] : array();
-						$promo_keywords = isset( $hygiene['promotional_keywords'] ) ? (array) $hygiene['promotional_keywords'] : array();
+						$promo_keywords   = isset( $hygiene['promotional_keywords'] ) ? (array) $hygiene['promotional_keywords'] : array();
 						?>
 						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[exclude_list]" rows="5" class="large-text code" placeholder="spammer@example.com&#10;@newsletters.spammy.net&#10;@unwanted-domain.com"><?php echo esc_textarea( implode( "\n", $exclude_list ) ); ?></textarea>
 						<p class="description">
@@ -865,7 +865,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 		$hygiene_key = WP_MCP_AI_CRM_Engine::HYGIENE_OPTION;
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by WordPress settings API.
 		if ( isset( $_POST[ $hygiene_key ] ) && is_array( $_POST[ $hygiene_key ] ) ) {
-			$hygiene_input = wp_unslash( $_POST[ $hygiene_key ] );
+			$hygiene_input     = wp_unslash( $_POST[ $hygiene_key ] );
 			$hygiene_sanitized = array();
 
 			// List-type fields (textarea → array via newline split).
@@ -880,7 +880,12 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					$lines = explode( "\n", $raw );
 					$lines = array_map( 'sanitize_text_field', $lines );
 					$lines = array_map( 'trim', $lines );
-					$lines = array_filter( $lines, function ( $l ) { return '' !== $l; } );
+					$lines = array_filter(
+						$lines,
+						function ( $l ) {
+							return '' !== $l;
+						}
+					);
 					$lines = array_values( $lines );
 
 					$hygiene_sanitized[ $field ] = $lines;
