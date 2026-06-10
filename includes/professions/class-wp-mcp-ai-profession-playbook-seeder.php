@@ -416,6 +416,38 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	}
 
 	/**
+	 * Count orphaned system-created playbook attachments.
+	 *
+	 * Orphaned attachments are those that:
+	 * - Have the _wp_mcp_ai_playbook_hash meta (system-created marker)
+	 * - Do NOT have the _wp_mcp_ai_playbook_profession_id meta (orphaned)
+	 *
+	 * This is a fast count query (no file-path verification) suitable for
+	 * the admin statistics display. The full safety checks are applied at
+	 * deletion time by delete_orphaned_system_playbooks().
+	 *
+	 * @return int Number of orphaned attachments.
+	 */
+	public static function count_orphaned_system_playbooks() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
+		$count = $wpdb->get_var(
+			"SELECT COUNT(*)
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} pm_hash ON p.ID = pm_hash.post_id
+			LEFT JOIN {$wpdb->postmeta} pm_prof ON p.ID = pm_prof.post_id
+				AND pm_prof.meta_key = '_wp_mcp_ai_playbook_profession_id'
+			WHERE p.post_type = 'attachment'
+			AND p.post_status = 'inherit'
+			AND pm_hash.meta_key = '_wp_mcp_ai_playbook_hash'
+			AND pm_prof.meta_id IS NULL"
+		);
+
+		return absint( $count );
+	}
+
+	/**
 	 * Create playbook attachment file.
 	 *
 	 * @param WP_Post $profession    Profession post object.
@@ -554,6 +586,11 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	 * Sync all profession playbooks.
 	 *
 	 * Can be called manually to regenerate all playbooks from current txt files.
+	 * Processes professions in batches to avoid memory exhaustion and timeouts
+	 * on sites with large profession counts.
+	 *
+	 * After syncing, automatically cleans up orphaned playbook attachments
+	 * created by content changes or force regeneration.
 	 *
 	 * @param bool $force Force regeneration even if content hash matches.
 	 */
@@ -569,17 +606,41 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		}
 
 		$repository  = new WP_MCP_AI_Profession_Repository();
-		$professions = $repository->find_all();
+		$loader      = new WP_MCP_AI_Profession_Playbook_Loader();
 
-		if ( empty( $professions ) ) {
-			return;
+		$batch_size  = 100;
+		$offset      = 0;
+		$max_batches = 200; // Safety cap: max 20,000 professions per sync.
+
+		for ( $batch = 0; $batch < $max_batches; $batch++ ) {
+			$professions = $repository->find_all(
+				array(
+					'posts_per_page' => $batch_size,
+					'offset'         => $offset,
+				)
+			);
+
+			if ( empty( $professions ) ) {
+				break;
+			}
+
+			foreach ( $professions as $profession ) {
+				self::sync_profession_playbook( $profession, $loader, $force );
+			}
+
+			$offset += $batch_size;
+
+			// Prevent PHP timeout on very large profession sets.
+			if ( $batch > 0 && 0 === $batch % 10 ) {
+				if ( function_exists( 'set_time_limit' ) ) {
+					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Best-effort timeout extension; failure is non-fatal.
+					@set_time_limit( 30 );
+				}
+			}
 		}
 
-		$loader = new WP_MCP_AI_Profession_Playbook_Loader();
-
-		foreach ( $professions as $profession ) {
-			self::sync_profession_playbook( $profession, $loader, $force );
-		}
+		// Clean up orphaned playbook attachments created by content changes or force regeneration.
+		self::delete_orphaned_system_playbooks( 500 );
 	}
 
 	/**
