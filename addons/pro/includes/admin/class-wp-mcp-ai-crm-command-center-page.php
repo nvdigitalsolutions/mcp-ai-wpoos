@@ -1294,12 +1294,12 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		$base_url = admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=support' );
 
 		// Lead source refresh stats.
-		$last_refresh   = get_option( 'wp_mcp_ai_crm_cc_last_source_refresh', false );
+		$last_refresh      = get_option( 'wp_mcp_ai_crm_cc_last_source_refresh', false );
 		$last_refresh_text = $last_refresh
 			? sprintf(
 				/* translators: %s: human-readable time ago */
 				__( 'Last refreshed %s ago', 'mcp-ai-wpoos-pro' ),
-				human_time_diff( (int) $last_refresh, current_time( 'timestamp' ) )
+				human_time_diff( (int) $last_refresh, time() )
 			)
 			: __( 'Never refreshed', 'mcp-ai-wpoos-pro' );
 
@@ -1549,14 +1549,14 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			</p>
 		</div>
 
-	<?php
-	$refresh_processing  = __( 'Pulling from sources and scoring leads...', 'mcp-ai-wpoos-pro' );
-	$refresh_error       = __( 'An error occurred during refresh.', 'mcp-ai-wpoos-pro' );
-	$refresh_ajax_error  = __( 'AJAX error: ', 'mcp-ai-wpoos-pro' );
-	$refresh_confirm     = __( 'This will pull new leads from all configured Gmail/email sources and re-score unscored leads. This may take a moment. Continue?', 'mcp-ai-wpoos-pro' );
+		<?php
+		$refresh_processing = __( 'Pulling from sources and scoring leads...', 'mcp-ai-wpoos-pro' );
+		$refresh_error      = __( 'An error occurred during refresh.', 'mcp-ai-wpoos-pro' );
+		$refresh_ajax_error = __( 'AJAX error: ', 'mcp-ai-wpoos-pro' );
+		$refresh_confirm    = __( 'This will pull new leads from all configured Gmail/email sources and re-score unscored leads. This may take a moment. Continue?', 'mcp-ai-wpoos-pro' );
 
-	ob_start();
-	?>
+		ob_start();
+		?>
 	jQuery(document).ready(function($) {
 		$('#crm-cc-refresh-sources-btn').on('click', function(e) {
 			e.preventDefault();
@@ -1645,15 +1645,15 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			});
 		});
 	});
-	<?php
-	$refresh_js = ob_get_clean();
-	wp_print_inline_script_tag( $refresh_js );
-	?>
-	<?php
-}
+		<?php
+		$refresh_js = ob_get_clean();
+		wp_print_inline_script_tag( $refresh_js );
+		?>
+		<?php
+	}
 
-/**
- * Render the Analytics tab.
+	/**
+	 * Render the Analytics tab.
 	 */
 	private static function render_analytics_tab() {
 		$kpis         = self::get_analytics_kpis();
@@ -2441,13 +2441,13 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		}
 
 		$stats = array(
-			'sources_checked'   => 0,
-			'emails_fetched'    => 0,
-			'leads_created'     => 0,
-			'leads_updated'     => 0,
-			'skipped_spam'      => 0,
-			'skipped_noise'     => 0,
-			'leads_scored'      => 0,
+			'sources_checked'    => 0,
+			'emails_fetched'     => 0,
+			'leads_created'      => 0,
+			'leads_updated'      => 0,
+			'skipped_spam'       => 0,
+			'skipped_noise'      => 0,
+			'leads_scored'       => 0,
 			'total_leads_before' => self::get_cpt_count( 'mcp_ai_lead', 'publish' ),
 		);
 
@@ -2458,7 +2458,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 
 			// Filter to Gmail-type connections.
-			$_import_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-import-gmail-to-crm.php';
+			$_import_file       = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-import-gmail-to-crm.php';
 			$importer_available = file_exists( $_import_file );
 
 			if ( $importer_available && ! empty( $all_connections ) ) {
@@ -2501,7 +2501,11 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 								$stats['skipped_noise']  += isset( $result['skipped_noise'] ) ? (int) $result['skipped_noise'] : 0;
 							}
 						} catch ( \Exception $e ) {
-							// Continue to the next source.
+							// Continue to the next source — individual connection failure is non-fatal.
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+								error_log( 'CRM CC source refresh error: ' . $e->getMessage() );
+							}
 						}
 					}
 				}
@@ -2509,7 +2513,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		}
 
 		// ── 2. Re-score all leads without a score ──
-		$unscored_args = array(
+		$unscored_args  = array(
 			'post_type'      => array( 'mcp_ai_lead', 'mcp_crm_contacts' ),
 			'post_status'    => 'publish',
 			'posts_per_page' => 50,
@@ -2538,7 +2542,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 				foreach ( $unscored_ids as $lead_id ) {
 					if ( class_exists( 'WP_MCP_AI_Tool_Score_Lead' ) ) {
-						$scorer = new WP_MCP_AI_Tool_Score_Lead();
+						$scorer       = new WP_MCP_AI_Tool_Score_Lead();
 						$score_result = $scorer->execute(
 							array( 'lead_id' => (int) $lead_id ),
 							$user_context
@@ -2555,7 +2559,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		$stats['new_leads']         = max( 0, $stats['total_leads_after'] - $stats['total_leads_before'] );
 
 		// Save the last-refresh timestamp.
-		update_option( 'wp_mcp_ai_crm_cc_last_source_refresh', current_time( 'timestamp' ), false );
+		update_option( 'wp_mcp_ai_crm_cc_last_source_refresh', time(), false );
 
 		wp_send_json_success( $stats );
 	}
