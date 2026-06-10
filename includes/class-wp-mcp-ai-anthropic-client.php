@@ -205,6 +205,87 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			$payload['model'] = $model;
 
+			// -----------------------------------------------------------------
+			// Pre-flight context-window validation using the same token-budget
+			// infrastructure shared with the OpenAI client. Anthropic's
+			// count_tokens() API endpoint is available for accurate counting;
+			// the synchronous estimate_tokens() path is used here to avoid
+			// adding an extra HTTP round-trip before every request.
+			// -----------------------------------------------------------------
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$context_limit = WP_MCP_AI_Token_Budget_Manager::get_model_limit( $model );
+
+				if ( $context_limit > 0 ) {
+					$payload_json     = wp_json_encode( $payload );
+					$estimated_tokens = WP_MCP_AI_Token_Budget_Manager::estimate_tokens( $payload_json );
+					$output_budget    = isset( $payload['max_tokens'] ) ? (int) $payload['max_tokens'] : 4096;
+					$total_estimated  = $estimated_tokens + $output_budget;
+					$usage_pct        = round( ( $total_estimated / $context_limit ) * 100, 1 );
+
+					WP_MCP_AI_Logger::log_event(
+						'anthropic_preflight_tokens',
+						'Pre-flight token estimate',
+						array(
+							'model'            => $model,
+							'context_limit'    => $context_limit,
+							'estimated_prompt' => $estimated_tokens,
+							'output_budget'    => $output_budget,
+							'total_estimated'  => $total_estimated,
+							'usage_pct'        => $usage_pct,
+							'tool_count'       => isset( $options['tools'] ) && is_array( $options['tools'] ) ? count( $options['tools'] ) : 0,
+							'message_count'    => count( $messages ),
+						)
+					);
+
+					if ( $total_estimated > $context_limit ) {
+						$tool_count = isset( $options['tools'] ) && is_array( $options['tools'] ) ? count( $options['tools'] ) : 0;
+
+						return new WP_Error(
+							'wp_mcp_ai_context_window_exceeded',
+							sprintf(
+								/* translators: 1: estimated total tokens, 2: model context window limit, 3: percentage, 4: model name */
+								__( 'The request payload (~%1$s tokens) exceeds the model context window of %2$s tokens (%3$s%%). Reduce the system prompt, limit conversation history, or deselect tools (currently %5$d selected). Consider switching to a model with a larger context window.', 'mcp-ai-wpoos' ),
+								number_format_i18n( $total_estimated ),
+								number_format_i18n( $context_limit ),
+								$usage_pct,
+								$model,
+								$tool_count
+							),
+							array(
+								'status'           => 400,
+								'estimated_tokens' => $total_estimated,
+								'context_limit'    => $context_limit,
+								'model'            => $model,
+								'tool_count'       => $tool_count,
+								'actions'          => array(
+									'reduce_tools'          => __( 'Deselect tools on the assistant edit page.', 'mcp-ai-wpoos' ),
+									'shorten_system_prompt' => __( 'Shorten the system prompt in the assistant defaults.', 'mcp-ai-wpoos' ),
+									'limit_history'         => __( 'Start a new conversation or use semantic compression.', 'mcp-ai-wpoos' ),
+									'upgrade_model'         => __( 'Switch to a model with a larger context window (e.g., claude-mythos with 1M tokens).', 'mcp-ai-wpoos' ),
+								),
+							)
+						);
+					}
+
+					if ( $usage_pct > 85 ) {
+						WP_MCP_AI_Logger::log_event(
+							'anthropic_high_context_usage',
+							sprintf(
+								'Request payload estimated at %s%% of context window. Consider reducing prompt size to avoid errors with long conversations.',
+								$usage_pct
+							),
+							array(
+								'model'      => $model,
+								'usage_pct'  => $usage_pct,
+								'estimated'  => $total_estimated,
+								'limit'      => $context_limit,
+								'tool_count' => isset( $options['tools'] ) && is_array( $options['tools'] ) ? count( $options['tools'] ) : 0,
+							)
+						);
+					}
+				}
+			}
+
 			$headers = $this->build_request_headers( $api_key );
 
 			// Add anthropic-beta header when needed.
