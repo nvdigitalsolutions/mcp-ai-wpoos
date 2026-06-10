@@ -1037,7 +1037,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				}
 			} catch ( Throwable $e ) {
 				$success   = false;
-				$error_msg = $e->getMessage();
+				$error_msg = sprintf(
+					'%s in %s:%d',
+					$e->getMessage(),
+					str_replace( ABSPATH, '', $e->getFile() ),
+					$e->getLine()
+				);
 
 				self::debug_log( sprintf( '[dispatch] Exception in %s schedule %s: %s', $schedule_type, $schedule_id, $error_msg ) );
 
@@ -1048,6 +1053,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 							'schedule_id'   => $schedule_id,
 							'schedule_type' => $schedule_type,
 							'error'         => $error_msg,
+							'trace'         => $e->getTraceAsString(),
 						)
 					);
 				}
