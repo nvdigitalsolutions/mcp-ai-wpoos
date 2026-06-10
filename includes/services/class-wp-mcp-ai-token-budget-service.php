@@ -56,26 +56,34 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gpt-4.1-nano'              => 1000000,
 		'gpt-5'                     => 128000,
 		'gpt-5-mini'                => 128000,
+		'gpt-5.2'                   => 270000,
+		'gpt-5.4'                   => 1050000,
+		'gpt-5.5'                   => 1050000,
 		'o1-preview'                => 128000,
 		'o1-mini'                   => 128000,
 		'o1-2024-12-17'             => 200000,
 		'o3-mini'                   => 128000,
+		'o3'                        => 200000,
+		'o4-mini'                   => 200000,
+		'o4'                        => 200000,
 		'gpt-4'                     => 8192,
 		'gpt-4-turbo'               => 128000,
 		'gpt-3.5-turbo'             => 16385,
 		'gemini-3.1-pro-preview'    => 1000000,
 		'gemini-3-pro-preview'      => 1000000,
 		'gemini-3-flash-preview'    => 1000000,
-		'gemini-1.5-pro'            => 2097152,
-		'gemini-1.5-flash'          => 1048576,
-		'gemini-2.0-flash'          => 1048576,
+		'gemini-2.5-pro'            => 1048576,
 		'gemini-2.5-flash'          => 1048576,
 		'gemini-2.5-flash-image'    => 1048576,
+		'gemini-2.0-flash'          => 1048576,
 		'gemini-2.0-flash-image'    => 1048576,
+		'gemini-1.5-pro'            => 2097152,
+		'gemini-1.5-flash'          => 1048576,
 		'imagen-3'                  => 8192,
 		// Claude Mythos: 1M context window, 128K output (most capable).
 		'claude-mythos-preview'     => 1000000,
 		// Claude 4.x models: 200K stable context window (1M available in beta).
+		'claude-opus-4-7'           => 200000,
 		'claude-opus-4-6'           => 200000,
 		'claude-sonnet-4-6'         => 200000,
 		'claude-opus-4-5'           => 200000,
@@ -86,13 +94,24 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'claude-3-opus'             => 200000,
 		'claude-3-haiku'            => 200000,
 		'llama3'                    => 8192,
+		'llama3.1'                  => 131072,
+		'llama3.2'                  => 131072,
+		'llama3.3'                  => 131072,
+		'llama4'                    => 131072,
 		'mistral'                   => 8192,
+		'mixtral'                   => 32768,
 		'codellama'                 => 16384,
 		'phi3'                      => 4096,
+		'phi4'                      => 16384,
 		'deepseek-coder'            => 16384,
+		'deepseek-chat'             => 65536,
+		'deepseek-reasoner'         => 65536,
+		'deepseek-v3'               => 65536,
 		'deepseek-r1-0528-qwen3-8b' => 32768,
 		'qwen2'                     => 32768,
+		'qwen2.5'                   => 131072,
 		'gemma2'                    => 8192,
+		'gemma3'                    => 32768,
 	);
 
 	/**
@@ -214,6 +233,46 @@ class WP_MCP_AI_Token_Budget_Manager {
 
 		// Safe default for unknown models.
 		return 'cl100k_base';
+	}
+
+	/**
+	 * Check whether a model slug matches any known entry in the limits map.
+	 *
+	 * Used by validate_context_window() to distinguish "model not in our
+	 * database" from "model known to have a small window". Models that
+	 * aren't in the map should skip validation rather than being incorrectly
+	 * capped at the conservative 8192 default.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string $model Model slug.
+	 * @return bool True if the model matches an entry in $model_limits.
+	 */
+	protected static function has_known_model( $model ) {
+		$model = sanitize_text_field( $model );
+
+		// Exact match.
+		if ( isset( self::$model_limits[ $model ] ) ) {
+			return true;
+		}
+
+		// Prefix match for model families (e.g., 'deepseek-chat-2025-01-01'
+		// matches 'deepseek-chat').
+		foreach ( self::$model_limits as $key => $limit ) {
+			if ( 0 === strpos( $model, $key ) ) {
+				return true;
+			}
+		}
+
+		// Also check CCT for dynamically configured models.
+		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			$cct_data = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_limits( $model );
+			if ( $cct_data && isset( $cct_data['context_window'] ) && $cct_data['context_window'] > 0 ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -856,6 +915,12 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 */
 	public static function validate_context_window( array $payload, $model, $provider, array $options = array(), array $messages = array() ) {
 		$context_limit = self::get_model_limit( $model );
+
+		// Skip validation for unknown models — the conservative 8192 default
+		// would incorrectly block models with larger context windows.
+		if ( $context_limit <= 8192 && ! self::has_known_model( $model ) ) {
+			return null;
+		}
 
 		if ( $context_limit <= 0 ) {
 			return null; // Unknown model — cannot validate.
