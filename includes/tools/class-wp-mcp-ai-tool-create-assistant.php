@@ -172,8 +172,8 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'provider'          => array(
 					'type'        => 'string',
-					'description' => __( 'Optional AI provider (openai, gemini, ollama, anthropic, lm_studio, huggingface, cloudflare, embedded). Defaults to openai.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'openai', 'gemini', 'ollama', 'anthropic', 'lm_studio', 'huggingface', 'cloudflare', 'embedded' ),
+					'description' => __( 'Optional AI provider. Defaults to openai.', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'openai', 'gemini', 'ollama', 'anthropic', 'lm_studio', 'huggingface', 'cloudflare', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ),
 					'default'     => 'openai',
 				),
 				'model'             => array(
@@ -515,7 +515,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Save provider (default to openai).
 		$provider = isset( $arguments['provider'] ) ? sanitize_key( $arguments['provider'] ) : 'openai';
-		if ( in_array( $provider, array( 'openai', 'gemini', 'ollama', 'anthropic', 'lm_studio', 'huggingface', 'cloudflare', 'embedded' ), true ) ) {
+		if ( in_array( $provider, array( 'openai', 'gemini', 'ollama', 'anthropic', 'lm_studio', 'huggingface', 'cloudflare', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ), true ) ) {
 			update_post_meta( $assistant_id, '_wp_mcp_ai_provider', $provider );
 		}
 

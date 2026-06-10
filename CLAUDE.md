@@ -260,6 +260,12 @@ Portable behaviour packages (`SKILL.md` files) that any NV oOS assistant can loa
 ## Build & Test Commands
 
 ```bash
+# ── Docker (recommended on Windows) ──
+bash bin/run-tests-docker.sh                             # all tests
+bash bin/run-tests-docker.sh tests/test-foo.php           # single file
+bash bin/run-tests-docker.sh --filter='test_bar'          # filter by name
+
+# ── Local PHP + MySQL ──
 # Before every PR:
 composer run lint:base && composer run test
 
@@ -417,6 +423,8 @@ Full agent inventory: [`AGENTS.md`](AGENTS.md)
 | Tool schema rejected by OpenAI | `'mixed'` type or missing `'items'` on arrays | Use `anyOf` for unions; always include `'items'` on arrays |
 | PHPCS error on `shell_exec()` | WordPress.org compliance | Use `proc_open()` for external processes |
 | Tests fail with "table not found" | Test DB not bootstrapped | Run `composer run test:install` first |
+| Tests fail with "Class not found" in Docker | Bind mount cached stale `vendor/` | Run `docker compose down && docker compose up -d` |
+| Paths mangled on Git Bash (`C:/Program Files/Git/...`) | MSYS path conversion | Use `bash bin/run-tests-docker.sh` (auto-handles it) |
 | Pro tools missing at runtime | `WP_MCP_AI_BASE_VERSION` is `true` | Set to `false` or remove the constant |
 | Context window too large | Loading all `.context/` files | Load only the subsystem files you need (GSD 30% rule) |
 

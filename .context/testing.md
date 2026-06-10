@@ -246,6 +246,31 @@ REST endpoint stories need at minimum:
 
 ## Running Tests
 
+### Option A: Docker (recommended for Windows / no local PHP)
+
+```bash
+# Prerequisites (once):
+composer install                        # install dev dependencies
+docker compose up -d                    # start WP + MySQL containers
+
+# Run tests:
+bash bin/run-tests-docker.sh                                   # all tests
+bash bin/run-tests-docker.sh tests/test-admin-settings.php     # single file
+bash bin/run-tests-docker.sh --filter='test_default_provider' tests/test-admin-settings.php
+```
+
+The script automatically:
+- Creates the `wordpress_test` database if missing
+- Refreshes the Composer autoloader (fixes stale bind-mount caches)
+- Handles Git Bash path mangling (`MSYS_NO_PATHCONV`)
+- Passes all arguments through to PHPUnit
+
+> **Note:** After `composer install` or `composer dump-autoload`, restart Docker
+> if tests fail with class-not-found errors — the bind mount can cache stale files.
+> Shortcut: `docker compose down && docker compose up -d`
+
+### Option B: Local PHP + MySQL
+
 ```bash
 # Install test dependencies (first time only):
 composer run test:install
@@ -261,6 +286,13 @@ vendor/bin/phpunit --verbose
 
 # Run with coverage (requires Xdebug):
 vendor/bin/phpunit --coverage-html coverage/
+```
+
+### Option C: Codex / SQLite (self-contained, no Docker)
+
+```bash
+bash bin/codex-startup.sh               # download WP + SQLite, start server
+composer run test                       # run tests against the Codex WP
 ```
 
 ---
