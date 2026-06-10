@@ -835,4 +835,119 @@ class WP_MCP_AI_Token_Budget_Manager {
 
 		return $messages;
 	}
+
+	/**
+	 * Validate that a built chat-completion payload fits within the model's
+	 * context window before sending it to the provider.
+	 *
+	 * This is the shared pre-flight check used by OpenAI, Anthropic, DeepSeek,
+	 * OpenRouter, Baseten, and DigitalOcean clients. It estimates the serialised
+	 * payload size, adds the output budget, and returns a clear WP_Error with
+	 * actionable suggestions when the total exceeds the window.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param array  $payload    The fully-built request payload (model, messages, tools, etc.).
+	 * @param string $model      Resolved model slug.
+	 * @param string $provider   Provider key for logging (e.g. 'deepseek', 'openrouter').
+	 * @param array  $options    Original request options (used to count tools).
+	 * @param array  $messages   Original messages (used for count in logs).
+	 * @return null|WP_Error     Null if payload fits, WP_Error if it exceeds the context window.
+	 */
+	public static function validate_context_window( array $payload, $model, $provider, array $options = array(), array $messages = array() ) {
+		$context_limit = self::get_model_limit( $model );
+
+		if ( $context_limit <= 0 ) {
+			return null; // Unknown model — cannot validate.
+		}
+
+		$payload_json     = wp_json_encode( $payload );
+		$estimated_tokens = self::estimate_tokens( $payload_json, $model );
+
+		// Resolve output budget from the payload.
+		$output_budget = 4096;
+		if ( isset( $payload['max_tokens'] ) ) {
+			$output_budget = (int) $payload['max_tokens'];
+		} elseif ( isset( $payload['max_completion_tokens'] ) ) {
+			$output_budget = (int) $payload['max_completion_tokens'];
+		} elseif ( isset( $payload['max_output_tokens'] ) ) {
+			$output_budget = (int) $payload['max_output_tokens'];
+		}
+
+		$total_estimated = $estimated_tokens + $output_budget;
+		$usage_pct       = round( ( $total_estimated / $context_limit ) * 100, 1 );
+		$tool_count      = isset( $options['tools'] ) && is_array( $options['tools'] ) ? count( $options['tools'] ) : 0;
+
+		// Log for diagnostics.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				$provider . '_preflight_tokens',
+				'Pre-flight token estimate',
+				array(
+					'model'            => $model,
+					'provider'         => $provider,
+					'context_limit'    => $context_limit,
+					'estimated_prompt' => $estimated_tokens,
+					'output_budget'    => $output_budget,
+					'total_estimated'  => $total_estimated,
+					'usage_pct'        => $usage_pct,
+					'tool_count'       => $tool_count,
+					'message_count'    => count( $messages ),
+				)
+			);
+		}
+
+		// Hard-reject when the estimate exceeds the context window.
+		if ( $total_estimated > $context_limit ) {
+			$provider_label = ucfirst( $provider );
+
+			return new WP_Error(
+				'wp_mcp_ai_context_window_exceeded',
+				sprintf(
+					/* translators: 1: estimated total tokens, 2: model context window limit, 3: percentage, 4: model name */
+					__( 'The request payload (~%1$s tokens) exceeds the model context window of %2$s tokens (%3$s%%). Reduce the system prompt, limit conversation history, or deselect tools (currently %5$d selected). Consider switching to a model with a larger context window.', 'mcp-ai-wpoos' ),
+					number_format_i18n( $total_estimated ),
+					number_format_i18n( $context_limit ),
+					$usage_pct,
+					$model,
+					$tool_count
+				),
+				array(
+					'status'           => 400,
+					'estimated_tokens' => $total_estimated,
+					'context_limit'    => $context_limit,
+					'model'            => $model,
+					'provider'         => $provider,
+					'tool_count'       => $tool_count,
+					'actions'          => array(
+						'reduce_tools'          => __( 'Deselect tools on the assistant edit page.', 'mcp-ai-wpoos' ),
+						'shorten_system_prompt' => __( 'Shorten the system prompt in the assistant defaults.', 'mcp-ai-wpoos' ),
+						'limit_history'         => __( 'Start a new conversation or use semantic compression.', 'mcp-ai-wpoos' ),
+						'upgrade_model'         => __( 'Switch to a model with a larger context window.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+		// Soft-warn at high usage.
+		if ( $usage_pct > 85 && class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				$provider . '_high_context_usage',
+				sprintf(
+					'Request payload estimated at %s%% of context window. Consider reducing prompt size to avoid errors with long conversations.',
+					$usage_pct
+				),
+				array(
+					'model'      => $model,
+					'provider'   => $provider,
+					'usage_pct'  => $usage_pct,
+					'estimated'  => $total_estimated,
+					'limit'      => $context_limit,
+					'tool_count' => $tool_count,
+				)
+			);
+		}
+
+		return null;
+	}
 }
