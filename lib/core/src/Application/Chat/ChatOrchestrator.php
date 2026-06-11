@@ -33,6 +33,7 @@ use Nvoos\Core\Domain\Event\AgenticIterationComplete;
 use Nvoos\Core\Domain\Event\AgenticLoopCompleted;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
+use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 
 class ChatOrchestrator {
 
@@ -40,6 +41,16 @@ class ChatOrchestrator {
 	 * Maximum agentic loop iterations. Prevents infinite loops.
 	 */
 	private const DEFAULT_MAX_ITERATIONS = 15;
+
+	/**
+	 * Estimated tokens consumed per tool definition in the system prompt.
+	 */
+	private const TOKENS_PER_TOOL_DEFINITION = 200;
+
+	/**
+	 * Optional token-budget manager for tool-definition capping.
+	 */
+	private ?TokenBudgetManager $tokenBudget = null;
 
 	public function __construct(
 		private readonly ToolRegistry $tools,
@@ -49,6 +60,13 @@ class ChatOrchestrator {
 		private readonly CostCalculator $costs,
 		private readonly SseHandler $sse,
 	) {}
+
+	/**
+	 * Wire the token-budget manager for tool-definition capping.
+	 */
+	public function setTokenBudgetManager( TokenBudgetManager $budget ): void {
+		$this->tokenBudget = $budget;
+	}
 
 	/**
 	 * Handle a chat request — non-streaming (returns full response).
