@@ -33,6 +33,7 @@ Houses every DietPi Pro Toolkit tool implementation — system-level SSH command
 | Update System | `dietpi_update_system` | System (Phase 2) |
 | Manage Storage | `dietpi_manage_storage` | System (Phase 2) |
 | Dashboard Summary | `dietpi_dashboard_summary` | System (Phase 2) |
+| Provision New App | `dietpi_provision_new_app` | System (Phase 3) |
 
 ## Dependencies
 

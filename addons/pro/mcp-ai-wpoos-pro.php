@@ -1926,6 +1926,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_DietPi_Update_System'         => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-update-system.php',
 				'WP_MCP_AI_Tool_DietPi_Manage_Storage'        => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-manage-storage.php',
 				'WP_MCP_AI_Tool_DietPi_Dashboard_Summary'     => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-dashboard-summary.php',
+				// Phase 3 tool (1).
+				'WP_MCP_AI_Tool_DietPi_Provision_New_App'     => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-provision-new-app.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $dietpi_toolkit_tools );
 		}
@@ -2550,6 +2552,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		$pro_tools['dietpi_update_system']         = 'system';
 		$pro_tools['dietpi_manage_storage']        = 'system';
 		$pro_tools['dietpi_dashboard_summary']     = 'system';
+		$pro_tools['dietpi_provision_new_app']     = 'system';
 
 		// Merge Pro tools into the main group map.
 		return array_merge( $group_map, $pro_tools );
