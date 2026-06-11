@@ -1,0 +1,17 @@
+{
+  "apiVersion": 3,
+  "name": "nvoos/librechat",
+  "title": "NV oOS LibreChat",
+  "category": "widgets",
+  "icon": "format-chat",
+  "description": "Embeds the NV oOS LibreChat React UI, backed by the existing NV oOS REST chat endpoints with optional code interpreter, web search, and speech features.",
+  "textdomain": "nvoos-librechat",
+  "attributes": {
+    "assistant_id": { "type": "integer", "default": 0 },
+    "theme":        { "type": "string",  "default": "dark" },
+    "height":       { "type": "string",  "default": "" },
+    "guest":        { "type": "boolean", "default": false }
+  },
+  "supports": { "html": false, "inserter": true },
+  "editorScript": "file:../../assets/js/block-editor.js"
+}
