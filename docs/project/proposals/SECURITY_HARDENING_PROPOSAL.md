@@ -1,8 +1,8 @@
 # Security Hardening Proposal
 
-**Date:** 2026-04-04
+**Date:** 2026-04-04 (original), updated 2026-06-11 (v1.1.29)
 **Author:** NV Digital Solutions
-**Status:** In Progress — P0 items completed, remaining items proposed
+**Status:** P0 Complete ✅ | P1-P3 Partially Addressed — SQL injection, direct DB queries, guest token TTL, output escaping, and sanitization order all fixed. Remaining REST audit and JS i18n items tracked in docs/operations/security/.
 **Branch:** `copilot/review-wordpress-plugin-security`
 
 ---

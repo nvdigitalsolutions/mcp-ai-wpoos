@@ -1,6 +1,6 @@
 # NV oOS Graphify — Next Steps Implementation Plan
 
-> **Date**: 2026-06-07 | **Status**: Phase 1 Complete — AI addon ready to ship
+> **Date**: 2026-06-07 (plan), updated 2026-06-11 (v1.1.29 status) | **Status**: Priority 1 ✅ Complete (AI addon shipped). Priorities 2-5 (Tools, Extensions, Engine, Pro) pending.
 >
 > This document is the actionable next-steps plan derived from the [restructuring roadmap](./nvoos-base-restructuring-roadmap.md). It prioritises concrete, shippable milestones.
 >

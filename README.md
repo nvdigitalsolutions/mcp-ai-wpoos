@@ -11,10 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.28  
-**Release Date:** 2026-06-09
+**Version:** 1.1.29  
+**Release Date:** 2026-06-11
 
-**Latest Updates:** June 9, 2026 (v1.1.28) — See [§ Latest Updates (v1.1.28 — June 2026)](#-latest-updates-v1128--june-2026) (CRM Phase C Complete: Customer CPT with 5 CRUD tools + Customer 360 dashboard, Support Ticket module with 10 AI tools + SLA enforcement + Zendesk sync, inbound multichannel ingestion (IMAP/SMS/WhatsApp/Gmail bridge), CRM search with TF-IDF + BM25 relevance ranking. New Funiq Bridge addon. Transformer-inspired attention routing with RRF fusion. NVOOS Graphify standalone plugin + AI addon + Platform addon ecosystem. NV Platform AI addon. Core data layer: conversation compressor + embedding store. Automated demo video pipeline Phases 1–3).
+**Latest Updates:** June 11, 2026 (v1.1.29) — See [§ Latest Updates (v1.1.29 — June 2026)](#-latest-updates-v1129--june-2026) (Bug-fix & stabilisation sweep: Chat Bubble assistant dropdown, context-window pre-flight validation across all 13 providers, OpenAI SSE streaming fix, stale provider validation lists, playbook orphan cleanup, CRM activity fixes, chat debug console fixes, OOS bridge & embedding fixes, shell-quote CVE-2026-9277 patch, chat transcript tests from 4% to 87% pass rate, and more).
+
+**Previous Updates (v1.1.28):**
 
 **Previous Updates (v1.1.27):** June 5, 2026 (v1.1.27) — See [§ Latest Updates (v1.1.27 — June 2026)](#-latest-updates-v1127--june-2026) (Real-time SSE streaming for OpenAI, DeepSeek, and all OpenAI-compatible providers. 35 new OOS core tools migrated. JetFormBuilder submission tools: 8 fixes for empty results, capability ordering, and form discovery. Extended Cognition vision recognition. Graphify tools capability compliance. DeepSeek agentic tool result handling. Documentation link fixes. June 2026 model pricing update. Plugin restructuring proposals v3.0).
 
@@ -53,6 +55,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
+- [🆕 Latest Updates (v1.1.29 — June 2026)](#-latest-updates-v1129--june-2026)
 - [🆕 Latest Updates (v1.1.28 — June 2026)](#-latest-updates-v1128--june-2026)
 - [🆕 Latest Updates (v1.1.27 — June 2026)](#-latest-updates-v1127--june-2026)
 - [🧩 Overview](#-overview)
@@ -139,6 +142,20 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.29)
+
+- 🪲 **Bug-Fix & Stabilisation Sweep.** 15+ fixes across the stack: chat bubble assistant dropdown UX, context-window pre-flight validation for all 13 providers, OpenAI real-time SSE streaming, stale provider validation lists, playbook orphan cleanup, CRM activity titles/due dates, chat debug console display, OOS bridge & embedding fatal errors, memory cookie-check nonce, and more.
+- 🔧 **Chat Bubble Assistant Dropdown.** Fixed settings UX: `chat_bubble_assistant_id` field on the Chat Bubble settings page changed from a plain number input to a proper select dropdown populated with all published assistants — matching the Default Assistant UX in General → Core Settings.
+- 🧠 **Context-Window Pre-Flight Validation.** Added pre-flight context-window validation across all 13 AI providers (OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama). Shared `validate_context_window()` helper with tiktoken integration, token-budget tool capping, and estimator metabox.
+- ⚡ **OpenAI SSE Streaming Fix.** Fixed `stream_options` payload flag that prevented OpenAI real-time SSE streaming from triggering — streaming now works correctly for OpenAI and all compatible providers.
+- 📋 **Playbook Orphan Cleanup & Batching.** Fixed orphan playbook accumulation, unsafe deletion without JetEngine validation, sync timeouts for large playbook sets, and batch processing for deletion operations.
+- 🏷️ **Stale Provider Validation Lists.** Fixed provider validation lists rejecting DeepSeek and newer providers — validation now uses dynamic provider discovery instead of hardcoded lists.
+- 🛡️ **Security Patch.** Bumped `shell-quote` to >=1.8.4 via npm overrides to fix CVE-2026-9277.
+- 🧪 **Chat Transcript Tests.** Fixed chat transcript REST controller tests — pass rate improved from ~4% to 87%.
+- 🔧 **Chat Debug Console.** Fixed `chatDebugMode` string coercion (PHP `'1'` vs JS `true`) and legacy debug console not displaying when enabled.
+- 📡 **OOS Bridge & Embedding Fixes.** Fixed OOS bridge initialization, embedding service fatal error on missing API key, and SSE header warnings.
+- 🗂️ **Missing Asset Files.** Added missing `.min.js` assets for voice and embedded LLM scripts.
 
 ### ✨ What's New at a Glance (v1.1.28)
 
@@ -428,6 +445,31 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 - Supporting services for video and audio processing
 
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
+
+---
+
+## 🆕 Latest Updates (v1.1.29 — June 2026)
+
+### June 7–11, 2026 — Bug-Fix & Stabilisation Sweep 🪲🔧⚡
+
+- ✅ **Chat Bubble Assistant Dropdown (PR #5333).** Fixed settings UX: `chat_bubble_assistant_id` field on the Chat Bubble settings page (`wp-admin/admin.php?page=wp-mcp-ai-dashboard&tab=general&subtab=chat_bubble`) changed from a plain `<input type="number">` to a proper `<select>` dropdown populated with all published assistants. Added `get_assistant_options()` helper method to `WP_MCP_AI_Section_Chat_Client` matching the pattern used by `default_assistant` in General → Core Settings. Users can now select assistants by name instead of manually typing numeric IDs.
+- ✅ **Context-Window Pre-Flight Validation — All 13 Providers (PR #5328).** Added pre-flight context-window validation to all AI provider clients: OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, and Ollama. Shared `validate_context_window()` helper method in `WP_MCP_AI_AI_Client_Base`. Integrated `tiktoken` for accurate token counting with estimator metabox on the Assistant editor. Token-budget tool capping prevents exceeding model limits. Context-window management documentation at `docs/developer/architecture/context-window-management.md`.
+- ✅ **OpenAI SSE Streaming Fix (PR #5327).** Fixed `stream_options` payload flag that prevented OpenAI real-time SSE streaming from triggering. The `include_usage` flag was incorrectly nested, causing the OpenAI API to ignore the streaming request and return a non-streamed response.
+- ✅ **Schedule Preset Data Mismatches (PR #5329).** Fixed schedule preset data mismatches where presets would lose configuration data after save. Improved error logging for preset operations with structured log contexts.
+- ✅ **Playbook Orphan Cleanup & Batching (PRs #5322, #5325).** Fixed orphan playbook accumulation where deleted parent records left unreachable children. Added JetEngine validation before deletion to prevent data corruption. Fixed sync timeouts for large playbook sets by implementing batch processing with configurable chunk sizes. `playbook_delete_batch_timeout` now uses iterative deletion instead of single-query operations.
+- ✅ **Stale Provider Validation Lists (PR #5323).** Fixed provider validation lists in multiple locations that rejected DeepSeek and newer providers. Updated `WP_MCP_AI_Section_General::validate()` and `WP_MCP_AI_REST_Chat_Controller` provider checks to use dynamic provider discovery via `WP_MCP_AI_Admin_Settings::get_available_providers()` instead of hardcoded arrays. Also fixed default provider validation in CRM settings and Pro REST controllers.
+- ✅ **CRM Activity Titles, Due Dates & Block API v3 (PR #5320).** Fixed CRM activity post titles not displaying correctly when created via AI tools. Fixed due date calculations for recurring activities. Migrated CRM admin blocks to WordPress Block API v3 (`apiVersion: 3`) for compatibility with WP 6.9+.
+- ✅ **OpenAI-Compatible Client — DeepSeek Parity (PR #5315).** Enhanced all OpenAI-compatible chat clients (OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM) to parity with the DeepSeek client: added `max_completion_tokens` support, temperature normalisation, `top_p` handling, and proper `stop` sequence forwarding.
+- ✅ **Voice & Embedded LLM Missing Assets (PR #5319).** Added missing `.min.js` asset files for voice recording/transcription scripts and embedded LLM worker scripts. These files were referenced by `wp_register_script()` but missing from the build output, causing 404 errors on sites using minified assets.
+- ✅ **Chat Config messagesEndpoint & Tool Count Guard (PR #5318).** Fixed chat config `messagesEndpoint` pointing to the wrong REST route in certain configurations. Added a tool count guard that returns a clear error message when an assistant has more tools configured than the provider's limit, preventing silent failures.
+- ✅ **Chat Debug Console Fixes (PRs #5316, #5317).** Fixed `chatDebugMode` using loose equality (`==` instead of `===`) so PHP's string `'1'` is accepted alongside JavaScript's boolean `true`. Fixed legacy chat debug console not displaying when enabled via admin settings — the debug panel container was hidden by a CSS rule that only targeted the new SPA debug view.
+- ✅ **OOS Bridge, Embedding Fatal & SSE Headers (PR #5313).** Fixed OOS bridge initialization failing when the core framework was loaded before WordPress user context was available. Fixed embedding service fatal error when API key was not configured — now returns a graceful `WP_Error`. Fixed SSE header warnings in PHP 8.1+ caused by `header_remove()` being called after output started.
+- ✅ **Memory Cookie-Check Nonce Fix (PR #5312).** Fixed "Cookie check failed" error on the admin Test Assistant memory drawer. The memory REST controller was generating a nonce on `init` (before the user session was available), producing an invalid nonce for authenticated users. Nonce generation moved to the `wp` hook.
+- ✅ **Chat Transcript Tests — 4% to 87% Pass Rate (PR #5310).** Fixed chat transcript REST controller tests. Root causes: test factories not creating posts with the correct `post_type`, missing `WP_REST_Server` initialization, session key normalisation mismatches, and permission callback assertions testing the wrong user role. Pass rate improved from ~4% (3/80) to 87% (70/80).
+- ✅ **Graphify Related Content Leak (PR #5291).** Fixed graphify related content leaking to wrong page sections — content isolation tightened so graph nodes only render within their designated container element.
+- ✅ **Model Limits — June 2026 Canonical Catalog (PR #5331).** Synced model limits (max tokens, max output tokens, rate limits) with the June 2026 canonical catalog across all providers.
+- ✅ **Security — shell-quote CVE-2026-9277 (PR #5330).** Bumped `shell-quote` to >=1.8.4 via npm overrides to fix CVE-2026-9277 (command injection via insufficient escaping).
+- 📦 **Versioning** — bumped to **1.1.29** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, `README.md`, and `docs/DOCUMENTATION_INDEX.md`. Provider count: **13** first-class language-model providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama). Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
 ---
 

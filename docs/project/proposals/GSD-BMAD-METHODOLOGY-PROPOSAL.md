@@ -1,7 +1,7 @@
 # GSD + BMAD Methodology Proposal for NV oOS
 
 **Date:** March 2026
-**Status:** Implemented
+> **Status:** 🚧 Partially adopted (v1.1.29) — GSD context files + folder README convention shipped; BMAD agent definitions not implemented
 **Author:** NV Digital Solutions
 **Applies To:** NV oOS Plugin Development Workflow
 

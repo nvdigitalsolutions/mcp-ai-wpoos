@@ -2,13 +2,13 @@
 
 ## Comprehensive Proposal for Framework-Agnostic AI Orchestration Engine
 
-**Status:** Partially Implemented — operational behind `?engine=oos` feature flag  
+**Status:** ✅ Phases 0–2 Complete · Phase 3 In Progress (~22%)  
 **Version:** 1.1.0 (implementation notes added)  
-**Date:** 2026-05-31 (proposal), updated 2026-06-03 (status)  
+**Date:** 2026-05-31 (proposal), updated 2026-06-11 (v1.1.29 status)  
 **Author:** AI Agent (via NV oOS)  
 **Audience:** Engineering leadership, architecture reviewers  
 
-> **📌 Implementation Status:** This proposal is **35–40% implemented**. The full `nvoos/core` package with 9 contracts, 10 entities, 5 errors, 8 events, 4 application services, 12 provider clients, and 43 migrated tools exists at `lib/core/`. All 8 WordPress adapters are complete. The extraction runs behind a feature flag (`?engine=oos`). See [`cross-platform-extraction-gap-analysis.md`](./cross-platform-extraction-gap-analysis.md) for a detailed current-state assessment.
+> **📌 Implementation Status (v1.1.29):** Phases 0–2 are **complete**. The `nvoos/core` package with 9 domain contracts, 10 entities, 8 events, 4 application services, 12 provider clients, and 43 migrated tools lives at `lib/core/`. All 8 WordPress adapters (`lib/wordpress-adapter/`), plus Craft and Laravel adapters, are complete. Phase 3 (tool migration) is at ~22% (43/195 tools). The extraction runs behind a feature flag (`?engine=oos`) and `WP_MCP_AI_OOS_ENGINE` constant. See [`cross-platform-extraction-gap-analysis.md`](./cross-platform-extraction-gap-analysis.md) for detailed current-state assessment.
 
 ---
 

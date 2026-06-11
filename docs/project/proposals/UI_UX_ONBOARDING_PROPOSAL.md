@@ -3,7 +3,7 @@
 
 **Version:** 1.0  
 **Date:** March 2026  
-**Status:** Approved for Implementation
+> **Status:** ✅ Implemented (v1.1.29) — Onboarding wizard, presets, welcome banner shipped
 
 ---
 

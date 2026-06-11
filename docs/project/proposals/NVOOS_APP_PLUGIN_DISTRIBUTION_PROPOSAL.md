@@ -2,7 +2,7 @@
 
 **Date:** March 2026  
 **Version:** 2.0 (updated from v1.0 — architecture revised based on stakeholder feedback)  
-**Status:** ✅ Implemented  
+> **Status:** ⏳ Not implemented (v1.1.29) — No multi-build distribution pipeline exists
 **Author:** NV Digital Solutions  
 **Related Docs:** [`docs/architecture/canvas-packaging-analysis.md`](../architecture/canvas-packaging-analysis.md), [`addons/pro/SIZE_BREAKDOWN.md`](../../addons/pro/SIZE_BREAKDOWN.md), [`addons/canvas/README.md`](../../addons/canvas/README.md)
 

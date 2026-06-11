@@ -1,8 +1,8 @@
 # WebLLM Implementation Status
 ## Advanced WebLLM Integration - Current State
 
-**Last Updated:** January 26, 2026  
-**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Complete ✅  
+**Last Updated:** June 11, 2026 (v1.1.29)  
+**Status:** Phases 1-3 Complete ✅ | Phases 4-8 Awaiting Approval — DeepSeek distilled models available in embedded client (`addons/embedded/`). Tool calling, multi-modal, function calling all operational.  
 **Next Phase:** Phase 4 (Web Workers & Performance) - Awaiting Approval
 
 ---

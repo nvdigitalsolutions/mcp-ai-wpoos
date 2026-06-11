@@ -1,7 +1,7 @@
 # CRM Support Correspondence Lifecycle — Enhancement Proposal
 
-> **Status:** Proposal — ready for review.
-> **Date:** 2026-06-08
+> **Status:** ✅ Implemented (v1.1.29) — Support Ticket CPT, 10 AI tools, SLA engine, Command Center tab, and settings page all delivered.  
+> **Date:** 2026-06-08 (proposal), updated 2026-06-11 (status)
 > **Scope:** `addons/pro/includes/tools/crm/support/` + supporting infrastructure
 > **Companion docs:** `addons/pro/docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md`, `addons/pro/docs/CRM_EMAIL_MARKETING_GUIDE.md`
 

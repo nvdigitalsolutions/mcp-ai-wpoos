@@ -1,7 +1,7 @@
 # NV oOS — Unix Theory Compliance Enhancement Proposal
 
 **Date:** May 2026 (originally drafted) · **Last reviewed:** May 2026  
-**Status:** 🟢 IN PROGRESS — Phases P0 + P1 + P2 + P3 + P4 + P6 + P7 landed (May–June 2026); P5 Part 1 audit landed (May 2026); P5 Part 2 **infrastructure** landed (May 2026); P5 Part 2 **decomposition #1** (`git_operations` → `git_inspect` + `git_change`) landed (May 2026); remaining decompositions (`web_browser`, `batch_manage_memory`, `manage_context_lifecycle`, `remote_wp_connection`) + Tier-C-overflow trims queued for v1.3.0 (see [§3 Implementation Phases](#3-implementation-phases))
+> **Status:** ✅ Implemented (v1.1.29) — P0-P7 complete; folder README convention enforced via CI
 **Plugin Version:** 1.1.17+  
 **Reviewer:** GitHub Copilot Agent  
 **Branch:** `copilot/enhance-plugin-compliance-unix-theory`

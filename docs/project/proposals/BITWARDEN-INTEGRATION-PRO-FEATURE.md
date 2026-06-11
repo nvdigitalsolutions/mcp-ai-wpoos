@@ -1,6 +1,6 @@
 # Bitwarden Server Integration - Pro Feature Proposal
 
-**Status:** 🚧 IN PROGRESS  
+**Status:** ✅ Implemented (v1.1.29) — Full Password Vault subsystem in addons/pro/includes/vault/ (8 files): AES-256-GCM encryption, Bitwarden import/export/sync, REST controller, vault CPTs.
 **Created:** January 23, 2026  
 **Proposed By:** GitHub Issue Request  
 **Target Release:** Pro 1.2.0  

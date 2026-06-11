@@ -1,5 +1,7 @@
 # Pro Plugin Enhancement: Visual Guide
 
+> **Status:** 🚧 Partially implemented (v1.1.29) — Architecture matches slash commands + workflow engine; Clean Content/Optimize Perf not built
+
 This visual guide provides diagrams and flowcharts for the slash commands and workflow automation enhancements.
 
 ---

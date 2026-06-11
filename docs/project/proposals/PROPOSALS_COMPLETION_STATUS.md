@@ -1,10 +1,12 @@
 # Proposals Completion Status
 
-**Last Updated:** March 9, 2026  
+**Last Updated:** June 11, 2026
 **Total Proposals:** 64 files  
 **Completed:** 26 proposals  
 **In Progress:** 4 proposals  
 **Pending:** 34 proposals
+
+> **Note (v1.1.29):** Per-file ground truth available in individual proposal status headers. This tracker may not reflect latest counts.
 
 ---
 

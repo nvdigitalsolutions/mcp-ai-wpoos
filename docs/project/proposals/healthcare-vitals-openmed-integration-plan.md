@@ -1,7 +1,7 @@
 # Healthcare Vitals Toolkit — OpenMed Integration Plan
 
-**Status:** Draft  
-**Date:** 2026-06-09  
+**Status:** 📋 Not Started (v1.1.29) — Healthcare Vitals CPT exists but no OpenMed integration has been implemented.  
+**Date:** 2026-06-09 (proposal), updated 2026-06-11 (status)  
 **Source:** Review of [OpenMed v1.5.5](https://github.com/maziyarpanahi/openmed) (Apache-2.0)
 
 ---

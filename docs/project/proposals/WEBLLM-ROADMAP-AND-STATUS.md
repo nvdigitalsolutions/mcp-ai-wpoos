@@ -1,9 +1,10 @@
 # WebLLM Enhancement - Roadmap & Status
 
-**Last Updated:** January 28, 2026  
-**Current Status:** Phases 1-3 Complete (Tool Calling, Transformers.js, LangChain)  
-**Next Phase:** Phases 4-8 Awaiting Approval  
-**Estimated Effort:** 80-120 hours for Phases 4-8
+> **CORRECTED (v1.1.29, 2026-06-11):** This document previously claimed Phases 2-3 were complete. Code audit confirmed only Phase 1 is implemented. All Phase 2-3 claimed files do not exist. Actual implementation lives at addons/embedded/assets/js/.
+
+**Last Updated:** June 11, 2026 (v1.1.29 correction)  
+**Current Status:** Phase 1 Complete, Phases 2-8 Not Started  
+**Next Phase:** Phases 2-8 Awaiting Approval
 
 ---
 
@@ -12,58 +13,42 @@
 | Phase | Feature | Status | Completion |
 |-------|---------|--------|------------|
 | **Phase 1** | Tool Calling Integration | ✅ COMPLETE | 100% |
-| **Phase 2** | Transformers.js Integration | ✅ COMPLETE | 100% |
-| **Phase 3** | LangChain.js Integration | ✅ COMPLETE | 100% |
-| **Phase 4** | Web Workers | ⏳ PENDING APPROVAL | 0% |
-| **Phase 5** | Service Workers | ⏳ PENDING APPROVAL | 0% |
-| **Phase 6** | IndexedDB Persistence | ⏳ PENDING APPROVAL | 0% |
-| **Phase 7** | Advanced Model Support | ⏳ PENDING APPROVAL | 0% |
-| **Phase 8** | Production Optimization | ⏳ PENDING APPROVAL | 0% |
+| **Phase 2** | Transformers.js Integration | NOT STARTED | 0% |
+| **Phase 3** | LangChain.js Integration | NOT STARTED | 0% |
+| **Phase 4** | Web Workers | PENDING APPROVAL | 0% |
+| **Phase 5** | Service Workers | PENDING APPROVAL | 0% |
+| **Phase 6** | IndexedDB Persistence | PENDING APPROVAL | 0% |
+| **Phase 7** | Advanced Model Support | PENDING APPROVAL | 0% |
+| **Phase 8** | Production Optimization | PENDING APPROVAL | 0% |
 
-**Overall Completion: Phases 1-3 (100%), Phases 4-8 (0%)**
+**Overall Completion: Phase 1 (100%), Phases 2-8 (0%)**
 
 ---
 
-## What's Implemented (Phases 1-3)
+## What's Implemented (Phase 1 Only)
 
-### Phase 1: Tool Calling Integration ✅
-
-**Delivered Features:**
-- ✅ WebLLM function calling support
-- ✅ Tool schema conversion (WordPress → WebLLM format)
-- ✅ Parallel tool execution
-- ✅ Error handling and fallbacks
-- ✅ Tool result formatting
-
-**Files:**
-- `assets/js/webllm-provider.js`
-- `assets/js/webllm-tool-handler.js`
-
-### Phase 2: Transformers.js Integration ✅
+### Phase 1: Tool Calling + Multi-Modal Integration
 
 **Delivered Features:**
-- ✅ Direct model loading via Transformers.js
-- ✅ Offline inference capability
-- ✅ Progressive loading with visual feedback
-- ✅ Memory management
-- ✅ Browser compatibility detection
+- WebLLM function calling support with WordPress tool schema conversion
+- Multi-modal support (vision models)
+- CDN-first loading with zero-bundle-bloat approach
+- DeepSeek distilled models (R1-Distill-Qwen-1.5B/7B, R1-Distill-Llama-8B)
 
-**Files:**
-- `assets/js/transformers-provider.js`
-- `assets/js/model-loader.js`
+**Actual Files (all in addons/embedded/assets/js/):**
+- embedded-llm-client.js — core WebLLM client
+- webllm-function-calling-client.js — tool calling wrapper
+- webllm-loader.js — CDN loader
+- webllm-multimodal-client.js — vision support
+- webllm-tool-adapter.js — WordPress to WebLLM schema adapter
 
-### Phase 3: LangChain.js Integration ✅
+### Phase 2: Transformers.js Integration
 
-**Delivered Features:**
-- ✅ LangChain.js wrapper for WebLLM
-- ✅ Chain composition support
-- ✅ Prompt template system
-- ✅ Memory persistence
-- ✅ Agent execution framework
+**Not started.** No huggingface/transformers npm package or provider code exists.
 
-**Files:**
-- `assets/js/langchain-adapter.js`
-- `assets/js/chain-executor.js`
+### Phase 3: LangChain.js Integration
+
+**Not started.** No langchain npm package or adapter/executor code exists.
 
 ---
 

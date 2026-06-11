@@ -1,7 +1,7 @@
 # Playwright Web Browser Pro Tool - Status
 
 **Last Updated:** January 28, 2026  
-**Status:** ✅ IMPLEMENTED & COMPLETE  
+**Status:** ✅ IMPLEMENTED — tool moved to capture/ subdirectory alongside capture-webpage-screenshot tool (v1.1.29)
 **Pro Tool Name:** `web_browser`  
 **Architecture:** External Playwright service + HTTP fallback
 

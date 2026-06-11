@@ -1,8 +1,8 @@
 # NV oOS Feature Gap Analysis & Forward Proposal — March 2026
 
-**Date:** March 8, 2026  
-**Plugin Version:** 1.1.3  
-**Reviewer:** GitHub Copilot Agent  
+**Date:** March 8, 2026 (original), updated June 11, 2026 (v1.1.29)  
+**Plugin Version:** 1.1.29 (was 1.1.3 at time of writing)  
+**Status:** Superseded — retain as historical reference. Many gaps identified have been closed (ROADMAP updated, toolkits documented). Open items tracked elsewhere.  
 **Review Type:** Base + Pro Plugin Gap Analysis & Documentation Alignment
 
 ---
