@@ -1,8 +1,8 @@
 # Bitwarden Server Integration - Executive Summary
 
-**Date:** January 23, 2026  
-**Status:** Awaiting Decision  
-**Decision Required By:** Project Stakeholder
+**Date:** January 23, 2026 (proposal), updated June 11, 2026 (v1.1.29 status)  
+**Status:** ✅ Implemented — Native WordPress password vault with Bitwarden/Vaultwarden bidirectional sync at `addons/pro/includes/vault/` and `addons/pro/includes/class-wp-mcp-ai-password-vault-admin.php`.  
+**Decision Required By:** N/A (implemented)
 
 ## The Ask
 

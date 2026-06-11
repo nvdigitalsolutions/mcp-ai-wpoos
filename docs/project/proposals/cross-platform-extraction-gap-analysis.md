@@ -1,7 +1,7 @@
 # Cross-Platform Extraction — Implementation Status & Gap Analysis
 
-**Date:** 2026-06-03  
-**Status:** Live assessment — the extraction is operational behind a feature flag  
+**Date:** 2026-06-03 (original), refreshed 2026-06-11 (v1.1.29)  
+**Status:** Live assessment — the extraction is operational behind a feature flag. Phases 0-2 complete, Phase 3 (tool migration) at ~22% (43/195 tools).  
 **Feature Flag:** `?engine=oos`, `X-WP-MCP-AI-Engine: oos` header, `WP_MCP_AI_OOS_ENGINE` constant, or admin setting `enable_oos_engine`
 
 **Key Files:**

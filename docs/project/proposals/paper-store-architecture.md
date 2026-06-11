@@ -1,9 +1,8 @@
 # NVoOS Paper Store — Architecture & Implementation Plan
 
-> **Status:** Proposed  
+> **Status:** ✅ Implemented (v1.1.29) — Pro version delivered at `addons/pro/includes/paper-store/` with admin CRUD UI, Git sync, and Markdown+YAML driver.  
 > **Author:** AI Coding Agent (research + analysis)  
-> **Date:** 2026-05-27  
-> **Tier:** Base (PHP 7.4+) + Pro extensions (PHP 8.1+)
+> **Date:** 2026-05-27 (proposal), updated 2026-06-11 (status)
 
 ---
 

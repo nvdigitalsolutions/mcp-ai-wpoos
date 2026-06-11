@@ -1,8 +1,8 @@
 # NV oOS — Graphify-Centric Restructuring Roadmap
 
-> **Version**: 4.0.0 | **Status**: Phase 0 Complete, Phase 1 Complete - AI addon ready to ship
+> **Version**: 4.0.0 | **Status**: ✅ Phases 0-1 Complete. Phases 2-5 (Tools, Extensions, Engine, Pro addons) pending — estimated 9 weeks remaining.
 >
-> **Last updated**: 2026-06-07
+> **Last updated**: 2026-06-11 (v1.1.29)
 >
 > This document is the **complete, phased restructuring roadmap** for transforming the NV oOS monolith into a Graphify-centric ecosystem where **`nvoos-graphify` (the knowledge graph product) is a standalone PSR-4 plugin that works with zero API keys**, and everything else extends it as 5 consolidated addons.
 >

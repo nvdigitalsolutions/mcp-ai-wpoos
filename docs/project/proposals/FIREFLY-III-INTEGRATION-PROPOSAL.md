@@ -1,7 +1,7 @@
 # Firefly III Personal Finance Integration - Comprehensive Proposal
 
-**Last Updated:** January 29, 2026  
-**Status:** 📋 PROPOSAL - Awaiting Review and Approval  
+**Last Updated:** June 11, 2026 (v1.1.29 status refresh)  
+**Status:** 📋 Not Started — No Firefly III client, OAuth integration, or `firefly_*` tools exist in the codebase.  
 **Recommendation:** Integrate via REST API with OAuth 2.0  
 **Estimated Effort:** 2-3 months for complete integration
 

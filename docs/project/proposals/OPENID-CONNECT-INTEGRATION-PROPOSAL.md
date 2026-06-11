@@ -1,7 +1,7 @@
 # OpenID Connect (OIDC) Integration Proposal
 
-**Last Updated:** March 15, 2026
-**Status:** 📋 PROPOSAL - Awaiting Review and Approval
+**Last Updated:** June 11, 2026 (v1.1.29 status refresh)
+**Status:** 📋 Not Started — Generic OIDC provider not yet built. OIDC token validation exists only in Google Chat webhook context (`class-wp-mcp-ai-google-chat-webhook-controller.php`). Auth0 integration ships but no configurable IdP support.
 **Recommendation:** ✅ YES — Implement Native Generic OIDC Provider Support
 **Estimated Effort:** 6–10 weeks for core + admin UI; 2–3 additional weeks for Pro tools
 
