@@ -1,4 +1,7 @@
 # Web-LLM Enhancement Roadmap - Visual Guide
+
+> **Status:** Phase 1 ✅ Complete | Phases 2-8 ❌ Not Started (v1.1.29)
+
 ## 20-Week Implementation Timeline
 
 **Last Updated:** January 24, 2026

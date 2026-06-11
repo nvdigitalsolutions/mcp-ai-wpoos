@@ -4,7 +4,7 @@
 **Current Base ZIP Size**: 11 MB (1,990 files)  
 **Goal**: Research options to reduce base plugin ZIP size for faster downloads and WordPress.org distribution
 
-## Implementation Plan (Approved)
+> **Status:** 🚧 Research only (v1.1.29) — Knowledge base still bundled; size reduction not implemented
 
 ### Phase 1: Exclude Vectorizer Library ⭐ PRIORITY
 

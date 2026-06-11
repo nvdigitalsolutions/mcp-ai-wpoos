@@ -1,8 +1,7 @@
 # Web Browser Pro Tool - Implementation Complete
 
-**Status:** ✅ IMPLEMENTED  
-**Date:** January 9, 2026  
-**Commit:** c790e6b
+**Status:** ✅ IMPLEMENTED (v1.1.29) — Tool live at addons/pro/includes/tools/capture/class-wp-mcp-ai-tool-web-browser.php alongside companion capture-webpage-screenshot tool.  
+**Date:** January 9, 2026
 
 ## What Was Built
 

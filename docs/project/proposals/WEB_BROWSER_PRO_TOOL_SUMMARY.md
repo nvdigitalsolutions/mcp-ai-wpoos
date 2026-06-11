@@ -1,6 +1,6 @@
 # Web Browser Pro Tool - Decision Summary
 
-**Status:** ✅ APPROVED  
+**Status:** APPROVED & IMPLEMENTED ✅ — web_browser tool built and registered in capture/ directory (v1.1.29)
 **Created:** January 9, 2026  
 **Decision:** Create new Pro tool `web_browser` with Playwright
 

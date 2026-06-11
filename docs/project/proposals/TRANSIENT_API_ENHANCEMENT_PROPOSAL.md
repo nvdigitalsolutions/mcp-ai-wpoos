@@ -1,6 +1,6 @@
 # Transient API Enhancement Proposal
 
-**Status:** Draft  
+**Status:** ✅ Implemented (v1.1.29) — All AI provider clients have transient caching
 **Created:** 2026-02-12  
 **Author:** GitHub Copilot Agent
 

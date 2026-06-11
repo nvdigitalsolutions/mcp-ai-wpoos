@@ -2,7 +2,7 @@
 
 **Date:** March 2, 2026
 **Version:** 1.1
-**Status:** 🚧 Implementation In Progress
+**Status:** ✅ Partially implemented (v1.1.29) — TMA controller + CMS interface shipped; toolkit browser, shop, inline mode listed as future
 **Priority:** HIGH
 **Estimated Effort:** 160–240 hours across 4 phases
 

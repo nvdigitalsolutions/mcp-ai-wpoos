@@ -1,8 +1,6 @@
 # Ralph Wiggum Task Orchestration Enhancement
 
-**Status:** Proposal  
-**Created:** 2026-01-22  
-**Version:** 1.0.0
+**Status:** ✅ Implemented (v1.1.29) — Core toolset + CCTs shipped. Phase 1 task plans, exit detection, session management, circuit breakers delivered.
 
 ## Executive Summary
 

@@ -2,7 +2,7 @@
 
 **Date:** February 2, 2026  
 **Version:** 1.0  
-**Status:** Proposal - Awaiting Approval
+**Status:** 🚧 Partially implemented (v1.1.29) — Slash commands (29), workflow engine V2, CLI shipped; clean-content/optimize-perf not built
 
 ---
 

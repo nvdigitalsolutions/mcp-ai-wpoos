@@ -284,7 +284,7 @@ We'll track progress weekly using these KPIs:
 
 ---
 
-**Status:** ⏳ Awaiting Approval  
+**Status:** ✅ Implemented (v1.1.29) — Toolkit registry, profession recommender, agent team orchestrator, and 8 playbooks shipped
 **Priority:** 🔴 High  
 **Complexity:** 🟡 Medium  
 **Timeline:** 12 weeks (or 1 week MVP)  

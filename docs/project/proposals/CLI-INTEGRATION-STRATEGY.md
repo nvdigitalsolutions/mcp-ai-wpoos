@@ -1,6 +1,6 @@
 # CLI Integration Strategy for NV oOS Pro
 
-**Status:** Revised Proposal  
+> **Status:** 🚧 Partially implemented (v1.1.29) — WP-CLI commands exist (base + pro); Claude Code/Codex/tmux not built
 **Date:** 2026-01-22  
 **Version:** 2.0.0
 

@@ -1,6 +1,6 @@
 # Playwright Integration Evaluation
 
-**Status:** ✅ DECISION APPROVED - Pro Tool  
+**Status:** ✅ DECISION APPROVED & IMPLEMENTED — Pro Tool shipped as capture/web-browser tool (v1.1.29)
 **Created:** January 9, 2026  
 **Author:** Copilot Workspace Agent  
 **Decision:** Create new Pro tool `web_browser` with Playwright

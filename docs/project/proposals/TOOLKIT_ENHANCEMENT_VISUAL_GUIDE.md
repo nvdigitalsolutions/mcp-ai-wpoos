@@ -1,5 +1,7 @@
 # Toolkit Enhancement Visual Guide
 
+> **Status:** ✅ Implemented (v1.1.29) — Visual guide matches shipped architecture
+
 **Visual diagrams and flowcharts for the toolkit enhancement proposal**
 
 ---

@@ -1,5 +1,7 @@
 # Phase 2 Bulk-Tool Audit
 
+> **Status:** ✅ Complete (v1.1.29) — All 85 unbounded query sites across 57 files bounded. Audit document serves as historical record.
+
 > Scope: identify every tool that issues `posts_per_page => -1` (or equivalent)
 > against `WP_Query` / `get_posts`, so the Phase 2 refactor can replace each
 > site with the `WP_MCP_AI_Batch_Iterator` + `WP_MCP_AI_Tool_Artifact_Helper`

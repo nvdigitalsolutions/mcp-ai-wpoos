@@ -1,6 +1,6 @@
 # In-Plugin Transferable Credits — Architecture Plan
 
-> **Status:** Proposal — awaiting implementation decision
+> **Status:** ⏳ Not implemented (v1.1.29) — Zero credit service infrastructure
 > **Date:** 2026-05-11
 > **Author:** Copilot Coding Agent
 > **Decision gate:** Choose Track A (recommended, ships in weeks) or Track B (requires legal counsel, ~12 months)

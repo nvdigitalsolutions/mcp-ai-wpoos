@@ -1,6 +1,6 @@
 # Bitwarden-Compatible Password Vault Server in WordPress - Revised Proposal
 
-**Status:** 🔬 RESEARCH PHASE  
+**Status:** Not pursued (v1.1.29) — Full Bitwarden server protocol rejected by proposal's own feasibility analysis. Native vault with Bitwarden import/export shipped instead.
 **Created:** January 23, 2026  
 **Revised:** January 23, 2026  
 **Complexity:** ⭐⭐⭐⭐⭐ VERY HIGH  

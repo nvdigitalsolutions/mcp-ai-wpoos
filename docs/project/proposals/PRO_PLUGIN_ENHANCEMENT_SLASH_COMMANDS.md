@@ -1,7 +1,7 @@
 # Pro Plugin Enhancement: Slash Commands & Workflow Automation
 
 **Proposal Date:** February 2, 2026  
-**Status:** Draft  
+> **Status:** 🚧 Partially implemented (v1.1.29) — 29 commands exist; clean-content and optimize-perf not built
 **Priority:** High  
 **Inspired By:** [OpenClaw](https://github.com/openclaw/openclaw) & [awesome-slash](https://github.com/avifenesh/awesome-slash)
 

@@ -1,5 +1,7 @@
 # Transient Caching Implementation - Session Summary
 
+> **Status:** ✅ Superseded (v1.1.29) — All phases subsequently completed. See FINAL_IMPLEMENTATION_SUMMARY.md
+
 ## Completed Work
 
 ### Phase 1: OpenAI list_models() Caching ✅

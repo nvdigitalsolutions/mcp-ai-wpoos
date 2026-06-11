@@ -1,7 +1,7 @@
 # Bitwarden/Vaultwarden Integration Proposal
 
 **Last Updated:** January 28, 2026  
-**Status:** ⏳ PENDING - Awaiting Stakeholder Decision  
+**Status:** Superseded (v1.1.29) — Native Password Vault shipped instead of Vaultwarden REST integration. Vault supports Bitwarden-compatible JSON import/export and bidirectional sync.
 **Recommendation:** Use Vaultwarden Integration (NOT Build from Scratch)  
 **Estimated Effort:** 2-3 months for Vaultwarden integration
 

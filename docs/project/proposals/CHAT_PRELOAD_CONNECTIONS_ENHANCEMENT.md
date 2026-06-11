@@ -1,5 +1,7 @@
 # Chat Initialization Enhancement: Pre-load Remote Connections
 
+> **Status:** Not implemented (v1.1.29) — No preload_connections or chat_preload code exists in PHP or JS. No /chat/context/{id} endpoint.
+
 ## Overview
 
 Enhancement proposal to automatically pre-load available remote site connections when the chat client initializes, eliminating the need for an explicit `list_connections` tool call before answering product availability questions.

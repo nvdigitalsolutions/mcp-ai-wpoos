@@ -1,5 +1,7 @@
 # Future Enhancement: Service Worker Support for WebLLM
 
+> **Status:** 📋 Future (v1.1.29) — No service worker registration code exists
+
 ## Overview
 Web-LLM provides Service Worker support to enable model persistence across page visits and improved offline experience. This document outlines how this could be integrated into the WordPress plugin.
 

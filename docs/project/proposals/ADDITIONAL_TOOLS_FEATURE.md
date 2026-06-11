@@ -1,5 +1,7 @@
 # Additional Tools Feature
 
+> **Status:** ✅ Implemented (v1.1.29) — Full implementation in class-wp-mcp-ai-shortcode.php. additional_tools attribute parsed, sanitized, merged for OpenAI and embedded paths. Used by 13+ Pro research pages.
+
 ## Overview
 
 The `additional_tools` feature allows specific contexts (like research pages) to inject tools that are available regardless of the assistant's configured tool list. This ensures that context-specific tools are always available where needed.

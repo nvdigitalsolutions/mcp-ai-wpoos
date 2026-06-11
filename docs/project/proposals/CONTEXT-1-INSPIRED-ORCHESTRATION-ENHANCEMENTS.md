@@ -3,7 +3,7 @@
 ## Proposal: Applying Agentic Retrieval Best Practices to NV oOS
 
 **Author:** NV Digital Solutions  
-**Status:** Proposal  
+> **Status:** ⏳ Not implemented (v1.1.29) — None of the 3 proposed orchestration services exist
 **Created:** 2026-03-27  
 **Related Components:** Agent Context Manager, Prioritize Context Tool, Workflow Tools, Research Tools, Agentic Workflow Optimizer  
 **Inspired By:** Chroma Context-1, Stanford ACE Framework, Anthropic Context Engineering

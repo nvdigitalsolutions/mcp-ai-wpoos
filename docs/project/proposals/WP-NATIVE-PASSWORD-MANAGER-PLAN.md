@@ -1,6 +1,6 @@
 # WordPress-Native Password Manager - Implementation Plan
 
-**Status:** 📋 DETAILED PLAN  
+**Status:** 🟡 IN PROGRESS — Pro addon shipped (v1.1.29). 8 vault files in addons/pro/includes/vault/ (CPTs, encryption, Bitwarden sync, REST, admin UI). Plan is now a delivered feature.
 **Created:** January 23, 2026  
 **Type:** Pro Add-on Feature  
 **Complexity:** ⭐⭐⭐ MEDIUM-HIGH  

@@ -1,5 +1,7 @@
 # Transient API Enhancement - Summary
 
+> **Status:** ✅ Complete (v1.1.29) — Settings, cache keys, and implementation match
+
 ## What Was Done
 
 This PR provides a complete proposal and implementation plan for enhancing the plugin's use of the WordPress Transient API based on industry best practices.
