@@ -11360,16 +11360,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Translate WordPress types to OOS domain types.
 				$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
 
-				// Reject requests with no assistant and no profession — matches the guard
-				// in the non-OOS handle_chat_request path.
-				if ( ! $assistant_id && ! $profession_id ) {
-					return new WP_Error(
-						'wp_mcp_ai_missing_assistant',
-						__( 'No assistant was provided and no default assistant is configured.', 'mcp-ai-wpoos' ),
-						array( 'status' => 400 )
-					);
-				}
-
 				$user_id = get_current_user_id();
 
 				// Build assistant config from WordPress post meta.
@@ -11460,20 +11450,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$options['model'] = $assistant_config['model'];
 			}
 
-			// Fall back to global default provider/model when the assistant config
-			// does not specify them. Matches the fallback chain in sanitize_options()
-			// used by the non-OOS handler.
-			if ( empty( $options['provider'] ) || empty( $options['model'] ) ) {
-				$global_settings = WP_MCP_AI_Admin_Settings::get_settings();
-				if ( empty( $options['provider'] ) && ! empty( $global_settings['default_provider'] ) ) {
-					$options['provider'] = sanitize_key( $global_settings['default_provider'] );
-				}
-				if ( empty( $options['model'] ) && ! empty( $global_settings['default_model'] ) ) {
-					$options['model'] = sanitize_text_field( $global_settings['default_model'] );
-				}
-			}
-
-			// Pass through temperature and max_tokens from assistant config if not
+				// Pass through temperature and max_tokens from assistant config if not
 				// already set in request options.
 			if ( ! isset( $options['temperature'] ) && isset( $assistant_config['temperature'] ) && null !== $assistant_config['temperature'] ) {
 				$options['temperature'] = (float) $assistant_config['temperature'];
