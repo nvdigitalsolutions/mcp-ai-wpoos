@@ -12,6 +12,7 @@ privacy filtering, and transcript mining.
 - Provenance tracer
 - RRF fusion
 - Transcript mining
+- RAG infrastructure audit (Traditional, Agentic, Graph, Vectorless/BM25)
 - Token enhancement quick reference
 
 ## What doesn't belong here
