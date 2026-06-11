@@ -8,7 +8,7 @@ Typed PSR-14 domain events that replace WordPress action hooks (`do_action` / `a
 
 | | |
 |---|---|
-| **Distribution** | `oos/core` Composer package |
+| **Distribution** | `nvoos/core` Composer package |
 | **PHP target** | 8.1+ |
 | **Dependencies** | PSR-14 (EventDispatcherInterface) |
 

@@ -55,7 +55,7 @@ The NV Cloud coverage exercises the client, adapter, service, and billing observ
 - [`../../../../.context/security-checklist.md`](../../../../.context/security-checklist.md) — outbound-HTTP, secret handling (always)
 - [`../../../../.context/pro-vs-base.md`](../../../../.context/pro-vs-base.md) — Base/Pro placement rules
 - [`../../../../CLAUDE.md`](../../../../CLAUDE.md) — PHP-compat, provider envelope conventions
-- [`../../../../docs/ADR_001_module_boundaries.md`](../../../../docs/ADR_001_module_boundaries.md) — adapter layering rationale
+- [`../../../../docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../../../docs/project/architecture-decisions/ADR_001_module_boundaries.md) — adapter layering rationale
 
 ## See Also
 

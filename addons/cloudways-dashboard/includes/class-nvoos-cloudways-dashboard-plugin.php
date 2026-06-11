@@ -59,24 +59,14 @@ class NV_oOS_CloudwaysDashboard_Plugin {
 	 * @return void
 	 */
 	public static function render_admin_page() {
-		echo '<div id="nvoos-cloudways-dashboard-root" class="nvoos-cloudways-dashboard-wrapper"></div>';
+		echo sprintf(
+			'<div class="nvoos-cloudways-dashboard-root" role="application" aria-label="%s" data-config="%s"></div>',
+			esc_attr( __( 'Cloudways Dashboard', 'nvoos-cloudways-dashboard' ) ),
+			esc_attr( wp_json_encode( array( 'isAdmin' => true ) ) )
+		);
 
 		// Enqueue assets inline so the admin page always gets them.
 		NV_oOS_CloudwaysDashboard_Shortcode::enqueue_assets( array() );
-
-		// Inline script to mount the React app inside WP-Admin.
-		$config = wp_json_encode(
-			array(
-				'isAdmin' => true,
-			)
-		);
-		wp_add_inline_script(
-			'nvoos-cloudways-dashboard',
-			sprintf(
-				'window.addEventListener("DOMContentLoaded",function(){var e=document.getElementById("nvoos-cloudways-dashboard-root");e&&(e.dataset.config=%s||"{}",e.dataset.mounted||(NVoOSCloudwaysDashboard&&NVoOSCloudwaysDashboard.mount&&NVoOSCloudwaysDashboard.mount(e),e.dataset.mounted="1"))});',
-				$config ? wp_json_encode( $config ) : '{}'
-			)
-		);
 	}
 
 	/**

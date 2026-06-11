@@ -61,7 +61,7 @@ There is no standalone `test-toolkit-cct-store.php` / `test-toolkit-cpt-store.ph
 - [`../../../../.context/security-checklist.md`](../../../../.context/security-checklist.md) — sanitisation at the storage seam (always)
 - [`../../../../.context/pro-vs-base.md`](../../../../.context/pro-vs-base.md) — Base/Pro placement rules
 - [`../../../../CLAUDE.md`](../../../../CLAUDE.md) — PHP-compat, canonical envelope (success array or `WP_Error`)
-- [`../../../../docs/ADR_001_module_boundaries.md`](../../../../docs/ADR_001_module_boundaries.md) — adapter layering rationale
+- [`../../../../docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../../../docs/project/architecture-decisions/ADR_001_module_boundaries.md) — adapter layering rationale
 
 ## See Also
 

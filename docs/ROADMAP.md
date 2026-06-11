@@ -396,6 +396,7 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 - [ ] Gemini context caching (68% cost savings)
 - [ ] Gemini thinking mode support
 - [ ] OpenAI batch embeddings
+- [x] Transformer-inspired attention routing — semantic tool selection via QKV embedding similarity, 5-head multi-head scoring, pre-computed tool embedding KV cache, sliding-window conversation compression, Reciprocal Rank Fusion (RRF) into harness Layer C (delivered June 2026, PR #5290)
 
 **Developer Experience:**
 - [ ] Improved error messages
@@ -490,7 +491,26 @@ Potential future toolkits based on community demand:
 
 ### Major Features
 
-#### 1. Advanced Workflow Automation
+#### 1. Cross-Platform Extraction (🟡 In Progress)
+- [x] Domain contracts (9 interfaces) — `lib/core/src/Domain/Contract/`
+- [x] Domain entities (10 value objects) — `lib/core/src/Domain/Entity/`
+- [x] Domain errors (5 typed exceptions) — `lib/core/src/Domain/Error/`
+- [x] Domain events (8 events) — `lib/core/src/Domain/Event/`
+- [x] Application services (ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry)
+- [x] 12 provider clients (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, Ollama, LM Studio, DigitalOcean, Nvidia Nim, Cloudflare, HuggingFace)
+- [x] SSE streaming handler + cost calculator
+- [x] 8 WordPress adapter implementations
+- [x] Feature flag activation (`?engine=oos`)
+- [x] 43 migrated tools (Tier 1 + select Tier 2)
+- [ ] ~152 remaining tool migrations
+- [ ] Test suite for extracted packages
+- [ ] Laravel adapter
+- [ ] Craft CMS adapter
+- [ ] Monorepo CI/CD + Packagist publishing
+
+See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](project/proposals/cross-platform-extraction-gap-analysis.md) for detailed status.
+
+#### 2. Advanced Workflow Automation
 - [ ] Custom workflow builder UI
 - [ ] Trigger-action automation system
 - [ ] Conditional logic for workflows

@@ -317,8 +317,8 @@ The `docs/` directory contains **570+ files** (including implementation history,
 | `docs/integrations/` | Third-party integration guides |
 | `docs/features/agent-skills.md` | Agent Skills end-to-end reference (Phases 1–4: bundled skills, remote catalogues, progressive disclosure, skill packs) |
 | `docs/reference/` | REST API, hooks, settings reference |
-| `docs/guides/` | How-to guides for specific workflows |
-| `docs/ADR_001_module_boundaries.md` | Architecture Decision Record #1 — module boundaries |
+| `docs/developer/` | How-to guides for specific workflows |
+| `docs/project/architecture-decisions/ADR_001_module_boundaries.md` | Architecture Decision Record #1 — module boundaries |
 
 ### Docs to skip (unless debugging history)
 

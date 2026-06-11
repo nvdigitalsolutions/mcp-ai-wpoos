@@ -288,6 +288,14 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				return $payload;
 			}
 
+			// Pre-flight context-window validation (shared with all providers).
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'cloudflare', $options, $messages );
+				if ( is_wp_error( $preflight ) ) {
+					return $preflight;
+				}
+			}
+
 			// Cloudflare Workers AI expects model IDs like @cf/meta/llama-3.1-8b-instruct
 			// to be part of the URL path with forward slashes intact, not URL-encoded.
 			// Validate model ID format and escape properly for URL path.
@@ -351,44 +359,12 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			$body = wp_remote_retrieve_body( $response );
 
 			if ( $code < 200 || $code >= 300 ) {
-				// Parse Cloudflare error response for better error messages.
-				$error_message = __( 'Cloudflare Workers AI returned an error.', 'mcp-ai-wpoos' );
-				$decoded_body  = json_decode( $body, true );
-
-				if ( is_array( $decoded_body ) && isset( $decoded_body['errors'] ) && is_array( $decoded_body['errors'] ) ) {
-					// Cloudflare returns errors in an array with code and message.
-					foreach ( $decoded_body['errors'] as $error ) {
-						if ( isset( $error['message'] ) ) {
-							// Sanitize error message to prevent XSS.
-							$sanitized_message = sanitize_text_field( $error['message'] );
-							$error_message    .= ' ' . $sanitized_message;
-							if ( isset( $error['code'] ) ) {
-								// Ensure code is an integer.
-								$error_code     = absint( $error['code'] );
-								$error_message .= ' (Code: ' . $error_code . ')';
-							}
-							break; // Use the first error message.
-						}
-					}
+				$error_body    = wp_remote_retrieve_body( $response );
+				$decoded_error = json_decode( $error_body, true );
+				if ( JSON_ERROR_NONE !== json_last_error() ) {
+					$decoded_error = array();
 				}
-
-				WP_MCP_AI_Logger::log_error(
-					'Cloudflare Workers AI returned an error.',
-					array(
-						'status'        => $code,
-						'body'          => $body,
-						'error_message' => $error_message,
-					)
-				);
-
-				return new WP_Error(
-					'wp_mcp_ai_api_error',
-					$error_message,
-					array(
-						'status' => $code,
-						'body'   => $body,
-					)
-				);
+				return $this->handle_api_error( $code, is_array( $decoded_error ) ? $decoded_error : array(), $response );
 			}
 
 			$decoded = json_decode( $body, true );
@@ -437,6 +413,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		protected function build_payload( array $messages, array $options ) {
 			// Normalize messages to ensure content is in the correct format.
 			// Cloudflare Workers AI expects content to be a string for text-only messages.
+			$messages            = $this->filter_tool_messages_for_payload( $messages );
 			$normalized_messages = $this->normalize_messages( $messages );
 
 			// CRITICAL: Cloudflare Workers AI follows OpenAI's chat completions format.
@@ -938,6 +915,216 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				),
 				'usage'    => $usage,
 			);
+		}
+
+		/**
+		 * Translate a Cloudflare HTTP error into a WP_Error.
+		 *
+		 * Handles a non-2xx API response and returns an appropriate WP_Error.
+		 * Focuses on 401 auth and 429 rate-limit with retry-after parsing.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param int          $code     HTTP status code.
+		 * @param array        $decoded  Decoded JSON response body.
+		 * @param array|object $response Full WP HTTP response.
+		 * @return WP_Error
+		 */
+		protected function handle_api_error( $code, array $decoded, $response ) {
+			$error_message = __( 'Cloudflare Workers AI returned an error.', 'mcp-ai-wpoos' );
+
+			// Try to extract a specific error message from the Cloudflare response.
+			if ( isset( $decoded['errors'] ) && is_array( $decoded['errors'] ) ) {
+				foreach ( $decoded['errors'] as $error ) {
+					if ( isset( $error['message'] ) ) {
+						$sanitized_message = sanitize_text_field( $error['message'] );
+						$error_message     = $sanitized_message;
+						break;
+					}
+				}
+			}
+
+			$error_data = array(
+				'status' => $code,
+				'body'   => $decoded,
+			);
+
+			$error_code = 'wp_mcp_ai_cloudflare_api_error';
+
+			if ( 401 === $code ) {
+				$error_code            = 'wp_mcp_ai_cloudflare_api_error_auth';
+				$error_data['actions'] = array(
+					'auth_info' => __( 'Verify your Cloudflare API token and account ID in NV oOS → Providers → Cloudflare.', 'mcp-ai-wpoos' ),
+				);
+			} elseif ( 429 === $code ) {
+				$error_code  = 'wp_mcp_ai_cloudflare_api_error_rate_limit';
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				if ( ! empty( $retry_after ) ) {
+					$error_data['retry_after'] = absint( $retry_after );
+				}
+				$error_data['actions'] = array(
+					'rate_limit_info' => __( 'The Cloudflare Workers AI rate limit has been exceeded. Try again in a few moments.', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Cloudflare Workers AI returned an error.',
+					array(
+						'code'          => $code,
+						'error_message' => $error_message,
+						'body'          => $decoded,
+					)
+				);
+			}
+
+			return new WP_Error( $error_code, $error_message, $error_data );
+		}
+
+		/**
+		 * Drop tool role messages that are not associated with the most recent
+		 * assistant tool call.
+		 *
+		 * Cloudflare Workers AI follows the OpenAI-compatible pattern where tool
+		 * responses must immediately follow the assistant message that emitted the
+		 * corresponding tool call. When intervening messages appear between those
+		 * entries the request may be rejected. This normaliser filters out any
+		 * tool messages that no longer have a matching pending call so the
+		 * payload remains valid.
+		 *
+		 * Logic mirrors WP_MCP_AI_OpenAI_Client::filter_tool_messages_for_payload().
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param array $messages Chat history supplied by the caller.
+		 * @return array
+		 */
+		protected function filter_tool_messages_for_payload( array $messages ) {
+			if ( empty( $messages ) ) {
+				return $messages;
+			}
+
+			$filtered                = array();
+			$pending_calls           = array();
+			$awaiting_tool_responses = false;
+			$incomplete_group_start  = null;
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+				if ( '' === $role ) {
+					continue;
+				}
+
+				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					// If the previous assistant message had tool_calls that were never
+					// fully answered, drop the entire incomplete group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'cloudflare_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before user/system message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+					$filtered[]              = $message;
+					continue;
+				}
+
+				if ( 'assistant' === $role ) {
+					// If the PREVIOUS assistant had unresolved tool_calls, drop that group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'cloudflare_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before next assistant message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						foreach ( $message['tool_calls'] as $tool_call ) {
+							if ( ! is_array( $tool_call ) ) {
+								continue;
+							}
+
+							$call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
+							if ( '' === $call_id ) {
+								continue;
+							}
+
+							$pending_calls[ $call_id ] = true;
+						}
+					}
+
+					if ( ! empty( $pending_calls ) ) {
+						$awaiting_tool_responses = true;
+						$incomplete_group_start  = count( $filtered );
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				if ( 'tool' === $role ) {
+					$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
+
+					if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'cloudflare_dropped_orphan_tool_message',
+								'Dropping tool message without matching tool call before Cloudflare request.',
+								array(
+									'tool_call_id' => $tool_call_id,
+									'reason'       => '' === $tool_call_id
+										? 'missing_tool_call_id'
+										: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+								)
+							);
+						}
+
+						continue;
+					}
+
+					unset( $pending_calls[ $tool_call_id ] );
+
+					if ( empty( $pending_calls ) ) {
+						$awaiting_tool_responses = false;
+						$incomplete_group_start  = null;
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				$pending_calls           = array();
+				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
+				$filtered[]              = $message;
+			}
+
+			return array_values( $filtered );
 		}
 
 		/**

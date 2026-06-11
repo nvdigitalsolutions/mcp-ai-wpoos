@@ -1,8 +1,28 @@
+# ───────────────────────────────────────────────────────────
+# oOS Engine — WordPress Plugin Development Environment
+# ───────────────────────────────────────────────────────────
+#
+# Start:    docker compose up -d
+# Stop:     docker compose down
+# Reset:    docker compose down -v && docker compose up -d
+# WP-CLI:   docker compose run --rm wp-cli plugin list
+# Logs:     docker compose logs -f wordpress
+#
+# Access:   http://localhost:8000
+#           http://localhost:8000/wp-admin  (setup on first visit)
+
+name: oos-wp
+
 services:
+
+  # ── WordPress Application Server ─────────────────────────
   wordpress:
-    image: wordpress:6.4-php8.1-apache
+    image: wordpress:6.9-php8.2-apache
+    container_name: oos-wp
+    restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8000:80"
     environment:
@@ -10,33 +30,80 @@ services:
       WORDPRESS_DB_NAME: wordpress
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DEBUG: "true"
+      WORDPRESS_CONFIG_EXTRA: |
+        /* ── Development overrides ── */
+        define( 'WP_DEBUG_LOG', true );
+        define( 'WP_DEBUG_DISPLAY', false );
+        define( 'SCRIPT_DEBUG', true );
+        define( 'WP_ENVIRONMENT_TYPE', 'development' );
+        define( 'WP_MEMORY_LIMIT', '256M' );
+
+        /* ── Plugin debug (must come after the plugin loads) ── */
+        if ( ! defined( 'WP_MCP_AI_DEBUG' ) ) {
+            define( 'WP_MCP_AI_DEBUG', true );
+        }
     volumes:
-      - wordpress_data:/var/www/html
-      - ./:/var/www/html/wp-content/plugins/wp-mcp-ai
-  wp-cli:
-    image: wordpress:cli-php8.1
-    depends_on:
-      - db
-      - wordpress
-    environment:
-      WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_NAME: wordpress
-      WORDPRESS_DB_USER: wordpress
-      WORDPRESS_DB_PASSWORD: wordpress
-    volumes:
-      - wordpress_data:/var/www/html
-      - ./:/var/www/html/wp-content/plugins/wp-mcp-ai
-    working_dir: /var/www/html
-    entrypoint: ["wp"]
+      - wp_core:/var/www/html
+      - .:/var/www/html/wp-content/plugins/mcp-ai-wpoos
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ── MySQL 8.0 Database ──────────────────────────────────
   db:
     image: mysql:8.0
+    container_name: oos-wp-db
+    restart: unless-stopped
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --max_allowed_packet=256M
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: wordpress
       MYSQL_DATABASE: wordpress
       MYSQL_USER: wordpress
       MYSQL_PASSWORD: wordpress
     volumes:
-      - db_data:/var/lib/mysql
+      - wp_db:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - -h
+        - localhost
+        - -u
+        - root
+        - -pwordpress
+        - --ssl-mode=DISABLED
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  # ── WP-CLI (on-demand only, not auto-started) ──────────
+  wp-cli:
+    image: wordpress:cli-php8.2
+    container_name: oos-wp-cli
+    profiles:
+      - tools
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    volumes:
+      - wp_core:/var/www/html
+      - .:/var/www/html/wp-content/plugins/mcp-ai-wpoos
+    working_dir: /var/www/html
+    # No entrypoint override — use the image's built-in `wp` shim.
+    # Run as:  docker compose run --rm wp-cli plugin list
+    command: ["--info"]
+
 volumes:
-  wordpress_data:
-  db_data:
+  wp_core:
+  wp_db:

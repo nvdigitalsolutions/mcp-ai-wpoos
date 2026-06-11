@@ -1,3 +1,21 @@
+/* Skip link — visually hidden until focused */
+.nvoos-skip-link {
+	position: absolute;
+	top: -9999px;
+	left: -9999px;
+	z-index: 9999;
+	padding: 8px 16px;
+	background: #2271b1;
+	color: #fff;
+	text-decoration: none;
+	border-radius: 4px;
+	font-size: 14px;
+}
+.nvoos-skip-link:focus {
+	top: 8px;
+	left: 8px;
+}
+
 .nvoos-canvas-toolkit-app {
 	font: inherit;
 	color: inherit;

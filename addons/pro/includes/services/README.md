@@ -80,7 +80,7 @@ Coverage spans both `addons/pro/tests/` and the root `tests/` suite — historic
 - [`../../../../.context/pro-vs-base.md`](../../../../.context/pro-vs-base.md) — Base/Pro placement rules
 - [`../../../../.context/testing.md`](../../../../.context/testing.md) — service test patterns
 - [`../../../../CLAUDE.md`](../../../../CLAUDE.md) — PHP-compat, canonical envelopes
-- [`../../../../docs/ADR_001_module_boundaries.md`](../../../../docs/ADR_001_module_boundaries.md) — service ↔ adapter layering
+- [`../../../../docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../../../docs/project/architecture-decisions/ADR_001_module_boundaries.md) — service ↔ adapter layering
 
 ## See Also
 

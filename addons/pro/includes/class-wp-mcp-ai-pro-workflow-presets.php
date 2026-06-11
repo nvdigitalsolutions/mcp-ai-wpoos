@@ -63,7 +63,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				self::get_data_presets(),
 				self::get_communication_presets(),
 				self::get_maintenance_presets(),
-				self::get_onboarding_presets()
+				self::get_onboarding_presets(),
+				self::get_crm_support_presets()
 			);
 
 			return $presets;
@@ -122,6 +123,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				'communication' => __( 'Messaging & Notifications', 'mcp-ai-wpoos-pro' ),
 				'maintenance'   => __( 'Site Maintenance', 'mcp-ai-wpoos-pro' ),
 				'onboarding'    => __( 'User & Content Onboarding', 'mcp-ai-wpoos-pro' ),
+				'crm_support'   => __( 'CRM — Support & Ticket Management', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -1337,7 +1339,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 								'toolSlug'    => 'search_content',
 								'arguments'   => array(
 									'post_type' => 'product',
-									'meta_key'  => 'rating',
+									'meta_key'  => 'rating', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Staging environment preset.
 								),
 								'description' => __( 'Fetch recent product reviews.', 'mcp-ai-wpoos-pro' ),
 							),
@@ -2753,6 +2755,352 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'target'       => 'node_6',
 							'sourceHandle' => 'output',
 						),
+					),
+				),
+			);
+		}
+
+		/**
+		 * Get CRM Support Ticket workflow presets.
+		 *
+		 * @since  2.6.0
+		 * @return array<string, array> Preset definitions.
+		 */
+		private static function get_crm_support_presets() {
+			return array(
+				'support_ticket_triage'       => array(
+					'name'        => __( 'Support Ticket Triage', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Auto-triage pipeline: classify incoming support tickets, suggest priority and category, assign to the right team member.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'crm_support',
+					'icon'        => 'dashicons-sos',
+					'tags'        => array( 'crm', 'support', 'triage', 'classification' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'New Ticket Created', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Triggered when a new support ticket is created.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Classify Ticket', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'AI classifies the ticket category and suggests priority.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'classify_support_ticket',
+								'tool_args'   => array( 'apply_results' => true ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Update Status', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Move ticket to Triaged status.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'update_support_ticket',
+								'tool_args'   => array( 'status' => 'triaged' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Ticket Triaged', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Ticket is classified and ready for agent.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'source' => 'node_1',
+							'target' => 'node_2',
+						),
+						array(
+							'source' => 'node_2',
+							'target' => 'node_3',
+						),
+						array(
+							'source' => 'node_3',
+							'target' => 'node_4',
+						),
+					),
+				),
+				'support_ticket_resolution'   => array(
+					'name'        => __( 'Support Ticket Resolution', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Resolution workflow: review ticket, add resolution notes, mark as resolved, and trigger CSAT survey.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'crm_support',
+					'icon'        => 'dashicons-yes-alt',
+					'tags'        => array( 'crm', 'support', 'resolution', 'csat' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Ticket in Progress', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Ticket is being worked on by an agent.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Add Resolution Note', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Add internal resolution note to the ticket.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'update_support_ticket',
+								'tool_args'   => array( 'note' => 'Resolution note' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Resolve Ticket', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Mark the ticket as resolved.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'resolve_support_ticket',
+								'tool_args'   => array( 'resolution_type' => 'solved' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Ticket Resolved + CSAT Queued', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Resolution complete, CSAT survey triggered.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'source' => 'node_1',
+							'target' => 'node_2',
+						),
+						array(
+							'source' => 'node_2',
+							'target' => 'node_3',
+						),
+						array(
+							'source' => 'node_3',
+							'target' => 'node_4',
+						),
+					),
+				),
+				'support_escalation_handling' => array(
+					'name'        => __( 'Support Escalation Handling', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Escalation workflow: detect SLA breaches, escalate priority, notify managers, and update ticket status.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'crm_support',
+					'icon'        => 'dashicons-warning',
+					'tags'        => array( 'crm', 'support', 'escalation', 'sla' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'SLA Breach Detected', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'A ticket SLA has been breached or is at risk.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Escalate Priority', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Bump the ticket priority level.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'escalate_support_ticket',
+								'tool_args'   => array(),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Get SLA Report', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Generate updated SLA compliance report.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'get_ticket_sla_report',
+								'tool_args'   => array(),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Escalation Complete', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Ticket escalated and managers notified.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'source' => 'node_1',
+							'target' => 'node_2',
+						),
+						array(
+							'source' => 'node_2',
+							'target' => 'node_3',
+						),
+						array(
+							'source' => 'node_3',
+							'target' => 'node_4',
+						),
+					),
+				),
+
+				// -- Customer Management workflow presets (v2.6.0) --
+				'lead_to_customer_conversion' => array(
+					'name'        => __( 'Lead-to-Customer Conversion', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'End-to-end lead conversion pipeline: qualify lead, convert to customer record, create linked deal.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'crm_support',
+					'icon'        => 'dashicons-update',
+					'tags'        => array( 'crm', 'customers', 'conversion', 'pipeline' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array( 'x' => 250, 'y' => 0 ),
+							'data'     => array(
+								'label'       => __( 'Lead Ready for Conversion', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Lead has reached SQL/Opportunity stage.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array( 'x' => 250, 'y' => 150 ),
+							'data'     => array(
+								'label'       => __( 'Qualify Lead (BANT)', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Run BANT qualification to validate lead readiness.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'qualify_lead_bant',
+								'tool_args'   => array(),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array( 'x' => 250, 'y' => 300 ),
+							'data'     => array(
+								'label'       => __( 'Convert to Customer', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Create customer record with linked deal.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'convert_lead_to_customer',
+								'tool_args'   => array( 'create_deal' => true ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array( 'x' => 250, 'y' => 450 ),
+							'data'     => array(
+								'label'       => __( 'Customer Created + Deal Open', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Customer record created with linked deal in pipeline.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array( 'source' => 'node_1', 'target' => 'node_2' ),
+						array( 'source' => 'node_2', 'target' => 'node_3' ),
+						array( 'source' => 'node_3', 'target' => 'node_4' ),
+					),
+				),
+				'customer_onboarding_sequence' => array(
+					'name'        => __( 'Customer Onboarding', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Post-conversion onboarding workflow: create welcome activity and schedule follow-up.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'crm_support',
+					'icon'        => 'dashicons-welcome-learn-more',
+					'tags'        => array( 'crm', 'customers', 'onboarding', 'automation' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array( 'x' => 250, 'y' => 0 ),
+							'data'     => array(
+								'label'       => __( 'Customer Created', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'A new customer record has been created.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array( 'x' => 250, 'y' => 150 ),
+							'data'     => array(
+								'label'       => __( 'Get Customer Details', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Retrieve full customer record.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'get_customer',
+								'tool_args'   => array(),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array( 'x' => 250, 'y' => 300 ),
+							'data'     => array(
+								'label'       => __( 'Create Welcome Activity', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Schedule a welcome call or onboarding meeting.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'create_crm_activity',
+								'tool_args'   => array( 'activity_type' => 'call', 'subject' => 'Customer Welcome Call' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array( 'x' => 250, 'y' => 450 ),
+							'data'     => array(
+								'label'       => __( 'Onboarding Initiated', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Welcome activity created, onboarding sequence started.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array( 'source' => 'node_1', 'target' => 'node_2' ),
+						array( 'source' => 'node_2', 'target' => 'node_3' ),
+						array( 'source' => 'node_3', 'target' => 'node_4' ),
 					),
 				),
 			);

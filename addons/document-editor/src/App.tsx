@@ -60,7 +60,12 @@ export function App( { config }: AppProps ) {
 			data-mode={ mode }
 			style={ heightStyle }
 		>
-			{ surface }
+			<a className="nvoos-skip-link" href="#nvoos-doc-editor-main-content">
+				{ __( 'Skip to main content', 'nvoos-document-editor' ) }
+			</a>
+			<div id="nvoos-doc-editor-main-content" tabIndex={ -1 }>
+				{ surface }
+			</div>
 		</div>
 	);
 }

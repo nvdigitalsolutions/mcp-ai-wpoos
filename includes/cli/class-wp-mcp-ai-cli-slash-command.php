@@ -243,8 +243,9 @@ class WP_MCP_AI_CLI_Slash_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 * @param mixed  $result Command result.
 	 * @param string $format Output format.
+	 * @param array  $fields Fields to include (unused, for signature compatibility).
 	 */
-	private function format_output( $result, $format ) {
+	protected function format_output( $result, $format = 'table', $fields = array() ) {
 		switch ( $format ) {
 			case 'json':
 				WP_CLI::line( wp_json_encode( $result, JSON_PRETTY_PRINT ) );

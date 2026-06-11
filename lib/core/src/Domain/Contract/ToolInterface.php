@@ -9,14 +9,14 @@
  *  - Adds optional sub-interfaces for capability flags, rules, data contracts,
  *    flow stages, and LLM sanitization.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 interface ToolInterface {
 
@@ -84,7 +84,7 @@ interface ToolCapabilityFlagsInterface {
 	/**
 	 * @return string[]  Array of capability flag strings.
 	 *
-	 * @see \Oos\Core\Domain\Entity\ToolCapabilityFlag  For the canonical flag list.
+	 * @see \Nvoos\Core\Domain\Entity\ToolCapabilityFlag  For the canonical flag list.
 	 */
 	public function getCapabilityFlags(): array;
 }

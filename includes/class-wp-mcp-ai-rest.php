@@ -3747,18 +3747,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$messages = $preflight['messages'];
 			$options  = $preflight['options'];
 
-			// Resolved provider slug, used for LM Studio native streaming checks below.
+			// Resolved provider slug, used for native streaming checks below.
 			$resolved_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
 
-			// Enable LM Studio real-time SSE streaming: inject stream_callback so that
-			// do_realtime_curl_stream() in WP_MCP_AI_LM_Studio_Client forwards each
-			// content/reasoning token to the browser as it is generated.
-			if ( function_exists( 'curl_init' ) && 'lm_studio' === $resolved_provider ) {
-				$native_streaming_used      = true;
-				$options['stream']          = true;
-				$options['stream_callback'] = function ( $chunk ) {
-					$this->send_sse_event( 'message', $chunk );
-				};
+			// Enable real-time SSE streaming for providers that support curl-based
+				// streaming (LM Studio local models and DeepSeek cloud API).  Each
+				// provider's client has a do_realtime_curl_stream() method that forwards
+				// content/reasoning tokens to the browser as they are generated.
+				//
+				// When disabled via the wp_mcp_ai_disable_native_streaming filter or the
+					// Disable Native Streaming setting (Advanced → System), the system falls
+					// back to simulated chunking (full response split into pieces with delays).
+					$disable_native = (bool) apply_filters( 'wp_mcp_ai_disable_native_streaming', false );
+					$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+					$disable_native = $disable_native || ( ! empty( $settings['disable_native_streaming'] ) );
+			if ( ! $disable_native ) {
+				$native_streaming_providers = apply_filters(
+					'wp_mcp_ai_native_streaming_providers',
+					array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
+				);
+				if ( function_exists( 'curl_init' ) && in_array( $resolved_provider, $native_streaming_providers, true ) ) {
+					$native_streaming_used      = true;
+					$options['stream']          = true;
+					$options['stream_callback'] = function ( $chunk ) {
+						$this->send_sse_event( 'message', $chunk );
+					};
+				}
 			}
 
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
@@ -4262,9 +4276,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Call LLM again with tool results.
-				// Re-enable native streaming if still on LM Studio provider (may have switched for TPM).
-				$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
-				if ( $native_streaming_used && 'lm_studio' === $loop_provider ) {
+				// Re-enable native streaming if still on a streaming-capable provider (may have switched for TPM).
+				$loop_provider              = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+				$native_streaming_providers = apply_filters(
+					'wp_mcp_ai_native_streaming_providers',
+					array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
+				);
+				if ( $native_streaming_used && in_array( $loop_provider, $native_streaming_providers, true ) ) {
 					$options['stream']          = true;
 					$options['stream_callback'] = function ( $chunk ) {
 						$this->send_sse_event( 'message', $chunk );
@@ -4398,7 +4416,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Send thinking text in chunks BEFORE sending main content (if present).
 			// This allows the client to display thinking text in the status section.
-			// Skip when LM Studio native streaming was active — reasoning tokens were
+			// Skip when native streaming was active — reasoning tokens were
 			// already forwarded in real time via the stream_callback.
 			if ( ! $native_streaming_used && is_string( $thinking_text ) && '' !== $thinking_text ) {
 				// Format thinking chunks based on provider for optimal client compatibility.
@@ -4484,7 +4502,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Send text content in chunks to simulate streaming (for better UX).
-			// Skip when LM Studio native streaming was active — content tokens were
+			// Skip when native streaming was active — content tokens were
 			// already forwarded in real time via the stream_callback.
 			if ( ! $native_streaming_used && is_string( $text_content ) && '' !== $text_content ) {
 				// Format content chunks in OpenAI-compatible format.
@@ -7835,10 +7853,99 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return array();
 			}
 
+			/**
+			 * Filter tool slugs before they are converted to LLM function payloads.
+			 *
+			 * This is the primary hook for attention-based tool selection.
+			 * Plugins or addons can reduce the tool list based on semantic
+			 * relevance, user capabilities, dependency availability, or
+			 * risk-tier assessment — the Transformer-inspired "attention
+			 * heads" that score tools on multiple dimensions.
+			 *
+			 * Return an empty array to use all allowed tools (bypass filtering).
+			 *
+			 * @since 1.8.0
+			 *
+			 * @param string[] $filtered_slugs   Filtered tool slugs (empty = use all).
+			 * @param string[] $allowed_tool_slugs Original tool slugs from assistant config.
+			 * @param array    $assistant_config   Full assistant configuration.
+			 */
+			$filtered_slugs = apply_filters( 'wp_mcp_ai_attention_tool_slugs', array(), $allowed_tool_slugs, $assistant_config );
+			if ( ! empty( $filtered_slugs ) && is_array( $filtered_slugs ) ) {
+				$allowed_tool_slugs = array_values( array_intersect( $filtered_slugs, $allowed_tool_slugs ) );
+			}
+
 			$chat_provider = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : 'openai';
 
 			$tools_payload = array();
+
+				/**
+				 * Maximum number of tools to include in a single chat request payload.
+				 *
+				 * OpenAI and most providers support up to 128 functions per request, but
+				 * sending that many tools bloats the payload and can exhaust PHP memory
+				 * during schema generation for complex tool definitions.  This guard
+				 * prevents crashes when an assistant has too many tools assigned and
+				 * logs a warning so the site owner can adjust the limit or reduce the
+				 * assigned tools.
+				 *
+				 * @since 2.4.0
+				 *
+				 * @param int $max_tools Maximum number of tools to include (default 50).
+				 */
+				$max_tools = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 50 );
+				$max_tools = max( 1, min( 128, $max_tools ) ); // Clamp to 1-128.
+
+				/**
+				 * Maximum combined token budget for tool definitions within a chat payload.
+				 *
+				 * Tool definitions are serialised JSON schemas that consume context-window
+				 * tokens. Complex tools with large parameter schemas can consume thousands
+				 * of tokens each. This budget provides a token-aware safety cap that
+				 * supplements the count-based cap above — tools are included until either
+				 * limit is reached.
+				 *
+				 * Default of 32000 tokens ≈ 25% of a 128K context window, following the
+				 * industry guidance of keeping tool overhead under 25-33% of the window.
+				 *
+				 * @since 2.7.0
+				 *
+				 * @param int $max_tool_tokens Maximum combined tokens for tool definitions (default 32000).
+				 */
+				$max_tool_tokens = (int) apply_filters( 'wp_mcp_ai_max_chat_tool_tokens', 32000 );
+				$max_tool_tokens = max( 1000, $max_tool_tokens );
+
+			if ( count( $allowed_tool_slugs ) > $max_tools ) {
+				WP_MCP_AI_Logger::log_event(
+					'tools_truncated_for_chat',
+					sprintf(
+						'Assistant has %d tools but the chat payload is capped at %d. Only the first %d tools will be sent to the LLM. Reduce the number of assigned tools to avoid this.',
+						count( $allowed_tool_slugs ),
+						$max_tools,
+						$max_tools
+					),
+					array(
+						'total_tools'  => count( $allowed_tool_slugs ),
+						'max_allowed'  => $max_tools,
+						'assistant_id' => isset( $assistant_config['id'] ) ? $assistant_config['id'] : null,
+					)
+				);
+				$allowed_tool_slugs = array_slice( $allowed_tool_slugs, 0, $max_tools );
+			}
+
+				// Track cumulative token consumption to enforce the token budget.
+				$cumulative_tool_tokens          = 0;
+				$tools_truncated_by_token_budget = false;
+				$truncated_tool_count            = 0;
+
 			foreach ( $allowed_tool_slugs as $slug ) {
+				// Enforce the token budget: stop adding tools once the cumulative
+				// token count exceeds the configured maximum.
+				if ( $cumulative_tool_tokens >= $max_tool_tokens ) {
+					$tools_truncated_by_token_budget = true;
+					++$truncated_tool_count;
+					continue;
+				}
 				$tool = $this->registry->get_tool( $slug );
 				if ( ! $tool ) {
 					WP_MCP_AI_Admin_Settings::log( 'Assistant references missing tool.', array( 'tool' => $slug ) );
@@ -7892,6 +7999,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'parameters'  => $schema,
 						),
 					);
+
+					// Track cumulative token consumption for the token budget cap.
+					if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+						$tool_def_json           = wp_json_encode( end( $tools_payload ) );
+						$cumulative_tool_tokens += WP_MCP_AI_Token_Budget_Manager::estimate_tokens( $tool_def_json );
+					}
 				} catch ( Exception $e ) {
 					// Log the error and skip this tool.
 					WP_MCP_AI_Logger::log_event(
@@ -7917,6 +8030,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 					continue;
 				}
+			}
+
+			// Log token-budget truncation when tools were dropped.
+			if ( $tools_truncated_by_token_budget ) {
+				WP_MCP_AI_Logger::log_event(
+					'tools_truncated_by_token_budget',
+					sprintf(
+						'Tool definitions reached the %d token budget after %d tools (%d dropped). Increase wp_mcp_ai_max_chat_tool_tokens filter or reduce tool schema complexity.',
+						$max_tool_tokens,
+						count( $tools_payload ),
+						$truncated_tool_count
+					),
+					array(
+						'max_token_budget'  => $max_tool_tokens,
+						'tools_included'    => count( $tools_payload ),
+						'tools_dropped'     => $truncated_tool_count,
+						'cumulative_tokens' => $cumulative_tool_tokens,
+						'assistant_id'      => isset( $assistant_config['id'] ) ? $assistant_config['id'] : null,
+					)
+				);
 			}
 
 			return $tools_payload;
@@ -9389,7 +9522,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
-			return array_keys( $array ) === range( 0, count( $array ) - 1 );
+			return array_keys( $arr ) === range( 0, count( $arr ) - 1 );
 		}
 
 		/**
@@ -11214,15 +11347,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// existing WordPress-specific workflow; profession-only requests
 				// are enriched with profession metadata and then flow through OOS.
 				$raw_assistant_id = $request->get_param( 'assistant_id' );
-				$team_id = $this->extract_team_id( $raw_assistant_id );
-				$profession_id = $this->extract_profession_id( $raw_assistant_id );
+				$team_id          = $this->extract_team_id( $raw_assistant_id );
+				$profession_id    = $this->extract_profession_id( $raw_assistant_id );
 
 				// Unified team requests ("unified_team_123") use the full multi-agent
 				// orchestration path. The OOS ChatOrchestrator does not yet implement
 				// team coordination, so we delegate to the existing handler.
-				if ( $team_id ) {
-					return $this->handle_unified_team_request( $request, $team_id );
-				}
+			if ( $team_id ) {
+				return $this->handle_unified_team_request( $request, $team_id );
+			}
 
 				// Translate WordPress types to OOS domain types.
 				$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
@@ -11235,9 +11368,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Merge profession configuration when testing a profession.
-				if ( $profession_id ) {
-					$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
-				}
+			if ( $profession_id ) {
+				$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
+			}
 
 				// Validate assistant access.
 			if ( $assistant_id ) {

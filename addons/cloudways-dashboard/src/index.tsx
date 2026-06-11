@@ -10,6 +10,23 @@ import { createElement, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 
+// TypeScript: declare process.env for esbuild define replacement.
+// esbuild replaces process.env.NODE_ENV with "production" in prod builds.
+declare const process: { env: { NODE_ENV: string } };
+
+// Load @axe-core/react in development builds for live accessibility audit output.
+// esbuild replaces process.env.NODE_ENV with "production" in prod builds,
+// making this block dead code that is eliminated by tree-shaking.
+if ( process.env.NODE_ENV !== 'production' ) {
+	Promise.all( [
+		import( 'react' ),
+		import( 'react-dom' ),
+		import( '@axe-core/react' ),
+	] ).then( ( [ React, ReactDOM, axe ] ) => {
+		axe.default( React, ReactDOM, 1000 );
+	} ).catch( () => { /* axe unavailable */ } );
+}
+
 declare global {
   interface Window {
     NVOOS_CLOUDWAYS_DASHBOARD: {

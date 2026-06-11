@@ -95,7 +95,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 * @return string
 		 */
 		public function get_documentation_url() {
-			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/settings/new-settings-december-2025.md';
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/admin-guides/settings/new-settings-december-2025.md';
 		}
 
 		/**
@@ -124,12 +124,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'step'        => 1,
 				),
 				'enable_opcache_reset'          => array(
-						'type'           => 'checkbox',
-						'label'          => __( 'Auto OPcache Reset', 'mcp-ai-wpoos' ),
-						'checkbox_label' => __( 'Automatically reset OPcache when needed', 'mcp-ai-wpoos' ),
-						'description'    => __( 'Automatically clears OPcache when plugin files are updated. Helps ensure code changes take effect immediately without manually clearing cache. Recommended for development environments.', 'mcp-ai-wpoos' ),
-						'default'        => false,
-					),
+							'type'           => 'checkbox',
+							'label'          => __( 'Auto OPcache Reset', 'mcp-ai-wpoos' ),
+							'checkbox_label' => __( 'Automatically reset OPcache when needed', 'mcp-ai-wpoos' ),
+							'description'    => __( 'Automatically clears OPcache when plugin files are updated. Helps ensure code changes take effect immediately without manually clearing cache. Recommended for development environments.', 'mcp-ai-wpoos' ),
+							'default'        => false,
+						),
+						'disable_native_streaming'      => array(
+							'type'           => 'checkbox',
+							'label'          => __( 'Disable Native Streaming', 'mcp-ai-wpoos' ),
+							'checkbox_label' => __( 'Use simulated chunking instead of real-time streaming', 'mcp-ai-wpoos' ),
+							'description'    => __( 'When enabled, responses are fully buffered then split into chunks with delays (simulated streaming) instead of streaming token-by-token in real time. Use this if you encounter issues with real-time streaming or your server does not support long-running cURL connections.', 'mcp-ai-wpoos' ),
+							'default'        => false,
+						),
 					'enable_oos_engine'             => array(
 						'type'           => 'checkbox',
 						'label'          => __( 'OOS Engine (Experimental)', 'mcp-ai-wpoos' ),
@@ -270,11 +277,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					),
 				),
 				'system'                 => array(
-					'id'     => 'system',
-					'label'  => __( 'System', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-admin-settings',
-					'fields' => array( 'enable_opcache_reset', 'enable_oos_engine' ),
-				),
+						'id'     => 'system',
+						'label'  => __( 'System', 'mcp-ai-wpoos' ),
+						'icon'   => 'dashicons-admin-settings',
+						'fields' => array( 'enable_opcache_reset', 'enable_oos_engine', 'disable_native_streaming' ),
+					),
 				'settings_management'    => array(
 					'id'     => 'settings_management',
 					'label'  => __( 'Settings Management', 'mcp-ai-wpoos' ),
@@ -713,6 +720,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<ul style="margin: 10px 0; padding-left: 20px;">
 							<li><strong><?php esc_html_e( 'Total Playbook Attachments:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $playbook_stats['total_attachments'] ); ?></li>
 							<li><strong><?php esc_html_e( 'Professions with Playbooks:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $playbook_stats['professions_with_playbooks'] ); ?> / <?php echo absint( $total_count ); ?></li>
+							<?php if ( $playbook_stats['orphaned_attachments'] > 0 ) : ?>
+								<li><strong><?php esc_html_e( 'Orphaned Playbooks:', 'mcp-ai-wpoos' ); ?></strong>
+									<span style="color: #a00;"><?php echo absint( $playbook_stats['orphaned_attachments'] ); ?></span>
+									<span class="description" style="margin-left: 5px;">
+										<?php esc_html_e( '(old attachments no longer in use — use Delete button below to clean up)', 'mcp-ai-wpoos' ); ?>
+									</span>
+								</li>
+							<?php endif; ?>
 							<li><strong><?php esc_html_e( 'Playbooks Seeded:', 'mcp-ai-wpoos' ); ?></strong>
 								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $playbook_stats['seeded'] ? 'success' : 'warning' ); ?>">
 									<?php echo esc_html( $playbook_stats['seeded'] ? __( 'Yes', 'mcp-ai-wpoos' ) : __( 'No', 'mcp-ai-wpoos' ) ); ?>
@@ -720,6 +735,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							</li>
 							<?php if ( $playbook_stats['last_sync'] ) : ?>
 								<li><strong><?php esc_html_e( 'Last Sync:', 'mcp-ai-wpoos' ); ?></strong> <?php echo esc_html( $playbook_stats['last_sync'] ); ?></li>
+							<?php endif; ?>
+							<?php if ( $playbook_stats['orphaned_playbooks'] > 0 ) : ?>
+								<li style="color: #a00;"><strong><?php esc_html_e( 'Orphaned Playbooks:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $playbook_stats['orphaned_playbooks'] ); ?>
+									<span class="description"><?php esc_html_e( '(old attachments no longer in use — use Delete button below to clean up)', 'mcp-ai-wpoos' ); ?></span>
+								</li>
 							<?php endif; ?>
 						</ul>
 					</div>
@@ -2589,6 +2609,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			return array(
 				'total_attachments'          => absint( $total_attachments ),
 				'professions_with_playbooks' => absint( $professions_with_playbooks ),
+				'orphaned_playbooks'         => WP_MCP_AI_Profession_Playbook_Seeder::count_orphaned_system_playbooks(),
 				'seeded'                     => $playbooks_seeded,
 				'last_sync'                  => $last_sync,
 			);

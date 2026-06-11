@@ -65,7 +65,7 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 	 * @return string
 	 */
 	public function get_documentation_url() {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/proposals/DEEPSEEK-V4-IMPLEMENTATION-STATUS.md';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/project/proposals/DEEPSEEK-V4-IMPLEMENTATION-STATUS.md';
 	}
 
 	/**

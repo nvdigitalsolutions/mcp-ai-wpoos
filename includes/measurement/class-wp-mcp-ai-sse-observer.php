@@ -33,7 +33,7 @@
  *   (sanitised) and `outcome`. Chunk payloads, status summaries,
  *   messages and headers are never included — the Internal privacy
  *   tier explicitly forbids them (see
- *   `docs/measurement/privacy-matrix.md`).
+ *   `docs/reference/measurement/privacy-matrix.md`).
  *
  * Opt-out:
  *   Return `false` from the `wp_mcp_ai_sse_observer_enabled` filter

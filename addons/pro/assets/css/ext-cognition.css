@@ -180,3 +180,393 @@
 	animation: nvoos-ext-cog-spin 0.7s linear infinite;
 	flex-shrink: 0;
 }
+
+/* ---------------------------------------------------------------
+   Camera Viewfinder (1.8.0)
+   Full-screen modal with live preview, detection overlays,
+   brand sidebar, and explicit scan authorization.
+--------------------------------------------------------------- */
+.nvoos-ext-cog-vf {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	background: rgba(0, 0, 0, 0.85);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.25s ease;
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+}
+
+.nvoos-ext-cog-vf.is-open {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.nvoos-ext-cog-vf__inner {
+	width: min(960px, calc(100vw - 32px));
+	max-height: calc(100vh - 32px);
+	background: #1e1e2e;
+	border: 1px solid #45475a;
+	border-radius: 14px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+.nvoos-ext-cog-vf__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	border-bottom: 1px solid #313244;
+	flex-shrink: 0;
+}
+
+.nvoos-ext-cog-vf__title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 700;
+	color: #cdd6f4;
+}
+
+.nvoos-ext-cog-vf__status {
+	font-size: 12px;
+	color: #a6adc8;
+	padding: 4px 12px;
+	border-radius: 20px;
+	background: #313244;
+	transition: background 0.2s, color 0.2s;
+}
+
+.nvoos-ext-cog-vf__status--success {
+	background: #1a3a2a;
+	color: #a6e3a1;
+}
+
+.nvoos-ext-cog-vf__status--error {
+	background: #3a1a1a;
+	color: #f38ba8;
+}
+
+.nvoos-ext-cog-vf__status--capturing {
+	background: #2a2a1a;
+	color: #f9e2af;
+	animation: nvoos-ext-cog-pulse 0.8s infinite;
+}
+
+.nvoos-ext-cog-vf__body {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.nvoos-ext-cog-vf__viewport {
+	flex: 1;
+	position: relative;
+	background: #000;
+	overflow: hidden;
+	min-height: 300px;
+}
+
+.nvoos-ext-cog-vf__video {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+}
+
+.nvoos-ext-cog-vf__overlay-canvas {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+.nvoos-ext-cog-vf__detections {
+	position: absolute;
+	bottom: 12px;
+	left: 12px;
+	right: 12px;
+	font-size: 12px;
+	color: #cdd6f4;
+	pointer-events: none;
+}
+
+.nvoos-ext-cog-vf__sidebar {
+	width: 220px;
+	flex-shrink: 0;
+	border-left: 1px solid #313244;
+	padding: 16px;
+	overflow-y: auto;
+	background: #181825;
+}
+
+.nvoos-ext-cog-vf__sidebar-title {
+	margin: 0 0 12px;
+	font-size: 13px;
+	font-weight: 700;
+	color: #a6adc8;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.nvoos-ext-cog-vf__brand-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-ext-cog-vf__brand-item {
+	padding: 6px 0;
+	font-size: 13px;
+	color: #cdd6f4;
+	border-bottom: 1px solid #313244;
+}
+
+.nvoos-ext-cog-vf__brand-item:last-child {
+	border-bottom: none;
+}
+
+.nvoos-ext-cog-vf__footer {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+	padding: 14px 20px;
+	border-top: 1px solid #313244;
+	flex-shrink: 0;
+}
+
+.nvoos-ext-cog-vf__btn {
+	padding: 8px 20px;
+	border-radius: 8px;
+	border: none;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 600;
+	transition: opacity 0.15s, transform 0.1s;
+}
+
+.nvoos-ext-cog-vf__btn:hover {
+	opacity: 0.9;
+	transform: translateY(-1px);
+}
+
+.nvoos-ext-cog-vf__btn:active {
+	transform: translateY(0);
+}
+
+.nvoos-ext-cog-vf__btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none;
+}
+
+.nvoos-ext-cog-vf__btn--primary {
+	background: #cba6f7;
+	color: #1e1e2e;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.nvoos-ext-cog-vf__btn--secondary {
+	background: transparent;
+	color: #cdd6f4;
+	border: 1px solid #45475a;
+}
+
+.nvoos-ext-cog-vf__scan-icon {
+	width: 18px;
+	height: 18px;
+	flex-shrink: 0;
+}
+
+/* Header actions bar: camera selector + torch + status */
+.nvoos-ext-cog-vf__header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-ext-cog-vf__camera-select {
+	padding: 4px 10px;
+	border-radius: 6px;
+	border: 1px solid #45475a;
+	background: #313244;
+	color: #cdd6f4;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a6adc8'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 8px center;
+	padding-right: 24px;
+}
+
+.nvoos-ext-cog-vf__camera-select:focus-visible {
+	outline: 2px solid #cba6f7;
+	outline-offset: 1px;
+}
+
+/* Torch / flashlight button */
+.nvoos-ext-cog-vf__torch-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border: 1px solid #45475a;
+	border-radius: 6px;
+	background: #313244;
+	color: #a6adc8;
+	cursor: pointer;
+	transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.nvoos-ext-cog-vf__torch-btn:hover {
+	color: #f9e2af;
+	border-color: #f9e2af;
+}
+
+.nvoos-ext-cog-vf__torch-btn--on {
+	color: #f9e2af;
+	background: #3a3520;
+	border-color: #f9e2af;
+	box-shadow: 0 0 8px rgba(249, 226, 175, 0.35);
+}
+
+.nvoos-ext-cog-vf__torch-icon {
+	width: 16px;
+	height: 16px;
+}
+
+/* Scanning region indicator (corner brackets) */
+.nvoos-ext-cog-vf__scan-region {
+	position: absolute;
+	inset: 10%;
+	pointer-events: none;
+	z-index: 5;
+	opacity: 0.6;
+	transition: opacity 0.3s;
+}
+
+.nvoos-ext-cog-vf__scan-region--hidden {
+	opacity: 0;
+}
+
+.nvoos-ext-cog-vf__corner {
+	position: absolute;
+	width: 24px;
+	height: 24px;
+	border-color: #cba6f7;
+	border-style: solid;
+}
+
+.nvoos-ext-cog-vf__corner--tl {
+	top: 0;
+	left: 0;
+	border-width: 3px 0 0 3px;
+	border-radius: 4px 0 0 0;
+}
+
+.nvoos-ext-cog-vf__corner--tr {
+	top: 0;
+	right: 0;
+	border-width: 3px 3px 0 0;
+	border-radius: 0 4px 0 0;
+}
+
+.nvoos-ext-cog-vf__corner--bl {
+	bottom: 0;
+	left: 0;
+	border-width: 0 0 3px 3px;
+	border-radius: 0 0 0 4px;
+}
+
+.nvoos-ext-cog-vf__corner--br {
+	bottom: 0;
+	right: 0;
+	border-width: 0 3px 3px 0;
+	border-radius: 0 0 4px 0;
+}
+
+/* File preview (uploaded image) */
+.nvoos-ext-cog-vf__file-preview {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+	background: #000;
+}
+
+.nvoos-ext-cog-vf__file-preview[hidden] {
+	display: none;
+}
+
+/* File upload button */
+.nvoos-ext-cog-vf__file-input {
+	display: none;
+}
+
+.nvoos-ext-cog-vf__footer-spacer {
+	flex: 1;
+}
+
+/* Camera button in chat actions bar */
+.wp-mcp-ai-chat__camera {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border: 1px solid #45475a;
+	border-radius: 8px;
+	background: transparent;
+	color: #a6adc8;
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s, background 0.15s;
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-chat__camera:hover {
+	color: #cba6f7;
+	border-color: #cba6f7;
+	background: rgba(203, 166, 247, 0.08);
+}
+
+.wp-mcp-ai-chat__camera:active {
+	transform: scale(0.95);
+}
+
+.wp-mcp-ai-chat__camera-icon {
+	width: 18px;
+	height: 18px;
+}
+
+@media (max-width: 600px) {
+	.nvoos-ext-cog-vf__body {
+		flex-direction: column;
+	}
+
+	.nvoos-ext-cog-vf__sidebar {
+		width: 100%;
+		border-left: none;
+		border-top: 1px solid #313244;
+		max-height: 120px;
+	}
+
+	.nvoos-ext-cog-vf__viewport {
+		min-height: 220px;
+	}
+}

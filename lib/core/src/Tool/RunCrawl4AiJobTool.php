@@ -1,13 +1,13 @@
 <?php
 /** Crawl4AI Job — triggers a crawl job via Crawl4AI REST API.
  *
- * @package Oos\Core @since 1.0.0 @license MIT */
+ * @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 class RunCrawl4AiJobTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly SettingsStoreInterface $s, private readonly HttpClientInterface $h ) {
 		parent::__construct( $e );}
@@ -50,9 +50,8 @@ class RunCrawl4AiJobTool extends AbstractTool {
 					'mode' => $this->stringParam( $arguments, 'mode', 'single' ),
 				)
 			);
-			$request  = new \Nyholm\Psr7\Request( 'POST', $baseUrl . '/crawl', array( 'Content-Type' => 'application/json' ), $body );
-			$response = $this->h->sendRequest( $request );
-			$data     = json_decode( (string) $response->getBody(), true );
+			$response = $this->h->send( 'POST', $baseUrl . '/crawl', array( 'Content-Type' => 'application/json' ), $body );
+			$data     = json_decode( $response->body, true );
 			return $this->success(
 				'Crawl job submitted.',
 				array(

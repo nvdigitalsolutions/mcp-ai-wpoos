@@ -583,7 +583,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	 *
 	 * @return array
 	 */
-	public function data_compliance_frameworks() {
+	public static function data_compliance_frameworks() {
 		return array(
 			'owasp' => array( 'owasp' ),
 			'gdpr'  => array( 'gdpr' ),

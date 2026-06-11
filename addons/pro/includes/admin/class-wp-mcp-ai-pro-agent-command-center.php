@@ -2090,7 +2090,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @return string Provider name (e.g. 'openai', 'gemini', 'anthropic', 'lm_studio').
 	 */
 	private function extract_provider_from_type( $type ) {
-		$providers = array( 'openai_external_action', 'openai', 'anthropic', 'gemini', 'lm_studio' );
+		$providers = array( 'openai_external_action', 'openai', 'anthropic', 'gemini', 'deepseek', 'openrouter', 'huggingface', 'nvidia', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 		foreach ( $providers as $provider ) {
 			if ( 0 === strpos( $type, $provider . '_' ) ) {
 				// Normalise 'openai_external_action' to 'openai'.

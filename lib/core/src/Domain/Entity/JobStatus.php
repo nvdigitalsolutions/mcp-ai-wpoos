@@ -5,14 +5,14 @@
  * Returned by QueueClientInterface to represent the current state
  * of an async job (tool execution, cron task, batch operation).
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class JobStatus implements \JsonSerializable {
 

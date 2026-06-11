@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** May 31, 2026  
-**Plugin Version:** 1.1.25  
+**Last Updated:** June 11, 2026  
+**Plugin Version:** 1.1.29  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,18 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **📌 JUNE 5, 2026 UPDATE (v1.1.27):** ⚡🧰🔧💰 **REAL-TIME SSE STREAMING, 35 OOS CORE TOOLS, JFB SUBMISSION FIXES, MODEL PRICING UPDATE**
+> - **Real-Time SSE Streaming** — Enabled for OpenAI, DeepSeek, and all OpenAI-compatible providers. "Disable Native Streaming" toggle in Advanced → System tab. `wp_mcp_ai_disable_native_streaming` filter.
+> - **35 New OOS Core Tools** — Data tools (GetPostTaxonomies, CountPosts, GetPostMeta, TruncateText, MergeArrays), format tools (FormatDate, TimeAgo, ParseCsv, MathEval, ColorConvert), infrastructure (EventDispatcher, Queue), cache tools, and OOS/core test infrastructure.
+> - **Extended Cognition Vision Recognition** — Visual product/brand recognition. Camera viewfinder UI with detection overlays, consent gate.
+> - **Graphify Tools Capability Fence** — Missing `WP_MCP_AI_Tool_Default_Capability` trait and `get_required_capability()` added to all Graphify tools.
+> - **JetFormBuilder Submission Tools — 8 Fixes** — Empty results for non-admin users, form discovery pipeline, PHPCS warnings, REST route matching, form-type auto-detection, plugin detection. Integration reference docs added.
+> - **DeepSeek Agentic Tool Handling** — Tool message filtering and payload normalisation for agentic workflows.
+> - **Documentation Link Fixes** — Broken links after Unix-theory reorganization resolved.
+> - **June 2026 Model Pricing** — All 13 provider pricing updated.
+> - **Plugin Restructuring Proposals v3.0** — Graphify-centric architecture spec and roadmap.
+> - **Versioning** — bumped to 1.1.27 across all manifests.
+>
 > **📌 MAY 31, 2026 UPDATE (v1.1.25):** 🧩☁️🏢💬📂 **UNIFIED BLUEPRINT SYSTEM, CLOUDWAYS TOOLKIT, CRM TOOLKIT (PHASES A–E), CHAT UI ENHANCEMENTS, UNIX-THEORY REORG PHASE 4–5**
 > - **Unified Blueprint System** — 55 pre-built AI assistants across 25 toolkits with one-click import. Shared `WP_MCP_AI_Blueprint_Installer`. JSON Schema validation. Healthcare blueprint import tool with HIPAA-aware templates. 4 Aerlinn blueprints. Full doc: [`docs/features/unified-blueprint-system.md`](features/unified-blueprint-system.md).
 > - **Cloudways Pro Toolkit** — 60 AI tools for server/app management via Cloudways API v2. `WP_MCP_AI_Cloudways_Client` OAuth singleton. Tool categories: Server Mgmt, App Mgmt, Security, Backups, Team, DNS. Admin dashboard with real-time status. Full doc: [`docs/features/cloudways-toolkit.md`](features/cloudways-toolkit.md).
@@ -20,7 +32,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Versioning** — bumped to 1.1.25 across all manifests. Tool count: ~195 base + ~765 Pro (~960 total; live registry is authoritative).
 
 > **📌 MAY 21, 2026 UPDATE (v1.1.21):** 🛡️🔒🧠⚡ **WP.ORG COMPLIANCE COMPLETE, CANONICAL RETURN ENVELOPE, SEMANTIC COMPRESSION, AI PROMPT CACHING, MEMORY LAYER PHASES 3–7**
-> - **WordPress.org Compliance — All 10 Findings (F1–F10) Resolved.** 53 files converted from inline scripts/styles to WP enqueue APIs; 11 PHP parse errors fixed. Re-audit verified: zero dangerous functions, all superglobals sanitized, all HTTP calls timed out, zero bare phpcs:ignore. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md).
+> - **WordPress.org Compliance — All 10 Findings (F1–F10) Resolved.** 53 files converted from inline scripts/styles to WP enqueue APIs; 11 PHP parse errors fixed. Re-audit verified: zero dangerous functions, all superglobals sanitized, all HTTP calls timed out, zero bare phpcs:ignore. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md`](operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md).
 > - **Canonical Return Envelope — Unix Theory P0/P1 Complete.** 191 non-canonical returns → `WP_Error` across 105 files. `WPMCPAI.Tools.CanonicalReturnEnvelope` + `SanitizeAtEntry` sniffs clean.
 > - **Semantic Caveman Compression** — `WP_MCP_AI_Semantic_Compressor` (1,988+ lines + 1,156 test lines). Opt-in prompt token optimization. Settings in Orchestration tab.
 > - **AI Prompt Caching** — `WP_MCP_AI_Chat_Response_Cache` + `WP_MCP_AI_Prompt_Optimizer` across all 5 providers. Cache Performance dashboard.
@@ -43,7 +55,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Kimi (Moonshot AI) provider** — 10th first-class language-model provider. `WP_MCP_AI_Kimi_Client` at `https://api.moonshot.cn/v1`. Models: kimi-k2.6 (256K, default), kimi-k2-thinking (CoT), moonshot-v1-*. Settings → Providers → Kimi subtab.
 > - **ACP Server** — Full Agent Client Protocol implementation. `WP_MCP_AI_ACP_Server` + `WP_MCP_AI_ACP_JSONRPC_Dispatcher` + `WP_MCP_AI_ACP_Session_Manager` + `WP_MCP_AI_ACP_Session_Bridge` + `WP_MCP_AI_ACP_Transport_HTTP`. JSON-RPC 2.0 over HTTP/SSE. `/.well-known/ai-peer` extended. `enable_acp_server` + `acp_require_approval` toggles in Orchestration → Settings. PHPUnit coverage in `tests/acp/`. Reference: [`docs/features/acp-server.md`](features/acp-server.md).
 > - **MCP Bridge** — `bin/mcp-bridge.js` stdio-to-HTTP relay for Claude Desktop, Cursor, Zed.
-> - **Unix Theory P7** — Folder README convention complete. Every `includes/` subdir ships a `README.md`. Enforced by `composer run docs:check-folder-readmes`. Convention: [`docs/guides/developer/folder-readme-convention.md`](guides/developer/folder-readme-convention.md).
+> - **Unix Theory P7** — Folder README convention complete. Every `includes/` subdir ships a `README.md`. Enforced by `composer run docs:check-folder-readmes`. Convention: [`docs/guides/developer/folder-readme-convention.md`](developer/folder-readme-convention.md).
 > - **GDPR** — JetEngine privacy exporters for CCT data (transcripts, memory, approvals).
 > - **Security hardening** — Settings-key encryption + admin-UI masking; webhook secret enforcement; SSRF via `wp_safe_remote_get`; attachment URL scheme allowlist; client-log debug-gate.
 > - **Chat Bubble sweep (13 PRs)** — Self-init via `wpMcpAiChatInit`; `kses_chat_output()` preserves form controls; Test Model fully restored; panel-fit + scoped CSS.
@@ -51,10 +63,10 @@ This document provides a comprehensive index of all documentation available for 
 > - **Versioning** — bumped to 1.1.19 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
 
 > **📌 MAY 14, 2026 UPDATE (v1.1.18):** 🧠⚙️📡🛡️ **UNIX THEORY P0–P6, DIGITALOCEAN PROVIDER, ASYNC CHAT CONTINUATION, JOBS/TASKS DRAWER, TOOLKIT MCP SERVERS PHASE 7**
-> - **Unix Theory Compliance Phases P0–P6** — canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (P0/P1); capability-fence audit (P2); `WP_MCP_AI_Tool_Data_Contract_Interface` (P3); tool-lifecycle descriptor 5th arg + OTel `nvoos.tool.data_type` / `duration_ms` (P4); back-compat alias infrastructure on the tool registry (P5); `WPMCPAI.Tools.SanitizeAtEntry` PHPCS sniff (P6). Master proposal: [`docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`](proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md). Codification doc: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](proposals/audits/P6-sanitize-escape-codification-2026-05.md).
+> - **Unix Theory Compliance Phases P0–P6** — canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (P0/P1); capability-fence audit (P2); `WP_MCP_AI_Tool_Data_Contract_Interface` (P3); tool-lifecycle descriptor 5th arg + OTel `nvoos.tool.data_type` / `duration_ms` (P4); back-compat alias infrastructure on the tool registry (P5); `WPMCPAI.Tools.SanitizeAtEntry` PHPCS sniff (P6). Master proposal: [`docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`](project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md). Codification doc: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](project/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
 > - **DigitalOcean Serverless Inference provider** (9th provider) — `WP_MCP_AI_DigitalOcean_Client` + OpenAI-compatible chat / tool calls / streaming / embeddings; default embedding model `gte-large-en-v1.5`; Provider Diagnostics card. Reference: [`docs/features/ai-providers/digitalocean.md`](features/ai-providers/digitalocean.md).
 > - **Async chat continuation** (slices 1–6) — durable store, dispatcher, LLM re-entry, SSE frame buffer, Pro webhook notifier, OTel hooks + Jest tests. Plan: [`docs/features/chat/async-continuation.md`](features/chat/async-continuation.md).
-> - **Jobs/Tasks Drawer + cron-status** (PRs A–G) — inline job-progress card subscribing to `wpMcpAiJobBus`; `POST /mcp-ai/v1/cron-status/{job_id}/cancel|retry` routes; Tasks Drawer + toasts (default-on via `wp_mcp_ai_chat_tasks_drawer` filter); 5 OTel hooks → `nvoos.chat.jobs.*` spans. Docs: [`docs/features/chat/cron-status-integration.md`](features/chat/cron-status-integration.md), [`docs/guides/developer/tool-development/registering-a-job-source.md`](guides/developer/tool-development/registering-a-job-source.md).
+> - **Jobs/Tasks Drawer + cron-status** (PRs A–G) — inline job-progress card subscribing to `wpMcpAiJobBus`; `POST /mcp-ai/v1/cron-status/{job_id}/cancel|retry` routes; Tasks Drawer + toasts (default-on via `wp_mcp_ai_chat_tasks_drawer` filter); 5 OTel hooks → `nvoos.chat.jobs.*` spans. Docs: [`docs/features/chat/cron-status-integration.md`](features/chat/cron-status-integration.md), [`docs/guides/developer/tool-development/registering-a-job-source.md`](developer/tool-development/registering-a-job-source.md).
 > - **Toolkit MCP Servers Phase 7 admin UI** — `WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page` (slug `nvoos-pro-toolkit-mcp-servers`) — 5-tab admin page (Servers / Detail / Audit / Discovery / Help).
 > - **JetEngine CCT memory mirror** — `retrieve_agent_memory` + `recall` hydrate from the CCT mirror when available.
 > - **Security / maintenance** — langsmith `>=0.6.0` (GHSA-3644-q5cj-c5c7); `wp_read_video_metadata` guard in Veo/Sora tools; production autoload restoration.
@@ -63,7 +75,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Versioning** — bumped to 1.1.18 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
 
 > **📌 MAY 10, 2026 UPDATE (v1.1.17):** 🛡️💬📚🧪 **WP.ORG COMPLIANCE, CHAT SPA PHASES 1–7, DOCS HUB v0.3.8, TOOLKIT SPA PHASES 5–12, COVERAGE CAMPAIGN**
-> - **WP.org Compliance Hardening** (PRs #4892, #4902) — B1/B2/B3/B5/B8/B10/B11/B12/B13 reviewer findings resolved. `WP_MCP_AI_User_Context_Helper` centralises privileged-op hardening. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md). Reviewer response table: [`SUBMISSION.md`](../SUBMISSION.md).
+> - **WP.org Compliance Hardening** (PRs #4892, #4902) — B1/B2/B3/B5/B8/B10/B11/B12/B13 reviewer findings resolved. `WP_MCP_AI_User_Context_Helper` centralises privileged-op hardening. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md). Reviewer response table: [`SUBMISSION.md`](../SUBMISSION.md).
 > - **Build-pipeline split** — `--wp-org` flag in `bin/build-plugin-zip.sh` produces a WP.org-submission ZIP; full GitHub Release ZIP built separately. `addons/` + `.zed` + root `*.md` excluded from the WP.org artifact.
 > - **Chat SPA addon** (`addons/chat-spa/`) — all 7 phases complete (v0.6.0): SSE adapter, tool-call cards, transcripts sidebar, memory drawer, HITL approval bar, file attachments + regenerate, `WP_MCP_AI_LEGACY_CHAT_JS` opt-out constant.
 > - **Docs Hub addon** (`addons/docs-hub/`) — evolved from v0.1.0 to v0.3.8: remote-first defaults, tree-picker UX, chunked rebuild + CLI, a11y hardening, syntax highlighting (rehype-highlight), `NV_oOS_Docs_Hub_Sitemap_Provider`, PageFooter, SSRF hardening.
@@ -73,7 +85,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Versioning** — bumped to 1.1.17 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
 
 > **📌 MAY 6, 2026 UPDATE (v1.1.16):** 🛠️ **SAAS CONTROLLER ADDON (v0.1.0) + STRUCTURED LOGGING INTEGRATION**
-> - **SaaS Controller Addon** (`addons/saas-controller/`, v0.1.0) — operator-side WordPress admin toolkit for provisioning and managing the NV oOS Cloud control plane. All 11 phases shipped. New reference doc: [`docs/saas-controller.md`](saas-controller.md).
+> - **SaaS Controller Addon** (`addons/saas-controller/`, v0.1.0) — operator-side WordPress admin toolkit for provisioning and managing the NV oOS Cloud control plane. All 11 phases shipped. New reference doc: [`docs/saas-controller.md`](operations/deployment/saas-controller.md).
 > - **Structured Logging Integration** (PR #4849) — `WP_MCP_AI_Logger` integrated across `WP_MCP_AI_Agent_Memory_CCT_Bridge`, `WP_MCP_AI_Transcript_Mining_Job`, Algorave, Canvas, Webchat, Fantasy Football, Graphify, SaaS Controller addons, and core admin/service components. New test classes: `test-agent-memory-cct-bridge-logging.php`, `test-transcript-mining-job-logging.php`.
 > - **Versioning** — bumped to 1.1.16 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
 
@@ -81,13 +93,13 @@ This document provides a comprehensive index of all documentation available for 
 > - **New AI providers** — OpenRouter (`WP_MCP_AI_OpenRouter_Client`), DeepSeek (`WP_MCP_AI_DeepSeek_Client`), Kimi K2.6, Qwen 3.6 added. LM Studio gains native cURL SSE streaming.
 > - **Orchestration Phases 1–7 re-landed** — HITL approval queue, prompt-injection guardrail (Layer I), structured output, OTel span exporter, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store adapter, Pro team budget manager. All JetEngine CCT bootstraps now on `init` priority 11+.
 > - **Observability UI** — Observability dashboard under **Orchestration** tab; OTLP endpoint + token configurable in **Tools → Connections**.
-> - **LLM Harnessing Subsystem (Layers A–H)** ships GA — seven opt-in epistemic layers. Reference: [`docs/llm-harness.md`](llm-harness.md).
+> - **LLM Harnessing Subsystem (Layers A–H)** ships GA — seven opt-in epistemic layers. Reference: [`docs/llm-harness.md`](features/llm-harness.md).
 > - **Chat-client Memory Bridge G-series** — complete with site-wide admin toggle in **Orchestration → Settings**.
 > - **Retroactive Transcript Mining** — three stuck-job root causes fixed (PRs #4804 #4826). Troubleshooting guide added to [`docs/features/memory/transcript-mining.md`](features/memory/transcript-mining.md).
 > - **Graphify NV oOS data-source bridge** — private CPTs, CCT resolvers, MemPalace edges, external `$wpdb` tables. New **Sources (CPT / CCT)** tab on Knowledge Graph settings page.
 > - **Stability sweep** — workflow-not-found, JetEngine CCT prefix, credential nonces, multi-agent dashboard TypeError, site-health polyfill, README TOC anchors.
 > - **Versioning** — bumped to 1.1.15 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`, `docs/QUICK_REFERENCE.md`, `docs/orchestration-reference.md`.
-> - **April 2026 Security Audit Summary** (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](compliance/SECURITY_AUDIT_2026_04.md) publishes the consolidated summary of the nine audit deliverables under [`docs/audit/2026-04/`](audit/2026-04/). Headline verdict: no Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational. Standards: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 / API Top 10, WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE.
+> - **April 2026 Security Audit Summary** (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](operations/compliance/SECURITY_AUDIT_2026_04.md) publishes the consolidated summary of the nine audit deliverables under [`docs/audit/2026-04/`](project/audits/2026-04/). Headline verdict: no Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational. Standards: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 / API Top 10, WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE.
 > - **Production-Ready Vendor Autoload** (v1.1.10) — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative`; plugin is deployable from a clean clone (PR #4733).
 > - **Veo 3.1 `generate_veo_video` Fix** (v1.1.10) — `seed` parameter now sent only to Veo 2.0; Veo 3.1 rejects it (PR #4735).
 > - **README.md / CHANGELOG.md / readme.txt / QUICK_REFERENCE.md** — Updated to v1.1.10.
@@ -97,12 +109,12 @@ This document provides a comprehensive index of all documentation available for 
 > - **PHPUnit 11 Upgrade** 🔒 (v1.1.9) — PHPUnit upgraded to 11.x with WordPress-compat patches to resolve argument-injection CVE **GHSA-qrr6-mg7r-m243**. CI PHP bumped 8.1 → 8.2. `@dataProvider` docblocks migrated to attributes.
 > - **Chart.js Handle Normalization** (v1.1.9) — All admin dashboards (ECA, Schedule Manager, Agent Command Center, Measurement) now enqueue a single `wp-mcp-ai-chartjs` handle.
 > - **Graphify Knowledge Graph Addon v0.5.0** (v1.1.9) — Optional WordPress Knowledge Graph addon restored under `addons/graphify/`.
-> - **New Doc**: [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) and full [`docs/measurement/`](measurement/) reference set (README, rollout-plan, goodhart-checklist, verifier/reward authoring, eval-harness, persistent-store, dashboard, SSE/stream, tool-execution, chat-turn, budgets, OTel exporter, privacy-matrix, conventions).
+> - **New Doc**: [`docs/ORCHESTRATION_REFERENCE.md`](reference/orchestration/ORCHESTRATION_REFERENCE.md) and full [`docs/measurement/`](measurement/) reference set (README, rollout-plan, goodhart-checklist, verifier/reward authoring, eval-harness, persistent-store, dashboard, SSE/stream, tool-execution, chat-turn, budgets, OTel exporter, privacy-matrix, conventions).
 > - **README.md / CHANGELOG.md / readme.txt / QUICK_REFERENCE.md** — Updated to v1.1.9 with a new Latest Updates section.
 
 > **📌 APRIL 16, 2026 UPDATE:** 🧠 **PSO ADAPTIVE OPTIMIZATION & ORCHESTRATION REFERENCE**
 > - **PSO Optimizer Service** (v1.2.0) — Particle Swarm Optimization for adaptive AI parameter tuning. 7-dimension search space, inertia decay, per-assistant particle state, global swarm convergence. New `pso_adaptive` workflow preset.
-> - **Comprehensive Orchestration Reference** (NEW) — [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) — Single authoritative reference for the entire orchestration layer: all 10 workflow presets, all 13 resource presets (with full settings comparison matrices), PSO algorithm documentation, tool execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks/filters, data storage keys, admin UI, and service file index.
+> - **Comprehensive Orchestration Reference** (NEW) — [`docs/ORCHESTRATION_REFERENCE.md`](reference/orchestration/ORCHESTRATION_REFERENCE.md) — Single authoritative reference for the entire orchestration layer: all 10 workflow presets, all 13 resource presets (with full settings comparison matrices), PSO algorithm documentation, tool execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks/filters, data storage keys, admin UI, and service file index.
 
 > **📌 APRIL 15, 2026 UPDATE:** 📋 **ERLANG C TOOLS & FULL TOOL-REFERENCE AUDIT**
 > - **Erlang C Queuing Theory Tools** (v1.1.8) — 4 new workforce-management tools: `calculate_erlang_c`, `erlang_c_concurrency_advisor`, `erlang_c_staffing_advisor`, `erlang_c_queue_health`. New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications.
@@ -115,7 +127,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Architecture Overview Refreshed** – Updated from Dec 2025 (3 providers, 133 tools) to current state: **9 providers**, **837 tool classes** (227 base + 610 pro), **34 REST controllers** (16 base + 18 pro), **64 service classes**, accurate directory structure with file counts, v1.1.6 version history entry.
 - **Request Flow Walkthrough** (NEW) – End-to-end trace of a chat message through every layer: `sendChat()` → `POST /chat-client` → Authentication (5 methods) → Assistant resolution → SSE setup → Language Model Router (9 providers) → Agentic loop (up to 15 iterations) → Token budget validation (auto-model switch) → SSE events → Frontend render. Covers provider routing table, agentic loop mechanics, tool execution internals, SSE event types, key source file reference, and hooks in the request path.
 > - **README.md** – Architecture section updated with current statistics; documentation section fixed stale tool/doc counts, added walkthrough link.
-> - **See**: [ARCHITECTURE.md](architecture/ARCHITECTURE.md), [REQUEST-FLOW-WALKTHROUGH.md](architecture/REQUEST-FLOW-WALKTHROUGH.md), [ACP_INTEGRATION.md](ACP_INTEGRATION.md)
+> - **See**: [ARCHITECTURE.md](developer/architecture/ARCHITECTURE.md), [REQUEST-FLOW-WALKTHROUGH.md](developer/architecture/REQUEST-FLOW-WALKTHROUGH.md), [ACP_INTEGRATION.md](project/ACP_INTEGRATION.md)
 
 > **📌 APRIL 2–6, 2026 UPDATE:** 🤝 **A2A PROTOCOL, JETENGINE MCP, AGENT COMMAND CENTER, CHAT BUBBLE, IMAGE VALIDATION**
 > - **JetEngine 3.8 MCP Server Integration** (PR #4608) – JSON-RPC 2.0 client bridging into JetEngine's native MCP Server. 7 new Pro tools: `jetengine_mcp`, `jetengine_create_post_type`, `jetengine_create_taxonomy`, `jetengine_create_meta_field`, `jetengine_manage_relations`, `jetengine_site_context`, `jetengine_prompts`. MCP-first dispatch with REST v2 fallback.
@@ -194,7 +206,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **New Telegram Features** - Inline mode, deep linking, payment webhooks, full-screen mode
 > - **10 New Tools** proposed - Payment, inline mode, and enhanced bot management tools
 > - **4-Phase Roadmap** - 14 weeks, 200 estimated hours
-> - **See**: [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md)
+> - **See**: [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](project/proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md)
 
 > **📌 FEBRUARY 17, 2026 UPDATE:** 🧹 **ROOT MARKDOWN FILES CONSOLIDATION** ⭐
 > - **Markdown File Review Complete** - Reviewed and consolidated all root markdown files
@@ -205,8 +217,8 @@ This document provides a comprehensive index of all documentation available for 
 > - **Documentation Updated**: Architecture README updated with new Technical Analyses section
 > - **Naming Standardized**: Converted to lowercase-with-hyphens for consistency
 > - **No Broken Links**: Verified all references, no external links to moved files
-> - **See**: [MARKDOWN_CONSOLIDATION_2026-02.md](MARKDOWN_CONSOLIDATION_2026-02.md)
-> - **Architecture Docs**: [Canvas Analysis](architecture/canvas-packaging-analysis.md) | [Size Optimization](architecture/pro-plugin-size-optimization.md)
+> - **See**: [MARKDOWN_CONSOLIDATION_2026-02.md](history/2026/implementations/MARKDOWN_CONSOLIDATION_2026-02.md)
+> - **Architecture Docs**: [Canvas Analysis](developer/architecture/canvas-packaging-analysis.md) | [Size Optimization](developer/architecture/pro-plugin-size-optimization.md)
 
 > **📌 FEBRUARY 13, 2026 UPDATE:** 🎯 **TOOL ENHANCEMENT ANALYSIS** ⭐⭐⭐
 > - **Research Pattern Enhancement Analysis Complete** - Comprehensive review of all 533+ tools for multi-step orchestration
@@ -228,9 +240,9 @@ This document provides a comprehensive index of all documentation available for 
 >   - Phase 4: Refinement (2 weeks)
 >   - Total effort: 8 weeks, $23,000 estimated cost
 > - **New Documentation:**
->   - [RESEARCH_PATTERN_EXECUTIVE_SUMMARY.md](RESEARCH_PATTERN_EXECUTIVE_SUMMARY.md) - Executive summary (12KB)
->   - [RESEARCH_PATTERN_ENHANCEMENT_ANALYSIS.md](RESEARCH_PATTERN_ENHANCEMENT_ANALYSIS.md) - Full analysis (32KB)
->   - [RESEARCH_PATTERN_IMPLEMENTATION_GUIDE.md](guides/RESEARCH_PATTERN_IMPLEMENTATION_GUIDE.md) - Developer guide (29KB)
+>   - [RESEARCH_PATTERN_EXECUTIVE_SUMMARY.md](history/2026/implementations/RESEARCH_PATTERN_EXECUTIVE_SUMMARY.md) - Executive summary (12KB)
+>   - [RESEARCH_PATTERN_ENHANCEMENT_ANALYSIS.md](history/2026/implementations/RESEARCH_PATTERN_ENHANCEMENT_ANALYSIS.md) - Full analysis (32KB)
+>   - [RESEARCH_PATTERN_IMPLEMENTATION_GUIDE.md](developer/research-pattern-implementation-guide.md) - Developer guide (29KB)
 > - **Reference Implementation:** `/addons/pro/includes/tools/class-wp-mcp-ai-tool-research-product.php`
 > - **Recommendation:** Proceed with phased implementation
 
@@ -263,8 +275,8 @@ This document provides a comprehensive index of all documentation available for 
 >   - 🔴 Document threat model in SECURITY.md (4-6h)
 >   - 🔴 Add security tests for rate limiting (4-6h)
 > - **New Documentation:**
->   - [GAP_ANALYSIS_COMPREHENSIVE_2026-02-06.md](GAP_ANALYSIS_COMPREHENSIVE_2026-02-06.md) - Full gap analysis (18KB)
->   - [IMPLEMENTATION_GUIDE_GAP_ANALYSIS_2026-02-06.md](IMPLEMENTATION_GUIDE_GAP_ANALYSIS_2026-02-06.md) - Actionable implementation guide (20KB)
+>   - [GAP_ANALYSIS_COMPREHENSIVE_2026-02-06.md](project/code-reviews/GAP_ANALYSIS_COMPREHENSIVE_2026-02-06.md) - Full gap analysis (18KB)
+>   - [IMPLEMENTATION_GUIDE_GAP_ANALYSIS_2026-02-06.md](project/code-reviews/IMPLEMENTATION_GUIDE_GAP_ANALYSIS_2026-02-06.md) - Actionable implementation guide (20KB)
 > - **See Previous Update Below** for February 6 security code review
 >
 > **📌 FEBRUARY 6, 2026 UPDATE (EARLIER):** ⭐⭐⭐
@@ -274,7 +286,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Pro Toolkit Commands** - 21 specialized slash commands for E-commerce, Social Media, and Video Production toolkits
 > - **Automated Workflows** - 7 pre-built workflow templates for cart recovery, social campaigns, video marketing, inventory management
 > - **Documentation Updated** - README.md and CHANGELOG.md updated with all new features
-> - **See**: [SLASH_COMMANDS_GUIDE.md](SLASH_COMMANDS_GUIDE.md), [PRO_TOOLKIT_SLASH_COMMANDS.md](PRO_TOOLKIT_SLASH_COMMANDS.md), [CHAT_CHANNELS_TOOLKIT.md](../addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md)
+> - **See**: [SLASH_COMMANDS_GUIDE.md](user-guides/slash-commands/SLASH_COMMANDS_GUIDE.md), [PRO_TOOLKIT_SLASH_COMMANDS.md](user-guides/slash-commands/PRO_TOOLKIT_SLASH_COMMANDS.md), [CHAT_CHANNELS_TOOLKIT.md](../addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md)
 > - **Complete Security Code Review & Verification** - All critical security vulnerabilities resolved!
 > - **Security Status**: ✅ EXCELLENT (95/100) - Up from 93/100 in January
 > - **4 Critical/High Issues FIXED**: SSRF, CSRF, XSS, Authorization
@@ -282,8 +294,8 @@ This document provides a comprehensive index of all documentation available for 
 > - **Grade Improvement**: A- (93/100) → A (95/100)
 > - **Production Status**: ✅ **APPROVED FOR IMMEDIATE DEPLOYMENT**
 > - **New Documentation**: 
->   - [CODE_REVIEW_2026-02-06.md](implementation-history/2026/CODE_REVIEW_2026-02-06.md) - Comprehensive review (23KB)
->   - [SECURITY_FIXES_2026-02-06.md](implementation-summaries/SECURITY_FIXES_2026-02-06.md) - Security fix details (13KB)
+>   - [CODE_REVIEW_2026-02-06.md](history/2026/CODE_REVIEW_2026-02-06.md) - Comprehensive review (23KB)
+>   - [SECURITY_FIXES_2026-02-06.md](history/2026/implementation-summaries/SECURITY_FIXES_2026-02-06.md) - Security fix details (13KB)
 > - **Roadmap Updated**: Future security enhancements added to v1.2.0
 > - **Response Time**: ~1 week from identification to fix ✅ **Excellent**
 
@@ -295,7 +307,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Archive Indexes Created**: Comprehensive navigation in both archive directories
 > - **No Content Lost**: All information preserved with organized indexes for reference
 > - **Improved Navigation**: Focus on current, maintained documentation
-> - **See**: [Root Archive](../archive/README.md), [Docs Archive](archive/2025/README.md)
+> - **See**: [Root Archive](../archive/README.md), [Docs Archive](history/archive/2025/README.md)
 
 > **📌 FEBRUARY 5, 2026 UPDATE (EARLIER):** ⭐
 > - **NPM Package Distribution Documentation Complete** - Comprehensive analysis for extracting JavaScript components as standalone NPM packages
@@ -304,7 +316,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Key Finding**: YES - Multiple components ready for NPM distribution with minimal/zero modifications
 > - **High Priority Components**: Markdown renderer (0/10 WP dependency), event system (0-2/10), storage utilities (1/10)
 > - **Timeline**: 8-12 weeks for first three packages, 2-3 weeks for pilot
-> - **Start Here**: [NPM_PACKAGE_DISTRIBUTION.md](NPM_PACKAGE_DISTRIBUTION.md) → [Full Documentation](npm-packages/README.md)
+> - **Start Here**: [NPM_PACKAGE_DISTRIBUTION.md](project/releases/NPM_PACKAGE_DISTRIBUTION.md) → [Full Documentation](project/releases/npm-packages/README.md)
 
 > **📌 FEBRUARY 1, 2026 UPDATE:** ⭐
 > - **PHPCS Documentation Suite Complete** - Comprehensive PHPCS compliance documentation added
@@ -312,7 +324,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **667 Violations Analyzed**: 91 fixable, 127 to suppress, 469 intentional
 > - **Implementation Status**: Phase 1 complete (file upload security, privacy compliance verified)
 > - **January 2026 Fixes**: 16 critical security errors resolved
-> - **Start Here**: [PHPCS_DOCUMENTATION_INDEX.md](archive/fixes/phpcs/PHPCS_DOCUMENTATION_INDEX.md)
+> - **Start Here**: [PHPCS_DOCUMENTATION_INDEX.md](history/archive/2026/fixes/phpcs/PHPCS_DOCUMENTATION_INDEX.md)
 
 > **📌 JANUARY 31, 2026 UPDATE:** 
 > - **Root Directory Organization Complete** - 5 documentation files moved from root to appropriate docs/ subdirectories
@@ -320,7 +332,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Root Now Contains**: Only 3 essential documentation files (README.md, CHANGELOG.md, CONTRIBUTING.md)
 > - **WordPress.org Plugin Check Review Complete** - Comprehensive compliance audit completed, plugin READY for WordPress.org submission
 > - **Overall Status**: ✅ COMPLIANT - All WordPress.org requirements met
-> - **New Documentation**: [WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md](WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md) - Complete review report
+> - **New Documentation**: [WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md](operations/compliance/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md) - Complete review report
 > - **Key Findings**: All 12 compliance categories PASS, no blocking issues, comprehensive external services disclosure
 > - **Recommendation**: Plugin can be confidently submitted to WordPress.org plugin directory
 
@@ -328,8 +340,8 @@ This document provides a comprehensive index of all documentation available for 
 > - **Repository Organization Complete** - Root directory cleaned, 7 implementation docs moved to `docs/implementation-history/2026/january/`
 > - **Files Moved**: IMPLEMENTATION_COMPLETE.md, IMPLEMENTATION_SUMMARY.md, PR_SUMMARY.md, ORCHESTRATION_MODES_ENHANCEMENT_SUMMARY.md, REGULATORY_TOOLKIT_ENHANCEMENT.md, TOOLKIT_ENHANCEMENT_README.md, VISUAL_GUIDE.md
 > - **Test Files Organized** - test-toolkit-registry.php → tests/manual/, wpcode-snippet.php → examples/
-> - **Proposals Status Tracking** - New comprehensive tracking document: [PROPOSALS_COMPLETION_STATUS.md](proposals/PROPOSALS_COMPLETION_STATUS.md)
-> - **Repository Documentation** - New guide: [REPOSITORY_ORGANIZATION.md](REPOSITORY_ORGANIZATION.md)
+> - **Proposals Status Tracking** - New comprehensive tracking document: [PROPOSALS_COMPLETION_STATUS.md](project/proposals/PROPOSALS_COMPLETION_STATUS.md)
+> - **Repository Documentation** - New guide: [REPOSITORY_ORGANIZATION.md](project/REPOSITORY_ORGANIZATION.md)
 > - **64 Proposals Tracked**: 18 complete (28%), 6 in progress (9%), 40 pending (63%)
 > - **Root Now Contains**: Only 8 essential files (README, CHANGELOG, CONTRIBUTING, SECURITY, LICENSE, BUILD, DEPENDENCIES_BUNDLING, CODEOWNERS)
 
@@ -361,9 +373,9 @@ This document provides a comprehensive index of all documentation available for 
 > - **Root Now Clean** - Only 6 essential files remain in repository root
 
 > **📌 JANUARY 8, 2026 UPDATE (WEEK 2):** 
-> - **Complete Code Review & Gap Analysis** - Comprehensive audit completed. Grade: A- (93/100). Production ready! See [CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)
+> - **Complete Code Review & Gap Analysis** - Comprehensive audit completed. Grade: A- (93/100). Production ready! See [CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](project/code-reviews/CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)
 > - **Development Dependencies Removed** - Repository now production-ready with `composer install --no-dev` completed
-> - **Root Directory Reorganization** - 19 temporary fix documents consolidated. See [Root Directory Consolidation](implementation-history/2026/ROOT-DOCS-REORGANIZATION.md)
+> - **Root Directory Reorganization** - 19 temporary fix documents consolidated. See [Root Directory Consolidation](history/2026/ROOT-DOCS-REORGANIZATION.md)
 
 > **📌 JANUARY 6, 2026 UPDATE (WEEK 2)**: 
 > - **Compliance posture documentation added** - historical ISO 27001, SOC 2, and HIPAA framework work landed; current docs avoid unbacked percentage claims and point operators to posture references
@@ -375,13 +387,13 @@ This document provides a comprehensive index of all documentation available for 
 > - **Text Domain Migration** - Complete migration to mcp-ai-wpoos (12,773 instances)
 > - **Production Ready** - Dev dependencies removed from vendor
 
-> **📌 JANUARY 3, 2026 UPDATE**: Gap Documentation Review completed - 100% high-priority completion achieved! All 10 critical items complete including Code Coverage Dashboard. Overall quality score: 98/100 (up from 95/100). Production ready with A+ grade. See [Gap Documentation Review Summary](GAP_DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Status Update](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md) for details.
+> **📌 JANUARY 3, 2026 UPDATE**: Gap Documentation Review completed - 100% high-priority completion achieved! All 10 critical items complete including Code Coverage Dashboard. Overall quality score: 98/100 (up from 95/100). Production ready with A+ grade. See [Gap Documentation Review Summary](history/2026/implementations/GAP_DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Status Update](history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md) for details.
 
-> **📌 JANUARY 2, 2026 UPDATE**: Code Review and Root Directory Organization completed. Historical tool count verification completed; current May 2026 framing is ~830 tools (~195 base + ~635 Pro). Repository organization improved - moved 8 fix/implementation files from root to proper docs/ subdirectories. See [Code Review Summary](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md) and [Organization Summary](implementation-history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md) for details.
+> **📌 JANUARY 2, 2026 UPDATE**: Code Review and Root Directory Organization completed. Historical tool count verification completed; current May 2026 framing is ~830 tools (~195 base + ~635 Pro). Repository organization improved - moved 8 fix/implementation files from root to proper docs/ subdirectories. See [Code Review Summary](history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md) and [Organization Summary](history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md) for details.
 
-> **📌 DECEMBER 29, 2025 UPDATE**: Comprehensive documentation review completed - 659 files reviewed, 100% feature coverage verified, zero significant gaps found. Overall documentation grade A (95/100). See [Documentation Review Summary](DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Review](implementation-history/2025/documentation/DOCUMENTATION_REVIEW_2025-12-29.md) for details.
+> **📌 DECEMBER 29, 2025 UPDATE**: Comprehensive documentation review completed - 659 files reviewed, 100% feature coverage verified, zero significant gaps found. Overall documentation grade A (95/100). See [Documentation Review Summary](history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Review](history/2025/documentation/DOCUMENTATION_REVIEW_2025-12-29.md) for details.
 
-> **📌 DECEMBER 25, 2025 UPDATE**: Complete codebase review performed - Full PHP/JS linting, security scan, architecture assessment. Overall grade A- (92/100) - Production Ready. See [Comprehensive Code Review](implementation-history/2025/code-reviews/COMPREHENSIVE_CODE_REVIEW_2025-12-25.md) and [Summary](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2025-12-25.md) for details.
+> **📌 DECEMBER 25, 2025 UPDATE**: Complete codebase review performed - Full PHP/JS linting, security scan, architecture assessment. Overall grade A- (92/100) - Production Ready. See [Comprehensive Code Review](history/2025/code-reviews/COMPREHENSIVE_CODE_REVIEW_2025-12-25.md) and [Summary](history/2025/code-reviews/CODE_REVIEW_SUMMARY_2025-12-25.md) for details.
 
 ---
 
@@ -389,9 +401,9 @@ This document provides a comprehensive index of all documentation available for 
 
 ### New documents (Phase 7 gap-fill)
 
-- **[docs/orchestration-reference.md](orchestration-reference.md)** ⭐ **NEW** — Canonical orchestration documentation hub. 2-paragraph NV oOS overview, links to every orchestration-relevant doc, full Phase 1 Observability reference (Run Timeline, Layer I Prompt Injection Detector, Structured Output Guardrail, OTel span exporter), full Phase 2 HITL reference (`request_user_approval` tool, `WP_MCP_AI_Approval_Queue`, REST `/mcp-ai/v1/approvals/*`, admin Approvals page), and Phase 3–6 roadmap table. Distinct from [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) (the deep infrastructure reference).
-- **[docs/comparisons/orchestration-platform-comparison.md](proposals/orchestration-platform-comparison.md)** ⭐ **NEW** — NV oOS vs LangGraph vs CrewAI vs AutoGen vs OpenAI Agent Builder vs n8n-AI. 15-row feature matrix covering platform type, LLM provider support, tool count, MCP, A2A, HITL, visual DAG, durable execution, OTel, prompt injection detection, structured output, memory, deployment, WordPress/WooCommerce integration, and license. Includes an honest "where others lead" assessment. Canonical path: `docs/comparisons/orchestration-platform-comparison.md` — see the file's footer note for the one-command `git mv` to its permanent home once `docs/comparisons/` is created.
-- **[docs/quickstart-workflow.md](quickstart-workflow.md)** ⭐ **NEW** — "Build your first workflow in 10 minutes" tutorial. Creates an assistant, enables `write_post` + `request_user_approval`, writes a system prompt, triggers the HITL loop from the chat UI, reviews the approval request in **NV oOS → Approvals**, approves, and watches the post publish. Welcoming tone; H2/H3 headings, numbered steps, code blocks.
+- **[docs/orchestration-reference.md](reference/orchestration/orchestration-reference.md)** ⭐ **NEW** — Canonical orchestration documentation hub. 2-paragraph NV oOS overview, links to every orchestration-relevant doc, full Phase 1 Observability reference (Run Timeline, Layer I Prompt Injection Detector, Structured Output Guardrail, OTel span exporter), full Phase 2 HITL reference (`request_user_approval` tool, `WP_MCP_AI_Approval_Queue`, REST `/mcp-ai/v1/approvals/*`, admin Approvals page), and Phase 3–6 roadmap table. Distinct from [`docs/ORCHESTRATION_REFERENCE.md`](reference/orchestration/ORCHESTRATION_REFERENCE.md) (the deep infrastructure reference).
+- **[docs/comparisons/orchestration-platform-comparison.md](project/proposals/orchestration-platform-comparison.md)** ⭐ **NEW** — NV oOS vs LangGraph vs CrewAI vs AutoGen vs OpenAI Agent Builder vs n8n-AI. 15-row feature matrix covering platform type, LLM provider support, tool count, MCP, A2A, HITL, visual DAG, durable execution, OTel, prompt injection detection, structured output, memory, deployment, WordPress/WooCommerce integration, and license. Includes an honest "where others lead" assessment. Canonical path: `docs/comparisons/orchestration-platform-comparison.md` — see the file's footer note for the one-command `git mv` to its permanent home once `docs/comparisons/` is created.
+- **[docs/quickstart-workflow.md](getting-started/quickstart-workflow.md)** ⭐ **NEW** — "Build your first workflow in 10 minutes" tutorial. Creates an assistant, enables `write_post` + `request_user_approval`, writes a system prompt, triggers the HITL loop from the chat UI, reviews the approval request in **NV oOS → Approvals**, approves, and watches the post publish. Welcoming tone; H2/H3 headings, numbered steps, code blocks.
 
 ---
 
@@ -399,7 +411,7 @@ This document provides a comprehensive index of all documentation available for 
 
 ### New and updated documents (May 3–4, 2026)
 
-- **[docs/llm-harness.md](llm-harness.md)** ⭐ **UPDATED** — LLM Harnessing Subsystem Layers A–H end-to-end reference, Quick Start, harness profile schema, all hooks, Pro Layer H curriculum export.
+- **[docs/llm-harness.md](features/llm-harness.md)** ⭐ **UPDATED** — LLM Harnessing Subsystem Layers A–H end-to-end reference, Quick Start, harness profile schema, all hooks, Pro Layer H curriculum export.
 - **[docs/features/memory/transcript-mining.md](features/memory/transcript-mining.md)** ⭐ **NEW** — Retroactive Transcript Mining: background job, REST API (3 endpoints), `mine_agent_memory` `transcripts` source, provenance metadata, de-duplication, filters, admin UI, PHPUnit coverage.
 - **[docs/features/memory/chat-client-integration.md](features/memory/chat-client-integration.md)** ⭐ **UPDATED** — G-series completion (G2 audit tab, G3 badge, G6 pagehide, G8 SSE frame, G11 export); two-gates section (`wp_mcp_ai_chat_memory_enabled` filter + per-user meta).
 - **[docs/features/slash-commands-guide.md](features/slash-commands-guide.md)** ⭐ **NEW** — Complete reference for all 24 base + 8 Pro slash commands with capability, aliases, and description. Replaces the dated Phase 1 guide for day-to-day reference.
@@ -412,7 +424,7 @@ This document provides a comprehensive index of all documentation available for 
 
 **NEW:** Comprehensive WordPress.org Plugin Check review completed - **READY FOR SUBMISSION**
 
-- **[WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md](WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md)** ⭐ **NEW (Jan 31)**
+- **[WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md](operations/compliance/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md)** ⭐ **NEW (Jan 31)**
   - Complete compliance audit against WordPress.org plugin directory requirements
   - **Overall Status: ✅ COMPLIANT - Ready for WordPress.org submission**
   - Documentation & Metadata: ✅ PASS (readme.txt, headers, licensing)
@@ -430,7 +442,7 @@ This document provides a comprehensive index of all documentation available for 
     - Comprehensive privacy policy section
   - **Recommendation:** Plugin can be submitted to WordPress.org plugin directory with confidence
 
-- **[WORDPRESS_ORG_SUBMISSION_CHECKLIST.md](WORDPRESS_ORG_SUBMISSION_CHECKLIST.md)** ⭐ **NEW (Jan 31)**
+- **[WORDPRESS_ORG_SUBMISSION_CHECKLIST.md](operations/compliance/WORDPRESS_ORG_SUBMISSION_CHECKLIST.md)** ⭐ **NEW (Jan 31)**
   - Complete submission checklist and process guide
   - Pre-submission requirements verification (all ✅ complete)
   - Step-by-step submission process
@@ -445,7 +457,7 @@ This document provides a comprehensive index of all documentation available for 
 
 **NEW:** Comprehensive WordPress integration gap analysis and enhancement proposal:
 
-- **[WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md](proposals/WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md)** ⭐ **NEW (Jan 28)**
+- **[WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md](project/proposals/WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md)** ⭐ **NEW (Jan 28)**
   - Complete technical specification for 24 WordPress integration improvements
   - Current state: 82/100 → Target: 95/100 integration score
   - **Critical gaps identified:** 82 output escaping issues, 97 enqueue violations
@@ -457,7 +469,7 @@ This document provides a comprehensive index of all documentation available for 
   - Complete code examples and acceptance criteria
   - Risk assessment and resource requirements
 
-- **[WORDPRESS_INTEGRATION_GAPS_EXECUTIVE_SUMMARY.md](WORDPRESS_INTEGRATION_GAPS_EXECUTIVE_SUMMARY.md)** ⭐ **NEW (Jan 28)**
+- **[WORDPRESS_INTEGRATION_GAPS_EXECUTIVE_SUMMARY.md](history/2026/implementations/WORDPRESS_INTEGRATION_GAPS_EXECUTIVE_SUMMARY.md)** ⭐ **NEW (Jan 28)**
   - Executive overview for decision makers
   - Business impact and ROI analysis
   - Quick wins: Site Health (6-8h), Privacy API (1d), Dashboard widgets (1-2d)
@@ -465,7 +477,7 @@ This document provides a comprehensive index of all documentation available for 
   - Timeline and resource requirements
   - Decision framework for stakeholders
 
-- **[WORDPRESS_INTEGRATION_IMPLEMENTATION_CHECKLIST.md](WORDPRESS_INTEGRATION_IMPLEMENTATION_CHECKLIST.md)** ⭐ **NEW (Jan 28)**
+- **[WORDPRESS_INTEGRATION_IMPLEMENTATION_CHECKLIST.md](history/2026/implementations/WORDPRESS_INTEGRATION_IMPLEMENTATION_CHECKLIST.md)** ⭐ **NEW (Jan 28)**
   - Step-by-step developer implementation guide
   - Phase-by-phase checklist with testing requirements
   - Code examples and testing commands
@@ -500,12 +512,12 @@ This document provides a comprehensive index of all documentation available for 
   - ✅ **GMAIL_OAUTH_FIX_SUMMARY.md** → Consolidated with `docs/fixes/gmail-oauth-fix-summary.md` (added Jan 27 Google API Client library fix)
 
 - **Proposals Directory Consolidated (37 files → 37 files with 5 consolidated master documents):**
-  - **[proposals/README.md](proposals/README.md)** ⭐ **NEW** - Comprehensive index and organization
-  - **[DEEPSEEK-V4-STATUS-AND-ROADMAP.md](proposals/DEEPSEEK-V4-STATUS-AND-ROADMAP.md)** ⭐ **NEW** - Consolidates 8 DeepSeek files into single status document
-  - **[WEBLLM-ROADMAP-AND-STATUS.md](proposals/WEBLLM-ROADMAP-AND-STATUS.md)** ⭐ **NEW** - Consolidates 5 WebLLM files
-  - **[PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md](proposals/PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md)** ⭐ **NEW** - Consolidates 3 Playwright files
-  - **[BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md](proposals/BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md)** ⭐ **NEW** - Consolidates 3 Bitwarden files
-  - **[RALPH-WIGGUM-CCT-ORCHESTRATION.md](proposals/RALPH-WIGGUM-CCT-ORCHESTRATION.md)** ⭐ **NEW** - Consolidates 4 Ralph/CCT files
+  - **[proposals/README.md](project/proposals/README.md)** ⭐ **NEW** - Comprehensive index and organization
+  - **[DEEPSEEK-V4-STATUS-AND-ROADMAP.md](project/proposals/DEEPSEEK-V4-STATUS-AND-ROADMAP.md)** ⭐ **NEW** - Consolidates 8 DeepSeek files into single status document
+  - **[WEBLLM-ROADMAP-AND-STATUS.md](project/proposals/WEBLLM-ROADMAP-AND-STATUS.md)** ⭐ **NEW** - Consolidates 5 WebLLM files
+  - **[PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md](project/proposals/PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md)** ⭐ **NEW** - Consolidates 3 Playwright files
+  - **[BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md](project/proposals/BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md)** ⭐ **NEW** - Consolidates 3 Bitwarden files
+  - **[RALPH-WIGGUM-CCT-ORCHESTRATION.md](project/proposals/RALPH-WIGGUM-CCT-ORCHESTRATION.md)** ⭐ **NEW** - Consolidates 4 Ralph/CCT files
 
 **Key Improvements:**
 - 📊 Clear status tracking (✅ Implemented, ⏳ Active, 🔮 Pending, 📚 Reference)
@@ -526,7 +538,7 @@ This document provides a comprehensive index of all documentation available for 
 
 **NEW:** Evaluation and decision to create Playwright-based browser automation Pro tool:
 
-- **[PLAYWRIGHT_INTEGRATION_EVALUATION.md](proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md)** ⭐ **NEW (Jan 9)**
+- **[PLAYWRIGHT_INTEGRATION_EVALUATION.md](project/proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md)** ⭐ **NEW (Jan 9)**
   - Full technical evaluation of Playwright integration options
   - Analysis: Enhance web_search vs Create new Pro tool
   - **Decision: Create new Pro tool `web_browser`**
@@ -535,7 +547,7 @@ This document provides a comprehensive index of all documentation available for 
   - 8-week implementation roadmap
   - Complete capability flags and parameter schema
 
-- **[WEB_BROWSER_PRO_TOOL_SUMMARY.md](proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md)** ⭐ **NEW (Jan 9)**
+- **[WEB_BROWSER_PRO_TOOL_SUMMARY.md](project/proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md)** ⭐ **NEW (Jan 9)**
   - Executive decision summary for stakeholders
   - **Key rationale: Base version size management** (118 tools, 17MB)
   - Playwright would add ~200MB dependencies (10x increase)
@@ -553,9 +565,9 @@ This document provides a comprehensive index of all documentation available for 
 
 **NEW:** Comprehensive code review and plugin gap analysis - **Grade: A- (93/100)**
 
-- **[audit/2026-04/](audit/2026-04/README.md)** ⭐ **NEW (Apr 26)** — Complete security & compliance code review of base plugin + all addons. 0 Critical, 5 High, 14 Medium findings; full inventory, findings register, remediation roadmap, WP.org submission checklist.
-- **[CODE_REVIEW_2026-02-06.md](implementation-history/2026/CODE_REVIEW_2026-02-06.md)** ⭐ **PREVIOUS (Feb 6)** - Complete security code review. Grade A (95/100). All critical vulnerabilities fixed!
-- **[CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)** ⭐ **PREVIOUS (Jan 8)** - Comprehensive audit. Grade A- (93/100). Production ready.
+- **[audit/2026-04/](project/audits/2026-04/README.md)** ⭐ **NEW (Apr 26)** — Complete security & compliance code review of base plugin + all addons. 0 Critical, 5 High, 14 Medium findings; full inventory, findings register, remediation roadmap, WP.org submission checklist.
+- **[CODE_REVIEW_2026-02-06.md](history/2026/CODE_REVIEW_2026-02-06.md)** ⭐ **PREVIOUS (Feb 6)** - Complete security code review. Grade A (95/100). All critical vulnerabilities fixed!
+- **[CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](project/code-reviews/CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)** ⭐ **PREVIOUS (Jan 8)** - Comprehensive audit. Grade A- (93/100). Production ready.
   - Complete codebase audit covering code quality, security, features, documentation
   - **Production Ready Status: ✅ APPROVED**
   - Overall Grade: A- (93/100)
@@ -575,19 +587,19 @@ This document provides a comprehensive index of all documentation available for 
 
 Complete consolidation and reorganization of temporary documentation files:
 
-- **[Root Directory Consolidation](implementation-history/2026/ROOT-DOCS-REORGANIZATION.md)** ⭐ **NEW (Jan 8)**
+- **[Root Directory Consolidation](history/2026/ROOT-DOCS-REORGANIZATION.md)** ⭐ **NEW (Jan 8)**
   - Cleaned up 19 temporary fix documentation files from root
   - Consolidated Chart.js and Pro Dashboard fixes into single document
   - Root directory now contains only 6 essential files
   - All historical information preserved in proper hierarchy
   
-- **[CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md](implementation-history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md)** ⭐ **NEW (Jan 8)**
+- **[CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md](history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md)** ⭐ **NEW (Jan 8)**
   - Comprehensive consolidation of all Chart.js and Pro Dashboard fixes
   - Covers 15 root MD files → 1 consolidated reference
   - Technical architecture, testing procedures, and lessons learned
   - Cross-referenced with detailed docs in `docs/fixes/` and `docs/troubleshooting/`
   
-- **[pro-dashboard-visual-test-guide.md](testing/pro-dashboard-visual-test-guide.md)** ⭐ **MOVED (Jan 8)**
+- **[pro-dashboard-visual-test-guide.md](developer/testing-docs/pro-dashboard-visual-test-guide.md)** ⭐ **MOVED (Jan 8)**
   - Visual testing guide for Pro Dashboard charts
   - Moved from root to proper testing documentation location
   - Complete visual reference with expected chart appearances
@@ -604,7 +616,7 @@ Complete consolidation and reorganization of temporary documentation files:
 
 Enterprise-grade failure handling and intelligent job prioritization for WordPress-native cron:
 
-- **[dead-letter-queue.md](architecture/dead-letter-queue.md)** ⭐ **NEW (Jan 3)**
+- **[dead-letter-queue.md](developer/architecture/dead-letter-queue.md)** ⭐ **NEW (Jan 3)**
   - Persistent storage for failed webhooks, cron jobs, async tools, and queue items
   - Automatic retry with exponential backoff + jitter (prevents thundering herd)
   - Max 1000 items with 30-day retention and weekly cleanup cron
@@ -612,7 +624,7 @@ Enterprise-grade failure handling and intelligent job prioritization for WordPre
   - WP-CLI commands: `wp mcp-ai dlq list/stats/retry/dismiss/delete/purge/clear`
   - Integration: Job Queue Manager, Job Notifier, Crawl4AI
   
-- **[sla-prioritization.md](architecture/sla-prioritization.md)** ⭐ **NEW (Jan 3)**
+- **[sla-prioritization.md](developer/architecture/sla-prioritization.md)** ⭐ **NEW (Jan 3)**
   - Three-tier SLA system: Real-time (<1s), Near real-time (1-30s), Batch (>30s)
   - Little's Law capacity planning (`L = λ × W`) for optimal worker allocation
   - Per-tier concurrency limits (realtime: 5, near-realtime: 3, batch: 2)
@@ -637,7 +649,7 @@ Enterprise-grade failure handling and intelligent job prioritization for WordPre
 
 Comprehensive review of all gap documentation with exceptional results:
 
-- **[GAP_DOCUMENTATION_REVIEW_SUMMARY.md](GAP_DOCUMENTATION_REVIEW_SUMMARY.md)** ⭐ **NEW (Jan 3)**
+- **[GAP_DOCUMENTATION_REVIEW_SUMMARY.md](history/2026/implementations/GAP_DOCUMENTATION_REVIEW_SUMMARY.md)** ⭐ **NEW (Jan 3)**
   - **🎉 100% high-priority completion achieved** (10 of 10 items complete)
   - Quality Score: 98/100 (up from 95/100)
   - Production Readiness: 98/100 (up from 95/100)
@@ -651,7 +663,7 @@ Comprehensive review of all gap documentation with exceptional results:
   - Medium-Priority: 67% complete (8 of 12 items)
   - Status: **Production Ready** ✅
 
-- **[GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md)** ⭐ **NEW (Jan 3)**
+- **[GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md](history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md)** ⭐ **NEW (Jan 3)**
   - Master status document (19KB) with detailed analysis
   - All 6 gap documents reviewed and updated
   - Complete implementation progress tracking
@@ -662,7 +674,7 @@ Comprehensive review of all gap documentation with exceptional results:
 
 Complete code coverage tracking and visualization system:
 
-- **[CODE_COVERAGE_DASHBOARD.md](guides/developer/testing/CODE_COVERAGE_DASHBOARD.md)** ⭐ **NEW (Jan 3)**
+- **[CODE_COVERAGE_DASHBOARD.md](developer/testing-docs/CODE_COVERAGE_DASHBOARD.md)** ⭐ **NEW (Jan 3)**
   - Codecov integration with badge ✅
   - Automatic coverage reporting in CI/CD
   - Interactive online dashboard at codecov.io
@@ -677,7 +689,7 @@ Complete code coverage tracking and visualization system:
 
 Post-December 23 changes review with historical tool count verification (superseded by the May 17, 2026 Rev 2.0 fact sheet):
 
-- **[CODE_REVIEW_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)** ⭐ **NEW (Jan 2)**
+- **[CODE_REVIEW_2026-01-02.md](history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)** ⭐ **NEW (Jan 2)**
   - Comprehensive code review (A- grade, 92/100)
   - Security: 10/10 (zero vulnerabilities)
   - JavaScript: 10/10 (ESLint clean)
@@ -689,14 +701,14 @@ Post-December 23 changes review with historical tool count verification (superse
   - 235 auto-fixable issues identified
   - Production ready status confirmed
 
-- **[CODE_REVIEW_SUMMARY_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md)** ⭐ **NEW (Jan 2)**
+- **[CODE_REVIEW_SUMMARY_2026-01-02.md](history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md)** ⭐ **NEW (Jan 2)**
   - Quick summary of code review findings
   - Score breakdown by category
   - Actions taken and documentation updates
   - Tool inventory verification details
   - Linting results and recommendations
 
-- **[ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md](implementation-history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md)** ⭐ **NEW (Jan 2)**
+- **[ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md](history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md)** ⭐ **NEW (Jan 2)**
   - Root directory cleanup: 15 → 7 files
   - Moved 6 fix documents to `docs/fixes/`
   - Moved 2 implementation summaries to `docs/implementation-summaries/`
@@ -711,7 +723,7 @@ Post-December 23 changes review with historical tool count verification (superse
 ### Weekly Commits Summary (December 16-23, 2025)
 Comprehensive consolidation of all commits and changes from the past week:
 
-- **[WEEKLY_COMMITS_SUMMARY_2025-12-23.md](implementation-history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md)** ⭐ **NEW (Dec 23)**
+- **[WEEKLY_COMMITS_SUMMARY_2025-12-23.md](history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md)** ⭐ **NEW (Dec 23)**
   - **COMPLETE WEEKLY REVIEW** of all commits from December 16-23, 2025
   - Primary PR #2364: Profession model architecture improvements
   - 2 commits reviewed, 300+ files changed, ~100,000 lines
@@ -733,15 +745,15 @@ Comprehensive consolidation of all commits and changes from the past week:
 ### Complete Consolidation
 Comprehensive consolidation of ALL fixes, summaries, code reviews, and improvements from 2025:
 
-- **[CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md](implementation-history/2025/summaries/CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md)** ⭐ **NEW (Dec 22)**
+- **[CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md](history/2025/summaries/CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md)** ⭐ **NEW (Dec 22)**
   - **CENTRAL INDEX** of all major implementations, fixes, and improvements completed in 2025
   - Quick navigation to all feature implementations, API enhancements, bug fixes
   - Includes Gemini Geospatial, OpenAI Batch/Moderation, IGCSE Teams, code quality improvements
   - Complete cross-references to detailed implementation documents
   - Statistics and quality metrics summary
-  - [2025 Implementation History Index](implementation-history/2025/INDEX.md) - Directory structure navigation
+  - [2025 Implementation History Index](history/2025/INDEX.md) - Directory structure navigation
 
-- **[MASTER_CONSOLIDATION_2025.md](implementation-history/2025/summaries/MASTER_CONSOLIDATION_2025.md)** ⭐ **PRIMARY REFERENCE (Dec 20)**
+- **[MASTER_CONSOLIDATION_2025.md](history/2025/summaries/MASTER_CONSOLIDATION_2025.md)** ⭐ **PRIMARY REFERENCE (Dec 20)**
   - **SINGLE SOURCE OF TRUTH** for all 2025 work
   - Complete consolidation of 55+ source documents
   - Zero information loss - everything preserved
@@ -749,7 +761,7 @@ Comprehensive consolidation of ALL fixes, summaries, code reviews, and improveme
   - 1,000+ lines, comprehensive reference
   - Cross-references to all original documents
 
-- **[CONSOLIDATION_MAP.md](implementation-history/2025/summaries/CONSOLIDATION_MAP.md)** ⭐ **NAVIGATION GUIDE**
+- **[CONSOLIDATION_MAP.md](history/2025/summaries/CONSOLIDATION_MAP.md)** ⭐ **NAVIGATION GUIDE**
   - Detailed map showing what was consolidated from where
   - Section-by-section source document mapping
   - Verification checklist ensuring zero information loss
@@ -783,7 +795,7 @@ Comprehensive consolidation of ALL fixes, summaries, code reviews, and improveme
 ### Comprehensive Documentation Review and Assessment
 Complete review of all implementations vs. documentation coverage:
 
-- **[DOCUMENTATION_REVIEW_SUMMARY.md](DOCUMENTATION_REVIEW_SUMMARY.md)** ⭐ **NEW (Dec 29)**
+- **[DOCUMENTATION_REVIEW_SUMMARY.md](history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)** ⭐ **NEW (Dec 29)**
   - **Grade A (95/100)** - Excellent documentation quality
   - 659 documentation files reviewed
   - 100% major feature coverage verified
@@ -791,7 +803,7 @@ Complete review of all implementations vs. documentation coverage:
   - All 2025 implementations fully documented
   - 717 broken links fixed in December 2025 (100% success)
   - Detailed recommendations for minor enhancements
-  - [Full Detailed Review](implementation-history/2025/documentation/DOCUMENTATION_REVIEW_2025-12-29.md)
+  - [Full Detailed Review](history/2025/documentation/DOCUMENTATION_REVIEW_2025-12-29.md)
 
 ---
 
@@ -800,7 +812,7 @@ Complete review of all implementations vs. documentation coverage:
 ### Comprehensive Project Management Gap Analysis and Strategy
 Complete review and enhancement of project management capabilities for the NV oOS repository:
 
-- **[PROJECT_MANAGEMENT_GAP_ANALYSIS.md](PROJECT_MANAGEMENT_GAP_ANALYSIS.md)** ⭐ **NEW (Dec 24)**
+- **[PROJECT_MANAGEMENT_GAP_ANALYSIS.md](project/PROJECT_MANAGEMENT_GAP_ANALYSIS.md)** ⭐ **NEW (Dec 24)**
   - Comprehensive gap analysis of internal WordPress PM features and GitHub repository management
   - 14 identified gaps with priority-based recommendations and effort estimates
   - 4-phase implementation roadmap (13-17 business days)
@@ -811,15 +823,15 @@ Complete review and enhancement of project management capabilities for the NV oO
   - Release planning through v2.0.0 (Sep 2026) and beyond
   - Community priority tracking and 2026 release calendar
 
-- **[MILESTONE_STRATEGY.md](MILESTONE_STRATEGY.md)** ⭐ **NEW (Dec 24)**
+- **[MILESTONE_STRATEGY.md](project/MILESTONE_STRATEGY.md)** ⭐ **NEW (Dec 24)**
   - Milestone management strategy for release planning
   - Complete milestone lifecycle and automation integration
 
-- **[LABEL_STRATEGY.md](LABEL_STRATEGY.md)** ⭐ **NEW (Dec 24)**
+- **[LABEL_STRATEGY.md](project/LABEL_STRATEGY.md)** ⭐ **NEW (Dec 24)**
   - Complete label taxonomy: 50 labels across 7 categories
   - Automatic labeling workflows and integration with GitHub Projects
 
-- **[RELEASE_PROCESS.md](RELEASE_PROCESS.md)** ⭐ **NEW (Dec 24)**
+- **[RELEASE_PROCESS.md](project/releases/RELEASE_PROCESS.md)** ⭐ **NEW (Dec 24)**
   - Complete release management process with checklists
   - Emergency hotfix and rollback procedures
 
@@ -828,7 +840,7 @@ Complete review and enhancement of project management capabilities for the NV oO
 ### Documentation Status Updates (CURRENT) ⭐ **NEW**
 Comprehensive review and update of documentation completion status across repository:
 
-- **[DOCUMENTATION_UPDATE_STATUS_2025-12-20.md](implementation-history/2025/documentation/DOCUMENTATION_UPDATE_STATUS_2025-12-20.md)** ⭐ **NEW**
+- **[DOCUMENTATION_UPDATE_STATUS_2025-12-20.md](history/2025/documentation/DOCUMENTATION_UPDATE_STATUS_2025-12-20.md)** ⭐ **NEW**
   - Systematic tracking document for reviewing all 549 documentation files
   - Progress tracker: 10 of 549 documents updated (1.8%)
   - Prioritized 5-tier review structure
@@ -836,12 +848,12 @@ Comprehensive review and update of documentation completion status across reposi
   - Quality score improvements tracked (95→98/100)
   
 - **Updated Documentation Files (December 20, 2025):**
-  - [GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md) - Marked 4 of 5 high-priority gaps complete
-  - [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) - Output escaping, input sanitization, JSDoc marked complete
-  - [QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md) - CI/CD gates, error documentation complete
-  - [PLUGIN_GAP_ANALYSIS.md](implementation-history/2025/summaries/PLUGIN_GAP_ANALYSIS.md) - PHP and JavaScript sections marked resolved
-  - [REMAINING_ISSUES.md](implementation-history/2025/summaries/REMAINING_ISSUES.md) - 97.5% PHPCS reduction documented
-  - [CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - Status updated to 98/100
+  - [GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md) - Marked 4 of 5 high-priority gaps complete
+  - [ACTION_ITEMS.md](history/2025/summaries/ACTION_ITEMS.md) - Output escaping, input sanitization, JSDoc marked complete
+  - [QUICK_WINS_GAP_FIXES.md](history/2025/summaries/QUICK_WINS_GAP_FIXES.md) - CI/CD gates, error documentation complete
+  - [PLUGIN_GAP_ANALYSIS.md](history/2025/summaries/PLUGIN_GAP_ANALYSIS.md) - PHP and JavaScript sections marked resolved
+  - [REMAINING_ISSUES.md](history/2025/summaries/REMAINING_ISSUES.md) - 97.5% PHPCS reduction documented
+  - [CONSOLIDATED_BUGS_AND_FIXES.md](history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - Status updated to 98/100
   - README.md - Tool count corrected (71→95 core, 109→133 total)
   - CHANGELOG.md - Gemini integration and documentation updates added
 
@@ -874,7 +886,7 @@ Comprehensive analysis and documentation of Gemini integration capabilities:
   - [GEMINI_CAPABILITIES_MATRIX.md](reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) - Feature comparison matrix
   - [GEMINI_INTEGRATION_ANALYSIS_INDEX.md](features/ai-providers/gemini/GEMINI_INTEGRATION_ANALYSIS_INDEX.md) - Navigation guide
   - [GEMINI_OPENAI_TOOLS_ARCHITECTURE.md](features/ai-providers/gemini/GEMINI_OPENAI_TOOLS_ARCHITECTURE.md) - Architecture docs
-  - [GEMINI_TOOL_SANITIZATION_FIX.md](implementation-history/2025/fixes/gemini/GEMINI_TOOL_SANITIZATION_FIX.md) - Implementation details
+  - [GEMINI_TOOL_SANITIZATION_FIX.md](history/2025/fixes/gemini/GEMINI_TOOL_SANITIZATION_FIX.md) - Implementation details
 
 ### Hugging Face Integration (December 23, 2025)
 Complete integration of Hugging Face capabilities including Inference API and Dataset Viewer:
@@ -882,7 +894,7 @@ Complete integration of Hugging Face capabilities including Inference API and Da
 #### Hugging Face Datasets - Dataset Viewer API Integration ⭐ **NEW (Dec 23)**
 Access 50+ popular datasets directly from WordPress without downloading:
 
-- **[HUGGINGFACE_DATASETS_HOW_TO.md](guides/features/HUGGINGFACE_DATASETS_HOW_TO.md)** ⭐ **NEW**
+- **[HUGGINGFACE_DATASETS_HOW_TO.md](features/HUGGINGFACE_DATASETS_HOW_TO.md)** ⭐ **NEW**
   - Complete step-by-step how-to guide with real examples
   - Setup and configuration walkthrough
   - All 11 dataset tools explained with expected outputs
@@ -982,7 +994,7 @@ Cloud AI inference via NVIDIA's optimized model platform with 40+ models:
 ### GPT-5.2 Model Support (December 16, 2025)
 Complete OpenAI GPT-5.2 model family integration with comprehensive testing and documentation:
 
-- **[CODE_REVIEW_2025-12-16.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-16.md)** ⭐ **NEW**
+- **[CODE_REVIEW_2025-12-16.md](history/2025/code-reviews/CODE_REVIEW_2025-12-16.md)** ⭐ **NEW**
   - Complete code review of PR #2144 (GPT-5.2 model support)
   - 6 model variants documented: base, pro, instant, thinking, and dated versions
   - 400K token context window analysis (2x GPT-5.1)
@@ -1006,14 +1018,14 @@ Complete OpenAI GPT-5.2 model family integration with comprehensive testing and 
 ### Symfony Phase 2B: Process Integration (COMPLETE)
 Symfony Process component integration for Pro addon tools completed:
 
-- **[SYMFONY_PHASE2B_PROCESS_INTEGRATION.md](implementation-history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md)** ⭐ **NEW**
+- **[SYMFONY_PHASE2B_PROCESS_INTEGRATION.md](history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md)** ⭐ **NEW**
   - Complete migration guide for Symfony Process integration
   - 6 Pro tools migrated from direct exec() calls
   - 2 services migrated (Jukebox, Video Frame Extractor)
   - Process Service wrapper implementation details
   - Enhanced security, timeout management, error handling
 
-- **[SYMFONY_SESSION_2025-12-09.md](implementation-history/2025/implementations/symfony-phases/SYMFONY_SESSION_2025-12-09.md)**
+- **[SYMFONY_SESSION_2025-12-09.md](history/2025/implementations/symfony-phases/SYMFONY_SESSION_2025-12-09.md)**
   - December 9 session summary
   - Symfony Phase 2A completion (tool validation)
   - 10 tools migrated to Symfony Validator pattern
@@ -1030,19 +1042,19 @@ Symfony Process component integration for Pro addon tools completed:
 ### Symfony Integration Analysis
 Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
-- **[SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md](implementation-history/2025/implementations/integrations/SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md)** ⭐ **START HERE**
+- **[SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md](history/2025/implementations/integrations/SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md)** ⭐ **START HERE**
   - Decision-maker focused overview
   - Financial analysis: $63-84K investment, 275% ROI over 5 years
   - Clear recommendations and next steps
   - 14KB, quick read (~15 minutes)
 
-- **[SYMFONY_AI_INTEGRATION_ANALYSIS.md](implementation-history/2025/implementations/integrations/SYMFONY_AI_INTEGRATION_ANALYSIS.md)**
+- **[SYMFONY_AI_INTEGRATION_ANALYSIS.md](history/2025/implementations/integrations/SYMFONY_AI_INTEGRATION_ANALYSIS.md)**
   - Deep-dive on Symfony AI capabilities vs NV oOS features
   - Semantic search/RAG implementation proposal
   - Phase-based rollout plan (Q1-Q3 2026)
   - 26KB, technical analysis
 
-- **[SYMFONY_UTILITIES_RECOMMENDATIONS.md](implementation-history/2025/implementations/integrations/SYMFONY_UTILITIES_RECOMMENDATIONS.md)**
+- **[SYMFONY_UTILITIES_RECOMMENDATIONS.md](history/2025/implementations/integrations/SYMFONY_UTILITIES_RECOMMENDATIONS.md)**
   - Component-by-component evaluation (8 Symfony components)
   - Validator, Cache, Filesystem integration strategies
   - Detailed migration plans with code examples
@@ -1057,24 +1069,24 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 ## Previous Updates (December 6-7, 2025)
 
 ### Comprehensive Gap Analysis Suite
-- **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** - Executive overview of comprehensive gap analysis
-- **[PLUGIN_GAP_ANALYSIS.md](implementation-history/2025/summaries/PLUGIN_GAP_ANALYSIS.md)** - Full gap analysis across 9 categories (23KB, 35 gaps identified)
-- **[QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md)** - Step-by-step quick fix implementations with code examples (22KB)
+- **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** - Executive overview of comprehensive gap analysis
+- **[PLUGIN_GAP_ANALYSIS.md](history/2025/summaries/PLUGIN_GAP_ANALYSIS.md)** - Full gap analysis across 9 categories (23KB, 35 gaps identified)
+- **[QUICK_WINS_GAP_FIXES.md](history/2025/summaries/QUICK_WINS_GAP_FIXES.md)** - Step-by-step quick fix implementations with code examples (22KB)
 
 **📋 Documentation Reorganization (November 18, 2025):**
 - 95+ historical documents moved to organized archive structure
 - Root directory now contains only 5 essential documents (README, CONTRIBUTING, SECURITY, CHANGELOG, BUILD)
-- All documentation preserved in [docs/archive/](archive/) with logical organization:
-  - [implementations/](archive/#implementations) - Feature implementation details
-  - [phases/](archive/#phases) - Development phase documents
-  - [fixes/](archive/#fixes) - Bug fixes and issue resolutions
-  - [features/](archive/#features) - Feature specifications
-  - [code-reviews/](archive/#code-reviews) - Historical code reviews
-  - [testing/](archive/#testing) - Test infrastructure documentation
-- **NEW (December 3, 2025):** [CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - Comprehensive bugs and fixes report with Pro addon updates
-- **NEW (December 4, 2025):** [CODE_REVIEW_2025-12-04.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-04.md) - Complete code review and enhancement update
-- **NEW (December 6, 2025):** [CODE_REVIEW_2025-12-06.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-06.md) - Comprehensive code review with 96/100 score - security audit, quality analysis, documentation assessment
-- Consolidated report: [TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md) - Complete testing and code quality analysis
+- All documentation preserved in [docs/archive/](history/archive/) with logical organization:
+  - [implementations/](history/archive/#implementations) - Feature implementation details
+  - [phases/](history/archive/#phases) - Development phase documents
+  - [fixes/](history/archive/#fixes) - Bug fixes and issue resolutions
+  - [features/](history/archive/#features) - Feature specifications
+  - [code-reviews/](history/archive/#code-reviews) - Historical code reviews
+  - [testing/](history/archive/#testing) - Test infrastructure documentation
+- **NEW (December 3, 2025):** [CONSOLIDATED_BUGS_AND_FIXES.md](history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - Comprehensive bugs and fixes report with Pro addon updates
+- **NEW (December 4, 2025):** [CODE_REVIEW_2025-12-04.md](history/2025/code-reviews/CODE_REVIEW_2025-12-04.md) - Complete code review and enhancement update
+- **NEW (December 6, 2025):** [CODE_REVIEW_2025-12-06.md](history/2025/code-reviews/CODE_REVIEW_2025-12-06.md) - Comprehensive code review with 96/100 score - security audit, quality analysis, documentation assessment
+- Consolidated report: [TESTING_AND_QUALITY_REPORT.md](developer/testing-docs/TESTING_AND_QUALITY_REPORT.md) - Complete testing and code quality analysis
 
 ---
 
@@ -1086,15 +1098,15 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 3. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
 4. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
 5. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
-6. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
+6. [BEST_PRACTICES.md](developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
 
 ### For Developers
-1. **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
-2. **[TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Complete testing and quality analysis (2,106 tests, code quality, security audit)
-3. [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Comprehensive code review (95/100 score)
+1. **[CONSOLIDATED_BUGS_AND_FIXES.md](history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
+2. **[TESTING_AND_QUALITY_REPORT.md](developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Complete testing and quality analysis (2,106 tests, code quality, security audit)
+3. [CODE-REVIEW-MASTER.md](developer/best-practices/CODE-REVIEW-MASTER.md) - Comprehensive code review (95/100 score)
 4. [DEVELOPMENT-HISTORY.md](visual-guides/misc/DEVELOPMENT-HISTORY.md) - Consolidated development history and milestones
 5. [TECHNICAL-REFERENCE.md](reference/technical/TECHNICAL-REFERENCE.md) - Consolidated technical fixes and implementations
-6. [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) - Prioritized development tasks
+6. [ACTION_ITEMS.md](history/2025/summaries/ACTION_ITEMS.md) - Prioritized development tasks
 7. [tool-reference.md](reference/tools/tool-reference.md) - Complete tool catalog
 8. [tool-grouping.md](reference/tools/tool-grouping.md) - Tool categorization system
 9. [rest-api.md](reference/api/rest-api.md) - REST API reference
@@ -1103,13 +1115,13 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 1. [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md) - Troubleshooting guide
 2. [mcp-server-authentication.md](reference/api/mcp-server-authentication.md) - Authentication setup
 3. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
-4. [tools-manager.md](guides/admin/tools/tools-manager.md) - Tools Manager admin interface guide
+4. [tools-manager.md](admin-guides/tools/tools-manager.md) - Tools Manager admin interface guide
 5. [rate-limit-protection.md](features/performance/rate-limit-protection.md) - Rate limiting configuration
 6. [multisite-support.md](getting-started/installation-setup/multisite-support.md) - Multisite considerations
 7. [mesh-compute-pooling.md](features/federation/mesh-compute-pooling.md) - Distributed compute pooling across sites
 
 ### Historical Documentation
-- **[Archive Directory](archive/README.md)** - 95+ historical documents organized by category
+- **[Archive Directory](history/archive/README.md)** - 95+ historical documents organized by category
   - Implementation summaries, phase documents, fix reports, features, code reviews, testing docs
 
 ---
@@ -1120,18 +1132,18 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 **Can parts of this plugin be distributed as NPM packages? YES!**
 
-- **[NPM_PACKAGE_DISTRIBUTION.md](NPM_PACKAGE_DISTRIBUTION.md)** ⭐ **NEW**
+- **[NPM_PACKAGE_DISTRIBUTION.md](project/releases/NPM_PACKAGE_DISTRIBUTION.md)** ⭐ **NEW**
   - Quick start guide for NPM package extraction
   - Executive summary with key findings (67 JS files analyzed, 15+ extractable components)
   - Timeline: 8-12 weeks for first three packages, 2-3 weeks for pilot
   - Resource requirements: 1-2 developers at 50-75% time
-  - [Full Documentation →](npm-packages/README.md)
+  - [Full Documentation →](project/releases/npm-packages/README.md)
 
 **Complete NPM Package Documentation Suite** (1,582 lines, 42KB):
-- **[npm-packages/README.md](npm-packages/README.md)** - Index and quick reference
-- **[npm-packages/STRATEGY_BLUEPRINT.md](npm-packages/STRATEGY_BLUEPRINT.md)** - Decision-making framework
-- **[npm-packages/EXTRACTION_GUIDE.md](npm-packages/EXTRACTION_GUIDE.md)** - Technical implementation
-- **[npm-packages/COMPONENT_ANALYSIS.md](npm-packages/COMPONENT_ANALYSIS.md)** - Detailed component evaluation
+- **[npm-packages/README.md](project/releases/npm-packages/README.md)** - Index and quick reference
+- **[npm-packages/STRATEGY_BLUEPRINT.md](project/releases/npm-packages/STRATEGY_BLUEPRINT.md)** - Decision-making framework
+- **[npm-packages/EXTRACTION_GUIDE.md](project/releases/npm-packages/EXTRACTION_GUIDE.md)** - Technical implementation
+- **[npm-packages/COMPONENT_ANALYSIS.md](project/releases/npm-packages/COMPONENT_ANALYSIS.md)** - Detailed component evaluation
 
 **Key Findings:**
 - ✅ Tier 1 Components (Ready Now): Markdown renderer (0/10 WP dep), event system (0-2/10), storage utilities (1/10)
@@ -1147,21 +1159,21 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** | **⭐ MASTER:** ALL bugs, fixes, improvements (Dec 7, 2025) - Pro tools, async execution, output escaping, site creator, SSE streaming, CodeSniffer cleanup | Developers/QA |
-| **[CONSOLIDATED_SESSION_SUMMARIES.md](implementation-history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md)** | **⭐ MASTER:** ALL development sessions consolidated - December 2025, November 2025, archived sessions with complete work history | Developers/PM |
-| **[CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md)** | **⭐ MASTER:** Consolidated code reviews - 96/100 score, all categories, review history | Developers/QA |
-| **[TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
+| **[CONSOLIDATED_BUGS_AND_FIXES.md](history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** | **⭐ MASTER:** ALL bugs, fixes, improvements (Dec 7, 2025) - Pro tools, async execution, output escaping, site creator, SSE streaming, CodeSniffer cleanup | Developers/QA |
+| **[CONSOLIDATED_SESSION_SUMMARIES.md](history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md)** | **⭐ MASTER:** ALL development sessions consolidated - December 2025, November 2025, archived sessions with complete work history | Developers/PM |
+| **[CODE-REVIEW-MASTER.md](developer/best-practices/CODE-REVIEW-MASTER.md)** | **⭐ MASTER:** Consolidated code reviews - 96/100 score, all categories, review history | Developers/QA |
+| **[TESTING_AND_QUALITY_REPORT.md](developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
 
 **Individual Code Reviews (For Reference):**
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [CODE_REVIEW_2025-12-06.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-06.md) | Latest comprehensive review (Dec 6, 2025) - 96/100 score, 21KB analysis | Developers/QA |
-| [CODE_REVIEW_2025-12-04.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-04.md) | Previous review - enhancements and improvements | Developers/QA |
-| [REMAINING_ISSUES.md](implementation-history/2025/summaries/REMAINING_ISSUES.md) | Active code quality issues tracking | Developers |
+| [CODE_REVIEW_2025-12-06.md](history/2025/code-reviews/CODE_REVIEW_2025-12-06.md) | Latest comprehensive review (Dec 6, 2025) - 96/100 score, 21KB analysis | Developers/QA |
+| [CODE_REVIEW_2025-12-04.md](history/2025/code-reviews/CODE_REVIEW_2025-12-04.md) | Previous review - enhancements and improvements | Developers/QA |
+| [REMAINING_ISSUES.md](history/2025/summaries/REMAINING_ISSUES.md) | Active code quality issues tracking | Developers |
 | [DEVELOPMENT-HISTORY.md](visual-guides/misc/DEVELOPMENT-HISTORY.md) | Chronological development history | Developers |
 | [TECHNICAL-REFERENCE.md](reference/technical/TECHNICAL-REFERENCE.md) | Consolidated technical documentation | Developers |
-| [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) | Comprehensive code review (95/100 score) | Developers |
+| [CODE-REVIEW-MASTER.md](developer/best-practices/CODE-REVIEW-MASTER.md) | Comprehensive code review (95/100 score) | Developers |
 
 ### Getting Started
 
@@ -1171,54 +1183,54 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [USE_CASES_AND_QUICKSTARTS.md](getting-started/USE_CASES_AND_QUICKSTARTS.md) | **NEW:** Comprehensive use cases and quickstart guides covering 7 major categories (41KB) | Everyone |
 | [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
-| [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
+| [BEST_PRACTICES.md](developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
 | **Onboarding Wizard** (built-in) | ⭐ **NEW:** 4-step Getting Started wizard at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`. 8 use-case presets seed fully-configured assistants with tools, system prompts, and temperatures. WCAG 2.1 accessible. See [README.md](../README.md#-installation). | Everyone |
 
 ### Architecture & Design
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [ARCHITECTURE.md](architecture/ARCHITECTURE.md) | **UPDATED (Apr 2026):** High-level architecture overview — 9 providers, 837 tool classes, 34 REST controllers, 64 services, full directory structure with file counts | Everyone |
-| [REQUEST-FLOW-WALKTHROUGH.md](architecture/REQUEST-FLOW-WALKTHROUGH.md) | **NEW (Apr 2026):** End-to-end chat request lifecycle trace — authentication → assistant → SSE → provider routing → agentic loop → tool execution → token budget → response | Everyone |
+| [ARCHITECTURE.md](developer/architecture/ARCHITECTURE.md) | **UPDATED (Apr 2026):** High-level architecture overview — 9 providers, 837 tool classes, 34 REST controllers, 64 services, full directory structure with file counts | Everyone |
+| [REQUEST-FLOW-WALKTHROUGH.md](developer/architecture/REQUEST-FLOW-WALKTHROUGH.md) | **NEW (Apr 2026):** End-to-end chat request lifecycle trace — authentication → assistant → SSE → provider routing → agentic loop → tool execution → token budget → response | Everyone |
 | [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](visual-guides/workflow/AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | **NEW:** Quick visual reference showing agentic workflow flow (print-friendly diagrams) | Everyone |
-| [CURRENT-STATE-AGENTIC-WORKFLOW.md](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
-| [agentic-workflow-architecture.md](architecture/core/agentic-workflow-architecture.md) | Detailed agentic workflow architecture, optimizations, and testing | Developers |
-| [ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
-| [dead-letter-queue.md](architecture/dead-letter-queue.md) | **NEW (Jan 2026):** Dead Letter Queue for persistent failure handling (12KB) | Developers/Admins |
-| [sla-prioritization.md](architecture/sla-prioritization.md) | **NEW (Jan 2026):** SLA-based job prioritization with Little's Law capacity planning (16KB) | Developers/Admins |
-| [ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md) | Complete implementation guide with code examples and PR #852 enhancements | Developers |
-| [ORCHESTRATION-DASHBOARD-SUMMARY.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-SUMMARY.md) | User-friendly feature overview, use cases, and quick start guide | Users/Admins |
+| [CURRENT-STATE-AGENTIC-WORKFLOW.md](developer/architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
+| [agentic-workflow-architecture.md](developer/architecture/core/agentic-workflow-architecture.md) | Detailed agentic workflow architecture, optimizations, and testing | Developers |
+| [ORCHESTRATION-LAYER-ARCHITECTURE.md](developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
+| [dead-letter-queue.md](developer/architecture/dead-letter-queue.md) | **NEW (Jan 2026):** Dead Letter Queue for persistent failure handling (12KB) | Developers/Admins |
+| [sla-prioritization.md](developer/architecture/sla-prioritization.md) | **NEW (Jan 2026):** SLA-based job prioritization with Little's Law capacity planning (16KB) | Developers/Admins |
+| [ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md](developer/architecture/orchestration/ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md) | Complete implementation guide with code examples and PR #852 enhancements | Developers |
+| [ORCHESTRATION-DASHBOARD-SUMMARY.md](developer/architecture/orchestration/ORCHESTRATION-DASHBOARD-SUMMARY.md) | User-friendly feature overview, use cases, and quick start guide | Users/Admins |
 | [ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md](visual-guides/orchestration/ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md) | Visual walkthrough with UI layouts and component details | All Users |
-| [ORCHESTRATION-DASHBOARD-FINDINGS.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-FINDINGS.md) | Documentation search findings and gap analysis | Developers/Admins |
+| [ORCHESTRATION-DASHBOARD-FINDINGS.md](developer/architecture/orchestration/ORCHESTRATION-DASHBOARD-FINDINGS.md) | Documentation search findings and gap analysis | Developers/Admins |
 | [RESOURCE-MANAGEMENT.md](features/performance/RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
 | [erlang-c-staffing-tools.md](features/erlang-c-staffing-tools.md) | **NEW (Apr 2026):** Erlang C queuing theory tools — staffing calculator, concurrency advisor, multi-channel staffing advisor, real-time queue health monitoring, `wp_mcp_ai_queue_alert` hook | Admins/Developers |
-| [orchestration-budget-enforcement.md](architecture/orchestration/orchestration-budget-enforcement.md) | Orchestration layer budget prediction and enforcement | Developers |
-| [ORCHESTRATION_REFERENCE.md](ORCHESTRATION_REFERENCE.md) | **NEW (Apr 2026):** Complete orchestration reference — 10 workflow presets, 13 resource presets, PSO optimizer, tool execution, load balancer, reasoning, multi-agent, health, budget, hooks, storage keys | Developers/Admins |
-| [assistant-storage-cpt-vs-cct.md](architecture/integrations/assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
+| [orchestration-budget-enforcement.md](developer/architecture/orchestration/orchestration-budget-enforcement.md) | Orchestration layer budget prediction and enforcement | Developers |
+| [ORCHESTRATION_REFERENCE.md](reference/orchestration/ORCHESTRATION_REFERENCE.md) | **NEW (Apr 2026):** Complete orchestration reference — 10 workflow presets, 13 resource presets, PSO optimizer, tool execution, load balancer, reasoning, multi-agent, health, budget, hooks, storage keys | Developers/Admins |
+| [assistant-storage-cpt-vs-cct.md](developer/architecture/integrations/assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
 | [assistant-tool-shortcuts.md](getting-started/first-steps/assistant-tool-shortcuts.md) | Prompt shortcuts system | Users/Devs |
 | [base-vs-full-comparison.md](reference/technical/base-vs-full-comparison.md) | Base vs Full version comparison | Admins |
-| [BUILD-ARTIFACTS-CLARIFICATION.md](troubleshooting/common/BUILD-ARTIFACTS-CLARIFICATION.md) | Build artifacts and base vs core terminology clarification | Developers/Admins |
+| [BUILD-ARTIFACTS-CLARIFICATION.md](operations/troubleshooting/common/BUILD-ARTIFACTS-CLARIFICATION.md) | Build artifacts and base vs core terminology clarification | Developers/Admins |
 | [memory-limits.md](features/memory/memory-limits.md) | Memory management and limits | Developers |
 
 ### Proposals & Planning
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [PLAYWRIGHT_INTEGRATION_EVALUATION.md](proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md) | **NEW (Jan 2026):** Full technical evaluation of Playwright browser automation integration - Decision to create Pro tool `web_browser` (15KB) | Developers/Decision Makers |
-| [WEB_BROWSER_PRO_TOOL_SUMMARY.md](proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md) | **NEW (Jan 2026):** Executive summary for web_browser Pro tool decision - Base version size management rationale (7KB) | Stakeholders/Admins |
-| [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md) | **NEW (Mar 2026):** Comprehensive Telegram Mini App enhancement - Stars payments, inline mode, deep linking, all 23 Pro toolkits integration, monetization strategy (41KB) | Developers/Stakeholders |
+| [PLAYWRIGHT_INTEGRATION_EVALUATION.md](project/proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md) | **NEW (Jan 2026):** Full technical evaluation of Playwright browser automation integration - Decision to create Pro tool `web_browser` (15KB) | Developers/Decision Makers |
+| [WEB_BROWSER_PRO_TOOL_SUMMARY.md](project/proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md) | **NEW (Jan 2026):** Executive summary for web_browser Pro tool decision - Base version size management rationale (7KB) | Stakeholders/Admins |
+| [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](project/proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md) | **NEW (Mar 2026):** Comprehensive Telegram Mini App enhancement - Stars payments, inline mode, deep linking, all 23 Pro toolkits integration, monetization strategy (41KB) | Developers/Stakeholders |
 
 ### Integration Guides
 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) | Google OAuth 2.0 setup for Gmail integration | Admins/Users |
-| [oauth-settings-architecture.md](architecture/integrations/oauth-settings-architecture.md) | OAuth settings architecture and hybrid system design | Developers |
-| [chatkit-integration.md](guides/developer/integration/chatkit-integration.md) | ChatKit module integration | Developers |
-| [elementor-widgets.md](architecture/integrations/elementor-widgets.md) | Elementor widget documentation | Users/Devs |
+| [oauth-settings-architecture.md](developer/architecture/integrations/oauth-settings-architecture.md) | OAuth settings architecture and hybrid system design | Developers |
+| [chatkit-integration.md](developer/integration/chatkit-integration.md) | ChatKit module integration | Developers |
+| [elementor-widgets.md](developer/architecture/integrations/elementor-widgets.md) | Elementor widget documentation | Users/Devs |
 | [jet-engine-rest-routes.md](reference/api/jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
-| [jetengine-api-compatibility.md](architecture/integrations/jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
-| [jukebox-integration.md](guides/developer/integration/jukebox-integration.md) | **NEW:** OpenAI Jukebox music generation integration (music with vocals, local installation) | Admins/Devs |
+| [jetengine-api-compatibility.md](developer/architecture/integrations/jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
+| [jukebox-integration.md](developer/integration/jukebox-integration.md) | **NEW:** OpenAI Jukebox music generation integration (music with vocals, local installation) | Admins/Devs |
 
 ### Remote Client Setup
 
@@ -1227,15 +1239,15 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) | Quick start guide for remote clients | Admins |
 | [remote-client-setup.md](getting-started/installation-setup/remote-client-setup.md) | Detailed remote client configuration (14KB) | Admins |
 | [cloudflare-tunnel-setup.md](getting-started/installation-setup/cloudflare-tunnel-setup.md) | Cloudflare Tunnel setup for exposing local AI services securely (16KB) | Admins |
-| [REMOTE_CLIENT_TESTING_SUMMARY.md](implementation-history/2025/summaries/REMOTE_CLIENT_TESTING_SUMMARY.md) | Testing results for remote clients | Developers |
+| [REMOTE_CLIENT_TESTING_SUMMARY.md](history/2025/summaries/REMOTE_CLIENT_TESTING_SUMMARY.md) | Testing results for remote clients | Developers |
 | [lm-studio-testing.md](getting-started/quick-starts/lm-studio-testing.md) | LM Studio specific testing | Developers |
 
 ### SaaS Setup (NV oOS Cloud)
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [saas-controller.md](saas-controller.md) | **NEW (v1.1.16):** SaaS Controller Addon reference — all 11 phases, admin UI, REST API (19 routes), filters, data storage, build instructions | Operators/Devs |
-| [SAAS_SETUP_GUIDE.md](SAAS_SETUP_GUIDE.md) | Industry-standard SaaS install/setup guide for NV oOS Cloud — prerequisites, account provisioning, connect tokens, billing, security, runbook | Operators/Admins |
+| [saas-controller.md](operations/deployment/saas-controller.md) | **NEW (v1.1.16):** SaaS Controller Addon reference — all 11 phases, admin UI, REST API (19 routes), filters, data storage, build instructions | Operators/Devs |
+| [SAAS_SETUP_GUIDE.md](operations/deployment/SAAS_SETUP_GUIDE.md) | Industry-standard SaaS install/setup guide for NV oOS Cloud — prerequisites, account provisioning, connect tokens, billing, security, runbook | Operators/Admins |
 | [features/nv-cloud.md](features/nv-cloud.md) | NV oOS Cloud feature spec (plugin contract, hooks, constants) | Developers |
 | [../addons/cloud-worker/README.md](../addons/cloud-worker/README.md) | Cloudflare Worker source-of-truth (deploy commands, D1 schema) | Operators |
 
@@ -1252,11 +1264,11 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [compliance/README.md](compliance/README.md) | **NEW:** Compliance overview and framework index | Admins/Compliance |
-| [compliance/MULTI-FRAMEWORK-COMPLIANCE-SUMMARY.md](compliance/MULTI-FRAMEWORK-COMPLIANCE-SUMMARY.md) | Multi-framework implementation summary with dashboard integration | Admins/Auditors |
-| [compliance/iso27001/](compliance/iso27001/) | **100% Compliant** - ISO/IEC 27001:2022 (83 of 83 controls, ~90KB docs) | Admins/Auditors |
-| [compliance/soc2/](compliance/soc2/) | **100% Compliant** - SOC 2 Trust Services (54 of 54 criteria) | Admins/Auditors |
-| [compliance/hipaa/](compliance/hipaa/) | **98% Compliant** - HIPAA Security Rule (42 of 43 safeguards) | Healthcare/Admins |
+| [compliance/README.md](operations/compliance/README.md) | **NEW:** Compliance overview and framework index | Admins/Compliance |
+| [compliance/MULTI-FRAMEWORK-COMPLIANCE-SUMMARY.md](operations/compliance/MULTI-FRAMEWORK-COMPLIANCE-SUMMARY.md) | Multi-framework implementation summary with dashboard integration | Admins/Auditors |
+| [compliance/iso27001/](operations/compliance/iso27001/) | **100% Compliant** - ISO/IEC 27001:2022 (83 of 83 controls, ~90KB docs) | Admins/Auditors |
+| [compliance/soc2/](operations/compliance/soc2/) | **100% Compliant** - SOC 2 Trust Services (54 of 54 criteria) | Admins/Auditors |
+| [compliance/hipaa/](operations/compliance/hipaa/) | **98% Compliant** - HIPAA Security Rule (42 of 43 safeguards) | Healthcare/Admins |
 
 **Pro Dashboard:** `wp-admin/admin.php?page=nvoos-pro-dashboard-multi-framework` for real-time compliance scores.
 
@@ -1273,10 +1285,10 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [rest-api.md](reference/api/rest-api.md) | Complete REST API documentation (15KB) | Developers |
 | [tool-reference.md](reference/tools/tool-reference.md) | All 105 built-in tools catalog (24KB) | Users/Devs |
 | [tool-grouping.md](reference/tools/tool-grouping.md) | Tool categorization system (WordPress Core, Plugins, External) | Users/Admins |
-| [tools-manager.md](guides/admin/tools/tools-manager.md) | Tools Manager admin interface guide | Admins/Users |
+| [tools-manager.md](admin-guides/tools/tools-manager.md) | Tools Manager admin interface guide | Admins/Users |
 | [gemini-api-enhancements.md](reference/api/gemini/gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
 | [send-group-email-usage.md](features/tools/communication/send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
-| [tool-image-download.md](guides/developer/tool-development/tool-image-download.md) | Image download tool specifics | Developers |
+| [tool-image-download.md](developer/tool-development/tool-image-download.md) | Image download tool specifics | Developers |
 | **[CRAWL4AI_SERVICE_IMPLEMENTATION.md](features/tools/crawl4ai/CRAWL4AI_SERVICE_IMPLEMENTATION.md)** ⭐ **NEW (Jan 2026)** | **Complete Crawl4AI remote service implementation** - Copy-paste ready Python/FastAPI code, Docker deployment, browser pool management (30KB) | Developers |
 | **[CRAWL4AI_SERVICE_REFERENCE.md](features/tools/crawl4ai/CRAWL4AI_SERVICE_REFERENCE.md)** ⭐ **NEW (Jan 2026)** | **Crawl4AI service API reference** - REST endpoints, deployment guides, integration examples, troubleshooting (32KB) | Developers/Admins |
 | [CRAWL4AI-JOB-TRACKING.md](features/tools/crawl4ai/CRAWL4AI-JOB-TRACKING.md) | Job tracking enhancement for Crawl4AI (all job types tracked) | Developers |
@@ -1285,10 +1297,10 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[SLASH_COMMANDS_GUIDE.md](SLASH_COMMANDS_GUIDE.md)** ⭐ **NEW (Feb 2026)** | **Complete slash commands system** - Phase 1 with 8 commands, workflow orchestrator, command chaining, REST API integration (32KB) | Users/Admins |
-| **[PRO_TOOLKIT_SLASH_COMMANDS.md](PRO_TOOLKIT_SLASH_COMMANDS.md)** ⭐ **NEW (Feb 2026)** | **Pro toolkit slash commands** - Phase 2 with 21 commands across 3 toolkits, 7 automated workflows (47KB) | Users/Admins |
-| [CROSS-WIDGET-COMMUNICATION.md](guides/user/chat/CROSS-WIDGET-COMMUNICATION.md) | Load sessions between User Chat History and Chat widgets | Users/Devs |
-| [chat-history-persistence.md](guides/user/chat/chat-history-persistence.md) | Chat history persistence system | Users/Devs |
+| **[SLASH_COMMANDS_GUIDE.md](user-guides/slash-commands/SLASH_COMMANDS_GUIDE.md)** ⭐ **NEW (Feb 2026)** | **Complete slash commands system** - Phase 1 with 8 commands, workflow orchestrator, command chaining, REST API integration (32KB) | Users/Admins |
+| **[PRO_TOOLKIT_SLASH_COMMANDS.md](user-guides/slash-commands/PRO_TOOLKIT_SLASH_COMMANDS.md)** ⭐ **NEW (Feb 2026)** | **Pro toolkit slash commands** - Phase 2 with 21 commands across 3 toolkits, 7 automated workflows (47KB) | Users/Admins |
+| [CROSS-WIDGET-COMMUNICATION.md](user-guides/chat/CROSS-WIDGET-COMMUNICATION.md) | Load sessions between User Chat History and Chat widgets | Users/Devs |
+| [chat-history-persistence.md](user-guides/chat/chat-history-persistence.md) | Chat history persistence system | Users/Devs |
 | [chat-history-persistence-quickstart.md](getting-started/quick-starts/chat-history-persistence-quickstart.md) | Quick guide for chat persistence | Users |
 
 ### Chat Channels & WebChat ⭐ **NEW (Feb 2026)**
@@ -1306,15 +1318,27 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| **[addons/pro/docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md](../addons/pro/docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md)** ⭐ **UPDATED (Jun 2026)** | **CRM Toolkit Enhancement Plan** — Phases A–E complete: Customer CPT (5 tools + Customer 360), Support Ticket module (10 tools + SLA + Zendesk), inbound multichannel (IMAP/SMS/WhatsApp/Gmail), TF-IDF + BM25 relevance search. 89 CRM tools total. | Developers/Admins |
 | **[features/pro-schedule-manager.md](features/pro-schedule-manager.md)** ⭐ **NEW (Mar 2026)** | **Pro Schedule Manager** — 5 schedule types (task / workflow / assistant_run / channel_broadcast / workflow_builder), Symfony Cache & Validator, MJML email, ical + CSV export, chart.js sparkline, retry logic, JetEngine CCT history, 6 AI tools, full admin UI | Developers/Admins |
 | **[features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)** ⭐ **NEW (Mar 2026)** | **Healthcare DICOM Imaging Viewer** — Full manager: upload, study browser with search/filter, Cornerstone3D viewer, W/L presets, flip/rotate, AI interpretation, audit log, REST API reference, HIPAA notes | Admins/Clinical Staff |
 | [PRO_CPT_OVERVIEW.md](features/pro-cpt/PRO_CPT_OVERVIEW.md) | **NEW:** Events, Quizzes, and Places CPT overview (21 tools) | Users/Admins |
-| [telegram-mini-app-templates.md](telegram-mini-app-templates.md) | **NEW:** Health & Wellness and Medical Vitals Telegram Mini App templates — member selection, auth flow, role-based access, offline-first sync, custom template API | Developers/Users |
+| [telegram-mini-app-templates.md](features/telegram-mini-app-templates.md) | **NEW:** Health & Wellness and Medical Vitals Telegram Mini App templates — member selection, auth flow, role-based access, offline-first sync, custom template API | Developers/Users |
 
 **Pro Custom Post Types:**
+- **Customers** (5 tools) — Customer CPT with full CRUD, Customer 360 dashboard, lead-to-customer conversion
+- **Support Tickets** (10 tools) — Ticket lifecycle, SLA enforcement, AI classification, Zendesk sync
 - **Events** (5 tools) - Calendar management, Google Calendar integration
 - **Quizzes** (9 tools) - Assessments, grading, analytics, JetEngine CCT
 - **Places** (7 tools) - Location management, Google Places API integration
+
+**New Addons (June 2026):**
+- **Funiq Bridge** (`addons/funiq-bridge/`) — Payload-to-WordPress bridge with React admin SPA, REST controllers, transformers, post types (Product, Promocode, Promotion), taxonomies (Brand, Category, Color, Status)
+- **NV Platform** (`addons/ai-platform/`) — Top-level admin dashboard + CPTs (Project, Resource, Template)
+
+**Standalone Graphify Plugins:**
+- **NVOOS Graphify** (`plugins/nvoos-graphify/`) — Visual knowledge graph (Cytoscape.js), 14 graph tools, remote sources, REST API
+- **NVOOS Graphify AI** (`plugins/nvoos-graphify-ai/`) — AI addon: 13 providers, streaming chat, RAG, embeddings, 14 AI tools
+- **NVOOS Graphify AI Platform** (`plugins/nvoos-graphify-ai-platform/`) — Platform addon: Agents, A2A, ACP, Blueprints, Federation, Harness, Measurement, Professions, Skills, Slash Commands
 
 **Telegram Mini App Health Templates:**
 - **Health & Wellness** (`health_wellness`) – Daily metrics (steps, sleep, hydration, sodium, mood), streak gamification, Chart.js charts, AI coach
@@ -1325,8 +1349,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [PERFORMANCE-OPTIMIZATION.md](features/performance/PERFORMANCE-OPTIMIZATION.md) | **NEW:** Comprehensive guide to caching system and database optimizations (Phase 1) | Developers/Admins |
-| [DYNAMIC-CONFIGURATION-FILTERS.md](guides/developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md) | WordPress filters for dynamic configuration (18 filters) | Developers |
-| [message-bundling-feature.md](guides/user/chat/message-bundling-feature.md) | Client-side message bundling optimization | Developers |
+| [DYNAMIC-CONFIGURATION-FILTERS.md](developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md) | WordPress filters for dynamic configuration (18 filters) | Developers |
+| [message-bundling-feature.md](user-guides/chat/message-bundling-feature.md) | Client-side message bundling optimization | Developers |
 | [high-token-tool-handling.md](features/tools/presets/high-token-tool-handling.md) | Agentic loop token management | Developers |
 | [token-counting.md](reference/technical/token-counting.md) | Token counting tool for budget management | Users/Devs |
 | [analytics-engine.md](features/analytics/analytics-engine.md) | **NEW:** Analytics Engine for trend analysis, patterns, and anomaly detection (Phase 7) | Developers/Admins |
@@ -1337,7 +1361,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [job-notification-system.md](features/async-jobs/job-notification-system.md) | Real-time async job notifications | Developers |
 | [chat-performance-optimizations.md](features/chat/chat-performance-optimizations.md) | Complete performance tuning guide | Developers |
 | [tpm-limit-validation.md](features/performance/tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
-| [tool-llm-sanitization.md](guides/developer/tool-development/tool-llm-sanitization.md) | Tool output sanitization | Developers |
+| [tool-llm-sanitization.md](developer/tool-development/tool-llm-sanitization.md) | Tool output sanitization | Developers |
 
 ### MCP Protocol
 
@@ -1354,12 +1378,12 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md) | Common deployment issues | Admins |
-| [voice-chat-troubleshooting.md](troubleshooting/chat/voice-chat-troubleshooting.md) | **NEW:** Voice chat 404 error diagnosis and fixes | All Users |
+| [voice-chat-troubleshooting.md](operations/troubleshooting/chat/voice-chat-troubleshooting.md) | **NEW:** Voice chat 404 error diagnosis and fixes | All Users |
 | [console-testing.md](getting-started/first-steps/console-testing.md) | **NEW:** Browser console testing utility for chat transcripts API | Developers |
-| [CRON_TESTING_GUIDE.md](guides/developer/testing/CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
+| [CRON_TESTING_GUIDE.md](developer/testing-docs/CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 | [php-version-compatibility.md](reference/technical/php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
 | [multisite-support.md](getting-started/installation-setup/multisite-support.md) | Multisite configuration | Admins |
-| [REMAINING_ISSUES.md](implementation-history/2025/summaries/REMAINING_ISSUES.md) | Known minor issues | Developers |
+| [REMAINING_ISSUES.md](history/2025/summaries/REMAINING_ISSUES.md) | Known minor issues | Developers |
 
 ---
 
@@ -1369,19 +1393,19 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[../PHPCS_DOCUMENTATION_INDEX.md](archive/fixes/phpcs/PHPCS_DOCUMENTATION_INDEX.md)** | **⭐ NEW (Feb 1, 2026):** Complete PHPCS documentation suite - 7 files covering 667 violations, implementation plan | Developers/QA |
-| **[GAP_DOCUMENTATION_REVIEW_SUMMARY.md](GAP_DOCUMENTATION_REVIEW_SUMMARY.md)** | **⭐ NEW (Jan 3, 2026):** Gap documentation review - 100% high-priority completion! Quality: 98/100 | Everyone |
-| **[GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md)** | **NEW (Jan 3, 2026):** Master status update - all 6 gap documents reviewed, phase tracking | Developers/PM |
-| **[CODE_REVIEW_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)** | **NEW (Jan 2, 2026):** Comprehensive code review - historical tool-count verification superseded by Rev 2.0 fact sheet, Grade A- (92/100) | Developers/QA |
-| **[CODE_REVIEW_SUMMARY_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md)** | **NEW (Jan 2, 2026):** Quick summary of January 2 code review findings and actions | Everyone |
-| **[ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md](implementation-history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md)** | **NEW (Jan 2, 2026):** Root cleanup - moved 8 files to proper docs/ locations | Developers |
-| **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** | Executive summary of comprehensive gap analysis (Dec 6, 2025) | Everyone |
-| **[PLUGIN_GAP_ANALYSIS.md](implementation-history/2025/summaries/PLUGIN_GAP_ANALYSIS.md)** | Full gap analysis - 365 files, 9 categories, 35 gaps identified (Dec 6, 2025) | Developers/QA |
-| **[QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md)** | Step-by-step quick fixes with code examples (Dec 6, 2025) | Developers |
-| [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) | Master Code Review - Comprehensive assessment (95/100 score, consolidates 6 reviews) | Developers |
-| [archive/](archive/README.md) | Historical code reviews (archived for reference) | Developers |
-| [SETTINGS_PAGE_CODE_REVIEW.md](implementation-history/2025/code-reviews/SETTINGS_PAGE_CODE_REVIEW.md) | Settings page architecture review (debugging-focused) | Developers |
-| [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) | Prioritized development tasks (9KB) | Developers |
+| **[../PHPCS_DOCUMENTATION_INDEX.md](history/archive/2026/fixes/phpcs/PHPCS_DOCUMENTATION_INDEX.md)** | **⭐ NEW (Feb 1, 2026):** Complete PHPCS documentation suite - 7 files covering 667 violations, implementation plan | Developers/QA |
+| **[GAP_DOCUMENTATION_REVIEW_SUMMARY.md](history/2026/implementations/GAP_DOCUMENTATION_REVIEW_SUMMARY.md)** | **⭐ NEW (Jan 3, 2026):** Gap documentation review - 100% high-priority completion! Quality: 98/100 | Everyone |
+| **[GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md](history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md)** | **NEW (Jan 3, 2026):** Master status update - all 6 gap documents reviewed, phase tracking | Developers/PM |
+| **[CODE_REVIEW_2026-01-02.md](history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)** | **NEW (Jan 2, 2026):** Comprehensive code review - historical tool-count verification superseded by Rev 2.0 fact sheet, Grade A- (92/100) | Developers/QA |
+| **[CODE_REVIEW_SUMMARY_2026-01-02.md](history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md)** | **NEW (Jan 2, 2026):** Quick summary of January 2 code review findings and actions | Everyone |
+| **[ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md](history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md)** | **NEW (Jan 2, 2026):** Root cleanup - moved 8 files to proper docs/ locations | Developers |
+| **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** | Executive summary of comprehensive gap analysis (Dec 6, 2025) | Everyone |
+| **[PLUGIN_GAP_ANALYSIS.md](history/2025/summaries/PLUGIN_GAP_ANALYSIS.md)** | Full gap analysis - 365 files, 9 categories, 35 gaps identified (Dec 6, 2025) | Developers/QA |
+| **[QUICK_WINS_GAP_FIXES.md](history/2025/summaries/QUICK_WINS_GAP_FIXES.md)** | Step-by-step quick fixes with code examples (Dec 6, 2025) | Developers |
+| [CODE-REVIEW-MASTER.md](developer/best-practices/CODE-REVIEW-MASTER.md) | Master Code Review - Comprehensive assessment (95/100 score, consolidates 6 reviews) | Developers |
+| [archive/](history/archive/README.md) | Historical code reviews (archived for reference) | Developers |
+| [SETTINGS_PAGE_CODE_REVIEW.md](history/2025/code-reviews/SETTINGS_PAGE_CODE_REVIEW.md) | Settings page architecture review (debugging-focused) | Developers |
+| [ACTION_ITEMS.md](history/2025/summaries/ACTION_ITEMS.md) | Prioritized development tasks (9KB) | Developers |
 
 #### PHPCS Compliance & Fixes ⭐ **NEW (Feb 2026)**
 
@@ -1389,14 +1413,14 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Size | Audience |
 |----------|-------------|------|----------|
-| **[../PHPCS_DOCUMENTATION_INDEX.md](archive/fixes/phpcs/PHPCS_DOCUMENTATION_INDEX.md)** | Master index for all PHPCS documentation - Start here! | 11 KB | Everyone |
-| [../PHPCS_VIOLATIONS_FLOWCHART.md](archive/fixes/phpcs/PHPCS_VIOLATIONS_FLOWCHART.md) | Visual decision-making guide with ASCII flowchart | 8.6 KB | Developers |
-| [../SAFE_PHPCS_FIX_PLAN.md](archive/fixes/phpcs/SAFE_PHPCS_FIX_PLAN.md) | 4-phase implementation plan with examples | 13 KB | Developers |
-| [../PHPCS_FIX_QUICK_REFERENCE.md](archive/fixes/phpcs/PHPCS_FIX_QUICK_REFERENCE.md) | Quick lookup reference for development | 5.9 KB | Developers |
-| [../PHPCS_IGNORE_ANALYSIS.md](archive/fixes/phpcs/PHPCS_IGNORE_ANALYSIS.md) | Detailed analysis of 149 phpcs:ignore instances | 76 KB | Developers |
-| [PHPCS_IGNORE_REVIEW_SUMMARY.md](PHPCS_IGNORE_REVIEW_SUMMARY.md) | Executive summary of unused parameter analysis | 6.2 KB | Developers/QA |
-| [HIGH_PRIORITY_PHPCS_IMPLEMENTATION.md](HIGH_PRIORITY_PHPCS_IMPLEMENTATION.md) | Phase 1 implementation status (4 of 7 complete) | 5.3 KB | Developers |
-| [development/PHPCS_FIXES_NEEDED.md](development/PHPCS_FIXES_NEEDED.md) | Historical record of January 2026 fixes (16 security errors) | 8.7 KB | Developers |
+| **[../PHPCS_DOCUMENTATION_INDEX.md](history/archive/2026/fixes/phpcs/PHPCS_DOCUMENTATION_INDEX.md)** | Master index for all PHPCS documentation - Start here! | 11 KB | Everyone |
+| [../PHPCS_VIOLATIONS_FLOWCHART.md](history/archive/2026/fixes/phpcs/PHPCS_VIOLATIONS_FLOWCHART.md) | Visual decision-making guide with ASCII flowchart | 8.6 KB | Developers |
+| [../SAFE_PHPCS_FIX_PLAN.md](history/archive/2026/fixes/phpcs/SAFE_PHPCS_FIX_PLAN.md) | 4-phase implementation plan with examples | 13 KB | Developers |
+| [../PHPCS_FIX_QUICK_REFERENCE.md](history/archive/2026/fixes/phpcs/PHPCS_FIX_QUICK_REFERENCE.md) | Quick lookup reference for development | 5.9 KB | Developers |
+| [../PHPCS_IGNORE_ANALYSIS.md](history/archive/2026/fixes/phpcs/PHPCS_IGNORE_ANALYSIS.md) | Detailed analysis of 149 phpcs:ignore instances | 76 KB | Developers |
+| [PHPCS_IGNORE_REVIEW_SUMMARY.md](history/2026/implementations/PHPCS_IGNORE_REVIEW_SUMMARY.md) | Executive summary of unused parameter analysis | 6.2 KB | Developers/QA |
+| [HIGH_PRIORITY_PHPCS_IMPLEMENTATION.md](history/2026/implementations/HIGH_PRIORITY_PHPCS_IMPLEMENTATION.md) | Phase 1 implementation status (4 of 7 complete) | 5.3 KB | Developers |
+| [development/PHPCS_FIXES_NEEDED.md](developer/PHPCS_FIXES_NEEDED.md) | Historical record of January 2026 fixes (16 security errors) | 8.7 KB | Developers |
 
 **Key Statistics:**
 - 667 total violations analyzed
@@ -1412,26 +1436,26 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[CODE_COVERAGE_DASHBOARD.md](guides/developer/testing/CODE_COVERAGE_DASHBOARD.md)** | **⭐ NEW (Jan 3, 2026):** Code coverage dashboard with Codecov integration, auto-reporting in CI/CD | Developers/QA |
-| [TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md) | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
-| [CRON_TESTING_GUIDE.md](guides/developer/testing/CRON_TESTING_GUIDE.md) | Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
+| **[CODE_COVERAGE_DASHBOARD.md](developer/testing-docs/CODE_COVERAGE_DASHBOARD.md)** | **⭐ NEW (Jan 3, 2026):** Code coverage dashboard with Codecov integration, auto-reporting in CI/CD | Developers/QA |
+| [TESTING_AND_QUALITY_REPORT.md](developer/testing-docs/TESTING_AND_QUALITY_REPORT.md) | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
+| [CRON_TESTING_GUIDE.md](developer/testing-docs/CRON_TESTING_GUIDE.md) | Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 
 ### Technical Documentation
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[ADR_001_module_boundaries.md](ADR_001_module_boundaries.md)** | **⭐ NEW (Mar 2026):** Architecture Decision Record — four-layer module boundaries, interface catalogue, enforcement rules | Developers |
-| **[BUILD_MATRIX.md](BUILD_MATRIX.md)** | **⭐ NEW (Mar 2026):** Complete build script reference — every `npm run build:*` script, its config file, output, and when to run it | Developers |
-| [gmail-oauth-fix-summary.md](fixes/gmail-oauth-fix-summary.md) | Gmail OAuth integration fix (400 Bad Request) | Developers/Admins |
+| **[ADR_001_module_boundaries.md](project/architecture-decisions/ADR_001_module_boundaries.md)** | **⭐ NEW (Mar 2026):** Architecture Decision Record — four-layer module boundaries, interface catalogue, enforcement rules | Developers |
+| **[BUILD_MATRIX.md](project/releases/BUILD_MATRIX.md)** | **⭐ NEW (Mar 2026):** Complete build script reference — every `npm run build:*` script, its config file, output, and when to run it | Developers |
+| [gmail-oauth-fix-summary.md](history/2026/fixes/gmail-oauth-fix-summary.md) | Gmail OAuth integration fix (400 Bad Request) | Developers/Admins |
 | [OPENAI-STABILIZATION.md](features/ai-providers/openai/OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
-| [TRANSCRIPT_RECONSTRUCTION_FIX.md](implementation-history/2025/fixes/chat/TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |
-| [GET_OPEN_METEO_FIX.md](fixes/GET_OPEN_METEO_FIX.md) | Weather forecast chart iframe rendering fix | Developers |
-| [BEFORE_AFTER_COMPARISON.md](fixes/BEFORE_AFTER_COMPARISON.md) | Visual comparison of get_open_meteo_forecast chart rendering fix | Developers |
-| [CHART_BUBBLE_WIDTH_FIX.md](fixes/CHART_BUBBLE_WIDTH_FIX.md) | CSS fix for chart bubble width display | Developers |
-| [CHART_WIDTH_FIX_SUMMARY.md](fixes/CHART_WIDTH_FIX_SUMMARY.md) | Summary of chart width-related fixes | Developers |
-| [CHART_FIX_TESTING.md](fixes/CHART_FIX_TESTING.md) | Comprehensive testing guide for chart fixes | Developers/QA |
-| [IMPLEMENTATION_SUMMARY_GET_OPEN_METEO.md](implementation-summaries/IMPLEMENTATION_SUMMARY_GET_OPEN_METEO.md) | Implementation summary for weather forecast fix | Developers |
-| [PR_SUMMARY_GET_OPEN_METEO.md](implementation-history/2025/PR_SUMMARY_GET_OPEN_METEO.md) | PR summary for weather forecast iframe rendering fix | Developers |
+| [TRANSCRIPT_RECONSTRUCTION_FIX.md](history/2025/fixes/chat/TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |
+| [GET_OPEN_METEO_FIX.md](history/2026/fixes/GET_OPEN_METEO_FIX.md) | Weather forecast chart iframe rendering fix | Developers |
+| [BEFORE_AFTER_COMPARISON.md](history/2026/fixes/BEFORE_AFTER_COMPARISON.md) | Visual comparison of get_open_meteo_forecast chart rendering fix | Developers |
+| [CHART_BUBBLE_WIDTH_FIX.md](history/2026/fixes/CHART_BUBBLE_WIDTH_FIX.md) | CSS fix for chart bubble width display | Developers |
+| [CHART_WIDTH_FIX_SUMMARY.md](history/2026/fixes/CHART_WIDTH_FIX_SUMMARY.md) | Summary of chart width-related fixes | Developers |
+| [CHART_FIX_TESTING.md](history/2026/fixes/CHART_FIX_TESTING.md) | Comprehensive testing guide for chart fixes | Developers/QA |
+| [IMPLEMENTATION_SUMMARY_GET_OPEN_METEO.md](history/2026/implementation-summaries/IMPLEMENTATION_SUMMARY_GET_OPEN_METEO.md) | Implementation summary for weather forecast fix | Developers |
+| [PR_SUMMARY_GET_OPEN_METEO.md](history/2025/PR_SUMMARY_GET_OPEN_METEO.md) | PR summary for weather forecast iframe rendering fix | Developers |
 
 ---
 
@@ -1565,7 +1589,7 @@ Essential files only (reduced from 30 to 5 files):
 
 ### Contributing
 1. Read [../CONTRIBUTING.md](../CONTRIBUTING.md)
-2. Review code quality guidelines in [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md)
+2. Review code quality guidelines in [CODE-REVIEW-MASTER.md](developer/best-practices/CODE-REVIEW-MASTER.md)
 3. Follow security practices in [../SECURITY.md](../SECURITY.md)
 4. Submit pull requests with documentation updates
 

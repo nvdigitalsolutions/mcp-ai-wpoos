@@ -20,7 +20,7 @@ agent:
 
   critical_rules:
     - Always verify claims via verify_information before reporting findings
-    - Produce structured Project Brief following docs/proposals/templates/PROJECT-BRIEF-TEMPLATE.md
+    - Produce structured Project Brief following docs/project/proposals/templates/PROJECT-BRIEF-TEMPLATE.md
     - Identify Base vs Pro version placement for every discovered feature component
     - Flag security implications upfront (credentials, user data, external APIs)
     - Keep Project Briefs concise — under 500 lines
@@ -38,12 +38,12 @@ agent:
     - batch_manage_memory
 
   output_artifacts:
-    - docs/proposals/[FEATURE]-PROJECT-BRIEF.md
+    - docs/project/proposals/[FEATURE]-PROJECT-BRIEF.md
 
   context_files:
     - .context/conventions.md
     - .context/pro-vs-base.md
-    - docs/proposals/templates/PROJECT-BRIEF-TEMPLATE.md
+    - docs/project/proposals/templates/PROJECT-BRIEF-TEMPLATE.md
 
   handoff_to: nv-oos-product-manager
   handoff_criteria:

@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Concrete implementations of the 9 domain interfaces from `oos/core`, backed by Craft CMS services. Each adapter wraps one Craft subsystem behind a framework-agnostic contract.
+Concrete implementations of the 9 domain interfaces from `nvoos/core`, backed by Craft CMS services. Each adapter wraps one Craft subsystem behind a framework-agnostic contract.
 
 ## Tier
 
 | | |
 |---|---|
-| **Distribution** | `oos/craft-adapter` Composer package |
+| **Distribution** | `nvoos/craft-adapter` Composer package |
 | **PHP target** | 8.1+ |
-| **Dependencies** | `oos/core`, `craftcms/cms ^4.0 \|\| ^5.0` |
+| **Dependencies** | `nvoos/core`, `craftcms/cms ^4.0 \|\| ^5.0` |
 
 ## Public Surface
 
@@ -29,7 +29,7 @@ Concrete implementations of the 9 domain interfaces from `oos/core`, backed by C
 
 - One adapter per file, one Craft subsystem per adapter.
 - Adapter methods are thin wrappers — one Craft service call per method.
-- Config via `config/oos.php` with `Craft::parseEnv()` for secrets.
+- Config via `config/nvoos.php` with `Craft::parseEnv()` for secrets.
 - Adapters do not contain business logic.
 - `declare(strict_types=1)` in every file.
 
@@ -45,3 +45,6 @@ vendor/bin/phpunit tests/
 - [`lib/core/src/Domain/Entity/`](../../core/src/Domain/Entity/) — value objects returned by these adapters
 - [`lib/wordpress-adapter/src/Adapter/`](../../../wordpress-adapter/src/Adapter/) — sibling WordPress implementations
 - [`lib/laravel-adapter/src/Adapter/`](../../../laravel-adapter/src/Adapter/) — sibling Laravel implementations
+
+> **Monorepo sync:** This directory is synced to `nvdigitalsolutions/nvoos-craft-adapter` via `.github/workflows/sync-nvoos-craft-adapter.yml` on push to `main` or `alpha-working`.
+

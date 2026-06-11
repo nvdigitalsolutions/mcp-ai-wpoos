@@ -43,7 +43,7 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 	 * @return string
 	 */
 	public function get_documentation_url() {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/user-guides/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md';
 	}
 
 	/**

@@ -73,6 +73,12 @@ class WP_MCP_AI_Shortcode {
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_assets' ) );
 
+		// Defer user-dependent localisation (nonce, currentUserId, memory
+		// endpoints) until after WordPress has determined the current user.
+		// On init, get_current_user_id() returns 0, producing a nonce that
+		// fails rest_cookie_check_errors for logged-in users.
+		add_action( 'wp', array( $this, 'localize_user_dependent_data' ) );
+
 		// Only register the legacy [mcp_ai_chat] shortcode when legacy mode is
 		// active. Set define( 'WP_MCP_AI_LEGACY_CHAT_JS', false ) in wp-config.php
 		// to disable legacy mode and use [nvoos_chat_spa] instead.
@@ -186,7 +192,7 @@ class WP_MCP_AI_Shortcode {
 		);
 
 		// Register realtime voice service (standalone, loaded on demand).
-		$voice_realtime_relative = $js_dir . 'chat-voice-realtime-service' . $js_ext;
+		$voice_realtime_relative = $this->resolve_js_asset_path( $js_dir, 'chat-voice-realtime-service', $js_ext );
 		wp_register_script(
 			'wp-mcp-ai-voice-realtime',
 			WP_MCP_AI_URL . $voice_realtime_relative,
@@ -196,7 +202,7 @@ class WP_MCP_AI_Shortcode {
 		);
 
 		// Register browser voice service (standalone, loaded on demand).
-		$voice_browser_relative = $js_dir . 'chat-browser-voice-service' . $js_ext;
+		$voice_browser_relative = $this->resolve_js_asset_path( $js_dir, 'chat-browser-voice-service', $js_ext );
 		wp_register_script(
 			'wp-mcp-ai-voice-browser',
 			WP_MCP_AI_URL . $voice_browser_relative,
@@ -206,7 +212,7 @@ class WP_MCP_AI_Shortcode {
 		);
 
 		// Register voice mode integration (glues voice services to chat UI).
-		$voice_integration_relative = $js_dir . 'chat-voice-mode-integration' . $js_ext;
+		$voice_integration_relative = $this->resolve_js_asset_path( $js_dir, 'chat-voice-mode-integration', $js_ext );
 		wp_register_script(
 			'wp-mcp-ai-voice-integration',
 			WP_MCP_AI_URL . $voice_integration_relative,
@@ -215,13 +221,10 @@ class WP_MCP_AI_Shortcode {
 			true
 		);
 
-		// Inject the chat-memory bridge endpoints so chat-memory-service.js can find them.
-		// Runs once per page (after each wp_localize_script call on this handle), so the data
-		// is available no matter which surface enqueued the bundle (block, shortcode, widget).
-		$memory_endpoints = self::get_chat_memory_endpoints_inline_script();
-		if ( '' !== $memory_endpoints ) {
-			wp_add_inline_script( self::SCRIPT_HANDLE, $memory_endpoints, 'after' );
-		}
+		// Memory endpoints are injected after user authentication via the
+		// localize_user_dependent_data() method (hooked to 'wp'). Calling
+		// get_chat_memory_endpoints_inline_script() here on 'init' would
+		// return empty because get_current_user_id() is still 0.
 
 		// Register chat bubble assets (floating chat widget).
 		$bubble_script_relative = 'assets/js/chat-bubble.js';
@@ -328,6 +331,66 @@ class WP_MCP_AI_Shortcode {
 	}
 
 	/**
+	 * Overwrite user-dependent localisation keys (nonce, currentUserId) with
+	 * values generated after WordPress has authenticated the current user.
+	 *
+	 * Also injects the chat-memory bridge endpoints so that
+	 * chat-memory-service.js can locate the REST routes. Both operations
+	 * must happen after user authentication because:
+	 *   - wp_create_nonce('wp_rest') uses the current user's session token.
+	 *     On init the user is still 0, producing a nonce that fails
+	 *     rest_cookie_check_errors for logged-in users ("Cookie check failed").
+	 *   - get_chat_memory_endpoints_inline_script() skips guests, but on
+	 *     init every user appears to be a guest.
+	 *
+	 * Hooked to 'wp' so that determine_current_user has already run.
+	 * For admin pages the enqueue_chat_assets() path in the test-page base
+	 * class also calls wp_localize_script later (on admin_enqueue_scripts),
+	 * but the 'wp' hook provides a single safe correction point for the
+	 * frontend shortcode, block, and Elementor widget surfaces.
+	 *
+	 * @since 1.1.29
+	 *
+	 * @return void
+	 */
+	public function localize_user_dependent_data() {
+		// Only localise when the handle is registered (should always be true
+		// after init, but defensive).
+		if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
+			return;
+		}
+
+		$user_id = get_current_user_id();
+
+		// Preserve chatDebugMode from the initial register_assets() call
+		// so the second wp_localize_script call (which WordPress appends
+		// as a new `var wpMcpAiChat = {...}` declaration) does not strip
+		// the debugging flag from the JS global.
+		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+		$chat_debug_mode  = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
+
+		// Overwrite the nonce and current user ID that were set (with user 0)
+		// during register_assets() on init.
+		//
+		// Use wp_add_inline_script to merge individual properties onto the
+		// existing window.wpMcpAiChat object instead of calling
+		// wp_localize_script, which would create a new `var wpMcpAiChat = ...`
+		// declaration that strips every other key (messagesEndpoint, restUrl,
+		// etc.) that was set during register_assets().
+		$update_script  = 'window.wpMcpAiChat = window.wpMcpAiChat || {};';
+		$update_script .= 'window.wpMcpAiChat.nonce = ' . wp_json_encode( wp_create_nonce( 'wp_rest' ) ) . ';';
+		$update_script .= 'window.wpMcpAiChat.currentUserId = ' . wp_json_encode( $user_id ) . ';';
+		$update_script .= 'window.wpMcpAiChat.chatDebugMode = ' . wp_json_encode( $chat_debug_mode ) . ';';
+		wp_add_inline_script( self::SCRIPT_HANDLE, $update_script, 'after' );
+
+		// Inject the chat-memory bridge endpoints now that we know the user.
+		$memory_endpoints = self::get_chat_memory_endpoints_inline_script();
+		if ( '' !== $memory_endpoints ) {
+			wp_add_inline_script( self::SCRIPT_HANDLE, $memory_endpoints, 'after' );
+		}
+	}
+
+	/**
 	 * Determine the version string for an asset, using the file modification time when available.
 	 *
 	 * Falls back to the plugin version when the asset does not exist on disk.
@@ -348,6 +411,34 @@ class WP_MCP_AI_Shortcode {
 		}
 
 		return WP_MCP_AI_VERSION;
+	}
+
+	/**
+	 * Resolve the best available JS file extension for a given basename.
+	 *
+	 * When the build system produces .min.js files but one is missing on disk,
+	 * gracefully fall back to the non-minified .js source to prevent MIME-type
+	 * errors (404s served as text/html by the web server).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $js_dir   Directory path relative to plugin root (e.g. 'assets/js/').
+	 * @param string $basename File basename without extension.
+	 * @param string $js_ext   Preferred extension (e.g. '.min.js' or '.js').
+	 * @return string Relative path with the best available extension.
+	 */
+	protected function resolve_js_asset_path( $js_dir, $basename, $js_ext ) {
+		$relative = $js_dir . $basename . $js_ext;
+
+		// If we prefer .min.js but it doesn't exist, try .js.
+		if ( '.min.js' === $js_ext && ! file_exists( WP_MCP_AI_PATH . $relative ) ) {
+			$fallback = $js_dir . $basename . '.js';
+			if ( file_exists( WP_MCP_AI_PATH . $fallback ) ) {
+				return $fallback;
+			}
+		}
+
+		return $relative;
 	}
 
 	/**

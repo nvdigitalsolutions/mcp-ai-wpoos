@@ -14,7 +14,7 @@ This repo is developed by multiple AI agents. Before doing work, be aware of:
 
 When making changes, check `git log` first — another agent may have already addressed part of the task. Do not duplicate scopes that are owned by an agent declared in `.github/agents/` or in the `AGENTS.md` inventory.
 
-**Folder context (per-folder READMEs):** Every PHP-bearing subdirectory under `includes/` and `addons/pro/includes/` ships a `README.md` declaring that folder's purpose, public surface, neighbors, and which `.context/*.md` files to load alongside it. **When editing files in `includes/<folder>/`, read `includes/<folder>/README.md` first.** Convention details in [`docs/guides/developer/folder-readme-convention.md`](../docs/guides/developer/folder-readme-convention.md); enforcement via `composer run docs:check-folder-readmes` (part of `composer run ci:all`).
+**Folder context (per-folder READMEs):** Every PHP-bearing subdirectory under `includes/` and `addons/pro/includes/` ships a `README.md` declaring that folder's purpose, public surface, neighbors, and which `.context/*.md` files to load alongside it. **When editing files in `includes/<folder>/`, read `includes/<folder>/README.md` first.** Convention details in [`docs/developer/folder-readme-convention.md`](../docs/developer/folder-readme-convention.md); enforcement via `composer run docs:check-folder-readmes` (part of `composer run ci:all`).
 
 
 ## Repository Structure

@@ -8,6 +8,7 @@
  * @package WP_MCP_AI_Pro
  * @subpackage CRM_Toolkit
  * @since 2.1.0
+ * @since 2.4.0  Added configurable orderby, order, search with TF-IDF relevance scoring.
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
@@ -16,6 +17,8 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-search.php';
 
 /**
  * CRM Email Search – Customer Correspondence Tool.
@@ -31,6 +34,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 2.1.0
  */
 class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_CRM_Relevance_Search;
 
 	/**
 	 * WP Cron hook for scheduled cache refresh.
@@ -84,6 +89,13 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	const CHANNELS = array( 'email', 'phone', 'chat', 'social', 'all' );
 
 	/**
+	 * Allowed orderby values for correspondence search.
+	 *
+	 * @var string[]
+	 */
+	const ORDERBY_OPTIONS = array( 'relevance', 'last_contacted', 'date', 'name', 'company' );
+
+	/**
 	 * Constructor – registers WP Cron callback.
 	 */
 	public function __construct() {
@@ -127,7 +139,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
  * {@inheritdoc}
  */
 	public function get_description() {
-		return __( 'Search CRM contacts for customer correspondence activity. Supports industry-standard email categories (support, general, sales, escalated), response-time analytics, routing suggestions, and follow-up status filtering. Results are cached and can be auto-refreshed on a WP Cron schedule.', 'mcp-ai-wpoos-pro' );
+		return __( 'Search CRM contacts for customer correspondence activity. Supports industry-standard email categories (support, general, sales, escalated), response-time analytics, routing suggestions, follow-up status filtering, and free-text TF-IDF relevance search across name, company, and email. Configurable orderby (relevance, last_contacted, date, name, company) and order (ASC/DESC). Results are cached and can be auto-refreshed on a WP Cron schedule.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -219,6 +231,22 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 					'type'        => 'boolean',
 					'description' => __( 'When true, return only contacts that have breached SLA (Service Level Agreement) response time thresholds. Uses days_since_contact as the SLA threshold. Industry standard in enterprise CRM / helpdesk operations.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
+				),
+				'search'              => array(
+					'type'        => 'string',
+					'description' => __( 'Free-text search across contact name, company, and email fields. When combined with orderby=relevance, results are scored and ranked using TF-IDF relevance. Useful for finding contacts by partial name, domain, or company keyword.', 'mcp-ai-wpoos-pro' ),
+				),
+				'orderby'             => array(
+					'type'        => 'string',
+					'enum'        => self::ORDERBY_OPTIONS,
+					'description' => __( 'Sort order for results. "relevance" requires the search parameter and ranks by TF-IDF score. "last_contacted" sorts by last contact date. "date" sorts by contact creation date. "name" sorts alphabetically by contact name. "company" sorts by company name.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'last_contacted',
+				),
+				'order'               => array(
+					'type'        => 'string',
+					'enum'        => array( 'ASC', 'DESC' ),
+					'description' => __( 'Sort direction: ASC (ascending) or DESC (descending).', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'ASC',
 				),
 			),
 			'required'             => array( 'action' ),
@@ -418,10 +446,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 		$result = wp_schedule_event( time(), $recurrence, self::CRON_HOOK );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'error'   => $result->get_error_message(),
-			);
+			return $result;
 		}
 
 		return array(
@@ -503,25 +528,29 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	 * @return array
 	 */
 	private function query_correspondence( array $filters ) {
+		global $wpdb;
+
 		$per_page            = min( max( absint( $filters['per_page'] ), 1 ), 100 );
 		$page                = max( absint( $filters['page'] ), 1 );
 		$correspondence_type = $filters['correspondence_type'];
 		$days_since          = max( 1, absint( $filters['days_since_contact'] ) );
 		$include_analytics   = ! empty( $filters['include_analytics'] );
+		$orderby             = isset( $filters['orderby'] ) ? $filters['orderby'] : 'last_contacted';
+		$order               = isset( $filters['order'] ) ? $filters['order'] : 'ASC';
+		$search              = isset( $filters['search'] ) ? trim( sanitize_text_field( $filters['search'] ) ) : '';
+		$is_relevance        = ( 'relevance' === $orderby && '' !== $search );
 
 		$query_args = array(
 			'post_type'      => 'mcp_crm_contacts',
 			'post_status'    => 'publish',
-			'posts_per_page' => $per_page,
-			'paged'          => $page,
-			'orderby'        => 'date',
-			'order'          => 'DESC',
+			'posts_per_page' => $is_relevance ? 500 : $per_page,
+			'paged'          => $is_relevance ? 1 : $page,
 		);
 
 		$meta_query  = array( 'relation' => 'AND' );
 		$cutoff_date = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days_since} days" ) );
 
-		// Correspondence status / search-mode clauses.
+		// Correspondence status / search-mode clauses (meta_query only — ordering is applied separately).
 		switch ( $correspondence_type ) {
 			case 'needs_followup':
 				$meta_query[] = array(
@@ -537,21 +566,15 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 						'compare' => 'NOT EXISTS',
 					),
 				);
-				$query_args['meta_key'] = 'last_contacted'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for correspondence ordering on indexed meta.
-				$query_args['orderby']  = 'meta_value';
-				$query_args['order']    = 'ASC';
 				break;
 
 			case 'recently_contacted':
-				$meta_query[]           = array(
+				$meta_query[] = array(
 					'key'     => 'last_contacted',
 					'value'   => $cutoff_date,
 					'compare' => '>=',
 					'type'    => 'DATETIME',
 				);
-				$query_args['meta_key'] = 'last_contacted'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for correspondence ordering on indexed meta.
-				$query_args['orderby']  = 'meta_value';
-				$query_args['order']    = 'DESC';
 				break;
 
 			case 'never_contacted':
@@ -559,26 +582,66 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 					'key'     => 'last_contacted',
 					'compare' => 'NOT EXISTS',
 				);
-				$query_args['orderby'] = 'date';
 				break;
 
 			case 'overdue':
-				$meta_query[]           = array(
+				$meta_query[] = array(
 					'key'     => 'follow_up_date',
 					'value'   => current_time( 'mysql' ),
 					'compare' => '<',
 					'type'    => 'DATETIME',
 				);
-				$query_args['meta_key'] = 'follow_up_date'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for overdue ordering on indexed meta.
-				$query_args['orderby']  = 'meta_value';
-				$query_args['order']    = 'ASC';
 				break;
 
 			case 'all':
 			default:
-				$query_args['orderby'] = 'date';
-				$query_args['order']   = 'DESC';
 				break;
+		}
+
+		// Dynamic orderby – decoupled from correspondence_type filtering.
+		if ( ! $is_relevance ) {
+			switch ( $orderby ) {
+				case 'last_contacted':
+					$query_args['meta_key'] = 'last_contacted'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for correspondence ordering on indexed meta.
+					$query_args['orderby']  = 'meta_value';
+					break;
+				case 'name':
+					$query_args['orderby'] = 'title';
+					break;
+				case 'company':
+					$query_args['meta_key'] = 'company'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for company-name ordering on indexed meta.
+					$query_args['orderby']  = 'meta_value';
+					break;
+				case 'date':
+				default:
+					$query_args['orderby'] = 'date';
+					break;
+			}
+			$query_args['order'] = $order;
+		} else {
+			// Relevance mode queries broadly; scoring and pagination happen after the loop.
+			$query_args['orderby'] = 'date';
+			$query_args['order']   = 'DESC';
+		}
+
+		// Free-text search across contact name, company, and email.
+		if ( '' !== $search ) {
+			$search_like  = '%' . $wpdb->esc_like( $search ) . '%';
+			$meta_query[] = array(
+				'relation' => 'OR',
+				array(
+					'key'     => 'company',
+					'value'   => $search_like,
+					'compare' => 'LIKE',
+				),
+				array(
+					'key'     => 'email',
+					'value'   => $search_like,
+					'compare' => 'LIKE',
+				),
+			);
+			// Also search post title (contact name) via WordPress core search.
+			$query_args['s'] = $search;
 		}
 
 		// Email category (industry-standard: support, general, sales, escalated).
@@ -678,6 +741,25 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 			}
 
 			$contacts[] = $record;
+		}
+
+		// Relevance scoring: rank all results with TF-IDF, then paginate.
+		if ( $is_relevance ) {
+			$contacts = $this->rank_by_relevance( $contacts, $search );
+			$total    = count( $contacts );
+			$pages    = max( 1, (int) ceil( $total / $per_page ) );
+			$offset   = ( $page - 1 ) * $per_page;
+			$contacts = array_slice( $contacts, $offset, $per_page );
+
+			return array(
+				'success'  => true,
+				'contacts' => $contacts,
+				'total'    => $total,
+				'per_page' => $per_page,
+				'page'     => $page,
+				'pages'    => $pages,
+				'filters'  => $filters,
+			);
 		}
 
 		return array(
@@ -805,6 +887,17 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 			$channel = 'all';
 		}
 
+		$orderby = $this->sanitise_orderby(
+			isset( $arguments['orderby'] ) ? $arguments['orderby'] : '',
+			'last_contacted',
+			self::ORDERBY_OPTIONS
+		);
+
+		$order = isset( $arguments['order'] ) ? strtoupper( sanitize_key( $arguments['order'] ) ) : 'ASC';
+		if ( ! in_array( $order, array( 'ASC', 'DESC' ), true ) ) {
+			$order = 'ASC';
+		}
+
 		return array(
 			'correspondence_type' => $correspondence_type,
 			'category'            => $category,
@@ -817,6 +910,9 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 			'include_analytics'   => isset( $arguments['include_analytics'] ) ? (bool) $arguments['include_analytics'] : true,
 			'per_page'            => isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20,
 			'page'                => isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1,
+			'orderby'             => $orderby,
+			'order'               => $order,
+			'search'              => isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '',
 		);
 	}
 

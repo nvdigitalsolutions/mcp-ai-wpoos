@@ -1,0 +1,5 @@
+# Suppress all generated artifacts from version control
+*
+# But keep directory structure and this file
+!.gitignore
+!.gitkeep

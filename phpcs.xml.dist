@@ -20,6 +20,7 @@
 <exclude-pattern>*/assets/examples/*</exclude-pattern>
 <exclude-pattern>*/bin/*</exclude-pattern>
 <exclude-pattern>*/lib/*</exclude-pattern>
+<exclude-pattern>*/docker/*</exclude-pattern>
 <!--
 	The phpcs/ directory contains custom PHPCS sniff classes which follow the
 	upstream PHPCS naming convention (CamelCase class files, camelCase variables
@@ -46,6 +47,18 @@
 <!-- oos-bridge.php wires the OOS core package (camelCase classes) into WordPress;
      variable names intentionally follow the upstream OOS\Core\* convention. -->
 <exclude-pattern>*/includes/bootstrap/oos-bridge.php</exclude-pattern>
+
+<!-- NV oOS Graphify is a standalone plugin with its own PSR-4 architecture
+     and phpcs.xml.dist. Exclude it from the base plugin's WPCS scan. -->
+<exclude-pattern>*/plugins/nvoos-graphify/**</exclude-pattern>
+
+<!-- NV oOS Graphify — AI is a standalone addon plugin with its own PSR-4
+     architecture and phpcs.xml.dist. Exclude from the base plugin's scan. -->
+<exclude-pattern>*/plugins/nvoos-graphify-ai/**</exclude-pattern>
+
+<!-- NV oOS Graphify — AI Platform is a standalone addon plugin with its own
+     PSR-4 architecture and phpcs.xml.dist. Exclude from the base plugin's scan. -->
+<exclude-pattern>*/plugins/nvoos-graphify-ai-platform/**</exclude-pattern>
 
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>

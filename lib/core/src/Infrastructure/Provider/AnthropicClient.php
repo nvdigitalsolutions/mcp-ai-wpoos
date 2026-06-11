@@ -6,18 +6,18 @@
  * POST https://api.anthropic.com/v1/messages
  * Requires: anthropic-version header, x-api-key header.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Infrastructure\Provider;
+namespace Nvoos\Core\Infrastructure\Provider;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 class AnthropicClient extends AbstractProviderClient {
 
@@ -96,6 +96,81 @@ class AnthropicClient extends AbstractProviderClient {
 		);
 
 		try {
+			$response   = $this->http->send( 'POST', $this->getBaseUrl() . '/messages', $headers, $body );
+			$statusCode = $response->statusCode;
+			$respBody   = $response->body;
+
+			if ( $statusCode >= 400 ) {
+				return $this->parseError( $statusCode, $respBody );
+			}
+
+			return $this->normalizeResponse(
+				\json_decode( $respBody, true ) ?: array(),
+				$model,
+			);
+
+		} catch ( \Exception $e ) {
+			return $this->errors->create( 'http_request_failed', $e->getMessage() );
+		}
+	}
+
+	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
+		$apiKey = $this->getApiKey();
+
+		if ( '' === $apiKey ) {
+			return $this->missingApiKeyError();
+		}
+
+		$model = $this->resolveModel( $options );
+
+		// Separate system message from conversation.
+		$system       = '';
+		$convMessages = array();
+
+		foreach ( $messages as $msg ) {
+			if ( 'system' === ( $msg['role'] ?? '' ) ) {
+				$system = is_string( $msg['content'] ?? null ) ? $msg['content'] : '';
+			} else {
+				$convMessages[] = $msg;
+			}
+		}
+
+		$anthropicMessages = $this->convertMessages( $convMessages );
+
+		$payload = array(
+			'model'      => $model,
+			'max_tokens' => (int) ( $options['max_tokens'] ?? 4096 ),
+			'messages'   => $anthropicMessages,
+			'stream'     => true,
+		);
+
+		if ( '' !== $system ) {
+			$payload['system'] = $system;
+		}
+
+		if ( isset( $options['temperature'] ) ) {
+			$payload['temperature'] = (float) $options['temperature'];
+		}
+		if ( isset( $options['top_p'] ) ) {
+			$payload['top_p'] = (float) $options['top_p'];
+		}
+		if ( ! empty( $options['tools'] ) ) {
+			$payload['tools'] = $this->convertTools( $options['tools'] );
+		}
+
+		try {
+			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
+		} catch ( \JsonException $e ) {
+			return $this->errors->create( 'json_encode_failed', $e->getMessage() );
+		}
+
+		$headers = array(
+			'x-api-key'         => $apiKey,
+			'anthropic-version' => self::API_VERSION,
+			'Content-Type'      => 'application/json',
+		);
+
+		try {
 			$request    = new \Nyholm\Psr7\Request(
 				'POST',
 				$this->getBaseUrl() . '/messages',
@@ -110,18 +185,58 @@ class AnthropicClient extends AbstractProviderClient {
 				return $this->parseError( $statusCode, $respBody );
 			}
 
+			// Parse Anthropic SSE stream.
+			$assembled = '';
+			$toolUse   = array();
+
+			foreach ( \preg_split( "/\r?\n/", $respBody ) as $line ) {
+				$line = \trim( $line );
+				if ( '' === $line || 0 !== \strpos( $line, 'data: ' ) ) {
+					continue;
+				}
+				$data = \substr( $line, 6 );
+				$chunk = \json_decode( $data, true );
+				if ( ! is_array( $chunk ) ) {
+					continue;
+				}
+
+				$type = $chunk['type'] ?? '';
+
+				if ( 'content_block_delta' === $type ) {
+					$delta = $chunk['delta'] ?? array();
+					if ( 'text_delta' === ( $delta['type'] ?? '' ) ) {
+						$token = $delta['text'] ?? '';
+						$assembled .= $token;
+						if ( null !== $onChunk ) {
+							$onChunk( $token );
+						}
+					} elseif ( 'input_json_delta' === ( $delta['type'] ?? '' ) ) {
+						$idx = (int) ( $chunk['index'] ?? 0 );
+						if ( ! isset( $toolUse[ $idx ] ) ) {
+							$toolUse[ $idx ] = '';
+						}
+						$toolUse[ $idx ] .= $delta['partial_json'] ?? '';
+					}
+				}
+			}
+
 			return $this->normalizeResponse(
-				\json_decode( $respBody, true ) ?: array(),
+				array(
+					'id'      => '',
+					'content' => array(
+						array(
+							'type' => 'text',
+							'text' => $assembled,
+						),
+					),
+					'stop_reason' => 'end_turn',
+				),
 				$model,
 			);
 
 		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
 			return $this->errors->create( 'http_request_failed', $e->getMessage() );
 		}
-	}
-
-	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
-		return $this->chat( $messages, $options );
 	}
 
 	public function listModels(): mixed {

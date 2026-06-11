@@ -11,6 +11,7 @@
  *  - Routing strategy resolution (round_robin, weighted, territory, skill).
  *  - Currency formatting helpers.
  *  - DNC / suppression helper.
+ *  - Search algorithm configuration (keyword_tfidf, fulltext).
  *
  * Mirrors WP_MCP_AI_Healthcare_Engine in the healthcare toolkit.
  *
@@ -29,6 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Shared CRM engine.
  *
  * @since 2.3.0
+ * @since 2.4.0 Added 'search' settings block for configurable relevance algorithm.
  */
 class WP_MCP_AI_CRM_Engine {
 
@@ -48,9 +50,9 @@ class WP_MCP_AI_CRM_Engine {
 
 	/*
 	---------------------------------------------------------------------
-	 * Toolkit settings
-	 * ------------------------------------------------------------------
-	 */
+	* Toolkit settings
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Get resolved CRM toolkit settings.
@@ -117,10 +119,60 @@ class WP_MCP_AI_CRM_Engine {
 				),
 			),
 			'integrations'            => array(
+				// Twilio (SMS outbound + inbound webhook).
 				'twilio_account_sid_secret' => '',
+				'twilio_auth_token_secret'  => '',
+				'twilio_from_number'        => '', // E.164 format, e.g. +1234567890
+				// WhatsApp (Meta Cloud API outbound + inbound webhook).
+				'whatsapp_access_token'     => '',
 				'whatsapp_phone_number_id'  => '',
+				'whatsapp_app_secret'       => '', // For webhook signature validation
+				// notify.lk (Sri Lanka SMS gateway).
+				'notifylk_user_id'          => '',
+				'notifylk_api_key'          => '',
+				'notifylk_sender_id'        => '',
+				// OAuth handles for IMAP/Gmail/Outlook.
 				'gmail_oauth_handle'        => '',
 				'outlook_oauth_handle'      => '',
+				// Default SMS provider: 'twilio' | 'notifylk'.
+				'sms_provider'              => 'twilio',
+				// Default Gmail import query (Gmail search syntax).
+				'gmail_default_query'       => 'newer_than:7d is:unread',
+			),
+			'search'                  => array(
+				'algorithm'       => 'keyword_tfidf',
+				'default_orderby' => 'relevance',
+				'min_relevance'   => 0,
+				'field_weights'   => array(
+					'name'    => 3.0,
+					'company' => 2.0,
+					'email'   => 1.5,
+				),
+			),
+			'research_assistant'      => 'default',
+			// Storage backend preference: 'auto', 'cct', or 'cpt'.
+			'storage_backend'         => 'auto',
+			// SLA targets for support tickets (P1–P4, minutes).
+			'sla'                     => array(
+				'p1_first_response_minutes'  => 15,
+				'p1_resolution_minutes'      => 240,
+				'p2_first_response_minutes'  => 60,
+				'p2_resolution_minutes'      => 480,
+				'p3_first_response_minutes'  => 240,
+				'p3_resolution_minutes'      => 1440,
+				'p4_first_response_minutes'  => 480,
+				'p4_resolution_minutes'      => 4320,
+				'business_hours_start'       => '09:00',
+				'business_hours_end'         => '17:00',
+				'business_days'              => array( 1, 2, 3, 4, 5 ), // Mon–Fri.
+				'auto_close_resolved_days'   => 3,
+				'auto_escalate_waiting_days' => 3,
+			),
+			// Support module settings.
+			'support'                 => array(
+				'default_assignee_id' => 0,
+				'ticket_categories'   => array( 'Bug', 'Question', 'Feature Request', 'Account', 'Billing', 'Other' ),
+				'resolution_types'    => array( 'Solved', 'Not Reproducible', "Won't Fix", 'Duplicate', 'Third Party' ),
 			),
 		);
 
@@ -152,13 +204,79 @@ class WP_MCP_AI_CRM_Engine {
 	 */
 	public static function flush_settings_cache() {
 		self::$settings_cache = null;
+		self::$hygiene_cache  = null;
 	}
 
 	/*
 	---------------------------------------------------------------------
-	 * Lifecycle stages
-	 * ------------------------------------------------------------------
+	* Email Hygiene Settings
+	* ------------------------------------------------------------------
+	*/
+
+	/**
+	 * Hygiene settings option key.
+	 *
+	 * @var string
 	 */
+	const HYGIENE_OPTION = 'wp_mcp_ai_crm_hygiene_settings';
+
+	/**
+	 * Cached hygiene settings.
+	 *
+	 * @var array|null
+	 */
+	private static $hygiene_cache = null;
+
+	/**
+	 * Get resolved email hygiene settings.
+	 *
+	 * @since 2.8.0
+	 * @return array
+	 */
+	public static function get_hygiene_settings() {
+		if ( null !== self::$hygiene_cache ) {
+			return self::$hygiene_cache;
+		}
+
+		$defaults = array(
+			'exclude_list'          => array(),
+			'priority_list'         => array(),
+			'spam_domains'          => array(),
+			'promotional_domains'   => array(),
+			'priority_domains'      => array(),
+			'promotional_keywords'  => array(),
+			'auto_prune_spam'       => true,
+			'auto_prune_stale_days' => 0, // 0 = disabled.
+			'auto_prune_excluded'   => true,
+		);
+
+		$stored = get_option( self::HYGIENE_OPTION, array() );
+		if ( ! is_array( $stored ) ) {
+			$stored = array();
+		}
+
+		$settings = array_merge( $defaults, $stored );
+
+		/**
+		 * Filter: override resolved email hygiene settings.
+		 *
+		 * @since 2.8.0
+		 * @param array $settings Merged hygiene settings.
+		 */
+		$settings = apply_filters( 'wp_mcp_ai_crm_hygiene_settings', $settings );
+		if ( ! is_array( $settings ) ) {
+			$settings = $defaults;
+		}
+
+		self::$hygiene_cache = $settings;
+		return self::$hygiene_cache;
+	}
+
+	/*
+	---------------------------------------------------------------------
+	* Lifecycle stages
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Canonical lifecycle stages (HubSpot-aligned).
@@ -168,9 +286,9 @@ class WP_MCP_AI_CRM_Engine {
 	const LIFECYCLE_STAGES = array(
 		'subscriber',
 		'lead',
-		'mql',     // Marketing Qualified Lead
-		'sal',     // Sales Accepted Lead
-		'sql',     // Sales Qualified Lead
+		'mql',     // Marketing Qualified Lead.
+		'sal',     // Sales Accepted Lead.
+		'sql',     // Sales Qualified Lead.
 		'opportunity',
 		'customer',
 		'evangelist',
@@ -204,9 +322,9 @@ class WP_MCP_AI_CRM_Engine {
 
 	/*
 	---------------------------------------------------------------------
-	 * Lead scoring
-	 * ------------------------------------------------------------------
-	 */
+	* Lead scoring
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Score label by numeric score bucket.
@@ -242,10 +360,10 @@ class WP_MCP_AI_CRM_Engine {
 	 */
 	public static function calculate_lead_score( array $factors ) {
 		$default_weights = array(
-			'fit'        => 0.35,   // company size, industry fit
-			'intent'     => 0.30,   // signals: pricing-page visit, demo request
-			'engagement' => 0.20,   // email opens, click-throughs, replies
-			'recency'    => 0.15,   // recent activity decay
+			'fit'        => 0.35,   // company size, industry fit.
+			'intent'     => 0.30,   // signals: pricing-page visit, demo request.
+			'engagement' => 0.20,   // email opens, click-throughs, replies.
+			'recency'    => 0.15,   // recent activity decay.
 		);
 
 		/**
@@ -278,9 +396,9 @@ class WP_MCP_AI_CRM_Engine {
 
 	/*
 	---------------------------------------------------------------------
-	 * Pipeline helpers
-	 * ------------------------------------------------------------------
-	 */
+	* Pipeline helpers
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Get pipeline stages definition.
@@ -316,9 +434,9 @@ class WP_MCP_AI_CRM_Engine {
 
 	/*
 	---------------------------------------------------------------------
-	 * Routing
-	 * ------------------------------------------------------------------
-	 */
+	* Routing
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Resolve the next owner for a lead based on the active routing strategy.
@@ -413,9 +531,9 @@ class WP_MCP_AI_CRM_Engine {
 
 	/*
 	---------------------------------------------------------------------
-	 * Suppression / DNC
-	 * ------------------------------------------------------------------
-	 */
+	* Suppression / DNC
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Internal DNC / suppression list.
@@ -470,9 +588,9 @@ class WP_MCP_AI_CRM_Engine {
 
 	/*
 	---------------------------------------------------------------------
-	 * Currency helpers
-	 * ------------------------------------------------------------------
-	 */
+	* Currency helpers
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Format an amount in the default currency.

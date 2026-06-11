@@ -12,4 +12,4 @@ declare(strict_types=1);
 $coreAutoload = require __DIR__ . '/../../core/vendor/autoload.php';
 
 // Register the Laravel adapter namespace as a PSR-4 prefix.
-$coreAutoload->addPsr4( 'Oos\\Laravel\\', __DIR__ . '/../src/' );
+$coreAutoload->addPsr4( 'Nvoos\\Laravel\\', __DIR__ . '/../src/' );

@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Concrete implementations of the 9 domain interfaces from `oos/core`, backed by Craft CMS services. Each adapter wraps one Craft subsystem behind the framework-agnostic contract — same pattern as `oos/wordpress-adapter` and `oos/laravel-adapter`, using Craft's Yii-based service layer.
+Concrete implementations of the 9 domain interfaces from `nvoos/core`, backed by Craft CMS services. Each adapter wraps one Craft subsystem behind the framework-agnostic contract — same pattern as `nvoos/wordpress-adapter` and `nvoos/laravel-adapter`, using Craft's Yii-based service layer.
 
 ## Tier
 
 | | |
 |---|---|
-| **Distribution** | `oos/craft-adapter` Composer package |
+| **Distribution** | `nvoos/craft-adapter` Composer package |
 | **PHP target** | 8.1+ |
-| **Dependencies** | `oos/core`, `craftcms/cms ^4.0 || ^5.0` |
+| **Dependencies** | `nvoos/core`, `craftcms/cms ^4.0 || ^5.0` |
 
 ## Public Surface
 
@@ -36,7 +36,7 @@ Concrete implementations of the 9 domain interfaces from `oos/core`, backed by C
 ## Installation
 
 ```bash
-composer require oos/craft-adapter
+composer require nvoos/craft-adapter
 ```
 
 ### Bootstrap the module
@@ -46,7 +46,7 @@ Add to `config/app.php`:
 ```php
 return [
     'modules' => [
-        'oos-core' => \Oos\Craft\Module\OosModule::class,
+        'oos-core' => \Nvoos\Craft\Module\NvoosModule::class,
     ],
     'bootstrap' => [
         'oos-core',
@@ -56,17 +56,17 @@ return [
 
 ## Configuration
 
-Create `config/oos.php`:
+Create `config/nvoos.php`:
 
 ```php
 return [
-    'default_provider'     => Craft::parseEnv('$OOS_DEFAULT_PROVIDER') ?: 'openai',
-    'default_model'        => Craft::parseEnv('$OOS_DEFAULT_MODEL') ?: 'gpt-4o-mini',
+    'default_provider'     => Craft::parseEnv('$NVOOS_DEFAULT_PROVIDER') ?: 'openai',
+    'default_model'        => Craft::parseEnv('$NVOOS_DEFAULT_MODEL') ?: 'gpt-4o-mini',
     'content_section'      => 'posts',
     'cache_duration'       => 3600,
     'queue_ttr'            => 300,
     'storage_volume'       => 'uploads',
-    'mesh_api_key'         => Craft::parseEnv('$OOS_MESH_API_KEY') ?: '',
+    'mesh_api_key'         => Craft::parseEnv('$NVOOS_MESH_API_KEY') ?: '',
 ];
 ```
 

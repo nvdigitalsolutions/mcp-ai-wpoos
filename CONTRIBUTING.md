@@ -151,7 +151,7 @@ Maintainers follow [RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for all release
 
 ## GSD × BMAD Development Methodology
 
-NV oOS uses a hybrid **GSD (Get Shit Done) + BMAD (Breakthrough Method for Agile AI-Driven Development)** methodology for AI-assisted feature development. This workflow is fully documented in [docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md](docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md).
+NV oOS uses a hybrid **GSD (Get Shit Done) + BMAD (Breakthrough Method for Agile AI-Driven Development)** methodology for AI-assisted feature development. This workflow is fully documented in [docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md](docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md).
 
 ### Workflow Summary (10 Phases)
 
@@ -184,7 +184,7 @@ Not every change requires the full workflow. Choose based on complexity:
 - **Agent definitions:** `.bmad/agents/` — YAML role definitions for each BMAD agent
 - **Team compositions:** `.bmad/teams/feature-development.yaml` — Multi-agent team configuration
 - **Context files:** `.context/` — GSD context engineering files (conventions, security, subsystem guides)
-- **Templates:** `docs/proposals/templates/` — Project Brief, PRD, Architecture Spec templates
+- **Templates:** `docs/project/proposals/templates/` — Project Brief, PRD, Architecture Spec templates
 
 ### Phase-Completion Checklists
 

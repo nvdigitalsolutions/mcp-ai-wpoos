@@ -14,25 +14,26 @@
  * WP_MCP_AI_REST::handle_chat_request() and
  * handle_chat_request_with_streaming().
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Application\Chat;
+namespace Nvoos\Core\Application\Chat;
 
-use Oos\Core\Application\Provider\ProviderRouter;
-use Oos\Core\Application\Tool\ToolRegistry;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\EventDispatcherInterface;
-use Oos\Core\Domain\Event\BeforeChatRequest;
-use Oos\Core\Domain\Event\AfterChatResponse;
-use Oos\Core\Domain\Event\AgenticIterationComplete;
-use Oos\Core\Domain\Event\AgenticLoopCompleted;
-use Oos\Core\Infrastructure\Cost\CostCalculator;
-use Oos\Core\Infrastructure\Streaming\SseHandler;
+use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Application\Tool\ToolRegistry;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Event\BeforeChatRequest;
+use Nvoos\Core\Domain\Event\AfterChatResponse;
+use Nvoos\Core\Domain\Event\AgenticIterationComplete;
+use Nvoos\Core\Domain\Event\AgenticLoopCompleted;
+use Nvoos\Core\Infrastructure\Cost\CostCalculator;
+use Nvoos\Core\Infrastructure\Streaming\SseHandler;
+use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 
 class ChatOrchestrator {
 
@@ -40,6 +41,16 @@ class ChatOrchestrator {
 	 * Maximum agentic loop iterations. Prevents infinite loops.
 	 */
 	private const DEFAULT_MAX_ITERATIONS = 15;
+
+	/**
+	 * Estimated tokens consumed per tool definition in the system prompt.
+	 */
+	private const TOKENS_PER_TOOL_DEFINITION = 200;
+
+	/**
+	 * Optional token-budget manager for tool-definition capping.
+	 */
+	private ?TokenBudgetManager $tokenBudget = null;
 
 	public function __construct(
 		private readonly ToolRegistry $tools,
@@ -49,6 +60,13 @@ class ChatOrchestrator {
 		private readonly CostCalculator $costs,
 		private readonly SseHandler $sse,
 	) {}
+
+	/**
+	 * Wire the token-budget manager for tool-definition capping.
+	 */
+	public function setTokenBudgetManager( TokenBudgetManager $budget ): void {
+		$this->tokenBudget = $budget;
+	}
 
 	/**
 	 * Handle a chat request — non-streaming (returns full response).
@@ -238,8 +256,8 @@ class ChatOrchestrator {
 		// Calculate cost.
 		$cost = $this->costs->calculateFromResponse(
 			$response,
-			$options['provider'] ?? '',
-			$options['model'] ?? '',
+			$options['provider'],
+			$options['model'],
 		);
 
 		return array(
@@ -306,7 +324,25 @@ class ChatOrchestrator {
 			)
 		);
 
-		$response = $this->providers->chat( $messages, $options, $assistantConfig );
+		$onStreamChunk = function ( string $token ): void {
+			$this->sse->sendEvent(
+				'message',
+				array(
+					'choices' => array(
+						array(
+							'delta' => array( 'content' => $token ),
+						),
+					),
+				)
+			);
+		};
+
+		$response = $this->providers->stream(
+			$messages,
+			$options,
+			$assistantConfig,
+			$onStreamChunk,
+		);
 
 		if ( $this->errors->isError( $response ) ) {
 			$normalized = $this->errors->normalize( $response );
@@ -428,7 +464,12 @@ class ChatOrchestrator {
 				)
 			);
 
-			$response = $this->providers->chat( $messages, $options, $assistantConfig );
+			$response = $this->providers->stream(
+				$messages,
+				$options,
+				$assistantConfig,
+				$onStreamChunk,
+			);
 
 			if ( $this->errors->isError( $response ) ) {
 				break;
@@ -467,8 +508,8 @@ class ChatOrchestrator {
 
 		$cost = $this->costs->calculateFromResponse(
 			$response,
-			$options['provider'] ?? '',
-			$options['model'] ?? '',
+			$options['provider'],
+			$options['model'],
 		);
 
 		$payload = array(
@@ -477,17 +518,6 @@ class ChatOrchestrator {
 			'tool_results' => $toolResultMessages,
 			'cost'         => $cost,
 		);
-
-		// Simulate streaming text chunks.
-		$text = $this->extractTextContent( $response );
-		if ( '' !== $text ) {
-			$this->sse->streamChunks(
-				$text,
-				function ( string $chunk ) {
-					return array( 'choices' => array( array( 'delta' => array( 'content' => $chunk ) ) ) );
-				}
-			);
-		}
 
 		$this->sse->sendEvent( 'message', $payload );
 		$this->sse->sendDone();

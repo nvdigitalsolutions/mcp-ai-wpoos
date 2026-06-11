@@ -112,6 +112,18 @@ class WP_MCP_AI_Agent_Context_Manager {
 		// Update context index.
 		$this->update_context_index( $agent_id, $context_id, $context_record, $ttl );
 
+		/**
+		 * Fires after an agent context is successfully stored.
+		 *
+		 * Listeners can hook in to pre-compute embeddings, update secondary
+		 * indexes, or notify external systems.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param array $context_record The full context record that was stored.
+		 */
+		do_action( 'wp_mcp_ai_after_context_stored', $context_record );
+
 		return array(
 			'success'    => true,
 			'context_id' => $context_id,

@@ -36,6 +36,11 @@ class Test_Chat_Transcript_Missing_Session_Fix extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Ensure REST routes are registered.
+		WP_MCP_AI_REST::get_instance();
+		// Trigger rest_api_init so routes are available.
+		rest_get_server();
+
 		// Create a test user.
 		$this->user_id = $this->factory->user->create(
 			array(
@@ -80,6 +85,7 @@ class Test_Chat_Transcript_Missing_Session_Fix extends WP_UnitTestCase {
 
 		// Make request using query parameter approach (same as JavaScript frontend).
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'session_key', $session_key );
 		$request->set_param( 'user_id', $this->user_id );
 		$request->set_param( 'assistant_id', $this->assistant_id );
@@ -118,6 +124,7 @@ class Test_Chat_Transcript_Missing_Session_Fix extends WP_UnitTestCase {
 
 		// Make request using path parameter approach.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/' . $session_key );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $this->user_id );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 
@@ -156,6 +163,7 @@ class Test_Chat_Transcript_Missing_Session_Fix extends WP_UnitTestCase {
 
 		// Test via query parameter.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'session_key', $session_key );
 		$request->set_param( 'user_id', $this->user_id );
 

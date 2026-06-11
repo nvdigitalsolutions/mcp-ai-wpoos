@@ -115,15 +115,17 @@ export function ScriptEditor({ comicId, onScriptCreated }: ScriptEditorProps) {
 		setError(null);
 		try {
 			const comic = await fetchCreatorComic(comicId);
-			// Pull script data from comic meta
+			// @todo Replace the double-cast (as unknown as Record<string, unknown>)
+			// with proper DTO hydration once the CreatorComic response type includes
+			// script meta fields in the api layer.
+			const meta = comic as unknown as Record<string, unknown>;
 			setScript({
 				id: comicId,
 				title: comic.title,
-				premise: (comic as Record<string, unknown>).script_premise as string || '',
-				genre: (comic as Record<string, unknown>).script_genre as string || '',
-				panel_count:
-					((comic as Record<string, unknown>).script_panel_count as number) || 0,
-				scenes: (comic as Record<string, unknown>).script_scenes as Scene[] || [],
+				premise: (meta.script_premise as string) || '',
+				genre: (meta.script_genre as string) || '',
+				panel_count: (meta.script_panel_count as number) || 0,
+				scenes: (meta.script_scenes as Scene[]) || [],
 			});
 		} catch (err) {
 			setError(err instanceof Error ? err.message : t('errorLoad'));

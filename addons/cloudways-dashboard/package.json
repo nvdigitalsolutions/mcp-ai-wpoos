@@ -9,6 +9,7 @@
     "build:dev": "node esbuild.config.cjs",
     "watch": "node esbuild.config.cjs --watch",
     "typecheck": "tsc --noEmit",
+    "lint:a11y": "eslint --max-warnings 0 src/",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "dependencies": {
@@ -17,9 +18,14 @@
     "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
+    "@axe-core/react": "4.10.2",
+    "@types/node": "^22.15.17",
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.4",
+    "@typescript-eslint/parser": "8.32.0",
     "esbuild": "^0.27.0",
+    "eslint": "9.27.0",
+    "eslint-plugin-jsx-a11y": "6.10.2",
     "typescript": "5.8.3"
   },
   "type": "module"

@@ -4,18 +4,18 @@
  *
  * Calls the OpenAI Embeddings API. Zero WordPress dependencies.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 class CreateTextEmbeddingsTool extends AbstractTool {
 
@@ -92,17 +92,11 @@ class CreateTextEmbeddingsTool extends AbstractTool {
 
 		try {
 			$body     = \json_encode( $payload );
-			$request  = new \Nyholm\Psr7\Request(
-				'POST',
-				$baseUrl . '/embeddings',
-				array(
-					'Authorization' => "Bearer {$apiKey}",
-					'Content-Type'  => 'application/json',
-				),
-				$body,
-			);
-			$response = $this->http->sendRequest( $request );
-			$data     = \json_decode( (string) $response->getBody(), true );
+			$response = $this->http->send( 'POST', $baseUrl . '/embeddings', array(
+				'Authorization' => "Bearer {$apiKey}",
+				'Content-Type'  => 'application/json',
+			), $body );
+			$data     = \json_decode( $response->body, true );
 
 			if ( ! is_array( $data ) || ! isset( $data['data'][0]['embedding'] ) ) {
 				return $this->errors->create( 'embeddings_failed', 'OpenAI returned an unexpected embeddings response.' );

@@ -246,6 +246,11 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$result = $this->perform_duckduckgo_search( $query, $max_results, $search_options );
 		}
 
+		// Apply relevance reranking if the LibreChat addon is active and enabled.
+		if ( ! is_wp_error( $result ) && ! empty( $result['results'] ) ) {
+			$result = $this->maybe_rerank_results( $result, $query );
+		}
+
 		// Validate and normalize the result before caching and returning.
 		// This ensures consistent structure and prevents corrupted data from being cached.
 		if ( ! is_wp_error( $result ) ) {
@@ -1636,30 +1641,30 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * causing HTTP2 protocol errors. This method removes or replaces invalid
 	 * sequences to ensure the string is safe for JSON encoding.
 	 *
-	 * @param string $string String to sanitize.
+	 * @param string $input String to sanitize.
 	 * @return string Sanitized string with only valid UTF-8 characters.
 	 */
-	protected function sanitize_utf8( $string ) {
+	protected function sanitize_utf8( $input ) {
 		// Return early for non-strings.
-		if ( ! is_string( $string ) ) {
-			return $string;
+		if ( ! is_string( $input ) ) {
+			return $input;
 		}
 
 		// Remove invalid UTF-8 sequences from the source string.
 		// The iconv IGNORE flag skips any bytes that are not valid in the source encoding (UTF-8),.
 		// effectively removing malformed UTF-8 sequences while preserving valid characters.
-		$sanitized = iconv( 'UTF-8', 'UTF-8//IGNORE', $string );
+		$sanitized = iconv( 'UTF-8', 'UTF-8//IGNORE', $input );
 
 		// If iconv failed (returned false), fall back to mb_convert_encoding.
 		if ( false === $sanitized && function_exists( 'mb_convert_encoding' ) ) {
-			$sanitized = mb_convert_encoding( $string, 'UTF-8', 'UTF-8' );
+			$sanitized = mb_convert_encoding( $input, 'UTF-8', 'UTF-8' );
 		}
 
 		// If both methods failed, use preg_replace to remove common problematic control characters.
 		// This targets specific control characters (null bytes, form feed, etc.) that often cause issues.
 		// Note: Not using 'u' modifier since we're dealing with potentially invalid UTF-8.
 		if ( false === $sanitized ) {
-			$sanitized = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $string );
+			$sanitized = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $input );
 		}
 
 		// Final fallback: if still invalid, return empty string.
@@ -1808,5 +1813,196 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		return $normalized;
+	}
+
+	/**
+	 * Optionally rerank search results using a relevance reranking API (Jina or Cohere).
+	 *
+	 * Only active when the NV oOS LibreChat addon is enabled and the reranking
+	 * feature toggle is on. Falls back silently to the original order if the
+	 * reranker is unavailable, misconfigured, or returns an error.
+	 *
+	 * @since 1.1.29
+	 *
+	 * @param array  $result Search result array with 'results' key.
+	 * @param string $query  Original search query.
+	 * @return array Possibly reranked result (original order preserved on failure).
+	 */
+	protected function maybe_rerank_results( array $result, $query ) {
+		// Guard: reranking requires the LibreChat addon.
+		$settings = get_option( 'nvoos_librechat_settings', array() );
+		if ( empty( $settings['enable_web_search'] ) || empty( $settings['rerank_provider'] ) ) {
+			return $result;
+		}
+
+		$results = isset( $result['results'] ) ? $result['results'] : array();
+		if ( count( $results ) < 2 ) {
+			return $result; // Nothing to rerank.
+		}
+
+		$provider = sanitize_key( $settings['rerank_provider'] );
+
+		// Build documents list: combine title + snippet for relevance scoring.
+		$documents = array();
+		foreach ( $results as $item ) {
+			$text        = isset( $item['title'] ) ? $item['title'] : '';
+			$text       .= isset( $item['snippet'] ) ? ' ' . $item['snippet'] : '';
+			$documents[] = trim( $text );
+		}
+
+		if ( 'cohere' === $provider ) {
+			$reranked_indices = $this->perform_rerank_cohere( $query, $documents );
+		} else {
+			$reranked_indices = $this->perform_rerank_jina( $query, $documents );
+		}
+
+		// If reranking failed or returned empty, keep original order.
+		if ( empty( $reranked_indices ) || count( $reranked_indices ) !== count( $results ) ) {
+			return $result;
+		}
+
+		// Reorder results by relevance.
+		$reranked = array();
+		foreach ( $reranked_indices as $index ) {
+			if ( isset( $results[ $index ] ) ) {
+				$reranked[] = $results[ $index ];
+			}
+		}
+
+		$result['results']  = $reranked;
+		$result['reranked'] = true;
+
+		return $result;
+	}
+
+	/**
+	 * Rerank results using the Jina AI Reranker API.
+	 *
+	 * API reference: https://jina.ai/reranker/
+	 *
+	 * @param string $query     Search query.
+	 * @param array  $documents Array of document texts to score.
+	 * @return array Array of indices sorted by descending relevance, or empty on failure.
+	 */
+	protected function perform_rerank_jina( $query, array $documents ) {
+		$response = wp_remote_post(
+			'https://api.jina.ai/v1/rerank',
+			array(
+				'timeout' => 5,
+				'headers' => array(
+					'Content-Type' => 'application/json',
+					'Accept'       => 'application/json',
+				),
+				'body'    => wp_json_encode(
+					array(
+						'model'     => 'jina-reranker-v2-base-multilingual',
+						'query'     => $query,
+						'documents' => $documents,
+						'top_n'     => count( $documents ),
+					)
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array();
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $status_code ) {
+			return array();
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		if ( ! is_array( $data ) || ! isset( $data['results'] ) || ! is_array( $data['results'] ) ) {
+			return array();
+		}
+
+		$indices = array();
+		foreach ( $data['results'] as $item ) {
+			if ( isset( $item['index'] ) ) {
+				$indices[] = absint( $item['index'] );
+			}
+		}
+
+		return $indices;
+	}
+
+	/**
+	 * Rerank results using the Cohere Rerank API.
+	 *
+	 * API reference: https://docs.cohere.com/reference/rerank
+	 *
+	 * @param string $query     Search query.
+	 * @param array  $documents Array of document texts to score.
+	 * @return array Array of indices sorted by descending relevance, or empty on failure.
+	 */
+	protected function perform_rerank_cohere( $query, array $documents ) {
+		// Cohere requires an API key. Use the NV oOS core API key slot or a dedicated filter.
+		$api_key = '';
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$core_settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$api_key       = isset( $core_settings['openai_api_key'] ) ? trim( $core_settings['openai_api_key'] ) : '';
+		}
+
+		/**
+		 * Filter the Cohere API key for reranking.
+		 *
+		 * @param string $api_key Cohere API key.
+		 */
+		$api_key = apply_filters( 'wp_mcp_ai_cohere_rerank_api_key', $api_key );
+
+		if ( empty( $api_key ) ) {
+			return array();
+		}
+
+		$response = wp_remote_post(
+			'https://api.cohere.ai/v1/rerank',
+			array(
+				'timeout' => 5,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'Accept'        => 'application/json',
+				),
+				'body'    => wp_json_encode(
+					array(
+						'model'            => 'rerank-english-v3.0',
+						'query'            => $query,
+						'documents'        => $documents,
+						'top_n'            => count( $documents ),
+						'return_documents' => false,
+					)
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array();
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $status_code ) {
+			return array();
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		if ( ! is_array( $data ) || ! isset( $data['results'] ) || ! is_array( $data['results'] ) ) {
+			return array();
+		}
+
+		$indices = array();
+		foreach ( $data['results'] as $item ) {
+			if ( isset( $item['index'] ) ) {
+				$indices[] = absint( $item['index'] );
+			}
+		}
+
+		return $indices;
 	}
 }

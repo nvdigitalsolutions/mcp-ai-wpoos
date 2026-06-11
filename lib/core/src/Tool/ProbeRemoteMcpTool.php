@@ -1,12 +1,12 @@
 <?php
 /** Probe Remote MCP — connectivity test for remote MCP endpoints.
  *
- * @package Oos\Core @since 1.0.0 @license MIT */
+ * @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 class ProbeRemoteMcpTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly HttpClientInterface $h ) {
 		parent::__construct( $e );}
@@ -37,16 +37,15 @@ class ProbeRemoteMcpTool extends AbstractTool {
 		}
 		try {
 			$start    = microtime( true );
-			$request  = new \Nyholm\Psr7\Request( 'GET', $url, array( 'Accept' => 'application/json' ) );
-			$response = $this->h->sendRequest( $request );
+			$response = $this->h->send( 'GET', $url, array( 'Accept' => 'application/json' ) );
 			$latency  = round( ( microtime( true ) - $start ) * 1000 );
 			return $this->success(
 				"MCP endpoint responded in {$latency}ms.",
 				array(
 					'url'        => $url,
-					'status'     => $response->getStatusCode(),
+					'status'     => $response->statusCode,
 					'latency_ms' => $latency,
-					'reachable'  => $response->getStatusCode() < 500,
+					'reachable'  => $response->statusCode < 500,
 				)
 			);
 		} catch ( \Exception $e ) {

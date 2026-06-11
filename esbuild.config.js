@@ -194,6 +194,22 @@ const builds = [
 		outfile: 'assets/js/offline-chat-manager.min.js',
 		...commonOptions,
 	},
+	// Voice enhancement files (realtime, browser, integration)
+	{
+		entryPoints: ['assets/js/chat-voice-realtime-service.js'],
+		outfile: 'assets/js/chat-voice-realtime-service.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/chat-browser-voice-service.js'],
+		outfile: 'assets/js/chat-browser-voice-service.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/chat-voice-mode-integration.js'],
+		outfile: 'assets/js/chat-voice-mode-integration.min.js',
+		...commonOptions,
+	},
 	// ── TypeScript service builds (WP_MCP_AI_USE_TS_BUILD) ──────────
 	// Compiles from assets/js/src/ → assets/js/dist/
 	// Activated by: define('WP_MCP_AI_USE_TS_BUILD', true);

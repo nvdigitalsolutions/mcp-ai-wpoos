@@ -56,7 +56,7 @@ The assistant, profession, settings, and team repositories are exercised indirec
 - [`.context/conventions.md`](../../.context/conventions.md) — naming, style (always)
 - [`.context/security-checklist.md`](../../.context/security-checklist.md) — sanitisation/escaping rules for DB I/O
 - [`.context/testing.md`](../../.context/testing.md) — when adding repository tests
-- [`docs/ADR_001_module_boundaries.md`](../../docs/ADR_001_module_boundaries.md) — where repositories sit between domain and infrastructure
+- [`docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../docs/project/architecture-decisions/ADR_001_module_boundaries.md) — where repositories sit between domain and infrastructure
 
 ## See Also
 

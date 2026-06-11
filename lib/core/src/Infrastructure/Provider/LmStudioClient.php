@@ -6,18 +6,18 @@
  * Default endpoint: http://localhost:1234/v1.
  * Supports SSE streaming natively.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Infrastructure\Provider;
+namespace Nvoos\Core\Infrastructure\Provider;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 class LmStudioClient extends OpenAiCompatibleClient {
 
@@ -32,6 +32,13 @@ class LmStudioClient extends OpenAiCompatibleClient {
 
 	protected function getDefaultBaseUrl(): string {
 		return 'http://localhost:1234/v1';
+	}
+
+	/**
+	 * LM Studio runs locally — never require an API key.
+	 */
+	protected function requiresApiKey(): bool {
+		return false;
 	}
 
 	protected function buildAuthHeaders( string $apiKey ): array {

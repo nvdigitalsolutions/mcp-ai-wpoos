@@ -77,7 +77,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				</p>
 				<p>
 					<strong><?php esc_html_e( 'Architecture:', 'mcp-ai-wpoos-pro' ); ?></strong>
-					<?php esc_html_e( 'Mirrors the Healthcare Toolkit pattern — shared engine, standards registry, audit ledger, capability map, consent ledger, pipeline stage registry, and classifier. Phases A, B, D & E are complete; Phase C has 1 integration stub remaining.', 'mcp-ai-wpoos-pro' ); ?>
+					<?php esc_html_e( 'Mirrors the Healthcare Toolkit pattern — shared engine, standards registry, audit ledger, capability map, consent ledger, pipeline stage registry, and classifier. Phases A, B, D, E & F are complete; Phase C has 1 integration stub remaining.', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 			</div>
 
@@ -129,11 +129,11 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 						<td>~22</td>
 						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done', 'mcp-ai-wpoos-pro' ); ?></span></td>
 					</tr>
-					<tr style="background-color: #fff3cd;">
+					<tr style="background-color: #d4edda;">
 						<td><strong><?php esc_html_e( 'Phase C', 'mcp-ai-wpoos-pro' ); ?></strong></td>
 						<td><?php esc_html_e( 'Inbound triage (email/SMS/WhatsApp), multichannel outbound send, auto-reply, AI draft', 'mcp-ai-wpoos-pro' ); ?></td>
-						<td>15 tools built</td>
-						<td><span style="color: #856404;">⚠ <?php esc_html_e( 'In Progress — IMAP polling depends on ext-imap', 'mcp-ai-wpoos-pro' ); ?></span></td>
+						<td>15 tools + 3 listeners (IMAP/SMS/WhatsApp webhooks)</td>
+						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done — Pure PHP IMAP (no ext-imap), Twilio + notify.lk SMS, Meta WhatsApp API, AI-powered drafts', 'mcp-ai-wpoos-pro' ); ?></span></td>
 					</tr>
 					<tr style="background-color: #d4edda;">
 						<td><strong><?php esc_html_e( 'Phase D', 'mcp-ai-wpoos-pro' ); ?></strong></td>
@@ -276,8 +276,133 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					</td>
 				</tr>
 
+				<!-- Integrations (Phase C) -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Channel Integrations', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p class="description" style="margin: 4px 0 8px 0;">
+					<?php esc_html_e( 'Gmail and WhatsApp credentials can also be managed via', 'mcp-ai-wpoos-pro' ); ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' ) ); ?>"><?php esc_html_e( 'Remote Sites', 'mcp-ai-wpoos-pro' ); ?></a>.
+					<?php esc_html_e( 'The CRM tools automatically discover Gmail and WhatsApp connections configured there. Twilio and notify.lk direct entry is provided below until Remote Sites types are added for them.', 'mcp-ai-wpoos-pro' ); ?>
+				</p></td></tr>
+
+				<!-- Gmail Import Default Query -->
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Gmail Import Query', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][gmail_default_query]" value="<?php echo esc_attr( $settings['integrations']['gmail_default_query'] ?? '' ); ?>" class="large-text" placeholder="newer_than:7d is:unread -category:promotions -category:social" />
+						<p class="description">
+							<?php esc_html_e( 'Default Gmail search query used by import_gmail_to_crm and crm_email_search_leads when no query is provided. Uses Gmail search syntax.', 'mcp-ai-wpoos-pro' ); ?><br>
+							<?php esc_html_e( 'Examples:', 'mcp-ai-wpoos-pro' ); ?>
+							<code>newer_than:7d is:unread</code>,
+							<code>from:client.com newer_than:3d</code>,
+							<code>subject:demo OR subject:pricing is:unread</code>,
+							<code>newer_than:14d -category:promotions -category:social -category:forums</code>
+						</p>
+					</td>
+				</tr>
+
+				<!-- SMS Provider -->
+				<tr>
+					<th scope="row"><?php esc_html_e( 'SMS Provider', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[integrations][sms_provider]">
+							<option value="twilio" <?php selected( $settings['integrations']['sms_provider'] ?? 'twilio', 'twilio' ); ?>>Twilio</option>
+							<option value="notifylk" <?php selected( $settings['integrations']['sms_provider'] ?? '', 'notifylk' ); ?>>notify.lk (Sri Lanka)</option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Select which SMS gateway to use for outbound SMS and auto-reply.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Twilio -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Twilio (SMS)', 'mcp-ai-wpoos-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Account SID', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][twilio_account_sid_secret]" value="<?php echo esc_attr( $settings['integrations']['twilio_account_sid_secret'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'Your Twilio Account SID from the Twilio Console dashboard.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Auth Token', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][twilio_auth_token_secret]" value="<?php echo esc_attr( $settings['integrations']['twilio_auth_token_secret'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'Your Twilio Auth Token. Stored securely in the WordPress options table.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'From Number', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][twilio_from_number]" value="<?php echo esc_attr( $settings['integrations']['twilio_from_number'] ?? '' ); ?>" class="regular-text" placeholder="+1234567890" />
+						<p class="description"><?php esc_html_e( 'Your Twilio phone number in E.164 format (e.g. +1234567890). Used as the sender for outbound SMS.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- WhatsApp -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'WhatsApp (Meta Cloud API)', 'mcp-ai-wpoos-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Access Token', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][whatsapp_access_token]" value="<?php echo esc_attr( $settings['integrations']['whatsapp_access_token'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'System User Access Token from Meta Business Suite → Business Settings → System Users. Must have whatsapp_business_messaging permission.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Phone Number ID', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][whatsapp_phone_number_id]" value="<?php echo esc_attr( $settings['integrations']['whatsapp_phone_number_id'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'WhatsApp Business phone number ID from the WABA settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'App Secret', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][whatsapp_app_secret]" value="<?php echo esc_attr( $settings['integrations']['whatsapp_app_secret'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'Meta App Secret for webhook signature validation. Used to verify inbound WhatsApp messages are authentic.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- notify.lk -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'notify.lk (Sri Lanka SMS Gateway)', 'mcp-ai-wpoos-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'User ID', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][notifylk_user_id]" value="<?php echo esc_attr( $settings['integrations']['notifylk_user_id'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'Your notify.lk User ID from the API Keys page at app.notify.lk.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'API Key', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][notifylk_api_key]" value="<?php echo esc_attr( $settings['integrations']['notifylk_api_key'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'Your notify.lk API Key.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Sender ID', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][notifylk_sender_id]" value="<?php echo esc_attr( $settings['integrations']['notifylk_sender_id'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'Your pre-approved sender ID for outbound SMS (e.g. your business name).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<!-- Storage & Audit -->
 				<tr><td colspan="2"><h3><?php esc_html_e( 'Storage & Auditing', 'mcp-ai-wpoos-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Storage Backend', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$jetengine_active = function_exists( 'jet_engine' );
+						?>
+						<p>
+							<strong><?php esc_html_e( 'WordPress CPT', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php if ( $jetengine_active ) : ?>
+								<br /><span style="color: #856404;">&#9888; <?php esc_html_e( 'JetEngine is active but CRM entities (Company, Lead, Deal, Activity) currently use WordPress CPTs. CCT migration is on the roadmap.', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php else : ?>
+								<br /><span style="color: blue;">&#9711; <?php esc_html_e( 'Using WordPress Custom Post Types. Install JetEngine to enable CCT migration in a future release.', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php endif; ?>
+						</p>
+						<p class="description"><?php esc_html_e( 'CRM entities (Company, Lead, Deal, Activity) are stored as WordPress custom post types. JetEngine CCT storage for high-performance is planned for a future release.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Audit Retention (days)', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
@@ -285,23 +410,72 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 						<p class="description"><?php esc_html_e( 'How long PII/consent audit entries are retained in the rolling buffer.  For long-term storage, use the wp_mcp_ai_crm_after_audit action to forward to an external SIEM.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
+
+				<!-- Email Hygiene -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Email Hygiene &amp; List Management', 'mcp-ai-wpoos-pro' ); ?></h3></td></tr>
 				<tr>
-					<th scope="row"><?php esc_html_e( 'Storage Backend', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'Exclude List', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<?php
-						$storage_type = class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' )
-							? WP_MCP_AI_Toolkit_Data_Store_Factory::get_storage_type()
-							: 'cpt';
+						$hygiene          = class_exists( 'WP_MCP_AI_CRM_Engine' )
+							? WP_MCP_AI_CRM_Engine::get_hygiene_settings()
+							: array();
+						$exclude_list     = isset( $hygiene['exclude_list'] ) ? (array) $hygiene['exclude_list'] : array();
+						$priority_list    = isset( $hygiene['priority_list'] ) ? (array) $hygiene['priority_list'] : array();
+						$spam_domains     = isset( $hygiene['spam_domains'] ) ? (array) $hygiene['spam_domains'] : array();
+						$promo_domains    = isset( $hygiene['promotional_domains'] ) ? (array) $hygiene['promotional_domains'] : array();
+						$priority_domains = isset( $hygiene['priority_domains'] ) ? (array) $hygiene['priority_domains'] : array();
+						$promo_keywords   = isset( $hygiene['promotional_keywords'] ) ? (array) $hygiene['promotional_keywords'] : array();
 						?>
-						<p>
-							<strong><?php echo esc_html( 'cct' === $storage_type ? __( 'JetEngine CCT', 'mcp-ai-wpoos-pro' ) : __( 'WordPress CPT', 'mcp-ai-wpoos-pro' ) ); ?></strong>
-							<?php if ( 'cct' === $storage_type ) : ?>
-								<br /><span style="color: green;">✓ Using JetEngine Custom Content Types for enhanced performance</span>
-							<?php else : ?>
-								<br /><span style="color: blue;">○ Using WordPress Custom Post Types (standard storage)</span>
-							<?php endif; ?>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[exclude_list]" rows="5" class="large-text code" placeholder="spammer@example.com&#10;@newsletters.spammy.net&#10;@unwanted-domain.com"><?php echo esc_textarea( implode( "\n", $exclude_list ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Email addresses or domains to ALWAYS skip during import. One per line. Use @domain.com to block an entire domain.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
-						<p class="description"><?php esc_html_e( 'Storage backend is automatically selected based on JetEngine availability.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Priority List', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[priority_list]" rows="5" class="large-text code" placeholder="vip@client.com&#10;@important-partner.com"><?php echo esc_textarea( implode( "\n", $priority_list ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Email addresses or domains to ALWAYS fast-track. One per line. Use @domain.com to prioritise an entire domain.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Spam Domains', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[spam_domains]" rows="3" class="large-text code" placeholder="seo-spam.com&#10;cheap-meds.example"><?php echo esc_textarea( implode( "\n", $spam_domains ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Known spam domains. Any email from these domains is automatically classified as spam. Substring match (e.g. "spam" matches "super-spam.net").', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Promotional Domains', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[promotional_domains]" rows="3" class="large-text code" placeholder="mailchimp.app&#10;sendgrid.net"><?php echo esc_textarea( implode( "\n", $promo_domains ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Domains that send bulk marketing/newsletters. Substring match. Overlaps with exclude list — entries here help the classifier detect promotional content even from new addresses.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Priority Domains', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[priority_domains]" rows="3" class="large-text code" placeholder="@client-corp.com&#10;@partner.org"><?php echo esc_textarea( implode( "\n", $priority_domains ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Domains that should always be treated as priority. Substring match against sender domain.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Promotional Keywords', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[promotional_keywords]" rows="3" class="large-text code" placeholder="flash sale&#10;weekly newsletter&#10;limited time offer"><?php echo esc_textarea( implode( "\n", $promo_keywords ) ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Keywords/phrases that indicate promotional or newsletter content. Case-insensitive substring match. One per line.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 
@@ -318,7 +492,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 							<?php endforeach; ?>
 						</select>
 						<p class="description">
-							<?php esc_html_e( 'Select which AI assistant to use as the default for all Research & Add pages (Company, Lead, Deal). Each CPT settings page can override this default.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'Select which AI assistant to use as the default for all Research & Add pages (Company, Lead, Deal, Customer). Each CPT settings page can override this default.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -376,6 +550,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'get_pipeline_view'         => __( 'Pipeline Kanban View', 'mcp-ai-wpoos-pro' ),
 			'get_conversion_funnel'     => __( 'Conversion Funnel', 'mcp-ai-wpoos-pro' ),
 			'forecast_pipeline_revenue' => __( 'Forecast Pipeline Revenue', 'mcp-ai-wpoos-pro' ),
+			'identify_top_customers'    => __( 'Identify Top Customers', 'mcp-ai-wpoos-pro' ),
+			'identify_top_clients'      => __( 'Identify Top Clients', 'mcp-ai-wpoos-pro' ),
 			'assign_lead_to_owner'      => __( 'Assign Lead to Owner', 'mcp-ai-wpoos-pro' ),
 			'rotate_leads'              => __( 'Rotate Leads', 'mcp-ai-wpoos-pro' ),
 		);
@@ -417,7 +593,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 		);
 
 		// ---- Phase E: Compliance + Interop (8 tools) ----
-		$tools[ __( 'Phase E — Compliance & Interop (8 tools)', 'mcp-ai-wpoos-pro' ) ] = array(
+		$tools[ __( 'Phase E — Compliance &amp; Interop (11 tools)', 'mcp-ai-wpoos-pro' ) ] = array(
 			'record_consent'          => __( 'Record Consent', 'mcp-ai-wpoos-pro' ),
 			'revoke_consent'          => __( 'Revoke Consent', 'mcp-ai-wpoos-pro' ),
 			'process_opt_out'         => __( 'Process Opt-Out', 'mcp-ai-wpoos-pro' ),
@@ -426,6 +602,26 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'import_crm_csv'          => __( 'Import CRM CSV', 'mcp-ai-wpoos-pro' ),
 			'connect_to_external_crm' => __( 'Connect to External CRM', 'mcp-ai-wpoos-pro' ),
 			'import_crm_blueprint'    => __( 'Import CRM Blueprint', 'mcp-ai-wpoos-pro' ),
+			'classify_email_hygiene'  => __( 'Classify Email Hygiene', 'mcp-ai-wpoos-pro' ),
+			'manage_email_hygiene'    => __( 'Manage Email Hygiene', 'mcp-ai-wpoos-pro' ),
+			'prune_crm_messages'      => __( 'Prune CRM Messages', 'mcp-ai-wpoos-pro' ),
+			'repair_crm_data'         => __( 'Repair CRM Data', 'mcp-ai-wpoos-pro' ),
+			'detect_duplicates'       => __( 'Detect Duplicate Leads', 'mcp-ai-wpoos-pro' ),
+			'merge_duplicates'        => __( 'Merge Duplicate Leads', 'mcp-ai-wpoos-pro' ),
+		);
+
+		// ---- Phase F: Support Ticket Management (10 tools) ----
+		$tools[ __( 'Phase F — Support Ticket Management (10 tools)', 'mcp-ai-wpoos-pro' ) ] = array(
+			'create_support_ticket'   => __( 'Create Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'get_support_ticket'      => __( 'Get Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'list_support_tickets'    => __( 'List Support Tickets', 'mcp-ai-wpoos-pro' ),
+			'update_support_ticket'   => __( 'Update Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'resolve_support_ticket'  => __( 'Resolve Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'reopen_support_ticket'   => __( 'Reopen Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'escalate_support_ticket' => __( 'Escalate Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'merge_support_tickets'   => __( 'Merge Support Tickets', 'mcp-ai-wpoos-pro' ),
+			'classify_support_ticket' => __( 'Classify Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'get_ticket_sla_report'   => __( 'Get Ticket SLA Report', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $tools;
@@ -606,9 +802,109 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			}
 		}
 
+		// --- Channel Integrations (Phase C) ---
+		if ( isset( $input['integrations'] ) && is_array( $input['integrations'] ) ) {
+			$integrations = $input['integrations'];
+
+			// SMS provider.
+			if ( isset( $integrations['sms_provider'] ) ) {
+				$valid_providers                           = array( 'twilio', 'notifylk' );
+				$sanitized['integrations']['sms_provider'] = in_array( $integrations['sms_provider'], $valid_providers, true )
+					? $integrations['sms_provider']
+					: 'twilio';
+			}
+
+			// Twilio.
+			if ( isset( $integrations['twilio_account_sid_secret'] ) ) {
+				$sanitized['integrations']['twilio_account_sid_secret'] = sanitize_text_field( $integrations['twilio_account_sid_secret'] );
+			}
+			if ( isset( $integrations['twilio_auth_token_secret'] ) ) {
+				// Auth tokens must not be mangled by sanitize_text_field — trim only.
+				$sanitized['integrations']['twilio_auth_token_secret'] = trim( (string) $integrations['twilio_auth_token_secret'] );
+			}
+			if ( isset( $integrations['twilio_from_number'] ) ) {
+				$sanitized['integrations']['twilio_from_number'] = sanitize_text_field( $integrations['twilio_from_number'] );
+			}
+
+			// WhatsApp.
+			if ( isset( $integrations['whatsapp_access_token'] ) ) {
+				// Access tokens must not be sanitized with sanitize_text_field — trim only.
+				$sanitized['integrations']['whatsapp_access_token'] = trim( (string) $integrations['whatsapp_access_token'] );
+			}
+			if ( isset( $integrations['whatsapp_phone_number_id'] ) ) {
+				$sanitized['integrations']['whatsapp_phone_number_id'] = sanitize_text_field( $integrations['whatsapp_phone_number_id'] );
+			}
+			if ( isset( $integrations['whatsapp_app_secret'] ) ) {
+				$sanitized['integrations']['whatsapp_app_secret'] = trim( (string) $integrations['whatsapp_app_secret'] );
+			}
+
+			// notify.lk.
+			if ( isset( $integrations['notifylk_user_id'] ) ) {
+				$sanitized['integrations']['notifylk_user_id'] = sanitize_text_field( $integrations['notifylk_user_id'] );
+			}
+			if ( isset( $integrations['notifylk_api_key'] ) ) {
+				$sanitized['integrations']['notifylk_api_key'] = trim( (string) $integrations['notifylk_api_key'] );
+			}
+			if ( isset( $integrations['notifylk_sender_id'] ) ) {
+				$sanitized['integrations']['notifylk_sender_id'] = sanitize_text_field( $integrations['notifylk_sender_id'] );
+			}
+
+			// Gmail default import query.
+			if ( isset( $integrations['gmail_default_query'] ) ) {
+				$sanitized['integrations']['gmail_default_query'] = sanitize_text_field( $integrations['gmail_default_query'] );
+			}
+		}
+
 		// Clear engine static cache so next read picks up the new values.
 		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
 			WP_MCP_AI_CRM_Engine::flush_settings_cache();
+		}
+
+		// --- Email Hygiene Settings ---
+		// These are posted under their own option key and sanitised separately.
+		$hygiene_key = WP_MCP_AI_CRM_Engine::HYGIENE_OPTION;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by WordPress settings API.
+		if ( isset( $_POST[ $hygiene_key ] ) && is_array( $_POST[ $hygiene_key ] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing
+			$hygiene_input     = wp_unslash( $_POST[ $hygiene_key ] );
+			$hygiene_sanitized = array();
+
+			// List-type fields (textarea → array via newline split).
+			$list_fields = array( 'exclude_list', 'priority_list', 'spam_domains', 'promotional_domains', 'priority_domains', 'promotional_keywords' );
+			foreach ( $list_fields as $field ) {
+				if ( isset( $hygiene_input[ $field ] ) ) {
+					$raw = is_array( $hygiene_input[ $field ] )
+						? implode( "\n", $hygiene_input[ $field ] )
+						: (string) $hygiene_input[ $field ];
+
+					// Split on newlines, trim, filter empty.
+					$lines = explode( "\n", $raw );
+					$lines = array_map( 'sanitize_text_field', $lines );
+					$lines = array_map( 'trim', $lines );
+					$lines = array_filter(
+						$lines,
+						function ( $l ) {
+							return '' !== $l;
+						}
+					);
+					$lines = array_values( $lines );
+
+					$hygiene_sanitized[ $field ] = $lines;
+				}
+			}
+
+			// Boolean fields.
+			$bool_fields = array( 'auto_prune_spam', 'auto_prune_excluded' );
+			foreach ( $bool_fields as $field ) {
+				$hygiene_sanitized[ $field ] = ! empty( $hygiene_input[ $field ] );
+			}
+
+			// Numeric fields.
+			if ( isset( $hygiene_input['auto_prune_stale_days'] ) ) {
+				$hygiene_sanitized['auto_prune_stale_days'] = absint( $hygiene_input['auto_prune_stale_days'] );
+			}
+
+			update_option( $hygiene_key, $hygiene_sanitized, false );
 		}
 
 		return $sanitized;

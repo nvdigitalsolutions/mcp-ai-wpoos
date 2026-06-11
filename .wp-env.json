@@ -1,7 +1,7 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/wp-env.json",
 	"core": null,
-	"phpVersion": "8.1",
+	"phpVersion": "8.2",
 	"plugins": [ "." ],
 	"themes": [],
 	"port": 8888,
@@ -16,7 +16,14 @@
 		"WP_MCP_AI_DEBUG": true,
 		"WP_MEMORY_LIMIT": "256M"
 	},
+	"mappings": {
+		"wp-content/plugins/mcp-ai-wpoos": "."
+	},
 	"lifecycleScripts": {
-		"afterStart": "wp-env run cli wp rewrite structure '/%postname%/'; wp-env run cli wp option update blogdescription 'NV oOS Dev Environment'"
+		"afterStart": [
+			"wp-env run cli --env-cwd=wp-content/plugins/mcp-ai-wpoos composer install --no-interaction",
+			"wp-env run cli wp rewrite structure '/%postname%/'",
+			"wp-env run cli wp option update blogdescription 'NV oOS Dev Environment'"
+		]
 	}
 }

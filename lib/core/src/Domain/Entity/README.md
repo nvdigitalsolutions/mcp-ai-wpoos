@@ -8,7 +8,7 @@ Immutable value objects and command DTOs that carry data across the oOS core eng
 
 | | |
 |---|---|
-| **Distribution** | `oos/core` Composer package |
+| **Distribution** | `nvoos/core` Composer package |
 | **PHP target** | 8.1+ |
 | **Dependencies** | none (pure PHP, no framework imports) |
 
@@ -26,6 +26,7 @@ Immutable value objects and command DTOs that carry data across the oOS core eng
 | `UserInfo` | `UserInfo.php` | `AuthProviderInterface::getUserInfo()` |
 | `StoredFile` | `StoredFile.php` | `FileStoreInterface` |
 | `JobStatus` | `JobStatus.php` | `QueueClientInterface` |
+| `HttpResponse` | `HttpResponse.php` | `HttpClientInterface` |
 
 ## Conventions
 

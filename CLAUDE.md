@@ -94,7 +94,7 @@ When a file is **derived from**, **heavily inspired by**, or **wraps** an upstre
  */
 ```
 
-The full repo-wide attribution index — every Composer package, npm dependency, vendored asset, bundled skill, font, and methodology — lives in [`CREDITS.md`](CREDITS.md) at the repo root. When you add or update a dependency, also update `CREDITS.md`, `docs/THIRD_PARTY_ASSETS.md` (for JS), and the relevant per-addon `README.md` Credits section. For Pro npm packages, the `get_package_definitions()` array in `addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php` powers the in-product Credits surface — keep its `homepage` / `license` / `copyright` fields in sync.
+The full repo-wide attribution index — every Composer package, npm dependency, vendored asset, bundled skill, font, and methodology — lives in [`CREDITS.md`](CREDITS.md) at the repo root. When you add or update a dependency, also update `CREDITS.md`, `docs/project/THIRD_PARTY_ASSETS.md` (for JS), and the relevant per-addon `README.md` Credits section. For Pro npm packages, the `get_package_definitions()` array in `addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php` powers the in-product Credits surface — keep its `homepage` / `license` / `copyright` fields in sync.
 
 ## Tool Implementation Pattern
 
@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_Example extends WP_MCP_AI_Tool_Base {
 
 ## Tool Return Format — Canonical Envelope
 
-Every tool's `execute()` method returns **exactly one of two shapes**. This is the canonical envelope enforced repo-wide (see [Unix Theory Compliance Proposal §2.2](docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope)).
+Every tool's `execute()` method returns **exactly one of two shapes**. This is the canonical envelope enforced repo-wide (see [Unix Theory Compliance Proposal §2.2](docs/project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope)).
 
 ```php
 // SUCCESS — array with success/message/data:
@@ -151,7 +151,7 @@ Every tool's `execute()` method must satisfy two gates (Unix Theory Compliance �
 - **Gate 1 — Sanitize at entry:** all `$arguments[...]` values are sanitised at the top of `execute()` **before** any business logic (use `absint`, `sanitize_text_field`, `sanitize_key`, `wp_kses_post`, `esc_url_raw`, etc.).
 - **Gate 2 — Escape at exit:** every value returned in the canonical-envelope `data` array — and every value inserted into a database, redirect URL, response header, or rendered HTML — is escaped/prepared (use `esc_html`, `esc_attr`, `esc_url`, `wp_json_encode`, `$wpdb->prepare()` with placeholders).
 
-The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` (severity 5 — visible under `composer run lint`, silent under `composer run lint:base`). The sniff warns when `$arguments[...]` is interpolated into a double-quoted string or concatenated with `.` outside a recognised safe wrapper. Full sanitiser / escaper allow-list and rationale: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
+The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` (severity 5 — visible under `composer run lint`, silent under `composer run lint:base`). The sniff warns when `$arguments[...]` is interpolated into a double-quoted string or concatenated with `.` outside a recognised safe wrapper. Full sanitiser / escaper allow-list and rationale: [`docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
 
 ## Base vs Pro Decision
 
@@ -171,7 +171,7 @@ The plugin fires 60+ hooks. Key ones:
 - `wp_mcp_ai_cost_calculated` — token cost tracking
 - `wp_mcp_ai_slash_commands_initialized` — slash command system ready
 
-Full reference: `docs/hooks-reference.md`
+Full reference: `docs/reference/hooks/hooks-reference.md`
 
 ### Agentic Loop (REST API)
 
@@ -234,7 +234,7 @@ Implements the [Agent Client Protocol](https://agentclientprotocol.com/) specifi
 
 ### LLM Harnessing Subsystem
 
-Seven opt-in per-request layers (`includes/harness/`) that improve response quality without modifying existing tool behaviour. All layers are off by default and activated per-assistant via the **LLM Harness** metabox on the assistant edit screen. Harness profile stored in `_wp_mcp_ai_harness_profile` post meta (keys: `enabled`, `layers`, `cost_ceiling_usd`, `tools.router_mode`, `tools.preset_weights`, `evals_enabled`, `pii_filter`). Pro Layer H (`addons/pro/includes/harness/`) exports fine-tune curricula as OpenAI JSONL — loaded via `addons/pro/includes/harness-init.php`. Key hooks: `wp_mcp_ai_register_prompt_cues`, `wp_mcp_ai_harness_profile`, `wp_mcp_ai_harness_tool_score`, `wp_mcp_ai_harness_eval_generator`, `wp_mcp_ai_harness_eval_tick`. Reference: `docs/llm-harness.md`.
+Seven opt-in per-request layers (`includes/harness/`) that improve response quality without modifying existing tool behaviour. All layers are off by default and activated per-assistant via the **LLM Harness** metabox on the assistant edit screen. Harness profile stored in `_wp_mcp_ai_harness_profile` post meta (keys: `enabled`, `layers`, `cost_ceiling_usd`, `tools.router_mode`, `tools.preset_weights`, `evals_enabled`, `pii_filter`). Pro Layer H (`addons/pro/includes/harness/`) exports fine-tune curricula as OpenAI JSONL — loaded via `addons/pro/includes/harness-init.php`. Key hooks: `wp_mcp_ai_register_prompt_cues`, `wp_mcp_ai_harness_profile`, `wp_mcp_ai_harness_tool_score`, `wp_mcp_ai_harness_eval_generator`, `wp_mcp_ai_harness_eval_tick`. Reference: `docs/features/llm-harness.md`.
 
 ### Chat-client Memory Bridge
 
@@ -260,6 +260,12 @@ Portable behaviour packages (`SKILL.md` files) that any NV oOS assistant can loa
 ## Build & Test Commands
 
 ```bash
+# ── Docker (recommended on Windows) ──
+bash bin/run-tests-docker.sh                             # all tests
+bash bin/run-tests-docker.sh tests/test-foo.php           # single file
+bash bin/run-tests-docker.sh --filter='test_bar'          # filter by name
+
+# ── Local PHP + MySQL ──
 # Before every PR:
 composer run lint:base && composer run test
 
@@ -294,8 +300,8 @@ test(scope): brief description
 | `.context/chat-ui.md` | Working on frontend chat |
 | `.context/testing.md` | Writing PHPUnit tests |
 | `.context/pro-vs-base.md` | Base vs Pro decisions |
-| `docs/hooks-reference.md` | Working with plugin hooks |
-| `docs/llm-harness.md` | Working on LLM Harnessing (Layers A–H) |
+| `docs/reference/hooks/hooks-reference.md` | Working with plugin hooks |
+| `docs/features/llm-harness.md` | Working on LLM Harnessing (Layers A–H) |
 | `docs/features/memory/chat-client-integration.md` | Working on Chat-client Memory Bridge / Drawer |
 | `docs/features/agent-skills.md` | Working on Agent Skills bundling / curation / catalogues |
 
@@ -393,10 +399,12 @@ This repository is developed by multiple AI coding agents. You (Claude Code) are
 
 **Layering rule for `.github/agents/`:** Those files hold only agent-specific metadata + behavior (frontmatter, scope, examples, refusals). They MUST NOT restate naming/security/PHP-compat/architecture rules — those live in `AGENTS.md`, `CLAUDE.md`, and `.context/`. If you (Claude Code) are asked to author or edit a `*.agent.md` file, keep it slim and link to the canonical sources. See [`AGENTS.md` §2 "Layering rule"](AGENTS.md) for the full rule.
 
+> **GSD Core upstream:** The GSD context-engineering methodology used by this project is now standardised as [`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core) (`npx @opengsd/gsd-core@latest`). NV oOS was an early adopter and implementation proving ground for the Discuss→Plan→Execute→Verify→Ship phase loop that gsd-core productises. The `.bmad/` agent definitions and `.context/` files in this repo remain NV oOS-specific instantiations of those patterns.
+
 **Key points for Claude Code sessions:**
 - Load `.context/conventions.md` + `.context/security-checklist.md` at minimum for every session.
 - Load subsystem-specific context files (listed in "Context Engineering Files" above) only when working on that subsystem.
-- **When editing files inside `includes/<folder>/`, also read `includes/<folder>/README.md` first.** Folder READMEs declare each folder's purpose, public surface, and neighbors, and tell you which `.context/*.md` files to also load. See [`docs/guides/developer/folder-readme-convention.md`](docs/guides/developer/folder-readme-convention.md). The same applies to `addons/pro/includes/<folder>/README.md`.
+- **When editing files inside `includes/<folder>/`, also read `includes/<folder>/README.md` first.** Folder READMEs declare each folder's purpose, public surface, and neighbors, and tell you which `.context/*.md` files to also load. See [`docs/developer/folder-readme-convention.md`](docs/developer/folder-readme-convention.md). The same applies to `addons/pro/includes/<folder>/README.md`.
 - If a BMAD workflow is active, the orchestrator agent coordinates — follow the phase gates documented in `CONTRIBUTING.md`.
 - Do **not** duplicate work that another agent has already completed. Check `git log` for recent commits by other agents.
 
@@ -415,6 +423,8 @@ Full agent inventory: [`AGENTS.md`](AGENTS.md)
 | Tool schema rejected by OpenAI | `'mixed'` type or missing `'items'` on arrays | Use `anyOf` for unions; always include `'items'` on arrays |
 | PHPCS error on `shell_exec()` | WordPress.org compliance | Use `proc_open()` for external processes |
 | Tests fail with "table not found" | Test DB not bootstrapped | Run `composer run test:install` first |
+| Tests fail with "Class not found" in Docker | Bind mount cached stale `vendor/` | Run `docker compose down && docker compose up -d` |
+| Paths mangled on Git Bash (`C:/Program Files/Git/...`) | MSYS path conversion | Use `bash bin/run-tests-docker.sh` (auto-handles it) |
 | Pro tools missing at runtime | `WP_MCP_AI_BASE_VERSION` is `true` | Set to `false` or remove the constant |
 | Context window too large | Loading all `.context/` files | Load only the subsystem files you need (GSD 30% rule) |
 

@@ -113,8 +113,14 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		// Set up mock handler.
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 
+		WP_MCP_AI_REST::get_instance();
 		rest_get_server();
 		do_action( 'init' );
+
+		// These tests save and retrieve via CCT, which requires JetEngine.
+		if ( ! function_exists( 'jet_engine' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine for transcript storage' );
+		}
 	}
 
 	/**
@@ -209,6 +215,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		// === PART 1: SAVE TO CCT ===
 		// Save via POST /chat-transcripts.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -299,6 +306,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -328,6 +336,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -404,6 +413,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 
 		// Save the conversation.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -463,6 +473,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		// Save conversation for assistant 1.
 		$session_key_1 = 'test_assistant1_' . wp_generate_password( 12, false );
 		$request       = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -483,6 +494,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		// Save conversation for assistant 2.
 		$session_key_2 = 'test_assistant2_' . wp_generate_password( 12, false );
 		$request       = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -558,6 +570,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 
 		// Save the conversation.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(

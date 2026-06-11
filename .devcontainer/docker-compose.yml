@@ -1,0 +1,64 @@
+# ───────────────────────────────────────────────────────────
+# NV oOS WordPress Plugin — Dev Container compose override
+# ───────────────────────────────────────────────────────────
+# Adds a MySQL 8.0 database service that the devcontainer's
+# `post-create.sh` can connect to for WordPress installation.
+#
+# This file extends the devcontainer image defined in Dockerfile
+# with a sidecar MySQL service. The devcontainer spec requires
+# using dockerComposeFile when you need multiple services.
+#
+# Usage:
+#   The devcontainer auto-discovers this file via devcontainer.json.
+#   To run standalone:  docker compose -f .devcontainer/docker-compose.yml up
+
+services:
+
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+      - wp_dev_data:/workspace/wordpress
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    # Overrides the default command to keep the container alive
+    command: sleep infinity
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - wp_dev_db:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - -h
+        - localhost
+        - -u
+        - root
+        - -pwordpress
+        - --ssl-mode=DISABLED
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+volumes:
+  wp_dev_data:
+  wp_dev_db:

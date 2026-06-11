@@ -8,7 +8,7 @@ Typed exception classes for the oOS core engine. Each carries structured context
 
 | | |
 |---|---|
-| **Distribution** | `oos/core` Composer package |
+| **Distribution** | `nvoos/core` Composer package |
 | **PHP target** | 8.1+ |
 
 ## Public Surface

@@ -121,6 +121,12 @@ jobs:
           composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction
           echo "✅ Production dependencies installed"
 
+      - name: Install Pro addon production dependencies
+        working-directory: addons/pro
+        run: |
+          composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --ignore-platform-req=ext-fileinfo --ignore-platform-req=ext-gd --ignore-platform-req=ext-zip
+          echo "✅ Pro addon production dependencies installed"
+
       - name: Update version numbers
         run: |
           VERSION="${{ steps.version.outputs.version }}"
@@ -409,7 +415,7 @@ jobs:
   # Runs the official `wp plugin-check` command against the built ZIP — the
   # exact same artifact that `10up/action-wordpress-plugin-deploy` would push.
   # Any reported Errors block the release; Warnings are surfaced for triage.
-  # See docs/audit/2026-04/wp-org-submission-checklist.md row R-T-04.
+  # See docs/project/audits/2026-04/wp-org-submission-checklist.md row R-T-04.
   # =============================================================================
   plugin-check:
     name: WordPress.org Plugin Check
@@ -688,6 +694,11 @@ jobs:
       - name: Install production dependencies
         if: steps.check_creds.outputs.has_creds == 'true'
         run: composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction
+
+      - name: Install Pro addon production dependencies
+        if: steps.check_creds.outputs.has_creds == 'true'
+        working-directory: addons/pro
+        run: composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --ignore-platform-req=ext-fileinfo --ignore-platform-req=ext-gd --ignore-platform-req=ext-zip
 
       - name: Update version numbers
         if: steps.check_creds.outputs.has_creds == 'true'

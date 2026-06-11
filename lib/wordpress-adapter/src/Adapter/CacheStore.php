@@ -3,21 +3,20 @@
  * WordPress adapter: CacheStoreInterface implementation.
  *
  * Wraps WordPress transients and object cache functions behind the
- * PSR-6-extending CacheStoreInterface. It extends PSR-6 with simpler
- * transient-style convenience methods.
+ * domain-owned CacheStoreInterface with a transient-style convenience API.
  *
- * @package Oos\WordPress
+ * Does not extend PSR-6 — the domain contract is fully standalone.
+ *
+ * @package Nvoos\WordPress
  * @since   1.0.0
  * @license GPL-3.0-or-later
  */
 
 declare(strict_types=1);
 
-namespace Oos\WordPress\Adapter;
+namespace Nvoos\WordPress\Adapter;
 
-use Oos\Core\Domain\Contract\CacheStoreInterface;
-use Psr\Cache\CacheItemInterface;
-use Psr\Cache\CacheItemPoolInterface;
+use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 
 class CacheStore implements CacheStoreInterface {
 
@@ -95,10 +94,19 @@ class CacheStore implements CacheStoreInterface {
 		return $value;
 	}
 
-	// ─── PSR-6 CacheItemPoolInterface methods ─────────────────────────
+	// ─── Legacy PSR-6 compatibility methods (not part of the domain contract) ──
 
-	public function getItem( string $key ): CacheItemInterface {
-		return new class($key, $this->getValue( $key, null ), $this) implements CacheItemInterface {
+	/**
+	 * Get a single cache item (PSR-6 compatibility).
+	 *
+	 * These PSR-6 methods are retained for backward compatibility with
+	 * code that type-hints the concrete CacheStore class directly.
+	 * New code should use getValue()/setValue()/remember() instead.
+	 *
+	 * @return \Psr\Cache\CacheItemInterface
+	 */
+	public function getItem( string $key ): \Psr\Cache\CacheItemInterface {
+		return new class($key, $this->getValue( $key, null ), $this) implements \Psr\Cache\CacheItemInterface {
 			private bool $hit;
 
 			public function __construct(
@@ -171,11 +179,11 @@ class CacheStore implements CacheStoreInterface {
 		return $success;
 	}
 
-	public function save( CacheItemInterface $item ): bool {
+	public function save( \Psr\Cache\CacheItemInterface $item ): bool {
 		return $this->setValue( $item->getKey(), $item->get() );
 	}
 
-	public function saveDeferred( CacheItemInterface $item ): bool {
+	public function saveDeferred( \Psr\Cache\CacheItemInterface $item ): bool {
 		// Deferred saves are not supported; save immediately.
 		return $this->save( $item );
 	}

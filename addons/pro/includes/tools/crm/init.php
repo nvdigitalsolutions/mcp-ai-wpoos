@@ -54,11 +54,13 @@ if ( $is_enabled && ! $is_base ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-company-cpt.php';
 	WP_MCP_AI_Company_CPT::init();
 
-	// Phase B: Load Lead, Deal, and Activity CPTs.
+	// Phase B: Load Lead, Deal, Activity, Support Ticket, and Customer CPTs.
 	$_phase_b_cpts = array(
 		'class-wp-mcp-ai-lead-cpt.php',
 		'class-wp-mcp-ai-deal-cpt.php',
 		'class-wp-mcp-ai-crm-activity-cpt.php',
+		'class-wp-mcp-ai-support-ticket-cpt.php',
+		'class-wp-mcp-ai-customer-cpt.php',
 	);
 	foreach ( $_phase_b_cpts as $_cpt_file ) {
 		$_cpt_path = WP_MCP_AI_PRO_PATH . 'includes/' . $_cpt_file;
@@ -69,6 +71,8 @@ if ( $is_enabled && ! $is_base ) {
 	WP_MCP_AI_Lead_CPT::init();
 	WP_MCP_AI_Deal_CPT::init();
 	WP_MCP_AI_CRM_Activity_CPT::init();
+	WP_MCP_AI_Support_Ticket_CPT::init();
+	WP_MCP_AI_Customer_CPT::init();
 
 	// Phase D: Load Sequence and Workflow Rule CPTs.
 	$_phase_d_cpts = array(
@@ -102,6 +106,8 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-lead-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-support-ticket-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-customer-settings-page.php';
 
 		// Load Research & Add pages (per-CPT, under individual CPT menus).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-research-page.php';
@@ -113,6 +119,9 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-research-page.php';
 		WP_MCP_AI_Deal_Research_Page::init();
 
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-customer-research-page.php';
+		WP_MCP_AI_Customer_Research_Page::init();
+
 		// Load per-CPT Settings pages (under each CPT submenu).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-settings-page.php';
 		WP_MCP_AI_Company_Settings_Page::init();
@@ -122,6 +131,12 @@ if ( $is_enabled && ! $is_base ) {
 
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-settings-page.php';
 		WP_MCP_AI_Deal_Settings_Page::init();
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-support-ticket-settings-page.php';
+		WP_MCP_AI_Support_Ticket_Settings_Page::init();
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-customer-settings-page.php';
+		WP_MCP_AI_Customer_Settings_Page::init();
 
 		// Load CRM Blueprints page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-blueprints-page.php';
@@ -135,6 +150,12 @@ if ( $is_enabled && ! $is_base ) {
 	// Load Research & Add for CCT/CPT integration.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-crm-research-add.php';
 	new WP_MCP_AI_CRM_Research_Add();
+
+	// Load support ticket tools.
+	$_support_tools_init = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/support/init.php';
+	if ( file_exists( $_support_tools_init ) ) {
+		require_once $_support_tools_init;
+	}
 
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/crm/.
@@ -155,6 +176,20 @@ if ( $is_enabled && ! $is_base ) {
 	if ( file_exists( $_webform_file ) ) {
 		require_once $_webform_file;
 		WP_MCP_AI_CRM_Web_Form_Listener::init();
+	}
+
+	// ---- Phase C: Twilio SMS inbound webhook ----
+	$_sms_webhook_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-crm-sms-webhook-listener.php';
+	if ( file_exists( $_sms_webhook_file ) ) {
+		require_once $_sms_webhook_file;
+		add_action( 'rest_api_init', array( 'WP_MCP_AI_CRM_SMS_Webhook_Listener', 'register_route' ) );
+	}
+
+	// ---- Phase C: Meta WhatsApp inbound webhook ----
+	$_wa_webhook_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-crm-whatsapp-webhook-listener.php';
+	if ( file_exists( $_wa_webhook_file ) ) {
+		require_once $_wa_webhook_file;
+		add_action( 'rest_api_init', array( 'WP_MCP_AI_CRM_WhatsApp_Webhook_Listener', 'register_route' ) );
 	}
 }
 
@@ -187,22 +222,23 @@ function wp_mcp_ai_enqueue_crm_toolkit_admin_styles() {
 }
 add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_crm_toolkit_admin_styles' );
 
-/**
- * Handle an inbound chat channel message by routing it to the CRM evaluation pipeline.
- *
- * Hooks into 'wp_mcp_ai_chat_channel_message_received' fired by
- * WP_MCP_AI_Channel_Messages_CCT::insert() for every inbound message.
- *
- * @since 2.3.0
- *
- * @param int    $message_id        Row ID of the persisted message.
- * @param string $channel           Channel slug (whatsapp, telegram, etc.).
- * @param string $channel_contact_id Platform-side contact/user ID.
- * @param string $contact_name      Display name of the sender.
- * @param string $content           Message body.
- * @param string $message_type      Message type (text, image, etc.).
- */
-function wp_mcp_ai_crm_handle_chat_channel_message( $message_id, $channel, $channel_contact_id, $contact_name, $content, $message_type ) {
+	/**
+	 * Handle an inbound chat channel message by routing it to the CRM evaluation pipeline.
+	 *
+	 * Hooks into 'wp_mcp_ai_chat_channel_message_received' fired by
+	 * WP_MCP_AI_Channel_Messages_CCT::insert() for every inbound message.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int    $message_id        Row ID of the persisted message.
+	 * @param string $channel           Channel slug (whatsapp, telegram, etc.).
+	 * @param string $channel_contact_id Platform-side contact/user ID.
+	 * @param string $contact_name      Display name of the sender.
+	 * @param string $content           Message body.
+	 * @param string $message_type      Message type (text, image, etc.).
+	 * @param string $connection_id     Remote Site Manager connection ID.
+	 */
+function wp_mcp_ai_crm_handle_chat_channel_message( $message_id, $channel, $channel_contact_id, $contact_name, $content, $message_type, $connection_id = '' ) {
 	// Only process text messages.
 	if ( 'text' !== $message_type ) {
 		return;
@@ -226,6 +262,7 @@ function wp_mcp_ai_crm_handle_chat_channel_message( $message_id, $channel, $chan
 		'sender_name'        => $contact_name,
 		'message_body'       => $content,
 		'message_id'         => $message_id,
+		'connection_id'      => $connection_id,
 		'source'             => 'chat_channel',
 	);
 

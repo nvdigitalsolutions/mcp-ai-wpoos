@@ -1,20 +1,23 @@
 {
-    "name": "oos/core",
-    "version": "1.0.0",
-    "description": "Framework-agnostic AI orchestration engine — agentic loop, tool registry, provider routing, SSE streaming.",
+    "name": "nvoos/core",
+    "description": "Framework-agnostic AI orchestration engine â€” agentic loop, tool registry, provider routing, SSE streaming.",
     "type": "library",
     "license": "MIT",
+    "authors": [
+        {
+            "name": "NV Digital Solutions",
+            "email": "developer@nvdigitalsolutions.com",
+            "homepage": "https://nvdigitalsolutions.com",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
+    "support": {
+        "issues": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues",
+        "source": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/lib/core"
+    },
     "require": {
-        "php": "^8.1",
-        "psr/container": "^2.0",
-        "psr/log": "^3.0",
-        "psr/cache": "^3.0",
-        "psr/event-dispatcher": "^1.0",
-        "psr/http-client": "^1.0",
-        "psr/http-factory": "^1.0",
-        "psr/http-message": "^1.0 || ^2.0",
-        "nyholm/psr7": "^1.8",
-        "symfony/validator": "^6.4 || ^7.0"
+        "php": "^8.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0 || ^11.0",
@@ -23,26 +26,27 @@
     },
     "autoload": {
         "psr-4": {
-            "Oos\\Core\\": "src/"
+            "Nvoos\\Core\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Oos\\Core\\Tests\\": "tests/"
+            "Nvoos\\Core\\Tests\\": "tests/"
         }
     },
     "suggest": {
-        "oos/wordpress-adapter": "WordPress integration via the adapter layer",
-        "oos/laravel-adapter": "Laravel integration via the adapter layer",
-        "oos/craft-adapter": "Craft CMS integration via the adapter layer"
+        "nvoos/wordpress-adapter": "WordPress integration via the adapter layer",
+        "nvoos/laravel-adapter": "Laravel integration via the adapter layer",
+        "nvoos/craft-adapter": "Craft CMS integration via the adapter layer"
     },
-    "repositories": {
-        "local-adapters": {
-            "type": "path",
-            "url": "../*",
-            "options": {
-                "symlink": true
-            }
-        }
+    "scripts": {
+        "lint": "phpstan analyse --no-progress",
+        "lint:level8": "phpstan analyse --level 8 --no-progress",
+        "test": "phpunit --no-configuration --bootstrap tests/bootstrap.php tests/Unit/",
+        "test:with-config": "phpunit",
+        "ci": [
+            "@lint",
+            "@test"
+        ]
     }
 }

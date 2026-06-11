@@ -14,6 +14,7 @@ import { Hono } from 'hono';
 import accountApp from './account';
 import connectApp from './connect';
 import inferenceApp from './inference';
+import subscriptionsApp from './subscriptions';
 import { creditWallet } from './billing';
 import { verifyWebhook, type StripeWebhookEvent } from './stripe';
 import type { Env } from './types';
@@ -32,6 +33,9 @@ app.route('/connect', connectApp);
 // Authenticated APIs.
 app.route('/', inferenceApp);
 app.route('/v1/account', accountApp);
+
+// SaaS subscription & tenant management.
+app.route('/v1', subscriptionsApp);
 
 // Stripe webhook — signature verified, idempotent.
 app.post('/stripe/webhook', async (c) => {

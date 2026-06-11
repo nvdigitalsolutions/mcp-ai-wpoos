@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Concrete implementations of the 9 domain interfaces from `oos/core`, backed by Laravel framework APIs. Each adapter wraps one Laravel subsystem behind a framework-agnostic contract.
+Concrete implementations of the 9 domain interfaces from `nvoos/core`, backed by Laravel framework APIs. Each adapter wraps one Laravel subsystem behind a framework-agnostic contract.
 
 ## Tier
 
 | | |
 |---|---|
-| **Distribution** | `oos/laravel-adapter` Composer package |
+| **Distribution** | `nvoos/laravel-adapter` Composer package |
 | **PHP target** | 8.1+ |
-| **Dependencies** | `oos/core`, `illuminate/*` |
+| **Dependencies** | `nvoos/core`, `illuminate/*` |
 
 ## Public Surface
 
@@ -46,3 +46,6 @@ Uses Orchestra Testbench for a bootable Laravel test environment.
 - [`lib/core/src/Domain/Contract/`](../../core/src/Domain/Contract/) — the interfaces these implement
 - [`lib/core/src/Domain/Entity/`](../../core/src/Domain/Entity/) — value objects returned by these adapters
 - [`lib/wordpress-adapter/src/Adapter/`](../../../wordpress-adapter/src/Adapter/) — sibling WordPress implementations for reference
+
+> **Monorepo sync:** This directory is synced to `nvdigitalsolutions/nvoos-laravel-adapter` via `.github/workflows/sync-nvoos-laravel-adapter.yml` on push to `main` or `alpha-working`.
+

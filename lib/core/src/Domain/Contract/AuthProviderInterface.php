@@ -6,18 +6,18 @@
  * credential management so that tools and services never depend on
  * WordPress functions (current_user_can, wp_verify_nonce, etc.).
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
-use Oos\Core\Domain\Entity\AuthContext;
-use Oos\Core\Domain\Entity\Credential;
-use Oos\Core\Domain\Entity\UserInfo;
+use Nvoos\Core\Domain\Entity\AuthContext;
+use Nvoos\Core\Domain\Entity\Credential;
+use Nvoos\Core\Domain\Entity\UserInfo;
 
 interface AuthProviderInterface {
 
@@ -50,7 +50,7 @@ interface AuthProviderInterface {
 	 *
 	 * @return AuthContext  Context including user_id, token_type, scoped assistant, etc.
 	 *
-	 * @throws \Oos\Core\Domain\Error\AuthenticationException  When token is invalid or expired.
+	 * @throws \Nvoos\Core\Domain\Error\AuthenticationException  When token is invalid or expired.
 	 */
 	public function authenticate( string $token, string $tokenType = 'bearer' ): AuthContext;
 

@@ -304,6 +304,8 @@ require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
 require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
 require_once WP_MCP_AI_PATH . 'includes/markup-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
+require_once WP_MCP_AI_PATH . 'includes/data/data-init.php';
+require_once WP_MCP_AI_PATH . 'includes/services/content-embedding-init.php';
 require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';
 
 // ---------------------------------------------------------------------------

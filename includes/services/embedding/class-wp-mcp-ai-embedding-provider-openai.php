@@ -3,7 +3,7 @@
  * OpenAI embedding provider.
  *
  * Default embedding backend used by {@see WP_MCP_AI_Vector_Context_Service}.
- * Wraps the existing {@see WP_MCP_AI_OpenAI_Client::create_embedding()} call so
+ * Wraps the existing {@see WP_MCP_AI_OpenAI_Client::create_embeddings()} call so
  * the vector service can stay provider-agnostic.
  *
  * Phase 3 enhancement inspired by the MemPalace project
@@ -112,11 +112,9 @@ class WP_MCP_AI_Embedding_Provider_OpenAI implements WP_MCP_AI_Embedding_Provide
 		}
 
 		try {
-			$response = $this->get_client()->create_embedding(
-				array(
-					'model' => $this->get_model(),
-					'input' => $text,
-				)
+			$response = $this->get_client()->create_embeddings(
+				$text,
+				array( 'model' => $this->get_model() )
 			);
 		} catch ( Exception $e ) {
 			return new WP_Error( 'embedding_error', $e->getMessage() );

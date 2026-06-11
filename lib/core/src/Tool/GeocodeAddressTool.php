@@ -1,11 +1,11 @@
 <?php
-/** @package Oos\Core @since 1.0.0 @license MIT */
+/** @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 class GeocodeAddressTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly SettingsStoreInterface $s, private readonly HttpClientInterface $h ) {
 		parent::__construct( $e );}
@@ -45,8 +45,8 @@ class GeocodeAddressTool extends AbstractTool {
 					'key'     => $apiKey,
 				)
 			);
-			$resp = $this->h->sendRequest( new \Nyholm\Psr7\Request( 'GET', $url ) );
-			$data = json_decode( (string) $resp->getBody(), true );
+			$resp = $this->h->send( 'GET', $url );
+			$data = json_decode( $resp->body, true );
 			if ( ! is_array( $data ) || 'OK' !== ( $data['status'] ?? '' ) ) {
 				return $this->errors->create( 'geocode_failed', $data['error_message'] ?? $data['status'] ?? 'Geocoding failed.' );
 			}

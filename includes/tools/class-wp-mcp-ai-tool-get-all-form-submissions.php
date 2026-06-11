@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 
 	/** {@inheritdoc} */
 	public function get_description() {
-		return __( 'Retrieves recent form submissions from all available sources (JetFormBuilder, Elementor Pro, and configured remote data connections) in a unified format. Use this to get a cross-plugin overview of all form activity.', 'mcp-ai-wpoos' );
+		return __( 'Retrieves recent form submissions from all available sources (JetFormBuilder, Elementor Pro, and configured remote data connections) in a unified format. IMPORTANT: When looking up a specific form ID, call get_jetformbuilder_forms or get_elementor_templates FIRST to discover which forms exist and what type they are. This tool auto-detects form types when a form_id is provided, but discovery tools provide richer context about available forms and their field structures.', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
@@ -153,10 +153,34 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 		$form_id       = isset( $arguments['form_id'] ) ? $arguments['form_id'] : '';
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
 
-		// Determine which sources to query.
-		$requested_sources = isset( $arguments['sources'] ) && is_array( $arguments['sources'] )
+		$user_requested_sources = isset( $arguments['sources'] ) && is_array( $arguments['sources'] )
 			? array_map( 'sanitize_key', $arguments['sources'] )
-			: array( 'jetformbuilder', 'elementor', 'remote' );
+			: array();
+
+		$form_id_int = $form_id ? absint( $form_id ) : 0;
+
+		// When a specific form_id is provided, auto-detect its type to avoid
+		// querying incompatible sources and misleading the AI about which
+		// form builder owns the form.
+		$detected_form_type = '';
+		if ( $form_id_int && empty( $user_requested_sources ) ) {
+			$detected_form_type = $this->detect_form_type( $form_id_int, $context );
+		}
+
+		if ( $form_id_int && empty( $user_requested_sources ) && $detected_form_type ) {
+			// Auto-scope to the detected source only.
+			if ( 'jetformbuilder' === $detected_form_type ) {
+				$requested_sources = array( 'jetformbuilder' );
+			} elseif ( 'elementor' === $detected_form_type ) {
+				$requested_sources = array( 'elementor' );
+			} else {
+				$requested_sources = array( 'jetformbuilder', 'elementor' );
+			}
+		} elseif ( empty( $user_requested_sources ) ) {
+			$requested_sources = array( 'jetformbuilder', 'elementor', 'remote' );
+		} else {
+			$requested_sources = $user_requested_sources;
+		}
 
 		$all_submissions = array();
 		$totals          = array();
@@ -164,37 +188,78 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 
 		// Query JetFormBuilder.
 		if ( in_array( 'jetformbuilder', $requested_sources, true )
-			&& class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions' )
+		&& class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions' )
 		) {
 			$jfb_tool = new WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions();
 			if ( $jfb_tool->is_available() ) {
-				$jfb_args = array(
-					'limit'     => $limit,
-					'transport' => $connection_id ? 'http' : 'auto',
-				);
-				if ( $status ) {
-					$jfb_args['status'] = $status;
-				}
-				if ( $form_id ) {
-					$jfb_args['form_id'] = $form_id;
-				}
-				if ( $connection_id ) {
-					$jfb_args['connection_id'] = $connection_id;
-				}
+				// If no specific form_id is given, discover all JetFormBuilder
+				// forms so the unified tool can aggregate across them.
+				$jfb_form_ids = $form_id ? array( $form_id ) : array();
+				if ( empty( $jfb_form_ids ) ) {
+					// Always query the records table directly for form IDs
+					// that actually have submissions. This is the authoritative
+					// source: it finds every form that has stored record data,
+					// including forms that may no longer exist as CPT posts.
+					$jfb_form_ids = $this->discover_jfb_forms_local();
 
-				$jfb_result = $jfb_tool->execute( $jfb_args, $context );
-
-				if ( is_wp_error( $jfb_result ) ) {
-					$errors['jetformbuilder'] = $jfb_result->get_error_message();
-				} else {
-					$subs = isset( $jfb_result['submissions'] ) ? $jfb_result['submissions'] : array();
-					foreach ( $subs as &$sub ) {
-						$sub['source'] = 'jetformbuilder';
+					// Supplement with forms discovered via the REST API
+					// (which may include forms that have no records yet
+					// but exist as CPT posts).
+					if ( class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms' ) ) {
+						$forms_tool   = new WP_MCP_AI_Tool_Get_JetFormBuilder_Forms();
+						$forms_result = $forms_tool->execute(
+							array( 'limit' => 50 ),
+							$context
+						);
+						if ( ! is_wp_error( $forms_result ) && ! empty( $forms_result['forms'] ) ) {
+							foreach ( $forms_result['forms'] as $form ) {
+								if ( ! empty( $form['id'] ) ) {
+									$jfb_form_ids[] = $form['id'];
+								}
+							}
+						} elseif ( is_wp_error( $forms_result ) ) {
+							$errors['jetformbuilder_forms'] = $forms_result->get_error_message();
+						}
 					}
-					unset( $sub );
-					$all_submissions          = array_merge( $all_submissions, $subs );
-					$totals['jetformbuilder'] = isset( $jfb_result['total'] ) ? (int) $jfb_result['total'] : count( $subs );
+
+					// Deduplicate form IDs.
+					$jfb_form_ids = array_values( array_unique( $jfb_form_ids ) );
 				}
+
+				$jfb_running_total = 0;
+				foreach ( $jfb_form_ids as $current_form_id ) {
+					$jfb_args = array(
+						'limit'     => $limit,
+						'form_id'   => $current_form_id,
+						'transport' => $connection_id ? 'http' : 'auto',
+					);
+					if ( $status ) {
+						$jfb_args['status'] = $status;
+					}
+					if ( $connection_id ) {
+						$jfb_args['connection_id'] = $connection_id;
+					}
+
+					$jfb_result = $jfb_tool->execute( $jfb_args, $context );
+
+					if ( is_wp_error( $jfb_result ) ) {
+						$errors['jetformbuilder'] = $jfb_result->get_error_message();
+					} else {
+						$subs = isset( $jfb_result['submissions'] ) ? $jfb_result['submissions'] : array();
+						foreach ( $subs as &$sub ) {
+							$sub['source'] = 'jetformbuilder';
+						}
+						unset( $sub );
+						$all_submissions    = array_merge( $all_submissions, $subs );
+						$jfb_running_total += isset( $jfb_result['total'] ) ? (int) $jfb_result['total'] : count( $subs );
+
+						// Pass through form_found signal from the JFB tool.
+						if ( isset( $jfb_result['form_found'] ) ) {
+							$totals['jetformbuilder_form_found'] = (bool) $jfb_result['form_found'];
+						}
+					}
+				}
+				$totals['jetformbuilder'] = $jfb_running_total;
 			}
 		}
 
@@ -204,31 +269,48 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 		) {
 			$elementor_tool = new WP_MCP_AI_Tool_Get_Elementor_Form_Submissions();
 			if ( $elementor_tool->is_available() ) {
-				$el_args = array(
-					'limit' => $limit,
-				);
-				if ( $status ) {
-					$el_args['status'] = $status;
-				}
-				if ( $form_id ) {
-					$el_args['form_post_id'] = $form_id;
-				}
-				if ( $connection_id ) {
-					$el_args['connection_id'] = $connection_id;
-				}
+				// If no specific form_id is given, discover all Elementor
+				// form post IDs from the submissions table.
+				$el_form_ids = $form_id ? array( $form_id ) : $this->discover_elementor_forms_local();
 
-				$el_result = $elementor_tool->execute( $el_args, $context );
-
-				if ( is_wp_error( $el_result ) ) {
-					$errors['elementor'] = $el_result->get_error_message();
+				if ( empty( $el_form_ids ) && ! $form_id ) {
+					// No Elementor forms have submissions yet.
+					$totals['elementor'] = 0;
 				} else {
-					$subs = isset( $el_result['submissions'] ) ? $el_result['submissions'] : array();
-					foreach ( $subs as &$sub ) {
-						$sub['source'] = 'elementor';
+					$el_running_total = 0;
+					foreach ( $el_form_ids as $current_el_id ) {
+						$el_args = array(
+							'limit'        => $limit,
+							'form_post_id' => $current_el_id,
+						);
+						if ( $status ) {
+							$el_args['status'] = $status;
+						}
+						if ( $connection_id ) {
+							$el_args['connection_id'] = $connection_id;
+						}
+
+						$el_result = $elementor_tool->execute( $el_args, $context );
+
+						if ( is_wp_error( $el_result ) ) {
+							$errors['elementor'] = $el_result->get_error_message();
+						} else {
+							$subs = isset( $el_result['submissions'] ) ? $el_result['submissions'] : array();
+							foreach ( $subs as &$sub ) {
+								$sub['source'] = 'elementor';
+							}
+							unset( $sub );
+							$all_submissions   = array_merge( $all_submissions, $subs );
+							$el_running_total += isset( $el_result['total'] ) ? (int) $el_result['total'] : count( $subs );
+
+							// Pass through form_found signal from the Elementor tool.
+							if ( isset( $el_result['form_found'] ) ) {
+								$key            = 'elementor_form_found_' . $current_el_id;
+								$totals[ $key ] = (bool) $el_result['form_found'];
+							}
+						}
 					}
-					unset( $sub );
-					$all_submissions     = array_merge( $all_submissions, $subs );
-					$totals['elementor'] = isset( $el_result['total'] ) ? (int) $el_result['total'] : count( $subs );
+					$totals['elementor'] = $el_running_total;
 				}
 			}
 		}
@@ -344,12 +426,236 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 			$output['errors'] = $errors;
 		}
 
+		// Include form-type detection when a specific form_id was queried.
+		if ( $form_id_int && $detected_form_type ) {
+			$output['form_type_detected'] = $detected_form_type;
+		} elseif ( $form_id_int ) {
+			$output['form_type_detected'] = 'unknown';
+			$output['form_type_hint']     = __(
+				'Could not determine which form builder owns this form ID. Use get_jetformbuilder_forms to list JetFormBuilder forms and get_elementor_templates to list Elementor templates, then query the matching submission tool directly.',
+				'mcp-ai-wpoos'
+			);
+		}
+
 		return $output;
+	}
+
+	/**
+	 * Discover JetFormBuilder form IDs from the records table directly,
+	 * bypassing the REST API when its endpoints are unavailable.
+	 *
+	 * This fallback queries the `jet_fb_records` table for distinct form
+	 * IDs, providing the same information that `get_jetformbuilder_forms`
+	 * would return through the REST API — but without depending on the
+	 * REST route being registered or accessible.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return int[] Form IDs found in the records table.
+	 */
+	private function discover_jfb_forms_local() {
+		global $wpdb;
+
+		$records_table = $wpdb->prefix . 'jet_fb_records';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$table_exists = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $records_table )
+		);
+
+		if ( ! $table_exists ) {
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return array();
+		}
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$form_ids = $wpdb->get_col(
+			"SELECT DISTINCT form_id FROM {$records_table} ORDER BY form_id DESC LIMIT 50"
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( empty( $form_ids ) ) {
+			return array();
+		}
+
+		return array_map( 'absint', $form_ids );
+	}
+
+	/**
+	 * Discover Elementor form post IDs from the e_submissions table.
+	 *
+	 * Returns distinct post_id values that have form submissions,
+	 * analogous to discover_jfb_forms_local() for JetFormBuilder.
+	 *
+	 * @since 1.9.5
+	 *
+	 * @return int[] Post IDs found in the submissions table.
+	 */
+	private function discover_elementor_forms_local() {
+		global $wpdb;
+
+		$submissions_table = $wpdb->prefix . 'e_submissions';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$table_exists = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $submissions_table )
+		);
+
+		if ( ! $table_exists ) {
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return array();
+		}
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$form_ids = $wpdb->get_col(
+			"SELECT DISTINCT post_id FROM {$submissions_table} WHERE type = 'form' ORDER BY post_id DESC LIMIT 50"
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( empty( $form_ids ) ) {
+			return array();
+		}
+
+		return array_map( 'absint', $form_ids );
+	}
+
+	/**
+	 * Detect which form builder a given form ID belongs to.
+	 *
+	 * Checks JetFormBuilder first (post type check + forms list),
+	 * then Elementor (submissions table check). Returns an empty
+	 * string when the form type cannot be determined.
+	 *
+	 * @since 1.9.5
+	 *
+	 * @param int   $form_id The form ID to classify.
+	 * @param array $context Execution context.
+	 * @return string 'jetformbuilder', 'elementor', or '' (unknown).
+	 */
+	private function detect_form_type( $form_id, $context ) {
+		$form_id = absint( $form_id );
+		if ( ! $form_id ) {
+			return '';
+		}
+
+		// 1. Check if this is a JetFormBuilder form.
+		$is_jfb = $this->is_jetformbuilder_form( $form_id, $context );
+		if ( $is_jfb ) {
+			return 'jetformbuilder';
+		}
+
+		// 2. Check if this is an Elementor form (has submissions in e_submissions).
+		$is_elementor = $this->is_elementor_form( $form_id );
+		if ( $is_elementor ) {
+			return 'elementor';
+		}
+
+		// 3. Fallback: check if the post exists and might be a form host.
+		$post = get_post( $form_id );
+		if ( ! $post ) {
+			return '';
+		}
+
+		// If the post has Elementor data (stored in post meta), it's likely
+		// an Elementor page that may contain a form widget.
+		if ( get_post_meta( $form_id, '_elementor_edit_mode', true ) ) {
+			return 'elementor';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Check if a form ID belongs to a JetFormBuilder form.
+	 *
+	 * @param int   $form_id The form ID.
+	 * @param array $context Execution context.
+	 * @return bool
+	 */
+	private function is_jetformbuilder_form( $form_id, $context ) {
+		// Check if the post type is a known JetFormBuilder CPT.
+		$post_type = get_post_type( $form_id );
+		if ( $post_type && 'jet-form-builder' === $post_type ) {
+			return true;
+		}
+
+		// Query the JFB forms list to see if this ID is present.
+		if ( class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms' )
+			&& WP_MCP_AI_Tool_Get_JetFormBuilder_Forms::is_available()
+		) {
+			$forms_tool   = new WP_MCP_AI_Tool_Get_JetFormBuilder_Forms();
+			$forms_result = $forms_tool->execute(
+				array( 'limit' => 50 ),
+				$context
+			);
+			if ( ! is_wp_error( $forms_result ) && ! empty( $forms_result['forms'] ) ) {
+				foreach ( $forms_result['forms'] as $form ) {
+					if ( (int) $form['id'] === $form_id ) {
+						return true;
+					}
+				}
+			}
+		}
+
+		// Last resort: check the jet_fb_records table for this form_id.
+		global $wpdb;
+		$records_table = $wpdb->prefix . 'jet_fb_records';
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$table_exists = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $records_table )
+		);
+		if ( $table_exists ) {
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$records_table} WHERE form_id = %d",
+					$form_id
+				)
+			);
+			if ( $count > 0 ) {
+				return true;
+			}
+		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		return false;
+	}
+
+	/**
+	 * Check if a form ID has submissions in the Elementor e_submissions table.
+	 *
+	 * @param int $form_id The form (post) ID.
+	 * @return bool
+	 */
+	private function is_elementor_form( $form_id ) {
+		global $wpdb;
+
+		$submissions_table = $wpdb->prefix . 'e_submissions';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$table_exists = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $submissions_table )
+		);
+
+		if ( ! $table_exists ) {
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return false;
+		}
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$submissions_table} WHERE post_id = %d AND type = %s",
+				$form_id,
+				'form'
+			)
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		return $count > 0;
 	}
 
 
 	/**
-
 	 * Get extended tool definition including toolkit metadata.
 	 *
 	 * @since 1.1.0

@@ -11,6 +11,7 @@
 #   nvoos-media-studio-v{version}.zip
 #   nvoos-toolkit-shell-v{version}.zip
 #   nvoos-docs-hub-v{version}.zip
+#   nvoos-librechat-v{version}.zip
 #
 # Triggered by:
 #   - Manual workflow_dispatch (all addons) or with a specific addon input
@@ -25,6 +26,7 @@
 #   media-studio     ≤ 900 KB  gzip
 #   toolkit-shell    ≤ 200 KB  gzip
 #   docs-hub         ≤ 250 KB  gzip
+#   librechat        ≤ 350 KB  gzip
 
 name: Build SPA Addons
 
@@ -37,6 +39,7 @@ on:
       - 'media-studio-v*.*.*'
       - 'toolkit-shell-v*.*.*'
       - 'docs-hub-v*.*.*'
+      - 'librechat-v*.*.*'
     branches:
       - main
       - alpha-working
@@ -47,6 +50,7 @@ on:
       - 'addons/media-studio/**'
       - 'addons/toolkit-shell/**'
       - 'addons/docs-hub/**'
+      - 'addons/librechat/**'
   pull_request:
     paths:
       - 'addons/chat-spa/**'
@@ -55,6 +59,7 @@ on:
       - 'addons/media-studio/**'
       - 'addons/toolkit-shell/**'
       - 'addons/docs-hub/**'
+      - 'addons/librechat/**'
   workflow_dispatch:
     inputs:
       addon:
@@ -69,6 +74,7 @@ on:
           - media-studio
           - toolkit-shell
           - docs-hub
+          - librechat
       create_release:
         description: 'Create GitHub Releases for built addons'
         required: false
@@ -106,15 +112,20 @@ jobs:
             exit 0
           fi
 
-          # Otherwise build all addons
-          echo 'addons=[
-            {"slug":"chat-spa"},
-            {"slug":"canvas-toolkit"},
-            {"slug":"document-editor"},
-            {"slug":"media-studio"},
-            {"slug":"toolkit-shell"},
-            {"slug":"docs-hub"}
-          ]' >> "$GITHUB_OUTPUT"
+          # Otherwise build all addons — use heredoc for multi-line JSON output.
+          {
+            echo 'addons<<ADDONS_EOF'
+            echo '[
+              {"slug":"chat-spa"},
+              {"slug":"canvas-toolkit"},
+              {"slug":"document-editor"},
+              {"slug":"media-studio"},
+              {"slug":"toolkit-shell"},
+              {"slug":"docs-hub"},
+              {"slug":"librechat"}
+            ]'
+            echo 'ADDONS_EOF'
+          } >> "$GITHUB_OUTPUT"
 
   # ===========================================================================
   # Build each addon (parallel via matrix)
@@ -125,9 +136,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false  # Don't cancel other addons if one fails
-
-    matrix:
-      addon: ${{ fromJSON(needs.matrix-prep.outputs.addons) }}
+      matrix:
+        addon: ${{ fromJSON(needs.matrix-prep.outputs.addons) }}
 
     steps:
       - name: Checkout repository

@@ -95,6 +95,12 @@ export function ComicUploader({ onComplete, onCancel }: ComicUploaderProps) {
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				onClick={() => !uploading && inputRef.current?.click()}
+				onKeyDown={(e) => {
+					if (!uploading && (e.key === 'Enter' || e.key === ' ')) {
+						e.preventDefault();
+						inputRef.current?.click();
+					}
+				}}
 				role="button"
 				tabIndex={0}
 				aria-label={t('dropHint')}

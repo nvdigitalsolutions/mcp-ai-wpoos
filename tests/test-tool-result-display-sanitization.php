@@ -10,7 +10,14 @@
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php';
-require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-extract-video-frames.php';
+
+if ( ! class_exists( 'WP_MCP_AI_Tool_Extract_Video_Frames' ) ) {
+	$extract_frames = WP_MCP_AI_PATH . 'addons/pro/includes/tools/video-production/class-wp-mcp-ai-tool-extract-video-frames.php';
+	if ( file_exists( $extract_frames ) ) {
+		require_once $extract_frames;
+	}
+}
+
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 
 /**

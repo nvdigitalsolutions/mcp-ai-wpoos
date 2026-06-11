@@ -1,11 +1,11 @@
 <?php
-/** @package Oos\Core @since 1.0.0 @license MIT */
+/** @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\ContentStoreInterface;
-use Oos\Core\Domain\Entity\ContentQuery;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Entity\ContentQuery;
 class GetRecentPostsTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly ContentStoreInterface $c ) {
 		parent::__construct( $e );}

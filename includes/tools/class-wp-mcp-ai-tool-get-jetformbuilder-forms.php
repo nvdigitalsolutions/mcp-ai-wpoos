@@ -48,7 +48,7 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interfac
 
 	/** {@inheritdoc} */
 	public function get_description() {
-		return __( 'Lists JetFormBuilder forms with concise metadata for the assistant.', 'mcp-ai-wpoos' );
+		return __( 'Lists all JetFormBuilder forms with their IDs, names, and statuses. Use this BEFORE querying form submissions to discover which forms exist in the system. Each returned form has an id field that can be passed as form_id to get_jetformbuilder_submissions or get_all_form_submissions.', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
@@ -218,13 +218,13 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interfac
 	 * Sanitize the maximum number of results to return.
 	 *
 	 * @param mixed $value   Raw value from the assistant.
-	 * @param int   $default Default value when input is missing.
+	 * @param int   $fallback Default value when input is missing.
 	 * @return int
 	 */
-	protected function sanitize_limit( $value, $default ) {
+	protected function sanitize_limit( $value, $fallback ) {
 		$limit = absint( $value );
 		if ( $limit < 1 ) {
-			$limit = $default;
+			$limit = $fallback;
 		}
 
 		return (int) min( 50, $limit );
@@ -392,11 +392,11 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Determine whether the provided array uses sequential integer keys.
 	 *
-	 * @param array $array Array to test.
+	 * @param array $items Array to test.
 	 * @return bool
 	 */
-	protected function is_sequential_array( array $array ) {
-		return array_keys( $array ) === range( 0, count( $array ) - 1 );
+	protected function is_sequential_array( array $items ) {
+		return array_keys( $items ) === range( 0, count( $items ) - 1 );
 	}
 
 	/**

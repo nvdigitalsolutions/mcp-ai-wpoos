@@ -18,7 +18,7 @@ changes to existing filters, actions, REST shapes, or CCT schema.
 **Feature Version:** v1.1.20
 **Branch:** `feature/memory-layer-2026-enhancements` (off `alpha-working`)
 **Brief:** _N/A — proposed and approved inline in chat (Nov 2026)_
-**Reference doc:** `docs/AGENT-MEMORY-COMPLETE-GUIDE.md` (existing)
+**Reference doc:** `docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md` (existing)
 
 ---
 
@@ -31,7 +31,7 @@ Always:
   .context/conventions.md
   .context/security-checklist.md
   .context/archive/memory-layer-2026-v1.1.20.md  ← archived feature context (reference only)
-  docs/AGENT-MEMORY-COMPLETE-GUIDE.md
+  docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md
   includes/services/README.md
   includes/tools/README.md
 

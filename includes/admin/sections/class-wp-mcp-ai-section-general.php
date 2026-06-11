@@ -686,7 +686,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 
 			// Validate default_provider.
 			if ( isset( $input['default_provider'] ) ) {
-				$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+				$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 				if ( ! in_array( $input['default_provider'], $valid_providers, true ) ) {
 					$errors[] = __( 'Invalid AI provider selected.', 'mcp-ai-wpoos' );
 				}

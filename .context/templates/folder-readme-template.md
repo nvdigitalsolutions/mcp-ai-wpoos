@@ -9,8 +9,8 @@
   Rationale: This file applies Unix theory's "rule of transparency" + "rule of
   representation" at the directory level. Each folder must be able to introduce
   itself: what it does (one thing), what it exports, who calls it, and where to
-  go next. See `docs/guides/developer/folder-readme-convention.md` for the full
-  rationale and `docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`
+  go next. See `docs/developer/folder-readme-convention.md` for the full
+  rationale and `docs/project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`
   §P7 for the proposal context.
 
   LAYERING RULE (mirrors `AGENTS.md` §2): folder READMEs MUST NOT restate
@@ -84,7 +84,7 @@ project-wide rules. Examples of folder-specific deltas:
 - "All classes here must implement `WP_MCP_AI_Tool_Interface`."
 - "Files here must be PHP 8.1+ — this folder is Pro-only."
 - "Direct WordPress API calls are forbidden — use the `infrastructure/`
-  adapter (see [`ADR-001`](../../docs/ADR_001_module_boundaries.md))."
+  adapter (see [`ADR-001`](../../docs/project/architecture-decisions/ADR_001_module_boundaries.md))."
 
 If you find yourself restating naming/security/PHP-compat rules here, **stop
 and link to `.context/conventions.md` instead**.

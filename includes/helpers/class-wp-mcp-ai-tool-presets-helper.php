@@ -559,6 +559,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Email.
 					'search_gmail',
 					'send_group_email',
+					// CRM email search (Pro).
+					'crm_email_search_leads',
+					'crm_email_search_correspondence',
 					// Newsletter.
 					'newsletter_add_subscriber',
 					'newsletter_create_email',
@@ -1410,6 +1413,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Communication.
 					'send_group_email',
 					'search_gmail',
+					// CRM email search (Pro).
+					'crm_email_search_leads',
+					'crm_email_search_correspondence',
+					'crm_email_search_accounting',
 					// Calendar.
 					'create_google_calendar_event',
 					// Site management.
@@ -1490,8 +1497,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'search_content',
 					// Communication.
 					'send_group_email',
+					'search_gmail',
 					'schedule_notify_sms',
 					'send_whatsapp_message',
+					// CRM email search (Pro).
+					'crm_email_search_leads',
+					'crm_email_search_correspondence',
 					// Calendar.
 					'create_google_calendar_event',
 					// Forms.

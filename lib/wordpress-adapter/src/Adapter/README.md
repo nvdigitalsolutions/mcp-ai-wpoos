@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Concrete implementations of the 9 domain interfaces from `oos/core`, backed by WordPress APIs. Each adapter wraps one WordPress subsystem behind a framework-agnostic contract.
+Concrete implementations of the 9 domain interfaces from `nvoos/core`, backed by WordPress APIs. Each adapter wraps one WordPress subsystem behind a framework-agnostic contract.
 
 ## Tier
 
 | | |
 |---|---|
-| **Distribution** | `oos/wordpress-adapter` Composer package |
+| **Distribution** | `nvoos/wordpress-adapter` Composer package |
 | **PHP target** | 7.4+ |
-| **Dependencies** | `oos/core`, WordPress core |
+| **Dependencies** | `nvoos/core`, WordPress core |
 
 ## Public Surface
 
@@ -45,3 +45,6 @@ vendor/bin/phpunit tests/test-wp-content-store.php
 - [`lib/core/src/Domain/Contract/`](../../core/src/Domain/Contract/) — the interfaces these implement
 - [`lib/core/src/Domain/Entity/`](../../core/src/Domain/Entity/) — value objects returned by these adapters
 - [`includes/bootstrap/oos-bridge.php`](../../../includes/bootstrap/oos-bridge.php) — DI wiring that instantiates these adapters
+
+> **Monorepo sync:** This directory is synced to `nvdigitalsolutions/nvoos-wordpress-adapter` via `.github/workflows/sync-nvoos-wordpress-adapter.yml` on push to `main` or `alpha-working`.
+

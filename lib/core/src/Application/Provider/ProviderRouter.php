@@ -6,18 +6,18 @@
  * configured provider (openai, gemini, anthropic, etc.) and falls
  * back to the site default when not specified.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Application\Provider;
+namespace Nvoos\Core\Application\Provider;
 
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Infrastructure\Provider\AbstractProviderClient;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
 
 class ProviderRouter {
 

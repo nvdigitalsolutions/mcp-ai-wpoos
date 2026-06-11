@@ -15,7 +15,7 @@
  * sanitiser-less read of `$arguments`. Broader detection lives in the human
  * code-review checklist documented in `.context/security-checklist.md` and
  * the codification audit at
- * `docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`.
+ * `docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md`.
  *
  * Trigger:
  *   $sql = "SELECT * FROM wp_posts WHERE id = {$arguments['id']}";   ← warned
@@ -148,7 +148,7 @@ class SanitizeAtEntrySniff implements Sniff {
 			if ( preg_match( '/' . $escaped . '\s*\[/', $content ) ) {
 				$phpcsFile->addWarning(
 					sprintf(
-						'Tool input %s[...] is interpolated into a string without an explicit sanitiser. Assign it to a sanitised local first (e.g. $id = absint( %s[\'id\'] )), or pass it through $wpdb->prepare() with a placeholder. See docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md.',
+						'Tool input %s[...] is interpolated into a string without an explicit sanitiser. Assign it to a sanitised local first (e.g. $id = absint( %s[\'id\'] )), or pass it through $wpdb->prepare() with a placeholder. See docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md.',
 						$var,
 						$var
 					),
@@ -199,7 +199,7 @@ class SanitizeAtEntrySniff implements Sniff {
 
 		$phpcsFile->addWarning(
 			sprintf(
-				'Tool input %s[...] is concatenated into a string without an explicit sanitiser. Assign it to a sanitised local first, or use $wpdb->prepare() with a placeholder. See docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md.',
+				'Tool input %s[...] is concatenated into a string without an explicit sanitiser. Assign it to a sanitised local first, or use $wpdb->prepare() with a placeholder. See docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md.',
 				$tokens[ $next ]['content']
 			),
 			$next,

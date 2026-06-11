@@ -1,0 +1,94 @@
+{
+  "slug": "hero-with-cta",
+  "name": "Hero Section with CTA",
+  "description": "A hero banner with a heading, subheading, and call-to-action button arranged vertically.",
+  "version": "1.0.0",
+  "inputs": {
+    "heading": {
+      "type": "string",
+      "label": "Heading",
+      "default": "Welcome to Our Site"
+    },
+    "subheading": {
+      "type": "string",
+      "label": "Subheading",
+      "default": "We build amazing things with WordPress."
+    },
+    "cta_text": {
+      "type": "string",
+      "label": "Button Text",
+      "default": "Get Started"
+    },
+    "cta_url": {
+      "type": "url",
+      "label": "Button URL",
+      "default": "#"
+    }
+  },
+  "outputs": {
+    "html": {
+      "type": "html",
+      "node": "hero_container",
+      "port": "html"
+    }
+  },
+  "internalGraph": {
+    "nodes": {
+      "heading_block": {
+        "slug": "text_block",
+        "inputs": {
+          "tag": "h1",
+          "content": "{heading}",
+          "className": "hero-heading"
+        }
+      },
+      "subheading_block": {
+        "slug": "text_block",
+        "inputs": {
+          "tag": "p",
+          "content": "{subheading}",
+          "className": "hero-subtitle"
+        }
+      },
+      "cta_block": {
+        "slug": "text_block",
+        "inputs": {
+          "tag": "a",
+          "content": "{cta_text}",
+          "className": "hero-cta"
+        }
+      },
+      "hero_container": {
+        "slug": "flex_container",
+        "inputs": {
+          "direction": "column",
+          "gap": "24px",
+          "align": "center",
+          "justify": "center",
+          "padding": "80px 0"
+        }
+      }
+    },
+    "edges": [
+      {
+        "source": "heading_block",
+        "sourcePort": "html",
+        "target": "hero_container",
+        "targetPort": "children"
+      },
+      {
+        "source": "subheading_block",
+        "sourcePort": "html",
+        "target": "hero_container",
+        "targetPort": "children"
+      },
+      {
+        "source": "cta_block",
+        "sourcePort": "html",
+        "target": "hero_container",
+        "targetPort": "children"
+      }
+    ],
+    "outputNode": "hero_container"
+  }
+}

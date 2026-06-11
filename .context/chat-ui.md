@@ -287,5 +287,5 @@ References:
 - [`docs/features/chat/cron-status-integration.md`](../docs/features/chat/cron-status-integration.md) — architecture, SSE event schema, OTel hooks, REST routes.
 - [`docs/features/chat/async-continuation.md`](../docs/features/chat/async-continuation.md) — async chat continuation slices 1–6 (durable store, dispatcher, LLM re-entry, SSE channel, Pro webhook notifier, OTel + Jest).
 - [`docs/features/chat/cron-status-tasks-drawer-plan.md`](../docs/features/chat/cron-status-tasks-drawer-plan.md) — Tasks Drawer PR-by-PR plan (A–G).
-- [`docs/guides/developer/tool-development/registering-a-job-source.md`](../docs/guides/developer/tool-development/registering-a-job-source.md) — 5-step developer guide for new long-running tools that want to appear in the drawer.
+- [`docs/developer/tool-development/registering-a-job-source.md`](../docs/developer/tool-development/registering-a-job-source.md) — 5-step developer guide for new long-running tools that want to appear in the drawer.
 

@@ -241,6 +241,7 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 				'restUrl'             => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace ) ) ) ),
 				'uploadEndpoint'      => esc_url_raw( $this->normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
 				'prepareEndpoint'     => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/attachments/prepare' ) ) ),
+				'messagesEndpoint'    => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-client' ) ) ),
 				'filesEndpoint'       => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace . '/files' ) ) ) ),
 				'toolsEndpoint'       => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/tools' ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-transcripts' ) ) ),
@@ -253,6 +254,17 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 				'strings'             => $this->get_chat_strings(),
 			)
 		);
+
+		// Inject the chat-memory bridge endpoints so chat-memory-service.js can
+		// find them. Must run after user authentication (admin_enqueue_scripts)
+		// rather than on init, because get_current_user_id() returns 0 before
+		// WordPress has determined the user.
+		if ( class_exists( 'WP_MCP_AI_Shortcode' ) && method_exists( 'WP_MCP_AI_Shortcode', 'get_chat_memory_endpoints_inline_script' ) ) {
+			$memory_endpoints = WP_MCP_AI_Shortcode::get_chat_memory_endpoints_inline_script();
+			if ( '' !== $memory_endpoints ) {
+				wp_add_inline_script( 'wp-mcp-ai-chat', $memory_endpoints, 'after' );
+			}
+		}
 	}
 
 	/**

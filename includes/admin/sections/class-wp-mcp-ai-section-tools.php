@@ -1431,10 +1431,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Render Plugins Integration footer content.
 		 */
 		private function render_plugins_footer() {
-			$jetengine_active   = class_exists( 'Jet_Engine' );
-			$woocommerce_active = class_exists( 'WooCommerce' );
-			$elementor_active   = did_action( 'elementor/loaded' );
-			$sitekit_active     = class_exists( 'Google\\Site_Kit\\Plugin' );
+			$jetengine_active      = class_exists( 'Jet_Engine' );
+			$jetformbuilder_active = class_exists( 'Jet_Form_Builder\\Plugin' );
+			$woocommerce_active    = class_exists( 'WooCommerce' );
+			$elementor_active      = did_action( 'elementor/loaded' );
+			$sitekit_active        = class_exists( 'Google\\Site_Kit\\Plugin' );
 			?>
 			<tr>
 				<th scope="row"></th>
@@ -1446,6 +1447,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<li>
 							<strong><?php esc_html_e( 'JetEngine:', 'mcp-ai-wpoos' ); ?></strong>
 							<?php if ( $jetengine_active ) : ?>
+								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
+							<?php else : ?>
+								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>
+							<?php endif; ?>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'JetFormBuilder:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php if ( $jetformbuilder_active ) : ?>
 								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
 							<?php else : ?>
 								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>

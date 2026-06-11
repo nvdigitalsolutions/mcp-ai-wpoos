@@ -65,7 +65,12 @@ export function App( { config }: AppProps ) {
 			data-mode={ mode }
 			style={ heightStyle }
 		>
-			{ surface }
+			<a className="nvoos-skip-link" href="#nvoos-canvas-main-content">
+				{ __( 'Skip to main content', 'nvoos-canvas-toolkit' ) }
+			</a>
+			<div id="nvoos-canvas-main-content" tabIndex={ -1 }>
+				{ surface }
+			</div>
 		</div>
 	);
 }

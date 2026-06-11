@@ -5,21 +5,21 @@
  * Registers, resolves, validates, and executes tools for the agentic loop.
  * Replaces WP_MCP_AI_Tool_Registry with framework-agnostic tool management.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Application\Tool;
+namespace Nvoos\Core\Application\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\ToolInterface;
-use Oos\Core\Domain\Contract\EventDispatcherInterface;
-use Oos\Core\Domain\Event\BeforeToolExecution;
-use Oos\Core\Domain\Event\AfterToolExecution;
-use Oos\Core\Domain\Event\ToolsRegistered;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ToolInterface;
+use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Event\BeforeToolExecution;
+use Nvoos\Core\Domain\Event\AfterToolExecution;
+use Nvoos\Core\Domain\Event\ToolsRegistered;
 
 class ToolRegistry {
 

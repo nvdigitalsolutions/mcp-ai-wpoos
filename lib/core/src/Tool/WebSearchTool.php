@@ -7,18 +7,18 @@
  *
  * Framework-agnostic equivalent of WP_MCP_AI_Tool_Web_Search.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 class WebSearchTool extends AbstractTool {
 
@@ -104,7 +104,7 @@ class WebSearchTool extends AbstractTool {
 		);
 
 		try {
-			$request  = new \Nyholm\Psr7\Request(
+			$response = $this->http->send(
 				'GET',
 				$url,
 				array(
@@ -112,17 +112,16 @@ class WebSearchTool extends AbstractTool {
 					'X-Subscription-Token' => $apiKey,
 				),
 			);
-			$response = $this->http->sendRequest( $request );
 
-			if ( $response->getStatusCode() >= 400 ) {
+			if ( $response->statusCode >= 400 ) {
 				return $this->errors->create(
 					'search_failed',
-					"Search returned HTTP {$response->getStatusCode()}.",
-					array( 'status' => $response->getStatusCode() ),
+					"Search returned HTTP {$response->statusCode}.",
+					array( 'status' => $response->statusCode ),
 				);
 			}
 
-			$data = \json_decode( (string) $response->getBody(), true );
+			$data = \json_decode( $response->body, true );
 
 			$results = array();
 			foreach ( $data['web']['results'] ?? array() as $r ) {
@@ -160,9 +159,8 @@ class WebSearchTool extends AbstractTool {
 		);
 
 		try {
-			$request  = new \Nyholm\Psr7\Request( 'GET', $url );
-			$response = $this->http->sendRequest( $request );
-			$data     = \json_decode( (string) $response->getBody(), true );
+			$response = $this->http->send( 'GET', $url );
+			$data     = \json_decode( $response->body, true );
 
 			if ( ! is_array( $data ) ) {
 				return $this->emptyResult( 'No search results found.' );

@@ -1072,7 +1072,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			// Check optional integrations.
 			$status['integrations'] = array(
 				'jetengine'      => class_exists( 'Jet_Engine' ),
-				'jetformbuilder' => class_exists( 'Jet_Form_Builder' ),
+				'jetformbuilder' => class_exists( 'Jet_Form_Builder\\Plugin' ),
 				'woocommerce'    => class_exists( 'WooCommerce' ),
 				'elementor'      => defined( 'ELEMENTOR_VERSION' ),
 				'rankmath'       => defined( 'RANK_MATH_VERSION' ),
@@ -1228,14 +1228,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				}
 			}
 
-			// Check Pro addon vendor directory.
+			// Check Pro addon vendor directory (does not require autoload.php gate;
+			// package directories are always present when installed via Composer).
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-				$pro_vendor_autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
-				if ( file_exists( $pro_vendor_autoload ) ) {
-					$pro_vendor_path = WP_MCP_AI_PRO_PATH . 'vendor/' . $package;
-					if ( file_exists( $pro_vendor_path ) ) {
-						return true;
-					}
+				$pro_vendor_path = WP_MCP_AI_PRO_PATH . 'vendor/' . $package;
+				if ( file_exists( $pro_vendor_path ) ) {
+					return true;
 				}
 			}
 
@@ -1400,7 +1398,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'docx'                              => 'docx/package.json',
 				// Browser automation packages (optional).
 				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
-				'@puppeteer/browsers'               => '@puppeteer/browsers/lib/cjs/index.js',
+				'@puppeteer/browsers'               => '@puppeteer/browsers/lib/cjs/main.js',
 			);
 			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// @types packages don't have runtime files.
@@ -1430,29 +1428,29 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			}
 
 			// Check for React packages bundled into workflow-builder via @wordpress/scripts.
-			// These packages (react, react-dom, reactflow, @dnd-kit/*) are build-time dependencies
-			// that get compiled into the workflow builder bundle for production.
-			// The workflow builder is a PRO feature.
+			// These packages are build-time dependencies that get compiled into the
+			// workflow builder bundle for production. The workflow builder is a PRO feature.
 			$workflow_bundled_packages = array(
 				'react',
 				'react-dom',
+				'react-error-boundary',
 				'reactflow',
+				'zustand',
 				'@dnd-kit/core',
 				'@dnd-kit/sortable',
 				'@dnd-kit/utilities',
 			);
 			if ( in_array( $package, $workflow_bundled_packages, true ) ) {
-				// Priority 1: Check for built workflow-builder bundle in Pro addon directory (production, correct location).
-				// wp-scripts builds src/workflow-builder/index.jsx → build/workflow-builder/index.jsx.js.
+				// Priority 1: Check for built workflow-builder bundle in Pro addon directory (production).
+				// wp-scripts builds src/workflow-builder/index.jsx → build/workflow-builder/workflow-builder.js.
 				if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/index.jsx.js';
+					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js';
 					if ( file_exists( $workflow_build_path ) ) {
 						return true;
 					}
 				}
 				// Priority 2: Check base build directory (legacy/development location).
-				// NOTE: This should be moved to pro addon directory as per project standards.
-				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/index.jsx.js';
+				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/workflow-builder.js';
 				if ( file_exists( $legacy_workflow_build_path ) ) {
 					return true;
 				}

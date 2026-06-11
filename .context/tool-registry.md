@@ -219,7 +219,7 @@ slug. `get_tool()` and `is_tool_registered()` thread through
 `reset_deprecated_alias_invocations()`), making it easy for observability
 exporters to count residual usage and decide when removal is safe.
 
-Master plan: [`docs/proposals/audits/P5-action-split-part-2-plan-2026-05.md`](../docs/proposals/audits/P5-action-split-part-2-plan-2026-05.md).
+Master plan: [`docs/project/proposals/audits/P5-action-split-part-2-plan-2026-05.md`](../docs/project/proposals/audits/P5-action-split-part-2-plan-2026-05.md).
 
 ---
 

@@ -3,9 +3,9 @@ Contributors: nvdigitalsolutions
 Donate link: https://nvdigitalsolutions.com/wpoos
 Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.25
+Stable tag: 1.1.29
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -270,7 +270,6 @@ See our [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob
 
 * [GitHub Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues) - Bug reports and feature requests
 * [Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs) - Comprehensive guides
-* [WordPress.org Forums](https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/) - Community support (after WordPress.org approval)
 
 = Is this plugin patented? =
 
@@ -297,6 +296,44 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.27 - June 5, 2026 =
+
+Bumped to 1.1.27 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
+
+**Real-Time SSE Streaming, 35 New OOS Core Tools, JFB Submission Fixes, and Model Pricing Update**
+
+* **Real-Time SSE Streaming.** Enabled for OpenAI, DeepSeek, and all OpenAI-compatible providers. "Disable Native Streaming" setting in Advanced → System tab. `wp_mcp_ai_disable_native_streaming` filter. WPCS violations fixed in streaming clients.
+* **35 New OOS Core Tools.** 35 tools migrated with full test coverage: Data Tools (GetPostTaxonomies, CountPosts, GetPostMeta, TruncateText, MergeArrays), Format Tools (FormatDate, TimeAgo, ParseCsv, MathEval, ColorConvert), Infrastructure (EventDispatcher, Queue), Cache Tools + DeleteSettingTool. OOS/core test infrastructure established.
+* **Extended Cognition Vision Recognition.** Visual product/brand recognition. Camera viewfinder UI with detection overlays, consent gate, camera switcher, torch, scan region, and file upload.
+* **Graphify Tools Fixes.** Missing `WP_MCP_AI_Tool_Default_Capability` trait added. Explicit `get_required_capability()` added to all Graphify tools.
+* **JetFormBuilder Submission Tools — 8 Fixes.** Empty results for non-admin users resolved (direct DB fallback). Form discovery pipeline fixed. PHPCS warnings resolved. REST routes matched to actual JFB endpoints. Form-type auto-detection fixed for JFB vs Elementor. Plugin detection fixed with namespaced class. Integration reference docs added.
+* **DeepSeek Agentic Tool Result Handling.** Tool message filtering and payload normalisation for agentic multi-turn workflows.
+* **Documentation Fixes.** Broken doc links after Unix-theory reorganization resolved.
+* **Model Pricing Update.** All 13 provider pricing updated to June 2026 rates.
+* **Plugin Restructuring Proposals.** Graphify-core spec and base restructuring roadmap added. Proposals updated to v3.0 Graphify-centric architecture.
+
+= 1.1.26 - June 3, 2026 =
+
+Bumped to 1.1.26 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts: ~195 base + ~765 Pro (~960 total; live registry via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+
+**Cross-Platform Extraction Engine Phases 0–2 + Site-Builder Node-Graph + SPA a11y Hardening + Screenshot & Docs Overhaul**
+
+* **Cross-Platform Extraction Engine (Phases 0–2).** Framework-agnostic OOS core in `lib/`: monorepo foundations, 8 domain interfaces with WordPress adapters, 12 AI provider clients, core application layer, AbstractTool base class, SkillRegistry, 33 migrated tools. OOS bridge with feature flag (`WP_MCP_AI_OOS_ENGINE_ENABLED`). Full proposal: `docs/project/proposals/cross-platform-extraction-architecture.md`.
+* **Site-Builder Node-Graph Pipeline (Phases 1–4).** Visual site construction subsystem with node-graph architecture. SPA blueprint v3.0 from pipeline output.
+* **SPA a11y Hardening Phase 5.** axe-core accessibility testing across all 7 SPA addons. Keyboard navigation, ARIA labels, focus management, screen-reader support.
+* **Screenshot Overhaul.** 137 Playwright captures, 79 tracked pages, inventory + maintenance plan + coverage checker.
+* **Docs Reorganization.** Unix-theory separation of concerns across `docs/`. Per-folder READMEs restored.
+* **Form Submissions Data Source.** JFB + Elementor integration with admin dashboard. PHPUnit tests + PHPStan fixes.
+* **Cloudways Dashboard SPA v0.1.0.** New React SPA addon.
+* **Laravel & Craft CMS Adapters.** OOS core extraction adapters.
+* **Blueprint Profession Roles.** 6 missing definitions + CRM/healthcare role assignments.
+* **Pro Toolkits Security Audit Phase 1.** 9 HIGH-severity findings fixed.
+* **OOS Engine Stability.** PSR-4 event classes, ErrorFactoryInterface imports, provider client imports, event dispatcher dependency, parse/CacheStore errors, Gemini tools fix, team/profession integration.
+* **Reviewer Onboarding Docs.** Complete suite at `docs/project/FOR_REVIEWERS.md`.
+* **Docker Dev Environments.** WordPress, Laravel, Craft CMS all fixed.
+* **Test Infrastructure.** 95% of PHPUnit failures resolved across all suites.
+* **Infrastructure Fixes.** TCPDF autoloader, Pro vendor files, puppeteer detection, NPM package status, vendor gitignore, shallow clone recommendation.
 
 = 1.1.21 - May 20, 2026 =
 
@@ -359,7 +396,7 @@ Bumped to 1.1.18 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` 
   * **P3 — Data-contract metadata.** New optional `WP_MCP_AI_Tool_Data_Contract_Interface` (`get_data_contract() => array{produces?, consumes?}`). Tool-service appends `[Data contract: produces=X, consumes=A|B]` to the OpenAI function-calling description. Filter `wp_mcp_ai_tool_data_contract_description_suffix`.
   * **P4 — Tool lifecycle descriptor.** Optional 5th arg on `wp_mcp_ai_after_tool_execution`; helper `WP_MCP_AI_Tool_Lifecycle_Descriptor::build()` returns `{success, error_code, data_type, duration_ms}`. OTel spans gain `nvoos.tool.data_type` + `nvoos.tool.duration_ms`. 4-arg subscribers stay back-compat.
   * **P5 — Back-compat alias infrastructure.** `WP_MCP_AI_Tool_Registry::register_deprecated_alias()`, `get_deprecated_aliases()`, `resolve_deprecated_alias()`, `reset_deprecated_alias_invocations()`. Action `wp_mcp_ai_tool_deprecated_alias_invoked` fires once per request per slug. Aliases live in a separate map invisible to `build_tools_payload`. Sets up Tier-A decompositions for v1.3.0.
-  * **P6 — Sanitize-at-entry sniff.** New PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` enforces Gate 1 of the two-gate sanitisation rule. Codification: `docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`.
+  * **P6 — Sanitize-at-entry sniff.** New PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` enforces Gate 1 of the two-gate sanitisation rule. Codification: `docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md`.
 
 * **DigitalOcean Serverless Inference provider (new — 9th provider).** `WP_MCP_AI_DigitalOcean_Client` wraps the OpenAI-compatible API at `https://inference.do-ai.run/v1`. Chat completions, tool/function calling, JSON mode, SSE streaming, native `/embeddings`, model listing, reasoning passthrough. Settings → Providers → DigitalOcean subtab; Model Discovery `digitalocean` branch; Provider Diagnostics card with `GET /v1/models` probe; default embedding model `gte-large-en-v1.5`. DigitalOcean Agent endpoints (`*.agents.do-ai.run`) intentionally out of scope.
 
@@ -370,7 +407,7 @@ Bumped to 1.1.18 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` 
   * New REST routes `POST /mcp-ai/v1/cron-status/{job_id}/cancel` and `.../retry`. Async-executor gains `cancel_job()`, `retry_job()`, `is_owned_by()`. Actions: `wp_mcp_ai_job_cancelled`, `wp_mcp_ai_job_retried`.
   * Tasks Drawer + toasts in chat shortcode; default on via filter `wp_mcp_ai_chat_tasks_drawer`. localStorage key `wp_mcp_ai_tasks_{assistantId}` (max 200 entries).
   * Five new OTel hooks (`wp_mcp_ai_chat_jobs_snapshot|stream|cancel|retry`) emit `nvoos.chat.jobs.*` OTLP spans.
-  * Docs: `docs/features/chat/cron-status-integration.md`, `docs/guides/developer/tool-development/registering-a-job-source.md`.
+  * Docs: `docs/features/chat/cron-status-integration.md`, `docs/developer/tool-development/registering-a-job-source.md`.
 
 * **Toolkit MCP Servers Phase 7 admin UI.** New `WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page` (slug `nvoos-pro-toolkit-mcp-servers`) — 5-tab admin page (Servers / Detail / Audit / Discovery / Help). Action hook `wp_mcp_ai_toolkit_mcp_server_toggled`. Observability card + assistant metabox links updated. `addons/pro/mcp-ai-wpoos-pro.php` load order fix so the toolkit page registers before the admin block.
 
@@ -396,7 +433,7 @@ Bumped to 1.1.17 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` 
 * B10 — New WP_MCP_AI_User_Context_Helper::safe_set_current_user() validates get_userdata() and multisite membership before touching global state.
 * B13 — wp_unslash() added to approval handler $_POST reads; phpcs:ignore annotations annotated with explanations.
 * B1/B2/B5/B11/B12 — unescape-before-output patterns removed, dead WP < 5.7 branches deleted, permission callback gaps closed.
-* 49/49 base AJAX handlers confirmed with check_ajax_referer(). Full evidence: docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md.
+* 49/49 base AJAX handlers confirmed with check_ajax_referer(). Full evidence: docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md.
 
 *Added — Chat SPA addon (addons/chat-spa/, v0.6.0 — all 7 phases)*
 
@@ -484,7 +521,7 @@ Observability dashboard surfaced under the **Orchestration** tab (#4833). OpenTe
 
 *Added — LLM Harnessing Subsystem (Layers A-H)*
 
-Seven opt-in per-request layers in `includes/harness/` improve response quality without changing existing tool behaviour: Layer A (Prompt/Cue Library with 7 named templates), Layer B (Reasoning Trace + self-consistency vote), Layer C (Tool Routing with preset_weights), Layer D (Retrieval fan-out + citation verification), Layer E (Self-Refine loop with cost caps), Layer F (Memory Scoping + PII Filter), Layer G (Eval Scheduler cron). Pro Layer H exports fine-tune curricula as OpenAI JSONL. Profile stored in `_wp_mcp_ai_harness_profile` post meta. Reference: `docs/llm-harness.md`.
+Seven opt-in per-request layers in `includes/harness/` improve response quality without changing existing tool behaviour: Layer A (Prompt/Cue Library with 7 named templates), Layer B (Reasoning Trace + self-consistency vote), Layer C (Tool Routing with preset_weights), Layer D (Retrieval fan-out + citation verification), Layer E (Self-Refine loop with cost caps), Layer F (Memory Scoping + PII Filter), Layer G (Eval Scheduler cron). Pro Layer H exports fine-tune curricula as OpenAI JSONL. Profile stored in `_wp_mcp_ai_harness_profile` post meta. Reference: `docs/features/llm-harness.md`.
 
 *Added — 19 new slash commands (11 base + 8 Pro, 32 total)*
 
@@ -546,9 +583,9 @@ A new in-the-loop image / document markup system that lets tools pause the agent
 * **Telemetry** — bounded option `wp_mcp_ai_markup_telemetry` aggregates per-tool / per-mode counters and last-seen timestamps for seven outcome buckets.
 * **Slash command** `/markup-stats` (alias `/markup`) renders the summary as Markdown with `--verbose`, `--json`, and `--reset` flags.
 * **Admin dashboard** under **NV oOS → Markup Telemetry** renders the same summary as a server-rendered HTML table with a colour-coded completion-rate card, per-tool / per-mode breakdowns, relative `last_seen` timestamps, and a nonce-protected `Reset counters` form.
-* **Hooks** (4 actions, 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts`. Documented in `docs/hooks-reference.md`.
+* **Hooks** (4 actions, 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts`. Documented in `docs/reference/hooks/hooks-reference.md`.
 * **Daily cleanup** cron (`wp_mcp_ai_markup_cleanup`) prunes expired markup transients and orphan mask attachments.
-* Reference: `docs/markup-subsystem.md`.
+* Reference: `docs/features/markup-subsystem.md`.
 
 *Added — Agent Skills Phases 1–4 (PR #4771)*
 
@@ -562,7 +599,7 @@ A new in-the-loop image / document markup system that lets tools pause the agent
 
 * **Phase A — foundation** — base capture interface, lifecycle hooks, and shared time-source / tier-logging utilities, with a follow-up review fix for time consistency and tier-logging payload shape.
 * **Phase B1 — five highest-leverage capture tools** that write into the durable `ai_agent_memories` Custom Content Type through the Phase 4a/4b bridge shipped in 1.1.13.
-* See `docs/AGENT-MEMORY-COMPLETE-GUIDE.md` for the unified MemPalace / Letta / Zep / mem0 / Cognee schema rationale.
+* See `docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md` for the unified MemPalace / Letta / Zep / mem0 / Cognee schema rationale.
 
 *Added — Graphify CPT/CCT integration suite*
 
@@ -601,8 +638,8 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 *Documentation*
 
-* `docs/markup-subsystem.md` (new) walks through the end-to-end markup flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
-* `docs/hooks-reference.md` extended with the 4 markup actions + 4 markup filters.
+* `docs/features/markup-subsystem.md` (new) walks through the end-to-end markup flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
+* `docs/reference/hooks/hooks-reference.md` extended with the 4 markup actions + 4 markup filters.
 * `docs/features/agent-skills.md` updated end-to-end with the Phases 1–4 narrative.
 * `README.md`, `MAINTAINER_MAP.md`, `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` refreshed with v1.1.14 and reconciled tool counts (~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative).
 
@@ -623,7 +660,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 *Changed*
 
 * **Production-only Composer autoloader** — `composer install --no-dev --classmap-authoritative` (no separate `dump-autoload` invocation) regenerates the autoloader as part of `install`. `vendor/composer/installed.json` now reports `"dev": false` with an empty `dev-package-names` array — no dev references survive in the production tree. `vendor/composer/autoload_real.php` calls `setClassMapAuthoritative(true)`, so PSR-4 filesystem fallback lookups are skipped at runtime. Net classmap diff: −6,761 / +279 lines as `phpunit/`, `phpcs/`, `wp-phpunit/`, and other dev-only packages drop out of `vendor/`. The repo can now be cloned and used as a production WordPress plugin without an extra build step.
-* **Source citations to MemPalace** — file headers across the agent-memory subsystem (`class-wp-mcp-ai-tool-store-agent-context.php`, `class-wp-mcp-ai-tool-wake-up-context.php`, `class-wp-mcp-ai-tool-mine-agent-memory.php`, `class-wp-mcp-ai-jetengine-agent-memories-cct.php`, `interface-wp-mcp-ai-embedding-provider.php`, `class-wp-mcp-ai-embedding-provider-openai.php`, `class-wp-mcp-ai-embedding-provider-ollama.php`, `class-wp-mcp-ai-vector-context-service.php`) now cite the upstream project URL so source attribution matches `docs/AGENT-MEMORY-COMPLETE-GUIDE.md`.
+* **Source citations to MemPalace** — file headers across the agent-memory subsystem (`class-wp-mcp-ai-tool-store-agent-context.php`, `class-wp-mcp-ai-tool-wake-up-context.php`, `class-wp-mcp-ai-tool-mine-agent-memory.php`, `class-wp-mcp-ai-jetengine-agent-memories-cct.php`, `interface-wp-mcp-ai-embedding-provider.php`, `class-wp-mcp-ai-embedding-provider-openai.php`, `class-wp-mcp-ai-embedding-provider-ollama.php`, `class-wp-mcp-ai-vector-context-service.php`) now cite the upstream project URL so source attribution matches `docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md`.
 
 *Tests*
 
@@ -673,7 +710,6 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 *Fixed*
 
-* **Dead support-forum URL** — `readme.txt` now points to `https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/` (the canonical WordPress.org slug) instead of the obsolete `wp-mcp-ai` URL.
 * **Inconsistent tool count in readme** — The headline description and the Base Plugin section now both report `250+ tools`, matching the Tool Registry screenshot caption and the audited `tool-reference.md` figure.
 * **Missing canonical `mcp` tag** — `Tags:` line now includes `mcp` alongside `ai assistant`, `openai`, `chatbot`, `automation` (5 tags maximum, per WordPress.org guidelines). The MCP protocol is a primary feature and was previously undiscoverable in plugin search.
 
@@ -684,7 +720,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 *Documentation*
 
-* **`docs/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md`** and **`docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`** updated with the 1.1.11 status table and a note that source-level identifier prefix migration (`wp_mcp_ai_*` → slug-derived prefix, ~14k identifiers across base + Pro) remains scheduled for v2.0 with a coordinated options/postmeta/cron migration; it is not a WordPress.org submission blocker.
+* **`docs/operations/compliance/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md`** and **`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`** updated with the 1.1.11 status table and a note that source-level identifier prefix migration (`wp_mcp_ai_*` → slug-derived prefix, ~14k identifiers across base + Pro) remains scheduled for v2.0 with a coordinated options/postmeta/cron migration; it is not a WordPress.org submission blocker.
 
 *Version*
 
@@ -696,8 +732,8 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 *Documentation*
 
-* New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/compliance/SECURITY_AUDIT_2026_04.md) — published summary of the April 2026 security & compliance code review (base plugin + Pro addon + 6 minor addons). Cross-references the 9 deliverables under `docs/audit/2026-04/`. Headline verdict: no Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational
-* `docs/DOCUMENTATION_INDEX.md`, `docs/compliance/README.md`, `docs/QUICK_REFERENCE.md`, and `docs/audit/2026-04/README.md` updated to cross-reference the new audit summary
+* New [`docs/operations/compliance/SECURITY_AUDIT_2026_04.md`](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/operations/compliance/SECURITY_AUDIT_2026_04.md) — published summary of the April 2026 security & compliance code review (base plugin + Pro addon + 6 minor addons). Cross-references the 9 deliverables under `docs/project/audits/2026-04/`. Headline verdict: no Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational
+* `docs/DOCUMENTATION_INDEX.md`, `docs/operations/compliance/README.md`, `docs/QUICK_REFERENCE.md`, and `docs/project/audits/2026-04/README.md` updated to cross-reference the new audit summary
 
 *Changed*
 
@@ -737,7 +773,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 * Contextual help tabs on the Measurement dashboard (overview / metrics / privacy / cli) — extensible via the `wp_mcp_ai_measurement_help_tabs` filter
 * Reference snippets shipped under `assets/examples/measurement/`: a custom rule verifier, an eval-suite registration, and a CLI generator callable
-* Documentation: `docs/measurement/README.md`, `docs/measurement/rollout-plan.md`, and `docs/measurement/goodhart-checklist.md` updated through PR 11
+* Documentation: `docs/reference/measurement/README.md`, `docs/reference/measurement/rollout-plan.md`, and `docs/reference/measurement/goodhart-checklist.md` updated through PR 11
 
 *Security & Tooling*
 
@@ -753,7 +789,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 *Documentation*
 
-* New `docs/ORCHESTRATION_REFERENCE.md` — single authoritative reference for the orchestration layer (all 10 workflow presets, 13 resource presets with full settings matrices, PSO algorithm, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks / filters, storage keys, admin UI, and service file index)
+* New `docs/reference/orchestration/ORCHESTRATION_REFERENCE.md` — single authoritative reference for the orchestration layer (all 10 workflow presets, 13 resource presets with full settings matrices, PSO algorithm, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks / filters, storage keys, admin UI, and service file index)
 * Version bumped to 1.1.9 across plugin header, `WP_MCP_AI_VERSION` constant, readme.txt stable tag, and CHANGELOG.md
 
 = 1.1.8 - April 15, 2026 =
@@ -767,7 +803,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 * `erlang_c_concurrency_advisor` — reads plugin session telemetry and returns a data-driven recommendation for the Max Concurrent Sessions setting
 * `erlang_c_staffing_advisor` — multi-channel staffing with chat concurrency multiplier, bot-deflection-rate adjustment, and optional NICE WFM / Genesys / Verint / Calabrio endpoint integration
 * `erlang_c_queue_health` — real-time SLA monitoring: polls a contact-centre REST endpoint, fires `wp_mcp_ai_queue_alert` action on breach, stores snapshots in JetEngine CCT
-* New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications — full parameter schema documented in `docs/hooks-reference.md`
+* New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications — full parameter schema documented in `docs/reference/hooks/hooks-reference.md`
 * Shared helper class `WP_MCP_AI_Erlang_C` with `erlang_c()`, `avg_wait_time()`, `min_agents_for_service_level()`, and `service_level()` static methods
 
 *Documentation*
@@ -775,14 +811,14 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 * `docs/reference/tools/tool-reference.md` fully audited — all 250+ tools in `load_default_tools` (base + extended) now documented
 * 14 new sections added to tool-reference.md: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queuing tools
 * New feature guide `docs/features/erlang-c-staffing-tools.md` with industry standards table, usage scenarios, and helper class API reference
-* `docs/hooks-reference.md` — added `wp_mcp_ai_queue_alert` section with full `$snapshot` schema and Slack/webhook usage example
+* `docs/reference/hooks/hooks-reference.md` — added `wp_mcp_ai_queue_alert` section with full `$snapshot` schema and Slack/webhook usage example
 * `docs/QUICK_REFERENCE.md` — updated to v1.1.8 with Erlang C in Recent Updates
 * `docs/DOCUMENTATION_INDEX.md` — added April 15 update block and new feature doc entry
 
 *Compliance*
 
 * Full re-audit of base plugin against all 13 WordPress.org Plugin Developer Guidelines — all pass
-* New compliance document `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` with detailed evidence for each guideline
+* New compliance document `docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` with detailed evidence for each guideline
 * Pro Addon External Services (P1–P3: Replicate, ESPN Fantasy, Yahoo Fantasy) documented in readme.txt, clearly marked as not present in base plugin
 * Version bumped to 1.1.8 across plugin header, constants, readme.txt, and CHANGELOG.md
 
@@ -1176,7 +1212,7 @@ Initial release. Welcome to Open Operator System!
 
 **IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. All external services used by this plugin are documented below.
 
-**📖 Additional Details:** For supplementary documentation about data transmission and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md).
+**📖 Additional Details:** For supplementary documentation about data transmission and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/EXTERNAL_SERVICES.md).
 
 = AI Provider Services (Required - At Least One Must Be Configured) =
 

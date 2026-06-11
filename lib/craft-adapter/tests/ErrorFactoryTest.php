@@ -6,16 +6,16 @@
  * maps domain error codes to HTTP statuses, and normalises exceptions
  * including Yii HTTP exceptions.
  *
- * @package Oos\Craft\Tests
+ * @package Nvoos\Craft\Tests
  * @since   1.0.0
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Tests\Adapter;
+namespace Nvoos\Craft\Tests\Adapter;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Craft\Adapter\ErrorFactory;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Craft\Adapter\ErrorFactory;
 use PHPUnit\Framework\TestCase;
 
 class ErrorFactoryTest extends TestCase {

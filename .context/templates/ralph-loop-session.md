@@ -1,7 +1,7 @@
 # Ralph Wiggum Autonomous Loop Session Template
 
 > **GSD Context Template** — Use this to configure autonomous development sessions.
-> Based on: `docs/proposals/RALPH-WIGGUM-TASK-ORCHESTRATION-IMPLEMENTATION.md`
+> Based on: `docs/project/proposals/RALPH-WIGGUM-TASK-ORCHESTRATION-IMPLEMENTATION.md`
 > Last reviewed: March 2026.
 
 ---

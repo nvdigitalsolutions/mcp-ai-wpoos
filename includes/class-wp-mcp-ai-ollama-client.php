@@ -253,6 +253,8 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				return $this->create_openai_compat_completion( $messages, $options, $model );
 			}
 
+			$messages = $this->filter_tool_messages_for_payload( $messages );
+
 			$payload = $this->build_payload( $messages, $options, $model );
 			if ( is_wp_error( $payload ) ) {
 				return $payload;
@@ -289,6 +291,16 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Handle streaming vs non-streaming responses differently.
 			if ( $is_streaming ) {
 				return $this->handle_streaming_response( $response, $model );
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			if ( $code < 200 || $code >= 300 ) {
+				$body    = wp_remote_retrieve_body( $response );
+				$decoded = json_decode( $body, true );
+				if ( JSON_ERROR_NONE !== json_last_error() ) {
+					$decoded = array();
+				}
+				return $this->handle_api_error( $code, is_array( $decoded ) ? $decoded : array(), $response );
 			}
 
 			// Non-streaming response - decode and normalize as before.
@@ -1044,6 +1056,200 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			return $normalized;
+		}
+
+		/**
+		 * Handle a non-2xx API response and return an appropriate WP_Error.
+		 *
+		 * Ollama does not use API keys, so 401 authentication checks are
+		 * omitted. The primary error of interest is 429 rate-limiting with
+		 * an optional Retry-After header.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @param int          $code     HTTP status code.
+		 * @param array        $decoded  Decoded JSON response body.
+		 * @param array|object $response Full WP HTTP response.
+		 * @return WP_Error
+		 */
+		protected function handle_api_error( $code, array $decoded, $response ) {
+			$error_message = isset( $decoded['error'] ) && is_string( $decoded['error'] )
+				? $decoded['error']
+				: __( 'Unexpected response from Ollama.', 'mcp-ai-wpoos' );
+			$error_data    = array(
+				'status' => $code,
+				'body'   => $decoded,
+			);
+
+			$error_code = 'wp_mcp_ai_ollama_api_error';
+
+			if ( 429 === $code ) {
+				$error_code  = 'wp_mcp_ai_rate_limit_exceeded';
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				if ( ! empty( $retry_after ) ) {
+					$error_data['retry_after'] = absint( $retry_after );
+				}
+				$error_data['actions'] = array(
+					'rate_limit_info' => __( 'The Ollama API rate limit has been exceeded. Try again in a few moments.', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Ollama returned an error response.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+			}
+
+			return new WP_Error( $error_code, $error_message, $error_data );
+		}
+
+		/**
+		 * Drop tool role messages that are not associated with the most recent
+		 * assistant tool call.
+		 *
+		 * Ollama's chat API requires tool responses to immediately follow the
+		 * assistant message that emitted the corresponding tool call. When
+		 * intervening messages appear between those entries the request may be
+		 * rejected. This normaliser filters out any tool messages that no longer
+		 * have a matching pending call so the payload remains valid.
+		 *
+		 * Logic mirrors WP_MCP_AI_OpenAI_Client::filter_tool_messages_for_payload().
+		 *
+		 * @since 1.6.0
+		 *
+		 * @param array $messages Chat history supplied by the caller.
+		 * @return array
+		 */
+		protected function filter_tool_messages_for_payload( array $messages ) {
+			if ( empty( $messages ) ) {
+				return $messages;
+			}
+
+			$filtered                = array();
+			$pending_calls           = array();
+			$awaiting_tool_responses = false;
+			$incomplete_group_start  = null;
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+				if ( '' === $role ) {
+					continue;
+				}
+
+				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					// If the previous assistant message had tool_calls that were never
+					// fully answered, drop the entire incomplete group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'ollama_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before user/system message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+					$filtered[]              = $message;
+					continue;
+				}
+
+				if ( 'assistant' === $role ) {
+					// If the PREVIOUS assistant had unresolved tool_calls, drop that group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'ollama_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before next assistant message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						foreach ( $message['tool_calls'] as $tool_call ) {
+							if ( ! is_array( $tool_call ) ) {
+								continue;
+							}
+
+							$call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
+							if ( '' === $call_id ) {
+								continue;
+							}
+
+							$pending_calls[ $call_id ] = true;
+						}
+					}
+
+					if ( ! empty( $pending_calls ) ) {
+						$awaiting_tool_responses = true;
+						$incomplete_group_start  = count( $filtered );
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				if ( 'tool' === $role ) {
+					$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
+
+					if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'ollama_dropped_orphan_tool_message',
+								'Dropping tool message without matching tool call before Ollama request.',
+								array(
+									'tool_call_id' => $tool_call_id,
+									'reason'       => '' === $tool_call_id
+										? 'missing_tool_call_id'
+										: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+								)
+							);
+						}
+
+						continue;
+					}
+
+					unset( $pending_calls[ $tool_call_id ] );
+
+					if ( empty( $pending_calls ) ) {
+						$awaiting_tool_responses = false;
+						$incomplete_group_start  = null;
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				$pending_calls           = array();
+				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
+				$filtered[]              = $message;
+			}
+
+			return array_values( $filtered );
 		}
 
 		/**

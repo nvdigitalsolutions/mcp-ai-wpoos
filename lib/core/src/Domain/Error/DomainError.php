@@ -7,14 +7,14 @@
  * throws exceptions. This class provides a consistent, serializable
  * error when no framework is present.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Error;
+namespace Nvoos\Core\Domain\Error;
 
 final class DomainError implements \JsonSerializable {
 

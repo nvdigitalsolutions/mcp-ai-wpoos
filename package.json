@@ -1,6 +1,6 @@
 {
 	"name": "mcp-ai-wpoos",
-	"version": "1.1.25",
+	"version": "1.1.29",
 	"description": "NV Digital Open Operator System (oOS) - WordPress plugin integrating MCP tools with AI workflows",
 	"private": true,
 	"scripts": {
@@ -167,8 +167,9 @@
 		"lodash-es": ">=4.18.1",
 		"uuid": ">=14.0.0",
 		"fast-uri": ">=3.1.2",
-		"@babel/plugin-transform-modules-systemjs": ">=7.29.4"
-	},
+		"@babel/plugin-transform-modules-systemjs": ">=7.29.4",
+				"shell-quote": ">=1.8.4"
+			},
 	"engines": {
 		"node": ">=18.17.0",
 		"npm": ">=9.0.0"

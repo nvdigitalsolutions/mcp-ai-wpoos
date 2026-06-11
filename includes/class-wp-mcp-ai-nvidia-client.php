@@ -62,6 +62,33 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 		}
 
 		/**
+		 * Build the standard HTTP request headers for the NVIDIA NIM API.
+		 *
+		 * @param string $api_key      NVIDIA NIM API key.
+		 * @param string $content_type Optional content type (default: application/json).
+		 * @return array Associative array of HTTP headers.
+		 */
+		public function build_request_headers( $api_key, $content_type = 'application/json' ) {
+			$headers = array(
+				'Content-Type'  => $content_type,
+				'Authorization' => 'Bearer ' . $api_key,
+			);
+
+			/**
+			 * Filter the NVIDIA NIM request headers before sending.
+			 *
+			 * Allows third-party plugins to inject or modify headers for all
+			 * NVIDIA NIM API requests.
+			 *
+			 * @since 2.7.0
+			 *
+			 * @param array  $headers  Associative array of HTTP headers.
+			 * @param string $api_key  The API key being used.
+			 */
+			return apply_filters( 'wp_mcp_ai_nvidia_request_headers', $headers, $api_key );
+		}
+
+		/**
 		 * Extract a human-readable error message from an NVIDIA NIM error response.
 		 *
 		 * NVIDIA NIM may return errors in multiple formats:
@@ -386,15 +413,21 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 				return $payload;
 			}
 
-			$url = untrailingslashit( $endpoint_url ) . '/chat/completions';
+			// Pre-flight context-window validation (shared with all providers).
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'nvidia', $options, $messages );
+				if ( is_wp_error( $preflight ) ) {
+					return $preflight;
+				}
+			}
+
+			$url     = untrailingslashit( $endpoint_url ) . '/chat/completions';
+			$timeout = max( 60, $this->resolve_timeout( $options ) );
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'  => 'application/json',
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
-				'timeout' => max( 60, $this->resolve_timeout( $options ) ),
+				'timeout' => $timeout,
 			);
 
 			WP_MCP_AI_Logger::log_event(
@@ -405,6 +438,15 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 					'model' => $model,
 				)
 			);
+
+			// Real-time SSE: bypass wp_remote_post when streaming with a callback.
+			$is_streaming = ! empty( $payload['stream'] );
+			if ( $is_streaming && function_exists( 'curl_init' ) ) {
+				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
+				if ( null !== $realtime_cb ) {
+					return $this->do_realtime_curl_stream( $url, $payload, $model, $timeout, $realtime_cb );
+				}
+			}
 
 			$response = wp_remote_post( $url, $request_args );
 
@@ -460,26 +502,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = $this->extract_error_message( $decoded );
-
-				WP_MCP_AI_Logger::log_error(
-					'NVIDIA NIM returned an error response.',
-					array(
-						'code'  => $code,
-						'url'   => $url,
-						'model' => $model,
-						'body'  => $decoded,
-					)
-				);
-
-				return new WP_Error(
-					'wp_mcp_ai_nvidia_api_error',
-					$error_message,
-					array(
-						'status' => $code,
-						'body'   => $decoded,
-					)
-				);
+				return $this->handle_api_error( $code, $decoded, $response, $url, $model );
 			}
 
 			// NVIDIA NIM returns OpenAI-compatible format, so we can use it directly.
@@ -489,6 +512,182 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 
 			return $normalized;
 		}
+
+		/**
+		 * Perform a real-time SSE stream request to NVIDIA using direct cURL.
+		 *
+		 * Uses CURLOPT_WRITEFUNCTION to process each network chunk as it arrives.
+		 *
+		 * @param string   $url      Full endpoint URL.
+		 * @param array    $payload  Request payload (stream: true already set).
+		 * @param string   $model    Resolved model identifier.
+		 * @param int      $timeout  Request timeout in seconds.
+		 * @param callable $stream_callback Invoked with each content chunk array.
+		 * @return array|WP_Error
+		 */
+		protected function do_realtime_curl_stream( $url, array $payload, $model, $timeout, $stream_callback ) {
+			$api_key      = $this->get_api_key();
+			$raw_headers  = $this->build_request_headers( $api_key );
+			$curl_headers = array();
+			foreach ( $raw_headers as $header_name => $header_value ) {
+				$curl_headers[] = $header_name . ': ' . $header_value;
+			}
+
+			$sse_buffer          = '';
+			$http_status         = 0;
+			$accumulated_content = '';
+			$accumulated_reason  = '';
+			$tool_calls_by_idx   = array();
+			$response_id         = '';
+			$finish_reason       = null;
+			$usage               = null;
+			$found_done          = false;
+
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init
+			$ch = curl_init();
+			curl_setopt_array(
+				$ch,
+				array(
+					CURLOPT_URL            => $url,
+					CURLOPT_POST           => true,
+					CURLOPT_POSTFIELDS     => wp_json_encode( $payload ),
+					CURLOPT_HTTPHEADER     => $curl_headers,
+					CURLOPT_TIMEOUT        => max( 120, $timeout ),
+					CURLOPT_RETURNTRANSFER => false,
+					CURLOPT_SSL_VERIFYPEER => true,
+					CURLOPT_SSL_VERIFYHOST => 2,
+					CURLOPT_HEADERFUNCTION => function ( $_ch, $header ) use ( &$http_status ) {
+						if ( preg_match( '/^HTTP\/[\d.]+ (\d+)/', $header, $m ) ) {
+							$http_status = (int) $m[1];
+						}
+						return strlen( $header );
+					},
+					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+						$sse_buffer .= $data;
+						while ( false !== ( $pos = strpos(
+							$sse_buffer,
+							'
+'
+						) ) ) {
+							$line = trim( substr( $sse_buffer, 0, $pos ) );
+							$sse_buffer = substr( $sse_buffer, $pos + 1 );
+							if ( '' === $line || ':' === $line[0] ) {
+								continue;
+							}
+							if ( 'data: [DONE]' === $line ) {
+								$found_done = true;
+								continue; }
+							if ( 0 !== strpos( $line, 'data: ' ) ) {
+								continue;
+							}
+							$chunk = json_decode( substr( $line, 6 ), true );
+							if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+								continue;
+							}
+							if ( '' === $response_id && isset( $chunk['id'] ) ) {
+								$response_id = (string) $chunk['id'];
+							}
+							$choice = isset( $chunk['choices'][0] ) ? $chunk['choices'][0] : array();
+							$delta = isset( $choice['delta'] ) ? $choice['delta'] : array();
+							if ( ! empty( $delta['content'] ) ) {
+								$accumulated_content .= $delta['content'];
+								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'content' => $delta['content'] ) ) ) ) );
+							}
+
+							// Handle reasoning/thinking content from reasoning models (e.g. DeepSeek-R1, Qwen3).
+							if ( ! empty( $delta['reasoning_content'] ) ) {
+								$accumulated_reason .= $delta['reasoning_content'];
+								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'reasoning_content' => $delta['reasoning_content'] ) ) ) ) );
+							}
+							if ( ! empty( $delta['tool_calls'] ) ) {
+								foreach ( $delta['tool_calls'] as $tc ) {
+									if ( ! isset( $tc['index'] ) ) {
+										continue;
+									}
+									$idx = (int) $tc['index'];
+									if ( ! isset( $tool_calls_by_idx[ $idx ] ) ) {
+										$tool_calls_by_idx[ $idx ] = array(
+											'index'    => $idx,
+											'id'       => '',
+											'type'     => 'function',
+											'function' => array(
+												'name' => '',
+												'arguments' => '',
+											),
+										);
+									}
+									if ( isset( $tc['id'] ) ) {
+										$tool_calls_by_idx[ $idx ]['id'] .= $tc['id'];
+									}
+									if ( isset( $tc['function']['name'] ) ) {
+										$tool_calls_by_idx[ $idx ]['function']['name'] .= $tc['function']['name'];
+									}
+									if ( isset( $tc['function']['arguments'] ) ) {
+										$tool_calls_by_idx[ $idx ]['function']['arguments'] .= $tc['function']['arguments'];
+									}
+								}
+							}
+							if ( isset( $choice['finish_reason'] ) && null !== $choice['finish_reason'] ) {
+								$finish_reason = $choice['finish_reason'];
+							}
+							if ( ! empty( $chunk['usage'] ) ) {
+								$usage = $chunk['usage'];
+							}
+						}
+						return strlen( $data );
+					},
+				)
+			);
+			curl_exec( $ch );
+			$curl_errno = curl_errno( $ch );
+			$curl_error = curl_error( $ch );
+			curl_close( $ch );
+			// phpcs:enable
+
+			if ( $curl_errno ) {
+				return new WP_Error( 'wp_mcp_ai_http_error', $curl_error ? $curl_error : __( 'cURL streaming request failed.', 'mcp-ai-wpoos' ) );
+			}
+			if ( $http_status >= 400 ) {
+				return new WP_Error( 'wp_mcp_ai_api_error', __( 'NVIDIA returned an error during streaming.', 'mcp-ai-wpoos' ), array( 'status' => $http_status ) );
+			}
+
+			$message = array(
+				'role'    => 'assistant',
+				'content' => $accumulated_content,
+			);
+
+			if ( '' !== $accumulated_reason ) {
+				$message['reasoning_content'] = $accumulated_reason;
+			}
+
+			if ( ! empty( $tool_calls_by_idx ) ) {
+				ksort( $tool_calls_by_idx );
+				$message['tool_calls'] = array_values( $tool_calls_by_idx );
+			}
+
+			$assembled = array(
+				'id'      => $response_id,
+				'object'  => 'chat.completion',
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => $message,
+						'finish_reason' => $finish_reason,
+					),
+				),
+			);
+
+			if ( null !== $usage ) {
+				$assembled['usage'] = $usage;
+			}
+
+			if ( ! empty( $model ) ) {
+				$assembled['model'] = $model;
+			}
+
+			return $this->normalize_response( $assembled, $model );
+		}
+
 
 		/**
 		 * Resolve the model identifier for the request.
@@ -709,7 +908,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			$payload = array(
 				'model'    => $model,
 				'messages' => $formatted_messages,
-				'stream'   => false, // Explicitly disable streaming to prevent chunked responses.
+				'stream'   => isset( $options['stream'] ) ? (bool) $options['stream'] : false, // Explicitly disable streaming to prevent chunked responses.
 			);
 
 			// Add tools if provided (OpenAI-compatible function calling).
@@ -887,6 +1086,201 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			}
 
 			return $response;
+		}
+
+		/**
+		 * Build a structured WP_Error from an HTTP error response.
+		 *
+		 * Leverages the existing {@see extract_error_message()} to parse
+		 * NVIDIA's multi-format error responses (OpenAI-compatible, NVIDIA
+		 * native, flat string) and adds action-level guidance for auth and
+		 * rate-limit errors.
+		 *
+		 * @param int    $code     HTTP status code.
+		 * @param array  $decoded  Decoded JSON response body.
+		 * @param array  $response Raw WP HTTP response array.
+		 * @param string $url      The endpoint URL that was called (for logging context).
+		 * @param string $model    The model identifier (for logging context).
+		 * @return WP_Error
+		 */
+		protected function handle_api_error( $code, array $decoded, $response, $url = '', $model = '' ) {
+			$error_message = $this->extract_error_message( $decoded, __( 'Unexpected response from NVIDIA NIM.', 'mcp-ai-wpoos' ) );
+			$error_data    = array(
+				'status' => $code,
+				'body'   => $decoded,
+			);
+
+			$error_code = 'wp_mcp_ai_nvidia_api_error';
+
+			if ( 401 === $code ) {
+				$error_code            = 'wp_mcp_ai_nvidia_auth_error';
+				$error_data['actions'] = array(
+					'auth_info' => __( 'Verify your NVIDIA NIM API key in NV oOS → Providers → NVIDIA.', 'mcp-ai-wpoos' ),
+				);
+			} elseif ( 429 === $code ) {
+				$error_code  = 'wp_mcp_ai_rate_limit_exceeded';
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				if ( ! empty( $retry_after ) ) {
+					$error_data['retry_after'] = absint( $retry_after );
+				}
+				$error_data['actions'] = array(
+					'rate_limit_info' => __( 'The NVIDIA NIM API rate limit has been exceeded. Try again in a few moments.', 'mcp-ai-wpoos' ),
+				);
+			} elseif ( 404 === $code ) {
+				$error_code            = 'wp_mcp_ai_nvidia_not_found';
+				$error_data['actions'] = array(
+					'endpoint_info' => __( 'The NVIDIA NIM endpoint or model was not found. Verify the endpoint URL and model identifier in the NV oOS settings.', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			WP_MCP_AI_Logger::log_error(
+				'NVIDIA NIM returned an error response.',
+				array(
+					'code'  => $code,
+					'url'   => $url,
+					'model' => $model,
+					'body'  => $decoded,
+				)
+			);
+
+			return new WP_Error( $error_code, $error_message, $error_data );
+		}
+
+		/**
+		 * Drop tool role messages that are not associated with the most recent
+		 * assistant tool call.
+		 *
+		 * The NVIDIA NIM API requires tool responses to immediately follow the
+		 * assistant message that emitted the corresponding tool call. When
+		 * intervening messages appear between those entries the request may be
+		 * rejected. This normaliser filters out any tool messages that no longer
+		 * have a matching pending call so the payload remains valid.
+		 *
+		 * Copied from the OpenAI / DeepSeek client pattern.
+		 *
+		 * @param array $messages Messages to sanitize.
+		 * @return array
+		 */
+		protected function filter_tool_messages_for_payload( array $messages ) {
+			if ( empty( $messages ) ) {
+				return $messages;
+			}
+
+			$filtered                = array();
+			$pending_calls           = array();
+			$awaiting_tool_responses = false;
+			$incomplete_group_start  = null;
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+				if ( '' === $role ) {
+					continue;
+				}
+
+				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					// If the previous assistant message had tool_calls that were never
+					// fully answered, drop the entire incomplete group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						WP_MCP_AI_Logger::log_event(
+							'nvidia_dropped_incomplete_tool_group',
+							'Dropped assistant message with unresolved tool_calls before user/system message.',
+							array(
+								'pending_call_ids' => array_keys( $pending_calls ),
+							)
+						);
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+					$filtered[]              = $message;
+					continue;
+				}
+
+				if ( 'assistant' === $role ) {
+					// If the PREVIOUS assistant had unresolved tool_calls, drop that group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						WP_MCP_AI_Logger::log_event(
+							'nvidia_dropped_incomplete_tool_group',
+							'Dropped assistant message with unresolved tool_calls before next assistant message.',
+							array(
+								'pending_call_ids' => array_keys( $pending_calls ),
+							)
+						);
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						foreach ( $message['tool_calls'] as $tool_call ) {
+							if ( ! is_array( $tool_call ) ) {
+								continue;
+							}
+
+							$call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
+							if ( '' === $call_id ) {
+								continue;
+							}
+
+							$pending_calls[ $call_id ] = true;
+						}
+					}
+
+					if ( ! empty( $pending_calls ) ) {
+						$awaiting_tool_responses = true;
+						$incomplete_group_start  = count( $filtered );
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				if ( 'tool' === $role ) {
+					$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
+
+					if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'nvidia_dropped_orphan_tool_message',
+							'Dropping tool message without matching tool call before NVIDIA NIM request.',
+							array(
+								'tool_call_id' => $tool_call_id,
+								'reason'       => '' === $tool_call_id
+									? 'missing_tool_call_id'
+									: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+							)
+						);
+
+						continue;
+					}
+
+					unset( $pending_calls[ $tool_call_id ] );
+
+					if ( empty( $pending_calls ) ) {
+						$awaiting_tool_responses = false;
+						$incomplete_group_start  = null;
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				$pending_calls           = array();
+				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
+				$filtered[]              = $message;
+			}
+
+			return array_values( $filtered );
 		}
 
 		/**

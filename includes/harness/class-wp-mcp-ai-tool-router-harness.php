@@ -25,8 +25,67 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Tool Router Harness.
+ *
+ * @since 1.4.0
  */
 class WP_MCP_AI_Tool_Router_Harness {
+
+	/**
+	 * RRF constant — the smoothing parameter that prevents division by
+	 * near-zero for top-ranked items. Industry standard is 60 (Elasticsearch,
+	 * OpenSearch, MongoDB all use this default).
+	 *
+	 * @since 1.8.0
+	 * @var int
+	 */
+	const RRF_K = 60;
+
+	/**
+	 * Per-stage weights for Reciprocal Rank Fusion.
+	 *
+	 * Different task classes benefit differently from semantic vs. structural
+	 * scoring. Research/RAG tasks need semantic matching (which tool
+	 * understands the domain?), while code tasks need structural matching
+	 * (which tool is idempotent/safe?).
+	 *
+	 * Keys: 'attention' = semantic embedding similarity (Stage 1)
+	 *       'harness'   = capability flags + preferences (Stage 2)
+	 *
+	 * @since 1.8.0
+	 * @return array<string,array<string,float>>
+	 */
+	private static function stage_weights() {
+		return array(
+			'research' => array(
+				'attention' => 1.5,
+				'harness'   => 0.5,
+			),
+			'rag'      => array(
+				'attention' => 1.5,
+				'harness'   => 0.5,
+			),
+			'qa'       => array(
+				'attention' => 1.2,
+				'harness'   => 0.8,
+			),
+			'math'     => array(
+				'attention' => 0.5,
+				'harness'   => 1.5,
+			),
+			'code'     => array(
+				'attention' => 0.8,
+				'harness'   => 1.2,
+			),
+			'agentic'  => array(
+				'attention' => 1.0,
+				'harness'   => 1.0,
+			),
+			'general'  => array(
+				'attention' => 1.0,
+				'harness'   => 1.0,
+			),
+		);
+	}
 
 	/**
 	 * Coarse mapping from task class to the capability flags that tend to
@@ -76,9 +135,10 @@ class WP_MCP_AI_Tool_Router_Harness {
 	 * @param array                    $assistant_prefs Per-assistant slug-level preferences (slug → weight).
 	 * @param array                    $preset_weights  Per-assistant preset-family weights (preset_slug → weight),
 	 *                                                  resolved against `WP_MCP_AI_Tool_Presets_Helper::get_presets()`.
+	 * @param float|null               $attention_score  Semantic attention score for this tool (0–1), or null if unavailable.
 	 * @return float Score; higher is better.
 	 */
-	public static function score_tool( $tool, $task_class, array $assistant_prefs = array(), array $preset_weights = array() ) {
+	public static function score_tool( $tool, $task_class, array $assistant_prefs = array(), array $preset_weights = array(), $attention_score = null ) {
 		$task_class = sanitize_key( (string) $task_class );
 		if ( '' === $task_class ) {
 			$task_class = 'general';
@@ -130,13 +190,16 @@ class WP_MCP_AI_Tool_Router_Harness {
 		/**
 		 * Filter the harness score for a tool.
 		 *
+		 * @since 1.4.0
+		 *
 		 * @param float                    $score             Default score from the base scoring rules.
 		 * @param WP_MCP_AI_Tool_Interface $tool              Tool instance.
 		 * @param string                   $task_class        Task class slug.
 		 * @param array                    $assistant_prefs   Per-assistant slug-level preferences.
 		 * @param array                    $preset_weights    Per-assistant preset-family weights.
+		 * @param float|null               $attention_score   Semantic attention score for this tool (0–1), or null if unavailable.
 		 */
-		$score = (float) apply_filters( 'wp_mcp_ai_harness_tool_score', $score, $tool, $task_class, $assistant_prefs, $preset_weights );
+		$score = (float) apply_filters( 'wp_mcp_ai_harness_tool_score', $score, $tool, $task_class, $assistant_prefs, $preset_weights, $attention_score );
 
 		return $score;
 	}
@@ -145,13 +208,21 @@ class WP_MCP_AI_Tool_Router_Harness {
 	 * Rank an iterable of tools for a task class. Returns slug => score
 	 * sorted descending.
 	 *
-	 * @param iterable $tools           Tool instances.
-	 * @param string   $task_class      Task class.
-	 * @param array    $assistant_prefs Optional per-assistant slug-level preferences.
-	 * @param array    $preset_weights  Optional per-assistant preset-family weights.
+	 * When $attention_scores is provided (slug => cosine_similarity), the
+	 * harness fuses its own structural scores with the attention router's
+	 * semantic scores via Weighted Reciprocal Rank Fusion (RRF) — the
+	 * industry-standard method for combining heterogeneous ranking signals.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param iterable            $tools            Tool instances.
+	 * @param string              $task_class       Task class.
+	 * @param array               $assistant_prefs  Optional per-assistant slug-level preferences.
+	 * @param array               $preset_weights   Optional per-assistant preset-family weights.
+	 * @param array<string,float> $attention_scores Optional semantic attention scores (slug => 0–1).
 	 * @return array<string,float>
 	 */
-	public static function rank( $tools, $task_class, array $assistant_prefs = array(), array $preset_weights = array() ) {
+	public static function rank( $tools, $task_class, array $assistant_prefs = array(), array $preset_weights = array(), array $attention_scores = array() ) {
 		$scored = array();
 		foreach ( $tools as $tool ) {
 			if ( ! $tool instanceof WP_MCP_AI_Tool_Interface ) {
@@ -161,10 +232,94 @@ class WP_MCP_AI_Tool_Router_Harness {
 			if ( '' === $slug ) {
 				continue;
 			}
-			$scored[ $slug ] = self::score_tool( $tool, $task_class, $assistant_prefs, $preset_weights );
+
+			// Resolve per-tool attention score (null if unavailable).
+			$attn = isset( $attention_scores[ $slug ] ) ? (float) $attention_scores[ $slug ] : null;
+
+			$scored[ $slug ] = self::score_tool( $tool, $task_class, $assistant_prefs, $preset_weights, $attn );
 		}
+
+		// If attention scores are available, fuse via RRF instead of pure harness ranking.
+		if ( ! empty( $attention_scores ) ) {
+			return self::fuse_with_rrf( $scored, $attention_scores, $task_class );
+		}
+
 		arsort( $scored, SORT_NUMERIC );
 		return $scored;
+	}
+
+	// -------------------------------------------------------------------------
+	// Reciprocal Rank Fusion (RRF)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Fuse harness structural scores with attention-router semantic scores
+	 * using Weighted Reciprocal Rank Fusion.
+	 *
+	 * RRF is the industry-standard method for combining heterogeneous ranking
+	 * signals (used by Elasticsearch, OpenSearch, MongoDB). It operates on
+	 * ranks rather than raw scores, making it immune to scale differences
+	 * between the two scoring systems.
+	 *
+	 * Formula:
+	 *   RRF(d) = Σ  w_stage × 1 / (k + rank_stage(d))
+	 *
+	 * where k = 60 (standard smoothing constant).
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param array<string,float> $harness_scores   Harness structural scores (slug => score).
+	 * @param array<string,float> $attention_scores Attention semantic scores (slug => 0–1).
+	 * @param string              $task_class       Task class for stage-weight selection.
+	 * @return array<string,float> Fused scores, sorted descending.
+	 */
+	public static function fuse_with_rrf( array $harness_scores, array $attention_scores, $task_class ) {
+		$k = self::RRF_K;
+
+		// Rank by each scorer independently (descending — rank 0 = highest score).
+		arsort( $harness_scores, SORT_NUMERIC );
+		arsort( $attention_scores, SORT_NUMERIC );
+
+		// Build rank maps: slug => 0-based rank.
+		$harness_ranks   = array_flip( array_keys( $harness_scores ) );
+		$attention_ranks = array_flip( array_keys( $attention_scores ) );
+
+		// Resolve per-stage weights for this task class.
+		$sw          = self::stage_weights();
+		$tc          = isset( $sw[ $task_class ] ) ? $task_class : 'general';
+		$w_harness   = $sw[ $tc ]['harness'];
+		$w_attention = $sw[ $tc ]['attention'];
+
+		/**
+		 * Filter the RRF stage weights for a task class.
+		 *
+		 * Allows per-assistant or global tuning of how much weight the
+		 * semantic (attention) stage gets vs. the structural (harness) stage.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param float  $w_harness   Weight for harness structural scoring.
+		 * @param float  $w_attention Weight for attention semantic scoring.
+		 * @param string $task_class  Task class slug.
+		 */
+		$w_harness   = (float) apply_filters( 'wp_mcp_ai_harness_rrf_weight_harness', $w_harness, $task_class );
+		$w_attention = (float) apply_filters( 'wp_mcp_ai_harness_rrf_weight_attention', $w_attention, $task_class );
+
+		// Fuse: every slug that appears in either rank list.
+		$all_slugs = array_unique( array_merge( array_keys( $harness_scores ), array_keys( $attention_scores ) ) );
+		$max_rank  = max( count( $harness_scores ), count( $attention_scores ), 1 );
+
+		$fused = array();
+		foreach ( $all_slugs as $slug ) {
+			$hr = isset( $harness_ranks[ $slug ] ) ? $harness_ranks[ $slug ] : $max_rank;
+			$ar = isset( $attention_ranks[ $slug ] ) ? $attention_ranks[ $slug ] : $max_rank;
+
+			$fused[ $slug ] = ( $w_harness * ( 1.0 / ( $k + $hr ) ) )
+				+ ( $w_attention * ( 1.0 / ( $k + $ar ) ) );
+		}
+
+		arsort( $fused, SORT_NUMERIC );
+		return $fused;
 	}
 
 	/**

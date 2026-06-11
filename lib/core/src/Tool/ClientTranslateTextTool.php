@@ -1,7 +1,7 @@
 <?php
-/** @package Oos\Core @since 1.0.0 @license MIT */
+/** @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
 class ClientTranslateTextTool extends AbstractClientSideTool {
 	public function getSlug(): string {

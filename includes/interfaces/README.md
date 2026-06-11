@@ -46,7 +46,7 @@ Every file in this folder is part of the public surface — that is the whole po
 
 - Files contain **only** `interface` declarations, optional `phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound` annotations when related interfaces are co-located, and PHPDoc.
 - **No** method bodies, no constants beyond what an interface legally allows, no `use` of traits, no static state. If you find yourself adding logic, you want a trait (`traits/`) or an abstract class instead.
-- **No** WordPress API calls anywhere in this folder — interfaces describe abstractions that `infrastructure/` adapts to WordPress. See [`docs/ADR_001_module_boundaries.md`](../../docs/ADR_001_module_boundaries.md).
+- **No** WordPress API calls anywhere in this folder — interfaces describe abstractions that `infrastructure/` adapts to WordPress. See [`docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../docs/project/architecture-decisions/ADR_001_module_boundaries.md).
 - Two naming forms are in active use and both are accepted:
   - `Interface_WP_MCP_AI_*` (prefixed) — newer adapter contracts (HTTP client, options store, provider client).
   - `WP_MCP_AI_*_Interface` (suffixed) — original tool/agent contracts.
@@ -68,7 +68,7 @@ vendor/bin/phpunit tests/test-huggingface-tools-interface-compliance.php
 - [`.context/conventions.md`](../../.context/conventions.md) — naming, style (always)
 - [`.context/security-checklist.md`](../../.context/security-checklist.md) — input/output rules implementers must satisfy
 - [`.context/tool-registry.md`](../../.context/tool-registry.md) — canonical tool envelope referenced by `WP_MCP_AI_Tool_Interface`
-- [`docs/ADR_001_module_boundaries.md`](../../docs/ADR_001_module_boundaries.md) — why these contracts exist
+- [`docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../docs/project/architecture-decisions/ADR_001_module_boundaries.md) — why these contracts exist
 
 ## See Also
 

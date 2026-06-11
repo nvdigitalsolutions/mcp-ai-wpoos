@@ -6,14 +6,14 @@
  * never depends on WP_Error, Laravel exceptions, or any other error type.
  * Each platform adapter implements this interface with its native error type.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 interface ErrorFactoryInterface {
 
@@ -23,7 +23,7 @@ interface ErrorFactoryInterface {
 	 * The concrete return type is platform-specific:
 	 *  - WordPress: \WP_Error
 	 *  - Laravel:   throws a domain exception
-	 *  - Standalone: Oos\Core\Domain\Error\DomainError
+	 *  - Standalone: Nvoos\Core\Domain\Error\DomainError
 	 *
 	 * @return mixed  Framework-specific error object.
 	 */

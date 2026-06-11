@@ -8,117 +8,108 @@ Welcome to the comprehensive documentation for Open Operator System (NV oOS).
 
 ## 🚀 Quick Navigation
 
-### 🎯 **[Getting Started](getting-started/)** 
+### 🎯 [Getting Started](getting-started/)
 Installation, setup, and quick start guides
 - [Plugin Setup Checklist](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md)
 - [Quick Start: MCP Testing](getting-started/quick-starts/QUICK-START-MCP-TESTING.md)
 - [LM Studio Setup](getting-started/quick-starts/lm-studio-setup.md)
 
-### 📖 **[Guides](guides/)**
-Comprehensive guides for all users
-- **[User Guides](guides/user/)** - Chat, assistants, professionals, media
-- **[Developer Guides](guides/developer/)** - Architecture, tools, testing, integration
-- **[Admin Guides](guides/admin/)** - Settings, cron, monitoring
+### 📖 [User Guides](user-guides/)
+How-to guides for end users
+- [Chat](user-guides/chat/) — chat interface, history, templates
+- [Assistants](user-guides/assistants/) — building and testing assistants
+- [Professionals](user-guides/professionals/) — knowledge base, reseeding
+- [Slash Commands](user-guides/slash-commands/) — slash command reference
 
-### 📚 **[API Reference](reference/)**
+### ⚙️ [Admin Guides](admin-guides/)
+Configuration and management
+- [Settings](admin-guides/settings/) — plugin settings and configuration
+- [Cron](admin-guides/cron/) — cron job management
+- [Tools Manager](admin-guides/tools/) — tools manager interface
+- [Monitoring](admin-guides/monitoring/) — performance, error tracking, cost display
+
+### 💻 [Developer](developer/)
+Technical documentation for contributors
+- [Architecture](developer/architecture/) — system design, patterns, orchestration
+- [Tool Development](developer/tool-development/) — creating custom tools
+- [Testing](developer/testing-docs/) — strategies, coverage, performance
+- [Best Practices](developer/best-practices/) — coding standards
+- [Addons](developer/addons/) — chat-spa, docs-hub, toolkit-spa-blueprint
+
+### 📚 [Reference](reference/)
 Complete technical reference
-- **[REST API](reference/api/rest-api.md)** ⭐ Essential
-- **[Tool Reference](reference/tools/tool-reference.md)** ⭐ All ~960 tools (~195 base + ~765 Pro; live count authoritative)
-- **[Models](reference/models/)** - AI model specifications
-- **[Technical Specs](reference/technical/)** - Token counting, compatibility
+- [REST API](reference/api/rest-api.md) ⭐ Essential
+- [Tool Reference](reference/tools/tool-reference.md) ⭐ All tools
+- [Models](reference/models/) — AI model specifications
+- [Measurement](reference/measurement/) — metrics, budgets, evals
+- [Orchestration](reference/orchestration/) — orchestration reference
+- [Playbooks](reference/playbooks/) — professional playbooks
+- [Slash Commands](reference/slash-commands/) — slash command definitions
 
-### 🏗️ **[Architecture](architecture/)**
-System design and patterns
-- **[Agentic Workflow](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md)** ⭐ Comprehensive
-- **[Multi-Agent System](features/multi-agent/README-MULTI-AGENT-SYSTEM.md)** - Multi-agent orchestration implementation
-- **[Orchestration](architecture/orchestration/)** - Orchestration layer
-- **[Integrations](architecture/integrations/)** - Elementor, JetEngine
-- **[Inline-async-tick Pattern](architecture/inline-async-tick-pattern.md)** — background-job kick pattern
-
-### ✨ **[Features](features/)**
+### ✨ [Features](features/)
 Feature-specific documentation
-- **[AI Providers](features/ai-providers/)** - Gemini, LM Studio, OpenAI, Jukebox, Baseten
-- **[Tools](features/tools/)** - Image, video, communication tools
-- **[Security](features/security/)** - Security hardening, key rotation
-- **[Performance](features/performance/)** - Rate limiting, token management
-- **[LLM Harnessing (Layers A–H)](llm-harness.md)** — opt-in epistemic layers
-- **[Markup Subsystem](markup-subsystem.md)** — in-loop image markup with Konva canvas
-- **[Agent Skills](features/agent-skills.md)** — portable SKILL.md behavior packages
-- **[Chat-client Memory Bridge](features/memory/chat-client-integration.md)** — Memory Drawer + REST proxy
-- **[Toolkit MCP Servers](features/toolkit-mcp-servers.md)** — 26 per-toolkit JSON-RPC servers
-- **[NV oOS Cloud](features/nv-cloud.md)** — managed-tokens + SaaS Controller
+- [AI Providers](features/ai-providers/) — Gemini, LM Studio, OpenAI, and more
+- [Chat UI](features/chat/) — chat interface features
+- [Memory](features/memory/) — agent memory, RAG, transcript mining
+- [Performance](features/performance/) — rate limiting, token management
+- [Security](features/security/) — hardening, key rotation
+- [Federation](features/federation/) — mesh networking
+- [Multi-Agent](features/multi-agent/) — multi-agent orchestration
 
-### 🔧 **[Troubleshooting](troubleshooting/)**
-Problem-solving guides
-- **[Deployment](troubleshooting/deployment/)** - Installation issues
-- **[Chat](troubleshooting/chat/)** - Chat functionality problems
-- **[Common Issues](troubleshooting/common/)** - General problems
-- **[Federation Setup](guides/admin/FEDERATION_SETUP_GUIDE.md)** - Federation and mesh computing setup
+### 🔧 [Operations](operations/)
+Deployment, security, and troubleshooting
+- [Deployment](operations/deployment/) — production guides
+- [Troubleshooting](operations/troubleshooting/) — problem-solving
+- [Security](operations/security/) — hardening and posture
+- [Compliance](operations/compliance/) — ISO 27001, SOC 2, HIPAA
 
-### 🔧 **[Deployment](deployment/)**
-Deployment and production guides
-- **[Production Composer Setup](deployment/PRODUCTION_COMPOSER.md)** - Composer dependencies for production
-- **[Production Ready Guide](deployment/PRODUCTION_READY.md)** - Production deployment checklist
+### 📋 [Project](project/)
+Planning, decisions, and releases
+- [Proposals](project/proposals/) — feature proposals and research
+- [Architecture Decisions](project/architecture-decisions/) — ADRs and RFDs
+- [Code Reviews](project/code-reviews/) — quality assessments
+- [Releases](project/releases/) — build, NPM, release process
+- [Audits](project/audits/) — security and compliance audits
 
-### 📅 **[Implementation History](implementation-history/)**
-Historical documentation (2025)
-- **[Code Reviews](implementation-history/2025/code-reviews/)** - Quality assessments
-- **[Implementations](implementation-history/2025/implementations/)** - Feature rollouts
-- **[Fixes](implementation-history/2025/fixes/)** - Bug fixes
-- **[Documentation](implementation-history/2025/documentation/)** - Doc updates
+### 📅 [History](history/)
+Historical records and archives
+- [2025](history/2025/) — 2025 implementation records
+- [2026](history/2026/) — 2026 records
+- [Archive](history/archive/) — pre-2025 archival content
 
-### 🎨 **[Visual Guides](visual-guides/)**
+### 🎨 [Visual Guides](visual-guides/)
 Diagrams and visual documentation
-- **[Workflow](visual-guides/workflow/)** - Flow diagrams
-- **[Testing](visual-guides/testing/)** - Visual testing guides
 
-### 📝 **[Examples](examples/)**
+### 📝 [Examples](examples/)
 Usage examples and demos
-- [Product Price Lookup Usage](examples/product-price-lookup-usage.md)
-
-### 📦 **[Archive](archive/)**
-Historical reference (260+ documents from 2024-2025)
-- **[2025 Archive](archive/2025/README.md)** - Recently archived: DeepSeek V4, WordPress.org, Pro Dashboard, Pro Toolkit consolidation
-- **[Root Archive](../archive/README.md)** - 50+ files from root directory reorganization (Phase 6, fixes, status reports)
-
-### 🔌 **[Addons](addons/)**
-Installable addon documentation
-- **[Toolkit SPA Blueprint](addons/toolkit-spa-blueprint.md)** — standard pattern for all SPA addons
-- **[Chat SPA](addons/chat-spa.md)** — React replacement for the legacy chat shortcode
-- **[Docs Hub](addons/docs-hub.md)** — in-site documentation SPA
-- **[SaaS Controller Reference](saas-controller.md)** — NV oOS Cloud control plane
 
 ---
 
 ## 📌 Essential Documents
 
-- **[Documentation Index](DOCUMENTATION_INDEX.md)** - Complete navigation
-- **[Documentation Organization](DOCUMENTATION_ORGANIZATION.md)** - How documentation is organized
-- **[Quick Reference](QUICK_REFERENCE.md)** - Fast lookup
-- **[Master Consolidation 2025](implementation-history/2025/summaries/MASTER_CONSOLIDATION_2025.md)** - 2025 single source of truth
-- **[Best Practices](guides/developer/best-practices/BEST_PRACTICES.md)** - Coding standards
+- [Documentation Index](DOCUMENTATION_INDEX.md) — complete navigation
+- [Documentation Organization](DOCUMENTATION_ORGANIZATION.md) — how docs are organized
+- [Quick Reference](QUICK_REFERENCE.md) — fast lookup
+- [Roadmap](ROADMAP.md) — release planning
 
 ---
 
 ## 📊 Documentation Stats
 
-- **Total Files:** 551+ markdown documents
-- **Categories:** 9 main categories + archive
-- **Tools Documented:** 398 (141 base + 257 Pro)
-- **Quality Score:** 9.5/10
-- **Last Reorganized:** February 5, 2026 (Root + Docs consolidation)
+- **Top-level directories:** 10
+- **Root entry-point files:** 5
+- **Last Reorganized:** June 2026 — Unix-theory reorganization
 
 ---
 
 ## 🆘 Getting Help
 
 - **First Time?** Start with [Getting Started](getting-started/)
-- **Having Issues?** Check [Troubleshooting](troubleshooting/)
-- **Developer?** See [Developer Guides](guides/developer/)
+- **Having Issues?** Check [Operations → Troubleshooting](operations/troubleshooting/)
+- **Developer?** See [Developer Docs](developer/)
 - **Need Support?** [GitHub Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
 
 ---
 
-**Plugin Version:** 1.1.21  
-**MCP Version:** 2024-11-05  
+**Plugin Version:** 1.1.27
 **WordPress:** 6.0+ | **PHP:** 7.4+

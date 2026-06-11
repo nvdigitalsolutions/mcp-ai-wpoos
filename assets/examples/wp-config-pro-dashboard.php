@@ -6,7 +6,7 @@
  * Place it anywhere before the "That's all, stop editing!" comment.
  *
  * @package WP_MCP_AI
- * @see     docs/compliance/iso27001/Pro-Dashboard-Activation.md
+ * @see     docs/operations/compliance/iso27001/Pro-Dashboard-Activation.md
  */
 
 // Enable NV oOS Pro Dashboard with ISO 27001 compliance features

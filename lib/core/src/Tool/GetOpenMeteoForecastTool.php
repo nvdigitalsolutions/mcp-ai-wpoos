@@ -4,17 +4,17 @@
  *
  * Calls the free Open-Meteo API (no auth required). Zero WordPress dependencies.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 
 class GetOpenMeteoForecastTool extends AbstractTool {
 
@@ -86,9 +86,8 @@ class GetOpenMeteoForecastTool extends AbstractTool {
 		);
 
 		try {
-			$request  = new \Nyholm\Psr7\Request( 'GET', self::API_URL . '?' . \http_build_query( $params ) );
-			$response = $this->http->sendRequest( $request );
-			$data     = \json_decode( (string) $response->getBody(), true );
+			$response = $this->http->send( 'GET', self::API_URL . '?' . \http_build_query( $params ) );
+			$data     = \json_decode( $response->body, true );
 
 			if ( ! is_array( $data ) || isset( $data['error'] ) ) {
 				return $this->errors->create(

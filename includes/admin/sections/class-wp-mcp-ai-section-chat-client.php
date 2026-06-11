@@ -68,7 +68,36 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 		 * @return string
 		 */
 		public function get_documentation_url() {
-			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/chat/chat-client-settings.md';
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/user-guides/chat/chat-client-settings.md';
+		}
+
+		/**
+		 * Build a list of published assistants for use in select dropdowns.
+		 *
+		 * @return array<int, string> Assistant ID => title pairs, keyed with 0 as "None".
+		 */
+		private function get_assistant_options() {
+			$options = array(
+				0 => __( 'None (use default)', 'mcp-ai-wpoos' ),
+			);
+
+			$assistants = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+				)
+			);
+
+			if ( ! empty( $assistants ) ) {
+				foreach ( $assistants as $assistant ) {
+					$options[ $assistant->ID ] = $assistant->post_title;
+				}
+			}
+
+			return $options;
 		}
 
 		/**
@@ -417,12 +446,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'default'        => false,
 				),
 				'chat_bubble_assistant_id'          => array(
-					'type'        => 'number',
-					'label'       => __( 'Assistant ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'The ID of the assistant to use for the chat bubble. Set to 0 to use the default assistant.', 'mcp-ai-wpoos' ),
+					'type'        => 'select',
+					'label'       => __( 'Chat Bubble Assistant', 'mcp-ai-wpoos' ),
+					'description' => __( 'The assistant to use for the chat bubble. Select "None (use default)" to fall back to the Default Assistant configured in General → Core Settings.', 'mcp-ai-wpoos' ),
+					'options'     => $this->get_assistant_options(),
 					'default'     => 0,
-					'placeholder' => '0',
-					'min'         => 0,
 				),
 				'chat_bubble_allow_guests'          => array(
 					'type'           => 'checkbox',

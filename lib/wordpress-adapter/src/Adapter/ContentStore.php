@@ -6,24 +6,24 @@
  * get_post_meta, wp_get_post_terms) behind the framework-agnostic
  * ContentStoreInterface.
  *
- * @package Oos\WordPress
+ * @package Nvoos\WordPress
  * @since   1.0.0
  * @license GPL-3.0-or-later
  */
 
 declare(strict_types=1);
 
-namespace Oos\WordPress\Adapter;
+namespace Nvoos\WordPress\Adapter;
 
-use Oos\Core\Domain\Contract\ContentStoreInterface;
-use Oos\Core\Domain\Entity\ContentCollection;
-use Oos\Core\Domain\Entity\ContentItem;
-use Oos\Core\Domain\Entity\ContentQuery;
-use Oos\Core\Domain\Entity\CreateContentCommand;
-use Oos\Core\Domain\Entity\UpdateContentCommand;
-use Oos\Core\Domain\Error\AccessDeniedException;
-use Oos\Core\Domain\Error\NotFoundException;
-use Oos\Core\Domain\Error\ValidationException;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Entity\ContentCollection;
+use Nvoos\Core\Domain\Entity\ContentItem;
+use Nvoos\Core\Domain\Entity\ContentQuery;
+use Nvoos\Core\Domain\Entity\CreateContentCommand;
+use Nvoos\Core\Domain\Entity\UpdateContentCommand;
+use Nvoos\Core\Domain\Error\AccessDeniedException;
+use Nvoos\Core\Domain\Error\NotFoundException;
+use Nvoos\Core\Domain\Error\ValidationException;
 
 class ContentStore implements ContentStoreInterface {
 

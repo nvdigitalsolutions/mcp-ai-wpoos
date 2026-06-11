@@ -49,6 +49,10 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 					'default'     => 'email',
 					'description' => __( 'Message channel.', 'mcp-ai-wpoos-pro' ),
 				),
+				'channel_contact_id'      => array(
+					'type'        => 'string',
+					'description' => __( 'Platform-side contact/user ID for source traceability.', 'mcp-ai-wpoos-pro' ),
+				),
 				'sender_email'            => array(
 					'type'        => 'string',
 					'description' => __( 'Sender email address.', 'mcp-ai-wpoos-pro' ),
@@ -74,6 +78,14 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 					'type'    => 'string',
 					'enum'    => array( 'bant', 'meddic' ),
 					'default' => 'bant',
+				),
+				'connection_id'           => array(
+					'type'        => 'string',
+					'description' => __( 'Remote Site Manager connection ID for source attribution.', 'mcp-ai-wpoos-pro' ),
+				),
+				'message_id'              => array(
+					'type'        => 'string',
+					'description' => __( 'Platform message ID for source traceability.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array( 'message_body' ),
@@ -206,6 +218,19 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 		$result['pipeline']['contact_id']  = $contact_id;
 		$result['pipeline']['is_new_lead'] = empty( $arguments['existing_contact_id'] );
 
+		// Store source connection metadata for traceability.
+		$connection_id_arg = isset( $arguments['connection_id'] ) ? sanitize_text_field( $arguments['connection_id'] ) : '';
+		$message_id_arg    = isset( $arguments['message_id'] ) ? sanitize_text_field( $arguments['message_id'] ) : '';
+		if ( $contact_id && $connection_id_arg ) {
+			update_post_meta( $contact_id, '_source_connection_id', $connection_id_arg );
+		}
+		if ( $contact_id && $message_id_arg ) {
+			update_post_meta( $contact_id, '_source_message_id', $message_id_arg );
+		}
+		if ( $contact_id && ! empty( $arguments['channel_contact_id'] ) ) {
+			update_post_meta( $contact_id, '_source_channel_contact_id', sanitize_text_field( $arguments['channel_contact_id'] ) );
+		}
+
 		// --- Step 4: Score lead ---
 		if ( $contact_id && class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
 			$score = WP_MCP_AI_CRM_Engine::calculate_lead_score(
@@ -244,14 +269,48 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 				'channel' => $channel,
 				'message' => $auto_msg,
 			);
+
+			// If this is a support request, include ticket info in auto-reply.
+			if ( isset( $classification['intent'] ) && 'support_request' === $classification['intent'] && $contact_id ) {
+				/**
+				 * Fires when an inbound support request is detected.
+				 *
+				 * Hook WP_MCP_AI_CRM_Ticket_Notifications::auto_create_support_ticket
+				 * to auto-create a support ticket.
+				 *
+				 * @since 2.6.0
+				 * @param int   $contact_id Lead/contact ID of the sender.
+				 * @param array $message    Message context.
+				 */
+				$support_message = array(
+					'body'    => $message_body,
+					'subject' => isset( $arguments['message_subject'] ) ? sanitize_text_field( $arguments['message_subject'] ) : '',
+					'channel' => $channel,
+					'email'   => $sender_email,
+				);
+				do_action( 'wp_mcp_ai_crm_inbound_support_detected', $contact_id, $support_message );
+			}
 		}
 
 		// --- Step 7: Schedule follow-up ---
 		if ( $contact_id ) {
+			// Include lead name in the activity title for clarity.
+			$contact_post = get_post( $contact_id );
+			if ( $contact_post && 'mcp_ai_lead' === $contact_post->post_type ) {
+				$follow_up_title = sprintf(
+					/* translators: 1: lead name, 2: lead ID */
+					__( 'Follow up with %1$s (Lead #%2$d)', 'mcp-ai-wpoos-pro' ),
+					get_the_title( $contact_post ),
+					$contact_id
+				);
+			} else {
+				$follow_up_title = sprintf( __( 'Follow up with lead #%d', 'mcp-ai-wpoos-pro' ), $contact_id );
+			}
+
 			$follow_up_id = wp_insert_post(
 				array(
 					'post_type'   => 'mcp_ai_crm_activity',
-					'post_title'  => sprintf( __( 'Follow up with lead #%d', 'mcp-ai-wpoos-pro' ), $contact_id ),
+					'post_title'  => $follow_up_title,
 					'post_status' => 'publish',
 				),
 				true
@@ -260,7 +319,7 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 				update_post_meta( $follow_up_id, 'activity_type', 'task' );
 				update_post_meta( $follow_up_id, 'related_type', 'lead' );
 				update_post_meta( $follow_up_id, 'related_id', $contact_id );
-				update_post_meta( $follow_up_id, 'due_date', gmdate( 'Y-m-d', strtotime( '+2 business days' ) ) );
+				update_post_meta( $follow_up_id, 'due_date', gmdate( 'Y-m-d', strtotime( '+2 days' ) ) );
 				$result['pipeline']['follow_up_activity_id'] = $follow_up_id;
 			}
 		}

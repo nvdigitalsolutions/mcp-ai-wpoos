@@ -5,18 +5,18 @@
  * OpenAI-compatible API running on localhost. No API key required.
  * Default endpoint: http://localhost:11434/v1.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Infrastructure\Provider;
+namespace Nvoos\Core\Infrastructure\Provider;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 class OllamaClient extends OpenAiCompatibleClient {
 
@@ -34,17 +34,22 @@ class OllamaClient extends OpenAiCompatibleClient {
 	}
 
 	/**
-	 * Ollama does not require an API key — it runs locally.
-	 * Override to skip the missing-key check.
+	 * Ollama runs locally — never require an API key.
 	 */
-	protected function getApiKey(): string {
-		// Ollama may use no auth or a bearer token. Return whatever is configured.
-		return parent::getApiKey(); // Returns empty string if not set.
+	protected function requiresApiKey(): bool {
+		return false;
 	}
 
 	/**
-	 * Override: Ollama's auth header uses the configured token, but if none
-	 * is configured, omit the Authorization header entirely.
+	 * Ollama may optionally use a bearer token. Return whatever is configured,
+	 * but never require one.
+	 */
+	protected function getApiKey(): string {
+		return parent::getApiKey();
+	}
+
+	/**
+	 * Override: omit Authorization header when no token is configured.
 	 */
 	protected function buildAuthHeaders( string $apiKey ): array {
 		$headers = array( 'Content-Type' => 'application/json' );

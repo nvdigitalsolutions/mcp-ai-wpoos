@@ -31,8 +31,8 @@
  *
  * @package WP_MCP_AI
  * @since   1.x.x
- * @link    docs/guides/developer/folder-readme-convention.md
- * @link    docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md
+ * @link    docs/developer/folder-readme-convention.md
+ * @link    docs/project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md
  */
 
 declare( strict_types=1 );

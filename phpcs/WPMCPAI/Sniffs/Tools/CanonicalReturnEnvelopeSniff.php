@@ -117,7 +117,7 @@ class CanonicalReturnEnvelopeSniff implements Sniff {
 			}
 
 			$phpcsFile->addWarning(
-				'Tool return envelopes must not use "success => false". Return new WP_Error( $code, $message [, $extra] ) on the failure path instead. See docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md §2.2.',
+				'Tool return envelopes must not use "success => false". Return new WP_Error( $code, $message [, $extra] ) on the failure path instead. See docs/project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md §2.2.',
 				$i,
 				'SuccessFalseArray'
 			);

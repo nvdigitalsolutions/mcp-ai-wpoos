@@ -64,7 +64,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 		 * @return string
 		 */
 		public function get_documentation_url() {
-			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/integrations/elementor-widgets.md';
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/developer/architecture/integrations/elementor-widgets.md';
 		}
 
 		/**

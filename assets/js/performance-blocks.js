@@ -21,6 +21,7 @@
 	 * Register Performance Test Runner Block.
 	 */
 	registerBlockType( 'mcp-ai-wpoos/performance-test-runner', {
+		apiVersion: 3,
 		title: 'Performance Test Runner',
 		icon: 'performance',
 		category: 'widgets',
@@ -51,6 +52,7 @@
 	 * Register Performance Metrics Block.
 	 */
 	registerBlockType( 'mcp-ai-wpoos/performance-metrics', {
+		apiVersion: 3,
 		title: 'Performance Metrics',
 		icon: 'dashboard',
 		category: 'widgets',
@@ -85,6 +87,7 @@
 	 * Register System Health Status Block.
 	 */
 	registerBlockType( 'mcp-ai-wpoos/system-health-status', {
+		apiVersion: 3,
 		title: 'System Health Status',
 		icon: 'heart',
 		category: 'widgets',
@@ -115,6 +118,7 @@
 	 * Register Test Results Table Block.
 	 */
 	registerBlockType( 'mcp-ai-wpoos/test-results-table', {
+		apiVersion: 3,
 		title: 'Test Results Table',
 		icon: 'list-view',
 		category: 'widgets',
@@ -149,6 +153,7 @@
 	 * Register Performance Recommendations Block.
 	 */
 	registerBlockType( 'mcp-ai-wpoos/performance-recommendations', {
+		apiVersion: 3,
 		title: 'Performance Recommendations',
 		icon: 'lightbulb',
 		category: 'widgets',
@@ -183,6 +188,7 @@
 	 * Register Performance Trends Block.
 	 */
 	registerBlockType( 'mcp-ai-wpoos/performance-trends', {
+		apiVersion: 3,
 		title: 'Performance Trends',
 		icon: 'chart-line',
 		category: 'widgets',

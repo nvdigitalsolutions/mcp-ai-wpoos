@@ -114,14 +114,14 @@ All 10 fixed sections now properly display links to their respective documentati
 
 1. **General Settings**: [QUICK_START_5_MINUTES.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/getting-started/QUICK_START_5_MINUTES.md)
 2. **Authentication**: [authentication.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/authentication.md)
-3. **Chat Client**: [chat-client-settings.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/chat/chat-client-settings.md)
-4. **Advanced**: [new-settings-december-2025.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/settings/new-settings-december-2025.md)
-5. **Providers**: [SETTINGS_DASHBOARD_GUIDE.md#providers-tab](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#providers-tab)
-6. **Orchestration**: [ORCHESTRATION-LAYER-ARCHITECTURE.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
+3. **Chat Client**: [chat-client-settings.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/user-guides/chat/chat-client-settings.md)
+4. **Advanced**: [new-settings-december-2025.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/admin-guides/settings/new-settings-december-2025.md)
+5. **Providers**: [SETTINGS_DASHBOARD_GUIDE.md#providers-tab](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/admin-guides/SETTINGS_DASHBOARD_GUIDE.md#providers-tab)
+6. **Orchestration**: [ORCHESTRATION-LAYER-ARCHITECTURE.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
 7. **Overview**: [QUICK_REFERENCE.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/QUICK_REFERENCE.md)
 8. **Tools**: [tool-reference.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/tools/tool-reference.md)
 9. **Token Manager**: [TOKEN_MANAGEMENT_GUIDE.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/performance/TOKEN_MANAGEMENT_GUIDE.md)
-10. **Integrations**: [oauth-settings-architecture.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/integrations/oauth-settings-architecture.md)
+10. **Integrations**: [oauth-settings-architecture.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/developer/architecture/integrations/oauth-settings-architecture.md)
 
 ## Impact
 

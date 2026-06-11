@@ -194,8 +194,8 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 		}
 
 		$sidebar  = '<p><strong>' . esc_html__( 'For more information', 'mcp-ai-wpoos' ) . '</strong></p>';
-		$sidebar .= '<p><a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/measurement/README.md" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Measurement docs', 'mcp-ai-wpoos' ) . '</a></p>';
-		$sidebar .= '<p><a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/measurement/goodhart-checklist.md" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Goodhart checklist', 'mcp-ai-wpoos' ) . '</a></p>';
+		$sidebar .= '<p><a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/measurement/README.md" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Measurement docs', 'mcp-ai-wpoos' ) . '</a></p>';
+		$sidebar .= '<p><a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/measurement/goodhart-checklist.md" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Goodhart checklist', 'mcp-ai-wpoos' ) . '</a></p>';
 		$screen->set_help_sidebar( $sidebar );
 	}
 

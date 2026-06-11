@@ -1,6 +1,6 @@
 # Toolkit SPA Blueprint
 
-> **Status:** Phases 0–9 complete · Tier A manifests complete · canvas-toolkit v0.2.0 · document-editor v0.2.0 · chat-spa v0.6.0 (Tier E — memory drawer, HITL bar, attachments, regenerate, branching + legacy opt-out). Last reviewed: **May 2026** · Version: **2.5**
+> **Status:** Phases 0–9 complete · Tier A manifests complete · canvas-toolkit v0.2.0 · document-editor v0.2.0 · chat-spa v0.6.0 (Tier E — memory drawer, HITL bar, attachments, regenerate, branching + legacy opt-out). **Site-builder Phases 1–3 implemented** (node interface, registry, pipeline executor, sub-blueprint compiler). Last reviewed: **May 2026** · Version: **3.0**
 >
 > This document formalizes the reusable pattern established by
 > [`addons/docs-hub/`](../../addons/docs-hub/) for shipping a React Single-Page
@@ -8,6 +8,10 @@
 > (CRM, calendar-booking, financial-planner, document-generation, canvas, etc.)
 > **must** follow this blueprint so the surfaces stay consistent, secure, and
 > easy to maintain.
+>
+> v3.0 adds the **Site Builder subsystem** (§21–§25) — a ComfyUI-inspired
+> node-graph pipeline for composing site sections from typed, cacheable,
+> composable nodes and reusable subgraph blueprints.
 
 ---
 
@@ -769,6 +773,12 @@ scaffolding:
 - [`.context/security-checklist.md`](../../.context/security-checklist.md) —
   required reading for every PR that touches the surface
 - [`CREDITS.md`](../../CREDITS.md) — root attribution index
+- [`includes/site-builder/`](../../includes/site-builder/) — site-builder subsystem (node interface, registry, pipeline executor, blueprint compiler)
+- [`config/site-blueprints/`](../../config/site-blueprints/) — reusable section blueprint JSON files
+- [`tests/test-site-node-registry.php`](../../tests/test-site-node-registry.php) — registry tests
+- [`tests/test-site-node-implementations.php`](../../tests/test-site-node-implementations.php) — node implementation tests
+- [`tests/test-site-pipeline-executor.php`](../../tests/test-site-pipeline-executor.php) — pipeline executor tests
+- [`tests/test-site-blueprint-compiler.php`](../../tests/test-site-blueprint-compiler.php) — blueprint compiler tests
 
 ---
 
@@ -811,3 +821,269 @@ The `chat-spa` addon (Tier E, v0.6.0) is a drop-in React replacement for
 > **Note:** Setting `WP_MCP_AI_LEGACY_CHAT_JS = false` without first replacing
 > all `[mcp_ai_chat]` shortcodes will result in those shortcodes rendering as
 > plain text. Always migrate shortcodes first.
+
+---
+
+## 21. Site Builder subsystem — node-graph pipeline architecture (v3.0)
+
+The site builder is a ComfyUI-inspired node-graph pipeline for composing
+WordPress site sections from typed, cacheable, composable nodes. It lives in
+`includes/site-builder/` and `config/site-blueprints/`. This section documents
+the server-side infrastructure; the React front-end (ReactFlow node-graph +
+GrapesJS live preview) ships as Phase 5.
+
+### Architecture layers (ComfyUI analogues)
+
+| NV oOS Site Builder | ComfyUI analogue |
+|----------------------|------------------|
+| `WP_MCP_AI_Site_Node_Interface` | ComfyUI `NODE_CLASS_MAPPINGS` — typed INPUT/OUTPUT contract |
+| `WP_MCP_AI_Site_Node_Registry` | `custom_nodes/` auto-discovery + registration |
+| `WP_MCP_AI_Site_Pipeline_Executor` | `execution.py` — DAG walker with incremental cache |
+| `WP_MCP_AI_Site_Blueprint_Compiler` | Subgraph/template system — reusable groups with exposed I/O |
+
+### Usage example (5 lines to a rendered section)
+
+```php
+$compiler  = new WP_MCP_AI_Site_Blueprint_Compiler();
+$bp        = $compiler->load( 'hero-with-cta' );
+$graph     = $compiler->compile( $bp, [ 'heading' => 'Hello World' ] );
+$executor  = new WP_MCP_AI_Site_Pipeline_Executor();
+$result    = $executor->execute( $graph, 'hero-with-cta' );
+// $result['outputs']['hero-with-cta__hero_container']['html'] is the rendered section.
+```
+
+---
+
+## 22. Site Builder — extension hooks for addons
+
+Addons can register custom site node types and additional blueprint directories
+without modifying the base plugin.
+
+### wp_mcp_ai_register_site_nodes (action)
+
+Fires after the registry loads its built-in nodes. Addons hook in to register
+custom node classes.
+
+```php
+add_action( 'wp_mcp_ai_register_site_nodes', function ( $registry ) {
+    require_once __DIR__ . '/nodes/class-my-custom-node.php';
+    $registry->register_node( new My_Custom_Node() );
+} );
+```
+
+### wp_mcp_ai_default_site_nodes (filter)
+
+Allows injecting node class→filepath entries without hooking into the action.
+Use this when you want nodes loaded before the `register_site_nodes` action fires.
+
+```php
+add_filter( 'wp_mcp_ai_default_site_nodes', function ( $nodes ) {
+    $nodes['My_Custom_Node'] = __DIR__ . '/nodes/class-my-custom-node.php';
+    return $nodes;
+} );
+```
+
+### wp_mcp_ai_site_blueprint_directories (filter)
+
+Registers additional directories for blueprint JSON auto-discovery. Pro addons
+and third-party plugins can ship their own section blueprints.
+
+```php
+add_filter( 'wp_mcp_ai_site_blueprint_directories', function ( $dirs ) {
+    $dirs[] = __DIR__ . '/my-site-blueprints/';
+    return $dirs;
+} );
+```
+
+---
+
+## 23. Site Builder — creating a custom site node
+
+### Step 1: Implement the interface
+
+Every site node implements `WP_MCP_AI_Site_Node_Interface`:
+
+```php
+use WP_MCP_AI_Site_Node_Interface;
+
+class My_CTA_Button_Node implements WP_MCP_AI_Site_Node_Interface {
+
+    public function get_slug(): string        { return 'cta_button'; }
+    public function get_name(): string        { return __( 'CTA Button', 'my-addon' ); }
+    public function get_description(): string { return __( 'Renders a call-to-action button.', 'my-addon' ); }
+    public function get_category(): string    { return 'layout'; }
+    // Valid categories: 'source', 'layout', 'style', 'transform', 'output', 'integration'
+
+    public function get_inputs(): array {
+        return [
+            [ 'name' => 'label', 'type' => 'string', 'label' => 'Button Text', 'default' => 'Click Me' ],
+            [ 'name' => 'url',   'type' => 'url',    'label' => 'Link URL',     'default' => '#' ],
+        ];
+    }
+
+    public function get_outputs(): array {
+        return [ [ 'name' => 'html', 'type' => 'html', 'label' => 'HTML' ] ];
+    }
+
+    public function execute( array $inputs ) {
+        $label = sanitize_text_field( $inputs['label'] ?? 'Click Me' );
+        $url   = esc_url( $inputs['url'] ?? '#' );
+        return [
+            'html' => sprintf(
+                '<a href="%s" class="cta-button">%s</a>',
+                $url,
+                esc_html( $label )
+            ),
+        ];
+    }
+}
+```
+
+### Step 2: Register it
+
+```php
+add_action( 'wp_mcp_ai_register_site_nodes', function ( $registry ) {
+    $registry->register_node( new My_CTA_Button_Node() );
+} );
+```
+
+### Step 3: Expose to the front-end palette
+
+The registry's `get_nodes_for_frontend()` serialises all registered nodes into
+a JSON array consumable by the ReactFlow node palette. The front-end receives
+slug, name, description, category, typed inputs, and typed outputs for each node.
+
+### Sanitisation rules (two-gate rule)
+
+Following the tool-authoring P0–P6 rules from `CLAUDE.md`:
+
+- **Gate 1 (entry):** Sanitise every `$inputs[...]` value at the top of `execute()`.
+- **Gate 2 (exit):** Escape every value before returning it in the output array.
+- **Failures:** Return a `WP_Error` on invalid/unsafe input — never `array( 'success' => false, … )`.
+
+---
+
+## 24. Site Builder — creating a section blueprint
+
+Blueprints are pre-wired subgraphs (ComfyUI's "group into subgraph") stored as
+JSON files in registered directories (default: `config/site-blueprints/`).
+
+### Blueprint JSON structure
+
+```jsonc
+{
+  "slug": "hero-with-cta",          // Must match filename (without .json)
+  "name": "Hero Section with CTA",   // Human-readable palette label
+  "description": "...",              // Tooltip text
+  "version": "1.0.0",
+  "inputs": {                        // Exposed input ports
+    "heading":    { "type": "string", "label": "Heading",      "default": "Welcome" },
+    "subheading": { "type": "string", "label": "Subheading",   "default": "Learn more" },
+    "cta_text":   { "type": "string", "label": "Button Text", "default": "Get Started" }
+  },
+  "outputs": {                       // Exposed output ports
+    "html": { "type": "html", "node": "hero_container", "port": "html" }
+  },
+  "internalGraph": {                 // The pre-wired internal subgraph
+    "nodes": {
+      "heading_block": { "slug": "text_block", "inputs": { "content": "{heading}", "tag": "h1" } },
+      "hero_container": { "slug": "flex_container", "inputs": { "direction": "column", "gap": "24px" } }
+    },
+    "edges": [
+      { "source": "heading_block", "sourcePort": "html", "target": "hero_container", "targetPort": "children" }
+    ],
+    "outputNode": "hero_container"
+  }
+}
+```
+
+### Rules
+
+- `{placeholder}` references in node inputs are substituted at compile time with
+  the resolved input value (provided value > blueprint default > literal placeholder).
+- Internal node IDs are prefixed with `{slug}__` at compile time to avoid collisions
+  when multiple blueprints are composed into one pipeline.
+- The `internalGraph.outputNode` is purely informational; the executor determines
+  the actual final node from edge topology.
+
+### Shipping blueprints
+
+Place `.json` files in a registered directory. The default directory is
+`config/site-blueprints/`. Pro addons should add their own directory via
+`wp_mcp_ai_site_blueprint_directories`. The compiler's `list_all()` and
+`list_all_summaries()` provide a complete catalogue for the front-end palette.
+
+---
+
+## 25. Site Builder — pipeline execution & caching
+
+The `WP_MCP_AI_Site_Pipeline_Executor` walks a DAG of nodes, executing each in
+topological order with incremental caching.
+
+### Execution flow
+
+1. **Topological sort** (Kahn's algorithm) on the pipeline's edges to determine safe order.
+2. For each node in order:
+   - **Resolve inputs** — merge static node config with upstream edge values.
+   - **Compute cache key** — `md5( slug + serialize( sorted_inputs ) )`.
+   - **Check cache** — in-memory (per-run) first, then WordPress transients.
+   - **Execute** the node via the registry if no cache hit.
+   - **Store** the result in both caches.
+3. Return all outputs keyed by node ID.
+
+### Caching strategy
+
+- **In-memory:** Avoids transient DB lookups when the same node + inputs appears
+  multiple times in one pipeline execution.
+- **WordPress transients:** Cross-request cache with configurable TTL (default: 1 hour).
+  Cache keys include the `pipeline_id` so different pipelines don't collide.
+- **Invalidation:** `clear_cache( $pipeline_id )` deletes all entries for a
+  specific pipeline; `clear_all_caches()` purges everything.
+- **Changed inputs → new hash → fresh execution** — ComfyUI's "only re-execute
+  changed parts" is achieved through content-addressed caching.
+
+### Pipeline graph format
+
+The executor consumes the same `{ nodes, edges }` format produced by the compiler
+and the ReactFlow front-end:
+
+```php
+$graph = [
+    'nodes' => [
+        'node_1' => [ 'slug' => 'text_block', 'inputs' => [ 'content' => 'Hello' ] ],
+        'node_2' => [ 'slug' => 'text_block', 'inputs' => [ 'tag' => 'p' ] ],
+    ],
+    'edges' => [
+        [ 'source' => 'node_1', 'sourcePort' => 'html', 'target' => 'node_2', 'targetPort' => 'content' ],
+    ],
+];
+```
+
+### Error handling
+
+| Condition | WP_Error code |
+|-----------|---------------|
+| Empty pipeline (no nodes) | `wp_mcp_ai_site_empty_pipeline` |
+| Cycle detected in edges | `wp_mcp_ai_site_pipeline_cycle` |
+| Node missing a slug | `wp_mcp_ai_site_node_missing_slug` |
+| Upstream dependency not executed | `wp_mcp_ai_site_missing_dependency` |
+| Node type not registered | `wp_mcp_ai_site_node_not_found` |
+
+---
+
+## 26. Site Builder — Tier C integration with document-editor
+
+The `document-editor` addon's `site-creator` mode is the first consumer of the
+site-builder subsystem. In Phase 5 (future):
+
+- The ReactFlow node-graph palette is populated from `get_nodes_for_frontend()`.
+- Section blueprints appear as draggable palette entries (from `list_all_summaries()`).
+- The GrapesJS preview receives the pipeline executor's HTML output in real-time.
+- Users can toggle between the node-graph view (developer mode) and the
+  GrapesJS visual editor (content mode).
+
+Existing references:
+
+- [`includes/site-builder/`](../../includes/site-builder/) — server-side infrastructure
+- [`config/site-blueprints/`](../../config/site-blueprints/) — reusable section blueprints
+- [`tests/test-site-node-*.php`](../../tests/) — PHPUnit test suites

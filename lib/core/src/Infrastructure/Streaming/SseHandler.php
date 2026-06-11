@@ -5,14 +5,14 @@
  * Sends properly framed SSE events to the client. Framework-agnostic:
  * relies on flush/echo, which works in any PHP SAPI.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Infrastructure\Streaming;
+namespace Nvoos\Core\Infrastructure\Streaming;
 
 class SseHandler {
 
@@ -40,14 +40,26 @@ class SseHandler {
 	 * Send SSE headers to the client.
 	 *
 	 * Must be called before any event is emitted. Disables output buffering
-	 * and sets the text/event-stream content type.
+	 * at both the PHP and WordPress levels and sets the text/event-stream
+	 * content type.
 	 */
 	public function sendHeaders(): void {
 		if ( $this->headersSent ) {
 			return;
 		}
 
-		// Disable output buffering.
+		// Disable PHP output buffering.
+		// phpcs:disable WordPress.PHP.DevelopmentFunctions,WordPress.PHP.IniSet.Risky,Generic.PHP.NoSilencedErrors.Discouraged
+		@\ini_set( 'output_buffering', 'off' );
+		@\ini_set( 'zlib.output_compression', 'off' );
+		// phpcs:enable
+
+		// Flush WordPress output buffers.
+		if ( \function_exists( 'wp_ob_end_flush_all' ) ) {
+			\wp_ob_end_flush_all();
+		}
+
+		// Clear any remaining output buffers.
 		while ( \ob_get_level() > 0 ) {
 			\ob_end_clean();
 		}
