@@ -77,6 +77,12 @@ class WP_MCP_AI_Harness_Profile {
 				'task_class' => 'general',
 				'pii_filter' => true,
 			),
+			'guardrails'       => array(
+				'enabled'        => false,
+				'strictness'     => 'medium',
+				'mode'           => 'warn',
+				'allowed_topics' => array(),
+			),
 			'evals_enabled'    => array(),
 			'verifiers'        => array(),
 			'cost_ceiling_usd' => self::DEFAULT_COST_CEILING_USD,
@@ -189,6 +195,27 @@ class WP_MCP_AI_Harness_Profile {
 				$out['memory']['task_class'] = 'general';
 			}
 			$out['memory']['pii_filter'] = isset( $m['pii_filter'] ) ? (bool) $m['pii_filter'] : true;
+		}
+
+		if ( isset( $raw['guardrails'] ) && is_array( $raw['guardrails'] ) ) {
+			$g                               = $raw['guardrails'];
+			$out['guardrails']['enabled']    = ! empty( $g['enabled'] );
+			$out['guardrails']['strictness'] = isset( $g['strictness'] ) && in_array( (string) $g['strictness'], array( 'low', 'medium', 'high' ), true )
+				? (string) $g['strictness']
+				: 'medium';
+			$out['guardrails']['mode']       = isset( $g['mode'] ) && in_array( (string) $g['mode'], array( 'block', 'warn', 'log' ), true )
+				? (string) $g['mode']
+				: 'warn';
+			if ( isset( $g['allowed_topics'] ) && is_array( $g['allowed_topics'] ) ) {
+				$topics = array();
+				foreach ( $g['allowed_topics'] as $topic ) {
+					$topic = trim( sanitize_text_field( (string) $topic ) );
+					if ( '' !== $topic ) {
+						$topics[] = $topic;
+					}
+				}
+				$out['guardrails']['allowed_topics'] = array_values( array_unique( $topics ) );
+			}
 		}
 
 		if ( isset( $raw['evals_enabled'] ) && is_array( $raw['evals_enabled'] ) ) {
@@ -312,7 +339,7 @@ class WP_MCP_AI_Harness_Profile {
 	 * Convenience: is a particular harness layer enabled for an assistant?
 	 *
 	 * @param int    $assistant_id Assistant post ID.
-	 * @param string $layer        One of: prompt, reasoning, tool_router, retrieval, refine, memory.
+	 * @param string $layer        One of: prompt, reasoning, tool_router, retrieval, refine, memory, guardrails.
 	 * @return bool
 	 */
 	public static function is_layer_enabled( $assistant_id, $layer ) {
@@ -335,6 +362,8 @@ class WP_MCP_AI_Harness_Profile {
 				return ! empty( $profile['refine']['enabled'] );
 			case 'memory':
 				return ! empty( $profile['memory']['scoped'] );
+			case 'guardrails':
+				return ! empty( $profile['guardrails']['enabled'] );
 			default:
 				return false;
 		}
