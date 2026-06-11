@@ -301,6 +301,7 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 		const merged = {
 			...( body as Record< string, unknown > ),
 			assistant_id: opts.assistantId,
+			stream: true,
 		};
 
 		const upstream = await fetch( opts.endpoint, {
