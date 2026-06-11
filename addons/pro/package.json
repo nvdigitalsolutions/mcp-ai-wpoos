@@ -57,7 +57,7 @@
 		"tesseract.js": "^5.1.1",
 		"turndown": "^7.2.0",
 		"twitter-api-v2": "^1.15.2",
-		"validator": "^13.12.0",
+		"validator": "^13.15.35",
 		"video-stitch": "^1.7.1"
 	},
 	"optionalDependencies": {
