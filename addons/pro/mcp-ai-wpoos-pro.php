@@ -1921,6 +1921,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_DietPi_Media_Center'          => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-media-center.php',
 				'WP_MCP_AI_Tool_DietPi_Health_Check'          => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-health-check.php',
 				'WP_MCP_AI_Tool_DietPi_Media_Request_Flow'    => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-media-request-flow.php',
+				// Phase 2 tools (4).
+				'WP_MCP_AI_Tool_DietPi_Backup_System'         => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-backup-system.php',
+				'WP_MCP_AI_Tool_DietPi_Update_System'         => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-update-system.php',
+				'WP_MCP_AI_Tool_DietPi_Manage_Storage'        => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-manage-storage.php',
+				'WP_MCP_AI_Tool_DietPi_Dashboard_Summary'     => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-dashboard-summary.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $dietpi_toolkit_tools );
 		}
@@ -2541,6 +2546,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		$pro_tools['dietpi_media_center']          = 'dietpi-apps';
 		$pro_tools['dietpi_health_check']          = 'dietpi-apps';
 		$pro_tools['dietpi_media_request_flow']    = 'dietpi-apps';
+		$pro_tools['dietpi_backup_system']         = 'system';
+		$pro_tools['dietpi_update_system']         = 'system';
+		$pro_tools['dietpi_manage_storage']        = 'system';
+		$pro_tools['dietpi_dashboard_summary']     = 'system';
 
 		// Merge Pro tools into the main group map.
 		return array_merge( $group_map, $pro_tools );

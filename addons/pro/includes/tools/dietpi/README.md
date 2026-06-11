@@ -29,6 +29,10 @@ Houses every DietPi Pro Toolkit tool implementation — system-level SSH command
 | Media Center | `dietpi_media_center` | Plex / Jellyfin |
 | Health Check | `dietpi_health_check` | Cross-app |
 | Media Request Flow | `dietpi_media_request_flow` | Cross-app |
+| Backup System | `dietpi_backup_system` | System (Phase 2) |
+| Update System | `dietpi_update_system` | System (Phase 2) |
+| Manage Storage | `dietpi_manage_storage` | System (Phase 2) |
+| Dashboard Summary | `dietpi_dashboard_summary` | System (Phase 2) |
 
 ## Dependencies
 
