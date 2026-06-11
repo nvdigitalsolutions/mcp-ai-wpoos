@@ -92,7 +92,7 @@ const App: React.FC<AppProps> = ( { config, apiUrl, nonce, endpoints } ) => {
 					'X-WP-Nonce': nonce,
 				},
 				body: JSON.stringify( {
-					message: trimmed,
+					messages: [ { role: 'user', content: trimmed } ],
 					assistant_id: config.assistantId || 0,
 					stream: true,
 				} ),
