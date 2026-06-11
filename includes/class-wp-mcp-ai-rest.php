@@ -2757,46 +2757,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_messages', __( 'Messages must be provided as an array of role/content pairs.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
-			// ----- Layer I Guardrails: pre-screen the last user message -----
-			$last_user_message = '';
-			for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
-				if ( isset( $messages[ $i ]['role'] ) && 'user' === $messages[ $i ]['role'] ) {
-					$last_user_message = isset( $messages[ $i ]['content'] ) ? (string) $messages[ $i ]['content'] : '';
-					break;
-				}
-			}
-
-			if ( '' !== $last_user_message ) {
-				/**
-				 * Filter: pre-screen a chat message before it reaches the LLM.
-				 *
-				 * The Layer I guardrails subscriber hooks here to detect off-topic,
-				 * jailbreak, and prompt-injection messages. Returning a WP_Error
-				 * blocks the message.
-				 *
-				 * @since 1.12.0
-				 *
-				 * @param array|WP_Error|null $result       Pass-through or WP_Error to block.
-				 * @param string              $message      The user's message text.
-				 * @param int                 $assistant_id Assistant post ID.
-				 * @param array               $context      Additional context: { surface, request }.
-				 */
-				$screen_result = apply_filters(
-					'wp_mcp_ai_pre_chat_message',
-					null,
-					$last_user_message,
-					isset( $assistant_id ) ? (int) $assistant_id : 0,
-					array(
-						'surface' => 'rest_chat',
-						'request' => $request,
-					)
-				);
-
-				if ( is_wp_error( $screen_result ) ) {
-					return $screen_result;
-				}
-			}
-
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 
 			// Check if this is an embedded provider with a client-side (WebLLM) model.
