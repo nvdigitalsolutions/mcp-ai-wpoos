@@ -21,6 +21,7 @@ namespace Nvoos\Core\Infrastructure\Provider;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 
 abstract class AbstractProviderClient {
 
@@ -31,11 +32,32 @@ abstract class AbstractProviderClient {
 	 */
 	protected string $providerSlug;
 
+	/**
+	 * Optional token-budget manager for pre-flight context-window validation.
+	 *
+	 * When set (via the oos-bridge or adapter layer), every chat() / stream()
+	 * call performs a pre-flight check against the model's context window.
+	 * When null, validation is skipped — this preserves backward compatibility
+	 * for callers that haven't wired the token-budget manager yet.
+	 */
+	protected ?TokenBudgetManager $tokenBudget = null;
+
 	public function __construct(
 		protected readonly SettingsStoreInterface $settings,
 		protected readonly HttpClientInterface $http,
 		protected readonly ErrorFactoryInterface $errors,
 	) {}
+
+	/**
+	 * Wire the token-budget manager for pre-flight context-window validation.
+	 *
+	 * Called by the DI bridge (oos-bridge.php) after all providers are
+	 * constructed.  Once set, every chat() and stream() call runs
+	 * validateContextWindow() before sending the request.
+	 */
+	public function setTokenBudgetManager( TokenBudgetManager $budget ): void {
+		$this->tokenBudget = $budget;
+	}
 
 	/**
 	 * Return the provider identifier slug.
@@ -155,5 +177,57 @@ abstract class AbstractProviderClient {
 		}
 
 		return $this->settings->getRequestTimeout();
+	}
+
+	// ─── Context Window Validation ─────────────────────────────────────
+
+	/**
+	 * Run pre-flight context-window validation on a chat payload.
+	 *
+	 * Concrete provider clients call this *after* building the full
+	 * request payload and *before* sending the HTTP request.  When the
+	 * token-budget manager is wired, this:
+	 *
+	 *  1. Estimates tokens from the serialised payload.
+	 *  2. Looks up the model's context window limit.
+	 *  3. Hard-rejects if the estimate exceeds the limit.
+	 *
+	 * Returns null when validation passes (or when no budget manager is
+	 * wired).  Returns an error shape when the context window is exceeded.
+	 *
+	 * @param array  $payload  The full request payload about to be sent.
+	 * @param string $model    Model identifier.
+	 * @return array|null  Error shape or null.
+	 *
+	 * @phpstan-return array{code: string, message: string, data: array}|null
+	 */
+	protected function validateContextWindow( array $payload, string $model ): ?array {
+		if ( null === $this->tokenBudget ) {
+			return null;
+		}
+
+		return $this->tokenBudget->validateContextWindow(
+			$payload,
+			$model,
+			$this->providerSlug,
+		);
+	}
+
+	/**
+	 * Convert a context-window validation error into a provider error.
+	 *
+	 * Since validateContextWindow() returns raw array shapes (not error
+	 * objects), this helper wraps the result through ErrorFactoryInterface
+	 * so that concrete providers can return a proper error type.
+	 *
+	 * @param array $result  The error shape from validateContextWindow().
+	 * @return mixed  A properly-typed error via ErrorFactoryInterface.
+	 */
+	protected function contextWindowError( array $result ): mixed {
+		return $this->errors->create(
+			$result['code'],
+			$result['message'],
+			$result['data'],
+		);
 	}
 }

@@ -67,6 +67,16 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 			$payload['stream'] = (bool) $options['stream'];
 		}
 
+		// Pre-flight context-window validation.
+		$preflight = $this->validateContextWindow( $payload, $model );
+		if ( null !== $preflight && ! empty( $preflight['data']['warning'] ) ) {
+			// Soft warning — log but do not block.
+			// Platforms may hook here for observability.
+		}
+		if ( null !== $preflight && empty( $preflight['data']['warning'] ) ) {
+			return $this->contextWindowError( $preflight );
+		}
+
 		try {
 			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
 		} catch ( \JsonException $e ) {
@@ -134,6 +144,15 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 		}
 		if ( isset( $options['top_p'] ) ) {
 			$payload['top_p'] = (float) $options['top_p'];
+		}
+
+		// Pre-flight context-window validation.
+		$preflight = $this->validateContextWindow( $payload, $model );
+		if ( null !== $preflight && ! empty( $preflight['data']['warning'] ) ) {
+			// Soft warning — log but do not block.
+		}
+		if ( null !== $preflight && empty( $preflight['data']['warning'] ) ) {
+			return $this->contextWindowError( $preflight );
 		}
 
 		try {

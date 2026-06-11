@@ -2757,6 +2757,46 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_messages', __( 'Messages must be provided as an array of role/content pairs.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
+			// ----- Layer I Guardrails: pre-screen the last user message -----
+			$last_user_message = '';
+			for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
+				if ( isset( $messages[ $i ]['role'] ) && 'user' === $messages[ $i ]['role'] ) {
+					$last_user_message = isset( $messages[ $i ]['content'] ) ? (string) $messages[ $i ]['content'] : '';
+					break;
+				}
+			}
+
+			if ( '' !== $last_user_message ) {
+				/**
+				 * Filter: pre-screen a chat message before it reaches the LLM.
+				 *
+				 * The Layer I guardrails subscriber hooks here to detect off-topic,
+				 * jailbreak, and prompt-injection messages. Returning a WP_Error
+				 * blocks the message.
+				 *
+				 * @since 1.12.0
+				 *
+				 * @param array|WP_Error|null $result       Pass-through or WP_Error to block.
+				 * @param string              $message      The user's message text.
+				 * @param int                 $assistant_id Assistant post ID.
+				 * @param array               $context      Additional context: { surface, request }.
+				 */
+				$screen_result = apply_filters(
+					'wp_mcp_ai_pre_chat_message',
+					null,
+					$last_user_message,
+					isset( $assistant_id ) ? (int) $assistant_id : 0,
+					array(
+						'surface' => 'rest_chat',
+						'request' => $request,
+					)
+				);
+
+				if ( is_wp_error( $screen_result ) ) {
+					return $screen_result;
+				}
+			}
+
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 
 			// Check if this is an embedded provider with a client-side (WebLLM) model.
@@ -11360,6 +11400,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Translate WordPress types to OOS domain types.
 				$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
 
+				// Reject requests with no assistant and no profession — matches the guard
+				// in the non-OOS handle_chat_request path.
+				if ( ! $assistant_id && ! $profession_id ) {
+					return new WP_Error(
+						'wp_mcp_ai_missing_assistant',
+						__( 'No assistant was provided and no default assistant is configured.', 'mcp-ai-wpoos' ),
+						array( 'status' => 400 )
+					);
+				}
+
 				$user_id = get_current_user_id();
 
 				// Build assistant config from WordPress post meta.
@@ -11450,7 +11500,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$options['model'] = $assistant_config['model'];
 			}
 
-				// Pass through temperature and max_tokens from assistant config if not
+			// Fall back to global default provider/model when the assistant config
+			// does not specify them. Matches the fallback chain in sanitize_options()
+			// used by the non-OOS handler.
+			if ( empty( $options['provider'] ) || empty( $options['model'] ) ) {
+				$global_settings = WP_MCP_AI_Admin_Settings::get_settings();
+				if ( empty( $options['provider'] ) && ! empty( $global_settings['default_provider'] ) ) {
+					$options['provider'] = sanitize_key( $global_settings['default_provider'] );
+				}
+				if ( empty( $options['model'] ) && ! empty( $global_settings['default_model'] ) ) {
+					$options['model'] = sanitize_text_field( $global_settings['default_model'] );
+				}
+			}
+
+			// Pass through temperature and max_tokens from assistant config if not
 				// already set in request options.
 			if ( ! isset( $options['temperature'] ) && isset( $assistant_config['temperature'] ) && null !== $assistant_config['temperature'] ) {
 				$options['temperature'] = (float) $assistant_config['temperature'];

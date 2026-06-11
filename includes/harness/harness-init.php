@@ -25,10 +25,15 @@ require_once __DIR__ . '/class-wp-mcp-ai-retrieval-harness.php';
 require_once __DIR__ . '/class-wp-mcp-ai-self-refine-loop.php';
 require_once __DIR__ . '/class-wp-mcp-ai-harness-prompt-injector.php';
 require_once __DIR__ . '/class-wp-mcp-ai-harness-eval-scheduler.php';
+require_once __DIR__ . '/class-wp-mcp-ai-guardrails.php';
 
 // Register the chat-client cue injector. Off by default at the profile
 // level — this is just the subscriber wiring.
 WP_MCP_AI_Harness_Prompt_Injector::register();
+
+// Register the Layer I guardrails subscriber. Off by default at the profile
+// level — this is just the subscriber wiring.
+WP_MCP_AI_Guardrails::register();
 
 // Register the Layer G cron. The handler is a no-op until at least one
 // assistant has `evals_enabled` populated and a generator is wired up

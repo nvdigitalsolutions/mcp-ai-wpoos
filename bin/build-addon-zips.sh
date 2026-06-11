@@ -16,6 +16,10 @@
 #   build/nvoos-saas-controller-v<saas-controller-version>.zip
 #   build/nvoos-comic-reader-v<comic-reader-version>.zip
 #   build/nvoos-chat-spa-v<chat-spa-version>.zip
+#   build/nvoos-librechat-v<librechat-version>.zip
+#   build/nvoos-cloudways-dashboard-v<cloudways-dashboard-version>.zip
+#   build/nvoos-funiq-bridge-v<funiq-bridge-version>.zip
+#   build/nvoos-schedule-anything-platform-v<schedule-anything-platform-version>.zip
 #
 # Usage:
 #   ./bin/build-addon-zips.sh
@@ -129,6 +133,18 @@ COMIC_READER_VERSION=${COMIC_READER_VERSION:-dev}
 CHAT_SPA_VERSION=$(_read_addon_version "addons/chat-spa/nvoos-chat-spa.php")
 CHAT_SPA_VERSION=${CHAT_SPA_VERSION:-dev}
 
+LIBRECHAT_VERSION=$(_read_addon_version "addons/librechat/nvoos-librechat.php")
+LIBRECHAT_VERSION=${LIBRECHAT_VERSION:-dev}
+
+CW_DASHBOARD_VERSION=$(_read_addon_version "addons/cloudways-dashboard/nvoos-cloudways-dashboard.php")
+CW_DASHBOARD_VERSION=${CW_DASHBOARD_VERSION:-dev}
+
+FUNIQ_BRIDGE_VERSION=$(_read_addon_version "addons/funiq-bridge/funiq-bridge.php")
+FUNIQ_BRIDGE_VERSION=${FUNIQ_BRIDGE_VERSION:-dev}
+
+SAP_VERSION=$(_read_addon_version "addons/schedule-anything-platform/schedule-anything-platform.php")
+SAP_VERSION=${SAP_VERSION:-dev}
+
 if ! command -v zip >/dev/null 2>&1; then
 echo "❌ Error: zip is required but not installed."
 exit 1
@@ -157,8 +173,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, and addons/chat-spa must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, and addons/schedule-anything-platform must exist."
 exit 1
 fi
 
@@ -183,6 +199,10 @@ DOCS_HUB_ZIP="${OUTPUT_DIR}/nvoos-docs-hub-v${DOCS_HUB_VERSION}.zip"
 SAAS_CONTROLLER_ZIP="${OUTPUT_DIR}/nvoos-saas-controller-v${SAAS_VERSION}.zip"
 COMIC_READER_ZIP="${OUTPUT_DIR}/nvoos-comic-reader-v${COMIC_READER_VERSION}.zip"
 CHAT_SPA_ZIP="${OUTPUT_DIR}/nvoos-chat-spa-v${CHAT_SPA_VERSION}.zip"
+LIBRECHAT_ZIP="${OUTPUT_DIR}/nvoos-librechat-v${LIBRECHAT_VERSION}.zip"
+CW_DASHBOARD_ZIP="${OUTPUT_DIR}/nvoos-cloudways-dashboard-v${CW_DASHBOARD_VERSION}.zip"
+FUNIQ_BRIDGE_ZIP="${OUTPUT_DIR}/nvoos-funiq-bridge-v${FUNIQ_BRIDGE_VERSION}.zip"
+SAP_ZIP="${OUTPUT_DIR}/nvoos-schedule-anything-platform-v${SAP_VERSION}.zip"
 
 # Remove any previously built ZIPs for these slugs (they may carry a stale version stamp).
 rm -f "$OUTPUT_DIR"/nvoos-algorave-linux-x64-v*.zip
@@ -194,14 +214,18 @@ rm -f "$OUTPUT_DIR"/nvoos-docs-hub-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-saas-controller-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-comic-reader-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-chat-spa-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-librechat-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-cloudways-dashboard-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-funiq-bridge-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-schedule-anything-platform-v*.zip
 if [ "$SKIP_CANVAS" = false ]; then
 rm -f "$OUTPUT_DIR"/nvoos-canvas-linux-x64-v*.zip
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=10
+TOTAL_STEPS=14
 else
-TOTAL_STEPS=11
+TOTAL_STEPS=15
 fi
 
 echo "=========================================="
@@ -476,6 +500,139 @@ CHAT_SPA_SIZE=$(du -h "$CHAT_SPA_ZIP" | cut -f1)
 echo "✅ ${CHAT_SPA_ZIP} (${CHAT_SPA_SIZE})"
 echo ""
 
+echo "[10/${TOTAL_STEPS}] Building nvoos-librechat-v${LIBRECHAT_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/librechat/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/librechat/node_modules" ]; then
+echo "  ℹ️  Installing librechat npm dependencies (npm ci)..."
+( cd addons/librechat && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for librechat — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/librechat/node_modules" ]; then
+echo "  ℹ️  Building librechat artifacts (npm run build)..."
+( cd addons/librechat && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for librechat — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/librechat-stage/nvoos-librechat"
+rsync -a "addons/librechat/" "${TMP_DIR}/librechat-stage/nvoos-librechat/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'esbuild.config.cjs' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/librechat-stage"
+zip -r -q "${ROOT_DIR}/${LIBRECHAT_ZIP}" nvoos-librechat/
+)
+LIBRECHAT_SIZE=$(du -h "$LIBRECHAT_ZIP" | cut -f1)
+echo "✅ ${LIBRECHAT_ZIP} (${LIBRECHAT_SIZE})"
+echo ""
+
+echo "[11/${TOTAL_STEPS}] Building nvoos-cloudways-dashboard-v${CW_DASHBOARD_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/cloudways-dashboard/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/cloudways-dashboard/node_modules" ]; then
+echo "  ℹ️  Installing cloudways-dashboard npm dependencies (npm ci)..."
+( cd addons/cloudways-dashboard && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for cloudways-dashboard — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/cloudways-dashboard/node_modules" ]; then
+echo "  ℹ️  Building cloudways-dashboard artifacts (npm run build)..."
+( cd addons/cloudways-dashboard && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for cloudways-dashboard — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/cw-dashboard-stage/nvoos-cloudways-dashboard"
+rsync -a "addons/cloudways-dashboard/" "${TMP_DIR}/cw-dashboard-stage/nvoos-cloudways-dashboard/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'esbuild.config.cjs' \
+--exclude 'eslint.config.js' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/cw-dashboard-stage"
+zip -r -q "${ROOT_DIR}/${CW_DASHBOARD_ZIP}" nvoos-cloudways-dashboard/
+)
+CW_DASHBOARD_SIZE=$(du -h "$CW_DASHBOARD_ZIP" | cut -f1)
+echo "✅ ${CW_DASHBOARD_ZIP} (${CW_DASHBOARD_SIZE})"
+echo ""
+
+echo "[12/${TOTAL_STEPS}] Building nvoos-funiq-bridge-v${FUNIQ_BRIDGE_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/funiq-bridge/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/funiq-bridge/node_modules" ]; then
+echo "  ℹ️  Installing funiq-bridge npm dependencies (npm ci)..."
+( cd addons/funiq-bridge && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for funiq-bridge — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/funiq-bridge/node_modules" ]; then
+echo "  ℹ️  Building funiq-bridge artifacts (npm run build)..."
+( cd addons/funiq-bridge && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for funiq-bridge — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/funiq-bridge-stage/nvoos-funiq-bridge"
+rsync -a "addons/funiq-bridge/" "${TMP_DIR}/funiq-bridge-stage/nvoos-funiq-bridge/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'esbuild.config.cjs' \
+--exclude 'eslint.config.js' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/funiq-bridge-stage"
+zip -r -q "${ROOT_DIR}/${FUNIQ_BRIDGE_ZIP}" nvoos-funiq-bridge/
+)
+FUNIQ_BRIDGE_SIZE=$(du -h "$FUNIQ_BRIDGE_ZIP" | cut -f1)
+echo "✅ ${FUNIQ_BRIDGE_ZIP} (${FUNIQ_BRIDGE_SIZE})"
+echo ""
+
+echo "[13/${TOTAL_STEPS}] Building nvoos-schedule-anything-platform-v${SAP_VERSION}.zip"
+mkdir -p "${TMP_DIR}/sap-stage/nvoos-schedule-anything-platform"
+rsync -a "addons/schedule-anything-platform/" "${TMP_DIR}/sap-stage/nvoos-schedule-anything-platform/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json'
+(
+cd "${TMP_DIR}/sap-stage"
+zip -r -q "${ROOT_DIR}/${SAP_ZIP}" nvoos-schedule-anything-platform/
+)
+SAP_SIZE=$(du -h "$SAP_ZIP" | cut -f1)
+echo "✅ ${SAP_ZIP} (${SAP_SIZE})"
+echo ""
+
 # Canvas builds a native Linux binary (canvas.node) inside a Docker
 # container. This step is best-effort:
 #   - Canvas is platform-specific and is NOT part of the WordPress.org
@@ -498,7 +655,7 @@ echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavail
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[10/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
+echo "[14/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
 
 # Defensive re-check: in long-running pipelines the docker daemon may have
 # disappeared between the start-of-script check and now. Bail out softly
@@ -588,6 +745,10 @@ echo "  - ${GRAPHIFY_ZIP}"
 echo "  - ${SAAS_CONTROLLER_ZIP}"
 echo "  - ${COMIC_READER_ZIP}"
 echo "  - ${CHAT_SPA_ZIP}"
+echo "  - ${LIBRECHAT_ZIP}"
+echo "  - ${CW_DASHBOARD_ZIP}"
+echo "  - ${FUNIQ_BRIDGE_ZIP}"
+echo "  - ${SAP_ZIP}"
 if [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 0 ]; then
 echo "  - ${CANVAS_ZIP}"
 elif [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 1 ]; then

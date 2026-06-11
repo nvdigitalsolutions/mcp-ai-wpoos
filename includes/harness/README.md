@@ -1,8 +1,8 @@
-# Harness — LLM Harness Layers A–H
+# Harness — LLM Harness Layers A–I
 
 ## Purpose
 
-Implements the seven opt-in LLM harness layers (Profile, Prompt cues, Reasoning/Self-consistency, Tool routing, Retrieval, Self-Refine, PII filter, Eval scheduling) that wrap provider calls with rate-limit, retry, telemetry, and reflection behaviour — and nothing else.
+Implements the eight opt-in LLM harness layers (Profile, Prompt cues, Reasoning/Self-consistency, Tool routing, Retrieval, Self-Refine, PII filter, Eval scheduling, Guardrails) that wrap provider calls with rate-limit, retry, telemetry, and reflection behaviour — and nothing else.
 
 ## Tier
 
@@ -26,8 +26,11 @@ Implements the seven opt-in LLM harness layers (Profile, Prompt cues, Reasoning/
 | `WP_MCP_AI_Self_Refine_Loop` | `class-wp-mcp-ai-self-refine-loop.php` | chat service (when enabled), `record_reflection` tool |
 | `WP_MCP_AI_Harness_Prompt_Injector` | `class-wp-mcp-ai-harness-prompt-injector.php` | self-registers a chat-client subscriber on load |
 | `WP_MCP_AI_Harness_Eval_Scheduler` | `class-wp-mcp-ai-harness-eval-scheduler.php` | self-registers a WP-Cron handler on load |
+| `WP_MCP_AI_Guardrails` | `class-wp-mcp-ai-guardrails.php` | self-registers as system-prompt + pre-screen subscriber on load |
 
 The seven harness tools (`list_prompt_cues`, `select_prompt_cue`, `apply_prompt_cue`, `self_consistency_vote`, `retrieve_with_provenance`, `record_reflection`, `scope_memory`) live in [`includes/tools/harness/`](../tools/harness/) and are registered from this folder's init via `wp_mcp_ai_register_tools`.
+
+Layer I (Guardrails) does not ship its own tools — it hooks into the existing chat pipeline via the `wp_mcp_ai_resolved_system_prompt` filter (to inject guardrail instructions) and the `wp_mcp_ai_pre_chat_message` filter (to pre-screen messages before they reach the LLM).
 
 ## Inputs / Outputs / Neighbors
 
@@ -35,8 +38,9 @@ The seven harness tools (`list_prompt_cues`, `select_prompt_cue`, `apply_prompt_
 - **Writes to:** agent-memory CCT (verbal reflections after PII scrubbing), telemetry spans via the OTEL exporter, WP-Cron schedule (`Eval_Scheduler::register()`).
 - **Upstream callers:** [`includes/services/`](../services/) chat service (per-assistant gating on `Harness_Profile`), [`includes/assistants/metaboxes/`](../assistants/metaboxes/) (`Metabox_Harness_Profile`), [`includes/tools/harness/`](../tools/harness/).
 - **Downstream collaborators:** [`includes/agents/`](../agents/) Critic role (default critic callable for `Self_Refine_Loop`), [`includes/measurement/`](../measurement/) (reads reliability data, writes spans), [`includes/tools/`](../tools/) registry (registers harness tools).
-- **Events fired:** `wp_mcp_ai_harness_tool_score` (filter — Pro override point, now includes `$attention_score` param since 1.8.0), `wp_mcp_ai_harness_rrf_weight_harness` / `wp_mcp_ai_harness_rrf_weight_attention` (filter — tune RRF stage weights per task class since 1.8.0), `wp_mcp_ai_harness_eval_generator` (filter), `wp_mcp_ai_pii_filter_patterns` (filter — extra redaction patterns), `wp_mcp_ai_register_tools` listener at priority 30.
-- **Events listened to:** chat-client message lifecycle (`Harness_Prompt_Injector`), WP-Cron `wp_mcp_ai_harness_eval_run` (`Eval_Scheduler`), `wp_mcp_ai_register_tools`.
+- **Events fired:** `wp_mcp_ai_harness_tool_score` (filter — Pro override point, now includes `$attention_score` param since 1.8.0), `wp_mcp_ai_harness_rrf_weight_harness` / `wp_mcp_ai_harness_rrf_weight_attention` (filter — tune RRF stage weights per task class since 1.8.0), `wp_mcp_ai_harness_eval_generator` (filter), `wp_mcp_ai_pii_filter_patterns` (filter — extra redaction patterns), `wp_mcp_ai_guardrail_violation` (action — Layer I, fired when a guardrail violation is detected), `wp_mcp_ai_register_tools` listener at priority 30.
+- **Events listened to:** chat-client message lifecycle (`Harness_Prompt_Injector`, `Guardrails`), WP-Cron `wp_mcp_ai_harness_eval_run` (`Eval_Scheduler`), `wp_mcp_ai_register_tools`.
+- **Filters subscribed to (Guardrails):** `wp_mcp_ai_resolved_system_prompt` (priority 20 — injects guardrail instructions), `wp_mcp_ai_pre_chat_message` (priority 10 — pre-screens user messages).
 
 ## Conventions
 
@@ -60,7 +64,7 @@ vendor/bin/phpunit tests/test-harness-eval-scheduler-inline-kick.php
 
 ## Also Load
 
-- [`docs/llm-harness.md`](../../docs/llm-harness.md) — the full Layers A–H reference (authoritative)
+- [`docs/features/llm-harness.md`](../../docs/features/llm-harness.md) — the full Layers A–I reference (authoritative)
 - [`.context/conventions.md`](../../.context/conventions.md) — naming, style (always)
 - [`.context/security-checklist.md`](../../.context/security-checklist.md) — PII / secret handling (always)
 - [`.context/tool-registry.md`](../../.context/tool-registry.md) — the seven harness tools live in `includes/tools/harness/`
