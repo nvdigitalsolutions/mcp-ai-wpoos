@@ -115,7 +115,7 @@
 		"@wordpress/data": "^9.0.0",
 		"@wordpress/element": "^5.0.0",
 		"@wordpress/env": "^11.6.0",
-		"@wordpress/eslint-plugin": "^23.0.0",
+		"@wordpress/eslint-plugin": "^25.4.0",
 		"@wordpress/hooks": "^3.0.0",
 		"@wordpress/i18n": "^4.0.0",
 		"@wordpress/scripts": "^31.4.0",
