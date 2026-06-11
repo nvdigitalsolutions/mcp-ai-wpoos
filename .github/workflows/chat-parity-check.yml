@@ -68,17 +68,21 @@ jobs:
             const { execSync } = require('child_process');
             const output = execSync('php bin/check-chat-parity.php 2>&1 || true', { encoding: 'utf8' });
 
+            const body = [
+              '## Chat Parity Check',
+              '',
+              'This PR touches legacy chat code. The parity check found gaps between the legacy implementation and `lib/core`.',
+              '',
+              '```',
+              output.substring(0, 6000),
+              '```',
+              '',
+              '> **Note:** Non-blocking advisory. If your changes need a `lib/core` counterpart, open a companion PR or file an issue with the `gap:chat` label.',
+            ].join('\n');
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `## Chat Parity Check
-
-This PR touches legacy chat code. The parity check found gaps between the legacy implementation and \`lib/core\`.
-
-\`\`\`
-${output.substring(0, 6000)}
-\`\`\`
-
-> **Note:** Non-blocking advisory. If your changes need a \`lib/core\` counterpart, open a companion PR or file an issue with the \`gap:chat\` label.`
+              body,
             });
