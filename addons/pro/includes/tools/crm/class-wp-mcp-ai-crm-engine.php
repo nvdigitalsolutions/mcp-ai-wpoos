@@ -138,7 +138,14 @@ class WP_MCP_AI_CRM_Engine {
 				'sms_provider'              => 'twilio',
 				// Default Gmail import query (Gmail search syntax).
 				'gmail_default_query'       => 'newer_than:7d is:unread',
+				// Gmail scheduled import settings (since 2.9.0).
+				'gmail_poll_interval'       => 300, // Seconds (60–3600). Default 5 minutes.
+				'gmail_max_per_poll'        => 10,  // Max messages per poll cycle (1–25).
+				'gmail_use_history_sync'    => true, // Use incremental historyId sync.
+				// Email-to-Case routing rules (since 2.9.0).
+				'email_to_case_rules'       => array(),
 			),
+
 			'search'                  => array(
 				'algorithm'       => 'keyword_tfidf',
 				'default_orderby' => 'relevance',
@@ -173,6 +180,16 @@ class WP_MCP_AI_CRM_Engine {
 				'default_assignee_id' => 0,
 				'ticket_categories'   => array( 'Bug', 'Question', 'Feature Request', 'Account', 'Billing', 'Other' ),
 				'resolution_types'    => array( 'Solved', 'Not Reproducible', "Won't Fix", 'Duplicate', 'Third Party' ),
+			),
+			// Email-to-Case routing (since 2.9.0).
+			'email_to_case'           => array(
+				'enabled'              => true,
+				'default_priority'     => 'p2_high',
+				'default_category'     => 'question',
+				// Subject-based routing: keyword → (category, priority).
+				'subject_rules'        => array(),
+				// Sender-based routing: email/domain → (category, priority, assignee).
+				'sender_rules'         => array(),
 			),
 		);
 
