@@ -672,6 +672,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php';
 		}
 
+		// Load DietPi Pro Toolkit if enabled (Pro feature — Raspberry Pi / DietPi server and media app management).
+		if ( ! empty( $settings['enable_dietpi_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/dietpi-toolkit-init.php';
+		}
+
 		// Load Extended Cognition Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/init.php';
@@ -1888,6 +1893,45 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools              = array_merge( $pro_tools, $law_firm_toolkit_tools );
 		}
 
+		// Add DietPi Pro Toolkit tools if enabled (19 tools — Raspberry Pi / DietPi server and media app management).
+		if ( ! empty( $settings['enable_dietpi_toolkit'] ) ) {
+			$dietpi_toolkit_tools = array(
+				// System tools (5).
+				'WP_MCP_AI_Tool_DietPi_Send_SSH_Command'      => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-send-ssh-command.php',
+				'WP_MCP_AI_Tool_DietPi_List_Services'         => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-list-services.php',
+				'WP_MCP_AI_Tool_DietPi_Control_Service'       => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-control-service.php',
+				'WP_MCP_AI_Tool_DietPi_System_Info'           => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-system-info.php',
+				'WP_MCP_AI_Tool_DietPi_System_Stats'          => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-system-stats.php',
+				// Transmission tools (3).
+				'WP_MCP_AI_Tool_DietPi_List_Transmission'     => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-list-transmission.php',
+				'WP_MCP_AI_Tool_DietPi_Add_Transmission'      => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-add-transmission.php',
+				'WP_MCP_AI_Tool_DietPi_Control_Transmission'  => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-control-transmission.php',
+				// Jackett tools (2).
+				'WP_MCP_AI_Tool_DietPi_Search_Jackett'        => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-search-jackett.php',
+				'WP_MCP_AI_Tool_DietPi_List_Jackett_Indexers' => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-list-jackett-indexers.php',
+				// Sonarr tools (3).
+				'WP_MCP_AI_Tool_DietPi_List_Sonarr_Series'    => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-list-sonarr-series.php',
+				'WP_MCP_AI_Tool_DietPi_Add_Sonarr_Series'     => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-add-sonarr-series.php',
+				'WP_MCP_AI_Tool_DietPi_Manage_Sonarr'         => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-manage-sonarr.php',
+				// Radarr tools (3).
+				'WP_MCP_AI_Tool_DietPi_List_Radarr_Movies'    => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-list-radarr-movies.php',
+				'WP_MCP_AI_Tool_DietPi_Add_Radarr_Movie'      => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-add-radarr-movie.php',
+				'WP_MCP_AI_Tool_DietPi_Manage_Radarr'         => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-manage-radarr.php',
+				// Media center, health check, cross-app workflow (3).
+				'WP_MCP_AI_Tool_DietPi_Media_Center'          => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-media-center.php',
+				'WP_MCP_AI_Tool_DietPi_Health_Check'          => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-health-check.php',
+				'WP_MCP_AI_Tool_DietPi_Media_Request_Flow'    => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-media-request-flow.php',
+				// Phase 2 tools (4).
+				'WP_MCP_AI_Tool_DietPi_Backup_System'         => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-backup-system.php',
+				'WP_MCP_AI_Tool_DietPi_Update_System'         => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-update-system.php',
+				'WP_MCP_AI_Tool_DietPi_Manage_Storage'        => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-manage-storage.php',
+				'WP_MCP_AI_Tool_DietPi_Dashboard_Summary'     => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-dashboard-summary.php',
+				// Phase 3 tool (1).
+				'WP_MCP_AI_Tool_DietPi_Provision_New_App'     => WP_MCP_AI_PRO_PATH . 'includes/tools/dietpi/class-wp-mcp-ai-tool-dietpi-provision-new-app.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $dietpi_toolkit_tools );
+		}
+
 		// Comic Creation Toolkit (12 tools).
 		if ( ! empty( $settings['enable_comic_creation_toolkit'] ) ) {
 			$comic_tools_base = WP_MCP_AI_PRO_PATH . 'includes/tools/comic-creation/';
@@ -2483,6 +2527,32 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		 * @param array $pro_tools Associative array of Pro tool slugs to group identifiers.
 		 */
 		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tool_groups', $pro_tools );
+
+		// ── DietPi Toolkit (19 tools) ──
+		$pro_tools['dietpi_send_ssh_command']      = 'system';
+		$pro_tools['dietpi_list_services']         = 'system';
+		$pro_tools['dietpi_control_service']       = 'system';
+		$pro_tools['dietpi_system_info']           = 'system';
+		$pro_tools['dietpi_system_stats']          = 'system';
+		$pro_tools['dietpi_list_transmission']     = 'dietpi-apps';
+		$pro_tools['dietpi_add_transmission']      = 'dietpi-apps';
+		$pro_tools['dietpi_control_transmission']  = 'dietpi-apps';
+		$pro_tools['dietpi_search_jackett']        = 'dietpi-apps';
+		$pro_tools['dietpi_list_jackett_indexers'] = 'dietpi-apps';
+		$pro_tools['dietpi_list_sonarr_series']    = 'dietpi-apps';
+		$pro_tools['dietpi_add_sonarr_series']     = 'dietpi-apps';
+		$pro_tools['dietpi_manage_sonarr']         = 'dietpi-apps';
+		$pro_tools['dietpi_list_radarr_movies']    = 'dietpi-apps';
+		$pro_tools['dietpi_add_radarr_movie']      = 'dietpi-apps';
+		$pro_tools['dietpi_manage_radarr']         = 'dietpi-apps';
+		$pro_tools['dietpi_media_center']          = 'dietpi-apps';
+		$pro_tools['dietpi_health_check']          = 'dietpi-apps';
+		$pro_tools['dietpi_media_request_flow']    = 'dietpi-apps';
+		$pro_tools['dietpi_backup_system']         = 'system';
+		$pro_tools['dietpi_update_system']         = 'system';
+		$pro_tools['dietpi_manage_storage']        = 'system';
+		$pro_tools['dietpi_dashboard_summary']     = 'system';
+		$pro_tools['dietpi_provision_new_app']     = 'system';
 
 		// Merge Pro tools into the main group map.
 		return array_merge( $group_map, $pro_tools );
