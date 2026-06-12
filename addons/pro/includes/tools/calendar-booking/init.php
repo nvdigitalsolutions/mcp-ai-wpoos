@@ -38,6 +38,10 @@ if ( is_admin() ) {
 // Tools will be implemented in Phase 2.6.
 // Planned location: addons/pro/includes/tools/calendar-booking/.
 
+// --- Performance optimization (business hours autoload, appointment retention, schedule cap, orphan detection) ---
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-cal-orch-optimization.php';
+WP_MCP_AI_Calendar_Orchestration_Optimization::init();
+
 /**
  * Enqueue calendar booking toolkit admin styles.
  *

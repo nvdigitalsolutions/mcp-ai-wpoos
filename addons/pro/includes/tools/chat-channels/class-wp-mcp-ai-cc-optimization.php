@@ -331,5 +331,3 @@ class WP_MCP_AI_Chat_Channels_Optimization {
 	}
 }
 
-// Initialize.
-add_action( 'plugins_loaded', array( 'WP_MCP_AI_Chat_Channels_Optimization', 'init' ), 40 );

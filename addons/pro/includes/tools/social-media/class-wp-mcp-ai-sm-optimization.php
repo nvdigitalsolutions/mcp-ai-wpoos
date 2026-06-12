@@ -246,7 +246,6 @@ class WP_MCP_AI_Social_Media_Optimization {
 	 * @param mixed $new_value New value.
 	 */
 	public static function fix_templates_autoload( $old, $new_value ) {
-		unset( $old, $new_value );
 		global $wpdb;
 
 		// Force no-autoload.
@@ -260,12 +259,18 @@ class WP_MCP_AI_Social_Media_Optimization {
 		);
 
 		// Enforce cap on template count.
-		if ( is_array( $new ) && count( $new ) > self::MAX_TEMPLATES ) {
-			$new = array_slice( $new, count( $new ) - self::MAX_TEMPLATES, self::MAX_TEMPLATES, true );
-			update_option( self::TEMPLATES_OPTION, $new, false );
+		if ( is_array( $new_value ) && count( $new_value ) > self::MAX_TEMPLATES ) {
+			$capped = array_slice( $new_value, count( $new_value ) - self::MAX_TEMPLATES, self::MAX_TEMPLATES, true );
+			// Write capped value directly to DB to avoid re-triggering this hook.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$wpdb->update(
+				$wpdb->options,
+				array( 'option_value' => maybe_serialize( $capped ) ),
+				array( 'option_name' => self::TEMPLATES_OPTION ),
+				array( '%s' ),
+				array( '%s' )
+			);
 		}
 	}
 }
 
-// Initialize.
-add_action( 'plugins_loaded', array( 'WP_MCP_AI_Social_Media_Optimization', 'init' ), 40 );

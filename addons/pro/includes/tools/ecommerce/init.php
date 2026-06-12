@@ -97,3 +97,10 @@ function wp_mcp_ai_enqueue_ecommerce_toolkit_admin_styles( $hook ) {
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_ecommerce_toolkit_admin_styles' );
+
+// --- Performance optimization (inventory autoload, temp file cleanup, post-meta prune) ---
+// Must load even when not in admin so its daily cron runs.
+if ( wp_mcp_ai_is_ecommerce_toolkit_enabled() && ! ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-ec-optimization.php';
+	WP_MCP_AI_Ecommerce_Optimization::init();
+}

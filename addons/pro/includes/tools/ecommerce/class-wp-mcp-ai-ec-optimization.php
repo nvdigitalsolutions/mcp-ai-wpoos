@@ -206,5 +206,3 @@ class WP_MCP_AI_Ecommerce_Optimization {
 	}
 }
 
-// Initialize.
-add_action( 'plugins_loaded', array( 'WP_MCP_AI_Ecommerce_Optimization', 'init' ), 40 );

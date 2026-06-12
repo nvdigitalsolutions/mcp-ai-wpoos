@@ -31,6 +31,10 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/social-media/.
+
+	// --- Performance optimization (CPT fix, cron handler, retention, autorespond cap) ---
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-sm-optimization.php';
+	WP_MCP_AI_Social_Media_Optimization::init();
 }
 
 /**
