@@ -967,17 +967,11 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,  // Only stores data.
-			'external-api'      => true,  // May fetch user-provided URLs via wp_remote_get.
-			'read-only'         => false, // Writes context data.
-			'idempotent'        => false, // Creates new context each time.
-			'cacheable'         => false, // Storage operation, not cacheable.
-			'requires-auth'     => true,  // Needs user authentication.
-			'blocking'          => false, // Fast operation.
-			'uses-network'      => false, // No network calls.
-			'modifies-wp'       => true,  // Stores data in transients.
-			'expensive'         => false, // Low cost operation.
-			'requires-approval' => false, // Auto-approved.
+			'external-api',         // May fetch user-provided URLs via wp_remote_get.
+			'network-dependent',    // May fetch user-provided URLs.
+			'write',                // Writes context data.
+			'state-changing',       // Stores data in transients.
+			'requires-capability',  // Needs user authentication.
 		);
 	}
 }

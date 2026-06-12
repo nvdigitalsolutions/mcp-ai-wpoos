@@ -255,17 +255,10 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => false, // Creates team records.
-			'local-only'        => true,  // No external API calls.
-			'read-only'         => false, // Writes team data.
-			'idempotent'        => false, // Creates new team each time.
-			'cacheable'         => false, // Team composition is dynamic.
-			'requires-auth'     => true,  // Needs user authentication.
-			'blocking'          => false, // Fast operation.
-			'uses-network'      => false, // No network calls.
-			'modifies-wp'       => true,  // Stores team in transients.
-			'expensive'         => false, // Low cost operation.
-			'requires-approval' => false, // Auto-approved.
+			'local-only',          // No external API calls.
+			'write',               // Creates team records.
+			'state-changing',      // Stores team in transients.
+			'requires-capability', // Needs user authentication.
 		);
 	}
 }

@@ -291,17 +291,10 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => false, // Creates delegation records.
-			'local-only'        => true,  // No external API calls.
-			'read-only'         => false, // Writes delegation data.
-			'idempotent'        => false, // Each delegation is unique.
-			'cacheable'         => false, // Delegation is dynamic.
-			'requires-auth'     => true,  // Needs user authentication.
-			'blocking'          => false, // Async delegation.
-			'uses-network'      => false, // No network calls.
-			'modifies-wp'       => true,  // Stores delegation in transients.
-			'expensive'         => false, // Low cost operation.
-			'requires-approval' => false, // Auto-approved.
+			'local-only',          // No external API calls.
+			'write',               // Creates delegation records.
+			'state-changing',      // Stores delegation in transients.
+			'requires-capability', // Needs user authentication.
 		);
 	}
 }
