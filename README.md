@@ -46,8 +46,6 @@
 
 ### Getting Started
 - [🆕 Latest Updates (v1.1.29 — June 2026)](#-latest-updates-v1129--june-2026)
-- [🆕 Latest Updates (v1.1.28 — June 2026)](#-latest-updates-v1128--june-2026)
-- [🆕 Latest Updates (v1.1.27 — June 2026)](#-latest-updates-v1127--june-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -195,37 +193,6 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - 🖥️ **CLI Coverage Enhancements.** Comprehensive WP-CLI command coverage improvements across the plugin toolchain.
 - 📚 **Folder README Convention — Unix Theory P7.** Folder READMEs added for every PHP-bearing subdirectory across `includes/` and `addons/pro/includes/`. Agent context docs (`CLAUDE.md`, `AGENTS.md`) synced with recent features.
 - 🔧 **Build & CI.** `build-spa-addons` GitHub Actions workflow added. Missing SPA addon ZIPs restored. All SPA bundles rebuilt.
-
-### ✨ What's New at a Glance (v1.1.23)
-
-- 🖥️ **Pro React SPA — Zed-Inspired Admin Interface.** Threads Sidebar with scope-grouped agent conversations. Agent Panel with SSE streaming chat and tool call cards. Cmd+K Command Palette with fuzzy search across 830+ tools. Hash-based routing with 7 pages (Chat, Settings, Tools, Assistants, Workflows, Analytics).
-- 🔒 **Agent Profiles — Write/Ask/Minimal/Custom.** Built-in tool permission profiles with per-tool allow/deny/confirm patterns and glob-style matching. Filter tools sent to LLM by profile.
-- 💬 **@-mention Context System.** Type `@` to mention posts, tools, skills, threads, files, users, terms, and settings. Debounced autocomplete with keyboard navigation.
-- 📸 **Checkpoints & Diff Review.** Automatic state snapshots on every agentic turn. One-click restore to any checkpoint. Accept/reject individual change hunks with before/after diff visualization.
-- ✏️ **Inline Assistant — Gutenberg AI Text Transform.** Select text in block editor → describe transformation → model rewrites in place or inserts after. Supports GPT-4o, Claude, Gemini.
-- 🔄 **Multi-Model Comparison.** Send same prompt to multiple AI models simultaneously and compare responses side-by-side with timing badges and "Use This Response" selection.
-- 👥 **Collaborative Presence.** Real-time user presence tracking via WordPress Heartbeat API. Avatar stack showing other editors with activity descriptions.
-- 🏗️ **Base Thread Management Infrastructure.** 6 PHP manager classes + 5 REST controllers + 4 DB tables (PHP 7.4 compatible). Shared by jQuery chat UI and Pro React SPA.
-- 🤖 **Antigravity Interactions API Rewrite.** Gemini Managed Agent service rewritten for the real Antigravity Interactions API with code execution, Google Search grounding, and sandbox environments.
-- 📦 **TypeScript Upgrade + Orchestration Toggles.** Shared TS types, services, and React SPA builds. "Use TypeScript-Compiled Assets" toggle + Antigravity managed agents toggle in Orchestration settings.
-- 📚 **Comic Reader Addon.** New React-based CBR/CBZ/CB7/CBT comic reader with dual-page modes, zoom, keyboard nav, touch, fullscreen, and drag-drop upload.
-- 🎨 **Media Studio v0.3.0.** Zoom/pan, drawing tools (brush, eraser, shapes, text), and save-to-WP-Media-Library. Image editor now feature-complete.
-- 🔧 **30+ Reliability Fixes.** Cron status diagnostics (HTTP status + body in errors), PHP 8.2+ compatibility ($namespace/$rest_base), PHPUnit 11 (6 batches), WP.org compliance re-audit, PHPCS 0 errors (353→0), qs CVE-2026-8723, docs-hub fixes, DeepSeek fallback, test suite stability.
-
-### ✨ What's New at a Glance (v1.1.22)
-
-- ✅ **Baseten AI — 11th first-class provider.** Full OpenAI-compatible integration with chat, tools, streaming, and reasoning passthrough at `api.baseten.co/v1`.
-- ✅ **CoSAI Secure-by-Design Agentic System.** Four new `includes/agents/` classes: capability boundary with per-session tool allow-lists + rate limiting, cryptographic SHA-256 audit trails (CPT + options dual storage), risk-tiered approval gate (low/medium/high/critical), and isolated code sandbox (Python/Node.js/Bash/PHP). All provider-agnostic.
-- ✅ **Gemini I/O 2026 Model Refresh.** Gemini 3.5 Flash as recommended model (4x faster, dynamic thinking, $1.50/M input). Gemini Omni Flash as new video default (10s, native audio, AI avatars). 3.1 Flash deprecated.
-- ✅ **Continual Harness P5 — Self-Improving Agent System.** Agents learn from execution history and improve tool selection through feedback loops. CoSAI audit trail integration.
-- ✅ **SaaS Controller Phase 2 & 4 complete.** Stripe deployment editor + OpenRouter deployment editor from WP-Admin.
-- ✅ **npm packages — nvoos-vad, nvoos-chat-bubble, nvoos-chat-memory-ui.** Voice Activity Detection, floating chat bubble widget, chat memory drawer component. All with TypeScript declarations.
-- ✅ **WordPress Studio test environment.** Auto-detection of Studio's database, ABSPATH, and site URL in `tests/bootstrap.php`.
-- ✅ **Security fixes.** UUID buffer bounds check (saas-controller), `map_meta_cap=false` for audit trail CPT (WP 6.1+ compat), AV false positives in test suite.
-- ✅ **Allowed providers list expanded.** DeepSeek, OpenRouter, DigitalOcean, Kimi, Baseten added to provider validation gate.
-- ✅ **LM Studio URLs fixed.** All `lmstudio.ai` references → GitHub org after upstream HTTP 500 errors.
-- ✅ **Addons PHPCS — 93% reduction (1,143 → 82 errors).** Two-batch cleanup across all addons with 12 new `bin/` helper scripts.
-- ✅ **v1.1.21 items:** WP.org Compliance Complete (F1–F10 resolved). Canonical Return Envelope (191 `WP_Error` conversions). Semantic Caveman Compression. AI Prompt Caching (all providers). Capability Fence P2b full rollout (~830 tools). Security Center (5-tab). Memory Layer 2026 Phases 3–8. Kimi provider (10th). ACP Server. MCP Bridge. Unix Theory P0–P7. DigitalOcean Serverless Inference. Async Chat Continuation. Jobs/Tasks Drawer. Model Catalog May 2026 refresh. GDPR JetEngine Privacy Exporters. `@wordpress/env` dev dependency. Domain migration (nvoos.com → nvoos.pro/cloud). Addons/pro security scan fixes.
 
 **Privacy & Terms Notice:** This plugin connects to external AI services. Review each provider's policies:
 - **OpenAI**: [Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy)
