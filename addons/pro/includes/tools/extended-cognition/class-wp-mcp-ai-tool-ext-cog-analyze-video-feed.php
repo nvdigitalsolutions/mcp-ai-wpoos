@@ -27,7 +27,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.8.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
+class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+
+	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
 	/**
 	 * Action Scheduler hook for background video analysis.
@@ -99,34 +101,34 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'video_source'      => array(
+					'video_source'       => array(
 						'type'        => 'string',
 						'enum'        => array( 'camera_stream', 'attachment_id', 'url' ),
 						'description' => 'Video source. "camera_stream" polls the browser camera via SSE. "attachment_id" uses a WP media library video. "url" downloads an external video. Default: camera_stream.',
 						'default'     => 'camera_stream',
 					),
-					'session_id'        => array(
+					'session_id'         => array(
 						'type'        => 'string',
 						'description' => 'Active chat session ID (required for camera_stream mode).',
 					),
-					'attachment_id'     => array(
+					'attachment_id'      => array(
 						'type'        => 'integer',
 						'description' => 'WordPress attachment post ID (required for attachment_id mode).',
 						'minimum'     => 1,
 					),
-					'url'               => array(
+					'url'                => array(
 						'type'        => 'string',
 						'format'      => 'uri',
 						'description' => 'External video URL (required for url mode).',
 					),
-					'sample_rate'       => array(
+					'sample_rate'        => array(
 						'type'        => 'integer',
 						'description' => 'Frames per second to analyze. Higher values give more detail but take longer. Default: 1 (one frame per second).',
 						'minimum'     => 1,
 						'maximum'     => 30,
 						'default'     => 1,
 					),
-					'analysis_depth'    => array(
+					'analysis_depth'     => array(
 						'type'        => 'string',
 						'enum'        => array( 'quick', 'thorough', 'scene_change_only' ),
 						'description' => 'Analysis depth. "quick" samples every Nth frame. "thorough" samples every frame at the requested rate. "scene_change_only" only samples when visual scene changes significantly. Default: quick.',
@@ -134,23 +136,26 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 					),
 					'labels_of_interest' => array(
 						'type'        => 'array',
-						'items'       => array( 'type' => 'string', 'maxLength' => 100 ),
+						'items'       => array(
+							'type'      => 'string',
+							'maxLength' => 100,
+						),
 						'description' => 'Products/brands to look for. Falls back to Product Brand taxonomy.',
 						'maxItems'    => 100,
 					),
-					'track_products'    => array(
+					'track_products'     => array(
 						'type'        => 'boolean',
 						'description' => 'Track products across frames to avoid double-counting. Default: true.',
 						'default'     => true,
 					),
-					'max_frames'        => array(
+					'max_frames'         => array(
 						'type'        => 'integer',
 						'description' => 'Maximum frames to process (1–600). Longer videos beyond the sync limit are dispatched to background processing. Default: 60.',
 						'minimum'     => 1,
 						'maximum'     => 600,
 						'default'     => 60,
 					),
-					'timeout_ms'        => array(
+					'timeout_ms'         => array(
 						'type'        => 'integer',
 						'description' => 'Max ms for synchronous processing. Default: 60000.',
 						'minimum'     => 10000,
@@ -272,12 +277,12 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 		$jobs    = is_array( $jobs ) ? $jobs : array();
 
 		$jobs[ $action_id ] = array(
-			'action_id'     => $action_id,
-			'user_id'       => $user_id,
-			'video_source'  => $video_source,
-			'max_frames'    => $max_frames,
-			'status'        => 'pending',
-			'created_at'    => time(),
+			'action_id'    => $action_id,
+			'user_id'      => $user_id,
+			'video_source' => $video_source,
+			'max_frames'   => $max_frames,
+			'status'       => 'pending',
+			'created_at'   => time(),
 		);
 
 		// Keep only last 100 jobs.
@@ -288,11 +293,11 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 		update_option( 'wp_mcp_ai_ext_cog_video_jobs', $jobs, false );
 
 		return array(
-			'success'       => true,
+			'success'         => true,
 			'processing_mode' => 'background',
-			'action_id'     => $action_id,
-			'max_frames'    => $max_frames,
-			'message'       => sprintf(
+			'action_id'       => $action_id,
+			'max_frames'      => $max_frames,
+			'message'         => sprintf(
 				/* translators: %d: action scheduler ID */
 				__( 'Video analysis dispatched to background queue (job #%d). Results will be stored on the session when complete. Check Action Scheduler admin for progress.', 'mcp-ai-wpoos-pro' ),
 				$action_id
@@ -302,6 +307,9 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 
 	/**
 	 * Run synchronous frame-by-frame analysis.
+	 *
+	 * Public so Action Scheduler callbacks can invoke it directly without
+	 * Reflection (see as-callbacks.php).
 	 *
 	 * @param string $video_source   Source type.
 	 * @param string $session_id     Session ID.
@@ -316,7 +324,7 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 	 * @param array  $context        Execution context.
 	 * @return array|WP_Error
 	 */
-	private function run_sync_analysis( $video_source, $session_id, $attachment_id, $url, $sample_rate, $analysis_depth, $track_products, $max_frames, array $labels, $timeout_ms, array $context ) {
+	public function run_sync_analysis( $video_source, $session_id, $attachment_id, $url, $sample_rate, $analysis_depth, $track_products, $max_frames, array $labels, $timeout_ms, array $context ) {
 		// --- Acquire frames ---
 		if ( 'camera_stream' === $video_source ) {
 			$frames = $this->capture_stream_frames( $session_id, $sample_rate, $max_frames, $timeout_ms, $context );
@@ -335,9 +343,9 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 		}
 
 		// --- Analyze each frame ---
-		$service      = new WP_MCP_AI_HF_Vision_Inference_Service();
-		$frame_results = array();
-		$all_brands    = array();
+		$service        = new WP_MCP_AI_HF_Vision_Inference_Service();
+		$frame_results  = array();
+		$all_brands     = array();
 		$brand_timeline = array();
 
 		foreach ( $frames as $index => $frame_base64 ) {
@@ -361,7 +369,7 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 
 			// Aggregate brands.
 			foreach ( $result['brands_found'] as $brand ) {
-				$all_brands[] = $brand;
+				$all_brands[]             = $brand;
 				$brand_timeline[ $index ] = isset( $brand_timeline[ $index ] )
 					? array_merge( $brand_timeline[ $index ], array( $brand ) )
 					: array( $brand );
@@ -417,12 +425,12 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 			return $post_id;
 		}
 
-		$rate_limit = absint( $settings['rate_limit'] );
+		$rate_limit  = absint( $settings['rate_limit'] );
 		$interval_us = $sample_rate > 0 ? (int) ( 1000000 / $sample_rate ) : 1000000;
 
-		$timeout_s    = ceil( $timeout_ms / 1000 );
-		$start_time   = time();
-		$frames       = array();
+		$timeout_s  = ceil( $timeout_ms / 1000 );
+		$start_time = time();
+		$frames     = array();
 
 		for ( $i = 0; $i < $max_frames; $i++ ) {
 			if ( ( time() - $start_time ) >= $timeout_s ) {
@@ -439,7 +447,10 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 				array(
 					'type'       => 'capture_visual',
 					'request_id' => $request_id,
-					'resolution' => array( 'width' => 640, 'height' => 480 ),
+					'resolution' => array(
+						'width'  => 640,
+						'height' => 480,
+					),
 					'store'      => false,
 				)
 			);
@@ -489,7 +500,7 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 			return new WP_Error( 'ffmpeg_unavailable', __( 'Video frame extractor service is not available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$extractor = new WP_MCP_AI_Video_Frame_Extractor_Service();
+		$extractor   = new WP_MCP_AI_Video_Frame_Extractor_Service();
 		$frame_count = min( $max_frames, 'thorough' === $analysis_depth ? $max_frames : max( 5, (int) ( $max_frames / 5 ) ) );
 
 		$frame_paths = $extractor->extract_frames( $video_path, $frame_count );
@@ -538,26 +549,26 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			@unlink( $temp_file );
-			return $response;
+				wp_delete_file( $temp_file );
+				return $response;
 		}
 
 		$code = wp_remote_retrieve_response_code( $response );
 		if ( $code < 200 || $code >= 300 ) {
-			@unlink( $temp_file );
-			return new WP_Error(
-				'download_failed',
-				sprintf(
+				wp_delete_file( $temp_file );
+				return new WP_Error(
+					'download_failed',
+					sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'Failed to download video (HTTP %d).', 'mcp-ai-wpoos-pro' ),
-					$code
-				)
-			);
+						__( 'Failed to download video (HTTP %d).', 'mcp-ai-wpoos-pro' ),
+						$code
+					)
+				);
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Video_Frame_Extractor_Service' ) ) {
-			@unlink( $temp_file );
-			return new WP_Error( 'ffmpeg_unavailable', __( 'Video frame extractor service is not available.', 'mcp-ai-wpoos-pro' ) );
+				wp_delete_file( $temp_file );
+				return new WP_Error( 'ffmpeg_unavailable', __( 'Video frame extractor service is not available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$extractor   = new WP_MCP_AI_Video_Frame_Extractor_Service();
@@ -566,7 +577,7 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 		$frame_paths = $extractor->extract_frames( $temp_file, $frame_count );
 
 		// Clean up temp file.
-		@unlink( $temp_file );
+			wp_delete_file( $temp_file );
 
 		if ( is_wp_error( $frame_paths ) ) {
 			return $frame_paths;
@@ -585,24 +596,5 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed {
 		}
 
 		return $frames;
-	}
-
-	/**
-	 * Check if the current user (or guest) is allowed to use sensors.
-	 *
-	 * @param array $context Execution context.
-	 * @return bool
-	 */
-	private function current_user_can_use_sensors( array $context ) {
-		if ( current_user_can( 'edit_posts' ) ) {
-			return true;
-		}
-
-		$settings = wp_mcp_ai_ext_cog_get_settings();
-		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
-			return true;
-		}
-
-		return false;
 	}
 }

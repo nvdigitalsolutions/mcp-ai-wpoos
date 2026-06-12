@@ -24,7 +24,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Capture_Visual {
+class WP_MCP_AI_Tool_Ext_Cog_Capture_Visual implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+
+	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
 	/**
 	 * Get tool slug.
@@ -33,6 +35,33 @@ class WP_MCP_AI_Tool_Ext_Cog_Capture_Visual {
 	 */
 	public function get_slug() {
 		return 'ext_cog_capture_visual';
+	}
+
+	/**
+	 * Get tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Capture Visual (Extended Cognition)', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Capture a still frame from the user\'s camera for AI vision analysis.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -203,24 +232,5 @@ class WP_MCP_AI_Tool_Ext_Cog_Capture_Visual {
 		}
 
 		return $result;
-	}
-
-	/**
-	 * Check if the current user (or guest) is allowed to use sensors.
-	 *
-	 * @param array $context Execution context.
-	 * @return bool
-	 */
-	private function current_user_can_use_sensors( array $context ) {
-		if ( current_user_can( 'edit_posts' ) ) {
-			return true;
-		}
-
-		$settings = wp_mcp_ai_ext_cog_get_settings();
-		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
-			return true;
-		}
-
-		return false;
 	}
 }

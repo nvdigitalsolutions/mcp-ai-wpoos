@@ -55,18 +55,18 @@ class WP_MCP_AI_Product_Brand_Taxonomy {
 	 */
 	public static function register_taxonomy() {
 		$labels = array(
-			'name'                       => _x( 'Product Brands', 'Taxonomy General Name', 'mcp-ai-wpoos-pro' ),
-			'singular_name'              => _x( 'Product Brand', 'Taxonomy Singular Name', 'mcp-ai-wpoos-pro' ),
-			'search_items'               => __( 'Search Brands', 'mcp-ai-wpoos-pro' ),
-			'all_items'                  => __( 'All Brands', 'mcp-ai-wpoos-pro' ),
-			'parent_item'                => __( 'Parent Brand', 'mcp-ai-wpoos-pro' ),
-			'parent_item_colon'          => __( 'Parent Brand:', 'mcp-ai-wpoos-pro' ),
-			'edit_item'                  => __( 'Edit Brand', 'mcp-ai-wpoos-pro' ),
-			'update_item'                => __( 'Update Brand', 'mcp-ai-wpoos-pro' ),
-			'add_new_item'               => __( 'Add New Brand', 'mcp-ai-wpoos-pro' ),
-			'new_item_name'              => __( 'New Brand Name', 'mcp-ai-wpoos-pro' ),
-			'menu_name'                  => __( 'Product Brands', 'mcp-ai-wpoos-pro' ),
-			'not_found'                  => __( 'No brands found. Brands are used by the Extended Cognition visual recognition tools.', 'mcp-ai-wpoos-pro' ),
+			'name'              => _x( 'Product Brands', 'Taxonomy General Name', 'mcp-ai-wpoos-pro' ),
+			'singular_name'     => _x( 'Product Brand', 'Taxonomy Singular Name', 'mcp-ai-wpoos-pro' ),
+			'search_items'      => __( 'Search Brands', 'mcp-ai-wpoos-pro' ),
+			'all_items'         => __( 'All Brands', 'mcp-ai-wpoos-pro' ),
+			'parent_item'       => __( 'Parent Brand', 'mcp-ai-wpoos-pro' ),
+			'parent_item_colon' => __( 'Parent Brand:', 'mcp-ai-wpoos-pro' ),
+			'edit_item'         => __( 'Edit Brand', 'mcp-ai-wpoos-pro' ),
+			'update_item'       => __( 'Update Brand', 'mcp-ai-wpoos-pro' ),
+			'add_new_item'      => __( 'Add New Brand', 'mcp-ai-wpoos-pro' ),
+			'new_item_name'     => __( 'New Brand Name', 'mcp-ai-wpoos-pro' ),
+			'menu_name'         => __( 'Product Brands', 'mcp-ai-wpoos-pro' ),
+			'not_found'         => __( 'No brands found. Brands are used by the Extended Cognition visual recognition tools.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		$args = array(
@@ -89,7 +89,7 @@ class WP_MCP_AI_Product_Brand_Taxonomy {
 			'query_var'         => false,
 		);
 
-		register_taxonomy( self::TAXONOMY, array( 'ext_cog_session' ), $args );
+		register_taxonomy( self::TAXONOMY, array( 'wp_mcp_ai_cog_session' ), $args );
 	}
 
 	/**

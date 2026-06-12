@@ -20,7 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context {
+class WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+
+	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
 	/**
 	 * Get tool slug.
@@ -29,6 +31,33 @@ class WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context {
 	 */
 	public function get_slug() {
 		return 'ext_cog_get_motion_context';
+	}
+
+	/**
+	 * Get tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Get Motion Context (Extended Cognition)', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Read device orientation and motion state for understanding the user\'s physical context.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -167,24 +196,5 @@ class WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context {
 			'activity_inference' => isset( $captured['activity_inference'] ) ? sanitize_text_field( $captured['activity_inference'] ) : '',
 			'message'            => __( 'Device motion context captured. alpha/beta/gamma are orientation angles in degrees. acceleration is in m/s².', 'mcp-ai-wpoos' ),
 		);
-	}
-
-	/**
-	 * Check if the current user (or guest) is allowed to use sensors.
-	 *
-	 * @param array $context Execution context.
-	 * @return bool
-	 */
-	private function current_user_can_use_sensors( array $context ) {
-		if ( current_user_can( 'edit_posts' ) ) {
-			return true;
-		}
-
-		$settings = wp_mcp_ai_ext_cog_get_settings();
-		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
-			return true;
-		}
-
-		return false;
 	}
 }
