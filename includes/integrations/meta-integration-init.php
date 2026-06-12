@@ -34,4 +34,5 @@ function wp_mcp_ai_init_meta_integration() {
 $meta_handler = wp_mcp_ai_init_meta_integration();
 add_action( 'admin_post_wp_mcp_ai_meta_oauth_start', array( $meta_handler, 'handle_meta_oauth_start' ) );
 add_action( 'admin_post_wp_mcp_ai_meta_oauth_callback', array( $meta_handler, 'handle_meta_oauth_callback' ) );
+add_action( 'admin_post_wp_mcp_ai_meta_disconnect', array( $meta_handler, 'handle_meta_disconnect' ) );
 add_filter( 'allowed_redirect_hosts', array( $meta_handler, 'allow_meta_oauth_redirect_host' ), 10, 2 );

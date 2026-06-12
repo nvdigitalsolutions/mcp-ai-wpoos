@@ -603,6 +603,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
 				'wp_mcp_ai_gmail_oauth_start'
 			);
+			$disconnect_url    = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_disconnect' ),
+				'wp_mcp_ai_gmail_disconnect'
+			);
 
 			// Check for success or error messages.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
@@ -652,6 +656,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<p>
 						<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
 							<?php esc_html_e( 'Reconnect Gmail Account', 'mcp-ai-wpoos' ); ?>
+						</a>
+						<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
+							<?php esc_html_e( 'Disconnect', 'mcp-ai-wpoos' ); ?>
 						</a>
 					</p>
 					<p class="description">
@@ -775,6 +782,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				admin_url( 'admin-post.php?action=wp_mcp_ai_google_drive_oauth_start' ),
 				'wp_mcp_ai_google_drive_oauth_start'
 			);
+			$disconnect_url    = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_google_drive_disconnect' ),
+				'wp_mcp_ai_google_drive_disconnect'
+			);
 
 			// Check for success or error messages.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
@@ -824,6 +835,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<p>
 						<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
 							<?php esc_html_e( 'Reconnect Google Drive Account', 'mcp-ai-wpoos' ); ?>
+						</a>
+						<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
+							<?php esc_html_e( 'Disconnect', 'mcp-ai-wpoos' ); ?>
 						</a>
 					</p>
 					<p class="description">
@@ -1590,7 +1604,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				admin_url( 'admin-post.php?action=wp_mcp_ai_meta_oauth_start' ),
 				'wp_mcp_ai_meta_oauth_start'
 			);
+			$disconnect_url    = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_meta_disconnect' ),
+				'wp_mcp_ai_meta_disconnect'
+			);
+
+			// Check for disconnect notice.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$meta_disconnected = isset( $_GET['meta_disconnected'] ) ? sanitize_text_field( wp_unslash( $_GET['meta_disconnected'] ) ) : '';
 			?>
+			<?php if ( $meta_disconnected ) : ?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div class="notice notice-success inline" style="margin: 0 0 15px;">
+						<p><?php esc_html_e( 'Disconnected from Meta. Your app credentials remain saved for future connections.', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				</td>
+			</tr>
+		<?php endif; ?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Meta Connection', 'mcp-ai-wpoos' ); ?></th>
 				<td>
@@ -1613,6 +1645,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<p>
 							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
 								<?php esc_html_e( 'Reconnect Meta Account', 'mcp-ai-wpoos' ); ?>
+							</a>
+							<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
+								<?php esc_html_e( 'Disconnect', 'mcp-ai-wpoos' ); ?>
 							</a>
 						</p>
 						<p class="description">
@@ -1934,14 +1969,56 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Cloudways footer content.
 		 */
 		private function render_cloudways_footer() {
+			$settings            = WP_MCP_AI_Admin_Settings::get_settings();
+			$cloudways_connected = ! empty( $settings['cloudways_connected'] );
+			$disconnect_url      = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_cloudways_disconnect' ),
+				'wp_mcp_ai_cloudways_disconnect'
+			);
+
+			// Check for disconnect notice.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$cloudways_disconnected = isset( $_GET['cloudways_disconnected'] ) ? sanitize_text_field( wp_unslash( $_GET['cloudways_disconnected'] ) ) : '';
 			?>
+			<?php if ( $cloudways_disconnected ) : ?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div class="notice notice-success inline" style="margin: 0 0 15px;">
+						<p><?php esc_html_e( 'Disconnected from Cloudways. Your API credentials remain saved for future connections.', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				</td>
+			</tr>
+		<?php endif; ?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Cloudways Connection', 'mcp-ai-wpoos' ); ?></th>
 				<td>
+					<?php if ( $cloudways_connected ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'Connected to Cloudways', 'mcp-ai-wpoos' ); ?></strong>
+								<?php if ( ! empty( $settings['cloudways_account_name'] ) ) : ?>
+									<?php
+									printf(
+										/* translators: %s: Cloudways account name */
+										esc_html__( 'as %s', 'mcp-ai-wpoos' ),
+										'<code>' . esc_html( $settings['cloudways_account_name'] ) . '</code>'
+									);
+									?>
+								<?php endif; ?>
+							</p>
+						</div>
+					<?php endif; ?>
 					<p>
 						<button type="button" id="wp-mcp-ai-test-cloudways-connection" class="button button-secondary">
 							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 						</button>
+						<?php if ( $cloudways_connected ) : ?>
+							<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
+								<?php esc_html_e( 'Disconnect', 'mcp-ai-wpoos' ); ?>
+							</a>
+						<?php endif; ?>
 						<span id="wp-mcp-ai-cloudways-test-result" style="margin-left: 10px;"></span>
 					</p>
 					<div id="wp-mcp-ai-cloudways-account-info" style="margin-top: 10px;"></div>
@@ -1976,6 +2053,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$cloudflare_connected = ! empty( $settings['cloudflare_connected'] );
 			$pro_toolkit_enabled  = ! empty( $settings['enable_cloudflare_pro_toolkit'] );
 			$is_pro_active        = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$disconnect_url       = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_cloudflare_disconnect' ),
+				'wp_mcp_ai_cloudflare_disconnect'
+			);
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Cloudflare Connection', 'mcp-ai-wpoos' ); ?></th>
@@ -2001,6 +2082,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<button type="button" id="wp-mcp-ai-test-cloudflare-connection" class="button button-secondary">
 							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 						</button>
+						<?php if ( $cloudflare_connected ) : ?>
+							<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
+								<?php esc_html_e( 'Disconnect', 'mcp-ai-wpoos' ); ?>
+							</a>
+						<?php endif; ?>
 						<span id="wp-mcp-ai-cloudflare-test-result" style="margin-left: 10px;"></span>
 					</p>
 					<div id="wp-mcp-ai-cloudflare-zone-info" style="margin-top: 10px;"></div>
