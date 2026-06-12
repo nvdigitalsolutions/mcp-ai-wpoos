@@ -638,7 +638,6 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						case 'text':
 						case 'email':
 						case 'url':
-						case 'number':
 							?>
 							<input
 								type="<?php echo esc_attr( $type ); ?>"
@@ -647,13 +646,32 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								value="<?php echo esc_attr( $value ); ?>"
 								class="regular-text"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
-								<?php if ( 'number' === $type && isset( $field['min'] ) ) : ?>
+								<?php if ( ! empty( $autocomplete ) ) : ?>
+									autocomplete="<?php echo esc_attr( $autocomplete ); ?>"
+								<?php endif; ?>
+								<?php echo esc_attr( $required ? 'required' : '' ); ?>
+							/>
+							<?php
+							break;
+
+						case 'number':
+						case 'range':
+						case 'slider':
+							?>
+							<input
+								type="number"
+								id="<?php echo esc_attr( $key ); ?>"
+								name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
+								value="<?php echo esc_attr( $value ); ?>"
+								class="regular-text"
+								placeholder="<?php echo esc_attr( $placeholder ); ?>"
+								<?php if ( isset( $field['min'] ) ) : ?>
 									min="<?php echo esc_attr( $field['min'] ); ?>"
 								<?php endif; ?>
-								<?php if ( 'number' === $type && isset( $field['max'] ) ) : ?>
+								<?php if ( isset( $field['max'] ) ) : ?>
 									max="<?php echo esc_attr( $field['max'] ); ?>"
 								<?php endif; ?>
-								<?php if ( 'number' === $type && isset( $field['step'] ) ) : ?>
+								<?php if ( isset( $field['step'] ) ) : ?>
 									step="<?php echo esc_attr( $field['step'] ); ?>"
 								<?php endif; ?>
 								<?php if ( ! empty( $autocomplete ) ) : ?>
