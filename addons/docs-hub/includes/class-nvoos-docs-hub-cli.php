@@ -85,6 +85,11 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 	 * [--cancel]
 	 * : Cancel the currently in-flight rebuild.
 	 *
+	 * [--reset]
+	 * : Force-reset the rebuild state before enqueueing. Useful when a
+	 * previous rebuild is stuck and the auto-stale detection hasn't
+	 * triggered yet.
+	 *
 	 * [--strict]
 	 * : With --sync, exit non-zero if any broken links are found.
 	 *
@@ -93,6 +98,7 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 	 *   wp nvoos-docs rebuild --async
 	 *   wp nvoos-docs rebuild --sync
 	 *   wp nvoos-docs rebuild --resume
+	 *   wp nvoos-docs rebuild --reset      # force-reset stuck state then rebuild
 	 *
 	 * @subcommand rebuild
 	 * @since 1.2.0
@@ -106,6 +112,10 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 			$state = NV_oOS_Docs_Hub_Rebuild_Job::cancel_async();
 			WP_CLI::success( sprintf( 'Rebuild canceled at phase %s (cursor %d).', $state['phase'], (int) $state['cursor'] ) );
 			return;
+		}
+
+		if ( ! empty( $assoc_args['reset'] ) ) {
+			$this->reset( $args, $assoc_args );
 		}
 
 		if ( ! empty( $assoc_args['resume'] ) ) {
@@ -130,6 +140,83 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 			)
 		);
 		WP_CLI::log( 'Run `wp nvoos-docs status` to monitor progress.' );
+	}
+
+	/**
+	 * Force-reset a stuck rebuild state, optionally clearing caches.
+	 *
+	 * When a chunked rebuild stalls (cron down, server restart, etc.)
+	 * the state is left in a non-terminal phase and every subsequent
+	 * `enqueue()` call returns immediately without starting work.  This
+	 * command resets the state back to idle so the next rebuild can
+	 * proceed.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--hard]
+	 * : Also clear the live documentation cache (manifest + page files).
+	 *
+	 * [--staging]
+	 * : Also clear any partial staging artefacts left by a mid-rebuild
+	 * crash. On by default when the state phase is not `idle` or `done`.
+	 * Pass `--no-staging` to keep them.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *   # Reset a stuck state, keep the existing cache
+	 *   wp nvoos-docs reset
+	 *
+	 *   # Full nuclear reset — state + staging + live cache
+	 *   wp nvoos-docs reset --hard
+	 *
+	 * @since 1.2.1
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Named arguments.
+	 * @return void
+	 */
+	public function reset( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		$state  = NV_oOS_Docs_Hub_Rebuild_State::get();
+		$phase  = $state['phase'];
+		$job_id = $state['job_id'];
+
+		WP_CLI::log(
+			sprintf(
+				'Current rebuild state: phase=%s, cursor=%d/%d, job_id=%s, last_error=%s',
+				$phase,
+				(int) $state['cursor'],
+				(int) $state['total'],
+				$job_id ?: '—',
+				$state['last_error'] ?: '—'
+			)
+		);
+
+		$hard           = \WP_CLI\Utils\get_flag_value( $assoc_args, 'hard', false );
+		$clear_staging  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'staging', true );
+		$keep_staging   = \WP_CLI\Utils\get_flag_value( $assoc_args, 'no-staging', false );
+
+		if ( $keep_staging ) {
+			$clear_staging = false;
+		}
+
+		// Cancel any in-flight cron ticks.
+		wp_clear_scheduled_hook( NV_oOS_Docs_Hub_Rebuild_Pipeline::TICK_HOOK );
+		NV_oOS_Docs_Hub_Rebuild_State::reset();
+		WP_CLI::log( 'Rebuild state reset to idle.' );
+
+		if ( $clear_staging || $hard ) {
+			$cache = new NV_oOS_Docs_Hub_Cache();
+			$cache->clear_staging();
+			WP_CLI::log( 'Staging cache cleared.' );
+		}
+
+		if ( $hard ) {
+			$cache = new NV_oOS_Docs_Hub_Cache();
+			$cache->clear();
+			WP_CLI::log( 'Live documentation cache cleared.' );
+		}
+
+		WP_CLI::success( 'Reset complete. Run `wp nvoos-docs rebuild` to start a fresh rebuild.' );
 	}
 
 	/**

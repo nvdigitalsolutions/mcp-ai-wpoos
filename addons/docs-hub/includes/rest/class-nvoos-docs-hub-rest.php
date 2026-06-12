@@ -271,11 +271,17 @@ class NV_oOS_Docs_Hub_REST {
 		$cache    = new NV_oOS_Docs_Hub_Cache();
 		$manifest = $cache->get_manifest();
 
+		// When the cache is empty, schedule an async rebuild instead of
+		// running the full rebuild inline — a blocking sync rebuild inside
+		// a REST request can exceed the PHP max_execution_time on large
+		// repos and cause a critical error / white screen for the visitor.
+		// The async path returns quickly; the visitor sees an empty index
+		// while the background job populates it.
 		if ( false === $manifest ) {
-			// Attempt a fresh build.
-			$result = NV_oOS_Docs_Hub_Rebuild_Job::run();
-			if ( ! empty( $result['success'] ) ) {
-				$manifest = $cache->get_manifest();
+			// Only attempt auto-rebuild when an admin is logged in
+			// (avoid triggering rebuilds for every anonymous visitor).
+			if ( current_user_can( 'manage_options' ) ) {
+				NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
 			}
 		}
 
@@ -350,10 +356,10 @@ class NV_oOS_Docs_Hub_REST {
 		$payload = $cache->get_page( $slug );
 
 		if ( false === $payload ) {
-			// Try to build on-demand.
-			$result = NV_oOS_Docs_Hub_Rebuild_Job::run();
-			if ( ! empty( $result['success'] ) ) {
-				$payload = $cache->get_page( $slug );
+			// When page cache is empty, schedule an async rebuild instead
+			// of running the sync rebuild inline (same rationale as get_manifest).
+			if ( current_user_can( 'manage_options' ) ) {
+				NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
 			}
 		}
 
