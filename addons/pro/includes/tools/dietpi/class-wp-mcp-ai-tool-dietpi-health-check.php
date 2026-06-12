@@ -23,7 +23,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Health_Check' ) ) {
 			}
 			// Pi throttling.
 			$pi_info = $this->ssh()->raspberry_pi_info();
-			if ( ! is_wp_error( $pi_info ) && isset( $pi_info['throttled'] ) && '0x0' !== $pi_info['throttled'] ) { $report['warnings'][] = 'pi_throttling_detected'; $report['status'] = 'warning'; }
+			if ( ! is_wp_error( $pi_info ) && isset( $pi_info['throttled'] ) && 'throttled=0x0' !== $pi_info['throttled'] ) { $report['warnings'][] = 'pi_throttling_detected'; $report['status'] = 'warning'; }
 			// Services.
 			$svc = $this->ssh()->dietpi_services( 'status', '' );
 			if ( ! is_wp_error( $svc ) ) {
