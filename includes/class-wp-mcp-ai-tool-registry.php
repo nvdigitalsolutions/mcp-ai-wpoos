@@ -249,8 +249,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return void
 		 */
 		public function clear_tools() {
-			$this->tools                 = array();
-			$this->bootstrapped          = false;
+			$this->tools                     = array();
+			$this->bootstrapped              = false;
 			$this->unavailable_tool_messages = array();
 		}
 
@@ -272,11 +272,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 *
 		 * @param string $old_slug Slug of the deprecated tool.
 		 * @param string $new_slug Slug of the replacement tool.
-		 * @param array  $args     Optional metadata: {
+		 * @param array  $args     Optional metadata.
 		 *     @type string $since   Version where the alias was introduced (e.g. '1.3.0').
 		 *     @type string $remove  Version where the alias will be removed (e.g. '1.4.0').
 		 *     @type string $message Human-readable migration note.
-		 * }
 		 * @return bool True on success, false if either slug is empty / identical.
 		 */
 		public function register_deprecated_alias( $old_slug, $new_slug, $args = array() ) {
@@ -1158,9 +1157,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 				// WordPress Plugins - Tools requiring specific WordPress plugins.
 				'get_elementor_templates'            => 'wordpress-plugins',
-								'get_elementor_form_submissions'    => 'wordpress-plugins',
-								'get_all_form_submissions'          => 'wordpress-plugins',
-								'get_woo_recent_orders'              => 'wordpress-plugins',
+				'get_elementor_form_submissions'     => 'wordpress-plugins',
+				'get_all_form_submissions'           => 'wordpress-plugins',
+				'get_woo_recent_orders'              => 'wordpress-plugins',
 				'get_woo_products'                   => 'wordpress-plugins',
 				'create_woo_product'                 => 'wordpress-plugins',
 				'get_jetengine_items'                => 'wordpress-plugins',
@@ -1777,9 +1776,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_FF_Create_League_Report'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-create-league-report.php',
 				'WP_MCP_AI_Tool_FF_Player_Research'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-player-research.php',
 				'WP_MCP_AI_Tool_Get_Elementor_Templates'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-templates.php',
-								'WP_MCP_AI_Tool_Import_Elementor_Template_Kit' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php',
-								'WP_MCP_AI_Tool_Get_Elementor_Form_Submissions' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-form-submissions.php',
-								'WP_MCP_AI_Tool_Get_All_Form_Submissions' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-all-form-submissions.php',
+				'WP_MCP_AI_Tool_Import_Elementor_Template_Kit' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php',
+				'WP_MCP_AI_Tool_Get_Elementor_Form_Submissions' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-form-submissions.php',
+				'WP_MCP_AI_Tool_Get_All_Form_Submissions'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-all-form-submissions.php',
 				'WP_MCP_AI_Tool_Get_Woo_Orders'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
 				'WP_MCP_AI_Tool_Get_Woo_Products'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-products.php',
 				'WP_MCP_AI_Tool_Create_Woo_Product'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-woo-product.php',
@@ -1919,14 +1918,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$status_labels = array();
 			$status_file   = WP_MCP_AI_PATH . 'docs/tool-status.txt';
 
-			// Check if file exists.
-			if ( ! file_exists( $status_file ) ) {
+			// Check if file exists and is readable.
+			if ( ! is_readable( $status_file ) ) {
 				return $status_labels;
 			}
 
-			// Read file content.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read for configuration.
-			$content = file_get_contents( $status_file );
+			// Read file content, suppressing warnings since failure is handled below.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents,WordPress.PHP.NoSilencedErrors.Discouraged -- Local file read; failure handled below.
+			$content = @file_get_contents( $status_file );
 			if ( false === $content ) {
 				return $status_labels;
 			}
@@ -2023,7 +2022,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @param array                           $contexts Execution contexts (e.g., 'client', 'server', 'worker').
 		 * @return bool Whether the tool was registered.
 		 */
-		public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future context-aware registration.
+		public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameter reserved for future context-aware registration.
 			// For now, use legacy registration.
 			return $this->register_tool( $tool );
 		}

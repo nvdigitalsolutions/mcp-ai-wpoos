@@ -648,6 +648,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => false,
 				),
 
+				// DietPi Pro Toolkit.
+				'enable_dietpi_toolkit'                  => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable DietPi Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable DietPi device management, SSH, transmission, Sonarr, Radarr, Jackett, and media center tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 18+ AI-powered DietPi management tools for SSH command execution, service control, system monitoring, transmission torrent management, Sonarr/Radarr media automation, Jackett indexer search, and media center integration. Requires Pro addon and a DietPi device. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// E-commerce Toolkit.
 				'enable_ecommerce_toolkit'               => array(
 					'type'           => 'checkbox',
@@ -877,7 +886,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Pro Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_law_firm_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_dietpi_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_law_firm_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -981,7 +990,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 			// Register inline style handle for section tools CSS (populated via
 			// wp_add_inline_style in render_features_footer when features subtab is active).
-			wp_register_style( 'wp-mcp-ai-section-tools', false );
+			wp_register_style( 'wp-mcp-ai-section-tools', false, array(), WP_MCP_AI_VERSION );
 			wp_enqueue_style( 'wp-mcp-ai-section-tools' );
 
 			// Get the active group.
@@ -1062,6 +1071,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_healthcare_imaging'              => 96,   // 1 tool, DICOM/Cornerstone3D medical imaging viewer.
 				'enable_cloudways_toolkit'               => 192,  // 58+ tools, extensive server management.
 				'enable_crm_toolkit'                     => 56,   // 10+ tools, company/contact/lead/campaign management with web search.
+				'enable_dietpi_toolkit'                  => 96,   // 18+ tools, SSH, app clients, service management.
 				'enable_ecommerce_toolkit'               => 80,   // 20 tools, WooCommerce integration.
 				'enable_social_media_toolkit'            => 64,   // 15 tools, multi-platform APIs.
 				'enable_analytics_toolkit'               => 96,   // 12 tools, data warehouse integrations.
@@ -2166,43 +2176,43 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					?>
 					(function($) {
 					$('#wp-mcp-ai-filter-tools').on('click', function() {
-					 const $button = $(this);
+					const $button = $(this);
 
-					 // Add loading state
-					  $button.addClass('is-loading').prop('disabled', true);
+					// Add loading state
+						$button.addClass('is-loading').prop('disabled', true);
 
-					 const search = $('#tool_search').val();
-					  const group = $('#tool_group').val();
-					  const url = new URL(window.location.href);
+					const search = $('#tool_search').val();
+						const group = $('#tool_group').val();
+						const url = new URL(window.location.href);
 
-					 // Update URL parameters.
-					  url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
-					  url.searchParams.set('tab', 'tools');
-					  url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
+					// Update URL parameters.
+						url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
+						url.searchParams.set('tab', 'tools');
+						url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
 
-					 if (search) {
-					 url.searchParams.set('tool_search', search);
-					  } else {
-					 url.searchParams.delete('tool_search');
-					  }
+					if (search) {
+					url.searchParams.set('tool_search', search);
+						} else {
+					url.searchParams.delete('tool_search');
+						}
 
-					 if (group) {
-					 url.searchParams.set('tool_group', group);
-					  } else {
-					 url.searchParams.delete('tool_group');
-					  }
+					if (group) {
+					url.searchParams.set('tool_group', group);
+						} else {
+					url.searchParams.delete('tool_group');
+						}
 
-					 // Navigate to filtered URL.
-					  window.location.href = url.toString();
-					 });
+					// Navigate to filtered URL.
+						window.location.href = url.toString();
+					});
 
-					 // Allow Enter key to trigger filter.
-					 $('#tool_search, #tool_group').on('keypress', function(e) {
+					// Allow Enter key to trigger filter.
+					$('#tool_search, #tool_group').on('keypress', function(e) {
 					if (e.which === 13) {
-					 e.preventDefault();
-					   $('#wp-mcp-ai-filter-tools').click();
-					  }
-					 });
+					e.preventDefault();
+						$('#wp-mcp-ai-filter-tools').click();
+						}
+					});
 					})(jQuery);
 					<?php
 					$js = ob_get_clean();
@@ -2429,14 +2439,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$status_labels = array();
 			$status_file   = WP_MCP_AI_PATH . 'docs/tool-status.txt';
 
-			// Check if file exists.
-			if ( ! file_exists( $status_file ) ) {
+			// Check if file exists and is readable.
+			if ( ! is_readable( $status_file ) ) {
 				return $status_labels;
 			}
 
-			// Read file content.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read for configuration.
-			$content = file_get_contents( $status_file );
+			// Read file content, suppressing warnings since failure is handled below.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents,WordPress.PHP.NoSilencedErrors.Discouraged -- Local file read; failure handled below.
+			$content = @file_get_contents( $status_file );
 			if ( false === $content ) {
 				return $status_labels;
 			}
@@ -2578,34 +2588,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			// Check for plugin-specific tools.
 			$plugin_requirements = array(
 				'get_elementor_templates'        => array(
-									'plugin' => 'Elementor',
-									'check'  => 'class_exists',
-									'value'  => '\Elementor\Plugin',
-								),
-								'import_elementor_template_kit'  => array(
-									'plugin' => 'Elementor',
-									'check'  => 'class_exists',
-									'value'  => '\Elementor\Plugin',
-								),
-								'get_elementor_form_submissions' => array(
-									'plugin' => 'Elementor Pro',
-									'check'  => 'class_exists',
-									'value'  => '\ElementorPro\Plugin',
-								),
-								'get_all_form_submissions'       => array(
-									'plugin' => 'JetFormBuilder or Elementor Pro',
-									'checks' => array(
-										array(
-											'check' => 'class_exists',
-											'value' => 'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions',
-										),
-										array(
-											'check' => 'class_exists',
-											'value' => 'WP_MCP_AI_Tool_Get_Elementor_Form_Submissions',
-										),
-									),
-									'require_all' => false,
-								),
+					'plugin' => 'Elementor',
+					'check'  => 'class_exists',
+					'value'  => '\Elementor\Plugin',
+				),
+				'import_elementor_template_kit'  => array(
+					'plugin' => 'Elementor',
+					'check'  => 'class_exists',
+					'value'  => '\Elementor\Plugin',
+				),
+				'get_elementor_form_submissions' => array(
+					'plugin' => 'Elementor Pro',
+					'check'  => 'class_exists',
+					'value'  => '\ElementorPro\Plugin',
+				),
+				'get_all_form_submissions'       => array(
+					'plugin'      => 'JetFormBuilder or Elementor Pro',
+					'checks'      => array(
+						array(
+							'check' => 'class_exists',
+							'value' => 'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions',
+						),
+						array(
+							'check' => 'class_exists',
+							'value' => 'WP_MCP_AI_Tool_Get_Elementor_Form_Submissions',
+						),
+					),
+					'require_all' => false,
+				),
 				'get_woo_recent_orders'          => array(
 					'plugin' => 'WooCommerce',
 					'check'  => 'class_exists',
@@ -2675,50 +2685,50 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				$requirement = $plugin_requirements[ $slug ];
 
 				// Support both single check and multiple checks.
-								if ( isset( $requirement['checks'] ) ) {
-									$require_all = ! isset( $requirement['require_all'] ) || $requirement['require_all'];
+				if ( isset( $requirement['checks'] ) ) {
+					$require_all = ! isset( $requirement['require_all'] ) || $requirement['require_all'];
 
-									if ( $require_all ) {
-										// Multiple checks - all must pass.
-										foreach ( $requirement['checks'] as $check_config ) {
-											$check_func  = $check_config['check'];
-											$check_value = $check_config['value'];
+					if ( $require_all ) {
+						// Multiple checks - all must pass.
+						foreach ( $requirement['checks'] as $check_config ) {
+							$check_func  = $check_config['check'];
+							$check_value = $check_config['value'];
 
-											// Validate check function is in allowlist.
-											if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
-												// Invalid check function - mark tool as unavailable.
-												$missing[] = $requirement['plugin'];
-												break;
-											}
+							// Validate check function is in allowlist.
+							if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
+								// Invalid check function - mark tool as unavailable.
+								$missing[] = $requirement['plugin'];
+								break;
+							}
 
-											if ( ! $check_func( $check_value ) ) {
-												$missing[] = $requirement['plugin'];
-												break; // No need to check further once one fails.
-											}
-										}
-									} else {
-										// Multiple checks - at least one must pass (OR logic).
-										$any_passed = false;
-										foreach ( $requirement['checks'] as $check_config ) {
-											$check_func  = $check_config['check'];
-											$check_value = $check_config['value'];
+							if ( ! $check_func( $check_value ) ) {
+								$missing[] = $requirement['plugin'];
+								break; // No need to check further once one fails.
+							}
+						}
+					} else {
+						// Multiple checks - at least one must pass (OR logic).
+						$any_passed = false;
+						foreach ( $requirement['checks'] as $check_config ) {
+							$check_func  = $check_config['check'];
+							$check_value = $check_config['value'];
 
-											// Validate check function is in allowlist.
-											if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
-												continue;
-											}
+							// Validate check function is in allowlist.
+							if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
+								continue;
+							}
 
-											if ( $check_func( $check_value ) ) {
-												$any_passed = true;
-												break;
-											}
-										}
+							if ( $check_func( $check_value ) ) {
+								$any_passed = true;
+								break;
+							}
+						}
 
-										if ( ! $any_passed ) {
-											$missing[] = $requirement['plugin'];
-										}
-									}
-								} else {
+						if ( ! $any_passed ) {
+							$missing[] = $requirement['plugin'];
+						}
+					}
+				} else {
 					// Single check.
 					$check_func  = $requirement['check'];
 					$check_value = $requirement['value'];
