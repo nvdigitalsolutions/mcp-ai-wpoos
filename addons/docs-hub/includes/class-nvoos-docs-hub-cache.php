@@ -91,15 +91,20 @@ class NV_oOS_Docs_Hub_Cache {
 	 * @return array|false
 	 */
 	public function get_manifest() {
-		$transient_key = self::TRANSIENT_PREFIX . 'manifest';
-		$cached        = get_transient( $transient_key );
-		if ( false !== $cached ) {
-			return $cached;
+		// In staging mode, never hit the live transient — always read
+		// directly from the staging filesystem so the async rebuild
+		// pipeline operates on its own copy.
+		if ( ! $this->staging ) {
+			$transient_key = self::TRANSIENT_PREFIX . 'manifest';
+			$cached        = get_transient( $transient_key );
+			if ( false !== $cached ) {
+				return $cached;
+			}
 		}
 
 		$data = $this->read_json( 'manifest.json' );
-		if ( false !== $data ) {
-			set_transient( $transient_key, $data, self::TRANSIENT_TTL );
+		if ( false !== $data && ! $this->staging ) {
+			set_transient( self::TRANSIENT_PREFIX . 'manifest', $data, self::TRANSIENT_TTL );
 		}
 		return $data;
 	}
@@ -114,7 +119,10 @@ class NV_oOS_Docs_Hub_Cache {
 	 */
 	public function set_manifest( $manifest ) {
 		$result = $this->write_json( 'manifest.json', $manifest );
-		if ( $result ) {
+		// Only set the live transient when writing to the live cache.
+		// Staging writes must not pollute the live transient, otherwise
+		// get_manifest() in live mode would see partial staged data.
+		if ( $result && ! $this->staging ) {
 			set_transient( self::TRANSIENT_PREFIX . 'manifest', $manifest, self::TRANSIENT_TTL );
 		}
 		return $result;
@@ -170,15 +178,18 @@ class NV_oOS_Docs_Hub_Cache {
 	 * @return array|false
 	 */
 	public function get_search_index() {
-		$transient_key = self::TRANSIENT_PREFIX . 'search';
-		$cached        = get_transient( $transient_key );
-		if ( false !== $cached ) {
-			return $cached;
+		// In staging mode, never hit the live transient.
+		if ( ! $this->staging ) {
+			$transient_key = self::TRANSIENT_PREFIX . 'search';
+			$cached        = get_transient( $transient_key );
+			if ( false !== $cached ) {
+				return $cached;
+			}
 		}
 
 		$data = $this->read_json( 'search-index.json' );
-		if ( false !== $data ) {
-			set_transient( $transient_key, $data, self::TRANSIENT_TTL );
+		if ( false !== $data && ! $this->staging ) {
+			set_transient( self::TRANSIENT_PREFIX . 'search', $data, self::TRANSIENT_TTL );
 		}
 		return $data;
 	}
@@ -193,7 +204,7 @@ class NV_oOS_Docs_Hub_Cache {
 	 */
 	public function set_search_index( $index ) {
 		$result = $this->write_json( 'search-index.json', $index );
-		if ( $result ) {
+		if ( $result && ! $this->staging ) {
 			set_transient( self::TRANSIENT_PREFIX . 'search', $index, self::TRANSIENT_TTL );
 		}
 		return $result;
