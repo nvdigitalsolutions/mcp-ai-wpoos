@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations.
-> Last reviewed: March 2026.
+> Last reviewed: June 2026.
 
 ---
 
@@ -14,7 +14,7 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** 519+ (165 base + 348 pro + 6 core/memory)
+**Total tools:** ~1,000+ (~195 base + ~800+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 

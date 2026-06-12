@@ -14,7 +14,7 @@
 **Version:** 1.1.29  
 **Release Date:** 2026-06-11
 
-**Latest Updates:** June 11, 2026 (v1.1.29) — See [§ Latest Updates (v1.1.29 — June 2026)](#-latest-updates-v1129--june-2026) (Bug-fix & stabilisation sweep: Chat Bubble assistant dropdown, context-window pre-flight validation across all 13 providers, OpenAI SSE streaming fix, stale provider validation lists, playbook orphan cleanup, CRM activity fixes, chat debug console fixes, OOS bridge & embedding fixes, shell-quote CVE-2026-9277 patch, chat transcript tests from 4% to 87% pass rate, and more).
+**Latest Updates:** June 11, 2026 (v1.1.29) — See [§ Latest Updates (v1.1.29 — June 2026)](#-latest-updates-v1129--june-2026) (Pro Toolkit Optimizations Phase 1–3 across 6 toolkits, Chat Transcript & Agent Memory Retention, DietPi Pro Toolkit Phases 0–3, Layer I Guardrails — jailbreak prevention, Context Window Management across all 13 providers, CRM Email Import & Lead Pruning, LibreChat Addon, Schedule Anything SaaS Platform, Vector Search Enhancements, OAuth/API Disconnect Buttons, 25+ bug fixes, security patches for guzzlehttp/psr7 and shell-quote CVEs, and more).
 
 **Previous Updates (v1.1.27):** June 5, 2026 (v1.1.27) — See [§ Latest Updates (v1.1.27 — June 2026)](#-latest-updates-v1127--june-2026) (Real-time SSE streaming for OpenAI, DeepSeek, and all OpenAI-compatible providers. 35 new OOS core tools migrated. JetFormBuilder submission tools: 8 fixes for empty results, capability ordering, and form discovery. Extended Cognition vision recognition. Graphify tools capability compliance. DeepSeek agentic tool result handling. Documentation link fixes. June 2026 model pricing update. Plugin restructuring proposals v3.0).
 
@@ -129,17 +129,21 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 ### ✨ What's New at a Glance (v1.1.29)
 
-- 🪲 **Bug-Fix & Stabilisation Sweep.** 15+ fixes across the stack: chat bubble assistant dropdown UX, context-window pre-flight validation for all 13 providers, OpenAI real-time SSE streaming, stale provider validation lists, playbook orphan cleanup, CRM activity titles/due dates, chat debug console display, OOS bridge & embedding fatal errors, memory cookie-check nonce, and more.
-- 🔧 **Chat Bubble Assistant Dropdown.** Fixed settings UX: `chat_bubble_assistant_id` field on the Chat Bubble settings page changed from a plain number input to a proper select dropdown populated with all published assistants — matching the Default Assistant UX in General → Core Settings.
-- 🧠 **Context-Window Pre-Flight Validation.** Added pre-flight context-window validation across all 13 AI providers (OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama). Shared `validate_context_window()` helper with tiktoken integration, token-budget tool capping, and estimator metabox.
-- ⚡ **OpenAI SSE Streaming Fix.** Fixed `stream_options` payload flag that prevented OpenAI real-time SSE streaming from triggering — streaming now works correctly for OpenAI and all compatible providers.
-- 📋 **Playbook Orphan Cleanup & Batching.** Fixed orphan playbook accumulation, unsafe deletion without JetEngine validation, sync timeouts for large playbook sets, and batch processing for deletion operations.
-- 🏷️ **Stale Provider Validation Lists.** Fixed provider validation lists rejecting DeepSeek and newer providers — validation now uses dynamic provider discovery instead of hardcoded lists.
-- 🛡️ **Security Patch.** Bumped `shell-quote` to >=1.8.4 via npm overrides to fix CVE-2026-9277.
-- 🧪 **Chat Transcript Tests.** Fixed chat transcript REST controller tests — pass rate improved from ~4% to 87%.
-- 🔧 **Chat Debug Console.** Fixed `chatDebugMode` string coercion (PHP `'1'` vs JS `true`) and legacy debug console not displaying when enabled.
-- 📡 **OOS Bridge & Embedding Fixes.** Fixed OOS bridge initialization, embedding service fatal error on missing API key, and SSE header warnings.
-- 🗂️ **Missing Asset Files.** Added missing `.min.js` assets for voice and embedded LLM scripts.
+- ⚡ **Pro Toolkit Optimizations Phase 1–3.** Performance optimization across 6 Pro toolkits (Chat Channels, Social Media, Healthcare, Ecommerce, Calendar/Orchestration, Document Generation) with autoload control, query caching, and lazy loading. 767-line PHPUnit test suite.
+- 🧠 **Chat Transcript & Agent Memory Retention.** Base plugin now includes `WP_MCP_AI_Transcript_Retention` (437 lines) for configurable TTL-based transcript cleanup. Pro adds `WP_MCP_AI_Memory_Retention` (358 lines) for agent memory lifecycle management.
+- 🥧 **DietPi Pro Toolkit Phases 0–3.** 19+ tools for DietPi server management: system info, package/service control, backup/restore, storage, provisioning, SSH proxy tunneling. Registered as an MCP server.
+- 🛡️ **Layer I Guardrails — Jailbreak Prevention.** Stay-on-target guardrails that detect and block jailbreak attempts before they reach the AI provider. Configurable per-assistant capability boundaries.
+- 🪟 **Context Window Management.** Pre-flight validation across all 13 AI providers via shared `validate_context_window()` helper. tiktoken integration, estimator metabox, token-budget tool capping, and chat parity drift detection in `lib/core`.
+- 📧 **CRM Email Import & Lead Pruning.** Scheduled IMAP email polling with message logging and dedup. Automatic lead pruning via cron with configurable retention.
+- 🔌 **OAuth & API Disconnect Buttons.** One-click disconnect for OAuth and API connections with automatic token clearing on credential change.
+- 💬 **LibreChat Addon.** New standalone addon with code interpreter, speech services, and web search reranker.
+- 📅 **Schedule Anything SaaS Platform.** Full SaaS booking platform with Stripe payment integration.
+- 🔍 **Vector Search Enhancements.** HNSW index for fast ANN search, content/context embedding stores, hybrid semantic search.
+- 🏷️ **CRM Leads Enhancements.** Inline tag editing and email priority/exclude actions on the leads admin table.
+- 🪲 **Bug-Fix & Stabilisation Sweep.** 25+ fixes across the stack: CPT slug length limits (3 slugs fixed), agentic loop tool result persistence across all providers, slider/range field rendering, well-known endpoint redirect guard, tool-status file guard, Pro Integrations subtab redirect, docs hub async rebuild stalls, chat addon endpoint mismatches, stale provider validation lists, playbook orphan cleanup, OpenAI SSE streaming payload flag, Cloudways Dashboard Requires Plugins header, chat debug console, OOS bridge & embedding fatal errors, memory cookie-check nonce, and more.
+- 🧪 **Tests.** Chat transcript REST controller tests improved from ~4% to 87% pass rate. New 767-line pro toolkit optimization test suite.
+- 🛡️ **Security Patches.** guzzlehttp/psr7 CVE-2026-49214 (CRLF injection), shell-quote CVE-2026-9277 (command injection), vitest/vite/esbuild dependabot alerts #211–#213.
+- 📋 **Proposal Status Audit.** All 66 proposals audited and refreshed for v1.1.29.
 
 ### ✨ What's New at a Glance (v1.1.28)
 
@@ -2441,11 +2445,11 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all ~960 tools (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+2. You now have the **complete version** with all ~990 tools (~195 base + ~795 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **What you get from the repository clone:**
-- ✅ Complete plugin with base + Pro features combined
-- ✅ All ~960 built-in tools ready to use (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+- ✅ The full codebase — all ~990 built-in tools ready to use (~195 base + ~795 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -2674,12 +2678,12 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (11 providers, ~960 tool classes, 36 REST controllers)
+- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (13 providers, ~990 tool classes, 36 REST controllers)
 - **[Request Flow Walkthrough](docs/developer/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~960 tools documented (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~990 tools documented (~195 base + ~795 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
