@@ -108,7 +108,7 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 		$model = ! empty( $model ) ? sanitize_text_field( $model ) : self::DEFAULT_DETECTION_MODEL;
 		$url   = $this->build_model_url( $model );
 
-		// Prepare input.  OWLv2 expects {"inputs": <base64>, "parameters": {"candidate_labels": [...]}}.
+		// Prepare input.  OWLv2 accepts base64 image with optional candidate labels parameter.
 		$payload = array(
 			'inputs' => $image_base64,
 		);
@@ -251,9 +251,9 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 		}
 
 		return array(
-			'success'   => true,
-			'model'     => $model,
-			'embedding' => $embedding,
+			'success'    => true,
+			'model'      => $model,
+			'embedding'  => $embedding,
 			'dimensions' => count( $embedding ),
 		);
 	}
@@ -287,43 +287,48 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 		// If no objects found, return empty.
 		if ( empty( $detections['detections'] ) ) {
 			return array(
-				'success'        => true,
-				'detections'     => array(),
-				'brands_found'   => array(),
-				'detection_model' => $detections['model'],
+				'success'              => true,
+				'detections'           => array(),
+				'brands_found'         => array(),
+				'detection_model'      => $detections['model'],
 				'classification_model' => ! empty( $class_model ) ? $class_model : self::DEFAULT_CLASSIFICATION_MODEL,
-				'message'        => __( 'No objects detected in the image.', 'mcp-ai-wpoos-pro' ),
+				'message'              => __( 'No objects detected in the image.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
-		// Step 2: For each detection, classify against brand labels.
-		// Note: true per-region classification requires cropping, which we can't
-		// do server-side without GD/Imagick.  For now we use the whole image +
-		// bounding box context as a proxy — FashionCLIP will focus on the most
-		// prominent objects.  A future version can add region-cropping.
+		// Step 2: Classify the whole image against brand labels.
+		// Per-region classification requires GD/Imagick cropping; without it
+		// we distribute the top-N classification results across detections
+		// in confidence order so each detection gets a distinct label.
 		$class_model_id = ! empty( $class_model ) ? sanitize_text_field( $class_model ) : self::DEFAULT_CLASSIFICATION_MODEL;
 		$classification = $this->run_zero_shot_classification( $image_base64, $brand_labels, $class_model_id );
 		if ( is_wp_error( $classification ) ) {
 			// Classification failed — still return detections.
 			return array(
-				'success'          => true,
-				'detections'       => $detections['detections'],
-				'brands_found'     => array(),
-				'detection_model'   => $detections['model'],
+				'success'              => true,
+				'detections'           => $detections['detections'],
+				'brands_found'         => array(),
+				'detection_model'      => $detections['model'],
 				'classification_model' => $class_model_id,
 				'classification_error' => $classification->get_error_message(),
-				'message'          => __( 'Objects detected but brand classification failed.', 'mcp-ai-wpoos-pro' ),
+				'message'              => __( 'Objects detected but brand classification failed.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
-		// Merge: assign the top classification to each detection.
+		// Distribute classification results across detections.
+		// Each detection gets a distinct label from the top-N results;
+		// when there are more detections than labels the remaining
+		// detections are left without brand assignments.
+		$class_labels = $classification['labels'];
+		$label_count  = count( $class_labels );
 		$brands_found = array();
-		foreach ( $detections['detections'] as &$det ) {
-			if ( ! empty( $classification['labels'] ) ) {
-				$top = $classification['labels'][0];
-				$det['brand_label']    = $top['label'];
-				$det['brand_confidence'] = $top['score'];
-				$brands_found[] = $top['label'];
+
+		foreach ( $detections['detections'] as $i => &$det ) {
+			if ( $i < $label_count ) {
+				$label                   = $class_labels[ $i ];
+				$det['brand_label']      = $label['label'];
+				$det['brand_confidence'] = $label['score'];
+				$brands_found[]          = $label['label'];
 			}
 		}
 		unset( $det );
@@ -383,7 +388,7 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 			);
 		}
 
-		$client = new WP_MCP_AI_Ollama_Client();
+		$client   = new WP_MCP_AI_Ollama_Client();
 		$endpoint = $client->get_endpoint_url();
 		if ( empty( $endpoint ) ) {
 			return new WP_Error(
@@ -419,9 +424,9 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 		$labels_csv = implode( ', ', $candidate_labels );
 		$prompt     = sprintf(
 			"Classify this image into exactly one of the following categories: %s.\n" .
-			"Return ONLY a JSON object with keys: \"label\" (the best-matching category), " .
-			"\"confidence\" (a float between 0.0 and 1.0), and \"all_scores\" (an object " .
-			"mapping each category to its confidence score).  Do not include any other text.",
+			'Return ONLY a JSON object with keys: "label" (the best-matching category), ' .
+			'"confidence" (a float between 0.0 and 1.0), and "all_scores" (an object ' .
+			'mapping each category to its confidence score).  Do not include any other text.',
 			$labels_csv
 		);
 
@@ -430,12 +435,12 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 				'role'    => 'user',
 				'content' => array(
 					array(
-						'type'          => 'text',
-						'text'          => $prompt,
+						'type' => 'text',
+						'text' => $prompt,
 					),
 					array(
-						'type'          => 'input_image',
-						'image_base64'  => $image_base64,
+						'type'         => 'input_image',
+						'image_base64' => $image_base64,
 					),
 				),
 			),
@@ -487,9 +492,12 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 				);
 			}
 			// Sort descending.
-			usort( $labels, function ( $a, $b ) {
-				return $b['score'] <=> $a['score'];
-			} );
+			usort(
+				$labels,
+				function ( $a, $b ) {
+					return $b['score'] <=> $a['score'];
+				}
+			);
 		} elseif ( isset( $parsed['label'] ) ) {
 			$labels[] = array(
 				'label' => sanitize_text_field( $parsed['label'] ),
@@ -498,10 +506,10 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 		}
 
 		return array(
-			'success'          => true,
-			'model'            => $model,
-			'provider'         => 'ollama',
-			'labels'           => $labels,
+			'success'  => true,
+			'model'    => $model,
+			'provider' => 'ollama',
+			'labels'   => $labels,
 		);
 	}
 
@@ -566,8 +574,14 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 			array(
 				'role'    => 'user',
 				'content' => array(
-					array( 'type' => 'text', 'text' => $prompt ),
-					array( 'type' => 'input_image', 'image_base64' => $image_base64 ),
+					array(
+						'type' => 'text',
+						'text' => $prompt,
+					),
+					array(
+						'type'         => 'input_image',
+						'image_base64' => $image_base64,
+					),
 				),
 			),
 		);
@@ -627,12 +641,12 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 		}
 
 		return array(
-			'success'        => true,
-			'model'          => $model,
-			'provider'       => 'ollama',
-			'detections'     => $detections,
-			'total_items'    => isset( $parsed['total_items'] ) ? absint( $parsed['total_items'] ) : count( $detections ),
-			'unique_labels'  => isset( $parsed['unique_labels'] ) && is_array( $parsed['unique_labels'] )
+			'success'       => true,
+			'model'         => $model,
+			'provider'      => 'ollama',
+			'detections'    => $detections,
+			'total_items'   => isset( $parsed['total_items'] ) ? absint( $parsed['total_items'] ) : count( $detections ),
+			'unique_labels' => isset( $parsed['unique_labels'] ) && is_array( $parsed['unique_labels'] )
 				? array_map( 'sanitize_text_field', $parsed['unique_labels'] )
 				: array(),
 		);
@@ -709,7 +723,10 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 			return new WP_Error(
 				'wp_mcp_ai_hf_vision_invalid_json',
 				__( 'HuggingFace returned non-JSON response.', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => $code, 'body_preview' => substr( $body, 0, 200 ) )
+				array(
+					'status'       => $code,
+					'body_preview' => substr( $body, 0, 200 ),
+				)
 			);
 		}
 
@@ -723,7 +740,10 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 				return new WP_Error(
 					'wp_mcp_ai_hf_vision_model_warming',
 					__( 'The HuggingFace model is still loading. Please retry in a few seconds.', 'mcp-ai-wpoos-pro' ),
-					array( 'status' => 503, 'estimated_time' => isset( $decoded['estimated_time'] ) ? $decoded['estimated_time'] : 20 )
+					array(
+						'status'         => 503,
+						'estimated_time' => isset( $decoded['estimated_time'] ) ? $decoded['estimated_time'] : 20,
+					)
 				);
 			}
 
@@ -747,7 +767,7 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 	private function normalize_detection_result( array $response, $model ) {
 		$detections = array();
 
-		// OWLv2 format: [{"label": "...", "score": 0.9, "box": {...}}, ...]
+		// OWLv2 format — array of objects with label, score, and box keys.
 		if ( is_array( $response ) && isset( $response[0] ) && isset( $response[0]['label'] ) ) {
 			foreach ( $response as $item ) {
 				$detections[] = array(
@@ -785,7 +805,7 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 	private function normalize_classification_result( array $response, $model ) {
 		$labels = array();
 
-		// CLIP/FashionCLIP format: [{"label": "...", "score": 0.95}, ...]
+		// CLIP and FashionCLIP format — array of objects with label and score keys.
 		if ( is_array( $response ) && isset( $response[0] ) && isset( $response[0]['label'] ) ) {
 			foreach ( $response as $item ) {
 				$labels[] = array(
@@ -801,9 +821,12 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 					'score' => (float) $response['scores'][ $i ],
 				);
 			}
-			usort( $labels, function ( $a, $b ) {
-				return $b['score'] <=> $a['score'];
-			} );
+			usort(
+				$labels,
+				function ( $a, $b ) {
+					return $b['score'] <=> $a['score'];
+				}
+			);
 		}
 
 		return array(

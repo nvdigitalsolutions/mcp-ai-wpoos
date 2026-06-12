@@ -20,6 +20,10 @@ $is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_bas
 
 if ( $is_enabled && ! $is_base ) {
 
+	// Tool interface and shared trait (1.8.1).
+	require_once __DIR__ . '/interface-wp-mcp-ai-ext-cog-tool.php';
+	require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
+
 	// Sensor session CPT.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-ext-cog-sensor-session.php';
 	WP_MCP_AI_Ext_Cog_Sensor_Session::register_post_type();
@@ -56,27 +60,27 @@ function wp_mcp_ai_ext_cog_is_enabled() {
 function wp_mcp_ai_ext_cog_get_settings() {
 	$all = get_option( 'wp_mcp_ai_settings', array() );
 	return array(
-		'enabled'             => ! empty( $all['enable_extended_cognition_toolkit'] ),
-		'sensor_camera'       => ! empty( $all['ext_cog_sensor_camera'] ),
-		'sensor_microphone'   => ! empty( $all['ext_cog_sensor_microphone'] ),
-		'sensor_screen'       => ! empty( $all['ext_cog_sensor_screen'] ),
-		'sensor_motion'       => ! empty( $all['ext_cog_sensor_motion'] ),
-		'guest_access'        => ! empty( $all['ext_cog_guest_access'] ),
-		'store_captures'      => ! empty( $all['ext_cog_store_captures'] ),
-		'gdpr_consent'        => ! empty( $all['ext_cog_gdpr_consent'] ),
-		'retention_days'      => isset( $all['ext_cog_retention_days'] ) ? absint( $all['ext_cog_retention_days'] ) : 7,
-		'rate_limit'          => isset( $all['ext_cog_rate_limit'] ) ? absint( $all['ext_cog_rate_limit'] ) : 10,
-		'max_capture_size_kb' => isset( $all['ext_cog_max_capture_size_kb'] ) ? absint( $all['ext_cog_max_capture_size_kb'] ) : 2048,
-		'vision_model'        => isset( $all['ext_cog_vision_model'] ) ? sanitize_text_field( $all['ext_cog_vision_model'] ) : 'auto',
+		'enabled'                  => ! empty( $all['enable_extended_cognition_toolkit'] ),
+		'sensor_camera'            => ! empty( $all['ext_cog_sensor_camera'] ),
+		'sensor_microphone'        => ! empty( $all['ext_cog_sensor_microphone'] ),
+		'sensor_screen'            => ! empty( $all['ext_cog_sensor_screen'] ),
+		'sensor_motion'            => ! empty( $all['ext_cog_sensor_motion'] ),
+		'guest_access'             => ! empty( $all['ext_cog_guest_access'] ),
+		'store_captures'           => ! empty( $all['ext_cog_store_captures'] ),
+		'gdpr_consent'             => ! empty( $all['ext_cog_gdpr_consent'] ),
+		'retention_days'           => isset( $all['ext_cog_retention_days'] ) ? absint( $all['ext_cog_retention_days'] ) : 7,
+		'rate_limit'               => isset( $all['ext_cog_rate_limit'] ) ? absint( $all['ext_cog_rate_limit'] ) : 10,
+		'max_capture_size_kb'      => isset( $all['ext_cog_max_capture_size_kb'] ) ? absint( $all['ext_cog_max_capture_size_kb'] ) : 2048,
+		'vision_model'             => isset( $all['ext_cog_vision_model'] ) ? sanitize_text_field( $all['ext_cog_vision_model'] ) : 'auto',
 
 		// Vision recognition (1.8.0).
-		'hf_detection_model'         => isset( $all['ext_cog_hf_detection_model'] ) ? sanitize_text_field( $all['ext_cog_hf_detection_model'] ) : '',
-		'hf_classification_model'    => isset( $all['ext_cog_hf_classification_model'] ) ? sanitize_text_field( $all['ext_cog_hf_classification_model'] ) : '',
-		'hf_embedding_model'         => isset( $all['ext_cog_hf_embedding_model'] ) ? sanitize_text_field( $all['ext_cog_hf_embedding_model'] ) : '',
-		'min_detection_confidence'   => isset( $all['ext_cog_min_detection_confidence'] ) ? (float) $all['ext_cog_min_detection_confidence'] : 0.5,
-		'enable_video_analysis'      => ! empty( $all['ext_cog_enable_video_analysis'] ),
-		'max_video_frames'           => isset( $all['ext_cog_max_video_frames'] ) ? absint( $all['ext_cog_max_video_frames'] ) : 60,
-		'brand_catalog'              => isset( $all['ext_cog_brand_catalog'] ) ? sanitize_textarea_field( $all['ext_cog_brand_catalog'] ) : '',
+		'hf_detection_model'       => isset( $all['ext_cog_hf_detection_model'] ) ? sanitize_text_field( $all['ext_cog_hf_detection_model'] ) : '',
+		'hf_classification_model'  => isset( $all['ext_cog_hf_classification_model'] ) ? sanitize_text_field( $all['ext_cog_hf_classification_model'] ) : '',
+		'hf_embedding_model'       => isset( $all['ext_cog_hf_embedding_model'] ) ? sanitize_text_field( $all['ext_cog_hf_embedding_model'] ) : '',
+		'min_detection_confidence' => isset( $all['ext_cog_min_detection_confidence'] ) ? (float) $all['ext_cog_min_detection_confidence'] : 0.5,
+		'enable_video_analysis'    => ! empty( $all['ext_cog_enable_video_analysis'] ),
+		'max_video_frames'         => isset( $all['ext_cog_max_video_frames'] ) ? absint( $all['ext_cog_max_video_frames'] ) : 60,
+		'brand_catalog'            => isset( $all['ext_cog_brand_catalog'] ) ? sanitize_textarea_field( $all['ext_cog_brand_catalog'] ) : '',
 	);
 }
 

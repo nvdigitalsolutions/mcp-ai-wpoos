@@ -27,7 +27,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.8.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products {
+class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+
+	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
 	/**
 	 * Get tool slug.
@@ -83,13 +85,19 @@ class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products {
 					),
 					'product_categories' => array(
 						'type'        => 'array',
-						'items'       => array( 'type' => 'string', 'maxLength' => 50 ),
+						'items'       => array(
+							'type'      => 'string',
+							'maxLength' => 50,
+						),
 						'description' => 'Filter to specific product categories (e.g. ["fragrances", "handbags", "shoes", "watches"]). Helps the model narrow its search.',
 						'maxItems'    => 20,
 					),
 					'brand_catalog'      => array(
 						'type'        => 'array',
-						'items'       => array( 'type' => 'string', 'maxLength' => 100 ),
+						'items'       => array(
+							'type'      => 'string',
+							'maxLength' => 100,
+						),
 						'description' => 'Curated list of brands to look for (e.g. ["Paco Rabanne", "Givenchy", "Dior"]). If omitted, falls back to the site\'s Product Brand taxonomy.',
 						'maxItems'    => 100,
 					),
@@ -161,13 +169,13 @@ class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products {
 		}
 
 		// --- Sanitize ---
-		$session_id    = isset( $arguments['session_id'] ) ? sanitize_text_field( $arguments['session_id'] ) : '';
-		$search_mode   = isset( $arguments['search_mode'] ) ? sanitize_text_field( $arguments['search_mode'] ) : 'detect_then_classify';
-		$max_results   = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 20;
+		$session_id     = isset( $arguments['session_id'] ) ? sanitize_text_field( $arguments['session_id'] ) : '';
+		$search_mode    = isset( $arguments['search_mode'] ) ? sanitize_text_field( $arguments['search_mode'] ) : 'detect_then_classify';
+		$max_results    = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 20;
 		$min_confidence = isset( $arguments['min_confidence'] ) ? (float) max( 0.0, min( 1.0, $arguments['min_confidence'] ) ) : 0.5;
-		$provider      = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : 'auto';
+		$provider       = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : 'auto';
 		$model_override = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : '';
-		$timeout_ms    = isset( $arguments['timeout_ms'] ) ? absint( $arguments['timeout_ms'] ) : 30000;
+		$timeout_ms     = isset( $arguments['timeout_ms'] ) ? absint( $arguments['timeout_ms'] ) : 30000;
 
 		// Sanitize categories.
 		$categories = array();
@@ -205,7 +213,10 @@ class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products {
 			array(
 				'type'       => 'capture_visual',
 				'request_id' => $request_id,
-				'resolution' => array( 'width' => 640, 'height' => 480 ),
+				'resolution' => array(
+					'width'  => 640,
+					'height' => 480,
+				),
 				'store'      => false,
 			)
 		);
@@ -295,7 +306,7 @@ class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products {
 			return $this->build_product_result( $result['labels'], $max_results, $min_confidence, 'huggingface', $result['model'], $captured['captured_at'], $categories );
 		}
 
-		// detect_then_classify (default).
+		// detect_then_classify pipeline (default).
 		$det_model = ! empty( $model_override ) ? $model_override : ( isset( $settings['hf_detection_model'] ) ? $settings['hf_detection_model'] : '' );
 		$cls_model = ! empty( $model_override ) ? $model_override : ( isset( $settings['hf_classification_model'] ) ? $settings['hf_classification_model'] : '' );
 
@@ -353,8 +364,8 @@ class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products {
 	 * @return array
 	 */
 	private function build_product_result( array $labels, $max, $min_confidence, $provider, $model, $captured_at, array $categories ) {
-		$products    = array();
-		$brands      = array();
+		$products      = array();
+		$brands        = array();
 		$category_hint = ! empty( $categories ) ? $categories[0] : '';
 
 		foreach ( $labels as $item ) {
@@ -378,14 +389,14 @@ class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products {
 		$unique_brands = array_values( array_unique( $brands ) );
 
 		return array(
-			'success'        => true,
-			'search_mode'    => 'zero_shot',
-			'provider'       => $provider,
-			'model'          => $model,
-			'products'       => $products,
-			'unique_brands'  => $unique_brands,
-			'captured_at'    => $captured_at,
-			'message'        => sprintf(
+			'success'       => true,
+			'search_mode'   => 'zero_shot',
+			'provider'      => $provider,
+			'model'         => $model,
+			'products'      => $products,
+			'unique_brands' => $unique_brands,
+			'captured_at'   => $captured_at,
+			'message'       => sprintf(
 				/* translators: %d: number of unique brands */
 				_n( 'Identified %d unique product/brand.', 'Identified %d unique products/brands.', count( $unique_brands ), 'mcp-ai-wpoos-pro' ),
 				count( $unique_brands )
@@ -401,8 +412,8 @@ class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products {
 	 * @return array
 	 */
 	private function build_detected_products( array $pipeline_result, array $categories ) {
-		$products    = array();
-		$seen        = array();
+		$products      = array();
+		$seen          = array();
 		$category_hint = ! empty( $categories ) ? $categories[0] : '';
 
 		foreach ( $pipeline_result['detections'] as $det ) {
@@ -415,33 +426,14 @@ class WP_MCP_AI_Tool_Ext_Cog_Recognize_Products {
 			$seen[ $label ] = true;
 
 			$products[] = array(
-				'name'              => esc_html( $label ),
+				'name'                 => esc_html( $label ),
 				'detection_confidence' => isset( $det['confidence'] ) ? (float) $det['confidence'] : 0.0,
-				'brand_confidence'  => isset( $det['brand_confidence'] ) ? (float) $det['brand_confidence'] : 0.0,
-				'category'          => $category_hint,
-				'bounding_box'      => isset( $det['box'] ) ? $det['box'] : null,
+				'brand_confidence'     => isset( $det['brand_confidence'] ) ? (float) $det['brand_confidence'] : 0.0,
+				'category'             => $category_hint,
+				'bounding_box'         => isset( $det['box'] ) ? $det['box'] : null,
 			);
 		}
 
 		return $products;
-	}
-
-	/**
-	 * Check if the current user (or guest) is allowed to use sensors.
-	 *
-	 * @param array $context Execution context.
-	 * @return bool
-	 */
-	private function current_user_can_use_sensors( array $context ) {
-		if ( current_user_can( 'edit_posts' ) ) {
-			return true;
-		}
-
-		$settings = wp_mcp_ai_ext_cog_get_settings();
-		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
-			return true;
-		}
-
-		return false;
 	}
 }

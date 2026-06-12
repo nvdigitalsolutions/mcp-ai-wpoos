@@ -21,7 +21,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.8.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Detect_Objects {
+class WP_MCP_AI_Tool_Ext_Cog_Detect_Objects implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+
+	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
 	/**
 	 * Get tool slug.
@@ -71,46 +73,49 @@ class WP_MCP_AI_Tool_Ext_Cog_Detect_Objects {
 			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'session_id'      => array(
+					'session_id'     => array(
 						'type'        => 'string',
 						'description' => 'Active chat session ID used to route the capture request to the correct browser tab.',
 					),
-					'labels'          => array(
+					'labels'         => array(
 						'type'        => 'array',
-						'items'       => array( 'type' => 'string', 'maxLength' => 100 ),
+						'items'       => array(
+							'type'      => 'string',
+							'maxLength' => 100,
+						),
 						'description' => 'Candidate object or brand labels to detect (e.g. ["Paco Rabanne bottle", "Givenchy perfume"]). If omitted, uses the site\'s Product Brand taxonomy catalogue.',
 						'maxItems'    => 100,
 					),
-					'detection_mode'  => array(
+					'detection_mode' => array(
 						'type'        => 'string',
 						'enum'        => array( 'objects', 'brands', 'full' ),
 						'description' => 'Detection mode. "objects" returns generic COCO-class detections. "brands" runs FashionCLIP zero-shot classification against the supplied labels. "full" runs both OWLv2 detection and FashionCLIP brand classification. Default: full.',
 						'default'     => 'full',
 					),
-					'min_confidence'  => array(
+					'min_confidence' => array(
 						'type'        => 'number',
 						'description' => 'Minimum confidence threshold (0.0–1.0). Detections below this are filtered out. Default: 0.5.',
 						'minimum'     => 0.0,
 						'maximum'     => 1.0,
 						'default'     => 0.5,
 					),
-					'include_bbox'    => array(
+					'include_bbox'   => array(
 						'type'        => 'boolean',
 						'description' => 'Whether to include bounding box coordinates for each detection. Default: true.',
 						'default'     => true,
 					),
-					'provider'        => array(
+					'provider'       => array(
 						'type'        => 'string',
 						'enum'        => array( 'auto', 'huggingface', 'ollama' ),
 						'description' => 'Vision provider. "auto" prefers HuggingFace when an API key is set, falling back to Ollama if a vision model is available. Default: auto.',
 						'default'     => 'auto',
 					),
-					'model'           => array(
+					'model'          => array(
 						'type'        => 'string',
 						'description' => 'Explicit model override (e.g. "google/owlv2-base-patch16" for HF, "llava:13b" for Ollama). When omitted the configured defaults are used.',
 						'maxLength'   => 200,
 					),
-					'timeout_ms'      => array(
+					'timeout_ms'     => array(
 						'type'        => 'integer',
 						'description' => 'Maximum milliseconds to wait for camera capture + inference. Default: 30000.',
 						'minimum'     => 5000,
@@ -192,7 +197,10 @@ class WP_MCP_AI_Tool_Ext_Cog_Detect_Objects {
 			array(
 				'type'       => 'capture_visual',
 				'request_id' => $request_id,
-				'resolution' => array( 'width' => 640, 'height' => 480 ),
+				'resolution' => array(
+					'width'  => 640,
+					'height' => 480,
+				),
 				'store'      => false,
 			)
 		);
@@ -225,7 +233,7 @@ class WP_MCP_AI_Tool_Ext_Cog_Detect_Objects {
 		$image_base64 = $captured['image_base64'];
 
 		// --- Step 2: Resolve provider ---
-		$service = new WP_MCP_AI_HF_Vision_Inference_Service();
+		$service    = new WP_MCP_AI_HF_Vision_Inference_Service();
 		$use_ollama = false;
 
 		if ( 'ollama' === $provider ) {
@@ -253,13 +261,13 @@ class WP_MCP_AI_Tool_Ext_Cog_Detect_Objects {
 				}
 
 				return array(
-					'success'      => true,
-					'mode'         => $detection_mode,
-					'provider'     => 'ollama',
-					'model'        => $result['model'],
-					'labels'       => $result['labels'],
-					'captured_at'  => $captured['captured_at'],
-					'message'      => $this->build_message( $result['labels'], $detection_mode ),
+					'success'     => true,
+					'mode'        => $detection_mode,
+					'provider'    => 'ollama',
+					'model'       => $result['model'],
+					'labels'      => $result['labels'],
+					'captured_at' => $captured['captured_at'],
+					'message'     => $this->build_message( $result['labels'], $detection_mode ),
 				);
 			}
 
@@ -349,33 +357,14 @@ class WP_MCP_AI_Tool_Ext_Cog_Detect_Objects {
 		}
 
 		return array(
-			'success'     => true,
-			'mode'        => 'full',
-			'provider'    => 'huggingface',
-			'detections'  => $include_bbox ? $result['detections'] : $this->strip_bbox( $result['detections'] ),
+			'success'      => true,
+			'mode'         => 'full',
+			'provider'     => 'huggingface',
+			'detections'   => $include_bbox ? $result['detections'] : $this->strip_bbox( $result['detections'] ),
 			'brands_found' => $result['brands_found'],
-			'captured_at' => $captured['captured_at'],
-			'message'     => esc_html( $result['message'] ),
+			'captured_at'  => $captured['captured_at'],
+			'message'      => esc_html( $result['message'] ),
 		);
-	}
-
-	/**
-	 * Check if the current user (or guest) is allowed to use sensors.
-	 *
-	 * @param array $context Execution context.
-	 * @return bool
-	 */
-	private function current_user_can_use_sensors( array $context ) {
-		if ( current_user_can( 'edit_posts' ) ) {
-			return true;
-		}
-
-		$settings = wp_mcp_ai_ext_cog_get_settings();
-		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
-			return true;
-		}
-
-		return false;
 	}
 
 	/**

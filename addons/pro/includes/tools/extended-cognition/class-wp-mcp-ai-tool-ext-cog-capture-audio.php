@@ -20,7 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Capture_Audio {
+class WP_MCP_AI_Tool_Ext_Cog_Capture_Audio implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+
+	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
 	/**
 	 * Get tool slug.
@@ -29,6 +31,33 @@ class WP_MCP_AI_Tool_Ext_Cog_Capture_Audio {
 	 */
 	public function get_slug() {
 		return 'ext_cog_capture_audio';
+	}
+
+	/**
+	 * Get tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Capture Audio (Extended Cognition)', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Record audio from the user\'s microphone for transcription and ambient sound classification.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -178,24 +207,5 @@ class WP_MCP_AI_Tool_Ext_Cog_Capture_Audio {
 			'transcription_confidence' => isset( $captured['transcription_confidence'] ) ? floatval( $captured['transcription_confidence'] ) : null,
 			'message'                  => __( 'Audio captured. Use the transcript to understand what was spoken and ambient_label for environmental context.', 'mcp-ai-wpoos' ),
 		);
-	}
-
-	/**
-	 * Check if the current user (or guest) is allowed to use sensors.
-	 *
-	 * @param array $context Execution context.
-	 * @return bool
-	 */
-	private function current_user_can_use_sensors( array $context ) {
-		if ( current_user_can( 'edit_posts' ) ) {
-			return true;
-		}
-
-		$settings = wp_mcp_ai_ext_cog_get_settings();
-		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
-			return true;
-		}
-
-		return false;
 	}
 }
