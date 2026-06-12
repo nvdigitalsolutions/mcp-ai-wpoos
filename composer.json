@@ -22,6 +22,7 @@
         "rahul900day/tiktoken-php": "^1.0",
         "psr/event-dispatcher": "^1.0",
         "symfony/http-client": "^6.4.36",
+        "guzzlehttp/psr7": "^2.10.2",
         "nyholm/psr7": "^1.8",
         "symfony/validator": "^6.4.36",
         "symfony/cache": "^6.4.40",
