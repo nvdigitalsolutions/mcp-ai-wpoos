@@ -2,7 +2,7 @@
 /**
  * Tool — Manage Architectural Precedents.
  *
- * CRUD interface to the `mcp_ai_arch_precedent` CPT. On every create /
+ * CRUD interface to the `mcp_ai_arch_prec` CPT. On every create /
  * update the tool regenerates the cached embedding via
  * `WP_MCP_AI_Architectural_Precedents_Engine` so the search tool always has
  * a current vector to compare against.

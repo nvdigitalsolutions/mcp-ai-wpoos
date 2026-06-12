@@ -6,7 +6,7 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 class WP_MCP_AI_CRM_Workflow_Rule_CPT {
-	const POST_TYPE = 'mcp_ai_crm_workflow_rule';
+	const POST_TYPE = 'mcp_ai_crm_wf_rule';
 	public static function init() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $s['enable_crm_toolkit'] ) ) {

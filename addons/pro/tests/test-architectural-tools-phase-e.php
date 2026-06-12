@@ -286,7 +286,7 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 		$cb   = static function ( $val, $text ) use ( $test ) {
 			return $test->pseudo_embedding( $text );
 		};
-		add_filter( 'wp_mcp_ai_arch_precedent_embedding', $cb, 10, 2 );
+		add_filter( 'wp_mcp_ai_arch_prec_embedding', $cb, 10, 2 );
 
 		$id1 = $this->create_precedent(
 			array(
@@ -314,7 +314,7 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 			),
 			$this->ctx()
 		);
-		remove_filter( 'wp_mcp_ai_arch_precedent_embedding', $cb, 10 );
+		remove_filter( 'wp_mcp_ai_arch_prec_embedding', $cb, 10 );
 
 		$this->assertSame( 'embedding', $result['mode'] );
 		$this->assertSame( 'Tropical Courtyard House', $result['results'][0]['title'] );

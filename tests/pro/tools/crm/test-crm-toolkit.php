@@ -224,7 +224,7 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	}
 
 	public function test_workflow_rule_cpt_registered() {
-		$this->assertTrue( post_type_exists( 'mcp_ai_crm_workflow_rule' ), 'Workflow Rule CPT should be registered.' );
+		$this->assertTrue( post_type_exists( 'mcp_ai_crm_wf_rule' ), 'Workflow Rule CPT should be registered.' );
 	}
 
 	// ────────────────────────────────────────────────────────
@@ -557,7 +557,7 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	public function test_create_workflow_rule() {
 		$rule_id = wp_insert_post(
 			array(
-				'post_type'   => 'mcp_ai_crm_workflow_rule',
+				'post_type'   => 'mcp_ai_crm_wf_rule',
 				'post_title'  => 'Auto-Reply Hot Leads',
 				'post_status' => 'publish',
 			)
