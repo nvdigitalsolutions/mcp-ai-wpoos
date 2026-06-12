@@ -57,6 +57,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_hygiene_add', array( __CLASS__, 'ajax_hygiene_add' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_hygiene_remove', array( __CLASS__, 'ajax_hygiene_remove' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_merge_duplicate', array( __CLASS__, 'ajax_merge_duplicate' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_crm_cc_lead_tags_update', array( __CLASS__, 'ajax_lead_tags_update' ) );
 	}
 
 	/**
@@ -279,12 +280,51 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					overflow: hidden;
 				}
 				.crm-cc-completeness-bar {
-					height: 100%;
-					border-radius: 3px;
-					transition: width 0.4s ease;
-					min-width: 2px;
-				}
-				@media (max-width: 768px) {
+								height: 100%;
+								border-radius: 3px;
+								transition: width 0.4s ease;
+								min-width: 2px;
+							}
+							/* Tag badges in leads table */
+							.crm-cc-tags-cell { min-width: 120px; }
+							.crm-cc-tags-list { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+							.crm-cc-tag-badge {
+								display: inline-flex;
+								align-items: center;
+								gap: 2px;
+								background: #e7e8ea;
+								color: #2c3338;
+								padding: 1px 4px 1px 7px;
+								border-radius: 10px;
+								font-size: 11px;
+								font-weight: 500;
+								white-space: nowrap;
+							}
+							.crm-cc-tag-badge .crm-cc-tag-remove {
+								background: none;
+								border: none;
+								color: #646970;
+								font-size: 13px;
+								font-weight: 700;
+								line-height: 1;
+								padding: 0 2px;
+								cursor: pointer;
+								border-radius: 50%;
+							}
+							.crm-cc-tag-badge .crm-cc-tag-remove:hover { color: #d63638; background: rgba(214,54,56,0.1); }
+							.crm-cc-tag-add-wrap { display: none; }
+							.crm-cc-tags-cell:hover .crm-cc-tag-add-wrap { display: flex; }
+							.crm-cc-tag-input { width: 80px; font-size: 11px; min-height: 22px; }
+							/* Email quick-action buttons */
+							.crm-cc-pri-btn { color: #00a32a !important; border-color: #00a32a !important; font-size: 10px; padding: 0 5px; min-height: 20px; line-height: 18px; }
+							.crm-cc-pri-btn:hover { background: #00a32a !important; color: #fff !important; }
+							.crm-cc-exc-btn { color: #d63638 !important; border-color: #d63638 !important; font-size: 10px; padding: 0 5px; min-height: 20px; line-height: 18px; }
+							.crm-cc-exc-btn:hover { background: #d63638 !important; color: #fff !important; }
+							/* Inline notice for email actions */
+							.crm-cc-email-msg { font-size: 10px; margin-top: 2px; display: none; }
+							.crm-cc-email-msg.success { color: #00a32a; }
+							.crm-cc-email-msg.error { color: #d63638; }
+							@media (max-width: 768px) {
 					.crm-cc-inline-cards { grid-template-columns: 1fr; }
 					.crm-cc-kpi-grid { grid-template-columns: repeat(2, 1fr); }
 				}
@@ -890,6 +930,10 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 										'key'   => '',
 										'label' => __( 'Source', 'mcp-ai-wpoos-pro' ),
 									),
+									array(
+										'key'   => '',
+										'label' => __( 'Tags', 'mcp-ai-wpoos-pro' ),
+									),
 								);
 								foreach ( $sort_cols as $col_def ) :
 									$col_key = $col_def['key'];
@@ -958,6 +1002,18 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 									<td>
 										<?php if ( $email ) : ?>
 											<a href="<?php echo esc_url( 'mailto:' . $email ); ?>"><?php echo esc_html( $email ); ?></a>
+											<div class="crm-cc-email-actions" style="margin-top: 3px; display: flex; gap: 4px;">
+												<button type="button" class="button button-small crm-cc-pri-btn"
+													data-email="<?php echo esc_attr( $email ); ?>"
+													title="<?php esc_attr_e( 'Add to Priority List', 'mcp-ai-wpoos-pro' ); ?>">
+													⭐ <?php esc_html_e( 'Pri', 'mcp-ai-wpoos-pro' ); ?>
+												</button>
+												<button type="button" class="button button-small crm-cc-exc-btn"
+													data-email="<?php echo esc_attr( $email ); ?>"
+													title="<?php esc_attr_e( 'Add to Exclude List', 'mcp-ai-wpoos-pro' ); ?>">
+													🚫 <?php esc_html_e( 'Exc', 'mcp-ai-wpoos-pro' ); ?>
+												</button>
+											</div>
 										<?php endif; ?>
 										<?php if ( $phone ) : ?>
 											<br><small class="crm-cc-muted"><?php echo esc_html( $phone ); ?></small>
@@ -991,6 +1047,32 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 										<?php else : ?>
 											—
 										<?php endif; ?>
+									</td>
+									<td class="crm-cc-tags-cell" data-lead-id="<?php echo esc_attr( $lead->ID ); ?>">
+										<div class="crm-cc-tags-list">
+											<?php
+											$lead_tags_raw = get_post_meta( $lead->ID, 'lead_tags', true );
+											$lead_tags     = $lead_tags_raw ? array_map( 'trim', explode( ',', $lead_tags_raw ) ) : array();
+											if ( ! empty( $lead_tags ) ) :
+												foreach ( $lead_tags as $tag ) :
+													if ( '' === $tag ) {
+														continue;
+													}
+													?>
+													<span class="crm-cc-tag-badge"><?php echo esc_html( $tag ); ?>
+														<button type="button" class="crm-cc-tag-remove" data-tag="<?php echo esc_attr( $tag ); ?>" title="<?php esc_attr_e( 'Remove tag', 'mcp-ai-wpoos-pro' ); ?>">×</button>
+													</span>
+													<?php
+												endforeach;
+											else :
+												?>
+												<span class="crm-cc-tags-empty crm-cc-muted"><?php esc_html_e( 'No tags', 'mcp-ai-wpoos-pro' ); ?></span>
+											<?php endif; ?>
+										</div>
+										<div class="crm-cc-tag-add-wrap" style="margin-top: 4px; display: flex; gap: 4px;">
+											<input type="text" class="crm-cc-tag-input" placeholder="<?php esc_attr_e( 'Add tag…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 80px; font-size: 11px;" />
+											<button type="button" class="button button-small crm-cc-tag-add-btn">+</button>
+										</div>
 									</td>
 								</tr>
 							<?php endforeach; ?>
@@ -1029,6 +1111,180 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					<?php endif; ?>
 				<?php endif; ?>
 			</div>
+
+			<script>
+			(function() {
+				var hygieneNonce = <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_crm_hygiene_action' ) ); ?>;
+
+				// --- Email Priority / Exclude quick actions ---
+				function addToHygieneList(email, listType) {
+					var formData = new FormData();
+					formData.append('action', 'wp_mcp_ai_crm_cc_hygiene_add');
+					formData.append('_ajax_nonce', hygieneNonce);
+					formData.append('list_type', listType);
+					formData.append('entry', email);
+
+					return fetch(ajaxurl, { method: 'POST', body: formData, credentials: 'same-origin' })
+						.then(function(r) { return r.json(); });
+				}
+
+				document.querySelectorAll('.crm-cc-pri-btn').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						var email = this.dataset.email;
+						var originalText = this.innerHTML;
+						this.disabled = true;
+						this.innerHTML = '...';
+						addToHygieneList(email, 'priority')
+							.then(function(data) {
+								if (data.success) {
+									btn.innerHTML = '&#10003; ' + <?php echo wp_json_encode( __( 'Added', 'mcp-ai-wpoos-pro' ) ); ?>;
+									btn.style.background = '#00a32a';
+									btn.style.color = '#fff';
+									setTimeout(function() {
+										btn.innerHTML = originalText;
+										btn.style.background = '';
+										btn.style.color = '';
+										btn.disabled = false;
+									}, 2000);
+								} else {
+									var msg = (data.data && data.data.message) ? data.data.message : 'Error';
+									btn.innerHTML = '&#9888; ' + <?php echo wp_json_encode( __( 'Error', 'mcp-ai-wpoos-pro' ) ); ?>;
+									btn.title = msg;
+									setTimeout(function() {
+										btn.innerHTML = originalText;
+										btn.disabled = false;
+									}, 2500);
+								}
+							})
+							.catch(function() {
+								btn.innerHTML = originalText;
+								btn.disabled = false;
+							});
+					});
+				});
+
+				document.querySelectorAll('.crm-cc-exc-btn').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						var email = this.dataset.email;
+						var originalText = this.innerHTML;
+						this.disabled = true;
+						this.innerHTML = '...';
+						addToHygieneList(email, 'exclude')
+							.then(function(data) {
+								if (data.success) {
+									btn.innerHTML = '&#10003; ' + <?php echo wp_json_encode( __( 'Added', 'mcp-ai-wpoos-pro' ) ); ?>;
+									btn.style.background = '#d63638';
+									btn.style.color = '#fff';
+									setTimeout(function() {
+										btn.innerHTML = originalText;
+										btn.style.background = '';
+										btn.style.color = '';
+										btn.disabled = false;
+									}, 2000);
+								} else {
+									var msg = (data.data && data.data.message) ? data.data.message : 'Error';
+									btn.innerHTML = '&#9888; ' + <?php echo wp_json_encode( __( 'Error', 'mcp-ai-wpoos-pro' ) ); ?>;
+									btn.title = msg;
+									setTimeout(function() {
+										btn.innerHTML = originalText;
+										btn.disabled = false;
+									}, 2500);
+								}
+							})
+							.catch(function() {
+								btn.innerHTML = originalText;
+								btn.disabled = false;
+							});
+					});
+				});
+
+				// --- Inline tag editing ---
+				function updateLeadTags(leadId, tagAction, tag, cell) {
+					var formData = new FormData();
+					formData.append('action', 'wp_mcp_ai_crm_cc_lead_tags_update');
+					formData.append('_ajax_nonce', hygieneNonce);
+					formData.append('lead_id', leadId);
+					formData.append('tag_action', tagAction);
+					formData.append('tag', tag);
+
+					return fetch(ajaxurl, { method: 'POST', body: formData, credentials: 'same-origin' })
+						.then(function(r) { return r.json(); })
+						.then(function(data) {
+							if (data.success && data.data && data.data.tags) {
+								renderTags(cell, data.data.tags, leadId);
+							}
+							return data;
+						});
+				}
+
+				function renderTags(cell, tags, leadId) {
+					var list = cell.querySelector('.crm-cc-tags-list');
+					if (!tags || tags.length === 0) {
+						list.innerHTML = '<span class="crm-cc-tags-empty crm-cc-muted">' + <?php echo wp_json_encode( __( 'No tags', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
+					} else {
+						var html = '';
+						tags.forEach(function(t) {
+							html += '<span class="crm-cc-tag-badge">' + escapeHtml(t) +
+								'<button type="button" class="crm-cc-tag-remove" data-tag="' + escapeAttr(t) + '" title="' + <?php echo wp_json_encode( esc_attr__( 'Remove tag', 'mcp-ai-wpoos-pro' ) ); ?> + '">&times;</button></span>';
+						});
+						list.innerHTML = html;
+						// Re-bind remove handlers.
+						list.querySelectorAll('.crm-cc-tag-remove').forEach(function(btn) {
+							btn.addEventListener('click', function() {
+								updateLeadTags(leadId, 'remove', this.dataset.tag, cell);
+							});
+						});
+					}
+				}
+
+				function escapeHtml(str) {
+					var div = document.createElement('div');
+					div.appendChild(document.createTextNode(str));
+					return div.innerHTML;
+				}
+
+				function escapeAttr(str) {
+					return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+				}
+
+				// Bind tag remove buttons.
+				document.querySelectorAll('.crm-cc-tag-remove').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						var cell = this.closest('.crm-cc-tags-cell');
+						var leadId = cell.dataset.leadId;
+						updateLeadTags(leadId, 'remove', this.dataset.tag, cell);
+					});
+				});
+
+				// Bind tag add buttons.
+				document.querySelectorAll('.crm-cc-tag-add-btn').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						var cell = this.closest('.crm-cc-tags-cell');
+						var leadId = cell.dataset.leadId;
+						var input = cell.querySelector('.crm-cc-tag-input');
+						var tag = input.value.trim();
+						if (!tag) return;
+						input.value = '';
+						updateLeadTags(leadId, 'add', tag, cell);
+					});
+				});
+
+				// Allow Enter key in tag input.
+				document.querySelectorAll('.crm-cc-tag-input').forEach(function(input) {
+					input.addEventListener('keydown', function(e) {
+						if (e.key === 'Enter') {
+							e.preventDefault();
+							var cell = this.closest('.crm-cc-tags-cell');
+							var leadId = cell.dataset.leadId;
+							var tag = this.value.trim();
+							if (!tag) return;
+							this.value = '';
+							updateLeadTags(leadId, 'add', tag, cell);
+						}
+					});
+				});
+			})();
+			</script>
 
 			<p>
 				<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_lead' ) ); ?>" class="button button-primary">
@@ -3785,11 +4041,84 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		);
 	}
 
-		/**
-		 * AJAX handler: merge a duplicate lead into a survivor.
-		 *
-		 * @since 2.8.0
-		 */
+	/**
+	 * AJAX handler: update lead tags (add or remove).
+	 *
+	 * @since 2.9.0
+	 */
+	public static function ajax_lead_tags_update() {
+		check_ajax_referer( 'wp_mcp_ai_crm_hygiene_action', '_ajax_nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$lead_id = isset( $_POST['lead_id'] ) ? absint( wp_unslash( $_POST['lead_id'] ) ) : 0;
+		$action  = isset( $_POST['tag_action'] ) ? sanitize_key( wp_unslash( $_POST['tag_action'] ) ) : '';
+		$tag     = isset( $_POST['tag'] ) ? sanitize_text_field( wp_unslash( $_POST['tag'] ) ) : '';
+
+		if ( $lead_id < 1 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid lead ID.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$tag = strtolower( trim( $tag ) );
+
+		if ( empty( $tag ) ) {
+			wp_send_json_error( array( 'message' => __( 'Tag is required.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		if ( strlen( $tag ) > 50 ) {
+			wp_send_json_error( array( 'message' => __( 'Tag is too long (max 50 characters).', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Load current tags.
+		$current_raw  = get_post_meta( $lead_id, 'lead_tags', true );
+		$current_tags = $current_raw ? array_map( 'trim', explode( ',', $current_raw ) ) : array();
+
+		if ( 'remove' === $action ) {
+			$current_tags = array_values(
+				array_filter(
+					$current_tags,
+					function ( $t ) use ( $tag ) {
+						return strtolower( trim( $t ) ) !== $tag;
+					}
+				)
+			);
+		} elseif ( 'add' === $action ) {
+			// Avoid duplicates.
+			$already = false;
+			foreach ( $current_tags as $t ) {
+				if ( strtolower( trim( $t ) ) === $tag ) {
+					$already = true;
+					break;
+				}
+			}
+			if ( ! $already ) {
+				$current_tags[] = $tag;
+			}
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Invalid tag action.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Save as comma-separated string.
+		$new_value = implode( ',', array_filter( $current_tags ) );
+		update_post_meta( $lead_id, 'lead_tags', $new_value );
+
+		wp_send_json_success(
+			array(
+				'message' => 'add' === $action
+					? sprintf( __( 'Tag "%s" added.', 'mcp-ai-wpoos-pro' ), $tag )
+					: sprintf( __( 'Tag "%s" removed.', 'mcp-ai-wpoos-pro' ), $tag ),
+				'tags'    => array_values( array_filter( $current_tags ) ),
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: merge a duplicate lead into a survivor.
+	 *
+	 * @since 2.8.0
+	 */
 	public static function ajax_merge_duplicate() {
 		check_ajax_referer( self::NONCE_ACTION, '_ajax_nonce' );
 
