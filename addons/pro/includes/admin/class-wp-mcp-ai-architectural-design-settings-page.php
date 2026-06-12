@@ -175,7 +175,7 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 						<span class="dashicons dashicons-media-document"></span>
 						<?php esc_html_e( 'Specifications', 'mcp-ai-wpoos-pro' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_arch_precedent' ) ); ?>" class="button">
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_arch_prec' ) ); ?>" class="button">
 						<span class="dashicons dashicons-book-alt"></span>
 						<?php esc_html_e( 'Precedent Library', 'mcp-ai-wpoos-pro' ); ?>
 					</a>

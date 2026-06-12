@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Manage_Workflow_Rules implements WP_MCP_AI_Tool_Interface, 
 		if ( 'list' === $action ) {
 			$q     = new WP_Query(
 				array(
-					'post_type'      => 'mcp_ai_crm_workflow_rule',
+					'post_type'      => 'mcp_ai_crm_wf_rule',
 					'post_status'    => 'publish',
 					'posts_per_page' => min( 100, absint( $arguments['per_page'] ?? 20 ) ),
 					'paged'          => max( 1, absint( $arguments['page'] ?? 1 ) ),
@@ -66,7 +66,7 @@ class WP_MCP_AI_Tool_Manage_Workflow_Rules implements WP_MCP_AI_Tool_Interface, 
 		}
 		$rule_id = absint( $arguments['rule_id'] ?? 0 );
 		$p       = get_post( $rule_id );
-		if ( ! $p || 'mcp_ai_crm_workflow_rule' !== $p->post_type ) {
+		if ( ! $p || 'mcp_ai_crm_wf_rule' !== $p->post_type ) {
 			return new WP_Error( 'not_found', __( 'Rule not found.', 'mcp-ai-wpoos-pro' ) ); }
 		switch ( $action ) {
 			case 'update':

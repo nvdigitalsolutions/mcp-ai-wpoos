@@ -32,7 +32,7 @@ class WP_MCP_AI_Architectural_Precedent_CPT {
 	 *
 	 * @var string
 	 */
-	const POST_TYPE = 'mcp_ai_arch_precedent';
+	const POST_TYPE = 'mcp_ai_arch_prec';
 
 	/**
 	 * Country taxonomy slug.

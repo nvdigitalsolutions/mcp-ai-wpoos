@@ -3,7 +3,7 @@
  * Architectural Precedents Engine.
  *
  * Phase E helper that wraps `WP_MCP_AI_Vector_Context_Service` for the
- * `mcp_ai_arch_precedent` CPT:
+ * `mcp_ai_arch_prec` CPT:
  *
  *  - `build_corpus()` joins title, excerpt, body, country, building type
  *    and key features into a single text blob suitable for embedding.
@@ -114,7 +114,7 @@ class WP_MCP_AI_Architectural_Precedents_Engine {
 		 * @param array|null $embedding Embedding vector or null to fall through.
 		 * @param string     $text      Raw text being embedded.
 		 */
-		$short_circuit = apply_filters( 'wp_mcp_ai_arch_precedent_embedding', null, $text );
+		$short_circuit = apply_filters( 'wp_mcp_ai_arch_prec_embedding', null, $text );
 		if ( is_array( $short_circuit ) ) {
 			return $short_circuit;
 		}

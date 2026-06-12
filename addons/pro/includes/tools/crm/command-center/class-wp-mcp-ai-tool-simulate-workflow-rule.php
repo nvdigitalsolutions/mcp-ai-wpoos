@@ -40,7 +40,7 @@ class WP_MCP_AI_Tool_Simulate_Workflow_Rule implements WP_MCP_AI_Tool_Interface,
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$rule_id = absint( $arguments['rule_id'] );
 		$p       = get_post( $rule_id );
-		if ( ! $p || 'mcp_ai_crm_workflow_rule' !== $p->post_type ) {
+		if ( ! $p || 'mcp_ai_crm_wf_rule' !== $p->post_type ) {
 			return new WP_Error( 'not_found', __( 'Rule not found.', 'mcp-ai-wpoos-pro' ) ); }
 		$trigger       = get_post_meta( $rule_id, 'trigger', true );
 		$actions       = get_post_meta( $rule_id, 'actions', true ) ?: array();

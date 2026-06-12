@@ -68,7 +68,7 @@ class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 		$conditions = $arguments['conditions'] ?? array();
 		$rule_id    = wp_insert_post(
 			array(
-				'post_type'   => 'mcp_ai_crm_workflow_rule',
+				'post_type'   => 'mcp_ai_crm_wf_rule',
 				'post_title'  => $name,
 				'post_status' => 'publish',
 			),

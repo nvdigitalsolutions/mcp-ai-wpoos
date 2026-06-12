@@ -28,7 +28,7 @@ class WP_MCP_AI_Comic_Character_CPT {
 	 *
 	 * @var string
 	 */
-	const POST_TYPE = 'mcp_ai_comic_character';
+	const POST_TYPE = 'mcp_ai_comic_char';
 
 	/**
 	 * Initialize the class.
