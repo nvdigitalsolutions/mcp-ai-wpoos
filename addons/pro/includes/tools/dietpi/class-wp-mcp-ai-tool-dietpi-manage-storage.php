@@ -25,22 +25,32 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 	 */
 	class WP_MCP_AI_Tool_DietPi_Manage_Storage extends WP_MCP_AI_Tool_DietPi_Base {
 
-		public function get_slug()        { return 'dietpi_manage_storage'; }
-		public function get_name()        { return __( 'DietPi Manage Storage', 'mcp-ai-wpoos-pro' ); }
+		/** {@inheritdoc} */
+		public function get_slug() {
+			return 'dietpi_manage_storage';
+		}
+
+		/** {@inheritdoc} */
+		public function get_name() {
+			return __( 'DietPi Manage Storage', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Inspect and manage storage on the DietPi device. List all mounted drives with usage, check free space on a specific path (useful for Transmission download directory), list large directories by size, and view drive information via dietpi-drive_manager.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
 				'properties' => array(
-					'action' => array(
+					'action'      => array(
 						'type'        => 'string',
 						'description' => __( 'Storage action to perform.', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'list_mounts', 'free_space', 'large_dirs', 'drive_info' ),
 					),
-					'path' => array(
+					'path'        => array(
 						'type'        => 'string',
 						'description' => __( 'Filesystem path to check (for free_space and large_dirs actions). Default for free_space: /.', 'mcp-ai-wpoos-pro' ),
 					),
@@ -55,19 +65,32 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 			);
 		}
 
-		public function get_required_capability() { return 'edit_posts'; }
+		/** {@inheritdoc} */
+		public function get_required_capability() {
+			return 'edit_posts';
+		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'read-only', 'cacheable' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$action = $this->sanitize_string( $arguments, 'action' );
 
 			switch ( $action ) {
 				case 'list_mounts':
 					$result = $this->ssh()->exec( 'df -h --type=ext4 --type=ext3 --type=vfat --type=ntfs --type=exfat --type=fuseblk 2>/dev/null || df -h', 10 );
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					$mounts  = array();
 					$lines   = explode( "\n", $result['stdout'] );
@@ -75,7 +98,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 
 					foreach ( $lines as $i => $line ) {
 						$line = trim( $line );
-						if ( '' === $line ) { continue; }
+						if ( '' === $line ) {
+							continue;
+						}
 						// Skip header line.
 						if ( 0 === strpos( $line, 'Filesystem' ) ) {
 							$headers = preg_split( '/\s+/', $line );
@@ -84,12 +109,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 						$cols = preg_split( '/\s+/', $line, 6 );
 						if ( count( $cols ) >= 6 ) {
 							$mounts[] = array(
-								'filesystem' => $cols[0],
-								'size'       => $cols[1],
-								'used'       => $cols[2],
-								'available'  => $cols[3],
-								'use_percent'=> $cols[4],
-								'mounted_on' => $cols[5],
+								'filesystem'  => $cols[0],
+								'size'        => $cols[1],
+								'used'        => $cols[2],
+								'available'   => $cols[3],
+								'use_percent' => $cols[4],
+								'mounted_on'  => $cols[5],
 							);
 						}
 					}
@@ -101,26 +126,33 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 
 				case 'free_space':
 					$path = $this->sanitize_string( $arguments, 'path', '/' );
-					if ( '' === $path ) { $path = '/'; }
+					if ( '' === $path ) {
+						$path = '/';
+					}
 
 					$result = $this->ssh()->exec(
 						sprintf( 'df -h %s | tail -1', escapeshellarg( $path ) ),
 						10
 					);
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					$cols = preg_split( '/\s+/', trim( $result['stdout'] ), 6 );
 					$info = array(
 						'path' => $path,
 					);
 					if ( count( $cols ) >= 6 ) {
-						$info = array_merge( $info, array(
-							'filesystem'  => $cols[0],
-							'size'        => $cols[1],
-							'used'        => $cols[2],
-							'available'   => $cols[3],
-							'use_percent' => $cols[4],
-						) );
+						$info = array_merge(
+							$info,
+							array(
+								'filesystem'  => $cols[0],
+								'size'        => $cols[1],
+								'used'        => $cols[2],
+								'available'   => $cols[3],
+								'use_percent' => $cols[4],
+							)
+						);
 					}
 
 					return $this->success(
@@ -129,10 +161,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 					);
 
 				case 'large_dirs':
-					$path    = $this->sanitize_string( $arguments, 'path', '/' );
-					$min_mb  = max( 1, $this->sanitize_int( $arguments, 'min_size_mb', 100 ) );
+					$path   = $this->sanitize_string( $arguments, 'path', '/' );
+					$min_mb = max( 1, $this->sanitize_int( $arguments, 'min_size_mb', 100 ) );
 
-					if ( '' === $path ) { $path = '/'; }
+					if ( '' === $path ) {
+						$path = '/';
+					}
 
 					$min_bytes = $min_mb * 1024;
 
@@ -144,12 +178,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 						),
 						30
 					);
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					$dirs = array();
 					foreach ( explode( "\n", trim( $result['stdout'] ) ) as $line ) {
 						$line = trim( $line );
-						if ( '' === $line ) { continue; }
+						if ( '' === $line ) {
+							continue;
+						}
 						$parts = preg_split( '/\t/', $line, 2 );
 						if ( 2 === count( $parts ) ) {
 							$dirs[] = array(
@@ -171,11 +209,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 				case 'drive_info':
 					// Run dietpi-drive_manager to list drives.
 					$result = $this->ssh()->exec( 'dietpi-drive_manager list 2>/dev/null || lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE 2>/dev/null', 15 );
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					// Also get drive temperatures if available.
 					$temp_result = $this->ssh()->exec( 'hddtemp /dev/sd? 2>/dev/null || echo "NO_HDDTEMP"', 10 );
-					$temps = '';
+					$temps       = '';
 					if ( ! is_wp_error( $temp_result ) && 'NO_HDDTEMP' !== trim( $temp_result['stdout'] ) ) {
 						$temps = $temp_result['stdout'];
 					}
@@ -183,7 +223,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 					return $this->success(
 						__( 'Drive information retrieved.', 'mcp-ai-wpoos-pro' ),
 						array(
-							'drive_list' => $result['stdout'],
+							'drive_list'   => $result['stdout'],
 							'temperatures' => $temps ?: null,
 						)
 					);

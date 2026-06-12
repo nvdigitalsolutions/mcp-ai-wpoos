@@ -25,17 +25,27 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Backup_System' ) ) {
 	 */
 	class WP_MCP_AI_Tool_DietPi_Backup_System extends WP_MCP_AI_Tool_DietPi_Base {
 
-		public function get_slug()        { return 'dietpi_backup_system'; }
-		public function get_name()        { return __( 'DietPi Backup System', 'mcp-ai-wpoos-pro' ); }
+		/** {@inheritdoc} */
+		public function get_slug() {
+			return 'dietpi_backup_system';
+		}
+
+		/** {@inheritdoc} */
+		public function get_name() {
+			return __( 'DietPi Backup System', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Manage DietPi system backups. List existing backups and their dates/sizes, create a new full system backup or app-data-only backup, and check backup status. Backups are created via dietpi-backup and stored in the configured backup location.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
 				'properties' => array(
-					'action' => array(
+					'action'      => array(
 						'type'        => 'string',
 						'description' => __( 'Backup action to perform.', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'list', 'create', 'status' ),
@@ -51,10 +61,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Backup_System' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'write', 'state-changing', 'performance-impact', 'may-timeout' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 			if ( ! $current_user_id || ! user_can( $current_user_id, 'manage_options' ) ) {
@@ -72,27 +90,33 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Backup_System' ) ) {
 						'ls -lh "$BACKUP_DIR"/*.tar.gz 2>/dev/null || echo "NO_BACKUPS_FOUND"',
 						15
 					);
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
-					$lines  = explode( "\n", $result['stdout'] );
+					$lines      = explode( "\n", $result['stdout'] );
 					$backup_dir = '';
 					$backups    = array();
 
 					foreach ( $lines as $line ) {
 						$line = trim( $line );
-						if ( '' === $line ) { continue; }
+						if ( '' === $line ) {
+							continue;
+						}
 						if ( 0 === strpos( $line, 'BACKUP_DIR:' ) ) {
 							$backup_dir = trim( substr( $line, 11 ) );
 							continue;
 						}
-						if ( 'NO_BACKUPS_FOUND' === $line ) { continue; }
-						// Parse ls -lh output: "-rw-r--r-- 1 root root 256M Jan 15 10:30 backup_file.tar.gz"
+						if ( 'NO_BACKUPS_FOUND' === $line ) {
+							continue;
+						}
+						// Parse ls -lh output: "-rw-r--r-- 1 root root 256M Jan 15 10:30 backup_file.tar.gz".
 						if ( preg_match( '/^[-drwx]+\s+\d+\s+\S+\s+\S+\s+(\S+)\s+(\S+\s+\d+)\s+(\S+)\s+(.+)$/', $line, $m ) ) {
 							$backups[] = array(
-								'size'  => $m[1],
-								'date'  => trim( $m[2] ),
-								'time'  => $m[3],
-								'name'  => $m[4],
+								'size' => $m[1],
+								'date' => trim( $m[2] ),
+								'time' => $m[3],
+								'name' => $m[4],
 							);
 						}
 					}
@@ -116,7 +140,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Backup_System' ) ) {
 
 					$result = $this->ssh()->exec( $cmd, 120 ); // Backups can take a while.
 
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					$success = ( 0 === $result['exit_code'] || false !== strpos( $result['stdout'] . $result['stderr'], 'success' ) );
 
@@ -142,12 +168,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Backup_System' ) ) {
 						'echo "BACKUP_COUNT:$(ls "$BACKUP_DIR"/*.tar.gz 2>/dev/null | wc -l)";',
 						15
 					);
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					$status = array();
 					foreach ( explode( "\n", $result['stdout'] ) as $line ) {
 						$line = trim( $line );
-						if ( '' === $line ) { continue; }
+						if ( '' === $line ) {
+							continue;
+						}
 						$parts = explode( ':', $line, 2 );
 						if ( 2 === count( $parts ) ) {
 							$status[ strtolower( trim( $parts[0] ) ) ] = trim( $parts[1] );

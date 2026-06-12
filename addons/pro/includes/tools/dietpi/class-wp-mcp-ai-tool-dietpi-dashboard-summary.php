@@ -25,12 +25,22 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 	 */
 	class WP_MCP_AI_Tool_DietPi_Dashboard_Summary extends WP_MCP_AI_Tool_DietPi_Base {
 
-		public function get_slug()        { return 'dietpi_dashboard_summary'; }
-		public function get_name()        { return __( 'DietPi Dashboard Summary', 'mcp-ai-wpoos-pro' ); }
+		/** {@inheritdoc} */
+		public function get_slug() {
+			return 'dietpi_dashboard_summary';
+		}
+
+		/** {@inheritdoc} */
+		public function get_name() {
+			return __( 'DietPi Dashboard Summary', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Generate a comprehensive dashboard summary of the entire DietPi system. This is the recommended first tool to call when checking system status. Returns: system health (CPU/RAM/disk/temp), all service states, Transmission torrent count, Sonarr/Radarr queue summaries, storage overview, and any active warnings. Designed for quick at-a-glance monitoring.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -44,12 +54,23 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 			);
 		}
 
-		public function get_required_capability() { return 'edit_posts'; }
+		/** {@inheritdoc} */
+		public function get_required_capability() {
+			return 'edit_posts';
+		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'read-only', 'cacheable', 'may-timeout' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$include_queues = $this->sanitize_bool( $arguments, 'include_queues', true );
 			$summary        = array();
@@ -62,7 +83,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 				// Check disk.
 				if ( isset( $stats['disk'] ) && preg_match( '/(\d+)%/', $stats['disk'], $m ) ) {
 					if ( (int) $m[1] > 85 ) {
-						$warnings[] = array( 'type' => 'disk_space_low', 'detail' => $stats['disk'] );
+						$warnings[] = array(
+							'type'   => 'disk_space_low',
+							'detail' => $stats['disk'],
+						);
 					}
 				}
 			}
@@ -72,7 +96,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 			if ( ! is_wp_error( $pi_info ) ) {
 				$summary['hardware'] = $pi_info;
 				if ( isset( $pi_info['throttled'] ) && $pi_info['throttled'] !== 'throttled=0x0' ) {
-					$warnings[] = array( 'type' => 'pi_throttled', 'detail' => $pi_info['throttled'] );
+					$warnings[] = array(
+						'type'   => 'pi_throttled',
+						'detail' => $pi_info['throttled'],
+					);
 				}
 			}
 
@@ -83,15 +110,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 				$service_states = array();
 
 				foreach ( $managed as $app_slug ) {
-					$catalogue = WP_MCP_AI_DietPi_Service_Catalogue::get( $app_slug );
-					$app_name  = $catalogue ? $catalogue['name'] : $app_slug;
-					$running   = ( false !== strpos( $svc_result['stdout'], $app_slug ) && false !== strpos( $svc_result['stdout'], 'active' ) );
+					$catalogue                   = WP_MCP_AI_DietPi_Service_Catalogue::get( $app_slug );
+					$app_name                    = $catalogue ? $catalogue['name'] : $app_slug;
+					$running                     = ( false !== strpos( $svc_result['stdout'], $app_slug ) && false !== strpos( $svc_result['stdout'], 'active' ) );
 					$service_states[ $app_slug ] = array(
 						'name'    => $app_name,
 						'running' => $running,
 					);
 					if ( ! $running ) {
-						$warnings[] = array( 'type' => 'service_down', 'detail' => $app_name );
+						$warnings[] = array(
+							'type'   => 'service_down',
+							'detail' => $app_name,
+						);
 					}
 				}
 
@@ -106,14 +136,25 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 				);
 				if ( ! is_wp_error( $tx ) && isset( $tx['torrents'] ) ) {
 					$torrents = $tx['torrents'];
-					$active   = 0; $paused = 0; $seeding = 0; $dl_speed = 0; $ul_speed = 0; $errors = 0;
+					$active   = 0;
+					$paused   = 0;
+					$seeding  = 0;
+					$dl_speed = 0;
+					$ul_speed = 0;
+					$errors   = 0;
 					foreach ( $torrents as $t ) {
 						$status = (int) $t['status'];
-						if ( 4 === $status ) { $active++; }
-						elseif ( 0 === $status ) { $paused++; }
-						elseif ( 6 === $status ) { $seeding++; }
-						elseif ( 16 === $status ) { $errors++; }
-						else { $active++; }
+						if ( 4 === $status ) {
+							++$active;
+						} elseif ( 0 === $status ) {
+							++$paused;
+						} elseif ( 6 === $status ) {
+							++$seeding;
+						} elseif ( 16 === $status ) {
+							++$errors;
+						} else {
+							++$active;
+						}
 						$dl_speed += (int) $t['rateDownload'];
 						$ul_speed += (int) $t['rateUpload'];
 					}
@@ -127,7 +168,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 						'upload_speed'   => $ul_speed,
 					);
 					if ( $errors > 0 ) {
-						$warnings[] = array( 'type' => 'transmission_errors', 'detail' => $errors . ' torrent(s) with errors' );
+						$warnings[] = array(
+							'type'   => 'transmission_errors',
+							'detail' => $errors . ' torrent(s) with errors',
+						);
 					}
 				}
 			}
@@ -141,10 +185,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 				$monitored    = 0;
 				if ( is_array( $series_list ) ) {
 					foreach ( $series_list as $s ) {
-						if ( ! empty( $s['monitored'] ) ) { $monitored++; }
+						if ( ! empty( $s['monitored'] ) ) {
+							++$monitored;
+						}
 					}
 				}
-				$queue_count  = is_array( $queue ) ? count( $queue ) : '?';
+				$queue_count = is_array( $queue ) ? count( $queue ) : '?';
 
 				$summary['sonarr'] = array(
 					'total_series' => $series_count,
@@ -158,13 +204,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 				$movie_list = $this->app_client()->get( 'radarr', '/api/v3/movie', array(), 15 );
 				$queue      = $this->app_client()->get( 'radarr', '/api/v3/queue', array(), 10 );
 
-				$movie_count  = is_array( $movie_list ) ? count( $movie_list ) : '?';
-				$monitored    = 0;
-				$missing      = 0;
+				$movie_count = is_array( $movie_list ) ? count( $movie_list ) : '?';
+				$monitored   = 0;
+				$missing     = 0;
 				if ( is_array( $movie_list ) ) {
 					foreach ( $movie_list as $m ) {
-						if ( ! empty( $m['monitored'] ) ) { $monitored++; }
-						if ( empty( $m['hasFile'] ) && ! empty( $m['monitored'] ) && 'released' === ( isset( $m['status'] ) ? $m['status'] : '' ) ) { $missing++; }
+						if ( ! empty( $m['monitored'] ) ) {
+							++$monitored;
+						}
+						if ( empty( $m['hasFile'] ) && ! empty( $m['monitored'] ) && 'released' === ( isset( $m['status'] ) ? $m['status'] : '' ) ) {
+							++$missing;
+						}
 					}
 				}
 				$queue_count = is_array( $queue ) ? count( $queue ) : '?';
@@ -183,15 +233,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 				$summary['storage'] = array();
 				foreach ( explode( "\n", trim( $disk_result['stdout'] ) ) as $line ) {
 					$line = trim( $line );
-					if ( '' === $line ) { continue; }
+					if ( '' === $line ) {
+						continue;
+					}
 					$cols = preg_split( '/\s+/', $line, 6 );
 					if ( count( $cols ) >= 6 ) {
 						$summary['storage'][] = array(
-							'path'          => $cols[5],
-							'size'          => $cols[1],
-							'used'          => $cols[2],
-							'available'     => $cols[3],
-							'use_percent'   => $cols[4],
+							'path'        => $cols[5],
+							'size'        => $cols[1],
+							'used'        => $cols[2],
+							'available'   => $cols[3],
+							'use_percent' => $cols[4],
 						);
 					}
 				}

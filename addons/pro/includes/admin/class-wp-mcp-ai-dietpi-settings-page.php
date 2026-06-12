@@ -40,10 +40,14 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_Settings_Page' ) ) {
 		}
 
 		/** {@inheritdoc} */
-		protected function get_toolkit_slug() { return $this->toolkit_slug; }
+		protected function get_toolkit_slug() {
+			return $this->toolkit_slug;
+		}
 
 		/** {@inheritdoc} */
-		protected function get_toolkit_name() { return $this->toolkit_name; }
+		protected function get_toolkit_name() {
+			return $this->toolkit_name;
+		}
 
 		/** {@inheritdoc} */
 		protected function get_tools_list() {
@@ -158,7 +162,11 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_Settings_Page' ) ) {
 				<h2><?php esc_html_e( 'Managed Applications', 'mcp-ai-wpoos-pro' ); ?></h2>
 				<p class="description"><?php esc_html_e( 'Configure API access for each app running on your DietPi device. API keys can be found in each app\'s Settings → General page.', 'mcp-ai-wpoos-pro' ); ?></p>
 
-				<?php foreach ( $apps as $app ) : $cfg = isset( $settings['apps'][ $app ] ) ? $settings['apps'][ $app ] : array(); $name = ucfirst( $app ); ?>
+				<?php
+				foreach ( $apps as $app ) :
+					$cfg  = isset( $settings['apps'][ $app ] ) ? $settings['apps'][ $app ] : array();
+					$name = ucfirst( $app );
+					?>
 				<div class="toolkit-card" style="margin-bottom:12px;">
 					<h3 style="margin-top:0;"><?php echo esc_html( $name ); ?></h3>
 					<table class="form-table">
@@ -185,14 +193,21 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_Settings_Page' ) ) {
 			<?php
 		}
 
-		/** {@inheritdoc} */
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $input The settings input to sanitize.
+		 * @return array Sanitized settings.
+		 */
 		public function sanitize_settings( $input ) {
-			if ( ! is_array( $input ) ) { return array(); }
-			$sanitized = array();
-			$sanitized['host']                = sanitize_text_field( isset( $input['host'] ) ? $input['host'] : '' );
-			$sanitized['ssh_port']            = absint( isset( $input['ssh_port'] ) ? $input['ssh_port'] : 22 );
-			$sanitized['ssh_user']            = sanitize_text_field( isset( $input['ssh_user'] ) ? $input['ssh_user'] : 'root' );
-			$sanitized['ssh_auth_method']     = in_array( isset( $input['ssh_auth_method'] ) ? $input['ssh_auth_method'] : 'key', array( 'key', 'password' ), true ) ? $input['ssh_auth_method'] : 'key';
+			if ( ! is_array( $input ) ) {
+				return array();
+			}
+			$sanitized                    = array();
+			$sanitized['host']            = sanitize_text_field( isset( $input['host'] ) ? $input['host'] : '' );
+			$sanitized['ssh_port']        = absint( isset( $input['ssh_port'] ) ? $input['ssh_port'] : 22 );
+			$sanitized['ssh_user']        = sanitize_text_field( isset( $input['ssh_user'] ) ? $input['ssh_user'] : 'root' );
+			$sanitized['ssh_auth_method'] = in_array( isset( $input['ssh_auth_method'] ) ? $input['ssh_auth_method'] : 'key', array( 'key', 'password' ), true ) ? $input['ssh_auth_method'] : 'key';
 			// Only update key if a new one is provided.
 			$current = get_option( $this->option_name, array() );
 			$new_key = isset( $input['ssh_private_key'] ) ? trim( $input['ssh_private_key'] ) : '';
@@ -204,24 +219,42 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_Settings_Page' ) ) {
 				$sanitized['ssh_private_key'] = isset( $current['ssh_private_key'] ) ? $current['ssh_private_key'] : '';
 			}
 			// Only update passphrase/password if provided.
-			if ( ! empty( $input['ssh_key_passphrase'] ) ) { $sanitized['ssh_key_passphrase'] = $input['ssh_key_passphrase']; } else { $sanitized['ssh_key_passphrase'] = isset( $current['ssh_key_passphrase'] ) ? $current['ssh_key_passphrase'] : ''; }
-			if ( ! empty( $input['ssh_password'] ) ) { $sanitized['ssh_password'] = $input['ssh_password']; } else { $sanitized['ssh_password'] = isset( $current['ssh_password'] ) ? $current['ssh_password'] : ''; }
+			if ( ! empty( $input['ssh_key_passphrase'] ) ) {
+				$sanitized['ssh_key_passphrase'] = $input['ssh_key_passphrase'];
+			} else {
+				$sanitized['ssh_key_passphrase'] = isset( $current['ssh_key_passphrase'] ) ? $current['ssh_key_passphrase'] : '';
+			}
+			if ( ! empty( $input['ssh_password'] ) ) {
+				$sanitized['ssh_password'] = $input['ssh_password'];
+			} else {
+				$sanitized['ssh_password'] = isset( $current['ssh_password'] ) ? $current['ssh_password'] : '';
+			}
 			// App settings.
-			$apps = array( 'transmission', 'jackett', 'sonarr', 'radarr', 'plex', 'jellyfin' );
+			$apps              = array( 'transmission', 'jackett', 'sonarr', 'radarr', 'plex', 'jellyfin' );
 			$sanitized['apps'] = array();
 			foreach ( $apps as $app ) {
-				$app_input = isset( $input['apps'][ $app ] ) ? $input['apps'][ $app ] : array();
+				$app_input                 = isset( $input['apps'][ $app ] ) ? $input['apps'][ $app ] : array();
 				$sanitized['apps'][ $app ] = array(
-					'enabled'  => ! empty( $app_input['enabled'] ),
-					'url'      => isset( $app_input['url'] ) ? esc_url_raw( $app_input['url'] ) : '',
+					'enabled' => ! empty( $app_input['enabled'] ),
+					'url'     => isset( $app_input['url'] ) ? esc_url_raw( $app_input['url'] ) : '',
 				);
 				if ( 'transmission' === $app ) {
 					$sanitized['apps'][ $app ]['username'] = isset( $app_input['username'] ) ? sanitize_text_field( $app_input['username'] ) : '';
-					if ( ! empty( $app_input['password'] ) ) { $sanitized['apps'][ $app ]['password'] = $app_input['password']; } else { $sanitized['apps'][ $app ]['password'] = isset( $current['apps'][ $app ]['password'] ) ? $current['apps'][ $app ]['password'] : ''; }
+					if ( ! empty( $app_input['password'] ) ) {
+						$sanitized['apps'][ $app ]['password'] = $app_input['password'];
+					} else {
+						$sanitized['apps'][ $app ]['password'] = isset( $current['apps'][ $app ]['password'] ) ? $current['apps'][ $app ]['password'] : '';
+					}
 				} elseif ( 'plex' === $app ) {
-					if ( ! empty( $app_input['token'] ) ) { $sanitized['apps'][ $app ]['token'] = $app_input['token']; } else { $sanitized['apps'][ $app ]['token'] = isset( $current['apps'][ $app ]['token'] ) ? $current['apps'][ $app ]['token'] : ''; }
+					if ( ! empty( $app_input['token'] ) ) {
+						$sanitized['apps'][ $app ]['token'] = $app_input['token'];
+					} else {
+						$sanitized['apps'][ $app ]['token'] = isset( $current['apps'][ $app ]['token'] ) ? $current['apps'][ $app ]['token'] : '';
+					}
+				} elseif ( ! empty( $app_input['api_key'] ) ) {
+					$sanitized['apps'][ $app ]['api_key'] = $app_input['api_key'];
 				} else {
-					if ( ! empty( $app_input['api_key'] ) ) { $sanitized['apps'][ $app ]['api_key'] = $app_input['api_key']; } else { $sanitized['apps'][ $app ]['api_key'] = isset( $current['apps'][ $app ]['api_key'] ) ? $current['apps'][ $app ]['api_key'] : ''; }
+					$sanitized['apps'][ $app ]['api_key'] = isset( $current['apps'][ $app ]['api_key'] ) ? $current['apps'][ $app ]['api_key'] : '';
 				}
 			}
 			return $sanitized;

@@ -25,22 +25,32 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Provision_New_App' ) ) {
 	 */
 	class WP_MCP_AI_Tool_DietPi_Provision_New_App extends WP_MCP_AI_Tool_DietPi_Base {
 
-		public function get_slug()        { return 'dietpi_provision_new_app'; }
-		public function get_name()        { return __( 'DietPi Provision New App', 'mcp-ai-wpoos-pro' ); }
+		/** {@inheritdoc} */
+		public function get_slug() {
+			return 'dietpi_provision_new_app';
+		}
+
+		/** {@inheritdoc} */
+		public function get_name() {
+			return __( 'DietPi Provision New App', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Install and configure new software on the DietPi device using dietpi-software. Search for available software packages, install one or more packages by DietPi software ID or name, and check installation status. Installing software requires explicit confirmation. Supports the 200+ software titles available in the DietPi optimized software catalogue.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
 				'properties' => array(
-					'action' => array(
+					'action'       => array(
 						'type'        => 'string',
 						'description' => __( 'Provisioning action to perform.', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'search', 'install', 'status' ),
 					),
-					'query' => array(
+					'query'        => array(
 						'type'        => 'string',
 						'description' => __( 'Search term for finding software (for search action). Searches software name and description.', 'mcp-ai-wpoos-pro' ),
 					),
@@ -49,16 +59,24 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Provision_New_App' ) ) {
 						'description' => __( 'DietPi software ID(s) to install (for install action). Use search action first to find IDs. Common IDs: 44=Transmission, 135=Jackett, 144=Sonarr, 145=Radarr, 42=Plex, 169=Jellyfin, 130=Pi-hole, 96=Home Assistant, 162=Nextcloud.', 'mcp-ai-wpoos-pro' ),
 						'items'       => array( 'type' => 'integer' ),
 					),
-					'confirm' => wp_mcp_ai_dietpi_param_confirm(),
+					'confirm'      => wp_mcp_ai_dietpi_param_confirm(),
 				),
 				'required'   => array( 'action' ),
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'write', 'state-changing', 'performance-impact', 'may-timeout', 'network-dependent' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 			if ( ! $current_user_id || ! user_can( $current_user_id, 'manage_options' ) ) {
@@ -82,22 +100,29 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Provision_New_App' ) ) {
 						),
 						20
 					);
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					$stdout = trim( $result['stdout'] );
 					if ( '' === $stdout || 'NO_RESULTS' === $stdout ) {
 						return $this->success(
 							sprintf( __( 'No software found matching "%s".', 'mcp-ai-wpoos-pro' ), $query ),
-							array( 'query' => $query, 'results' => array() )
+							array(
+								'query'   => $query,
+								'results' => array(),
+							)
 						);
 					}
 
 					// Parse dietpi-software list output.
-					// Typical format: "ID 42   │ Plex Media Server       │ Stream your media to any device"
+					// Typical format: "ID 42   │ Plex Media Server       │ Stream your media to any device".
 					$results = array();
 					foreach ( explode( "\n", $stdout ) as $line ) {
 						$line = trim( $line );
-						if ( '' === $line ) { continue; }
+						if ( '' === $line ) {
+							continue;
+						}
 						if ( preg_match( '/^\s*ID\s+(\d+)\s*[│|]\s*(.+?)\s*[│|]\s*(.+)$/u', $line, $m ) ) {
 							$results[] = array(
 								'id'          => (int) $m[1],
@@ -136,7 +161,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Provision_New_App' ) ) {
 						600 // Software installation can take several minutes.
 					);
 
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					return $this->success(
 						sprintf(
@@ -159,12 +186,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Provision_New_App' ) ) {
 						'dietpi-software list 2>/dev/null | grep "=2" | head -50 || echo "NO_INSTALLED"',
 						15
 					);
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					$installed = array();
 					foreach ( explode( "\n", trim( $result['stdout'] ) ) as $line ) {
 						$line = trim( $line );
-						if ( '' === $line || 'NO_INSTALLED' === $line ) { continue; }
+						if ( '' === $line || 'NO_INSTALLED' === $line ) {
+							continue;
+						}
 						if ( preg_match( '/^\s*ID\s+(\d+)\s*[│|]\s*(.+?)\s*[│|]/u', $line, $m ) ) {
 							$installed[] = array(
 								'id'   => (int) $m[1],

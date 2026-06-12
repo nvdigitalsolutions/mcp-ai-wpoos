@@ -110,20 +110,45 @@ function wp_mcp_ai_dietpi_is_app_configured( $app_slug ) {
  */
 function wp_mcp_ai_dietpi_get_settings() {
 	$defaults = array(
-		'host'                => '',
-		'ssh_port'            => 22,
-		'ssh_user'            => 'root',
-		'ssh_auth_method'     => 'key',
-		'ssh_private_key'     => '',
-		'ssh_key_passphrase'  => '',
-		'ssh_password'        => '',
-		'apps'                => array(
-			'transmission' => array( 'enabled' => false, 'url' => '', 'username' => '', 'password' => '' ),
-			'jackett'      => array( 'enabled' => false, 'url' => '', 'api_key' => '' ),
-			'sonarr'       => array( 'enabled' => false, 'url' => '', 'api_key' => '' ),
-			'radarr'       => array( 'enabled' => false, 'url' => '', 'api_key' => '' ),
-			'plex'         => array( 'enabled' => false, 'url' => '', 'token' => '' ),
-			'jellyfin'     => array( 'enabled' => false, 'url' => '', 'api_key' => '' ),
+		'host'                 => '',
+		'ssh_port'             => 22,
+		'ssh_user'             => 'root',
+		'ssh_auth_method'      => 'key',
+		'ssh_private_key'      => '',
+		'ssh_key_passphrase'   => '',
+		'ssh_password'         => '',
+		'apps'                 => array(
+			'transmission' => array(
+				'enabled'  => false,
+				'url'      => '',
+				'username' => '',
+				'password' => '',
+			),
+			'jackett'      => array(
+				'enabled' => false,
+				'url'     => '',
+				'api_key' => '',
+			),
+			'sonarr'       => array(
+				'enabled' => false,
+				'url'     => '',
+				'api_key' => '',
+			),
+			'radarr'       => array(
+				'enabled' => false,
+				'url'     => '',
+				'api_key' => '',
+			),
+			'plex'         => array(
+				'enabled' => false,
+				'url'     => '',
+				'token'   => '',
+			),
+			'jellyfin'     => array(
+				'enabled' => false,
+				'url'     => '',
+				'api_key' => '',
+			),
 		),
 		'default_download_dir' => '/mnt/dietpi_userdata/downloads',
 		'command_timeout'      => 30,

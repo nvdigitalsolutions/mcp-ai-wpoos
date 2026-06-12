@@ -179,7 +179,7 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_App_Client' ) ) {
 
 				case 'jellyfin':
 					if ( isset( $app['api_key'] ) && '' !== $app['api_key'] ) {
-						$token = $app['api_key'];
+						$token                           = $app['api_key'];
 						$headers['X-Emby-Authorization'] = sprintf(
 							'MediaBrowser Client="NV oOS", Device="DietPi Toolkit", DeviceId="mcp-ai-wpoos", Version="1.0", Token="%s"',
 							$token
@@ -347,7 +347,7 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_App_Client' ) ) {
 
 			// Handle Transmission JSON-RPC specially (CSRF session-id handshake).
 			if ( 'transmission' === $app_slug ) {
-				return $this->transmission_request( $method, $url, $args, $timeout );
+				return $this->transmission_request( $method, $url, $args );
 			}
 
 			$response = wp_remote_request( $url, $args );
@@ -363,10 +363,9 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_App_Client' ) ) {
 		 * @param string $method  HTTP method.
 		 * @param string $url     Request URL.
 		 * @param array  $args    Request args.
-		 * @param int    $timeout Timeout.
 		 * @return array|WP_Error
 		 */
-		private function transmission_request( $method, $url, $args, $timeout ) {
+		private function transmission_request( $method, $url, $args ) {
 			// Use cached session ID if available.
 			$host_key = $url;
 			if ( isset( $this->transmission_sessions[ $host_key ] ) ) {
@@ -379,7 +378,7 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_App_Client' ) ) {
 			if ( is_array( $response ) && 409 === wp_remote_retrieve_response_code( $response ) ) {
 				$session_id = wp_remote_retrieve_header( $response, 'X-Transmission-Session-Id' );
 				if ( ! empty( $session_id ) ) {
-					$this->transmission_sessions[ $host_key ] = $session_id;
+					$this->transmission_sessions[ $host_key ]     = $session_id;
 					$args['headers']['X-Transmission-Session-Id'] = $session_id;
 
 					// Retry with the session ID.
@@ -480,7 +479,7 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_App_Client' ) ) {
 		 */
 		public function transmission_rpc( $method, $arguments = array(), $tag = '' ) {
 			if ( '' === $tag ) {
-				$tag = mt_rand( 1, 999999 );
+				$tag = wp_rand( 1, 999999 );
 			}
 
 			$body = array(

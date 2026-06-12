@@ -177,7 +177,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Base' ) ) {
 		 * @return string Sanitized action (start, stop, restart, status).
 		 */
 		protected function sanitize_service_action( $arguments ) {
-			$valid = array( 'start', 'stop', 'restart', 'status' );
+			$valid  = array(
+				'start',
+				'stop',
+				'restart',
+				'status',
+			);
 			$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : '';
 			return in_array( $action, $valid, true ) ? $action : '';
 		}
@@ -201,11 +206,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Base' ) ) {
 		 *
 		 * @param array  $arguments Tool arguments.
 		 * @param string $key       Argument key.
-		 * @param string $default   Default value.
+		 * @param string $default_value Default value.
 		 * @return string
 		 */
-		protected function sanitize_string( $arguments, $key, $default = '' ) {
-			return isset( $arguments[ $key ] ) ? sanitize_text_field( $arguments[ $key ] ) : $default;
+		protected function sanitize_string( $arguments, $key, $default_value = '' ) {
+			return isset( $arguments[ $key ] ) ? sanitize_text_field( $arguments[ $key ] ) : $default_value;
 		}
 
 		/**
@@ -215,11 +220,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Base' ) ) {
 		 *
 		 * @param array  $arguments Tool arguments.
 		 * @param string $key       Argument key.
-		 * @param int    $default   Default value.
+		 * @param int    $default_value Default value.
 		 * @return int
 		 */
-		protected function sanitize_int( $arguments, $key, $default = 0 ) {
-			return isset( $arguments[ $key ] ) ? absint( $arguments[ $key ] ) : $default;
+		protected function sanitize_int( $arguments, $key, $default_value = 0 ) {
+			return isset( $arguments[ $key ] ) ? absint( $arguments[ $key ] ) : $default_value;
 		}
 
 		/**
@@ -229,11 +234,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Base' ) ) {
 		 *
 		 * @param array  $arguments Tool arguments.
 		 * @param string $key       Argument key.
-		 * @param bool   $default   Default value.
+		 * @param bool   $default_value Default value.
 		 * @return bool
 		 */
-		protected function sanitize_bool( $arguments, $key, $default = false ) {
-			return isset( $arguments[ $key ] ) ? (bool) $arguments[ $key ] : $default;
+		protected function sanitize_bool( $arguments, $key, $default_value = false ) {
+			return isset( $arguments[ $key ] ) ? (bool) $arguments[ $key ] : $default_value;
 		}
 
 		/**

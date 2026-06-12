@@ -69,6 +69,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Send_SSH_Command' ) ) {
 
 		/**
 		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array|WP_Error
 		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();

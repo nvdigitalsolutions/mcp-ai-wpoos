@@ -24,17 +24,27 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Update_System' ) ) {
 	 */
 	class WP_MCP_AI_Tool_DietPi_Update_System extends WP_MCP_AI_Tool_DietPi_Base {
 
-		public function get_slug()        { return 'dietpi_update_system'; }
-		public function get_name()        { return __( 'DietPi Update System', 'mcp-ai-wpoos-pro' ); }
+		/** {@inheritdoc} */
+		public function get_slug() {
+			return 'dietpi_update_system';
+		}
+
+		/** {@inheritdoc} */
+		public function get_name() {
+			return __( 'DietPi Update System', 'mcp-ai-wpoos-pro' );
+		}
+
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Check for available DietPi OS and software updates, and apply them. Supports checking the current version, listing pending updates, and running dietpi-update to upgrade the system. Applying updates requires explicit confirmation.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
 				'properties' => array(
-					'action' => array(
+					'action'  => array(
 						'type'        => 'string',
 						'description' => __( 'Update action to perform.', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'check', 'apply', 'list_packages' ),
@@ -45,10 +55,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Update_System' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'write', 'state-changing', 'performance-impact', 'may-timeout', 'network-dependent' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 			if ( ! $current_user_id || ! user_can( $current_user_id, 'manage_options' ) ) {
@@ -69,12 +87,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Update_System' ) ) {
 						'echo "DIETPI_UPDATE_AVAILABLE:$(/boot/dietpi/dietpi-update 1 2>/dev/null | grep -c "available" || echo "unknown")";',
 						20
 					);
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					$info = array();
 					foreach ( explode( "\n", $result['stdout'] ) as $line ) {
 						$line = trim( $line );
-						if ( '' === $line ) { continue; }
+						if ( '' === $line ) {
+							continue;
+						}
 						$parts = explode( ':', $line, 2 );
 						if ( 2 === count( $parts ) ) {
 							$info[ strtolower( trim( $parts[0] ) ) ] = trim( $parts[1] );
@@ -101,7 +123,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Update_System' ) ) {
 					// Run dietpi-update non-interactively (mode 1 = check and apply).
 					$result = $this->ssh()->exec( '/boot/dietpi/dietpi-update 1', 300 );
 
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					return $this->success(
 						__( 'System update process completed. Check stdout for details.', 'mcp-ai-wpoos-pro' ),
@@ -119,7 +143,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Update_System' ) ) {
 						'apt list --upgradable 2>/dev/null | tail -n +2 | awk -F/ \'{printf "%s (%s -> %s)\\n", $1, $2, $3}\' || echo "No upgradable packages."',
 						15
 					);
-					if ( is_wp_error( $result ) ) { return $result; }
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
 
 					$packages = array_filter( array_map( 'trim', explode( "\n", $result['stdout'] ) ) );
 

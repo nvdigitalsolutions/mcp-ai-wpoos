@@ -231,10 +231,10 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_SSH_Client' ) ) {
 		 * @return array|WP_Error
 		 */
 		private function exec_ssh2( $command, $timeout ) {
-			$host     = $this->settings['host'];
-			$port     = isset( $this->settings['ssh_port'] ) ? absint( $this->settings['ssh_port'] ) : self::DEFAULT_PORT;
-			$user     = isset( $this->settings['ssh_user'] ) ? $this->settings['ssh_user'] : 'root';
-			$method   = isset( $this->settings['ssh_auth_method'] ) ? $this->settings['ssh_auth_method'] : 'key';
+			$host   = $this->settings['host'];
+			$port   = isset( $this->settings['ssh_port'] ) ? absint( $this->settings['ssh_port'] ) : self::DEFAULT_PORT;
+			$user   = isset( $this->settings['ssh_user'] ) ? $this->settings['ssh_user'] : 'root';
+			$method = isset( $this->settings['ssh_auth_method'] ) ? $this->settings['ssh_auth_method'] : 'key';
 
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged — Connection failure is handled below.
 			$connection = @ssh2_connect( $host, $port );
@@ -358,18 +358,22 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_SSH_Client' ) ) {
 		 * @return array|WP_Error
 		 */
 		private function exec_proc_open( $command, $timeout ) {
-			$host       = $this->settings['host'];
-			$port       = isset( $this->settings['ssh_port'] ) ? absint( $this->settings['ssh_port'] ) : self::DEFAULT_PORT;
-			$user       = isset( $this->settings['ssh_user'] ) ? $this->settings['ssh_user'] : 'root';
-			$method     = isset( $this->settings['ssh_auth_method'] ) ? $this->settings['ssh_auth_method'] : 'key';
+			$host   = $this->settings['host'];
+			$port   = isset( $this->settings['ssh_port'] ) ? absint( $this->settings['ssh_port'] ) : self::DEFAULT_PORT;
+			$user   = isset( $this->settings['ssh_user'] ) ? $this->settings['ssh_user'] : 'root';
+			$method = isset( $this->settings['ssh_auth_method'] ) ? $this->settings['ssh_auth_method'] : 'key';
 
 			$ssh_args = array(
 				'ssh',
 				'-q',                     // Quiet mode.
-				'-o', 'StrictHostKeyChecking=no',
-				'-o', 'UserKnownHostsFile=/dev/null',
-				'-o', 'ConnectTimeout=' . max( 5, intval( $timeout / 2 ) ),
-				'-p', $port,
+				'-o',
+				'StrictHostKeyChecking=no',
+				'-o',
+				'UserKnownHostsFile=/dev/null',
+				'-o',
+				'ConnectTimeout=' . max( 5, intval( $timeout / 2 ) ),
+				'-p',
+				$port,
 			);
 
 			if ( 'key' === $method ) {
@@ -461,12 +465,15 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_SSH_Client' ) ) {
 			stream_set_blocking( $pipes[1], false );
 			stream_set_blocking( $pipes[2], false );
 
-			$stdout      = '';
-			$stderr      = '';
-			$deadline    = time() + $timeout;
+			$stdout   = '';
+			$stderr   = '';
+			$deadline = time() + $timeout;
 
 			while ( time() < $deadline ) {
-				$read   = array( $pipes[1], $pipes[2] );
+				$read   = array(
+					$pipes[1],
+					$pipes[2],
+				);
 				$write  = null;
 				$except = null;
 
@@ -520,7 +527,12 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_SSH_Client' ) ) {
 		 * @return array|WP_Error Result map keyed by service name.
 		 */
 		public function dietpi_services( $action, $services ) {
-			$valid_actions = array( 'start', 'stop', 'restart', 'status' );
+			$valid_actions = array(
+				'start',
+				'stop',
+				'restart',
+				'status',
+			);
 			if ( ! in_array( $action, $valid_actions, true ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_dietpi_invalid_action',
@@ -636,7 +648,7 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_SSH_Client' ) ) {
 					continue;
 				}
 
-				// Parse service lines — typical format: "ServiceName : active (running) | enabled"
+				// Parse service lines — typical format: "ServiceName : active (running) | enabled".
 				if ( preg_match( '/^(\S+)\s*:\s*(.+)$/', $line, $m ) ) {
 					$services[ $m[1] ] = trim( $m[2] );
 				}
