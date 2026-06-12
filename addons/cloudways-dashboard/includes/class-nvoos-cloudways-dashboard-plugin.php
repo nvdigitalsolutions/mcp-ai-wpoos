@@ -20,6 +20,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class NV_oOS_CloudwaysDashboard_Plugin {
 
 	/**
+	 * WordPress option key for addon settings.
+	 *
+	 * @since 0.1.1
+	 * @var string
+	 */
+	const OPTION_KEY = 'nvoos_cloudways_dashboard_settings';
+
+	/**
 	 * Register all WordPress hooks.
 	 *
 	 * @return void
@@ -29,6 +37,7 @@ class NV_oOS_CloudwaysDashboard_Plugin {
 		add_action( 'init', array( 'NV_oOS_CloudwaysDashboard_Block', 'register' ), 12 );
 		add_action( 'rest_api_init', array( 'NV_oOS_CloudwaysDashboard_REST', 'register_routes' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'register_admin_menu' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'maybe_render_missing_base_notice' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_render_missing_bundle_notice' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_render_missing_cloudways_notice' ) );
 
@@ -67,6 +76,39 @@ class NV_oOS_CloudwaysDashboard_Plugin {
 
 		// Enqueue assets inline so the admin page always gets them.
 		NV_oOS_CloudwaysDashboard_Shortcode::enqueue_assets( array() );
+	}
+
+	/**
+	 * Check whether the addon is enabled in settings.
+	 *
+	 * @since 0.1.1
+	 *
+	 * @return bool
+	 */
+	public static function is_enabled() {
+		$settings = get_option( self::OPTION_KEY, array() );
+		return ! isset( $settings['enabled'] ) || ! empty( $settings['enabled'] );
+	}
+
+	/**
+	 * Render an admin notice when the NV oOS base plugin is not active.
+	 *
+	 * @since 0.1.1
+	 *
+	 * @return void
+	 */
+	public static function maybe_render_missing_base_notice() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( defined( 'WP_MCP_AI_VERSION' ) ) {
+			return;
+		}
+		printf(
+			'<div class="notice notice-warning is-dismissible"><p><strong>%s</strong> %s</p></div>',
+			esc_html__( 'NV oOS Cloudways Dashboard:', 'nvoos-cloudways-dashboard' ),
+			esc_html__( 'the NV oOS base plugin is not active. The Cloudways Dashboard requires the base plugin to function.', 'nvoos-cloudways-dashboard' )
+		);
 	}
 
 	/**
