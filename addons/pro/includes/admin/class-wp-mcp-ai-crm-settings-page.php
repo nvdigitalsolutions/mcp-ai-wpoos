@@ -300,6 +300,34 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					</td>
 				</tr>
 
+				<!-- Gmail Scheduled Import -->
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Gmail Poll Interval (seconds)', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[integrations][gmail_poll_interval]" value="<?php echo esc_attr( $settings['integrations']['gmail_poll_interval'] ?? 300 ); ?>" min="60" max="3600" step="60" class="small-text" />
+						<p class="description">
+							<?php esc_html_e( 'How often the Gmail listener polls for new emails (60–3600 seconds). Shorter intervals consume more API quota. Default: 300 (5 minutes).', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Max Emails Per Poll', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[integrations][gmail_max_per_poll]" value="<?php echo esc_attr( $settings['integrations']['gmail_max_per_poll'] ?? 10 ); ?>" min="1" max="25" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Maximum emails to fetch per poll cycle (1–25). Use lower values to reduce API usage.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Incremental Sync (historyId)', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[integrations][gmail_use_history_sync]" value="1" <?php checked( ! empty( $settings['integrations']['gmail_use_history_sync'] ) ); ?> />
+							<?php esc_html_e( 'Use Gmail historyId for incremental sync (only fetch new messages since last poll). When disabled, performs a fresh search each cycle.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Recommended: enabled. Reduces API quota consumption by up to 90%. Uses Gmail users.history.list() API.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<!-- SMS Provider -->
 				<tr>
 					<th scope="row"><?php esc_html_e( 'SMS Provider', 'mcp-ai-wpoos-pro' ); ?></th>
@@ -475,6 +503,27 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 						<textarea name="<?php echo esc_attr( WP_MCP_AI_CRM_Engine::HYGIENE_OPTION ); ?>[promotional_keywords]" rows="3" class="large-text code" placeholder="flash sale&#10;weekly newsletter&#10;limited time offer"><?php echo esc_textarea( implode( "\n", $promo_keywords ) ); ?></textarea>
 						<p class="description">
 							<?php esc_html_e( 'Keywords/phrases that indicate promotional or newsletter content. Case-insensitive substring match. One per line.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<!-- Performance Optimization -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Performance &amp; Storage', 'mcp-ai-wpoos-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Message Retention (days)', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[optimization][message_retention_days]" value="<?php echo esc_attr( $settings['optimization']['message_retention_days'] ?? 90 ); ?>" min="0" max="730" class="small-text" />
+						<p class="description">
+							<?php esc_html_e( 'Automatically delete CRM messages older than this many days. Set to 0 to keep forever. Default: 90 days. Industry recommendation: 30–365 days.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Audit Log Max Entries', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[optimization][audit_max_entries]" value="<?php echo esc_attr( $settings['optimization']['audit_max_entries'] ?? 5000 ); ?>" min="1000" max="10000" step="500" class="small-text" />
+						<p class="description">
+							<?php esc_html_e( 'Maximum audit log entries before automatic compaction. Lower values reduce option size but keep less history. Default: 5,000.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -852,6 +901,25 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			// Gmail default import query.
 			if ( isset( $integrations['gmail_default_query'] ) ) {
 				$sanitized['integrations']['gmail_default_query'] = sanitize_text_field( $integrations['gmail_default_query'] );
+			}
+
+			// Gmail scheduled import settings (since 2.9.0).
+			if ( isset( $integrations['gmail_poll_interval'] ) ) {
+				$sanitized['integrations']['gmail_poll_interval'] = max( 60, min( 3600, absint( $integrations['gmail_poll_interval'] ) ) );
+			}
+			if ( isset( $integrations['gmail_max_per_poll'] ) ) {
+				$sanitized['integrations']['gmail_max_per_poll'] = max( 1, min( 25, absint( $integrations['gmail_max_per_poll'] ) ) );
+			}
+			$sanitized['integrations']['gmail_use_history_sync'] = ! empty( $integrations['gmail_use_history_sync'] );
+		}
+
+		// --- Optimization settings (since 2.9.0) ---
+		if ( isset( $input['optimization'] ) && is_array( $input['optimization'] ) ) {
+			if ( isset( $input['optimization']['message_retention_days'] ) ) {
+				$sanitized['optimization']['message_retention_days'] = max( 0, min( 730, absint( $input['optimization']['message_retention_days'] ) ) );
+			}
+			if ( isset( $input['optimization']['audit_max_entries'] ) ) {
+				$sanitized['optimization']['audit_max_entries'] = max( 1000, min( 10000, absint( $input['optimization']['audit_max_entries'] ) ) );
 			}
 		}
 

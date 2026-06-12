@@ -109,7 +109,7 @@ class WP_MCP_AI_Customer_CPT {
 				'show_ui'         => true,
 				'show_in_menu'    => true,
 				'menu_icon'       => 'dashicons-smiley',
-				'menu_position'   => 57,
+				'menu_position'   => 59,
 				'capability_type' => 'post',
 				'has_archive'     => false,
 				'hierarchical'    => false,

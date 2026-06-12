@@ -15,6 +15,7 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
+ * @since 2.9.0 Added message logging via WP_MCP_AI_CRM_Message_Log on entry.
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
@@ -105,11 +106,37 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
 
-		$channel      = sanitize_key( $arguments['channel'] ?? 'email' );
-		$message_body = sanitize_textarea_field( $arguments['message_body'] . ( ! empty( $arguments['message_subject'] ) ? "\n\nSubject: " . $arguments['message_subject'] : '' ) );
-		$sender_email = sanitize_email( $arguments['sender_email'] ?? '' );
-		$sender_phone = sanitize_text_field( $arguments['sender_phone'] ?? '' );
-		$sender_name  = sanitize_text_field( $arguments['sender_name'] ?? '' );
+		$channel         = sanitize_key( $arguments['channel'] ?? 'email' );
+		$message_body    = sanitize_textarea_field( $arguments['message_body'] . ( ! empty( $arguments['message_subject'] ) ? "\n\nSubject: " . $arguments['message_subject'] : '' ) );
+		$message_subject = sanitize_text_field( $arguments['message_subject'] ?? '' );
+		$sender_email    = sanitize_email( $arguments['sender_email'] ?? '' );
+		$sender_phone    = sanitize_text_field( $arguments['sender_phone'] ?? '' );
+		$sender_name     = sanitize_text_field( $arguments['sender_name'] ?? '' );
+		$source          = sanitize_key( $arguments['source'] ?? $channel );
+		$connection_id   = sanitize_text_field( $arguments['connection_id'] ?? '' );
+		$platform_msg_id = sanitize_text_field( $arguments['message_id'] ?? '' );
+
+		// ── Log raw message before pipeline processing. ──
+		$message_log_id = 0;
+		if ( class_exists( 'WP_MCP_AI_CRM_Message_Log' ) && ! empty( $arguments['message_body'] ) ) {
+			$log_result = WP_MCP_AI_CRM_Message_Log::log(
+				array(
+					'message_id'         => $platform_msg_id,
+					'channel'            => $channel,
+					'sender_email'       => $sender_email,
+					'sender_name'        => $sender_name,
+					'sender_phone'       => $sender_phone,
+					'subject'            => $message_subject,
+					'body'               => $arguments['message_body'] ?? '',
+					'source'             => $source,
+					'connection_id'      => $connection_id,
+					'channel_contact_id' => sanitize_text_field( $arguments['channel_contact_id'] ?? '' ),
+				)
+			);
+			if ( ! is_wp_error( $log_result ) ) {
+				$message_log_id = $log_result;
+			}
+		}
 
 		$result = array(
 			'success'  => true,
@@ -218,8 +245,13 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 		$result['pipeline']['contact_id']  = $contact_id;
 		$result['pipeline']['is_new_lead'] = empty( $arguments['existing_contact_id'] );
 
+		// Link message log to contact.
+		if ( $message_log_id && $contact_id && class_exists( 'WP_MCP_AI_CRM_Message_Log' ) ) {
+			WP_MCP_AI_CRM_Message_Log::link_to_contact( $message_log_id, $contact_id );
+		}
+
 		// Store source connection metadata for traceability.
-		$connection_id_arg = isset( $arguments['connection_id'] ) ? sanitize_text_field( $arguments['connection_id'] ) : '';
+		$connection_id_arg = $connection_id;
 		$message_id_arg    = isset( $arguments['message_id'] ) ? sanitize_text_field( $arguments['message_id'] ) : '';
 		if ( $contact_id && $connection_id_arg ) {
 			update_post_meta( $contact_id, '_source_connection_id', $connection_id_arg );
