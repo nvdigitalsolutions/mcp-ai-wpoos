@@ -276,5 +276,3 @@ class WP_MCP_AI_Healthcare_Optimization {
 	}
 }
 
-// Initialize.
-add_action( 'plugins_loaded', array( 'WP_MCP_AI_Healthcare_Optimization', 'init' ), 40 );

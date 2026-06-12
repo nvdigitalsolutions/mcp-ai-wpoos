@@ -190,5 +190,3 @@ class WP_MCP_AI_Calendar_Orchestration_Optimization {
 	}
 }
 
-// Initialize.
-add_action( 'plugins_loaded', array( 'WP_MCP_AI_Calendar_Orchestration_Optimization', 'init' ), 40 );

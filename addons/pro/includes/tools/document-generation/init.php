@@ -43,6 +43,10 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/document-generation/.
+
+	// --- Performance optimization (QMS audit log retention, audit schema autoload) ---
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-dg-optimization.php';
+	WP_MCP_AI_Document_Gen_Optimization::init();
 }
 
 // Initialize Document Template CPT.

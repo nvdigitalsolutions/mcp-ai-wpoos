@@ -143,5 +143,3 @@ class WP_MCP_AI_Document_Gen_Optimization {
 	}
 }
 
-// Initialize.
-add_action( 'plugins_loaded', array( 'WP_MCP_AI_Document_Gen_Optimization', 'init' ), 40 );
