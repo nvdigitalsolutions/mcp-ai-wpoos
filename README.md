@@ -59,7 +59,7 @@
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
-- [⚠️ Warranty & Safe Use](#-#%EF%B8%8F-warranty--safe-use)
+- [⚠️ Warranty & Safe Use](#warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
@@ -75,16 +75,12 @@
 - [💬 Frontend Shortcode](#-frontend-shortcode)
 
 ### Addons & Extensions
-- [☁️ NV oOS Cloud & SaaS Controller](#-nv-oos-cloud--saas-controller)
-- [💬 Chat SPA Addon](#-chat-spa-addon)
-- [📚 Docs Hub Addon](#-docs-hub-addon)
-- [🎨 Toolkit SPA Blueprint](#-toolkit-spa-blueprint)
+
+- [🏗 System Architecture (covers addon ecosystem)](#-system-architecture)
 
 ### Orchestration & AI Features
-- [🎛 Orchestration Phases 1–7](#-orchestration-phases-17)
-- [🧠 LLM Harnessing (Layers A–H)](#-llm-harnessing-layers-ah)
-- [🔗 Toolkit MCP Servers](#-toolkit-mcp-servers)
-- [🧵 Chat-client Memory Bridge](#-chat-client-memory-bridge)
+
+- [🏗 System Architecture (covers orchestration, harnessing, MCP servers, memory bridge)](#-system-architecture)
 
 ### AI Providers & Integration
 - [🧠 Language Model Providers](#-language-model-providers-openai-gemini-anthropic-nvidia-nim-ollama-lm-studio-hugging-face--cloudflare)
@@ -317,7 +313,7 @@ The patent covers NV oOS's innovative approach to implementing sophisticated AI 
 - Metrics-driven budget adjustment for real-time optimization
 - Persistent-behavior illusion in request-based architectures
 
-The orchestration layer makes NV oOS unique in the WordPress ecosystem by solving fundamental architectural limitations that prevent traditional WordPress plugins from supporting advanced AI features. See the [System Architecture](#system-architecture) section below for technical details on how these innovations work together.
+The orchestration layer makes NV oOS unique in the WordPress ecosystem by solving fundamental architectural limitations that prevent traditional WordPress plugins from supporting advanced AI features. See the [System Architecture](#-system-architecture) section below for technical details on how these innovations work together.
 
 ## 🏗 System Architecture
 
