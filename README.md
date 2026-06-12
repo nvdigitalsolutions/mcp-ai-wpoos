@@ -22,14 +22,6 @@
 
 **Previous Updates (v1.1.25):** May 31, 2026 (v1.1.25) — See [§ Latest Updates (v1.1.25 — May 2026)](#-latest-updates-v1125--may-2026) (Unified Blueprint System, Cloudways Toolkit, CRM Toolkit Phases A–E, Chat UI enhancements, Unix-theory tool reorg Phase 4–5, Pro Toolkit MCP Server settings, Build infrastructure hardening).
 
-**Previous Updates (v1.1.24):** May 28, 2026 (v1.1.24) — See [§ Latest Updates (v1.1.24 — May 2026)](#-latest-updates-v1124--may-2026) (Bug-fix & stabilisation sweep: Paper Store load order, Chat SPA duplicate messages & SSE protocol fixes, skill manager canonical envelope, CVE patches, assistant tool presets coverage, CLI coverage enhancements, Paper Store admin CRUD, folder README convention completion).
-
-**Previous Updates (v1.1.22):** May 23, 2026 (v1.1.22) — See [§ Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026) (May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup, Gemini I/O 2026 Refresh, Security Fixes).
-
-**Previous Updates (v1.1.21):** May 20, 2026 (v1.1.21) — WP.org Compliance Re-Audit, Capability Fence P2b Full Rollout, Security Center, Model Catalog May 2026 Refresh, Domain Migration. See [§ Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026) below.  
-
-**Previous Updates (v1.1.20):** May 18, 2026 (v1.1.20) — Memory Layer 2026 Phase 7 UI/UX completion: Memory Health subtab, Retrieval Waterfall, and Session Replay tab + route. See [§ Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026) below.  
-
 **MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
