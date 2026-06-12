@@ -524,7 +524,7 @@ These services are **only used if you explicitly configure OAuth integrations**.
 
 **Legal & Privacy:**
 - **Terms of Service:** https://accounts.intuit.com/terms-of-service
-- **Privacy Policy:** https://www.intuit.com/privacy/statement/
+- **Privacy Policy:** https://www.intuit.com/privacy/
 - **Developer Terms:** https://developer.intuit.com/app/developer/qbo/docs/develop/authentication-and-authorization/oauth-2.0
 
 **Related Files:**

@@ -1535,7 +1535,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **When:** When QuickBooks tools are used after OAuth setup
 * **Service URL:** https://appcenter.intuit.com/connect/oauth2 (OAuth authorize), https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer (OAuth token exchange), https://quickbooks.api.intuit.com/v3 (accounting data API)
 * **Terms of Service:** https://accounts.intuit.com/terms-of-service
-* **Privacy Policy:** https://www.intuit.com/privacy/statement/
+* **Privacy Policy:** https://www.intuit.com/privacy/
 
 **31. Mailjet API**
 * **Purpose:** Email marketing and transactional email
