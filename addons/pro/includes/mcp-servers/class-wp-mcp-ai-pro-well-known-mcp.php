@@ -46,7 +46,8 @@ class WP_MCP_AI_Pro_Well_Known_MCP {
 	public function __construct() {
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
-		add_action( 'template_redirect', array( $this, 'handle_request' ) );
+		add_action( 'template_redirect', array( $this, 'handle_request' ), 5 );
+		add_filter( 'redirect_canonical', array( $this, 'prevent_canonical_redirect' ), 10, 2 );
 	}
 
 	/**
@@ -69,6 +70,25 @@ class WP_MCP_AI_Pro_Well_Known_MCP {
 	public function add_query_vars( $vars ) {
 		$vars[] = self::QUERY_VAR;
 		return $vars;
+	}
+
+	/**
+	 * Prevent redirect_canonical from adding/removing a trailing slash
+	 * on the /.well-known/mcp URL. Without this, WordPress may 301-
+	 * redirect /.well-known/mcp → /.well-known/mcp/ (or vice versa)
+	 * before our handler runs, breaking MCP client discovery.
+	 *
+	 * @since 1.6.1
+	 *
+	 * @param string|false $redirect_url  Canonical URL to redirect to, or false.
+	 * @param string       $requested_url Original requested URL.
+	 * @return string|false
+	 */
+	public function prevent_canonical_redirect( $redirect_url, $requested_url ) {
+		if ( false !== strpos( $requested_url, '.well-known/mcp' ) ) {
+			return false;
+		}
+		return $redirect_url;
 	}
 
 	/**
