@@ -37,7 +37,8 @@ class WP_MCP_AI_Federation_WellKnown {
 
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
-		add_action( 'template_redirect', array( $this, 'handle_wellknown_requests' ) );
+		add_action( 'template_redirect', array( $this, 'handle_wellknown_requests' ), 5 );
+		add_filter( 'redirect_canonical', array( $this, 'prevent_canonical_redirect' ), 10, 2 );
 	}
 
 	/**
@@ -66,6 +67,27 @@ class WP_MCP_AI_Federation_WellKnown {
 	public function add_query_vars( $vars ) {
 		$vars[] = 'wp_mcp_ai_wellknown';
 		return $vars;
+	}
+
+	/**
+	 * Prevent redirect_canonical from interfering with the
+	 * /.well-known/ai-peer and /.well-known/jwks.json URLs
+	 * (trailing-slash redirects, etc.).
+	 *
+	 * @since 1.6.1
+	 *
+	 * @param string|false $redirect_url  Canonical URL to redirect to, or false.
+	 * @param string       $requested_url Original requested URL.
+	 * @return string|false
+	 */
+	public function prevent_canonical_redirect( $redirect_url, $requested_url ) {
+		if (
+			false !== strpos( $requested_url, '.well-known/ai-peer' )
+			|| false !== strpos( $requested_url, '.well-known/jwks.json' )
+		) {
+			return false;
+		}
+		return $redirect_url;
 	}
 
 	/**
@@ -154,7 +176,7 @@ class WP_MCP_AI_Federation_WellKnown {
 					'version'      => 1,
 					'endpoint'     => rest_url( 'mcp-ai/v1/acp' ),
 					'sse_endpoint' => rest_url( 'mcp-ai/v1/acp/sse' ),
-					'transports'   => array( 'http+sse' ), // WebSocket can be added here if implemented
+					'transports'   => array( 'http+sse' ),
 					'auth_methods' => array( 'wp_nonce', 'bearer_credential', 'bearer_auth0', 'guest' ),
 					'capabilities' => array(
 						'loadSession'        => true,
@@ -170,7 +192,7 @@ class WP_MCP_AI_Federation_WellKnown {
 				),
 			),
 			'mcp'          => array(
-				'url' => rest_url( 'mcp-ai/v1' ), // Kept for backwards compatibility
+				'url' => rest_url( 'mcp-ai/v1' ),
 			),
 			'openapi'      => array(
 				'url' => rest_url( 'mcp-ai/v1/openapi.json' ),

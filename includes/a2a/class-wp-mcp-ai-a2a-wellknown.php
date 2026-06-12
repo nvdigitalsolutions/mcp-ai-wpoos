@@ -27,7 +27,8 @@ class WP_MCP_AI_A2A_WellKnown {
 	public function __construct() {
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
-		add_action( 'template_redirect', array( $this, 'handle_wellknown_request' ) );
+		add_action( 'template_redirect', array( $this, 'handle_wellknown_request' ), 5 );
+		add_filter( 'redirect_canonical', array( $this, 'prevent_canonical_redirect' ), 10, 2 );
 	}
 
 	/**
@@ -50,6 +51,23 @@ class WP_MCP_AI_A2A_WellKnown {
 	public function add_query_vars( $vars ) {
 		$vars[] = 'wp_mcp_ai_a2a_wellknown';
 		return $vars;
+	}
+
+	/**
+	 * Prevent redirect_canonical from interfering with the
+	 * /.well-known/agent.json URL (trailing-slash redirects, etc.).
+	 *
+	 * @since 1.6.1
+	 *
+	 * @param string|false $redirect_url  Canonical URL to redirect to, or false.
+	 * @param string       $requested_url Original requested URL.
+	 * @return string|false
+	 */
+	public function prevent_canonical_redirect( $redirect_url, $requested_url ) {
+		if ( false !== strpos( $requested_url, '.well-known/agent.json' ) ) {
+			return false;
+		}
+		return $redirect_url;
 	}
 
 	/**
@@ -96,13 +114,6 @@ class WP_MCP_AI_A2A_WellKnown {
 	 * Flush rewrite rules on activation.
 	 */
 	public static function activate() {
-		flush_rewrite_rules();
-	}
-
-	/**
-	 * Flush rewrite rules on deactivation.
-	 */
-	public static function deactivate() {
 		flush_rewrite_rules();
 	}
 }
