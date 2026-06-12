@@ -118,10 +118,10 @@ class WP_MCP_AI_Tool_Merge_Support_Tickets implements WP_MCP_AI_Tool_Interface, 
 
 		$target = get_post( $target_id );
 		$source = get_post( $source_id );
-		if ( ! $target || 'mcp_ai_support_ticket' !== $target->post_type ) {
+		if ( ! $target || 'mcp_ai_ticket' !== $target->post_type ) {
 			return new WP_Error( 'target_not_found', __( 'Target support ticket not found.', 'mcp-ai-wpoos-pro' ) );
 		}
-		if ( ! $source || 'mcp_ai_support_ticket' !== $source->post_type ) {
+		if ( ! $source || 'mcp_ai_ticket' !== $source->post_type ) {
 			return new WP_Error( 'source_not_found', __( 'Source support ticket not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 

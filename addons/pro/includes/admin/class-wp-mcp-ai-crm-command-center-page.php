@@ -404,7 +404,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	private static function render_overview_tab() {
 			$leads_count       = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
 			$deals_count       = self::get_cpt_count( 'mcp_ai_deal', 'publish' );
-			$tickets_count     = self::get_cpt_count( 'mcp_ai_support_ticket', 'publish' );
+			$tickets_count     = self::get_cpt_count( 'mcp_ai_ticket', 'publish' );
 			$companies_count   = self::get_cpt_count( 'mcp_ai_company', 'publish' );
 			$sequences_count   = self::get_cpt_count( 'mcp_ai_sequence', 'publish' );
 			$pipeline_value    = self::get_pipeline_value();
@@ -1219,7 +1219,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		// Build query.
 		$args = array(
-			'post_type'      => 'mcp_ai_support_ticket',
+			'post_type'      => 'mcp_ai_ticket',
 			'post_status'    => 'publish',
 			'posts_per_page' => $per_page,
 			'paged'          => $paged,
@@ -1283,14 +1283,14 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		);
 
 		foreach ( array_keys( $stage_labels ) as $stage ) {
-			$stage_counts[ $stage ] = self::get_cpt_count_by_meta( 'mcp_ai_support_ticket', 'publish', '_ticket_status', $stage );
+			$stage_counts[ $stage ] = self::get_cpt_count_by_meta( 'mcp_ai_ticket', 'publish', '_ticket_status', $stage );
 		}
 		$max_stage = max( 1, max( $stage_counts ) );
 
 		// SLA overview.
-		$on_track  = self::get_cpt_count_by_meta( 'mcp_ai_support_ticket', 'publish', '_ticket_sla_status', 'on_track' );
-		$at_risk   = self::get_cpt_count_by_meta( 'mcp_ai_support_ticket', 'publish', '_ticket_sla_status', 'at_risk' );
-		$breached  = self::get_cpt_count_by_meta( 'mcp_ai_support_ticket', 'publish', '_ticket_sla_status', 'breached' );
+		$on_track  = self::get_cpt_count_by_meta( 'mcp_ai_ticket', 'publish', '_ticket_sla_status', 'on_track' );
+		$at_risk   = self::get_cpt_count_by_meta( 'mcp_ai_ticket', 'publish', '_ticket_sla_status', 'at_risk' );
+		$breached  = self::get_cpt_count_by_meta( 'mcp_ai_ticket', 'publish', '_ticket_sla_status', 'breached' );
 		$total_sla = $on_track + $at_risk + $breached;
 
 		$priority_map = array(
@@ -1555,10 +1555,10 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			<?php endif; ?>
 
 			<p style="margin-top: 12px;">
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_support_ticket' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_ticket' ) ); ?>" class="button">
 					<?php esc_html_e( 'Manage All Tickets →', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_support_ticket' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_ticket' ) ); ?>" class="button">
 					<?php esc_html_e( 'Add New Ticket', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 			</p>

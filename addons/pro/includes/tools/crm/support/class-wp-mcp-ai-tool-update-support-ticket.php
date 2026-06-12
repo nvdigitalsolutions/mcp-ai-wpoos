@@ -140,7 +140,7 @@ class WP_MCP_AI_Tool_Update_Support_Ticket implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$ticket = get_post( $ticket_id );
-		if ( ! $ticket || 'mcp_ai_support_ticket' !== $ticket->post_type ) {
+		if ( ! $ticket || 'mcp_ai_ticket' !== $ticket->post_type ) {
 			return new WP_Error( 'ticket_not_found', __( 'Support ticket not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 

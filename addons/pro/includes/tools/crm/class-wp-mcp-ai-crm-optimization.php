@@ -585,7 +585,7 @@ class WP_MCP_AI_CRM_Optimization {
 			'mcp_ai_deal',
 			'mcp_ai_customer',
 			'mcp_ai_crm_activity',
-			'mcp_ai_support_ticket',
+			'mcp_ai_ticket',
 			'mcp_crm_message',
 		);
 

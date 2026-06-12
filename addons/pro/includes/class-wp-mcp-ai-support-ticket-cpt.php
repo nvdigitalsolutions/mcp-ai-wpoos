@@ -2,7 +2,7 @@
 /**
  * Support Ticket Custom Post Type for CRM post-sale support correspondence.
  *
- * Registers `mcp_ai_support_ticket` — an ITIL-aligned support ticket entity
+ * Registers `mcp_ai_ticket` — an ITIL-aligned support ticket entity
  * with a 7-stage pipeline (New → Triaged → In Progress → Waiting on Customer →
  * Waiting on 3rd Party → Resolved → Closed), P1–P4 SLA enforcement, contact
  * association, and activity timeline.
@@ -33,7 +33,7 @@ class WP_MCP_AI_Support_Ticket_CPT {
 	 *
 	 * @var string
 	 */
-	const POST_TYPE = 'mcp_ai_support_ticket';
+	const POST_TYPE = 'mcp_ai_ticket';
 
 	/**
 	 * Canonical ticket pipeline stages.

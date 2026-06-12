@@ -114,7 +114,7 @@ class WP_MCP_AI_Tool_Get_Ticket_Sla_Report implements WP_MCP_AI_Tool_Interface, 
 
 		$tickets = get_posts(
 			array(
-				'post_type'      => 'mcp_ai_support_ticket',
+				'post_type'      => 'mcp_ai_ticket',
 				'post_status'    => 'publish',
 				'posts_per_page' => -1,
 				'fields'         => 'ids',
