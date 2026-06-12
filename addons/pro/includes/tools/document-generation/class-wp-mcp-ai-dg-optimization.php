@@ -69,8 +69,11 @@ class WP_MCP_AI_Document_Gen_Optimization {
 	 * Fix autoload on QMS audit schema option (tiny option, but consistency).
 	 *
 	 * @since 2.9.0
+	 * @param mixed $old       Previous value (unused).
+	 * @param mixed $new_value New value (unused).
 	 */
-	public static function fix_schema_autoload( $old, $new ) {
+	public static function fix_schema_autoload( $old, $new_value ) {
+		unset( $old, $new_value );
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->update(
@@ -98,7 +101,8 @@ class WP_MCP_AI_Document_Gen_Optimization {
 
 		$table = $wpdb->prefix . 'wp_mcp_ai_qms_audit';
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom audit table has no WP API; low-traffic weekly cron.
+
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 		if ( ! $exists ) {
 			return;
@@ -119,14 +123,11 @@ class WP_MCP_AI_Document_Gen_Optimization {
 		$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$retention_days} days" ) );
 		$limit  = 10000; // Safety cap.
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via SHOW TABLES above.
 		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM `{$table}` WHERE created_at < %s LIMIT %d",
-				$cutoff,
-				$limit
-			)
+			$wpdb->prepare( "DELETE FROM `{$table}` WHERE created_at < %s LIMIT %d", $cutoff, $limit )
 		);
+		// phpcs:enable
 
 		// After large deletes, run OPTIMIZE to reclaim disk space.
 		// Only on tables with significant row count to avoid unnecessary work.
@@ -134,9 +135,11 @@ class WP_MCP_AI_Document_Gen_Optimization {
 		$row_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
 
 		if ( $row_count > 50000 ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated above; OPTIMIZE requires literal table name.
 			$wpdb->query( "OPTIMIZE TABLE `{$table}`" );
+			// phpcs:enable
 		}
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 	}
 }
 

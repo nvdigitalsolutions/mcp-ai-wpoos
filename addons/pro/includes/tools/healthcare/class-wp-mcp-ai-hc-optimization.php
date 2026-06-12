@@ -202,11 +202,14 @@ class WP_MCP_AI_Healthcare_Optimization {
 			}
 
 			// Keep the most recent plans (sort by created_at).
-			uasort( $plans, function ( $a, $b ) {
-				$ta = isset( $a['created_at'] ) ? strtotime( $a['created_at'] ) : 0;
-				$tb = isset( $b['created_at'] ) ? strtotime( $b['created_at'] ) : 0;
-				return $tb <=> $ta;
-			} );
+			uasort(
+				$plans,
+				function ( $a, $b ) {
+					$ta = isset( $a['created_at'] ) ? strtotime( $a['created_at'] ) : 0;
+					$tb = isset( $b['created_at'] ) ? strtotime( $b['created_at'] ) : 0;
+					return $tb <=> $ta;
+				}
+			);
 
 			$plans = array_slice( $plans, 0, self::MAX_CARE_PLANS, true );
 			update_option( $row->option_name, $plans, false );
@@ -267,8 +270,8 @@ class WP_MCP_AI_Healthcare_Optimization {
 		do_action( 'wp_mcp_ai_health_reminder_notify', $reminder_id, $reminder_data );
 
 		// Mark as completed.
-		$all_reminders[ $reminder_id ]['status']          = 'completed';
-		$all_reminders[ $reminder_id ]['completed_at']    = current_time( 'mysql' );
+		$all_reminders[ $reminder_id ]['status']       = 'completed';
+		$all_reminders[ $reminder_id ]['completed_at'] = current_time( 'mysql' );
 		update_option( 'wp_mcp_ai_health_reminders', $all_reminders, false );
 	}
 }

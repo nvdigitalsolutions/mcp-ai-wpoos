@@ -72,10 +72,11 @@ class WP_MCP_AI_Ecommerce_Optimization {
 	 * ~500 bytes each = 500KB+. It should never autoload.
 	 *
 	 * @since 2.9.0
-	 * @param mixed $old Previous value.
-	 * @param mixed $new New value.
+	 * @param mixed $old       Previous value (unused).
+	 * @param mixed $new_value New value (unused).
 	 */
-	public static function fix_inventory_autoload( $old, $new ) {
+	public static function fix_inventory_autoload( $old, $new_value ) {
+		unset( $old, $new_value );
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->update(
@@ -106,31 +107,34 @@ class WP_MCP_AI_Ecommerce_Optimization {
 	 * @since 2.9.0
 	 */
 	private static function cleanup_temp_directory() {
+		global $wp_filesystem;
+
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		WP_Filesystem();
+
 		$upload_dir = wp_upload_dir();
 		$temp_path  = trailingslashit( $upload_dir['basedir'] ) . self::TEMP_DIR;
 
-		if ( ! is_dir( $temp_path ) ) {
+		if ( ! $wp_filesystem->is_dir( $temp_path ) ) {
 			return;
 		}
 
-		$files = @scandir( $temp_path );
+		$files = $wp_filesystem->dirlist( $temp_path );
 		if ( ! is_array( $files ) ) {
 			return;
 		}
 
 		$cutoff    = time() - DAY_IN_SECONDS; // 24 hours.
 		$total     = 0;
-		$max_files = 200; // Safety cap — don't iterate thousands.
+		$max_files = 200; // Safety cap - don't iterate thousands.
 
-		foreach ( $files as $file ) {
-			if ( '.' === $file || '..' === $file ) {
-				continue;
-			}
-
+		foreach ( $files as $file => $info ) {
 			$filepath = $temp_path . '/' . $file;
 
-			if ( is_file( $filepath ) && filemtime( $filepath ) < $cutoff ) {
-				@unlink( $filepath );
+			if ( 'f' === $info['type'] && $info['lastmodunix'] < $cutoff ) {
+				$wp_filesystem->delete( $filepath );
 				++$total;
 			}
 
@@ -140,16 +144,12 @@ class WP_MCP_AI_Ecommerce_Optimization {
 		}
 
 		// Also clean empty subdirectories.
-		foreach ( $files as $file ) {
-			if ( '.' === $file || '..' === $file ) {
-				continue;
-			}
-
-			$filepath = $temp_path . '/' . $file;
-			if ( is_dir( $filepath ) ) {
-				$sub_files = @scandir( $filepath );
-				if ( is_array( $sub_files ) && count( $sub_files ) <= 2 ) {
-					@rmdir( $filepath );
+		foreach ( $files as $file => $info ) {
+			if ( 'd' === $info['type'] ) {
+				$filepath  = $temp_path . '/' . $file;
+				$sub_files = $wp_filesystem->dirlist( $filepath );
+				if ( is_array( $sub_files ) && count( $sub_files ) <= 0 ) {
+					$wp_filesystem->rmdir( $filepath );
 				}
 			}
 		}
@@ -190,10 +190,13 @@ class WP_MCP_AI_Ecommerce_Optimization {
 				continue;
 			}
 
-			$filtered = array_filter( $log, function ( $entry ) use ( $cutoff ) {
-				$ts = isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : 0;
-				return $ts <= 0 || $ts > $cutoff;
-			} );
+			$filtered = array_filter(
+				$log,
+				function ( $entry ) use ( $cutoff ) {
+					$ts = isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : 0;
+					return $ts <= 0 || $ts > $cutoff;
+				}
+			);
 
 			if ( count( $filtered ) !== count( $log ) ) {
 				update_post_meta( $product_id, '_inventory_movement_log', array_values( $filtered ) );

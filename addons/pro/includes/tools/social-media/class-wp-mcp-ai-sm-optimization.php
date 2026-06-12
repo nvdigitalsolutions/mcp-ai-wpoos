@@ -115,21 +115,21 @@ class WP_MCP_AI_Social_Media_Optimization {
 		register_post_type(
 			self::SCHEDULED_POST_TYPE,
 			array(
-				'labels'              => array(
+				'labels'          => array(
 					'name'          => __( 'Scheduled Posts', 'mcp-ai-wpoos-pro' ),
 					'singular_name' => __( 'Scheduled Post', 'mcp-ai-wpoos-pro' ),
 				),
-				'public'              => false,
-				'show_ui'             => true,
-				'show_in_menu'        => true,
-				'menu_icon'           => 'dashicons-calendar-alt',
-				'menu_position'       => 60,
-				'capability_type'     => 'post',
-				'has_archive'         => false,
-				'rewrite'             => false,
-				'query_var'           => false,
-				'supports'            => array( 'title', 'editor', 'author' ),
-				'show_in_rest'        => true,
+				'public'          => false,
+				'show_ui'         => true,
+				'show_in_menu'    => true,
+				'menu_icon'       => 'dashicons-calendar-alt',
+				'menu_position'   => 60,
+				'capability_type' => 'post',
+				'has_archive'     => false,
+				'rewrite'         => false,
+				'query_var'       => false,
+				'supports'        => array( 'title', 'editor', 'author' ),
+				'show_in_rest'    => true,
 			)
 		);
 	}
@@ -242,10 +242,11 @@ class WP_MCP_AI_Social_Media_Optimization {
 	 * Force autorespond templates to no-autoload and enforce cap.
 	 *
 	 * @since 2.9.0
-	 * @param mixed $old Previous value.
-	 * @param mixed $new New value.
+	 * @param mixed $old       Previous value (unused).
+	 * @param mixed $new_value New value.
 	 */
-	public static function fix_templates_autoload( $old, $new ) {
+	public static function fix_templates_autoload( $old, $new_value ) {
+		unset( $old, $new_value );
 		global $wpdb;
 
 		// Force no-autoload.

@@ -51,10 +51,11 @@ class WP_MCP_AI_Calendar_Orchestration_Optimization {
 	 * Force business hours option to no-autoload.
 	 *
 	 * @since 2.9.0
-	 * @param mixed $old Previous value.
-	 * @param mixed $new New value.
+	 * @param mixed $old       Previous value (unused).
+	 * @param mixed $new_value New value (unused).
 	 */
-	public static function fix_business_hours_autoload( $old, $new ) {
+	public static function fix_business_hours_autoload( $old, $new_value ) {
+		unset( $old, $new_value );
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->update(
@@ -114,20 +115,24 @@ class WP_MCP_AI_Calendar_Orchestration_Optimization {
 	 *
 	 * @since 2.9.0
 	 * @param mixed $new_value New option value.
-	 * @param mixed $old_value Old option value.
+	 * @param mixed $_old_value Old option value (unused).
 	 * @return mixed Capped value.
 	 */
-	public static function cap_schedule_count( $new_value, $old_value ) {
+	public static function cap_schedule_count( $new_value, $_old_value ) {
+		unset( $_old_value );
 		if ( ! is_array( $new_value ) || count( $new_value ) <= 100 ) {
 			return $new_value;
 		}
 
 		// Keep the 100 most recently modified schedules.
-		uasort( $new_value, function ( $a, $b ) {
-			$ta = isset( $a['updated_at'] ) ? strtotime( $a['updated_at'] ) : 0;
-			$tb = isset( $b['updated_at'] ) ? strtotime( $b['updated_at'] ) : 0;
-			return $tb <=> $ta;
-		} );
+		uasort(
+			$new_value,
+			function ( $a, $b ) {
+				$ta = isset( $a['updated_at'] ) ? strtotime( $a['updated_at'] ) : 0;
+				$tb = isset( $b['updated_at'] ) ? strtotime( $b['updated_at'] ) : 0;
+				return $tb <=> $ta;
+			}
+		);
 
 		return array_slice( $new_value, 0, 100, true );
 	}

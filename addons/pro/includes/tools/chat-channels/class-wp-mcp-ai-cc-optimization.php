@@ -87,10 +87,11 @@ class WP_MCP_AI_Chat_Channels_Optimization {
 	 * Force settings option to no-autoload.
 	 *
 	 * @since 2.9.0
-	 * @param mixed $old Previous value.
-	 * @param mixed $new New value.
+	 * @param mixed $old       Previous value (unused).
+	 * @param mixed $new_value New value (unused).
 	 */
-	public static function fix_autoload( $old, $new ) {
+	public static function fix_autoload( $old, $new_value ) {
+		unset( $old, $new_value );
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->update(
@@ -278,32 +279,27 @@ class WP_MCP_AI_Chat_Channels_Optimization {
 	private static function prune_cct_batch( $cct_slug, $cutoff, $date_column = 'created_at' ) {
 		global $wpdb;
 
-		$table = $wpdb->prefix . 'jet_cct_' . $cct_slug;
+		// Sanitize slug: only allow lowercase alphanumeric + underscore.
+		$cct_slug    = preg_replace( '/[^a-z0-9_]/', '', $cct_slug );
+		$table       = $wpdb->prefix . 'jet_cct_' . $cct_slug;
+		$date_column = preg_replace( '/[^a-z0-9_]/', '', $date_column );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- CCT tables have no WP API; table/column names are regex-whitelisted above.
+
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 		if ( ! $exists ) {
 			return 0;
 		}
 
-		// Check if the date column exists.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// Verify the date column exists.
 		$column_exists = $wpdb->get_var(
-			$wpdb->prepare(
-				"SHOW COLUMNS FROM `{$table}` LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$date_column
-			)
+			$wpdb->prepare( "SHOW COLUMNS FROM `{$table}` LIKE %s", $date_column )
 		);
 
 		if ( ! $column_exists ) {
-			// Try 'created_at' as fallback for messages.
 			if ( 'last_message_at' === $date_column ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 				$column_exists = $wpdb->get_var(
-					$wpdb->prepare(
-						"SHOW COLUMNS FROM `{$table}` LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-						'created_at'
-					)
+					$wpdb->prepare( "SHOW COLUMNS FROM `{$table}` LIKE %s", 'created_at' )
 				);
 				if ( $column_exists ) {
 					$date_column = 'created_at';
@@ -315,29 +311,21 @@ class WP_MCP_AI_Chat_Channels_Optimization {
 			}
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$count = (int) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM `{$table}` WHERE `{$date_column}` < %s",
-				$cutoff
-			)
+			$wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE `{$date_column}` < %s", $cutoff )
 		);
 
 		if ( $count <= 0 ) {
 			return 0;
 		}
 
-		// Safety cap.
 		$limit = min( 1000, $count );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$deleted = $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM `{$table}` WHERE `{$date_column}` < %s LIMIT %d",
-				$cutoff,
-				$limit
-			)
+			$wpdb->prepare( "DELETE FROM `{$table}` WHERE `{$date_column}` < %s LIMIT %d", $cutoff, $limit )
 		);
+
+		// phpcs:enable
 
 		return false !== $deleted ? (int) $deleted : 0;
 	}
