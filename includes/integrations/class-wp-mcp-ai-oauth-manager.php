@@ -902,5 +902,81 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			wp_safe_redirect( add_query_arg( 'yahoo_success', rawurlencode( $success_message ), $redirect_base ) );
 			exit;
 		}
+
+		/**
+		 * Handle disconnecting from Gmail.
+		 *
+		 * Clears the OAuth refresh token and user email from settings.
+		 * Credentials (Client ID, Client Secret) are preserved for future reconnection.
+		 *
+		 * @since 1.0.0
+		 */
+		public function handle_gmail_disconnect() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
+			}
+
+			check_admin_referer( 'wp_mcp_ai_gmail_disconnect' );
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Clear OAuth tokens (but keep Client ID and Client Secret for reconnection).
+			unset( $settings['gmail_refresh_token'] );
+			unset( $settings['gmail_user_email'] );
+
+			update_option( 'wp_mcp_ai_settings', $settings );
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'         => 'wp-mcp-ai-dashboard',
+						'tab'          => 'tools',
+						'subtab'       => 'connections',
+						'connection'   => 'gmail',
+						'gmail_success' => rawurlencode( __( 'Disconnected from Gmail. Your OAuth credentials remain saved for future connections.', 'mcp-ai-wpoos' ) ),
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
+
+		/**
+		 * Handle disconnecting from Google Drive.
+		 *
+		 * Clears the OAuth refresh token and user email from settings.
+		 * Credentials (Client ID, Client Secret) are preserved for future reconnection.
+		 *
+		 * @since 1.0.0
+		 */
+		public function handle_google_drive_disconnect() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
+			}
+
+			check_admin_referer( 'wp_mcp_ai_google_drive_disconnect' );
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Clear OAuth tokens (but keep Client ID and Client Secret for reconnection).
+			unset( $settings['google_drive_refresh_token'] );
+			unset( $settings['google_drive_user_email'] );
+
+			update_option( 'wp_mcp_ai_settings', $settings );
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'         => 'wp-mcp-ai-dashboard',
+						'tab'          => 'tools',
+						'subtab'       => 'connections',
+						'connection'   => 'google_drive',
+						'drive_success' => rawurlencode( __( 'Disconnected from Google Drive. Your OAuth credentials remain saved for future connections.', 'mcp-ai-wpoos' ) ),
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
 	}
 }

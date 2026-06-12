@@ -698,7 +698,47 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				}
 
 				// ========================================================================
-				// STEP 5: Merge Settings with Validation
+				// STEP 5: Auto-clear OAuth tokens when credentials change
+				// ========================================================================
+				// When a user changes their OAuth Client ID or Client Secret, the old
+				// refresh token is no longer valid for the new credentials. Force-clear
+				// associated tokens so the OAuth callback cannot resurrect stale
+				// account bindings via its fallback that reuses old refresh tokens.
+				$oauth_credential_token_map = array(
+					// Gmail.
+					'gmail_client_id'        => array( 'gmail_refresh_token', 'gmail_user_email' ),
+					'gmail_client_secret'    => array( 'gmail_refresh_token', 'gmail_user_email' ),
+					// Google Drive.
+					'google_drive_client_id'     => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
+					'google_drive_client_secret' => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
+					// Meta.
+					'meta_app_id'     => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
+					'meta_app_secret' => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
+				);
+
+				foreach ( $oauth_credential_token_map as $credential_key => $token_keys ) {
+					$old_value = isset( $existing_settings[ $credential_key ] ) ? $existing_settings[ $credential_key ] : '';
+					$new_value = isset( $sanitized_new[ $credential_key ] ) ? $sanitized_new[ $credential_key ] : $old_value;
+
+					if ( $new_value !== $old_value && '' !== $new_value ) {
+						foreach ( $token_keys as $token_key ) {
+							$sanitized_new[ $token_key ] = '';
+						}
+						if ( $enable_logging ) {
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- user-enabled diagnostic logging.
+							error_log(
+								sprintf(
+									'[NV oOS Settings] Credential change: %s → clearing %s',
+									$credential_key,
+									implode( ', ', $token_keys )
+								)
+							);
+						}
+					}
+				}
+
+				// ========================================================================
+				// STEP 6: Merge Settings with Validation
 				// ========================================================================
 				// DEBUG: Log checkbox values before merge to diagnose persistence issue.
 				if ( $enable_logging ) {
@@ -753,7 +793,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				}
 
 				// ========================================================================
-				// STEP 5a: Auto-generate mesh API key if needed
+				// STEP 6a: Auto-generate mesh API key if needed
 				// ========================================================================
 				// Check if mesh networking or federation directory was just enabled and generate API key if needed.
 				// This must happen BEFORE validation and save to avoid race conditions.

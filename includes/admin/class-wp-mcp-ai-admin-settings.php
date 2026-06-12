@@ -106,7 +106,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Note: OAuth callback is now handled via admin_init in the OAuth manager itself.
 			// We only need the 'start' action here as it uses admin-post.php properly.
 			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_start', array( $this->oauth_manager, 'handle_gmail_oauth_start' ) );
+			add_action( 'admin_post_wp_mcp_ai_gmail_disconnect', array( $this->oauth_manager, 'handle_gmail_disconnect' ) );
 			add_action( 'admin_post_wp_mcp_ai_google_drive_oauth_start', array( $this->oauth_manager, 'handle_google_drive_oauth_start' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_drive_disconnect', array( $this->oauth_manager, 'handle_google_drive_disconnect' ) );
 			// Yahoo OAuth start hook removed - button now links directly to Yahoo OAuth.
 			// OAuth state is generated when button is rendered in class-wp-mcp-ai-section-integrations.php.
 			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this->settings_base, 'filter_memory_max_file_bytes' ), 10, 2 );

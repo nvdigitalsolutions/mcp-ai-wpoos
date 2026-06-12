@@ -365,5 +365,37 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_Client' ) ) {
 
 			update_option( 'wp_mcp_ai_settings', $settings );
 		}
+
+		/**
+		 * Handle admin-post disconnect request for Cloudways.
+		 *
+		 * Clears cached OAuth tokens and redirects back to the connections page.
+		 * API credentials (email, API key, server/app IDs) are preserved.
+		 *
+		 * @since 1.0.0
+		 */
+		public function handle_cloudways_disconnect() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
+			}
+
+			check_admin_referer( 'wp_mcp_ai_cloudways_disconnect' );
+
+			$this->disconnect();
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'       => 'wp-mcp-ai-dashboard',
+						'tab'        => 'tools',
+						'subtab'     => 'connections',
+						'connection' => 'cloudways',
+						'cloudways_disconnected' => '1',
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
 	}
 }
