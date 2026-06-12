@@ -13,7 +13,6 @@
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: nvoos-cloudways-dashboard
  * Domain Path: /languages
- * Requires Plugins: mcp-ai-wpoos
  *
  * @package NV_oOS_CloudwaysDashboard
  *
@@ -44,4 +43,27 @@ require_once NVOOS_CLOUDWAYS_DASHBOARD_PATH . 'includes/rest/class-nvoos-cloudwa
 require_once NVOOS_CLOUDWAYS_DASHBOARD_PATH . 'includes/shortcode/class-nvoos-cloudways-dashboard-shortcode.php';
 require_once NVOOS_CLOUDWAYS_DASHBOARD_PATH . 'includes/block/class-nvoos-cloudways-dashboard-block.php';
 
+/**
+ * Check whether the NV oOS base plugin is active.
+ *
+ * @since 0.1.1
+ *
+ * @return bool True when the base plugin is available.
+ */
+function nvoos_cloudways_dashboard_is_base_active() {
+	return defined( 'WP_MCP_AI_VERSION' );
+}
+
+/**
+ * Check whether the Cloudways Dashboard addon is fully ready.
+ *
+ * @since 0.1.1
+ *
+ * @return bool True when the addon is operational.
+ */
+function nvoos_cloudways_dashboard_is_ready() {
+	return NV_oOS_CloudwaysDashboard_Plugin::is_enabled();
+}
+
+// Boot the plugin.
 NV_oOS_CloudwaysDashboard_Plugin::init();
