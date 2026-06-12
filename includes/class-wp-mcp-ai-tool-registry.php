@@ -1919,14 +1919,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$status_labels = array();
 			$status_file   = WP_MCP_AI_PATH . 'docs/tool-status.txt';
 
-			// Check if file exists.
-			if ( ! file_exists( $status_file ) ) {
+			// Check if file exists and is readable.
+			if ( ! is_readable( $status_file ) ) {
 				return $status_labels;
 			}
 
-			// Read file content.
+			// Read file content, suppressing warnings since failure is handled below.
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read for configuration.
-			$content = file_get_contents( $status_file );
+			$content = @file_get_contents( $status_file );
 			if ( false === $content ) {
 				return $status_labels;
 			}

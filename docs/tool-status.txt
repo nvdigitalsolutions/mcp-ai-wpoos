@@ -1,0 +1,10 @@
+# Tool Status Labels
+# Format: tool_slug = status_label
+# Valid status labels: stable, beta, dev, experimental, bug
+# Tools marked "bug" are automatically disabled on init.
+#
+# Example:
+# example_tool = stable
+# another_tool = bug
+#
+# Add your entries below:
