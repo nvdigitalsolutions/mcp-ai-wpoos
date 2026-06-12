@@ -296,17 +296,12 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => false, // Creates workflow state and executes agents.
-			'local-only'        => true,  // No external API calls directly.
-			'read-only'         => false, // Creates and modifies data.
-			'idempotent'        => false, // Each execution creates new workflow.
-			'cacheable'         => false, // Workflow execution is dynamic.
-			'requires-auth'     => true,  // Needs user authentication.
-			'blocking'          => true,  // Can take time to execute.
-			'uses-network'      => false, // No direct network calls.
-			'modifies-wp'       => true,  // Stores workflow state.
-			'expensive'         => true,  // Resource-intensive operation.
-			'requires-approval' => false, // Auto-approved.
+			'local-only',          // No external API calls directly.
+			'write',               // Creates and modifies workflow state.
+			'state-changing',      // Stores workflow state.
+			'long-running',        // Can take time to execute.
+			'requires-capability', // Needs user authentication.
+			'performance-impact',  // Resource-intensive operation.
 		);
 	}
 }

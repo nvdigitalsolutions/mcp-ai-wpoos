@@ -360,20 +360,23 @@ class WP_MCP_AI_Tool_Load_Balancer {
 			return false;
 		}
 
-		// Get tool definition.
+		// Get tool instance.
 		$tool = $registry->get_tool( $tool_slug );
 		if ( ! $tool ) {
 			return false;
 		}
 
-		$definition = $tool->get_definition();
+		// Tool must be read-only, idempotent, cacheable, and not state-changing.
+		if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+			$flags = (array) $tool->get_capability_flags();
+			$is_read_only      = in_array( 'read-only', $flags, true );
+			$is_state_changing = in_array( 'state-changing', $flags, true ) || in_array( 'write', $flags, true );
+			$is_cacheable      = in_array( 'cacheable', $flags, true );
+			$is_idempotent     = in_array( 'idempotent', $flags, true );
+			return $is_read_only && ! $is_state_changing && $is_cacheable && $is_idempotent;
+		}
 
-		// Tool must be marked as safe and not modify state.
-		$is_safe          = isset( $definition['safe'] ) && $definition['safe'];
-		$modifies_wp      = isset( $definition['modifies-wp'] ) && $definition['modifies-wp'];
-		$is_deterministic = isset( $definition['deterministic'] ) && $definition['deterministic'];
-
-		return $is_safe && ! $modifies_wp && $is_deterministic;
+		return false;
 	}
 
 	/**

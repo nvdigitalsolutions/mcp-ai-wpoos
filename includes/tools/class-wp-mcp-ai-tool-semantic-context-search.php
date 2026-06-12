@@ -334,17 +334,13 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,  // Read-only operation.
-			'local-only'        => false, // Uses external API (OpenAI).
-			'read-only'         => true,  // Does not modify data.
-			'idempotent'        => true,  // Same input = same output.
-			'cacheable'         => true,  // Results can be cached.
-			'requires-auth'     => true,  // Needs user authentication.
-			'blocking'          => false, // API call may take time.
-			'uses-network'      => true,  // Calls OpenAI API.
-			'modifies-wp'       => false, // Does not modify data.
-			'expensive'         => true,  // Uses paid API (embeddings).
-			'requires-approval' => false, // Auto-approved.
+			'read-only',           // Does not modify data.
+			'external-api',        // Calls OpenAI API.
+			'network-dependent',   // Calls OpenAI API.
+			'idempotent',          // Same input = same output.
+			'cacheable',           // Results can be cached.
+			'requires-capability', // Needs user authentication.
+			'performance-impact',  // Uses paid API (embeddings).
 		);
 	}
 }

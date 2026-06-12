@@ -706,17 +706,10 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,
-			'local-only'        => true,
-			'read-only'         => false,
-			'idempotent'        => false,
-			'cacheable'         => false,
-			'requires-auth'     => true,
-			'blocking'          => false,
-			'uses-network'      => false,
-			'modifies-wp'       => true,
-			'expensive'         => false,
-			'requires-approval' => false,
+			'local-only',           // No external API calls.
+			'write',                // Supports refresh/compress/merge/prune/delete.
+			'state-changing',       // Modifies context data.
+			'requires-capability',  // Needs user authentication.
 		);
 	}
 }

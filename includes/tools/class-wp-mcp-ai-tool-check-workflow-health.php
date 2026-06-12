@@ -165,17 +165,10 @@ class WP_MCP_AI_Tool_Check_Workflow_Health implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,  // Read-only operation.
-			'local-only'        => true,  // No external API calls.
-			'read-only'         => true,  // Only reads data.
-			'idempotent'        => true,  // Can be called multiple times safely.
-			'cacheable'         => false, // Workflow state changes over time.
-			'requires-auth'     => true,  // Needs user authentication.
-			'blocking'          => false, // Fast operation.
-			'uses-network'      => false, // No network calls.
-			'modifies-wp'       => false, // Does not modify WordPress data.
-			'expensive'         => false, // Low cost operation.
-			'requires-approval' => false, // Auto-approved.
+			'read-only',           // Read-only operation.
+			'local-only',          // No external API calls.
+			'idempotent',          // Can be called multiple times safely.
+			'requires-capability', // Needs user authentication.
 		);
 	}
 }

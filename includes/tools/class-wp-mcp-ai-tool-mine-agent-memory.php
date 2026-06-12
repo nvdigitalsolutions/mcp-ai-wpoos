@@ -1102,17 +1102,13 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,
-			'external-api'      => true,  // May fetch URLs when source=urls.
-			'read-only'         => false,
-			'idempotent'        => false, // Creates new context each time.
-			'cacheable'         => false,
-			'requires-auth'     => true,
-			'blocking'          => true,  // Bulk operations may take seconds.
-			'uses-network'      => true,  // When source=urls.
-			'modifies-wp'       => true,  // Stores transients.
-			'expensive'         => true,  // May write many records.
-			'requires-approval' => false,
+			'external-api',         // May fetch URLs when source=urls.
+			'network-dependent',    // When source=urls.
+			'write',                // Creates new context each time.
+			'state-changing',       // Stores transients.
+			'long-running',         // Bulk operations may take seconds.
+			'requires-capability',  // Needs user authentication.
+			'performance-impact',   // May write many records.
 		);
 	}
 }

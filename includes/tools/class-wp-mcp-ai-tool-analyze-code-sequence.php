@@ -117,9 +117,10 @@ class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'          => true,
-			'modifies-wp'   => false,
-			'deterministic' => true,
+			'read-only',   // Only analyzes code, no mutations.
+			'local-only',  // No external API calls.
+			'idempotent',  // Same input = same output.
+			'cacheable',   // Deterministic results can be cached.
 		);
 	}
 
