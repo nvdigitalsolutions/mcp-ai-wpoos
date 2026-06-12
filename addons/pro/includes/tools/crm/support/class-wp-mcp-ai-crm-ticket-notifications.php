@@ -183,7 +183,7 @@ class WP_MCP_AI_CRM_Ticket_Notifications {
 
 		$ticket_id = wp_insert_post(
 			array(
-				'post_type'    => 'mcp_ai_support_ticket',
+				'post_type'    => 'mcp_ai_ticket',
 				'post_title'   => $subject,
 				'post_content' => $body,
 				'post_status'  => 'publish',

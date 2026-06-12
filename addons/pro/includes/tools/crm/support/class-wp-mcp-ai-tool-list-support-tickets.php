@@ -159,7 +159,7 @@ class WP_MCP_AI_Tool_List_Support_Tickets implements WP_MCP_AI_Tool_Interface, W
 		$order       = in_array( $order, array( 'ASC', 'DESC' ), true ) ? $order : 'DESC';
 
 		$args = array(
-			'post_type'      => 'mcp_ai_support_ticket',
+			'post_type'      => 'mcp_ai_ticket',
 			'post_status'    => 'publish',
 			'posts_per_page' => $per_page,
 			'paged'          => $page,
