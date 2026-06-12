@@ -1762,6 +1762,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						echo wp_kses_post( $field['content'] );
 						echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
+					} elseif ( 'slider' === $field['type'] || 'range' === $field['type'] ) {
+						// Close table, use orchestration renderer for slider/range, reopen table.
+						echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
+						if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+							echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field );
+						} else {
+							// Fallback: render as plain number input.
+							$this->render_field( $key, $field );
+						}
+						echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					} else {
 						$this->render_field( $key, $field );
 					}
