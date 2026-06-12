@@ -3631,9 +3631,22 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 							}
 
 							if ( isset( $part['functionResponse'] ) && is_array( $part['functionResponse'] ) ) {
+								// Preserve function response as structured data so the
+								// frontend can render it with proper tool-call linkage.
+								// This mirrors the OpenAI-compatible tool_result format
+								// that the chat UI expects for agentic loop messages.
+								$function_name = isset( $part['functionResponse']['name'] )
+									? sanitize_text_field( $part['functionResponse']['name'] )
+									: '';
+								$function_result = isset( $part['functionResponse']['response'] )
+									? $part['functionResponse']['response']
+									: array();
+
 								$segments[] = array(
-									'type' => 'text',
-									'text' => $this->render_function_response_text( $part['functionResponse'] ),
+									'type'            => 'tool_result',
+									'tool_name'       => $function_name,
+									'tool_result'     => $function_result,
+									'text'            => $this->render_function_response_text( $part['functionResponse'] ),
 								);
 							}
 						}
