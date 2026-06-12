@@ -132,7 +132,7 @@ class WP_MCP_AI_Agent_Capability_Boundary {
 		 * @param int   $max_iterations   Default maximum iterations.
 		 * @param array $assistant_config Assistant configuration array (empty here — boundary is assistant-agnostic).
 		 */
-		$default_iterations   = 1;
+		$default_iterations   = 5;
 		$this->max_iterations = (int) apply_filters( 'wp_mcp_ai_max_agentic_iterations', $default_iterations, array() );
 		$this->max_iterations = max( 1, min( 50, $this->max_iterations ) );
 

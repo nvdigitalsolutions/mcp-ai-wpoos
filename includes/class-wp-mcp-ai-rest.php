@@ -3004,9 +3004,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$wants_streaming = $this->request_wants_event_stream( $request );
 
 			// Agentic loop: automatically execute tools server-side when LLM requests them.
-			// Default limit prevents infinite loops. /chat-client endpoint applies higher limit via filter.
-			// Temporarily reduced to 1 to prevent loops on tool errors while quality mapping is being fixed.
-			$max_iterations = 1;
+			// Industry standard base default is 5 iterations (OpenAI SDK defaults to 15; Anthropic
+			// Claude Code agent loop caps at 50). A base of 5 allows multi-step tool workflows
+			// (search → analyse → respond) while preventing runaway loops on misconfigured tools.
+			// Entry points raise this via the wp_mcp_ai_max_agentic_iterations filter:
+			// - Chat client (browser UI): 15 iterations (priority 10).
+			// - Channel webhooks (Telegram/Slack/WhatsApp): 10 iterations (priority 10).
+			// - Scheduled runs: 10 iterations (priority 10).
+			// - Admin setting (filter_max_agentic_iterations): priority 5.
+			// - PSO optimiser: dynamic (priority 50).
+			$max_iterations = 5;
 			$max_iterations = (int) apply_filters( 'wp_mcp_ai_max_agentic_iterations', $max_iterations, $assistant_config );
 			$max_iterations = max( 1, min( 50, $max_iterations ) ); // Safety bounds: 1-50.
 			$iteration      = 0;
@@ -3488,32 +3495,41 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$recorded_session_key = null;
 			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+				// Augment the response with tool_results so they are persisted
+				// alongside the LLM response in the transcript record. This
+				// ensures server-side transcripts carry the full agentic-loop
+				// context (tool names, results, and call IDs) for consumers.
+				$transcript_response = $response;
+				if ( ! empty( $tool_result_messages ) ) {
+					$transcript_response['tool_results'] = $tool_result_messages;
+				}
+
 				$recorded_session_key = WP_MCP_AI_Chat_Transcript_Recorder::record(
 					$assistant_id,
 					$messages,
 					$options,
-					$response,
+					$transcript_response,
 					$request,
 					$user_id,
 					$transcript_context
 				);
 			}
 
-			WP_MCP_AI_Usage_Tracker::record_chat_usage(
-				$user_id,
-				$assistant_id,
-				$options,
-				$response
-			);
+				WP_MCP_AI_Usage_Tracker::record_chat_usage(
+					$user_id,
+					$assistant_id,
+					$options,
+					$response
+				);
 
-			/**
-			 * Fires after a chat response has been received from the language model.
-			 *
-			 * @param int              $assistant_id Assistant identifier.
-			 * @param array            $response     Raw response array.
-			 * @param WP_REST_Request  $request      REST request instance.
-			 */
-			do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
+				/**
+				 * Fires after a chat response has been received from the language model.
+				 *
+				 * @param int              $assistant_id Assistant identifier.
+				 * @param array            $response     Raw response array.
+				 * @param WP_REST_Request  $request      REST request instance.
+				 */
+				do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 			// Extract cost information for Phase 7 Week 5-6 Enhanced Token Tracking.
 			$cost_data = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'chat response' );
@@ -4401,11 +4417,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$recorded_session_key = null;
 			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+				// Augment the response with tool_results so they are persisted
+				// alongside the LLM response in the transcript record.
+				$transcript_response = $response;
+				if ( ! empty( $tool_result_messages ) ) {
+					$transcript_response['tool_results'] = $tool_result_messages;
+				}
+
 				$recorded_session_key = WP_MCP_AI_Chat_Transcript_Recorder::record(
 					$assistant_id,
 					$messages,
 					$options,
-					$response,
+					$transcript_response,
 					$request,
 					$user_id,
 					$transcript_context
