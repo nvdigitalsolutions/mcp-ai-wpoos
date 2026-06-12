@@ -191,6 +191,11 @@ class WP_MCP_AI_CRM_Engine {
 				// Sender-based routing: email/domain → (category, priority, assignee).
 				'sender_rules'         => array(),
 			),
+			// Performance optimization (since 2.9.0).
+			'optimization'            => array(
+				'message_retention_days' => 90,  // Auto-prune CRM messages older than N days (0 = keep forever).
+				'audit_max_entries'     => 5000, // Max audit log entries before compaction.
+			),
 		);
 
 		$stored = get_option( self::SETTINGS_OPTION, array() );
