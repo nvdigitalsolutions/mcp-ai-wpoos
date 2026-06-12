@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
-> **This file is loaded every turn by Claude Code.** Keep it focused and actionable.
-> Last reviewed: **May 31, 2026** · Version: **2.5**
+> This file is loaded every turn by Claude Code. Keep it focused and actionable.
+> Last reviewed: **June 12, 2026** · Version: **2.6**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~960 tools (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, Anthropic, HuggingFace, NVIDIA), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,000+ tools (~195 base + ~800+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,7 +50,8 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~960 tools total)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,000+ tools total)
+├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── tools/                              ← base tool implementations (~195 classes; live count is authoritative)
 ├── services/                           ← 20+ service classes
 ├── admin/                              ← WordPress admin UI
@@ -58,16 +59,24 @@ includes/
 ├── slash-commands/                     ← /help, /ship, /compact, /context, etc.
 ├── integrations/                       ← JetEngine, Elementor, Auth0
 ├── a2a/                                ← Agent-to-Agent protocol
+├── harness/                            ← LLM Harnessing subsystem (Layers A–H)
 └── interfaces/                         ← PHP interfaces
 addons/pro/
 ├── mcp-ai-wpoos-pro.php                ← Pro entry (auto-loaded, no WP plugin header)
-└── includes/
-    ├── tools/                          ← ~765+ pro tools
-    │   ├── cloudways/                  ← Cloudways Toolkit (60 tools + API v2 client)
-    │   ├── crm/                        ← CRM Toolkit (70+ tools, 5 phases)
-    │   └── ...
-    ├── cloudways/                      ← Cloudways API v2 OAuth client + helpers
-    └── ...                             ← Pro admin, REST, services
+├── includes/
+│   ├── class-wp-mcp-ai-memory-retention.php ← Agent memory retention (Pro)
+│   ├── tools/                          ← ~800+ pro tools
+│   │   ├── cloudways/                  ← Cloudways Toolkit (60 tools + API v2 client)
+│   │   ├── crm/                        ← CRM Toolkit (70+ tools, 5 phases)
+│   │   ├── dietpi/                     ← DietPi Pro Toolkit (19+ tools, 3 phases)
+│   │   └── ...
+│   ├── cloudways/                      ← Cloudways API v2 OAuth client + helpers
+│   └── ...                             ← Pro admin, REST, services
+addons/
+├── librechat/                          ← LibreChat addon (code interpreter, speech)
+├── funiq-bridge/                       ← Funiq Bridge addon (v1.0.0)
+├── schedule-anything/                  ← Schedule Anything SaaS platform
+└── ...                                 ← 18+ standalone addons
 ```
 
 ## Security — Non-Negotiable
@@ -157,7 +166,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~195 base tool classes) or `false` (~830 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~195 base tool classes) or `false` (~1,000+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -257,6 +266,48 @@ Portable behaviour packages (`SKILL.md` files) that any NV oOS assistant can loa
 - **Filters:** `wp_mcp_ai_skill_catalogue_manifest_ttl`, `wp_mcp_ai_skill_catalogue_refresh_cadence`.
 - **Reference:** `docs/features/agent-skills.md` (full Phases 1–4 narrative).
 
+### Context Window Management
+
+Pre-flight validation across all 13 AI providers before every chat request:
+- **Shared helper:** `validate_context_window( $model, $messages, $tools, $max_tokens )` in the base plugin — estimates token count, caps tools when near budget, and returns actionable guidance.
+- **tiktoken integration** for accurate token counting via `gpt-tokenizer` npm package and PHP port.
+- **Estimator metabox** on the assistant edit screen showing real-time token budget breakdown (system prompt, tools, messages, reserved).
+- **Token-budget tool capping** — when the estimated prompt size exceeds 80% of the context window, tools are pruned by priority (least-capable first).
+- **Chat parity drift detection** in `lib/core` — compares response quality across providers to detect model degradation.
+- All 13 provider clients (OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama) call the shared helper before sending requests.
+
+### Transcript & Memory Retention
+
+Two-tier retention system for chat data lifecycle management:
+- **Base — Transcript Retention** (`WP_MCP_AI_Transcript_Retention`, `includes/class-wp-mcp-ai-transcript-retention.php`): Configurable TTL-based cleanup of chat transcripts stored in the database. Admin-configurable retention periods. Automatic cleanup via WordPress cron.
+- **Pro — Agent Memory Retention** (`WP_MCP_AI_Memory_Retention`, `addons/pro/includes/class-wp-mcp-ai-memory-retention.php`): Agent memory lifecycle management with pruning and retention windows. Manages the persistent memory store used by the chat-client memory bridge.
+- Both classes enforce TTL-based cleanup and expose admin settings for retention period configuration.
+
+### Layer I Guardrails
+
+Stay-on-target jailbreak prevention that runs before every AI provider request:
+- **Jailbreak detection** — pattern-based and heuristic analysis of user messages for prompt injection, role-play manipulation, and boundary-testing attempts.
+- **Capability boundary enforcement** — configurable thresholds that limit what the assistant can access or modify.
+- **Agent capability boundary** (`WP_MCP_AI_Agent_Capability_Boundary`) — enforces per-assistant guardrails at the framework level, before the prompt reaches the provider.
+- All guardrails are opt-in per assistant and configurable in the Orchestration → Guardrails admin tab.
+
+### Pro Toolkit Optimizations
+
+Performance optimization classes for 6 Pro toolkits:
+- **Pattern:** `WP_MCP_AI_{Toolkit}_Optimization` classes that implement autoload control, query caching, lazy loading, and retention policies.
+- **Toolkits optimized:** Chat Channels (`WP_MCP_AI_CC_Optimization`), Social Media (`WP_MCP_AI_SM_Optimization`), Healthcare (`WP_MCP_AI_HC_Optimization`), Ecommerce (`WP_MCP_AI_EC_Optimization`), Calendar/Orchestration (`WP_MCP_AI_Cal_Orch_Optimization`), Document Generation (`WP_MCP_AI_DG_Optimization`).
+- Each class is wired into its toolkit's `init.php` file and activated when the toolkit is enabled.
+- Full test suite at `tests/test-pro-toolkit-optimization.php`.
+
+### DietPi Pro Toolkit
+
+Server management toolkit for DietPi single-board computers (Raspberry Pi, Odroid, etc.):
+- **19+ tools** spanning system info, package management, service control, network diagnostics, backup/restore, system update, storage management, provisioning, and SSH proxy tunneling.
+- **MCP server integration** — DietPi toolkit registered as an MCP server for remote management.
+- **Admin toggle** in Features → Pro Toolkits subtab.
+- **SSH proxy** for secure tunneling to DietPi devices behind NAT/firewalls.
+- Pro-only, requires the Pro addon.
+
 ## Build & Test Commands
 
 ```bash
@@ -304,6 +355,9 @@ test(scope): brief description
 | `docs/features/llm-harness.md` | Working on LLM Harnessing (Layers A–H) |
 | `docs/features/memory/chat-client-integration.md` | Working on Chat-client Memory Bridge / Drawer |
 | `docs/features/agent-skills.md` | Working on Agent Skills bundling / curation / catalogues |
+| `docs/features/context-window-management.md` | Working on context-window validation / tiktoken / tool capping |
+| `docs/features/pro-toolkit-optimization.md` | Working on Pro toolkit optimization classes |
+| `docs/features/dietpi-pro-toolkit.md` | Working on DietPi server management tools |
 
 ## OpenAI Schema Compatibility
 

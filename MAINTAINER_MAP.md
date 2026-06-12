@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **May 31, 2026**
+> Last reviewed: **June 12, 2026** (v1.1.29)
 
 ### Related Files
 
@@ -247,7 +247,7 @@ npm run rebuild:all               # Rebuild all three ZIPs
 | | Base | Pro |
 |---|---|---|
 | **Entry point** | `mcp-ai-wpoos.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
-| **Tools** | ~195 core tools | +~635 Pro tools = **~830 total** |
+| **Tools** | ~195 core tools | +~800+ Pro tools = **~1,000+ total** |
 | **Control constant** | `WP_MCP_AI_BASE_VERSION=true` | `WP_MCP_AI_BASE_VERSION=false` |
 | **PHP vendor** | `vendor/` (root) | `addons/pro/vendor/` (PHP 8.1+ deps: phpspreadsheet, etc.) |
 | **JS build** | `esbuild.config.js` | `esbuild.config.pro.js` |
@@ -267,7 +267,12 @@ npm run rebuild:all               # Rebuild all three ZIPs
 - **Health & wellness** – 27 tools (vitals, vaccinations, health records, DICOM)
 - **Finance / ERP** – ERP connector, financial tools
 - **Telegram Mini Apps** – TMA template builder and 8 built-in templates
+- **DietPi Pro Toolkit** – 19+ tools for DietPi server management (system info, backup, update, storage, provisioning, SSH proxy, MCP server)
+- **LibreChat** – code interpreter, speech services, web search reranker
+- **Schedule Anything SaaS** – full SaaS booking platform with Stripe integration
 - **Agent Skills (base + Pro)** – progressive-disclosure `load_skill` tool (base), bundled `SKILL.md` library (28+ Pro skills + 1 base skill curated from `Lonsdale201/wp-agent-skills` and `anthropics/skills`), Pro Skill Catalogue Service + REST controller for one-click installs from registered public GitHub repos, curated skill packs. See [`docs/features/agent-skills.md`](docs/features/agent-skills.md).
+- **Pro Toolkit Optimizations** – autoload control, caching, and lazy loading across 6 toolkits (Chat Channels, Social Media, Healthcare, Ecommerce, Calendar/Orchestration, Document Generation)
+- **Memory Retention** – agent memory lifecycle management with configurable pruning and retention windows
 
 ### How Pro loads in a cloned repo
 

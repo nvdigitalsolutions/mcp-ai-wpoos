@@ -1,18 +1,17 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.19  
-**Last Updated:** May 17, 2026
+**Version:** 1.1.29  
+**Last Updated:** June 12, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
-## 🆕 Recent Updates (May 2026)
+## 🆕 Recent Updates (June 2026)
 
-- **Documentation refresh** (May 17): `USE_CASES_AND_QUICKSTARTS.md` moved to independent doc revision 2.0 with `docs/getting-started/_USE_CASES_FACT_SHEET.md` as the point-in-time count source. Current framing: ~830 tools (~195 base + ~635 Pro), ~190 profession templates, 10 GA SPA-manifested Pro toolkits; live registry remains authoritative.
-- **v1.1.19** (May 18): **Kimi (Moonshot AI)** as 10th first-class provider (`WP_MCP_AI_Kimi_Client`, 256K context, kimi-k2-thinking CoT); **ACP Server** (JSON-RPC 2.0 + HTTP/SSE — `WP_MCP_AI_ACP_Server` + IDE integration + `/.well-known/ai-peer` ACP advertisement); **MCP Bridge** (`bin/mcp-bridge.js` stdio relay for Claude Desktop/Cursor/Zed); **Unix Theory P7** (folder README convention backfilled across all `includes/` subdirs; `composer run docs:check-folder-readmes`); **GDPR** (JetEngine privacy exporters); **Security** (settings-key encryption, webhook secret enforcement, SSRF hardening, attachment URL validation, client-log debug-gate); **Chat Bubble sweep** (13 PRs — self-init via wpMcpAiChatInit, kses form controls, Test Model restored, panel-fit + scoped CSS)
-- **v1.1.18** (May 14): **Unix Theory Compliance Phases P0–P6** (canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` sniff, capability-fence audit, `WP_MCP_AI_Tool_Data_Contract_Interface`, tool-lifecycle descriptor 5th arg + OTel `data_type`/`duration_ms`, back-compat alias infrastructure, `WPMCPAI.Tools.SanitizeAtEntry` sniff); **DigitalOcean Serverless Inference** provider (9th provider); **Async chat continuation** slices 1–6 (durable store, dispatcher, LLM re-entry, SSE frame buffer, Pro webhook notifier, OTel + Jest); **Jobs/Tasks Drawer + cron-status** PRs A–G (inline progress cards, cancel/retry routes, OTel hooks); **Toolkit MCP Servers Phase 7** admin UI; **JetEngine CCT memory mirror** hydration; **UI/UX Pro Max Skill Bundle** (45th bundled skill with design system data for 15+ frameworks); agent-surface refresh across `.bmad/` `.codex/` `.context/` `.devcontainer/` `.github/agents/` `.vscode/` `.zed/`
-- **v1.1.17** (May 10): WP.org compliance hardening B1–B13 all resolved; **Chat SPA addon** v0.6.0 (Phases 1–7 complete); **Docs Hub** v0.3.8; **Toolkit SPA Blueprint** Phases 5–12; PHPUnit + Vitest coverage campaign (PRs #1–#11, 271 AJAX handlers covered); build-pipeline split (WP.org vs full GitHub Release ZIPs); Dependabot security sweep (33 alerts resolved)
-- **v1.1.16** (May 6): **SaaS Controller** v0.1.0 (11 phases, NV oOS Cloud control plane); **Structured Logging** integration across all addons and core; **Docs Hub** v0.1.0; inline-async-tick pattern (8 consumers); **Toolkit MCP servers** all 7 phases complete; Rev 2.0 distinguishes 10 GA SPA-manifested Pro toolkits from the broader settings-page/module inventory; addon licensing split
-- **v1.1.15** (May 5): **OpenRouter + DeepSeek** as first-class providers; **LM Studio** native cURL SSE streaming; **Orchestration Phases 1–7** GA (HITL, OTel, DAG builder, durable runs, triggers/webhooks, sub-agents); **LLM Harnessing GA** (Layers A–H); 19 new slash commands; **Chat-client Memory Bridge** G-series; **Graphify** NV oOS data-source bridge
+- **v1.1.29** (June 12): **Pro Toolkit Optimizations Phase 1–3** across 6 toolkits; **Chat Transcript & Agent Memory Retention**; **DietPi Pro Toolkit** (19+ tools, MCP server, SSH proxy); **Layer I Guardrails** (jailbreak prevention); **Context Window Management** (13-provider validation, tiktoken, token capping); **LibreChat Addon**; **Schedule Anything SaaS**; **Vector Search** (HNSW, hybrid); **CRM Enhancements** (email import, lead pruning, inline tags, duplicates); **25+ bug fixes**. Full docs: [`docs/features/`](features/).
+- **v1.1.28** (June 8): CRM Phase C (IMAP/Twilio/WhatsApp/Gmail inbound), Customer CPT + 360, Support Ticket Module (10 tools + SLA), TF-IDF + BM25, Attention Routing (QKV 5-head), Funiq Bridge, NVOOS Graphify.
+- **v1.1.27** (June 5): Real-Time SSE Streaming, 35 OOS Core Tools, Extended Cognition Vision, JFB fixes, Graphify compliance, June 2026 model pricing.
+- **v1.1.26** (June 3): Cross-Platform Extraction Engine, Site-Builder Pipeline, SPA a11y Hardening, Cloudways Dashboard SPA.
+- **v1.1.25** (May 31): Unified Blueprint System (55 blueprints), Cloudways Toolkit (60 tools), CRM Toolkit A–E (70+ tools), Chat UI Enhancements.
 
 ### Previous Updates (April 2026)
 

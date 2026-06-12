@@ -1,8 +1,8 @@
 # Built-in tool reference
 
-**Status:** ✅ UPDATED - April 2026  
-**Tool Count:** 230+ base/extended tools registered in `load_default_tools`; 400+ total including Pro addon  
-**Last Updated:** April 15, 2026
+**Status:** ✅ UPDATED - June 2026  
+**Tool Count:** ~195 base tools + ~800+ Pro tools = ~1,000+ total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)  
+**Last Updated:** June 12, 2026
 
 NV oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 

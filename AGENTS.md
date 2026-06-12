@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **May 31, 2026** · Version: **1.5**
+> Last reviewed: **June 12, 2026** · Version: **1.6**
 
 ### Related Files
 
@@ -90,6 +90,10 @@ Every agent session loads these two files:
 | [`.context/pro-vs-base.md`](.context/pro-vs-base.md) | Making Base vs Pro placement decisions |
 | [`docs/features/llm-harness.md`](docs/features/llm-harness.md) | Working on LLM Harnessing (Layers A–H) |
 | [`docs/features/memory/chat-client-integration.md`](docs/features/memory/chat-client-integration.md) | Working on the Chat-client Memory Bridge or Memory Drawer |
+| [`docs/features/context-window-management.md`](docs/features/context-window-management.md) | Working on context-window validation, tiktoken, or token-budget capping |
+| [`docs/features/pro-toolkit-optimization.md`](docs/features/pro-toolkit-optimization.md) | Working on Pro toolkit performance optimization classes |
+| [`docs/features/dietpi-pro-toolkit.md`](docs/features/dietpi-pro-toolkit.md) | Working on DietPi server management tools |
+| [`docs/features/layer-i-guardrails.md`](docs/features/layer-i-guardrails.md) | Working on jailbreak prevention or capability boundaries |
 
 ### Folder context (loaded per folder being edited)
 

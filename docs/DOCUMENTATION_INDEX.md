@@ -9,7 +9,20 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
-> **📌 JUNE 5, 2026 UPDATE (v1.1.27):** ⚡🧰🔧💰 **REAL-TIME SSE STREAMING, 35 OOS CORE TOOLS, JFB SUBMISSION FIXES, MODEL PRICING UPDATE**
+> **📌 JUNE 12, 2026 UPDATE (v1.1.29):** ⚡🧠🥧🛡️ **PRO TOOLKIT OPTIMIZATIONS, CHAT TRANSCRIPT & MEMORY RETENTION, DIETPI PRO TOOLKIT, LAYER I GUARDRAILS, CONTEXT WINDOW MANAGEMENT, LIBRECHAT, SCHEDULE ANYTHING SAAS, VECTOR SEARCH, CRM ENHANCEMENTS**
+> - **Pro Toolkit Optimizations Phase 1–3** — Autoload control, query caching, and lazy loading across 6 Pro toolkits (Chat Channels, Social Media, Healthcare, Ecommerce, Calendar/Orchestration, Document Generation). Full doc: [`docs/features/pro-toolkit-optimization.md`](features/pro-toolkit-optimization.md).
+> - **Chat Transcript & Memory Retention** — `WP_MCP_AI_Transcript_Retention` (Base, 437 lines) and `WP_MCP_AI_Memory_Retention` (Pro, 358 lines) with configurable TTL-based cleanup. Full doc: [`docs/features/chat-transcript-retention.md`](features/chat-transcript-retention.md).
+> - **DietPi Pro Toolkit Phases 0–3** — 19+ tools for DietPi server management (system info, backup, provisioning, SSH proxy). MCP server integration. Full doc: [`docs/features/dietpi-pro-toolkit.md`](features/dietpi-pro-toolkit.md).
+> - **Layer I Guardrails — Jailbreak Prevention** — Pre-provider jailbreak detection and capability boundary enforcement. Full doc: [`docs/features/layer-i-guardrails.md`](features/layer-i-guardrails.md).
+> - **Context Window Management** — Pre-flight validation across all 13 providers via shared `validate_context_window()` helper with tiktoken integration, estimator metabox, and token-budget tool capping. Full doc: [`docs/features/context-window-management.md`](features/context-window-management.md).
+> - **LibreChat Addon** — Code interpreter, speech services, and web search reranker.
+> - **Schedule Anything SaaS Platform** — Full SaaS booking platform with Stripe integration.
+> - **Vector Search Enhancements** — HNSW index, content/context embedding stores, hybrid semantic search.
+> - **CRM Enhancements** — Email import with scheduled polling, lead pruning, inline tag editing, email priority/exclude actions.
+> - **OAuth/API Disconnect Buttons** — One-click disconnect with automatic token clearing.
+> - **Bug Fixes** — 25+ fixes: CPT slug length limits, agentic loop tool persistence, slider/range rendering, well-known endpoints, tool-status guard, docs hub rebuild stalls, chat addon endpoints, provider validation, playbook orphans, and more.
+> - **Security** — guzzlehttp/psr7 CVE-2026-49214, shell-quote CVE-2026-9277, dependabot alerts #211–#213.
+> - **Versioning** — bumped to 1.1.29 across all manifests. Tool count: ~195 base + ~795 Pro (~990 total; live registry is authoritative).
 > - **Real-Time SSE Streaming** — Enabled for OpenAI, DeepSeek, and all OpenAI-compatible providers. "Disable Native Streaming" toggle in Advanced → System tab. `wp_mcp_ai_disable_native_streaming` filter.
 > - **35 New OOS Core Tools** — Data tools (GetPostTaxonomies, CountPosts, GetPostMeta, TruncateText, MergeArrays), format tools (FormatDate, TimeAgo, ParseCsv, MathEval, ColorConvert), infrastructure (EventDispatcher, Queue), cache tools, and OOS/core test infrastructure.
 > - **Extended Cognition Vision Recognition** — Visual product/brand recognition. Camera viewfinder UI with detection overlays, consent gate.
