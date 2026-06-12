@@ -3,7 +3,7 @@
  * Toolkit MCP Servers — Bootstrap
  *
  * Loads framework classes, primes the registry on init, and registers all
- * Tier-1 toolkit servers (Phases 1 + 2 = 19 servers).
+ * toolkit servers (Phases 1-3 + 6 + DietPi = 29 servers).
  *
  * @package WP_MCP_AI_Pro
  * @since 1.2.0
@@ -55,6 +55,9 @@ require_once __DIR__ . '/servers/class-wp-mcp-ai-healthcare-imaging-mcp-server.p
 require_once __DIR__ . '/servers/class-wp-mcp-ai-healthcare-wellness-mcp-server.php';
 require_once __DIR__ . '/servers/class-wp-mcp-ai-site-creator-mcp-server.php';
 
+// DietPi Pro Toolkit (Phase 1).
+require_once __DIR__ . '/servers/class-wp-mcp-ai-dietpi-mcp-server.php';
+
 // Phase 6 — /.well-known/mcp discovery endpoint.
 require_once __DIR__ . '/class-wp-mcp-ai-pro-well-known-mcp.php';
 
@@ -102,6 +105,9 @@ add_action(
 		$registry->register( new WP_MCP_AI_Regulatory_Registration_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Social_Media_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Video_Production_MCP_Server() );
+
+		// DietPi Pro Toolkit.
+		$registry->register( new WP_MCP_AI_DietPi_MCP_Server() );
 
 		// Phase 6 Tier-2 promotions (alphabetical).
 		$registry->register( new WP_MCP_AI_Analytics_MCP_Server() );
