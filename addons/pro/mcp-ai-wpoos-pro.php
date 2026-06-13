@@ -438,6 +438,49 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
+		// Load Pro SPA (v1.7.0) — React Single Page Application admin interface.
+		// Registers admin page, enqueues assets, and exposes bootstrap REST endpoint.
+		if ( is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			$spa_loader    = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-spa-loader.php';
+			$spa_bootstrap = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-spa-bootstrap-controller.php';
+
+			if ( file_exists( $spa_loader ) ) {
+				require_once $spa_loader;
+				$loader = new WP_MCP_AI_Pro_SPA_Loader();
+				$loader->register();
+			}
+
+			if ( file_exists( $spa_bootstrap ) ) {
+				require_once $spa_bootstrap;
+				add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_SPA_Bootstrap_Controller', 'register_routes' ) );
+			}
+		}
+
+		// Load Pro Inline Assistant (v1.7.0) — Gutenberg sidebar for AI text transformation.
+		$inline_assistant = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-inline-assistant.php';
+		if ( file_exists( $inline_assistant ) ) {
+			require_once $inline_assistant;
+			WP_MCP_AI_Pro_Inline_Assistant::init();
+		}
+
+		// Load Pro Parallel Model Dispatcher (v1.7.0) — multi-model comparison.
+		$parallel_dispatcher   = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-parallel-model-dispatcher.php';
+		$comparison_controller = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-model-comparison-controller.php';
+		if ( file_exists( $parallel_dispatcher ) ) {
+			require_once $parallel_dispatcher;
+		}
+		if ( file_exists( $comparison_controller ) ) {
+			require_once $comparison_controller;
+			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_Model_Comparison_Controller', 'register_routes' ) );
+		}
+
+		// Load Pro Collaborative Presence (v1.7.0) — real-time user presence for collaborative editing.
+		$collaborative_presence = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-collaborative-presence.php';
+		if ( file_exists( $collaborative_presence ) ) {
+			require_once $collaborative_presence;
+			WP_MCP_AI_Pro_Collaborative_Presence::init();
+		}
+
 		// WebChat integration has been moved to the NV oOS Embedded addon.
 		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 
