@@ -223,6 +223,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$this->handle_upwork_oauth_callback();
 		}
 
+		// Handle LinkedIn OAuth connect action.
+		if ( 'linkedin_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = sanitize_key( wp_unslash( $_GET['_wpnonce'] ) );
+			$connection_id = sanitize_key( wp_unslash( $_GET['connection_id'] ) );
+			if ( ! wp_verify_nonce( $nonce, 'linkedin_oauth_connect_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+			$this->handle_linkedin_oauth_start( $connection_id );
+		}
+
+		// Handle LinkedIn OAuth callback action.
+		if ( 'linkedin_oauth_callback' === $oauth_handler ) {
+			$this->handle_linkedin_oauth_callback();
+		}
+
 		// Handle Google Chat OAuth connect action.
 		if ( 'google_chat_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
 			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -327,6 +342,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$client_secret = isset( $_POST['upwork_client_secret'] ) ? wp_unslash( $_POST['upwork_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$refresh_token = isset( $_POST['upwork_refresh_token'] ) ? wp_unslash( $_POST['upwork_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$user_email    = isset( $_POST['upwork_user_email'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_user_email'] ) ) : '';
+					break;
+				case 'linkedin':
+					$client_id     = isset( $_POST['linkedin_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['linkedin_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['linkedin_client_secret'] ) ? wp_unslash( $_POST['linkedin_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$refresh_token = isset( $_POST['linkedin_refresh_token'] ) ? wp_unslash( $_POST['linkedin_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$user_email    = isset( $_POST['linkedin_user_email'] ) ? sanitize_text_field( wp_unslash( $_POST['linkedin_user_email'] ) ) : '';
 					break;
 				case 'telegram':
 					$api_key = isset( $_POST['telegram_bot_token'] ) ? wp_unslash( $_POST['telegram_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -771,7 +792,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 * @since 1.0.0
 	 */
 	public function render_admin_page() {
-		$connections        = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only; nonce not required for read operations.
 		$editing            = isset( $_GET['edit'] ) ? sanitize_key( $_GET['edit'] ) : '';
 		$connection_to_edit = null;
 
@@ -789,7 +811,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Remote Site Connections', 'mcp-ai-wpoos-pro' ); ?></h1>
 
-			<?php if ( isset( $_GET['saved'] ) ) : ?>
+			<?php if ( isset( $_GET['saved'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Connection saved successfully.', 'mcp-ai-wpoos-pro' ); ?></p>
 				</div>
@@ -802,6 +824,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			<?php endif; ?>
 
 			<?php if ( isset( $_GET['error'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
 				<?php $error_message = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : ''; ?>
 				<div class="notice notice-error is-dismissible">
 					<p><?php echo esc_html( $error_message ); ?></p>
@@ -810,6 +833,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 			<?php if ( isset( $_GET['test_success'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 				<?php
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag.
 				$editing      = isset( $_GET['edit'] ) ? sanitize_key( $_GET['edit'] ) : '';
 				$test_results = $editing ? get_transient( 'wp_mcp_ai_test_result_' . $editing ) : false;
 				?>
@@ -819,10 +843,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<ul style="margin: 10px 0; padding-left: 20px;">
 							<?php if ( isset( $test_results['whatsapp'] ) && $test_results['whatsapp'] ) : ?>
 								<?php if ( ! empty( $test_results['phone_number'] ) ) : ?>
-									<li><?php echo esc_html( sprintf( __( 'Phone Number: %s', 'mcp-ai-wpoos-pro' ), $test_results['phone_number'] ) ); ?></li>
+									<li><?php echo esc_html( sprintf( /* translators: %s: WhatsApp phone number */ __( 'Phone Number: %s', 'mcp-ai-wpoos-pro' ), $test_results['phone_number'] ) ); ?></li>
 								<?php endif; ?>
 								<?php if ( ! empty( $test_results['verified_name'] ) ) : ?>
-									<li><?php echo esc_html( sprintf( __( 'Verified Name: %s', 'mcp-ai-wpoos-pro' ), $test_results['verified_name'] ) ); ?></li>
+									<li><?php echo esc_html( sprintf( /* translators: %s: verified business name */ __( 'Verified Name: %s', 'mcp-ai-wpoos-pro' ), $test_results['verified_name'] ) ); ?></li>
 								<?php endif; ?>
 								<?php if ( ! empty( $test_results['quality_rating'] ) ) : ?>
 									<li>
@@ -837,12 +861,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 										} else {
 											$quality_color = '#d63638';
 										}
-										echo wp_kses_post( sprintf( __( 'Quality Rating: <span style="color: %1$s; font-weight: bold;">%2$s</span>', 'mcp-ai-wpoos-pro' ), $quality_color, $quality_upper ) );
+										echo wp_kses_post( sprintf( /* translators: 1: color hex code, 2: quality rating label */ __( 'Quality Rating: <span style="color: %1$s; font-weight: bold;">%2$s</span>', 'mcp-ai-wpoos-pro' ), $quality_color, $quality_upper ) );
 										?>
 									</li>
 								<?php endif; ?>
 								<?php if ( ! empty( $test_results['business_name'] ) ) : ?>
-									<li><?php echo esc_html( sprintf( __( 'Business Profile: %s', 'mcp-ai-wpoos-pro' ), $test_results['business_name'] ) ); ?></li>
+									<li><?php echo esc_html( sprintf( /* translators: %s: business profile name */ __( 'Business Profile: %s', 'mcp-ai-wpoos-pro' ), $test_results['business_name'] ) ); ?></li>
 								<?php endif; ?>
 								<?php if ( isset( $test_results['has_app_secret'] ) && $test_results['has_app_secret'] ) : ?>
 									<li style="color: #00a32a;">✓ <?php esc_html_e( 'App Secret configured (webhook signatures will be validated)', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -855,13 +879,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<?php endif; ?>
 							<?php elseif ( isset( $test_results['telegram'] ) && $test_results['telegram'] ) : ?>
 								<?php if ( ! empty( $test_results['bot_name'] ) ) : ?>
-									<li><?php echo esc_html( sprintf( __( 'Bot Name: %s', 'mcp-ai-wpoos-pro' ), $test_results['bot_name'] ) ); ?></li>
+									<li><?php echo esc_html( sprintf( /* translators: %s: Telegram bot name */ __( 'Bot Name: %s', 'mcp-ai-wpoos-pro' ), $test_results['bot_name'] ) ); ?></li>
 								<?php endif; ?>
 								<?php if ( ! empty( $test_results['bot_username'] ) ) : ?>
-									<li><?php echo esc_html( sprintf( __( 'Bot Username: @%s', 'mcp-ai-wpoos-pro' ), ltrim( $test_results['bot_username'], '@' ) ) ); ?></li>
+									<li><?php echo esc_html( sprintf( /* translators: %s: Telegram bot username */ __( 'Bot Username: @%s', 'mcp-ai-wpoos-pro' ), ltrim( $test_results['bot_username'], '@' ) ) ); ?></li>
 								<?php endif; ?>
 								<?php if ( ! empty( $test_results['bot_id'] ) ) : ?>
-									<li><?php echo esc_html( sprintf( __( 'Bot ID: %s', 'mcp-ai-wpoos-pro' ), $test_results['bot_id'] ) ); ?></li>
+									<li><?php echo esc_html( sprintf( /* translators: %s: Telegram bot ID */ __( 'Bot ID: %s', 'mcp-ai-wpoos-pro' ), $test_results['bot_id'] ) ); ?></li>
 								<?php endif; ?>
 								<?php if ( ! empty( $test_results['webhook_url'] ) ) : ?>
 									<li>
@@ -870,7 +894,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									</li>
 								<?php endif; ?>
 							<?php elseif ( isset( $test_results['site_name'] ) ) : ?>
-								<li><?php echo esc_html( sprintf( __( 'Site: %s', 'mcp-ai-wpoos-pro' ), $test_results['site_name'] ) ); ?></li>
+								<li><?php echo esc_html( sprintf( /* translators: %s: remote site name */ __( 'Site: %s', 'mcp-ai-wpoos-pro' ), $test_results['site_name'] ) ); ?></li>
 								<?php if ( isset( $test_results['woocommerce'] ) && $test_results['woocommerce'] ) : ?>
 									<li style="color: #00a32a;">✓ <?php esc_html_e( 'WooCommerce detected', 'mcp-ai-wpoos-pro' ); ?></li>
 								<?php endif; ?>
@@ -896,6 +920,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			<?php endif; ?>
 
 			<?php if ( isset( $_GET['test_error'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
 				<?php $test_error = isset( $_GET['test_error'] ) ? sanitize_text_field( wp_unslash( $_GET['test_error'] ) ) : ''; ?>
 				<div class="notice notice-error is-dismissible">
 					<p><?php echo esc_html( urldecode( $test_error ) ); ?></p>
@@ -903,13 +928,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			<?php endif; ?>
 
 			<?php if ( isset( $_GET['oauth_success'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
 				<?php $oauth_success = isset( $_GET['oauth_success'] ) ? sanitize_text_field( wp_unslash( $_GET['oauth_success'] ) ) : ''; ?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php echo esc_html( urldecode( $oauth_success ) ); ?></p>
 				</div>
 			<?php endif; ?>
 
-			<?php if ( $editing || isset( $_GET['add'] ) ) : ?>
+			<?php if ( $editing || isset( $_GET['add'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only query flag. ?>
 				<?php $this->render_edit_form( $connection_to_edit ); ?>
 			<?php else : ?>
 				<?php $this->render_connections_list( $connections ); ?>
@@ -1346,6 +1372,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="upwork" <?php selected( $connection_type, 'upwork' ); ?>>
 								<?php esc_html_e( 'Upwork (Freelance Marketplace)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="linkedin" <?php selected( $connection_type, 'linkedin' ); ?>>
+								<?php esc_html_e( 'LinkedIn (Professional Network)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="telegram" <?php selected( $connection_type, 'telegram' ); ?>>
 								<?php esc_html_e( 'Telegram (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
@@ -2397,6 +2426,104 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</span>
 						<?php endif; ?>
 						<p class="description"><?php esc_html_e( 'Click to authorize this plugin to access your Upwork account via OAuth 2.0.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<?php endif; ?>
+
+				<!-- Type-specific fields for LinkedIn -->
+				<tr class="linkedin-only-field" style="display: none;">
+					<th scope="row">
+						<label for="linkedin_client_id"><?php esc_html_e( 'OAuth Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="linkedin_client_id" id="linkedin_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your LinkedIn app Client ID from the LinkedIn Developer Portal.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="linkedin-only-field" style="display: none;">
+					<th scope="row">
+						<label for="linkedin_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="linkedin_client_secret" id="linkedin_client_secret" class="regular-text" value="" autocomplete="new-password" placeholder="<?php $is_edit ? esc_attr_e( 'Leave blank to keep existing secret', 'mcp-ai-wpoos-pro' ) : ''; ?>">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing client secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your LinkedIn app Client Secret. Stored encrypted.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr class="linkedin-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Redirect URI', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$linkedin_redirect_uri = add_query_arg(
+							array(
+								'page'          => 'wp-mcp-ai-remote-sites',
+								'oauth_handler' => 'linkedin_oauth_callback',
+							),
+							admin_url( 'admin.php' )
+						);
+						?>
+						<code style="word-break: break-all;"><?php echo esc_url( $linkedin_redirect_uri ); ?></code>
+						<p class="description"><?php esc_html_e( 'Add this URL as an Authorized Redirect URI in your LinkedIn app settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="linkedin-only-field" style="display: none;">
+					<th scope="row">
+						<label for="linkedin_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="password" name="linkedin_refresh_token" id="linkedin_refresh_token" class="regular-text" value="" autocomplete="new-password" placeholder="<?php $is_edit ? esc_attr_e( 'Auto-populated by OAuth flow', 'mcp-ai-wpoos-pro' ) : ''; ?>">
+						<p class="description"><?php esc_html_e( 'Auto-populated after completing the OAuth flow. Do not enter manually.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="linkedin-only-field" style="display: none;">
+					<th scope="row">
+						<label for="linkedin_user_email"><?php esc_html_e( 'LinkedIn Email (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="linkedin_user_email" id="linkedin_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="you@example.com">
+						<p class="description"><?php esc_html_e( 'Your LinkedIn account email (auto-populated after OAuth connect).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<?php if ( $is_edit && 'linkedin' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+				<tr class="linkedin-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Connect LinkedIn Account', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$linkedin_oauth_url = add_query_arg(
+							array(
+								'page'          => 'wp-mcp-ai-remote-sites',
+								'oauth_handler' => 'linkedin_oauth_connect',
+								'connection_id' => $connection['id'],
+								'_wpnonce'      => wp_create_nonce( 'linkedin_oauth_connect_' . $connection['id'] ),
+							),
+							admin_url( 'admin.php' )
+						);
+						?>
+						<a href="<?php echo esc_url( $linkedin_oauth_url ); ?>" class="button button-primary">
+							<?php esc_html_e( '🔗 Connect LinkedIn Account', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+						<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
+							<span class="dashicons dashicons-yes" style="color: green; vertical-align: middle; margin-left: 8px;"></span>
+							<span style="color: green;">
+								<?php
+								if ( ! empty( $connection['user_email'] ) ) {
+									echo esc_html(
+										sprintf(
+											/* translators: %s: LinkedIn email */
+											__( 'Connected as: %s', 'mcp-ai-wpoos-pro' ),
+											$connection['user_email']
+										)
+									);
+								} else {
+									esc_html_e( 'Connected', 'mcp-ai-wpoos-pro' );
+								}
+								?>
+							</span>
+						<?php endif; ?>
+						<p class="description"><?php esc_html_e( 'Click to authorize this plugin to access your LinkedIn account via OAuth 2.0.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 				<?php endif; ?>
@@ -5689,6 +5816,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var shipengineFields = document.querySelectorAll('.shipengine-only-field');
 			var shipstationFields = document.querySelectorAll('.shipstation-only-field');
 			var upworkFields = document.querySelectorAll('.upwork-only-field');
+			var linkedinFields = document.querySelectorAll('.linkedin-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -5775,6 +5903,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			upworkFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			linkedinFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -5869,6 +6000,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				// Upwork doesn't use the standard auth_type, it has its own OAuth flow
+				authTypeSelect.value = 'none';
+			} else if (connectionType === 'linkedin') {
+				linkedinFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// LinkedIn uses OAuth, set URL to LinkedIn API
+				urlField.value = 'https://api.linkedin.com/rest';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				// LinkedIn doesn't use the standard auth_type, it has its own OAuth flow
 				authTypeSelect.value = 'none';
 			} else if (connectionType === 'telegram') {
 				telegramFields.forEach(function(field) {
@@ -8683,7 +8825,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
 		if ( $error ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Google */ __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
 			exit;
 		}
 
@@ -8913,7 +9055,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
 		if ( $error ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Google */ __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
 			exit;
 		}
 
@@ -9137,7 +9279,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
 		if ( $error ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Google */ __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
 			exit;
 		}
 
@@ -9393,7 +9535,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		if ( $error ) {
 			$message = $error_description ? $error_description : $error;
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Microsoft OAuth error: %s', 'mcp-ai-wpoos-pro' ), $message ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( /* translators: %s: OAuth error from Microsoft */ __( 'Microsoft OAuth error: %s', 'mcp-ai-wpoos-pro' ), $message ) ) ) );
 			exit;
 		}
 
@@ -9720,7 +9862,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$zip = new ZipArchive();
 		if ( true !== $zip->open( $tmp_file, ZipArchive::OVERWRITE ) ) {
-			@unlink( $tmp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			@unlink( $tmp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.unlink_unlink -- Temp file cleanup after failed ZIP open.
 			wp_send_json_error( __( 'Could not open ZIP archive for writing.', 'mcp-ai-wpoos-pro' ) );
 			return;
 		}
@@ -9730,8 +9872,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$zip->addFromString( 'outline.png', $outline_png );
 		$zip->close();
 
-		$zip_contents = @file_get_contents( $tmp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-		@unlink( $tmp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		$zip_contents = @file_get_contents( $tmp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local generated ZIP in memory.
+		@unlink( $tmp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.unlink_unlink -- Temp file cleanup after ZIP read.
 
 		if ( false === $zip_contents ) {
 			wp_send_json_error( __( 'Could not read the generated ZIP file.', 'mcp-ai-wpoos-pro' ) );
@@ -14290,6 +14432,179 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
+		exit;
+	}
+
+	/**
+	 * Handle LinkedIn OAuth 2.0 connect — redirect to LinkedIn authorization.
+	 *
+	 * @since 2.10.0
+	 * @param string $connection_id Connection ID.
+	 */
+	protected function handle_linkedin_oauth_start( $connection_id ) {
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		if ( 'linkedin' !== $connection['connection_type'] ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a LinkedIn connection.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		// Build the LinkedIn authorization URL.
+		$state  = wp_generate_uuid4();
+		$scopes = array( 'openid', 'profile', 'email' );
+
+		// Store state for CSRF verification.
+		set_transient( 'wp_mcp_ai_linkedin_oauth_state_' . md5( $state ), $connection_id, 10 * MINUTE_IN_SECONDS );
+
+		$params = array(
+			'response_type' => 'code',
+			'client_id'     => $connection['client_id'],
+			'redirect_uri'  => add_query_arg(
+				array(
+					'page'          => 'wp-mcp-ai-remote-sites',
+					'oauth_handler' => 'linkedin_oauth_callback',
+				),
+				admin_url( 'admin.php' )
+			),
+			'state'         => $state,
+			'scope'         => implode( ' ', $scopes ),
+		);
+
+		$authorize_url = add_query_arg( $params, 'https://www.linkedin.com/oauth/v2/authorization' );
+
+		wp_safe_redirect( $authorize_url );
+		exit;
+	}
+
+	/**
+	 * Handle the LinkedIn OAuth 2.0 callback after user authorization.
+	 *
+	 * @since 2.10.0
+	 */
+	protected function handle_linkedin_oauth_callback() {
+		// OAuth callback — state parameter provides CSRF protection.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+
+		if ( $error ) {
+			wp_safe_redirect(
+				admin_url(
+					'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode(
+						sprintf(
+							/* translators: %s: OAuth error message */
+							__( 'LinkedIn OAuth error: %s', 'mcp-ai-wpoos-pro' ),
+							$error
+						)
+					)
+				)
+			);
+			exit;
+		}
+
+		$transient_key = 'wp_mcp_ai_linkedin_oauth_state_' . md5( $state );
+		$connection_id = get_transient( $transient_key );
+
+		if ( ! $connection_id ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Invalid or expired OAuth state. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		delete_transient( $transient_key );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		// Exchange authorization code for tokens.
+		$redirect_uri = add_query_arg(
+			array(
+				'page'          => 'wp-mcp-ai-remote-sites',
+				'oauth_handler' => 'linkedin_oauth_callback',
+			),
+			admin_url( 'admin.php' )
+		);
+
+		$token_response = wp_remote_post(
+			'https://www.linkedin.com/oauth/v2/accessToken',
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Content-Type' => 'application/x-www-form-urlencoded',
+				),
+				'body'    => array(
+					'grant_type'    => 'authorization_code',
+					'code'          => $code,
+					'client_id'     => $connection['client_id'],
+					'client_secret' => WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] ),
+					'redirect_uri'  => $redirect_uri,
+				),
+			)
+		);
+
+		if ( is_wp_error( $token_response ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $token_response->get_error_message() ) ) );
+			exit;
+		}
+
+		$status  = wp_remote_retrieve_response_code( $token_response );
+		$body    = wp_remote_retrieve_body( $token_response );
+		$decoded = json_decode( $body, true );
+
+		if ( 200 !== $status || ! is_array( $decoded ) || empty( $decoded['access_token'] ) ) {
+			$err_msg = isset( $decoded['error_description'] ) ? $decoded['error_description'] : __( 'Unknown token exchange error.', 'mcp-ai-wpoos-pro' );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $err_msg ) ) );
+			exit;
+		}
+
+		$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
+		$access_token  = isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '';
+
+		// Fall back to existing refresh_token if none returned.
+		if ( '' === $refresh_token && ! empty( $connection['refresh_token'] ) ) {
+			$refresh_token = $connection['refresh_token'];
+		}
+
+		if ( '' === $refresh_token ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		// Save the updated connection data.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => $connection['name'],
+			'url'             => $connection['url'],
+			'connection_type' => 'linkedin',
+			'auth_type'       => 'none',
+			'client_id'       => $connection['client_id'],
+			'client_secret'   => '',
+			'refresh_token'   => $refresh_token,
+			'user_email'      => isset( $connection['user_email'] ) ? $connection['user_email'] : '',
+			'enabled'         => $connection['enabled'],
+		);
+		// Flag already-encrypted client_secret to prevent double-encryption.
+		$update_data['_client_secret_encrypted'] = true;
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		if ( is_wp_error( $result ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
+			exit;
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( __( 'LinkedIn account connected successfully!', 'mcp-ai-wpoos-pro' ) ) ) );
 		exit;
 	}
 }
