@@ -440,19 +440,23 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load Pro SPA (v1.7.0) — React Single Page Application admin interface.
 		// Registers admin page, enqueues assets, and exposes bootstrap REST endpoint.
-		if ( is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
-			$spa_loader    = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-spa-loader.php';
-			$spa_bootstrap = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-spa-bootstrap-controller.php';
 
+		// Bootstrap REST route must be registered on every request — REST_REQUEST
+		// is not defined yet when plugins_loaded fires, so the is_admin() gate
+		// would skip it for REST API calls, causing "No route was found" 404s.
+		$spa_bootstrap = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-spa-bootstrap-controller.php';
+		if ( file_exists( $spa_bootstrap ) ) {
+			require_once $spa_bootstrap;
+			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_SPA_Bootstrap_Controller', 'register_routes' ) );
+		}
+
+		// SPA loader (menu page + asset enqueue) is admin-only.
+		if ( is_admin() ) {
+			$spa_loader = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-spa-loader.php';
 			if ( file_exists( $spa_loader ) ) {
 				require_once $spa_loader;
 				$loader = new WP_MCP_AI_Pro_SPA_Loader();
 				$loader->register();
-			}
-
-			if ( file_exists( $spa_bootstrap ) ) {
-				require_once $spa_bootstrap;
-				add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_SPA_Bootstrap_Controller', 'register_routes' ) );
 			}
 		}
 
