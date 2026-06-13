@@ -9217,10 +9217,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			$preview = '';
+			$preview    = '';
+			$turn_count = 0;
 
 			if ( '' !== $session_key ) {
-				$preview = $this->get_session_preview_text( $session_key, $user_id );
+				$session_data = $this->get_session_preview_and_turn_count( $session_key, $user_id );
+				$preview      = $session_data['preview'];
+				$turn_count   = $session_data['turn_count'];
+			}
+
+			// Fall back to SQL COUNT(*) only when the per-message count is zero (no
+			// request_payload rows found or payload missing messages).
+			if ( 0 === $turn_count && isset( $row['turn_count'] ) ) {
+				$turn_count = (int) $row['turn_count'];
 			}
 
 			return array(
@@ -9231,7 +9240,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'started_at'      => $this->format_transcript_timestamp( isset( $row['started_at'] ) ? $row['started_at'] : '', isset( $row['first_created'] ) ? $row['first_created'] : '' ),
 				'completed_at'    => $this->format_transcript_timestamp( isset( $row['completed_at'] ) ? $row['completed_at'] : '', isset( $row['last_created'] ) ? $row['last_created'] : '' ),
 				'updated_at'      => $this->format_transcript_timestamp( isset( $row['last_created'] ) ? $row['last_created'] : '', isset( $row['completed_at'] ) ? $row['completed_at'] : '' ),
-				'turn_count'      => isset( $row['turn_count'] ) ? (int) $row['turn_count'] : 0,
+				'turn_count'      => $turn_count,
 				'preview'         => $preview,
 			);
 		}
@@ -9290,6 +9299,85 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return '';
+		}
+
+		/**
+		 * Load preview text and accurate turn count from a session's stored
+		 * request_payload in a single query.
+		 *
+		 * The listing query uses COUNT(*) which always returns 1 after the
+		 * transcript recorder switched to upsert behaviour (each session_key
+		 * maps to exactly one row).  Counting user messages inside the
+		 * stored payload gives the true number of conversation turns.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $session_key Session key.
+		 * @param int    $user_id     User identifier.
+		 * @return array{preview: string, turn_count: int}
+		 */
+		protected function get_session_preview_and_turn_count( $session_key, $user_id ) {
+			global $wpdb;
+
+			$result = array(
+				'preview'    => '',
+				'turn_count' => 0,
+			);
+
+			if ( '' === $session_key ) {
+				return $result;
+			}
+
+			$table = esc_sql( $this->get_transcript_table_name() );
+
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql() above.
+			$query = $wpdb->prepare(
+				"SELECT request_payload
+	             FROM {$table}
+	             WHERE session_key = %s AND cct_author_id = %d
+	             ORDER BY cct_created ASC
+	             LIMIT 1",
+				$session_key,
+				absint( $user_id )
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+			$row = $wpdb->get_row( $query, ARRAY_A );
+
+			if ( empty( $row['request_payload'] ) ) {
+				return $result;
+			}
+
+			$payload = json_decode( $row['request_payload'], true );
+
+			if ( ! is_array( $payload ) || empty( $payload['messages'] ) || ! is_array( $payload['messages'] ) ) {
+				return $result;
+			}
+
+			$user_message_count = 0;
+
+			foreach ( $payload['messages'] as $message ) {
+				if ( ! isset( $message['role'] ) ) {
+					continue;
+				}
+
+				if ( 'user' === $message['role'] ) {
+					++$user_message_count;
+
+					// Capture the first user message as the preview.
+					if ( '' === $result['preview'] ) {
+						$text = $this->prepare_message_text( $message );
+						if ( '' !== $text ) {
+							$result['preview'] = $text;
+						}
+					}
+				}
+			}
+
+			$result['turn_count'] = $user_message_count;
+
+			return $result;
 		}
 
 		/**
