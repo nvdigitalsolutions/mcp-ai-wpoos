@@ -160,6 +160,7 @@ if ( $is_enabled && ! $is_base ) {
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/crm/.
 	// Upwork sub-tools are in: addons/pro/includes/tools/crm/upwork/.
+	// LinkedIn sub-tools are in: addons/pro/includes/tools/crm/linkedin/.
 
 	// ---- Phase C: Chat channel message → CRM inbound pipeline listener ----
 	add_action( 'wp_mcp_ai_chat_channel_message_received', 'wp_mcp_ai_crm_handle_chat_channel_message', 10, 6 );
