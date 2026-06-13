@@ -843,6 +843,39 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project' => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-promote-resource-to-project.php',
 			// MemPalace capture tool (Phase B1) — decision/status/ADR.
 			'WP_MCP_AI_Tool_PM_Capture_Decision'           => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-pm-capture-decision.php',
+			// PM Analytics tools (Pro feature - v2.7.0).
+			'WP_MCP_AI_Tool_Get_Burndown_Chart'            => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/analytics/class-wp-mcp-ai-tool-get-burndown-chart.php',
+			'WP_MCP_AI_Tool_Get_Team_Velocity'             => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/analytics/class-wp-mcp-ai-tool-get-team-velocity.php',
+			'WP_MCP_AI_Tool_Get_Portfolio_Health'          => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/analytics/class-wp-mcp-ai-tool-get-portfolio-health.php',
+			'WP_MCP_AI_Tool_Get_Resource_Utilization'      => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/analytics/class-wp-mcp-ai-tool-get-resource-utilization.php',
+			'WP_MCP_AI_Tool_Get_Project_Timeline'          => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/analytics/class-wp-mcp-ai-tool-get-project-timeline.php',
+			'WP_MCP_AI_Tool_Forecast_Completion'           => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/analytics/class-wp-mcp-ai-tool-forecast-completion.php',
+			// PM Risk tools (Pro feature - v2.7.0).
+			'WP_MCP_AI_Tool_Assess_Project_Risk'           => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/risk/class-wp-mcp-ai-tool-assess-project-risk.php',
+			'WP_MCP_AI_Tool_Detect_Stale_Tasks'            => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/risk/class-wp-mcp-ai-tool-detect-stale-tasks.php',
+			'WP_MCP_AI_Tool_Identify_Blockers'             => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/risk/class-wp-mcp-ai-tool-identify-blockers.php',
+			// PM Command Center query tools (Pro feature - v2.7.0).
+			'WP_MCP_AI_Tool_Get_PM_KPIs'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/command-center/class-wp-mcp-ai-tool-get-pm-kpis.php',
+			'WP_MCP_AI_Tool_Get_Project_Pipeline'          => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/command-center/class-wp-mcp-ai-tool-get-project-pipeline.php',
+			'WP_MCP_AI_Tool_Get_Upcoming_Deadlines'        => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/command-center/class-wp-mcp-ai-tool-get-upcoming-deadlines.php',
+			'WP_MCP_AI_Tool_Get_My_Tasks'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/command-center/class-wp-mcp-ai-tool-get-my-tasks.php',
+			// PM Workflow Automation tools (Pro feature - v2.7.0).
+			'WP_MCP_AI_Tool_Create_PM_Workflow_Rule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/workflow/class-wp-mcp-ai-tool-create-pm-workflow-rule.php',
+			'WP_MCP_AI_Tool_List_PM_Workflow_Rules'        => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/workflow/class-wp-mcp-ai-tool-list-pm-workflow-rules.php',
+			'WP_MCP_AI_Tool_Simulate_PM_Workflow_Rule'     => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/workflow/class-wp-mcp-ai-tool-simulate-pm-workflow-rule.php',
+			// PM Task Template tools (Pro feature - v2.7.0).
+			'WP_MCP_AI_Tool_Create_Task_Template'          => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/templates/class-wp-mcp-ai-tool-create-task-template.php',
+			'WP_MCP_AI_Tool_List_Task_Templates'           => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/templates/class-wp-mcp-ai-tool-list-task-templates.php',
+			'WP_MCP_AI_Tool_Instantiate_Task_Template'     => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/templates/class-wp-mcp-ai-tool-instantiate-task-template.php',
+			// PM Sprint Management tools (Pro feature - v2.7.0).
+			'WP_MCP_AI_Tool_Create_Sprint'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/sprints/class-wp-mcp-ai-tool-create-sprint.php',
+			'WP_MCP_AI_Tool_Plan_Sprint'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/sprints/class-wp-mcp-ai-tool-plan-sprint.php',
+			'WP_MCP_AI_Tool_Close_Sprint'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/sprints/class-wp-mcp-ai-tool-close-sprint.php',
+			// PM Reporting tools (Pro feature - v2.7.0).
+			'WP_MCP_AI_Tool_Generate_Status_Report'        => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/reports/class-wp-mcp-ai-tool-generate-status-report.php',
+			'WP_MCP_AI_Tool_Export_Project_CSV'            => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/reports/class-wp-mcp-ai-tool-export-project-csv.php',
+			// PM Blueprint Import tool (Pro feature - v2.7.0).
+			'WP_MCP_AI_Tool_Import_PM_Blueprint'           => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/examples/class-wp-mcp-ai-tool-import-project-management-blueprint.php',
 			// QMS (ISO 9001:2015 Clause 7.5) tools (Pro feature - v1.2.0).
 			'WP_MCP_AI_Tool_QMS_Create_Controlled_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-create-controlled-document.php',
 			'WP_MCP_AI_Tool_QMS_Submit_For_Review'         => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-submit-for-review.php',
