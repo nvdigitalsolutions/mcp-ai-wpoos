@@ -545,8 +545,27 @@ composer install</pre>
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		// Only load on settings page.
-		if ( strpos( $hook, 'mcp-ai-wpoos-pro' ) === false ) {
+		// Only load on the NV oOS settings dashboard page.
+		// The page slug is 'wp-mcp-ai-dashboard' registered via
+		// WP_MCP_AI_Settings_Dashboard::PAGE_SLUG. WordPress prepends
+		// 'toplevel_page_' for top-level admin menu pages.
+		$is_dashboard = (
+			false !== strpos( $hook, 'wp-mcp-ai-dashboard' ) ||
+			false !== strpos( $hook, 'nvoos-pro-dashboard' )
+		);
+		if ( ! $is_dashboard ) {
+			return;
+		}
+
+		// Only enqueue if we're on the performance_monitoring sub-tab (or default).
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+		if ( 'advanced' !== $tab ) {
+			return;
+		}
+
+		// Avoid double-enqueue if dashboard already loaded this script.
+		if ( wp_script_is( 'wp-mcp-ai-performance-admin', 'enqueued' ) || wp_script_is( 'wp-mcp-ai-performance-admin', 'done' ) ) {
 			return;
 		}
 
@@ -589,6 +608,18 @@ composer install</pre>
 			// Try to run the test programmatically.
 			$result = $this->run_performance_test_programmatically( $test_type );
 
+			// Persist test results so they appear in metrics dashboards and historical trends.
+			// Uses CCT when JetEngine is available, falls back to WordPress options automatically.
+			if ( class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) && isset( $result['metrics'] ) ) {
+				WP_MCP_AI_Performance_Monitor_CCT::store_test_result(
+					$test_type,
+					'admin_dashboard',
+					false,
+					$result['metrics'],
+					isset( $result['test_results'] ) ? $result['test_results'] : array()
+				);
+			}
+
 			if ( $result['success'] ) {
 				wp_send_json_success( $result );
 			} else {
@@ -620,23 +651,24 @@ composer install</pre>
 	 * @return array Test results with success status and message.
 	 */
 	protected function run_performance_test_programmatically( $test_type ) {
-		// Check if exec() function is available.
-		if ( ! function_exists( 'exec' ) ) {
-			return array(
-				'success'     => false,
-				'message'     => __( 'Shell execution is disabled on this server.', 'mcp-ai-wpoos-pro' ),
-				'details'     => __( 'The exec() function is disabled in your PHP configuration. Performance tests requiring PHPUnit cannot run from the admin interface. You can still use the lightweight checks below, or run tests via CLI if you have command-line access.', 'mcp-ai-wpoos-pro' ),
-				'cli_command' => './bin/run-performance-tests.sh --suite=' . $test_type,
-			);
-		}
-
 		// Check if PHPUnit is available.
 		$phpunit_bin = WP_MCP_AI_PATH . 'vendor/bin/phpunit';
 		$has_phpunit = file_exists( $phpunit_bin );
 
 		// If PHPUnit is not available, run lightweight production checks instead.
+		// These work on ALL hosting platforms including Cloudways — no exec() required.
 		if ( ! $has_phpunit ) {
 			return $this->run_lightweight_check( $test_type );
+		}
+
+		// Full PHPUnit tests require shell access. Check if exec() is available.
+		if ( ! function_exists( 'exec' ) ) {
+			// Fall back to lightweight checks since we can't exec PHPUnit.
+			// Include a notice that full tests are unavailable.
+			$result                = $this->run_lightweight_check( $test_type );
+			$result['notice']      = __( 'Full PHPUnit tests require shell access which is disabled on this server. Showing lightweight production-safe checks instead.', 'mcp-ai-wpoos-pro' );
+			$result['cli_command'] = './bin/run-performance-tests.sh --suite=' . $test_type;
+			return $result;
 		}
 
 		// Map test types to file paths.
@@ -721,26 +753,43 @@ composer install</pre>
 			$summary = $this->parse_test_output( $output_text );
 
 			return array(
-				'success' => true,
-				'message' => sprintf(
+				'success'      => true,
+				'message'      => sprintf(
 					/* translators: %1$s: test type, %2$s: test summary */
 					__( '%1$s tests completed successfully. %2$s', 'mcp-ai-wpoos-pro' ),
 					ucfirst( $test_type ),
 					$summary
 				),
-				'output'  => $output_text,
-				'summary' => $summary,
+				'output'       => $output_text,
+				'summary'      => $summary,
+				'metrics'      => array(
+					'avg_response_time' => 0,
+					'memory_peak_mb'    => round( memory_get_peak_usage() / 1024 / 1024, 2 ),
+					'db_queries'        => get_num_queries(),
+				),
+				'test_results' => array(
+					'return_code' => $return_var,
+					'output'      => $output_text,
+				),
 			);
 		} else {
 			return array(
-				'success'     => false,
-				'message'     => sprintf(
+				'success'      => false,
+				'message'      => sprintf(
 					/* translators: %s: test type */
 					__( '%s tests failed. See details below.', 'mcp-ai-wpoos-pro' ),
 					ucfirst( $test_type )
 				),
-				'output'      => $output_text,
-				'return_code' => $return_var,
+				'output'       => $output_text,
+				'return_code'  => $return_var,
+				'metrics'      => array(
+					'error_rate' => 100,
+					'db_queries' => get_num_queries(),
+				),
+				'test_results' => array(
+					'return_code' => $return_var,
+					'failed'      => 1,
+				),
 			);
 		}
 	}
@@ -813,8 +862,20 @@ composer install</pre>
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
+		// Performance_Monitor_CCT is loaded from the base plugin. It falls back to
+		// WordPress options automatically when JetEngine CCT is not active.
 		if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Performance monitoring not available in base version mode.', 'mcp-ai-wpoos-pro' ) ) );
+			wp_send_json_success(
+				array(
+					'trend'               => 'no_data',
+					'avg_response_time'   => 0,
+					'avg_memory_usage'    => 0,
+					'avg_db_queries'      => 0,
+					'status_distribution' => array(),
+					'total_tests'         => 0,
+					'message'             => __( 'Performance Monitor CCT not loaded.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
 		}
 
 		$component = isset( $_POST['component'] ) ? sanitize_key( $_POST['component'] ) : 'rest_api';
@@ -1130,24 +1191,41 @@ composer install</pre>
 
 		$output = $this->format_check_results( $checks );
 
-		return array(
-			'success' => 0 === $failed,
-			'message' => sprintf(
-				/* translators: %1$s: test type, %2$d: passed checks, %3$d: failed checks */
+		$result = array(
+			'success'      => 0 === $failed,
+			'message'      => sprintf(
+				/* translators: %1$s: test type, %2$d: passed checks, %3$d: failed checks, %4$d: warnings */
 				__( '%1$s check completed: %2$d passed, %3$d failed, %4$d warnings', 'mcp-ai-wpoos-pro' ),
 				ucfirst( $test_type ),
 				$passed,
 				$failed,
 				$warnings
 			),
-			'summary' => sprintf(
+			'summary'      => sprintf(
 				/* translators: %1$s: duration, %2$s: memory */
 				__( 'Duration: %1$sms | Memory: %2$sMB', 'mcp-ai-wpoos-pro' ),
 				$duration,
 				$memory_used
 			),
-			'output'  => $output,
+			'output'       => $output,
+			// Structured metrics for storage / trend analysis.
+			'metrics'      => array(
+				'avg_response_time' => $duration,
+				'memory_peak_mb'    => $memory_used,
+				'db_queries'        => get_num_queries(),
+			),
+			'test_results' => array(
+				'passed'   => $passed,
+				'failed'   => $failed,
+				'warnings' => $warnings,
+				'checks'   => $checks,
+			),
 		);
+
+		// Attach any notice from the caller (e.g., when falling back from PHPUnit).
+		// Already handled by the caller merging the array — no extra work needed here.
+
+		return $result;
 	}
 
 	/**
@@ -1198,7 +1276,7 @@ composer install</pre>
 				);
 			}
 
-			$writable = isset( $upload_dir['basedir'] ) && is_writable( $upload_dir['basedir'] );
+			$writable = isset( $upload_dir['basedir'] ) && wp_is_writable( $upload_dir['basedir'] );
 
 			return array(
 				'name'    => __( 'File Permissions', 'mcp-ai-wpoos-pro' ),
