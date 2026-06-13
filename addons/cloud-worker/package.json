@@ -18,7 +18,8 @@
     "stripe": "^17.4.0"
   },
   "overrides": {
-    "qs": ">=6.15.2"
+    "qs": ">=6.15.2",
+    "esbuild": "^0.28.1"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.3",
