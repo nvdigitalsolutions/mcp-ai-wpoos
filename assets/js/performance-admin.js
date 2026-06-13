@@ -108,7 +108,7 @@
 								html += '<th>Check</th><th>Status</th><th>Message</th>';
 								html += '</tr></thead><tbody>';
 								response.data.test_results.checks.forEach(function(check) {
-									var statusClass = check.status === 'pass' ? 'notice-success' : (check.status === 'fail' ? 'notice-error' : 'notice-warning');
+									const statusClass = check.status === 'pass' ? 'notice-success' : (check.status === 'fail' ? 'notice-error' : 'notice-warning');
 									html += '<tr><td>' + PerformanceAdmin.escapeHtml(check.name) + '</td>';
 									html += '<td><span class="' + statusClass + '">' + PerformanceAdmin.escapeHtml(check.status) + '</span></td>';
 									html += '<td>' + PerformanceAdmin.escapeHtml(check.message || '') + '</td></tr>';
@@ -218,8 +218,8 @@
 				},
 				success: function(response) {
 					if (response.success) {
-						var data = response.data;
-						var detailsHtml = '<div style="text-align:left;">';
+						const data = response.data;
+						let detailsHtml = '<div style="text-align:left;">';
 						detailsHtml += '<p><strong>Trend:</strong> ' + PerformanceAdmin.escapeHtml(data.trend || 'N/A') + '</p>';
 						detailsHtml += '<p><strong>Avg Response Time:</strong> ' + (data.avg_response_time || 0).toFixed(2) + ' ms</p>';
 						detailsHtml += '<p><strong>Avg Memory:</strong> ' + (data.avg_memory_usage || 0).toFixed(2) + ' MB</p>';
@@ -237,7 +237,7 @@
 						detailsHtml += '</div>';
 						
 						// Replace alert with inline display.
-						var $detailDiv = $('#component-detail-' + component);
+						let $detailDiv = $('#component-detail-' + component);
 						if ($detailDiv.length === 0) {
 							$detailDiv = $('<div id="component-detail-' + component + '" class="notice notice-info inline" style="margin-top:10px;"></div>');
 							$button.closest('tr').after('<tr class="component-detail-row"><td colspan="5"></td></tr>');
