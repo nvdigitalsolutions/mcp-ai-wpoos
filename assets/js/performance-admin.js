@@ -87,53 +87,87 @@
 				},
 				timeout: 65000, // 65 second timeout for test execution
 				success: function(response) {
-					
-					if (response.success) {
-						let html = '<div class="notice notice-success"><p><strong>✓ ' + response.data.message + '</strong></p></div>';
 						
-						// Show summary if available
-						if (response.data.summary) {
-							html += '<div class="test-summary"><p>' + response.data.summary + '</p></div>';
+						if (response.success) {
+							let html = '<div class="notice notice-success"><p><strong>✓ ' + PerformanceAdmin.escapeHtml(response.data.message) + '</strong></p></div>';
+							
+							// Show notice if present (e.g., when falling back to lightweight checks)
+							if (response.data.notice) {
+								html += '<div class="notice notice-info inline"><p>' + PerformanceAdmin.escapeHtml(response.data.notice) + '</p></div>';
+							}
+							
+							// Show summary if available
+							if (response.data.summary) {
+								html += '<div class="test-summary"><p>' + PerformanceAdmin.escapeHtml(response.data.summary) + '</p></div>';
+							}
+							
+							// Show check results from lightweight checks
+							if (response.data.test_results && response.data.test_results.checks) {
+								html += '<details class="test-output"><summary>View Individual Check Results</summary>';
+								html += '<table class="wp-list-table widefat fixed striped"><thead><tr>';
+								html += '<th>Check</th><th>Status</th><th>Message</th>';
+								html += '</tr></thead><tbody>';
+								response.data.test_results.checks.forEach(function(check) {
+									const statusClass = check.status === 'pass' ? 'notice-success' : (check.status === 'fail' ? 'notice-error' : 'notice-warning');
+									html += '<tr><td>' + PerformanceAdmin.escapeHtml(check.name) + '</td>';
+									html += '<td><span class="' + statusClass + '">' + PerformanceAdmin.escapeHtml(check.status) + '</span></td>';
+									html += '<td>' + PerformanceAdmin.escapeHtml(check.message || '') + '</td></tr>';
+								});
+								html += '</tbody></table></details>';
+							}
+							
+							// Show detailed output if available
+							if (response.data.output) {
+								html += '<details class="test-output"><summary>View Detailed Output</summary><pre>' + 
+										PerformanceAdmin.escapeHtml(response.data.output) + '</pre></details>';
+							}
+							
+							$results.html(html);
+							$resultsContainer.slideDown(300);
+						} else {
+							let html = '<div class="notice notice-error"><p><strong>✗ ' + 
+									   PerformanceAdmin.escapeHtml(response.data.message) + '</strong></p></div>';
+							
+							// Show CLI command if available
+							if (response.data.cli_command) {
+								html += '<div class="cli-command"><p><strong>Run via CLI:</strong></p>' +
+										'<code>' + PerformanceAdmin.escapeHtml(response.data.cli_command) + '</code></div>';
+							}
+							
+							// Show setup command if needed
+							if (response.data.setup_command) {
+								html += '<div class="setup-command"><p><strong>Setup Required:</strong></p>' +
+										'<code>' + PerformanceAdmin.escapeHtml(response.data.setup_command) + '</code></div>';
+							}
+							
+							// Show details if available
+							if (response.data.details) {
+								html += '<div class="test-details"><p>' + PerformanceAdmin.escapeHtml(response.data.details) + '</p></div>';
+							}
+							
+							// Show individual check results even for failed tests
+							if (response.data.test_results && response.data.test_results.checks) {
+								html += '<details class="test-output"><summary>View Check Results</summary>';
+								html += '<table class="wp-list-table widefat fixed striped"><thead><tr>';
+								html += '<th>Check</th><th>Status</th><th>Message</th>';
+								html += '</tr></thead><tbody>';
+								response.data.test_results.checks.forEach(function(check) {
+									html += '<tr><td>' + PerformanceAdmin.escapeHtml(check.name) + '</td>';
+									html += '<td>' + PerformanceAdmin.escapeHtml(check.status) + '</td>';
+									html += '<td>' + PerformanceAdmin.escapeHtml(check.message || '') + '</td></tr>';
+								});
+								html += '</tbody></table></details>';
+							}
+							
+							// Show output if available
+							if (response.data.output) {
+								html += '<details class="test-output"><summary>View Error Output</summary><pre>' + 
+										PerformanceAdmin.escapeHtml(response.data.output) + '</pre></details>';
+							}
+							
+							$results.html(html);
+							$resultsContainer.slideDown(300);
 						}
-						
-						// Show detailed output if available
-						if (response.data.output) {
-							html += '<details class="test-output"><summary>View Detailed Output</summary><pre>' + 
-									PerformanceAdmin.escapeHtml(response.data.output) + '</pre></details>';
-						}
-						
-						$results.html(html);
-						$resultsContainer.slideDown(300);
-					} else {
-						let html = '<div class="notice notice-error"><p><strong>✗ ' + 
-								   PerformanceAdmin.escapeHtml(response.data.message) + '</strong></p></div>';
-						
-						// Show CLI command if available
-						if (response.data.cli_command) {
-							html += '<div class="cli-command"><p><strong>Run via CLI:</strong></p>' +
-									'<code>' + PerformanceAdmin.escapeHtml(response.data.cli_command) + '</code></div>';
-						}
-						
-						// Show setup command if needed
-						if (response.data.setup_command) {
-							html += '<div class="setup-command"><p><strong>Setup Required:</strong></p>' +
-									'<code>' + PerformanceAdmin.escapeHtml(response.data.setup_command) + '</code></div>';
-						}
-						
-						// Show details if available
-						if (response.data.details) {
-							html += '<div class="test-details"><p>' + PerformanceAdmin.escapeHtml(response.data.details) + '</p></div>';
-						}
-						
-						// Show output if available
-						if (response.data.output) {
-							html += '<details class="test-output"><summary>View Error Output</summary><pre>' + 
-									PerformanceAdmin.escapeHtml(response.data.output) + '</pre></details>';
-						}
-						
-						$results.html(html);
-						$resultsContainer.slideDown(300);
-					}
 				},
 				error: function(jqXHR, textStatus) {
 					let errorMsg = 'AJAX request failed';
@@ -172,6 +206,8 @@
 			const $button = $(e.currentTarget);
 			const component = $button.data('component');
 
+			$button.prop('disabled', true).text('Loading...');
+
 			$.ajax({
 				url: wpMcpAiPerformance.ajaxUrl,
 				type: 'POST',
@@ -183,16 +219,40 @@
 				success: function(response) {
 					if (response.success) {
 						const data = response.data;
-
-						// Show in a modal or alert for now.
-						alert('Component Details:\n\n' + 
-							'Trend: ' + (data.trend || 'N/A') + '\n' +
-							'Avg Response Time: ' + (data.avg_response_time || 0).toFixed(2) + ' ms\n' +
-							'Avg Memory: ' + (data.avg_memory_usage || 0).toFixed(2) + ' MB\n' +
-							'Avg DB Queries: ' + (data.avg_db_queries || 0) + '\n' +
-							'Total Tests: ' + (data.total_tests || 0)
-						);
+						let detailsHtml = '<div style="text-align:left;">';
+						detailsHtml += '<p><strong>Trend:</strong> ' + PerformanceAdmin.escapeHtml(data.trend || 'N/A') + '</p>';
+						detailsHtml += '<p><strong>Avg Response Time:</strong> ' + (data.avg_response_time || 0).toFixed(2) + ' ms</p>';
+						detailsHtml += '<p><strong>Avg Memory:</strong> ' + (data.avg_memory_usage || 0).toFixed(2) + ' MB</p>';
+						detailsHtml += '<p><strong>Avg DB Queries:</strong> ' + (data.avg_db_queries || 0) + '</p>';
+						detailsHtml += '<p><strong>Total Tests:</strong> ' + (data.total_tests || 0) + '</p>';
+						
+						// Show status distribution if available.
+						if (data.status_distribution && Object.keys(data.status_distribution).length > 0) {
+							detailsHtml += '<p><strong>Status Distribution:</strong></p><ul>';
+							Object.keys(data.status_distribution).forEach(function(status) {
+								detailsHtml += '<li>' + PerformanceAdmin.escapeHtml(status) + ': ' + data.status_distribution[status] + '</li>';
+							});
+							detailsHtml += '</ul>';
+						}
+						detailsHtml += '</div>';
+						
+						// Replace alert with inline display.
+						let $detailDiv = $('#component-detail-' + component);
+						if ($detailDiv.length === 0) {
+							$detailDiv = $('<div id="component-detail-' + component + '" class="notice notice-info inline" style="margin-top:10px;"></div>');
+							$button.closest('tr').after('<tr class="component-detail-row"><td colspan="5"></td></tr>');
+							$button.closest('tr').next().find('td').append($detailDiv);
+						}
+						$detailDiv.html(detailsHtml).slideDown(200);
+					} else {
+						alert('Error: ' + (response.data && response.data.message ? response.data.message : 'Unknown error'));
 					}
+				},
+				error: function() {
+					alert('Failed to load component metrics.');
+				},
+				complete: function() {
+					$button.prop('disabled', false).text('View Details');
 				}
 			});
 		},

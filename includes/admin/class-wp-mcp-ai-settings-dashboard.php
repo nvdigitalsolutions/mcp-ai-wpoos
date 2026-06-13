@@ -1187,27 +1187,33 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				wp_set_script_translations( 'wp-mcp-ai-tool-orchestration', 'mcp-ai-wpoos' );
 			}
 
-			// Enqueue performance admin scripts if on advanced tab with performance_monitoring subtab.
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'advanced' === sanitize_key( wp_unslash( $_GET['tab'] ) ) && isset( $_GET['subtab'] ) && 'performance_monitoring' === sanitize_key( wp_unslash( $_GET['subtab'] ) ) ) {
-				$performance_js = $this->get_asset_file( 'assets/js/performance-admin.js' );
-				wp_enqueue_script(
-					'wp-mcp-ai-performance-admin',
-					$performance_js['url'],
-					array( 'jquery' ),
-					$performance_js['version'],
-					true
-				);
+			// Enqueue performance admin scripts if on advanced tab.
+			// When no subtab is specified, performance_monitoring is the default (see
+			// WP_MCP_AI_Section_Advanced::get_active_subtab).
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only query parameter checks.
+			if ( isset( $_GET['tab'] ) && 'advanced' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
+				$subtab = isset( $_GET['subtab'] ) ? sanitize_key( wp_unslash( $_GET['subtab'] ) ) : 'performance_monitoring';
+				// phpcs:enable WordPress.Security.NonceVerification.Recommended
+				if ( 'performance_monitoring' === $subtab ) {
+					$performance_js = $this->get_asset_file( 'assets/js/performance-admin.js' );
+					wp_enqueue_script(
+						'wp-mcp-ai-performance-admin',
+						$performance_js['url'],
+						array( 'jquery' ),
+						$performance_js['version'],
+						true
+					);
 
-				wp_localize_script(
-					'wp-mcp-ai-performance-admin',
-					'wpMcpAiPerformance',
-					array(
-						'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
-						'nonce'       => wp_create_nonce( 'wp_mcp_ai_performance' ),
-						'runningText' => __( 'Running...', 'mcp-ai-wpoos' ),
-					)
-				);
+					wp_localize_script(
+						'wp-mcp-ai-performance-admin',
+						'wpMcpAiPerformance',
+						array(
+							'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+							'nonce'       => wp_create_nonce( 'wp_mcp_ai_performance' ),
+							'runningText' => __( 'Running...', 'mcp-ai-wpoos' ),
+						)
+					);
+				}
 			}
 
 			// Enqueue mesh peer test scripts if on advanced tab with federation_mesh subtab.
