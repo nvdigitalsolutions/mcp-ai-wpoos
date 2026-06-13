@@ -93,15 +93,15 @@ class WP_MCP_AI_Pro_SPA_Bootstrap_Controller {
 		// 3. Tools catalogue (names + slugs only, not full definitions).
 		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$registry  = WP_MCP_AI_Tool_Registry::get_instance();
-			$all_tools = $registry->get_tools();
+			$all_tools = $registry->get_all_tools();
 			$tools     = array();
 
 			foreach ( $all_tools as $slug => $tool ) {
 				$tools[] = array(
 					'slug'        => $slug,
-					'name'        => isset( $tool['name'] ) ? $tool['name'] : $slug,
-					'description' => isset( $tool['description'] ) ? $tool['description'] : '',
-					'capability'  => isset( $tool['required_capability'] ) ? $tool['required_capability'] : 'read',
+					'name'        => $tool->get_name(),
+					'description' => $tool->get_description(),
+					'capability'  => $tool->get_required_capability(),
 				);
 			}
 
