@@ -80,12 +80,16 @@ class WP_MCP_AI_Pro_SPA_Loader {
 		$dist_dir = WP_MCP_AI_PRO_PATH . 'assets/spa/dist/';
 		$dist_url = WP_MCP_AI_PRO_URL . 'assets/spa/dist/';
 
-		// Check if built assets exist.
+		// Check if built assets exist (filesystem paths).
 		$asset_file = $dist_dir . 'spa-bundle.asset.php';
-		$js_file    = $dist_dir . 'spa-bundle.js';
-		$css_file   = $dist_dir . 'spa-bundle.css';
+		$js_path    = $dist_dir . 'spa-bundle.js';
+		$css_path   = $dist_dir . 'spa-bundle.css';
 
-		if ( ! file_exists( $asset_file ) || ! file_exists( $js_file ) ) {
+		// URLs for enqueuing (browser-accessible).
+		$js_url  = $dist_url . 'spa-bundle.js';
+		$css_url = $dist_url . 'spa-bundle.css';
+
+		if ( ! file_exists( $asset_file ) || ! file_exists( $js_path ) ) {
 			// Show a notice if built assets are missing (development mode).
 			add_action(
 				'admin_notices',
@@ -103,16 +107,16 @@ class WP_MCP_AI_Pro_SPA_Loader {
 
 		wp_enqueue_script(
 			'wp-mcp-ai-spa',
-			$js_file,
+			$js_url,
 			$asset_data['dependencies'],
 			$asset_data['version'],
 			true
 		);
 
-		if ( file_exists( $css_file ) ) {
+		if ( file_exists( $css_path ) ) {
 			wp_enqueue_style(
 				'wp-mcp-ai-spa',
-				$css_file,
+				$css_url,
 				array( 'wp-components' ),
 				$asset_data['version']
 			);

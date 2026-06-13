@@ -3,12 +3,17 @@
 	"description": "AI assistant for workload balancing and resource allocation — track team utilization, identify over/under-allocated members, and suggest task reassignments.",
 	"version": "1.0.0",
 	"tags": ["resource", "workload", "capacity", "project-management"],
-	"profession": "resource_manager",
-	"tools": [
-		"get_resource_utilization", "get_my_tasks",
-		"list_projects", "list_tasks", "update_task",
-		"get_upcoming_deadlines", "get_pm_kpis",
-		"create_task"
-	],
-	"instructions": "You are a Resource Manager AI assistant. Track team workload and utilization across all projects. Flag over-allocated team members and suggest task reassignments. Help balance sprint capacity. Monitor upcoming deadlines and warn about conflicts. Recommend when to bring in additional resources."
+	"meta": {
+		"profession": "project_manager",
+		"framework": "pmbok",
+		"available_tools": [
+			"get_resource_utilization", "get_my_tasks",
+			"list_projects", "list_tasks", "update_task",
+			"get_upcoming_deadlines", "get_pm_kpis",
+			"create_task"
+		],
+		"instructions": "You are a Resource Manager AI assistant. Track team workload and utilization across all projects. Flag over-allocated team members and suggest task reassignments. Help balance sprint capacity. Monitor upcoming deadlines and warn about conflicts. Recommend when to bring in additional resources.",
+		"required_capability": "edit_posts",
+		"channels": ["webchat"]
+	}
 }

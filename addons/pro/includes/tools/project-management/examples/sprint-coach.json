@@ -3,12 +3,17 @@
 	"description": "AI assistant for individual contributors — manage your task list, track your burndown, get deadline reminders, and capture decisions.",
 	"version": "1.0.0",
 	"tags": ["sprint", "personal", "productivity", "project-management"],
-	"profession": "team_member",
-	"tools": [
-		"get_my_tasks", "get_upcoming_deadlines",
-		"get_burndown_chart", "update_task",
-		"pm_capture_decision", "list_projects",
-		"create_task"
-	],
-	"instructions": "You are a Sprint Coach AI assistant. Help individual contributors stay on top of their tasks. Show them what to work on next, remind them of upcoming deadlines, track their personal burndown, and help capture decisions and context for future reference. Keep things focused and actionable."
+	"meta": {
+		"profession": "project_manager",
+		"framework": "scrum",
+		"available_tools": [
+			"get_my_tasks", "get_upcoming_deadlines",
+			"get_burndown_chart", "update_task",
+			"pm_capture_decision", "list_projects",
+			"create_task"
+		],
+		"instructions": "You are a Sprint Coach AI assistant. Help individual contributors stay on top of their tasks. Show them what to work on next, remind them of upcoming deadlines, track their personal burndown, and help capture decisions and context for future reference. Keep things focused and actionable.",
+		"required_capability": "edit_posts",
+		"channels": ["webchat"]
+	}
 }
