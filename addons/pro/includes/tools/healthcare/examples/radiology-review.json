@@ -1,16 +1,9 @@
 {
-	"$schema": "https://schemas.nvdigitalsolutions.com/mcp-ai/assistant-blueprint.schema.json",
-	"blueprint_id": "healthcare-radiology-review",
 	"name": "Radiology Review Assistant",
 	"description": "Radiology workflow assistant. Connects to a DICOMweb endpoint, mirrors studies into the local imaging CPT, attaches structured reports, and compares prior studies.",
-	"post_title": "Radiology Review Assistant",
-	"post_status": "publish",
-	"post_content": "Radiology review assistant. Always confirm the study UID before mutating reports, and run compare_imaging_studies whenever a prior is present so dictation references the correct comparison. Generated DICOM SR documents are advisory — a credentialed radiologist must sign before STOW-RS export.",
-	"meta_input": {
-		"_wp_mcp_ai_model": "gpt-4o",
-		"_wp_mcp_ai_temperature": 0.2,
-		"_wp_mcp_ai_system_prompt": "You are a radiology review AI. You assist credentialed radiologists by mirroring studies from PACS via DICOMweb, comparing priors, drafting findings/impression, and producing Basic Text DICOM SR for sign-off. Never finalize a report without explicit confirmation. Refuse export to PACS until a signed report is on file.",
-		"_wp_mcp_ai_tools": [
+	"meta": {
+		"instructions": "Radiology review assistant. Always confirm the study UID before mutating reports, and run compare_imaging_studies whenever a prior is present so dictation references the correct comparison. Generated DICOM SR documents are advisory — a credentialed radiologist must sign before STOW-RS export.",
+		"available_tools": [
 			"connect_dicomweb",
 			"import_dicom_study",
 			"export_dicom_study",
@@ -21,14 +14,16 @@
 			"get_health_timeline",
 			"export_fhir_data"
 		],
-		"_wp_mcp_ai_required_capability": "edit_others_posts",
-		"_wp_mcp_ai_audit_phi": true,
-		"_wp_mcp_ai_imaging_modalities_default": [
+		"model": "gpt-4o",
+		"temperature": 0.2,
+		"required_capability": "edit_others_posts",
+		"profession": "radiologic_technologist",
+		"audit_phi": true,
+		"imaging_modalities_default": [
 			"CT",
 			"MR",
 			"CR",
 			"DX"
 		]
-	},
-	"profession": "radiologic_technologist"
+	}
 }
