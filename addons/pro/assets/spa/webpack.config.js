@@ -1,4 +1,5 @@
 const defaultConfig = require('@wordpress/scripts/config/webpack.config');
+const path = require('path');
 
 module.exports = {
 	...defaultConfig,
@@ -8,6 +9,7 @@ module.exports = {
 	},
 	output: {
 		...defaultConfig.output,
+		path: path.resolve(__dirname, 'dist'),
 		filename: '[name].js',
 	},
 };

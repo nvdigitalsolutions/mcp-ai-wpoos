@@ -11,12 +11,12 @@
  */
 
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import ChatPage from '../pages/ChatPage';
-import SettingsPage from '../pages/SettingsPage';
-import ToolsPage from '../pages/ToolsPage';
-import AssistantsPage from '../pages/AssistantsPage';
-import WorkflowsPage from '../pages/WorkflowsPage';
-import AnalyticsPage from '../pages/AnalyticsPage';
+import ChatPage from './pages/ChatPage';
+import SettingsPage from './pages/SettingsPage';
+import ToolsPage from './pages/ToolsPage';
+import AssistantsPage from './pages/AssistantsPage';
+import WorkflowsPage from './pages/WorkflowsPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 export default function AppRouter() {
 	return (

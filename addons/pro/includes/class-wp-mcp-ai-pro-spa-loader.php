@@ -81,7 +81,7 @@ class WP_MCP_AI_Pro_SPA_Loader {
 		$dist_url = WP_MCP_AI_PRO_URL . 'assets/spa/dist/';
 
 		// Check if built assets exist.
-		$asset_file = $dist_dir . 'index.asset.php';
+		$asset_file = $dist_dir . 'spa-bundle.asset.php';
 		$js_file    = $dist_dir . 'spa-bundle.js';
 		$css_file   = $dist_dir . 'spa-bundle.css';
 
