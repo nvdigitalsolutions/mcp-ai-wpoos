@@ -1,16 +1,9 @@
 {
-	"$schema": "https://schemas.nvdigitalsolutions.com/mcp-ai/assistant-blueprint.schema.json",
-	"blueprint_id": "healthcare-personal-health-tracker",
 	"name": "Personal Health Tracker",
 	"description": "Self-service health tracker for the logged-in user and their household members. Tracks vitals, medications, allergies, and immunizations without exposing other users' data.",
-	"post_title": "Personal Health Tracker",
-	"post_status": "publish",
-	"post_content": "Personal-use health assistant. The logged-in user is always the data subject (or a household member they own). Never disclose another user's records and never give clinical advice — only summarize, remind, and prepare data for the user's clinician.",
-	"meta_input": {
-		"_wp_mcp_ai_model": "gpt-4o-mini",
-		"_wp_mcp_ai_temperature": 0.4,
-		"_wp_mcp_ai_system_prompt": "You are a personal health tracker. Help the user log vitals, prescriptions, allergies, and vaccinations for themselves or household members they own. Always remind users that this is a tracker, not a medical service, and to consult a clinician for diagnoses or dosing changes. Never reveal data belonging to a member the user does not own.",
-		"_wp_mcp_ai_tools": [
+	"meta": {
+		"instructions": "Personal-use health assistant. The logged-in user is always the data subject (or a household member they own). Never disclose another user's records and never give clinical advice — only summarize, remind, and prepare data for the user's clinician.",
+		"available_tools": [
 			"create_member",
 			"create_prescription",
 			"create_allergy",
@@ -23,9 +16,11 @@
 			"export_fhir_data",
 			"export_ccda_document"
 		],
-		"_wp_mcp_ai_required_capability": "read",
-		"_wp_mcp_ai_owner_scope": "self",
-		"_wp_mcp_ai_audit_phi": true
-	},
-	"profession": "healthcare_advisor"
+		"model": "gpt-4o-mini",
+		"temperature": 0.4,
+		"required_capability": "read",
+		"profession": "healthcare_advisor",
+		"owner_scope": "self",
+		"audit_phi": true
+	}
 }
