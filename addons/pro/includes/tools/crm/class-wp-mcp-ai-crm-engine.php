@@ -183,18 +183,41 @@ class WP_MCP_AI_CRM_Engine {
 			),
 			// Email-to-Case routing (since 2.9.0).
 			'email_to_case'           => array(
-				'enabled'              => true,
-				'default_priority'     => 'p2_high',
-				'default_category'     => 'question',
+				'enabled'          => true,
+				'default_priority' => 'p2_high',
+				'default_category' => 'question',
 				// Subject-based routing: keyword → (category, priority).
-				'subject_rules'        => array(),
+				'subject_rules'    => array(),
 				// Sender-based routing: email/domain → (category, priority, assignee).
-				'sender_rules'         => array(),
+				'sender_rules'     => array(),
 			),
 			// Performance optimization (since 2.9.0).
 			'optimization'            => array(
 				'message_retention_days' => 90,  // Auto-prune CRM messages older than N days (0 = keep forever).
-				'audit_max_entries'     => 5000, // Max audit log entries before compaction.
+				'audit_max_entries'      => 5000, // Max audit log entries before compaction.
+			),
+			// External freelancer platform sourcing (since 2.10.0).
+			'external_sourcing'       => array(
+				'upwork'               => array(
+					'default_connection_id' => '',
+					'auto_import_as'        => 'deal',
+					'auto_import_enabled'   => false,
+					'auto_import_min_score' => 60,
+					'use_profile_context'   => false,
+				),
+				'linkedin'             => array(
+					'default_connection_id'   => '',
+					'auto_import_as'          => 'deal',
+					'auto_import_enabled'     => false,
+					'auto_import_min_score'   => 60,
+					'use_profile_context'     => false,
+					'default_search_keywords' => '',
+					'default_location'        => '',
+				),
+				'ideal_client_profile' => '',
+				'default_budget_min'   => '',
+				'default_budget_max'   => '',
+				'excluded_keywords'    => '',
 			),
 		);
 

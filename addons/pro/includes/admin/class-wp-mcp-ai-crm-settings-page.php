@@ -507,6 +507,174 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					</td>
 				</tr>
 
+				<!-- Freelance Platforms & External Sourcing -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Freelance Platforms &amp; External Sourcing', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p class="description" style="margin: 4px 0 8px 0;">
+					<?php esc_html_e( 'Configure LinkedIn and Upwork connections for job/project search, import, and pipeline tracking. These credentials are managed via', 'mcp-ai-wpoos-pro' ); ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' ) ); ?>"><?php esc_html_e( 'Remote Sites', 'mcp-ai-wpoos-pro' ); ?></a>.
+					<?php esc_html_e( 'When a connection is configured, tools use the platform API directly; otherwise they fall back to AI-powered web search.', 'mcp-ai-wpoos-pro' ); ?>
+				</p></td></tr>
+
+				<!-- Upwork External Sourcing -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Upwork', 'mcp-ai-wpoos-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$_upwork_connections = array();
+						if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+							$_all_conns = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+							foreach ( $_all_conns as $_id => $_conn ) {
+								if ( ! empty( $_conn['type'] ) && 'upwork' === $_conn['type'] ) {
+									$_upwork_connections[ $_id ] = isset( $_conn['label'] ) ? $_conn['label'] : $_id;
+								}
+							}
+						}
+						$_current_upwork = $settings['external_sourcing']['upwork']['default_connection_id'] ?? '';
+						?>
+						<?php if ( empty( $_upwork_connections ) ) : ?>
+							<p class="description" style="color: #856404;">
+								&#9888; <?php esc_html_e( 'No Upwork connections found. Add one via Remote Sites to enable API-based job search and contract sync.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						<?php else : ?>
+							<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_connection_id]">
+								<option value=""><?php esc_html_e( '— None —', 'mcp-ai-wpoos-pro' ); ?></option>
+								<?php foreach ( $_upwork_connections as $_id => $_label ) : ?>
+									<option value="<?php echo esc_attr( $_id ); ?>" <?php selected( $_current_upwork, $_id ); ?>><?php echo esc_html( $_label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						<?php endif; ?>
+						<p class="description"><?php esc_html_e( 'Select which Upwork connection to use as default for CRM tools (search, import, contracts, tasks).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Auto-Import Jobs As', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][auto_import_as]">
+							<option value="deal" <?php selected( $settings['external_sourcing']['upwork']['auto_import_as'] ?? 'deal', 'deal' ); ?>><?php esc_html_e( 'Deal (Pipeline Opportunity)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="project" <?php selected( $settings['external_sourcing']['upwork']['auto_import_as'] ?? '', 'project' ); ?>><?php esc_html_e( 'Project', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="task" <?php selected( $settings['external_sourcing']['upwork']['auto_import_as'] ?? '', 'task' ); ?>><?php esc_html_e( 'Task', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default CRM entity type when importing Upwork jobs into the pipeline.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Min Score to Auto-Import', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][auto_import_min_score]" value="<?php echo esc_attr( $settings['external_sourcing']['upwork']['auto_import_min_score'] ?? 60 ); ?>" min="0" max="100" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Only auto-import Upwork jobs scoring at or above this threshold (0–100). Set to 0 to import all scored jobs.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Use My Profile for AI Grounding', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][use_profile_context]" value="1" <?php checked( ! empty( $settings['external_sourcing']['upwork']['use_profile_context'] ) ); ?> />
+							<?php esc_html_e( 'Feed my connected Upwork profile (skills, work history, rate) to the AI as grounding context when drafting proposals and scoring jobs. This improves personalisation and accuracy.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+
+				<!-- LinkedIn External Sourcing -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'LinkedIn', 'mcp-ai-wpoos-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$_linkedin_connections = array();
+						if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+							$_all_conns = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+							foreach ( $_all_conns as $_id => $_conn ) {
+								if ( ! empty( $_conn['type'] ) && 'linkedin' === $_conn['type'] ) {
+									$_linkedin_connections[ $_id ] = isset( $_conn['label'] ) ? $_conn['label'] : $_id;
+								}
+							}
+						}
+						$_current_linkedin = $settings['external_sourcing']['linkedin']['default_connection_id'] ?? '';
+						?>
+						<?php if ( empty( $_linkedin_connections ) ) : ?>
+							<p class="description" style="color: #856404;">
+								&#9888; <?php esc_html_e( 'No LinkedIn connections found. Add one via Remote Sites to enable API-based job search and profile import. Tools will use AI-powered web search as fallback.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						<?php else : ?>
+							<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_connection_id]">
+								<option value=""><?php esc_html_e( '— None —', 'mcp-ai-wpoos-pro' ); ?></option>
+								<?php foreach ( $_linkedin_connections as $_id => $_label ) : ?>
+									<option value="<?php echo esc_attr( $_id ); ?>" <?php selected( $_current_linkedin, $_id ); ?>><?php echo esc_html( $_label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						<?php endif; ?>
+						<p class="description"><?php esc_html_e( 'Select which LinkedIn connection to use as default for CRM tools (job search, scoring, profile import).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Use My Profile for AI Grounding', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][use_profile_context]" value="1" <?php checked( ! empty( $settings['external_sourcing']['linkedin']['use_profile_context'] ) ); ?> />
+							<?php esc_html_e( 'Feed my LinkedIn profile (headline, summary, skills, experience) to the AI as grounding context. Helps the AI filter jobs most relevant to your background and craft personalised outreach.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Location', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_location]" value="<?php echo esc_attr( $settings['external_sourcing']['linkedin']['default_location'] ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g. Remote, United States, London', 'mcp-ai-wpoos-pro' ); ?>" />
+						<p class="description"><?php esc_html_e( 'Default location filter for LinkedIn job searches. Leave blank for worldwide.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Search Keywords', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_search_keywords]" value="<?php echo esc_attr( $settings['external_sourcing']['linkedin']['default_search_keywords'] ?? '' ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'e.g. WordPress developer, SEO consultant, content writer', 'mcp-ai-wpoos-pro' ); ?>" />
+						<p class="description"><?php esc_html_e( 'Comma-separated keywords used as defaults when searching LinkedIn jobs without specifying a query.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Auto-Import Jobs As', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][auto_import_as]">
+							<option value="deal" <?php selected( $settings['external_sourcing']['linkedin']['auto_import_as'] ?? 'deal', 'deal' ); ?>><?php esc_html_e( 'Deal (Pipeline Opportunity)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="project" <?php selected( $settings['external_sourcing']['linkedin']['auto_import_as'] ?? '', 'project' ); ?>><?php esc_html_e( 'Project', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="task" <?php selected( $settings['external_sourcing']['linkedin']['auto_import_as'] ?? '', 'task' ); ?>><?php esc_html_e( 'Task', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default CRM entity type when importing LinkedIn jobs into the pipeline.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Min Score to Auto-Import', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][auto_import_min_score]" value="<?php echo esc_attr( $settings['external_sourcing']['linkedin']['auto_import_min_score'] ?? 60 ); ?>" min="0" max="100" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Only auto-import LinkedIn jobs scoring at or above this threshold (0–100). Set to 0 to import all.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Shared: Ideal Client Profile & Search Filters -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Shared: Ideal Client Profile &amp; Search Filters', 'mcp-ai-wpoos-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Ideal Client Profile', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][ideal_client_profile]" rows="5" class="large-text" placeholder="<?php esc_attr_e( 'Describe your ideal client or project for AI scoring.\\n\\nExample:\\n- Budget: $5k–$20k per project\\n- Industry: SaaS, eCommerce, FinTech\\n- Tech stack: WordPress, WooCommerce, React\\n- Project type: Custom plugin, API integrations', 'mcp-ai-wpoos-pro' ); ?>"><?php echo esc_textarea( $settings['external_sourcing']['ideal_client_profile'] ?? '' ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Injected as context into score_upwork_job and score_linkedin_job tools. The AI evaluates each job against this profile. Leave blank for generic scoring.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Budget Range', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][default_budget_min]" value="<?php echo esc_attr( $settings['external_sourcing']['default_budget_min'] ?? '' ); ?>" class="small-text" placeholder="<?php esc_attr_e( 'Min', 'mcp-ai-wpoos-pro' ); ?>" min="0" step="100" />
+						&nbsp;–&nbsp;
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][default_budget_max]" value="<?php echo esc_attr( $settings['external_sourcing']['default_budget_max'] ?? '' ); ?>" class="small-text" placeholder="<?php esc_attr_e( 'Max', 'mcp-ai-wpoos-pro' ); ?>" min="0" step="100" />
+						<p class="description"><?php esc_html_e( 'Default budget range (in your CRM currency) for filtering jobs on both platforms. Leave blank to skip budget filtering.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Excluded Keywords', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][excluded_keywords]" rows="3" class="large-text code" placeholder="<?php esc_attr_e( 'crypto\\nNFT\\nadult\\ngambling', 'mcp-ai-wpoos-pro' ); ?>"><?php echo esc_textarea( $settings['external_sourcing']['excluded_keywords'] ?? '' ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Jobs containing any of these keywords (case-insensitive) are filtered out of results and never scored. One per line.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<!-- Performance Optimization -->
 				<tr><td colspan="2"><h3><?php esc_html_e( 'Performance &amp; Storage', 'mcp-ai-wpoos-pro' ); ?></h3></td></tr>
 				<tr>
@@ -575,6 +743,14 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'draft_upwork_proposal'           => __( 'Draft Upwork Proposal', 'mcp-ai-wpoos-pro' ),
 			'score_upwork_job'                => __( 'Score Upwork Job', 'mcp-ai-wpoos-pro' ),
 			'search_upwork_jobs'              => __( 'Search Upwork Jobs', 'mcp-ai-wpoos-pro' ),
+			'import_upwork_project'           => __( 'Import Upwork Project', 'mcp-ai-wpoos-pro' ),
+			'list_upwork_contracts'           => __( 'List Upwork Contracts', 'mcp-ai-wpoos-pro' ),
+			'sync_upwork_tasks'               => __( 'Sync Upwork Tasks', 'mcp-ai-wpoos-pro' ),
+			// LinkedIn.
+			'search_linkedin_jobs'            => __( 'Search LinkedIn Jobs', 'mcp-ai-wpoos-pro' ),
+			'score_linkedin_job'              => __( 'Score LinkedIn Job', 'mcp-ai-wpoos-pro' ),
+			'import_linkedin_profile'         => __( 'Import LinkedIn Profile', 'mcp-ai-wpoos-pro' ),
+			'save_linkedin_job'               => __( 'Save LinkedIn Job', 'mcp-ai-wpoos-pro' ),
 		);
 
 		// ---- Phase B: CRUD + Pipeline + Routing (22 tools) ----
@@ -920,6 +1096,61 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			}
 			if ( isset( $input['optimization']['audit_max_entries'] ) ) {
 				$sanitized['optimization']['audit_max_entries'] = max( 1000, min( 10000, absint( $input['optimization']['audit_max_entries'] ) ) );
+			}
+		}
+
+		// --- External Sourcing settings (since 2.10.0) ---
+		if ( isset( $input['external_sourcing'] ) && is_array( $input['external_sourcing'] ) ) {
+			$es = $input['external_sourcing'];
+
+			// Upwork.
+			if ( isset( $es['upwork']['default_connection_id'] ) ) {
+				$sanitized['external_sourcing']['upwork']['default_connection_id'] = sanitize_text_field( $es['upwork']['default_connection_id'] );
+			}
+			if ( isset( $es['upwork']['auto_import_as'] ) ) {
+				$valid_as = array( 'deal', 'project', 'task' );
+				$sanitized['external_sourcing']['upwork']['auto_import_as'] = in_array( $es['upwork']['auto_import_as'], $valid_as, true )
+					? $es['upwork']['auto_import_as']
+					: 'deal';
+			}
+			if ( isset( $es['upwork']['auto_import_min_score'] ) ) {
+				$sanitized['external_sourcing']['upwork']['auto_import_min_score'] = min( 100, max( 0, absint( $es['upwork']['auto_import_min_score'] ) ) );
+			}
+			$sanitized['external_sourcing']['upwork']['use_profile_context'] = ! empty( $es['upwork']['use_profile_context'] );
+
+			// LinkedIn.
+			if ( isset( $es['linkedin']['default_connection_id'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['default_connection_id'] = sanitize_text_field( $es['linkedin']['default_connection_id'] );
+			}
+			if ( isset( $es['linkedin']['auto_import_as'] ) ) {
+				$valid_as = array( 'deal', 'project', 'task' );
+				$sanitized['external_sourcing']['linkedin']['auto_import_as'] = in_array( $es['linkedin']['auto_import_as'], $valid_as, true )
+					? $es['linkedin']['auto_import_as']
+					: 'deal';
+			}
+			if ( isset( $es['linkedin']['auto_import_min_score'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['auto_import_min_score'] = min( 100, max( 0, absint( $es['linkedin']['auto_import_min_score'] ) ) );
+			}
+			$sanitized['external_sourcing']['linkedin']['use_profile_context'] = ! empty( $es['linkedin']['use_profile_context'] );
+			if ( isset( $es['linkedin']['default_search_keywords'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['default_search_keywords'] = sanitize_text_field( $es['linkedin']['default_search_keywords'] );
+			}
+			if ( isset( $es['linkedin']['default_location'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['default_location'] = sanitize_text_field( $es['linkedin']['default_location'] );
+			}
+
+			// Shared fields.
+			if ( isset( $es['ideal_client_profile'] ) ) {
+				$sanitized['external_sourcing']['ideal_client_profile'] = sanitize_textarea_field( $es['ideal_client_profile'] );
+			}
+			if ( isset( $es['default_budget_min'] ) && '' !== $es['default_budget_min'] ) {
+				$sanitized['external_sourcing']['default_budget_min'] = absint( $es['default_budget_min'] );
+			}
+			if ( isset( $es['default_budget_max'] ) && '' !== $es['default_budget_max'] ) {
+				$sanitized['external_sourcing']['default_budget_max'] = absint( $es['default_budget_max'] );
+			}
+			if ( isset( $es['excluded_keywords'] ) ) {
+				$sanitized['external_sourcing']['excluded_keywords'] = sanitize_textarea_field( $es['excluded_keywords'] );
 			}
 		}
 

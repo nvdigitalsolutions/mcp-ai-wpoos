@@ -84,6 +84,10 @@ class WP_MCP_AI_CRM_Codes {
 		'inbound_call',
 		'partner',
 		'website_chat',
+		'linkedin',
+		'linkedin_job',
+		'upwork',
+		'upwork_project',
 		'other',
 	);
 
