@@ -525,8 +525,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 						if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 							$_all_conns = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 							foreach ( $_all_conns as $_id => $_conn ) {
-								if ( ! empty( $_conn['type'] ) && 'upwork' === $_conn['type'] ) {
-									$_upwork_connections[ $_id ] = isset( $_conn['label'] ) ? $_conn['label'] : $_id;
+								if ( ! empty( $_conn['connection_type'] ) && 'upwork' === $_conn['connection_type'] ) {
+									$_upwork_connections[ $_id ] = isset( $_conn['name'] ) ? $_conn['name'] : $_id;
 								}
 							}
 						}
@@ -585,8 +585,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 						if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 							$_all_conns = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 							foreach ( $_all_conns as $_id => $_conn ) {
-								if ( ! empty( $_conn['type'] ) && 'linkedin' === $_conn['type'] ) {
-									$_linkedin_connections[ $_id ] = isset( $_conn['label'] ) ? $_conn['label'] : $_id;
+								if ( ! empty( $_conn['connection_type'] ) && 'linkedin' === $_conn['connection_type'] ) {
+									$_linkedin_connections[ $_id ] = isset( $_conn['name'] ) ? $_conn['name'] : $_id;
 								}
 							}
 						}
