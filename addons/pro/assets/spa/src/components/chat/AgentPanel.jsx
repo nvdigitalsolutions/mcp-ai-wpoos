@@ -175,7 +175,7 @@ export default function AgentPanel() {
 				<div className="nvoos-agent-panel__welcome">
 					<h1>NV oOS</h1>
 					<p>Select a thread or create a new one to get started.</p>
-					<button onClick={createThread} className="nvoos-btn nvoos-btn--primary">
+					<button onClick={() => createThread()} className="nvoos-btn nvoos-btn--primary">
 						New Thread
 					</button>
 				</div>
