@@ -363,16 +363,16 @@ class WP_MCP_AI_PM_Command_Center_Page {
 	private static function render_overview_tab() {
 		$settings = class_exists( 'WP_MCP_AI_PM_Engine' ) ? WP_MCP_AI_PM_Engine::get_toolkit_settings() : array();
 
-		// KPI counts
-		$active_projects    = self::get_active_project_count();
-		$total_projects     = self::get_cpt_count( 'mcp_ai_project' );
-		$open_tasks         = self::get_open_task_count();
+		// KPI counts.
+		$active_projects     = self::get_active_project_count();
+		$total_projects      = self::get_cpt_count( 'mcp_ai_project' );
+		$open_tasks          = self::get_open_task_count();
 		$completed_this_week = self::get_completed_this_week();
-		$upcoming_events    = self::get_cpt_count_by_meta_date( 'mcp_ai_event', '_event_date', 7 );
-		$events_today       = self::get_cpt_count_by_meta_date( 'mcp_ai_event', '_event_date', 1 );
-		$overdue_tasks      = self::get_overdue_task_count();
-		$blocked_tasks      = self::get_cpt_count_by_meta( 'mcp_ai_task', '_task_status', 'blocked' );
-		$new_blocked_week   = self::get_new_blocked_this_week();
+		$upcoming_events     = self::get_cpt_count_by_meta_date( 'mcp_ai_event', '_event_date', 7 );
+		$events_today        = self::get_cpt_count_by_meta_date( 'mcp_ai_event', '_event_date', 1 );
+		$overdue_tasks       = self::get_overdue_task_count();
+		$blocked_tasks       = self::get_cpt_count_by_meta( 'mcp_ai_task', '_task_status', 'blocked' );
+		$new_blocked_week    = self::get_new_blocked_this_week();
 
 		$health = class_exists( 'WP_MCP_AI_PM_Engine' ) ? WP_MCP_AI_PM_Engine::calculate_portfolio_health() : array( 'score' => 0 );
 
@@ -383,12 +383,12 @@ class WP_MCP_AI_PM_Command_Center_Page {
 			$health_class = 'warn';
 		}
 
-		// Pipeline data
+		// Pipeline data.
 		$pipeline = array();
 		if ( class_exists( 'WP_MCP_AI_PM_Pipeline_Stages' ) ) {
 			$stages = WP_MCP_AI_PM_Pipeline_Stages::get_open_stages();
 			foreach ( $stages as $stage_id => $stage_def ) {
-				$count = self::get_cpt_count_by_meta( 'mcp_ai_project', '_project_status', $stage_id );
+				$count = self::get_cpt_count_by_meta( 'mcp_ai_project', '_project_status', $stage_id ); // phpcs:ignore Generic.Formatting.MultipleStatementAlignment.NotSameWarning -- Aligned correctly within foreach scope; WPCS comparing across block boundaries.
 				$pipeline[ $stage_id ] = array(
 					'label' => $stage_def['label'],
 					'count' => $count,
@@ -449,7 +449,7 @@ class WP_MCP_AI_PM_Command_Center_Page {
 					printf(
 						/* translators: %.0f: percentage of open tasks that are overdue */
 						esc_html__( '%.0f%% of open tasks', 'mcp-ai-wpoos-pro' ),
-						$open_tasks > 0 ? round( $overdue_tasks / $open_tasks * 100 ) : 0
+						$open_tasks > 0 ? (float) round( $overdue_tasks / $open_tasks * 100 ) : 0
 					);
 					?>
 				</div>
@@ -587,7 +587,8 @@ class WP_MCP_AI_PM_Command_Center_Page {
 					<tbody>
 					<?php
 					foreach ( $projects as $project ) :
-						$status     = get_post_meta( $project->ID, '_project_status', true ) ?: 'planning';
+						$status_raw = get_post_meta( $project->ID, '_project_status', true );
+						$status     = $status_raw ? $status_raw : 'planning';
 						$end_date   = get_post_meta( $project->ID, '_project_end_date', true );
 						$task_count = class_exists( 'WP_MCP_AI_PM_Engine' ) ? WP_MCP_AI_PM_Engine::count_tasks( $project->ID ) : 0;
 						?>
@@ -597,7 +598,7 @@ class WP_MCP_AI_PM_Command_Center_Page {
 							</td>
 							<td><span class="pm-cc-badge-status <?php echo esc_attr( $status ); ?>"><?php echo esc_html( ucfirst( $status ) ); ?></span></td>
 							<td><?php echo esc_html( $task_count ); ?></td>
-							<td><?php echo esc_html( $end_date ?: '—' ); ?></td>
+							<td><?php echo esc_html( $end_date ? $end_date : '—' ); ?></td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>
@@ -791,10 +792,12 @@ class WP_MCP_AI_PM_Command_Center_Page {
 					<tbody>
 					<?php
 					foreach ( $tasks as $task ) :
-						$status     = get_post_meta( $task->ID, '_task_status', true ) ?: 'todo';
-						$priority   = get_post_meta( $task->ID, '_task_priority', true ) ?: 'medium';
-						$project_id = get_post_meta( $task->ID, '_task_project_id', true );
-						$due_date   = get_post_meta( $task->ID, '_task_due_date', true );
+						$status_raw   = get_post_meta( $task->ID, '_task_status', true );
+						$status       = $status_raw ? $status_raw : 'todo';
+						$priority_raw = get_post_meta( $task->ID, '_task_priority', true );
+						$priority     = $priority_raw ? $priority_raw : 'medium';
+						$project_id   = get_post_meta( $task->ID, '_task_project_id', true );
+						$due_date     = get_post_meta( $task->ID, '_task_due_date', true );
 						?>
 						<tr>
 							<td><a href="<?php echo esc_url( get_edit_post_link( $task->ID ) ); ?>"><strong><?php echo esc_html( $task->post_title ); ?></strong></a></td>
@@ -809,7 +812,7 @@ class WP_MCP_AI_PM_Command_Center_Page {
 								}
 								?>
 							</td>
-							<td><?php echo esc_html( $due_date ?: '—' ); ?></td>
+							<td><?php echo esc_html( $due_date ? $due_date : '—' ); ?></td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>
@@ -864,9 +867,9 @@ class WP_MCP_AI_PM_Command_Center_Page {
 						?>
 						<tr>
 							<td><a href="<?php echo esc_url( get_edit_post_link( $event->ID ) ); ?>"><strong><?php echo esc_html( $event->post_title ); ?></strong></a></td>
-							<td><?php echo esc_html( $event_date ?: '—' ); ?></td>
-							<td><?php echo esc_html( $event_time ?: '—' ); ?></td>
-							<td><?php echo esc_html( $location ?: '—' ); ?></td>
+							<td><?php echo esc_html( $event_date ? $event_date : '—' ); ?></td>
+							<td><?php echo esc_html( $event_time ? $event_time : '—' ); ?></td>
+							<td><?php echo esc_html( $location ? $location : '—' ); ?></td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>
@@ -1054,7 +1057,7 @@ class WP_MCP_AI_PM_Command_Center_Page {
 					<?php foreach ( $templates as $tpl ) : ?>
 						<tr>
 							<td><a href="<?php echo esc_url( get_edit_post_link( $tpl->ID ) ); ?>"><strong><?php echo esc_html( $tpl->post_title ); ?></strong></a></td>
-							<td><?php echo esc_html( $tpl->post_excerpt ?: '—' ); ?></td>
+							<td><?php echo esc_html( $tpl->post_excerpt ? $tpl->post_excerpt : '—' ); ?></td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>
@@ -1209,10 +1212,9 @@ class WP_MCP_AI_PM_Command_Center_Page {
 				'post_status'    => 'publish',
 				'posts_per_page' => 1,
 				'fields'         => 'ids',
-				// phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Intentional single-key count lookup.
+				// phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value, WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Intentional single-key count lookup.
 				'meta_key'       => is_array( $meta_value ) ? '' : $meta_key,
 				'meta_value'     => is_array( $meta_value ) ? '' : $meta_value,
-				// phpcs:enable
 				'no_found_rows'  => false,
 				'meta_query'     => is_array( $meta_value ) ? array(
 					array(
@@ -1221,6 +1223,7 @@ class WP_MCP_AI_PM_Command_Center_Page {
 						'compare' => 'IN',
 					),
 				) : array(),
+				// phpcs:enable
 			)
 		);
 		$count = $query->found_posts;
@@ -1293,6 +1296,7 @@ class WP_MCP_AI_PM_Command_Center_Page {
 	private static function get_completed_this_week() {
 		global $wpdb;
 		$week_start = gmdate( 'Y-m-d', strtotime( 'monday this week' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Intentional aggregate count of completed tasks; caching overhead not justified for admin dashboard KPI.
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*)
@@ -1370,7 +1374,7 @@ class WP_MCP_AI_PM_Command_Center_Page {
 				),
 			)
 		);
-		$count = $query->found_posts;
+		$count = $query->found_posts; // phpcs:ignore Generic.Formatting.MultipleStatementAlignment.NotSameWarning -- Aligned correctly within method; WPCS comparing across block boundaries.
 		wp_reset_postdata();
 		return $count;
 	}
@@ -1425,15 +1429,15 @@ class WP_MCP_AI_PM_Command_Center_Page {
 		}
 
 		$stats = array(
-			'sources_checked'   => 0,
-			'tasks_created'     => 0,
-			'tasks_updated'     => 0,
-			'projects_created'  => 0,
-			'events_created'    => 0,
-			'skipped_existing'  => 0,
-			'total_tasks'       => self::get_cpt_count( 'mcp_ai_task' ),
-			'total_projects'    => self::get_cpt_count( 'mcp_ai_project' ),
-			'total_events'      => self::get_cpt_count( 'mcp_ai_event' ),
+			'sources_checked'  => 0,
+			'tasks_created'    => 0,
+			'tasks_updated'    => 0,
+			'projects_created' => 0,
+			'events_created'   => 0,
+			'skipped_existing' => 0,
+			'total_tasks'      => self::get_cpt_count( 'mcp_ai_task' ),
+			'total_projects'   => self::get_cpt_count( 'mcp_ai_project' ),
+			'total_events'     => self::get_cpt_count( 'mcp_ai_event' ),
 		);
 
 		$stats['total_items_before'] = $stats['total_tasks'] + $stats['total_projects'] + $stats['total_events'];
@@ -1469,16 +1473,16 @@ class WP_MCP_AI_PM_Command_Center_Page {
 					// Sync tasks from Upwork contracts if available.
 					if ( class_exists( 'WP_MCP_AI_Tool_Sync_Upwork_Tasks' ) ) {
 						try {
-							$syncer  = new WP_MCP_AI_Tool_Sync_Upwork_Tasks();
+							$syncer    = new WP_MCP_AI_Tool_Sync_Upwork_Tasks();
 							$contracts = self::get_upwork_contracts_for_connection( $conn_id );
 
 							if ( ! empty( $contracts ) ) {
 								foreach ( $contracts as $contract_id ) {
 									$result = $syncer->execute(
 										array(
-											'contract_id'   => $contract_id,
+											'contract_id' => $contract_id,
 											'connection_id' => $conn_id,
-											'limit'         => 10,
+											'limit'       => 10,
 										),
 										$user_context
 									);
@@ -1558,8 +1562,8 @@ class WP_MCP_AI_PM_Command_Center_Page {
 		$stats['total_projects'] = self::get_cpt_count( 'mcp_ai_project' );
 		$stats['total_events']   = self::get_cpt_count( 'mcp_ai_event' );
 
-		$total_after            = $stats['total_tasks'] + $stats['total_projects'] + $stats['total_events'];
-		$stats['new_items']     = max( 0, $total_after - $stats['total_items_before'] );
+		$total_after        = $stats['total_tasks'] + $stats['total_projects'] + $stats['total_events'];
+		$stats['new_items'] = max( 0, $total_after - $stats['total_items_before'] );
 
 		// Save the last-ingestion timestamp.
 		update_option( 'wp_mcp_ai_pm_cc_last_work_ingestion', time(), false );
@@ -1574,7 +1578,7 @@ class WP_MCP_AI_PM_Command_Center_Page {
 	 * @param string $connection_id Remote site connection ID.
 	 * @return array List of Upwork contract IDs.
 	 */
-	private static function get_upwork_contracts_for_connection( $connection_id ) {
+	private static function get_upwork_contracts_for_connection( $connection_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Reserved for future connection-scoped contract resolution.
 		$contracts = array();
 
 		// Look for CRM tasks/deals with Upwork source that have active contract IDs.
