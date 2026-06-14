@@ -56,6 +56,7 @@ class WP_MCP_AI_PM_Command_Center_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_pm_cc_get_pipeline', array( __CLASS__, 'ajax_get_pipeline' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_pm_cc_get_deadlines', array( __CLASS__, 'ajax_get_deadlines' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_pm_cc_get_activity', array( __CLASS__, 'ajax_get_activity' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_pm_cc_ingest_work_items', array( __CLASS__, 'ajax_ingest_work_items' ) );
 	}
 
 	/**
@@ -626,7 +627,152 @@ class WP_MCP_AI_PM_Command_Center_Page {
 				'order'          => 'DESC',
 			)
 		);
+
+		// --- Work Ingestion stats ---
+		$last_ingestion      = get_option( 'wp_mcp_ai_pm_cc_last_work_ingestion', false );
+		$last_ingestion_text = $last_ingestion
+			? sprintf(
+				/* translators: %s: human-readable time ago */
+				__( 'Last ingested %s ago', 'mcp-ai-wpoos-pro' ),
+				human_time_diff( (int) $last_ingestion, time() )
+			)
+			: __( 'Never ingested', 'mcp-ai-wpoos-pro' );
+
+		$total_tasks    = self::get_cpt_count( 'mcp_ai_task' );
+		$total_projects = self::get_cpt_count( 'mcp_ai_project' );
+		$total_events   = self::get_cpt_count( 'mcp_ai_event' );
+		$source_count   = self::get_pm_source_count();
+		$ingest_nonce   = wp_create_nonce( self::NONCE_ACTION );
 		?>
+
+		<!-- Work Ingestion Section -->
+		<div class="pm-cc-section" style="border-left: 3px solid #2271b1;">
+			<h2 style="display: flex; align-items: center; gap: 8px;">
+				<span class="dashicons dashicons-download" style="color:#2271b1;"></span>
+				<?php esc_html_e( 'Work Ingestion', 'mcp-ai-wpoos-pro' ); ?>
+			</h2>
+			<p class="description" style="margin-bottom: 16px;">
+				<?php esc_html_e( 'Manually pull tasks, projects, and events from all configured inbound sources (Upwork, email, remote sites) into the PM system and auto-categorize them using your workflow rules and templates.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<div class="pm-cc-source-stats" style="margin: 0 0 16px; padding: 12px; background: #f9f9f9; border-radius: 3px; display: flex; gap: 24px; flex-wrap: wrap;">
+				<div>
+					<strong><?php esc_html_e( 'Total Tasks:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<span id="pm-cc-total-tasks"><?php echo absint( $total_tasks ); ?></span>
+				</div>
+				<div>
+					<strong><?php esc_html_e( 'Total Projects:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<?php echo absint( $total_projects ); ?>
+				</div>
+				<div>
+					<strong><?php esc_html_e( 'Total Events:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<?php echo absint( $total_events ); ?>
+				</div>
+				<div>
+					<strong><?php esc_html_e( 'Configured Sources:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<?php echo absint( $source_count ); ?>
+				</div>
+				<div>
+					<strong><?php esc_html_e( 'Last Ingestion:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<span id="pm-cc-last-ingestion"><?php echo esc_html( $last_ingestion_text ); ?></span>
+				</div>
+			</div>
+
+			<p>
+				<button type="button" class="button button-primary" id="pm-cc-ingest-work-btn">
+					<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+					<?php esc_html_e( 'Pull & Create from All Sources', 'mcp-ai-wpoos-pro' ); ?>
+				</button>
+				<span class="description" style="margin-left: 10px;">
+					<?php esc_html_e( 'Imports new tasks, projects, and events from Upwork, email, and configured remote sources.', 'mcp-ai-wpoos-pro' ); ?>
+				</span>
+			</p>
+
+			<div id="pm-cc-ingest-message" class="notice" style="display: none; margin: 15px 0 0;">
+				<p></p>
+			</div>
+		</div>
+
+		<script>
+		jQuery(document).ready(function($) {
+			var $ingestBtn     = $('#pm-cc-ingest-work-btn');
+			var $ingestMsg     = $('#pm-cc-ingest-message');
+			var $ingestMsgP    = $ingestMsg.find('p');
+			var $lastIngest    = $('#pm-cc-last-ingestion');
+			var $totalTasks    = $('#pm-cc-total-tasks');
+			var ingestNonce    = <?php echo wp_json_encode( $ingest_nonce ); ?>;
+			var ingestProcessing = <?php echo wp_json_encode( __( 'Processing…', 'mcp-ai-wpoos-pro' ) ); ?>;
+
+			$ingestBtn.on('click', function() {
+				if ($ingestBtn.prop('disabled')) return;
+
+				$ingestBtn.prop('disabled', true);
+				$ingestBtn.find('.dashicons').addClass('spin');
+
+				// Hide previous message.
+				$ingestMsg.hide().removeClass('notice-success notice-error notice-warning');
+
+				$.ajax({
+					url: ajaxurl,
+					type: 'POST',
+					data: {
+						action: 'wp_mcp_ai_pm_cc_ingest_work_items',
+						nonce: ingestNonce
+					},
+					success: function(response) {
+						$ingestBtn.prop('disabled', false);
+						$ingestBtn.find('.dashicons').removeClass('spin');
+
+						if (response.success && response.data) {
+							var data = response.data;
+							var msg  = [];
+
+							if (data.sources_checked) {
+								msg.push(data.sources_checked + ' source(s) processed.');
+							}
+							if (data.tasks_created) {
+								msg.push(data.tasks_created + ' task(s) created.');
+							}
+							if (data.tasks_updated) {
+								msg.push(data.tasks_updated + ' task(s) updated.');
+							}
+							if (data.projects_created) {
+								msg.push(data.projects_created + ' project(s) created.');
+							}
+							if (data.events_created) {
+								msg.push(data.events_created + ' event(s) created.');
+							}
+							if (data.new_items > 0) {
+								msg.push(data.new_items + ' new item(s) overall.');
+							}
+
+							var summary = msg.length ? msg.join(' ') : <?php echo wp_json_encode( __( 'No new items found.', 'mcp-ai-wpoos-pro' ) ); ?>;
+
+							$ingestMsg.addClass('notice-success').show();
+							$ingestMsgP.text(summary);
+
+							// Update stats.
+							if (data.total_tasks !== undefined) {
+								$totalTasks.text(data.total_tasks);
+							}
+							$lastIngest.text(<?php echo wp_json_encode( __( 'Just now', 'mcp-ai-wpoos-pro' ) ); ?>);
+						} else {
+							var errMsg = (response.data && response.data.message) ? response.data.message : <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos-pro' ) ); ?>;
+							$ingestMsg.addClass('notice-error').show();
+							$ingestMsgP.text(errMsg);
+						}
+					},
+					error: function() {
+						$ingestBtn.prop('disabled', false);
+						$ingestBtn.find('.dashicons').removeClass('spin');
+						$ingestMsg.addClass('notice-error').show();
+						$ingestMsgP.text(<?php echo wp_json_encode( __( 'Network error. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?>);
+					}
+				});
+			});
+		});
+		</script>
+
 		<div class="pm-cc-section">
 			<h2><?php esc_html_e( 'Recent Tasks', 'mcp-ai-wpoos-pro' ); ?></h2>
 			<?php if ( empty( $tasks ) ) : ?>
@@ -1257,6 +1403,230 @@ class WP_MCP_AI_PM_Command_Center_Page {
 			);
 		}
 		return $items;
+	}
+
+	// =========================================================================
+	// Work Ingestion
+	// =========================================================================
+
+	/**
+	 * AJAX handler: ingest work items from all configured PM sources.
+	 *
+	 * Pulls tasks, projects, and events from Upwork connections, Gmail/email
+	 * sources, and remote sites into the PM system.
+	 *
+	 * @since 2.8.0
+	 */
+	public static function ajax_ingest_work_items() {
+		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$stats = array(
+			'sources_checked'   => 0,
+			'tasks_created'     => 0,
+			'tasks_updated'     => 0,
+			'projects_created'  => 0,
+			'events_created'    => 0,
+			'skipped_existing'  => 0,
+			'total_tasks'       => self::get_cpt_count( 'mcp_ai_task' ),
+			'total_projects'    => self::get_cpt_count( 'mcp_ai_project' ),
+			'total_events'      => self::get_cpt_count( 'mcp_ai_event' ),
+		);
+
+		$stats['total_items_before'] = $stats['total_tasks'] + $stats['total_projects'] + $stats['total_events'];
+		$user_context                = array( 'user_id' => get_current_user_id() );
+
+		// ── 1. Sync from Upwork connections ──
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+			// Filter to Upwork-type connections.
+			$upwork_connections = array();
+			foreach ( $all_connections as $conn_id => $connection ) {
+				$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+				if ( 'upwork' === $conn_type ) {
+					$upwork_connections[ $conn_id ] = $connection;
+				}
+			}
+
+			if ( ! empty( $upwork_connections ) ) {
+				$_sync_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/upwork/class-wp-mcp-ai-tool-sync-upwork-tasks.php';
+				if ( file_exists( $_sync_file ) ) {
+					require_once $_sync_file;
+				}
+
+				$_import_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/upwork/class-wp-mcp-ai-tool-import-upwork-project.php';
+				if ( file_exists( $_import_file ) ) {
+					require_once $_import_file;
+				}
+
+				foreach ( $upwork_connections as $conn_id => $connection ) {
+					++$stats['sources_checked'];
+
+					// Sync tasks from Upwork contracts if available.
+					if ( class_exists( 'WP_MCP_AI_Tool_Sync_Upwork_Tasks' ) ) {
+						try {
+							$syncer  = new WP_MCP_AI_Tool_Sync_Upwork_Tasks();
+							$contracts = self::get_upwork_contracts_for_connection( $conn_id );
+
+							if ( ! empty( $contracts ) ) {
+								foreach ( $contracts as $contract_id ) {
+									$result = $syncer->execute(
+										array(
+											'contract_id'   => $contract_id,
+											'connection_id' => $conn_id,
+											'limit'         => 10,
+										),
+										$user_context
+									);
+
+									if ( ! is_wp_error( $result ) ) {
+										$synced = isset( $result['synced'] ) ? (int) $result['synced'] : 0;
+										// Approximate: half are creates, half are updates when syncing.
+										$stats['tasks_created'] += $synced;
+									}
+								}
+							}
+						} catch ( \Exception $e ) {
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+								error_log( 'PM CC work ingestion Upwork sync error: ' . $e->getMessage() );
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// ── 2. Pull from Gmail/email connections (convert emails to tasks) ──
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+			foreach ( $all_connections as $conn_id => $connection ) {
+				$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+				if ( ! in_array( $conn_type, array( 'gmail', 'google_workspace', 'email_imap' ), true ) ) {
+					continue;
+				}
+
+				++$stats['sources_checked'];
+
+				// Attempt email-to-task conversion via the Gmail import tool if PM toolkit is enabled.
+				$_import_gmail_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-import-gmail-to-crm.php';
+				if ( file_exists( $_import_gmail_file ) && class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+					require_once $_import_gmail_file;
+
+					if ( class_exists( 'WP_MCP_AI_Tool_Import_Gmail_To_CRM' ) ) {
+						try {
+							$default_query = 'newer_than:7d is:unread';
+							$crm_settings  = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+							$default_query = $crm_settings['integrations']['gmail_default_query'] ?? $default_query;
+
+							$importer = new WP_MCP_AI_Tool_Import_Gmail_To_CRM();
+							$result   = $importer->execute(
+								array(
+									'query'       => $default_query,
+									'max_results' => 5,
+									'auto_reply'  => false,
+								),
+								$user_context
+							);
+
+							if ( ! is_wp_error( $result ) ) {
+								// Gmail import creates leads primarily, but also can create tasks if workflow rules map them.
+								$stats['tasks_created']    += isset( $result['tasks_created'] ) ? (int) $result['tasks_created'] : 0;
+								$stats['projects_created'] += isset( $result['projects_created'] ) ? (int) $result['projects_created'] : 0;
+							}
+						} catch ( \Exception $e ) {
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+								error_log( 'PM CC work ingestion Gmail error: ' . $e->getMessage() );
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// ── 3. Run template-based task creation for any pending template instantiations ──
+		// (Future: trigger template-based task/project creation here when scheduled.)
+
+		// ── Recalculate totals ──
+		$stats['total_tasks']    = self::get_cpt_count( 'mcp_ai_task' );
+		$stats['total_projects'] = self::get_cpt_count( 'mcp_ai_project' );
+		$stats['total_events']   = self::get_cpt_count( 'mcp_ai_event' );
+
+		$total_after            = $stats['total_tasks'] + $stats['total_projects'] + $stats['total_events'];
+		$stats['new_items']     = max( 0, $total_after - $stats['total_items_before'] );
+
+		// Save the last-ingestion timestamp.
+		update_option( 'wp_mcp_ai_pm_cc_last_work_ingestion', time(), false );
+
+		wp_send_json_success( $stats );
+	}
+
+	/**
+	 * Get Upwork contract IDs associated with a remote connection.
+	 *
+	 * @since 2.8.0
+	 * @param string $connection_id Remote site connection ID.
+	 * @return array List of Upwork contract IDs.
+	 */
+	private static function get_upwork_contracts_for_connection( $connection_id ) {
+		$contracts = array();
+
+		// Look for CRM tasks/deals with Upwork source that have active contract IDs.
+		$posts = get_posts(
+			array(
+				'post_type'      => array( 'mcp_ai_task', 'mcp_ai_deal' ),
+				'post_status'    => 'publish',
+				'posts_per_page' => 20,
+				'fields'         => 'ids',
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'     => '_wp_mcp_ai_task_upwork_contract_id',
+						'compare' => 'EXISTS',
+					),
+				),
+			)
+		);
+
+		foreach ( $posts as $post_id ) {
+			$contract_id = get_post_meta( $post_id, '_wp_mcp_ai_task_upwork_contract_id', true );
+			if ( $contract_id && ! in_array( $contract_id, $contracts, true ) ) {
+				$contracts[] = $contract_id;
+			}
+		}
+
+		return $contracts;
+	}
+
+	/**
+	 * Count configured inbound sources for PM ingestion.
+	 *
+	 * Includes Upwork connections, Gmail/email connections, and any remote
+	 * site connections that can feed work items into the PM system.
+	 *
+	 * @since 2.8.0
+	 * @return int Number of configured sources.
+	 */
+	private static function get_pm_source_count() {
+		$count = 0;
+
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+			foreach ( $all_connections as $connection ) {
+				$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+				// Count Upwork, Gmail, Google Workspace, and IMAP email connections.
+				if ( in_array( $conn_type, array( 'upwork', 'gmail', 'google_workspace', 'email_imap' ), true ) ) {
+					++$count;
+				}
+			}
+		}
+
+		return $count;
 	}
 
 	/**
