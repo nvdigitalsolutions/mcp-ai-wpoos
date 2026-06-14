@@ -537,7 +537,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Note: /cron-status route now handled by Tools Controller (Phase 3.4).
 
 			// Register thread CRUD endpoints.
-			$threads_controller = new WP_MCP_AI_REST_Threads_Controller();
+			$threads_controller = new WP_MCP_AI_REST_Threads_Controller( $this );
 			$threads_controller->register_routes();
 
 			// Note: /mcp route now handled by MCP Controller (Phase 3.3).
@@ -11517,15 +11517,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Translate WordPress types to OOS domain types.
 				$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
 
-				// Reject requests with no assistant and no profession — matches the guard
-				// in the non-OOS handle_chat_request path.
-				if ( ! $assistant_id && ! $profession_id ) {
-					return new WP_Error(
-						'wp_mcp_ai_missing_assistant',
-						__( 'No assistant was provided and no default assistant is configured.', 'mcp-ai-wpoos' ),
-						array( 'status' => 400 )
-					);
-				}
+			// Reject requests with no assistant and no profession — matches the guard
+			// in the non-OOS handle_chat_request path.
+			if ( ! $assistant_id && ! $profession_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_assistant',
+					__( 'No assistant was provided and no default assistant is configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
 
 				$user_id = get_current_user_id();
 
