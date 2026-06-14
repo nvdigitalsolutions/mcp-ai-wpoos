@@ -145,15 +145,9 @@ class GeminiClient extends AbstractProviderClient {
 		}
 
 		try {
-			$request    = new \Nyholm\Psr7\Request(
-				'POST',
-				$url,
-				array( 'Content-Type' => 'application/json' ),
-				$body,
-			);
-			$response   = $this->http->sendRequest( $request );
-			$statusCode = $response->getStatusCode();
-			$respBody   = (string) $response->getBody();
+			$response   = $this->http->send( 'POST', $url, array( 'Content-Type' => 'application/json' ), $body );
+			$statusCode = $response->statusCode;
+			$respBody   = $response->body;
 
 			if ( $statusCode >= 400 ) {
 				return $this->errors->create( "http_{$statusCode}", $respBody, array( 'status' => $statusCode ) );
@@ -197,7 +191,7 @@ class GeminiClient extends AbstractProviderClient {
 				$model,
 			);
 
-		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
+		} catch ( \Exception $e ) {
 			return $this->errors->create( 'http_request_failed', $e->getMessage() );
 		}
 	}
