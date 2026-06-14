@@ -4,40 +4,23 @@ import { useMessagesStore } from '../store/messagesStore';
 import { createSSEStream } from '../services/sse';
 import { apiPost } from '../services/api';
 
+/**
+ * Threads hook — read-only historical view.
+ *
+ * Threads are treated as a read-only history of past conversations.
+ * To browse a thread, select it; messages are loaded via GET.
+ *
+ * Sending a new message goes through the conversation transport
+ * (/mcp-ai/v1/chat-client), not the thread endpoint.  This keeps
+ * threads as a safe, immutable archive and avoids coupling the chat
+ * transport to the OOS engine's thread pipeline.
+ *
+ * @param {number} threadId Thread ID from URL params (optional).
+ * @returns {object} Thread store methods (read operations only).
+ */
 export function useThreads(threadId) {
 	const threadsStore = useThreadsStore();
 	const messagesStore = useMessagesStore();
-
-	const sendMessage = useCallback(async (content, mentions = []) => {
-		if (!threadId) return;
-
-		// Add user message.
-		messagesStore.addUserMessage(threadId, content);
-
-		// Start streaming.
-		messagesStore.startStream(threadId);
-
-		// Open SSE stream.
-		createSSEStream(
-			`/mcp-ai/v1/threads/${threadId}/messages`,
-			{ content, context_mentions: mentions },
-			{
-				onChunk: (chunk) => {
-					messagesStore.appendChunk(threadId, chunk);
-				},
-				onToolCall: (toolCall) => {
-					// Tool call cards handled inline in message content.
-				},
-				onDone: (data) => {
-					messagesStore.endStream(threadId, data.message_id, data.checkpoint_id);
-				},
-				onError: (err) => {
-					messagesStore.appendChunk(threadId, { content: `\n\n[Error: ${err.message}]` });
-					messagesStore.endStream(threadId);
-				},
-			}
-		);
-	}, [threadId, messagesStore]);
 
 	return {
 		threads: threadsStore.threads,
@@ -48,6 +31,5 @@ export function useThreads(threadId) {
 		archiveThread: threadsStore.archiveThread,
 		restoreThread: threadsStore.restoreThread,
 		summarizeThread: threadsStore.summarizeThread,
-		sendMessage,
 	};
 }
