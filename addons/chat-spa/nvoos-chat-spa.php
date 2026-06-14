@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Chat SPA
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: NV oOS Chat — modern React chat surface for the NV oOS plugin. Drop-in shortcode + Gutenberg block that talks to the existing NV oOS REST chat endpoints (mcp-ai/v1/chat-client, /chat-transcripts, /chat-memory) via the Vercel AI SDK UI layer (@ai-sdk/react). No Node server is introduced.
- * Version:     0.6.0
+ * Version:     0.7.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: NV Digital Solutions
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version — must match package.json. */
-define( 'NVOOS_CHAT_SPA_VERSION', '0.6.0' );
+define( 'NVOOS_CHAT_SPA_VERSION', '0.7.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_CHAT_SPA_FILE', __FILE__ );
