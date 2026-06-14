@@ -63,14 +63,16 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that google_analytics_credentials_json is in google_analytics subtab.
+	 * Test that google_analytics_credentials_json is in the Pro integrations section.
+	 * This field only exists in the Pro addon (WP_MCP_AI_Section_Pro_Integrations).
 	 */
 	public function test_google_analytics_credentials_json_in_subtab() {
-		if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
-			require_once dirname( __DIR__ ) . '/includes/admin/sections/class-wp-mcp-ai-section-integrations.php';
+		if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
+			$this->markTestSkipped( 'google_analytics_credentials_json is only available in the Pro addon.' );
+			return;
 		}
 
-		$section    = new WP_MCP_AI_Section_Integrations();
+		$section    = new WP_MCP_AI_Section_Pro_Integrations();
 		$fields     = $section->get_fields();
 		$reflection = new ReflectionClass( $section );
 		$method     = $reflection->getMethod( 'get_subtab_groups' );
@@ -78,32 +80,27 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'google_analytics_credentials_json', $fields, 'google_analytics_credentials_json field should be defined' );
-		$this->assertArrayHasKey( 'google_analytics', $subtab_groups, 'google_analytics subtab should exist' );
-		$this->assertContains( 'google_analytics_credentials_json', $subtab_groups['google_analytics']['fields'], 'google_analytics_credentials_json should be in google_analytics subtab' );
+		$this->assertArrayHasKey( 'analytics', $subtab_groups, 'analytics subtab should exist' );
+		$this->assertContains( 'google_analytics_credentials_json', $subtab_groups['analytics']['fields'], 'google_analytics_credentials_json should be in analytics subtab' );
 	}
 
 	/**
-	 * Test that ita_tariff_api_key is in ita_tariff subtab.
+	 * Test that ita_tariff_api_key field exists in the Integrations section.
+	 * Note: ita_tariff_api_key is a standalone field, not in a dedicated subtab.
 	 */
 	public function test_ita_tariff_api_key_in_subtab() {
 		if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			require_once dirname( __DIR__ ) . '/includes/admin/sections/class-wp-mcp-ai-section-integrations.php';
 		}
 
-		$section    = new WP_MCP_AI_Section_Integrations();
-		$fields     = $section->get_fields();
-		$reflection = new ReflectionClass( $section );
-		$method     = $reflection->getMethod( 'get_subtab_groups' );
-		$method->setAccessible( true );
-		$subtab_groups = $method->invoke( $section );
+		$section = new WP_MCP_AI_Section_Integrations();
+		$fields  = $section->get_fields();
 
 		$this->assertArrayHasKey( 'ita_tariff_api_key', $fields, 'ita_tariff_api_key field should be defined' );
-		$this->assertArrayHasKey( 'ita_tariff', $subtab_groups, 'ita_tariff subtab should exist' );
-		$this->assertContains( 'ita_tariff_api_key', $subtab_groups['ita_tariff']['fields'], 'ita_tariff_api_key should be in ita_tariff subtab' );
 	}
 
 	/**
-	 * Test that all 28 Phase 3 settings are accessible.
+	 * Test that all 27 Phase 3 settings (base plugin) are accessible.
 	 */
 	public function test_all_28_settings_accessible() {
 		// Load all section classes.
@@ -138,7 +135,6 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 			'federation_burst',
 			'federation_jwks_keys',
 			'federation_price_hints',
-			'google_analytics_credentials_json',
 			'ita_tariff_api_key',
 			'wordpress_gravatar_userinfo_endpoint',
 			'mesh_inbound_api_key',
@@ -190,6 +186,6 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 			}
 		}
 
-		$this->assertEmpty( $missing, 'All 28 Phase 3 settings should be defined. Missing: ' . implode( ', ', $missing ) );
+		$this->assertEmpty( $missing, 'All 27 Phase 3 settings should be defined. Missing: ' . implode( ', ', $missing ) );
 	}
 }

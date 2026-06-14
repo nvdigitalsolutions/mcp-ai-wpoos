@@ -133,6 +133,8 @@ class WP_MCP_AI_Provider_Enable_Disable_Test extends WP_UnitTestCase {
 		$section = new WP_MCP_AI_Section_Providers();
 
 		// Test with checkbox enabled.
+		// Set subtab context so sanitize_with_subtabs processes the openai subtab fields.
+		$_POST['subtab'] = 'openai';
 		$input_enabled = array(
 			'enable_openai' => '1',
 		);

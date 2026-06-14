@@ -287,9 +287,11 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			$result['usage'] = $image['usage'];
 		}
 
-		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included
-		// in the default response to prevent bloating tool results sent to chat clients and LLMs.
-		// If base64 content is needed, it should be retrieved via a separate endpoint or parameter.
+		// Include inline content payload (base64 encoded image data).
+		$content = $this->build_inline_content_payload( $storage );
+		if ( ! empty( $content ) ) {
+			$result['content'] = $content;
+		}
 
 		/**
 		 * Allow third parties to filter the Gemini image generation result before it is returned.

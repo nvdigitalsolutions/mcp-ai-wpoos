@@ -260,6 +260,9 @@ class WP_MCP_AI_Tool_Load_Balancer {
 		$task_lower      = strtolower( $task_description );
 
 		foreach ( $tools as $tool_slug => $tool ) {
+			if ( ! method_exists( $tool, 'get_definition' ) ) {
+				continue;
+			}
 			$definition = $tool->get_definition();
 			if ( empty( $definition ) ) {
 				continue;

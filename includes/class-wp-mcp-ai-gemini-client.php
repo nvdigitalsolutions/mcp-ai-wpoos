@@ -1912,6 +1912,16 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$normalized = $this->normalize_response( $decoded );
 
+			// Extract text content from the first candidate for direct access.
+			if ( isset( $decoded['candidates'][0]['content']['parts'] ) && is_array( $decoded['candidates'][0]['content']['parts'] ) ) {
+				foreach ( $decoded['candidates'][0]['content']['parts'] as $part ) {
+					if ( isset( $part['text'] ) ) {
+						$normalized['content'] = (string) $part['text'];
+						break;
+					}
+				}
+			}
+
 			// Extract Google Maps context token if available.
 			if ( isset( $decoded['candidates'][0]['googleMapsWidgetContextToken'] ) ) {
 				$normalized['google_maps_context_token'] = $decoded['candidates'][0]['googleMapsWidgetContextToken'];
