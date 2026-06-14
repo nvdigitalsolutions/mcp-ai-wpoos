@@ -25,6 +25,13 @@
  *   - The drawer is disabled for guest mounts and when
  *     `runtime.endpoints.memory` is absent.
  *
+ * As of v0.5.0 this component also supports the Threads sidebar:
+ *   - A "Threads" tab in the sidebar lists active threads from the thread
+ *     manager (`mcp-ai/v1/threads`).
+ *   - Clicking a thread loads its messages into the chat surface as
+ *     `initialMessages` (read-only — the chat transport stays on /chat-client).
+ *   - The "Conversations" tab still shows saved transcripts.
+ *
  * No Node server is introduced; the WordPress PHP layer remains the
  * orchestrator and AI provider gateway.
  */
@@ -47,6 +54,7 @@ import { MemoryDrawer, type MemoryTab } from './components/MemoryDrawer';
 import { TranscriptsSidebar } from './components/TranscriptsSidebar';
 import { HitlApprovalBar } from './components/HitlApprovalBar';
 import { useTranscriptSession } from './hooks/useTranscriptSession';
+import { useThreadsSidebar } from './hooks/useThreadsSidebar';
 import { useAttachments, ACCEPT_ATTR } from './hooks/useAttachments';
 
 interface AppProps {
@@ -97,6 +105,61 @@ export function App( { config }: AppProps ) {
 		disabled: transcriptsDisabled,
 	} );
 
+	// ── Threads sidebar (new) ────────────────────────────────────────────────
+	// Threads are always disabled for guests (same as transcripts).
+	const threadsDisabled = isGuest;
+
+	const threads = useThreadsSidebar( {
+		endpoint: runtime.endpoints.threads,
+		nonce: runtime.nonce,
+		disabled: threadsDisabled,
+	} );
+
+	// Sidebar tab state — "Conversations" or "Threads".
+	type SidebarTab = 'transcripts' | 'threads';
+	const [ sidebarTab, setSidebarTab ] = useState< SidebarTab >( 'transcripts' );
+
+	// When switching to the transcripts tab, deselect any active thread.
+	const handleTabChange = useCallback( ( tab: SidebarTab ) => {
+		setSidebarTab( tab );
+		if ( tab === 'transcripts' ) {
+			threads.deselectThread();
+		}
+	}, [ threads ] );
+
+	// When a transcript session is selected, deselect any active thread.
+	const handleSelectSession = useCallback(
+		( key: string ) => {
+			threads.deselectThread();
+			void session.selectSession( key );
+		},
+		[ session, threads ]
+	);
+
+	// Compute initialMessages: threads take priority when a thread is active.
+	const mergedInitialMessages = useMemo( () => {
+		if ( threads.threadInitialMessages ) {
+			return threads.threadInitialMessages.map( ( m, idx ) => ( {
+				id: m.id || `thread-msg-${ idx }`,
+				role: ( m.role === 'system' || m.role === 'tool' ? 'assistant' : m.role ) as
+					| 'user'
+					| 'assistant'
+					| 'system'
+					| 'data',
+				content: m.content,
+			} ) ) as Message[];
+		}
+		return session.initialMessages.map( ( m, idx ) => ( {
+			id: `${ session.sessionKey }:${ idx }`,
+			role: ( m.role === 'system' || m.role === 'tool' ? 'assistant' : m.role ) as
+				| 'user'
+				| 'assistant'
+				| 'system'
+				| 'data',
+			content: typeof m.content === 'string' ? m.content : '',
+		} ) ) as Message[];
+	}, [ threads.threadInitialMessages, session.initialMessages, session.sessionKey ] );
+
 	const transcriptsClient = useMemo(
 		() =>
 			new TranscriptsClient( {
@@ -123,17 +186,7 @@ export function App( { config }: AppProps ) {
 		// switching conversations does not bleed messages between them.
 		id: session.sessionKey,
 		api: endpoint,
-		initialMessages: session.initialMessages.map( ( m, idx ) => ( {
-			// `useChat` requires a stable id per message; transcripts don't carry one,
-			// so synthesize a deterministic key per index within the session.
-			id: `${ session.sessionKey }:${ idx }`,
-			role: ( m.role === 'system' || m.role === 'tool' ? 'assistant' : m.role ) as
-				| 'user'
-				| 'assistant'
-				| 'system'
-				| 'data',
-			content: typeof m.content === 'string' ? m.content : '',
-		} ) ) as Message[],
+		initialMessages: mergedInitialMessages as Message[],
 		// `fetch` is exposed by `useChat` so callers can plug in custom transports.
 		// We use it to bridge NV oOS's native SSE protocol into the AI SDK Data
 		// Stream Protocol that `useChat` expects.
@@ -166,7 +219,7 @@ export function App( { config }: AppProps ) {
 	}, [ messages ] );
 
 	const [ sidebarCollapsed, setSidebarCollapsed ] = useState< boolean >(
-		readInitialSidebarCollapsed
+			readInitialSidebarCollapsed
 	);
 	const toggleSidebar = useCallback( () => {
 		setSidebarCollapsed( ( prev ) => {
@@ -302,12 +355,21 @@ export function App( { config }: AppProps ) {
 					sessions={ session.sessions }
 					activeSessionKey={ session.sessionKey }
 					unavailableMessage={ session.unavailableMessage }
-					error={ session.error }
+					transcriptError={ session.error }
 					isCollapsed={ sidebarCollapsed }
 					onToggleCollapsed={ toggleSidebar }
-					onSelect={ ( key ) => void session.selectSession( key ) }
+					onSelect={ handleSelectSession }
 					onDelete={ ( key ) => void session.deleteSession( key ) }
 					onNew={ session.startNewSession }
+					threads={ threads.threads }
+					threadsLoading={ threads.isLoading }
+					threadsError={ threads.error }
+					threadsUnavailable={ threads.unavailable }
+					activeThreadId={ threads.activeThreadId }
+					activeTab={ sidebarTab }
+					onTabChange={ handleTabChange }
+					onSelectThread={ ( id ) => void threads.selectThread( id ) }
+					onDeselectThread={ threads.deselectThread }
 				/>
 			) }
 			<div className="nvoos-chat-spa-main">
@@ -324,12 +386,12 @@ export function App( { config }: AppProps ) {
 					/>
 				) }
 				<div className="nvoos-chat-spa-messages" role="log" aria-live="polite">
-					{ session.isLoading && (
+					{ ( session.isLoading || threads.isLoading ) && messages.length === 0 && (
 						<p className="nvoos-chat-spa-empty">
 							{ __( 'Loading conversation…', 'nvoos-chat-spa' ) }
 						</p>
 					) }
-					{ ! session.isLoading && messages.length === 0 && (
+					{ ! session.isLoading && ! threads.isLoading && messages.length === 0 && (
 						<p className="nvoos-chat-spa-empty">
 							{ __( 'Start a conversation…', 'nvoos-chat-spa' ) }
 						</p>

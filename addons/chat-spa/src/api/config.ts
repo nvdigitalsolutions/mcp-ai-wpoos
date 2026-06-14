@@ -18,6 +18,7 @@ export interface ChatSpaEndpoints {
 	chatClient: string;
 	transcripts: string;
 	memory: string;
+	threads: string;
 	/** Only present (non-empty) for users with manage_options. */
 	approvals: string;
 }
@@ -53,7 +54,8 @@ export function readChatSpaConfig(): ChatSpaRuntime | null {
 		typeof e.chatClient !== 'string' ||
 		typeof e.chat !== 'string' ||
 		typeof e.transcripts !== 'string' ||
-		typeof e.memory !== 'string'
+		typeof e.memory !== 'string' ||
+		typeof e.threads !== 'string'
 	) {
 		return null;
 	}
@@ -67,6 +69,7 @@ export function readChatSpaConfig(): ChatSpaRuntime | null {
 			chatClient: e.chatClient,
 			transcripts: e.transcripts,
 			memory: e.memory,
+			threads: e.threads,
 			approvals: typeof e.approvals === 'string' ? e.approvals : '',
 		},
 	};
