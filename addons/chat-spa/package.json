@@ -1,6 +1,6 @@
 {
   "name": "nvoos-chat-spa",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "NV oOS Chat SPA — React chat surface using the Vercel AI SDK UI layer (@ai-sdk/react) on top of NV oOS REST chat endpoints",
   "private": true,
   "type": "module",

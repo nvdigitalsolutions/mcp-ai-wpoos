@@ -348,6 +348,33 @@ export function App( { config }: AppProps ) {
 		}
 	}, [ input ] );
 
+	// ── Message actions (Phase 8) ────────────────────────────────────────────
+	// Feedback state: maps message id → rating.
+	const [ feedbackState, setFeedbackState ] = useState< Record< string, 'up' | 'down' > >( {} );
+
+	const handleDelete = useCallback(
+		( msgId: string ) => {
+			setMessages( ( prev ) => prev.filter( ( m ) => m.id !== msgId ) );
+		},
+		[ setMessages ]
+	);
+
+	const handleFeedback = useCallback(
+		( msgId: string, rating: 'up' | 'down' ) => {
+			setFeedbackState( ( prev ) => {
+				// Toggle off if the same rating is clicked again.
+				if ( prev[ msgId ] === rating ) {
+					const next = { ...prev };
+					delete next[ msgId ];
+					return next;
+				}
+				return { ...prev, [ msgId ]: rating };
+			} );
+			// TODO: Persist feedback to server via REST endpoint.
+		},
+		[]
+	);
+
 	return (
 		<div className="nvoos-chat-spa-app" data-theme={ config.theme ?? 'auto' }>
 			{ ! transcriptsDisabled && (
@@ -400,7 +427,14 @@ export function App( { config }: AppProps ) {
 						<div key={ m.id } className="nvoos-chat-spa-message-wrapper">
 							<MessageView
 								message={ m as Parameters< typeof MessageView >[ 0 ][ 'message' ] }
+								index={ idx }
+								totalCount={ messages.length }
+								isStreaming={ isStreaming }
+								onDelete={ handleDelete }
+								onFeedback={ handleFeedback }
+								feedback={ feedbackState[ m.id ] ?? null }
 							/>
+							{ /* Edit button: only on user messages when idle */ }
 							{ ! isStreaming && m.role === 'user' && (
 								<button
 									type="button"
@@ -411,6 +445,7 @@ export function App( { config }: AppProps ) {
 									✏
 								</button>
 							) }
+							{ /* Regenerate button: only on last assistant message when idle and there's a user msg before it */ }
 							{ ! isStreaming &&
 								m.role === 'assistant' &&
 								idx === messages.length - 1 &&
