@@ -168,22 +168,15 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 		$headers = $this->buildAuthHeaders( $apiKey );
 
 		try {
-			$request  = new \Nyholm\Psr7\Request(
-				'POST',
-				$baseUrl . '/chat/completions',
-				$headers,
-				$body,
-			);
-			$response = $this->http->sendRequest( $request );
-
-			$statusCode = $response->getStatusCode();
+			$response   = $this->http->send( 'POST', $baseUrl . '/chat/completions', $headers, $body );
+			$statusCode = $response->statusCode;
+			$streamBody = $response->body;
 
 			if ( $statusCode >= 400 ) {
-				return $this->parseError( $statusCode, (string) $response->getBody() );
+				return $this->parseError( $statusCode, $streamBody );
 			}
 
 			// Parse SSE stream.
-			$streamBody = (string) $response->getBody();
 			$assembled  = '';
 			$finish     = 'stop';
 			$toolCalls  = array();
@@ -274,7 +267,7 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 				),
 			);
 
-		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
+		} catch ( \Exception $e ) {
 			return $this->errors->create(
 				'http_request_failed',
 				"Stream request failed: {$e->getMessage()}",
