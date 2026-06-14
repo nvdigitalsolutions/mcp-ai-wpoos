@@ -798,3 +798,19 @@
 	animation: spin 0.8s linear infinite;
 	margin: 0 auto 12px;
 }
+
+/* Read-only thread badge */
+.nvoos-agent-panel__badge {
+	display: inline-block;
+	font-size: 10px;
+	font-weight: 500;
+	color: #787c82;
+	background: #f0f0f1;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+	padding: 1px 6px;
+	margin-left: 8px;
+	vertical-align: middle;
+	text-transform: uppercase;
+	cursor: help;
+}

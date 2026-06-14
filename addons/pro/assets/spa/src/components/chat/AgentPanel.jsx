@@ -8,6 +8,7 @@
 import { useState, useCallback, useRef, useEffect } from '@wordpress/element';
 import { useParams } from 'react-router-dom';
 import { useThreads } from '../../hooks/useThreads';
+import { useConversations } from '../../hooks/useConversations';
 import { useMessagesStore } from '../../store/messagesStore';
 import { useModelStore } from '../../store/modelStore';
 import { useProfilesStore } from '../../store/profilesStore';
@@ -23,7 +24,8 @@ import ModelComparisonView from '../models/ModelComparisonView';
 
 export default function AgentPanel() {
 	const { threadId } = useParams();
-	const { activeThread, sendMessage, createThread } = useThreads(threadId);
+	const { activeThread, createThread } = useThreads(threadId);
+	const { sendMessage, getMessages, clearMessages } = useConversations();
 	const messagesStore = useMessagesStore();
 	const { model } = useModelStore();
 	const { activeProfile } = useProfilesStore();
@@ -39,7 +41,8 @@ export default function AgentPanel() {
 	const messagesEndRef = useRef(null);
 	const textareaRef = useRef(null);
 
-	const threadMessages = messagesStore.getMessages(threadId);
+	// Thread messages (read-only historical view) or conversation messages (active chat).
+	const threadMessages = threadId ? messagesStore.getMessages(threadId) : getMessages();
 
 	const scrollToBottom = () => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -178,7 +181,7 @@ export default function AgentPanel() {
 			<div className="nvoos-agent-panel nvoos-agent-panel--empty">
 				<div className="nvoos-agent-panel__welcome">
 					<h1>NV oOS</h1>
-					<p>Select a thread or create a new one to get started.</p>
+					<p>Start a new conversation or browse a saved thread.</p>
 					<button onClick={() => createThread(0, model, activeProfile, {})} className="nvoos-btn nvoos-btn--primary">
 						New Thread
 					</button>
@@ -191,7 +194,14 @@ export default function AgentPanel() {
 		<div className="nvoos-agent-panel">
 			{/* Header with title, model, and profile selectors */}
 			<div className="nvoos-agent-panel__header">
-				<h1 className="nvoos-agent-panel__title">{activeThread?.title || 'Thread'}</h1>
+				<h1 className="nvoos-agent-panel__title">
+					{activeThread?.title || 'Thread'}
+					{activeThread && (
+						<span className="nvoos-agent-panel__badge" title="This thread is read-only. New messages are sent via the conversation transport.">
+							Read-only
+						</span>
+					)}
+				</h1>
 				<div className="nvoos-agent-panel__controls">
 					<ModelSelector />
 					<ProfileSelector onProfileChange={(name) => {
@@ -200,7 +210,7 @@ export default function AgentPanel() {
 				</div>
 			</div>
 
-			{/* Messages */}
+			{/* Messages — read-only when browsing a thread. */}
 			<div className="nvoos-agent-panel__messages">
 				{threadMessages.messages?.map((msg, i) => (
 					<div key={msg.id || i} className={`nvoos-message nvoos-message--${msg.role}`}>
