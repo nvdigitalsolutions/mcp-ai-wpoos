@@ -814,3 +814,128 @@
 	text-transform: uppercase;
 	cursor: help;
 }
+
+/* ── Chat Sidebar Tabs ─────────────────────────────────────────────────── */
+.nvoos-chat-sidebar-tabs {
+	display: flex;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.nvoos-chat-sidebar-tab {
+	flex: 1;
+	padding: 8px 4px;
+	border: none;
+	background: transparent;
+	font-size: 12px;
+	font-weight: 500;
+	color: #787c82;
+	cursor: pointer;
+	border-bottom: 2px solid transparent;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.nvoos-chat-sidebar-tab:hover {
+	color: #1e1e1e;
+}
+
+.nvoos-chat-sidebar-tab--active {
+	color: #2271b1;
+	border-bottom-color: #2271b1;
+}
+
+.nvoos-chat-sidebar-panel {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	overflow: hidden;
+}
+
+/* ── Chat Sidebar Items (Conversations) ─────────────────────────────────── */
+.nvoos-chat-sidebar-item-select {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	background: none;
+	border: none;
+	padding: 0;
+	text-align: left;
+	cursor: pointer;
+	font-size: 12px;
+	overflow: hidden;
+}
+
+.nvoos-chat-sidebar-item-delete {
+	background: none;
+	border: none;
+	color: #787c82;
+	cursor: pointer;
+	font-size: 16px;
+	padding: 0 4px;
+	line-height: 1;
+	opacity: 0;
+	transition: opacity 0.15s;
+}
+
+.nvoos-threads-sidebar__item:hover .nvoos-chat-sidebar-item-delete {
+	opacity: 1;
+}
+
+.nvoos-chat-sidebar-item-delete:hover {
+	color: #cc1818;
+}
+
+.nvoos-chat-sidebar-error {
+	color: #cc1818;
+	font-size: 12px;
+	padding: 8px 16px;
+	margin: 0;
+}
+
+/* ── Assistant List (sidebar) ──────────────────────────────────────────── */
+.nvoos-chat-sidebar-assistants {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	padding: 4px 8px;
+	border-bottom: 1px solid #dcdcde;
+	max-height: 160px;
+	overflow-y: auto;
+}
+
+.nvoos-chat-sidebar-assistant {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 8px;
+	border: none;
+	border-radius: 4px;
+	background: transparent;
+	font-size: 12px;
+	color: #1e1e1e;
+	cursor: pointer;
+	text-align: left;
+	width: 100%;
+}
+
+.nvoos-chat-sidebar-assistant:hover {
+	background: #f0f0f1;
+}
+
+.nvoos-chat-sidebar-assistant--active {
+	background: #e5e5ff;
+	color: #2271b1;
+	font-weight: 500;
+}
+
+.nvoos-chat-sidebar-assistant-icon {
+	flex-shrink: 0;
+	font-size: 8px;
+}
+
+.nvoos-chat-sidebar-assistant-name {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}

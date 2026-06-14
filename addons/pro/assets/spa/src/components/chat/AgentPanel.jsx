@@ -5,13 +5,15 @@
  * Zed equivalent: Agent Panel.
  */
 
-import { useState, useCallback, useRef, useEffect } from '@wordpress/element';
+import { useState, useCallback, useRef, useEffect, useContext } from '@wordpress/element';
 import { useParams } from 'react-router-dom';
 import { useThreads } from '../../hooks/useThreads';
 import { useConversations } from '../../hooks/useConversations';
+import { TranscriptContext } from '../../hooks/TranscriptContext';
 import { useMessagesStore } from '../../store/messagesStore';
 import { useModelStore } from '../../store/modelStore';
 import { useProfilesStore } from '../../store/profilesStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { useCheckpoints } from '../../hooks/useCheckpoints';
 import { useContextMentions } from '../../hooks/useContextMentions';
 import ProfileSelector from '../profiles/ProfileSelector';
@@ -29,7 +31,9 @@ export default function AgentPanel() {
 	const messagesStore = useMessagesStore();
 	const { model } = useModelStore();
 	const { activeProfile } = useProfilesStore();
+	const { selectedAssistantId } = useSettingsStore();
 	const { lastCheckpoint, diff, fetchCheckpoints, restoreCheckpoint, fetchDiff, clearDiff } = useCheckpoints(threadId);
+	const transcripts = useContext(TranscriptContext);
 	const mentionCtx = useContextMentions();
 
 	const [input, setInput] = useState('');
@@ -58,6 +62,15 @@ export default function AgentPanel() {
 			fetchCheckpoints();
 		}
 	}, [threadId, fetchCheckpoints]);
+	// Load transcript initialMessages into the store when session changes.
+	useEffect(() => {
+		if (transcripts && transcripts.initialMessages.length > 0 && !threadId) {
+			// Seed the conversation buffer with saved messages.
+			transcripts.initialMessages.forEach((m) => {
+				messagesStore.addUserMessage('__conversation__', m.content || '');
+			});
+		}
+	}, [transcripts?.initialMessages, transcripts?.sessionKey]);
 
 	// @-mention detection on input change.
 	const handleInputChange = useCallback((e) => {
@@ -138,7 +151,16 @@ export default function AgentPanel() {
 		setMentions([]);
 
 		try {
-			await sendMessage(content, currentMentions);
+			await sendMessage(content, currentMentions, { assistantId: selectedAssistantId });
+			// After turn completes, save conversation transcript.
+			if (transcripts) {
+				const msgs = getMessages().messages || [];
+				const wireMessages = msgs.map(m => ({
+					role: m.role,
+					content: typeof m.content === 'string' ? m.content : '',
+				}));
+				transcripts.saveTranscript(wireMessages, { finish_reason: 'stop', source: 'pro-spa' });
+			}
 		} catch (err) {
 			// Error handled in stream.
 		} finally {
