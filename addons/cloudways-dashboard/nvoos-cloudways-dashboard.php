@@ -62,7 +62,7 @@ function nvoos_cloudways_dashboard_is_base_active() {
  * @return bool True when the addon is operational.
  */
 function nvoos_cloudways_dashboard_is_ready() {
-	return NV_oOS_CloudwaysDashboard_Plugin::is_enabled();
+	return nvoos_cloudways_dashboard_is_base_active() && NV_oOS_CloudwaysDashboard_Plugin::is_enabled();
 }
 
 // Boot the plugin.
