@@ -232,6 +232,14 @@ require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-baseten-provider-client.php';
 
 // ---------------------------------------------------------------------------
+// WP 7.0 Connectors API bridge (no-op on WP < 7.0).
+// Must load after all provider client classes but before the tool
+// infrastructure so Credential_Resolver is available when
+// WP_MCP_AI_Model_Config::get_available_providers() is called.
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/bridge/bridge-init.php';
+
+// ---------------------------------------------------------------------------
 // Tool infrastructure and utilities
 // ---------------------------------------------------------------------------
 

@@ -417,37 +417,58 @@ class WP_MCP_AI_Model_Config {
 		$settings  = get_option( 'wp_mcp_ai_settings', array() );
 		$providers = array();
 
+		/*
+		 * API-key providers now resolve credentials through
+		 * WP_MCP_AI_Credential_Resolver, which checks four sources
+		 * in priority order:
+		 *   1. NV oOS settings (wp_mcp_ai_settings)
+		 *   2. WP 7.0 Connector DB (connectors_ai_{id}_api_key)
+		 *   3. Environment variable ({PROVIDER}_API_KEY)
+		 *   4. PHP constant ({PROVIDER}_API_KEY)
+		 *
+		 * When WP < 7.0, only source 1 is checked — identical to
+		 * the previous behaviour.  See includes/bridge/.
+		 */
+
 		// Check enable_openai setting (defaults to false if not set).
 		$enable_openai = isset( $settings['enable_openai'] ) ? $settings['enable_openai'] : false;
-		if ( $enable_openai && ! empty( $settings['openai_api_key'] ) ) {
+		if ( $enable_openai && WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) ) {
 			$providers['openai'] = __( 'OpenAI', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_anthropic setting (defaults to false if not set).
 		$enable_anthropic = isset( $settings['enable_anthropic'] ) ? $settings['enable_anthropic'] : false;
-		if ( $enable_anthropic && ! empty( $settings['anthropic_api_key'] ) ) {
+		if ( $enable_anthropic && WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' ) ) {
 			$providers['anthropic'] = __( 'Anthropic (Claude)', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_gemini setting (defaults to false if not set).
 		$enable_gemini = isset( $settings['enable_gemini'] ) ? $settings['enable_gemini'] : false;
-		if ( $enable_gemini && ! empty( $settings['gemini_api_key'] ) ) {
+		if ( $enable_gemini && WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) ) {
 			$providers['gemini'] = __( 'Google Gemini', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_ollama setting (defaults to false if not set).
+		// Ollama uses an endpoint URL, not an API key, so the
+		// credential resolver delegates to has_credentials() which
+		// returns true for no-key providers — but the enable toggle
+		// + endpoint URL check is still needed for the admin UI.
 		$enable_ollama = isset( $settings['enable_ollama'] ) ? $settings['enable_ollama'] : false;
 		if ( $enable_ollama && ! empty( $settings['ollama_endpoint_url'] ) ) {
 			$providers['ollama'] = __( 'Ollama', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_lm_studio setting (defaults to false if not set).
+		// Same rationale as Ollama — endpoint URL, not API key.
 		$enable_lm_studio = isset( $settings['enable_lm_studio'] ) ? $settings['enable_lm_studio'] : false;
 		if ( $enable_lm_studio && ! empty( $settings['lm_studio_endpoint_url'] ) ) {
 			$providers['lm_studio'] = __( 'LM Studio (Local)', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_cloudflare setting (defaults to false if not set).
+		// Cloudflare needs both a token AND an account ID — the
+		// Credential_Resolver only handles single API keys, so this
+		// provider keeps its two-field check.
 		$enable_cloudflare = isset( $settings['enable_cloudflare'] ) ? $settings['enable_cloudflare'] : false;
 		if ( $enable_cloudflare && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
 			$providers['cloudflare'] = __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' );
@@ -455,43 +476,43 @@ class WP_MCP_AI_Model_Config {
 
 		// Check enable_nvidia setting (defaults to false if not set).
 		$enable_nvidia = isset( $settings['enable_nvidia'] ) ? $settings['enable_nvidia'] : false;
-		if ( $enable_nvidia && ! empty( $settings['nvidia_api_key'] ) ) {
+		if ( $enable_nvidia && WP_MCP_AI_Credential_Resolver::has_credentials( 'nvidia' ) ) {
 			$providers['nvidia'] = __( 'NVIDIA NIM', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_deepseek setting (defaults to false if not set).
 		$enable_deepseek = isset( $settings['enable_deepseek'] ) ? $settings['enable_deepseek'] : false;
-		if ( $enable_deepseek && ! empty( $settings['deepseek_api_key'] ) ) {
+		if ( $enable_deepseek && WP_MCP_AI_Credential_Resolver::has_credentials( 'deepseek' ) ) {
 			$providers['deepseek'] = __( 'DeepSeek', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_kimi setting (defaults to false if not set).
 		$enable_kimi = isset( $settings['enable_kimi'] ) ? $settings['enable_kimi'] : false;
-		if ( $enable_kimi && ! empty( $settings['kimi_api_key'] ) ) {
+		if ( $enable_kimi && WP_MCP_AI_Credential_Resolver::has_credentials( 'kimi' ) ) {
 			$providers['kimi'] = __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_baseten setting (defaults to false if not set).
 		$enable_baseten = isset( $settings['enable_baseten'] ) ? $settings['enable_baseten'] : false;
-		if ( $enable_baseten && ! empty( $settings['baseten_api_key'] ) ) {
+		if ( $enable_baseten && WP_MCP_AI_Credential_Resolver::has_credentials( 'baseten' ) ) {
 			$providers['baseten'] = __( 'Baseten', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_openrouter setting (defaults to false if not set).
 		$enable_openrouter = isset( $settings['enable_openrouter'] ) ? $settings['enable_openrouter'] : false;
-		if ( $enable_openrouter && ! empty( $settings['openrouter_api_key'] ) ) {
+		if ( $enable_openrouter && WP_MCP_AI_Credential_Resolver::has_credentials( 'openrouter' ) ) {
 			$providers['openrouter'] = __( 'OpenRouter', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_digitalocean setting (defaults to false if not set).
 		$enable_digitalocean = isset( $settings['enable_digitalocean'] ) ? $settings['enable_digitalocean'] : false;
-		if ( $enable_digitalocean && ! empty( $settings['digitalocean_api_key'] ) ) {
+		if ( $enable_digitalocean && WP_MCP_AI_Credential_Resolver::has_credentials( 'digitalocean' ) ) {
 			$providers['digitalocean'] = __( 'DigitalOcean', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_huggingface setting (defaults to false if not set).
 		$enable_huggingface = isset( $settings['enable_huggingface'] ) ? $settings['enable_huggingface'] : false;
-		if ( $enable_huggingface && ! empty( $settings['huggingface_api_key'] ) ) {
+		if ( $enable_huggingface && WP_MCP_AI_Credential_Resolver::has_credentials( 'huggingface' ) ) {
 			$providers['huggingface'] = __( 'Hugging Face', 'mcp-ai-wpoos' );
 		}
 
