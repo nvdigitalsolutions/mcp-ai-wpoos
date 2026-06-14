@@ -1581,8 +1581,11 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 			foreach ( $all_connections as $conn ) {
-				$ct = isset( $conn['connection_type'] ) ? $conn['connection_type'] : '';
-				if ( in_array( $ct, array( 'gmail', 'google_workspace', 'email_imap' ), true ) ) {
+				$ct = isset( $conn['connection_type'] ) ? sanitize_key( $conn['connection_type'] ) : '';
+				if (
+					in_array( $ct, array( 'gmail', 'google_workspace', 'email_imap' ), true )
+					&& ! empty( $conn['enabled'] )
+				) {
 					++$source_count;
 				}
 			}
@@ -3777,8 +3780,11 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				foreach ( $all_connections as $conn_id => $connection ) {
 					$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
 
-					// Only pull from email/Gmail connections.
-					if ( ! in_array( $conn_type, array( 'gmail', 'google_workspace', 'email_imap' ), true ) ) {
+					// Only pull from enabled email/Gmail connections.
+					if (
+						! in_array( $conn_type, array( 'gmail', 'google_workspace', 'email_imap' ), true )
+						|| empty( $connection['enabled'] )
+					) {
 						continue;
 					}
 
