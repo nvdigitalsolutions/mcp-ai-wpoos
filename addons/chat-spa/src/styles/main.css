@@ -1093,3 +1093,68 @@ border-color: rgba( 255, 255, 255, 0.08 );
 background: #2a2a2a;
 border-color: rgba( 255, 255, 255, 0.1 );
 }
+
+/* ── Sidebar tabs (Threads integration, v0.5.0) ───────────────────── */
+
+.nvoos-chat-spa-sidebar-tabs {
+	display: flex;
+	border-bottom: 1px solid rgba( 0, 0, 0, 0.06 );
+}
+
+.nvoos-chat-spa-sidebar-tab {
+	flex: 1 1 auto;
+	font: inherit;
+	font-size: 0.75rem;
+	padding: 0.4rem 0.25rem;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: none;
+	color: rgba( 0, 0, 0, 0.55 );
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.nvoos-chat-spa-sidebar-tab:hover {
+	color: rgba( 0, 0, 0, 0.8 );
+}
+
+.nvoos-chat-spa-sidebar-tab--active {
+	color: inherit;
+	border-bottom-color: #8a2be2;
+}
+
+.nvoos-chat-spa-sidebar-panel {
+	flex: 1 1 auto;
+	overflow-y: auto;
+}
+
+.nvoos-chat-spa-sidebar-item-model {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	color: #8a2be2;
+}
+
+.nvoos-chat-spa-sidebar-item-stamp {
+	opacity: 0.8;
+}
+
+.nvoos-chat-spa-sidebar-item-count {
+	opacity: 0.7;
+}
+
+/* Dark-theme sidebar tab variants */
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-tab {
+	color: rgba( 255, 255, 255, 0.55 );
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-tab:hover {
+	color: rgba( 255, 255, 255, 0.8 );
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-tab--active {
+	color: #fff;
+	border-bottom-color: #b388ff;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-item-model {
+	color: #b388ff;
+}

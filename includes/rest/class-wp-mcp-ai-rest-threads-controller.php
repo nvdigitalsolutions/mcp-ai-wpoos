@@ -465,7 +465,7 @@ class WP_MCP_AI_REST_Threads_Controller extends WP_REST_Controller {
 		}
 
 		$user_id      = get_current_user_id();
-		$assistant_id = $request->get_param( 'assistant_id' );
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
 		$model        = $request->get_param( 'model' );
 		$profile      = $request->get_param( 'profile' );
 		$scope        = $request->get_param( 'scope' );
@@ -476,6 +476,16 @@ class WP_MCP_AI_REST_Threads_Controller extends WP_REST_Controller {
 		}
 		if ( ! is_array( $scope ) ) {
 			$scope = array();
+		}
+
+		// Auto-resolve assistant when none is provided.
+		if ( $assistant_id < 1 ) {
+			$settings     = get_option( 'wp_mcp_ai_settings', array() );
+			$assistant_id = ! empty( $settings['default_assistant_id'] ) ? absint( $settings['default_assistant_id'] ) : 0;
+
+			if ( $assistant_id < 1 ) {
+				$assistant_id = $this->get_any_assistant_id();
+			}
 		}
 
 		$result = $this->thread_manager->create_thread( $user_id, $assistant_id, $model, $profile, $scope );
@@ -640,11 +650,22 @@ class WP_MCP_AI_REST_Threads_Controller extends WP_REST_Controller {
 
 		// If we still have no assistant, use the site default.
 		if ( $assistant_id < 1 ) {
-			$settings         = get_option( 'wp_mcp_ai_settings', array() );
-			$assistant_id     = ! empty( $settings['default_assistant_id'] ) ? absint( $settings['default_assistant_id'] ) : 0;
-			$assistant_config = $assistant_id > 0 && class_exists( 'WP_MCP_AI_Assistant_CPT' )
-				? WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id )
-				: array();
+			$settings     = get_option( 'wp_mcp_ai_settings', array() );
+			$assistant_id = ! empty( $settings['default_assistant_id'] ) ? absint( $settings['default_assistant_id'] ) : 0;
+
+			// Only override config when a valid site default is found.
+			if ( $assistant_id > 0 && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			}
+
+			// Last-resort fallback: find any published assistant.
+			if ( $assistant_id < 1 && empty( $assistant_config['provider'] ) ) {
+				$fallback_id = $this->get_any_assistant_id();
+				if ( $fallback_id > 0 && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+					$assistant_id     = $fallback_id;
+					$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $fallback_id );
+				}
+			}
 		}
 
 		// If there is still no assistant and no model configured, return an error.
@@ -850,5 +871,35 @@ class WP_MCP_AI_REST_Threads_Controller extends WP_REST_Controller {
 
 		WP_MCP_AI_Thread_Manager::create_tables();
 		set_transient( $transient_key, true, DAY_IN_SECONDS );
+	}
+
+	/**
+	 * Return the ID of any published AI assistant as a last-resort fallback.
+	 *
+	 * When no assistant is assigned to the thread and no global
+	 * default_assistant_id is configured in settings, this helper queries
+	 * for the first published mcp_ai_assistant post so that incoming
+	 * messages always receive a reply rather than erroring.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @return int Assistant post ID, or 0 if none exist.
+	 */
+	private function get_any_assistant_id() {
+		$posts = get_posts(
+			array(
+				'post_type'              => 'mcp_ai_assistant',
+				'post_status'            => 'publish',
+				'numberposts'            => 1,
+				'fields'                 => 'ids',
+				'orderby'                => 'date',
+				'order'                  => 'ASC',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			)
+		);
+
+		return ! empty( $posts ) ? (int) $posts[0] : 0;
 	}
 }
