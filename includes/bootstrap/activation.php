@@ -271,6 +271,13 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		// This runs in the background after activation to avoid blocking.
 		do_action( 'wp_mcp_ai_after_activation' );
 
+		// Create thread management database tables (SPA conversation support).
+		$thread_manager_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-thread-manager.php';
+		if ( file_exists( $thread_manager_file ) ) {
+			require_once $thread_manager_file;
+			WP_MCP_AI_Thread_Manager::create_tables();
+		}
+
 		// Track plugin activation for analytics.
 		// Determine the plugin variant based on constants and file structure.
 		$plugin_variant = 'complete'; // Default for mcp-ai-wpoos.php.
@@ -523,6 +530,9 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 			$wpdb->prefix . 'mcp_ai_job_queue',
 			$wpdb->prefix . 'mcp_ai_hourly_token_usage',
 			$wpdb->prefix . 'mcp_ai_metric_events',
+			$wpdb->prefix . 'mcp_ai_threads',
+			$wpdb->prefix . 'mcp_ai_thread_messages',
+			$wpdb->prefix . 'mcp_ai_thread_checkpoints',
 		);
 
 		foreach ( $tables as $table ) {
