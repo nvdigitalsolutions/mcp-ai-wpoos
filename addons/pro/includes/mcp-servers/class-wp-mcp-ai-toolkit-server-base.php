@@ -483,14 +483,39 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 			$out[] = array(
 				'name'        => $slug,
 				'description' => isset( $definition['description'] ) ? $definition['description'] : ( isset( $definition['name'] ) ? $definition['name'] : $slug ),
-				'inputSchema' => isset( $definition['parameters'] ) && is_array( $definition['parameters'] )
-					? $definition['parameters']
-					: array(
-						'type'       => 'object',
-						'properties' => array(),
-					),
+				'inputSchema' => $this->resolve_input_schema( $definition, $tool ),
 			);
 		}
 		return $out;
+	}
+
+	/**
+	 * Resolve the inputSchema for a tool, preferring the definition's
+	 * parameters key and falling back to the tool's get_parameters_schema().
+	 *
+	 * Uses stdClass for empty properties so json_encode produces {} not [].
+	 *
+	 * @param array  $definition Tool definition from get_definition().
+	 * @param object $tool       The tool instance.
+	 * @return array
+	 */
+	protected function resolve_input_schema( array $definition, $tool ) {
+		if ( isset( $definition['parameters'] ) && is_array( $definition['parameters'] ) ) {
+			return $definition['parameters'];
+		}
+
+		if ( method_exists( $tool, 'get_parameters_schema' ) ) {
+			$schema = $tool->get_parameters_schema();
+			if ( is_array( $schema ) ) {
+				return $schema;
+			}
+		}
+
+		// Minimal fallback: empty object schema with properties as stdClass
+		// so json_encode outputs {} instead of [].
+		return array(
+			'type'       => 'object',
+			'properties' => new \stdClass(),
+		);
 	}
 }
