@@ -6,11 +6,15 @@
 
 import { useNavigate, useParams } from 'react-router-dom';
 import { useThreadsStore } from '../../store/threadsStore';
+import { useModelStore } from '../../store/modelStore';
+import { useProfilesStore } from '../../store/profilesStore';
 
 export default function ThreadsSidebar() {
 	const navigate = useNavigate();
 	const { threadId } = useParams();
 	const { threads, activeThreadId, setActiveThread, createThread, archiveThread } = useThreadsStore();
+	const { model } = useModelStore();
+	const { activeProfile } = useProfilesStore();
 
 	const handleSelect = (id) => {
 		setActiveThread(id);
@@ -19,7 +23,7 @@ export default function ThreadsSidebar() {
 
 	const handleNew = async () => {
 		try {
-			const thread = await createThread();
+			const thread = await createThread(0, model, activeProfile, {});
 			navigate(`/chat/${thread.id}`);
 		} catch (err) {
 			// Error displayed via toast or inline.
