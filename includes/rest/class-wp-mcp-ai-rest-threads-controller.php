@@ -606,11 +606,33 @@ class WP_MCP_AI_REST_Threads_Controller extends WP_REST_Controller {
 
 		$thread = $this->thread_manager->get_thread( $thread_id );
 		if ( ! $thread ) {
-			return new WP_Error(
-				'wp_mcp_ai_thread_not_found',
-				__( 'Thread not found.', 'mcp-ai-wpoos' ),
-				array( 'status' => 404 )
-			);
+			// Auto-create the thread so the SPA can send messages
+			// without a pre-existing thread (e.g. navigating directly
+			// to #/chat/{id}).
+			$user_id       = get_current_user_id();
+			$create_result = $this->thread_manager->create_thread( $user_id );
+
+			if ( is_wp_error( $create_result ) ) {
+				return $create_result;
+			}
+
+			$thread_id = (int) ( $create_result['data']['id'] ?? 0 );
+			if ( $thread_id < 1 ) {
+				return new WP_Error(
+					'wp_mcp_ai_thread_create_failed',
+					__( 'Failed to create thread.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			$thread = $this->thread_manager->get_thread( $thread_id );
+			if ( ! $thread ) {
+				return new WP_Error(
+					'wp_mcp_ai_thread_not_found',
+					__( 'Thread not found.', 'mcp-ai-wpoos' ),
+					array( 'status' => 404 )
+				);
+			}
 		}
 
 		// 1. Save the user message to the thread.
