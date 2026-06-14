@@ -72,7 +72,9 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 		$main_controller = new WP_MCP_AI_REST( $registry, $mock_client, $authenticator, $validator );
 		$mcp_controller  = new WP_MCP_AI_REST_MCP_Controller( $main_controller, $authenticator, $validator );
 
-		$mcp_controller->register_routes();
+		// Register routes during rest_api_init to avoid "doing it wrong" notices.
+		add_action( 'rest_api_init', array( $mcp_controller, 'register_routes' ) );
+		do_action( 'rest_api_init' );
 	}
 
 	/**

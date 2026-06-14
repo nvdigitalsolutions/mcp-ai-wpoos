@@ -513,6 +513,12 @@ unset(
 );
 
 // ---------------------------------------------------------------------------
+// Settings section autoloader — MUST be available outside is_admin() so CLI
+// test runs can resolve WP_MCP_AI_Section_* classes during instantiation.
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
+
+// ---------------------------------------------------------------------------
 // Admin-only includes
 // ---------------------------------------------------------------------------
 
@@ -576,7 +582,6 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-rest-context-diagnostic.php';
 	WP_MCP_AI_REST_Context_Diagnostic::init();
 
-	require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 	wp_mcp_ai_container()->get( 'admin.auth0_setup' );
 	wp_mcp_ai_container()->get( 'admin.settings' );
