@@ -27,6 +27,8 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-thread-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-threads-controller.php';
 
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
@@ -533,6 +535,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Note: /files/{file_id}/download route now handled by Tools Controller (Phase 3.4).
 
 			// Note: /cron-status route now handled by Tools Controller (Phase 3.4).
+
+			// Register thread CRUD endpoints.
+			$threads_controller = new WP_MCP_AI_REST_Threads_Controller();
+			$threads_controller->register_routes();
 
 			// Note: /mcp route now handled by MCP Controller (Phase 3.3).
 		}
