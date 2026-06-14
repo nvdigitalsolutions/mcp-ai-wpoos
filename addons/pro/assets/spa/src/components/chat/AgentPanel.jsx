@@ -9,6 +9,8 @@ import { useState, useCallback, useRef, useEffect } from '@wordpress/element';
 import { useParams } from 'react-router-dom';
 import { useThreads } from '../../hooks/useThreads';
 import { useMessagesStore } from '../../store/messagesStore';
+import { useModelStore } from '../../store/modelStore';
+import { useProfilesStore } from '../../store/profilesStore';
 import { useCheckpoints } from '../../hooks/useCheckpoints';
 import { useContextMentions } from '../../hooks/useContextMentions';
 import ProfileSelector from '../profiles/ProfileSelector';
@@ -23,6 +25,8 @@ export default function AgentPanel() {
 	const { threadId } = useParams();
 	const { activeThread, sendMessage, createThread } = useThreads(threadId);
 	const messagesStore = useMessagesStore();
+	const { model } = useModelStore();
+	const { activeProfile } = useProfilesStore();
 	const { lastCheckpoint, diff, fetchCheckpoints, restoreCheckpoint, fetchDiff, clearDiff } = useCheckpoints(threadId);
 	const mentionCtx = useContextMentions();
 
@@ -175,7 +179,7 @@ export default function AgentPanel() {
 				<div className="nvoos-agent-panel__welcome">
 					<h1>NV oOS</h1>
 					<p>Select a thread or create a new one to get started.</p>
-					<button onClick={() => createThread()} className="nvoos-btn nvoos-btn--primary">
+					<button onClick={() => createThread(0, model, activeProfile, {})} className="nvoos-btn nvoos-btn--primary">
 						New Thread
 					</button>
 				</div>

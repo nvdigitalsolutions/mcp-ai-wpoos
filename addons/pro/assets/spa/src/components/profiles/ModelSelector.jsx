@@ -3,7 +3,7 @@
  * Zed equivalent: Model selector in Agent Panel.
  */
 
-import { useState } from '@wordpress/element';
+import { useModelStore } from '../../store/modelStore';
 
 // Hardcoded model list — will be replaced by dynamic API in Phase 8.
 const DEFAULT_MODELS = [
@@ -15,17 +15,17 @@ const DEFAULT_MODELS = [
 ];
 
 export default function ModelSelector({ value, onChange }) {
-	const [selected, setSelected] = useState(value || DEFAULT_MODELS[0]);
+	const { model, setModel } = useModelStore();
+	const selected = value || model;
+	const selectedKey = `${selected.provider}|${selected.model}`;
 
 	const handleChange = (e) => {
 		const key = e.target.value;
-		const [provider, model] = key.split('|');
-		const item = { provider, model };
-		setSelected(item);
+		const [provider, modelName] = key.split('|');
+		const item = { provider, model: modelName };
+		setModel(item);
 		onChange?.(item);
 	};
-
-	const selectedKey = `${selected.provider}|${selected.model}`;
 
 	return (
 		<div className="nvoos-model-selector">
