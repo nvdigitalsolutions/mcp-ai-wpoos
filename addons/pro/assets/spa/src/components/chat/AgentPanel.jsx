@@ -65,10 +65,16 @@ export default function AgentPanel() {
 	// Load transcript initialMessages into the store when session changes.
 	useEffect(() => {
 		if (transcripts && transcripts.initialMessages.length > 0 && !threadId) {
-			// Seed the conversation buffer with saved messages.
-			transcripts.initialMessages.forEach((m) => {
-				messagesStore.addUserMessage('__conversation__', m.content || '');
-			});
+			// Seed the conversation buffer with saved messages (all roles).
+			messagesStore.setMessages(
+				'__conversation__',
+				transcripts.initialMessages.map((m, idx) => ({
+					role: m.role || 'assistant',
+					content: typeof m.content === 'string' ? m.content : '',
+					id: `transcript-${transcripts.sessionKey}-${idx}`,
+				})),
+				transcripts.initialMessages.length
+			);
 		}
 	}, [transcripts?.initialMessages, transcripts?.sessionKey]);
 
@@ -197,27 +203,12 @@ export default function AgentPanel() {
 		setInput(result.content);
 	}, []);
 
-	// Welcome screen when no thread selected.
-	if (!threadId) {
-		return (
-			<div className="nvoos-agent-panel nvoos-agent-panel--empty">
-				<div className="nvoos-agent-panel__welcome">
-					<h1>NV oOS</h1>
-					<p>Start a new conversation or browse a saved thread.</p>
-					<button onClick={() => createThread(0, model, activeProfile, {})} className="nvoos-btn nvoos-btn--primary">
-						New Thread
-					</button>
-				</div>
-			</div>
-		);
-	}
-
 	return (
 		<div className="nvoos-agent-panel">
 			{/* Header with title, model, and profile selectors */}
 			<div className="nvoos-agent-panel__header">
 				<h1 className="nvoos-agent-panel__title">
-					{activeThread?.title || 'Thread'}
+					{activeThread?.title || 'Conversation'}
 					{activeThread && (
 						<span className="nvoos-agent-panel__badge" title="This thread is read-only. New messages are sent via the conversation transport.">
 							Read-only
