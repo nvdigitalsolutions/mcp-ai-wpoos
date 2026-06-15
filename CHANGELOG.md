@@ -1,5 +1,156 @@
 # oOS – Changelog
 
+## [1.1.30] - 2026-06-15
+
+### Added — Chat SPA Phase 8: Message Actions & Content Enrichment (PRs #5381, #5383, #5390)
+
+- **Conversations sidebar** with assistant scoping in the Pro Chat SPA.
+- **Auto-create thread** when posting a message to a non-existent thread.
+- **Phase 8: message actions** — edit, delete, regenerate, copy, and content enrichment cards on every assistant message.
+- Pro SPA chat now routed through the chat-client endpoint; threads marked read-only after archiving.
+
+### Added — Project Management Toolkit Enhancement Phase A–D (PR #5370)
+
+- **Shared engine** (`WP_MCP_AI_PM_Engine`) powering the Command Center dashboard.
+- **Command Center dashboard** with real-time task visibility, status filters, and bulk actions.
+- **28 new AI tools** spanning task management, resource allocation, timeline generation, and reporting.
+- **Work Ingestion panel** on the Command Center tasks tab for importing external tasks.
+
+### Added — CRM Toolkit: Duplicates, Email Hygiene & Analytics (PRs #5362, #5367, #5368)
+
+- **Duplicate detection** engine with safe one-click merge and bulk merge from the Duplicates tab.
+- **Email hygiene module** — classify domains by reputation, manage exclusion/priority lists, auto-prune.
+- **Top Customers & Top Clients analytics** tools with dedicated Command Center tabs.
+- **Merged status filter** and column on the leads admin list.
+- **Inline tag editing** and email priority/exclude actions in the leads table.
+- **Repair CRM data** tool fixing broken dates, generic titles, and impersonal sender names.
+- **Refresh All Sources** button on the Command Center Support tab.
+- **LinkedIn & Upwork** external sourcing with LinkedIn as a Remote Sites OAuth 2.0 connection type.
+
+### Added — DietPi Pro Toolkit Phases 0–3 (PRs #5346, #5348, #5350)
+
+- **Phase 0–1:** Foundations — CPT/CCT scaffolding, admin settings page, 19 core tools for system monitoring, package management, and service control.
+- **Phase 2:** Backup, update, storage, and dashboard tools.
+- **Phase 3:** Provisioning automation, infrastructure blueprints, and SSH proxy.
+- Registered as an MCP server with Feature subtab toggle.
+
+### Added — Layer I Guardrails (PRs #5340, #5344)
+
+- **Stay-on-target jailbreak prevention** — harness Layer I intercepts prompt-injection and role-change attacks.
+- Activated per-assistant via the LLM Harness metabox.
+
+### Added — LibreChat Addon (PR #5336)
+
+- New `addons/librechat/` addon with code interpreter, speech-to-text/text-to-speech services, and web search reranker.
+- Added to SPA build workflow and addon ZIP build pipeline.
+
+### Added — Context Window Management (PRs #5335, #5348, #5352)
+
+- **Pre-flight context-window validation** across all 13 AI providers (OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA, Cloudflare, Hugging Face, LM Studio, Ollama).
+- **tiktoken integration** for accurate token counting before API dispatch.
+- **Estimator metabox** on the assistant edit screen showing real-time token budget.
+- **Token-budget tool capping** — tools exceeding the remaining budget are auto-excluded.
+- **Shared `validate_context_window()` helper** in the language model router.
+- **Chat parity drift detection** workflow and context-window validation in `lib/core`.
+- Model limits synced with June 2026 canonical catalog.
+
+### Added — WP 7.0 Connectors API Bridge (PR #5387)
+
+- Bridge for provider credentials enabling forward-compatibility with the WordPress 7.0 Connectors API.
+- Bridge classes load unconditionally to prevent fatal errors on WP < 7.0.
+
+### Added — Chat Transcript & Agent Memory Retention (PRs #5356, #5357)
+
+- **Base:** `WP_MCP_AI_Transcript_Retention` — configurable retention policies for chat transcripts, automatic cleanup cron.
+- **Pro:** `WP_MCP_AI_Memory_Retention` — agent memory lifecycle management with pruning and retention windows.
+
+### Added — Pro Toolkit Optimizations Phase 1–3 (PRs #5355, #5356, #5357)
+
+- **Phase 1:** Chat Channels and Social Media toolkits — autoload control and retention policies.
+- **Phase 2:** Healthcare, Ecommerce, Calendar, and Orchestration toolkits.
+- **Phase 3:** Document Generation and QMS toolkits.
+- All classes wired into their respective toolkit init files with 767-line PHPUnit test suite.
+
+### Added — OAuth & API Connection Management (PR #5351)
+
+- **Disconnect buttons** for OAuth and API connections in the admin UI.
+- **Auto-clear OAuth tokens** when provider credentials change on save.
+
+### Added — MCP Server Directory Addon Proposal (PR #5380)
+
+- Implementation proposal for a new addon cataloguing and discovering MCP servers.
+
+### Fixed — SPA Reliability Sweep (PRs #5371–#5379)
+
+- Register thread REST endpoints (fixes SPA `createThread` crash).
+- Fix SPA router context error — lift `HashRouter` to Layout component.
+- Fix `createThread` onClick event serialization crash.
+- Register `POST /threads/{id}/messages` endpoint for SPA chat.
+- Pass model and profile selections to `createThread`.
+- Fix SPA bootstrap tool iteration and transcript `turn_count`.
+- Fix SPA bootstrap REST route not registered for API calls.
+- Fix SPA enqueue paths and PM blueprints missing JS.
+- Restore Zed-inspired SPA accidentally deleted by revert.
+- Build SPA bundle and fix import paths for pre-packaged distribution.
+
+### Fixed — Core & Provider Fixes
+
+- **12 test suites** fixed and SPL autoloader moved before `is_admin()` gate.
+- **Toolkit MCP tools** returning empty `inputSchema` for image tools.
+- **OOS engine fatal error** from undefined `sendRequest` in provider streaming clients.
+- **Agentic loop tool result persistence** fixed across all providers.
+- **OpenAI real-time SSE streaming** never triggering.
+- **Fatal error** loading bridge classes unconditionally on WP < 7.0.
+- **Context-window validation** added to all 13 providers with shared helper.
+- **Stale provider validation lists** rejecting DeepSeek and newer providers.
+- **Schedule preset data mismatches** fixed with improved error logging.
+
+### Fixed — CRM & Data Fixes
+
+- CRM configured sources count showing 0 for valid Gmail connections.
+- Slider/range fields not rendering input controls.
+- 3 CPT slugs exceeding 20-character WordPress limit.
+- Support ticket CPT renamed from `mcp_ai_support_ticket` to `mcp_ai_ticket`.
+- Memory tools capability flags fixed for orchestration layer.
+- Extended Cognition review issues: interface, trait, pipeline, storage, menu.
+- Playbook orphan accumulation, unsafe deletion, and sync timeouts.
+
+### Fixed — Addon Fixes
+
+- **Docs Hub:** async rebuild stalls and browse critical error; broken Intuit privacy policy link.
+- **Cloudways Dashboard:** removed `Requires Plugins` header; added base-active check to `_is_ready()`.
+- **Pro Integrations:** subtab overwriting redirect after save.
+- **Performance monitor:** buttons, reports, and test execution restored.
+- **DietPi Toolkit:** PHPCS formatting across all files; PHPCompat hex-string comparison fix.
+
+### Fixed — Security
+
+- **guzzlehttp/psr7** pinned to `^2.10.2` to fix CVE-2026-49214 and CRLF injection.
+- **esbuild** pinned to `^0.28.1` across all addons; esbuild integrity check vulnerability in Pro addon.
+- **shell-quote** bumped to `>=1.8.4` via overrides to fix CVE-2026-9277.
+- **vitest/vite/esbuild** security alerts fixed in `schedule-anything-spa` addon.
+
+### Fixed — Infrastructure
+
+- `redirect_canonical` prevented from breaking well-known endpoints.
+- `tool-status.txt` reads guarded against missing file warnings.
+- WPCS lint issues in section-tools and tool-registry.
+- ESLint `no-var` violations in performance-admin.js.
+- PHPCS errors in CRM analytics and compliance tools.
+- CRM inline alignment and sprintf i18n placeholders fixed.
+- Chat parity workflow permissions and PR comment formatting.
+- YAML indentation error in chat-parity-check workflow.
+
+### Changed
+
+- **46 healthcare-style blueprints** converted to CRM-style format.
+- **All legacy flat-format blueprints** upgraded to canonical formats.
+- **README** updated with PM toolkit, repository map, and broken anchor link fixes.
+- **v1.1.29** comprehensive documentation refresh across all surfaces.
+- **66 proposal statuses** audited and refreshed for v1.1.29.
+- 75 PHPCS violations auto-fixed in Pro addon bootstrap file.
+- Composer production autoloader regenerated (`--no-dev --classmap-authoritative`).
+
 ## [1.1.29] - 2026-06-11
 
 ### Added — Pro Toolkit Optimizations Phase 1–3 (PRs #5355, #5356, #5357)
