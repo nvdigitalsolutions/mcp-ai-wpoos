@@ -2552,6 +2552,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_media_presets() {
 			return array(
+
+				// ================================================================
+				// Maintenance (existing)
+				// ================================================================
+
 				'media_library_cleanup'     => array(
 					'name'          => __( 'Media Library Cleanup', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Removes orphaned media files, clears broken attachment records, and reclaims storage space.', 'mcp-ai-wpoos-pro' ),
@@ -2631,6 +2636,302 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'schedule_data' => array(
 						'assistant_config' => array(
 							'message' => 'Perform a comprehensive monthly media usage audit. Analyse storage growth trends, most-accessed media files, bandwidth consumption by file type, upload patterns, and provide recommendations for media management improvements.',
+						),
+					),
+				),
+
+				// ================================================================
+				// Blog & Post — Content Creation & Publishing
+				// ================================================================
+
+				'weekly_blog_topic_research' => array(
+					'name'          => __( 'Weekly Blog Topic Research', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Researches trending topics in your industry, analyses competitor content, and recommends blog post ideas with SEO keywords, target audience, and estimated search volume — following HubSpot and SEMrush content strategy best practices.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'content',
+					'icon'          => 'dashicons-lightbulb',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'blog', 'research', 'content-strategy', 'seo' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Research trending blog topics for the coming week. Use research_blog_post to explore current industry trends, competitor content, and keyword opportunities. Analyse: 1) Trending topics in our niche with search volume estimates. 2) Content gaps our competitors are not covering. 3) Seasonal or timely topics relevant to our audience. 4) Long-tail keyword opportunities with low competition. 5) Suggested titles with primary and secondary keywords. 6) Recommended content format (how-to, listicle, case study, opinion, comparison) for each topic. Generate a prioritised editorial brief for 3-5 blog post ideas with target word count, suggested headings, and primary image recommendations.',
+						),
+					),
+				),
+				'weekly_blog_post_writer'   => array(
+					'name'          => __( 'Weekly Blog Post Writer', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Drafts a complete, publish-ready blog post each week with SEO metadata, schema markup, embedded media suggestions, and accessibility best practices following Google E-E-A-T content quality guidelines.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'content',
+					'icon'          => 'dashicons-edit-page',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'blog', 'writing', 'content', 'eeat' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Draft a complete blog post for this week. Use research_blog_post to perform deep research on the selected topic, then use create_post to generate a publish-ready draft. The post must include: 1) Compelling SEO-optimised title (H1) with primary keyword. 2) Meta description (150-160 chars) with call-to-action. 3) Introduction that hooks the reader with a statistic, question, or story. 4) Well-structured body with H2/H3 subheadings following the inverted pyramid. 5) 3-5 data points or statistics with citations. 6) Suggested image placements with alt-text descriptions. 7) Internal links to 2-3 related posts. 8) Schema.org Article markup. 9) Author bio snippet. 10) Call-to-action at the end. Set post status to draft for human review before publishing.',
+						),
+					),
+				),
+				'blog_editorial_calendar'   => array(
+					'name'          => __( 'Editorial Calendar Generator', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Generates a 30-day editorial calendar with topic clusters, publishing cadence, content pillar mapping, and social media promotion suggestions — following the topic cluster model used by HubSpot and Content Marketing Institute.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'content',
+					'icon'          => 'dashicons-calendar-alt',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'wp_mcp_ai_monthly',
+					'tags'          => array( 'media', 'blog', 'editorial', 'calendar', 'content-strategy' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Generate a 30-day editorial calendar for the blog. Structure around the topic cluster model: 1) Identify 2-3 pillar content topics for the month. 2) Map 6-8 cluster posts that link to each pillar. 3) Assign a publishing date and time for each post (recommend Tue-Thu for B2B, Mon-Wed for B2C). 4) Include content type (how-to, listicle, case study, news, opinion). 5) Assign target keywords and search intent (informational, commercial, transactional, navigational). 6) Note seasonal hooks, industry events, or product launches. 7) Suggest social media promotion angles for each post. 8) Identify repurposing opportunities (infographic, video, podcast, email newsletter). Output as a structured calendar view with status tracking.',
+						),
+					),
+				),
+				'post_seo_audit'            => array(
+					'name'          => __( 'Weekly Post SEO Audit', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Audits existing blog posts for SEO health including keyword rankings, meta completeness, internal linking opportunities, content freshness, and Core Web Vitals alignment — following Yoast and Google Search Essentials best practices.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-search',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'seo', 'audit', 'posts', 'optimisation' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Perform a weekly SEO audit of existing blog posts. Use get_post to review the latest 20 published posts and check: 1) Meta title length (50-60 chars ideal, flag truncated titles). 2) Meta description presence and length (150-160 chars). 3) H1 tag count (must be exactly 1). 4) Keyword in first 100 words. 5) Image alt-text completeness. 6) Internal link count (recommend 3-5 per post). 7) External authoritative links. 8) Readability score (Flesch-Kincaid target 60-70). 9) Content length (flag posts under 300 words as thin content). 10) Last updated date (flag posts older than 6 months for refresh). 11) Mobile-friendliness indicators. Generate a prioritised fix list sorted by impact (critical, high, medium, low) with specific recommendations for each post.',
+						),
+					),
+				),
+				'draft_post_review_alert'   => array(
+					'name'          => __( 'Draft Post Review Alert', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Daily Slack broadcast listing all draft posts ready for editorial review, with word count, author, last-modified date, and completeness score — ensuring no content gets stuck in draft limbo.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'communication',
+					'icon'          => 'dashicons-format-status',
+					'schedule_type' => 'channel_broadcast',
+					'schedule'      => 'daily',
+					'tags'          => array( 'media', 'drafts', 'review', 'editorial', 'workflow' ),
+					'schedule_data' => array(
+						'broadcast_config' => array(
+							'message'  => 'Draft post review alert: the following posts are in draft status and ready for editorial review. Include post title, author, word count, days in draft, and whether a featured image is set. Posts in draft for more than 7 days should be flagged for priority review or archival.',
+							'channels' => array( 'slack' ),
+						),
+					),
+				),
+				'post_performance_report'   => array(
+					'name'          => __( 'Monthly Post Performance Report', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Analyses blog post performance including traffic, engagement, conversions, bounce rate, and social shares — provides data-driven recommendations for content optimisation and repurposing.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-chart-bar',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'wp_mcp_ai_monthly',
+					'tags'          => array( 'media', 'analytics', 'posts', 'performance', 'content-marketing' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Generate a monthly blog post performance report. Analyse: 1) Top 10 posts by pageviews, time on page, and conversion rate. 2) Bottom 10 posts (low traffic/engagement) with recommendations to update, merge, or retire. 3) Traffic sources breakdown (organic, social, direct, referral, email). 4) Keyword ranking changes for target keywords. 5) Social share counts by platform. 6) Comment engagement and sentiment. 7) Bounce rate trends and pages with above-average bounce rates. 8) Mobile vs desktop performance split. 9) Content format winners (which formats drive the most engagement). 10) Suggested content refreshes for high-potential underperforming posts. Include a summary dashboard and 3 actionable recommendations for next month.',
+						),
+					),
+				),
+				'content_gap_analysis'      => array(
+					'name'          => __( 'Content Gap Analysis', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Weekly competitive content gap analysis identifying topics your competitors rank for that your site does not cover — following the Ahrefs and SEMrush content gap methodology.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'content',
+					'icon'          => 'dashicons-editor-expand',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'content-gap', 'competitive', 'seo', 'strategy' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Perform a weekly content gap analysis against 3-5 key competitors. Use research_blog_post to explore competitor content. Identify: 1) Keywords competitors rank for (top 20) that we do not. 2) Topics with high search volume and low competition where we have no content. 3) Content formats competitors use that we do not (video, infographics, podcasts, tools, calculators). 4) Questions people ask in our niche that no one is answering well (People Also Ask opportunities). 5) Content depth comparison — topics where competitor content is more comprehensive. 6) Quick-win opportunities (low-effort, high-impact topics we can produce within a week). Prioritise gaps by potential traffic impact and content effort. Generate a content roadmap for the next 30 days.',
+						),
+					),
+				),
+
+				// ================================================================
+				// Page Management
+				// ================================================================
+
+				'page_content_freshness'    => array(
+					'name'          => __( 'Page Content Freshness Audit', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Weekly audit of key pages (About, Services, Contact, Landing Pages) for content freshness, broken CTAs, outdated information, and brand voice consistency — following the Website Content Lifecycle model.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-admin-page',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'pages', 'freshness', 'audit', 'content-lifecycle' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Perform a weekly content freshness audit of all published pages. Use get_post to review key pages (limit to 30 most important pages by traffic or business value). Check: 1) Content accuracy — flag outdated statistics, old dates, deprecated product references, or changed service offerings. 2) CTA functionality — verify all call-to-action buttons and forms reference current offers. 3) Brand voice consistency — flag pages that deviate from established tone and voice guidelines. 4) Legal/compliance — check for outdated terms, privacy policy dates, or missing cookie consent language. 5) Multimedia status — flag broken images, missing videos, or unoptimised embeds. 6) Page load indicators — flag extremely long pages or those with excessive embeds. 7) Last-reviewed date — flag pages not updated in 6+ months. Generate a freshness report with a RAG status (Red/Amber/Green) for each page and recommended update actions.',
+						),
+					),
+				),
+				'page_seo_accessibility'    => array(
+					'name'          => __( 'Monthly Page SEO & Accessibility Check', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Comprehensive monthly audit of core pages for SEO best practices and WCAG 2.1 AA accessibility compliance including heading hierarchy, ARIA landmarks, colour contrast, and keyboard navigation.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-universal-access-alt',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'wp_mcp_ai_monthly',
+					'tags'          => array( 'media', 'pages', 'seo', 'accessibility', 'wcag' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Perform a monthly SEO and accessibility audit of core pages (About, Services, Contact, and top 10 landing pages by traffic). SEO checks: 1) Title tag optimisation and uniqueness across pages. 2) Meta description quality and uniqueness. 3) URL structure (short, keyword-rich, no special characters). 4) Canonical tags presence. 5) Open Graph and Twitter Card meta tags. 6) Schema.org structured data validity. Accessibility checks (WCAG 2.1 AA): 7) Heading hierarchy (no skipped levels, exactly one H1). 8) All images have descriptive alt text (decorative images use empty alt). 9) Colour contrast ratios meet 4.5:1 minimum. 10) Form inputs have associated labels. 11) ARIA landmarks used correctly. 12) Keyboard-navigable interactive elements. 13) Skip-to-content link present. 14) Video captions and audio transcripts. Generate a combined report with violations grouped by severity and fix recommendations.',
+						),
+					),
+				),
+				'broken_link_scanner'       => array(
+					'name'          => __( 'Weekly Broken Link Scanner', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Scans all published pages and posts for broken internal and external links, 404 errors, and redirect chains — critical for both SEO health and user experience.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'maintenance',
+					'icon'          => 'dashicons-admin-links',
+					'schedule_type' => 'task',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'links', 'broken', 'seo', 'maintenance' ),
+					'schedule_data' => array(
+						'hook' => 'wp_mcp_ai_media_broken_link_scan',
+					),
+				),
+				'landing_page_performance'  => array(
+					'name'          => __( 'Landing Page Performance Report', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Weekly analysis of landing page conversion rates, bounce rates, and Core Web Vitals (LCP, FID, CLS) with actionable optimisation recommendations following Google Page Experience guidelines.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-dashboard',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'landing-pages', 'performance', 'core-web-vitals', 'cro' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Generate a weekly landing page performance report for the top 10 landing pages by traffic. Analyse: 1) Conversion rate trends (week-over-week and month-over-month). 2) Bounce rate and exit rate per page. 3) Average time on page. 4) Core Web Vitals: LCP (Largest Contentful Paint, target <2.5s), FID (First Input Delay, target <100ms), CLS (Cumulative Layout Shift, target <0.1). 5) Mobile vs desktop performance split. 6) Form abandonment rate. 7) Above-the-fold content effectiveness. 8) CTA click-through rate. 9) Page load time and resource waterfall. Flag pages that fail Core Web Vitals thresholds. Provide specific optimisation recommendations ranked by expected impact on conversion rate.',
+						),
+					),
+				),
+				'page_meta_audit'           => array(
+					'name'          => __( 'Monthly Page Metadata Audit', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Audits all pages for complete and accurate metadata including SEO titles, descriptions, social sharing cards, schema markup, and canonical URLs — ensuring every indexed page is fully optimised.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-tag',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'wp_mcp_ai_monthly',
+					'tags'          => array( 'media', 'pages', 'metadata', 'seo', 'schema' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Perform a monthly metadata completeness audit of all published pages. For each page check: 1) SEO title set and within 50-60 character range. 2) Meta description set and within 150-160 character range with compelling CTA. 3) Focus keyword assigned. 4) Open Graph title, description, and image tags present and valid. 5) Twitter Card tags present. 6) Canonical URL correctly set and self-referencing. 7) Schema.org markup present and valid (Article, WebPage, Organization, LocalBusiness as applicable). 8) Robots meta tag not accidentally set to noindex on important pages. 9) Breadcrumb markup. 10) Hreflang tags if multilingual. Flag any page with missing or invalid metadata. Generate a completeness score (0-100) for each page and a fix-it checklist sorted by SEO impact.',
+						),
+					),
+				),
+
+				// ================================================================
+				// Media Management — Image & Asset Optimisation
+				// ================================================================
+
+				'media_alt_text_audit'      => array(
+					'name'          => __( 'Weekly Alt Text Audit', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Audits all media library images for missing or low-quality alt text, generates AI-suggested alt descriptions, and reports accessibility compliance rate — essential for both WCAG and image SEO.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-format-image',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'alt-text', 'accessibility', 'seo', 'images' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Audit the media library for alt text completeness and quality. 1) Identify all images missing alt text entirely. 2) Flag images with generic alt text (e.g., "image", "photo", "picture", file names). 3) Flag images with keyword-stuffed alt text (over 125 characters or unnatural keyword density). 4) Calculate overall alt text compliance percentage. 5) For the top 20 most-viewed images missing good alt text, generate AI-suggested descriptive alt text (concise, descriptive, includes context, under 125 characters). 6) Group findings by post/page context so editors can fix alt text in bulk. 7) Track week-over-week compliance improvement. Report the compliance rate, number of images needing attention, and a priority fix list.',
+						),
+					),
+				),
+				'media_compression_sweep'   => array(
+					'name'          => __( 'Weekly Media Compression Sweep', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Scans for uncompressed or oversized images, automatically compresses them using Sharp, converts to WebP/AVIF where supported, and reports storage savings — following Google PageSpeed Insights image optimisation guidelines.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'maintenance',
+					'icon'          => 'dashicons-image-rotate',
+					'schedule_type' => 'task',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'compression', 'webp', 'avif', 'performance' ),
+					'schedule_data' => array(
+						'hook' => 'wp_mcp_ai_media_compression_sweep',
+					),
+				),
+				'featured_image_check'      => array(
+					'name'          => __( 'Daily Featured Image Check', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Daily check for posts and pages missing featured images, with Slack notification listing affected content — featured images are critical for social sharing, Open Graph cards, and blog listing pages.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'communication',
+					'icon'          => 'dashicons-cover-image',
+					'schedule_type' => 'channel_broadcast',
+					'schedule'      => 'daily',
+					'tags'          => array( 'media', 'featured-image', 'posts', 'social-sharing' ),
+					'schedule_data' => array(
+						'broadcast_config' => array(
+							'message'  => 'Featured image check: the following published posts and pages are missing a featured image. Featured images are important for social media sharing (Open Graph), blog listing pages, and search appearance. Please assign featured images to these items.',
+							'channels' => array( 'slack' ),
+						),
+					),
+				),
+				'media_duplicate_detector'  => array(
+					'name'          => __( 'Monthly Duplicate Media Detector', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Detects duplicate and near-duplicate images in the media library using perceptual hashing, reports wasted storage, and suggests deduplication actions — essential for media library hygiene at scale.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'maintenance',
+					'icon'          => 'dashicons-images-alt2',
+					'schedule_type' => 'task',
+					'schedule'      => 'wp_mcp_ai_monthly',
+					'tags'          => array( 'media', 'duplicates', 'storage', 'cleanup' ),
+					'schedule_data' => array(
+						'hook' => 'wp_mcp_ai_media_duplicate_detect',
+					),
+				),
+				'media_copyright_review'    => array(
+					'name'          => __( 'Monthly Copyright & Licence Review', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Monthly review of media library for potential copyright issues — flags images without licence information, stock photos nearing licence expiry, and suggests attribution compliance improvements.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'business',
+					'icon'          => 'dashicons-lock',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'wp_mcp_ai_monthly',
+					'tags'          => array( 'media', 'copyright', 'licensing', 'compliance', 'legal' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Perform a monthly copyright and licence review of the media library. 1) Identify images that lack licence/source metadata in their attachment fields. 2) Flag stock photos from known providers (Unsplash, Pexels, Shutterstock) and check if licence terms require attribution that is missing. 3) Flag images with embedded EXIF copyright that differs from site ownership. 4) Detect potentially AI-generated images that may lack clear licensing. 5) Identify images sourced from third-party websites without documented permission. 6) Check for images with watermarks still visible (indicating unlicensed use). 7) Review any Creative Commons images for proper attribution format. Generate a risk report with High/Medium/Low risk classification for each flagged item and recommended remediation steps.',
+						),
+					),
+				),
+				'image_seo_report'          => array(
+					'name'          => __( 'Weekly Image SEO Report', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Generates a weekly image SEO report covering file names, alt text quality, image sitemap status, structured data for images, and Google Image Search optimisation recommendations.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-format-gallery',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'image-seo', 'google-images', 'optimisation' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Generate a weekly image SEO report. Analyse: 1) Top 50 images by page placement — check file names are descriptive and keyword-rich (not IMG_001.jpg). 2) Alt text quality score distribution (excellent, good, fair, poor, missing). 3) Image file size vs dimensions (flag images with poor compression ratio). 4) Images missing from XML sitemap or image sitemap. 5) Structured data for images (ImageObject schema) presence. 6) Responsive images — check srcset and sizes attributes are correctly implemented. 7) Lazy loading implementation status. 8) Images indexed in Google Image Search vs total images. 9) Image CDN usage and configuration status. 10) Next-gen format adoption rate (WebP/AVIF vs JPEG/PNG). Provide a summary scorecard and top 10 fixes prioritised by potential traffic impact.',
+						),
+					),
+				),
+				'media_collection_health'   => array(
+					'name'          => __( 'Weekly Media Collection Health Check', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Monitors media collections for completeness, template consistency, processing errors, and stale items — ensuring organised media stays organised.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'media',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-portfolio',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'media', 'collections', 'health', 'organisation' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Perform a weekly health check of all media collections. Use list_media_templates and related tools to review: 1) Collections with zero items (empty collections to archive). 2) Collections not updated in 90+ days (stale). 3) Collections where items are missing files (broken references). 4) Templates applied to collections and their last-validation status. 5) Collections with inconsistent file formats or aspect ratios. 6) Processing errors or failed batch operations that need retry. 7) Collections approaching storage quotas. Generate a health dashboard with collection-level RAG status and recommended cleanup actions.',
 						),
 					),
 				),

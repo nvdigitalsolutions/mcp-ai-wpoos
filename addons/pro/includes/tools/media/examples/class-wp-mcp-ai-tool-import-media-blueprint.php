@@ -21,7 +21,12 @@ class WP_MCP_AI_Tool_Import_Media_Blueprint implements WP_MCP_AI_Tool_Interface,
 
 	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/media/examples';
 
-	const BLUEPRINT_SLUGS = array( 'digital-asset-manager' );
+	const BLUEPRINT_SLUGS = array(
+			'digital-asset-manager',
+			'content-publisher',
+			'blog-editor',
+			'page-manager',
+		);
 
 	/**
 	 * {@inheritdoc}
