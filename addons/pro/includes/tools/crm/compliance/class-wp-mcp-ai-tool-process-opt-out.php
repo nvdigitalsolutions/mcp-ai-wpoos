@@ -72,17 +72,22 @@ class WP_MCP_AI_Tool_Process_Opt_Out implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'identifier' => array(
+				'identifier'      => array(
 					'type'        => 'string',
 					'description' => __( 'Email address or phone number.', 'mcp-ai-wpoos-pro' ),
 				),
-				'channel'    => array(
+				'channel'         => array(
 					'type'    => 'string',
 					'default' => 'all',
 				),
-				'reason'     => array(
+				'reason'          => array(
 					'type'    => 'string',
 					'default' => 'user_request',
+				),
+				'preserve_record' => array(
+					'type'        => 'boolean',
+					'default'     => false,
+					'description' => __( 'If true, skip PII pseudonymisation — only add to DNC and revoke consent.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array( 'identifier' ),
@@ -124,28 +129,39 @@ class WP_MCP_AI_Tool_Process_Opt_Out implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$identifier = strtolower( trim( sanitize_text_field( $arguments['identifier'] ) ) );
-		$channel    = sanitize_key( $arguments['channel'] ?? 'all' );
-		$reason     = sanitize_key( $arguments['reason'] ?? 'user_request' );
+		$identifier      = strtolower( trim( sanitize_text_field( $arguments['identifier'] ) ) );
+		$channel         = sanitize_key( $arguments['channel'] ?? 'all' );
+		$reason          = sanitize_key( $arguments['reason'] ?? 'user_request' );
+		$preserve_record = ! empty( $arguments['preserve_record'] );
+
 		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
 			return new WP_Error( 'engine_missing', __( 'CRM Engine not available.', 'mcp-ai-wpoos-pro' ) );
 		}
 		WP_MCP_AI_CRM_Engine::add_to_dnc( $identifier, $channel );
-		// If email, find matching contact and revoke consent.
-		if ( strpos( $identifier, '@' ) !== false ) {
+
+		$is_email      = ( strpos( $identifier, '@' ) !== false );
+		$meta_key      = $is_email ? 'email' : 'phone';
+		$pseudonymized = 0;
+		$matched_ids   = array();
+		$per_page      = 50;
+		$page          = 1;
+
+		// ── Step 2: Find ALL matching contacts (paginated) ──
+		do {
 			$q = new WP_Query(
 				array(
 					'post_type'      => array( 'mcp_ai_lead', 'mcp_crm_contacts' ),
 					'post_status'    => 'publish',
-					'posts_per_page' => 1,
+					'posts_per_page' => $per_page,
+					'paged'          => $page,
 					'fields'         => 'ids',
-					'meta_query'     => array(
+					'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 						array(
-							'key'   => 'email',
+							'key'   => $meta_key,
 							'value' => $identifier,
 						),
 					),
-					'no_found_rows'  => true,
+					'no_found_rows'  => false,
 				)
 			);
 			if ( $q->have_posts() && class_exists( 'WP_MCP_AI_CRM_Consent' ) ) {
@@ -158,17 +174,34 @@ class WP_MCP_AI_Tool_Process_Opt_Out implements WP_MCP_AI_Tool_Interface, WP_MCP
 				'dnc',
 				0,
 				array(
-					'identifier' => $identifier,
-					'channel'    => $channel,
-					'reason'     => $reason,
+					'identifier'    => $identifier,
+					'channel'       => $channel,
+					'reason'        => $reason,
+					'matched_ids'   => $matched_ids,
+					'pseudonymized' => $pseudonymized,
 				)
 			);
 		}
+
 		return array(
-			'success'    => true,
-			'message'    => __( 'Opt-out processed.', 'mcp-ai-wpoos-pro' ),
-			'identifier' => $identifier,
-			'channel'    => $channel,
+			'success'          => true,
+			'message'          => $preserve_record
+				? __( 'Opt-out processed (record preserved).', 'mcp-ai-wpoos-pro' )
+				: sprintf(
+					/* translators: 1: number of contacts pseudonymised, 2: total matched */
+					_n(
+						'Opt-out processed. %1$d of %2$d matching contact pseudonymised.',
+						'Opt-out processed. %1$d of %2$d matching contacts pseudonymised.',
+						$pseudonymized,
+						'mcp-ai-wpoos-pro'
+					),
+					$pseudonymized,
+					count( $matched_ids )
+				),
+			'identifier'       => $identifier,
+			'channel'          => $channel,
+			'matched_contacts' => count( $matched_ids ),
+			'pseudonymized'    => $pseudonymized,
 		);
 	}
 }
