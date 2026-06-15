@@ -230,6 +230,7 @@ require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-openrouter-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-digitalocean-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-baseten-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-deepseek-provider-client.php';
 
 // ---------------------------------------------------------------------------
 // WP 7.0 Connectors API bridge (no-op on WP < 7.0).

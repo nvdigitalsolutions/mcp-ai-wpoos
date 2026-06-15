@@ -398,13 +398,19 @@ class WP_MCP_AI_Token_Usage_Service {
 		$provider = sanitize_key( $provider );
 
 		$provider_labels = array(
-			'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
-			'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
-			'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
-			'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
-			'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
-			'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
-			'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
+			'openai'       => __( 'OpenAI', 'mcp-ai-wpoos' ),
+			'anthropic'    => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+			'gemini'       => __( 'Gemini', 'mcp-ai-wpoos' ),
+			'ollama'       => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
+			'lm_studio'    => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
+			'huggingface'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+			'cloudflare'   => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
+			'deepseek'     => __( 'DeepSeek', 'mcp-ai-wpoos' ),
+			'openrouter'   => __( 'OpenRouter', 'mcp-ai-wpoos' ),
+			'nvidia'       => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
+			'digitalocean' => __( 'DigitalOcean GenAI', 'mcp-ai-wpoos' ),
+			'baseten'      => __( 'Baseten', 'mcp-ai-wpoos' ),
+			'nv_hosted'    => __( 'NV oOS Cloud', 'mcp-ai-wpoos' ),
 		);
 
 		if ( isset( $provider_labels[ $provider ] ) ) {

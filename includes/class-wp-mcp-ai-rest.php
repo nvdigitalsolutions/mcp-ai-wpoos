@@ -3038,6 +3038,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// exhausts its iteration cap.
 			$agentic_tool_messages = array();
 
+			// Accumulate cost across all agentic-loop LLM calls so that
+			// intermediate iterations are not silently discarded.
+			// Phase 8: Per-iteration cost tracking.
+			$agentic_cost_accumulator = array(
+				'cost_usd'                => 0.0,
+				'total_prompt_tokens'     => 0,
+				'total_completion_tokens' => 0,
+				'total_cached_tokens'     => 0,
+				'iterations'              => array(),
+			);
+
 			// If streaming is requested, use streaming-enabled agentic loop.
 			if ( $wants_streaming ) {
 				// Enforce SSE rate limits before opening a streaming connection.
@@ -3119,6 +3130,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				WP_MCP_AI_Logger::log_error( $log_message, $context );
 				return $response;
+			}
+
+			// Capture cost of the initial LLM call before entering the agentic loop.
+			// This ensures the first response (which may contain tool_calls) is
+			// counted even when the loop executes multiple iterations.
+			$initial_cost = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'initial chat response' );
+			if ( is_array( $initial_cost ) ) {
+				$agentic_cost_accumulator['cost_usd']                += $initial_cost['cost_usd'];
+				$agentic_cost_accumulator['total_prompt_tokens']     += isset( $initial_cost['prompt_tokens'] ) ? (int) $initial_cost['prompt_tokens'] : 0;
+				$agentic_cost_accumulator['total_completion_tokens'] += isset( $initial_cost['completion_tokens'] ) ? (int) $initial_cost['completion_tokens'] : 0;
+				$agentic_cost_accumulator['iterations'][]             = array_merge(
+					$initial_cost,
+					array(
+						'iteration' => 0,
+						'phase'     => 'initial',
+					)
+				);
 			}
 
 			// Agentic loop: execute tools until LLM stops requesting them.
@@ -3400,20 +3428,39 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return $response;
 				}
 
+				// Capture cost for this agentic-loop LLM call so intermediate
+				// iterations are tracked and not silently discarded.
+				$iter_cost = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'agentic iteration ' . ( $iteration + 1 ) );
+				if ( is_array( $iter_cost ) ) {
+					$agentic_cost_accumulator['cost_usd']                += $iter_cost['cost_usd'];
+					$agentic_cost_accumulator['total_prompt_tokens']     += isset( $iter_cost['prompt_tokens'] ) ? (int) $iter_cost['prompt_tokens'] : 0;
+					$agentic_cost_accumulator['total_completion_tokens'] += isset( $iter_cost['completion_tokens'] ) ? (int) $iter_cost['completion_tokens'] : 0;
+					if ( isset( $iter_cost['cached_tokens'] ) ) {
+						$agentic_cost_accumulator['total_cached_tokens'] += (int) $iter_cost['cached_tokens'];
+					}
+					$agentic_cost_accumulator['iterations'][] = array_merge(
+						$iter_cost,
+						array(
+							'iteration' => $iteration + 1,
+							'phase'     => 'agentic',
+						)
+					);
+				}
+
 				++$iteration;
 
-				/**
-				 * Fires after a single agentic-loop iteration has completed in
-				 * the non-streaming REST chat path. Pure notification hook —
-				 * consumed by the measurement observer to emit the
-				 * `chat.agentic.iterations` histogram. No behaviour change.
-				 *
-				 * @since 1.3.0
-				 *
-				 * @param int   $iteration    Total iterations completed so far (1-based).
-				 * @param mixed $assistant_id Assistant identifier.
-				 */
-				do_action( 'wp_mcp_ai_agentic_iteration_complete', $iteration, $assistant_id );
+					/**
+					 * Fires after a single agentic-loop iteration has completed in
+					 * the non-streaming REST chat path. Pure notification hook —
+					 * consumed by the measurement observer to emit the
+					 * `chat.agentic.iterations` histogram. No behaviour change.
+					 *
+					 * @since 1.3.0
+					 *
+					 * @param int   $iteration    Total iterations completed so far (1-based).
+					 * @param mixed $assistant_id Assistant identifier.
+					 */
+					do_action( 'wp_mcp_ai_agentic_iteration_complete', $iteration, $assistant_id );
 			}
 
 			if ( $iteration >= $max_iterations ) {
@@ -3540,6 +3587,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Extract cost information for Phase 7 Week 5-6 Enhanced Token Tracking.
 			$cost_data = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'chat response' );
 
+			// Merge accumulated agentic-loop costs into the final cost data so that
+			// intermediate iterations are not lost. The response payload (and all
+			// downstream consumers such as the billing observer and measurement
+			// collector) receive the true total cost.
+			if ( is_array( $cost_data ) ) {
+				$cost_data['cost_usd']                += $agentic_cost_accumulator['cost_usd'];
+				$cost_data['prompt_tokens']            = isset( $cost_data['prompt_tokens'] ) ? (int) $cost_data['prompt_tokens'] : 0;
+				$cost_data['completion_tokens']        = isset( $cost_data['completion_tokens'] ) ? (int) $cost_data['completion_tokens'] : 0;
+				$cost_data['prompt_tokens']           += $agentic_cost_accumulator['total_prompt_tokens'];
+				$cost_data['completion_tokens']       += $agentic_cost_accumulator['total_completion_tokens'];
+				$cost_data['agentic_accumulated']      = $agentic_cost_accumulator;
+				$cost_data['agentic_iterations_count'] = $iteration;
+			} elseif ( $agentic_cost_accumulator['cost_usd'] > 0.0 ) {
+				// Final response had no usable usage data, but intermediate iterations
+				// did — surface the accumulated cost so it is not entirely lost.
+				$cost_data = array(
+					'cost_usd'                 => $agentic_cost_accumulator['cost_usd'],
+					'provider'                 => isset( $options['provider'] ) ? $options['provider'] : 'openai',
+					'model'                    => isset( $options['model'] ) ? $options['model'] : '',
+					'is_estimated'             => false,
+					'prompt_tokens'            => $agentic_cost_accumulator['total_prompt_tokens'],
+					'completion_tokens'        => $agentic_cost_accumulator['total_completion_tokens'],
+					'agentic_accumulated'      => $agentic_cost_accumulator,
+					'agentic_iterations_count' => $iteration,
+				);
+			}
+
 			// Extract usage information from response for frontend display.
 			$usage_data = null;
 			if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
@@ -3555,6 +3629,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 				if ( isset( $options['model'] ) ) {
 					$usage_data['model'] = $options['model'];
+				}
+
+				// Include accumulated agentic-loop tokens for frontend badge display.
+				if ( $agentic_cost_accumulator['total_prompt_tokens'] > 0 || $agentic_cost_accumulator['total_completion_tokens'] > 0 ) {
+					$usage_data['agentic_prompt_tokens']     = $agentic_cost_accumulator['total_prompt_tokens'];
+					$usage_data['agentic_completion_tokens'] = $agentic_cost_accumulator['total_completion_tokens'];
+					$usage_data['agentic_iterations']        = $iteration;
 				}
 			}
 
@@ -3734,6 +3815,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tool_result_messages  = array();
 			$agentic_tool_messages = array();
 			$native_streaming_used = false; // True when LM Studio real-time SSE streaming is active.
+
+			// Accumulate cost across all agentic-loop LLM calls so that
+			// intermediate iterations are not silently discarded.
+			// Phase 8: Per-iteration cost tracking (streaming path).
+			$agentic_cost_accumulator = array(
+				'cost_usd'                => 0.0,
+				'total_prompt_tokens'     => 0,
+				'total_completion_tokens' => 0,
+				'total_cached_tokens'     => 0,
+				'iterations'              => array(),
+			);
 
 			// Send status for attachment processing if attachments are present.
 			// This provides user feedback when images or documents are being analyzed.
@@ -3926,6 +4018,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$this->send_sse_done();
 				$this->finish_sse();
 				return;
+			}
+
+			// Capture cost of the initial LLM call before entering the agentic loop.
+			// This ensures the first response (which may contain tool_calls) is
+			// counted even when the loop executes multiple iterations.
+			$initial_cost = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'initial streaming chat response' );
+			if ( is_array( $initial_cost ) ) {
+				$agentic_cost_accumulator['cost_usd']                += $initial_cost['cost_usd'];
+				$agentic_cost_accumulator['total_prompt_tokens']     += isset( $initial_cost['prompt_tokens'] ) ? (int) $initial_cost['prompt_tokens'] : 0;
+				$agentic_cost_accumulator['total_completion_tokens'] += isset( $initial_cost['completion_tokens'] ) ? (int) $initial_cost['completion_tokens'] : 0;
+				$agentic_cost_accumulator['iterations'][]             = array_merge(
+					$initial_cost,
+					array(
+						'iteration' => 0,
+						'phase'     => 'initial',
+					)
+				);
 			}
 
 			// Remove native-streaming options to prevent them from leaking to a
@@ -4370,6 +4479,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return;
 				}
 
+				// Capture cost for this agentic-loop LLM call so intermediate
+				// iterations are tracked and not silently discarded.
+				$iter_cost = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'agentic streaming iteration ' . ( $iteration + 1 ) );
+				if ( is_array( $iter_cost ) ) {
+					$agentic_cost_accumulator['cost_usd']                += $iter_cost['cost_usd'];
+					$agentic_cost_accumulator['total_prompt_tokens']     += isset( $iter_cost['prompt_tokens'] ) ? (int) $iter_cost['prompt_tokens'] : 0;
+					$agentic_cost_accumulator['total_completion_tokens'] += isset( $iter_cost['completion_tokens'] ) ? (int) $iter_cost['completion_tokens'] : 0;
+					if ( isset( $iter_cost['cached_tokens'] ) ) {
+						$agentic_cost_accumulator['total_cached_tokens'] += (int) $iter_cost['cached_tokens'];
+					}
+					$agentic_cost_accumulator['iterations'][] = array_merge(
+						$iter_cost,
+						array(
+							'iteration' => $iteration + 1,
+							'phase'     => 'agentic',
+						)
+					);
+				}
+
 				++$iteration;
 
 				/**
@@ -4452,6 +4580,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Extract cost information for Phase 7 Week 5-6 Enhanced Token Tracking (SSE streaming path).
 			$cost_data = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'streaming chat response' );
+
+			// Merge accumulated agentic-loop costs into the final cost data so that
+			// intermediate iterations are not lost. The response payload (and all
+			// downstream consumers such as the billing observer and measurement
+			// collector) receive the true total cost.
+			if ( is_array( $cost_data ) ) {
+				$cost_data['cost_usd']                += $agentic_cost_accumulator['cost_usd'];
+				$cost_data['prompt_tokens']            = isset( $cost_data['prompt_tokens'] ) ? (int) $cost_data['prompt_tokens'] : 0;
+				$cost_data['completion_tokens']        = isset( $cost_data['completion_tokens'] ) ? (int) $cost_data['completion_tokens'] : 0;
+				$cost_data['prompt_tokens']           += $agentic_cost_accumulator['total_prompt_tokens'];
+				$cost_data['completion_tokens']       += $agentic_cost_accumulator['total_completion_tokens'];
+				$cost_data['agentic_accumulated']      = $agentic_cost_accumulator;
+				$cost_data['agentic_iterations_count'] = $iteration;
+			} elseif ( $agentic_cost_accumulator['cost_usd'] > 0.0 ) {
+				// Final response had no usable usage data, but intermediate iterations
+				// did — surface the accumulated cost so it is not entirely lost.
+				$cost_data = array(
+					'cost_usd'                 => $agentic_cost_accumulator['cost_usd'],
+					'provider'                 => isset( $options['provider'] ) ? $options['provider'] : 'openai',
+					'model'                    => isset( $options['model'] ) ? $options['model'] : '',
+					'is_estimated'             => false,
+					'prompt_tokens'            => $agentic_cost_accumulator['total_prompt_tokens'],
+					'completion_tokens'        => $agentic_cost_accumulator['total_completion_tokens'],
+					'agentic_accumulated'      => $agentic_cost_accumulator,
+					'agentic_iterations_count' => $iteration,
+				);
+			}
 
 			// Extract thinking/reasoning text from the response if present.
 			// Supports multiple providers:
