@@ -170,7 +170,11 @@ class WP_MCP_AI_Tool_LF_Billing_Compliance_Checker implements WP_MCP_AI_Tool_Int
 					$issues[] = array(
 						'entry_id' => $entry_id,
 						'type'     => 'invalid_utbms',
-						'message'  => sprintf( __( 'Invalid UTBMS code: %s', 'mcp-ai-wpoos-pro' ), $utbms ),
+						'message'  => sprintf(
+							/* translators: %s: UTBMS code */
+							__( 'Invalid UTBMS code: %s', 'mcp-ai-wpoos-pro' ),
+							$utbms
+						),
 					);
 				}
 			}
@@ -191,7 +195,11 @@ class WP_MCP_AI_Tool_LF_Billing_Compliance_Checker implements WP_MCP_AI_Tool_Int
 					$issues[] = array(
 						'entry_id' => $entry_id,
 						'type'     => 'excessive_hours',
-						'message'  => sprintf( __( 'Excessive hours in single entry: %s', 'mcp-ai-wpoos-pro' ), $hours ),
+						'message'  => sprintf(
+							/* translators: %s: number of hours */
+							__( 'Excessive hours in single entry: %s', 'mcp-ai-wpoos-pro' ),
+							$hours
+						),
 					);
 				}
 				if ( $rate <= 0 && 'billable' === get_post_meta( $entry_id, '_lf_billing_type', true ) ) {
@@ -208,7 +216,12 @@ class WP_MCP_AI_Tool_LF_Billing_Compliance_Checker implements WP_MCP_AI_Tool_Int
 
 		return array(
 			'success'    => true,
-			'message'    => sprintf( __( 'Compliance check complete: %d issues found. Status: %s. ', 'mcp-ai-wpoos-pro' ), count( $issues ), $status ) . self::DISCLAIMER,
+			'message'    => sprintf(
+				/* translators: %1$d: number of issues found, %2$s: compliance status */
+				__( 'Compliance check complete: %1$d issues found. Status: %2$s. ', 'mcp-ai-wpoos-pro' ),
+				count( $issues ),
+				$status
+			) . self::DISCLAIMER,
 			'data'       => array(
 				'matter_id'         => $matter_id,
 				'entries_checked'   => count( $entries ),

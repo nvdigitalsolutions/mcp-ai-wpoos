@@ -417,10 +417,10 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	protected function render_configuration_form() {
 		$settings = get_option( $this->option_name, array() );
 
-		$saved_assistant      = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
-		$enable_logging       = ! empty( $settings['enable_logging'] );
-		$enable_rate_limiting = isset( $settings['enable_rate_limiting'] ) ? (bool) $settings['enable_rate_limiting'] : true;
-		$verify_webhook       = isset( $settings['verify_webhook_signatures'] ) ? (bool) $settings['verify_webhook_signatures'] : true;
+		$saved_assistant        = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+		$enable_logging         = ! empty( $settings['enable_logging'] );
+		$enable_rate_limiting   = isset( $settings['enable_rate_limiting'] ) ? (bool) $settings['enable_rate_limiting'] : true;
+		$verify_webhook         = isset( $settings['verify_webhook_signatures'] ) ? (bool) $settings['verify_webhook_signatures'] : true;
 		$message_retention_days = isset( $settings['optimization']['message_retention_days'] ) ? absint( $settings['optimization']['message_retention_days'] ) : 90;
 
 		$assistants = get_posts(
@@ -531,7 +531,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		$sanitized['verify_webhook_signatures'] = ! empty( $input['verify_webhook_signatures'] );
 
 		// Performance & Storage fields.
-		$sanitized['optimization'] = isset( $sanitized['optimization'] ) && is_array( $sanitized['optimization'] )
+		$sanitized['optimization']                           = isset( $sanitized['optimization'] ) && is_array( $sanitized['optimization'] )
 			? $sanitized['optimization']
 			: array();
 		$sanitized['optimization']['message_retention_days'] = isset( $input['optimization']['message_retention_days'] )

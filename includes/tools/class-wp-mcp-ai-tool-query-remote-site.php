@@ -61,16 +61,21 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get the required capability for this tool.
 	 *
-	 * @param array $arguments Tool arguments.
-	 * @param array $context   Execution context.
-	 * @return array|WP_Error
+	 * @return string
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the remote site query tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 

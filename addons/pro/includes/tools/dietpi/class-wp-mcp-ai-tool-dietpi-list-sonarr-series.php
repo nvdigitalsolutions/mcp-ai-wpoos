@@ -1,12 +1,20 @@
 <?php
 /**
  * DietPi List Sonarr Series Tool
- * @package WP_MCP_AI_Pro @subpackage DietPi_Toolkit @since 1.3.0
+ *
+ * @package WP_MCP_AI_Pro
+ * @subpackage DietPi_Toolkit
+ * @since 1.3.0
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Sonarr_Series' ) ) {
+	/**
+	 * Lists TV series in Sonarr via the Sonarr API.
+	 */
 	class WP_MCP_AI_Tool_DietPi_List_Sonarr_Series extends WP_MCP_AI_Tool_DietPi_Base {
 		/**
 		 * {@inheritdoc}
@@ -92,6 +100,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Sonarr_Series' ) ) {
 			}
 			return $this->success(
 				sprintf(
+					/* translators: %d: number of series */
 					_n( 'Found %d series.', 'Found %d series.', count( $out ), 'mcp-ai-wpoos-pro' ),
 					count( $out )
 				),

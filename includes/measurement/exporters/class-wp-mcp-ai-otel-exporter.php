@@ -136,10 +136,10 @@ class WP_MCP_AI_OTel_Exporter {
 				: $now_nanos;
 
 			$data_points_by_metric[ $metric_id ]['data_points'][] = array(
-				'attributes'   => $this->flatten_attributes( isset( $event['context'] ) ? $event['context'] : array() ),
+				'attributes'        => $this->flatten_attributes( isset( $event['context'] ) ? $event['context'] : array() ),
 				'startTimeUnixNano' => (string) $timestamp_nanos,
-				'timeUnixNano' => (string) $timestamp_nanos,
-				'asDouble'     => (float) $event['value'],
+				'timeUnixNano'      => (string) $timestamp_nanos,
+				'asDouble'          => (float) $event['value'],
 			);
 		}
 
@@ -184,7 +184,7 @@ class WP_MCP_AI_OTel_Exporter {
 		$payload = array(
 			'resourceMetrics' => array(
 				array(
-					'resource' => array(
+					'resource'     => array(
 						'attributes' => $resource_attrs,
 					),
 					'scopeMetrics' => array(
@@ -375,25 +375,25 @@ class WP_MCP_AI_OTel_Exporter {
 	private function attribute_entry( $key, $value ) {
 		if ( is_bool( $value ) ) {
 			return array(
-				'key' => $key,
+				'key'   => $key,
 				'value' => array( 'boolValue' => $value ),
 			);
 		}
 		if ( is_int( $value ) ) {
 			return array(
-				'key' => $key,
+				'key'   => $key,
 				'value' => array( 'intValue' => (string) $value ),
 			);
 		}
 		if ( is_float( $value ) ) {
 			return array(
-				'key' => $key,
+				'key'   => $key,
 				'value' => array( 'doubleValue' => $value ),
 			);
 		}
 		if ( is_string( $value ) ) {
 			return array(
-				'key' => $key,
+				'key'   => $key,
 				'value' => array( 'stringValue' => $value ),
 			);
 		}
@@ -429,9 +429,9 @@ class WP_MCP_AI_OTel_Exporter {
 	 * @return int
 	 */
 	private function now_unix_nanos() {
-		$parts    = explode( ' ', microtime() );
-		$micro    = isset( $parts[0] ) ? (float) $parts[0] : 0.0;
-		$seconds  = isset( $parts[1] ) ? (int) $parts[1] : time();
+		$parts   = explode( ' ', microtime() );
+		$micro   = isset( $parts[0] ) ? (float) $parts[0] : 0.0;
+		$seconds = isset( $parts[1] ) ? (int) $parts[1] : time();
 		return ( $seconds * 1000000000 ) + (int) round( $micro * 1000000000 );
 	}
 }

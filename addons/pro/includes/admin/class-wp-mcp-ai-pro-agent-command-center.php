@@ -195,11 +195,16 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 					'offline'          => __( 'Offline', 'mcp-ai-wpoos-pro' ),
 					'idle'             => __( 'Idle', 'mcp-ai-wpoos-pro' ),
 					'lastActive'       => __( 'Last active', 'mcp-ai-wpoos-pro' ),
+					/* translators: %s: time duration like "5 minutes" */
 					'timeAgo'          => __( '%s ago', 'mcp-ai-wpoos-pro' ),
 					'justNow'          => __( 'Just now', 'mcp-ai-wpoos-pro' ),
+					/* translators: %d: number of seconds */
 					'seconds'          => __( '%ds', 'mcp-ai-wpoos-pro' ),
+					/* translators: %d: number of minutes */
 					'minutes'          => __( '%dm', 'mcp-ai-wpoos-pro' ),
+					/* translators: %d: number of hours */
 					'hours'            => __( '%dh', 'mcp-ai-wpoos-pro' ),
+					/* translators: %d: number of days */
 					'days'             => __( '%dd', 'mcp-ai-wpoos-pro' ),
 					'tokensUsed'       => __( 'Tokens Used', 'mcp-ai-wpoos-pro' ),
 					'apiCalls'         => __( 'API Calls', 'mcp-ai-wpoos-pro' ),

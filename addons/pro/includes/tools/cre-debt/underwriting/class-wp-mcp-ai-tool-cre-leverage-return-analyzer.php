@@ -275,7 +275,7 @@ class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Inte
 						'equity_multiple' => round( $unlev_em, 2 ) . 'x',
 						'year1_coc'       => $calc::format_percentage( $noi / $price ),
 					),
-					'leverage_spread' => ( $lev_irr !== null && $unlev_irr !== null )
+					'leverage_spread' => ( null !== $lev_irr && null !== $unlev_irr )
 						? round( ( $lev_irr - $unlev_irr ) * 10000 ) . ' bps'
 						: 'N/A',
 				),

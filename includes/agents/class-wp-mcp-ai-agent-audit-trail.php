@@ -277,7 +277,7 @@ class WP_MCP_AI_Agent_Audit_Trail {
 			'data'         => wp_json_encode( self::sanitize_decision_data( $data ) ),
 		);
 
-		$event['event_hash']     = self::compute_event_hash( $event );
+		$event['event_hash']      = self::compute_event_hash( $event );
 		$event['prev_event_hash'] = self::get_last_event_hash( $trail_id );
 
 		$stored = self::store_event( $event );
@@ -611,9 +611,9 @@ class WP_MCP_AI_Agent_Audit_Trail {
 	 *
 	 * @since 1.2.0
 	 *
-	 * @param int      $assistant_id Assistant post ID.
-	 * @param int      $limit        Maximum number of trails to return. Default 20.
-	 * @param int      $offset       Pagination offset. Default 0.
+	 * @param int $assistant_id Assistant post ID.
+	 * @param int $limit        Maximum number of trails to return. Default 20.
+	 * @param int $offset       Pagination offset. Default 0.
 	 * @return array|WP_Error Array with 'trails' and 'total' keys on success.
 	 */
 	public static function get_trails_by_assistant( $assistant_id, $limit = 20, $offset = 0 ) {
@@ -663,15 +663,15 @@ class WP_MCP_AI_Agent_Audit_Trail {
 		);
 
 		$args = array(
-			'labels'              => $labels,
-			'public'              => false,
-			'show_ui'             => false,
-			'show_in_menu'        => false,
-			'show_in_nav_menus'   => false,
-			'show_in_admin_bar'   => false,
-			'show_in_rest'        => false,
-			'capability_type'     => 'post',
-			'capabilities'        => array(
+			'labels'            => $labels,
+			'public'            => false,
+			'show_ui'           => false,
+			'show_in_menu'      => false,
+			'show_in_nav_menus' => false,
+			'show_in_admin_bar' => false,
+			'show_in_rest'      => false,
+			'capability_type'   => 'post',
+			'capabilities'      => array(
 				'create_posts'       => 'manage_options',
 				'edit_post'          => 'manage_options',
 				'read_post'          => 'manage_options',
@@ -682,14 +682,14 @@ class WP_MCP_AI_Agent_Audit_Trail {
 				'publish_posts'      => 'manage_options',
 				'read_private_posts' => 'manage_options',
 			),
-			'map_meta_cap'        => false, // false prevents WP 6.1+ delete_post _doing_it_wrong notice (same fix as PR #4822 workflow-cpt).
-			'has_archive'         => false,
-			'hierarchical'        => false,
-			'supports'            => array( 'title' ),
-			'rewrite'             => false,
-			'query_var'           => false,
-			'can_export'          => false,
-			'delete_with_user'    => false,
+			'map_meta_cap'      => false, // false prevents WP 6.1+ delete_post _doing_it_wrong notice (same fix as PR #4822 workflow-cpt).
+			'has_archive'       => false,
+			'hierarchical'      => false,
+			'supports'          => array( 'title' ),
+			'rewrite'           => false,
+			'query_var'         => false,
+			'can_export'        => false,
+			'delete_with_user'  => false,
 		);
 
 		register_post_type( self::CPT_SLUG, $args );
@@ -1154,8 +1154,8 @@ class WP_MCP_AI_Agent_Audit_Trail {
 			}
 		}
 
-		$total  = count( $matching );
-		$paged  = array_slice( $matching, $offset, $limit );
+		$total = count( $matching );
+		$paged = array_slice( $matching, $offset, $limit );
 
 		return array(
 			'trails' => $paged,
@@ -1579,8 +1579,8 @@ class WP_MCP_AI_Agent_Audit_Trail {
 	 */
 	private static function update_trail_meta_option( $trail_id, $event, $chunk ) {
 		// Track chunk count for retrieval.
-		$meta_key  = self::OPTION_PREFIX . 'meta_' . $trail_id;
-		$meta      = get_option( $meta_key, array() );
+		$meta_key = self::OPTION_PREFIX . 'meta_' . $trail_id;
+		$meta     = get_option( $meta_key, array() );
 
 		if ( ! is_array( $meta ) ) {
 			$meta = array();
@@ -1619,7 +1619,7 @@ class WP_MCP_AI_Agent_Audit_Trail {
 		);
 
 		foreach ( $options as $option_name ) {
-			// Extract trail_id from option name: wp_mcp_ai_audit_trail_{trail_id}_chunk_0
+			// Extract trail_id from option name: wp_mcp_ai_audit_trail_{trail_id}_chunk_0.
 			$pattern  = '/^' . preg_quote( self::OPTION_PREFIX . 'trail_', '/' ) . '(.+)_chunk_0$/';
 			$trail_id = preg_replace( $pattern, '$1', $option_name );
 

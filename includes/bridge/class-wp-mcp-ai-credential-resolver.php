@@ -54,7 +54,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) :
 				return self::$key_cache[ $provider ];
 			}
 
-			$key = self::resolve( $provider );
+			$key                          = self::resolve( $provider );
 			self::$key_cache[ $provider ] = $key;
 
 			return $key;

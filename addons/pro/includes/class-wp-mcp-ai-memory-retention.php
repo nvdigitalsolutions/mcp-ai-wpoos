@@ -120,9 +120,9 @@ class WP_MCP_AI_Memory_Retention {
 	 * @return array
 	 */
 	public static function add_default_settings( $defaults ) {
-		$defaults['memory_retention_days']  = self::DEFAULT_MEMORY_RETENTION_DAYS;
-		$defaults['memory_dormancy_days']   = self::DEFAULT_DORMANCY_DAYS;
-		$defaults['memory_per_user_max']    = self::DEFAULT_PER_USER_MAX;
+		$defaults['memory_retention_days'] = self::DEFAULT_MEMORY_RETENTION_DAYS;
+		$defaults['memory_dormancy_days']  = self::DEFAULT_DORMANCY_DAYS;
+		$defaults['memory_per_user_max']   = self::DEFAULT_PER_USER_MAX;
 		return $defaults;
 	}
 
@@ -138,14 +138,13 @@ class WP_MCP_AI_Memory_Retention {
 		}
 
 		global $wpdb;
-		$dormancy_days    = (int) WP_MCP_AI_Settings_Registry::get_setting( 'memory_dormancy_days', self::DEFAULT_DORMANCY_DAYS );
-		$per_user_max     = (int) WP_MCP_AI_Settings_Registry::get_setting( 'memory_per_user_max', self::DEFAULT_PER_USER_MAX );
-		$dormancy_cutoff  = gmdate( 'Y-m-d H:i:s', strtotime( "-{$dormancy_days} days" ) );
+		$dormancy_days   = (int) WP_MCP_AI_Settings_Registry::get_setting( 'memory_dormancy_days', self::DEFAULT_DORMANCY_DAYS );
+		$per_user_max    = (int) WP_MCP_AI_Settings_Registry::get_setting( 'memory_per_user_max', self::DEFAULT_PER_USER_MAX );
+		$dormancy_cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$dormancy_days} days" ) );
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from validated internal source.
 
 		// 1. Mark dormant: memories not accessed in > dormancy_days.
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated.
 		$wpdb->query(
 			$wpdb->prepare(
 				"UPDATE `{$table}` SET status = 'dormant' WHERE status = 'active' AND last_accessed_at < %s",
@@ -195,8 +194,7 @@ class WP_MCP_AI_Memory_Retention {
 		$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$retention_days} days" ) );
 		$limit  = self::MAX_DELETES_PER_RUN;
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from validated internal source.
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM `{$table}` WHERE cct_created < %s AND status = 'dormant' LIMIT %d",
@@ -219,8 +217,7 @@ class WP_MCP_AI_Memory_Retention {
 	private static function enforce_per_user_cap( $table, $max_per_user ) {
 		global $wpdb;
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from validated internal source.
 		$over_limit = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT cct_author_id, COUNT(*) AS cnt FROM `{$table}` WHERE cct_author_id > 0 GROUP BY cct_author_id HAVING cnt > %d ORDER BY cnt DESC LIMIT 20",
@@ -239,8 +236,7 @@ class WP_MCP_AI_Memory_Retention {
 			$to_delete    = min( $excess_count, 50 );
 
 			// Delete oldest dormant memories for this user first.
-			// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from validated internal source.
 			$wpdb->query(
 				$wpdb->prepare(
 					"DELETE FROM `{$table}` WHERE cct_author_id = %d AND status = 'dormant' ORDER BY cct_created ASC LIMIT %d",

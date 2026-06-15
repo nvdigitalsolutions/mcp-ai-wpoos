@@ -104,12 +104,14 @@ class WP_MCP_AI_Site_Node_Text_Block implements WP_MCP_AI_Site_Node_Interface {
 	 * Execute: wrap content in the configured HTML tag with optional class/style.
 	 *
 	 * {@inheritdoc}
+	 *
+	 * @param array $inputs Node input values keyed by input name.
 	 */
 	public function execute( array $inputs ) {
-		$tag       = isset( $inputs['tag'] ) ? sanitize_key( $inputs['tag'] ) : 'div';
-		$content   = isset( $inputs['content'] ) ? wp_kses_post( (string) $inputs['content'] ) : '';
+		$tag        = isset( $inputs['tag'] ) ? sanitize_key( $inputs['tag'] ) : 'div';
+		$content    = isset( $inputs['content'] ) ? wp_kses_post( (string) $inputs['content'] ) : '';
 		$class_attr = isset( $inputs['className'] ) ? sanitize_html_class( $inputs['className'] ) : '';
-		$style     = isset( $inputs['style'] ) ? esc_attr( (string) $inputs['style'] ) : '';
+		$style      = isset( $inputs['style'] ) ? esc_attr( (string) $inputs['style'] ) : '';
 
 		// Allow only safe block-level tags.
 		$allowed_tags = array( 'div', 'section', 'article', 'aside', 'header', 'footer', 'p', 'blockquote', 'pre', 'figure' );

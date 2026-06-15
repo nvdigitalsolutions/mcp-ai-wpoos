@@ -420,7 +420,7 @@ class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interfa
 		// Handle RSS 2.0 format.
 		if ( isset( $xml->channel->item ) ) {
 			foreach ( $xml->channel->item as $item ) {
-				$pub_date = isset( $item->pubDate ) ? strtotime( (string) $item->pubDate ) : 0;
+				$pub_date = isset( $item->{'pubDate'} ) ? strtotime( (string) $item->{'pubDate'} ) : 0;
 
 				if ( $pub_date > 0 && $pub_date < $cutoff ) {
 					continue;

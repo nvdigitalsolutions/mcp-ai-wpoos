@@ -2367,7 +2367,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			// mark the last tool definition with cache_control so Gemini can cache the
 			// tool definitions across turns (mirrors what Anthropic does).
 			if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $payload['tools'] ) && is_array( $payload['tools'] ) ) {
-				$last_tool_idx = count( $payload['tools'] ) - 1;
+				$last_tool_idx                                       = count( $payload['tools'] ) - 1;
 				$payload['tools'][ $last_tool_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
 			}
 
@@ -3645,7 +3645,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 								// frontend can render it with proper tool-call linkage.
 								// This mirrors the OpenAI-compatible tool_result format
 								// that the chat UI expects for agentic loop messages.
-								$function_name = isset( $part['functionResponse']['name'] )
+								$function_name   = isset( $part['functionResponse']['name'] )
 									? sanitize_text_field( $part['functionResponse']['name'] )
 									: '';
 								$function_result = isset( $part['functionResponse']['response'] )
@@ -3653,10 +3653,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 									: array();
 
 								$segments[] = array(
-									'type'            => 'tool_result',
-									'tool_name'       => $function_name,
-									'tool_result'     => $function_result,
-									'text'            => $this->render_function_response_text( $part['functionResponse'] ),
+									'type'        => 'tool_result',
+									'tool_name'   => $function_name,
+									'tool_result' => $function_result,
+									'text'        => $this->render_function_response_text( $part['functionResponse'] ),
 								);
 							}
 						}

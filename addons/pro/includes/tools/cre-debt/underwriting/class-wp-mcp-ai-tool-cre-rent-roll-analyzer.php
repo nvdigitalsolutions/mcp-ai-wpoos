@@ -148,8 +148,8 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 		$now           = new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) );
 		$total_rent    = 0.0;
 		$total_sf      = 0.0;
-		$walt_num      = 0.0; // numerator: rent * remaining years
-		$rollover      = array(); // year => array of tenant data
+		$walt_num      = 0.0; // numerator: rent * remaining years.
+		$rollover      = array(); // year => array of tenant data.
 		$concentration = array();
 		$mtm_details   = array();
 

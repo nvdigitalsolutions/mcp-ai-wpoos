@@ -1,19 +1,61 @@
 <?php
-/** List Outreach Sequences @package WP_MCP_AI_Pro @since 2.3.0 */
+/**
+ * List Outreach Sequences — list all outreach sequence definitions.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.3.0
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
+	exit;
+}
+
+/**
+ * List Outreach Sequences tool.
+ *
+ * @since 2.3.0
+ */
 class WP_MCP_AI_Tool_List_Outreach_Sequences implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
-		return ! empty( $s['enable_crm_toolkit'] ); }
+		return ! empty( $s['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public static function get_unavailable_reason() {
-		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_slug() {
-		return 'list_outreach_sequences'; }
+		return 'list_outreach_sequences';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_name() {
-		return __( 'List Outreach Sequences', 'mcp-ai-wpoos-pro' ); }
+		return __( 'List Outreach Sequences', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_description() {
-		return __( 'List all outreach sequence definitions.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'List all outreach sequence definitions.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -27,13 +69,37 @@ class WP_MCP_AI_Tool_List_Outreach_Sequences implements WP_MCP_AI_Tool_Interface
 					'default' => 1,
 				),
 			),
-		); }
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
-		return 'edit_posts'; }
+		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function requires_base_pro() {
-		return true; }
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_capability_flags() {
-		return array( 'pro', 'database-read', 'requires-capability' ); }
+		return array( 'pro', 'database-read', 'requires-capability' );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$q    = new WP_Query(
 			array(
@@ -53,7 +119,8 @@ class WP_MCP_AI_Tool_List_Outreach_Sequences implements WP_MCP_AI_Tool_Interface
 				'description' => $p->post_content,
 				'step_count'  => (int) get_post_meta( $p->ID, 'step_count', true ),
 				'steps'       => get_post_meta( $p->ID, 'steps', true ),
-			); }
+			);
+		}
 		return array(
 			'success'   => true,
 			'sequences' => $seqs,

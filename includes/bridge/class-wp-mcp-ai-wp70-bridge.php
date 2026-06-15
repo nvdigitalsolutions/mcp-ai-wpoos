@@ -52,7 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 		 * @var array<string, array>
 		 */
 		const CUSTOM_CONNECTORS = array(
-			'openrouter'    => array(
+			'openrouter'   => array(
 				'name'           => 'OpenRouter',
 				'description'    => 'Unified API gateway for 200+ models (NV oOS).',
 				'authentication' => array(
@@ -60,7 +60,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 					'credentials_url' => 'https://openrouter.ai/keys',
 				),
 			),
-			'deepseek'      => array(
+			'deepseek'     => array(
 				'name'           => 'DeepSeek',
 				'description'    => 'DeepSeek AI models (NV oOS).',
 				'authentication' => array(
@@ -68,7 +68,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 					'credentials_url' => 'https://platform.deepseek.com/api_keys',
 				),
 			),
-			'nvidia'        => array(
+			'nvidia'       => array(
 				'name'           => 'NVIDIA NIM',
 				'description'    => 'NVIDIA NIM inference endpoints (NV oOS).',
 				'authentication' => array(
@@ -76,7 +76,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 					'credentials_url' => 'https://build.nvidia.com/',
 				),
 			),
-			'huggingface'   => array(
+			'huggingface'  => array(
 				'name'           => 'Hugging Face',
 				'description'    => 'Hugging Face inference API (NV oOS).',
 				'authentication' => array(
@@ -84,7 +84,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 					'credentials_url' => 'https://huggingface.co/settings/tokens',
 				),
 			),
-			'kimi'          => array(
+			'kimi'         => array(
 				'name'           => 'Kimi (Moonshot AI)',
 				'description'    => 'Moonshot AI inference (NV oOS).',
 				'authentication' => array(
@@ -92,7 +92,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 					'credentials_url' => 'https://platform.moonshot.cn/console/api-keys',
 				),
 			),
-			'baseten'       => array(
+			'baseten'      => array(
 				'name'           => 'Baseten',
 				'description'    => 'Baseten serverless inference (NV oOS).',
 				'authentication' => array(
@@ -100,7 +100,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 					'credentials_url' => 'https://app.baseten.co/settings/api-keys',
 				),
 			),
-			'digitalocean'  => array(
+			'digitalocean' => array(
 				'name'           => 'DigitalOcean',
 				'description'    => 'DigitalOcean Serverless Inference (NV oOS).',
 				'authentication' => array(
@@ -108,7 +108,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 					'credentials_url' => 'https://cloud.digitalocean.com/account/api/tokens',
 				),
 			),
-			'cloudflare'    => array(
+			'cloudflare'   => array(
 				'name'           => 'Cloudflare Workers AI',
 				'description'    => 'Cloudflare Workers AI inference (NV oOS).',
 				'authentication' => array(
@@ -116,21 +116,21 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 					'credentials_url' => 'https://dash.cloudflare.com/profile/api-tokens',
 				),
 			),
-			'ollama'        => array(
+			'ollama'       => array(
 				'name'           => 'Ollama',
 				'description'    => 'Local AI inference via Ollama — no cloud API key needed (NV oOS).',
 				'authentication' => array(
 					'method' => 'none',
 				),
 			),
-			'lm_studio'     => array(
+			'lm_studio'    => array(
 				'name'           => 'LM Studio',
 				'description'    => 'Local AI inference via LM Studio — no cloud API key needed (NV oOS).',
 				'authentication' => array(
 					'method' => 'none',
 				),
 			),
-			'embedded'      => array(
+			'embedded'     => array(
 				'name'           => 'Embedded LLM',
 				'description'    => 'In-browser GGUF inference (NV oOS Pro).',
 				'authentication' => array(
@@ -208,7 +208,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 		}
 
 		/**
-		 * wp_connectors_init callback — register NV oOS custom connectors and
+		 * Wp_connectors_init callback — register NV oOS custom connectors and
 		 * override built-in connector metadata.
 		 *
 		 * Runs at priority 20 so community / official plugins have already
@@ -307,7 +307,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 			}
 
 			// Auto-generated fallback per the WP 7.0 dev note:
-			// connectors_{type}_{id}_api_key
+			// connectors_{type}_{id}_api_key.
 			return 'connectors_ai_' . $provider_id . '_api_key';
 		}
 	}

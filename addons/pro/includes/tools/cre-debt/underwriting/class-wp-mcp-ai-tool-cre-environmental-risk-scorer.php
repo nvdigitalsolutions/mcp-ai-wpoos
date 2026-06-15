@@ -145,7 +145,7 @@ class WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer implements WP_MCP_AI_Tool_Int
 
 		// Category weights (total = 100).
 		$weights = array(
-			'contamination' => 30, // Phase I/II + brownfield
+			'contamination' => 30, // Phase I/II + brownfield.
 			'flood'         => 25,
 			'seismic'       => 20,
 			'climate'       => 25,

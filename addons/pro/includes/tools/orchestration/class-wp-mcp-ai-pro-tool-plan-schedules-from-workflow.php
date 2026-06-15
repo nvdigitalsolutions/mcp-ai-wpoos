@@ -147,13 +147,10 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 
 
 	/**
-
 	 * Execute the tool.
-
-	 * @param array $arguments Tool arguments.
-
-	 *  * @param array $context   Execution context.
 	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {

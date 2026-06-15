@@ -186,6 +186,7 @@ class WP_MCP_AI_Tool_Graph_Function implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		$result = array(
 			'success'       => true,
+			/* translators: %s: function expression */
 			'message'       => sprintf( __( 'Graph generated for function: %s', 'mcp-ai-wpoos-pro' ), $function ),
 			'text'          => sprintf( 'Function graphed: %s', $function ),
 			'function'      => $function,

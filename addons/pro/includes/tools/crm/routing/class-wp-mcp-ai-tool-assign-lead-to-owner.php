@@ -5,21 +5,57 @@
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
  */
-if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Assign Lead to Owner — routing + manual assignment tool.
+ *
+ * @since 2.3.0
+ */
 class WP_MCP_AI_Tool_Assign_Lead_To_Owner implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
-		return ! empty( $s['enable_crm_toolkit'] ); }
+		return ! empty( $s['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public static function get_unavailable_reason() {
-		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_slug() {
-		return 'assign_lead_to_owner'; }
+		return 'assign_lead_to_owner';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_name() {
-		return __( 'Assign Lead to Owner', 'mcp-ai-wpoos-pro' ); }
+		return __( 'Assign Lead to Owner', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_description() {
-		return __( 'Assign a lead to a specific owner, or use the automatic routing strategy (round_robin, weighted).', 'mcp-ai-wpoos-pro' ); }
+		return __( 'Assign a lead to a specific owner, or use the automatic routing strategy (round_robin, weighted).', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -36,19 +72,43 @@ class WP_MCP_AI_Tool_Assign_Lead_To_Owner implements WP_MCP_AI_Tool_Interface, W
 			'required'   => array( 'lead_id' ),
 		);
 	}
-	public function get_required_capability() {
-		return 'edit_posts'; }
-	public function requires_base_pro() {
-		return true; }
-	public function get_capability_flags() {
-		return array( 'pro', 'database-write', 'requires-capability' ); }
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array( 'pro', 'database-write', 'requires-capability' );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }
+			return new WP_Error( 'unavailable', self::get_unavailable_reason() );
+		}
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
-			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
+			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		$lead_id = absint( $arguments['lead_id'] );
 		$post    = get_post( $lead_id );
@@ -86,6 +146,7 @@ class WP_MCP_AI_Tool_Assign_Lead_To_Owner implements WP_MCP_AI_Tool_Interface, W
 
 		return array(
 			'success'        => true,
+			/* translators: %s: assigned user name */
 			'message'        => sprintf( __( 'Lead assigned to %s.', 'mcp-ai-wpoos-pro' ), $assigned_name ),
 			'lead_id'        => $lead_id,
 			'owner_id'       => $owner_id,

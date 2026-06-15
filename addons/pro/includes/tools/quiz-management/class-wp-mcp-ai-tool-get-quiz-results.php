@@ -168,8 +168,9 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$response = array(
-			'summary'          => sprintf(
-				/* translators: 1: quiz title, 2: student name */
+			'summary'          =>
+			sprintf(
+				/* translators: %1$s: quiz title, %2$s: student name */
 				__( 'Results for %1$s - %2$s', 'mcp-ai-wpoos-pro' ),
 				get_the_title( $quiz ),
 				get_userdata( $student_id )->display_name
@@ -234,6 +235,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		foreach ( $detailed_results as $result ) {
 			$q_num    = $result['question_number'];
+			/* translators: %d: question number */
 			$labels[] = sprintf( __( 'Q%d', 'mcp-ai-wpoos-pro' ), $q_num );
 
 			$earned = isset( $result['points_earned'] ) ? floatval( $result['points_earned'] ) : 0;

@@ -517,7 +517,7 @@ class WP_MCP_AI_Tool_Financial_Search implements WP_MCP_AI_Tool_Interface, WP_MC
 					'source'    => $source_label,
 					'snippet'   => isset( $item->description ) ? wp_strip_all_tags( (string) $item->description ) : '',
 					'relevance' => 'medium',
-					'date'      => isset( $item->pubDate ) ? sanitize_text_field( (string) $item->pubDate ) : '',
+					'date'      => isset( $item->{'pubDate'} ) ? sanitize_text_field( (string) $item->{'pubDate'} ) : '',
 				);
 			}
 		}

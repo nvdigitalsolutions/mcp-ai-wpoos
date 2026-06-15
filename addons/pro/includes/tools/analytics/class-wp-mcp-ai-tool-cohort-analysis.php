@@ -414,21 +414,25 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		$user_ids = implode( ',', array_map( 'absint', $users ) );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		switch ( $metric ) {
 			case 'retention':
 				// Count users with activity in period.
+				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$active_users = $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT COUNT(DISTINCT post_author)
 						FROM {$wpdb->posts}
 						WHERE post_type = 'shop_order'
 							AND post_status IN ('wc-completed', 'wc-processing')
-							AND post_author IN ({$user_ids}) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic IN clause
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic IN clause
+							AND post_author IN ({$user_ids})
 							AND post_date BETWEEN %s AND %s",
 						$period_start,
 						$period_end
 					)
 				);
+				// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 				$retention_rate = $cohort_size > 0 ? ( $active_users / $cohort_size ) * 100 : 0;
 
@@ -439,6 +443,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 				);
 
 			case 'revenue':
+				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$revenue = $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT SUM(CAST(pm.meta_value AS DECIMAL(10,2)))
@@ -481,6 +486,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 			default:
 				return array( 'value' => 0 );
 		}
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
@@ -542,6 +548,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 			if ( isset( $retention[0], $retention[1] ) && $retention[1] < 50 ) {
 				$insights[] = array(
 					'type'    => 'retention_drop',
+					/* translators: %s: retention percentage */
 					'message' => sprintf( __( 'Retention drops to %s%% in month 1', 'mcp-ai-wpoos-pro' ), $retention[1] ),
 					'action'  => __( 'Implement early engagement campaign', 'mcp-ai-wpoos-pro' ),
 				);

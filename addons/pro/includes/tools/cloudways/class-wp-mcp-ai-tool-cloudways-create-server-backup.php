@@ -23,24 +23,24 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Create_Server_Backup' ) ) {
 	 */
 	class WP_MCP_AI_Tool_Cloudways_Create_Server_Backup extends WP_MCP_AI_Tool_Cloudways_Base {
 
-	/** {@inheritdoc} */
+		/** {@inheritdoc} */
 
-	/** {@inheritdoc} */
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_create_server_backup';
 		}
 
-	/** {@inheritdoc} */
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'Create Server Backup', 'mcp-ai-wpoos-pro' );
 		}
 
-	/** {@inheritdoc} */
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Create a full backup of a server.', 'mcp-ai-wpoos-pro' );
 		}
 
-	/** {@inheritdoc} */
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -54,19 +54,19 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Create_Server_Backup' ) ) {
 			);
 		}
 
-	/** {@inheritdoc} */
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'write', 'state-changing', 'reversible' ) );
 		}
 
-	/**
-	 * {@inheritdoc}
-	 *
-	 * @param array $arguments Tool arguments.
-	 * @param array $context   Contextual data.
-	 * @return array|WP_Error
-	 */
-	public function execute( array $arguments = array(), array $context = array() ) {
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
+		public function execute( array $arguments = array(), array $context = array() ) {
 			$server_id = $this->sanitize_server_id( $arguments );
 
 			if ( 0 === $server_id ) {

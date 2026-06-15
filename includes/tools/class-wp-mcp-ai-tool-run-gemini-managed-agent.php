@@ -113,7 +113,11 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the Gemini Managed Agent tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( $arguments, $context ) {
 		$operation     = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';
@@ -159,13 +163,13 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Handle "create" operation — new agent session.
 	 *
-	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service       Service instance.
-	 * @param string                                  $task          Task description.
-	 * @param string                                  $system_prompt System instructions.
-	 * @param array                                   $tool_slugs    Allowed tool slugs.
-	 * @param int                                     $max_iter      Max iterations.
-	 * @param int                                     $timeout       Timeout seconds.
-	 * @param string                                  $model         Model ID.
+	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service      Service instance.
+	 * @param string                                 $task         Task description.
+	 * @param string                                 $system_prompt System instructions.
+	 * @param array                                  $tool_slugs   Allowed tool slugs.
+	 * @param int                                    $max_iter     Max iterations.
+	 * @param int                                    $timeout      Timeout seconds.
+	 * @param string                                 $model        Model ID.
 	 * @return array|WP_Error
 	 */
 	protected function handle_create( $service, $task, $system_prompt, $tool_slugs, $max_iter, $timeout, $model ) {
@@ -228,10 +232,10 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Handle "run" operation — execute task in existing session.
 	 *
-	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service    Service instance.
-	 * @param string                                  $session_id Session ID.
-	 * @param string                                  $task       Task description.
-	 * @param int                                     $timeout    Timeout seconds.
+	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service   Service instance.
+	 * @param string                                 $session_id Session ID.
+	 * @param string                                 $task      Task description.
+	 * @param int                                    $timeout   Timeout seconds.
 	 * @return array|WP_Error
 	 */
 	protected function handle_run( $service, $session_id, $task, $timeout ) {
@@ -284,8 +288,8 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Handle "status" operation.
 	 *
-	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service    Service instance.
-	 * @param string                                  $session_id Session ID.
+	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service   Service instance.
+	 * @param string                                 $session_id Session ID.
 	 * @return array|WP_Error
 	 */
 	protected function handle_status( $service, $session_id ) {
@@ -347,8 +351,8 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Handle "terminate" operation.
 	 *
-	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service    Service instance.
-	 * @param string                                  $session_id Session ID.
+	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service   Service instance.
+	 * @param string                                 $session_id Session ID.
 	 * @return array|WP_Error
 	 */
 	protected function handle_terminate( $service, $session_id ) {

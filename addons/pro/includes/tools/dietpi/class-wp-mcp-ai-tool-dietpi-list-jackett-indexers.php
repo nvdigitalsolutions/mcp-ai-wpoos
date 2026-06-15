@@ -1,12 +1,20 @@
 <?php
 /**
  * DietPi List Jackett Indexers Tool
- * @package WP_MCP_AI_Pro @subpackage DietPi_Toolkit @since 1.3.0
+ *
+ * @package WP_MCP_AI_Pro
+ * @subpackage DietPi_Toolkit
+ * @since 1.3.0
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Jackett_Indexers' ) ) {
+	/**
+	 * Lists Jackett indexers via the Jackett API.
+	 */
 	class WP_MCP_AI_Tool_DietPi_List_Jackett_Indexers extends WP_MCP_AI_Tool_DietPi_Base {
 		/**
 		 * {@inheritdoc}
@@ -86,6 +94,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Jackett_Indexers' ) ) {
 			}
 			return $this->success(
 				sprintf(
+					/* translators: %d: number of indexers */
 					_n( 'Found %d indexer.', 'Found %d indexers.', count( $indexers ), 'mcp-ai-wpoos-pro' ),
 					count( $indexers )
 				),

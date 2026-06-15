@@ -39,53 +39,53 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_Service_Catalogue' ) ) {
 		 */
 		const SERVICES = array(
 			'transmission-daemon' => array(
-				'name'           => 'Transmission',
-				'port'           => 9091,
-				'api_type'       => 'json-rpc',
-				'dietpi_id'      => 44,
-				'api_path'       => '/transmission/rpc',
-				'auth_type'      => 'basic',
-				'category'       => 'downloads',
+				'name'      => 'Transmission',
+				'port'      => 9091,
+				'api_type'  => 'json-rpc',
+				'dietpi_id' => 44,
+				'api_path'  => '/transmission/rpc',
+				'auth_type' => 'basic',
+				'category'  => 'downloads',
 			),
 			'jackett'             => array(
-				'name'           => 'Jackett',
-				'port'           => 9117,
-				'api_type'       => 'rest',
-				'dietpi_id'      => 135,
-				'api_path'       => '/api/v2.0',
-				'auth_type'      => 'api_key_query',
-				'auth_param'     => 'apikey',
-				'category'       => 'indexer',
+				'name'       => 'Jackett',
+				'port'       => 9117,
+				'api_type'   => 'rest',
+				'dietpi_id'  => 135,
+				'api_path'   => '/api/v2.0',
+				'auth_type'  => 'api_key_query',
+				'auth_param' => 'apikey',
+				'category'   => 'indexer',
 			),
 			'sonarr'              => array(
-				'name'           => 'Sonarr',
-				'port'           => 8989,
-				'api_type'       => 'rest-v3',
-				'dietpi_id'      => 144,
-				'api_path'       => '/api/v3',
-				'auth_type'      => 'api_key_header',
-				'auth_header'    => 'X-Api-Key',
-				'category'       => 'media-automation',
+				'name'        => 'Sonarr',
+				'port'        => 8989,
+				'api_type'    => 'rest-v3',
+				'dietpi_id'   => 144,
+				'api_path'    => '/api/v3',
+				'auth_type'   => 'api_key_header',
+				'auth_header' => 'X-Api-Key',
+				'category'    => 'media-automation',
 			),
 			'radarr'              => array(
-				'name'           => 'Radarr',
-				'port'           => 7878,
-				'api_type'       => 'rest-v3',
-				'dietpi_id'      => 145,
-				'api_path'       => '/api/v3',
-				'auth_type'      => 'api_key_header',
-				'auth_header'    => 'X-Api-Key',
-				'category'       => 'media-automation',
+				'name'        => 'Radarr',
+				'port'        => 7878,
+				'api_type'    => 'rest-v3',
+				'dietpi_id'   => 145,
+				'api_path'    => '/api/v3',
+				'auth_type'   => 'api_key_header',
+				'auth_header' => 'X-Api-Key',
+				'category'    => 'media-automation',
 			),
 			'plexmediaserver'     => array(
-				'name'           => 'Plex Media Server',
-				'port'           => 32400,
-				'api_type'       => 'rest',
-				'dietpi_id'      => 42,
-				'api_path'       => '',
-				'auth_type'      => 'token_header',
-				'auth_header'    => 'X-Plex-Token',
-				'category'       => 'media-center',
+				'name'        => 'Plex Media Server',
+				'port'        => 32400,
+				'api_type'    => 'rest',
+				'dietpi_id'   => 42,
+				'api_path'    => '',
+				'auth_type'   => 'token_header',
+				'auth_header' => 'X-Plex-Token',
+				'category'    => 'media-center',
 			),
 			'jellyfin'            => array(
 				'name'           => 'Jellyfin',
@@ -190,9 +190,9 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_Service_Catalogue' ) ) {
 				return null;
 			}
 
-			$host  = rtrim( $host, '/' );
-			$port  = isset( $entry['port'] ) ? ':' . $entry['port'] : '';
-			$path  = isset( $entry['api_path'] ) ? $entry['api_path'] : '';
+			$host = rtrim( $host, '/' );
+			$port = isset( $entry['port'] ) ? ':' . $entry['port'] : '';
+			$path = isset( $entry['api_path'] ) ? $entry['api_path'] : '';
 
 			// Transmission requires no scheme in the catalogue — tools use http by default.
 			$scheme = 'http';

@@ -95,7 +95,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 			$pi_info = $this->ssh()->raspberry_pi_info();
 			if ( ! is_wp_error( $pi_info ) ) {
 				$summary['hardware'] = $pi_info;
-				if ( isset( $pi_info['throttled'] ) && $pi_info['throttled'] !== 'throttled=0x0' ) {
+				if ( isset( $pi_info['throttled'] ) && 'throttled=0x0' !== $pi_info['throttled'] ) {
 					$warnings[] = array(
 						'type'   => 'pi_throttled',
 						'detail' => $pi_info['throttled'],
@@ -259,7 +259,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Dashboard_Summary' ) ) {
 			$health  = empty( $warnings ) ? 'healthy' : 'warning';
 			$message = empty( $warnings )
 				? __( 'All systems healthy.', 'mcp-ai-wpoos-pro' )
-				: sprintf( _n( '%d warning detected.', '%d warnings detected.', count( $warnings ), 'mcp-ai-wpoos-pro' ), count( $warnings ) );
+				: sprintf(
+					/* translators: %d: number of warnings */
+					_n( '%d warning detected.', '%d warnings detected.', count( $warnings ), 'mcp-ai-wpoos-pro' ),
+					count( $warnings )
+				);
 
 			return $this->success(
 				$message,

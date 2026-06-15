@@ -122,29 +122,29 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_slug() {
 		return 'crm_email_search_correspondence';
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_name() {
 		return __( 'CRM Email Search: Customer Correspondence', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_description() {
 		return __( 'Search CRM contacts for customer correspondence activity. Supports industry-standard email categories (support, general, sales, escalated), response-time analytics, routing suggestions, follow-up status filtering, and free-text TF-IDF relevance search across name, company, and email. Configurable orderby (relevance, last_contacted, date, name, company) and order (ASC/DESC). Results are cached and can be auto-refreshed on a WP Cron schedule.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -255,22 +255,22 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function requires_base_pro() {
 		return true;
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -709,7 +709,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 
 			// SLA breach filter: skip contacts within SLA threshold when sla_breach_only is active.
 			if ( ! empty( $filters['sla_breach_only'] ) && $last_contacted ) {
-				$diff_seconds = current_time( 'timestamp', true ) - strtotime( $last_contacted );
+				$diff_seconds = time() - strtotime( $last_contacted );
 				if ( $diff_seconds < ( $days_since * DAY_IN_SECONDS ) ) {
 					continue;
 				}
@@ -725,8 +725,8 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 				'contact_status' => sanitize_text_field( (string) get_post_meta( $post->ID, 'contact_status', true ) ),
 				'category'       => $category,
 				// Default to 'email' when no channel is stored — email is the primary.
-			// correspondence channel in CRM systems that don't yet track omnichannel.
-			'channel'        => $channel_value  ? $channel_value : 'email',
+				// correspondence channel in CRM systems that don't yet track omnichannel.
+				'channel'        => $channel_value ? $channel_value : 'email',
 				'last_contacted' => sanitize_text_field( $last_contacted ),
 				'follow_up_date' => sanitize_text_field( $follow_up_date ),
 				'contact_count'  => $contact_count,
@@ -799,12 +799,12 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 		);
 
 		if ( $last_contacted ) {
-			$diff = ( current_time( 'timestamp', true ) - strtotime( $last_contacted ) );
+			$diff = ( time() - strtotime( $last_contacted ) );
 			$analytics['days_since_last_contact'] = (int) floor( $diff / DAY_IN_SECONDS );
 		}
 
 		if ( $follow_up_date ) {
-			$overdue_seconds = current_time( 'timestamp', true ) - strtotime( $follow_up_date );
+			$overdue_seconds = time() - strtotime( $follow_up_date );
 			if ( $overdue_seconds > 0 ) {
 				$analytics['is_overdue']   = true;
 				$analytics['days_overdue'] = (int) floor( $overdue_seconds / DAY_IN_SECONDS );

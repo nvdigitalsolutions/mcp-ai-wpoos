@@ -173,12 +173,17 @@ class WP_MCP_AI_Tool_Send_Status_Change_Notification implements WP_MCP_AI_Tool_I
 			__( 'The status of registration "%s" has changed:', 'mcp-ai-wpoos-pro' ),
 			$registration->post_title
 		) . "\n\n";
+		/* translators: %s: previous registration status */
 		$message .= sprintf( __( 'Previous Status: %s', 'mcp-ai-wpoos-pro' ), $old_status ) . "\n";
+		/* translators: %s: new registration status */
 		$message .= sprintf( __( 'New Status: %s', 'mcp-ai-wpoos-pro' ), $new_status ) . "\n\n";
 		$message .= __( 'Registration Details:', 'mcp-ai-wpoos-pro' ) . "\n";
+		/* translators: %s: country name */
 		$message .= sprintf( __( 'Country: %s', 'mcp-ai-wpoos-pro' ), $country ) . "\n";
+		/* translators: %s: regulatory authority name */
 		$message .= sprintf( __( 'Authority: %s', 'mcp-ai-wpoos-pro' ), $authority ) . "\n";
 		if ( $cos_number ) {
+			/* translators: %s: COS number */
 			$message .= sprintf( __( 'COS Number: %s', 'mcp-ai-wpoos-pro' ), $cos_number ) . "\n";
 		}
 

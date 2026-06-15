@@ -309,39 +309,39 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 
 			$model = $this->resolve_model( $options );
 
-				if ( empty( $model ) ) {
-					return new WP_Error(
-						'wp_mcp_ai_missing_huggingface_model',
-						__( 'No Hugging Face model has been configured.', 'mcp-ai-wpoos' ),
-						array(
-							'status'  => 400,
-							'actions' => array(
-								'configure_huggingface_model' => __( 'Choose a Hugging Face model in the NV oOS settings.', 'mcp-ai-wpoos' ),
-							),
-						)
-					);
+			if ( empty( $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_huggingface_model',
+					__( 'No Hugging Face model has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_huggingface_model' => __( 'Choose a Hugging Face model in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			// Filter orphaned tool messages before building the payload.
+			// Hugging Face's OpenAI-compatible API rejects requests where
+			// tool messages lack a matching assistant tool_call.
+			$messages = $this->filter_tool_messages_for_payload( $messages );
+
+			$payload = $this->build_payload( $messages, $options, $model );
+
+			if ( is_wp_error( $payload ) ) {
+				return $payload;
+			}
+
+			// Pre-flight context-window validation (shared with all providers).
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'huggingface', $options, $messages );
+				if ( is_wp_error( $preflight ) ) {
+					return $preflight;
 				}
+			}
 
-				// Filter orphaned tool messages before building the payload.
-				// Hugging Face's OpenAI-compatible API rejects requests where
-				// tool messages lack a matching assistant tool_call.
-				$messages = $this->filter_tool_messages_for_payload( $messages );
-
-				$payload = $this->build_payload( $messages, $options, $model );
-
-				if ( is_wp_error( $payload ) ) {
-					return $payload;
-				}
-
-				// Pre-flight context-window validation (shared with all providers).
-				if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
-					$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'huggingface', $options, $messages );
-					if ( is_wp_error( $preflight ) ) {
-						return $preflight;
-					}
-				}
-
-				$url     = untrailingslashit( $endpoint_url ) . '/chat/completions';
+			$url     = untrailingslashit( $endpoint_url ) . '/chat/completions';
 			$timeout = max( 60, $this->resolve_timeout( $options ) );
 
 			$request_args = array(

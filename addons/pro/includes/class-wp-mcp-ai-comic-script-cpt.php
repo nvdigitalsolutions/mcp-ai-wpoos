@@ -117,10 +117,10 @@ class WP_MCP_AI_Comic_Script_CPT {
 	public static function render_config_metabox( $post ) {
 		wp_nonce_field( 'comic_script_meta', 'comic_script_meta_nonce' );
 
-		$comic_id   = get_post_meta( $post->ID, '_comic_id', true );
+		$comic_id    = get_post_meta( $post->ID, '_comic_id', true );
 		$scenes_json = get_post_meta( $post->ID, '_scenes_json', true );
-		$genre      = get_post_meta( $post->ID, '_genre', true );
-		$premise    = get_post_meta( $post->ID, '_premise', true );
+		$genre       = get_post_meta( $post->ID, '_genre', true );
+		$premise     = get_post_meta( $post->ID, '_premise', true );
 		$panel_count = get_post_meta( $post->ID, '_panel_count', true );
 
 		$comics = get_posts(

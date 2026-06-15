@@ -3963,7 +3963,8 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		$list     = isset( $settings[ $list_key ] ) ? (array) $settings[ $list_key ] : array();
 
 		if ( in_array( $entry, $list, true ) ) {
-			wp_send_json_error( array( 'message' => sprintf( __( '%1$s is already in the %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
+			/* translators: 1: entry value, 2: list type (exclude/priority) */
+				wp_send_json_error( array( 'message' => sprintf( __( '%1$s is already in the %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
 		}
 
 		$list[] = $entry;
@@ -3979,6 +3980,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		wp_send_json_success(
 			array(
+				/* translators: 1: entry value, 2: list type (exclude/priority) */
 				'message' => sprintf( __( '%1$s added to %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ),
 				'count'   => count( $list ),
 			)
@@ -4029,7 +4031,8 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		);
 
 		if ( ! $found ) {
-			wp_send_json_error( array( 'message' => sprintf( __( '%1$s was not found in the %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
+			/* translators: 1: entry value, 2: list type (exclude/priority) */
+				wp_send_json_error( array( 'message' => sprintf( __( '%1$s was not found in the %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ) ) );
 		}
 
 		$settings[ $list_key ] = $list;
@@ -4041,6 +4044,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		wp_send_json_success(
 			array(
+				/* translators: 1: entry value, 2: list type (exclude/priority) */
 				'message' => sprintf( __( '%1$s removed from %2$s list.', 'mcp-ai-wpoos-pro' ), $entry, $list_type ),
 				'count'   => count( $list ),
 			)
@@ -4113,8 +4117,8 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		wp_send_json_success(
 			array(
 				'message' => 'add' === $action
-					? sprintf( __( 'Tag "%s" added.', 'mcp-ai-wpoos-pro' ), $tag )
-					: sprintf( __( 'Tag "%s" removed.', 'mcp-ai-wpoos-pro' ), $tag ),
+					? sprintf( /* translators: %s: tag name */ __( 'Tag "%s" added.', 'mcp-ai-wpoos-pro' ), $tag )
+					: sprintf( /* translators: %s: tag name */ __( 'Tag "%s" removed.', 'mcp-ai-wpoos-pro' ), $tag ),
 				'tags'    => array_values( array_filter( $current_tags ) ),
 			)
 		);

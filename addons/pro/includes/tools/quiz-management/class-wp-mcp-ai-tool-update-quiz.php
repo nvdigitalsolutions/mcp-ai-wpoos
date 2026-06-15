@@ -206,11 +206,13 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 			foreach ( $questions as $index => $question_data ) {
 				if ( ! isset( $question_data['question'] ) || '' === trim( $question_data['question'] ) ) {
-					return new WP_Error( 'wp_mcp_ai_invalid_question', sprintf( __( 'Question %d is missing question text.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
+					/* translators: %d: question number */
+					 return new WP_Error( 'wp_mcp_ai_invalid_question', sprintf( __( 'Question %d is missing question text.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
 				}
 
 				if ( ! isset( $question_data['type'] ) || ! in_array( $question_data['type'], array( 'multiple_choice', 'true_false', 'short_answer' ), true ) ) {
-					return new WP_Error( 'wp_mcp_ai_invalid_type', sprintf( __( 'Question %d has an invalid type.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
+					/* translators: %d: question number */
+					 return new WP_Error( 'wp_mcp_ai_invalid_type', sprintf( __( 'Question %d has an invalid type.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
 				}
 
 				$validated_question = array(
@@ -222,7 +224,8 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				// Validate options for multiple choice.
 				if ( 'multiple_choice' === $validated_question['type'] ) {
 					if ( empty( $question_data['options'] ) || ! is_array( $question_data['options'] ) ) {
-						return new WP_Error( 'wp_mcp_ai_missing_options', sprintf( __( 'Question %d is missing answer options.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
+						/* translators: %d: question number */
+						 return new WP_Error( 'wp_mcp_ai_missing_options', sprintf( __( 'Question %d is missing answer options.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
 					}
 					$validated_question['options'] = array_map( 'sanitize_text_field', $question_data['options'] );
 				}

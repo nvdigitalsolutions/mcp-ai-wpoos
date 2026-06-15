@@ -144,6 +144,7 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( in_array( $operation, $binary_ops, true ) && null === $matrix_b ) {
 			return array(
 				'success' => false,
+				/* translators: %s: operation name */
 				'error'   => sprintf( __( 'Operation "%s" requires matrix_b parameter.', 'mcp-ai-wpoos-pro' ), $operation ),
 			);
 		}
@@ -197,6 +198,7 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$result = array(
 			'success'   => true,
+			/* translators: %s: operation name */
 			'message'   => sprintf( __( 'Matrix operation completed: %s', 'mcp-ai-wpoos-pro' ), $operation ),
 			'text'      => sprintf( 'Result: %s', json_encode( $result_matrix ) ),
 			'operation' => $operation,

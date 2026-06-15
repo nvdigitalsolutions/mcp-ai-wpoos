@@ -214,29 +214,29 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$search_term = isset( $arguments['search_term'] ) ? sanitize_text_field( $arguments['search_term'] ) : '';
 		$search_type = isset( $arguments['search_type'] ) ? sanitize_key( $arguments['search_type'] ) : 'keyword';
 		if ( ! in_array( $search_type, array( 'keyword', 'semantic', 'hybrid' ), true ) ) {
-		 $search_type = 'keyword';
+			$search_type = 'keyword';
 		}
 
-	$min_similarity = isset( $arguments['min_similarity'] ) ? (float) $arguments['min_similarity'] : 0.5;
-	$min_similarity = max( 0.0, min( 1.0, $min_similarity ) );
+		$min_similarity = isset( $arguments['min_similarity'] ) ? (float) $arguments['min_similarity'] : 0.5;
+		$min_similarity = max( 0.0, min( 1.0, $min_similarity ) );
 
-	$post_type   = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'any';
-	$settings    = get_option( 'wp_mcp_ai_settings', array() );
-	$max_limit   = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
-	$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
-	$limit       = $limit > 0 ? min( $limit, $max_limit ) : 10;
+		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'any';
+		$settings  = get_option( 'wp_mcp_ai_settings', array() );
+		$max_limit = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
+		$limit     = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
+		$limit     = $limit > 0 ? min( $limit, $max_limit ) : 10;
 
-	// Branch: semantic or hybrid search when embeddings are available.
-	$can_embed = class_exists( 'WP_MCP_AI_Vector_Context_Service' )
-		&& class_exists( 'WP_MCP_AI_Content_Embedding_Store' )
-		&& '' !== $search_term;
+		// Branch: semantic or hybrid search when embeddings are available.
+		$can_embed = class_exists( 'WP_MCP_AI_Vector_Context_Service' )
+			&& class_exists( 'WP_MCP_AI_Content_Embedding_Store' )
+			&& '' !== $search_term;
 
-	if ( ( 'semantic' === $search_type || 'hybrid' === $search_type ) && $can_embed ) {
-		$order = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
-		return $this->execute_semantic_search( $search_term, $post_type, $limit, $min_similarity, $order, $search_type );
-	}
+		if ( ( 'semantic' === $search_type || 'hybrid' === $search_type ) && $can_embed ) {
+			$order = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
+			return $this->execute_semantic_search( $search_term, $post_type, $limit, $min_similarity, $order, $search_type );
+		}
 
-	// Fall through to keyword search (original behaviour).
+		// Fall through to keyword search (original behaviour).
 
 		$orderby      = $this->sanitise_orderby(
 			isset( $arguments['orderby'] ) ? $arguments['orderby'] : 'date',
@@ -313,8 +313,8 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'content' => 2.0,
 				'excerpt' => 1.0,
 			);
-			$results = $this->rank_by_relevance( $results, $search_term, $field_weights, $algorithm );
-			$results = array_slice( $results, 0, $limit );
+			$results       = $this->rank_by_relevance( $results, $search_term, $field_weights, $algorithm );
+			$results       = array_slice( $results, 0, $limit );
 		}
 
 		// Use trait method to ensure proper message field for chat client.
@@ -640,7 +640,7 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		arsort( $vector_scores, SORT_NUMERIC );
 
 		if ( 'hybrid' === $mode ) {
-			$kw_results  = $this->get_keyword_post_ids( $search_term, $post_type, max( $limit * 3, 50 ) );
+			$kw_results    = $this->get_keyword_post_ids( $search_term, $post_type, max( $limit * 3, 50 ) );
 			$vector_scores = $this->rrf_fuse_simple( $vector_scores, $kw_results, $limit );
 		}
 
@@ -648,7 +648,7 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		$results = array();
 		foreach ( $top_ids as $pid ) {
-			$pid = absint( $pid );
+			$pid       = absint( $pid );
 			$results[] = array(
 				'ID'         => $pid,
 				'title'      => get_the_title( $pid ),
@@ -672,16 +672,39 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+	/**
+	 * Get post IDs matching a keyword search term.
+	 *
+	 * @param string $search_term The search term.
+	 * @param string $post_type   The post type.
+	 * @param int    $limit       Maximum number of results.
+	 * @return int[] Array of post IDs.
+	 */
 	private function get_keyword_post_ids( $search_term, $post_type, $limit ) {
-		$q = new WP_Query(array(
-			'post_type' => $post_type, 'post_status' => 'publish',
-			'posts_per_page' => $limit, 's' => $search_term,
-			'orderby' => 'relevance', 'order' => 'DESC',
-			'fields' => 'ids', 'no_found_rows' => true, 'ignore_sticky_posts' => true,
-		));
+		$q = new WP_Query(
+			array(
+				'post_type'           => $post_type,
+				'post_status'         => 'publish',
+				'posts_per_page'      => $limit,
+				's'                   => $search_term,
+				'orderby'             => 'relevance',
+				'order'               => 'DESC',
+				'fields'              => 'ids',
+				'no_found_rows'       => true,
+				'ignore_sticky_posts' => true,
+			)
+		);
 		return $q->posts;
 	}
 
+	/**
+	 * Fuse vector scores with keyword results using Reciprocal Rank Fusion.
+	 *
+	 * @param array $vector_scores Associative array of post IDs to similarity scores.
+	 * @param array $keyword_ids   Array of post IDs from keyword search.
+	 * @param int   $limit         Maximum number of results.
+	 * @return array Fused scores.
+	 */
 	private function rrf_fuse_simple( array $vector_scores, array $keyword_ids, $limit ) {
 		$k     = 60;
 		$fused = array();

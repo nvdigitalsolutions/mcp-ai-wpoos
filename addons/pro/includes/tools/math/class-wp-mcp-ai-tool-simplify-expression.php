@@ -149,6 +149,7 @@ class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP
 
 		$result = array(
 			'success'             => true,
+			/* translators: %s: expression text */
 			'message'             => sprintf( __( 'Expression simplified: %s', 'mcp-ai-wpoos-pro' ), $expression ),
 			'text'                => sprintf( 'Simplified: %s', $simplified ),
 			'original_expression' => $expression,

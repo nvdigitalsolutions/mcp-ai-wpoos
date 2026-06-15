@@ -143,11 +143,14 @@ class WP_MCP_AI_Tool_Close_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Only allow closing active sprints.
 		if ( 'active' !== $sprint_status ) {
-			return new WP_Error( 'wp_mcp_ai_sprint_not_active', sprintf(
-				/* translators: %s: current sprint status */
-				__( 'Only active sprints can be closed. Current status: %s', 'mcp-ai-wpoos-pro' ),
-				$sprint_status ? $sprint_status : 'unknown'
-			) );
+			return new WP_Error(
+				'wp_mcp_ai_sprint_not_active',
+				sprintf(
+					/* translators: %s: current sprint status */
+					__( 'Only active sprints can be closed. Current status: %s', 'mcp-ai-wpoos-pro' ),
+					$sprint_status ? $sprint_status : 'unknown'
+				)
+			);
 		}
 
 		// Get sprint date range.
@@ -242,7 +245,7 @@ class WP_MCP_AI_Tool_Close_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'success'       => true,
 			'message'       => sprintf(
 				/* translators: 1: sprint title, 2: completion percentage, 3: velocity */
-				__( 'Sprint closed: %1$s — %2$s%% complete, velocity %.1f tasks/day', 'mcp-ai-wpoos-pro' ),
+				__( 'Sprint closed: %1$s — %2$s%% complete, velocity %3$.1f tasks/day', 'mcp-ai-wpoos-pro' ),
 				$sprint->post_title,
 				$completion_pct,
 				$velocity

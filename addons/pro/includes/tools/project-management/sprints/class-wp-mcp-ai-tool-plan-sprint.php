@@ -161,11 +161,14 @@ class WP_MCP_AI_Tool_Plan_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		// Only allow planning for sprints in 'planning' status.
 		if ( $sprint_status && 'planning' !== $sprint_status ) {
-			return new WP_Error( 'wp_mcp_ai_sprint_not_plannable', sprintf(
-				/* translators: %s: current sprint status */
-				__( 'Sprint cannot be planned because its status is "%s". Only sprints in "planning" status can be planned.', 'mcp-ai-wpoos-pro' ),
-				$sprint_status
-			) );
+			return new WP_Error(
+				'wp_mcp_ai_sprint_not_plannable',
+				sprintf(
+					/* translators: %s: current sprint status */
+					__( 'Sprint cannot be planned because its status is "%s". Only sprints in "planning" status can be planned.', 'mcp-ai-wpoos-pro' ),
+					$sprint_status
+				)
+			);
 		}
 
 		$planned_task_ids = array();
@@ -279,22 +282,27 @@ class WP_MCP_AI_Tool_Plan_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$tasks = $query->posts;
 
 		// Sort by priority (urgent > high > medium > low).
-		usort( $tasks, function ( $a, $b ) {
-			$priority_a = get_post_meta( $a->ID, '_task_priority', true ) ?: 'medium';
-			$priority_b = get_post_meta( $b->ID, '_task_priority', true ) ?: 'medium';
+		usort(
+			$tasks,
+			function ( $a, $b ) {
+				$priority_a_raw = get_post_meta( $a->ID, '_task_priority', true );
+				$priority_a     = $priority_a_raw ? $priority_a_raw : 'medium';
+				$priority_b_raw = get_post_meta( $b->ID, '_task_priority', true );
+				$priority_b     = $priority_b_raw ? $priority_b_raw : 'medium';
 
-			$rank_a = array_search( $priority_a, self::PRIORITY_ORDER, true );
-			$rank_b = array_search( $priority_b, self::PRIORITY_ORDER, true );
+				$rank_a = array_search( $priority_a, self::PRIORITY_ORDER, true );
+				$rank_b = array_search( $priority_b, self::PRIORITY_ORDER, true );
 
-			if ( false === $rank_a ) {
-				$rank_a = 2;
+				if ( false === $rank_a ) {
+					$rank_a = 2;
+				}
+				if ( false === $rank_b ) {
+					$rank_b = 2;
+				}
+
+				return $rank_a - $rank_b;
 			}
-			if ( false === $rank_b ) {
-				$rank_b = 2;
-			}
-
-			return $rank_a - $rank_b;
-		} );
+		);
 
 		return $tasks;
 	}

@@ -167,7 +167,15 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 				if ( 'disburse' === $action ) {
 					$balance = $this->calculate_balance( $matter_id );
 					if ( $amount > $balance ) {
-						return new WP_Error( 'insufficient_funds', sprintf( __( 'Insufficient trust balance. Current: $%s, Requested: $%s', 'mcp-ai-wpoos-pro' ), number_format( $balance, 2 ), number_format( $amount, 2 ) ) );
+						return new WP_Error(
+							'insufficient_funds',
+							sprintf(
+								/* translators: %1$s: current balance, %2$s: requested amount */
+								__( 'Insufficient trust balance. Current: $%1$s, Requested: $%2$s', 'mcp-ai-wpoos-pro' ),
+								number_format( $balance, 2 ),
+								number_format( $amount, 2 )
+							)
+						);
 					}
 				}
 
@@ -197,7 +205,13 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 
 				return array(
 					'success'    => true,
-					'message'    => sprintf( __( 'Trust %s of $%s recorded. New balance: $%s. ', 'mcp-ai-wpoos-pro' ), $action, number_format( $amount, 2 ), number_format( $new_balance, 2 ) ) . self::DISCLAIMER,
+					'message'    => sprintf(
+						/* translators: %1$s: action (deposit/disburse), %2$s: amount, %3$s: new balance */
+						__( 'Trust %1$s of $%2$s recorded. New balance: $%3$s. ', 'mcp-ai-wpoos-pro' ),
+						$action,
+						number_format( $amount, 2 ),
+						number_format( $new_balance, 2 )
+					) . self::DISCLAIMER,
 					'data'       => array(
 						'transaction_id' => $post_id,
 						'matter_id'      => $matter_id,
@@ -212,7 +226,11 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 				$balance = $this->calculate_balance( $matter_id );
 				return array(
 					'success'    => true,
-					'message'    => sprintf( __( 'Trust balance: $%s. ', 'mcp-ai-wpoos-pro' ), number_format( $balance, 2 ) ) . self::DISCLAIMER,
+					'message'    => sprintf(
+						/* translators: %s: trust account balance */
+						__( 'Trust balance: $%s. ', 'mcp-ai-wpoos-pro' ),
+						number_format( $balance, 2 )
+					) . self::DISCLAIMER,
 					'data'       => array(
 						'matter_id' => $matter_id,
 						'balance'   => $balance,
@@ -255,7 +273,11 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 
 				return array(
 					'success'    => true,
-					'message'    => sprintf( __( 'Ledger contains %d transactions. ', 'mcp-ai-wpoos-pro' ), count( $ledger ) ) . self::DISCLAIMER,
+					'message'    => sprintf(
+						/* translators: %d: number of ledger transactions */
+						__( 'Ledger contains %d transactions. ', 'mcp-ai-wpoos-pro' ),
+						count( $ledger )
+					) . self::DISCLAIMER,
 					'data'       => array(
 						'matter_id'       => $matter_id,
 						'ledger'          => $ledger,

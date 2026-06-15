@@ -147,19 +147,23 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the Omni Video generation tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( $arguments, $context ) {
 		// Sanitize inputs (two-gate rule: sanitize at entry).
-		$prompt           = isset( $arguments['prompt'] ) ? sanitize_textarea_field( $arguments['prompt'] ) : '';
-		$duration         = isset( $arguments['duration'] ) ? absint( $arguments['duration'] ) : 5;
-		$aspect_ratio     = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '16:9';
-		$resolution       = isset( $arguments['resolution'] ) ? sanitize_text_field( $arguments['resolution'] ) : '720p';
-		$negative_prompt  = isset( $arguments['negative_prompt'] ) ? sanitize_textarea_field( $arguments['negative_prompt'] ) : '';
-		$style            = isset( $arguments['style'] ) ? sanitize_text_field( $arguments['style'] ) : 'none';
-		$use_async        = ! empty( $arguments['async'] );
-		$use_avatar       = ! empty( $arguments['use_avatar'] );
-		$user_id          = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$prompt          = isset( $arguments['prompt'] ) ? sanitize_textarea_field( $arguments['prompt'] ) : '';
+		$duration        = isset( $arguments['duration'] ) ? absint( $arguments['duration'] ) : 5;
+		$aspect_ratio    = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '16:9';
+		$resolution      = isset( $arguments['resolution'] ) ? sanitize_text_field( $arguments['resolution'] ) : '720p';
+		$negative_prompt = isset( $arguments['negative_prompt'] ) ? sanitize_textarea_field( $arguments['negative_prompt'] ) : '';
+		$style           = isset( $arguments['style'] ) ? sanitize_text_field( $arguments['style'] ) : 'none';
+		$use_async       = ! empty( $arguments['async'] );
+		$use_avatar      = ! empty( $arguments['use_avatar'] );
+		$user_id         = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		// Reference images.
 		$reference_images = array();
@@ -293,8 +297,8 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		$video_data = $result['video_data'];
-		$model      = isset( $result['model'] ) ? $result['model'] : 'gemini-omni-flash';
+		$video_data  = $result['video_data'];
+		$model       = isset( $result['model'] ) ? $result['model'] : 'gemini-omni-flash';
 		$is_fallback = isset( $result['fallback_used'] ) && $result['fallback_used'];
 
 		// Generate filename.
@@ -354,14 +358,14 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 		$attachment_url = wp_get_attachment_url( $attach_id );
 
 		return array(
-			'success'         => true,
-			'attachment_id'   => $attach_id,
-			'attachment_url'  => $attachment_url,
-			'model'           => $model,
-			'prompt'          => $prompt,
-			'aspect_ratio'    => $aspect_ratio,
-			'fallback_used'   => $is_fallback,
-			'filename'        => $filename,
+			'success'        => true,
+			'attachment_id'  => $attach_id,
+			'attachment_url' => $attachment_url,
+			'model'          => $model,
+			'prompt'         => $prompt,
+			'aspect_ratio'   => $aspect_ratio,
+			'fallback_used'  => $is_fallback,
+			'filename'       => $filename,
 		);
 	}
 
@@ -370,7 +374,7 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'background-only' => true,
+			'background-only'  => true,
 			'token_multiplier' => 5.0,
 		);
 	}

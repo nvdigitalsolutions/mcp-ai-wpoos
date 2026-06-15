@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore WordPress.Files.FileName -- Class name does not match filename; file included explicitly.
 /**
  * Media Toolkit MCP Server
  *

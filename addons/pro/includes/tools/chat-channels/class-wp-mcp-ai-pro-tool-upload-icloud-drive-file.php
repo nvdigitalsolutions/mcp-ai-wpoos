@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for uploading files to iCloud Drive via a configured gateway API.
  */
-class WP_MCP_AI_Pro_Tool_Upload_iCloud_Drive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
 	 * Default timeout for iCloud gateway API requests (seconds).

@@ -197,7 +197,12 @@ class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Inter
 
 		return array(
 			'success'    => true,
-			'message'    => sprintf( __( 'Monitored %1$d matters, %2$d need replenishment. ', 'mcp-ai-wpoos-pro' ), count( $results ), $alerts ) . self::DISCLAIMER,
+			'message'    => sprintf(
+				/* translators: %1$d: total matters monitored, %2$d: matters needing replenishment */
+				__( 'Monitored %1$d matters, %2$d need replenishment. ', 'mcp-ai-wpoos-pro' ),
+				count( $results ),
+				$alerts
+			) . self::DISCLAIMER,
 			'data'       => array(
 				'matters'         => $results,
 				'total_monitored' => count( $results ),

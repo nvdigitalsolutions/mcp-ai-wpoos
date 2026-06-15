@@ -258,7 +258,8 @@ class WP_MCP_AI_Tool_Data_Warehouse_Sync implements WP_MCP_AI_Tool_Interface, WP
 				if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) === $table_name ) {
 					$data = $wpdb->get_results(
 						$wpdb->prepare(
-							"SELECT * FROM {$table_name} // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic table name
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic table name
+							"SELECT * FROM {$table_name}
 							WHERE recorded_at >= %s AND recorded_at <= %s",
 							$start_date,
 							$end_date

@@ -201,9 +201,12 @@ class WP_MCP_AI_Tool_Export_Project_Csv implements WP_MCP_AI_Tool_Interface, WP_
 		foreach ( $tasks as $task ) {
 			$task_id      = $task->ID;
 			$title        = $task->post_title;
-			$status       = get_post_meta( $task_id, '_task_status', true ) ?: 'pending';
-			$priority     = get_post_meta( $task_id, '_task_priority', true ) ?: 'medium';
-			$due_date     = get_post_meta( $task_id, '_task_due_date', true ) ?: '';
+			$status   = get_post_meta( $task_id, '_task_status', true );
+			$status   = $status ? $status : 'pending';
+			$priority = get_post_meta( $task_id, '_task_priority', true );
+			$priority = $priority ? $priority : 'medium';
+			$due_date = get_post_meta( $task_id, '_task_due_date', true );
+			$due_date = $due_date ? $due_date : '';
 
 			// Assignee.
 			$assignee_id   = get_post_meta( $task_id, '_task_assigned_to', true );

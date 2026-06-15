@@ -92,7 +92,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Control_Service' ) ) {
 				return $result;
 			}
 			return $this->success(
-				sprintf( __( 'Service "%1$s" %2$s completed.', 'mcp-ai-wpoos-pro' ), $service, $action ),
+				sprintf(
+					/* translators: %1$s: service name, %2$s: action (start/stop/restart) */
+					__( 'Service "%1$s" %2$s completed.', 'mcp-ai-wpoos-pro' ),
+					$service,
+					$action
+				),
 				array(
 					'service_name' => $service,
 					'action'       => $action,

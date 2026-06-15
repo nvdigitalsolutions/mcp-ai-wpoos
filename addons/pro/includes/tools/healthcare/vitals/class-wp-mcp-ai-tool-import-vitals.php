@@ -416,6 +416,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $member_post || 'mcp_ai_member' !== $member_post->post_type ) {
 			return new WP_Error(
 				'wp_mcp_ai_import_vitals_member_not_found',
+				/* translators: %d: member post ID */
 				sprintf( __( 'No mcp_ai_member found with ID %d.', 'mcp-ai-wpoos-pro' ), $member_id )
 			);
 		}

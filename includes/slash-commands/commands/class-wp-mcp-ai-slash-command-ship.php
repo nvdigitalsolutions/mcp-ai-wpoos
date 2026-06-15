@@ -626,7 +626,7 @@ class WP_MCP_AI_Slash_Command_Ship {
 			esc_html( ucwords( str_replace( '_', ' ', $result['status'] ) ) )
 		);
 
-		// Error message (shown for invalid post IDs etc.)
+		// Error message (shown for invalid post IDs etc.).
 		if ( isset( $result['message'] ) && ! empty( $result['message'] ) ) {
 			$output .= sprintf( "**Message:** %s\n\n", esc_html( $result['message'] ) );
 		}

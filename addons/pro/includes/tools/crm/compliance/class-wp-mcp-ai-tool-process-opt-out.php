@@ -1,19 +1,73 @@
 <?php
-/** Process Opt-Out — channel-specific or global opt-out. @package WP_MCP_AI_Pro @since 2.3.0 */
+/**
+ * Process Opt-Out — channel-specific or global opt-out.
+ *
+ * @package   WP_MCP_AI_Pro
+ * @since     2.3.0
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
+	exit;
+}
+
+/**
+ * Processes an opt-out request: adds to DNC list, revokes consent, and logs.
+ *
+ * @since 2.3.0
+ */
 class WP_MCP_AI_Tool_Process_Opt_Out implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Whether the tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
-		return ! empty( $s['enable_crm_toolkit'] ); }
+		return ! empty( $s['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * Reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
-		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
-		return 'process_opt_out'; }
+		return 'process_opt_out';
+	}
+
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
-		return __( 'Process Opt-Out', 'mcp-ai-wpoos-pro' ); }
+		return __( 'Process Opt-Out', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
-		return __( 'Process an opt-out request: add to DNC list, revoke consent, and log for compliance.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'Process an opt-out request: add to DNC list, revoke consent, and log for compliance.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -32,19 +86,50 @@ class WP_MCP_AI_Tool_Process_Opt_Out implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 			),
 			'required'   => array( 'identifier' ),
-		); }
+		);
+	}
+
+	/**
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
-		return 'edit_posts'; }
+		return 'edit_posts';
+	}
+
+	/**
+	 * Whether the tool requires Base Pro.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
-		return true; }
+		return true;
+	}
+
+	/**
+	 * Get the capability flags.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
-		return array( 'pro', 'database-write', 'requires-capability' ); }
+		return array( 'pro', 'database-write', 'requires-capability' );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$identifier = strtolower( trim( sanitize_text_field( $arguments['identifier'] ) ) );
 		$channel    = sanitize_key( $arguments['channel'] ?? 'all' );
 		$reason     = sanitize_key( $arguments['reason'] ?? 'user_request' );
 		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
-			return new WP_Error( 'engine_missing', __( 'CRM Engine not available.', 'mcp-ai-wpoos-pro' ) ); }
+			return new WP_Error( 'engine_missing', __( 'CRM Engine not available.', 'mcp-ai-wpoos-pro' ) );
+		}
 		WP_MCP_AI_CRM_Engine::add_to_dnc( $identifier, $channel );
 		// If email, find matching contact and revoke consent.
 		if ( strpos( $identifier, '@' ) !== false ) {
@@ -64,7 +149,8 @@ class WP_MCP_AI_Tool_Process_Opt_Out implements WP_MCP_AI_Tool_Interface, WP_MCP
 				)
 			);
 			if ( $q->have_posts() && class_exists( 'WP_MCP_AI_CRM_Consent' ) ) {
-				WP_MCP_AI_CRM_Consent::revoke( $q->posts[0], $channel ); }
+				WP_MCP_AI_CRM_Consent::revoke( $q->posts[0], $channel );
+			}
 		}
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
 			WP_MCP_AI_CRM_Audit::record(
@@ -76,7 +162,8 @@ class WP_MCP_AI_Tool_Process_Opt_Out implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'channel'    => $channel,
 					'reason'     => $reason,
 				)
-			); }
+			);
+		}
 		return array(
 			'success'    => true,
 			'message'    => __( 'Opt-out processed.', 'mcp-ai-wpoos-pro' ),

@@ -41,14 +41,14 @@ class WP_MCP_AI_Healthcare_FHIR {
 	/**
 	 * Build a Patient resource.
 	 *
-	 * @param array $data {
+	 * @param array $data Patient data.
 	 *     @type string|int $id          Logical id (e.g. member post id).
 	 *     @type string     $given_name  Given name.
 	 *     @type string     $family_name Family name.
 	 *     @type string     $gender      'male'|'female'|'other'|'unknown'.
 	 *     @type string     $birth_date  ISO date (YYYY-MM-DD).
 	 *     @type string     $mrn         Optional Medical Record Number.
-	 * }
+	 *
 	 * @return array
 	 */
 	public static function build_patient( array $data ) {
@@ -94,7 +94,7 @@ class WP_MCP_AI_Healthcare_FHIR {
 	/**
 	 * Build an Observation resource (vitals, labs, simple measurements).
 	 *
-	 * @param array $data {
+	 * @param array $data Observation data.
 	 *     @type string|int $id          Logical id.
 	 *     @type string     $patient_id  Patient logical id.
 	 *     @type string     $loinc_code  LOINC code (e.g. '8867-4').
@@ -104,7 +104,7 @@ class WP_MCP_AI_Healthcare_FHIR {
 	 *     @type string     $unit_code   UCUM code.
 	 *     @type string     $effective   ISO 8601 instant.
 	 *     @type string     $status      'final' (default), 'amended', etc.
-	 * }
+	 *
 	 * @return array
 	 */
 	public static function build_observation( array $data ) {

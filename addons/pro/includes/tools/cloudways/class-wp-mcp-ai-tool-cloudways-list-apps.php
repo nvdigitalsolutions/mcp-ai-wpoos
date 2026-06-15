@@ -103,8 +103,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_List_Apps' ) ) {
 
 			return $this->success(
 				sprintf(
-					/* translators: %d: number of apps */
-					_n( 'Found %d app on server %d.', 'Found %d apps on server %d.', count( $apps ), 'mcp-ai-wpoos-pro' ),
+					/* translators: 1: number of apps, 2: server ID */
+					_n( 'Found %1$d app on server %2$d.', 'Found %1$d apps on server %2$d.', count( $apps ), 'mcp-ai-wpoos-pro' ),
 					count( $apps ),
 					$server_id
 				),

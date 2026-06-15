@@ -205,16 +205,16 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 	protected function enqueue_test_runner_script() {
 		static $printed = false;
 
-		$ajax_url       = admin_url( 'admin-ajax.php' );
-		$nonce          = wp_create_nonce( 'wp_mcp_ai_performance' );
-		$running_test   = __( 'Running test...', 'mcp-ai-wpoos' );
-		$test_complete  = __( 'Test completed successfully!', 'mcp-ai-wpoos' );
-		$unknown_error  = __( 'Unknown error', 'mcp-ai-wpoos' );
-		$test_failed    = __( 'Test failed:', 'mcp-ai-wpoos' );
-		$test_output    = __( 'Test Output (Click to expand)', 'mcp-ai-wpoos' );
-		$cli_command    = __( 'CLI Command:', 'mcp-ai-wpoos' );
-		$setup_command  = __( 'Setup Command:', 'mcp-ai-wpoos' );
-		$ajax_error     = __( 'An error occurred while running the test.', 'mcp-ai-wpoos' );
+		$ajax_url      = admin_url( 'admin-ajax.php' );
+		$nonce         = wp_create_nonce( 'wp_mcp_ai_performance' );
+		$running_test  = __( 'Running test...', 'mcp-ai-wpoos' );
+		$test_complete = __( 'Test completed successfully!', 'mcp-ai-wpoos' );
+		$unknown_error = __( 'Unknown error', 'mcp-ai-wpoos' );
+		$test_failed   = __( 'Test failed:', 'mcp-ai-wpoos' );
+		$test_output   = __( 'Test Output (Click to expand)', 'mcp-ai-wpoos' );
+		$cli_command   = __( 'CLI Command:', 'mcp-ai-wpoos' );
+		$setup_command = __( 'Setup Command:', 'mcp-ai-wpoos' );
+		$ajax_error    = __( 'An error occurred while running the test.', 'mcp-ai-wpoos' );
 
 		ob_start();
 		?>
@@ -236,16 +236,22 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 			}
 
 			$(document).ready(function() {
-				var l10n = <?php echo wp_json_encode( array(
-					'runningTest'  => $running_test,
-					'testComplete' => $test_complete,
-					'unknownError' => $unknown_error,
-					'testFailed'   => $test_failed,
-					'testOutput'   => $test_output,
-					'cliCommand'   => $cli_command,
-					'setupCommand' => $setup_command,
-					'ajaxError'    => $ajax_error,
-				) ); ?>;
+				var l10n = 
+				<?php
+				echo wp_json_encode(
+					array(
+						'runningTest'  => $running_test,
+						'testComplete' => $test_complete,
+						'unknownError' => $unknown_error,
+						'testFailed'   => $test_failed,
+						'testOutput'   => $test_output,
+						'cliCommand'   => $cli_command,
+						'setupCommand' => $setup_command,
+						'ajaxError'    => $ajax_error,
+					)
+				);
+				?>
+				;
 
 				$('.wp-mcp-ai-test-runner__button').on('click', function(e) {
 					e.preventDefault();

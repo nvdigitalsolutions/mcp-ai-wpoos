@@ -275,4 +275,3 @@ class WP_MCP_AI_Healthcare_Optimization {
 		update_option( 'wp_mcp_ai_health_reminders', $all_reminders, false );
 	}
 }
-

@@ -273,4 +273,3 @@ class WP_MCP_AI_Social_Media_Optimization {
 		}
 	}
 }
-

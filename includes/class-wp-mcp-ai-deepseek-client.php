@@ -412,6 +412,7 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_errno
 			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_error
 			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_close
+
 			/*
 			 * Direct cURL is required here for real-time DeepSeek streaming.
 			 *

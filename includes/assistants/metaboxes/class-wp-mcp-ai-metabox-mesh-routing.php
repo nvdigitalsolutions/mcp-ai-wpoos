@@ -256,9 +256,9 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 			</table>
 
 			<?php
-			$peer_options    = wp_json_encode( array_column( $peer_sites, 'name' ) );
-			$select_peer     = esc_js( __( '-- Select Peer --', 'mcp-ai-wpoos' ) );
-			$remove_label    = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
+			$peer_options = wp_json_encode( array_column( $peer_sites, 'name' ) );
+			$select_peer  = esc_js( __( '-- Select Peer --', 'mcp-ai-wpoos' ) );
+			$remove_label = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
 
 			ob_start();
 			?>

@@ -206,7 +206,7 @@ class WP_MCP_AI_Tool_Letter_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_
 			}
 
 			if ( isset( $element['color'] ) ) {
-				$item['color'] = sanitize_hex_color( $element['color'] ) ?: '#000000';
+				$item['color'] = sanitize_hex_color( $element['color'] ) ? sanitize_hex_color( $element['color'] ) : '#000000';
 			}
 
 			$sanitized[] = $item;

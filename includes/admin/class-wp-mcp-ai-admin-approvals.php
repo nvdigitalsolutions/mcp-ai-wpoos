@@ -83,6 +83,7 @@ class WP_MCP_AI_Admin_Approvals {
 					'deny'      => __( 'Deny', 'mcp-ai-wpoos' ),
 					'loading'   => __( 'Loading…', 'mcp-ai-wpoos' ),
 					'noPending' => __( 'No pending approvals.', 'mcp-ai-wpoos' ),
+					/* translators: %s is the action being confirmed (e.g. Approve, Deny). */
 					'confirm'   => __( 'Please confirm: %s', 'mcp-ai-wpoos' ),
 					'approved'  => __( 'Approved', 'mcp-ai-wpoos' ),
 					'denied'    => __( 'Denied', 'mcp-ai-wpoos' ),

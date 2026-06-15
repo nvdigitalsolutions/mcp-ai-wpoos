@@ -1,19 +1,59 @@
 <?php
-/** Auto-Route Inbound Message — workload-aware routing. @package WP_MCP_AI_Pro @since 2.3.0 */
+/**
+ * Auto-Route Inbound Message — workload-aware routing.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.3.0
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
+
+/**
+ * Auto-Route Inbound Message tool — workload-aware routing.
+ */
 class WP_MCP_AI_Tool_Auto_Route_Inbound_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Check whether the tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $s['enable_crm_toolkit'] ); }
+	/**
+	 * Get the reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'auto_route_inbound_message'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Auto-Route Inbound Message', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Automatically assign a new lead to the best owner using the configured routing strategy and workload.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the JSON Schema for the tool parameters.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -27,12 +67,34 @@ class WP_MCP_AI_Tool_Auto_Route_Inbound_Message implements WP_MCP_AI_Tool_Interf
 			),
 			'required'   => array( 'lead_id' ),
 		); }
+	/**
+	 * Get the required WordPress capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts'; }
+	/**
+	 * Check whether this tool requires the base Pro version.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
 		return true; }
+	/**
+	 * Get capability flags for the tool.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'requires-capability' ); }
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments The tool arguments.
+	 * @param array $context   The execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$lead_id = absint( $arguments['lead_id'] );
 		$lp      = get_post( $lead_id );
@@ -58,7 +120,11 @@ class WP_MCP_AI_Tool_Auto_Route_Inbound_Message implements WP_MCP_AI_Tool_Interf
 			); }
 		return array(
 			'success'        => true,
-			'message'        => sprintf( __( 'Lead routed to %s.', 'mcp-ai-wpoos-pro' ), $u ? $u->display_name : (string) $owner ),
+			'message'        => sprintf(
+				/* translators: %s: display name of the assigned owner */
+				__( 'Lead routed to %s.', 'mcp-ai-wpoos-pro' ),
+				$u ? $u->display_name : (string) $owner
+			),
 			'lead_id'        => $lead_id,
 			'owner_id'       => $owner,
 			'owner_name'     => $u ? $u->display_name : '',

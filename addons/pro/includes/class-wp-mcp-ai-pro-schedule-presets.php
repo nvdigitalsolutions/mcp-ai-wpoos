@@ -1766,7 +1766,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_crm_presets() {
 			return array(
-				'lead_followup_reminder'      => array(
+				'lead_followup_reminder'            => array(
 					'name'          => __( 'Lead Follow-up Reminder', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Sends daily reminders for leads that are due for follow-up based on their pipeline stage and last contact date.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1782,7 +1782,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'contact_engagement_score'    => array(
+				'contact_engagement_score'          => array(
 					'name'          => __( 'Contact Engagement Scoring', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Recalculates engagement scores for all contacts based on recent interactions, email opens, and site visits.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1808,7 +1808,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'pipeline_status_report'      => array(
+				'pipeline_status_report'            => array(
 					'name'          => __( 'Daily Pipeline Status Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Generates a daily snapshot of the sales pipeline showing deals by stage, value, and probability.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1823,7 +1823,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'customer_birthday_alerts'    => array(
+				'customer_birthday_alerts'          => array(
 					'name'          => __( 'Customer Birthday Alerts', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Sends daily alerts for customer birthdays coming up in the next 7 days for personalised outreach.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1839,7 +1839,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'crm_data_cleanup'            => array(
+				'crm_data_cleanup'                  => array(
 					'name'          => __( 'CRM Data Cleanup', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Identifies and cleans duplicate contacts, invalid emails, and stale records in the CRM database.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1873,7 +1873,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 
 				// -- CRM Email Correspondence (industry-standard HubSpot / Salesforce patterns).
 
-				'email_correspondence_audit'  => array(
+				'email_correspondence_audit'        => array(
 					'name'          => __( 'Email Correspondence Audit', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Searches CRM contacts for customer emails that need follow-up, categorises correspondence by type (support, sales, escalated), and flags overdue responses following enterprise CRM standards.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1906,7 +1906,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'email_sla_breach_monitor'    => array(
+				'email_sla_breach_monitor'          => array(
 					'name'          => __( 'Email SLA Breach Monitor', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Monitors customer email response times and alerts when SLA thresholds are breached. Checks for escalated or support emails awaiting reply beyond the configured window.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1938,7 +1938,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'lead_nurture_email_digest'   => array(
+				'lead_nurture_email_digest'         => array(
 					'name'          => __( 'Lead Nurture Email Digest', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Generates a daily digest of new leads from email inquiries and scores them for sales readiness using industry-standard lead qualification criteria (demographic, firmographic, behavioural signals).', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1953,7 +1953,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'customer_reengagement_check' => array(
+				'customer_reengagement_check'       => array(
 					'name'          => __( 'Customer Re-engagement Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Identifies inactive customers who have not engaged via email in 30+ days and triggers re-engagement outreach following multi-touch CRM best practices.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1984,7 +1984,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'email_deliverability_report' => array(
+				'email_deliverability_report'       => array(
 					'name'          => __( 'Email Deliverability Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Weekly analysis of email deliverability metrics including bounce rates, open rates, and spam complaints, with actionable recommendations to maintain sender reputation.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2002,7 +2002,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 
 				// -- Lead Intake & Qualification presets.
 
-				'lead_intake_inbox_scanner'   => array(
+				'lead_intake_inbox_scanner'         => array(
 					'name'          => __( 'Lead Intake Inbox Scanner', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Scans all configured Gmail inboxes for new lead emails every hour. Uses multi-connection search to discover leads across business, support, and sales email accounts. Classifies inbound emails by inquiry type and flags high-intent leads (demo, trial, pricing, consultation) for immediate follow-up.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2028,7 +2028,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'high_intent_lead_alert'      => array(
+				'high_intent_lead_alert'            => array(
 					'name'          => __( 'High-Intent Lead Alert', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Hourly scan for high-intent inbound leads (demo requests, trial signups, pricing inquiries, consultation bookings) and immediately broadcasts alerts to the sales team via Slack. Ensures hot leads are never missed and receive prompt response.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2075,7 +2075,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'lead_qualification_queue'    => array(
+				'lead_qualification_queue'          => array(
 					'name'          => __( 'Lead Qualification Queue', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Daily assistant run that qualifies all new leads ingested in the last 24 hours using BANT (Budget, Authority, Need, Timeline) or MEDDIC frameworks. Scores each lead, assigns MQL/SQL stages, and generates a prioritised qualification queue for the sales team.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2090,7 +2090,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'multi_account_lead_sync'     => array(
+				'multi_account_lead_sync'           => array(
 					'name'          => __( 'Multi-Account Lead Sync', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Hourly workflow that searches across all connected Gmail accounts for lead emails and syncs discovered contacts to the CRM. Uses the multi-connection search capability to aggregate leads from support@, sales@, info@, and other business email addresses into a unified lead pipeline.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2115,7 +2115,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'lead_scoring_refresh'        => array(
+				'lead_scoring_refresh'              => array(
 					'name'          => __( 'Lead Scoring Refresh', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Daily workflow that recalculates lead scores for all active leads based on recent engagement signals, email interactions, and demographic/firmographic data. Updates hot/warm/cold classifications and adjusts MQL/SQL pipeline stages accordingly.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2147,7 +2147,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'trial_conversion_tracker'    => array(
+				'trial_conversion_tracker'          => array(
 					'name'          => __( 'Trial-to-Paid Conversion Tracker', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Daily assistant run monitoring trial signups and tracking conversion progress. Identifies trial users approaching expiry, those who have engaged with key product features, and those who need outreach to convert. Generates a trial pipeline report with conversion probability estimates.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2163,7 +2163,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					),
 				),
 
-				'deal_velocity_tracker'       => array(
+				'deal_velocity_tracker'             => array(
 					'name'          => __( 'Deal Velocity Tracker', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Daily assistant run that tracks deal movement through pipeline stages, alerts when deals stall beyond 2x average stage duration.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2178,7 +2178,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'win_loss_analysis'           => array(
+				'win_loss_analysis'                 => array(
 					'name'          => __( 'Win/Loss Analysis', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Monthly assistant run analysing closed-won vs closed-lost patterns by segment, competitor, deal size, rep.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2193,7 +2193,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'sales_forecast_accuracy'     => array(
+				'sales_forecast_accuracy'           => array(
 					'name'          => __( 'Sales Forecast Accuracy', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Weekly assistant run comparing forecasted vs actual revenue for forecast accuracy metrics.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2208,7 +2208,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'account_health_scorecard'    => array(
+				'account_health_scorecard'          => array(
 					'name'          => __( 'Account Health Scorecard', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Weekly assistant run scoring accounts on engagement, support health, financial health, and satisfaction.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2223,7 +2223,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'contract_renewal_reminder'   => array(
+				'contract_renewal_reminder'         => array(
 					'name'          => __( 'Contract Renewal Reminder', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Daily channel broadcast (to Slack) alerting account managers of renewals at 90/60/30 day milestones.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2239,7 +2239,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'churn_risk_early_warning'    => array(
+				'churn_risk_early_warning'          => array(
 					'name'          => __( 'Churn Risk Early Warning', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Weekly assistant run detecting churn signals from engagement, support, financial, and sentiment data.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2256,7 +2256,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				),
 
 				// -- Customer Management presets (v2.6.0) --
-				'customer_lifetime_value_refresh' => array(
+				'customer_lifetime_value_refresh'   => array(
 					'name'          => __( 'Customer LTV Refresh', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Monthly workflow that recalculates lifetime value for all customers based on total revenue, deal history, and engagement data. Updates LTV and total_revenue fields on customer records.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2283,7 +2283,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'customer_health_dashboard' => array(
+				'customer_health_dashboard'         => array(
 					'name'          => __( 'Customer Health Dashboard', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Weekly assistant run generating a customer health report: active customers, recent conversions, revenue trends, at-risk accounts, and engagement metrics.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2315,7 +2315,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				),
 
 				// -- Support Ticket Management --
-				'support_ticket_sla_monitor'  => array(
+				'support_ticket_sla_monitor'        => array(
 					'name'          => __( 'Support Ticket SLA Monitor', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Monitors all support tickets every 15 minutes for SLA compliance, auto-escalates waiting tickets, and auto-closes resolved tickets.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2329,7 +2329,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'args' => array(),
 					),
 				),
-				'support_ticket_daily_report' => array(
+				'support_ticket_daily_report'       => array(
 					'name'          => __( 'Daily Support Ticket Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Generates a daily SLA compliance report showing breached, at-risk, and on-track tickets grouped by assignee.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2344,7 +2344,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'support_ticket_cleanup'      => array(
+				'support_ticket_cleanup'            => array(
 					'name'          => __( 'Support Ticket Auto-Cleanup', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Automatically closes resolved tickets after the configured period and escalates tickets blocked on third parties for too long.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',

@@ -162,7 +162,7 @@ class WP_MCP_AI_Admin_DAG_Builder {
 						<?php foreach ( $workflows as $wf ) : ?>
 						<li class="mcp-ai-dag-workflow-item<?php echo ( $wf->ID === $workflow_id ) ? ' is-active' : ''; ?>">
 							<strong><?php echo esc_html( $wf->post_title ); ?></strong>
-							<small>v<?php echo esc_html( get_post_meta( $wf->ID, WP_MCP_AI_Workflow_CPT::META_VERSION, true ) ?: '1.0.0' ); ?></small>
+							<small>v<?php echo esc_html( get_post_meta( $wf->ID, WP_MCP_AI_Workflow_CPT::META_VERSION, true ) ? get_post_meta( $wf->ID, WP_MCP_AI_Workflow_CPT::META_VERSION, true ) : '1.0.0' ); ?></small>
 							<div class="mcp-ai-dag-workflow-actions">
 								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dag-builder&workflow_id=' . $wf->ID ) ); ?>"
 									class="button button-small">

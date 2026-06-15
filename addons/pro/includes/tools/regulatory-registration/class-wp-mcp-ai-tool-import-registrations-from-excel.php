@@ -228,9 +228,16 @@ class WP_MCP_AI_Tool_Import_Registrations_From_Excel implements WP_MCP_AI_Tool_I
 			// Link product if enabled.
 			$product_id = 0;
 			if ( $auto_link_products ) {
-				$product = get_page_by_title( $registration_data['product_name'], OBJECT, 'mcp_ai_reg_product' );
-				if ( $product ) {
-					$product_id = $product->ID;
+				$query = new WP_Query(
+					array(
+						'post_type'      => 'mcp_ai_reg_product',
+						'title'          => $registration_data['product_name'],
+						'posts_per_page' => 1,
+						'post_status'    => 'any',
+					)
+				);
+				if ( $query->have_posts() ) {
+					$product_id = $query->posts[0];
 				}
 			}
 

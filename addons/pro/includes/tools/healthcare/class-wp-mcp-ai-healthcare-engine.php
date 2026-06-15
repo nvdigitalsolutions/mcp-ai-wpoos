@@ -233,10 +233,10 @@ class WP_MCP_AI_Healthcare_Engine {
 	 *
 	 * Each metric is an associative array of { min, max, unit }.
 	 *
-	 * @param array $context Member context.  Recognised keys:.
+	 * @param array $context Member context. Recognised keys: species, sex, age_years.
 	 *                       - species: 'human' (default) | 'canine' | 'feline' | …
 	 *                       - sex:     'male' | 'female' | 'unknown'
-	 *                       - age_years: float|null
+	 *                       - age_years: float|null.
 	 * @return array Map of metric_slug => { min, max, unit }.
 	 */
 	public static function reference_ranges( array $context = array() ) {

@@ -97,13 +97,6 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 
 	/**
 	 * {@inheritdoc}
-	 *
-	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
-	 *
-	 *
-	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
-	 *
-	 * @param array $context   Execution context.
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';

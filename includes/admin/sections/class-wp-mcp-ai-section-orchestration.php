@@ -478,14 +478,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Semantic Prompt Compression', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Reduce token usage by stripping unnecessary grammar and filler words from prompts while preserving all facts, numbers, and technical terms.', 'mcp-ai-wpoos' ) . '</p>',
 				),
-				'enable_semantic_compression'      => array(
+				'enable_semantic_compression'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Semantic Prompt Compression', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Apply caveman-style compression to prompts before sending to AI models', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Strips unnecessary grammar, connectives, and filler words from prompts while preserving all facts, numbers, and technical terms. Reduces token usage by 20-35% with no quality loss. All facts and specific data are preserved verbatim.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'semantic_compression_level'       => array(
+				'semantic_compression_level'      => array(
 					'type'        => 'select',
 					'label'       => __( 'Compression Level', 'mcp-ai-wpoos' ),
 					'description' => __( 'Controls how aggressively prompts are compressed. Conservative preserves more original wording. Aggressive maximizes token savings.', 'mcp-ai-wpoos' ),
@@ -2236,8 +2236,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								<p class="description">
 									<?php
 									printf(
-										/* translators: %s: link to the OpenTelemetry connection settings page */
 										wp_kses(
+											/* translators: %s: link to the OpenTelemetry connection settings page */
 											__( 'Configure your OTLP/HTTP endpoint on the %s page.', 'mcp-ai-wpoos' ),
 											array( 'a' => array( 'href' => array() ) )
 										),

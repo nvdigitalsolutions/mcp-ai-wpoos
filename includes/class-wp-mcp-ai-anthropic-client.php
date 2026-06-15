@@ -193,7 +193,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			// never answered by a matching role:tool result message (e.g. the agentic loop
 			// hit max_iterations, or the client restored an incomplete conversation from
 			// localStorage). Without this Anthropic rejects with:
-			//   "400 — tool_use block missing corresponding tool_result in next message."
+			// "400 — tool_use block missing corresponding tool_result in next message."
 			// The OpenAI client performs the same normalisation in filter_tool_messages_for_payload().
 			$messages = $this->filter_tool_messages_for_payload( $messages );
 

@@ -189,4 +189,3 @@ class WP_MCP_AI_Calendar_Orchestration_Optimization {
 		}
 	}
 }
-

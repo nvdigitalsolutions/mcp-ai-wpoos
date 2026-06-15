@@ -107,10 +107,10 @@ class WP_MCP_AI_Transcript_Retention {
 	 * @return array
 	 */
 	public static function add_default_settings( $defaults ) {
-		$defaults['transcript_retention_days']        = self::DEFAULT_RETENTION_DAYS;
-		$defaults['transcript_retention_enabled']     = true;
-		$defaults['transcript_guest_retention_days']  = self::DEFAULT_GUEST_RETENTION_DAYS;
-		$defaults['transcript_per_user_max']          = self::DEFAULT_PER_USER_MAX;
+		$defaults['transcript_retention_days']       = self::DEFAULT_RETENTION_DAYS;
+		$defaults['transcript_retention_enabled']    = true;
+		$defaults['transcript_guest_retention_days'] = self::DEFAULT_GUEST_RETENTION_DAYS;
+		$defaults['transcript_per_user_max']         = self::DEFAULT_PER_USER_MAX;
 		return $defaults;
 	}
 
@@ -178,10 +178,9 @@ class WP_MCP_AI_Transcript_Retention {
 		$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 		$limit  = min( self::MAX_DELETES_PER_RUN, 500 );
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery -- CCT table has no WP API; low-traffic daily cron.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- CCT table has no WP API; low-traffic daily cron.
 
 		if ( $guest_only ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via get_transcript_table().
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM `{$table}` WHERE cct_created < %s AND cct_author_id = 0",
@@ -192,7 +191,6 @@ class WP_MCP_AI_Transcript_Retention {
 				return 0;
 			}
 			$limit = min( $limit, $count );
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$deleted = $wpdb->query(
 				$wpdb->prepare(
 					"DELETE FROM `{$table}` WHERE cct_created < %s AND cct_author_id = 0 LIMIT %d",
@@ -201,7 +199,6 @@ class WP_MCP_AI_Transcript_Retention {
 				)
 			);
 		} else {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM `{$table}` WHERE cct_created < %s AND cct_author_id > 0",
@@ -212,7 +209,6 @@ class WP_MCP_AI_Transcript_Retention {
 				return 0;
 			}
 			$limit = min( $limit, $count );
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$deleted = $wpdb->query(
 				$wpdb->prepare(
 					"DELETE FROM `{$table}` WHERE cct_created < %s AND cct_author_id > 0 LIMIT %d",
@@ -249,8 +245,7 @@ class WP_MCP_AI_Transcript_Retention {
 		}
 
 		// Find users who exceed the cap.
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$over_limit = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT cct_author_id, COUNT(*) AS cnt FROM `{$table}` WHERE cct_author_id > 0 GROUP BY cct_author_id HAVING cnt > %d ORDER BY cnt DESC LIMIT 50",
@@ -270,12 +265,11 @@ class WP_MCP_AI_Transcript_Retention {
 				break;
 			}
 
-			$user_id       = (int) $row->cct_author_id;
-			$excess_count  = (int) $row->cnt - $max_per_user;
-			$to_delete     = min( $excess_count, $remaining - $total_pruned, 100 );
+			$user_id      = (int) $row->cct_author_id;
+			$excess_count = (int) $row->cnt - $max_per_user;
+			$to_delete    = min( $excess_count, $remaining - $total_pruned, 100 );
 
-			// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 			$deleted = $wpdb->query(
 				$wpdb->prepare(
 					"DELETE FROM `{$table}` WHERE cct_author_id = %d ORDER BY cct_created ASC LIMIT %d",
@@ -356,8 +350,7 @@ class WP_MCP_AI_Transcript_Retention {
 		global $wpdb;
 
 		// Verify the transcript belongs to this user.
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$owner = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT cct_author_id FROM `{$table}` WHERE _ID = %d",
@@ -381,9 +374,9 @@ class WP_MCP_AI_Transcript_Retention {
 
 		return new WP_REST_Response(
 			array(
-				'success'        => true,
-				'transcript_id'  => $transcript_id,
-				'message'        => __( 'Transcript deleted successfully.', 'mcp-ai-wpoos' ),
+				'success'       => true,
+				'transcript_id' => $transcript_id,
+				'message'       => __( 'Transcript deleted successfully.', 'mcp-ai-wpoos' ),
 			),
 			200
 		);
@@ -420,7 +413,7 @@ class WP_MCP_AI_Transcript_Retention {
 		$retention_days = (int) WP_MCP_AI_Settings_Registry::get_setting( 'transcript_retention_days', self::DEFAULT_RETENTION_DAYS );
 
 		return array(
-			'available'        => true,
+			'available'         => true,
 			'total'             => $total,
 			'guest_total'       => $guest_total,
 			'user_total'        => $total - $guest_total,

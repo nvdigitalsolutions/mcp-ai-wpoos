@@ -61,7 +61,7 @@ class WP_MCP_AI_Rule_Verifier extends WP_MCP_AI_Verifier_Base {
 			'disallowed_tools'     => array(),
 			'allowed_domains'      => array(),
 		);
-		$this->rules = $this->normalize_rules( $rules );
+		$this->rules                = $this->normalize_rules( $rules );
 	}
 
 	/**
@@ -171,7 +171,7 @@ class WP_MCP_AI_Rule_Verifier extends WP_MCP_AI_Verifier_Base {
 			$weight        = (float) $rule['weight'];
 			$total_weight += $weight;
 
-			$value      = $this->extract_path( $subject, $rule['path'] );
+			$value       = $this->extract_path( $subject, $rule['path'] );
 			$rule_passed = $this->evaluate_rule( $rule, $value );
 
 			if ( $rule_passed ) {

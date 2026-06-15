@@ -246,7 +246,7 @@ class WP_MCP_AI_CRM_Optimization {
 		$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$retention_days} days" ) );
 
 		// Query old messages in batches to avoid long-running queries.
-		$batch_size = 100;
+		$batch_size   = 100;
 		$total_pruned = 0;
 
 		do {
@@ -370,11 +370,14 @@ class WP_MCP_AI_CRM_Optimization {
 		}
 
 		// Sort by timestamp descending, keep newest half.
-		uasort( $map, function ( $a, $b ) {
-			$ta = isset( $a['timestamp'] ) ? (int) $a['timestamp'] : 0;
-			$tb = isset( $b['timestamp'] ) ? (int) $b['timestamp'] : 0;
-			return $tb <=> $ta;
-		} );
+		uasort(
+			$map,
+			function ( $a, $b ) {
+				$ta = isset( $a['timestamp'] ) ? (int) $a['timestamp'] : 0;
+				$tb = isset( $b['timestamp'] ) ? (int) $b['timestamp'] : 0;
+				return $tb <=> $ta;
+			}
+		);
 
 		$map = array_slice( $map, 0, WP_MCP_AI_CRM_Message_Log::DEDUP_MAX_ENTRIES / 2, true );
 		update_option( WP_MCP_AI_CRM_Message_Log::DEDUP_OPTION, $map, false );
@@ -509,14 +512,14 @@ class WP_MCP_AI_CRM_Optimization {
 		$total_autoload_bytes = 0;
 
 		foreach ( $rows as $row ) {
-			$size_bytes = (int) $row->size_bytes;
+			$size_bytes  = (int) $row->size_bytes;
 			$is_autoload = 'yes' === $row->autoload;
 
 			$report['options'][] = array(
-				'name'      => $row->option_name,
+				'name'       => $row->option_name,
 				'size_bytes' => $size_bytes,
 				'size_kb'    => round( $size_bytes / 1024, 2 ),
-				'autoload'  => $row->autoload,
+				'autoload'   => $row->autoload,
 			);
 
 			$report['total_bytes'] += $size_bytes;
@@ -527,7 +530,7 @@ class WP_MCP_AI_CRM_Optimization {
 
 			// Warn on large individual options.
 			if ( $size_bytes > self::OPTION_SIZE_WARN_BYTES ) {
-				$report['healthy'] = false;
+				$report['healthy']    = false;
 				$report['warnings'][] = sprintf(
 					/* translators: 1: option name, 2: size in KB */
 					__( 'CRM option "%1$s" is %2$s KB — consider reducing size or disabling autoload.', 'mcp-ai-wpoos-pro' ),
@@ -539,7 +542,7 @@ class WP_MCP_AI_CRM_Optimization {
 
 		// Warn on excessive total autoload.
 		if ( $total_autoload_bytes > self::AUTOLOAD_TOTAL_WARN_BYTES ) {
-			$report['healthy'] = false;
+			$report['healthy']    = false;
 			$report['warnings'][] = sprintf(
 				/* translators: %s: total autoload size in KB */
 				__( 'CRM autoloaded options total %s KB — exceeds recommended 300 KB. Some options should use no-autoload.', 'mcp-ai-wpoos-pro' ),
@@ -573,7 +576,7 @@ class WP_MCP_AI_CRM_Optimization {
 		global $wpdb;
 
 		$stats = array(
-			'cpt_counts'  => array(),
+			'cpt_counts'   => array(),
 			'option_count' => 0,
 			'option_bytes' => 0,
 		);
@@ -592,7 +595,7 @@ class WP_MCP_AI_CRM_Optimization {
 		foreach ( $crm_post_types as $pt ) {
 			if ( post_type_exists( $pt ) ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-				$count = (int) $wpdb->get_var(
+				$count                      = (int) $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status = 'publish'",
 						$pt
@@ -603,7 +606,7 @@ class WP_MCP_AI_CRM_Optimization {
 		}
 
 		// Option stats.
-		$health = self::check_option_health();
+		$health                = self::check_option_health();
 		$stats['option_count'] = count( $health['options'] );
 		$stats['option_bytes'] = $health['total_bytes'];
 

@@ -50,7 +50,7 @@ class WP_MCP_AI_ACP_Session_Manager {
 		$session_id = 'sess_' . wp_generate_password( 16, false );
 		$user_id    = get_current_user_id();
 
-		// Default session structure
+		// Default session structure.
 		$session_data = array(
 			'id'         => $session_id,
 			'user_id'    => $user_id,
@@ -62,7 +62,7 @@ class WP_MCP_AI_ACP_Session_Manager {
 
 		set_transient( self::TRANSIENT_PREFIX . $session_id, $session_data, self::SESSION_LIFETIME );
 
-		// Keep track of user's sessions for session/list
+		// Keep track of user's sessions for session/list.
 		$this->add_to_user_sessions( $user_id, $session_id );
 
 		return array(
@@ -83,8 +83,8 @@ class WP_MCP_AI_ACP_Session_Manager {
 			return new WP_Error( -32001, 'Session not found or expired' );
 		}
 
-		// Ensure the user owns this session or has permissions
-		if ( $session['user_id'] !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+		// Ensure the user owns this session or has permissions.
+		if ( get_current_user_id() !== $session['user_id'] && ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error( -32002, 'Unauthorized access to session' );
 		}
 
@@ -117,7 +117,7 @@ class WP_MCP_AI_ACP_Session_Manager {
 			}
 		}
 
-		// Cleanup expired sessions from user meta
+		// Cleanup expired sessions from user meta.
 		if ( count( $active_sessions ) !== count( $sessions ) ) {
 			update_user_meta( $user_id, '_acp_sessions', wp_list_pluck( $active_sessions, 'id' ) );
 		}
@@ -134,7 +134,7 @@ class WP_MCP_AI_ACP_Session_Manager {
 	 * @return bool True if cancelled.
 	 */
 	public function cancel_session( $session_id ) {
-		// Store a cancellation flag for this session to interrupt ongoing prompt turns
+		// Store a cancellation flag for this session to interrupt ongoing prompt turns.
 		set_transient( self::TRANSIENT_PREFIX . $session_id . '_cancel', true, 60 );
 		return true;
 	}

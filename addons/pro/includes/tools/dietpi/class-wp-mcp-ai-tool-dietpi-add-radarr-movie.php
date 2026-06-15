@@ -150,7 +150,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Radarr_Movie' ) ) {
 			if ( ! is_array( $lookup ) || empty( $lookup ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_not_found',
-					sprintf( __( 'No movie found for "%s".', 'mcp-ai-wpoos-pro' ), $term )
+					sprintf(
+						/* translators: %s: search term */
+						__( 'No movie found for "%s".', 'mcp-ai-wpoos-pro' ),
+						$term
+					)
 				);
 			}
 			$selected  = $lookup[0];
@@ -185,7 +189,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Radarr_Movie' ) ) {
 				return $add;
 			}
 			return $this->success(
-				sprintf( __( 'Movie "%s" added to Radarr.', 'mcp-ai-wpoos-pro' ), $selected['title'] ),
+				sprintf(
+					/* translators: %s: movie title */
+					__( 'Movie "%s" added to Radarr.', 'mcp-ai-wpoos-pro' ),
+					$selected['title']
+				),
 				array( 'movie' => $add )
 			);
 		}

@@ -224,7 +224,7 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 		}
 
 		// --- Fuse -------------------------------------------------------.
-		$rank_lists   = array();
+		$rank_lists = array();
 		foreach ( $stream_rankings as $stream_label => $records ) {
 			$rank_lists[ $stream_label ] = self::extract_context_ids( $records );
 		}
@@ -345,10 +345,9 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 
 		$suppress = $wpdb->suppress_errors( true );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name comes from a constant CCT slug + $wpdb->prefix; values are parameterised.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- table name comes from a constant CCT slug + $wpdb->prefix; values are parameterised.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name interpolation, see above.
 				'SELECT *, MATCH(title, content) AGAINST(%s IN NATURAL LANGUAGE MODE) AS relevance '
 				. "FROM `{$table}` "
 				. 'WHERE agent_id = %s '
@@ -362,6 +361,7 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 
 		$had_error = ! empty( $wpdb->last_error );
 		$wpdb->suppress_errors( $suppress );
@@ -402,8 +402,8 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 		if ( ! class_exists( 'WP_MCP_AI_Agent_Context_Manager' ) ) {
 			return array();
 		}
-		$mgr      = WP_MCP_AI_Agent_Context_Manager::get_instance();
-		$records  = $mgr->search_contexts( $agent_id, $filters, 200, false );
+		$mgr     = WP_MCP_AI_Agent_Context_Manager::get_instance();
+		$records = $mgr->search_contexts( $agent_id, $filters, 200, false );
 		if ( empty( $records ) ) {
 			return array();
 		}
@@ -505,11 +505,11 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 		$max_depth = (int) apply_filters( 'wp_mcp_ai_memory_rrf_graph_max_depth', self::DEFAULT_GRAPH_MAX_DEPTH );
 
 		$args = array(
-			'agent_id' => (string) $agent_id,
-			'wing'     => isset( $filters['wing'] ) ? (string) $filters['wing'] : '',
-			'room'     => isset( $filters['room'] ) ? (string) $filters['room'] : '',
-			'query'    => $entity_q,
-			'limit'    => max( 1, (int) $limit ),
+			'agent_id'  => (string) $agent_id,
+			'wing'      => isset( $filters['wing'] ) ? (string) $filters['wing'] : '',
+			'room'      => isset( $filters['room'] ) ? (string) $filters['room'] : '',
+			'query'     => $entity_q,
+			'limit'     => max( 1, (int) $limit ),
 			// Forwarded for forward-compat with future Graphify versions; the
 			// current bridge ignores unknown keys.
 			'max_depth' => max( 1, $max_depth ),
@@ -549,7 +549,7 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 	 * @return array<string, float> Diversified scores in same order.
 	 */
 	public static function apply_session_diversity( array $scores, array $records_by_id, $cap ) {
-		$cap = max( 1, (int) $cap );
+		$cap         = max( 1, (int) $cap );
 		$per_session = array();
 		$out         = array();
 		$unique      = 0;
@@ -590,8 +590,8 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 	public static function apply_confidence_weighting( array $scores, array $records_by_id ) {
 		$weighted = array();
 		foreach ( $scores as $context_id => $score ) {
-			$record     = isset( $records_by_id[ $context_id ] ) ? $records_by_id[ $context_id ] : array();
-			$confidence = self::extract_confidence_score( $record );
+			$record                  = isset( $records_by_id[ $context_id ] ) ? $records_by_id[ $context_id ] : array();
+			$confidence              = self::extract_confidence_score( $record );
 			$weighted[ $context_id ] = (float) $score * (float) $confidence;
 		}
 		arsort( $weighted );
@@ -599,9 +599,10 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 	}
 
 	/*
-	 ----------------------------------------------------------------------
+	----------------------------------------------------------------------
 	 * Internal helpers
-	 * ------------------------------------------------------------------- */
+	 * -------------------------------------------------------------------
+	 */
 
 	/**
 	 * Build the final response envelope from fused scores.
@@ -668,8 +669,8 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 			: $fused_scores;
 
 		// Session diversification.
-		$session_cap     = (int) apply_filters( 'wp_mcp_ai_memory_rrf_session_diversity_cap', self::DEFAULT_SESSION_DIVERSITY_CAP );
-		$diversified     = self::apply_session_diversity( $final_scores, $records_by_id, $session_cap );
+		$session_cap = (int) apply_filters( 'wp_mcp_ai_memory_rrf_session_diversity_cap', self::DEFAULT_SESSION_DIVERSITY_CAP );
+		$diversified = self::apply_session_diversity( $final_scores, $records_by_id, $session_cap );
 
 		// Top-N slice.
 		$top = array_slice( $diversified, 0, max( 1, (int) $limit ), true );

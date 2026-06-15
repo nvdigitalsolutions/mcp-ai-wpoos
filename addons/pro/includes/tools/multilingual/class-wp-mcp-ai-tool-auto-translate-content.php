@@ -226,10 +226,6 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 	 * @param mixed $source_lang Parameter.
 	 * @param mixed $target_lang Parameter.
 	 * @return array|WP_Error Result.
-	 *
-	 * @param array $text Parameter.
-	 * @param array $source_lang Parameter.
-	 * @param array $target_lang Parameter.
 	 */
 	private function translate_text( $text, $source_lang, $target_lang ) {
 		if ( empty( $text ) ) {

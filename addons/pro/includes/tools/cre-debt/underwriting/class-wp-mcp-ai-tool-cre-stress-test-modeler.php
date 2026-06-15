@@ -200,8 +200,8 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 		$new_rate                 = $rate + ( $rate_bps / 10000 );
 		$rate_metrics             = $compute_metrics( $base_noi, $new_rate, $value );
 		$rate_metrics['scenario'] = sprintf(
-			/* translators: %s: rate increase in BPS */
-			__( 'Interest rate increase (+%d bps to %s)', 'mcp-ai-wpoos-pro' ),
+			/* translators: %1$d: rate increase in BPS, %2$s: new interest rate */
+			__( 'Interest rate increase (+%1$d bps to %2$s)', 'mcp-ai-wpoos-pro' ),
 			$rate_bps,
 			$calc::format_percentage( $new_rate )
 		);

@@ -1341,15 +1341,15 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 			<?php
 			// Pre-compute all dynamic PHP values for the provider test script.
-			$diag_ajax_url         = admin_url( 'admin-ajax.php' );
-			$diag_nonce            = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
-			$diag_testing_text     = __( 'Testing...', 'mcp-ai-wpoos' );
-			$diag_testing_conn     = __( 'Testing connection...', 'mcp-ai-wpoos' );
-			$diag_success_text     = __( 'Success!', 'mcp-ai-wpoos' );
-			$diag_error_text       = __( 'Error!', 'mcp-ai-wpoos' );
-			$diag_unknown_error    = __( 'Unknown error occurred', 'mcp-ai-wpoos' );
-			$diag_test_text        = __( 'Test', 'mcp-ai-wpoos' );
-			$diag_connection_text  = __( 'Connection', 'mcp-ai-wpoos' );
+			$diag_ajax_url        = admin_url( 'admin-ajax.php' );
+			$diag_nonce           = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
+			$diag_testing_text    = __( 'Testing...', 'mcp-ai-wpoos' );
+			$diag_testing_conn    = __( 'Testing connection...', 'mcp-ai-wpoos' );
+			$diag_success_text    = __( 'Success!', 'mcp-ai-wpoos' );
+			$diag_error_text      = __( 'Error!', 'mcp-ai-wpoos' );
+			$diag_unknown_error   = __( 'Unknown error occurred', 'mcp-ai-wpoos' );
+			$diag_test_text       = __( 'Test', 'mcp-ai-wpoos' );
+			$diag_connection_text = __( 'Connection', 'mcp-ai-wpoos' );
 
 			ob_start();
 			?>

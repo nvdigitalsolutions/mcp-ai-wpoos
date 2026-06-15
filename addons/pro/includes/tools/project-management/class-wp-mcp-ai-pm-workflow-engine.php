@@ -62,8 +62,10 @@ class WP_MCP_AI_PM_Workflow_Engine {
 
 		$fired = array();
 		foreach ( $rules as $rule ) {
-			$conditions = json_decode( get_post_meta( $rule->ID, '_pm_wf_conditions', true ) ?: '[]', true );
-			$actions    = json_decode( get_post_meta( $rule->ID, '_pm_wf_actions', true ) ?: '[]', true );
+			$conditions_raw = get_post_meta( $rule->ID, '_pm_wf_conditions', true );
+			$conditions     = json_decode( $conditions_raw ? $conditions_raw : '[]', true );
+			$actions_raw    = get_post_meta( $rule->ID, '_pm_wf_actions', true );
+			$actions        = json_decode( $actions_raw ? $actions_raw : '[]', true );
 
 			if ( self::check_conditions( $conditions, $entity_id, $context ) ) {
 				self::execute_actions( $actions, $entity_id, $context );
@@ -201,7 +203,8 @@ class WP_MCP_AI_PM_Workflow_Engine {
 		}
 
 		$trigger_type = get_post_meta( $rule_id, '_pm_wf_trigger_type', true );
-		$conditions   = json_decode( get_post_meta( $rule_id, '_pm_wf_conditions', true ) ?: '[]', true );
+		$conditions_raw = get_post_meta( $rule_id, '_pm_wf_conditions', true );
+		$conditions     = json_decode( $conditions_raw ? $conditions_raw : '[]', true );
 
 		// Determine which CPT to query based on trigger.
 		$post_type = 'mcp_ai_task';

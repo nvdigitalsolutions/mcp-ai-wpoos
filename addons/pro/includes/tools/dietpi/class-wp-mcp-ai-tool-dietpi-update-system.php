@@ -107,7 +107,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Update_System' ) ) {
 
 					return $this->success(
 						$pending > 0
-							? sprintf( _n( '%d package update available.', '%d package updates available.', $pending, 'mcp-ai-wpoos-pro' ), $pending )
+							? sprintf(
+								/* translators: %d: number of pending updates */
+								_n( '%d package update available.', '%d package updates available.', $pending, 'mcp-ai-wpoos-pro' ),
+								$pending
+							)
 							: __( 'System is up to date.', 'mcp-ai-wpoos-pro' ),
 						$info
 					);
@@ -150,7 +154,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Update_System' ) ) {
 					$packages = array_filter( array_map( 'trim', explode( "\n", $result['stdout'] ) ) );
 
 					return $this->success(
-						sprintf( _n( '%d upgradable package.', '%d upgradable packages.', count( $packages ), 'mcp-ai-wpoos-pro' ), count( $packages ) ),
+						sprintf(
+							/* translators: %d: number of upgradable packages */
+							_n( '%d upgradable package.', '%d upgradable packages.', count( $packages ), 'mcp-ai-wpoos-pro' ),
+							count( $packages )
+						),
 						array( 'packages' => array_values( $packages ) )
 					);
 

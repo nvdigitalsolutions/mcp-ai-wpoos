@@ -128,7 +128,8 @@ class WP_MCP_AI_CRM_Activity_CPT {
 					'task'    => 'dashicons-yes',
 					'note'    => 'dashicons-edit',
 				);
-				$type      = get_post_meta( $post_id, 'activity_type', true ) ?: 'task';
+				$type      = get_post_meta( $post_id, 'activity_type', true );
+					$type  = $type ? $type : 'task';
 				$icon      = isset( $dashicons[ $type ] ) ? $dashicons[ $type ] : 'dashicons-yes';
 				echo '<span class="dashicons ' . esc_attr( $icon ) . '" style="vertical-align: middle; margin-right: 4px;"></span> ';
 				echo esc_html( ucfirst( $type ) );
@@ -138,17 +139,18 @@ class WP_MCP_AI_CRM_Activity_CPT {
 				$related_id   = (int) get_post_meta( $post_id, 'related_id', true );
 				if ( $related_id ) {
 					$title = get_the_title( $related_id );
-					echo esc_html( $title ?: ( $related_type . ' #' . $related_id ) );
+					echo esc_html( $title ? $title : ( $related_type . ' #' . $related_id ) );
 				} else {
 					echo '—';
 				}
 				break;
 			case 'due_date':
 				$due = get_post_meta( $post_id, 'due_date', true );
-				echo esc_html( $due ?: '—' );
+				echo esc_html( $due ? $due : '—' );
 				break;
 			case 'disposition':
-				echo esc_html( get_post_meta( $post_id, 'disposition', true ) ?: '—' );
+				$disposition = get_post_meta( $post_id, 'disposition', true );
+					echo esc_html( $disposition ? $disposition : '—' );
 				break;
 		}
 	}

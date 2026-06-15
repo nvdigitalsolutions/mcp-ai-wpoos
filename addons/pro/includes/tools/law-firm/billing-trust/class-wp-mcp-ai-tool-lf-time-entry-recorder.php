@@ -170,7 +170,11 @@ class WP_MCP_AI_Tool_LF_Time_Entry_Recorder implements WP_MCP_AI_Tool_Interface,
 		if ( $utbms_code ) {
 			$utbms_result = WP_MCP_AI_Law_Firm_Calculator::validate_utbms_code( $utbms_code );
 			if ( ! $utbms_result['is_valid'] ) {
-				$warnings[] = sprintf( __( 'UTBMS code "%s" may be invalid.', 'mcp-ai-wpoos-pro' ), $utbms_code );
+				$warnings[] = sprintf(
+					/* translators: %s: UTBMS code */
+					__( 'UTBMS code "%s" may be invalid.', 'mcp-ai-wpoos-pro' ),
+					$utbms_code
+				);
 			}
 		}
 
@@ -210,7 +214,12 @@ class WP_MCP_AI_Tool_LF_Time_Entry_Recorder implements WP_MCP_AI_Tool_Interface,
 
 		return array(
 			'success'    => true,
-			'message'    => sprintf( __( 'Time entry recorded: %s hours at %s. ', 'mcp-ai-wpoos-pro' ), WP_MCP_AI_Law_Firm_Calculator::format_hours( $hours ), WP_MCP_AI_Law_Firm_Calculator::format_currency( $rate ) ) . self::DISCLAIMER,
+			'message'    => sprintf(
+				/* translators: %1$s: hours formatted, %2$s: rate formatted */
+				__( 'Time entry recorded: %1$s hours at %2$s. ', 'mcp-ai-wpoos-pro' ),
+				WP_MCP_AI_Law_Firm_Calculator::format_hours( $hours ),
+				WP_MCP_AI_Law_Firm_Calculator::format_currency( $rate )
+			) . self::DISCLAIMER,
 			'data'       => array(
 				'entry_id'     => $post_id,
 				'matter_id'    => $matter_id,

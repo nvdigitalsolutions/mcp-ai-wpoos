@@ -89,7 +89,7 @@ if ( $is_enabled && ! $is_base ) {
 
 	// --- REST API: iCloud Drive webhook controller ---
 	$_icloud_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php';
-	if ( file_exists( $_icloud_rest ) && ! class_exists( 'WP_MCP_AI_iCloud_Webhook_Controller' ) ) {
+	if ( file_exists( $_icloud_rest ) && ! class_exists( 'WP_MCP_AI_ICloud_Webhook_Controller' ) ) {
 		require_once $_icloud_rest;
 		new WP_MCP_AI_iCloud_Webhook_Controller();
 	}

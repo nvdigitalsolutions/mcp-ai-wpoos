@@ -213,7 +213,11 @@ class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_M
 
 		return array(
 			'success'    => true,
-			'message'    => sprintf( __( 'Fee calculated: %s. ', 'mcp-ai-wpoos-pro' ), WP_MCP_AI_Law_Firm_Calculator::format_currency( $result['fee_amount'] ) ) . self::DISCLAIMER,
+			'message'    => sprintf(
+				/* translators: %s: calculated fee amount */
+				__( 'Fee calculated: %s. ', 'mcp-ai-wpoos-pro' ),
+				WP_MCP_AI_Law_Firm_Calculator::format_currency( $result['fee_amount'] )
+			) . self::DISCLAIMER,
 			'data'       => $result,
 			'disclaimer' => self::DISCLAIMER,
 		);

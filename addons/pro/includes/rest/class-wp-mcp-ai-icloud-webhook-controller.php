@@ -39,7 +39,7 @@ unset( $_cc_messages_file, $_cc_contacts_file );
 /**
  * ICloud Drive webhook REST controller.
  */
-class WP_MCP_AI_iCloud_Webhook_Controller extends WP_REST_Controller {
+class WP_MCP_AI_ICloud_Webhook_Controller extends WP_REST_Controller {
 
 	/**
 	 * REST API namespace.

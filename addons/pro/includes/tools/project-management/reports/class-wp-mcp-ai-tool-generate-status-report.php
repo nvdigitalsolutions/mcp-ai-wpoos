@@ -151,9 +151,12 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Gather project metadata.
-		$project_status   = get_post_meta( $project_id, '_project_status', true ) ?: 'planning';
-		$project_start    = get_post_meta( $project_id, '_project_start_date', true ) ?: '';
-		$project_end      = get_post_meta( $project_id, '_project_end_date', true ) ?: '';
+		$project_status   = get_post_meta( $project_id, '_project_status', true );
+		$project_status   = $project_status ? $project_status : 'planning';
+		$project_start    = get_post_meta( $project_id, '_project_start_date', true );
+		$project_start    = $project_start ? $project_start : '';
+		$project_end      = get_post_meta( $project_id, '_project_end_date', true );
+		$project_end      = $project_end ? $project_end : '';
 		$project_assigned = get_post_meta( $project_id, '_project_assigned_to', true );
 		$project_assigned = is_array( $project_assigned ) ? $project_assigned : array();
 
@@ -375,12 +378,14 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 					}
 				}
 
+				$priority_raw = get_post_meta( $task->ID, '_task_priority', true );
+
 				$upcoming[] = array(
 					'id'        => $task->ID,
 					'title'     => $task->post_title,
 					'due_date'  => $due_date,
 					'status'    => get_post_meta( $task->ID, '_task_status', true ),
-					'priority'  => get_post_meta( $task->ID, '_task_priority', true ) ?: 'medium',
+					'priority'  => $priority_raw ? $priority_raw : 'medium',
 					'assignee'  => $assignee_name,
 				);
 			}
@@ -433,7 +438,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 			$blockers[] = array(
 				'id'      => $task->ID,
 				'title'   => $task->post_title,
-				'reason'  => $block_reason ?: __( 'No reason provided', 'mcp-ai-wpoos-pro' ),
+				'reason'  => $block_reason ? $block_reason : __( 'No reason provided', 'mcp-ai-wpoos-pro' ),
 				'assignee' => $assignee,
 			);
 		}
@@ -666,20 +671,24 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 		// Burndown.
 		if ( $burndown && $burndown['total'] > 0 ) {
 			$report .= "\n## " . esc_html__( 'Burndown Snapshot', 'mcp-ai-wpoos-pro' ) . "\n\n";
-			$report .= esc_html( sprintf(
-				/* translators: 1: done count, 2: total count, 3: percentage */
-				__( '%1$d of %2$d tasks completed (%3$s%%). %4$d remaining.', 'mcp-ai-wpoos-pro' ),
-				$burndown['done'],
-				$burndown['total'],
-				$burndown['pct_done'],
-				$burndown['remaining']
-			) ) . "\n";
+			$report .= esc_html(
+				sprintf(
+					/* translators: 1: done count, 2: total count, 3: percentage, 4: remaining count */
+					__( '%1$d of %2$d tasks completed (%3$s%%). %4$d remaining.', 'mcp-ai-wpoos-pro' ),
+					$burndown['done'],
+					$burndown['total'],
+					$burndown['pct_done'],
+					$burndown['remaining']
+				)
+			) . "\n";
 			if ( $burndown['blocked'] > 0 ) {
-				$report .= esc_html( sprintf(
-					/* translators: %d: blocked task count */
-					__( '%d task(s) blocked.', 'mcp-ai-wpoos-pro' ),
-					$burndown['blocked']
-				) ) . "\n";
+				$report .= esc_html(
+					sprintf(
+						/* translators: %d: blocked task count */
+						__( '%d task(s) blocked.', 'mcp-ai-wpoos-pro' ),
+						$burndown['blocked']
+					)
+				) . "\n";
 			}
 		}
 
@@ -694,7 +703,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Upcoming tasks.
-		$report .= "\n## " . esc_html__( 'Upcoming Tasks', 'mcp-ai-wpoos-pro' ) . " (7 " . esc_html__( 'days', 'mcp-ai-wpoos-pro' ) . ")\n\n";
+		$report .= "\n## " . esc_html__( 'Upcoming Tasks', 'mcp-ai-wpoos-pro' ) . ' (7 ' . esc_html__( 'days', 'mcp-ai-wpoos-pro' ) . ")\n\n";
 		if ( empty( $upcoming_tasks ) ) {
 			$report .= esc_html__( 'No tasks due in the next 7 days.', 'mcp-ai-wpoos-pro' ) . "\n";
 		} else {
@@ -800,20 +809,24 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 		// Burndown.
 		if ( $burndown && $burndown['total'] > 0 ) {
 			$report .= '<h2>' . esc_html__( 'Burndown Snapshot', 'mcp-ai-wpoos-pro' ) . '</h2>' . "\n";
-			$report .= '<p>' . esc_html( sprintf(
-				/* translators: 1: done count, 2: total count, 3: percentage */
-				__( '%1$d of %2$d tasks completed (%3$s%%). %4$d remaining.', 'mcp-ai-wpoos-pro' ),
-				$burndown['done'],
-				$burndown['total'],
-				$burndown['pct_done'],
-				$burndown['remaining']
-			) ) . '</p>' . "\n";
+			$report .= '<p>' . esc_html(
+				sprintf(
+					/* translators: 1: done count, 2: total count, 3: percentage, 4: remaining count */
+					__( '%1$d of %2$d tasks completed (%3$s%%). %4$d remaining.', 'mcp-ai-wpoos-pro' ),
+					$burndown['done'],
+					$burndown['total'],
+					$burndown['pct_done'],
+					$burndown['remaining']
+				)
+			) . '</p>' . "\n";
 			if ( $burndown['blocked'] > 0 ) {
-				$report .= '<p>' . esc_html( sprintf(
-					/* translators: %d: blocked task count */
-					__( '%d task(s) blocked.', 'mcp-ai-wpoos-pro' ),
-					$burndown['blocked']
-				) ) . '</p>' . "\n";
+				$report .= '<p>' . esc_html(
+					sprintf(
+						/* translators: %d: blocked task count */
+						__( '%d task(s) blocked.', 'mcp-ai-wpoos-pro' ),
+						$burndown['blocked']
+					)
+				) . '</p>' . "\n";
 			}
 		}
 

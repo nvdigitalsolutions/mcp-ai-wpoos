@@ -35,13 +35,13 @@ class WP_MCP_AI_PM_Capabilities {
 	 * @var string[]
 	 */
 	const ROLES = array(
-		'project_manager',  // Oversees projects, team assignments, reporting
-		'scrum_master',     // Facilitates sprints, removes blockers
-		'product_owner',    // Owns backlog, priorities, stakeholder alignment
-		'team_member',      // Executes tasks, updates status
-		'stakeholder',      // Read-only visibility into portfolio
-		'resource_manager', // Staffing and allocation
-		'pm_viewer',        // Read-only dashboards
+		'project_manager',  // Oversees projects, team assignments, reporting.
+		'scrum_master',     // Facilitates sprints, removes blockers.
+		'product_owner',    // Owns backlog, priorities, stakeholder alignment.
+		'team_member',      // Executes tasks, updates status.
+		'stakeholder',      // Read-only visibility into portfolio.
+		'resource_manager', // Staffing and allocation.
+		'pm_viewer',        // Read-only dashboards.
 	);
 
 	/**

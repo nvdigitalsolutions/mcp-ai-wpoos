@@ -23,10 +23,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load bridge classes.
 //
 // Both classes are loaded unconditionally because:
-//  - Credential_Resolver is called from WP_MCP_AI_Model_Config on all WP
-//    versions and handles WP < 7.0 gracefully internally.
-//  - WP70_Bridge methods all guard themselves with is_available() and are
-//    safe to define even when the WP 7.0 infrastructure is absent.
+// - Credential_Resolver is called from WP_MCP_AI_Model_Config on all WP
+// versions and handles WP < 7.0 gracefully internally.
+// - WP70_Bridge methods all guard themselves with is_available() and are
+// safe to define even when the WP 7.0 infrastructure is absent.
 // ---------------------------------------------------------------------------
 
 require_once __DIR__ . '/class-wp-mcp-ai-wp70-bridge.php';

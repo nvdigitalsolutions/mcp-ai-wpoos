@@ -116,6 +116,7 @@ class WP_MCP_AI_Tool_Block_Time_Slot implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$blocked_id = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_blocked_time',
+				/* translators: %1$s: start time, %2$s: end time */
 				'post_title'  => sprintf( __( 'Blocked: %1$s to %2$s', 'mcp-ai-wpoos-pro' ), $start_time, $end_time ),
 				'post_status' => 'publish',
 				'meta_input'  => array(
