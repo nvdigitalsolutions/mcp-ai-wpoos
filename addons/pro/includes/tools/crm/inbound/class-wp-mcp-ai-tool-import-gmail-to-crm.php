@@ -44,22 +44,52 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	const HISTORY_ID_OPTION_PREFIX = 'wp_mcp_ai_crm_gmail_history_id_';
 
+	/**
+	 * Whether this tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $s['enable_crm_toolkit'] ); }
 
+	/**
+	 * Reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'import_gmail_to_crm'; }
 
+	/**
+	 * Tool display name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Import Gmail to CRM', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Searches your Gmail inbox and imports matching emails into the CRM pipeline. Each email is classified for intent, scored, and upserted as a lead — spam and newsletters are automatically filtered out. Use this to turn raw inbox emails into structured CRM leads.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -84,15 +114,37 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			'required'   => array( 'query' ),
 		); }
 
+	/**
+	 * Required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts'; }
 
+	/**
+	 * Whether this tool requires base pro.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
 		return true; }
 
+	/**
+	 * Capability flags.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'outbound-network', 'database-write', 'requires-capability' ); }
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
 			return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }
@@ -131,7 +183,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Search Gmail for matching messages (with optional historyId incremental sync).
-		$gmail_user = $creds['user_email'] ?: 'me';
+		$gmail_user = $creds['user_email'] ? $creds['user_email'] : 'me';
 
 		if ( $use_history_sync && ! empty( $connection_id ) ) {
 			$last_history_id = get_option( self::HISTORY_ID_OPTION_PREFIX . $connection_id, '' );
@@ -496,7 +548,11 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		if ( 200 !== $code ) {
 			return new WP_Error(
 				'gmail_list_failed',
-				sprintf( __( 'Gmail list API returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $code )
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Gmail list API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
 			);
 		}
 
@@ -604,7 +660,11 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		if ( 200 !== $code ) {
 			return new WP_Error(
 				'gmail_history_failed',
-				sprintf( __( 'Gmail history API returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $code )
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Gmail history API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
 			);
 		}
 

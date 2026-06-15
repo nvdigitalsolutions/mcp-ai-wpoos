@@ -15,24 +15,62 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Create CRM Activity Tool
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.3.0
+ */
 class WP_MCP_AI_Tool_Create_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Whether this tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $settings['enable_crm_toolkit'] );
 	}
 
+	/**
+	 * Reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'The Create CRM Activity tool requires the CRM Toolkit to be enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'create_crm_activity'; }
+
+	/**
+	 * Tool display name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Create CRM Activity', 'mcp-ai-wpoos-pro' ); }
+
+	/**
+	 * Tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Log a sales activity (call, email, meeting, task, note) against a lead or deal.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -78,13 +116,37 @@ class WP_MCP_AI_Tool_Create_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP
 		);
 	}
 
+	/**
+	 * Required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts'; }
+
+	/**
+	 * Whether this tool requires base pro.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
 		return true; }
+
+	/**
+	 * Capability flags.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'requires-capability' ); }
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
 			return new WP_Error( 'tool_unavailable', self::get_unavailable_reason() );

@@ -1,12 +1,20 @@
 <?php
 /**
  * DietPi Manage Sonarr Tool — Trigger refresh, rescan, search, monitor/unmonitor.
- * @package WP_MCP_AI_Pro @subpackage DietPi_Toolkit @since 1.3.0
+ *
+ * @package WP_MCP_AI_Pro
+ * @subpackage DietPi_Toolkit
+ * @since 1.3.0
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Sonarr' ) ) {
+	/**
+	 * Manages Sonarr via the Sonarr API.
+	 */
 	class WP_MCP_AI_Tool_DietPi_Manage_Sonarr extends WP_MCP_AI_Tool_DietPi_Base {
 		/**
 		 * {@inheritdoc}
@@ -81,14 +89,30 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Sonarr' ) ) {
 					if ( $sid <= 0 ) {
 						return new WP_Error( 'wp_mcp_ai_missing_series_id', __( 'series_id is required for this action.', 'mcp-ai-wpoos-pro' ) );
 					}
-					$result = $this->app_client()->post( 'sonarr', '/api/v3/command', array( 'name' => 'RescanSeries', 'seriesId' => $sid ), 15 );
+					$result = $this->app_client()->post(
+						'sonarr',
+						'/api/v3/command',
+						array(
+							'name'     => 'RescanSeries',
+							'seriesId' => $sid,
+						),
+						15
+					);
 					return is_wp_error( $result ) ? $result : $this->success( __( 'Series rescan triggered.', 'mcp-ai-wpoos-pro' ), $result );
 				case 'search_missing':
 					$sid = $this->sanitize_int( $arguments, 'series_id' );
 					if ( $sid <= 0 ) {
 						return new WP_Error( 'wp_mcp_ai_missing_series_id', __( 'series_id is required.', 'mcp-ai-wpoos-pro' ) );
 					}
-					$result = $this->app_client()->post( 'sonarr', '/api/v3/command', array( 'name' => 'MissingEpisodeSearch', 'seriesId' => $sid ), 15 );
+					$result = $this->app_client()->post(
+						'sonarr',
+						'/api/v3/command',
+						array(
+							'name'     => 'MissingEpisodeSearch',
+							'seriesId' => $sid,
+						),
+						15
+					);
 					return is_wp_error( $result ) ? $result : $this->success( __( 'Missing episode search triggered.', 'mcp-ai-wpoos-pro' ), $result );
 				case 'monitor':
 				case 'unmonitor':
@@ -96,8 +120,23 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Sonarr' ) ) {
 					if ( $sid <= 0 ) {
 						return new WP_Error( 'wp_mcp_ai_missing_series_id', __( 'series_id is required.', 'mcp-ai-wpoos-pro' ) );
 					}
-					$result = $this->app_client()->put( 'sonarr', '/api/v3/series/' . $sid, array( 'id' => $sid, 'monitored' => 'monitor' === $action ), 15 );
-					return is_wp_error( $result ) ? $result : $this->success( sprintf( __( 'Series %s.', 'mcp-ai-wpoos-pro' ), 'monitor' === $action ? __( 'monitored', 'mcp-ai-wpoos-pro' ) : __( 'unmonitored', 'mcp-ai-wpoos-pro' ) ), $result );
+					$result = $this->app_client()->put(
+						'sonarr',
+						'/api/v3/series/' . $sid,
+						array(
+							'id'        => $sid,
+							'monitored' => 'monitor' === $action,
+						),
+						15
+					);
+					return is_wp_error( $result ) ? $result : $this->success(
+						sprintf(
+							/* translators: %s: monitoring status (monitored/unmonitored) */
+							__( 'Series %s.', 'mcp-ai-wpoos-pro' ),
+							'monitor' === $action ? __( 'monitored', 'mcp-ai-wpoos-pro' ) : __( 'unmonitored', 'mcp-ai-wpoos-pro' )
+						),
+						$result
+					);
 				case 'queue':
 					$result = $this->app_client()->get( 'sonarr', '/api/v3/queue', array(), 15 );
 					if ( is_wp_error( $result ) ) {
@@ -105,6 +144,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Sonarr' ) ) {
 					}
 					return $this->success(
 						sprintf(
+							/* translators: %d: number of queue items */
 							_n( '%d item in queue.', '%d items in queue.', count( $result ), 'mcp-ai-wpoos-pro' ),
 							count( $result )
 						),
@@ -116,8 +156,23 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Sonarr' ) ) {
 				case 'calendar':
 					$start  = gmdate( 'Y-m-d' );
 					$end    = gmdate( 'Y-m-d', strtotime( '+14 days' ) );
-					$result = $this->app_client()->get( 'sonarr', '/api/v3/calendar', array( 'start' => $start, 'end' => $end ), 15 );
-					return is_wp_error( $result ) ? $result : $this->success( sprintf( __( 'Calendar: %d upcoming episodes.', 'mcp-ai-wpoos-pro' ), count( $result ) ), array( 'calendar' => $result ) );
+					$result = $this->app_client()->get(
+						'sonarr',
+						'/api/v3/calendar',
+						array(
+							'start' => $start,
+							'end'   => $end,
+						),
+						15
+					);
+					return is_wp_error( $result ) ? $result : $this->success(
+						sprintf(
+							/* translators: %d: number of upcoming episodes */
+							__( 'Calendar: %d upcoming episodes.', 'mcp-ai-wpoos-pro' ),
+							count( $result )
+						),
+						array( 'calendar' => $result )
+					);
 				default:
 					return new WP_Error( 'wp_mcp_ai_invalid_action', __( 'Invalid action.', 'mcp-ai-wpoos-pro' ) );
 			}

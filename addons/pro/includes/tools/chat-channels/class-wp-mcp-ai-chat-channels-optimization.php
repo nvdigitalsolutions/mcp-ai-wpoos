@@ -330,4 +330,3 @@ class WP_MCP_AI_Chat_Channels_Optimization {
 		return false !== $deleted ? (int) $deleted : 0;
 	}
 }
-

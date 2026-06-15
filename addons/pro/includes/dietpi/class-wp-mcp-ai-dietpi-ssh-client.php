@@ -108,6 +108,8 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_SSH_Client' ) ) {
 		 * Prevent unserialization.
 		 *
 		 * @since 1.3.0
+		 *
+		 * @throws \Exception Always, to prevent unserialization.
 		 */
 		public function __wakeup() {
 			throw new \Exception( 'Cannot unserialize singleton.' );

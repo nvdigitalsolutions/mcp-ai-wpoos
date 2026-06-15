@@ -1484,6 +1484,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_errno
 			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_error
 			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_close
+
 			/*
 			 * Direct cURL is required here for real-time LM Studio streaming.
 			 *

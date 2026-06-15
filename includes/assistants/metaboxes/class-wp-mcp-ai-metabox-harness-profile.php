@@ -101,17 +101,17 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 			return;
 		}
 
-		$assistant_id = (int) $post->ID;
-		$profile      = WP_MCP_AI_Harness_Profile::get( $assistant_id );
-		$selected     = isset( $profile['cues'] ) && is_array( $profile['cues'] ) ? $profile['cues'] : array();
-		$cues         = WP_MCP_AI_Prompt_Cue_Library::get_instance()->all();
-		$cost_ceiling = isset( $profile['cost_ceiling_usd'] ) ? (float) $profile['cost_ceiling_usd'] : WP_MCP_AI_Harness_Profile::DEFAULT_COST_CEILING_USD;
-		$reasoning    = isset( $profile['reasoning'] ) && is_array( $profile['reasoning'] ) ? $profile['reasoning'] : array();
-		$tools        = isset( $profile['tools'] ) && is_array( $profile['tools'] ) ? $profile['tools'] : array();
-		$retrieval    = isset( $profile['retrieval'] ) && is_array( $profile['retrieval'] ) ? $profile['retrieval'] : array();
-		$refine       = isset( $profile['refine'] ) && is_array( $profile['refine'] ) ? $profile['refine'] : array();
-		$memory       = isset( $profile['memory'] ) && is_array( $profile['memory'] ) ? $profile['memory'] : array();
-		$router_value = isset( $tools['router'] ) ? (string) $tools['router'] : 'fixed';
+		$assistant_id   = (int) $post->ID;
+		$profile        = WP_MCP_AI_Harness_Profile::get( $assistant_id );
+		$selected       = isset( $profile['cues'] ) && is_array( $profile['cues'] ) ? $profile['cues'] : array();
+		$cues           = WP_MCP_AI_Prompt_Cue_Library::get_instance()->all();
+		$cost_ceiling   = isset( $profile['cost_ceiling_usd'] ) ? (float) $profile['cost_ceiling_usd'] : WP_MCP_AI_Harness_Profile::DEFAULT_COST_CEILING_USD;
+		$reasoning      = isset( $profile['reasoning'] ) && is_array( $profile['reasoning'] ) ? $profile['reasoning'] : array();
+		$tools          = isset( $profile['tools'] ) && is_array( $profile['tools'] ) ? $profile['tools'] : array();
+		$retrieval      = isset( $profile['retrieval'] ) && is_array( $profile['retrieval'] ) ? $profile['retrieval'] : array();
+		$refine         = isset( $profile['refine'] ) && is_array( $profile['refine'] ) ? $profile['refine'] : array();
+		$memory         = isset( $profile['memory'] ) && is_array( $profile['memory'] ) ? $profile['memory'] : array();
+		$router_value   = isset( $tools['router'] ) ? (string) $tools['router'] : 'fixed';
 		$preset_weights = ( isset( $tools['preset_weights'] ) && is_array( $tools['preset_weights'] ) ) ? $tools['preset_weights'] : array();
 		$tool_presets   = array();
 		if ( class_exists( 'WP_MCP_AI_Tool_Presets_Helper' ) ) {
@@ -513,9 +513,9 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 		);
 
 		// Tool router (Layer C).
-		$tools_raw        = isset( $raw['tools'] ) && is_array( $raw['tools'] ) ? $raw['tools'] : array();
+		$tools_raw          = isset( $raw['tools'] ) && is_array( $raw['tools'] ) ? $raw['tools'] : array();
 		$preset_weights_raw = isset( $tools_raw['preset_weights'] ) && is_array( $tools_raw['preset_weights'] ) ? $tools_raw['preset_weights'] : array();
-		$payload['tools'] = array(
+		$payload['tools']   = array(
 			'router'         => isset( $tools_raw['router'] ) ? (string) $tools_raw['router'] : 'fixed',
 			'preset_weights' => $preset_weights_raw,
 		);

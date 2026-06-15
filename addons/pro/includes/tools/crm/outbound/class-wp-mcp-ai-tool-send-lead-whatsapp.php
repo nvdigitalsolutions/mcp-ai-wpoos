@@ -14,6 +14,13 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
+/**
+ * Send Lead WhatsApp — outbound WhatsApp via Meta Cloud API.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.3.0
+ * @since 2.4.0 Wired to real Meta Cloud API; stub removed.
+ */
 class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
@@ -26,22 +33,52 @@ class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	const HTTP_TIMEOUT = 20;
 
+	/**
+	 * Whether this tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $s['enable_crm_toolkit'] ); }
 
+	/**
+	 * Reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'send_lead_whatsapp'; }
 
+	/**
+	 * Tool display name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Send Lead WhatsApp', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Send a WhatsApp message via the Meta Cloud API. Auto-detects 24-hour session vs template message requirement.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -57,15 +94,37 @@ class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_
 			'required'   => array( 'lead_id', 'message' ),
 		); }
 
+	/**
+	 * Required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts'; }
 
+	/**
+	 * Whether this tool requires base pro.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
 		return true; }
 
+	/**
+	 * Capability flags.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'outbound-network', 'database-write', 'requires-capability', 'requires-consent' ); }
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
 			return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }

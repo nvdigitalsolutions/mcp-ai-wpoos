@@ -120,7 +120,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 					}
 
 					return $this->success(
-						sprintf( _n( 'Found %d mount point.', 'Found %d mount points.', count( $mounts ), 'mcp-ai-wpoos-pro' ), count( $mounts ) ),
+						sprintf(
+							/* translators: %d: number of mount points */
+							_n( 'Found %d mount point.', 'Found %d mount points.', count( $mounts ), 'mcp-ai-wpoos-pro' ),
+							count( $mounts )
+						),
 						array( 'mounts' => $mounts )
 					);
 
@@ -156,7 +160,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 					}
 
 					return $this->success(
-						sprintf( __( 'Free space on %s: %s available.', 'mcp-ai-wpoos-pro' ), $path, isset( $info['available'] ) ? $info['available'] : 'unknown' ),
+						sprintf(
+							/* translators: %1$s: path, %2$s: available space */
+							__( 'Free space on %1$s: %2$s available.', 'mcp-ai-wpoos-pro' ),
+							$path,
+							isset( $info['available'] ) ? $info['available'] : 'unknown'
+						),
 						$info
 					);
 
@@ -198,7 +207,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 					}
 
 					return $this->success(
-						sprintf( __( 'Found %d directories larger than %d MB.', 'mcp-ai-wpoos-pro' ), count( $dirs ), $min_mb ),
+						sprintf(
+							/* translators: %1$d: number of directories, %2$d: minimum size in MB */
+							__( 'Found %1$d directories larger than %2$d MB.', 'mcp-ai-wpoos-pro' ),
+							count( $dirs ),
+							$min_mb
+						),
 						array(
 							'base_path'   => $path,
 							'min_size_mb' => $min_mb,
@@ -224,7 +238,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Storage' ) ) {
 						__( 'Drive information retrieved.', 'mcp-ai-wpoos-pro' ),
 						array(
 							'drive_list'   => $result['stdout'],
-							'temperatures' => $temps ?: null,
+							'temperatures' => $temps ? $temps : null,
 						)
 					);
 

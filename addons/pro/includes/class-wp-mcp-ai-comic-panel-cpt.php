@@ -118,15 +118,15 @@ class WP_MCP_AI_Comic_Panel_CPT {
 	public static function render_config_metabox( $post ) {
 		wp_nonce_field( 'comic_panel_meta', 'comic_panel_meta_nonce' );
 
-		$comic_id       = get_post_meta( $post->ID, '_comic_id', true );
-		$page_number    = get_post_meta( $post->ID, '_page_number', true );
-		$panel_number   = get_post_meta( $post->ID, '_panel_number', true );
-		$description    = get_post_meta( $post->ID, '_panel_description', true );
-		$dialogue       = get_post_meta( $post->ID, '_dialogue', true );
-		$camera_angle   = get_post_meta( $post->ID, '_camera_angle', true );
+		$comic_id        = get_post_meta( $post->ID, '_comic_id', true );
+		$page_number     = get_post_meta( $post->ID, '_page_number', true );
+		$panel_number    = get_post_meta( $post->ID, '_panel_number', true );
+		$description     = get_post_meta( $post->ID, '_panel_description', true );
+		$dialogue        = get_post_meta( $post->ID, '_dialogue', true );
+		$camera_angle    = get_post_meta( $post->ID, '_camera_angle', true );
 		$generated_image = get_post_meta( $post->ID, '_generated_image_id', true );
-		$layout_grid    = get_post_meta( $post->ID, '_layout_grid', true );
-		$speech_bubbles = get_post_meta( $post->ID, '_speech_bubbles', true );
+		$layout_grid     = get_post_meta( $post->ID, '_layout_grid', true );
+		$speech_bubbles  = get_post_meta( $post->ID, '_speech_bubbles', true );
 
 		// Get available comics for dropdown.
 		$comics = get_posts(
@@ -283,9 +283,9 @@ class WP_MCP_AI_Comic_Panel_CPT {
 		foreach ( $columns as $key => $value ) {
 			$new_columns[ $key ] = $value;
 			if ( 'title' === $key ) {
-				$new_columns['comic']       = __( 'Comic', 'mcp-ai-wpoos-pro' );
-				$new_columns['page_panel']  = __( 'Page:Panel', 'mcp-ai-wpoos-pro' );
-				$new_columns['has_image']   = __( 'Image', 'mcp-ai-wpoos-pro' );
+				$new_columns['comic']      = __( 'Comic', 'mcp-ai-wpoos-pro' );
+				$new_columns['page_panel'] = __( 'Page:Panel', 'mcp-ai-wpoos-pro' );
+				$new_columns['has_image']  = __( 'Image', 'mcp-ai-wpoos-pro' );
 			}
 		}
 		return $new_columns;
@@ -311,9 +311,11 @@ class WP_MCP_AI_Comic_Panel_CPT {
 				}
 				break;
 			case 'page_panel':
-				$page  = get_post_meta( $post_id, '_page_number', true );
-				$panel = get_post_meta( $post_id, '_panel_number', true );
-				echo esc_html( $page ?: '?' ) . ':' . esc_html( $panel ?: '?' );
+				$page              = get_post_meta( $post_id, '_page_number', true );
+				$panel             = get_post_meta( $post_id, '_panel_number', true );
+				$display_page      = ( $page ? $page : '?' );
+					$display_panel = ( $panel ? $panel : '?' );
+					echo esc_html( $display_page ) . ':' . esc_html( $display_panel );
 				break;
 			case 'has_image':
 				$image_id = get_post_meta( $post_id, '_generated_image_id', true );

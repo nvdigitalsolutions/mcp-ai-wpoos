@@ -67,13 +67,10 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 
 
 	/**
-
 	 * Execute the tool.
-
-	 * @param array $arguments Tool arguments.
-
-	 *  * @param array $context   Execution context.
 	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
@@ -140,14 +137,11 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 	}
 
 	/**
-	 * Get_recommendation.
+	 * Get recommendation.
 	 *
-	 * @param mixed $verdict Parameter.
-	 * @param mixed $confidence Parameter.
-	 * @return array|WP_Error Result.
-	 *
-	 * @param array $verdict Parameter.
-	 * @param array $confidence Parameter.
+	 * @param string $verdict    Verification verdict.
+	 * @param float  $confidence Confidence score.
+	 * @return string
 	 */
 	private function get_recommendation( $verdict, $confidence ) {
 		if ( 'verified' === $verdict ) {

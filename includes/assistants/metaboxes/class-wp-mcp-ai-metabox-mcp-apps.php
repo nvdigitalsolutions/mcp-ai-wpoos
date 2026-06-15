@@ -411,10 +411,10 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		 * @return void
 		 */
 	protected function render_script() {
-		$app_index          = (int) count( $this->get_current_apps_count() );
-		$max_apps_message   = esc_js( __( 'Maximum number of MCP Apps reached.', 'mcp-ai-wpoos' ) );
-		$confirm_message    = esc_js( __( 'Remove this MCP App connection?', 'mcp-ai-wpoos' ) );
-		$mcp_app_label      = esc_js( __( 'MCP App', 'mcp-ai-wpoos' ) );
+		$app_index        = (int) count( $this->get_current_apps_count() );
+		$max_apps_message = esc_js( __( 'Maximum number of MCP Apps reached.', 'mcp-ai-wpoos' ) );
+		$confirm_message  = esc_js( __( 'Remove this MCP App connection?', 'mcp-ai-wpoos' ) );
+		$mcp_app_label    = esc_js( __( 'MCP App', 'mcp-ai-wpoos' ) );
 
 		ob_start();
 		?>

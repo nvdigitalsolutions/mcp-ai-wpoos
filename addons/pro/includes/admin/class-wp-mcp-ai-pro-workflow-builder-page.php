@@ -1002,7 +1002,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 				break;
 
 			default:
-				wp_send_json_error( array( 'message' => sprintf( __( 'Unsupported node type: %s', 'mcp-ai-wpoos' ), $node_type ) ) );
+				wp_send_json_error( array( 'message' => sprintf( /* translators: %s: node type name */ __( 'Unsupported node type: %s', 'mcp-ai-wpoos' ), $node_type ) ) );
 				return;
 		}
 
@@ -1077,11 +1077,12 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		return array(
-			'type'    => 'action',
-			'command' => $command,
-			'params'  => $params_array,
-			'status'  => 'completed',
-			'message' => sprintf( __( 'Command "%s" queued for execution.', 'mcp-ai-wpoos' ), $command ),
+			'type'        => 'action',
+			'command'     => $command,
+			'params'      => $params_array,
+			'status'      => 'completed',
+			/* translators: %s: command name */
+				'message' => sprintf( __( 'Command "%s" queued for execution.', 'mcp-ai-wpoos' ), $command ),
 		);
 	}
 
@@ -1169,7 +1170,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			return $result;
 		}
 
-		return new WP_Error( 'tool_not_found', sprintf( __( 'Tool "%s" not found.', 'mcp-ai-wpoos' ), $tool_name ) );
+		return new WP_Error( 'tool_not_found', sprintf( /* translators: %s: tool name */ __( 'Tool "%s" not found.', 'mcp-ai-wpoos' ), $tool_name ) );
 	}
 
 	/**

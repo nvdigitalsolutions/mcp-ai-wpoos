@@ -191,7 +191,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Control_Transmission' ) ) {
 				return $result;
 			}
 			return $this->success(
-				sprintf( __( 'Action "%s" completed on torrents.', 'mcp-ai-wpoos-pro' ), $action ),
+				sprintf(
+					/* translators: %s: action performed on torrents */
+					__( 'Action "%s" completed on torrents.', 'mcp-ai-wpoos-pro' ),
+					$action
+				),
 				array(
 					'action'      => $action,
 					'torrent_ids' => $ids,

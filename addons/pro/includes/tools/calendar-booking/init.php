@@ -39,7 +39,7 @@ if ( is_admin() ) {
 // Planned location: addons/pro/includes/tools/calendar-booking/.
 
 // --- Performance optimization (business hours autoload, appointment retention, schedule cap, orphan detection) ---
-require_once WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-cal-orch-optimization.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-calendar-orchestration-optimization.php';
 WP_MCP_AI_Calendar_Orchestration_Optimization::init();
 
 /**

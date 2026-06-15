@@ -306,9 +306,9 @@ class WP_MCP_AI_Agent_Approval_Gate {
 		}
 
 		// Update the approval record.
-		$approval['status']     = $approved ? 'approved' : 'rejected';
+		$approval['status']      = $approved ? 'approved' : 'rejected';
 		$approval['resolved_at'] = time();
-		$approval['reason']     = $reason;
+		$approval['reason']      = $reason;
 
 		// Retrieve user context if available.
 		$current_user = wp_get_current_user();
@@ -393,11 +393,11 @@ class WP_MCP_AI_Agent_Approval_Gate {
 				esc_html( $approval_id )
 			),
 			array(
-				'approval_id'  => $approval_id,
-				'session_id'   => $session_id,
-				'action_type'  => $action_type,
-				'risk_level'   => $risk_level,
-				'retry_after'  => self::TRANSIENT_TTL,
+				'approval_id' => $approval_id,
+				'session_id'  => $session_id,
+				'action_type' => $action_type,
+				'risk_level'  => $risk_level,
+				'retry_after' => self::TRANSIENT_TTL,
 			)
 		);
 	}

@@ -1,19 +1,61 @@
 <?php
-/** Pause / Resume / Exit Sequence — manage sequence enrollment state. @package WP_MCP_AI_Pro @since 2.3.0 */
+/**
+ * Pause / Resume / Exit Sequence — manage sequence enrollment state.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.3.0
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
+	exit;
+}
+
+/**
+ * Manage Sequence State tool.
+ *
+ * @since 2.3.0
+ */
 class WP_MCP_AI_Tool_Manage_Sequence_State implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
-		return ! empty( $s['enable_crm_toolkit'] ); }
+		return ! empty( $s['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public static function get_unavailable_reason() {
-		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_slug() {
-		return 'manage_sequence_state'; }
+		return 'manage_sequence_state';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_name() {
-		return __( 'Manage Sequence State', 'mcp-ai-wpoos-pro' ); }
+		return __( 'Manage Sequence State', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_description() {
-		return __( 'Pause, resume, or exit a lead from their active sequence.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'Pause, resume, or exit a lead from their active sequence.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -25,19 +67,44 @@ class WP_MCP_AI_Tool_Manage_Sequence_State implements WP_MCP_AI_Tool_Interface, 
 				),
 			),
 			'required'   => array( 'lead_id', 'action' ),
-		); }
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
-		return 'edit_posts'; }
+		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function requires_base_pro() {
-		return true; }
+		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_capability_flags() {
-		return array( 'pro', 'database-write', 'requires-capability' ); }
+		return array( 'pro', 'database-write', 'requires-capability' );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$lead_id = absint( $arguments['lead_id'] );
 		$action  = sanitize_key( $arguments['action'] );
 		$lp      = get_post( $lead_id );
 		if ( ! $lp ) {
-			return new WP_Error( 'not_found', __( 'Lead not found.', 'mcp-ai-wpoos-pro' ) ); }
+			return new WP_Error( 'not_found', __( 'Lead not found.', 'mcp-ai-wpoos-pro' ) );
+		}
 		switch ( $action ) {
 			case 'pause':
 				update_post_meta( $lead_id, '_sequence_paused', '1' );
@@ -60,7 +127,8 @@ class WP_MCP_AI_Tool_Manage_Sequence_State implements WP_MCP_AI_Tool_Interface, 
 				return new WP_Error( 'invalid_action', __( 'Invalid action.', 'mcp-ai-wpoos-pro' ) );
 		}
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
-			WP_MCP_AI_CRM_Audit::record( 'sequence_state_changed', 'sequence_enrollment', $lead_id, array( 'action' => $action ) ); }
+			WP_MCP_AI_CRM_Audit::record( 'sequence_state_changed', 'sequence_enrollment', $lead_id, array( 'action' => $action ) );
+		}
 		return array(
 			'success' => true,
 			'message' => $msg,

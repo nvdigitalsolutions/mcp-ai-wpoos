@@ -500,7 +500,7 @@ class WP_MCP_AI_Team_CPT {
 					. '.wp-mcp-ai-team-orchestration-field textarea{width:100%;font-family:\'Courier New\',Courier,monospace;font-size:13px;}'
 					. '.wp-mcp-ai-team-orchestration-field .description{margin-top:5px;font-style:italic;}'
 				);
-				?>
+			?>
 
 			<!-- Orchestration Mode -->
 			<div class="wp-mcp-ai-team-orchestration-field">

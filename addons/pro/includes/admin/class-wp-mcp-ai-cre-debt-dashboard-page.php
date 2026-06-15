@@ -428,8 +428,14 @@ class WP_MCP_AI_CRE_Debt_Dashboard_Page {
 							<?php
 							if ( $portfolio['avg_dscr'] > 0 ) {
 								echo $portfolio['avg_dscr'] >= $min_dscr
-									? '✓ ' . esc_html( sprintf( __( 'Above %sx min', 'mcp-ai-wpoos-pro' ), $min_dscr ) )
-									: '⚠ ' . esc_html( sprintf( __( 'Below %sx min', 'mcp-ai-wpoos-pro' ), $min_dscr ) );
+									? '✓ ' . esc_html(
+											/* translators: %s: Minimum DSCR ratio (numeric) */
+										sprintf( __( 'Above %sx min', 'mcp-ai-wpoos-pro' ), $min_dscr )
+									)
+									: '⚠ ' . esc_html(
+											/* translators: %s: Minimum DSCR ratio (numeric) */
+										sprintf( __( 'Below %sx min', 'mcp-ai-wpoos-pro' ), $min_dscr )
+									);
 							}
 							?>
 						</div>
@@ -442,8 +448,14 @@ class WP_MCP_AI_CRE_Debt_Dashboard_Page {
 							<?php
 							if ( $portfolio['avg_ltv'] > 0 ) {
 								echo $portfolio['avg_ltv'] <= $max_ltv
-									? '✓ ' . esc_html( sprintf( __( 'Under %s%% max', 'mcp-ai-wpoos-pro' ), $max_ltv ) )
-									: '⚠ ' . esc_html( sprintf( __( 'Over %s%% max', 'mcp-ai-wpoos-pro' ), $max_ltv ) );
+									? '✓ ' . esc_html(
+											/* translators: %s: Maximum LTV percentage (numeric) */
+										sprintf( __( 'Under %s%% max', 'mcp-ai-wpoos-pro' ), $max_ltv )
+									)
+									: '⚠ ' . esc_html(
+											/* translators: %s: Maximum LTV percentage (numeric) */
+										sprintf( __( 'Over %s%% max', 'mcp-ai-wpoos-pro' ), $max_ltv )
+									);
 							}
 							?>
 						</div>
@@ -456,8 +468,14 @@ class WP_MCP_AI_CRE_Debt_Dashboard_Page {
 							<?php
 							if ( $portfolio['avg_debt_yield'] > 0 ) {
 								echo $portfolio['avg_debt_yield'] >= $min_debt_yield
-									? '✓ ' . esc_html( sprintf( __( 'Above %s%% min', 'mcp-ai-wpoos-pro' ), $min_debt_yield ) )
-									: '⚠ ' . esc_html( sprintf( __( 'Below %s%% min', 'mcp-ai-wpoos-pro' ), $min_debt_yield ) );
+									? '✓ ' . esc_html(
+											/* translators: %s: Minimum debt yield percentage (numeric) */
+										sprintf( __( 'Above %s%% min', 'mcp-ai-wpoos-pro' ), $min_debt_yield )
+									)
+									: '⚠ ' . esc_html(
+											/* translators: %s: Minimum debt yield percentage (numeric) */
+										sprintf( __( 'Below %s%% min', 'mcp-ai-wpoos-pro' ), $min_debt_yield )
+									);
 							}
 							?>
 						</div>

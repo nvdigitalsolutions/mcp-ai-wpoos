@@ -58,13 +58,10 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 
 
 	/**
-
 	 * Execute the tool.
-
-	 * @param array $arguments Tool arguments.
-
-	 *  * @param array $context   Execution context.
 	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
@@ -100,12 +97,10 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 	}
 
 	/**
-	 * Calculate_median.
+	 * Calculate median.
 	 *
-	 * @param mixed $data Parameter.
-	 * @return array|WP_Error Result.
-	 *
-	 * @param array $data Parameter.
+	 * @param array $data Numeric data array.
+	 * @return float
 	 */
 	private function calculate_median( $data ) {
 		sort( $data );

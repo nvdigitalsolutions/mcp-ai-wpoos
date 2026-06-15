@@ -225,11 +225,14 @@ class WP_MCP_AI_Tool_Create_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interface
 		}
 
 		if ( ! in_array( $trigger_type, self::VALID_TRIGGER_TYPES, true ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_trigger', sprintf(
-				/* translators: %s: trigger type */
-				__( 'Invalid trigger type: %s', 'mcp-ai-wpoos-pro' ),
-				esc_html( $trigger_type )
-			) );
+			return new WP_Error(
+				'wp_mcp_ai_invalid_trigger',
+				sprintf(
+					/* translators: %s: trigger type */
+					__( 'Invalid trigger type: %s', 'mcp-ai-wpoos-pro' ),
+					esc_html( $trigger_type )
+				)
+			);
 		}
 
 		// Sanitize conditions.

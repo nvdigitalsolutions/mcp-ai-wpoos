@@ -181,8 +181,10 @@ class WP_MCP_AI_Tool_List_PM_Workflow_Rules implements WP_MCP_AI_Tool_Interface,
 				$query->the_post();
 				$rule_id = get_the_ID();
 
-				$conditions = json_decode( get_post_meta( $rule_id, '_pm_wf_conditions', true ) ?: '[]', true );
-				$actions    = json_decode( get_post_meta( $rule_id, '_pm_wf_actions', true ) ?: '[]', true );
+				$conditions_raw = get_post_meta( $rule_id, '_pm_wf_conditions', true );
+				$conditions     = json_decode( $conditions_raw ? $conditions_raw : '[]', true );
+				$actions_raw    = get_post_meta( $rule_id, '_pm_wf_actions', true );
+				$actions        = json_decode( $actions_raw ? $actions_raw : '[]', true );
 				$active_raw = get_post_meta( $rule_id, '_pm_wf_active', true );
 
 				$rules[] = array(

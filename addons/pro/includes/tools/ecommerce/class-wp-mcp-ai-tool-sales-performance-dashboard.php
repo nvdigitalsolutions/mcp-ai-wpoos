@@ -256,6 +256,8 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		$placeholders = implode( ', ', array_fill( 0, count( $statuses ), '%s' ) );
 		$results      = array();
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
 		// Revenue.
 		if ( in_array( 'revenue', $metrics, true ) ) {
 			$revenue = $wpdb->get_var(
@@ -265,6 +267,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 					FROM {$wpdb->posts} p
 					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
 					WHERE p.post_type = 'shop_order'
+// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic IN clause
 					AND p.post_status IN ($placeholders)
 					AND pm.meta_key = '_order_total'
 					AND p.post_date >= %s
@@ -321,6 +324,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		}
 
 		return $results;
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
@@ -339,6 +343,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		// Prepare placeholders for IN clause.
 		$placeholders = implode( ', ', array_fill( 0, count( $statuses ), '%s' ) );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$daily_revenue = $wpdb->get_results(
 			$wpdb->prepare(
 				// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare

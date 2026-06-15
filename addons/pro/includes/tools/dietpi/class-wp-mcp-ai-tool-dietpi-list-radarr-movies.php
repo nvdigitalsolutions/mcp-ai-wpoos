@@ -1,12 +1,20 @@
 <?php
 /**
  * DietPi List Radarr Movies Tool
- * @package WP_MCP_AI_Pro @subpackage DietPi_Toolkit @since 1.3.0
+ *
+ * @package WP_MCP_AI_Pro
+ * @subpackage DietPi_Toolkit
+ * @since 1.3.0
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Radarr_Movies' ) ) {
+	/**
+	 * Lists movies in Radarr via the Radarr API.
+	 */
 	class WP_MCP_AI_Tool_DietPi_List_Radarr_Movies extends WP_MCP_AI_Tool_DietPi_Base {
 		/**
 		 * {@inheritdoc}
@@ -89,6 +97,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Radarr_Movies' ) ) {
 			}
 			return $this->success(
 				sprintf(
+					/* translators: %d: number of movies */
 					_n( 'Found %d movie.', 'Found %d movies.', count( $out ), 'mcp-ai-wpoos-pro' ),
 					count( $out )
 				),

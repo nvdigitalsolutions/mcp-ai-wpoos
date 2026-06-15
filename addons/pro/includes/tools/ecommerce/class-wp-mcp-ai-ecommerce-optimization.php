@@ -205,4 +205,3 @@ class WP_MCP_AI_Ecommerce_Optimization {
 		wp_reset_postdata();
 	}
 }
-

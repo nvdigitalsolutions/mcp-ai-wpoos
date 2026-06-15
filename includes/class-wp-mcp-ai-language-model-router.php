@@ -122,37 +122,37 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param WP_MCP_AI_OpenAI_Client      $openai_client        OpenAI client instance.
-		 * @param WP_MCP_AI_Gemini_Client      $gemini_client        Gemini client instance.
-		 * @param WP_MCP_AI_Ollama_Client      $ollama_client        Ollama client instance (optional).
-		 * @param WP_MCP_AI_LM_Studio_Client   $lm_studio_client     LM Studio client instance (optional).
-		 * @param WP_MCP_AI_Anthropic_Client   $anthropic_client     Anthropic client instance (optional).
-		 * @param WP_MCP_AI_Huggingface_Client $huggingface_client   Hugging Face client instance (optional).
-		 * @param WP_MCP_AI_Cloudflare_Client  $cloudflare_client    Cloudflare client instance (optional).
-		 * @param object|null                  $embedded_client      Embedded LLM client instance (Pro-only, optional).
-		 * @param WP_MCP_AI_Nvidia_Client      $nvidia_client        NVIDIA NIM client instance (optional).
-		 * @param WP_MCP_AI_DeepSeek_Client    $deepseek_client      DeepSeek client instance (optional).
-		 * @param WP_MCP_AI_OpenRouter_Client  $openrouter_client    OpenRouter client instance (optional).
+		 * @param WP_MCP_AI_OpenAI_Client       $openai_client        OpenAI client instance.
+		 * @param WP_MCP_AI_Gemini_Client       $gemini_client        Gemini client instance.
+		 * @param WP_MCP_AI_Ollama_Client       $ollama_client        Ollama client instance (optional).
+		 * @param WP_MCP_AI_LM_Studio_Client    $lm_studio_client     LM Studio client instance (optional).
+		 * @param WP_MCP_AI_Anthropic_Client    $anthropic_client     Anthropic client instance (optional).
+		 * @param WP_MCP_AI_Huggingface_Client  $huggingface_client   Hugging Face client instance (optional).
+		 * @param WP_MCP_AI_Cloudflare_Client   $cloudflare_client    Cloudflare client instance (optional).
+		 * @param object|null                   $embedded_client      Embedded LLM client instance (Pro-only, optional).
+		 * @param WP_MCP_AI_Nvidia_Client       $nvidia_client        NVIDIA NIM client instance (optional).
+		 * @param WP_MCP_AI_DeepSeek_Client     $deepseek_client      DeepSeek client instance (optional).
+		 * @param WP_MCP_AI_OpenRouter_Client   $openrouter_client    OpenRouter client instance (optional).
 		 * @param WP_MCP_AI_DigitalOcean_Client $digitalocean_client DigitalOcean client instance (optional).
-		 * @param WP_MCP_AI_Kimi_Client        $kimi_client         Kimi client instance (optional).
-		 * @param WP_MCP_AI_Baseten_Client     $baseten_client      Baseten client instance (optional).
+		 * @param WP_MCP_AI_Kimi_Client         $kimi_client         Kimi client instance (optional).
+		 * @param WP_MCP_AI_Baseten_Client      $baseten_client      Baseten client instance (optional).
 		 */
 		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null, $embedded_client = null, WP_MCP_AI_Nvidia_Client $nvidia_client = null, WP_MCP_AI_DeepSeek_Client $deepseek_client = null, WP_MCP_AI_OpenRouter_Client $openrouter_client = null, WP_MCP_AI_DigitalOcean_Client $digitalocean_client = null, WP_MCP_AI_Kimi_Client $kimi_client = null, WP_MCP_AI_Baseten_Client $baseten_client = null ) {
-			$this->openai_client      = $openai_client;
-			$this->gemini_client      = $gemini_client;
-			$this->ollama_client      = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
-			$this->lm_studio_client   = $lm_studio_client ? $lm_studio_client : new WP_MCP_AI_LM_Studio_Client();
-			$this->anthropic_client   = $anthropic_client ? $anthropic_client : new WP_MCP_AI_Anthropic_Client();
-			$this->huggingface_client = $huggingface_client ? $huggingface_client : new WP_MCP_AI_Huggingface_Client();
-			$this->cloudflare_client  = $cloudflare_client ? $cloudflare_client : new WP_MCP_AI_Cloudflare_Client();
-			$this->nvidia_client      = $nvidia_client ? $nvidia_client : new WP_MCP_AI_Nvidia_Client();
-			$this->deepseek_client    = $deepseek_client ? $deepseek_client : new WP_MCP_AI_DeepSeek_Client();
-			$this->openrouter_client  = $openrouter_client ? $openrouter_client : new WP_MCP_AI_OpenRouter_Client();
+			$this->openai_client       = $openai_client;
+			$this->gemini_client       = $gemini_client;
+			$this->ollama_client       = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
+			$this->lm_studio_client    = $lm_studio_client ? $lm_studio_client : new WP_MCP_AI_LM_Studio_Client();
+			$this->anthropic_client    = $anthropic_client ? $anthropic_client : new WP_MCP_AI_Anthropic_Client();
+			$this->huggingface_client  = $huggingface_client ? $huggingface_client : new WP_MCP_AI_Huggingface_Client();
+			$this->cloudflare_client   = $cloudflare_client ? $cloudflare_client : new WP_MCP_AI_Cloudflare_Client();
+			$this->nvidia_client       = $nvidia_client ? $nvidia_client : new WP_MCP_AI_Nvidia_Client();
+			$this->deepseek_client     = $deepseek_client ? $deepseek_client : new WP_MCP_AI_DeepSeek_Client();
+			$this->openrouter_client   = $openrouter_client ? $openrouter_client : new WP_MCP_AI_OpenRouter_Client();
 			$this->digitalocean_client = $digitalocean_client ? $digitalocean_client : new WP_MCP_AI_DigitalOcean_Client();
-			$this->kimi_client        = $kimi_client ? $kimi_client : ( class_exists( 'WP_MCP_AI_Kimi_Client' ) ? new WP_MCP_AI_Kimi_Client() : null );
-			$this->baseten_client     = $baseten_client ? $baseten_client : new WP_MCP_AI_Baseten_Client();
+			$this->kimi_client         = $kimi_client ? $kimi_client : ( class_exists( 'WP_MCP_AI_Kimi_Client' ) ? new WP_MCP_AI_Kimi_Client() : null );
+			$this->baseten_client      = $baseten_client ? $baseten_client : new WP_MCP_AI_Baseten_Client();
 			// Embedded client is Pro-only; only instantiate when the class is available.
-			$this->embedded_client    = $embedded_client ?? ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null );
+			$this->embedded_client = $embedded_client ?? ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null );
 		}
 
 		/**

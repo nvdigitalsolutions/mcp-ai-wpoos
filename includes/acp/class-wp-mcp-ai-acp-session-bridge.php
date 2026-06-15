@@ -43,13 +43,13 @@ class WP_MCP_AI_ACP_Session_Bridge {
 	 * @param array $params Prompt parameters containing session ID and content.
 	 */
 	public function handle_prompt( $params ) {
-		// 1. Map ACP ContentBlocks to standard NV oOS format
+		// 1. Map ACP ContentBlocks to standard NV oOS format.
 		$mapped_messages = $this->map_acp_content_to_messages( $params['prompt'] );
 
-		// 2. Add to session history
+		// 2. Add to session history.
 		$session_manager = new WP_MCP_AI_ACP_Session_Manager();
 		$session_data    = $session_manager->get_session_data( $params['sessionId'] );
-		
+
 		if ( ! $session_data ) {
 			return new WP_Error( -32001, 'Session not found' );
 		}
@@ -57,26 +57,26 @@ class WP_MCP_AI_ACP_Session_Bridge {
 		$session_data['messages'] = array_merge( $session_data['messages'], $mapped_messages );
 		$session_manager->update_session_data( $params['sessionId'], $session_data );
 
-		// 3. Prepare parameters for WP_MCP_AI_Chat_Service
-		// For an ACP session, if an assistant ID isn't provided in the config, default to 0 (default assistant context)
-		$assistant_id = isset( $session_data['config']['assistant_id'] ) ? intval( $session_data['config']['assistant_id'] ) : 0;
-		$user_id      = $session_data['user_id'];
-		$options      = array( 'stream' => false ); // We'll manage streaming via the ACP queue.
-		$assistant_config = array();
+		// 3. Prepare parameters for WP_MCP_AI_Chat_Service.
+		// For an ACP session, if an assistant ID isn't provided in the config, default to 0 (default assistant context).
+		$assistant_id       = isset( $session_data['config']['assistant_id'] ) ? intval( $session_data['config']['assistant_id'] ) : 0;
+		$user_id            = $session_data['user_id'];
+		$options            = array( 'stream' => false ); // We'll manage streaming via the ACP queue.
+		$assistant_config   = array();
 		$transcript_context = array(
 			'source'     => 'acp',
-			'session_id' => $params['sessionId']
+			'session_id' => $params['sessionId'],
 		);
-		$max_iterations = 5;
+		$max_iterations     = 5;
 
 		if ( $this->chat_service ) {
-			// Hook into the chat service to intercept streaming chunks or tool calls if needed
-			// For simplicity in Phase 1, we await the full response and emit it, 
+			// Hook into the chat service to intercept streaming chunks or tool calls if needed.
+			// For simplicity in Phase 1, we await the full response and emit it,
 			// though true ACP streaming would involve a custom observer.
-			
-			// Empty WP_REST_Request as it's not strictly an HTTP boundary here
+
+			// Empty WP_REST_Request as it's not strictly an HTTP boundary here.
 			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/acp' );
-			
+
 			$result = $this->chat_service->process_chat_request(
 				$assistant_id,
 				$session_data['messages'],
@@ -89,29 +89,35 @@ class WP_MCP_AI_ACP_Session_Bridge {
 			);
 
 			if ( is_wp_error( $result ) ) {
-				$this->emit_update( $params['sessionId'], array(
-					'sessionUpdate' => 'agent_message_chunk',
-					'content'       => array(
-						'type' => 'text',
-						'text' => 'Error: ' . $result->get_error_message(),
-					),
-				) );
+				$this->emit_update(
+					$params['sessionId'],
+					array(
+						'sessionUpdate' => 'agent_message_chunk',
+						'content'       => array(
+							'type' => 'text',
+							'text' => 'Error: ' . $result->get_error_message(),
+						),
+					)
+				);
 
 				return array(
 					'stopReason' => 'refusal',
 				);
 			}
 
-			// We have a successful response from the chat service
-			$this->emit_update( $params['sessionId'], array(
-				'sessionUpdate' => 'agent_message_chunk',
-				'content'       => array(
-					'type' => 'text',
-					'text' => isset( $result['response'] ) ? $result['response'] : '',
-				),
-			) );
+			// We have a successful response from the chat service.
+			$this->emit_update(
+				$params['sessionId'],
+				array(
+					'sessionUpdate' => 'agent_message_chunk',
+					'content'       => array(
+						'type' => 'text',
+						'text' => isset( $result['response'] ) ? $result['response'] : '',
+					),
+				)
+			);
 
-			// Save the assistant's response to the session history
+			// Save the assistant's response to the session history.
 			$session_data['messages'][] = array(
 				'role'    => 'assistant',
 				'content' => isset( $result['response'] ) ? $result['response'] : '',
@@ -119,17 +125,20 @@ class WP_MCP_AI_ACP_Session_Bridge {
 			$session_manager->update_session_data( $params['sessionId'], $session_data );
 
 		} else {
-			// Stub response if chat service isn't injected yet
-			$this->emit_update( $params['sessionId'], array(
-				'sessionUpdate' => 'agent_message_chunk',
-				'content'       => array(
-					'type' => 'text',
-					'text' => 'Thinking... (Chat service unavailable)',
-				),
-			) );
+			// Stub response if chat service isn't injected yet.
+			$this->emit_update(
+				$params['sessionId'],
+				array(
+					'sessionUpdate' => 'agent_message_chunk',
+					'content'       => array(
+						'type' => 'text',
+						'text' => 'Thinking... (Chat service unavailable)',
+					),
+				)
+			);
 		}
 
-		// 4. Return stopReason (end_turn, max_tokens, refusal, etc.)
+		// 4. Return stopReason (end_turn, max_tokens, refusal, etc.).
 		return array(
 			'stopReason' => 'end_turn',
 		);
@@ -146,7 +155,7 @@ class WP_MCP_AI_ACP_Session_Bridge {
 		if ( ! is_array( $updates ) ) {
 			$updates = array();
 		}
-		
+
 		$updates[] = array(
 			'jsonrpc' => '2.0',
 			'method'  => 'session/update',
@@ -155,7 +164,7 @@ class WP_MCP_AI_ACP_Session_Bridge {
 				'update'    => $update,
 			),
 		);
-		
+
 		set_transient( 'acp_updates_' . $session_id, $updates, 60 );
 	}
 
@@ -166,17 +175,17 @@ class WP_MCP_AI_ACP_Session_Bridge {
 	 * @return array NV oOS compatible message structures.
 	 */
 	protected function map_acp_content_to_messages( $prompt ) {
-		$messages = array();
+		$messages     = array();
 		$text_content = '';
 
 		foreach ( $prompt as $block ) {
 			if ( 'text' === $block['type'] && ! empty( $block['text'] ) ) {
 				$text_content .= $block['text'] . "\n";
 			} elseif ( 'resource' === $block['type'] && ! empty( $block['resource'] ) ) {
-				// Map embedded resources natively as contextual content injections
-				$uri = isset( $block['resource']['uri'] ) ? $block['resource']['uri'] : 'unknown_resource';
+				// Map embedded resources natively as contextual content injections.
+				$uri           = isset( $block['resource']['uri'] ) ? $block['resource']['uri'] : 'unknown_resource';
 				$text_content .= "\n--- Attached Context: " . $uri . " ---\n";
-				
+
 				if ( isset( $block['resource']['text'] ) ) {
 					$text_content .= $block['resource']['text'] . "\n";
 				}
@@ -195,5 +204,4 @@ class WP_MCP_AI_ACP_Session_Bridge {
 
 		return $messages;
 	}
-
 }

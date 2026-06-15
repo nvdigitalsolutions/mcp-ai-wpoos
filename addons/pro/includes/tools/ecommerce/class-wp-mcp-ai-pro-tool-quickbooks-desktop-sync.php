@@ -143,12 +143,7 @@ class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_description() {
 		return __(
-			'Syncs data with QuickBooks Desktop through a QODBC relay API. '
-			. 'Supports querying customers, invoices, vendors, items, employees, '
-			. 'and other QuickBooks Desktop entities. Can also create and update '
-			. 'records when the relay is configured with a read-write QODBC license. '
-			. 'Requires a Remote Sites connection of type "quickbooks_desktop" pointing '
-			. 'to the PHP relay endpoint.',
+			'Syncs data with QuickBooks Desktop through a QODBC relay API. Supports querying customers, invoices, vendors, items, employees, and other QuickBooks Desktop entities. Can also create and update records when the relay is configured with a read-write QODBC license. Requires a Remote Sites connection of type "quickbooks_desktop" pointing to the PHP relay endpoint.',
 			'mcp-ai-wpoos-pro'
 		);
 	}
@@ -181,10 +176,7 @@ class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Inter
 					),
 					'default'     => 'query',
 					'description' => __(
-						'Action to perform. Use "list_tables" to discover available tables, '
-						. '"query" for custom SQL against any QODBC table, or a shortcut like '
-						. '"get_customers" for common entities. "create_record" and "update_record" '
-						. 'require a write-enabled QODBC license on the relay.',
+						'Action to perform. Use "list_tables" to discover available tables, "query" for custom SQL against any QODBC table, or a shortcut like "get_customers" for common entities. "create_record" and "update_record" require a write-enabled QODBC license on the relay.',
 						'mcp-ai-wpoos-pro'
 					),
 				),

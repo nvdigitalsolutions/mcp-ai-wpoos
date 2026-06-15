@@ -836,8 +836,8 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 		$mounted        = $server->mounted_surfaces();
 		$descriptor_url = rest_url( WP_MCP_AI_Toolkit_MCP_REST_Controller::REST_NAMESPACE . '/mcp/' . $server->get_slug() );
 
-		$is_enabled     = ! empty( $config['enabled'] );
-		$allowlist      = isset( $config['tools_allowlist'] ) ? (array) $config['tools_allowlist'] : array();
+		$is_enabled      = ! empty( $config['enabled'] );
+		$allowlist       = isset( $config['tools_allowlist'] ) ? (array) $config['tools_allowlist'] : array();
 		$candidate_count = count( $candidates );
 		$exposed_count   = empty( $allowlist ) ? $candidate_count : count( $allowlist );
 
@@ -868,7 +868,7 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 		}
 
 		// Token count.
-		$token_count = 0;
+		$token_count  = 0;
 		$token_option = get_option( 'wp_mcp_ai_tk_mcp_token_' . $server->get_slug(), array() );
 		if ( is_array( $token_option ) ) {
 			$token_count = count( $token_option );
@@ -978,8 +978,8 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 				<details style="margin-top:12px;">
 					<summary><?php esc_html_e( 'Test with curl', 'mcp-ai-wpoos-pro' ); ?></summary>
 					<pre style="background:#f0f0f1;padding:10px;overflow-x:auto;font-size:12px;"><code>curl -X POST <?php echo esc_html( $descriptor_url ); ?> \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'</code></pre>
+	-H "Content-Type: application/json" \
+	-d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'</code></pre>
 				</details>
 
 				<p style="margin-top:8px;">
@@ -1000,10 +1000,10 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 							<?php
 							if ( empty( $allowlist ) ) {
 								/* translators: %d: tool count */
-								printf( esc_html__( '%d of %d tools exposed (all)', 'mcp-ai-wpoos-pro' ), $candidate_count, $candidate_count );
+								printf( esc_html__( '%1$d of %2$d tools exposed (all)', 'mcp-ai-wpoos-pro' ), (int) $candidate_count, (int) $candidate_count );
 							} else {
 								/* translators: 1: exposed count, 2: total count */
-								printf( esc_html__( '%1$d of %2$d tools exposed (restricted)', 'mcp-ai-wpoos-pro' ), $exposed_count, $candidate_count );
+								printf( esc_html__( '%1$d of %2$d tools exposed (restricted)', 'mcp-ai-wpoos-pro' ), (int) $exposed_count, (int) $candidate_count );
 							}
 							?>
 						</span>
@@ -1025,7 +1025,8 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 					</div>
 
 					<ul class="wp-mcp-ai-tools-checklist" style="columns: 2; -webkit-columns: 2; -moz-columns: 2;">
-					<?php foreach ( $candidates as $slug ) :
+					<?php
+					foreach ( $candidates as $slug ) :
 						$checked = in_array( $slug, $allowlist, true );
 						?>
 						<li class="wp-mcp-ai-tool-item">
@@ -1138,7 +1139,7 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 									<span class="description" style="display:inline;margin-left:6px;">
 										<?php
 										/* translators: %d: global default value */
-										printf( esc_html__( '(global default: %d req/min)', 'mcp-ai-wpoos-pro' ), $global_rpm );
+										printf( esc_html__( '(global default: %1$d req/min)', 'mcp-ai-wpoos-pro' ), (int) $global_rpm );
 										?>
 									</span>
 								<?php elseif ( $rpm > 0 ) : ?>
@@ -1160,7 +1161,7 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 								<?php if ( 0 === $mpb && $global_mpb > 0 ) : ?>
 									<span class="description" style="display:inline;margin-left:6px;">
 										<?php
-										printf( esc_html__( '(global default: %s bytes)', 'mcp-ai-wpoos-pro' ), number_format_i18n( $global_mpb ) );
+										printf( /* translators: %s: formatted byte count */ esc_html__( '(global default: %s bytes)', 'mcp-ai-wpoos-pro' ), esc_html( number_format_i18n( $global_mpb ) ) );
 										?>
 									</span>
 								<?php elseif ( $mpb > 0 ) : ?>
@@ -1182,7 +1183,11 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 								<?php if ( 0 === $mit && $global_mit > 0 ) : ?>
 									<span class="description" style="display:inline;margin-left:6px;">
 										<?php
-										printf( esc_html__( '(global default: %d iterations)', 'mcp-ai-wpoos-pro' ), $global_mit );
+										printf(
+											/* translators: %1$d: number of iterations */
+											esc_html__( '(global default: %1$d iterations)', 'mcp-ai-wpoos-pro' ),
+											(int) $global_mit
+										);
 										?>
 									</span>
 								<?php elseif ( $mit > 0 ) : ?>
@@ -1241,5 +1246,5 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 			} )( jQuery );
 			</script>
 			<?php
-		}
 	}
+}

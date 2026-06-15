@@ -196,6 +196,7 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		$result = array(
 			'success'       => true,
+			/* translators: %s: equation text */
 			'message'       => sprintf( __( 'Equation solved: %s', 'mcp-ai-wpoos-pro' ), $equation ),
 			'text'          => sprintf( 'Solutions: %s', $text_output ),
 			'equation'      => $equation,

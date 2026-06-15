@@ -108,10 +108,22 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 	}
 
+	/**
+	 * Get the required capability for this tool.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the memory recall tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
@@ -129,12 +141,12 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		} else {
 			$agent_id = sanitize_text_field( (string) $agent_id );
 		}
-		$wing     = isset( $arguments['wing'] ) ? sanitize_text_field( (string) $arguments['wing'] ) : '';
-		$room     = isset( $arguments['room'] ) ? sanitize_text_field( (string) $arguments['room'] ) : '';
-		$query    = isset( $arguments['query'] ) ? sanitize_text_field( (string) $arguments['query'] ) : '';
-		$as_of    = isset( $arguments['as_of'] ) ? sanitize_text_field( (string) $arguments['as_of'] ) : '';
-		$limit    = isset( $arguments['limit'] ) ? max( 1, min( 50, absint( $arguments['limit'] ) ) ) : 10;
-		$tiers    = isset( $arguments['include_tiers'] ) && is_array( $arguments['include_tiers'] )
+		$wing  = isset( $arguments['wing'] ) ? sanitize_text_field( (string) $arguments['wing'] ) : '';
+		$room  = isset( $arguments['room'] ) ? sanitize_text_field( (string) $arguments['room'] ) : '';
+		$query = isset( $arguments['query'] ) ? sanitize_text_field( (string) $arguments['query'] ) : '';
+		$as_of = isset( $arguments['as_of'] ) ? sanitize_text_field( (string) $arguments['as_of'] ) : '';
+		$limit = isset( $arguments['limit'] ) ? max( 1, min( 50, absint( $arguments['limit'] ) ) ) : 10;
+		$tiers = isset( $arguments['include_tiers'] ) && is_array( $arguments['include_tiers'] )
 			? array_intersect( $arguments['include_tiers'], array( 'core', 'recall', 'archival' ) )
 			: array( 'core', 'recall' );
 
@@ -315,7 +327,7 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Run RRF (no cache bypass — same agent_id + query + filters reuses the cache).
-		$rrf_result = WP_MCP_AI_Memory_RRF_Fusion_Service::search( (string) $query, $agent_id, max( 1, (int) $limit ), $filters );
+		$rrf_result  = WP_MCP_AI_Memory_RRF_Fusion_Service::search( (string) $query, $agent_id, max( 1, (int) $limit ), $filters );
 		$ordered_ids = array();
 		if ( isset( $rrf_result['contexts'] ) && is_array( $rrf_result['contexts'] ) ) {
 			foreach ( $rrf_result['contexts'] as $ctx ) {
@@ -348,8 +360,8 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Stable partition: records ranked by RRF first (in RRF order), then
 		// the rest in legacy order.
-		$ranked   = array();
-		$rest     = array();
+		$ranked = array();
+		$rest   = array();
 		foreach ( $rankable as $rec ) {
 			$cid = isset( $rec['context_id'] ) ? (string) $rec['context_id'] : '';
 			if ( '' !== $cid && isset( $rank_map[ $cid ] ) ) {

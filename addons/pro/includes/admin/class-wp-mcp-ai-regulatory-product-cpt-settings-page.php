@@ -1,6 +1,6 @@
-<?php
+<?php // phpcs:ignore WordPress.Files.FileName -- Class name does not match filename; file included explicitly.
 /**
- * Regulatory Product CPT Settings Page
+ * Regulatory Product Settings Page
  *
  * Settings page for the Regulatory Product custom post type with Overview, Settings, and Tools tabs.
  *

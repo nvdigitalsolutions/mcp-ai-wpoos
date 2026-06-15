@@ -1,12 +1,20 @@
 <?php
 /**
  * DietPi Manage Radarr Tool
- * @package WP_MCP_AI_Pro @subpackage DietPi_Toolkit @since 1.3.0
+ *
+ * @package WP_MCP_AI_Pro
+ * @subpackage DietPi_Toolkit
+ * @since 1.3.0
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Radarr' ) ) {
+	/**
+	 * Manages Radarr via the Radarr API.
+	 */
 	class WP_MCP_AI_Tool_DietPi_Manage_Radarr extends WP_MCP_AI_Tool_DietPi_Base {
 		/**
 		 * {@inheritdoc}
@@ -82,6 +90,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Radarr' ) ) {
 					}
 					return $this->success(
 						sprintf(
+							/* translators: %d: number of queue items */
 							_n( '%d item in queue.', '%d items in queue.', count( $result ), 'mcp-ai-wpoos-pro' ),
 							count( $result )
 						),
@@ -93,8 +102,23 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Radarr' ) ) {
 				case 'calendar':
 					$start  = gmdate( 'Y-m-d' );
 					$end    = gmdate( 'Y-m-d', strtotime( '+30 days' ) );
-					$result = $this->app_client()->get( 'radarr', '/api/v3/calendar', array( 'start' => $start, 'end' => $end ), 15 );
-					return is_wp_error( $result ) ? $result : $this->success( sprintf( __( 'Calendar: %d upcoming movies.', 'mcp-ai-wpoos-pro' ), count( $result ) ), array( 'calendar' => $result ) );
+					$result = $this->app_client()->get(
+						'radarr',
+						'/api/v3/calendar',
+						array(
+							'start' => $start,
+							'end'   => $end,
+						),
+						15
+					);
+					return is_wp_error( $result ) ? $result : $this->success(
+						sprintf(
+							/* translators: %d: number of upcoming movies */
+							__( 'Calendar: %d upcoming movies.', 'mcp-ai-wpoos-pro' ),
+							count( $result )
+						),
+						array( 'calendar' => $result )
+					);
 				case 'diskspace':
 					$result = $this->app_client()->get( 'radarr', '/api/v3/diskspace', array(), 10 );
 					return is_wp_error( $result ) ? $result : $this->success( __( 'Disk space retrieved.', 'mcp-ai-wpoos-pro' ), $result );

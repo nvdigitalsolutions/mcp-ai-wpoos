@@ -40,7 +40,7 @@ class Test_Tool_Pro_Delete_All_Import extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Delete_All_Import' ) ) {
-			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-delete-all-import.php';
+			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/wp-all-import-export/class-wp-mcp-ai-pro-tool-delete-all-import.php';
 		}
 
 		$this->tool = new WP_MCP_AI_Pro_Tool_Delete_All_Import();

@@ -376,18 +376,18 @@ class WP_MCP_AI_Model_Config_Renderer {
 	 */
 	public static function render_javascript() {
 		// Pre-compute all dynamic PHP values before ob_start().
-		$saving_text          = __( 'Saving...', 'mcp-ai-wpoos' );
-		$saved_text           = __( 'Saved!', 'mcp-ai-wpoos' );
-		$save_text            = __( 'Save', 'mcp-ai-wpoos' );
-		$error_text           = __( 'Error', 'mcp-ai-wpoos' );
-		$ajax_failed_text     = __( 'AJAX request failed', 'mcp-ai-wpoos' );
-		$save_failed_text     = __( 'Failed to save model configuration.', 'mcp-ai-wpoos' );
-		$showing_text         = __( 'Showing', 'mcp-ai-wpoos' );
-		$found_text           = __( 'Found', 'mcp-ai-wpoos' );
-		$of_text              = __( 'of', 'mcp-ai-wpoos' );
-		$models_text          = __( 'models', 'mcp-ai-wpoos' );
-		$no_results_text      = __( 'No models found matching your search.', 'mcp-ai-wpoos' );
-		$nonce                = wp_create_nonce( 'wp_mcp_ai_admin' );
+		$saving_text      = __( 'Saving...', 'mcp-ai-wpoos' );
+		$saved_text       = __( 'Saved!', 'mcp-ai-wpoos' );
+		$save_text        = __( 'Save', 'mcp-ai-wpoos' );
+		$error_text       = __( 'Error', 'mcp-ai-wpoos' );
+		$ajax_failed_text = __( 'AJAX request failed', 'mcp-ai-wpoos' );
+		$save_failed_text = __( 'Failed to save model configuration.', 'mcp-ai-wpoos' );
+		$showing_text     = __( 'Showing', 'mcp-ai-wpoos' );
+		$found_text       = __( 'Found', 'mcp-ai-wpoos' );
+		$of_text          = __( 'of', 'mcp-ai-wpoos' );
+		$models_text      = __( 'models', 'mcp-ai-wpoos' );
+		$no_results_text  = __( 'No models found matching your search.', 'mcp-ai-wpoos' );
+		$nonce            = wp_create_nonce( 'wp_mcp_ai_admin' );
 
 		ob_start();
 		?>

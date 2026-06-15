@@ -88,7 +88,7 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 		$settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
 
 		// Connection parameters supplied via filters.
-		// Format example: {imap.gmail.com:993/imap/ssl}INBOX
+		// Format example: {imap.gmail.com:993/imap/ssl}INBOX.
 		$conn_string = apply_filters( 'wp_mcp_ai_crm_imap_connection_string', '', $settings );
 		$imap_user   = apply_filters( 'wp_mcp_ai_crm_imap_username', '', $settings );
 		$imap_pass   = apply_filters( 'wp_mcp_ai_crm_imap_password', '', $settings );

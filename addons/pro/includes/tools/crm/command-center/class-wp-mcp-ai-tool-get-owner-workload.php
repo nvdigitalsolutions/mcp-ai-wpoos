@@ -1,19 +1,59 @@
 <?php
-/** Get Owner Workload — active leads + overdue tasks + response SLA. @package WP_MCP_AI_Pro @since 2.3.0 */
+/**
+ * Get Owner Workload — active leads + overdue tasks + response SLA.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.3.0
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
+
+/**
+ * Get Owner Workload tool — active leads + overdue tasks + response SLA.
+ */
 class WP_MCP_AI_Tool_Get_Owner_Workload implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Check whether the tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $s['enable_crm_toolkit'] ); }
+	/**
+	 * Get the reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'get_owner_workload'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Get Owner Workload', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'View active lead count, overdue tasks, and response SLAs per owner.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the JSON Schema for the tool parameters.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -24,12 +64,34 @@ class WP_MCP_AI_Tool_Get_Owner_Workload implements WP_MCP_AI_Tool_Interface, WP_
 				),
 			),
 		); }
+	/**
+	 * Get the required WordPress capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts'; }
+	/**
+	 * Check whether this tool requires the base Pro version.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
 		return true; }
+	/**
+	 * Get capability flags for the tool.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'requires-capability' ); }
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments The tool arguments.
+	 * @param array $context   The execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$owner_id = isset( $arguments['owner_id'] ) ? absint( $arguments['owner_id'] ) : 0;
 		if ( $owner_id ) {

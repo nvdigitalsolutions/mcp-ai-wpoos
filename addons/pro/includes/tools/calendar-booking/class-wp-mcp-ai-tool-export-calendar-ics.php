@@ -224,7 +224,8 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 				'company' => get_bloginfo( 'name' ),
 				'product' => 'Open Operator System',
 			),
-			'calName'  => sprintf( __( 'Project: %s', 'mcp-ai-wpoos-pro' ), $project->post_title ),
+			/* translators: %s: project title */
+			'calName'   => sprintf( __( 'Project: %s', 'mcp-ai-wpoos-pro' ), $project->post_title ),
 			'timezone' => isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : wp_timezone_string(),
 		);
 
@@ -255,6 +256,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 			$response = array(
 				'success'      => true,
 				'message'      => __( 'Calendar exported successfully as ICS file.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %1$d: event count, %2$s: project title */
 				'text'         => sprintf( __( 'Calendar exported: %1$d events from %2$s', 'mcp-ai-wpoos-pro' ), count( $events ), $project->post_title ),
 				'project_id'   => $project_id,
 				'project_name' => $project->post_title,

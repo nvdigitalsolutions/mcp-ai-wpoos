@@ -153,14 +153,6 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @param array $context   The context in which the tool is being executed.
 	 * @return array|WP_Error Array with success status and project details, or WP_Error on failure.
 	 */
-		/**
-		 * Execute the tool.
-		 *
-		 * @param array $arguments Tool arguments.
-		 *  * @param array $context   Execution context.
-		 *
-		 * @return array
-		 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 

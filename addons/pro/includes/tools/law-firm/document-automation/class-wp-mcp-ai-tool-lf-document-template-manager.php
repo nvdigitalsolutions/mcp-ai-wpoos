@@ -189,7 +189,11 @@ class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Inte
 				}
 				return array(
 					'success'    => true,
-					'message'    => sprintf( __( '%d templates found. ', 'mcp-ai-wpoos-pro' ), count( $list ) ) . self::DISCLAIMER,
+					'message'    => sprintf(
+						/* translators: %d: number of templates */
+						__( '%d templates found. ', 'mcp-ai-wpoos-pro' ),
+						count( $list )
+					) . self::DISCLAIMER,
 					'data'       => array(
 						'templates' => $list,
 						'total'     => count( $list ),

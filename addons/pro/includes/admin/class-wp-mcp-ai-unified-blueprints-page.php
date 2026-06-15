@@ -504,6 +504,7 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 	 * @return string
 	 */
 	private static function get_inline_js() {
+		// phpcs:ignore Squiz.PHP.Heredoc.NotAllowed -- Inline JS fallback; nowdoc avoids escaping issues.
 		return <<<'JS'
 (function($){'use strict';var cfg=window.wpMcpAiUnifiedBlueprints||{};if(!cfg.ajaxUrl)return;
 function esc(s){var d=document.createElement('div');d.appendChild(document.createTextNode(s));return d.innerHTML;}

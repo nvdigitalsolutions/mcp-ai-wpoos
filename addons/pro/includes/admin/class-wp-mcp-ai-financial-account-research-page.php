@@ -387,7 +387,7 @@ class WP_MCP_AI_Financial_Account_Research_Page {
 						/* translators: 1: Account title, 2: Institution name */
 						__( 'A financial account with the title "%1$s"%2$s already exists. Please use a different title or update the existing account.', 'mcp-ai-wpoos-pro' ),
 						$title,
-						! empty( $institution ) ? ' ' . sprintf( __( 'at %s', 'mcp-ai-wpoos-pro' ), $institution ) : ''
+						! empty( $institution ) ? ' ' . sprintf( /* translators: %s: financial institution name */ __( 'at %s', 'mcp-ai-wpoos-pro' ), $institution ) : ''
 					),
 					'duplicate'    => true,
 					'existing_id'  => $existing_id,

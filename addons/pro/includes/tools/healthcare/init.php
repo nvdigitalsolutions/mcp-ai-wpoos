@@ -62,7 +62,7 @@ if ( $wp_mcp_ai_vitals_enabled ) {
 	WP_MCP_AI_Healthcare_Vital_Log_CPT::init();
 }
 // --- Performance optimization (per-member autoload, reminder pruning, care-plan cap) ---
-require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/class-wp-mcp-ai-hc-optimization.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/class-wp-mcp-ai-healthcare-optimization.php';
 WP_MCP_AI_Healthcare_Optimization::init();
 
 unset( $wp_mcp_ai_vitals_enabled, $wp_mcp_ai_settings );

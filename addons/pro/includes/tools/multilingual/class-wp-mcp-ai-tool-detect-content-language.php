@@ -167,7 +167,7 @@ class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface
 			'source'        => $result['source'],
 			'message'       => sprintf(
 				/* translators: 1: language name, 2: confidence percentage */
-				__( 'Detected language: %1$s (%.0f%% confidence).', 'mcp-ai-wpoos-pro' ),
+				__( 'Detected language: %1$s (%2$.0f%% confidence).', 'mcp-ai-wpoos-pro' ),
 				$result['name'],
 				$result['confidence'] * 100
 			),

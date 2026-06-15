@@ -107,7 +107,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Provision_New_App' ) ) {
 					$stdout = trim( $result['stdout'] );
 					if ( '' === $stdout || 'NO_RESULTS' === $stdout ) {
 						return $this->success(
-							sprintf( __( 'No software found matching "%s".', 'mcp-ai-wpoos-pro' ), $query ),
+							sprintf(
+								/* translators: %s: search query */
+								__( 'No software found matching "%s".', 'mcp-ai-wpoos-pro' ),
+								$query
+							),
 							array(
 								'query'   => $query,
 								'results' => array(),
@@ -133,7 +137,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Provision_New_App' ) ) {
 					}
 
 					return $this->success(
-						sprintf( _n( 'Found %d match for "%s".', 'Found %d matches for "%s".', count( $results ), 'mcp-ai-wpoos-pro' ), count( $results ), $query ),
+						sprintf(
+							/* translators: %1$d: number of matches, %2$s: search query */
+							_n( 'Found %1$d match for "%2$s".', 'Found %1$d matches for "%2$s".', count( $results ), 'mcp-ai-wpoos-pro' ),
+							count( $results ),
+							$query
+						),
 						array(
 							'query'   => $query,
 							'results' => $results,
@@ -205,7 +214,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Provision_New_App' ) ) {
 					}
 
 					return $this->success(
-						sprintf( _n( 'Found %d installed software package.', 'Found %d installed software packages.', count( $installed ), 'mcp-ai-wpoos-pro' ), count( $installed ) ),
+						sprintf(
+							/* translators: %d: number of installed packages */
+							_n( 'Found %d installed software package.', 'Found %d installed software packages.', count( $installed ), 'mcp-ai-wpoos-pro' ),
+							count( $installed )
+						),
 						array( 'installed' => $installed )
 					);
 

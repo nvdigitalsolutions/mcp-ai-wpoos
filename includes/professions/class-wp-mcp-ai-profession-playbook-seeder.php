@@ -605,8 +605,8 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-playbook-loader.php';
 		}
 
-		$repository  = new WP_MCP_AI_Profession_Repository();
-		$loader      = new WP_MCP_AI_Profession_Playbook_Loader();
+		$repository = new WP_MCP_AI_Profession_Repository();
+		$loader     = new WP_MCP_AI_Profession_Playbook_Loader();
 
 		$batch_size  = 100;
 		$offset      = 0;

@@ -60,9 +60,9 @@ abstract class WP_MCP_AI_Pro_CLI_Base_Command extends WP_MCP_AI_CLI_Base_Command
 	protected function assert_toolkit_enabled( $setting_key, $label ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings[ $setting_key ] ) ) {
-			/* translators: 1: toolkit label, 2: setting key */
 			WP_CLI::error(
 				sprintf(
+					/* translators: 1: toolkit label, 2: setting key */
 					__( 'The "%1$s" toolkit is not enabled. Enable it in NV oOS → Settings (%2$s).', 'mcp-ai-wpoos-pro' ),
 					$label,
 					$setting_key

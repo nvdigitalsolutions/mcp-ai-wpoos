@@ -94,10 +94,10 @@ class WP_MCP_AI_Thread_Manager {
 	public static function create_tables() {
 		global $wpdb;
 
-		$threads_table    = $wpdb->prefix . self::TABLE_THREADS;
-		$messages_table   = $wpdb->prefix . self::TABLE_MESSAGES;
+		$threads_table     = $wpdb->prefix . self::TABLE_THREADS;
+		$messages_table    = $wpdb->prefix . self::TABLE_MESSAGES;
 		$checkpoints_table = $wpdb->prefix . self::TABLE_CHECKPOINTS;
-		$charset_collate  = $wpdb->get_charset_collate();
+		$charset_collate   = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE {$threads_table} (
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -243,7 +243,7 @@ class WP_MCP_AI_Thread_Manager {
 		$threads_table = $this->get_threads_table();
 		$thread_id     = absint( $thread_id );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 		$thread = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT id, title, status, model_provider, model_name, profile, scope_type, scope_id, assistant_id, message_count, user_id, created_at, updated_at
@@ -253,6 +253,7 @@ class WP_MCP_AI_Thread_Manager {
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 
 		return $thread ? $this->format_thread( $thread ) : null;
 	}
@@ -511,13 +512,14 @@ class WP_MCP_AI_Thread_Manager {
 		}
 
 		// Update message count.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 		$wpdb->query(
 			$wpdb->prepare(
 				"UPDATE {$threads_table} SET message_count = message_count + 1 WHERE id = %d",
 				$thread_id
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 
 		return array(
 			'success' => true,
@@ -608,7 +610,7 @@ class WP_MCP_AI_Thread_Manager {
 		$thread_id      = absint( $thread_id );
 		$limit          = absint( $limit );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 		$messages = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT role, content FROM {$messages_table}
@@ -620,6 +622,7 @@ class WP_MCP_AI_Thread_Manager {
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 
 		if ( null === $messages ) {
 			return array();
@@ -695,7 +698,7 @@ class WP_MCP_AI_Thread_Manager {
 		$checkpoints_table = $this->get_checkpoints_table();
 		$thread_id         = absint( $thread_id );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 		$checkpoints = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT id, thread_id, label, diff_data, created_at
@@ -706,6 +709,7 @@ class WP_MCP_AI_Thread_Manager {
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 
 		if ( null === $checkpoints ) {
 			$checkpoints = array();
@@ -744,7 +748,7 @@ class WP_MCP_AI_Thread_Manager {
 		$thread_id         = absint( $thread_id );
 		$checkpoint_id     = absint( $checkpoint_id );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 		$checkpoint = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT diff_data FROM {$checkpoints_table} WHERE id = %d AND thread_id = %d",
@@ -753,6 +757,7 @@ class WP_MCP_AI_Thread_Manager {
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 
 		if ( ! $checkpoint ) {
 			return new WP_Error(
@@ -784,12 +789,12 @@ class WP_MCP_AI_Thread_Manager {
 	public function restore_checkpoint( $thread_id, $checkpoint_id ) {
 		global $wpdb;
 
-		$messages_table  = $this->get_messages_table();
-		$thread_id       = absint( $thread_id );
-		$checkpoint_id   = absint( $checkpoint_id );
+		$messages_table = $this->get_messages_table();
+		$thread_id      = absint( $thread_id );
+		$checkpoint_id  = absint( $checkpoint_id );
 
 		// Delete messages created after the checkpoint.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$messages_table} WHERE thread_id = %d AND checkpoint_id > %d",
@@ -797,15 +802,17 @@ class WP_MCP_AI_Thread_Manager {
 				$checkpoint_id
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 
 		// Update message count.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$messages_table} WHERE thread_id = %d",
 				$thread_id
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 
 		$threads_table = $this->get_threads_table();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -833,7 +840,7 @@ class WP_MCP_AI_Thread_Manager {
 			'id'             => (int) $row['id'],
 			'title'          => $row['title'],
 			'status'         => $row['status'],
-			'model_name'     => $row['model_name'] ?: 'Default',
+			'model_name'     => $row['model_name'] ? $row['model_name'] : 'Default',
 			'model_provider' => $row['model_provider'] ?? '',
 			'profile'        => $row['profile'] ?? 'write',
 			'scope_type'     => $row['scope_type'] ?? 'General',

@@ -1,12 +1,20 @@
 <?php
 /**
  * DietPi List Transmission Torrents Tool
- * @package WP_MCP_AI_Pro @subpackage DietPi_Toolkit @since 1.3.0
+ *
+ * @package WP_MCP_AI_Pro
+ * @subpackage DietPi_Toolkit
+ * @since 1.3.0
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Transmission' ) ) {
+	/**
+	 * Lists torrents in Transmission via the Transmission RPC API.
+	 */
 	class WP_MCP_AI_Tool_DietPi_List_Transmission extends WP_MCP_AI_Tool_DietPi_Base {
 		/**
 		 * {@inheritdoc}
@@ -88,9 +96,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Transmission' ) ) {
 				);
 				$code = isset( $status_map[ $filter ] ) ? $status_map[ $filter ] : null;
 				if ( null !== $code ) {
-					$torrents = array_values( array_filter( $torrents, function ( $t ) use ( $code ) {
-						return (int) $t['status'] === $code;
-					} ) );
+					$torrents = array_values(
+						array_filter(
+							$torrents,
+							function ( $t ) use ( $code ) {
+								return (int) $t['status'] === $code;
+							}
+						)
+					);
 				}
 			}
 			$out = array();
@@ -112,6 +125,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_List_Transmission' ) ) {
 			}
 			return $this->success(
 				sprintf(
+					/* translators: %d: number of torrents */
 					_n( 'Found %d torrent.', 'Found %d torrents.', count( $out ), 'mcp-ai-wpoos-pro' ),
 					count( $out )
 				),

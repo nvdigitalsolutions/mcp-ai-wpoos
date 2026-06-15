@@ -159,14 +159,14 @@ class WP_MCP_AI_Comic_CPT {
 	 */
 	protected static function create_default_styles() {
 		$styles = array(
-			'manga'           => __( 'Manga', 'mcp-ai-wpoos-pro' ),
-			'american-comic'  => __( 'American Comic', 'mcp-ai-wpoos-pro' ),
-			'webtoon'         => __( 'Webtoon', 'mcp-ai-wpoos-pro' ),
-			'graphic-novel'   => __( 'Graphic Novel', 'mcp-ai-wpoos-pro' ),
-			'comic-strip'     => __( 'Comic Strip', 'mcp-ai-wpoos-pro' ),
-			'noir'            => __( 'Noir', 'mcp-ai-wpoos-pro' ),
-			'silver-age'      => __( 'Silver Age', 'mcp-ai-wpoos-pro' ),
-			'euro-comic'      => __( 'European Comic', 'mcp-ai-wpoos-pro' ),
+			'manga'          => __( 'Manga', 'mcp-ai-wpoos-pro' ),
+			'american-comic' => __( 'American Comic', 'mcp-ai-wpoos-pro' ),
+			'webtoon'        => __( 'Webtoon', 'mcp-ai-wpoos-pro' ),
+			'graphic-novel'  => __( 'Graphic Novel', 'mcp-ai-wpoos-pro' ),
+			'comic-strip'    => __( 'Comic Strip', 'mcp-ai-wpoos-pro' ),
+			'noir'           => __( 'Noir', 'mcp-ai-wpoos-pro' ),
+			'silver-age'     => __( 'Silver Age', 'mcp-ai-wpoos-pro' ),
+			'euro-comic'     => __( 'European Comic', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $styles as $slug => $name ) {
@@ -402,10 +402,10 @@ class WP_MCP_AI_Comic_CPT {
 		foreach ( $columns as $key => $value ) {
 			$new_columns[ $key ] = $value;
 			if ( 'title' === $key ) {
-				$new_columns['cover']      = __( 'Cover', 'mcp-ai-wpoos-pro' );
-				$new_columns['series']     = __( 'Series', 'mcp-ai-wpoos-pro' );
-				$new_columns['direction']  = __( 'Direction', 'mcp-ai-wpoos-pro' );
-				$new_columns['panels']     = __( 'Panels', 'mcp-ai-wpoos-pro' );
+				$new_columns['cover']     = __( 'Cover', 'mcp-ai-wpoos-pro' );
+				$new_columns['series']    = __( 'Series', 'mcp-ai-wpoos-pro' );
+				$new_columns['direction'] = __( 'Direction', 'mcp-ai-wpoos-pro' );
+				$new_columns['panels']    = __( 'Panels', 'mcp-ai-wpoos-pro' );
 			}
 		}
 		return $new_columns;

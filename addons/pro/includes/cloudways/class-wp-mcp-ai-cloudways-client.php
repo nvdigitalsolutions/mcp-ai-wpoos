@@ -386,10 +386,10 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_Client' ) ) {
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'page'       => 'wp-mcp-ai-dashboard',
-						'tab'        => 'tools',
-						'subtab'     => 'connections',
-						'connection' => 'cloudways',
+						'page'                   => 'wp-mcp-ai-dashboard',
+						'tab'                    => 'tools',
+						'subtab'                 => 'connections',
+						'connection'             => 'cloudways',
 						'cloudways_disconnected' => '1',
 					),
 					admin_url( 'admin.php' )

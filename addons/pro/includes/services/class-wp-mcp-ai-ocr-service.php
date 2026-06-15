@@ -563,6 +563,7 @@ class WP_MCP_AI_OCR_Service {
 			);
 			return new WP_Error(
 				'provider_unavailable',
+				/* translators: %s: provider name */
 				sprintf( __( 'Provider %s is temporarily unavailable', 'mcp-ai-wpoos-pro' ), $provider )
 			);
 		}
@@ -662,6 +663,7 @@ class WP_MCP_AI_OCR_Service {
 			return new WP_Error(
 				'ocr_openai_failed',
 				sprintf(
+					/* translators: %s: error message from API */
 					__( 'OpenAI Vision OCR failed: %s. Will try fallback provider.', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				)
@@ -728,6 +730,7 @@ class WP_MCP_AI_OCR_Service {
 			return new WP_Error(
 				'ocr_gemini_failed',
 				sprintf(
+					/* translators: %s: error message from API */
 					__( 'Gemini Vision OCR failed: %s. Will try fallback provider.', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				)
@@ -1102,6 +1105,7 @@ class WP_MCP_AI_OCR_Service {
 			return new WP_Error(
 				'node_ocr_failed',
 				sprintf(
+					/* translators: %s: error message from Node.js OCR */
 					__( 'Pre-bundled Node.js OCR service failed. Ensure Node.js is installed. Error: %s', 'mcp-ai-wpoos-pro' ),
 					$error_message
 				),
@@ -1121,6 +1125,7 @@ class WP_MCP_AI_OCR_Service {
 			return new WP_Error(
 				'invalid_json_response',
 				sprintf(
+					/* translators: %s: raw output from OCR service */
 					__( 'Node.js OCR service returned invalid JSON. Raw output: %s', 'mcp-ai-wpoos-pro' ),
 					substr( $output_text, 0, 200 )
 				),
@@ -1177,7 +1182,8 @@ class WP_MCP_AI_OCR_Service {
 			return new WP_Error(
 				'file_too_large',
 				sprintf(
-					__( 'Image file is too large (%s). Maximum size is %s.', 'mcp-ai-wpoos-pro' ),
+						/* translators: 1: file size, 2: maximum allowed size */
+					__( 'Image file is too large (%1$s). Maximum size is %2$s.', 'mcp-ai-wpoos-pro' ),
 					size_format( $file_size ),
 					size_format( self::MAX_FILE_SIZE )
 				),
@@ -1192,7 +1198,8 @@ class WP_MCP_AI_OCR_Service {
 			return new WP_Error(
 				'invalid_file_type',
 				sprintf(
-					__( 'Invalid image file type: %s. Allowed types: %s', 'mcp-ai-wpoos-pro' ),
+						/* translators: 1: detected MIME type, 2: list of allowed types */
+					__( 'Invalid image file type: %1$s. Allowed types: %2$s', 'mcp-ai-wpoos-pro' ),
 					$mime_type,
 					implode( ', ', $allowed_types )
 				),
@@ -1234,7 +1241,8 @@ class WP_MCP_AI_OCR_Service {
 			return new WP_Error(
 				'file_too_large',
 				sprintf(
-					__( 'PDF file is too large (%s). Maximum size is %s.', 'mcp-ai-wpoos-pro' ),
+						/* translators: 1: file size, 2: maximum allowed size */
+					__( 'PDF file is too large (%1$s). Maximum size is %2$s.', 'mcp-ai-wpoos-pro' ),
 					size_format( $file_size ),
 					size_format( self::MAX_FILE_SIZE )
 				),
@@ -1248,6 +1256,7 @@ class WP_MCP_AI_OCR_Service {
 			return new WP_Error(
 				'invalid_file_type',
 				sprintf(
+					/* translators: %s: detected MIME type */
 					__( 'Invalid file type: %s. Expected application/pdf', 'mcp-ai-wpoos-pro' ),
 					$mime_type
 				),

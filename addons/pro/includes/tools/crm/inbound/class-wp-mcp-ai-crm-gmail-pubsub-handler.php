@@ -161,7 +161,13 @@ class WP_MCP_AI_CRM_Gmail_PubSub_Handler {
 					);
 				}
 			}
-			return new WP_REST_Response( array( 'ack' => true, 'note' => 'No matching connection; queued poll.' ), 200 );
+			return new WP_REST_Response(
+				array(
+					'ack' => true,
+					'note' => 'No matching connection; queued poll.',
+				),
+				200
+			);
 		}
 
 		// Update the history ID for the connection.
@@ -237,7 +243,11 @@ class WP_MCP_AI_CRM_Gmail_PubSub_Handler {
 		if ( 200 !== $code ) {
 			return new WP_Error(
 				'gmail_watch_failed',
-				sprintf( __( 'Gmail watch API returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $code )
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Gmail watch API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
 			);
 		}
 

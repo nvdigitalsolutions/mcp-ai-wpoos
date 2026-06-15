@@ -111,6 +111,8 @@ class WP_MCP_AI_Site_Node_WP_Query implements WP_MCP_AI_Site_Node_Interface {
 	 * Execute: run WP_Query and return post summaries.
 	 *
 	 * {@inheritdoc}
+	 *
+	 * @param array $inputs Node input values keyed by input name.
 	 */
 	public function execute( array $inputs ) {
 		$post_type      = isset( $inputs['post_type'] ) ? sanitize_text_field( $inputs['post_type'] ) : 'post';
@@ -142,17 +144,17 @@ class WP_MCP_AI_Site_Node_WP_Query implements WP_MCP_AI_Site_Node_Interface {
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$post_id    = get_the_ID();
-				$thumbnail  = get_the_post_thumbnail_url( $post_id, 'medium' );
+				$post_id   = get_the_ID();
+				$thumbnail = get_the_post_thumbnail_url( $post_id, 'medium' );
 
 				$result[] = array(
-					'id'             => $post_id,
-					'title'          => get_the_title(),
-					'excerpt'        => wp_kses_post( get_the_excerpt() ),
-					'permalink'      => esc_url( get_permalink() ),
-					'thumbnail_url'  => $thumbnail ? esc_url( $thumbnail ) : '',
-					'post_date'      => esc_html( get_the_date() ),
-					'author_name'    => esc_html( get_the_author() ),
+					'id'            => $post_id,
+					'title'         => get_the_title(),
+					'excerpt'       => wp_kses_post( get_the_excerpt() ),
+					'permalink'     => esc_url( get_permalink() ),
+					'thumbnail_url' => $thumbnail ? esc_url( $thumbnail ) : '',
+					'post_date'     => esc_html( get_the_date() ),
+					'author_name'   => esc_html( get_the_author() ),
 				);
 			}
 			wp_reset_postdata();

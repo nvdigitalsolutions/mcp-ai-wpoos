@@ -1120,37 +1120,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 
 			$provider_pricing = array(
-				'openai'      => array(
-					'input_price' => 0.0025,
+				'openai'     => array(
+					'input_price'      => 0.0025,
 					'cache_multiplier' => 0.50,
-					'label' => 'OpenAI',
+					'label'            => 'OpenAI',
 				),
-				'anthropic'   => array(
-					'input_price' => 0.0030,
+				'anthropic'  => array(
+					'input_price'      => 0.0030,
 					'cache_multiplier' => 0.10,
-					'label' => 'Anthropic',
+					'label'            => 'Anthropic',
 				),
-				'deepseek'    => array(
-					'input_price' => 0.00027,
+				'deepseek'   => array(
+					'input_price'      => 0.00027,
 					'cache_multiplier' => 0.10,
-					'label' => 'DeepSeek',
+					'label'            => 'DeepSeek',
 				),
-				'gemini'      => array(
-					'input_price' => 0.00125,
+				'gemini'     => array(
+					'input_price'      => 0.00125,
 					'cache_multiplier' => 0.25,
-					'label' => 'Gemini',
+					'label'            => 'Gemini',
 				),
-				'openrouter'  => array(
-					'input_price' => 0.0025,
+				'openrouter' => array(
+					'input_price'      => 0.0025,
 					'cache_multiplier' => 0.50,
-					'label' => 'OpenRouter',
+					'label'            => 'OpenRouter',
 				),
 			);
 
 			$total_prompt_tokens     = 0;
 			$total_cached_tokens     = 0;
 			$total_estimated_savings = 0.0;
-			$rows = array();
+			$rows                    = array();
 
 			foreach ( $site_stats['by_provider'] as $provider => $stats ) {
 				$prompt_tokens = isset( $stats['prompt_tokens'] ) ? (int) $stats['prompt_tokens'] : 0;
@@ -1164,16 +1164,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				$pricing = isset( $provider_pricing[ $provider ] )
 					? $provider_pricing[ $provider ]
 					: array(
-						'input_price' => 0.002,
+						'input_price'      => 0.002,
 						'cache_multiplier' => 0.50,
-						'label' => ucfirst( $provider ),
+						'label'            => ucfirst( $provider ),
 					);
 
 				// Cost without caching: cached_tokens * input_price / 1000.
 				$cost_without_cache = ( $cached_tokens / 1000 ) * $pricing['input_price'];
 				// Cost with caching: cached_tokens * input_price * cache_multiplier / 1000.
-				$cost_with_cache = ( $cached_tokens / 1000 ) * $pricing['input_price'] * $pricing['cache_multiplier'];
-				$savings = $cost_without_cache - $cost_with_cache;
+				$cost_with_cache          = ( $cached_tokens / 1000 ) * $pricing['input_price'] * $pricing['cache_multiplier'];
+				$savings                  = $cost_without_cache - $cost_with_cache;
 				$total_estimated_savings += $savings;
 
 				$rows[] = array(

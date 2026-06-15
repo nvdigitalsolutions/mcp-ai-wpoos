@@ -17,6 +17,8 @@
  * @license   GPL-3.0-or-later
  */
 
+// phpcs:disable WordPress.Files.FileName, Squiz.Commenting.FileComment, Universal.Files.SeparateFunctionsFromOO, PSR1.Files.SideEffects.FoundWithSymbols
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -356,6 +358,13 @@ if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 	 * to initialize all core components (REST API, tool registry, assistants, etc.).
 	 * Fires `wp_mcp_ai_bootstrapped` on completion — the Pro addon hooks into this.
 	 */
+			/**
+			 * Bootstrap the plugin.
+			 *
+			 * Instantiates the main plugin singleton and calls its bootstrap method.
+			 *
+			 * @since 1.0.0
+			 */
 	function wp_mcp_ai_bootstrap() {
 		$plugin = WP_MCP_AI::instance();
 		$plugin->bootstrap();

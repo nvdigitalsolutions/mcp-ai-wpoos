@@ -206,7 +206,7 @@ class WP_MCP_AI_Lead_CPT {
 				$merged_into = get_post_meta( $post_id, '_merged_into', true );
 				if ( $is_merged ) {
 					echo '<span style="color: #d63638; font-weight: 600;" title="';
-					echo $merged_into ? esc_attr( sprintf( __( 'Merged into lead #%d', 'mcp-ai-wpoos-pro' ), (int) $merged_into ) ) : esc_attr__( 'Merged', 'mcp-ai-wpoos-pro' );
+					echo $merged_into ? esc_attr( sprintf( /* translators: %d: lead post ID */ __( 'Merged into lead #%d', 'mcp-ai-wpoos-pro' ), (int) $merged_into ) ) : esc_attr__( 'Merged', 'mcp-ai-wpoos-pro' );
 					echo '">' . esc_html__( 'Merged', 'mcp-ai-wpoos-pro' ) . '</span>';
 				} else {
 					echo '—';

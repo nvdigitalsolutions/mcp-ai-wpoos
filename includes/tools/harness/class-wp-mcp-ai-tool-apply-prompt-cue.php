@@ -63,10 +63,22 @@ class WP_MCP_AI_Tool_Apply_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
+	/**
+	 * Get the required capability for this tool.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the apply prompt cue tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$system_prompt = isset( $arguments['system_prompt'] ) ? (string) $arguments['system_prompt'] : '';
 		$cue_slugs     = array();

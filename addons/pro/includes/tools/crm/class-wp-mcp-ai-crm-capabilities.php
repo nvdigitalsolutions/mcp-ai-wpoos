@@ -34,14 +34,14 @@ class WP_MCP_AI_CRM_Capabilities {
 	 * @var string[]
 	 */
 	const ROLES = array(
-		'sales_manager',    // Oversees pipeline, team assignments, reporting
-		'account_executive', // Owns deals from qualification to close
-		'sdr',              // Sales Development Rep — inbound/outbound prospecting
-		'business_development', // BD: partnerships, channel sales
-		'sales_ops',        // Admin: routing, sequences, CRM hygiene
-		'marketing_manager', // Campaigns, lead scoring config, nurture sequences
-		'marketing_ops',    // GDPR/consent, automation rules
-		'crm_viewer',       // Read-only dashboards
+		'sales_manager',    // Oversees pipeline, team assignments, reporting.
+		'account_executive', // Owns deals from qualification to close.
+		'sdr',              // Sales Development Rep — inbound/outbound prospecting.
+		'business_development', // BD: partnerships, channel sales.
+		'sales_ops',        // Admin: routing, sequences, CRM hygiene.
+		'marketing_manager', // Campaigns, lead scoring config, nurture sequences.
+		'marketing_ops',    // GDPR/consent, automation rules.
+		'crm_viewer',       // Read-only dashboards.
 	);
 
 	/**

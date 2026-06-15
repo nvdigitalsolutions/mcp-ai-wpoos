@@ -86,6 +86,8 @@ if ( ! class_exists( 'WP_MCP_AI_DietPi_App_Client' ) ) {
 
 		/**
 		 * Prevent unserialization.
+		 *
+		 * @throws \Exception Always, to prevent unserialization.
 		 */
 		public function __wakeup() {
 			throw new \Exception( 'Cannot unserialize singleton.' );

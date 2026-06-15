@@ -118,19 +118,19 @@ class WP_MCP_AI_CRM_Message_Log {
 	 * @return int|WP_Error Post ID of the logged message, or WP_Error.
 	 */
 	public static function log( array $args ) {
-		$message_id     = sanitize_text_field( $args['message_id'] ?? '' );
-		$channel        = sanitize_key( $args['channel'] ?? 'email' );
-		$sender_email   = sanitize_email( $args['sender_email'] ?? '' );
-		$sender_name    = sanitize_text_field( $args['sender_name'] ?? '' );
-		$sender_phone   = sanitize_text_field( $args['sender_phone'] ?? '' );
-		$subject        = sanitize_text_field( $args['subject'] ?? '' );
-		$body           = sanitize_textarea_field( $args['body'] ?? '' );
-		$contact_id     = absint( $args['contact_id'] ?? 0 );
-		$ticket_id      = absint( $args['ticket_id'] ?? 0 );
-		$source         = sanitize_key( $args['source'] ?? 'unknown' );
-		$connection_id  = sanitize_text_field( $args['connection_id'] ?? '' );
+		$message_id         = sanitize_text_field( $args['message_id'] ?? '' );
+		$channel            = sanitize_key( $args['channel'] ?? 'email' );
+		$sender_email       = sanitize_email( $args['sender_email'] ?? '' );
+		$sender_name        = sanitize_text_field( $args['sender_name'] ?? '' );
+		$sender_phone       = sanitize_text_field( $args['sender_phone'] ?? '' );
+		$subject            = sanitize_text_field( $args['subject'] ?? '' );
+		$body               = sanitize_textarea_field( $args['body'] ?? '' );
+		$contact_id         = absint( $args['contact_id'] ?? 0 );
+		$ticket_id          = absint( $args['ticket_id'] ?? 0 );
+		$source             = sanitize_key( $args['source'] ?? 'unknown' );
+		$connection_id      = sanitize_text_field( $args['connection_id'] ?? '' );
 		$channel_contact_id = sanitize_text_field( $args['channel_contact_id'] ?? '' );
-		$thread_id      = sanitize_text_field( $args['thread_id'] ?? '' );
+		$thread_id          = sanitize_text_field( $args['thread_id'] ?? '' );
 
 		// Dedup check: skip if this message_id was already logged.
 		if ( ! empty( $message_id ) && ! empty( $channel ) ) {
@@ -170,10 +170,10 @@ class WP_MCP_AI_CRM_Message_Log {
 
 		$post_id = wp_insert_post(
 			array(
-				'post_type'    => self::POST_TYPE,
-				'post_title'   => $title,
-				'post_content' => $body,
-				'post_status'  => 'publish',
+				'post_type'     => self::POST_TYPE,
+				'post_title'    => $title,
+				'post_content'  => $body,
+				'post_status'   => 'publish',
 				'post_date_gmt' => current_time( 'mysql', true ),
 			),
 			true
@@ -216,8 +216,8 @@ class WP_MCP_AI_CRM_Message_Log {
 				'message',
 				$post_id,
 				array(
-					'channel'  => $channel,
-					'source'   => $source,
+					'channel'    => $channel,
+					'source'     => $source,
 					'message_id' => $message_id,
 				)
 			);
@@ -339,9 +339,12 @@ class WP_MCP_AI_CRM_Message_Log {
 		$count = count( $map );
 		if ( $count > self::DEDUP_MAX_ENTRIES ) {
 			// Remove oldest entries (keep the most recent half).
-			uasort( $map, function ( $a, $b ) {
-				return $b['timestamp'] <=> $a['timestamp'];
-			} );
+			uasort(
+				$map,
+				function ( $a, $b ) {
+					return $b['timestamp'] <=> $a['timestamp'];
+				}
+			);
 			$map = array_slice( $map, 0, self::DEDUP_MAX_ENTRIES / 2, true );
 		}
 
@@ -420,20 +423,20 @@ class WP_MCP_AI_CRM_Message_Log {
 	 */
 	private static function format_message( $post ) {
 		return array(
-			'id'                 => $post->ID,
-			'message_id'         => get_post_meta( $post->ID, '_message_id', true ),
-			'thread_id'          => get_post_meta( $post->ID, '_thread_id', true ),
-			'channel'            => get_post_meta( $post->ID, '_channel', true ),
-			'sender_email'       => get_post_meta( $post->ID, '_sender_email', true ),
-			'sender_name'        => get_post_meta( $post->ID, '_sender_name', true ),
-			'subject'            => get_post_meta( $post->ID, '_subject', true ),
-			'body'               => $post->post_content,
-			'contact_id'         => (int) get_post_meta( $post->ID, '_contact_id', true ),
-			'ticket_id'          => (int) get_post_meta( $post->ID, '_ticket_id', true ),
-			'source'             => get_post_meta( $post->ID, '_source', true ),
-			'connection_id'      => get_post_meta( $post->ID, '_connection_id', true ),
-			'logged_at'          => get_post_meta( $post->ID, '_logged_at', true ),
-			'date'               => $post->post_date,
+			'id'            => $post->ID,
+			'message_id'    => get_post_meta( $post->ID, '_message_id', true ),
+			'thread_id'     => get_post_meta( $post->ID, '_thread_id', true ),
+			'channel'       => get_post_meta( $post->ID, '_channel', true ),
+			'sender_email'  => get_post_meta( $post->ID, '_sender_email', true ),
+			'sender_name'   => get_post_meta( $post->ID, '_sender_name', true ),
+			'subject'       => get_post_meta( $post->ID, '_subject', true ),
+			'body'          => $post->post_content,
+			'contact_id'    => (int) get_post_meta( $post->ID, '_contact_id', true ),
+			'ticket_id'     => (int) get_post_meta( $post->ID, '_ticket_id', true ),
+			'source'        => get_post_meta( $post->ID, '_source', true ),
+			'connection_id' => get_post_meta( $post->ID, '_connection_id', true ),
+			'logged_at'     => get_post_meta( $post->ID, '_logged_at', true ),
+			'date'          => $post->post_date,
 		);
 	}
 

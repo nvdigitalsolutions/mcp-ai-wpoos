@@ -207,7 +207,7 @@ class WP_MCP_AI_Tool_Generate_Comic_Panel implements WP_MCP_AI_Tool_Interface, W
 
 		// TODO: Integrate with actual AI image generation API (DALL-E, Stable Diffusion, etc.)
 		// For now, produce a simulated result.
-		$image_url     = 'https://placehold.co/' . $width . 'x' . $height . '/222/ccc?text=' . rawurlencode( 'Panel ' . ( $panel_id ?: 'New' ) );
+		$image_url     = 'https://placehold.co/' . $width . 'x' . $height . '/222/ccc?text=' . rawurlencode( 'Panel ' . ( $panel_id ? $panel_id : 'New' ) );
 		$attachment_id = $this->simulate_panel_attachment( $panel_id, $user_id, $width, $height );
 
 		// Update panel post meta.
@@ -263,7 +263,7 @@ class WP_MCP_AI_Tool_Generate_Comic_Panel implements WP_MCP_AI_Tool_Interface, W
 		$title = sprintf(
 			/* translators: %d: panel ID */
 			__( 'Comic Panel %d - Generated Artwork', 'mcp-ai-wpoos-pro' ),
-			$panel_id ?: 0
+			$panel_id ? $panel_id : 0
 		);
 
 		$attachment_data = array(

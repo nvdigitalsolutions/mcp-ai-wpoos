@@ -420,6 +420,7 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 		$buttons = $arguments['buttons'];
 
 		if ( count( $buttons ) > self::MAX_REPLY_BUTTONS ) {
+			/* translators: %d: maximum button count */
 			return new WP_Error( 'wp_mcp_ai_too_many_buttons', sprintf( __( 'Maximum %d buttons allowed.', 'mcp-ai-wpoos-pro' ), self::MAX_REPLY_BUTTONS ) );
 		}
 
@@ -483,6 +484,7 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 		$sections = $arguments['sections'];
 
 		if ( count( $sections ) > self::MAX_LIST_SECTIONS ) {
+			/* translators: %d: maximum section count */
 			return new WP_Error( 'wp_mcp_ai_too_many_sections', sprintf( __( 'Maximum %d sections allowed.', 'mcp-ai-wpoos-pro' ), self::MAX_LIST_SECTIONS ) );
 		}
 

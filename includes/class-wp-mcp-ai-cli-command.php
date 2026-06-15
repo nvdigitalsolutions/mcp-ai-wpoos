@@ -8,7 +8,7 @@
  * @license   GPL-3.0-or-later
  */
 
-// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound, Generic.Files.OneClassPerFile.MultipleFound, PSR1.Files.SideEffects.FoundWithSymbols -- CLI command file with multiple command classes and helper functions.
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO, Generic.Files, PSR1.Files.SideEffects.FoundWithSymbols, Squiz.Commenting.FunctionComment.Missing -- CLI command file with multiple command classes and helper functions.
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -18,6 +18,13 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	if ( ! function_exists( 'wp_mcp_ai_get_supported_plugins' ) ) {
 		/**
 		 * Retrieve a map of supported optional plugin dependencies.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return array[]
+		 */
+		/**
+		 * Get supported plugins list for WP-CLI diagnostics.
 		 *
 		 * @since 1.0.0
 		 *

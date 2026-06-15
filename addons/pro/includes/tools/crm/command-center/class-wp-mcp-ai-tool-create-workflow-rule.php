@@ -1,22 +1,59 @@
 <?php
 /**
  * Create Workflow Rule — if-this-then-that automation rule.
- * @package WP_MCP_AI_Pro @since 2.3.0
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.3.0
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
+
+/**
+ * Create Workflow Rule tool — if-this-then-that automation rule.
+ */
 class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Check whether the tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $s['enable_crm_toolkit'] ); }
+	/**
+	 * Get the reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'create_workflow_rule'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Create Workflow Rule', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Create an if-this-then-that automation rule for the CRM Workflow Command Center.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the JSON Schema for the tool parameters.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -50,12 +87,34 @@ class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 			),
 			'required'   => array( 'name', 'trigger', 'actions' ),
 		); }
+	/**
+	 * Get the required WordPress capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'manage_options'; }
+	/**
+	 * Check whether this tool requires the base Pro version.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
 		return true; }
+	/**
+	 * Get capability flags for the tool.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'requires-capability' ); }
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments The tool arguments.
+	 * @param array $context   The execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
 			return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }

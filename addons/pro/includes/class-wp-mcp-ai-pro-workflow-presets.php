@@ -2768,7 +2768,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 		 */
 		private static function get_crm_support_presets() {
 			return array(
-				'support_ticket_triage'       => array(
+				'support_ticket_triage'        => array(
 					'name'        => __( 'Support Ticket Triage', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Auto-triage pipeline: classify incoming support tickets, suggest priority and category, assign to the right team member.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'crm_support',
@@ -2843,7 +2843,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						),
 					),
 				),
-				'support_ticket_resolution'   => array(
+				'support_ticket_resolution'    => array(
 					'name'        => __( 'Support Ticket Resolution', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Resolution workflow: review ticket, add resolution notes, mark as resolved, and trigger CSAT survey.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'crm_support',
@@ -2918,7 +2918,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						),
 					),
 				),
-				'support_escalation_handling' => array(
+				'support_escalation_handling'  => array(
 					'name'        => __( 'Support Escalation Handling', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Escalation workflow: detect SLA breaches, escalate priority, notify managers, and update ticket status.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'crm_support',
@@ -2995,7 +2995,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				),
 
 				// -- Customer Management workflow presets (v2.6.0) --
-				'lead_to_customer_conversion' => array(
+				'lead_to_customer_conversion'  => array(
 					'name'        => __( 'Lead-to-Customer Conversion', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'End-to-end lead conversion pipeline: qualify lead, convert to customer record, create linked deal.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'crm_support',
@@ -3005,7 +3005,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'input',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Lead Ready for Conversion', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Lead has reached SQL/Opportunity stage.', 'mcp-ai-wpoos-pro' ),
@@ -3014,7 +3017,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Qualify Lead (BANT)', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Run BANT qualification to validate lead readiness.', 'mcp-ai-wpoos-pro' ),
@@ -3025,7 +3031,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Convert to Customer', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Create customer record with linked deal.', 'mcp-ai-wpoos-pro' ),
@@ -3036,7 +3045,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Customer Created + Deal Open', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Customer record created with linked deal in pipeline.', 'mcp-ai-wpoos-pro' ),
@@ -3044,9 +3056,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						),
 					),
 					'edges'       => array(
-						array( 'source' => 'node_1', 'target' => 'node_2' ),
-						array( 'source' => 'node_2', 'target' => 'node_3' ),
-						array( 'source' => 'node_3', 'target' => 'node_4' ),
+						array(
+							'source' => 'node_1',
+							'target' => 'node_2',
+						),
+						array(
+							'source' => 'node_2',
+							'target' => 'node_3',
+						),
+						array(
+							'source' => 'node_3',
+							'target' => 'node_4',
+						),
 					),
 				),
 				'customer_onboarding_sequence' => array(
@@ -3059,7 +3080,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'input',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Customer Created', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'A new customer record has been created.', 'mcp-ai-wpoos-pro' ),
@@ -3068,7 +3092,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Get Customer Details', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Retrieve full customer record.', 'mcp-ai-wpoos-pro' ),
@@ -3079,18 +3106,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Create Welcome Activity', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Schedule a welcome call or onboarding meeting.', 'mcp-ai-wpoos-pro' ),
 								'tool_slug'   => 'create_crm_activity',
-								'tool_args'   => array( 'activity_type' => 'call', 'subject' => 'Customer Welcome Call' ),
+								'tool_args'   => array(
+									'activity_type' => 'call',
+									'subject'       => 'Customer Welcome Call',
+								),
 							),
 						),
 						array(
 							'id'       => 'node_4',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Onboarding Initiated', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Welcome activity created, onboarding sequence started.', 'mcp-ai-wpoos-pro' ),
@@ -3098,9 +3134,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						),
 					),
 					'edges'       => array(
-						array( 'source' => 'node_1', 'target' => 'node_2' ),
-						array( 'source' => 'node_2', 'target' => 'node_3' ),
-						array( 'source' => 'node_3', 'target' => 'node_4' ),
+						array(
+							'source' => 'node_1',
+							'target' => 'node_2',
+						),
+						array(
+							'source' => 'node_2',
+							'target' => 'node_3',
+						),
+						array(
+							'source' => 'node_3',
+							'target' => 'node_4',
+						),
 					),
 				),
 			);

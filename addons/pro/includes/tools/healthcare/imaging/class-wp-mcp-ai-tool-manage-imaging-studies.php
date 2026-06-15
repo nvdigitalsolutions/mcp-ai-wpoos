@@ -108,14 +108,6 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 
 	/**
 	 * {@inheritdoc}
-	 *
-	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
-	 *
-	 *
-	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
-	 *
-	 * @param array $context   Execution context.
-	 * @return array|WP_Error
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';

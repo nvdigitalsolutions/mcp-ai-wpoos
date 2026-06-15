@@ -300,10 +300,13 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 			$plan_exits = isset( $floor_plan['exits'] ) ? (int) $floor_plan['exits'] : -1;
 			if ( $min_exits > 0 ) {
 				if ( $plan_exits < 0 ) {
+					/* translators: %d: minimum number of egress exits required */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Minimum %d means of egress required.', 'mcp-ai-wpoos-pro' ), $min_exits ), 'warning', __( 'Floor plan does not declare exit count.', 'mcp-ai-wpoos-pro' ) );
 				} elseif ( $plan_exits >= $min_exits ) {
+					/* translators: 1: minimum exits required, 2: actual exits provided */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Minimum %d means of egress required.', 'mcp-ai-wpoos-pro' ), $min_exits ), 'pass', sprintf( __( 'Plan provides %d exits.', 'mcp-ai-wpoos-pro' ), $plan_exits ) );
 				} else {
+					/* translators: 1: minimum exits required, 2: actual exits provided */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Minimum %d means of egress required.', 'mcp-ai-wpoos-pro' ), $min_exits ), 'fail', sprintf( __( 'Plan provides only %d exits.', 'mcp-ai-wpoos-pro' ), $plan_exits ) );
 				}
 			}
@@ -312,10 +315,13 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 			$plan_corridor = isset( $floor_plan['corridor_width_m'] ) ? (float) $floor_plan['corridor_width_m'] : 0.0;
 			if ( $min_corridor > 0 ) {
 				if ( $plan_corridor <= 0 ) {
+					/* translators: %.2f: minimum corridor width in meters */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Minimum corridor width %.2f m required.', 'mcp-ai-wpoos-pro' ), $min_corridor ), 'warning', __( 'Corridor width not provided.', 'mcp-ai-wpoos-pro' ) );
 				} elseif ( $plan_corridor + 1e-6 >= $min_corridor ) {
+					/* translators: 1: required corridor width, 2: provided corridor width */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Minimum corridor width %.2f m required.', 'mcp-ai-wpoos-pro' ), $min_corridor ), 'pass', sprintf( __( 'Provided: %.2f m.', 'mcp-ai-wpoos-pro' ), $plan_corridor ) );
 				} else {
+					/* translators: 1: required corridor width, 2: provided corridor width */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Minimum corridor width %.2f m required.', 'mcp-ai-wpoos-pro' ), $min_corridor ), 'fail', sprintf( __( 'Provided: %.2f m.', 'mcp-ai-wpoos-pro' ), $plan_corridor ) );
 				}
 			}
@@ -324,10 +330,13 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 			$plan_stair = isset( $floor_plan['stair_width_m'] ) ? (float) $floor_plan['stair_width_m'] : 0.0;
 			if ( $min_stair > 0 ) {
 				if ( $plan_stair <= 0 ) {
+					/* translators: %.2f: minimum stair width in meters */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Minimum stair width %.2f m required.', 'mcp-ai-wpoos-pro' ), $min_stair ), 'warning', __( 'Stair width not provided.', 'mcp-ai-wpoos-pro' ) );
 				} elseif ( $plan_stair + 1e-6 >= $min_stair ) {
+					/* translators: 1: required stair width, 2: provided stair width */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Minimum stair width %.2f m required.', 'mcp-ai-wpoos-pro' ), $min_stair ), 'pass', sprintf( __( 'Provided: %.2f m.', 'mcp-ai-wpoos-pro' ), $plan_stair ) );
 				} else {
+					/* translators: 1: required stair width, 2: provided stair width */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Minimum stair width %.2f m required.', 'mcp-ai-wpoos-pro' ), $min_stair ), 'fail', sprintf( __( 'Provided: %.2f m.', 'mcp-ai-wpoos-pro' ), $plan_stair ) );
 				}
 			}
@@ -336,10 +345,13 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 			$plan_travel = isset( $floor_plan['travel_distance_m'] ) ? (float) $floor_plan['travel_distance_m'] : 0.0;
 			if ( $max_travel > 0 ) {
 				if ( $plan_travel <= 0 ) {
+					/* translators: %.1f: maximum travel distance in meters */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Maximum travel distance %.1f m.', 'mcp-ai-wpoos-pro' ), $max_travel ), 'warning', __( 'Travel distance not provided.', 'mcp-ai-wpoos-pro' ) );
 				} elseif ( $plan_travel <= $max_travel + 1e-6 ) {
+					/* translators: 1: maximum travel distance, 2: provided travel distance */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Maximum travel distance %.1f m.', 'mcp-ai-wpoos-pro' ), $max_travel ), 'pass', sprintf( __( 'Provided: %.1f m.', 'mcp-ai-wpoos-pro' ), $plan_travel ) );
 				} else {
+					/* translators: 1: maximum travel distance, 2: provided travel distance */
 					$checks[] = $this->mk_check( 'egress', sprintf( __( 'Maximum travel distance %.1f m.', 'mcp-ai-wpoos-pro' ), $max_travel ), 'fail', sprintf( __( 'Provided: %.1f m.', 'mcp-ai-wpoos-pro' ), $plan_travel ) );
 				}
 			}
@@ -352,10 +364,13 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 			$plan_door = isset( $floor_plan['min_door_clear_width_mm'] ) ? (float) $floor_plan['min_door_clear_width_mm'] : 0.0;
 			if ( $min_door > 0 ) {
 				if ( $plan_door <= 0 ) {
+					/* translators: %.0f: minimum door clear width in mm */
 					$checks[] = $this->mk_check( 'accessibility', sprintf( __( 'Minimum door clear width %.0f mm required.', 'mcp-ai-wpoos-pro' ), $min_door ), 'warning', __( 'Minimum door width not provided.', 'mcp-ai-wpoos-pro' ) );
 				} elseif ( $plan_door + 1e-6 >= $min_door ) {
+					/* translators: 1: required door width, 2: provided door width */
 					$checks[] = $this->mk_check( 'accessibility', sprintf( __( 'Minimum door clear width %.0f mm required.', 'mcp-ai-wpoos-pro' ), $min_door ), 'pass', sprintf( __( 'Provided: %.0f mm.', 'mcp-ai-wpoos-pro' ), $plan_door ) );
 				} else {
+					/* translators: 1: required door width, 2: provided door width */
 					$checks[] = $this->mk_check( 'accessibility', sprintf( __( 'Minimum door clear width %.0f mm required.', 'mcp-ai-wpoos-pro' ), $min_door ), 'fail', sprintf( __( 'Provided: %.0f mm.', 'mcp-ai-wpoos-pro' ), $plan_door ) );
 				}
 			}
@@ -364,8 +379,10 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 			$plan_slope = isset( $floor_plan['ramp_slope_ratio'] ) ? (float) $floor_plan['ramp_slope_ratio'] : 0.0;
 			if ( $max_slope > 0 && $plan_slope > 0 ) {
 				if ( $plan_slope <= $max_slope + 1e-9 ) {
+					/* translators: 1: maximum ramp slope ratio, 2: provided ramp slope ratio */
 					$checks[] = $this->mk_check( 'accessibility', sprintf( __( 'Maximum ramp slope 1:%.0f.', 'mcp-ai-wpoos-pro' ), 1.0 / $max_slope ), 'pass', sprintf( __( 'Provided: 1:%.1f.', 'mcp-ai-wpoos-pro' ), 1.0 / $plan_slope ) );
 				} else {
+					/* translators: 1: maximum ramp slope ratio, 2: provided ramp slope ratio */
 					$checks[] = $this->mk_check( 'accessibility', sprintf( __( 'Maximum ramp slope 1:%.0f.', 'mcp-ai-wpoos-pro' ), 1.0 / $max_slope ), 'fail', sprintf( __( 'Provided: 1:%.1f.', 'mcp-ai-wpoos-pro' ), 1.0 / $plan_slope ) );
 				}
 			}
@@ -379,13 +396,16 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 			if ( $sprinkler_at > 0 && $plan_height > 0 ) {
 				if ( $plan_height >= $sprinkler_at ) {
 					$has      = ! empty( $floor_plan['sprinklered'] );
+					/* translators: %.1f: sprinkler trigger height in meters */
 					$checks[] = $this->mk_check( 'fire_safety', sprintf( __( 'Sprinklers required for buildings ≥ %.1f m.', 'mcp-ai-wpoos-pro' ), $sprinkler_at ), $has ? 'pass' : 'fail', $has ? __( 'Plan declares sprinkler system.', 'mcp-ai-wpoos-pro' ) : __( 'Plan does not declare a sprinkler system.', 'mcp-ai-wpoos-pro' ) );
 				} else {
+					/* translators: %.1f: sprinkler trigger height in meters */
 					$checks[] = $this->mk_check( 'fire_safety', sprintf( __( 'Sprinklers required for buildings ≥ %.1f m.', 'mcp-ai-wpoos-pro' ), $sprinkler_at ), 'pass', __( 'Below sprinkler-trigger height.', 'mcp-ai-wpoos-pro' ) );
 				}
 			}
 			$min_rating = isset( $rules['min_wall_rating_min'] ) ? (int) $rules['min_wall_rating_min'] : 0;
 			if ( $min_rating > 0 ) {
+				/* translators: %d: minimum wall fire rating in minutes */
 				$checks[] = $this->mk_check( 'fire_safety', sprintf( __( 'Minimum wall fire rating %d minutes.', 'mcp-ai-wpoos-pro' ), $min_rating ), 'warning', __( 'Verify wall ratings against jurisdictional schedule.', 'mcp-ai-wpoos-pro' ) );
 			}
 		}
@@ -407,8 +427,10 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 				$far_actual = WP_MCP_AI_Architectural_Engine::calculate_far( $built_up, $lot_area );
 				if ( $far_max > 0 ) {
 					if ( $far_actual <= $far_max + 1e-6 ) {
+						/* translators: 1: maximum FAR value, 2: calculated FAR value */
 						$checks[] = $this->mk_check( 'zoning', sprintf( __( 'Maximum FAR %.2f.', 'mcp-ai-wpoos-pro' ), $far_max ), 'pass', sprintf( __( 'Calculated: %.2f.', 'mcp-ai-wpoos-pro' ), $far_actual ) );
 					} else {
+						/* translators: 1: maximum FAR value, 2: calculated FAR value */
 						$checks[] = $this->mk_check( 'zoning', sprintf( __( 'Maximum FAR %.2f.', 'mcp-ai-wpoos-pro' ), $far_max ), 'fail', sprintf( __( 'Calculated: %.2f — reduce floor area or increase lot.', 'mcp-ai-wpoos-pro' ), $far_actual ) );
 					}
 				}
@@ -419,8 +441,10 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 				$cov_actual = WP_MCP_AI_Architectural_Engine::calculate_site_coverage( $footprint, $lot_area );
 				if ( $cov_max > 0 ) {
 					if ( $cov_actual <= $cov_max + 1e-6 ) {
+						/* translators: 1: maximum site coverage, 2: calculated site coverage */
 						$checks[] = $this->mk_check( 'zoning', sprintf( __( 'Maximum site coverage %.0f%%.', 'mcp-ai-wpoos-pro' ), $cov_max ), 'pass', sprintf( __( 'Calculated: %.1f%%.', 'mcp-ai-wpoos-pro' ), $cov_actual ) );
 					} else {
+						/* translators: 1: maximum site coverage, 2: calculated site coverage */
 						$checks[] = $this->mk_check( 'zoning', sprintf( __( 'Maximum site coverage %.0f%%.', 'mcp-ai-wpoos-pro' ), $cov_max ), 'fail', sprintf( __( 'Calculated: %.1f%%.', 'mcp-ai-wpoos-pro' ), $cov_actual ) );
 					}
 				}
@@ -441,9 +465,11 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 					foreach ( $result['violations'] as $v ) {
 						$checks[] = $this->mk_check(
 							'zoning',
-							sprintf( __( 'Minimum %s setback %.2f m.', 'mcp-ai-wpoos-pro' ), $v['side'], $v['required'] ),
+							/* translators: %1$s: setback side (front/rear/left/right), %2$.2f: required setback in meters */
+							sprintf( __( 'Minimum %1$s setback %2$.2f m.', 'mcp-ai-wpoos-pro' ), $v['side'], $v['required'] ),
 							'fail',
-							sprintf( __( 'Provided: %.2f m (short by %.2f m).', 'mcp-ai-wpoos-pro' ), $v['proposed'], $v['shortfall'] )
+							/* translators: %1$.2f: provided setback in meters, %2$.2f: shortfall in meters */
+							sprintf( __( 'Provided: %1$.2f m (short by %2$.2f m).', 'mcp-ai-wpoos-pro' ), $v['proposed'], $v['shortfall'] )
 						);
 					}
 				}
@@ -454,9 +480,11 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 		if ( in_array( 'structural', $check_categories, true ) && ! empty( $merged_rules['structural'] ) ) {
 			$rules = $merged_rules['structural'];
 			if ( ! empty( $rules['wind_standard'] ) ) {
+				/* translators: %s: wind design standard name */
 				$checks[] = $this->mk_check( 'structural', sprintf( __( 'Wind design per %s.', 'mcp-ai-wpoos-pro' ), $rules['wind_standard'] ), 'warning', __( 'Engage structural engineer for wind-load verification.', 'mcp-ai-wpoos-pro' ) );
 			}
 			if ( ! empty( $rules['seismic_standard'] ) ) {
+				/* translators: %s: seismic design standard name */
 				$checks[] = $this->mk_check( 'structural', sprintf( __( 'Seismic design per %s.', 'mcp-ai-wpoos-pro' ), $rules['seismic_standard'] ), 'warning', __( 'Engage structural engineer for seismic-load verification.', 'mcp-ai-wpoos-pro' ) );
 			}
 			if ( ! empty( $rules['opening_protection_required'] ) ) {
@@ -472,10 +500,13 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 			$min_ach  = isset( $rules['min_ach'] ) ? (float) $rules['min_ach'] : 0.0;
 			if ( $min_ach > 0 ) {
 				if ( $plan_ach <= 0 ) {
+					/* translators: %.1f: minimum air changes per hour */
 					$checks[] = $this->mk_check( 'energy', sprintf( __( 'Minimum %.1f air changes per hour.', 'mcp-ai-wpoos-pro' ), $min_ach ), 'warning', __( 'ACH not provided.', 'mcp-ai-wpoos-pro' ) );
 				} elseif ( $plan_ach + 1e-6 >= $min_ach ) {
+					/* translators: 1: minimum ACH, 2: provided ACH */
 					$checks[] = $this->mk_check( 'energy', sprintf( __( 'Minimum %.1f air changes per hour.', 'mcp-ai-wpoos-pro' ), $min_ach ), 'pass', sprintf( __( 'Provided: %.1f ACH.', 'mcp-ai-wpoos-pro' ), $plan_ach ) );
 				} else {
+					/* translators: 1: minimum ACH, 2: provided ACH */
 					$checks[] = $this->mk_check( 'energy', sprintf( __( 'Minimum %.1f air changes per hour.', 'mcp-ai-wpoos-pro' ), $min_ach ), 'fail', sprintf( __( 'Provided: %.1f ACH.', 'mcp-ai-wpoos-pro' ), $plan_ach ) );
 				}
 			}

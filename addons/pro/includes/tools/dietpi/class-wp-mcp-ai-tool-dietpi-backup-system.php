@@ -122,7 +122,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Backup_System' ) ) {
 					}
 
 					return $this->success(
-						sprintf( _n( 'Found %d backup.', 'Found %d backups.', count( $backups ), 'mcp-ai-wpoos-pro' ), count( $backups ) ),
+						sprintf(
+							/* translators: %d: number of backups */
+							_n( 'Found %d backup.', 'Found %d backups.', count( $backups ), 'mcp-ai-wpoos-pro' ),
+							count( $backups )
+						),
 						array(
 							'backup_directory' => $backup_dir,
 							'backups'          => $backups,
@@ -148,7 +152,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Backup_System' ) ) {
 
 					return $this->success(
 						$success
-							? sprintf( __( '%s backup completed successfully.', 'mcp-ai-wpoos-pro' ), 'full' === $backup_type ? __( 'Full system', 'mcp-ai-wpoos-pro' ) : __( 'App data', 'mcp-ai-wpoos-pro' ) )
+							? sprintf(
+								/* translators: %s: backup type (full system or app data) */
+								__( '%s backup completed successfully.', 'mcp-ai-wpoos-pro' ),
+								'full' === $backup_type ? __( 'Full system', 'mcp-ai-wpoos-pro' ) : __( 'App data', 'mcp-ai-wpoos-pro' )
+							)
 							: __( 'Backup completed with warnings. Check stderr for details.', 'mcp-ai-wpoos-pro' ),
 						array(
 							'backup_type' => $backup_type,

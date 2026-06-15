@@ -3614,7 +3614,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			do {
 				$result = WP_MCP_AI_Profession_Playbook_Seeder::delete_orphaned_system_playbooks( $batch_limit );
 
-				$total_deleted     += $result['deleted_count'];
+				$total_deleted += $result['deleted_count'];
 				++$batches_processed;
 
 				if ( $result['deleted_count'] < $batch_limit ) {
@@ -3626,7 +3626,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Older plugin versions may have created playbook attachments without
 			// _wp_mcp_ai_playbook_hash.  If the primary path found nothing, try a
 			// broader (but still guarded) sweep limited to a reasonable batch.
-			if ( $total_deleted === 0 ) {
+			if ( 0 === $total_deleted ) {
 				global $wpdb;
 
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
@@ -3656,8 +3656,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 				if ( ! empty( $legacy_ids ) ) {
 					foreach ( $legacy_ids as $legacy_id ) {
-						$legacy_id  = absint( $legacy_id );
-						$file_path  = get_attached_file( $legacy_id );
+						$legacy_id = absint( $legacy_id );
+						$file_path = get_attached_file( $legacy_id );
 
 						// Guard: only delete if the physical file lives in our directory.
 						if ( $file_path && false !== strpos( $file_path, 'wp-mcp-ai/profession-playbooks' ) ) {
@@ -3669,7 +3669,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				}
 			}
 
-			if ( $total_deleted === 0 ) {
+			if ( 0 === $total_deleted ) {
 				wp_send_json_success(
 					array(
 						'message' => __( 'No orphaned playbook attachments found to delete.', 'mcp-ai-wpoos' ),

@@ -210,7 +210,11 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 
 		return array(
 			'success'    => true,
-			'message'    => sprintf( __( 'Found %d citations. ', 'mcp-ai-wpoos-pro' ), count( $unique ) ) . self::DISCLAIMER,
+			'message'    => sprintf(
+				/* translators: %d: number of citations found */
+				__( 'Found %d citations. ', 'mcp-ai-wpoos-pro' ),
+				count( $unique )
+			) . self::DISCLAIMER,
 			'data'       => array(
 				'citations_found'       => $unique,
 				'total_citations'       => count( $unique ),

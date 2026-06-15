@@ -128,12 +128,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $gemini_models ) ) {
 				$gemini_models = array(
-						'gemini-3.5-flash'      => 'Gemini 3.5 Flash (Recommended)',
-						'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
-						'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite (Budget)',
-						'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
-						'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
-					);
+					'gemini-3.5-flash'      => 'Gemini 3.5 Flash (Recommended)',
+					'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
+					'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite (Budget)',
+					'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
+					'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
+				);
 			}
 
 			// Get Cloudflare models from Model Config.
@@ -732,7 +732,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'9:16' => '9:16 (Vertical)',
 						'16:9' => '16:9 (Widescreen)',
 					),
-				'default'     => '4:3',
+					'default'     => '4:3',
 				),
 				'gemini_video_model'                 => array(
 					'type'        => 'select',
@@ -746,15 +746,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => 'gemini-omni-flash',
 				),
 				'gemini_video_resolution'            => array(
-						'type'        => 'select',
-						'label'       => __( 'Gemini Video Resolution', 'mcp-ai-wpoos' ),
-						'description' => __( 'Default resolution for Gemini-generated videos. 720p is supported by all models and works for all aspect ratios. 1080p requires Omni Flash or Veo 3.1, 16:9 aspect ratio, and exactly 8 seconds duration. Note: Veo 2.0 always outputs 720p regardless of this setting.', 'mcp-ai-wpoos' ),
-						'options'     => array(
-							'720p'  => '720p (All models, all durations)',
-							'1080p' => '1080p (Omni/Veo 3.1, 16:9, 8s required)',
-						),
-						'default'     => '720p',
+					'type'        => 'select',
+					'label'       => __( 'Gemini Video Resolution', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default resolution for Gemini-generated videos. 720p is supported by all models and works for all aspect ratios. 1080p requires Omni Flash or Veo 3.1, 16:9 aspect ratio, and exactly 8 seconds duration. Note: Veo 2.0 always outputs 720p regardless of this setting.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'720p'  => '720p (All models, all durations)',
+						'1080p' => '1080p (Omni/Veo 3.1, 16:9, 8s required)',
 					),
+					'default'     => '720p',
+				),
 				'gemini_video_aspect_ratio'          => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Aspect Ratio', 'mcp-ai-wpoos' ),
@@ -766,19 +766,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '16:9',
 				),
 				'gemini_video_duration'              => array(
-						'type'        => 'select',
-						'label'       => __( 'Gemini Video Duration', 'mcp-ai-wpoos' ),
-						'description' => __( 'Default duration for Gemini-generated videos in seconds. Gemini Omni Flash supports up to 10 seconds (native audio included). Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
-						'options'     => array(
-							'4'  => '4 seconds (Veo 3.1/Omni)',
-							'5'  => '5 seconds',
-							'6'  => '6 seconds',
-							'7'  => '7 seconds',
-							'8'  => '8 seconds (Required for 1080p)',
-							'10' => '10 seconds (Omni Flash only)',
-						),
-						'default'     => '5',
+					'type'        => 'select',
+					'label'       => __( 'Gemini Video Duration', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default duration for Gemini-generated videos in seconds. Gemini Omni Flash supports up to 10 seconds (native audio included). Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'4'  => '4 seconds (Veo 3.1/Omni)',
+						'5'  => '5 seconds',
+						'6'  => '6 seconds',
+						'7'  => '7 seconds',
+						'8'  => '8 seconds (Required for 1080p)',
+						'10' => '10 seconds (Omni Flash only)',
 					),
+					'default'     => '5',
+				),
 
 				// Gemini Caching Settings.
 				'enable_gemini_api_caching'          => array(

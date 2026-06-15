@@ -212,7 +212,7 @@ class WP_MCP_AI_Tool_Export_Comic_Cbz implements WP_MCP_AI_Tool_Interface, WP_MC
 			$panel_files[] = array(
 				'panel_id'  => $pid,
 				'file_path' => '',
-				'image_url' => $image_url ?: '',
+				'image_url' => $image_url ? $image_url : '',
 				'order'     => $index + 1,
 			);
 		}
@@ -323,9 +323,9 @@ class WP_MCP_AI_Tool_Export_Comic_Cbz implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	private function generate_comic_info_xml( $comic_post, $panel_count ) {
 		$title  = esc_xml( $comic_post->post_title );
-		$genre  = esc_xml( get_post_meta( $comic_post->ID, '_comic_genre', true ) ?: '' );
-		$style  = esc_xml( get_post_meta( $comic_post->ID, '_comic_style', true ) ?: '' );
-		$premise = esc_xml( get_post_meta( $comic_post->ID, '_comic_premise', true ) ?: '' );
+		$genre  = esc_xml( get_post_meta( $comic_post->ID, '_comic_genre', true ) ? get_post_meta( $comic_post->ID, '_comic_genre', true ) : '' );
+		$style  = esc_xml( get_post_meta( $comic_post->ID, '_comic_style', true ) ? get_post_meta( $comic_post->ID, '_comic_style', true ) : '' );
+		$premise = esc_xml( get_post_meta( $comic_post->ID, '_comic_premise', true ) ? get_post_meta( $comic_post->ID, '_comic_premise', true ) : '' );
 
 		return sprintf(
 			'<?xml version="1.0" encoding="UTF-8"?>' . "\n" .

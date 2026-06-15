@@ -45,7 +45,7 @@ if ( $is_enabled && ! $is_base ) {
 	// Tools are located in: addons/pro/includes/tools/document-generation/.
 
 	// --- Performance optimization (QMS audit log retention, audit schema autoload) ---
-	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-dg-optimization.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-document-gen-optimization.php';
 	WP_MCP_AI_Document_Gen_Optimization::init();
 }
 

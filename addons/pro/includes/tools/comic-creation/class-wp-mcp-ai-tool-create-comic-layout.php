@@ -229,7 +229,7 @@ class WP_MCP_AI_Tool_Create_Comic_Layout implements WP_MCP_AI_Tool_Interface, WP
 
 			$panel_images[] = array(
 				'panel_id'  => $pid,
-				'image_url' => $image_url ?: '',
+				'image_url' => $image_url ? $image_url : '',
 			);
 		}
 

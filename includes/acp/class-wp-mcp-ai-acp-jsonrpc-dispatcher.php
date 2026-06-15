@@ -50,7 +50,7 @@ class WP_MCP_AI_ACP_JSONRPC_Dispatcher {
 	public function __construct( WP_MCP_AI_ACP_Session_Manager $session_manager, WP_MCP_AI_ACP_Session_Bridge $session_bridge ) {
 		$this->session_manager = $session_manager;
 		$this->session_bridge  = $session_bridge;
-		$this->chat_service    = null; // Injected on first real dispatch
+		$this->chat_service    = null; // Injected on first real dispatch.
 	}
 
 	/**
@@ -70,7 +70,7 @@ class WP_MCP_AI_ACP_JSONRPC_Dispatcher {
 	 * @return array Response array in JSON-RPC format.
 	 */
 	public function dispatch( $request ) {
-		// Validate JSON-RPC format
+		// Validate JSON-RPC format.
 		if ( ! isset( $request['jsonrpc'] ) || '2.0' !== $request['jsonrpc'] ) {
 			return $this->error_response( null, -32600, 'Invalid Request: Missing or invalid jsonrpc version' );
 		}
@@ -83,7 +83,7 @@ class WP_MCP_AI_ACP_JSONRPC_Dispatcher {
 		$params = isset( $request['params'] ) ? $request['params'] : array();
 		$id     = isset( $request['id'] ) ? $request['id'] : null;
 
-		// Route to appropriate handler method
+		// Route to appropriate handler method.
 		switch ( $method ) {
 			case 'initialize':
 				return $this->handle_initialize( $params, $id );
@@ -101,10 +101,10 @@ class WP_MCP_AI_ACP_JSONRPC_Dispatcher {
 				return $this->handle_session_list( $params, $id );
 
 			case 'session/cancel':
-				// Cancel is usually a notification, so it doesn't return a JSON-RPC result if it doesn't have an ID
+				// Cancel is usually a notification, so it doesn't return a JSON-RPC result if it doesn't have an ID.
 				$this->handle_session_cancel( $params );
 				if ( null === $id ) {
-					return null; // Notifications don't get responses
+					return null; // Notifications don't get responses.
 				}
 				return $this->success_response( $id, array( 'status' => 'cancelled' ) );
 
@@ -121,7 +121,7 @@ class WP_MCP_AI_ACP_JSONRPC_Dispatcher {
 	 * @return array JSON-RPC response.
 	 */
 	protected function handle_initialize( $params, $id ) {
-		// Capability negotiation
+		// Capability negotiation.
 		$result = array(
 			'protocolVersion'   => 1,
 			'agentCapabilities' => array(
@@ -139,7 +139,7 @@ class WP_MCP_AI_ACP_JSONRPC_Dispatcher {
 			'agentInfo'         => array(
 				'name'    => 'nv-oos',
 				'title'   => 'NV oOS Assistant',
-				'version' => '1.0.0', // Update with actual version if needed
+				'version' => '1.0.0', // Update with actual version if needed.
 			),
 			'authMethods'       => array(
 				'wp_nonce',
@@ -220,7 +220,7 @@ class WP_MCP_AI_ACP_JSONRPC_Dispatcher {
 			return $this->error_response( $id, $result->get_error_code(), $result->get_error_message() );
 		}
 
-		// Success response is usually a stopReason object
+		// Success response is usually a stopReason object.
 		return $this->success_response( $id, $result );
 	}
 

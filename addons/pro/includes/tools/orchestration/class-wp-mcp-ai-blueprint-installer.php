@@ -126,8 +126,8 @@ class WP_MCP_AI_Blueprint_Installer {
 			}
 		} else {
 			// Abstracted blueprint — two sub-formats:
-			//   CRM-style:  { name, meta: { profession, available_tools, instructions, ... } }
-			//   Flat/legacy: { name, profession, tools, instructions, ... }  (no meta wrapper)
+			// CRM-style: { name, meta: { profession, available_tools, instructions, ... } }.
+			// Flat/legacy: { name, profession, tools, instructions, ... } (no meta wrapper).
 			$raw_meta = $data['meta'] ?? array();
 
 			// If no meta wrapper but top-level keys exist, normalise flat format

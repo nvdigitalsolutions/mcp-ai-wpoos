@@ -706,14 +706,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// account bindings via its fallback that reuses old refresh tokens.
 				$oauth_credential_token_map = array(
 					// Gmail.
-					'gmail_client_id'        => array( 'gmail_refresh_token', 'gmail_user_email' ),
-					'gmail_client_secret'    => array( 'gmail_refresh_token', 'gmail_user_email' ),
+					'gmail_client_id'            => array( 'gmail_refresh_token', 'gmail_user_email' ),
+					'gmail_client_secret'        => array( 'gmail_refresh_token', 'gmail_user_email' ),
 					// Google Drive.
 					'google_drive_client_id'     => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
 					'google_drive_client_secret' => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
 					// Meta.
-					'meta_app_id'     => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
-					'meta_app_secret' => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
+					'meta_app_id'                => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
+					'meta_app_secret'            => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
 				);
 
 				foreach ( $oauth_credential_token_map as $credential_key => $token_keys ) {

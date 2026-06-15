@@ -295,10 +295,10 @@ class WP_MCP_AI_PM_Engine {
 
 		$score = (
 			( $schedule_variance * $weights['schedule_variance'] * 100 ) +
-			( $completion_rate  * $weights['task_completion_rate'] * 100 ) +
-			( $blocker_penalty  * $weights['blocker_count'] * 100 ) +
-			( $overdue_ratio    * $weights['overdue_task_ratio'] * 100 ) +
-			( $resource_health  * $weights['resource_utilization'] * 100 )
+			( $completion_rate * $weights['task_completion_rate'] * 100 ) +
+			( $blocker_penalty * $weights['blocker_count'] * 100 ) +
+			( $overdue_ratio * $weights['overdue_task_ratio'] * 100 ) +
+			( $resource_health * $weights['resource_utilization'] * 100 )
 		);
 
 		$result = array(

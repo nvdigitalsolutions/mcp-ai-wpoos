@@ -152,7 +152,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Sonarr_Series' ) ) {
 			if ( ! is_array( $lookup_result ) || empty( $lookup_result ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_not_found',
-					sprintf( __( 'No series found for "%s".', 'mcp-ai-wpoos-pro' ), $term )
+					sprintf(
+						/* translators: %s: search term */
+						__( 'No series found for "%s".', 'mcp-ai-wpoos-pro' ),
+						$term
+					)
 				);
 			}
 			$selected = $lookup_result[0];
@@ -189,7 +193,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Sonarr_Series' ) ) {
 				return $add_result;
 			}
 			return $this->success(
-				sprintf( __( 'Series "%s" added to Sonarr.', 'mcp-ai-wpoos-pro' ), $selected['title'] ),
+				sprintf(
+					/* translators: %s: series title */
+					__( 'Series "%s" added to Sonarr.', 'mcp-ai-wpoos-pro' ),
+					$selected['title']
+				),
 				array( 'series' => $add_result )
 			);
 		}

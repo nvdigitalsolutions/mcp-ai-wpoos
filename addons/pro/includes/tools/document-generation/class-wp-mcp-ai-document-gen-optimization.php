@@ -142,4 +142,3 @@ class WP_MCP_AI_Document_Gen_Optimization {
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
 	}
 }
-
