@@ -11312,6 +11312,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Fallback: compute cost from tokens when the tool result includes
+			// provider/model/usage but no explicit cost. This covers tools that
+			// call external APIs (e.g. a DeepSeek assistant running a Gemini
+			// search tool) where the tool returns usage data but does not compute
+			// its own cost.
+			if ( ! isset( $usage_info['cost_usd'] ) && ! empty( $usage_info['provider'] ) && ! empty( $usage_info['model'] ) && class_exists( 'WP_MCP_AI_Cost_Calculator' ) ) {
+				$computed_cost = WP_MCP_AI_Cost_Calculator::calculate_cost(
+					$usage_info['provider'],
+					$usage_info['model'],
+					$prompt_tokens,
+					$completion_tokens
+				);
+				if ( $computed_cost > 0.0 ) {
+					$usage_info['cost_usd']           = $computed_cost;
+					$usage_info['cost_is_calculated'] = true;
+				}
+			}
+
 			return $usage_info;
 		}
 
