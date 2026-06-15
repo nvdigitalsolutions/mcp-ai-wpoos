@@ -63,6 +63,17 @@ class WP_MCP_AI_CRM_Optimization {
 	const DEFAULT_MESSAGE_RETENTION_DAYS = 90;
 
 	/**
+	 * Default suppressed lead retention in days.
+	 *
+	 * After this many days a pseudonymised (suppressed) lead is
+	 * moved to trash.  WordPress auto-empties trash after
+	 * EMPTY_TRASH_DAYS (default 30 days).
+	 *
+	 * @var int
+	 */
+	const DEFAULT_SUPPRESSED_LEAD_RETENTION_DAYS = 90;
+
+	/**
 	 * Default audit log max entries.
 	 *
 	 * @var int
@@ -191,7 +202,10 @@ class WP_MCP_AI_CRM_Optimization {
 		// 4. Prune old CRM activities.
 		self::prune_old_activities();
 
-		// 5. Log optimization summary.
+		// 5. Prune suppressed leads past retention.
+		self::prune_suppressed_leads();
+
+		// 6. Log optimization summary.
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
 			WP_MCP_AI_CRM_Audit::record(
 				'daily_optimization_complete',
@@ -246,7 +260,7 @@ class WP_MCP_AI_CRM_Optimization {
 		$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$retention_days} days" ) );
 
 		// Query old messages in batches to avoid long-running queries.
-		$batch_size = 100;
+		$batch_size   = 100;
 		$total_pruned = 0;
 
 		do {
@@ -329,6 +343,141 @@ class WP_MCP_AI_CRM_Optimization {
 	}
 
 	/**
+	 * Prune suppressed leads past the retention period.
+	 *
+	 * Leads marked with lifecycle_stage = 'suppressed' are moved to
+	 * trash after the configured retention (default 90 days).  Only
+	 * leads with no active associated deals are eligible — leads
+	 * tied to open pipeline deals are preserved for forecasting.
+	 *
+	 * WordPress auto-empties trash after EMPTY_TRASH_DAYS (default
+	 * 30 days), providing a safety window before permanent deletion.
+	 *
+	 * @since 2.x.x
+	 */
+	private static function prune_suppressed_leads() {
+		$crm_settings = class_exists( 'WP_MCP_AI_CRM_Engine' )
+			? WP_MCP_AI_CRM_Engine::get_toolkit_settings()
+			: array();
+
+		$retention_days = isset( $crm_settings['optimization']['suppressed_lead_retention_days'] )
+			? absint( $crm_settings['optimization']['suppressed_lead_retention_days'] )
+			: self::DEFAULT_SUPPRESSED_LEAD_RETENTION_DAYS;
+
+		if ( $retention_days <= 0 ) {
+			return; // 0 = keep forever.
+		}
+
+		$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$retention_days} days" ) );
+
+		$batch_size    = 50;
+		$total_trashed = 0;
+
+		do {
+			// Query suppressed leads where _suppressed_at is before cutoff.
+			$query = new WP_Query(
+				array(
+					'post_type'      => array( 'mcp_ai_lead', 'mcp_crm_contacts' ),
+					'post_status'    => 'publish',
+					'posts_per_page' => $batch_size,
+					'fields'         => 'ids',
+					'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+						'relation' => 'AND',
+						array(
+							'key'   => 'lifecycle_stage',
+							'value' => 'suppressed',
+						),
+						array(
+							'key'     => '_suppressed_at',
+							'value'   => $cutoff,
+							'compare' => '<',
+							'type'    => 'DATETIME',
+						),
+					),
+					'no_found_rows'  => true,
+				)
+			);
+
+			$ids = $query->posts;
+			wp_reset_postdata();
+
+			if ( empty( $ids ) ) {
+				break;
+			}
+
+			foreach ( $ids as $lead_id ) {
+				// Skip leads with active associated deals.
+				if ( self::has_active_deals( $lead_id ) ) {
+					continue;
+				}
+
+				// Move to trash (soft delete).  WordPress auto-empties
+				// trash after EMPTY_TRASH_DAYS (default 30 days).
+				wp_trash_post( $lead_id );
+				++$total_trashed;
+			}
+
+			// Safety limit: 500 per run.
+			if ( $total_trashed >= 500 ) {
+				break;
+			}
+		} while ( ! empty( $ids ) );
+
+		if ( $total_trashed > 0 && class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+			WP_MCP_AI_CRM_Audit::record(
+				'suppressed_leads_pruned',
+				'lead',
+				'',
+				array(
+					'count'     => $total_trashed,
+					'retention' => $retention_days,
+				)
+			);
+		}
+	}
+
+	/**
+	 * Check whether a lead has any active (non-closed) associated deals.
+	 *
+	 * @since 2.x.x
+	 * @param int $lead_id Lead post ID.
+	 * @return bool True if the lead has at least one active deal.
+	 */
+	private static function has_active_deals( $lead_id ) {
+		$closed_stages = apply_filters(
+			'wp_mcp_ai_crm_closed_deal_stages',
+			array( 'closed_won', 'closed_lost' )
+		);
+
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_deal',
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					'relation' => 'AND',
+					array(
+						'key'   => '_lead_id',
+						'value' => $lead_id,
+					),
+					array(
+						'key'     => '_deal_stage',
+						'value'   => $closed_stages,
+						'compare' => 'NOT IN',
+					),
+				),
+				'no_found_rows'  => true,
+			)
+		);
+
+		$has_active = $query->have_posts();
+		wp_reset_postdata();
+
+		return $has_active;
+	}
+
+	/**
 	 * Compact the audit log if it exceeds the recommended size.
 	 *
 	 * @since 2.9.0
@@ -370,11 +519,14 @@ class WP_MCP_AI_CRM_Optimization {
 		}
 
 		// Sort by timestamp descending, keep newest half.
-		uasort( $map, function ( $a, $b ) {
-			$ta = isset( $a['timestamp'] ) ? (int) $a['timestamp'] : 0;
-			$tb = isset( $b['timestamp'] ) ? (int) $b['timestamp'] : 0;
-			return $tb <=> $ta;
-		} );
+		uasort(
+			$map,
+			function ( $a, $b ) {
+				$ta = isset( $a['timestamp'] ) ? (int) $a['timestamp'] : 0;
+				$tb = isset( $b['timestamp'] ) ? (int) $b['timestamp'] : 0;
+				return $tb <=> $ta;
+			}
+		);
 
 		$map = array_slice( $map, 0, WP_MCP_AI_CRM_Message_Log::DEDUP_MAX_ENTRIES / 2, true );
 		update_option( WP_MCP_AI_CRM_Message_Log::DEDUP_OPTION, $map, false );
@@ -509,14 +661,14 @@ class WP_MCP_AI_CRM_Optimization {
 		$total_autoload_bytes = 0;
 
 		foreach ( $rows as $row ) {
-			$size_bytes = (int) $row->size_bytes;
+			$size_bytes  = (int) $row->size_bytes;
 			$is_autoload = 'yes' === $row->autoload;
 
 			$report['options'][] = array(
-				'name'      => $row->option_name,
+				'name'       => $row->option_name,
 				'size_bytes' => $size_bytes,
 				'size_kb'    => round( $size_bytes / 1024, 2 ),
-				'autoload'  => $row->autoload,
+				'autoload'   => $row->autoload,
 			);
 
 			$report['total_bytes'] += $size_bytes;
@@ -527,7 +679,7 @@ class WP_MCP_AI_CRM_Optimization {
 
 			// Warn on large individual options.
 			if ( $size_bytes > self::OPTION_SIZE_WARN_BYTES ) {
-				$report['healthy'] = false;
+				$report['healthy']    = false;
 				$report['warnings'][] = sprintf(
 					/* translators: 1: option name, 2: size in KB */
 					__( 'CRM option "%1$s" is %2$s KB — consider reducing size or disabling autoload.', 'mcp-ai-wpoos-pro' ),
@@ -539,7 +691,7 @@ class WP_MCP_AI_CRM_Optimization {
 
 		// Warn on excessive total autoload.
 		if ( $total_autoload_bytes > self::AUTOLOAD_TOTAL_WARN_BYTES ) {
-			$report['healthy'] = false;
+			$report['healthy']    = false;
 			$report['warnings'][] = sprintf(
 				/* translators: %s: total autoload size in KB */
 				__( 'CRM autoloaded options total %s KB — exceeds recommended 300 KB. Some options should use no-autoload.', 'mcp-ai-wpoos-pro' ),
@@ -573,7 +725,7 @@ class WP_MCP_AI_CRM_Optimization {
 		global $wpdb;
 
 		$stats = array(
-			'cpt_counts'  => array(),
+			'cpt_counts'   => array(),
 			'option_count' => 0,
 			'option_bytes' => 0,
 		);
@@ -592,7 +744,7 @@ class WP_MCP_AI_CRM_Optimization {
 		foreach ( $crm_post_types as $pt ) {
 			if ( post_type_exists( $pt ) ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-				$count = (int) $wpdb->get_var(
+				$count                      = (int) $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status = 'publish'",
 						$pt
@@ -603,7 +755,7 @@ class WP_MCP_AI_CRM_Optimization {
 		}
 
 		// Option stats.
-		$health = self::check_option_health();
+		$health                = self::check_option_health();
 		$stats['option_count'] = count( $health['options'] );
 		$stats['option_bytes'] = $health['total_bytes'];
 
