@@ -38,7 +38,7 @@ class Test_Tool_Pro_Schedule_All_Export extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Schedule_All_Export' ) ) {
-			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-schedule-all-export.php';
+			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/wp-all-import-export/class-wp-mcp-ai-pro-tool-schedule-all-export.php';
 		}
 
 		$this->tool = new WP_MCP_AI_Pro_Tool_Schedule_All_Export();
