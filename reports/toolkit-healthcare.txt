@@ -1,0 +1,95 @@
+
+FILE: ...s\addons\pro\includes\tools\healthcare\class-wp-mcp-ai-hc-optimization.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+   1 | ERROR | [ ] Class file names should be based on the class name with
+     |       |     "class-" prepended. Expected
+     |       |     class-wp-mcp-ai-healthcare-optimization.php, but found
+     |       |     class-wp-mcp-ai-hc-optimization.php.
+ 277 | ERROR | [x] Expected 1 blank line at end of file; 2 found
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...addons\pro\includes\tools\healthcare\class-wp-mcp-ai-healthcare-engine.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 236 | ERROR | Parameter comment must end with a full stop
+--------------------------------------------------------------------------------
+
+
+FILE: ...s\addons\pro\includes\tools\healthcare\class-wp-mcp-ai-healthcare-fhir.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 44 | ERROR | Parameter comment must end with a full stop
+ 97 | ERROR | Parameter comment must end with a full stop
+--------------------------------------------------------------------------------
+
+
+FILE: ...\tools\healthcare\imaging\class-wp-mcp-ai-tool-interpret-imaging-study.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 171 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...s\tools\healthcare\imaging\class-wp-mcp-ai-tool-manage-imaging-studies.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 117 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...ncludes\tools\healthcare\interop\class-wp-mcp-ai-tool-export-fhir-data.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 463 | ERROR | Object property "$_ID" is not in valid snake_case format, try
+     |       | "$_i_d"
+ 463 | ERROR | Object property "$_ID" is not in valid snake_case format, try
+     |       | "$_i_d"
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\healthcare\vitals\class-wp-mcp-ai-tool-import-vitals.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 419 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...s\reminders-research\class-wp-mcp-ai-tool-compile-health-research-data.php
+--------------------------------------------------------------------------------
+FOUND 6 ERRORS AFFECTING 6 LINES
+--------------------------------------------------------------------------------
+ 636 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 639 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 653 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 658 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 662 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 665 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+Time: 19.67 secs; Memory: 50MB
+

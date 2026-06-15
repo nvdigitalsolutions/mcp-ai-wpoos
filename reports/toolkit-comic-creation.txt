@@ -1,0 +1,46 @@
+
+FILE: ...includes\tools\comic-creation\class-wp-mcp-ai-tool-create-comic-layout.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 232 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\comic-creation\class-wp-mcp-ai-tool-export-comic-cbz.php
+--------------------------------------------------------------------------------
+FOUND 4 ERRORS AFFECTING 4 LINES
+--------------------------------------------------------------------------------
+ 215 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 326 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 327 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 328 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+--------------------------------------------------------------------------------
+
+
+FILE: ...ncludes\tools\comic-creation\class-wp-mcp-ai-tool-generate-comic-panel.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 210 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 266 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+--------------------------------------------------------------------------------
+
+
+FILE: ...\includes\tools\comic-creation\class-wp-mcp-ai-tool-letter-comic-panel.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 209 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+--------------------------------------------------------------------------------
+
+Time: 3.17 secs; Memory: 18MB
+

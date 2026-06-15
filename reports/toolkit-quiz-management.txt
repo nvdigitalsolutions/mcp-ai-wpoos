@@ -1,0 +1,54 @@
+
+FILE: ...ns\pro\includes\tools\quiz-management\class-wp-mcp-ai-tool-create-quiz.php
+--------------------------------------------------------------------------------
+FOUND 3 ERRORS AFFECTING 3 LINES
+--------------------------------------------------------------------------------
+ 187 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 191 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 203 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...includes\tools\quiz-management\class-wp-mcp-ai-tool-get-quiz-analytics.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 521 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...o\includes\tools\quiz-management\class-wp-mcp-ai-tool-get-quiz-results.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 237 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ns\pro\includes\tools\quiz-management\class-wp-mcp-ai-tool-update-quiz.php
+--------------------------------------------------------------------------------
+FOUND 3 ERRORS AFFECTING 3 LINES
+--------------------------------------------------------------------------------
+ 209 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 213 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 225 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+Time: 3.19 secs; Memory: 26MB
+

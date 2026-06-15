@@ -1,0 +1,65 @@
+
+FILE: ...dons\pro\includes\tools\math\class-wp-mcp-ai-tool-calculate-derivative.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 170 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...addons\pro\includes\tools\math\class-wp-mcp-ai-tool-calculate-integral.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 193 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...oos\addons\pro\includes\tools\math\class-wp-mcp-ai-tool-graph-function.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 189 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...\addons\pro\includes\tools\math\class-wp-mcp-ai-tool-matrix-operations.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 147 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 200 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ddons\pro\includes\tools\math\class-wp-mcp-ai-tool-simplify-expression.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 152 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...oos\addons\pro\includes\tools\math\class-wp-mcp-ai-tool-solve-equation.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 199 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+Time: 3.16 secs; Memory: 22MB
+

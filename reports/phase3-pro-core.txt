@@ -1,0 +1,509 @@
+
+FILE: ...poos\addons\pro\includes\admin\class-wp-mcp-ai-cre-debt-dashboard-page.php
+--------------------------------------------------------------------------------
+FOUND 6 ERRORS AFFECTING 6 LINES
+--------------------------------------------------------------------------------
+ 431 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 432 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 445 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 446 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 459 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 460 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...poos\addons\pro\includes\admin\class-wp-mcp-ai-crm-command-center-page.php
+--------------------------------------------------------------------------------
+FOUND 6 ERRORS AFFECTING 6 LINES
+--------------------------------------------------------------------------------
+ 3966 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 3982 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 4032 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 4044 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 4116 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 4117 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...o\includes\admin\class-wp-mcp-ai-document-generation-cpt-settings-page.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+   1 | ERROR | Class file names should be based on the class name with "class-"
+     |       | prepended. Expected
+     |       | class-wp-mcp-ai-document-generation-settings-page.php, but found
+     |       | class-wp-mcp-ai-document-generation-cpt-settings-page.php.
+ 346 | ERROR | A function call to esc_html__() with texts containing
+     |       | placeholders was found, but was not accompanied by a
+     |       | "translators:" comment on the line above to clarify the meaning
+     |       | of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ons\pro\includes\admin\class-wp-mcp-ai-financial-account-research-page.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 390 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...\pro\includes\admin\class-wp-mcp-ai-image-production-cpt-settings-page.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+   1 | ERROR | Class file names should be based on the class name with "class-"
+     |       | prepended. Expected
+     |       | class-wp-mcp-ai-image-production-settings-page.php, but found
+     |       | class-wp-mcp-ai-image-production-cpt-settings-page.php.
+ 343 | ERROR | A function call to esc_html__() with texts containing
+     |       | placeholders was found, but was not accompanied by a
+     |       | "translators:" comment on the line above to clarify the meaning
+     |       | of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...-ai-wpoos\addons\pro\includes\admin\class-wp-mcp-ai-imaging-admin-page.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 316 | ERROR | [ ] A function call to __() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+ 694 | ERROR | [x] Multiple placeholders in translatable strings should be
+     |       |     ordered. Expected "%1$s, %2$s", but got "%s, %s" in 'All
+     |       |     endpoints are under %s and require the WP REST nonce header
+     |       |     %s.'.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...oos\addons\pro\includes\admin\class-wp-mcp-ai-pro-agent-command-center.php
+--------------------------------------------------------------------------------
+FOUND 5 ERRORS AFFECTING 5 LINES
+--------------------------------------------------------------------------------
+ 198 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 200 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 201 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 202 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 203 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...s\addons\pro\includes\admin\class-wp-mcp-ai-pro-packages-settings-page.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 150 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...os\addons\pro\includes\admin\class-wp-mcp-ai-pro-workflow-builder-page.php
+--------------------------------------------------------------------------------
+FOUND 3 ERRORS AFFECTING 3 LINES
+--------------------------------------------------------------------------------
+ 1005 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 1084 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 1172 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...os\addons\pro\includes\admin\class-wp-mcp-ai-reg-product-research-page.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1009 | ERROR | The $text parameter must be a single text string literal.
+      |       | Found: 'File: ' . basename( $file_path )
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\admin\class-wp-mcp-ai-regulatory-product-cpt-settings-page.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1 | ERROR | Class file names should be based on the class name with "class-"
+   |       | prepended. Expected
+   |       | class-wp-mcp-ai-regulatory-product-settings-page.php, but found
+   |       | class-wp-mcp-ai-regulatory-product-cpt-settings-page.php.
+--------------------------------------------------------------------------------
+
+
+FILE: ...-wpoos\addons\pro\includes\admin\class-wp-mcp-ai-toolkit-settings-base.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 8 LINES
+--------------------------------------------------------------------------------
+ 1003 | ERROR | [x] Multiple placeholders in translatable strings should be
+      |       |     ordered. Expected "%1$d, %2$d", but got "%d, %d" in '%d of
+      |       |     %d tools exposed (all)'.
+ 1003 | ERROR | [ ] All output should be run through an escaping function (see
+      |       |     the Security sections in the WordPress Developer
+      |       |     Handbooks), found '$candidate_count'.
+ 1003 | ERROR | [ ] All output should be run through an escaping function (see
+      |       |     the Security sections in the WordPress Developer
+      |       |     Handbooks), found '$candidate_count'.
+ 1006 | ERROR | [ ] All output should be run through an escaping function (see
+      |       |     the Security sections in the WordPress Developer
+      |       |     Handbooks), found '$exposed_count'.
+ 1006 | ERROR | [ ] All output should be run through an escaping function (see
+      |       |     the Security sections in the WordPress Developer
+      |       |     Handbooks), found '$candidate_count'.
+ 1028 | ERROR | [x] Opening PHP tag must be on a line by itself
+ 1141 | ERROR | [ ] All output should be run through an escaping function (see
+      |       |     the Security sections in the WordPress Developer
+      |       |     Handbooks), found '$global_rpm'.
+ 1163 | ERROR | [ ] A function call to esc_html__() with texts containing
+      |       |     placeholders was found, but was not accompanied by a
+      |       |     "translators:" comment on the line above to clarify the
+      |       |     meaning of the placeholders.
+ 1163 | ERROR | [ ] All output should be run through an escaping function (see
+      |       |     the Security sections in the WordPress Developer
+      |       |     Handbooks), found 'number_format_i18n'.
+ 1185 | ERROR | [ ] A function call to esc_html__() with texts containing
+      |       |     placeholders was found, but was not accompanied by a
+      |       |     "translators:" comment on the line above to clarify the
+      |       |     meaning of the placeholders.
+ 1185 | ERROR | [ ] All output should be run through an escaping function (see
+      |       |     the Security sections in the WordPress Developer
+      |       |     Handbooks), found '$global_mit'.
+ 1244 | ERROR | [x] Line indented incorrectly; expected 1 tabs, found 2
+ 1245 | ERROR | [x] Line indented incorrectly; expected 0 tabs, found 1
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 4 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...-tide\mcp-ai-wpoos\addons\pro\includes\class-wp-mcp-ai-comic-panel-cpt.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 316 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 316 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+--------------------------------------------------------------------------------
+
+
+FILE: ...tide\mcp-ai-wpoos\addons\pro\includes\class-wp-mcp-ai-crm-activity-cpt.php
+--------------------------------------------------------------------------------
+FOUND 4 ERRORS AFFECTING 4 LINES
+--------------------------------------------------------------------------------
+ 131 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 141 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 148 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 151 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+--------------------------------------------------------------------------------
+
+
+FILE: ...mcp-ai-wpoos\addons\pro\includes\class-wp-mcp-ai-crm-workflow-rule-cpt.php
+--------------------------------------------------------------------------------
+FOUND 5 ERRORS AFFECTING 5 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  5 | ERROR | [ ] There must be exactly one blank line after the file comment
+  8 | ERROR | [ ] Missing doc comment for class WP_MCP_AI_CRM_Workflow_Rule_CPT
+ 10 | ERROR | [ ] Missing doc comment for function init()
+ 15 | ERROR | [ ] Missing doc comment for function register_post_type()
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...\modest-tide\mcp-ai-wpoos\addons\pro\includes\class-wp-mcp-ai-deal-cpt.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 124 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 137 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+--------------------------------------------------------------------------------
+
+
+FILE: ...\modest-tide\mcp-ai-wpoos\addons\pro\includes\class-wp-mcp-ai-lead-cpt.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 209 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...tide\mcp-ai-wpoos\addons\pro\includes\class-wp-mcp-ai-memory-retention.php
+--------------------------------------------------------------------------------
+FOUND 4 ERRORS AFFECTING 4 LINES
+--------------------------------------------------------------------------------
+ 151 | ERROR | Use placeholders and $wpdb->prepare(); found interpolated
+     |       | variable {$table} at "UPDATE `{$table}` SET status = 'dormant'
+     |       | WHERE status = 'active' AND last_accessed_at < %s"
+ 202 | ERROR | Use placeholders and $wpdb->prepare(); found interpolated
+     |       | variable {$table} at "DELETE FROM `{$table}` WHERE cct_created <
+     |       | %s AND status = 'dormant' LIMIT %d"
+ 226 | ERROR | Use placeholders and $wpdb->prepare(); found interpolated
+     |       | variable {$table} at "SELECT cct_author_id, COUNT(*) AS cnt FROM
+     |       | `{$table}` WHERE cct_author_id > 0 GROUP BY cct_author_id HAVING
+     |       | cnt > %d ORDER BY cnt DESC LIMIT 20"
+ 246 | ERROR | Use placeholders and $wpdb->prepare(); found interpolated
+     |       | variable {$table} at "DELETE FROM `{$table}` WHERE cct_author_id
+     |       | = %d AND status = 'dormant' ORDER BY cct_created ASC LIMIT %d"
+--------------------------------------------------------------------------------
+
+
+FILE: ...\mcp-ai-wpoos\addons\pro\includes\class-wp-mcp-ai-pro-schedule-manager.php
+--------------------------------------------------------------------------------
+FOUND 7 ERRORS AFFECTING 7 LINES
+--------------------------------------------------------------------------------
+ 1928 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 1934 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 2363 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 2365 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 2367 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 2369 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+ 2506 | ERROR | A function call to __() with texts containing placeholders was
+      |       | found, but was not accompanied by a "translators:" comment on
+      |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...\mcp-ai-wpoos\addons\pro\includes\class-wp-mcp-ai-pro-workflow-presets.php
+--------------------------------------------------------------------------------
+FOUND 15 ERRORS AFFECTING 15 LINES
+--------------------------------------------------------------------------------
+ 3008 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3017 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3028 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3039 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3047 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3048 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3049 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3062 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3071 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3082 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3087 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3093 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3101 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3102 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+ 3103 | ERROR | [x] When a multi-item array uses associative keys, each value
+      |       |     should start on a new line.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 15 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...est-tide\mcp-ai-wpoos\addons\pro\includes\class-wp-mcp-ai-sequence-cpt.php
+--------------------------------------------------------------------------------
+FOUND 5 ERRORS AFFECTING 5 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  5 | ERROR | [ ] There must be exactly one blank line after the file comment
+  8 | ERROR | [ ] Missing doc comment for class WP_MCP_AI_Sequence_CPT
+ 10 | ERROR | [ ] Missing doc comment for function init()
+ 15 | ERROR | [ ] Missing doc comment for function register_post_type()
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...-ai-wpoos\addons\pro\includes\cli\class-wp-mcp-ai-pro-cli-base-command.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 66 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...-ai-wpoos\addons\pro\includes\dietpi\class-wp-mcp-ai-dietpi-app-client.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 89 | ERROR | Missing @throws tag in function comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...-ai-wpoos\addons\pro\includes\dietpi\class-wp-mcp-ai-dietpi-ssh-client.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 111 | ERROR | Missing @throws tag in function comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...addons\pro\includes\mcp-servers\servers\class-wp-mcp-ai-eca-mcp-server.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1 | ERROR | Class file names should be based on the class name with "class-"
+   |       | prepended. Expected class-wp-mcp-ai-eca-management-mcp-server.php,
+   |       | but found class-wp-mcp-ai-eca-mcp-server.php.
+--------------------------------------------------------------------------------
+
+
+FILE: ...udes\mcp-servers\servers\class-wp-mcp-ai-extended-cognition-mcp-server.php
+--------------------------------------------------------------------------------
+FOUND 3 ERRORS AFFECTING 3 LINES
+--------------------------------------------------------------------------------
+ 77 | ERROR | [x] Multi-line function call not indented correctly; expected 12
+    |       |     spaces but found 16
+ 78 | ERROR | [x] Multi-line function call not indented correctly; expected 12
+    |       |     spaces but found 16
+ 90 | ERROR | [x] Multi-line function call not indented correctly; expected 8
+    |       |     spaces but found 12
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 3 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...dons\pro\includes\mcp-servers\servers\class-wp-mcp-ai-media-mcp-server.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1 | ERROR | Class file names should be based on the class name with "class-"
+   |       | prepended. Expected class-wp-mcp-ai-media-toolkit-mcp-server.php,
+   |       | but found class-wp-mcp-ai-media-mcp-server.php.
+--------------------------------------------------------------------------------
+
+
+FILE: ...cludes\mcp-servers\servers\class-wp-mcp-ai-video-production-mcp-server.php
+--------------------------------------------------------------------------------
+FOUND 7 ERRORS AFFECTING 7 LINES
+--------------------------------------------------------------------------------
+ 87 | ERROR | [x] Array item not aligned correctly; expected 16 spaces but
+    |       |     found 20
+ 88 | ERROR | [x] Array item not aligned correctly; expected 16 spaces but
+    |       |     found 20
+ 89 | ERROR | [x] Array item not aligned correctly; expected 16 spaces but
+    |       |     found 20
+ 90 | ERROR | [x] Array item not aligned correctly; expected 16 spaces but
+    |       |     found 20
+ 91 | ERROR | [x] Array item not aligned correctly; expected 16 spaces but
+    |       |     found 20
+ 92 | ERROR | [x] Multi-line array item not aligned correctly; expected 16
+    |       |     spaces, but found 20
+ 93 | ERROR | [x] Array item not aligned correctly; expected 16 spaces but
+    |       |     found 20
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 7 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...s\addons\pro\includes\metaboxes\class-wp-mcp-ai-quiz-metabox-questions.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 119 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...oos\addons\pro\includes\rest\class-wp-mcp-ai-icloud-webhook-controller.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 42 | ERROR | Class name is not valid; consider
+    |       | WP_MCP_AI_ICloud_Webhook_Controller instead
+--------------------------------------------------------------------------------
+
+
+FILE: ...poos\addons\pro\includes\rest\class-wp-mcp-ai-nv-cloud-rest-controller.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1 | ERROR | Class file names should be based on the class name with "class-"
+   |       | prepended. Expected class-wp-mcp-ai-rest-nv-cloud-controller.php,
+   |       | but found class-wp-mcp-ai-nv-cloud-rest-controller.php.
+--------------------------------------------------------------------------------
+
+
+FILE: ...s\addons\pro\includes\rest\class-wp-mcp-ai-telegram-mini-app-templates.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1 | ERROR | Class file names should be based on the class name with "class-"
+   |       | prepended. Expected
+   |       | class-wp-mcp-ai-telegram-mini-app-template-base.php, but found
+   |       | class-wp-mcp-ai-telegram-mini-app-templates.php.
+--------------------------------------------------------------------------------
+
+Time: 2 mins, 6.3 secs; Memory: 202MB
+

@@ -1,0 +1,132 @@
+
+FILE: ...s\pro\includes\tools\orchestration\class-wp-mcp-ai-blueprint-installer.php
+--------------------------------------------------------------------------------
+FOUND 3 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 129 | ERROR | [x] Expected 1 space before comment text but found 3; use block
+     |       |     comment if you need indentation
+ 130 | ERROR | [x] Expected 1 space before comment text but found 3; use block
+     |       |     comment if you need indentation
+ 130 | ERROR | [ ] Inline comments must end in full-stops, exclamation marks,
+     |       |     or question marks
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 2 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...des\tools\orchestration\class-wp-mcp-ai-pro-tool-analyze-data-patterns.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+  60 | ERROR | Doc comment for parameter "$context" missing
+ 108 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...hestration\class-wp-mcp-ai-pro-tool-configure-schedule-widget-defaults.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 114 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...ludes\tools\orchestration\class-wp-mcp-ai-pro-tool-create-pro-schedule.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 267 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...ludes\tools\orchestration\class-wp-mcp-ai-pro-tool-delete-pro-schedule.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 74 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...udes\tools\orchestration\class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 84 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...\tools\orchestration\class-wp-mcp-ai-pro-tool-generate-research-report.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 144 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...ools\orchestration\class-wp-mcp-ai-pro-tool-get-schedule-latest-result.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 78 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...\tools\orchestration\class-wp-mcp-ai-pro-tool-get-schedule-run-history.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 81 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...cludes\tools\orchestration\class-wp-mcp-ai-pro-tool-list-pro-schedules.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 82 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...ls\orchestration\class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 149 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...es\tools\orchestration\class-wp-mcp-ai-pro-tool-render-schedule-result.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 100 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...ools\orchestration\class-wp-mcp-ai-pro-tool-schedule-channel-broadcast.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 118 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...ludes\tools\orchestration\class-wp-mcp-ai-pro-tool-update-pro-schedule.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 178 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+
+FILE: ...cludes\tools\orchestration\class-wp-mcp-ai-pro-tool-verify-information.php
+--------------------------------------------------------------------------------
+FOUND 3 ERRORS AFFECTING 3 LINES
+--------------------------------------------------------------------------------
+  69 | ERROR | Doc comment for parameter "$context" missing
+ 149 | ERROR | Superfluous parameter comment
+ 150 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+Time: 7.94 secs; Memory: 26MB
+

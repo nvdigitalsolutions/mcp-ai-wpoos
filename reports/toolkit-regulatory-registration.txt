@@ -1,0 +1,169 @@
+
+FILE: ...egulatory-registration\class-wp-mcp-ai-tool-add-regulatory-requirement.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 122 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...ludes\tools\regulatory-registration\class-wp-mcp-ai-tool-check-hs-code.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 92 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...\regulatory-registration\class-wp-mcp-ai-tool-check-product-compliance.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 105 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...ols\regulatory-registration\class-wp-mcp-ai-tool-duplicate-reg-product.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 112 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...\regulatory-registration\class-wp-mcp-ai-tool-generate-submission-pack.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 106 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...es\tools\regulatory-registration\class-wp-mcp-ai-tool-get-reg-document.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 101 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...regulatory-registration\class-wp-mcp-ai-tool-get-registration-timeline.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 91 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...gulatory-registration\class-wp-mcp-ai-tool-get-regulatory-requirements.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 121 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...ls\regulatory-registration\class-wp-mcp-ai-tool-get-regulatory-updates.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 115 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...tory-registration\class-wp-mcp-ai-tool-import-registrations-from-excel.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 231 | ERROR | get_page_by_title() has been deprecated since WordPress version
+     |       | 6.2.0. Use WP_Query instead.
+--------------------------------------------------------------------------------
+
+
+FILE: ...latory-registration\class-wp-mcp-ai-tool-list-registrations-by-country.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 99 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...\tools\regulatory-registration\class-wp-mcp-ai-tool-renew-registration.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 96 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...tory-registration\class-wp-mcp-ai-tool-send-status-change-notification.php
+--------------------------------------------------------------------------------
+FOUND 5 ERRORS AFFECTING 5 LINES
+--------------------------------------------------------------------------------
+ 176 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 177 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 179 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 180 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 182 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ls\regulatory-registration\class-wp-mcp-ai-tool-track-document-version.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 106 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...tools\regulatory-registration\class-wp-mcp-ai-tool-update-reg-document.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 117 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...tools\regulatory-registration\class-wp-mcp-ai-tool-upload-reg-document.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 132 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...gulatory-registration\class-wp-mcp-ai-tool-validate-document-checklist.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 99 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...regulatory-registration\class-wp-mcp-ai-tool-validate-inci-ingredients.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 97 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+
+FILE: ...ools\regulatory-registration\class-wp-mcp-ai-tool-validate-reg-product.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 109 | ERROR | Superfluous parameter comment
+--------------------------------------------------------------------------------
+
+Time: 12.99 secs; Memory: 28MB
+

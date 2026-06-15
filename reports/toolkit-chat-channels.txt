@@ -1,0 +1,56 @@
+
+FILE: ...ddons\pro\includes\tools\chat-channels\class-wp-mcp-ai-cc-optimization.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+   1 | ERROR | [ ] Class file names should be based on the class name with
+     |       |     "class-" prepended. Expected
+     |       |     class-wp-mcp-ai-chat-channels-optimization.php, but found
+     |       |     class-wp-mcp-ai-cc-optimization.php.
+ 332 | ERROR | [x] Expected 1 blank line at end of file; 2 found
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...des\tools\chat-channels\class-wp-mcp-ai-pro-tool-get-icloud-drive-file.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 29 | ERROR | Class name is not valid; consider
+    |       | WP_MCP_AI_Pro_Tool_Get_ICloud_Drive_File instead
+--------------------------------------------------------------------------------
+
+
+FILE: ...s\tools\chat-channels\class-wp-mcp-ai-pro-tool-list-icloud-drive-files.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 29 | ERROR | Class name is not valid; consider
+    |       | WP_MCP_AI_Pro_Tool_List_ICloud_Drive_Files instead
+--------------------------------------------------------------------------------
+
+
+FILE: ...tools\chat-channels\class-wp-mcp-ai-pro-tool-send-whatsapp-interactive.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 423 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 486 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...\tools\chat-channels\class-wp-mcp-ai-pro-tool-upload-icloud-drive-file.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 29 | ERROR | Class name is not valid; consider
+    |       | WP_MCP_AI_Pro_Tool_Upload_ICloud_Drive_File instead
+--------------------------------------------------------------------------------
+
+Time: 12.35 secs; Memory: 32MB
+

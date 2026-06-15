@@ -1,0 +1,46 @@
+
+FILE: ...pro\includes\tools\document-generation\class-wp-mcp-ai-dg-optimization.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+   1 | ERROR | [ ] Class file names should be based on the class name with
+     |       |     "class-" prepended. Expected
+     |       |     class-wp-mcp-ai-document-gen-optimization.php, but found
+     |       |     class-wp-mcp-ai-dg-optimization.php.
+ 144 | ERROR | [x] Expected 1 blank line at end of file; 2 found
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...cludes\tools\document-generation\class-wp-mcp-ai-tool-extract-pdf-text.php
+--------------------------------------------------------------------------------
+FOUND 4 ERRORS AFFECTING 4 LINES
+--------------------------------------------------------------------------------
+ 104 | ERROR | Missing doc comment for function get_required_capability()
+ 108 | ERROR | Missing doc comment for function execute()
+ 301 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+     |       | question marks
+ 518 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+     |       | question marks
+--------------------------------------------------------------------------------
+
+
+FILE: ...o\includes\tools\document-generation\class-wp-mcp-ai-tool-ocr-pdf-text.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 306 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+     |       | question marks
+--------------------------------------------------------------------------------
+
+
+FILE: ...cludes\tools\document-generation\class-wp-mcp-ai-tool-pro-document-ocr.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 219 | ERROR | Doc comment for parameter "$context" missing
+--------------------------------------------------------------------------------
+
+Time: 8.02 secs; Memory: 30MB
+

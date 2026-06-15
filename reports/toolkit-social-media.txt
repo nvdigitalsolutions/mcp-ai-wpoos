@@ -1,0 +1,26 @@
+
+FILE: ...es\tools\social-media\class-wp-mcp-ai-pro-tool-post-facebook-instagram.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 415 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...addons\pro\includes\tools\social-media\class-wp-mcp-ai-sm-optimization.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+   1 | ERROR | [ ] Class file names should be based on the class name with
+     |       |     "class-" prepended. Expected
+     |       |     class-wp-mcp-ai-social-media-optimization.php, but found
+     |       |     class-wp-mcp-ai-sm-optimization.php.
+ 275 | ERROR | [x] Expected 1 blank line at end of file; 2 found
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+Time: 8.99 secs; Memory: 30MB
+

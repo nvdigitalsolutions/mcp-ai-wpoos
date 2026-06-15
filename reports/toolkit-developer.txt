@@ -1,0 +1,12 @@
+
+FILE: ...\addons\pro\includes\tools\developer\class-wp-mcp-ai-tool-evaluate-eml.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 607 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+Time: 3.77 secs; Memory: 26MB
+

@@ -1,0 +1,281 @@
+
+FILE: ...pro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-add-radarr-movie.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 153 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 188 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-add-sonarr-series.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 155 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 192 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ns\pro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-backup-system.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 125 | ERROR | A function call to _n() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 151 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...\pro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-control-service.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 95 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-control-transmission.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 194 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-dashboard-summary.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+  98 | ERROR | Use Yoda Condition checks, you must.
+ 262 | ERROR | A function call to _n() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ncludes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-list-jackett-indexers.php
+--------------------------------------------------------------------------------
+FOUND 4 ERRORS AFFECTING 4 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  5 | ERROR | [ ] There must be exactly one blank line after the file comment
+ 10 | ERROR | [ ] Missing doc comment for class
+    |       |     WP_MCP_AI_Tool_DietPi_List_Jackett_Indexers
+ 89 | ERROR | [ ] A function call to _n() with texts containing placeholders
+    |       |     was found, but was not accompanied by a "translators:"
+    |       |     comment on the line above to clarify the meaning of the
+    |       |     placeholders.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...o\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-list-radarr-movies.php
+--------------------------------------------------------------------------------
+FOUND 4 ERRORS AFFECTING 4 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  5 | ERROR | [ ] There must be exactly one blank line after the file comment
+ 10 | ERROR | [ ] Missing doc comment for class
+    |       |     WP_MCP_AI_Tool_DietPi_List_Radarr_Movies
+ 92 | ERROR | [ ] A function call to _n() with texts containing placeholders
+    |       |     was found, but was not accompanied by a "translators:"
+    |       |     comment on the line above to clarify the meaning of the
+    |       |     placeholders.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...o\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-list-sonarr-series.php
+--------------------------------------------------------------------------------
+FOUND 4 ERRORS AFFECTING 4 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  5 | ERROR | [ ] There must be exactly one blank line after the file comment
+ 10 | ERROR | [ ] Missing doc comment for class
+    |       |     WP_MCP_AI_Tool_DietPi_List_Sonarr_Series
+ 95 | ERROR | [ ] A function call to _n() with texts containing placeholders
+    |       |     was found, but was not accompanied by a "translators:"
+    |       |     comment on the line above to clarify the meaning of the
+    |       |     placeholders.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-list-transmission.php
+--------------------------------------------------------------------------------
+FOUND 9 ERRORS AFFECTING 6 LINES
+--------------------------------------------------------------------------------
+   4 | ERROR | [x] There must be exactly one blank line before the tags in a
+     |       |     doc comment
+   5 | ERROR | [ ] There must be exactly one blank line after the file comment
+  10 | ERROR | [ ] Missing doc comment for class
+     |       |     WP_MCP_AI_Tool_DietPi_List_Transmission
+  91 | ERROR | [x] Opening parenthesis of a multi-line function call must be
+     |       |     the last content on the line
+  91 | ERROR | [x] Opening parenthesis of a multi-line function call must be
+     |       |     the last content on the line
+  91 | ERROR | [x] Only one argument is allowed per line in a multi-line
+     |       |     function call
+  93 | ERROR | [x] Closing parenthesis of a multi-line function call must be on
+     |       |     a line by itself
+  93 | ERROR | [x] Closing parenthesis of a multi-line function call must be on
+     |       |     a line by itself
+ 115 | ERROR | [ ] A function call to _n() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 6 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...ns\pro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-manage-radarr.php
+--------------------------------------------------------------------------------
+FOUND 6 ERRORS AFFECTING 6 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  5 | ERROR | [ ] There must be exactly one blank line after the file comment
+ 10 | ERROR | [ ] Missing doc comment for class
+    |       |     WP_MCP_AI_Tool_DietPi_Manage_Radarr
+ 85 | ERROR | [ ] A function call to _n() with texts containing placeholders
+    |       |     was found, but was not accompanied by a "translators:"
+    |       |     comment on the line above to clarify the meaning of the
+    |       |     placeholders.
+ 96 | ERROR | [x] When a multi-item array uses associative keys, each value
+    |       |     should start on a new line.
+ 97 | ERROR | [ ] A function call to __() with texts containing placeholders
+    |       |     was found, but was not accompanied by a "translators:"
+    |       |     comment on the line above to clarify the meaning of the
+    |       |     placeholders.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 2 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...ns\pro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-manage-sonarr.php
+--------------------------------------------------------------------------------
+FOUND 10 ERRORS AFFECTING 10 LINES
+--------------------------------------------------------------------------------
+   4 | ERROR | [x] There must be exactly one blank line before the tags in a
+     |       |     doc comment
+   5 | ERROR | [ ] There must be exactly one blank line after the file comment
+  10 | ERROR | [ ] Missing doc comment for class
+     |       |     WP_MCP_AI_Tool_DietPi_Manage_Sonarr
+  84 | ERROR | [x] When a multi-item array uses associative keys, each value
+     |       |     should start on a new line.
+  91 | ERROR | [x] When a multi-item array uses associative keys, each value
+     |       |     should start on a new line.
+  99 | ERROR | [x] When a multi-item array uses associative keys, each value
+     |       |     should start on a new line.
+ 100 | ERROR | [ ] A function call to __() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+ 108 | ERROR | [ ] A function call to _n() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+ 119 | ERROR | [x] When a multi-item array uses associative keys, each value
+     |       |     should start on a new line.
+ 120 | ERROR | [ ] A function call to __() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 5 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...s\pro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-manage-storage.php
+--------------------------------------------------------------------------------
+FOUND 6 ERRORS AFFECTING 4 LINES
+--------------------------------------------------------------------------------
+ 123 | ERROR | [ ] A function call to _n() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+ 159 | ERROR | [ ] A function call to __() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+ 159 | ERROR | [x] Multiple placeholders in translatable strings should be
+     |       |     ordered. Expected "%1$s, %2$s", but got "%s, %s" in 'Free
+     |       |     space on %s: %s available.'.
+ 201 | ERROR | [ ] A function call to __() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+ 201 | ERROR | [x] Multiple placeholders in translatable strings should be
+     |       |     ordered. Expected "%1$d, %2$d", but got "%d, %d" in 'Found
+     |       |     %d directories larger than %d MB.'.
+ 227 | ERROR | [ ] Using short ternaries is not allowed as they are rarely used
+     |       |     correctly
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 2 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-provision-new-app.php
+--------------------------------------------------------------------------------
+FOUND 5 ERRORS AFFECTING 3 LINES
+--------------------------------------------------------------------------------
+ 110 | ERROR | [ ] A function call to __() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+ 136 | ERROR | [ ] A function call to _n() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+ 136 | ERROR | [x] Multiple placeholders in translatable strings should be
+     |       |     ordered. Expected "%1$d, %2$s", but got "%d, %s" in 'Found
+     |       |     %d match for "%s".'.
+ 136 | ERROR | [x] Multiple placeholders in translatable strings should be
+     |       |     ordered. Expected "%1$d, %2$s", but got "%d, %s" in 'Found
+     |       |     %d matches for "%s".'.
+ 208 | ERROR | [ ] A function call to _n() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 2 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...ns\pro\includes\tools\dietpi\class-wp-mcp-ai-tool-dietpi-update-system.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 110 | ERROR | A function call to _n() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 153 | ERROR | A function call to _n() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+Time: 5.58 secs; Memory: 18MB
+

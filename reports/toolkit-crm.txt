@@ -1,0 +1,1217 @@
+
+FILE: ...cludes\tools\crm\activities\class-wp-mcp-ai-tool-complete-crm-activity.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  5 | ERROR | [ ] There must be exactly one blank line after the file comment
+  9 | ERROR | [ ] Missing doc comment for class
+    |       |     WP_MCP_AI_Tool_Complete_CRM_Activity
+ 10 | ERROR | [ ] Missing doc comment for function is_available()
+ 13 | ERROR | [ ] Missing doc comment for function get_unavailable_reason()
+ 15 | ERROR | [ ] Missing doc comment for function get_slug()
+ 17 | ERROR | [ ] Missing doc comment for function get_name()
+ 19 | ERROR | [ ] Missing doc comment for function get_description()
+ 21 | ERROR | [ ] Missing doc comment for function get_parameters_schema()
+ 31 | ERROR | [ ] Missing doc comment for function get_required_capability()
+ 33 | ERROR | [ ] Missing doc comment for function requires_base_pro()
+ 35 | ERROR | [ ] Missing doc comment for function get_capability_flags()
+ 38 | ERROR | [ ] Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...includes\tools\crm\activities\class-wp-mcp-ai-tool-create-crm-activity.php
+--------------------------------------------------------------------------------
+FOUND 11 ERRORS AFFECTING 11 LINES
+--------------------------------------------------------------------------------
+ 18 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Create_CRM_Activity
+ 20 | ERROR | Missing doc comment for function is_available()
+ 25 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 29 | ERROR | Missing doc comment for function get_slug()
+ 31 | ERROR | Missing doc comment for function get_name()
+ 33 | ERROR | Missing doc comment for function get_description()
+ 36 | ERROR | Missing doc comment for function get_parameters_schema()
+ 81 | ERROR | Missing doc comment for function get_required_capability()
+ 83 | ERROR | Missing doc comment for function requires_base_pro()
+ 85 | ERROR | Missing doc comment for function get_capability_flags()
+ 88 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\activities\class-wp-mcp-ai-tool-get-crm-activity.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  5 | ERROR | [ ] There must be exactly one blank line after the file comment
+  9 | ERROR | [ ] Missing doc comment for class WP_MCP_AI_Tool_Get_CRM_Activity
+ 10 | ERROR | [ ] Missing doc comment for function is_available()
+ 13 | ERROR | [ ] Missing doc comment for function get_unavailable_reason()
+ 15 | ERROR | [ ] Missing doc comment for function get_slug()
+ 17 | ERROR | [ ] Missing doc comment for function get_name()
+ 19 | ERROR | [ ] Missing doc comment for function get_description()
+ 21 | ERROR | [ ] Missing doc comment for function get_parameters_schema()
+ 28 | ERROR | [ ] Missing doc comment for function get_required_capability()
+ 30 | ERROR | [ ] Missing doc comment for function requires_base_pro()
+ 32 | ERROR | [ ] Missing doc comment for function get_capability_flags()
+ 35 | ERROR | [ ] Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...includes\tools\crm\activities\class-wp-mcp-ai-tool-list-crm-activities.php
+--------------------------------------------------------------------------------
+FOUND 11 ERRORS AFFECTING 11 LINES
+--------------------------------------------------------------------------------
+ 12 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_List_CRM_Activities
+ 13 | ERROR | Missing doc comment for function is_available()
+ 16 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 18 | ERROR | Missing doc comment for function get_slug()
+ 20 | ERROR | Missing doc comment for function get_name()
+ 22 | ERROR | Missing doc comment for function get_description()
+ 24 | ERROR | Missing doc comment for function get_parameters_schema()
+ 59 | ERROR | Missing doc comment for function get_required_capability()
+ 61 | ERROR | Missing doc comment for function requires_base_pro()
+ 63 | ERROR | Missing doc comment for function get_capability_flags()
+ 66 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...includes\tools\crm\activities\class-wp-mcp-ai-tool-snooze-crm-activity.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  5 | ERROR | [ ] There must be exactly one blank line after the file comment
+  9 | ERROR | [ ] Missing doc comment for class
+    |       |     WP_MCP_AI_Tool_Snooze_CRM_Activity
+ 10 | ERROR | [ ] Missing doc comment for function is_available()
+ 13 | ERROR | [ ] Missing doc comment for function get_unavailable_reason()
+ 15 | ERROR | [ ] Missing doc comment for function get_slug()
+ 17 | ERROR | [ ] Missing doc comment for function get_name()
+ 19 | ERROR | [ ] Missing doc comment for function get_description()
+ 21 | ERROR | [ ] Missing doc comment for function get_parameters_schema()
+ 34 | ERROR | [ ] Missing doc comment for function get_required_capability()
+ 36 | ERROR | [ ] Missing doc comment for function requires_base_pro()
+ 38 | ERROR | [ ] Missing doc comment for function get_capability_flags()
+ 41 | ERROR | [ ] Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...des\tools\crm\analytics\class-wp-mcp-ai-tool-forecast-pipeline-revenue.php
+--------------------------------------------------------------------------------
+FOUND 12 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  7 | ERROR | There must be exactly one blank line after the file comment
+ 11 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Forecast_Pipeline_Revenue
+ 12 | ERROR | Missing doc comment for function is_available()
+ 15 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 17 | ERROR | Missing doc comment for function get_slug()
+ 19 | ERROR | Missing doc comment for function get_name()
+ 21 | ERROR | Missing doc comment for function get_description()
+ 23 | ERROR | Missing doc comment for function get_parameters_schema()
+ 43 | ERROR | Missing doc comment for function get_required_capability()
+ 45 | ERROR | Missing doc comment for function requires_base_pro()
+ 47 | ERROR | Missing doc comment for function get_capability_flags()
+ 50 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ncludes\tools\crm\analytics\class-wp-mcp-ai-tool-get-conversion-funnel.php
+--------------------------------------------------------------------------------
+FOUND 12 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  7 | ERROR | There must be exactly one blank line after the file comment
+ 11 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Get_Conversion_Funnel
+ 12 | ERROR | Missing doc comment for function is_available()
+ 15 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 17 | ERROR | Missing doc comment for function get_slug()
+ 19 | ERROR | Missing doc comment for function get_name()
+ 21 | ERROR | Missing doc comment for function get_description()
+ 23 | ERROR | Missing doc comment for function get_parameters_schema()
+ 39 | ERROR | Missing doc comment for function get_required_capability()
+ 41 | ERROR | Missing doc comment for function requires_base_pro()
+ 43 | ERROR | Missing doc comment for function get_capability_flags()
+ 46 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\analytics\class-wp-mcp-ai-tool-get-pipeline-view.php
+--------------------------------------------------------------------------------
+FOUND 12 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  7 | ERROR | There must be exactly one blank line after the file comment
+ 11 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Get_Pipeline_View
+ 12 | ERROR | Missing doc comment for function is_available()
+ 15 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 17 | ERROR | Missing doc comment for function get_slug()
+ 19 | ERROR | Missing doc comment for function get_name()
+ 21 | ERROR | Missing doc comment for function get_description()
+ 23 | ERROR | Missing doc comment for function get_parameters_schema()
+ 41 | ERROR | Missing doc comment for function get_required_capability()
+ 43 | ERROR | Missing doc comment for function requires_base_pro()
+ 45 | ERROR | Missing doc comment for function get_capability_flags()
+ 48 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...i-wpoos\addons\pro\includes\tools\crm\class-wp-mcp-ai-crm-capabilities.php
+--------------------------------------------------------------------------------
+FOUND 8 ERRORS AFFECTING 8 LINES
+--------------------------------------------------------------------------------
+ 37 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+    |       | question marks
+ 38 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+    |       | question marks
+ 39 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+    |       | question marks
+ 40 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+    |       | question marks
+ 41 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+    |       | question marks
+ 42 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+    |       | question marks
+ 43 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+    |       | question marks
+ 44 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+    |       | question marks
+--------------------------------------------------------------------------------
+
+
+FILE: ...ai-wpoos\addons\pro\includes\tools\crm\class-wp-mcp-ai-crm-message-log.php
+--------------------------------------------------------------------------------
+FOUND 3 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 342 | ERROR | [x] Opening parenthesis of a multi-line function call must be
+     |       |     the last content on the line
+ 342 | ERROR | [x] Only one argument is allowed per line in a multi-line
+     |       |     function call
+ 344 | ERROR | [x] Closing parenthesis of a multi-line function call must be on
+     |       |     a line by itself
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 3 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...i-wpoos\addons\pro\includes\tools\crm\class-wp-mcp-ai-crm-optimization.php
+--------------------------------------------------------------------------------
+FOUND 3 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 373 | ERROR | [x] Opening parenthesis of a multi-line function call must be
+     |       |     the last content on the line
+ 373 | ERROR | [x] Only one argument is allowed per line in a multi-line
+     |       |     function call
+ 377 | ERROR | [x] Closing parenthesis of a multi-line function call must be on
+     |       |     a line by itself
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 3 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\class-wp-mcp-ai-tool-crm-email-search-accounting.php
+--------------------------------------------------------------------------------
+FOUND 21 ERRORS AFFECTING 21 LINES
+--------------------------------------------------------------------------------
+ 143 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 144 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 150 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 151 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 157 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 158 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 164 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 165 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 295 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 296 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 302 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 303 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 309 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 310 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 730 | ERROR | [x] Expected 1 space before "?"; 2 found
+ 832 | ERROR | [x] When a multi-item array uses associative keys, each value
+     |       |     should start on a new line.
+ 833 | ERROR | [x] When a multi-item array uses associative keys, each value
+     |       |     should start on a new line.
+ 834 | ERROR | [x] When a multi-item array uses associative keys, each value
+     |       |     should start on a new line.
+ 835 | ERROR | [x] When a multi-item array uses associative keys, each value
+     |       |     should start on a new line.
+ 840 | ERROR | [x] When a multi-item array uses associative keys, each value
+     |       |     should start on a new line.
+ 860 | ERROR | [x] Don't use current_time() for retrieving a Unix (UTC)
+     |       |     timestamp. Use time() instead. Found: current_time(
+     |       |     'timestamp', true )
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 21 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...ncludes\tools\crm\class-wp-mcp-ai-tool-crm-email-search-correspondence.php
+--------------------------------------------------------------------------------
+FOUND 19 ERRORS AFFECTING 19 LINES
+--------------------------------------------------------------------------------
+ 125 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 126 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 132 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 133 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 139 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 140 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 146 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 147 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 258 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 259 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 265 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 266 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 272 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 273 | ERROR | [x] Expected 5 spaces before asterisk; 1 found
+ 712 | ERROR | [x] Don't use current_time() for retrieving a Unix (UTC)
+     |       |     timestamp. Use time() instead. Found: current_time(
+     |       |     'timestamp', true )
+ 728 | ERROR | [x] Multi-line array item not aligned correctly; expected 16
+     |       |     spaces, but found 12
+ 729 | ERROR | [x] Expected 1 space before "?"; 2 found
+ 802 | ERROR | [x] Don't use current_time() for retrieving a Unix (UTC)
+     |       |     timestamp. Use time() instead. Found: current_time(
+     |       |     'timestamp', true )
+ 807 | ERROR | [x] Don't use current_time() for retrieving a Unix (UTC)
+     |       |     timestamp. Use time() instead. Found: current_time(
+     |       |     'timestamp', true )
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 19 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...ols\crm\command-center\class-wp-mcp-ai-tool-auto-route-inbound-message.php
+--------------------------------------------------------------------------------
+FOUND 14 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Auto_Route_Inbound_Message
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 30 | ERROR | Missing doc comment for function get_required_capability()
+ 32 | ERROR | Missing doc comment for function requires_base_pro()
+ 34 | ERROR | Missing doc comment for function get_capability_flags()
+ 36 | ERROR | Missing doc comment for function execute()
+ 61 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...des\tools\crm\command-center\class-wp-mcp-ai-tool-create-workflow-rule.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  5 | ERROR | [ ] There must be exactly one blank line after the file comment
+  8 | ERROR | [ ] Missing doc comment for class
+    |       |     WP_MCP_AI_Tool_Create_Workflow_Rule
+  9 | ERROR | [ ] Missing doc comment for function is_available()
+ 12 | ERROR | [ ] Missing doc comment for function get_unavailable_reason()
+ 14 | ERROR | [ ] Missing doc comment for function get_slug()
+ 16 | ERROR | [ ] Missing doc comment for function get_name()
+ 18 | ERROR | [ ] Missing doc comment for function get_description()
+ 20 | ERROR | [ ] Missing doc comment for function get_parameters_schema()
+ 53 | ERROR | [ ] Missing doc comment for function get_required_capability()
+ 55 | ERROR | [ ] Missing doc comment for function requires_base_pro()
+ 57 | ERROR | [ ] Missing doc comment for function get_capability_flags()
+ 59 | ERROR | [ ] Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...ludes\tools\crm\command-center\class-wp-mcp-ai-tool-get-owner-workload.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Get_Owner_Workload
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 27 | ERROR | Missing doc comment for function get_required_capability()
+ 29 | ERROR | Missing doc comment for function requires_base_pro()
+ 31 | ERROR | Missing doc comment for function get_capability_flags()
+ 33 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ludes\tools\crm\command-center\class-wp-mcp-ai-tool-get-workflow-inbox.php
+--------------------------------------------------------------------------------
+FOUND 14 ERRORS AFFECTING 14 LINES
+--------------------------------------------------------------------------------
+   5 | ERROR | [x] There must be exactly one blank line before the tags in a
+     |       |     doc comment
+   6 | ERROR | [ ] There must be exactly one blank line after the file comment
+   9 | ERROR | [ ] Missing doc comment for class
+     |       |     WP_MCP_AI_Tool_Get_Workflow_Inbox
+  10 | ERROR | [ ] Missing doc comment for function is_available()
+  13 | ERROR | [ ] Missing doc comment for function get_unavailable_reason()
+  15 | ERROR | [ ] Missing doc comment for function get_slug()
+  17 | ERROR | [ ] Missing doc comment for function get_name()
+  19 | ERROR | [ ] Missing doc comment for function get_description()
+  21 | ERROR | [ ] Missing doc comment for function get_parameters_schema()
+  37 | ERROR | [ ] Missing doc comment for function get_required_capability()
+  39 | ERROR | [ ] Missing doc comment for function requires_base_pro()
+  41 | ERROR | [ ] Missing doc comment for function get_capability_flags()
+  43 | ERROR | [ ] Missing doc comment for function execute()
+ 155 | ERROR | [ ] A function call to __() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...es\tools\crm\command-center\class-wp-mcp-ai-tool-manage-workflow-rules.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Manage_Workflow_Rules
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 35 | ERROR | Missing doc comment for function get_required_capability()
+ 37 | ERROR | Missing doc comment for function requires_base_pro()
+ 39 | ERROR | Missing doc comment for function get_capability_flags()
+ 41 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...s\tools\crm\command-center\class-wp-mcp-ai-tool-simulate-workflow-rule.php
+--------------------------------------------------------------------------------
+FOUND 16 ERRORS AFFECTING 15 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Simulate_Workflow_Rule
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 34 | ERROR | Missing doc comment for function get_required_capability()
+ 36 | ERROR | Missing doc comment for function requires_base_pro()
+ 38 | ERROR | Missing doc comment for function get_capability_flags()
+ 40 | ERROR | Missing doc comment for function execute()
+ 46 | ERROR | Using short ternaries is not allowed as they are rarely used
+    |       | correctly
+ 86 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+ 92 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\compliance\class-wp-mcp-ai-tool-check-dnc-status.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Check_Dnc_Status
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 29 | ERROR | Missing doc comment for function get_required_capability()
+ 31 | ERROR | Missing doc comment for function requires_base_pro()
+ 33 | ERROR | Missing doc comment for function get_capability_flags()
+ 35 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...udes\tools\crm\compliance\class-wp-mcp-ai-tool-connect-to-external-crm.php
+--------------------------------------------------------------------------------
+FOUND 17 ERRORS AFFECTING 16 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Connect_To_External_Crm
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 40 | ERROR | Missing doc comment for function get_required_capability()
+ 42 | ERROR | Missing doc comment for function requires_base_pro()
+ 44 | ERROR | Missing doc comment for function get_capability_flags()
+ 46 | ERROR | Missing doc comment for function execute()
+ 50 | ERROR | Using short ternaries is not allowed as they are rarely used
+    |       | correctly
+ 63 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+ 74 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+ 83 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...o\includes\tools\crm\compliance\class-wp-mcp-ai-tool-get-consent-audit.php
+--------------------------------------------------------------------------------
+FOUND 14 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Get_Consent_Audit
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 23 | ERROR | Missing doc comment for function get_required_capability()
+ 25 | ERROR | Missing doc comment for function requires_base_pro()
+ 27 | ERROR | Missing doc comment for function get_capability_flags()
+ 29 | ERROR | Missing doc comment for function execute()
+ 41 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...\pro\includes\tools\crm\compliance\class-wp-mcp-ai-tool-import-crm-csv.php
+--------------------------------------------------------------------------------
+FOUND 8 ERRORS AFFECTING 6 LINES
+--------------------------------------------------------------------------------
+   4 | ERROR | [x] There must be exactly one blank line before the tags in a
+     |       |     doc comment
+   5 | ERROR | [ ] There must be exactly one blank line after the file comment
+   8 | ERROR | [ ] Missing doc comment for class WP_MCP_AI_Tool_Import_CRM_Csv
+  83 | ERROR | [ ] Doc comment for parameter "$arguments" missing
+  83 | ERROR | [ ] Doc comment for parameter "$context" missing
+ 163 | ERROR | [ ] Using short ternaries is not allowed as they are rarely used
+     |       |     correctly
+ 201 | ERROR | [ ] A function call to __() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+ 201 | ERROR | [ ] A function call to __() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...pro\includes\tools\crm\compliance\class-wp-mcp-ai-tool-process-opt-out.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Process_Opt_Out
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 36 | ERROR | Missing doc comment for function get_required_capability()
+ 38 | ERROR | Missing doc comment for function requires_base_pro()
+ 40 | ERROR | Missing doc comment for function get_capability_flags()
+ 42 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...\pro\includes\tools\crm\compliance\class-wp-mcp-ai-tool-record-consent.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Record_Consent
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 39 | ERROR | Missing doc comment for function get_required_capability()
+ 41 | ERROR | Missing doc comment for function requires_base_pro()
+ 43 | ERROR | Missing doc comment for function get_capability_flags()
+ 45 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...\pro\includes\tools\crm\compliance\class-wp-mcp-ai-tool-revoke-consent.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Revoke_Consent
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 30 | ERROR | Missing doc comment for function get_required_capability()
+ 32 | ERROR | Missing doc comment for function requires_base_pro()
+ 34 | ERROR | Missing doc comment for function get_capability_flags()
+ 36 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\inbound\class-wp-mcp-ai-crm-gmail-pubsub-handler.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 2 LINES
+--------------------------------------------------------------------------------
+ 164 | ERROR | [x] When a multi-item array uses associative keys, each value
+     |       |     should start on a new line.
+ 240 | ERROR | [ ] A function call to __() with texts containing placeholders
+     |       |     was found, but was not accompanied by a "translators:"
+     |       |     comment on the line above to clarify the meaning of the
+     |       |     placeholders.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...\addons\pro\includes\tools\crm\inbound\class-wp-mcp-ai-crm-imap-client.php
+--------------------------------------------------------------------------------
+FOUND 5 ERRORS AFFECTING 5 LINES
+--------------------------------------------------------------------------------
+  99 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+     |       | question marks
+ 276 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+     |       | question marks
+ 373 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+     |       | question marks
+ 496 | ERROR | The use of strlen() inside a loop condition is not allowed;
+     |       | assign the return value to a variable and use the variable in
+     |       | the loop condition instead
+ 567 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+     |       | question marks
+--------------------------------------------------------------------------------
+
+
+FILE: ...ddons\pro\includes\tools\crm\inbound\class-wp-mcp-ai-crm-imap-listener.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 91 | ERROR | Inline comments must end in full-stops, exclamation marks, or
+    |       | question marks
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\inbound\class-wp-mcp-ai-crm-sms-webhook-listener.php
+--------------------------------------------------------------------------------
+FOUND 10 ERRORS AFFECTING 6 LINES
+--------------------------------------------------------------------------------
+  99 | ERROR | Processing form data without nonce verification.
+ 100 | ERROR | Processing form data without nonce verification.
+ 101 | ERROR | Processing form data without nonce verification.
+ 138 | ERROR | $_SERVER['HTTP_HOST'] not unslashed before sanitization. Use
+     |       | wp_unslash() or similar
+ 138 | ERROR | Detected usage of a non-sanitized input variable:
+     |       | $_SERVER['HTTP_HOST']
+ 138 | ERROR | $_SERVER['SERVER_NAME'] not unslashed before sanitization. Use
+     |       | wp_unslash() or similar
+ 138 | ERROR | Detected usage of a non-sanitized input variable:
+     |       | $_SERVER['SERVER_NAME']
+ 139 | ERROR | $_SERVER['REQUEST_URI'] not unslashed before sanitization. Use
+     |       | wp_unslash() or similar
+ 139 | ERROR | Detected usage of a non-sanitized input variable:
+     |       | $_SERVER['REQUEST_URI']
+ 142 | ERROR | Processing form data without nonce verification.
+--------------------------------------------------------------------------------
+
+
+FILE: ...cludes\tools\crm\inbound\class-wp-mcp-ai-crm-whatsapp-webhook-listener.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 144 | ERROR | Empty FOREACH statement detected
+--------------------------------------------------------------------------------
+
+
+FILE: ...ncludes\tools\crm\inbound\class-wp-mcp-ai-tool-classify-message-intent.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Classify_Message_Intent
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 29 | ERROR | Missing doc comment for function get_required_capability()
+ 31 | ERROR | Missing doc comment for function requires_base_pro()
+ 33 | ERROR | Missing doc comment for function get_capability_flags()
+ 35 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...\includes\tools\crm\inbound\class-wp-mcp-ai-tool-detect-buying-signals.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Detect_Buying_Signals
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 23 | ERROR | Missing doc comment for function get_required_capability()
+ 25 | ERROR | Missing doc comment for function requires_base_pro()
+ 27 | ERROR | Missing doc comment for function get_capability_flags()
+ 29 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...cludes\tools\crm\inbound\class-wp-mcp-ai-tool-evaluate-inbound-message.php
+--------------------------------------------------------------------------------
+FOUND 15 ERRORS AFFECTING 15 LINES
+--------------------------------------------------------------------------------
+  19 | ERROR | There must be exactly one blank line after the file comment
+  23 | ERROR | Missing doc comment for class
+     |       | WP_MCP_AI_Tool_Evaluate_Inbound_Message
+  24 | ERROR | Missing doc comment for function is_available()
+  27 | ERROR | Missing doc comment for function get_unavailable_reason()
+  29 | ERROR | Missing doc comment for function get_slug()
+  31 | ERROR | Missing doc comment for function get_name()
+  33 | ERROR | Missing doc comment for function get_description()
+  35 | ERROR | Missing doc comment for function get_parameters_schema()
+  95 | ERROR | Missing doc comment for function get_required_capability()
+  97 | ERROR | Missing doc comment for function requires_base_pro()
+  99 | ERROR | Missing doc comment for function get_capability_flags()
+ 102 | ERROR | Missing doc comment for function execute()
+ 219 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 298 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 339 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ludes\tools\crm\inbound\class-wp-mcp-ai-tool-extract-lead-from-message.php
+--------------------------------------------------------------------------------
+FOUND 14 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+   2 | ERROR | There must be exactly one blank line after the file comment
+   2 | ERROR | Missing @package tag in file comment
+   5 | ERROR | Missing doc comment for class
+     |       | WP_MCP_AI_Tool_Extract_Lead_From_Message
+   6 | ERROR | Missing doc comment for function is_available()
+   9 | ERROR | Missing doc comment for function get_unavailable_reason()
+  11 | ERROR | Missing doc comment for function get_slug()
+  13 | ERROR | Missing doc comment for function get_name()
+  15 | ERROR | Missing doc comment for function get_description()
+  17 | ERROR | Missing doc comment for function get_parameters_schema()
+  44 | ERROR | Missing doc comment for function get_required_capability()
+  46 | ERROR | Missing doc comment for function requires_base_pro()
+  48 | ERROR | Missing doc comment for function get_capability_flags()
+  50 | ERROR | Missing doc comment for function execute()
+ 110 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\inbound\class-wp-mcp-ai-tool-import-gmail-to-crm.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+  47 | ERROR | Missing doc comment for function is_available()
+  51 | ERROR | Missing doc comment for function get_unavailable_reason()
+  54 | ERROR | Missing doc comment for function get_slug()
+  57 | ERROR | Missing doc comment for function get_name()
+  60 | ERROR | Missing doc comment for function get_description()
+  63 | ERROR | Missing doc comment for function get_parameters_schema()
+  87 | ERROR | Missing doc comment for function get_required_capability()
+  90 | ERROR | Missing doc comment for function requires_base_pro()
+  93 | ERROR | Missing doc comment for function get_capability_flags()
+  96 | ERROR | Missing doc comment for function execute()
+ 134 | ERROR | Using short ternaries is not allowed as they are rarely used
+     |       | correctly
+ 499 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 607 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...\pro\includes\tools\crm\inbound\class-wp-mcp-ai-tool-qualify-lead-bant.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Qualify_Lead_Bant
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 29 | ERROR | Missing doc comment for function get_required_capability()
+ 31 | ERROR | Missing doc comment for function requires_base_pro()
+ 33 | ERROR | Missing doc comment for function get_capability_flags()
+ 35 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\inbound\class-wp-mcp-ai-tool-qualify-lead-meddic.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Qualify_Lead_Meddic
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 26 | ERROR | Missing doc comment for function get_required_capability()
+ 28 | ERROR | Missing doc comment for function requires_base_pro()
+ 30 | ERROR | Missing doc comment for function get_capability_flags()
+ 32 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...\addons\pro\includes\tools\crm\inbound\class-wp-mcp-ai-tool-score-lead.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Score_Lead
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 45 | ERROR | Missing doc comment for function get_required_capability()
+ 47 | ERROR | Missing doc comment for function requires_base_pro()
+ 49 | ERROR | Missing doc comment for function get_capability_flags()
+ 51 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\outbound\class-wp-mcp-ai-tool-auto-reply-inbound.php
+--------------------------------------------------------------------------------
+FOUND 11 ERRORS AFFECTING 11 LINES
+--------------------------------------------------------------------------------
+ 19 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Auto_Reply_Inbound
+ 21 | ERROR | Missing doc comment for function is_available()
+ 25 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 28 | ERROR | Missing doc comment for function get_slug()
+ 31 | ERROR | Missing doc comment for function get_name()
+ 34 | ERROR | Missing doc comment for function get_description()
+ 37 | ERROR | Missing doc comment for function get_parameters_schema()
+ 58 | ERROR | Missing doc comment for function get_required_capability()
+ 61 | ERROR | Missing doc comment for function requires_base_pro()
+ 64 | ERROR | Missing doc comment for function get_capability_flags()
+ 67 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...\pro\includes\tools\crm\outbound\class-wp-mcp-ai-tool-draft-lead-reply.php
+--------------------------------------------------------------------------------
+FOUND 11 ERRORS AFFECTING 11 LINES
+--------------------------------------------------------------------------------
+ 17 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Draft_Lead_Reply
+ 19 | ERROR | Missing doc comment for function is_available()
+ 23 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 26 | ERROR | Missing doc comment for function get_slug()
+ 29 | ERROR | Missing doc comment for function get_name()
+ 32 | ERROR | Missing doc comment for function get_description()
+ 35 | ERROR | Missing doc comment for function get_parameters_schema()
+ 61 | ERROR | Missing doc comment for function get_required_capability()
+ 64 | ERROR | Missing doc comment for function requires_base_pro()
+ 67 | ERROR | Missing doc comment for function get_capability_flags()
+ 70 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...\pro\includes\tools\crm\outbound\class-wp-mcp-ai-tool-log-call-outcome.php
+--------------------------------------------------------------------------------
+FOUND 14 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Log_Call_Outcome
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 32 | ERROR | Missing doc comment for function get_required_capability()
+ 34 | ERROR | Missing doc comment for function requires_base_pro()
+ 36 | ERROR | Missing doc comment for function get_capability_flags()
+ 38 | ERROR | Missing doc comment for function execute()
+ 53 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\outbound\class-wp-mcp-ai-tool-schedule-follow-up.php
+--------------------------------------------------------------------------------
+FOUND 15 ERRORS AFFECTING 14 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Schedule_Follow_Up
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 37 | ERROR | Missing doc comment for function get_required_capability()
+ 39 | ERROR | Missing doc comment for function requires_base_pro()
+ 41 | ERROR | Missing doc comment for function get_capability_flags()
+ 43 | ERROR | Missing doc comment for function execute()
+ 61 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+ 87 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...dons\pro\includes\tools\crm\outbound\class-wp-mcp-ai-tool-send-lead-dm.php
+--------------------------------------------------------------------------------
+FOUND 15 ERRORS AFFECTING 14 LINES
+--------------------------------------------------------------------------------
+  4 | ERROR | There must be exactly one blank line after the file comment
+  4 | ERROR | Missing @package tag in file comment
+  7 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Send_Lead_Dm
+  8 | ERROR | Missing doc comment for function is_available()
+ 11 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 13 | ERROR | Missing doc comment for function get_slug()
+ 15 | ERROR | Missing doc comment for function get_name()
+ 17 | ERROR | Missing doc comment for function get_description()
+ 19 | ERROR | Missing doc comment for function get_parameters_schema()
+ 33 | ERROR | Missing doc comment for function get_required_capability()
+ 35 | ERROR | Missing doc comment for function requires_base_pro()
+ 37 | ERROR | Missing doc comment for function get_capability_flags()
+ 39 | ERROR | Missing doc comment for function execute()
+ 65 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+ 80 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...s\pro\includes\tools\crm\outbound\class-wp-mcp-ai-tool-send-lead-email.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+   9 | ERROR | There must be exactly one blank line after the file comment
+  13 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Send_Lead_Email
+  14 | ERROR | Missing doc comment for function is_available()
+  17 | ERROR | Missing doc comment for function get_unavailable_reason()
+  19 | ERROR | Missing doc comment for function get_slug()
+  21 | ERROR | Missing doc comment for function get_name()
+  23 | ERROR | Missing doc comment for function get_description()
+  25 | ERROR | Missing doc comment for function get_parameters_schema()
+  49 | ERROR | Missing doc comment for function get_required_capability()
+  51 | ERROR | Missing doc comment for function requires_base_pro()
+  53 | ERROR | Missing doc comment for function get_capability_flags()
+  56 | ERROR | Missing doc comment for function execute()
+ 116 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ons\pro\includes\tools\crm\outbound\class-wp-mcp-ai-tool-send-lead-sms.php
+--------------------------------------------------------------------------------
+FOUND 12 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+ 17 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Send_Lead_SMS
+ 25 | ERROR | Doc comment short description must start with a capital letter
+ 34 | ERROR | Missing doc comment for function is_available()
+ 38 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 41 | ERROR | Missing doc comment for function get_slug()
+ 44 | ERROR | Missing doc comment for function get_name()
+ 47 | ERROR | Missing doc comment for function get_description()
+ 50 | ERROR | Missing doc comment for function get_parameters_schema()
+ 60 | ERROR | Missing doc comment for function get_required_capability()
+ 63 | ERROR | Missing doc comment for function requires_base_pro()
+ 66 | ERROR | Missing doc comment for function get_capability_flags()
+ 69 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ro\includes\tools\crm\outbound\class-wp-mcp-ai-tool-send-lead-whatsapp.php
+--------------------------------------------------------------------------------
+FOUND 11 ERRORS AFFECTING 11 LINES
+--------------------------------------------------------------------------------
+ 17 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Send_Lead_Whatsapp
+ 29 | ERROR | Missing doc comment for function is_available()
+ 33 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 36 | ERROR | Missing doc comment for function get_slug()
+ 39 | ERROR | Missing doc comment for function get_name()
+ 42 | ERROR | Missing doc comment for function get_description()
+ 45 | ERROR | Missing doc comment for function get_parameters_schema()
+ 60 | ERROR | Missing doc comment for function get_required_capability()
+ 63 | ERROR | Missing doc comment for function requires_base_pro()
+ 66 | ERROR | Missing doc comment for function get_capability_flags()
+ 69 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...o\includes\tools\crm\routing\class-wp-mcp-ai-tool-assign-lead-to-owner.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+  7 | ERROR | There must be exactly one blank line after the file comment
+ 11 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Assign_Lead_To_Owner
+ 12 | ERROR | Missing doc comment for function is_available()
+ 15 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 17 | ERROR | Missing doc comment for function get_slug()
+ 19 | ERROR | Missing doc comment for function get_name()
+ 21 | ERROR | Missing doc comment for function get_description()
+ 23 | ERROR | Missing doc comment for function get_parameters_schema()
+ 39 | ERROR | Missing doc comment for function get_required_capability()
+ 41 | ERROR | Missing doc comment for function requires_base_pro()
+ 43 | ERROR | Missing doc comment for function get_capability_flags()
+ 46 | ERROR | Missing doc comment for function execute()
+ 89 | ERROR | A function call to __() with texts containing placeholders was
+    |       | found, but was not accompanied by a "translators:" comment on the
+    |       | line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...ddons\pro\includes\tools\crm\routing\class-wp-mcp-ai-tool-rotate-leads.php
+--------------------------------------------------------------------------------
+FOUND 14 ERRORS AFFECTING 14 LINES
+--------------------------------------------------------------------------------
+   7 | ERROR | There must be exactly one blank line after the file comment
+  11 | ERROR | Missing doc comment for class WP_MCP_AI_Tool_Rotate_Leads
+  12 | ERROR | Missing doc comment for function is_available()
+  15 | ERROR | Missing doc comment for function get_unavailable_reason()
+  17 | ERROR | Missing doc comment for function get_slug()
+  19 | ERROR | Missing doc comment for function get_name()
+  21 | ERROR | Missing doc comment for function get_description()
+  23 | ERROR | Missing doc comment for function get_parameters_schema()
+  52 | ERROR | Missing doc comment for function get_required_capability()
+  54 | ERROR | Missing doc comment for function requires_base_pro()
+  56 | ERROR | Missing doc comment for function get_capability_flags()
+  59 | ERROR | Missing doc comment for function execute()
+ 131 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 132 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...udes\tools\crm\sequences\class-wp-mcp-ai-tool-create-outreach-sequence.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 13 LINES
+--------------------------------------------------------------------------------
+  5 | ERROR | [x] There must be exactly one blank line before the tags in a doc
+    |       |     comment
+  6 | ERROR | [ ] There must be exactly one blank line after the file comment
+  9 | ERROR | [ ] Missing doc comment for class
+    |       |     WP_MCP_AI_Tool_Create_Outreach_Sequence
+ 10 | ERROR | [ ] Missing doc comment for function is_available()
+ 13 | ERROR | [ ] Missing doc comment for function get_unavailable_reason()
+ 15 | ERROR | [ ] Missing doc comment for function get_slug()
+ 17 | ERROR | [ ] Missing doc comment for function get_name()
+ 19 | ERROR | [ ] Missing doc comment for function get_description()
+ 21 | ERROR | [ ] Missing doc comment for function get_parameters_schema()
+ 51 | ERROR | [ ] Missing doc comment for function get_required_capability()
+ 53 | ERROR | [ ] Missing doc comment for function requires_base_pro()
+ 55 | ERROR | [ ] Missing doc comment for function get_capability_flags()
+ 57 | ERROR | [ ] Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 1 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...udes\tools\crm\sequences\class-wp-mcp-ai-tool-delete-outreach-sequence.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Delete_Outreach_Sequence
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 23 | ERROR | Missing doc comment for function get_required_capability()
+ 25 | ERROR | Missing doc comment for function requires_base_pro()
+ 27 | ERROR | Missing doc comment for function get_capability_flags()
+ 29 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ludes\tools\crm\sequences\class-wp-mcp-ai-tool-enroll-lead-in-sequence.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Enroll_Lead_In_Sequence
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 26 | ERROR | Missing doc comment for function get_required_capability()
+ 28 | ERROR | Missing doc comment for function requires_base_pro()
+ 30 | ERROR | Missing doc comment for function get_capability_flags()
+ 32 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...udes\tools\crm\sequences\class-wp-mcp-ai-tool-get-sequence-performance.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Get_Sequence_Performance
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 23 | ERROR | Missing doc comment for function get_required_capability()
+ 25 | ERROR | Missing doc comment for function requires_base_pro()
+ 27 | ERROR | Missing doc comment for function get_capability_flags()
+ 29 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ludes\tools\crm\sequences\class-wp-mcp-ai-tool-list-outreach-sequences.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_List_Outreach_Sequences
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 31 | ERROR | Missing doc comment for function get_required_capability()
+ 33 | ERROR | Missing doc comment for function requires_base_pro()
+ 35 | ERROR | Missing doc comment for function get_capability_flags()
+ 37 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...ncludes\tools\crm\sequences\class-wp-mcp-ai-tool-manage-sequence-state.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Manage_Sequence_State
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 29 | ERROR | Missing doc comment for function get_required_capability()
+ 31 | ERROR | Missing doc comment for function requires_base_pro()
+ 33 | ERROR | Missing doc comment for function get_capability_flags()
+ 35 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+
+FILE: ...udes\tools\crm\sequences\class-wp-mcp-ai-tool-update-outreach-sequence.php
+--------------------------------------------------------------------------------
+FOUND 13 ERRORS AFFECTING 12 LINES
+--------------------------------------------------------------------------------
+  2 | ERROR | There must be exactly one blank line after the file comment
+  2 | ERROR | Missing @package tag in file comment
+  5 | ERROR | Missing doc comment for class
+    |       | WP_MCP_AI_Tool_Update_Outreach_Sequence
+  6 | ERROR | Missing doc comment for function is_available()
+  9 | ERROR | Missing doc comment for function get_unavailable_reason()
+ 11 | ERROR | Missing doc comment for function get_slug()
+ 13 | ERROR | Missing doc comment for function get_name()
+ 15 | ERROR | Missing doc comment for function get_description()
+ 17 | ERROR | Missing doc comment for function get_parameters_schema()
+ 28 | ERROR | Missing doc comment for function get_required_capability()
+ 30 | ERROR | Missing doc comment for function requires_base_pro()
+ 32 | ERROR | Missing doc comment for function get_capability_flags()
+ 34 | ERROR | Missing doc comment for function execute()
+--------------------------------------------------------------------------------
+
+Time: 26.03 secs; Memory: 44MB
+

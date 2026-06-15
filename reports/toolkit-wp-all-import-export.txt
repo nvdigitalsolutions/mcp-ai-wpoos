@@ -1,0 +1,46 @@
+
+FILE: ...udes\tools\wp-all-import-export\class-wp-mcp-ai-tool-delete-all-export.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1 | ERROR | Class file names should be based on the class name with "class-"
+   |       | prepended. Expected
+   |       | class-wp-mcp-ai-pro-tool-delete-all-export.php, but found
+   |       | class-wp-mcp-ai-tool-delete-all-export.php.
+--------------------------------------------------------------------------------
+
+
+FILE: ...udes\tools\wp-all-import-export\class-wp-mcp-ai-tool-delete-all-import.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1 | ERROR | Class file names should be based on the class name with "class-"
+   |       | prepended. Expected
+   |       | class-wp-mcp-ai-pro-tool-delete-all-import.php, but found
+   |       | class-wp-mcp-ai-tool-delete-all-import.php.
+--------------------------------------------------------------------------------
+
+
+FILE: ...es\tools\wp-all-import-export\class-wp-mcp-ai-tool-schedule-all-export.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1 | ERROR | Class file names should be based on the class name with "class-"
+   |       | prepended. Expected
+   |       | class-wp-mcp-ai-pro-tool-schedule-all-export.php, but found
+   |       | class-wp-mcp-ai-tool-schedule-all-export.php.
+--------------------------------------------------------------------------------
+
+
+FILE: ...es\tools\wp-all-import-export\class-wp-mcp-ai-tool-schedule-all-import.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1 | ERROR | Class file names should be based on the class name with "class-"
+   |       | prepended. Expected
+   |       | class-wp-mcp-ai-pro-tool-schedule-all-import.php, but found
+   |       | class-wp-mcp-ai-tool-schedule-all-import.php.
+--------------------------------------------------------------------------------
+
+Time: 1.24 secs; Memory: 16MB
+

@@ -1,0 +1,58 @@
+
+FILE: ...dons\pro\includes\tools\analytics\class-wp-mcp-ai-tool-cohort-analysis.php
+--------------------------------------------------------------------------------
+FOUND 4 ERRORS AFFECTING 4 LINES
+--------------------------------------------------------------------------------
+ 426 | ERROR | Use placeholders and $wpdb->prepare(); found interpolated
+     |       | variable {$user_ids} at                             AND
+     |       | post_author IN ({$user_ids}) // phpcs:ignore
+     |       | WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic IN
+     |       | clause
+     |       | 
+ 450 | ERROR | Use placeholders and $wpdb->prepare(); found interpolated
+     |       | variable {$user_ids} at                             AND
+     |       | p.post_author IN ({$user_ids}) // phpcs:ignore
+     |       | WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic IN
+     |       | clause
+     |       | 
+ 469 | ERROR | Use placeholders and $wpdb->prepare(); found interpolated
+     |       | variable {$user_ids} at                             AND
+     |       | post_author IN ({$user_ids}) // phpcs:ignore
+     |       | WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic IN
+     |       | clause
+     |       | 
+ 545 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+
+FILE: ...\pro\includes\tools\analytics\class-wp-mcp-ai-tool-data-warehouse-sync.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 261 | ERROR | Use placeholders and $wpdb->prepare(); found interpolated
+     |       | variable {$table_name} at "SELECT * FROM {$table_name} //
+     |       | phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared --
+     |       | Dynamic table name
+     |       | 
+--------------------------------------------------------------------------------
+
+
+FILE: ...udes\tools\analytics\class-wp-mcp-ai-tool-generate-executive-dashboard.php
+--------------------------------------------------------------------------------
+FOUND 3 ERRORS AFFECTING 3 LINES
+--------------------------------------------------------------------------------
+ 429 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 433 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+ 437 | ERROR | A function call to __() with texts containing placeholders was
+     |       | found, but was not accompanied by a "translators:" comment on
+     |       | the line above to clarify the meaning of the placeholders.
+--------------------------------------------------------------------------------
+
+Time: 3.58 secs; Memory: 22MB
+

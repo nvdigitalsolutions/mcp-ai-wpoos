@@ -1,0 +1,15 @@
+
+FILE: ...includes\tools\automotive\class-wp-mcp-ai-tool-vehicle-repair-estimate.php
+--------------------------------------------------------------------------------
+FOUND 3 ERRORS AFFECTING 3 LINES
+--------------------------------------------------------------------------------
+  755 | ERROR | Using short ternaries is not allowed as they are rarely used
+      |       | correctly
+ 1510 | ERROR | If control structure block found as the only statement within
+      |       | an "else" block. Use elseif instead.
+ 1604 | ERROR | Using short ternaries is not allowed as they are rarely used
+      |       | correctly
+--------------------------------------------------------------------------------
+
+Time: 1.68 secs; Memory: 32MB
+

@@ -1,0 +1,13 @@
+
+FILE: ...poos\modest-tide\mcp-ai-wpoos\addons\pro\includes\tools\jetengine\init.php
+--------------------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 1 | ERROR | Class file names should be based on the class name with "class-"
+   |       | prepended. Expected
+   |       | class-wp-mcp-ai-jetengine-cpt-research-init.php, but found
+   |       | init.php.
+--------------------------------------------------------------------------------
+
+Time: 3.17 secs; Memory: 24MB
+

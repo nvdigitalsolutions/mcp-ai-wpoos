@@ -1,0 +1,51 @@
+
+FILE: ...ludes\tools\cloudways\class-wp-mcp-ai-tool-cloudways-create-app-backup.php
+--------------------------------------------------------------------------------
+FOUND 8 ERRORS AFFECTING 8 LINES
+--------------------------------------------------------------------------------
+ 26 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 28 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 33 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 38 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 43 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 61 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 66 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 73 | ERROR | [x] Line indented incorrectly; expected 2 tabs, found 1
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 8 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...es\tools\cloudways\class-wp-mcp-ai-tool-cloudways-create-server-backup.php
+--------------------------------------------------------------------------------
+FOUND 8 ERRORS AFFECTING 8 LINES
+--------------------------------------------------------------------------------
+ 26 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 28 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 33 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 38 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 43 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 57 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 62 | ERROR | [x] Line indented incorrectly; expected at least 2 tabs, found 1
+ 69 | ERROR | [x] Line indented incorrectly; expected 2 tabs, found 1
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 8 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+
+FILE: ...\pro\includes\tools\cloudways\class-wp-mcp-ai-tool-cloudways-list-apps.php
+--------------------------------------------------------------------------------
+FOUND 2 ERRORS AFFECTING 1 LINE
+--------------------------------------------------------------------------------
+ 107 | ERROR | [x] Multiple placeholders in translatable strings should be
+     |       |     ordered. Expected "%1$d, %2$d", but got "%d, %d" in 'Found
+     |       |     %d app on server %d.'.
+ 107 | ERROR | [x] Multiple placeholders in translatable strings should be
+     |       |     ordered. Expected "%1$d, %2$d", but got "%d, %d" in 'Found
+     |       |     %d apps on server %d.'.
+--------------------------------------------------------------------------------
+PHPCBF CAN FIX THE 2 MARKED SNIFF VIOLATIONS AUTOMATICALLY
+--------------------------------------------------------------------------------
+
+Time: 10.97 secs; Memory: 18MB
+
