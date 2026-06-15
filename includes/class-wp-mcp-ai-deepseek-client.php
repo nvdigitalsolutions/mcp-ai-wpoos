@@ -865,6 +865,13 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			// Streaming flag.
 			if ( ! empty( $options['stream'] ) ) {
 				$payload['stream'] = true;
+
+				// Include stream_options so the final chunk carries usage data.
+				// Use caller-provided options when present; otherwise default
+				// to include_usage=true for cost/usage badge display.
+				$payload['stream_options'] = isset( $options['stream_options'] ) && is_array( $options['stream_options'] )
+					? $options['stream_options']
+					: array( 'include_usage' => true );
 			}
 
 			// Tool/function calling — only for models that support it.
