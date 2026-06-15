@@ -42,7 +42,11 @@ if ( is_admin() ) {
 		// Load Consolidate & Add page (under Media menu).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-consolidate-page.php';
 		WP_MCP_AI_Media_Consolidate_Page::init();
-	}
+
+		// Load Media Blueprints page (under Media menu).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-blueprints-page.php';
+		WP_MCP_AI_Media_Blueprints_Page::init();
+		}
 }
 
 // Initialize Media Toolkit system.
