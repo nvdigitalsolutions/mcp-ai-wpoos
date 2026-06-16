@@ -131,6 +131,18 @@ class WP_MCP_AI_Pro_SPA_Loader {
 				array(),
 				$version
 			);
+
+			// Bridge class-name mismatches between updated JS and un-rebuilt CSS.
+			// TODO: Remove once `npm run build` is re-run with matching source.
+			$overrides_path = $dist_dir . 'pro-spa-overrides.css';
+			if ( file_exists( $overrides_path ) ) {
+				wp_enqueue_style(
+					'wp-mcp-ai-pro-spa-v2-overrides',
+					$dist_url . 'pro-spa-overrides.css',
+					array( 'wp-mcp-ai-pro-spa-v2' ),
+					$version
+				);
+			}
 		}
 
 		/**
@@ -138,9 +150,9 @@ class WP_MCP_AI_Pro_SPA_Loader {
 		 *
 		 * Mirrors the structure expected by src/api/config.ts → readProSpaConfig().
 		 */
-		$user            = wp_get_current_user();
-		$user_id         = get_current_user_id();
-		$is_admin        = current_user_can( 'manage_options' );
+		$user     = wp_get_current_user();
+		$user_id  = get_current_user_id();
+		$is_admin = current_user_can( 'manage_options' );
 
 		$assistant_id = 0;
 		if ( class_exists( 'WP_MCP_AI_Assistant_Manager' ) ) {
@@ -192,8 +204,8 @@ class WP_MCP_AI_Pro_SPA_Loader {
 
 		// Populate mention types if the resolver is available.
 		if ( class_exists( 'WP_MCP_AI_Context_Mention_Resolver' ) ) {
-			$resolver            = new WP_MCP_AI_Context_Mention_Resolver();
-			$types               = $resolver->get_registered_types();
+			$resolver                = new WP_MCP_AI_Context_Mention_Resolver();
+			$types                   = $resolver->get_registered_types();
 			$runtime['mentionTypes'] = is_array( $types ) ? $types : array();
 		}
 
