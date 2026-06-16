@@ -51,8 +51,8 @@ class WP_MCP_AI_Pro_SPA_Loader {
 	 */
 	public function add_admin_page() {
 		$this->hook_suffix = add_menu_page(
-			__( 'NV oOS', 'mcp-ai-wpoos' ),
-			__( 'NV oOS', 'mcp-ai-wpoos' ),
+			__( 'NV oOS AI', 'mcp-ai-wpoos' ),
+			__( 'NV oOS AI', 'mcp-ai-wpoos' ),
 			'read',
 			'wp-mcp-ai-spa',
 			array( $this, 'render' ),
