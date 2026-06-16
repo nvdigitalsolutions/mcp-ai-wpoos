@@ -380,7 +380,7 @@
 
 /* ── Status Bar ───────────────────────────────────────────────────────────── */
 
-.nvoos-pro-spa-statusbar {
+.nvoos-pro-spa-status-bar {
 	position: fixed;
 	bottom: 0;
 	left: 0;
@@ -397,28 +397,15 @@
 	height: 24px;
 }
 
-.nvoos-pro-spa-layout--sidebar-open .nvoos-pro-spa-statusbar {
+.nvoos-pro-spa-layout--sidebar-open .nvoos-pro-spa-status-bar {
 	left: 260px;
 }
 
-.nvoos-pro-spa-layout--right-panel-open .nvoos-pro-spa-statusbar {
+.nvoos-pro-spa-layout--right-panel-open .nvoos-pro-spa-status-bar {
 	right: 280px;
 }
 
-.nvoos-pro-spa-statusbar__left,
-.nvoos-pro-spa-statusbar__right {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-}
-
-.nvoos-pro-spa-statusbar__item {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-}
-
-.nvoos-pro-spa-statusbar__toggle {
+.nvoos-pro-spa-status-bar__toggle-sidebar {
 	background: none;
 	border: none;
 	cursor: pointer;
@@ -428,13 +415,63 @@
 	line-height: 1;
 }
 
-.nvoos-pro-spa-statusbar__toggle:hover {
+.nvoos-pro-spa-status-bar__toggle-sidebar:hover {
 	color: var(--nvoos-text, #1e1e1e);
 }
 
-.nvoos-pro-spa-statusbar__status--connected { color: #46b450; }
-.nvoos-pro-spa-statusbar__status--connecting { color: #dba617; }
-.nvoos-pro-spa-statusbar__status--disconnected { color: #cc1818; }
+.nvoos-pro-spa-status-bar__toggle-icon {
+	font-size: 16px;
+}
+
+.nvoos-pro-spa-status-bar__indicator {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.nvoos-pro-spa-status-bar__indicator--connected .nvoos-pro-spa-status-bar__dot { background: #46b450; }
+.nvoos-pro-spa-status-bar__indicator--loading .nvoos-pro-spa-status-bar__dot { background: #dba617; }
+.nvoos-pro-spa-status-bar__indicator--error .nvoos-pro-spa-status-bar__dot { background: #cc1818; }
+
+.nvoos-pro-spa-status-bar__dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	display: inline-block;
+}
+
+.nvoos-pro-spa-status-bar__connection-label {
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-status-bar__item {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.nvoos-pro-spa-status-bar__label {
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-status-bar__value {
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-status-bar__error {
+	color: #cc1818;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.nvoos-pro-spa-status-bar__retry {
+	background: none;
+	border: none;
+	color: var(--nvoos-primary, #2271b1);
+	cursor: pointer;
+	text-decoration: underline;
+}
 
 /* ── Chat Page ────────────────────────────────────────────────────────────── */
 
@@ -507,20 +544,34 @@
 
 /* ── Agent Panel ──────────────────────────────────────────────────────────── */
 
-.nvoos-pro-spa-agent {
+.nvoos-pro-spa-agent-panel {
 	flex: 1;
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
 }
 
-.nvoos-pro-spa-agent__messages {
+.nvoos-pro-spa-agent-panel__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-agent-panel__title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-agent-panel__messages {
 	flex: 1;
 	overflow-y: auto;
 	padding: 16px 20px;
 }
 
-.nvoos-pro-spa-agent__empty {
+.nvoos-pro-spa-agent-panel__empty {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -529,7 +580,13 @@
 	font-size: 14px;
 }
 
-.nvoos-pro-spa-agent__composer {
+.nvoos-pro-spa-agent-panel__empty-text {
+	margin: 0;
+	font-size: 14px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-agent-panel__composer {
 	display: flex;
 	gap: 8px;
 	padding: 12px 20px;
@@ -537,7 +594,14 @@
 	align-items: flex-end;
 }
 
-.nvoos-pro-spa-agent__input {
+.nvoos-pro-spa-agent-panel__composer-form {
+	display: flex;
+	gap: 8px;
+	width: 100%;
+	align-items: flex-end;
+}
+
+.nvoos-pro-spa-agent-panel__composer-input {
 	flex: 1;
 	border: 1px solid var(--nvoos-border, #dcdcde);
 	border-radius: 8px;
@@ -550,17 +614,27 @@
 	max-height: 160px;
 }
 
-.nvoos-pro-spa-agent__input:focus {
+.nvoos-pro-spa-agent-panel__composer-input:focus {
 	outline: none;
 	border-color: var(--nvoos-primary, #2271b1);
 	box-shadow: 0 0 0 1px var(--nvoos-primary, #2271b1);
 }
 
-.nvoos-pro-spa-agent__send {
+.nvoos-pro-spa-agent-panel__composer-actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.nvoos-pro-spa-agent-panel__send-btn {
 	padding: 10px 20px;
 }
 
-.nvoos-pro-spa-agent__error {
+.nvoos-pro-spa-agent-panel__stop-btn {
+	padding: 10px 20px;
+}
+
+.nvoos-pro-spa-agent-panel__error {
 	padding: 8px 20px;
 	background: #fef2f2;
 	color: var(--nvoos-danger, #cc1818);
@@ -568,35 +642,66 @@
 	border-bottom: 1px solid #fecaca;
 }
 
+.nvoos-pro-spa-agent-panel__error-icon {
+	margin-right: 6px;
+}
+
+.nvoos-pro-spa-agent-panel__error-text {
+	color: var(--nvoos-danger, #cc1818);
+}
+
 /* ── Message View ─────────────────────────────────────────────────────────── */
 
-.nvoos-pro-spa-message {
+.nvoos-pro-spa-message-view {
 	margin-bottom: 20px;
 }
 
-.nvoos-pro-spa-message__header {
+.nvoos-pro-spa-message-view__header {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	margin-bottom: 4px;
 }
 
-.nvoos-pro-spa-message__role {
+.nvoos-pro-spa-message-view__badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	font-size: 14px;
+}
+
+.nvoos-pro-spa-message-view__badge--user {
+	background: #e0edfa;
+}
+
+.nvoos-pro-spa-message-view__badge--assistant {
+	background: #e8f5e9;
+}
+
+.nvoos-pro-spa-message-view__role {
 	font-size: 12px;
 	font-weight: 600;
 	color: var(--nvoos-text-secondary, #787c82);
 }
 
-.nvoos-pro-spa-message--user .nvoos-pro-spa-message__role {
+.nvoos-pro-spa-message-view--user .nvoos-pro-spa-message-view__role {
 	color: var(--nvoos-primary, #2271b1);
 }
 
-.nvoos-pro-spa-message__content {
+.nvoos-pro-spa-message-view__body {
 	line-height: 1.7;
 	font-size: 14px;
 }
 
-.nvoos-pro-spa-message--user .nvoos-pro-spa-message__content {
+.nvoos-pro-spa-message-view__markdown {
+	line-height: 1.7;
+	font-size: 14px;
+}
+
+.nvoos-pro-spa-message-view--user .nvoos-pro-spa-message-view__body {
 	background: #f0f6fc;
 	padding: 10px 14px;
 	border-radius: 8px;
@@ -604,11 +709,17 @@
 	margin-left: auto;
 }
 
-.nvoos-pro-spa-message--assistant .nvoos-pro-spa-message__content {
+.nvoos-pro-spa-message-view--assistant .nvoos-pro-spa-message-view__body {
 	color: var(--nvoos-text, #1e1e1e);
 }
 
-.nvoos-pro-spa-message__streaming-indicator {
+.nvoos-pro-spa-message-view__thinking {
+	color: var(--nvoos-text-secondary, #787c82);
+	font-style: italic;
+	padding: 10px 0;
+}
+
+.nvoos-pro-spa-message-view__streaming-indicator {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
@@ -617,7 +728,7 @@
 	padding: 10px 0;
 }
 
-.nvoos-pro-spa-message__streaming-dot {
+.nvoos-pro-spa-message-view__dot {
 	width: 4px;
 	height: 4px;
 	border-radius: 50%;
@@ -625,15 +736,15 @@
 	animation: nvoos-pro-spa-pulse 1.2s infinite;
 }
 
-.nvoos-pro-spa-message__streaming-dot:nth-child(2) { animation-delay: 0.2s; }
-.nvoos-pro-spa-message__streaming-dot:nth-child(3) { animation-delay: 0.4s; }
+.nvoos-pro-spa-message-view__dot:nth-child(2) { animation-delay: 0.2s; }
+.nvoos-pro-spa-message-view__dot:nth-child(3) { animation-delay: 0.4s; }
 
 @keyframes nvoos-pro-spa-pulse {
 	0%, 100% { opacity: 0.3; }
 	50% { opacity: 1; }
 }
 
-.nvoos-pro-spa-message__toolbar {
+.nvoos-pro-spa-message-view__actions {
 	display: flex;
 	gap: 4px;
 	margin-top: 4px;
@@ -641,12 +752,12 @@
 	transition: opacity 0.15s;
 }
 
-.nvoos-pro-spa-message:hover .nvoos-pro-spa-message__toolbar,
-.nvoos-pro-spa-message__toolbar:focus-within {
+.nvoos-pro-spa-message-view:hover .nvoos-pro-spa-message-view__actions,
+.nvoos-pro-spa-message-view__actions:focus-within {
 	opacity: 1;
 }
 
-.nvoos-pro-spa-message__toolbar-btn {
+.nvoos-pro-spa-message-view__action-btn {
 	padding: 2px 8px;
 	border: 1px solid transparent;
 	border-radius: 4px;
@@ -656,12 +767,12 @@
 	color: var(--nvoos-text-secondary, #787c82);
 }
 
-.nvoos-pro-spa-message__toolbar-btn:hover {
+.nvoos-pro-spa-message-view__action-btn:hover {
 	background: var(--nvoos-bg, #f0f0f1);
 	border-color: var(--nvoos-border, #dcdcde);
 }
 
-.nvoos-pro-spa-message__toolbar-btn--success {
+.nvoos-pro-spa-message-view__action-btn--success {
 	color: #46b450;
 }
 
