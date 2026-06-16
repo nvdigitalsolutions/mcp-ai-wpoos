@@ -1,11 +1,14 @@
 <?php
 /**
- * Pro SPA Loader — Registers the React Single Page Application admin page
- * and enqueues its assets. The SPA replaces the traditional PHP admin UI
- * with a Zed-inspired React interface (ThreadsSidebar, AgentPanel, Command Palette).
+ * Pro SPA v2 Loader — Registers the React Single Page Application admin page
+ * and enqueues the TypeScript/esbuild SPA assets.
+ *
+ * The SPA v2 replaces the legacy webpack-based Pro SPA with a modern
+ * TypeScript + esbuild + React 19 + AI SDK architecture, mirroring the
+ * chat-spa addon's patterns.
  *
  * @package NV_oOS_Pro
- * @since   1.7.0
+ * @since   2.0.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -41,7 +44,7 @@ class WP_MCP_AI_Pro_SPA_Loader {
 	 * Add the SPA admin page as a top-level menu item.
 	 *
 	 * Registered with a different slug than the base plugin's admin page
-	 * so both can coexist. The old page remains at 'wp-mcp-ai'.
+	 * so both can coexist.
 	 *
 	 * @since 1.7.0
 	 * @return void
@@ -63,113 +66,141 @@ class WP_MCP_AI_Pro_SPA_Loader {
 	/**
 	 * Render the SPA root div.
 	 *
+	 * The SPA entry point (index.tsx) mounts into #wp-mcp-ai-pro-spa-root
+	 * or any element with [data-config] attribute for multi-instance support.
+	 *
 	 * @since 1.7.0
 	 * @return void
 	 */
 	public function render() {
-		echo '<div id="wp-mcp-ai-spa-root"></div>';
+		echo '<div id="wp-mcp-ai-pro-spa-root"></div>';
 	}
 
 	/**
 	 * Enqueue SPA JavaScript and CSS assets.
 	 *
+	 * Loads the esbuild-built IIFE bundle (pro-spa.js / pro-spa.css) and
+	 * passes the NVOOS_PRO_SPA runtime configuration via wp_localize_script.
+	 *
 	 * @since 1.7.0
 	 * @return void
 	 */
 	public function enqueue() {
-		$dist_dir = WP_MCP_AI_PRO_PATH . 'assets/spa/dist/';
-		$dist_url = WP_MCP_AI_PRO_URL . 'assets/spa/dist/';
+		$dist_dir = WP_MCP_AI_PRO_PATH . 'assets/spa-v2/assets/dist/';
+		$dist_url = WP_MCP_AI_PRO_URL . 'assets/spa-v2/assets/dist/';
 
-		// Check if built assets exist (filesystem paths).
-		$asset_file = $dist_dir . 'spa-bundle.asset.php';
-		$js_path    = $dist_dir . 'spa-bundle.js';
-		$css_path   = $dist_dir . 'spa-bundle.css';
+		$js_path  = $dist_dir . 'pro-spa.js';
+		$css_path = $dist_dir . 'pro-spa.css';
 
-		// URLs for enqueuing (browser-accessible).
-		$js_url  = $dist_url . 'spa-bundle.js';
-		$css_url = $dist_url . 'spa-bundle.css';
+		$js_url  = $dist_url . 'pro-spa.js';
+		$css_url = $dist_url . 'pro-spa.css';
 
-		if ( ! file_exists( $asset_file ) || ! file_exists( $js_path ) ) {
-			// Show a notice if built assets are missing (development mode).
+		if ( ! file_exists( $js_path ) ) {
 			add_action(
 				'admin_notices',
 				function () {
 					printf(
 						'<div class="notice notice-warning"><p>%s</p></div>',
-						esc_html__( 'NV oOS Pro SPA assets not found. Run `npm run build` in addons/pro/assets/spa/.', 'mcp-ai-wpoos' )
+						esc_html__( 'NV oOS Pro SPA v2 assets not found. Run `npm run build` in addons/pro/assets/spa-v2/.', 'mcp-ai-wpoos' )
 					);
 				}
 			);
 			return;
 		}
 
-		$asset_data = include $asset_file;
+		$version = defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '2.0.0';
 
 		wp_enqueue_script(
-			'wp-mcp-ai-spa',
+			'wp-mcp-ai-pro-spa-v2',
 			$js_url,
-			$asset_data['dependencies'],
-			$asset_data['version'],
+			array( 'wp-i18n' ),
+			$version,
 			true
+		);
+
+		wp_set_script_translations(
+			'wp-mcp-ai-pro-spa-v2',
+			'nvoos-pro-spa',
+			WP_MCP_AI_PRO_PATH . 'languages'
 		);
 
 		if ( file_exists( $css_path ) ) {
 			wp_enqueue_style(
-				'wp-mcp-ai-spa',
+				'wp-mcp-ai-pro-spa-v2',
 				$css_url,
-				array( 'wp-components' ),
-				$asset_data['version']
+				array(),
+				$version
 			);
 		}
 
-		// Pass data to the SPA.
-		wp_localize_script(
-			'wp-mcp-ai-spa',
-			'wpMcpAiPro',
-			array(
-				'nonce'        => wp_create_nonce( 'wp_rest' ),
-				'restUrl'      => rest_url(),
-				'sseUrl'       => rest_url( 'mcp-ai/v1/sse' ),
-				'bootstrapUrl' => rest_url( 'mcp-ai-pro/v1/spa/bootstrap' ),
-				'userId'       => get_current_user_id(),
-				'isAdmin'      => current_user_can( 'manage_options' ),
-				'i18n'         => array(
-					'send'              => __( 'Send', 'mcp-ai-wpoos' ),
-					'sending'           => __( 'Sending…', 'mcp-ai-wpoos' ),
-					'stop'              => __( 'Stop', 'mcp-ai-wpoos' ),
-					'newThread'         => __( 'New Thread', 'mcp-ai-wpoos' ),
-					'archiveThread'     => __( 'Archive', 'mcp-ai-wpoos' ),
-					'restoreThread'     => __( 'Restore', 'mcp-ai-wpoos' ),
-					'compactThread'     => __( 'Compact', 'mcp-ai-wpoos' ),
-					'reviewChanges'     => __( 'Review Changes', 'mcp-ai-wpoos' ),
-					'restoreCheckpoint' => __( 'Restore Checkpoint', 'mcp-ai-wpoos' ),
-					'switchModel'       => __( 'Switch Model', 'mcp-ai-wpoos' ),
-					'switchProfile'     => __( 'Switch Profile', 'mcp-ai-wpoos' ),
-					'manageProfiles'    => __( 'Manage Profiles', 'mcp-ai-wpoos' ),
-					'threadHistory'     => __( 'Thread History', 'mcp-ai-wpoos' ),
-					'error'             => __( 'An error occurred.', 'mcp-ai-wpoos' ),
-					'typeMessage'       => __( 'Type a message…', 'mcp-ai-wpoos' ),
-					'typeCommand'       => __( 'Type a command…', 'mcp-ai-wpoos' ),
-					'noResults'         => __( 'No results found.', 'mcp-ai-wpoos' ),
-					'agentWriting'      => __( 'Agent is writing…', 'mcp-ai-wpoos' ),
-					'agentDone'         => __( 'Agent finished', 'mcp-ai-wpoos' ),
-					'tokenCount'        => __( 'Tokens', 'mcp-ai-wpoos' ),
-					'contextWarning'    => __( 'Approaching context limit. Consider compacting.', 'mcp-ai-wpoos' ),
-				),
-			)
+		/**
+		 * Runtime configuration passed to the SPA via NVOOS_PRO_SPA global.
+		 *
+		 * Mirrors the structure expected by src/api/config.ts → readProSpaConfig().
+		 */
+		$user            = wp_get_current_user();
+		$user_id         = get_current_user_id();
+		$is_admin        = current_user_can( 'manage_options' );
+
+		$assistant_id = 0;
+		if ( class_exists( 'WP_MCP_AI_Assistant_Manager' ) ) {
+			$default = WP_MCP_AI_Assistant_Manager::get_default_assistant( $user_id );
+			if ( $default ) {
+				$assistant_id = $default;
+			}
+		}
+
+		$runtime = array(
+			'apiUrl'       => esc_url_raw( rest_url( 'mcp-ai/v1' ) ),
+			'proApi'       => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
+			'nonce'        => wp_create_nonce( 'wp_rest' ),
+			'config'       => array(
+				'assistantId' => $assistant_id,
+				'theme'       => 'auto',
+			),
+			'endpoints'    => array(
+				// Core chat endpoints (mcp-ai/v1).
+				'chat'        => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
+				'chatClient'  => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
+				'transcripts' => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
+				'memory'      => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
+				'threads'     => esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
+				'tools'       => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
+				'assistants'  => esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
+				'settings'    => esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),
+
+				// Pro endpoints (mcp-ai-pro/v1).
+				'workflows'   => class_exists( 'WP_MCP_AI_Pro_Workflow_Controller' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflows' ) )
+					: '',
+				'analytics'   => $is_admin
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/analytics' ) )
+					: '',
+				'approvals'   => $is_admin
+					? esc_url_raw( rest_url( 'mcp-ai/v1/approvals' ) )
+					: '',
+			),
+			'user'         => array(
+				'id'           => $user_id,
+				'login'        => $user->user_login,
+				'displayName'  => $user->display_name,
+				'capabilities' => array_keys( $user->allcaps ),
+				'assistant_id' => $assistant_id,
+			),
+			'mentionTypes' => array(),
 		);
 
-		// Set script type to module for ES module support.
-		add_filter(
-			'script_loader_tag',
-			function ( $tag, $handle ) {
-				if ( 'wp-mcp-ai-spa' === $handle ) {
-					return str_replace( '<script ', '<script type="module" ', $tag );
-				}
-				return $tag;
-			},
-			10,
-			2
+		// Populate mention types if the resolver is available.
+		if ( class_exists( 'WP_MCP_AI_Context_Mention_Resolver' ) ) {
+			$resolver            = new WP_MCP_AI_Context_Mention_Resolver();
+			$types               = $resolver->get_registered_types();
+			$runtime['mentionTypes'] = is_array( $types ) ? $types : array();
+		}
+
+		wp_localize_script(
+			'wp-mcp-ai-pro-spa-v2',
+			'NVOOS_PRO_SPA',
+			$runtime
 		);
 	}
 }
