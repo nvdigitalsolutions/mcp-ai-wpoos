@@ -1892,6 +1892,9 @@ class WP_MCP_AI_Media_Command_Center_Page {
 		$now   = time();
 		foreach ( $templates as $tpl ) {
 			$cats = wp_get_object_terms( $tpl->ID, 'media_template_category', array( 'fields' => 'names' ) );
+			if ( is_wp_error( $cats ) ) {
+				$cats = array();
+			}
 			$usage = (int) get_post_meta( $tpl->ID, '_mcp_ai_template_usage_count', true );
 			$last_used_ts = (int) get_post_meta( $tpl->ID, '_mcp_ai_template_last_used', true );
 
