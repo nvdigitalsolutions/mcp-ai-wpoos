@@ -2791,6 +2791,7 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
 	// Seed media template presets if media toolkit is enabled.
 	if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
 		WP_MCP_AI_Media_Template_Presets::seed_presets();
+		WP_MCP_AI_Media_Template_Presets::seed_collections();
 	}
 
 	// Schedule installation of Pro bundled skills (Google Workspace CLI skills, etc.).

@@ -2117,6 +2117,272 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				?>
 			</div>
 
+			<!-- MEDIA TOOLKIT DATA MANAGEMENT SECTION -->
+			<?php
+			// Check if Pro addon is active and media toolkit is enabled.
+			$pro_active                = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$media_settings            = get_option( 'wp_mcp_ai_settings', array() );
+			$media_toolkit_enabled     = ! empty( $media_settings['enable_media_toolkit'] );
+			$media_templates_count     = 0;
+			$media_collections_count   = 0;
+			$media_templates_presets   = 0;
+			$media_collections_presets = 0;
+
+			if ( $pro_active && $media_toolkit_enabled ) {
+				// Count media templates.
+				if ( post_type_exists( 'mcp_ai_media_tpl' ) ) {
+					$tpl_counts             = wp_count_posts( 'mcp_ai_media_tpl' );
+					$media_templates_count  = isset( $tpl_counts->publish ) ? $tpl_counts->publish : 0;
+
+					// Count preset templates.
+					$preset_tpl_query = new WP_Query(
+						array(
+							'post_type'      => 'mcp_ai_media_tpl',
+							'post_status'    => 'publish',
+							'posts_per_page' => -1,
+							'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+								array(
+									'key'   => '_mcp_ai_template_is_preset',
+									'value' => true,
+								),
+							),
+							'fields'         => 'ids',
+						)
+					);
+					$media_templates_presets = $preset_tpl_query->found_posts;
+					wp_reset_postdata();
+				}
+
+				// Count media collections.
+				if ( post_type_exists( 'mcp_ai_media_coll' ) ) {
+					$coll_counts              = wp_count_posts( 'mcp_ai_media_coll' );
+					$media_collections_count  = isset( $coll_counts->publish ) ? $coll_counts->publish : 0;
+
+					// Count preset collections.
+					$preset_coll_query = new WP_Query(
+						array(
+							'post_type'      => 'mcp_ai_media_coll',
+							'post_status'    => 'publish',
+							'posts_per_page' => -1,
+							'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+								array(
+									'key'   => '_mcp_ai_collection_is_preset',
+									'value' => true,
+								),
+							),
+							'fields'         => 'ids',
+						)
+					);
+					$media_collections_presets = $preset_coll_query->found_posts;
+					wp_reset_postdata();
+				}
+
+				// Get available preset counts from the presets class.
+				if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
+					$media_presets_available  = count( WP_MCP_AI_Media_Template_Presets::get_presets() );
+					$media_coll_available     = count( WP_MCP_AI_Media_Template_Presets::get_collection_presets() );
+				} else {
+					$media_presets_available  = 0;
+					$media_coll_available     = 0;
+				}
+
+				// Determine sync status.
+				$tpl_sync_needed  = ( $media_templates_presets < $media_presets_available );
+				$coll_sync_needed = ( $media_collections_presets < $media_coll_available );
+				$media_seeded     = get_option( 'wp_mcp_ai_media_presets_seeded', '' );
+				$coll_seeded      = get_option( 'wp_mcp_ai_media_collections_seeded', false );
+
+				$tpl_status_text  = $tpl_sync_needed ? __( 'Updates Available', 'mcp-ai-wpoos' ) : __( 'Up to Date', 'mcp-ai-wpoos' );
+				$tpl_status_class = $tpl_sync_needed ? 'warning' : 'success';
+				$coll_status_text  = $coll_sync_needed ? __( 'Presets Available', 'mcp-ai-wpoos' ) : __( 'Up to Date', 'mcp-ai-wpoos' );
+				$coll_status_class = $coll_sync_needed ? 'warning' : 'success';
+			}
+			?>
+			<div class="wp-mcp-ai-media-toolkit-data-management-section" style="margin-top: 50px;">
+				<h3><?php esc_html_e( 'Media Toolkit Data Management', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Manage the pre-configured media templates and collections for the Pro Media Toolkit. Sync presets to get the latest template dimensions and collection groupings for your image processing workflows.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<?php if ( ! $pro_active ) : ?>
+					<div class="wp-mcp-ai-media-toolkit-notice" style="margin: 15px 0; padding: 12px; background: #f0f6fc; border-left: 3px solid #0073aa; border-radius: 3px;">
+						<p>
+							<span class="dashicons dashicons-info" style="color: #0073aa;"></span>
+							<?php esc_html_e( 'Media Toolkit presets require the Pro addon. Please install and activate the Pro addon to access pre-configured templates and collections.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					</div>
+				<?php elseif ( ! $media_toolkit_enabled ) : ?>
+					<div class="wp-mcp-ai-media-toolkit-notice" style="margin: 15px 0; padding: 12px; background: #f0f6fc; border-left: 3px solid #0073aa; border-radius: 3px;">
+						<p>
+							<span class="dashicons dashicons-info" style="color: #0073aa;"></span>
+							<?php
+							printf(
+								wp_kses(
+									/* translators: %s: Link to toolkit settings page */
+									__( 'The Media Toolkit is currently disabled. <a href="%s">Enable it in settings</a> to sync templates and collections.', 'mcp-ai-wpoos' ),
+									array( 'a' => array( 'href' => array() ) )
+								),
+								esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=features' ) )
+							);
+							?>
+						</p>
+					</div>
+				<?php else : ?>
+					<div class="wp-mcp-ai-media-toolkit-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+						<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></h4>
+						<ul style="margin: 10px 0; padding-left: 20px;">
+							<li><strong><?php esc_html_e( 'Published Templates:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $media_templates_count ); ?></li>
+							<li><strong><?php esc_html_e( 'Preset Templates:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $media_templates_presets ); ?> / <?php echo absint( $media_presets_available ); ?> available</li>
+							<li><strong><?php esc_html_e( 'Template Sync Status:', 'mcp-ai-wpoos' ); ?></strong>
+								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $tpl_status_class ); ?>">
+									<?php echo esc_html( $tpl_status_text ); ?>
+								</span>
+							</li>
+							<li><strong><?php esc_html_e( 'Published Collections:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $media_collections_count ); ?></li>
+							<li><strong><?php esc_html_e( 'Preset Collections:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $media_collections_presets ); ?> / <?php echo absint( $media_coll_available ); ?> available</li>
+							<li><strong><?php esc_html_e( 'Collection Sync Status:', 'mcp-ai-wpoos' ); ?></strong>
+								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $coll_status_class ); ?>">
+									<?php echo esc_html( $coll_status_text ); ?>
+								</span>
+							</li>
+						</ul>
+						<p class="description" style="margin: 10px 0 0 0;">
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_media_tpl' ) ); ?>">
+								<?php esc_html_e( 'View all media templates', 'mcp-ai-wpoos' ); ?> &rarr;
+							</a>
+							&nbsp;|&nbsp;
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_media_coll' ) ); ?>">
+								<?php esc_html_e( 'View all media collections', 'mcp-ai-wpoos' ); ?> &rarr;
+							</a>
+						</p>
+					</div>
+
+					<div class="wp-mcp-ai-media-toolkit-actions" style="margin-top: 20px;">
+						<h4><?php esc_html_e( 'Sync Media Presets', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description">
+							<?php esc_html_e( 'Load pre-configured template presets and collection groupings for the Media Toolkit. Templates include social media sizes, e-commerce product images, branding watermarks, and marketing graphics.', 'mcp-ai-wpoos' ); ?>
+						</p>
+
+						<div style="margin: 15px 0;">
+							<p>
+								<button type="button" class="button button-secondary" id="wp-mcp-ai-sync-media-templates-btn">
+									<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Sync Media Templates &amp; Collections', 'mcp-ai-wpoos' ); ?>
+								</button>
+								<span class="description" style="margin-left: 10px;">
+									<?php esc_html_e( 'Adds preset templates and collections without overwriting existing ones.', 'mcp-ai-wpoos' ); ?>
+								</span>
+							</p>
+
+							<p>
+								<button type="button" class="button button-secondary" id="wp-mcp-ai-force-reseed-media-btn">
+									<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Force Reseed Media Presets', 'mcp-ai-wpoos' ); ?>
+								</button>
+								<span class="description" style="margin-left: 10px;">
+									<?php esc_html_e( 'Updates existing presets with latest versions. Use after plugin updates to refresh template specs.', 'mcp-ai-wpoos' ); ?>
+								</span>
+							</p>
+						</div>
+
+						<div id="wp-mcp-ai-sync-media-templates-message" class="notice" style="display: none; margin: 15px 0;">
+							<p></p>
+						</div>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<?php
+			$media_sync_processing      = __( 'Syncing...', 'mcp-ai-wpoos' );
+			$media_sync_nonce           = wp_create_nonce( 'wp_mcp_ai_sync_media_templates' );
+			$media_sync_error           = __( 'An error occurred.', 'mcp-ai-wpoos' );
+			$media_sync_ajax_error      = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+			$media_sync_seed_confirm    = __( 'This will add pre-configured media templates and collections without modifying existing ones. Continue?', 'mcp-ai-wpoos' );
+			$media_sync_force_confirm   = __( 'This will update all preset media templates and collections with the latest versions. Existing presets will be overwritten. Continue?', 'mcp-ai-wpoos' );
+
+			ob_start();
+			?>
+			jQuery(document).ready(function($) {
+				function performMediaSync(actionType, buttonId) {
+					var $button = $(buttonId);
+					var $message = $('#wp-mcp-ai-sync-media-templates-message');
+					var originalText = $button.html();
+
+					// Disable both buttons.
+					$('#wp-mcp-ai-sync-media-templates-btn, #wp-mcp-ai-force-reseed-media-btn')
+						.prop('disabled', true)
+						.addClass('disabled');
+
+					// Update button text.
+					$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> ' + <?php echo wp_json_encode( $media_sync_processing ); ?>);
+
+					// Hide any previous messages.
+					$message.hide().removeClass('notice-success notice-error notice-warning');
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_sync_media_templates',
+							action_type: actionType,
+							nonce: <?php echo wp_json_encode( $media_sync_nonce ); ?>
+						},
+						success: function(response) {
+							if (response.success) {
+								$message
+									.removeClass('notice-error notice-warning')
+									.addClass('notice-success')
+									.find('p').html(response.data.message);
+								$message.show();
+
+								// Reload stats after a short delay.
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(response.data.message || <?php echo wp_json_encode( $media_sync_error ); ?>);
+								$message.show();
+							}
+						},
+						error: function(xhr, status, error) {
+							$message
+								.removeClass('notice-success notice-warning')
+								.addClass('notice-error')
+								.find('p').html(<?php echo wp_json_encode( $media_sync_ajax_error ); ?> + error);
+							$message.show();
+						},
+						complete: function() {
+							// Re-enable buttons and restore text.
+							$('#wp-mcp-ai-sync-media-templates-btn, #wp-mcp-ai-force-reseed-media-btn')
+								.prop('disabled', false)
+								.removeClass('disabled');
+							$button.html(originalText);
+						}
+					});
+				}
+
+				$('#wp-mcp-ai-sync-media-templates-btn').on('click', function(e) {
+					e.preventDefault();
+					if (confirm(<?php echo wp_json_encode( $media_sync_seed_confirm ); ?>)) {
+						performMediaSync('seed', '#wp-mcp-ai-sync-media-templates-btn');
+					}
+				});
+
+				$('#wp-mcp-ai-force-reseed-media-btn').on('click', function(e) {
+					e.preventDefault();
+					if (confirm(<?php echo wp_json_encode( $media_sync_force_confirm ); ?>)) {
+						performMediaSync('force_reseed', '#wp-mcp-ai-force-reseed-media-btn');
+					}
+				});
+			});
+			<?php
+			$media_sync_js = ob_get_clean();
+			wp_print_inline_script_tag( $media_sync_js );
+			?>
+
 			<!-- PRODUCTION CLEANUP SECTION -->
 			<div class="wp-mcp-ai-production-cleanup-section" style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd;">
 				<h3><?php esc_html_e( 'Production Cleanup', 'mcp-ai-wpoos' ); ?></h3>
