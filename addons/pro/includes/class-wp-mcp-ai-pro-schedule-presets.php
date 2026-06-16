@@ -2550,7 +2550,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 * @since  1.0.0
 		 * @return array<string, array> Preset definitions.
 		 */
-		private static function get_media_presets() {
+		public static function get_media_presets() {
 			return array(
 
 				// ================================================================
