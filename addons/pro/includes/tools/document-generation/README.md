@@ -4,7 +4,7 @@ AI-powered PDF, Word, and Excel document generation for WordPress.
 
 ## Overview
 
-The Document Generation Toolkit provides 13 professional document generation and manipulation tools:
+The Document Generation Toolkit provides 17 professional document generation and manipulation tools:
 
 ### AI-Powered Document Generation (3)
 - **pro_pdf_document** - Advanced AI-powered PDF generation with templates and formatting
@@ -26,6 +26,12 @@ The Document Generation Toolkit provides 13 professional document generation and
 ### Excel Data Tools (2)
 - **excel_data_import** - Import data from Excel spreadsheets
 - **excel_data_export** - Export data to Excel spreadsheets
+
+### Document Audit & Batch Tools (4)
+- **get_expired_documents** - Retrieve documents past their expiry date with type and time filters
+- **get_uninvoiced_orders** - Find WooCommerce orders without invoices (requires WooCommerce)
+- **archive_documents** - Batch archive documents with dry_run preview mode
+- **generate_invoice_batch** - Generate invoices for multiple orders in one operation
 
 ## Requirements
 

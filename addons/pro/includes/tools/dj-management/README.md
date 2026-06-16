@@ -25,7 +25,7 @@ Complete implementation of 18 professional tools for DJ business management.
    - Prevent double-booking with conflict detection
    - Track equipment usage and availability
 
-### Playlist & Music Library (5 tools)
+### Playlist & Music Library (7 tools)
 5. **Create Playlist** (`create_playlist`)
    - Create custom playlists with tracks
    - Organize by event type, genre, and mood
@@ -56,56 +56,68 @@ Complete implementation of 18 professional tools for DJ business management.
    - Transition style suggestions
    - Mix point calculations
 
+10. **Get Trending Tracks** (`get_trending_tracks`)
+    - List trending/popular tracks from the library
+    - Filter by genre, BPM range, or time period
+    - Returns play count, last played, and energy level
+    - Graceful handling when track library isn't set up yet
+
+11. **Update Playlist Rotation** (`update_playlist_rotation`)
+    - Promote, demote, or remove tracks in rotation
+    - Dry run mode previews changes without modifying data
+    - Tracks rotation history with timestamps
+    - Permission-aware (author or edit_others_posts)
+
 ### Event & Booking Management (5 tools)
-10. **Create Event Booking** (`create_event_booking`)
+12. **Create Event Booking** (`create_event_booking`)
     - Create DJ event bookings
     - Store client and event details
     - Track pricing and deposits
     - Post type: `dj_booking`
 
-11. **Update Event Details** (`update_event_details`)
+13. **Update Event Details** (`update_event_details`)
     - Modify existing booking information
     - Update status, pricing, and event info
     - Track modification history
 
-12. **Generate Event Timeline** (`generate_event_timeline`)
+14. **Generate Event Timeline** (`generate_event_timeline`)
     - Create detailed event schedules
     - Include setup and breakdown times
     - Event-type specific timelines (weddings, corporate, etc.)
     - Calculate total event duration
 
-13. **Send Event Confirmation** (`send_event_confirmation`)
+15. **Send Event Confirmation** (`send_event_confirmation`)
     - Email booking confirmations to clients
     - Include event details and timeline
     - Custom message support
     - Update booking status to "confirmed"
 
-14. **Track Event Payments** (`track_event_payments`)
+16. **Track Event Payments** (`track_event_payments`)
     - Record payment transactions
     - Track deposits, partial, and final payments
     - Calculate outstanding balances
     - Multiple payment methods support
 
 ### Client & Contract Management (4 tools)
-15. **Create Client Profile** (`create_client_profile`)
+17. **Create Client Profile** (`create_client_profile`)
     - Store client contact information
     - Track preferences and budget ranges
     - Prevent duplicate clients by email
     - Post type: `dj_client`
 
-16. **Generate DJ Contract** (`generate_dj_contract`)
+18. **Generate DJ Contract** (`generate_dj_contract`)
     - Create professional service contracts
     - Include event details and terms
     - Customizable payment and cancellation policies
     - Store contract with booking
 
-17. **Send Client Invoice** (`send_client_invoice`)
+19. **Send Client Invoice** (`send_client_invoice`)
     - Generate and email professional invoices
     - Track invoice numbers and due dates
     - Show payment breakdown and balance
     - Custom message support
 
-18. **Client Communication Log** (`client_communication_log`)
+20. **Client Communication Log** (`client_communication_log`)
     - Log all client interactions
     - Track emails, calls, meetings, notes
     - Follow-up reminders

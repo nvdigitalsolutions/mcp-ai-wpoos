@@ -1,6 +1,6 @@
 # Image Production Toolkit (Phase 2.8)
 
-This directory contains 15 professional AI-powered image tools for the NV oOS Pro toolkit.
+This directory contains 20 professional AI-powered image tools for the NV oOS Pro toolkit.
 
 ## Tools Overview
 
@@ -17,13 +17,18 @@ This directory contains 15 professional AI-powered image tools for the NV oOS Pr
 8. **apply_artistic_style** - Apply artistic styles (style transfer)
 9. **colorize_image** - Colorize black & white images
 
-### Optimization & Batch Processing (6 tools)
+### Optimization & Batch Processing (11 tools)
 10. **compress_image** - Compress with quality preservation
 11. **convert_image_format** - Convert formats (JPG, PNG, WebP, AVIF)
 12. **resize_image_smart** - Smart content-aware resizing
 13. **batch_process_images** - Batch apply operations
 14. **generate_responsive_images** - Generate responsive variants
 15. **optimize_for_web** - Optimize for web performance
+16. **get_images_without_alt** - Query images missing alt text
+17. **get_unoptimised_images** - Query images needing optimization
+18. **get_unwatermarked_images** - Query images not yet watermarked
+19. **apply_watermark_batch** - Batch watermark application
+20. **optimise_images_batch** - Batch image optimization
 
 ## Features
 
@@ -83,5 +88,5 @@ All tools implement:
 **Phase**: 2.8  
 **Component**: Image Production Toolkit  
 **Status**: Implemented  
-**Tools Count**: 15  
-**Total Size**: ~97 KB
+**Tools Count**: 20  
+**Total Size**: ~175 KB

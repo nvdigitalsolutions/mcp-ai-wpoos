@@ -23,6 +23,8 @@ Houses 6 Phase C cross-cutting Health & Wellness tools: member allergy checks, h
 | `WP_MCP_AI_Tool_Verify_Prescription_Interactions` | `class-wp-mcp-ai-tool-verify-prescription-interactions.php` | tool registry |
 | `WP_MCP_AI_Tool_Generate_Visit_Summary` | `class-wp-mcp-ai-tool-generate-visit-summary.php` | tool registry |
 | `WP_MCP_AI_Tool_Merge_Duplicate_Members` | `class-wp-mcp-ai-tool-merge-duplicate-members.php` | tool registry |
+| `WP_MCP_AI_Tool_Get_Recent_Health_Appointments` | `class-wp-mcp-ai-tool-get-recent-health-appointments.php` | tool registry |
+| `WP_MCP_AI_Tool_Send_Appointment_Followup` | `class-wp-mcp-ai-tool-send-appointment-followup.php` | tool registry |
 
 ## Inputs / Outputs / Neighbors
 

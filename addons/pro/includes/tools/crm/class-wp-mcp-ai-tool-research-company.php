@@ -14,6 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Ensure the base Web Search tool is available for the is_available() check.
+// Pro tools load at plugins_loaded priority 15, but base tools load at
+// priority 20, so class_exists() would return false without this require.
+if ( ! class_exists( 'WP_MCP_AI_Tool_Web_Search' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.php';
+}
+
 /**
  * Provides functionality to research companies using web search and AI.
  */
