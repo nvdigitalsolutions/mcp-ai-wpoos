@@ -9,12 +9,15 @@
  * Threads data is fetched internally via the read-only `useThreads` hook.
  */
 
-import { type JSX, useCallback, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { useThreads } from '../../hooks/useThreads';
 import type { TranscriptSession } from '../../api/transcripts';
 import type { ThreadSummary } from '../../api/threads';
+import { useAssistantStore } from '../../stores/assistantStore';
+import { AssistantsClient, type AssistantRecord } from '../../api/assistants';
+import { readProSpaConfig } from '../../api/config';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,8 +44,12 @@ export interface ChatSidebarProps {
 	/** WordPress REST nonce. */
 	nonce: string;
 
-	/** Callback when a thread is selected in the sidebar (read-only view). */
-	onSelectThread?: ( threadId: number ) => void;
+	/** Navigate to chat page when a thread is selected. */
+	onSelectThread?: ( id: number ) => void;
+
+	/** Base URL for the assistants REST endpoint. When provided, an
+	 *  assistant selector dropdown appears above the tab bar. */
+	assistantsEndpoint?: string;
 }
 
 type SidebarTab = 'conversations' | 'threads';
@@ -63,9 +70,33 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 		threadsEndpoint,
 		nonce,
 		onSelectThread,
+		assistantsEndpoint,
 	} = props;
 
-	// ---- active tab (default: conversations) ----
+	// ---- assistant store ----
+	const assistantId = useAssistantStore( ( s ) => s.assistantId );
+	const assistants = useAssistantStore( ( s ) => s.assistants );
+	const setActiveAssistant = useAssistantStore( ( s ) => s.setActiveAssistant );
+	const setAssistants = useAssistantStore( ( s ) => s.setAssistants );
+
+	// ---- fetch assistants on mount ----
+	useEffect( () => {
+		if ( ! assistantsEndpoint ) return;
+		let cancelled = false;
+		const runtime = readProSpaConfig();
+		const client = new AssistantsClient( {
+			endpoint: assistantsEndpoint,
+			nonce: runtime?.nonce ?? nonce,
+		} );
+		client.list().then( ( result ) => {
+			if ( ! cancelled ) setAssistants( result.assistants );
+		} ).catch( () => {
+			// Non-critical — selector just stays empty.
+		} );
+		return () => { cancelled = true; };
+	}, [ assistantsEndpoint, nonce, setAssistants ] );
+
+	// ---- active tab ----
 	const [ activeTab, setActiveTab ] = useState< SidebarTab >( 'conversations' );
 
 	// ---- threads (read-only browse) ----
@@ -150,7 +181,43 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 			role="complementary"
 			aria-label={ __( 'Chat sidebar', 'nvoos-pro-spa' ) }
 		>
-			{ /* ---- tab bar ---- */ }
+			{/* ---- assistant selector ---- */}
+			{ assistantsEndpoint && (
+				<div className="nvoos-pro-spa-sidebar__assistant-select">
+					<label
+						htmlFor="nvoos-pro-spa-sidebar-assistant"
+						className="nvoos-pro-spa-screen-reader-only"
+					>
+						{ __( 'Select assistant', 'nvoos-pro-spa' ) }
+					</label>
+					{ assistants.length > 0 ? (
+						<select
+							id="nvoos-pro-spa-sidebar-assistant"
+							value={ assistantId }
+							onChange={ ( e ) => {
+								const id = parseInt( e.target.value, 10 );
+								if ( id > 0 ) setActiveAssistant( id );
+							} }
+							aria-label={ __( 'Select assistant', 'nvoos-pro-spa' ) }
+						>
+							<option value="0" disabled>
+								{ __( '— Select an assistant —', 'nvoos-pro-spa' ) }
+							</option>
+							{ assistants.map( ( a ) => (
+								<option key={ a.id } value={ a.id }>
+									{ a.title }{ a.model ? ` — ${ a.provider ?? '' }/${ a.model }` : '' }
+								</option>
+							) ) }
+						</select>
+					) : (
+						<p className="nvoos-pro-spa-sidebar__assistant-loading">
+							{ __( 'Loading assistants…', 'nvoos-pro-spa' ) }
+						</p>
+					) }
+				</div>
+			) }
+
+			{/* ---- tab bar ---- */}
 			<div className="nvoos-pro-spa-sidebar__tabs" role="tablist">
 				<button
 					type="button"

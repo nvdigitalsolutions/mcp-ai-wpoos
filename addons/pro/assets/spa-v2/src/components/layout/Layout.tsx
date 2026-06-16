@@ -27,12 +27,13 @@ import { AppRouter } from '../../router';
 interface LayoutContentProps {
 	transcriptsEndpoint: string;
 	threadsEndpoint: string;
+	assistantsEndpoint: string;
 	nonce: string;
 	assistantId: number;
 }
 
 function LayoutContent( props: LayoutContentProps ): JSX.Element {
-	const { transcriptsEndpoint, threadsEndpoint, nonce, assistantId } = props;
+	const { transcriptsEndpoint, threadsEndpoint, assistantsEndpoint, nonce, assistantId } = props;
 
 	// ---- transcripts (conversation sessions) — single source of truth ----
 	const transcripts = useTranscripts( {
@@ -81,6 +82,7 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 				threadsEndpoint={ threadsEndpoint }
 				nonce={ nonce }
 				onSelectThread={ handleSelectThread }
+				assistantsEndpoint={ assistantsEndpoint }
 			/>
 
 			{ /* ---- main content ---- */ }
@@ -130,7 +132,7 @@ export function Layout(): JSX.Element {
 	}
 
 	const {
-		endpoints: { transcripts: transcriptsEndpoint, threads: threadsEndpoint },
+		endpoints: { transcripts: transcriptsEndpoint, threads: threadsEndpoint, assistants: assistantsEndpoint },
 		nonce,
 		config: { assistantId },
 	} = runtime;
@@ -140,6 +142,7 @@ export function Layout(): JSX.Element {
 			<LayoutContent
 				transcriptsEndpoint={ transcriptsEndpoint }
 				threadsEndpoint={ threadsEndpoint }
+				assistantsEndpoint={ assistantsEndpoint }
 				nonce={ nonce }
 				assistantId={ assistantId ?? 0 }
 			/>
