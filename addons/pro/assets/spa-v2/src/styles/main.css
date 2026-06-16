@@ -46,11 +46,49 @@
 	}
 }
 
+/* ── WordPress Admin Integration ──────────────────────────────────────────── */
+
+/*
+ * The SPA is rendered inside the WordPress admin content area at
+ * /wp-admin/admin.php?page=wp-mcp-ai-spa.  WordPress wraps the page in:
+ *
+ *   #wpwrap > #adminmenuwrap + #wpcontent > #wpbody > #wpbody-content
+ *
+ * #wpcontent has margin-left (160px expanded / 36px folded) to clear the
+ * admin menu.  #wpbody-content is floated which causes height collapse.
+ *
+ * The body class `toplevel_page_wp-mcp-ai-spa` is specific to this menu page.
+ */
+
+/* Unfloat the content area so it stretches to the viewport height.
+   Remove footer padding (the SPA has its own status bar). */
+body.toplevel_page_wp-mcp-ai-spa #wpbody-content {
+	float: none;
+	padding-bottom: 0;
+}
+
+/* Fill the available viewport below the 32px admin bar.
+   On small screens (≤782px) the admin bar is 46px. */
+body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
+	min-height: calc(100vh - 32px);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+@media screen and ( max-width: 782px ) {
+	body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
+		min-height: calc(100vh - 46px);
+	}
+}
+
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 
 .nvoos-pro-spa-layout {
+	position: relative;  /* anchoring context for absolutely-positioned children */
 	display: flex;
-	height: calc(100vh - 32px);
+	flex: 1;
+	min-height: 0;       /* allow flex shrink inside column parent */
 	background: var(--nvoos-bg, #f0f0f1);
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 	font-size: 14px;
@@ -62,6 +100,7 @@
 	overflow: auto;
 	display: flex;
 	flex-direction: column;
+	padding-bottom: 24px;  /* reserve space for the absolute status bar */
 }
 
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
@@ -120,7 +159,7 @@
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	height: 100vh;
+	height: 100%;
 	color: var(--nvoos-text-secondary, #787c82);
 }
 
@@ -381,7 +420,7 @@
 /* ── Status Bar ───────────────────────────────────────────────────────────── */
 
 .nvoos-pro-spa-status-bar {
-	position: fixed;
+	position: absolute;
 	bottom: 0;
 	left: 0;
 	right: 0;
@@ -1123,7 +1162,7 @@
 
 .nvoos-pro-spa-toast-container {
 	position: fixed;
-	bottom: 32px;
+	bottom: 40px;  /* above the 24px status bar */
 	right: 16px;
 	z-index: 100001;
 	display: flex;
@@ -1217,11 +1256,11 @@
 
 .nvoos-pro-spa-memory-drawer {
 	position: fixed;
-	top: 0;
+	top: 32px;  /* below the WordPress admin bar */
 	right: 0;
 	width: 380px;
 	max-width: 90vw;
-	height: 100vh;
+	height: calc(100vh - 32px);
 	background: var(--nvoos-bg-secondary, #fff);
 	border-left: 1px solid var(--nvoos-border, #dcdcde);
 	box-shadow: -4px 0 16px rgba( 0, 0, 0, 0.10 );
@@ -1229,6 +1268,13 @@
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-memory-drawer {
+		top: 46px;
+		height: calc(100vh - 46px);
+	}
 }
 
 .nvoos-pro-spa-memory-drawer-header {
