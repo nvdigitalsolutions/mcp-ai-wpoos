@@ -1474,6 +1474,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Apply_Collection_Template' => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-apply-collection-template.php',
 				// Sharp image optimization tool (enhanced with NPM package).
 				'WP_MCP_AI_Tool_Optimize_Image_Sharp'      => WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/class-wp-mcp-ai-tool-optimize-image-sharp.php',
+				// Orphaned media management tools.
+				'WP_MCP_AI_Tool_Scan_Orphaned_Media'       => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-scan-orphaned-media.php',
+				'WP_MCP_AI_Tool_Cleanup_Orphaned_Media'    => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-cleanup-orphaned-media.php',
 			);
 			$pro_tools           = array_merge( $pro_tools, $media_toolkit_tools );
 		}
@@ -2585,6 +2588,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['generate_material_schedule']     = 'external-tools';
 			$pro_tools['estimate_construction_cost']     = 'external-tools';
 			$pro_tools['generate_construction_timeline'] = 'external-tools';
+		}
+
+		// Add Media Toolkit tool mappings if enabled.
+		if ( ! empty( $settings['enable_media_toolkit'] ) ) {
+			$pro_tools['scan_orphaned_media']    = 'wordpress-core';
+			$pro_tools['cleanup_orphaned_media'] = 'wordpress-core';
 		}
 
 		// Pro Schedule Manager tools — always available (no toolkit gate).

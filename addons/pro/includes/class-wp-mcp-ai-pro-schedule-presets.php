@@ -3167,6 +3167,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 * @return array<string, array> Preset definitions.
 		 */
 		private static function get_upwork_freelancer_presets() {
+			// Only show Upwork Freelancer presets when the CRM toolkit is enabled,
+			// since the referenced tools (search_upwork_jobs, score_upwork_job, etc.)
+			// are registered under that toolkit.
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( empty( $settings['enable_crm_toolkit'] ) ) {
+				return array();
+			}
+
 			return array(
 				'upwork_job_discovery_scan'  => array(
 					'name'          => __( 'Upwork Job Discovery Scan', 'mcp-ai-wpoos-pro' ),
