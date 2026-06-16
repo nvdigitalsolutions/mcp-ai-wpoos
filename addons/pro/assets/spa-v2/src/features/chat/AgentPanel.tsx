@@ -37,6 +37,14 @@ export interface AgentPanelProps {
 	threadTitle: string;
 	/** Callback to regenerate the last assistant message. */
 	onRegenerate: () => void;
+	/** Callback to delete a message by ID. */
+	onDeleteMessage?: ( msgId: string ) => void;
+	/** Callback for feedback on a message. */
+	onFeedback?: ( msgId: string, rating: 'up' | 'down' ) => void;
+	/** Callback for editing a user message. */
+	onEditMessage?: ( msgId: string ) => void;
+	/** Map of message ID → feedback rating. */
+	feedbackState?: Record< string, 'up' | 'down' >;
 }
 
 export function AgentPanel( props: AgentPanelProps ): JSX.Element {
@@ -53,6 +61,10 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 		threadId,
 		threadTitle,
 		onRegenerate,
+		onDeleteMessage,
+		onFeedback,
+		onEditMessage,
+		feedbackState = {},
 	} = props;
 
 	const messagesEndRef = useRef< HTMLDivElement | null >( null );
@@ -83,18 +95,6 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 			}
 		},
 		[ handleSubmit ]
-	);
-
-	const isLastAssistant = useCallback(
-		( index: number ): boolean => {
-			for ( let i = messages.length - 1; i >= 0; i-- ) {
-				if ( messages[ i ].role === 'assistant' ) {
-					return i === index;
-				}
-			}
-			return false;
-		},
-		[ messages ]
 	);
 
 	return (
@@ -129,15 +129,19 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 				) }
 
 				{ messages.map( ( message, index ) => (
-					<MessageView
-						key={ message.id ?? `msg-${ index }` }
-						message={ message }
-						isLast={ index === messages.length - 1 }
-						isLastAssistant={ isLastAssistant( index ) }
-						onRegenerate={ onRegenerate }
-						isStreaming={ isStreaming }
-					/>
-				) ) }
+				<MessageView
+				key={ message.id ?? `msg-${ index }` }
+				message={ message }
+				index={ index }
+				totalCount={ messages.length }
+				isStreaming={ isStreaming }
+				onRegenerate={ onRegenerate }
+				 onDelete={ onDeleteMessage }
+				  onFeedback={ onFeedback }
+					onEdit={ onEditMessage }
+					feedback={ feedbackState[ message.id ] ?? null }
+				/>
+			) ) }
 
 				{/* Error display */}
 				{ error && status === 'error' && (

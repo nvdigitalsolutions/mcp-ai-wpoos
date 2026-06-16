@@ -16,6 +16,8 @@ import { useBootstrap } from '../../hooks/useBootstrap';
 import { useChatSpoke } from '../../hooks/useChatSpoke';
 import { useTranscripts } from '../../hooks/useTranscripts';
 import { useModelStore } from '../../stores/modelStore';
+import { useAssistantStore } from '../../stores/assistantStore';
+import { ThreadsClient } from '../../api/threads';
 import { AgentPanel } from './AgentPanel';
 import { MemoryDrawer, type MemoryTab } from '../../components/shared/MemoryDrawer';
 import { HitlApprovalBar } from '../../components/shared/HitlApprovalBar';
@@ -37,7 +39,9 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const availableModels = useModelStore( ( s ) => s.availableModels );
 	const availableProfiles = useModelStore( ( s ) => s.availableProfiles );
 
-	const assistantId = runtime?.config?.assistantId ?? 0;
+	// Use assistant store for dynamic selection (with runtime config fallback).
+	const storedAssistantId = useAssistantStore( ( s ) => s.assistantId );
+	const assistantId = storedAssistantId > 0 ? storedAssistantId : ( runtime?.config?.assistantId ?? runtime?.user?.assistant_id ?? 0 );
 	const endpoints = runtime?.endpoints;
 	const nonce = runtime?.nonce ?? '';
 
@@ -94,6 +98,55 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const [ memoryOpen, setMemoryOpen ] = useState< boolean >( false );
 	const [ memoryTab, setMemoryTab ] = useState< MemoryTab >( 'memories' );
 	const memoryToggleRef = useRef< HTMLButtonElement | null >( null );
+
+	// ---- Feedback state ----
+	const [ feedbackState, setFeedbackState ] = useState< Record< string, 'up' | 'down' > >( {} );
+
+	const handleDeleteMessage = useCallback(
+		( msgId: string ) => {
+			chatSpoke.setMessages( messages.filter( ( m: Message ) => m.id !== msgId ) );
+		},
+		[ messages, chatSpoke ]
+	);
+
+	const handleFeedback = useCallback(
+		( msgId: string, rating: 'up' | 'down' ) => {
+			setFeedbackState( ( prev ) => {
+				if ( prev[ msgId ] === rating ) {
+					const next = { ...prev };
+					delete next[ msgId ];
+					return next;
+				}
+				return { ...prev, [ msgId ]: rating };
+			} );
+		},
+		[]
+	);
+
+	const handleEditMessage = useCallback(
+		( msgId: string ) => {
+			const idx = messages.findIndex( ( m ) => m.id === msgId );
+			if ( idx < 0 ) return;
+			const msg = messages[ idx ];
+			if ( msg.role !== 'user' ) return;
+			chatSpoke.setMessages( messages.slice( 0, idx ) );
+			const content = typeof msg.content === 'string' ? msg.content : '';
+			// Fire a synthetic input event to update the composer.
+			const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+				window.HTMLTextAreaElement.prototype,
+				'value'
+			)?.set;
+			const inputEl = document.getElementById(
+				'nvoos-pro-spa-composer-input'
+			) as HTMLTextAreaElement | null;
+			if ( inputEl && nativeInputValueSetter ) {
+				nativeInputValueSetter.call( inputEl, content );
+				inputEl.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				inputEl.focus();
+			}
+		},
+		[ messages, chatSpoke ]
+	);
 
 	const hasMemory = typeof endpoints?.memory === 'string' && endpoints.memory.length > 0;
 	const hasApprovals = typeof endpoints?.approvals === 'string' && endpoints.approvals.length > 0;
@@ -223,19 +276,23 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 			) }
 
 			<AgentPanel
-				messages={ messages }
-				input={ input }
-				handleInputChange={ handleInputChange }
-				handleSubmit={ handleSubmit }
-				status={ status }
-				error={ chatError }
-				stop={ stop }
-				reload={ reload }
-				isStreaming={ isStreaming }
-				sendMessage={ sendMessage }
-				threadId={ 0 }
-				threadTitle={ '' }
-				onRegenerate={ handleRegenerate }
+			messages={ messages }
+			input={ input }
+			handleInputChange={ handleInputChange }
+			handleSubmit={ handleSubmit }
+			status={ status }
+			error={ chatError }
+			stop={ stop }
+			reload={ reload }
+			isStreaming={ isStreaming }
+			sendMessage={ sendMessage }
+			threadId={ 0 }
+			threadTitle={ '' }
+			onRegenerate={ handleRegenerate }
+			onDeleteMessage={ handleDeleteMessage }
+			onFeedback={ handleFeedback }
+			onEditMessage={ handleEditMessage }
+			feedbackState={ feedbackState }
 			/>
 
 			{/* Memory drawer */}

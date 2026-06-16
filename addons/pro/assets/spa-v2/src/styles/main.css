@@ -1646,6 +1646,385 @@
 /* ------------------------------------------------------------------ */
 /* screen-reader-only utility (AgentPanel label)                      */
 /* ------------------------------------------------------------------ */
+
+/* ── Markdown content (rendered HTML) ─────────────────────────────────── */
+
+.nvoos-pro-spa-markdown {
+	word-break: break-word;
+	line-height: 1.6;
+}
+
+.nvoos-pro-spa-markdown p {
+	margin: 0 0 0.5rem;
+}
+
+.nvoos-pro-spa-markdown p:last-child {
+	margin-bottom: 0;
+}
+
+.nvoos-pro-spa-markdown ul,
+.nvoos-pro-spa-markdown ol {
+	margin: 0 0 0.5rem;
+	padding-left: 1.25rem;
+}
+
+.nvoos-pro-spa-markdown li {
+	margin-bottom: 0.125rem;
+}
+
+.nvoos-pro-spa-markdown blockquote {
+	margin: 0 0 0.5rem;
+	padding: 0.25rem 0.75rem;
+	border-left: 3px solid var(--nvoos-border, #dcdcde);
+	opacity: 0.85;
+}
+
+.nvoos-pro-spa-markdown h1,
+.nvoos-pro-spa-markdown h2,
+.nvoos-pro-spa-markdown h3,
+.nvoos-pro-spa-markdown h4,
+.nvoos-pro-spa-markdown h5,
+.nvoos-pro-spa-markdown h6 {
+	margin: 0.75rem 0 0.25rem;
+	line-height: 1.3;
+}
+
+.nvoos-pro-spa-markdown h1 { font-size: 1.25rem; }
+.nvoos-pro-spa-markdown h2 { font-size: 1.15rem; }
+.nvoos-pro-spa-markdown h3 { font-size: 1.05rem; }
+
+.nvoos-pro-spa-markdown a {
+	color: var(--nvoos-primary, #2271b1);
+	text-decoration: underline;
+}
+
+.nvoos-pro-spa-markdown img {
+	max-width: 100%;
+	height: auto;
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-markdown pre {
+	margin: 0.25rem 0 0.5rem;
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.06);
+	border-radius: 4px;
+	overflow-x: auto;
+	font-size: 0.85rem;
+	line-height: 1.5;
+}
+
+.nvoos-pro-spa-markdown code {
+	font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+	font-size: 0.85em;
+}
+
+.nvoos-pro-spa-markdown :not(pre) > code {
+	padding: 0.1em 0.3em;
+	background: rgba(0, 0, 0, 0.08);
+	border-radius: 3px;
+}
+
+.nvoos-pro-spa-markdown table {
+	width: 100%;
+	margin: 0.25rem 0 0.5rem;
+	border-collapse: collapse;
+	font-size: 0.85rem;
+}
+
+.nvoos-pro-spa-markdown th,
+.nvoos-pro-spa-markdown td {
+	padding: 0.35rem 0.5rem;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	text-align: left;
+}
+
+.nvoos-pro-spa-markdown th {
+	background: rgba(0, 0, 0, 0.04);
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-markdown hr {
+	margin: 0.5rem 0;
+	border: none;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-markdown del {
+	opacity: 0.6;
+}
+
+/* ── Code block copy button ──────────────────────────────────────────── */
+
+.nvoos-pro-spa-code-wrapper {
+	position: relative;
+}
+
+.nvoos-pro-spa-code-copy {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	padding: 2px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 3px;
+	background: var(--nvoos-bg-secondary, #fff);
+	font-size: 11px;
+	cursor: pointer;
+	opacity: 0.7;
+	transition: opacity 0.15s;
+}
+
+.nvoos-pro-spa-code-copy:hover {
+	opacity: 1;
+}
+
+.nvoos-pro-spa-code-copy--success {
+	color: var(--nvoos-success, #00a32a);
+	border-color: var(--nvoos-success, #00a32a);
+}
+
+/* ── Message actions toolbar ──────────────────────────────────────────── */
+
+.nvoos-pro-spa-message-view__actions {
+	display: flex;
+	gap: 4px;
+	margin-top: 4px;
+	opacity: 0;
+	transition: opacity 0.15s;
+}
+
+.nvoos-pro-spa-message-view:hover .nvoos-pro-spa-message-view__actions {
+	opacity: 1;
+}
+
+.nvoos-pro-spa-toolbar-btn {
+	padding: 2px 6px;
+	border: 1px solid transparent;
+	border-radius: 3px;
+	background: transparent;
+	cursor: pointer;
+	font-size: 13px;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.nvoos-pro-spa-toolbar-btn:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+	border-color: var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-toolbar-copy--success {
+	color: var(--nvoos-success, #00a32a);
+}
+
+.nvoos-pro-spa-toolbar-save--active {
+	color: var(--nvoos-warning, #f0c33c);
+}
+
+.nvoos-pro-spa-toolbar-feedback--active {
+	color: var(--nvoos-primary, #2271b1);
+	border-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-toolbar-delete {
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-toolbar-delete:hover {
+	color: var(--nvoos-danger, #d63638);
+	border-color: var(--nvoos-danger, #d63638);
+	background: rgba(214, 54, 56, 0.08);
+}
+
+/* ── Tool invocation cards ───────────────────────────────────────────── */
+
+.nvoos-pro-spa-message-view__tools {
+	margin-top: 6px;
+}
+
+.nvoos-pro-spa-tool {
+	margin: 2px 0;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-tool summary {
+	padding: 6px 10px;
+	cursor: pointer;
+	font-size: 12px;
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-tool-name {
+	font-weight: 600;
+	color: var(--nvoos-primary, #2271b1);
+	font-family: monospace;
+}
+
+.nvoos-pro-spa-tool-state {
+	margin-left: 8px;
+	font-style: italic;
+	opacity: 0.7;
+}
+
+.nvoos-pro-spa-tool-block {
+	padding: 8px 10px;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-tool-block pre {
+	margin: 4px 0 0;
+	padding: 6px;
+	background: rgba(0, 0, 0, 0.04);
+	border-radius: 3px;
+	font-size: 11px;
+	overflow-x: auto;
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.nvoos-pro-spa-tool-block-label {
+	font-size: 11px;
+	text-transform: uppercase;
+	opacity: 0.6;
+}
+
+/* ── Annotation pills ────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-message-view__annotations {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 4px;
+}
+
+.nvoos-pro-spa-annotation {
+	padding: 1px 6px;
+	border-radius: 10px;
+	font-size: 10px;
+	background: rgba(0, 0, 0, 0.06);
+	text-transform: uppercase;
+}
+
+.nvoos-pro-spa-annotation--memory_event {
+	background: rgba(0, 163, 42, 0.12);
+	color: var(--nvoos-success, #00a32a);
+}
+
+/* ── Special content blocks ──────────────────────────────────────────── */
+
+.nvoos-pro-spa-special {
+	margin: 4px 0;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-special-summary {
+	padding: 6px 10px;
+	cursor: pointer;
+	font-size: 12px;
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-special-icon {
+	margin-right: 6px;
+	font-family: monospace;
+}
+
+.nvoos-pro-spa-special-body {
+	padding: 10px;
+	font-size: 12px;
+	overflow-x: auto;
+	max-height: 300px;
+	overflow-y: auto;
+	background: rgba(0, 0, 0, 0.02);
+}
+
+/* ── Chart block ─────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-chart {
+	margin: 8px 0;
+}
+
+.nvoos-pro-spa-chart-title {
+	font-weight: 600;
+	margin-bottom: 4px;
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-chart-iframe {
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	max-width: 100%;
+}
+
+/* ── Video block ─────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-video {
+	margin: 8px 0;
+}
+
+.nvoos-pro-spa-video-player {
+	max-width: 100%;
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-video-download {
+	display: inline-block;
+	margin-top: 4px;
+	font-size: 12px;
+}
+
+/* ── Image gallery ───────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-gallery {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 8px 0;
+}
+
+.nvoos-pro-spa-gallery-img {
+	max-width: 200px;
+	max-height: 200px;
+	object-fit: cover;
+	border-radius: 4px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-gallery-more {
+	font-size: 12px;
+	opacity: 0.6;
+	align-self: center;
+}
+
+/* ── Assistant selector in sidebar ───────────────────────────────────── */
+
+.nvoos-pro-spa-sidebar__assistant-select {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-sidebar__assistant-select select {
+	width: 100%;
+	padding: 6px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	font-size: 13px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-sidebar__assistant-loading {
+	font-size: 12px;
+	opacity: 0.6;
+	margin: 0;
+}
+
+/* ── Screen-reader only utility ──────────────────────────────────────── */
+
 .nvoos-pro-spa-screen-reader-only {
 	position: absolute;
 	width: 1px;
