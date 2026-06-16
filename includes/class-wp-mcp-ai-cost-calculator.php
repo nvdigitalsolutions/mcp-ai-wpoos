@@ -191,6 +191,11 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.10,   // $0.10 per 1M.
 				'output' => 0.40,   // $0.40 per 1M.
 			),
+			'gemini-3.1-flash-image'        => array(
+				'input'  => 0.50,   // $0.50 per 1M (text/image).
+				'output' => 60.00,  // $60 per 1M (images, ~$0.067/image at 1024x1024).
+			),
+			// [DEPRECATED] Gemini 2.5 Flash Image — migrate to gemini-3.1-flash-image.
 			'gemini-2.5-flash-image'        => array(
 				'input'  => 0.30,   // $0.30 per 1M (text).
 				'output' => 30.00,  // $30 per 1M (images, ~$0.039/image at 1024x1024).
