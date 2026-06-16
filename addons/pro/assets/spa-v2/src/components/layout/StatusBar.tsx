@@ -1,5 +1,8 @@
 /**
- * StatusBar — Fixed bottom bar showing connection status, model, profile, and thread count.
+ * StatusBar — Fixed bottom bar showing connection status, model, profile,
+ * and conversation (transcript) count.
+ *
+ * Connection health is derived from the transcripts endpoint availability.
  */
 
 import { type JSX, useMemo } from 'react';
@@ -7,35 +10,34 @@ import { __ } from '@wordpress/i18n';
 
 import { useUIStore } from '../../stores/uiStore';
 import { useModelStore } from '../../stores/modelStore';
-import { useThreads } from '../../hooks/useThreads';
+import { useTranscripts } from '../../hooks/useTranscripts';
 
 export interface StatusBarProps {
-	/** Base URL for the threads REST endpoint. */
-	threadsEndpoint: string;
+	/** Base URL for the transcripts REST endpoint. */
+	transcriptsEndpoint: string;
 	/** WordPress REST nonce. */
 	nonce: string;
 }
 
 /**
- * Derive a human-readable connection status from the threads hook state.
+ * Derive a human-readable connection status from the transcripts hook state.
  * Returns `'connected'`, `'loading'`, or `'error'`.
  */
 function deriveConnectionStatus(
-	threadsLoading: boolean,
-	threadsError: string | null,
-	threads: unknown[]
+	sessions: unknown[] | null,
+	error: string | null
 ): 'connected' | 'loading' | 'error' {
-	if ( threadsError ) {
+	if ( error ) {
 		return 'error';
 	}
-	if ( threadsLoading && threads.length === 0 ) {
+	if ( sessions === null ) {
 		return 'loading';
 	}
 	return 'connected';
 }
 
 export function StatusBar( props: StatusBarProps ): JSX.Element {
-	const { threadsEndpoint, nonce } = props;
+	const { transcriptsEndpoint, nonce } = props;
 
 	const sidebarOpen = useUIStore( ( s ) => s.sidebarOpen );
 	const toggleSidebar = useUIStore( ( s ) => s.toggleSidebar );
@@ -43,17 +45,27 @@ export function StatusBar( props: StatusBarProps ): JSX.Element {
 	const model = useModelStore( ( s ) => s.model );
 	const profile = useModelStore( ( s ) => s.profile );
 
+	// Use transcripts to derive connection status and conversation count.
 	const {
-		total: threadCount,
-		loading: threadsLoading,
-		error: threadsError,
-		fetchThreads: refreshThreads,
-	} = useThreads( { endpoint: threadsEndpoint, nonce } );
+		sessions,
+		error: transcriptsError,
+		refreshList: refreshTranscripts,
+	} = useTranscripts( {
+		endpoint: transcriptsEndpoint,
+		nonce,
+		assistantId: 0,
+		// We only need list, so assistantId isn't critical here.
+	} );
 
 	// ---- derived ----
 	const connectionStatus = useMemo(
-		() => deriveConnectionStatus( threadsLoading, threadsError, [] ),
-		[ threadsLoading, threadsError ]
+		() => deriveConnectionStatus( sessions, transcriptsError ),
+		[ sessions, transcriptsError ]
+	);
+
+	const conversationCount = useMemo(
+		() => ( Array.isArray( sessions ) ? sessions.length : 0 ),
+		[ sessions ]
 	);
 
 	const connectionLabel: Record< string, string > = useMemo(
@@ -133,28 +145,28 @@ export function StatusBar( props: StatusBarProps ): JSX.Element {
 				</span>
 			</span>
 
-			{ /* ---- thread count ---- */ }
+			{ /* ---- conversation count ---- */ }
 			<span className="nvoos-pro-spa-status-bar__item">
 				<span className="nvoos-pro-spa-status-bar__label">
-					{ __( 'Threads', 'nvoos-pro-spa' ) }
+					{ __( 'Conversations', 'nvoos-pro-spa' ) }
 					{ ': ' }
 				</span>
 				<span className="nvoos-pro-spa-status-bar__value">
-					{ threadCount }
+					{ conversationCount }
 				</span>
 			</span>
 
 			{ /* ---- error detail (shown only on error) ---- */ }
-			{ connectionStatus === 'error' && threadsError && (
+			{ connectionStatus === 'error' && transcriptsError && (
 				<span
 					className="nvoos-pro-spa-status-bar__error"
 					role="alert"
 				>
-					{ threadsError }
+					{ transcriptsError }
 					<button
 						type="button"
 						className="nvoos-pro-spa-status-bar__retry"
-						onClick={ () => void refreshThreads() }
+						onClick={ () => void refreshTranscripts() }
 					>
 						{ __( 'Retry', 'nvoos-pro-spa' ) }
 					</button>

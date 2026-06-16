@@ -4,7 +4,7 @@
  * This is the core chat hook that replaces the legacy messagesStore + sse.js.
  */
 
-import { useMemo, useCallback, useRef, type RefObject } from 'react';
+import { useMemo, useCallback, useRef, useEffect, type RefObject } from 'react';
 import { useChat, type Message } from '@ai-sdk/react';
 import { createChatFetch } from '../sse-adapter';
 import {
@@ -111,13 +111,28 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		initialMessages,
 		onFinish: ( message ) => {
 			// Persist full turn after completion.
-			const updated = [ ...messages, message ];
+			// Use the ref to avoid the stale-closure problem — `messages`
+			// inside this callback is captured at construction time.
+			const priorMessages = messagesRef.current ?? [];
+			const last = priorMessages[ priorMessages.length - 1 ];
+			const alreadyPresent =
+				last && message.id && last.id === message.id;
+			const updated = alreadyPresent
+				? priorMessages
+				: [ ...priorMessages, message ];
 			void persistFinishedTurn( updated );
 		},
 		onError: ( err ) => {
 			addToast( err.message || 'Chat error', 'error' );
 		},
 	} );
+
+	// Keep a ref to the current message list so `onFinish` (which is
+	// captured at construction time) can read the latest array.
+	const messagesRef = useRef< Message[] >( messages );
+	useEffect( () => {
+		messagesRef.current = messages;
+	}, [ messages ] );
 
 	const fileInputRef = useRef< HTMLInputElement | null >( null );
 

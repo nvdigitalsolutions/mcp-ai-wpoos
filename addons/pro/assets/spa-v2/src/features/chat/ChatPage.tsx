@@ -1,41 +1,33 @@
 /**
  * ChatPage — Main chat feature page for the Pro SPA v2.
  *
- * Routes: /chat and /chat/:threadId
+ * Route: /chat
  *
- * Orchestrates the chat spoke, thread management, transcript
- * persistence, and the agent panel UI.
+ * Architecture: **Conversations-first** (matching chat-spa pattern).
+ * The `useTranscripts` hook owns the chat session identity; `useChatSpoke`
+ * binds to `sessionKey` so switching conversations cleanly rebinds.
+ * Threads are a read-only browse view loaded via the sidebar.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useCallback, useMemo, useRef, useState, type JSX } from 'react';
 import { __, sprintf } from '@wordpress/i18n';
-import { type Message } from '@ai-sdk/react';
 
 import { useBootstrap } from '../../hooks/useBootstrap';
 import { useChatSpoke } from '../../hooks/useChatSpoke';
 import { useTranscripts } from '../../hooks/useTranscripts';
 import { useModelStore } from '../../stores/modelStore';
-import { ThreadsClient } from '../../api/threads';
 import { AgentPanel } from './AgentPanel';
 import { MemoryDrawer, type MemoryTab } from '../../components/shared/MemoryDrawer';
 import { HitlApprovalBar } from '../../components/shared/HitlApprovalBar';
 
-function chatSpokeMessagesFromThread(
-	raw: { role: string; content: string; id?: string | number }[]
-): Message[] {
-	return raw
-		.filter( ( m ) => m.role === 'user' || m.role === 'assistant' )
-		.map( ( m ) => ( {
-			id: String( m.id ?? `${ m.role }-${ Date.now() }-${ Math.random() }` ),
-			role: m.role as Message[ 'role' ],
-			content: m.content,
-		} ) );
+export interface ChatPageProps {
+	/** Transcript hook result lifted from Layout. */
+	transcripts: ReturnType< typeof useTranscripts >;
 }
 
-export function ChatPage(): JSX.Element {
-	const { threadId: threadIdParam } = useParams< { threadId?: string } >();
-	const navigate = useNavigate();
+export function ChatPage( props: ChatPageProps ): JSX.Element {
+	const { transcripts } = props;
+
 	const { loading: booting, error: bootError, runtime } = useBootstrap();
 
 	const model = useModelStore( ( s ) => s.model );
@@ -49,42 +41,29 @@ export function ChatPage(): JSX.Element {
 	const endpoints = runtime?.endpoints;
 	const nonce = runtime?.nonce ?? '';
 
-	// ---- direct ThreadsClient (for getMessages / create, not list) ----
-	const threadsClient = useMemo(
+	// Map transcript messages to AI SDK Message shape (needs `id`).
+	const initialMessages = useMemo(
 		() =>
-			endpoints?.threads
-				? new ThreadsClient( { endpoint: endpoints.threads, nonce } )
-				: null,
-		[ endpoints?.threads, nonce ]
+			transcripts.initialMessages.map( ( m, idx ) => ( {
+				id: `${ transcripts.sessionKey }:${ idx }`,
+				role: ( m.role === 'system' || m.role === 'tool' ? 'assistant' : m.role ) as
+					| 'user'
+					| 'assistant'
+					| 'system'
+					| 'data',
+				content: typeof m.content === 'string' ? m.content : '',
+			} ) ),
+		[ transcripts.initialMessages, transcripts.sessionKey ]
 	);
 
-	// ---- active thread (URL param only) ----
-	const activeThreadId = useMemo(
-		() => ( threadIdParam ? parseInt( threadIdParam, 10 ) : null ),
-		[ threadIdParam ]
-	);
-
-	// ---- local state ----
-	const [ isCreating, setIsCreating ] = useState< boolean >( false );
-	const [ threadTitle, setThreadTitle ] = useState< string >( '' );
-
-	// ---- Hooks (conditionally enabled after bootstrap) ----
-
-	const transcripts = useTranscripts( {
-		endpoint: endpoints?.transcripts ?? '',
-		nonce,
-		assistantId,
-		disabled: ! endpoints,
-	} );
-
-	const threadInitialMessages = useMemo< Message[] >( () => [], [] );
-
+	// ---- Chat spoke (conversation-driven) ----
+	// sessionKey owns the useChat `id` — switching conversations rebinds cleanly.
 	const chatSpoke = useChatSpoke( {
 		chatClientEndpoint: endpoints?.chatClient ?? '',
 		nonce,
 		assistantId,
 		transcriptsEndpoint: endpoints?.transcripts ?? '',
-		initialMessages: threadInitialMessages,
+		initialMessages,
 		sessionKey: transcripts.sessionKey,
 	} );
 
@@ -101,76 +80,11 @@ export function ChatPage(): JSX.Element {
 		sendMessage,
 	} = chatSpoke;
 
-	// ---- Load thread messages when threadId changes ----
-
-	const [ threadMessagesLoaded, setThreadMessagesLoaded ] = useState< boolean >( false );
-
-	useEffect( () => {
-		if ( ! activeThreadId || ! threadsClient || threadMessagesLoaded ) {
-			return;
-		}
-		let cancelled = false;
-		void ( async () => {
-			try {
-				// Load messages and thread info in parallel.
-				const [ msgsResult, listResult ] = await Promise.all( [
-					threadsClient.getMessages( activeThreadId ),
-					threadsClient.list(),
-				] );
-				if ( cancelled ) {
-					return;
-				}
-				// Thread title from the list.
-				const found = listResult.threads.find( ( t ) => t.id === activeThreadId );
-				if ( found?.title ) {
-					setThreadTitle( found.title );
-				}
-				if ( msgsResult.messages.length > 0 ) {
-					const formatted = chatSpokeMessagesFromThread( msgsResult.messages );
-					chatSpoke.setMessages( formatted );
-				}
-			} catch {
-				// Silently ignore — messages / title just won't load.
-			} finally {
-				if ( ! cancelled ) {
-					setThreadMessagesLoaded( true );
-				}
-			}
-		} )();
-		return () => {
-			cancelled = true;
-		};
-	}, [ activeThreadId, threadMessagesLoaded, threadsClient, chatSpoke ] );
-
-	// ---- Reset when threadId changes ----
-	useEffect( () => {
-		setThreadMessagesLoaded( false );
-		setThreadTitle( '' );
-	}, [ activeThreadId ] );
-
-	// ---- Handlers ----
-
-	const handleNewThread = useCallback( async () => {
-		if ( ! threadsClient ) {
-			return;
-		}
-		setIsCreating( true );
-		try {
-			const t = await threadsClient.create(
-				assistantId,
-				{ provider: model.provider, name: model.model },
-				profile,
-				{}
-			);
-			if ( t?.id ) {
-				navigate( `/chat/${ t.id }` );
-				setThreadMessagesLoaded( false );
-				setThreadTitle( '' );
-			}
-		} finally {
-			setIsCreating( false );
-		}
-	}, [ threadsClient, assistantId, model, profile, navigate ] );
+	// ---- Thread read‑only state (populated by ChatSidebar) ----
+	// When the sidebar selects a thread, LayoutContent calls
+	// chatSpoke.setMessages() with the thread's messages and sets
+	// activeThreadId. Those messages are treated as a read‑only view;
+	// the chat transport stays on /chat-client.
 
 	const handleRegenerate = useCallback( () => {
 		reload();
@@ -218,49 +132,12 @@ export function ChatPage(): JSX.Element {
 		);
 	}
 
-	// Welcome screen: no thread selected.
-	if ( ! activeThreadId ) {
-		return (
-			<div
-				className="nvoos-pro-spa-chat-page nvoos-pro-spa-chat-page--welcome"
-				role="main"
-				aria-label={ __( 'Welcome to Chat', 'nvoos-pro-spa' ) }
-			>
-				<div className="nvoos-pro-spa-chat-page__welcome">
-					<h1 className="nvoos-pro-spa-chat-page__welcome-title">
-						{ __( 'NV oOS Agent Chat', 'nvoos-pro-spa' ) }
-					</h1>
-					<p className="nvoos-pro-spa-chat-page__welcome-description">
-						{ __(
-							'Start a new conversation with your AI agent. Ask questions, run tools, and get things done.',
-							'nvoos-pro-spa'
-						) }
-					</p>
-					<button
-						type="button"
-						className="nvoos-pro-spa-chat-page__new-thread-btn nvoos-pro-spa-btn nvoos-pro-spa-btn--primary"
-						onClick={ handleNewThread }
-						disabled={ isCreating }
-					>
-						{ isCreating
-							? __( 'Creating…', 'nvoos-pro-spa' )
-							: __( 'New Thread', 'nvoos-pro-spa' ) }
-					</button>
-				</div>
-			</div>
-		);
-	}
-
-	// Active thread view.
+	// Always render the chat surface — conversations own the transport.
 	return (
 		<div
 			className="nvoos-pro-spa-chat-page nvoos-pro-spa-chat-page--active"
 			role="main"
-			aria-label={ sprintf(
-				/* translators: %d: thread ID */
-				__( 'Chat thread %d', 'nvoos-pro-spa' ),
-				activeThreadId
-			) }
+			aria-label={ __( 'Chat conversation', 'nvoos-pro-spa' ) }
 		>
 			<div className="nvoos-pro-spa-chat-page__toolbar">
 				{/* Model selector */}
@@ -356,8 +233,8 @@ export function ChatPage(): JSX.Element {
 				reload={ reload }
 				isStreaming={ isStreaming }
 				sendMessage={ sendMessage }
-				threadId={ activeThreadId }
-				threadTitle={ threadTitle }
+				threadId={ 0 }
+				threadTitle={ '' }
 				onRegenerate={ handleRegenerate }
 			/>
 
