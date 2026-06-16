@@ -57,18 +57,18 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'dry_run'                  => array(
+				'dry_run'             => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, previews what would be deleted without making changes. Default: true (safe).', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'cleanup_type'             => array(
+				'cleanup_type'        => array(
 					'type'        => 'string',
 					'description' => __( 'What to clean up. "all" removes everything orphaned; "missing_files" removes attachment records with missing physical files; "unregistered" removes files with no attachment record; "unreferenced" removes attachments not used in any content; "ids" only processes the provided attachment_ids.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'all', 'missing_files', 'unregistered', 'unreferenced', 'ids' ),
 					'default'     => 'all',
 				),
-				'attachment_ids'           => array(
+				'attachment_ids'      => array(
 					'type'        => 'array',
 					'description' => __( 'Optional list of specific attachment IDs to delete. Only used when cleanup_type is "ids".', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -76,12 +76,12 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 						'minimum' => 1,
 					),
 				),
-				'delete_unreferenced'      => array(
+				'delete_unreferenced' => array(
 					'type'        => 'boolean',
 					'description' => __( 'When cleanup_type is "all", whether to also delete unreferenced attachments (not used in any content). Default: false (safe — unreferenced files may still be needed).', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'limit'                    => array(
+				'limit'               => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of items to process. Default: 100. Use to avoid timeouts on large libraries.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 100,
@@ -187,20 +187,20 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 		$limit               = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 100;
 
 		$results = array(
-			'success'       => true,
-			'dry_run'       => $dry_run,
-			'cleanup_type'  => $cleanup_type,
-			'message'       => $dry_run
+			'success'      => true,
+			'dry_run'      => $dry_run,
+			'cleanup_type' => $cleanup_type,
+			'message'      => $dry_run
 				? __( 'Dry run completed. No files were actually deleted. Set dry_run to false to execute cleanup.', 'mcp-ai-wpoos-pro' )
 				: __( 'Orphaned media cleanup completed.', 'mcp-ai-wpoos-pro' ),
-			'deleted'       => array(
-				'attachments'     => array(),
+			'deleted'      => array(
+				'attachments'       => array(),
 				'count_attachments' => 0,
-				'files'           => array(),
-				'count_files'     => 0,
-				'errors'          => array(),
+				'files'             => array(),
+				'count_files'       => 0,
+				'errors'            => array(),
 			),
-			'bytes_freed'   => 0,
+			'bytes_freed'  => 0,
 		);
 
 		// Process by cleanup type.
@@ -257,7 +257,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 					'title' => $attachment->post_title,
 					'file'  => $file ? basename( $file ) : '',
 				);
-				$results['deleted']['count_attachments']++;
+				++$results['deleted']['count_attachments'];
 				if ( $file && file_exists( $file ) ) {
 					$results['bytes_freed'] += filesize( $file );
 				}
@@ -274,7 +274,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 						'title' => $attachment->post_title,
 						'file'  => $file ? basename( $file ) : '',
 					);
-					$results['deleted']['count_attachments']++;
+					++$results['deleted']['count_attachments'];
 				} else {
 					$results['deleted']['errors'][] = sprintf(
 						/* translators: %d: attachment ID */
@@ -319,7 +319,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 				continue;
 			}
 
-			$processed++;
+			++$processed;
 
 			if ( $dry_run ) {
 				$results['deleted']['attachments'][] = array(
@@ -327,7 +327,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 					'title'         => $attachment->post_title,
 					'expected_file' => $file ? basename( $file ) : '',
 				);
-				$results['deleted']['count_attachments']++;
+				++$results['deleted']['count_attachments'];
 			} else {
 				$deleted = wp_delete_attachment( $attachment->ID, true );
 				if ( $deleted ) {
@@ -335,7 +335,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 						'id'    => $attachment->ID,
 						'title' => $attachment->post_title,
 					);
-					$results['deleted']['count_attachments']++;
+					++$results['deleted']['count_attachments'];
 				} else {
 					$results['deleted']['errors'][] = sprintf(
 						/* translators: %d: attachment ID */
@@ -414,7 +414,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 						continue;
 					}
 
-					$processed++;
+					++$processed;
 
 					$relative_path = str_replace( $base_dir . '/', '', $normalized );
 					$file_size     = filesize( $file_path );
@@ -424,7 +424,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 							'file'      => $relative_path,
 							'file_size' => size_format( $file_size ),
 						);
-						$results['deleted']['count_files']++;
+						++$results['deleted']['count_files'];
 						$results['bytes_freed'] += $file_size;
 					} else {
 						// Also delete corresponding intermediate sizes.
@@ -435,11 +435,11 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 								'file'      => $relative_path,
 								'file_size' => size_format( $file_size ),
 							);
-							$results['deleted']['count_files']++;
+							++$results['deleted']['count_files'];
 							$results['bytes_freed'] += $file_size;
 
 							// Delete all intermediate size variants of this file.
-							$bytes_from_sizes = $this->delete_size_variants( $file_path, $dry_run, $results );
+							$bytes_from_sizes        = $this->delete_size_variants( $file_path, $dry_run, $results );
 							$results['bytes_freed'] += $bytes_from_sizes;
 						} else {
 							$results['deleted']['errors'][] = sprintf(
@@ -530,7 +530,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 				continue;
 			}
 
-			$processed++;
+			++$processed;
 
 			if ( $dry_run ) {
 				$results['deleted']['attachments'][] = array(
@@ -538,7 +538,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 					'title' => $attachment->post_title,
 					'file'  => basename( $file ),
 				);
-				$results['deleted']['count_attachments']++;
+				++$results['deleted']['count_attachments'];
 				if ( file_exists( $file ) ) {
 					$results['bytes_freed'] += filesize( $file );
 				}
@@ -554,7 +554,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 						'title' => $attachment->post_title,
 						'file'  => basename( $file ),
 					);
-					$results['deleted']['count_attachments']++;
+					++$results['deleted']['count_attachments'];
 				} else {
 					$results['deleted']['errors'][] = sprintf(
 						/* translators: %d: attachment ID */
@@ -574,10 +574,11 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 	 * @return bool True if any filename is found in post_content.
 	 */
 	private function is_referenced_in_content( $filenames ) {
-		$filenames = array_unique( $filenames );
+		$filenames  = array_unique( $filenames );
+		$term_count = count( $filenames );
 		$chunk_size = 5;
 
-		for ( $i = 0; $i < count( $filenames ); $i += $chunk_size ) {
+		for ( $i = 0; $i < $term_count; $i += $chunk_size ) {
 			$chunk   = array_slice( $filenames, $i, $chunk_size );
 			$clauses = array();
 
@@ -634,7 +635,7 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 	/**
 	 * Delete intermediate size variants for a given main file.
 	 *
-	 * e.g. For photo.jpg, deletes photo-150x150.jpg, photo-300x300.jpg, etc.
+	 * For example, photo.jpg deletes photo-150x150.jpg, photo-300x300.jpg, etc.
 	 *
 	 * @since 2.7.0
 	 * @param string $main_file Absolute path to the main file.
@@ -669,12 +670,12 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 					$variant_size = filesize( $variant );
 					// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
 					if ( unlink( $variant ) ) {
-						$bytes_freed += $variant_size;
+						$bytes_freed                  += $variant_size;
 						$results['deleted']['files'][] = array(
 							'file'      => str_replace( wp_normalize_path( wp_upload_dir()['basedir'] ) . '/', '', wp_normalize_path( $variant ) ),
 							'file_size' => size_format( $variant_size ),
 						);
-						$results['deleted']['count_files']++;
+						++$results['deleted']['count_files'];
 					}
 				}
 			}

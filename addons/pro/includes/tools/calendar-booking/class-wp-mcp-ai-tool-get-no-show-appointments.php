@@ -236,17 +236,17 @@ class WP_MCP_AI_Tool_Get_No_Show_Appointments implements WP_MCP_AI_Tool_Interfac
 				$appointment_id = get_the_ID();
 
 				$appointments[] = array(
-					'id'                => $appointment_id,
-					'client_name'       => get_post_meta( $appointment_id, '_client_name', true ) ?: '',
-					'client_email'      => get_post_meta( $appointment_id, '_client_email', true ) ?: '',
-					'appointment_date'  => get_post_meta( $appointment_id, '_appointment_date', true ) ?: '',
-					'start_time'        => get_post_meta( $appointment_id, '_start_time', true ) ?: '',
-					'end_time'          => get_post_meta( $appointment_id, '_end_time', true ) ?: '',
-					'service_type'      => get_post_meta( $appointment_id, '_service_type', true ) ?: '',
-					'status'            => 'no_show',
-					'notes'             => get_post_meta( $appointment_id, '_appointment_notes', true ) ?: '',
-					'created_at'        => get_the_date( 'c' ),
-					'updated_at'        => get_the_modified_date( 'c' ),
+					'id'               => $appointment_id,
+					'client_name'      => get_post_meta( $appointment_id, '_client_name', true ) ? get_post_meta( $appointment_id, '_client_name', true ) : '',
+					'client_email'     => get_post_meta( $appointment_id, '_client_email', true ) ? get_post_meta( $appointment_id, '_client_email', true ) : '',
+					'appointment_date' => get_post_meta( $appointment_id, '_appointment_date', true ) ? get_post_meta( $appointment_id, '_appointment_date', true ) : '',
+					'start_time'       => get_post_meta( $appointment_id, '_start_time', true ) ? get_post_meta( $appointment_id, '_start_time', true ) : '',
+					'end_time'         => get_post_meta( $appointment_id, '_end_time', true ) ? get_post_meta( $appointment_id, '_end_time', true ) : '',
+					'service_type'     => get_post_meta( $appointment_id, '_service_type', true ) ? get_post_meta( $appointment_id, '_service_type', true ) : '',
+					'status'           => 'no_show',
+					'notes'            => get_post_meta( $appointment_id, '_appointment_notes', true ) ? get_post_meta( $appointment_id, '_appointment_notes', true ) : '',
+					'created_at'       => get_the_date( 'c' ),
+					'updated_at'       => get_the_modified_date( 'c' ),
 				);
 			}
 			wp_reset_postdata();

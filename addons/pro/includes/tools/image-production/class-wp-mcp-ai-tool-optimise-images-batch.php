@@ -71,7 +71,7 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'attachment_ids'   => array(
+				'attachment_ids'  => array(
 					'type'        => 'array',
 					'description' => __( 'Array of attachment IDs to optimize.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -80,24 +80,24 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 					),
 					'minItems'    => 1,
 				),
-				'quality'          => array(
+				'quality'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Output quality (1-100). 82 is a good balance. Default: 82.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 82,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'convert_to_webp'  => array(
+				'convert_to_webp' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Convert JPEG/PNG images to WebP format. Default: true.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'strip_metadata'   => array(
+				'strip_metadata'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Strip EXIF and other metadata from images. Default: true.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'dry_run'          => array(
+				'dry_run'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, preview what would be optimized without applying. Default: true for safety.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -191,13 +191,13 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 		$saved = max( 0, $current_size - $estimated_size );
 
 		return array(
-			'current_bytes'    => $current_size,
-			'current_formatted' => size_format( $current_size ),
-			'estimated_bytes'  => $estimated_size,
+			'current_bytes'       => $current_size,
+			'current_formatted'   => size_format( $current_size ),
+			'estimated_bytes'     => $estimated_size,
 			'estimated_formatted' => size_format( $estimated_size ),
-			'savings_bytes'    => $saved,
-			'savings_formatted' => size_format( $saved ),
-			'savings_percent'  => $current_size > 0 ? round( ( $saved / $current_size ) * 100, 1 ) : 0,
+			'savings_bytes'       => $saved,
+			'savings_formatted'   => size_format( $saved ),
+			'savings_percent'     => $current_size > 0 ? round( ( $saved / $current_size ) * 100, 1 ) : 0,
 		);
 	}
 
@@ -220,9 +220,12 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 
 		// Sanitize attachment IDs.
 		$attachment_ids = array_map( 'absint', $attachment_ids );
-		$attachment_ids = array_filter( $attachment_ids, function ( $id ) {
-			return $id > 0;
-		} );
+		$attachment_ids = array_filter(
+			$attachment_ids,
+			function ( $id ) {
+				return $id > 0;
+			}
+		);
 
 		if ( empty( $attachment_ids ) ) {
 			return array(
@@ -253,7 +256,7 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 					'id'    => $attachment_id,
 					'error' => __( 'Attachment not found or invalid post type.', 'mcp-ai-wpoos-pro' ),
 				);
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 
@@ -264,7 +267,7 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 					'id'    => $attachment_id,
 					'error' => __( 'File does not exist on disk.', 'mcp-ai-wpoos-pro' ),
 				);
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 
@@ -274,13 +277,13 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 			$savings = $this->estimate_savings( $file_path, $quality, $convert_to_webp );
 
 			$entry = array(
-				'id'          => $attachment_id,
-				'title'       => esc_html( $post->post_title ),
-				'file'        => esc_html( basename( $file_path ) ),
-				'mime_type'   => esc_html( $post->post_mime_type ),
-				'dry_run'     => $dry_run,
-				'savings'     => $savings,
-				'actions'     => array(),
+				'id'        => $attachment_id,
+				'title'     => esc_html( $post->post_title ),
+				'file'      => esc_html( basename( $file_path ) ),
+				'mime_type' => esc_html( $post->post_mime_type ),
+				'dry_run'   => $dry_run,
+				'savings'   => $savings,
+				'actions'   => array(),
 			);
 
 			if ( $dry_run ) {
@@ -303,7 +306,7 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 					$entry['actions'][] = __( 'Would strip EXIF/metadata', 'mcp-ai-wpoos-pro' );
 				}
 				$entry['status'] = 'preview';
-				$processed++;
+				++$processed;
 				$total_savings += $savings['savings_bytes'];
 			} else {
 				// Actually optimize.
@@ -313,12 +316,12 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 					$entry['status'] = 'error';
 					$entry['error']  = $result->get_error_message();
 					$errors[]        = $entry;
-					$skipped++;
+					++$skipped;
 				} else {
-					$entry['status']            = 'optimized';
-					$entry['result']            = $result;
-					$entry['actual_savings']    = $result['savings'];
-					$processed++;
+					$entry['status']         = 'optimized';
+					$entry['result']         = $result;
+					$entry['actual_savings'] = $result['savings'];
+					++$processed;
 					$total_savings += $result['savings']['savings_bytes'];
 
 					// Mark as optimized.
@@ -341,8 +344,8 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		return array(
-			'success'        => true,
-			'message'        => $dry_run
+			'success'       => true,
+			'message'       => $dry_run
 				? sprintf(
 					/* translators: 1: number of images previewed, 2: estimated savings */
 					__( 'Previewed optimization for %1$d image(s). Estimated savings: %2$s.', 'mcp-ai-wpoos-pro' ),
@@ -355,18 +358,18 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 					$processed,
 					size_format( $total_savings )
 				),
-			'dry_run'        => $dry_run,
-			'total'          => count( $attachment_ids ),
-			'processed'      => $processed,
-			'skipped'        => $skipped,
-			'errors_count'   => count( $errors ),
-			'total_savings'  => size_format( $total_savings ),
-			'configuration'  => array(
+			'dry_run'       => $dry_run,
+			'total'         => count( $attachment_ids ),
+			'processed'     => $processed,
+			'skipped'       => $skipped,
+			'errors_count'  => count( $errors ),
+			'total_savings' => size_format( $total_savings ),
+			'configuration' => array(
 				'quality'         => $quality,
 				'convert_to_webp' => $convert_to_webp,
 				'strip_metadata'  => $strip_metadata,
 			),
-			'results'        => $results,
+			'results'       => $results,
 		);
 	}
 
@@ -497,19 +500,19 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 		$saved      = $before_size - $after_size;
 
 		return array(
-			'original_size'   => size_format( $before_size ),
-			'optimized_size'  => size_format( $after_size ),
-			'savings'         => array(
-				'current_bytes'      => $before_size,
-				'current_formatted'  => size_format( $before_size ),
-				'estimated_bytes'    => $after_size,
+			'original_size'     => size_format( $before_size ),
+			'optimized_size'    => size_format( $after_size ),
+			'savings'           => array(
+				'current_bytes'       => $before_size,
+				'current_formatted'   => size_format( $before_size ),
+				'estimated_bytes'     => $after_size,
 				'estimated_formatted' => size_format( $after_size ),
-				'savings_bytes'      => max( 0, $saved ),
-				'savings_formatted'  => size_format( max( 0, $saved ) ),
-				'savings_percent'    => $before_size > 0 ? round( ( max( 0, $saved ) / $before_size ) * 100, 1 ) : 0,
+				'savings_bytes'       => max( 0, $saved ),
+				'savings_formatted'   => size_format( max( 0, $saved ) ),
+				'savings_percent'     => $before_size > 0 ? round( ( max( 0, $saved ) / $before_size ) * 100, 1 ) : 0,
 			),
-			'quality_applied' => $quality,
-			'webp_converted'  => $convert_to_webp,
+			'quality_applied'   => $quality,
+			'webp_converted'    => $convert_to_webp,
 			'metadata_stripped' => $strip_metadata,
 		);
 	}

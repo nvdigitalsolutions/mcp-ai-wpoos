@@ -166,8 +166,8 @@ class WP_MCP_AI_Tool_Archive_Stale_Contacts implements WP_MCP_AI_Tool_Interface,
 			$post_types[] = 'mcp_ai_customer';
 		}
 
-		$archived  = array();
-		$skipped   = array();
+		$archived = array();
+		$skipped  = array();
 
 		foreach ( $post_types as $post_type ) {
 			// Find contacts with no activity since the cutoff date.

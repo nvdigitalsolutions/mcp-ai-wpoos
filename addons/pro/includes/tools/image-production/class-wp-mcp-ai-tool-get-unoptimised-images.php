@@ -210,7 +210,7 @@ class WP_MCP_AI_Tool_Get_Unoptimised_Images implements WP_MCP_AI_Tool_Interface,
 				$date_query['before'] = $date_to . ' 23:59:59';
 			}
 
-			$date_query['inclusive'] = true;
+			$date_query['inclusive']  = true;
 			$query_args['date_query'] = array( $date_query );
 		}
 
@@ -257,29 +257,29 @@ class WP_MCP_AI_Tool_Get_Unoptimised_Images implements WP_MCP_AI_Tool_Interface,
 			}
 
 			$images[] = array(
-				'id'             => $attachment->ID,
-				'title'          => esc_html( $attachment->post_title ),
-				'file'           => esc_html( basename( $file_path ) ),
-				'mime_type'      => esc_html( $attachment->post_mime_type ),
-				'extension'      => esc_html( $ext ),
-				'file_size'      => size_format( $file_size ),
+				'id'              => $attachment->ID,
+				'title'           => esc_html( $attachment->post_title ),
+				'file'            => esc_html( basename( $file_path ) ),
+				'mime_type'       => esc_html( $attachment->post_mime_type ),
+				'extension'       => esc_html( $ext ),
+				'file_size'       => size_format( $file_size ),
 				'file_size_bytes' => $file_size,
-				'upload_date'    => esc_html( $attachment->post_date ),
-				'url'            => esc_url( wp_get_attachment_url( $attachment->ID ) ),
-				'reasons'        => $reasons,
+				'upload_date'     => esc_html( $attachment->post_date ),
+				'url'             => esc_url( wp_get_attachment_url( $attachment->ID ) ),
+				'reasons'         => $reasons,
 			);
 		}
 
 		return array(
-			'success'      => true,
-			'message'      => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: %d: number of unoptimised images found */
 				__( 'Found %d unoptimised image(s).', 'mcp-ai-wpoos-pro' ),
 				count( $images )
 			),
-			'count'        => count( $images ),
-			'images'       => $images,
-			'filters'      => array(
+			'count'   => count( $images ),
+			'images'  => $images,
+			'filters' => array(
 				'min_size_kb' => $min_size_kb,
 				'mime_type'   => $mime_type,
 				'date_from'   => $date_from,

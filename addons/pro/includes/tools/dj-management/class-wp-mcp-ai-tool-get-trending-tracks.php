@@ -280,19 +280,19 @@ class WP_MCP_AI_Tool_Get_Trending_Tracks implements WP_MCP_AI_Tool_Interface, WP
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$post_id   = get_the_ID();
+				$post_id    = get_the_ID();
 				$post_ids[] = $post_id;
 
 				$tracks[] = array(
 					'id'          => $post_id,
 					'title'       => get_the_title(),
-					'artist'      => get_post_meta( $post_id, '_artist', true ) ?: '',
-					'bpm'         => (float) get_post_meta( $post_id, '_bpm', true ) ?: 0,
-					'genre'       => get_post_meta( $post_id, '_genre', true ) ?: '',
-					'key'         => get_post_meta( $post_id, '_key', true ) ?: '',
-					'play_count'  => (int) get_post_meta( $post_id, '_play_count', true ) ?: 0,
-					'last_played' => get_post_meta( $post_id, '_last_played', true ) ?: '',
-					'energy'      => get_post_meta( $post_id, '_energy_level', true ) ?: '',
+					'artist'      => get_post_meta( $post_id, '_artist', true ) ? get_post_meta( $post_id, '_artist', true ) : '',
+					'bpm'         => get_post_meta( $post_id, '_bpm', true ) ? (float) get_post_meta( $post_id, '_bpm', true ) : 0.0,
+					'genre'       => get_post_meta( $post_id, '_genre', true ) ? get_post_meta( $post_id, '_genre', true ) : '',
+					'key'         => get_post_meta( $post_id, '_key', true ) ? get_post_meta( $post_id, '_key', true ) : '',
+					'play_count'  => get_post_meta( $post_id, '_play_count', true ) ? (int) get_post_meta( $post_id, '_play_count', true ) : 0,
+					'last_played' => get_post_meta( $post_id, '_last_played', true ) ? get_post_meta( $post_id, '_last_played', true ) : '',
+					'energy'      => get_post_meta( $post_id, '_energy_level', true ) ? get_post_meta( $post_id, '_energy_level', true ) : '',
 				);
 			}
 			wp_reset_postdata();
@@ -301,10 +301,10 @@ class WP_MCP_AI_Tool_Get_Trending_Tracks implements WP_MCP_AI_Tool_Interface, WP
 		// If no dj_track posts were found, it's likely the post type doesn't exist yet.
 		if ( empty( $post_ids ) && ! post_type_exists( 'dj_track' ) ) {
 			return array(
-				'success'  => true,
-				'message'  => __( 'No DJ track library has been set up yet. Use the Manage Music Library tool to add tracks, or create a "dj_track" custom post type before populating your music library. Once tracks are added, trending data will be available here.', 'mcp-ai-wpoos-pro' ),
-				'tracks'   => array(),
-				'total'    => 0,
+				'success'      => true,
+				'message'      => __( 'No DJ track library has been set up yet. Use the Manage Music Library tool to add tracks, or create a "dj_track" custom post type before populating your music library. Once tracks are added, trending data will be available here.', 'mcp-ai-wpoos-pro' ),
+				'tracks'       => array(),
+				'total'        => 0,
 				'setup_needed' => true,
 			);
 		}

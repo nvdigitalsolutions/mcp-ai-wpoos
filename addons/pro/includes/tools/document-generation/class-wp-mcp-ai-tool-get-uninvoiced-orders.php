@@ -52,25 +52,25 @@ class WP_MCP_AI_Tool_Get_Uninvoiced_Orders implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'date_from'    => array(
+				'date_from'   => array(
 					'type'        => 'string',
 					'description' => __( 'Filter orders from this date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_to'      => array(
+				'date_to'     => array(
 					'type'        => 'string',
 					'description' => __( 'Filter orders up to this date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'customer_id'  => array(
+				'customer_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by customer ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'min_amount'   => array(
+				'min_amount'  => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum order total amount.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'limit'        => array(
+				'limit'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of orders to return. Default: 100.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 100,
@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_Get_Uninvoiced_Orders implements WP_MCP_AI_Tool_Interface, 
 			if ( ! empty( $date_to ) ) {
 				$date_query['before'] = $date_to;
 			}
-			$date_query['inclusive'] = true;
+			$date_query['inclusive']    = true;
 			$query_args['date_created'] = $date_query['after'] . '...' . $date_query['before'];
 		}
 
@@ -222,17 +222,17 @@ class WP_MCP_AI_Tool_Get_Uninvoiced_Orders implements WP_MCP_AI_Tool_Interface, 
 			}
 
 			$orders[] = array(
-				'id'               => $order_id,
-				'order_number'     => $order->get_order_number(),
-				'status'           => $order->get_status(),
-				'total'            => $total,
-				'currency'         => $order->get_currency(),
-				'date_created'     => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '',
-				'customer_id'      => $order->get_customer_id(),
-				'billing_name'     => $order->get_formatted_billing_full_name(),
-				'billing_email'    => $order->get_billing_email(),
-				'item_count'       => count( $order->get_items() ),
-				'edit_url'         => get_edit_post_link( $order_id, 'raw' ),
+				'id'            => $order_id,
+				'order_number'  => $order->get_order_number(),
+				'status'        => $order->get_status(),
+				'total'         => $total,
+				'currency'      => $order->get_currency(),
+				'date_created'  => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '',
+				'customer_id'   => $order->get_customer_id(),
+				'billing_name'  => $order->get_formatted_billing_full_name(),
+				'billing_email' => $order->get_billing_email(),
+				'item_count'    => count( $order->get_items() ),
+				'edit_url'      => get_edit_post_link( $order_id, 'raw' ),
 			);
 		}
 

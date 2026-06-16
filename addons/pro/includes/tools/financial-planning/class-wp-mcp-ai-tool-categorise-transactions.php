@@ -211,8 +211,8 @@ class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface
 			)
 		);
 
-		$categorised     = array();
-		$all_affected     = array();
+		$categorised  = array();
+		$all_affected = array();
 
 		foreach ( $accounts as $account ) {
 			$transactions = get_post_meta( $account->ID, '_wp_mcp_ai_transactions', true );
@@ -230,11 +230,9 @@ class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface
 					if ( ! in_array( absint( $tx_id ), $transaction_ids, true ) ) {
 						continue;
 					}
-				} else {
+				} elseif ( ! empty( $tx['category'] ) || ! empty( $tx['category_id'] ) ) {
 					// Skip already categorised transactions unless a rule is provided.
-					if ( ! empty( $tx['category'] ) || ! empty( $tx['category_id'] ) ) {
-						continue;
-					}
+					continue;
 				}
 
 				// Apply rule-based filtering if a rule is specified.
@@ -245,7 +243,7 @@ class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface
 					}
 				}
 
-				$affected          = array(
+				$affected = array(
 					'transaction_id' => $tx_id,
 					'description'    => isset( $tx['description'] ) ? $tx['description'] : '',
 					'merchant'       => isset( $tx['merchant'] ) ? $tx['merchant'] : '',
@@ -262,7 +260,7 @@ class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface
 				if ( ! $dry_run ) {
 					$transactions[ $key ]['category']    = $category;
 					$transactions[ $key ]['category_id'] = $category_id;
-					$modified                             = true;
+					$modified                            = true;
 				}
 			}
 
@@ -272,14 +270,14 @@ class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
-			'success'         => true,
-			'dry_run'         => $dry_run,
-			'category'        => $category,
-			'category_id'     => $category_id ?: null,
-			'rule_applied'    => $rule ?: null,
-			'affected_count'  => count( $all_affected ),
-			'affected'        => $all_affected,
-			'message'         => $dry_run
+			'success'        => true,
+			'dry_run'        => $dry_run,
+			'category'       => $category,
+			'category_id'    => $category_id ? $category_id : null,
+			'rule_applied'   => $rule ? $rule : null,
+			'affected_count' => count( $all_affected ),
+			'affected'       => $all_affected,
+			'message'        => $dry_run
 				? sprintf(
 					/* translators: 1: Count, 2: Category name */
 					__( 'Dry-run: %1$d transactions would be categorised as "%2$s". Set dry_run to false to apply.', 'mcp-ai-wpoos-pro' ),
@@ -324,8 +322,8 @@ class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface
 			case 'amount_range':
 				// Matches when the transaction amount falls within a predefined range
 				// based on the category ID (mod 10). Simple heuristic.
-				$amount     = isset( $tx['amount'] ) ? floatval( $tx['amount'] ) : 0;
-				$range_key  = $category_id % 10;
+				$amount    = isset( $tx['amount'] ) ? floatval( $tx['amount'] ) : 0;
+				$range_key = $category_id % 10;
 				// Map range key to amount brackets.
 				$brackets = array(
 					0 => array( -PHP_FLOAT_MAX, 0 ),        // Debits / expenses.
@@ -348,7 +346,7 @@ class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface
 				}
 				// Simple heuristic: match if the description contains time-related keywords
 				// or if the day-of-month matches certain patterns.
-				$description = isset( $tx['description'] ) ? $tx['description'] : '';
+				$description      = isset( $tx['description'] ) ? $tx['description'] : '';
 				$pattern_keywords = array( 'monthly', 'weekly', 'annual', 'subscription', 'recurring', 'rent', 'salary' );
 				foreach ( $pattern_keywords as $kw ) {
 					if ( false !== stripos( $description, $kw ) ) {

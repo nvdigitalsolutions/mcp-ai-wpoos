@@ -152,7 +152,7 @@ class WP_MCP_AI_Tool_Send_Appointment_Followup implements WP_MCP_AI_Tool_Interfa
 	 * @return string
 	 */
 	private function get_default_sms_template() {
-		return __( "Hi {{name}}, thanks for your {{appointment_type}} visit on {{appointment_date}}. Contact us with any questions. - {{site_name}}", 'mcp-ai-wpoos-pro' );
+		return __( 'Hi {{name}}, thanks for your {{appointment_type}} visit on {{appointment_date}}. Contact us with any questions. - {{site_name}}', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -176,9 +176,12 @@ class WP_MCP_AI_Tool_Send_Appointment_Followup implements WP_MCP_AI_Tool_Interfa
 
 		// Sanitize appointment IDs.
 		$appointment_ids = array_map( 'absint', $appointment_ids );
-		$appointment_ids = array_filter( $appointment_ids, function ( $id ) {
-			return $id > 0;
-		} );
+		$appointment_ids = array_filter(
+			$appointment_ids,
+			function ( $id ) {
+				return $id > 0;
+			}
+		);
 
 		if ( empty( $appointment_ids ) ) {
 			return array(
@@ -212,14 +215,14 @@ class WP_MCP_AI_Tool_Send_Appointment_Followup implements WP_MCP_AI_Tool_Interfa
 			}
 
 			// Get member info.
-			$member_id = get_post_meta( $appointment_id, '_member_id', true );
-			$member_name = '';
+			$member_id    = get_post_meta( $appointment_id, '_member_id', true );
+			$member_name  = '';
 			$member_email = '';
 			$member_phone = '';
 
 			if ( $member_id ) {
-				$member_post = get_post( absint( $member_id ) );
-				$member_name = $member_post ? $member_post->post_title : '';
+				$member_post  = get_post( absint( $member_id ) );
+				$member_name  = $member_post ? $member_post->post_title : '';
 				$member_email = get_post_meta( absint( $member_id ), '_email', true );
 				$member_phone = get_post_meta( absint( $member_id ), '_phone', true );
 			}
@@ -255,7 +258,7 @@ class WP_MCP_AI_Tool_Send_Appointment_Followup implements WP_MCP_AI_Tool_Interfa
 				} else {
 					$entry['recipient'] = $member_phone ? esc_html( $member_phone ) : __( '(no phone on file)', 'mcp-ai-wpoos-pro' );
 				}
-				$sent_count++;
+				++$sent_count;
 			} else {
 				// Actually send the follow-up.
 				$send_result = $this->send_followup( $member_email, $member_phone, $message_body, $method );
@@ -268,7 +271,7 @@ class WP_MCP_AI_Tool_Send_Appointment_Followup implements WP_MCP_AI_Tool_Interfa
 					// Mark follow-up as sent on the appointment.
 					update_post_meta( $appointment_id, '_followup_sent', current_time( 'mysql' ) );
 					update_post_meta( $appointment_id, '_followup_method', $method );
-					$sent_count++;
+					++$sent_count;
 
 					/**
 					 * Fires after a follow-up message is sent for an appointment.

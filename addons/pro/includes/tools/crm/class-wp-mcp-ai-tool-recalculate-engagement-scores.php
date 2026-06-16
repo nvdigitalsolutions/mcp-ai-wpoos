@@ -160,8 +160,8 @@ class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Int
 			$contact_ids = $this->get_all_contact_ids();
 		}
 
-		$scored  = array();
-		$failed  = array();
+		$scored = array();
+		$failed = array();
 
 		foreach ( $contact_ids as $contact_id ) {
 			$post = get_post( $contact_id );
@@ -177,11 +177,11 @@ class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Int
 			$score_detail = $this->get_score_breakdown( $contact_id );
 
 			$result_item = array(
-				'id'                   => $contact_id,
-				'type'                 => $post->post_type,
-				'title'                => get_the_title( $post ),
-				'engagement_score'     => $score,
-				'score_breakdown'      => $score_detail,
+				'id'               => $contact_id,
+				'type'             => $post->post_type,
+				'title'            => get_the_title( $post ),
+				'engagement_score' => $score,
+				'score_breakdown'  => $score_detail,
 			);
 
 			if ( ! $dry_run ) {
@@ -195,15 +195,15 @@ class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Int
 		}
 
 		return array(
-			'success'       => true,
-			'dry_run'       => $dry_run,
-			'score_model'   => $score_model,
-			'action'        => $dry_run
+			'success'      => true,
+			'dry_run'      => $dry_run,
+			'score_model'  => $score_model,
+			'action'       => $dry_run
 				? __( 'Dry run completed. No scores were saved.', 'mcp-ai-wpoos-pro' )
 				: __( 'Engagement scores recalculated successfully.', 'mcp-ai-wpoos-pro' ),
-			'scored_count'  => count( $scored ),
-			'failed_count'  => count( $failed ),
-			'contacts'      => array(
+			'scored_count' => count( $scored ),
+			'failed_count' => count( $failed ),
+			'contacts'     => array(
 				'scored' => $scored,
 				'failed' => $failed,
 			),
@@ -232,25 +232,27 @@ class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Int
 		$volume_score = min( 100, count( $activities ) * 10 );
 
 		// Recency score (25%): based on how recent the last activity was.
-		$newest       = reset( $activities );
-		$days_since   = max( 0, ( time() - strtotime( $newest->post_date ) ) / DAY_IN_SECONDS );
+		$newest        = reset( $activities );
+		$days_since    = max( 0, ( time() - strtotime( $newest->post_date ) ) / DAY_IN_SECONDS );
 		$recency_score = max( 0, 100 - ( $days_since * 2 ) );
 
 		// Diversity score (20%): based on unique activity types.
-		$types           = array_unique( array_map(
-			function ( $a ) {
-				return get_post_meta( $a->ID, '_activity_type', true );
-			},
-			$activities
-		) );
+		$types           = array_unique(
+			array_map(
+				function ( $a ) {
+					return get_post_meta( $a->ID, '_activity_type', true );
+				},
+				$activities
+			)
+		);
 		$diversity_score = min( 100, count( $types ) * 25 );
 
 		// Completion score (15%): based on completed vs total activities.
-		$completed        = 0;
+		$completed = 0;
 		foreach ( $activities as $a ) {
 			$outcome = get_post_meta( $a->ID, '_activity_outcome', true );
 			if ( 'completed' === $outcome ) {
-				$completed++;
+				++$completed;
 			}
 		}
 		$completion_score = count( $activities ) > 0
@@ -292,19 +294,21 @@ class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Int
 		$days_since    = max( 0, ( time() - strtotime( $newest->post_date ) ) / DAY_IN_SECONDS );
 		$recency_score = max( 0, 100 - ( $days_since * 2 ) );
 
-		$types           = array_unique( array_map(
-			function ( $a ) {
-				return get_post_meta( $a->ID, '_activity_type', true );
-			},
-			$activities
-		) );
+		$types           = array_unique(
+			array_map(
+				function ( $a ) {
+					return get_post_meta( $a->ID, '_activity_type', true );
+				},
+				$activities
+			)
+		);
 		$diversity_score = min( 100, count( $types ) * 25 );
 
 		$completed = 0;
 		foreach ( $activities as $a ) {
 			$outcome = get_post_meta( $a->ID, '_activity_outcome', true );
 			if ( 'completed' === $outcome ) {
-				$completed++;
+				++$completed;
 			}
 		}
 		$completion_score = count( $activities ) > 0
@@ -312,10 +316,10 @@ class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Int
 			: 0;
 
 		return array(
-			'volume'      => round( $volume_score ),
-			'recency'     => round( $recency_score ),
-			'diversity'   => round( $diversity_score ),
-			'completion'  => round( $completion_score ),
+			'volume'           => round( $volume_score ),
+			'recency'          => round( $recency_score ),
+			'diversity'        => round( $diversity_score ),
+			'completion'       => round( $completion_score ),
 			'total_activities' => count( $activities ),
 			'days_since_last'  => round( $days_since ),
 		);
@@ -368,7 +372,7 @@ class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Int
 				'fields'         => 'ids',
 			)
 		);
-		$ids = array_merge( $ids, $leads );
+		$ids   = array_merge( $ids, $leads );
 
 		$customers = get_posts(
 			array(
@@ -378,7 +382,7 @@ class WP_MCP_AI_Tool_Recalculate_Engagement_Scores implements WP_MCP_AI_Tool_Int
 				'fields'         => 'ids',
 			)
 		);
-		$ids = array_merge( $ids, $customers );
+		$ids       = array_merge( $ids, $customers );
 
 		return $ids;
 	}

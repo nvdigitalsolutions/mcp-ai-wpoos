@@ -70,7 +70,7 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'attachment_ids'   => array(
+				'attachment_ids'     => array(
 					'type'        => 'array',
 					'description' => __( 'Array of attachment IDs to watermark.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -79,13 +79,13 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 					),
 					'minItems'    => 1,
 				),
-				'watermark_type'   => array(
+				'watermark_type'     => array(
 					'type'        => 'string',
 					'description' => __( 'Type of watermark: text or logo.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'text', 'logo' ),
 					'default'     => 'text',
 				),
-				'watermark_text'   => array(
+				'watermark_text'     => array(
 					'type'        => 'string',
 					'description' => __( 'Text to use for text watermark. Defaults to site name.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -95,14 +95,14 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 					'enum'        => array( 'bottom-right', 'center', 'tiled' ),
 					'default'     => 'bottom-right',
 				),
-				'opacity'          => array(
+				'opacity'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Watermark opacity (0-100). Default: 50.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 50,
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
-				'dry_run'          => array(
+				'dry_run'            => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, preview what would be watermarked without applying. Default: true for safety.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -213,9 +213,12 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 
 		// Sanitize attachment IDs.
 		$attachment_ids = array_map( 'absint', $attachment_ids );
-		$attachment_ids = array_filter( $attachment_ids, function ( $id ) {
-			return $id > 0;
-		} );
+		$attachment_ids = array_filter(
+			$attachment_ids,
+			function ( $id ) {
+				return $id > 0;
+			}
+		);
 
 		if ( empty( $attachment_ids ) ) {
 			return array(
@@ -244,10 +247,10 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
-		$results    = array();
-		$processed  = 0;
-		$skipped    = 0;
-		$errors     = array();
+		$results   = array();
+		$processed = 0;
+		$skipped   = 0;
+		$errors    = array();
 
 		foreach ( $attachment_ids as $attachment_id ) {
 			$post = get_post( $attachment_id );
@@ -257,7 +260,7 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 					'id'    => $attachment_id,
 					'error' => __( 'Attachment not found or invalid post type.', 'mcp-ai-wpoos-pro' ),
 				);
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 
@@ -268,21 +271,21 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 					'id'    => $attachment_id,
 					'error' => __( 'File does not exist on disk.', 'mcp-ai-wpoos-pro' ),
 				);
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 
 			$entry = array(
-				'id'          => $attachment_id,
-				'title'       => esc_html( $post->post_title ),
-				'file'        => esc_html( basename( $file_path ) ),
-				'mime_type'   => esc_html( $post->post_mime_type ),
-				'watermark'   => array(
+				'id'        => $attachment_id,
+				'title'     => esc_html( $post->post_title ),
+				'file'      => esc_html( basename( $file_path ) ),
+				'mime_type' => esc_html( $post->post_mime_type ),
+				'watermark' => array(
 					'type'     => $watermark_type,
 					'position' => $watermark_position,
 					'opacity'  => $opacity,
 				),
-				'dry_run'     => $dry_run,
+				'dry_run'   => $dry_run,
 			);
 
 			if ( 'text' === $watermark_type ) {
@@ -298,7 +301,7 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 					$watermark_type,
 					$watermark_position
 				);
-				$processed++;
+				++$processed;
 			} else {
 				// Apply watermark.
 				$result = $this->apply_watermark( $attachment_id, $file_path, $watermark_type, $watermark_text, $logo_id, $watermark_position, $opacity );
@@ -307,14 +310,14 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 					$entry['status'] = 'error';
 					$entry['error']  = $result->get_error_message();
 					$errors[]        = $entry;
-					$skipped++;
+					++$skipped;
 				} else {
 					$entry['status'] = 'applied';
 					// Mark as watermarked.
 					update_post_meta( $attachment_id, '_is_watermarked', current_time( 'mysql' ) );
 					update_post_meta( $attachment_id, '_watermark_type', $watermark_type );
 					update_post_meta( $attachment_id, '_watermark_position', $watermark_position );
-					$processed++;
+					++$processed;
 
 					/**
 					 * Fires after a watermark is applied to an attachment.
@@ -362,13 +365,13 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * Apply watermark to an image file.
 	 *
-	 * @param int        $attachment_id Attachment ID.
-	 * @param string     $file_path     Path to the image file.
-	 * @param string     $type          Watermark type (text or logo).
-	 * @param string     $text          Watermark text (text type only).
-	 * @param int|null   $logo_id       Logo attachment ID (logo type only).
-	 * @param string     $position      Watermark position.
-	 * @param int        $opacity       Opacity (0-100).
+	 * @param int      $attachment_id Attachment ID.
+	 * @param string   $file_path     Path to the image file.
+	 * @param string   $type          Watermark type (text or logo).
+	 * @param string   $text          Watermark text (text type only).
+	 * @param int|null $logo_id       Logo attachment ID (logo type only).
+	 * @param string   $position      Watermark position.
+	 * @param int      $opacity       Opacity (0-100).
 	 * @return true|WP_Error True on success, WP_Error on failure.
 	 */
 	private function apply_watermark( $attachment_id, $file_path, $type, $text, $logo_id, $position, $opacity ) {
@@ -464,7 +467,7 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 			$font_size = (int) max( 10, min( $width, $height ) * 0.04 );
 			$font      = 5; // GD built-in font.
 
-			$text_box  = imagettfbbox( $font_size, 0, $font, $text );
+			$text_box = imagettfbbox( $font_size, 0, $font, $text );
 			if ( false === $text_box ) {
 				// Fallback: use built-in font sizing.
 				$text_width  = imagefontwidth( $font ) * strlen( $text );
@@ -504,7 +507,7 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 		if ( 'logo' === $type && $logo_id ) {
 			$logo_path = get_attached_file( $logo_id );
 			if ( $logo_path && file_exists( $logo_path ) ) {
-				$logo = null;
+				$logo      = null;
 				$logo_mime = get_post_mime_type( $logo_id );
 
 				switch ( $logo_mime ) {
@@ -523,10 +526,10 @@ class WP_MCP_AI_Tool_Apply_Watermark_Batch implements WP_MCP_AI_Tool_Interface, 
 					// Scale logo to max 20% of image width.
 					$max_logo_width = (int) ( $width * 0.2 );
 					if ( $logo_width > $max_logo_width ) {
-						$ratio = $max_logo_width / $logo_width;
+						$ratio           = $max_logo_width / $logo_width;
 						$new_logo_width  = $max_logo_width;
 						$new_logo_height = (int) ( $logo_height * $ratio );
-						$scaled = imagecreatetruecolor( $new_logo_width, $new_logo_height );
+						$scaled          = imagecreatetruecolor( $new_logo_width, $new_logo_height );
 						imagealphablending( $scaled, false );
 						imagesavealpha( $scaled, true );
 						imagecopyresampled( $scaled, $logo, 0, 0, 0, 0, $new_logo_width, $new_logo_height, $logo_width, $logo_height );

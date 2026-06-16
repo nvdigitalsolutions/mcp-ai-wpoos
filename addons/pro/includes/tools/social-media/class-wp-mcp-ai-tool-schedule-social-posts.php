@@ -52,7 +52,7 @@ class WP_MCP_AI_Tool_Schedule_Social_Posts implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'posts'  => array(
+				'posts'   => array(
 					'type'        => 'array',
 					'description' => __( 'Array of social media posts to schedule.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(

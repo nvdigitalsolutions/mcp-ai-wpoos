@@ -159,10 +159,10 @@ class WP_MCP_AI_Tool_Archive_Documents implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		$now           = gmdate( 'Y-m-d H:i:s' );
-		$archived      = array();
-		$skipped       = array();
-		$not_found     = array();
+		$now       = gmdate( 'Y-m-d H:i:s' );
+		$archived  = array();
+		$skipped   = array();
+		$not_found = array();
 
 		foreach ( $document_ids as $doc_id ) {
 			$post = get_post( $doc_id );

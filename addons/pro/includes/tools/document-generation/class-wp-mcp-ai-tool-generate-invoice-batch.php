@@ -191,16 +191,16 @@ class WP_MCP_AI_Tool_Generate_Invoice_Batch implements WP_MCP_AI_Tool_Interface,
 
 			if ( $dry_run ) {
 				// Check if already invoiced.
-				$already_invoiced = ! empty( get_post_meta( $order_id, '_invoiced', true ) );
+				$already_invoiced               = ! empty( get_post_meta( $order_id, '_invoiced', true ) );
 				$order_info['already_invoiced'] = $already_invoiced;
-				$generated[] = $order_info;
+				$generated[]                    = $order_info;
 				continue;
 			}
 
 			// Check if already invoiced.
 			if ( ! empty( get_post_meta( $order_id, '_invoiced', true ) ) ) {
 				$order_info['reason'] = __( 'Order already has an invoice.', 'mcp-ai-wpoos-pro' );
-				$failed[] = $order_info;
+				$failed[]             = $order_info;
 				continue;
 			}
 
@@ -225,7 +225,7 @@ class WP_MCP_AI_Tool_Generate_Invoice_Batch implements WP_MCP_AI_Tool_Interface,
 						update_post_meta( $order_id, '_invoice_attachment_id', absint( $invoice_result['attachment_id'] ) );
 					}
 					$order_info['attachment_id'] = isset( $invoice_result['attachment_id'] ) ? $invoice_result['attachment_id'] : 0;
-					$invoice_generated = true;
+					$invoice_generated           = true;
 				}
 			}
 
@@ -241,7 +241,7 @@ class WP_MCP_AI_Tool_Generate_Invoice_Batch implements WP_MCP_AI_Tool_Interface,
 				if ( ! empty( $customer_email ) ) {
 					// Note: Email sending is handled by the invoice tool or external WC integration.
 					$order_info['email_sent'] = true;
-					$emailed[] = $order_info;
+					$emailed[]                = $order_info;
 				}
 			}
 

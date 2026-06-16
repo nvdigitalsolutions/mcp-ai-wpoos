@@ -158,7 +158,7 @@ class WP_MCP_AI_Tool_Scan_Duplicate_Contacts implements WP_MCP_AI_Tool_Interface
 		$limit          = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 200;
 		$limit          = min( max( $limit, 1 ), 1000 );
 
-		$contacts = $this->get_all_contacts();
+		$contacts   = $this->get_all_contacts();
 		$duplicates = array();
 
 		if ( 'all' === $match_field || 'email' === $match_field ) {
@@ -183,17 +183,17 @@ class WP_MCP_AI_Tool_Scan_Duplicate_Contacts implements WP_MCP_AI_Tool_Interface
 		$duplicates = array_slice( $duplicates, 0, $limit );
 
 		return array(
-			'success'           => true,
-			'message'           => sprintf(
+			'success'          => true,
+			'message'          => sprintf(
 				/* translators: %d: number of duplicate groups found */
 				__( 'Found %d potential duplicate groups.', 'mcp-ai-wpoos-pro' ),
 				count( $duplicates )
 			),
-			'match_field'       => $match_field,
-			'min_similarity'    => $min_similarity,
-			'total_contacts'    => count( $contacts ),
-			'duplicate_groups'  => count( $duplicates ),
-			'duplicates'        => $duplicates,
+			'match_field'      => $match_field,
+			'min_similarity'   => $min_similarity,
+			'total_contacts'   => count( $contacts ),
+			'duplicate_groups' => count( $duplicates ),
+			'duplicates'       => $duplicates,
 		);
 	}
 
@@ -263,15 +263,18 @@ class WP_MCP_AI_Tool_Scan_Duplicate_Contacts implements WP_MCP_AI_Tool_Interface
 
 			$duplicates[] = array(
 				'match_field' => $field,
-				'match_value' => $field === 'email' ? $value : $this->mask_phone( $value ),
+				'match_value' => 'email' === $field ? $value : $this->mask_phone( $value ),
 				'similarity'  => 100, // Exact match on normalized value.
-				'contacts'    => array_map( function ( $c ) {
-					return array(
-						'id'    => $c['id'],
-						'type'  => $c['type'],
-						'title' => $c['title'],
-					);
-				}, $group ),
+				'contacts'    => array_map(
+					function ( $c ) {
+						return array(
+							'id'    => $c['id'],
+							'type'  => $c['type'],
+							'title' => $c['title'],
+						);
+					},
+					$group
+				),
 			);
 		}
 
@@ -349,7 +352,7 @@ class WP_MCP_AI_Tool_Scan_Duplicate_Contacts implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Levenshtein-based similarity.
-		$max_len  = max( strlen( $a ), strlen( $b ) );
+		$max_len = max( strlen( $a ), strlen( $b ) );
 		if ( 0 === $max_len ) {
 			return 100;
 		}
@@ -382,7 +385,7 @@ class WP_MCP_AI_Tool_Scan_Duplicate_Contacts implements WP_MCP_AI_Tool_Interface
 				continue;
 			}
 			$seen_pairs[ $pair_key ] = true;
-			$unique[] = $group;
+			$unique[]                = $group;
 		}
 
 		return $unique;

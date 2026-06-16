@@ -199,7 +199,7 @@ class WP_MCP_AI_Tool_Send_Reschedule_Invitation implements WP_MCP_AI_Tool_Interf
 			$appointment = get_post( $appointment_id );
 
 			if ( ! $appointment || 'mcp_appointment' !== $appointment->post_type ) {
-				$results['skipped']++;
+				++$results['skipped'];
 				$results['errors'][] = array(
 					'appointment_id' => $appointment_id,
 					'error'          => __( 'Invalid appointment.', 'mcp-ai-wpoos-pro' ),
@@ -210,13 +210,13 @@ class WP_MCP_AI_Tool_Send_Reschedule_Invitation implements WP_MCP_AI_Tool_Interf
 			// Verify this is a no-show appointment.
 			$status = get_post_meta( $appointment_id, '_appointment_status', true );
 			if ( 'no_show' !== $status ) {
-				$results['skipped']++;
+				++$results['skipped'];
 				$results['errors'][] = array(
 					'appointment_id' => $appointment_id,
 					'error'          => sprintf(
 						/* translators: %s: current appointment status */
 						__( 'Appointment is not marked as no-show (current status: %s).', 'mcp-ai-wpoos-pro' ),
-						$status ?: 'unknown'
+						$status ? $status : 'unknown'
 					),
 				);
 				continue;
@@ -230,18 +230,18 @@ class WP_MCP_AI_Tool_Send_Reschedule_Invitation implements WP_MCP_AI_Tool_Interf
 
 			$recipient = array(
 				'appointment_id' => $appointment_id,
-				'client_name'    => $client_name ?: '',
-				'client_email'   => $client_email ?: '',
-				'client_phone'   => $client_phone ?: '',
-				'service_type'   => $service_type ?: '',
-				'missed_time'    => $start_time ?: '',
+				'client_name'    => $client_name ? $client_name : '',
+				'client_email'   => $client_email ? $client_email : '',
+				'client_phone'   => $client_phone ? $client_phone : '',
+				'service_type'   => $service_type ? $service_type : '',
+				'missed_time'    => $start_time ? $start_time : '',
 				'method'         => $method,
 				'sent'           => false,
 			);
 
 			if ( $dry_run ) {
 				$results['recipients'][] = $recipient;
-				$results['processed']++;
+				++$results['processed'];
 				continue;
 			}
 
@@ -305,9 +305,9 @@ class WP_MCP_AI_Tool_Send_Reschedule_Invitation implements WP_MCP_AI_Tool_Interf
 			$results['recipients'][] = $recipient;
 
 			if ( $sent ) {
-				$results['processed']++;
+				++$results['processed'];
 			} else {
-				$results['failed']++;
+				++$results['failed'];
 				$results['errors'][] = array(
 					'appointment_id' => $appointment_id,
 					'error'          => __( 'Failed to send reschedule invitation.', 'mcp-ai-wpoos-pro' ),

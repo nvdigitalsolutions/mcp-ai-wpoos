@@ -244,18 +244,18 @@ class WP_MCP_AI_Tool_Get_Unconfirmed_Bookings implements WP_MCP_AI_Tool_Interfac
 				$booking_id = get_the_ID();
 
 				$bookings[] = array(
-					'id'                => $booking_id,
-					'client_name'       => get_post_meta( $booking_id, '_client_name', true ) ?: '',
-					'client_email'      => get_post_meta( $booking_id, '_client_email', true ) ?: '',
-					'client_phone'      => get_post_meta( $booking_id, '_client_phone', true ) ?: '',
-					'appointment_date'  => get_post_meta( $booking_id, '_appointment_date', true ) ?: '',
-					'start_time'        => get_post_meta( $booking_id, '_start_time', true ) ?: '',
-					'end_time'          => get_post_meta( $booking_id, '_end_time', true ) ?: '',
-					'service_type'      => get_post_meta( $booking_id, '_service_type', true ) ?: '',
-					'status'            => get_post_meta( $booking_id, '_appointment_status', true ) ?: 'pending',
-					'notes'             => get_post_meta( $booking_id, '_appointment_notes', true ) ?: '',
-					'created_at'        => get_the_date( 'c' ),
-					'updated_at'        => get_the_modified_date( 'c' ),
+					'id'               => $booking_id,
+					'client_name'      => get_post_meta( $booking_id, '_client_name', true ) ? get_post_meta( $booking_id, '_client_name', true ) : '',
+					'client_email'     => get_post_meta( $booking_id, '_client_email', true ) ? get_post_meta( $booking_id, '_client_email', true ) : '',
+					'client_phone'     => get_post_meta( $booking_id, '_client_phone', true ) ? get_post_meta( $booking_id, '_client_phone', true ) : '',
+					'appointment_date' => get_post_meta( $booking_id, '_appointment_date', true ) ? get_post_meta( $booking_id, '_appointment_date', true ) : '',
+					'start_time'       => get_post_meta( $booking_id, '_start_time', true ) ? get_post_meta( $booking_id, '_start_time', true ) : '',
+					'end_time'         => get_post_meta( $booking_id, '_end_time', true ) ? get_post_meta( $booking_id, '_end_time', true ) : '',
+					'service_type'     => get_post_meta( $booking_id, '_service_type', true ) ? get_post_meta( $booking_id, '_service_type', true ) : '',
+					'status'           => get_post_meta( $booking_id, '_appointment_status', true ) ? get_post_meta( $booking_id, '_appointment_status', true ) : 'pending',
+					'notes'            => get_post_meta( $booking_id, '_appointment_notes', true ) ? get_post_meta( $booking_id, '_appointment_notes', true ) : '',
+					'created_at'       => get_the_date( 'c' ),
+					'updated_at'       => get_the_modified_date( 'c' ),
 				);
 			}
 			wp_reset_postdata();

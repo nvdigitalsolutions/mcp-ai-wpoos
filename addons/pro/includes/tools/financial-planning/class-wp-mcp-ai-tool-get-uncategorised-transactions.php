@@ -225,9 +225,9 @@ class WP_MCP_AI_Tool_Get_Uncategorised_Transactions implements WP_MCP_AI_Tool_In
 					continue;
 				}
 				foreach ( $transactions as $tx ) {
-					$tx['account_id']   = $post_id;
+					$tx['account_id']    = $post_id;
 					$tx['account_title'] = get_the_title( $post_id );
-					$all_transactions[] = $tx;
+					$all_transactions[]  = $tx;
 				}
 			}
 		}
@@ -266,37 +266,40 @@ class WP_MCP_AI_Tool_Get_Uncategorised_Transactions implements WP_MCP_AI_Tool_In
 				'merchant'       => isset( $tx['merchant'] ) ? sanitize_text_field( $tx['merchant'] ) : '',
 				'amount'         => $tx_amount,
 				'type'           => isset( $tx['type'] ) ? sanitize_text_field( $tx['type'] ) : '',
-				'account_id'     => isset( $tx['account_id'] ) ? absint( $tx['account_id'] ) : ( $account_id ?: 0 ),
+				'account_id'     => isset( $tx['account_id'] ) ? absint( $tx['account_id'] ) : ( $account_id ? absint( $account_id ) : 0 ),
 				'account_title'  => isset( $tx['account_title'] ) ? sanitize_text_field( $tx['account_title'] ) : '',
 			);
 		}
 
 		// Sort by date descending.
-		usort( $uncategorised, function ( $a, $b ) {
-			return strcmp( $b['date'], $a['date'] );
-		} );
+		usort(
+			$uncategorised,
+			function ( $a, $b ) {
+				return strcmp( $b['date'], $a['date'] );
+			}
+		);
 
 		// Apply limit.
-		$total_count = count( $uncategorised );
+		$total_count   = count( $uncategorised );
 		$uncategorised = array_slice( $uncategorised, 0, $limit );
 
 		$total_amount = round( array_sum( array_column( $uncategorised, 'amount' ) ), 2 );
 
 		return array(
-			'success'         => true,
-			'total_found'     => $total_count,
-			'returned'        => count( $uncategorised ),
-			'total_amount'    => $total_amount,
-			'filters'         => array(
-				'date_from'  => $date_from ?: null,
-				'date_to'    => $date_to ?: null,
-				'account_id' => $account_id ?: null,
+			'success'      => true,
+			'total_found'  => $total_count,
+			'returned'     => count( $uncategorised ),
+			'total_amount' => $total_amount,
+			'filters'      => array(
+				'date_from'  => $date_from ? $date_from : null,
+				'date_to'    => $date_to ? $date_to : null,
+				'account_id' => $account_id ? absint( $account_id ) : null,
 				'min_amount' => $min_amount,
 				'max_amount' => $max_amount,
 				'limit'      => $limit,
 			),
-			'transactions'    => $uncategorised,
-			'message'         => sprintf(
+			'transactions' => $uncategorised,
+			'message'      => sprintf(
 				/* translators: 1: Number found, 2: Total amount */
 				__( 'Found %1$d uncategorised transactions totaling %2$s.', 'mcp-ai-wpoos-pro' ),
 				$total_count,

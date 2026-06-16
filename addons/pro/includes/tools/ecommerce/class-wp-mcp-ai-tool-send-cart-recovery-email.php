@@ -55,18 +55,18 @@ class WP_MCP_AI_Tool_Send_Cart_Recovery_Email implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'cart_ids'        => array(
+				'cart_ids'       => array(
 					'type'        => 'array',
 					'description' => __( 'Array of cart session keys to target. If omitted, all abandoned carts are targeted.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'email_template'  => array(
+				'email_template' => array(
 					'type'        => 'string',
 					'description' => __( 'Optional custom email template content. Supports basic HTML. Use {{cart_url}}, {{cart_items}}, {{cart_total}} as merge tags.', 'mcp-ai-wpoos-pro' ),
 				),
-				'dry_run'         => array(
+				'dry_run'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, previews the recipients and email content without actually sending. Default: true (safe mode).', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -202,12 +202,12 @@ class WP_MCP_AI_Tool_Send_Cart_Recovery_Email implements WP_MCP_AI_Tool_Interfac
 
 		if ( empty( $abandoned_carts ) ) {
 			return array(
-				'success'     => true,
-				'dry_run'     => $dry_run,
-				'sent_count'  => 0,
-				'skipped'     => 0,
-				'recipients'  => array(),
-				'message'     => __( 'No abandoned carts found to send recovery emails for.', 'mcp-ai-wpoos-pro' ),
+				'success'    => true,
+				'dry_run'    => $dry_run,
+				'sent_count' => 0,
+				'skipped'    => 0,
+				'recipients' => array(),
+				'message'    => __( 'No abandoned carts found to send recovery emails for.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -240,9 +240,9 @@ class WP_MCP_AI_Tool_Send_Cart_Recovery_Email implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Send actual emails.
-		$sent_count   = 0;
-		$skipped      = 0;
-		$results      = array();
+		$sent_count = 0;
+		$skipped    = 0;
+		$results    = array();
 
 		foreach ( $abandoned_carts as $cart ) {
 			if ( empty( $cart['customer_email'] ) ) {
@@ -255,10 +255,10 @@ class WP_MCP_AI_Tool_Send_Cart_Recovery_Email implements WP_MCP_AI_Tool_Interfac
 				continue;
 			}
 
-			$subject    = $this->get_recovery_subject();
-			$message    = $this->build_recovery_email( $cart, $email_template );
-			$headers    = array( 'Content-Type: text/html; charset=UTF-8' );
-			$was_sent   = wp_mail( $cart['customer_email'], $subject, $message, $headers );
+			$subject  = $this->get_recovery_subject();
+			$message  = $this->build_recovery_email( $cart, $email_template );
+			$headers  = array( 'Content-Type: text/html; charset=UTF-8' );
+			$was_sent = wp_mail( $cart['customer_email'], $subject, $message, $headers );
 
 			if ( $was_sent ) {
 				$results[] = array(
@@ -331,7 +331,7 @@ class WP_MCP_AI_Tool_Send_Cart_Recovery_Email implements WP_MCP_AI_Tool_Interfac
 
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- table name is safe, query built with %d/%s placeholders.
 			$prepared_query = $wpdb->prepare( $query, $where_args );
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 			$sessions = $wpdb->get_results( $prepared_query );
 		} else {
 			$sessions = array();

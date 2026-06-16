@@ -226,17 +226,17 @@ class WP_MCP_AI_Tool_Get_Contact_Interactions implements WP_MCP_AI_Tool_Interfac
 		wp_reset_postdata();
 
 		return array(
-			'success'           => true,
-			'message'           => sprintf(
+			'success'          => true,
+			'message'          => sprintf(
 				/* translators: %d: number of interactions found */
-				__( 'Found %d interactions for contact #%d.', 'mcp-ai-wpoos-pro' ),
+				__( 'Found %1$d interactions for contact #%2$d.', 'mcp-ai-wpoos-pro' ),
 				count( $interactions ),
 				$contact_id
 			),
-			'contact_id'        => $contact_id,
-			'total_count'       => count( $interactions ),
-			'interaction_type'  => $interaction_type,
-			'interactions'      => $interactions,
+			'contact_id'       => $contact_id,
+			'total_count'      => count( $interactions ),
+			'interaction_type' => $interaction_type,
+			'interactions'     => $interactions,
 		);
 	}
 }

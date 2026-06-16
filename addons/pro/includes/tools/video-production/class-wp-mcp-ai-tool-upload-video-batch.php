@@ -270,7 +270,7 @@ class WP_MCP_AI_Tool_Upload_Video_Batch implements WP_MCP_AI_Tool_Interface, WP_
 				? __( 'Dry run complete. No videos were actually uploaded.', 'mcp-ai-wpoos-pro' )
 				: sprintf(
 					/* translators: %d: number of videos */
-					__( '%d videos queued for upload to %s.', 'mcp-ai-wpoos-pro' ),
+					__( '%1$d videos queued for upload to %2$s.', 'mcp-ai-wpoos-pro' ),
 					count( $processed ),
 					ucfirst( $platform )
 				),

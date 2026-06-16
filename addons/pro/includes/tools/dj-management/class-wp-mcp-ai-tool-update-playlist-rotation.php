@@ -231,9 +231,12 @@ class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interfac
 
 		// Sanitize and deduplicate track IDs.
 		$track_ids = array_unique( array_map( 'absint', $track_ids ) );
-		$track_ids = array_filter( $track_ids, function ( $id ) {
-			return $id > 0;
-		} );
+		$track_ids = array_filter(
+			$track_ids,
+			function ( $id ) {
+				return $id > 0;
+			}
+		);
 
 		if ( empty( $track_ids ) ) {
 			return array(
@@ -254,9 +257,9 @@ class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interfac
 				continue;
 			}
 
-			$current_rotation = get_post_meta( $track_id, '_rotation_status', true ) ?: 'active';
-			$current_priority = (int) get_post_meta( $track_id, '_rotation_priority', true ) ?: 0;
-			$play_count       = (int) get_post_meta( $track_id, '_play_count', true ) ?: 0;
+			$current_rotation = get_post_meta( $track_id, '_rotation_status', true ) ? get_post_meta( $track_id, '_rotation_status', true ) : 'active';
+			$current_priority = get_post_meta( $track_id, '_rotation_priority', true ) ? (int) get_post_meta( $track_id, '_rotation_priority', true ) : 0;
+			$play_count       = get_post_meta( $track_id, '_play_count', true ) ? (int) get_post_meta( $track_id, '_play_count', true ) : 0;
 
 			// Compute new rotation values based on action.
 			$new_rotation = $current_rotation;
@@ -278,22 +281,27 @@ class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interfac
 			}
 
 			$track_details[] = array(
-				'id'                => $track_id,
-				'title'             => $track_post->post_title,
-				'current_rotation'  => $current_rotation,
-				'new_rotation'      => $new_rotation,
-				'current_priority'  => $current_priority,
-				'new_priority'      => $new_priority,
-				'play_count'        => $play_count,
-				'changed'           => ( $current_rotation !== $new_rotation || $current_priority !== $new_priority ),
+				'id'               => $track_id,
+				'title'            => $track_post->post_title,
+				'current_rotation' => $current_rotation,
+				'new_rotation'     => $new_rotation,
+				'current_priority' => $current_priority,
+				'new_priority'     => $new_priority,
+				'play_count'       => $play_count,
+				'changed'          => ( $current_rotation !== $new_rotation || $current_priority !== $new_priority ),
 			);
 		}
 
 		// Dry run: return preview of changes.
 		if ( $dry_run ) {
-			$changes_count = count( array_filter( $track_details, function ( $t ) {
-				return $t['changed'];
-			} ) );
+			$changes_count = count(
+				array_filter(
+					$track_details,
+					function ( $t ) {
+						return $t['changed'];
+					}
+				)
+			);
 
 			return array(
 				'success'        => true,

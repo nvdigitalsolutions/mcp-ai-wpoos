@@ -183,6 +183,7 @@ class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP
 		// Check permissions.
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
+		// phpcs:ignore WordPress.WP.Capabilities.Unknown -- manage_woocommerce is a WooCommerce capability.
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'manage_woocommerce' ) ) {
 			if ( ! user_can( $current_user_id, 'edit_posts' ) ) {
 				return new WP_Error(
@@ -243,7 +244,7 @@ class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP
 			return $this->query_persistent_carts( $date_from, $date_to, $min_value, $customer_type, $limit );
 		}
 
-		$query   = "SELECT s.session_key, s.session_value, s.session_expiry
+		$query        = "SELECT s.session_key, s.session_value, s.session_expiry
 			FROM {$table_name} s
 			{$where_sql}
 			ORDER BY s.session_expiry DESC
@@ -252,7 +253,7 @@ class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- table name is safe, query built with %d placeholders.
 		$prepared_query = $wpdb->prepare( $query, $where_args );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$sessions = $wpdb->get_results( $prepared_query );
 
 		$abandoned_carts = array();
@@ -299,13 +300,13 @@ class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP
 				$cart_total += $item_total;
 
 				$items[] = array(
-					'product_id'    => $product_id,
-					'variation_id'  => $variation,
-					'product_name'  => $product->get_name(),
-					'sku'           => $product->get_sku(),
-					'quantity'      => $quantity,
-					'price'         => wc_format_decimal( $price, 2 ),
-					'total'         => wc_format_decimal( $item_total, 2 ),
+					'product_id'   => $product_id,
+					'variation_id' => $variation,
+					'product_name' => $product->get_name(),
+					'sku'          => $product->get_sku(),
+					'quantity'     => $quantity,
+					'price'        => wc_format_decimal( $price, 2 ),
+					'total'        => wc_format_decimal( $item_total, 2 ),
 				);
 			}
 
@@ -315,16 +316,16 @@ class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP
 			}
 
 			$abandoned_carts[] = array(
-				'session_key'       => sanitize_text_field( $session_data->session_key ),
-				'customer_email'    => $customer_email,
-				'customer_user_id'  => $customer_user_id,
-				'customer_type'     => $customer_user_id > 0 ? 'registered' : 'guest',
-				'cart_total'        => wc_format_decimal( $cart_total, 2 ),
-				'items_count'       => count( $items ),
-				'items'             => $items,
-				'session_expiry'    => absint( $session_data->session_expiry ),
-				'abandoned_at'      => gmdate( 'Y-m-d H:i:s', absint( $session_data->session_expiry ) ),
-				'hours_abandoned'   => round( ( time() - absint( $session_data->session_expiry ) ) / 3600, 1 ),
+				'session_key'      => sanitize_text_field( $session_data->session_key ),
+				'customer_email'   => $customer_email,
+				'customer_user_id' => $customer_user_id,
+				'customer_type'    => $customer_user_id > 0 ? 'registered' : 'guest',
+				'cart_total'       => wc_format_decimal( $cart_total, 2 ),
+				'items_count'      => count( $items ),
+				'items'            => $items,
+				'session_expiry'   => absint( $session_data->session_expiry ),
+				'abandoned_at'     => gmdate( 'Y-m-d H:i:s', absint( $session_data->session_expiry ) ),
+				'hours_abandoned'  => round( ( time() - absint( $session_data->session_expiry ) ) / 3600, 1 ),
 			);
 		}
 
@@ -332,8 +333,8 @@ class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP
 			'success'         => true,
 			'total_found'     => count( $abandoned_carts ),
 			'filters'         => array(
-				'date_from'     => $date_from ?: null,
-				'date_to'       => $date_to ?: null,
+				'date_from'     => $date_from ? $date_from : null,
+				'date_to'       => $date_to ? $date_to : null,
 				'min_value'     => $min_value,
 				'customer_type' => $customer_type,
 				'limit'         => $limit,
@@ -369,6 +370,7 @@ class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP
 		// Query users who have a persistent cart.
 		$user_query = new WP_User_Query(
 			array(
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 				'meta_key'     => $meta_key,
 				'meta_compare' => 'EXISTS',
 				'number'       => $limit,
@@ -382,8 +384,8 @@ class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP
 				'success'         => true,
 				'total_found'     => 0,
 				'filters'         => array(
-					'date_from'     => $date_from ?: null,
-					'date_to'       => $date_to ?: null,
+					'date_from'     => $date_from ? $date_from : null,
+					'date_to'       => $date_to ? $date_to : null,
 					'min_value'     => $min_value,
 					'customer_type' => $customer_type,
 					'limit'         => $limit,
@@ -457,8 +459,8 @@ class WP_MCP_AI_Tool_Get_Abandoned_Carts implements WP_MCP_AI_Tool_Interface, WP
 			'success'         => true,
 			'total_found'     => count( $abandoned_carts ),
 			'filters'         => array(
-				'date_from'     => $date_from ?: null,
-				'date_to'       => $date_to ?: null,
+				'date_from'     => $date_from ? $date_from : null,
+				'date_to'       => $date_to ? $date_to : null,
 				'min_value'     => $min_value,
 				'customer_type' => $customer_type,
 				'limit'         => $limit,

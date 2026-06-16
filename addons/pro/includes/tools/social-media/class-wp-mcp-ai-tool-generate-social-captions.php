@@ -235,22 +235,22 @@ class WP_MCP_AI_Tool_Generate_Social_Captions implements WP_MCP_AI_Tool_Interfac
 
 		// Build post context for the AI to use.
 		$post_context = array(
-			'post_id'   => $post_id,
-			'title'     => $post ? $post->post_title : '',
-			'excerpt'   => $post ? wp_strip_all_tags( $post->post_excerpt ) : '',
-			'permalink' => $post ? get_permalink( $post ) : '',
+			'post_id'    => $post_id,
+			'title'      => $post ? $post->post_title : '',
+			'excerpt'    => $post ? wp_strip_all_tags( $post->post_excerpt ) : '',
+			'permalink'  => $post ? get_permalink( $post ) : '',
 			'categories' => $post ? wp_get_post_categories( $post_id, array( 'fields' => 'names' ) ) : array(),
 			'tags'       => $post ? wp_get_post_tags( $post_id, array( 'fields' => 'names' ) ) : array(),
 		);
 
 		// Build the structured prompt context.
 		$prompt_context = array(
-			'platform'       => $platform,
-			'tone'           => $tone,
-			'count'          => $count,
+			'platform'         => $platform,
+			'tone'             => $tone,
+			'count'            => $count,
 			'include_hashtags' => $include_hashtags,
-			'platform_specs' => isset( $platform_specs[ $platform ] ) ? $platform_specs[ $platform ] : $platform_specs['facebook'],
-			'post_context'   => $post_context,
+			'platform_specs'   => isset( $platform_specs[ $platform ] ) ? $platform_specs[ $platform ] : $platform_specs['facebook'],
+			'post_context'     => $post_context,
 		);
 
 		// Return structured context for the AI to generate captions.
@@ -277,24 +277,24 @@ class WP_MCP_AI_Tool_Generate_Social_Captions implements WP_MCP_AI_Tool_Interfac
 	private function get_tone_guidance( $tone ) {
 		$guidance = array(
 			'professional' => array(
-				'style'      => __( 'Formal, polished, authoritative.', 'mcp-ai-wpoos-pro' ),
-				'voice'      => __( 'Industry expert sharing valuable insights.', 'mcp-ai-wpoos-pro' ),
-				'avoid'      => __( 'Slang, excessive emoji, overly casual language.', 'mcp-ai-wpoos-pro' ),
+				'style' => __( 'Formal, polished, authoritative.', 'mcp-ai-wpoos-pro' ),
+				'voice' => __( 'Industry expert sharing valuable insights.', 'mcp-ai-wpoos-pro' ),
+				'avoid' => __( 'Slang, excessive emoji, overly casual language.', 'mcp-ai-wpoos-pro' ),
 			),
 			'casual'       => array(
-				'style'      => __( 'Friendly, conversational, approachable.', 'mcp-ai-wpoos-pro' ),
-				'voice'      => __( 'Friend sharing something interesting.', 'mcp-ai-wpoos-pro' ),
-				'avoid'      => __( 'Jargon, stiff formality, corporate speak.', 'mcp-ai-wpoos-pro' ),
+				'style' => __( 'Friendly, conversational, approachable.', 'mcp-ai-wpoos-pro' ),
+				'voice' => __( 'Friend sharing something interesting.', 'mcp-ai-wpoos-pro' ),
+				'avoid' => __( 'Jargon, stiff formality, corporate speak.', 'mcp-ai-wpoos-pro' ),
 			),
 			'humorous'     => array(
-				'style'      => __( 'Witty, playful, engaging.', 'mcp-ai-wpoos-pro' ),
-				'voice'      => __( 'Entertainer making the audience smile.', 'mcp-ai-wpoos-pro' ),
-				'avoid'      => __( 'Offensive humor, dark topics, sarcasm that could be misread.', 'mcp-ai-wpoos-pro' ),
+				'style' => __( 'Witty, playful, engaging.', 'mcp-ai-wpoos-pro' ),
+				'voice' => __( 'Entertainer making the audience smile.', 'mcp-ai-wpoos-pro' ),
+				'avoid' => __( 'Offensive humor, dark topics, sarcasm that could be misread.', 'mcp-ai-wpoos-pro' ),
 			),
 			'informative'  => array(
-				'style'      => __( 'Educational, clear, data-driven.', 'mcp-ai-wpoos-pro' ),
-				'voice'      => __( 'Teacher breaking down complex topics.', 'mcp-ai-wpoos-pro' ),
-				'avoid'      => __( 'Fluff, vague claims, unsupported assertions.', 'mcp-ai-wpoos-pro' ),
+				'style' => __( 'Educational, clear, data-driven.', 'mcp-ai-wpoos-pro' ),
+				'voice' => __( 'Teacher breaking down complex topics.', 'mcp-ai-wpoos-pro' ),
+				'avoid' => __( 'Fluff, vague claims, unsupported assertions.', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 

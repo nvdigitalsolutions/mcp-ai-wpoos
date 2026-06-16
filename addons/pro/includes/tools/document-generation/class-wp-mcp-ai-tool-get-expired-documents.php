@@ -181,7 +181,7 @@ class WP_MCP_AI_Tool_Get_Expired_Documents implements WP_MCP_AI_Tool_Interface, 
 
 		// Filter by minimum days past expiry.
 		if ( $days_past_expiry > 0 ) {
-			$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$days_past_expiry} days" ) );
+			$cutoff_date                          = gmdate( 'Y-m-d', strtotime( "-{$days_past_expiry} days" ) );
 			$query_args['meta_query'][0]['value'] = $cutoff_date;
 		}
 
@@ -206,15 +206,15 @@ class WP_MCP_AI_Tool_Get_Expired_Documents implements WP_MCP_AI_Tool_Interface, 
 		wp_reset_postdata();
 
 		return array(
-			'success'        => true,
-			'message'        => sprintf(
+			'success'          => true,
+			'message'          => sprintf(
 				/* translators: %d: number of expired documents found */
 				__( 'Found %d expired documents.', 'mcp-ai-wpoos-pro' ),
 				count( $documents )
 			),
-			'total_count'    => count( $documents ),
-			'documents'      => $documents,
-			'query_date'     => $today,
+			'total_count'      => count( $documents ),
+			'documents'        => $documents,
+			'query_date'       => $today,
 			'days_past_cutoff' => $days_past_expiry,
 		);
 	}

@@ -120,9 +120,9 @@ class WP_MCP_AI_Tool_Send_Booking_Confirmation implements WP_MCP_AI_Tool_Interfa
 		$start_time   = get_post_meta( $appointment_id, '_start_time', true );
 		$end_time     = get_post_meta( $appointment_id, '_end_time', true );
 		/* translators: %d: appointment ID */
-		$subject   = sprintf( __( 'Appointment Confirmation #%d', 'mcp-ai-wpoos-pro' ), $appointment_id );
+		$subject = sprintf( __( 'Appointment Confirmation #%d', 'mcp-ai-wpoos-pro' ), $appointment_id );
 		/* translators: %1$s: client name, %2$s: start time, %3$s: end time */
-		$message   = sprintf( __( "Hello %1\$s,\n\nYour appointment is confirmed.\nTime: %2\$s to %3\$s\n\n", 'mcp-ai-wpoos-pro' ), $client_name, $start_time, $end_time );
+		$message = sprintf( __( "Hello %1\$s,\n\nYour appointment is confirmed.\nTime: %2\$s to %3\$s\n\n", 'mcp-ai-wpoos-pro' ), $client_name, $start_time, $end_time );
 		if ( ! empty( $arguments['custom_message'] ) ) {
 			$message .= sanitize_textarea_field( $arguments['custom_message'] ) . "\n\n";
 		}

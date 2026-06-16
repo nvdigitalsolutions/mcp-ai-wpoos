@@ -204,9 +204,9 @@ class WP_MCP_AI_Tool_Get_Content_Calendar implements WP_MCP_AI_Tool_Interface, W
 		// Filter by status.
 		if ( ! empty( $status ) ) {
 			$status_map = array(
-				'scheduled'  => 'future',
-				'draft'      => 'draft',
-				'published'  => 'publish',
+				'scheduled' => 'future',
+				'draft'     => 'draft',
+				'published' => 'publish',
 			);
 			if ( isset( $status_map[ $status ] ) ) {
 				$query_args['post_status'] = array( $status_map[ $status ] );

@@ -149,11 +149,11 @@ class WP_MCP_AI_Tool_Get_Recent_Health_Appointments implements WP_MCP_AI_Tool_In
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments with sanitization.
-		$member_id       = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
-		$provider_id     = isset( $arguments['provider_id'] ) ? absint( $arguments['provider_id'] ) : 0;
+		$member_id        = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
+		$provider_id      = isset( $arguments['provider_id'] ) ? absint( $arguments['provider_id'] ) : 0;
 		$appointment_type = isset( $arguments['appointment_type'] ) ? sanitize_text_field( $arguments['appointment_type'] ) : '';
-		$days_back       = isset( $arguments['days_back'] ) ? absint( $arguments['days_back'] ) : 30;
-		$limit           = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 50;
+		$days_back        = isset( $arguments['days_back'] ) ? absint( $arguments['days_back'] ) : 30;
+		$limit            = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 50;
 
 		// Clamp values.
 		$days_back = max( 1, min( 365, $days_back ) );
@@ -211,11 +211,11 @@ class WP_MCP_AI_Tool_Get_Recent_Health_Appointments implements WP_MCP_AI_Tool_In
 
 		$appointments = array();
 		foreach ( $posts as $post ) {
-			$member_id_val     = get_post_meta( $post->ID, '_member_id', true );
-			$provider_id_val   = get_post_meta( $post->ID, '_provider_id', true );
-			$appt_type_val     = get_post_meta( $post->ID, '_appointment_type', true );
-			$appointment_date  = get_post_meta( $post->ID, '_appointment_date', true );
-			$status            = get_post_meta( $post->ID, '_status', true );
+			$member_id_val    = get_post_meta( $post->ID, '_member_id', true );
+			$provider_id_val  = get_post_meta( $post->ID, '_provider_id', true );
+			$appt_type_val    = get_post_meta( $post->ID, '_appointment_type', true );
+			$appointment_date = get_post_meta( $post->ID, '_appointment_date', true );
+			$status           = get_post_meta( $post->ID, '_status', true );
 
 			$appointments[] = array(
 				'id'               => $post->ID,
@@ -230,15 +230,15 @@ class WP_MCP_AI_Tool_Get_Recent_Health_Appointments implements WP_MCP_AI_Tool_In
 		}
 
 		return array(
-			'success'       => true,
-			'message'       => sprintf(
+			'success'      => true,
+			'message'      => sprintf(
 				/* translators: %d: number of appointments found */
 				__( 'Found %d recent appointments.', 'mcp-ai-wpoos-pro' ),
 				count( $appointments )
 			),
-			'count'         => count( $appointments ),
-			'appointments'  => $appointments,
-			'filters'       => array(
+			'count'        => count( $appointments ),
+			'appointments' => $appointments,
+			'filters'      => array(
 				'days_back'        => $days_back,
 				'member_id'        => $member_id,
 				'provider_id'      => $provider_id,

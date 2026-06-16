@@ -169,7 +169,7 @@ class WP_MCP_AI_Tool_Get_Unwatermarked_Images implements WP_MCP_AI_Tool_Interfac
 				$date_query['before'] = $date_to . ' 23:59:59';
 			}
 
-			$date_query['inclusive'] = true;
+			$date_query['inclusive']  = true;
 			$query_args['date_query'] = array( $date_query );
 		}
 

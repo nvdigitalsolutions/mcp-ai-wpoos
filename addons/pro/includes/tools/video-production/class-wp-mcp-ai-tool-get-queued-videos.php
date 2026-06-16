@@ -218,16 +218,16 @@ class WP_MCP_AI_Tool_Get_Queued_Videos implements WP_MCP_AI_Tool_Interface, WP_M
 				$attachment_id = get_the_ID();
 
 				$videos[] = array(
-					'id'          => $attachment_id,
-					'title'       => get_the_title(),
-					'url'         => wp_get_attachment_url( $attachment_id ),
-					'mime_type'   => get_post_mime_type( $attachment_id ),
-					'file_size'   => filesize( get_attached_file( $attachment_id ) ),
-					'queue_status' => get_post_meta( $attachment_id, '_mcp_video_queue_status', true ) ?: 'pending',
-					'platform'    => get_post_meta( $attachment_id, '_mcp_video_target_platform', true ),
-					'error'       => get_post_meta( $attachment_id, '_mcp_video_queue_error', true ),
-					'queued_at'   => get_post_meta( $attachment_id, '_mcp_video_queued_at', true ),
-					'created_at'  => get_the_date( 'c' ),
+					'id'           => $attachment_id,
+					'title'        => get_the_title(),
+					'url'          => wp_get_attachment_url( $attachment_id ),
+					'mime_type'    => get_post_mime_type( $attachment_id ),
+					'file_size'    => filesize( get_attached_file( $attachment_id ) ),
+					'queue_status' => get_post_meta( $attachment_id, '_mcp_video_queue_status', true ) ? get_post_meta( $attachment_id, '_mcp_video_queue_status', true ) : 'pending',
+					'platform'     => get_post_meta( $attachment_id, '_mcp_video_target_platform', true ),
+					'error'        => get_post_meta( $attachment_id, '_mcp_video_queue_error', true ),
+					'queued_at'    => get_post_meta( $attachment_id, '_mcp_video_queued_at', true ),
+					'created_at'   => get_the_date( 'c' ),
 				);
 			}
 			wp_reset_postdata();

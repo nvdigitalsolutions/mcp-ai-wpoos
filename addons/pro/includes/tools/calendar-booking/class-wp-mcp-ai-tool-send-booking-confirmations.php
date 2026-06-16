@@ -195,7 +195,7 @@ class WP_MCP_AI_Tool_Send_Booking_Confirmations implements WP_MCP_AI_Tool_Interf
 			$appointment = get_post( $booking_id );
 
 			if ( ! $appointment || 'mcp_appointment' !== $appointment->post_type ) {
-				$results['skipped']++;
+				++$results['skipped'];
 				$results['errors'][] = array(
 					'booking_id' => $booking_id,
 					'error'      => __( 'Invalid appointment.', 'mcp-ai-wpoos-pro' ),
@@ -212,12 +212,12 @@ class WP_MCP_AI_Tool_Send_Booking_Confirmations implements WP_MCP_AI_Tool_Interf
 
 			$recipient = array(
 				'booking_id'   => $booking_id,
-				'client_name'  => $client_name ?: '',
-				'client_email' => $client_email ?: '',
-				'client_phone' => $client_phone ?: '',
-				'service_type' => $service_type ?: '',
-				'start_time'   => $start_time ?: '',
-				'end_time'     => $end_time ?: '',
+				'client_name'  => $client_name ? $client_name : '',
+				'client_email' => $client_email ? $client_email : '',
+				'client_phone' => $client_phone ? $client_phone : '',
+				'service_type' => $service_type ? $service_type : '',
+				'start_time'   => $start_time ? $start_time : '',
+				'end_time'     => $end_time ? $end_time : '',
 				'methods_used' => array(),
 				'sent'         => false,
 			);
@@ -225,7 +225,7 @@ class WP_MCP_AI_Tool_Send_Booking_Confirmations implements WP_MCP_AI_Tool_Interf
 			if ( $dry_run ) {
 				$recipient['methods_used'][] = 'dry_run_preview';
 				$results['recipients'][]     = $recipient;
-				$results['processed']++;
+				++$results['processed'];
 				continue;
 			}
 
@@ -284,13 +284,13 @@ class WP_MCP_AI_Tool_Send_Booking_Confirmations implements WP_MCP_AI_Tool_Interf
 				}
 			}
 
-			$recipient['sent'] = $email_sent || $sms_sent;
+			$recipient['sent']       = $email_sent || $sms_sent;
 			$results['recipients'][] = $recipient;
 
 			if ( $recipient['sent'] ) {
-				$results['processed']++;
+				++$results['processed'];
 			} else {
-				$results['failed']++;
+				++$results['failed'];
 				if ( empty( $recipient['methods_used'] ) ) {
 					$results['errors'][] = array(
 						'booking_id' => $booking_id,

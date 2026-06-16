@@ -225,7 +225,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 				'product' => 'Open Operator System',
 			),
 			/* translators: %s: project title */
-			'calName'   => sprintf( __( 'Project: %s', 'mcp-ai-wpoos-pro' ), $project->post_title ),
+			'calName'  => sprintf( __( 'Project: %s', 'mcp-ai-wpoos-pro' ), $project->post_title ),
 			'timezone' => isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : wp_timezone_string(),
 		);
 

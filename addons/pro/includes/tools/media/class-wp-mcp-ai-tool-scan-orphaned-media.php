@@ -195,18 +195,18 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 		);
 
 		if ( 'all' === $scan_type || 'unreferenced' === $scan_type ) {
-			$unreferenced                  = $this->scan_unreferenced_attachments( $limit, $year_month );
-			$results['unreferenced']       = $unreferenced;
+			$unreferenced            = $this->scan_unreferenced_attachments( $limit, $year_month );
+			$results['unreferenced'] = $unreferenced;
 		}
 
 		if ( 'all' === $scan_type || 'missing_files' === $scan_type ) {
-			$missing_files                 = $this->scan_missing_files( $limit, $year_month );
-			$results['missing_files']      = $missing_files;
+			$missing_files            = $this->scan_missing_files( $limit, $year_month );
+			$results['missing_files'] = $missing_files;
 		}
 
 		if ( 'all' === $scan_type || 'unregistered' === $scan_type ) {
-			$unregistered                  = $this->scan_unregistered_files( $limit, $year_month );
-			$results['unregistered']       = $unregistered;
+			$unregistered            = $this->scan_unregistered_files( $limit, $year_month );
+			$results['unregistered'] = $unregistered;
 		}
 
 		$results['total_orphaned'] = $results['unreferenced']['count'] + $results['missing_files']['count'] + $results['unregistered']['count'];
@@ -341,7 +341,7 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 	 * it appears as a featured image.
 	 *
 	 * @since 2.7.0
-	 * @param int     $attachment_id Attachment ID.
+	 * @param int      $attachment_id Attachment ID.
 	 * @param string[] $filenames    Filenames to search for in content.
 	 * @return bool True if referenced anywhere.
 	 */
@@ -380,12 +380,13 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$search_terms = array_unique( $search_terms );
+		$term_count   = count( $search_terms );
 
 		// Search in chunks to avoid extremely long queries.
 		$chunk_size = 5;
 
-		for ( $i = 0; $i < count( $search_terms ); $i += $chunk_size ) {
-			$chunk  = array_slice( $search_terms, $i, $chunk_size );
+		for ( $i = 0; $i < $term_count; $i += $chunk_size ) {
+			$chunk   = array_slice( $search_terms, $i, $chunk_size );
 			$clauses = array();
 
 			foreach ( $chunk as $term ) {
@@ -462,11 +463,11 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 			if ( ! $file || ! file_exists( $file ) ) {
 				$attachment_post = get_post( $attachment_id );
 				$missing[]       = array(
-					'id'          => $attachment_id,
-					'title'       => $attachment_post ? $attachment_post->post_title : '',
+					'id'            => $attachment_id,
+					'title'         => $attachment_post ? $attachment_post->post_title : '',
 					'expected_file' => $file ? basename( $file ) : '',
-					'upload_date' => $attachment_post ? $attachment_post->post_date : '',
-					'mime_type'   => $attachment_post ? $attachment_post->post_mime_type : '',
+					'upload_date'   => $attachment_post ? $attachment_post->post_date : '',
+					'mime_type'     => $attachment_post ? $attachment_post->post_mime_type : '',
 				);
 			}
 		}
@@ -560,7 +561,7 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 						'file'      => str_replace( $base_dir . '/', '', $normalized ),
 						'file_size' => size_format( filesize( $file_path ) ),
 					);
-					$count++;
+					++$count;
 				}
 			}
 		}
