@@ -1,169 +1,139 @@
 /**
- * useThreads — Hook for managing agent conversation threads.
+ * useThreads — Read-only hook for browsing agent conversation threads.
+ *
+ * Mirrors chat-spa's `useThreadsSidebar`: threads are a browse view;
+ * conversations (transcripts) own the chat transport. This hook only
+ * fetches lists and messages — it does NOT create, archive, restore,
+ * or summarize threads (those operations are available at the API
+ * layer but not exposed through the chat flow).
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { ThreadsClient, type ThreadSummary, type ThreadMessage } from '../api/threads';
-import { useUIStore } from '../stores/uiStore';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+	ThreadsClient,
+	type ThreadSummary,
+} from '../api/threads';
 
 export interface UseThreadsOptions {
 	endpoint: string;
 	nonce: string;
+	/** Disables server calls when true (e.g. missing config). */
+	disabled?: boolean;
 }
 
 export interface UseThreadsReturn {
-	threads: ThreadSummary[];
-	total: number;
-	activeThreadId: number | null;
-	loading: boolean;
+	/** Thread list (null = not yet loaded). */
+	threads: ThreadSummary[] | null;
+	/** True while the thread list is being fetched. */
+	isLoading: boolean;
+	/** Generic transient error from the latest list/get call. */
 	error: string | null;
-
-	setActiveThread: ( id: number | null ) => void;
-	fetchThreads: () => Promise< void >;
-	createThread: (
-		assistantId?: number,
-		model?: { provider?: string; name?: string },
-		profile?: string,
-		scope?: Record< string, unknown >
-	) => Promise< ThreadSummary | null >;
-	archiveThread: ( id: number ) => Promise< void >;
-	restoreThread: ( id: number ) => Promise< void >;
-	summarizeThread: ( id: number ) => Promise< { new_thread_id?: number } >;
-	getMessages: ( threadId: number ) => Promise< ThreadMessage[] >;
+	/** True when the threads feature is unavailable. */
+	unavailable: boolean;
+	/** Currently selected thread (by id), or null. */
+	activeThreadId: number | null;
+	/** Select a thread and load its messages. */
+	selectThread: ( threadId: number ) => Promise< void >;
+	/** Clear the active thread selection. */
+	deselectThread: () => void;
+	/** Force-refresh the thread list. */
+	refreshList: () => Promise< void >;
 }
 
-export function useThreads( options: UseThreadsOptions ): UseThreadsReturn {
+export function useThreads(
+	options: UseThreadsOptions
+): UseThreadsReturn {
+	const { endpoint, nonce, disabled = false } = options;
+
 	const client = useMemo(
-		() => new ThreadsClient( { endpoint: options.endpoint, nonce: options.nonce } ),
-		[ options.endpoint, options.nonce ]
+		() => new ThreadsClient( { endpoint, nonce } ),
+		[ endpoint, nonce ]
 	);
 
-	const [ threads, setThreads ] = useState< ThreadSummary[] >( [] );
-	const [ total, setTotal ] = useState< number >( 0 );
-	const [ activeThreadId, setActiveThreadId ] = useState< number | null >( null );
-	const [ loading, setLoading ] = useState< boolean >( false );
+	const [ threads, setThreads ] = useState< ThreadSummary[] | null >( null );
+	const [ isLoading, setIsLoading ] = useState< boolean >( false );
 	const [ error, setError ] = useState< string | null >( null );
+	const [ unavailable, setUnavailable ] = useState< boolean >( false );
+	const [ activeThreadId, setActiveThreadId ] = useState< number | null >( null );
 
-	const addToast = useUIStore( ( s ) => s.addToast );
+	const abortRef = useRef< AbortController | null >( null );
 
-	const fetchThreads = useCallback( async () => {
-		setLoading( true );
+	const refreshList = useCallback( async () => {
+		if ( disabled ) {
+			setThreads( [] );
+			return;
+		}
+		setIsLoading( true );
 		setError( null );
 		try {
-			const result = await client.list();
-			setThreads( result.threads );
-			setTotal( result.total );
+			const data = await client.list();
+			setThreads( data.threads );
+			setUnavailable( false );
 		} catch ( err ) {
-			setError( err instanceof Error ? err.message : String( err ) );
-		} finally {
-			setLoading( false );
-		}
-	}, [ client ] );
-
-	useEffect( () => {
-		void fetchThreads();
-	}, [ fetchThreads ] );
-
-	const setActiveThread = useCallback( ( id: number | null ) => {
-		setActiveThreadId( id );
-	}, [] );
-
-	const createThread = useCallback(
-		async (
-			assistantId = 0,
-			model: { provider?: string; name?: string } = {},
-			profile = 'write',
-			scope: Record< string, unknown > = {}
-		): Promise< ThreadSummary | null > => {
-			try {
-				const thread = await client.create( assistantId, model, profile, scope );
-				setThreads( ( prev ) => [ thread, ...prev ] );
-				setTotal( ( prev ) => prev + 1 );
-				setActiveThreadId( thread.id );
-				addToast( 'Thread created', 'success' );
-				return thread;
-			} catch ( err ) {
-				const msg = err instanceof Error ? err.message : String( err );
+			// If the threads route doesn't exist or returns an error,
+			// mark the feature unavailable and show an empty state.
+			const msg = err instanceof Error ? err.message : String( err );
+			if ( msg.includes( '404' ) || msg.includes( 'not found' ) || msg.includes( 'no route' ) ) {
+				setUnavailable( true );
+				setThreads( [] );
+			} else {
 				setError( msg );
-				addToast( msg, 'error' );
-				return null;
+				setThreads( [] );
 			}
-		},
-		[ client, addToast ]
-	);
+		} finally {
+			setIsLoading( false );
+		}
+	}, [ client, disabled ] );
 
-	const archiveThread = useCallback(
-		async ( id: number ) => {
+	// Initial list fetch on mount.
+	useEffect( () => {
+		void refreshList();
+	}, [ refreshList ] );
+
+	const selectThread = useCallback(
+		async ( threadId: number ) => {
+			if ( disabled || ! threadId ) {
+				return;
+			}
+			abortRef.current?.abort();
+			const controller = new AbortController();
+			abortRef.current = controller;
+			setIsLoading( true );
+			setError( null );
 			try {
-				await client.archive( id );
-				setThreads( ( prev ) => prev.filter( ( t ) => t.id !== id ) );
-				setTotal( ( prev ) => prev - 1 );
-				if ( activeThreadId === id ) {
-					setActiveThreadId( null );
+				// Load messages — caller retrieves them via getMessages.
+				await client.getMessages( threadId, controller.signal );
+				if ( controller.signal.aborted ) {
+					return;
 				}
-				addToast( 'Thread archived', 'success' );
+				setActiveThreadId( threadId );
 			} catch ( err ) {
-				addToast( err instanceof Error ? err.message : String( err ), 'error' );
-			}
-		},
-		[ client, activeThreadId, addToast ]
-	);
-
-	const restoreThread = useCallback(
-		async ( id: number ) => {
-			try {
-				await client.restore( id );
-				void fetchThreads();
-				addToast( 'Thread restored', 'success' );
-			} catch ( err ) {
-				addToast( err instanceof Error ? err.message : String( err ), 'error' );
-			}
-		},
-		[ client, fetchThreads, addToast ]
-	);
-
-	const summarizeThread = useCallback(
-		async ( id: number ) => {
-			try {
-				const result = await client.summarize( id );
-				void fetchThreads();
-				if ( result.new_thread_id ) {
-					setActiveThreadId( result.new_thread_id );
+				if ( ! controller.signal.aborted ) {
+					setError( err instanceof Error ? err.message : String( err ) );
 				}
-				addToast( 'Thread summarized', 'success' );
-				return result;
-			} catch ( err ) {
-				addToast( err instanceof Error ? err.message : String( err ), 'error' );
-				return {};
+			} finally {
+				if ( ! controller.signal.aborted ) {
+					setIsLoading( false );
+				}
 			}
 		},
-		[ client, fetchThreads, addToast ]
+		[ client, disabled ]
 	);
 
-	const getMessages = useCallback(
-		async ( threadId: number ): Promise< ThreadMessage[] > => {
-			try {
-				const result = await client.getMessages( threadId );
-				return result.messages;
-			} catch {
-				return [];
-			}
-		},
-		[ client ]
-	);
+	const deselectThread = useCallback( () => {
+		abortRef.current?.abort();
+		setActiveThreadId( null );
+		setError( null );
+	}, [] );
 
 	return {
 		threads,
-		total,
-		activeThreadId,
-		loading,
+		isLoading,
 		error,
-		setActiveThread,
-		fetchThreads,
-		createThread,
-		archiveThread,
-		restoreThread,
-		summarizeThread,
-		getMessages,
+		unavailable,
+		activeThreadId,
+		selectThread,
+		deselectThread,
+		refreshList,
 	};
 }

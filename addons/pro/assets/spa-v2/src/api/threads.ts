@@ -2,6 +2,10 @@
  * Pro SPA v2 — typed wrappers around `mcp-ai/v1/threads`.
  *
  * Read-only subset for sidebar integration and thread browsing.
+ *
+ * NOTE: The `create`, `archive`, `restore`, and `summarize` methods are
+ * available at the API layer but are NOT used in the primary chat flow.
+ * The chat flow is conversation-driven (transcripts), not thread-driven.
  */
 
 import { __ } from '@wordpress/i18n';

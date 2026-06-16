@@ -1,12 +1,16 @@
 /**
  * ChatSidebar — Left sidebar with two tabs: Conversations (transcripts) and Threads.
  *
+ * Architecture: **Conversations-first** — the "Conversations" tab is the default
+ * and the primary way to start, switch, and delete chat sessions. The "Threads"
+ * tab provides a read-only browse view of thread-manager threads.
+ *
  * Transcripts data is received from the parent Layout component.
- * Threads data is fetched internally via the useThreads hook.
+ * Threads data is fetched internally via the read-only `useThreads` hook.
  */
 
 import { type JSX, useCallback, useMemo, useState } from 'react';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { useThreads } from '../../hooks/useThreads';
 import type { TranscriptSession } from '../../api/transcripts';
@@ -37,8 +41,8 @@ export interface ChatSidebarProps {
 	/** WordPress REST nonce. */
 	nonce: string;
 
-	/** Navigate to chat page when a thread is selected. */
-	onSelectThread?: ( id: number ) => void;
+	/** Callback when a thread is selected in the sidebar (read-only view). */
+	onSelectThread?: ( threadId: number ) => void;
 }
 
 type SidebarTab = 'conversations' | 'threads';
@@ -61,18 +65,18 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 		onSelectThread,
 	} = props;
 
-	// ---- active tab ----
+	// ---- active tab (default: conversations) ----
 	const [ activeTab, setActiveTab ] = useState< SidebarTab >( 'conversations' );
 
-	// ---- threads (fetched internally) ----
+	// ---- threads (read-only browse) ----
 	const {
 		threads,
 		activeThreadId,
-		loading: threadsLoading,
+		isLoading: threadsLoading,
 		error: threadsError,
-		setActiveThread,
-		createThread,
-		archiveThread,
+		unavailable: threadsUnavailable,
+		selectThread,
+		deselectThread,
 	} = useThreads( { endpoint: threadsEndpoint, nonce } );
 
 	// ---- derived ----
@@ -81,12 +85,12 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 		[ sessions ]
 	);
 
-	const activeThread = useMemo(
-		() => threads.find( ( t ) => t.id === activeThreadId ) ?? null,
-		[ threads, activeThreadId ]
+	const safeThreads: ThreadSummary[] = useMemo(
+		() => ( Array.isArray( threads ) ? threads : [] ),
+		[ threads ]
 	);
 
-	// ---- callbacks ----
+	// ---- tab keyboard navigation ----
 	const handleTabKeyDown = useCallback(
 		( tab: SidebarTab ) =>
 			( e: React.KeyboardEvent< HTMLButtonElement > ): void => {
@@ -102,11 +106,25 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 		[]
 	);
 
+	// ---- callbacks ----
+	const handleTabChange = useCallback(
+		( tab: SidebarTab ) => {
+			setActiveTab( tab );
+			// Deselect thread when switching to conversations tab.
+			if ( tab === 'conversations' ) {
+				deselectThread();
+			}
+		},
+		[ deselectThread ]
+	);
+
 	const handleSessionClick = useCallback(
 		( key: string ) => {
+			// When selecting a conversation, deselect any active thread.
+			deselectThread();
 			void onSelectSession( key );
 		},
-		[ onSelectSession ]
+		[ onSelectSession, deselectThread ]
 	);
 
 	const handleSessionDelete = useCallback(
@@ -117,22 +135,11 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 	);
 
 	const handleThreadClick = useCallback(
-		( id: number ) => {
-			setActiveThread( id );
+		async ( id: number ) => {
+			await selectThread( id );
 			onSelectThread?.( id );
 		},
-		[ setActiveThread, onSelectThread ]
-	);
-
-	const handleNewThread = useCallback( () => {
-		void createThread();
-	}, [ createThread ] );
-
-	const handleArchiveThread = useCallback(
-		( id: number ) => {
-			void archiveThread( id );
-		},
-		[ archiveThread ]
+		[ selectThread, onSelectThread ]
 	);
 
 	// ---- render ----
@@ -159,7 +166,7 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 					aria-selected={ activeTab === 'conversations' }
 					aria-controls="nvoos-pro-spa-sidebar-panel-conversations"
 					id="nvoos-pro-spa-sidebar-tab-conversations"
-					onClick={ () => setActiveTab( 'conversations' ) }
+					onClick={ () => handleTabChange( 'conversations' ) }
 					onKeyDown={ handleTabKeyDown( 'conversations' ) }
 				>
 					{ __( 'Conversations', 'nvoos-pro-spa' ) }
@@ -178,7 +185,7 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 					aria-selected={ activeTab === 'threads' }
 					aria-controls="nvoos-pro-spa-sidebar-panel-threads"
 					id="nvoos-pro-spa-sidebar-tab-threads"
-					onClick={ () => setActiveTab( 'threads' ) }
+					onClick={ () => handleTabChange( 'threads' ) }
 					onKeyDown={ handleTabKeyDown( 'threads' ) }
 				>
 					{ __( 'Threads', 'nvoos-pro-spa' ) }
@@ -269,9 +276,10 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 									{ s.turn_count !== undefined && (
 										<span className="nvoos-pro-spa-sidebar__item-meta">
 											{ s.turn_count }{ ' ' }
-											{ __(
-												'turns',
-												'nvoos-pro-spa'
+											{ sprintf(
+												/* translators: %d: number of turns */
+												__( '%d turns', 'nvoos-pro-spa' ),
+												s.turn_count
 											) }
 										</span>
 									) }
@@ -307,7 +315,7 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 				</ul>
 			</div>
 
-			{ /* ---- Threads tab panel ---- */ }
+			{ /* ---- Threads tab panel (read-only) ---- */ }
 			<div
 				className="nvoos-pro-spa-sidebar__panel"
 				id="nvoos-pro-spa-sidebar-panel-threads"
@@ -315,15 +323,11 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 				aria-labelledby="nvoos-pro-spa-sidebar-tab-threads"
 				hidden={ activeTab !== 'threads' }
 			>
-				<div className="nvoos-pro-spa-sidebar__actions">
-					<button
-						type="button"
-						className="nvoos-pro-spa-sidebar__new-btn"
-						onClick={ handleNewThread }
-					>
-						{ __( '+ New Thread', 'nvoos-pro-spa' ) }
-					</button>
-				</div>
+				{ threadsUnavailable && (
+					<p className="nvoos-pro-spa-sidebar__notice">
+						{ __( 'Threads are not available.', 'nvoos-pro-spa' ) }
+					</p>
+				) }
 
 				{ threadsLoading && (
 					<p className="nvoos-pro-spa-sidebar__loading">
@@ -345,7 +349,7 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 					role="list"
 					aria-label={ __( 'Threads', 'nvoos-pro-spa' ) }
 				>
-					{ threads.map( ( t ) => {
+					{ safeThreads.map( ( t ) => {
 						const isActive = t.id === activeThreadId;
 						return (
 							<li
@@ -374,40 +378,29 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 								>
 									<span className="nvoos-pro-spa-sidebar__item-title">
 										{ t.title ||
-											__( 'Untitled', 'nvoos-pro-spa' ) }
+											`Thread #${ t.id }` }
 									</span>
 									{ t.message_count !== undefined && (
 										<span className="nvoos-pro-spa-sidebar__item-meta">
 											{ t.message_count }{ ' ' }
-											{ __(
-												'msgs',
-												'nvoos-pro-spa'
+											{ sprintf(
+												/* translators: %d: number of messages */
+												__( '%d msgs', 'nvoos-pro-spa' ),
+												t.message_count
 											) }
 										</span>
 									) }
 								</button>
-								<button
-									type="button"
-									className="nvoos-pro-spa-sidebar__item-delete"
-									onClick={ () =>
-										handleArchiveThread( t.id )
-									}
-									aria-label={ __(
-										'Archive thread',
-										'nvoos-pro-spa'
-									) }
-								>
-									×
-								</button>
 							</li>
 						);
 					} ) }
-					{ threads.length === 0 &&
+					{ safeThreads.length === 0 &&
 						! threadsLoading &&
+						! threadsUnavailable &&
 						! threadsError && (
 							<li className="nvoos-pro-spa-sidebar__empty">
 								{ __(
-									'No threads yet.',
+									'No active threads.',
 									'nvoos-pro-spa'
 								) }
 							</li>

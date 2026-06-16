@@ -1,8 +1,10 @@
 /**
  * Layout — Root layout component wrapping the SPA in HashRouter.
  *
- * Reads runtime config from window.NVOOS_PRO_SPA, wires transcripts,
- * and renders the 3-column + status-bar chrome.
+ * Reads runtime config from window.NVOOS_PRO_SPA, instantiates the
+ * shared `useTranscripts` hook once, and passes it to both the
+ * ChatSidebar and ChatPage so there is only one source of truth for
+ * the active conversation session.
  */
 
 import { type JSX, useCallback, useMemo } from 'react';
@@ -15,7 +17,6 @@ import { useTranscripts } from '../../hooks/useTranscripts';
 import { ChatSidebar } from './ChatSidebar';
 import { RightPanel } from './RightPanel';
 import { StatusBar } from './StatusBar';
-import { ToastContainer } from '../shared/Toast';
 
 import { AppRouter } from '../../router';
 
@@ -33,7 +34,7 @@ interface LayoutContentProps {
 function LayoutContent( props: LayoutContentProps ): JSX.Element {
 	const { transcriptsEndpoint, threadsEndpoint, nonce, assistantId } = props;
 
-	// ---- transcripts (conversation sessions) ----
+	// ---- transcripts (conversation sessions) — single source of truth ----
 	const transcripts = useTranscripts( {
 		endpoint: transcriptsEndpoint,
 		nonce,
@@ -45,11 +46,14 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 	const rightPanelOpen = useUIStore( ( s ) => s.rightPanelOpen );
 	const theme = useUIStore( ( s ) => s.theme );
 
-	// ---- thread selection -> navigate to /chat/:id ----
+	// ---- thread selection callback (no URL navigation needed) ----
 	const navigate = useNavigate();
 	const handleSelectThread = useCallback(
-		( id: number ) => {
-			navigate( `/chat/${ id }` );
+		( threadId: number ) => {
+			// Navigate to the chat route so ChatPage is rendered.
+			// Thread messages are loaded by the sidebar and injected
+			// into ChatPage via chatSpoke.setMessages() in the router.
+			navigate( '/chat' );
 		},
 		[ navigate ]
 	);
@@ -85,7 +89,7 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 				id="nvoos-pro-spa-main-content"
 				role="main"
 			>
-				<AppRouter />
+				<AppRouter transcripts={ transcripts } />
 			</main>
 
 			{ /* ---- right panel ---- */ }
@@ -93,12 +97,10 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 
 			{ /* ---- fixed bottom status bar ---- */ }
 			<StatusBar
-				threadsEndpoint={ threadsEndpoint }
+				transcriptsEndpoint={ transcriptsEndpoint }
 				nonce={ nonce }
 			/>
 
-			{ /* ---- toast notifications ---- */ }
-			<ToastContainer />
 		</div>
 	);
 }
