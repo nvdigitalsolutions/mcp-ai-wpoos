@@ -1,6 +1,6 @@
 {
   "name": "@nvoos/pro-spa-v2",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "NV oOS Pro Admin SPA — modern TypeScript React admin panel replacing the legacy pro-spa",
   "private": true,
   "type": "module",

@@ -601,11 +601,11 @@ class WP_MCP_AI_Media_Command_Center_Page {
 	 * Render the Templates tab with template grid, usage stats, and quick actions.
 	 */
 	private static function render_templates_tab() {
-		$templates     = self::get_all_templates();
-		$total         = count( $templates );
-		$categories    = self::get_template_categories();
-		$most_used     = self::get_most_used_templates( 5 );
-		$unused        = self::get_unused_templates();
+		$templates  = self::get_all_templates();
+		$total      = count( $templates );
+		$categories = self::get_template_categories();
+		$most_used  = self::get_most_used_templates( 5 );
+		$unused     = self::get_unused_templates();
 		?>
 		<div class="media-cc-kpi-grid">
 			<div class="media-cc-kpi">
@@ -761,10 +761,10 @@ class WP_MCP_AI_Media_Command_Center_Page {
 		foreach ( $collections as $c ) {
 			$total_items += $c['item_count'];
 			if ( 0 === $c['item_count'] ) {
-				$empty_count++;
+				++$empty_count;
 			}
 			if ( $c['last_updated_ts'] > 0 && ( $now - $c['last_updated_ts'] ) > 90 * DAY_IN_SECONDS ) {
-				$stale_count++;
+				++$stale_count;
 			}
 		}
 		?>
@@ -861,10 +861,10 @@ class WP_MCP_AI_Media_Command_Center_Page {
 	 * Render the Processing tab with Sharp status, job queue, and package health.
 	 */
 	private static function render_processing_tab() {
-		$sharp_ready   = self::check_nodejs_available() && self::check_package_available( 'sharp' );
-		$queue         = self::get_processing_queue_status();
-		$packages      = self::get_media_package_statuses();
-		$compression   = self::get_compression_stats();
+		$sharp_ready = self::check_nodejs_available() && self::check_package_available( 'sharp' );
+		$queue       = self::get_processing_queue_status();
+		$packages    = self::get_media_package_statuses();
+		$compression = self::get_compression_stats();
 		?>
 		<div class="media-cc-section">
 			<h2><?php esc_html_e( 'Sharp Processing Engine', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -1202,13 +1202,13 @@ class WP_MCP_AI_Media_Command_Center_Page {
 		$overdue = 0;
 		foreach ( $presets as $p ) {
 			if ( 'active' === $p['status'] ) {
-				$active++;
+				++$active;
 			}
 			if ( ! empty( $p['ran_today'] ) ) {
-				$ran++;
+				++$ran;
 			}
 			if ( ! empty( $p['is_overdue'] ) ) {
-				$overdue++;
+				++$overdue;
 			}
 		}
 		?>
@@ -1449,11 +1449,11 @@ class WP_MCP_AI_Media_Command_Center_Page {
 		$general_settings  = get_option( 'wp_mcp_ai_settings', array() );
 		$template_settings = get_option( 'wp_mcp_ai_media_settings', array() );
 
-		$sharp_mode    = isset( $media_settings['sharp_processing_mode'] ) ? $media_settings['sharp_processing_mode'] : 'local';
-		$webp_enabled  = ! empty( $media_settings['sharp_enable_webp'] );
-		$ai_design     = ! empty( $media_settings['enable_ai_design'] );
-		$smart_tagging = ! empty( $template_settings['enable_smart_tagging'] );
-		$ocr_provider  = isset( $media_settings['ocr_primary_provider'] ) ? $media_settings['ocr_primary_provider'] : 'tesseract';
+		$sharp_mode       = isset( $media_settings['sharp_processing_mode'] ) ? $media_settings['sharp_processing_mode'] : 'local';
+		$webp_enabled     = ! empty( $media_settings['sharp_enable_webp'] );
+		$ai_design        = ! empty( $media_settings['enable_ai_design'] );
+		$smart_tagging    = ! empty( $template_settings['enable_smart_tagging'] );
+		$ocr_provider     = isset( $media_settings['ocr_primary_provider'] ) ? $media_settings['ocr_primary_provider'] : 'tesseract';
 		$research_enabled = ! empty( $media_settings['enable_research'] );
 		?>
 		<div class="media-cc-section">
@@ -1566,13 +1566,13 @@ class WP_MCP_AI_Media_Command_Center_Page {
 
 		// Count images with alt text.
 		global $wpdb;
-		$image_mimes = array( 'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif' );
+		$image_mimes       = array( 'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif' );
 		$mime_placeholders = implode( ',', array_fill( 0, count( $image_mimes ), '%s' ) );
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.LikeWildcardsInQuery
 		$image_count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type IN ($mime_placeholders)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type IN ($mime_placeholders)",
 				...$image_mimes
 			)
 		);
@@ -1583,7 +1583,7 @@ class WP_MCP_AI_Media_Command_Center_Page {
 				INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt'
 				WHERE p.post_type = 'attachment'
 				AND p.post_mime_type IN ($mime_placeholders)
-				AND pm.meta_value != ''", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				AND pm.meta_value != ''",
 				...$image_mimes
 			)
 		);
@@ -1603,11 +1603,11 @@ class WP_MCP_AI_Media_Command_Center_Page {
 				AND post_title NOT LIKE 'photo-%'
 				AND post_title NOT LIKE 'Photo_%'
 				AND post_title NOT LIKE 'dsc_%'
-				AND post_title NOT LIKE 'DSC_%'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				AND post_title NOT LIKE 'DSC_%'",
 				...$image_mimes
 			)
 		);
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.LikeWildcardsInQuery
 
 		return array(
 			'total'                      => $total,
@@ -1677,8 +1677,8 @@ class WP_MCP_AI_Media_Command_Center_Page {
 	 * @return array
 	 */
 	private static function get_alt_text_compliance_detailed() {
-		$stats  = self::get_attachment_stats();
-		$pct    = $stats['image_count'] > 0 ? (int) round( ( $stats['with_alt'] / $stats['image_count'] ) * 100 ) : 100;
+		$stats   = self::get_attachment_stats();
+		$pct     = $stats['image_count'] > 0 ? (int) round( ( $stats['with_alt'] / $stats['image_count'] ) * 100 ) : 100;
 		$missing = $stats['image_count'] - $stats['with_alt'];
 
 		return array(
@@ -1776,11 +1776,11 @@ class WP_MCP_AI_Media_Command_Center_Page {
 
 			$items[] = array(
 				'id'         => $att->ID,
-				'title'      => $att->post_title ?: __( '(untitled)', 'mcp-ai-wpoos-pro' ),
+				'title'      => $att->post_title ? $att->post_title : __( '(untitled)', 'mcp-ai-wpoos-pro' ),
 				'filename'   => basename( get_attached_file( $att->ID ) ),
-				'thumbnail'  => $thumb ?: '',
+				'thumbnail'  => $thumb ? $thumb : '',
 				'mime_short' => isset( $mime[1] ) ? strtoupper( $mime[1] ) : strtoupper( $mime[0] ),
-				'dimensions' => $dimensions ?: '—',
+				'dimensions' => $dimensions ? $dimensions : '—',
 				'filesize'   => $filesize,
 				'has_alt'    => ! empty( $alt ),
 				'edit_url'   => get_edit_post_link( $att->ID, 'raw' ),
@@ -1799,11 +1799,11 @@ class WP_MCP_AI_Media_Command_Center_Page {
 	private static function get_processing_queue_status() {
 		$stats = get_option( 'wp_mcp_ai_media_processing_queue', array() );
 		return array(
-			'pending'          => isset( $stats['pending'] ) ? (int) $stats['pending'] : 0,
-			'completed_today'  => isset( $stats['completed_today'] ) ? (int) $stats['completed_today'] : 0,
-			'failed'           => isset( $stats['failed'] ) ? (int) $stats['failed'] : 0,
-			'total_processed'  => isset( $stats['total_processed'] ) ? (int) $stats['total_processed'] : 0,
-			'recent_failures'  => isset( $stats['recent_failures'] ) ? (array) $stats['recent_failures'] : array(),
+			'pending'         => isset( $stats['pending'] ) ? (int) $stats['pending'] : 0,
+			'completed_today' => isset( $stats['completed_today'] ) ? (int) $stats['completed_today'] : 0,
+			'failed'          => isset( $stats['failed'] ) ? (int) $stats['failed'] : 0,
+			'total_processed' => isset( $stats['total_processed'] ) ? (int) $stats['total_processed'] : 0,
+			'recent_failures' => isset( $stats['recent_failures'] ) ? (array) $stats['recent_failures'] : array(),
 		);
 	}
 
@@ -1834,7 +1834,7 @@ class WP_MCP_AI_Media_Command_Center_Page {
 					'ids'
 				);
 				if ( ! empty( $pending ) ) {
-					$active++;
+					++$active;
 				}
 			}
 
@@ -1847,12 +1847,12 @@ class WP_MCP_AI_Media_Command_Center_Page {
 				),
 				'ids'
 			);
-			$ran = count( $completed );
+			$ran         = count( $completed );
 
 			// Find next run.
 			$actions = as_get_scheduled_actions(
 				array(
-					'status' => \ActionScheduler_Store::STATUS_PENDING,
+					'status'   => \ActionScheduler_Store::STATUS_PENDING,
 					'per_page' => 1,
 					'orderby'  => 'schedule',
 					'order'    => 'ASC',
@@ -1865,10 +1865,10 @@ class WP_MCP_AI_Media_Command_Center_Page {
 		}
 
 		return array(
-			'active'   => $active,
+			'active'    => $active,
 			'ran_today' => $ran,
-			'overdue'  => $overdue,
-			'next_run' => $next,
+			'overdue'   => $overdue,
+			'next_run'  => $next,
 		);
 	}
 
@@ -1891,8 +1891,11 @@ class WP_MCP_AI_Media_Command_Center_Page {
 		$items = array();
 		$now   = time();
 		foreach ( $templates as $tpl ) {
-			$cats = wp_get_object_terms( $tpl->ID, 'media_template_category', array( 'fields' => 'names' ) );
-			$usage = (int) get_post_meta( $tpl->ID, '_mcp_ai_template_usage_count', true );
+			$cats         = wp_get_object_terms( $tpl->ID, 'media_template_category', array( 'fields' => 'names' ) );
+			if ( is_wp_error( $cats ) ) {
+				$cats = array();
+			}
+			$usage        = (int) get_post_meta( $tpl->ID, '_mcp_ai_template_usage_count', true );
 			$last_used_ts = (int) get_post_meta( $tpl->ID, '_mcp_ai_template_last_used', true );
 
 			$items[] = array(
@@ -1960,9 +1963,12 @@ class WP_MCP_AI_Media_Command_Center_Page {
 			);
 		}
 
-		usort( $items, function ( $a, $b ) {
-			return $b['usage_count'] - $a['usage_count'];
-		} );
+		usort(
+			$items,
+			function ( $a, $b ) {
+				return $b['usage_count'] - $a['usage_count'];
+			}
+		);
 
 		return array_slice( $items, 0, $limit );
 	}
@@ -2005,10 +2011,10 @@ class WP_MCP_AI_Media_Command_Center_Page {
 
 		$items = array();
 		foreach ( $collections as $coll ) {
-			$collection_items    = get_post_meta( $coll->ID, '_mcp_ai_collection_items', true );
+			$collection_items     = get_post_meta( $coll->ID, '_mcp_ai_collection_items', true );
 			$collection_templates = get_post_meta( $coll->ID, '_mcp_ai_collection_templates', true );
-			$item_count          = is_array( $collection_items ) ? count( $collection_items ) : 0;
-			$template_count      = is_array( $collection_templates ) ? count( $collection_templates ) : 0;
+			$item_count           = is_array( $collection_items ) ? count( $collection_items ) : 0;
+			$template_count       = is_array( $collection_templates ) ? count( $collection_templates ) : 0;
 
 			$items[] = array(
 				'id'              => $coll->ID,
@@ -2034,7 +2040,7 @@ class WP_MCP_AI_Media_Command_Center_Page {
 			return wp_mcp_ai_check_nodejs_available();
 		}
 		// Fallback: try to execute node --version.
-		$output = null;
+		$output     = null;
 		$return_var = 0;
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 		exec( 'node --version 2>/dev/null', $output, $return_var );
@@ -2096,20 +2102,20 @@ class WP_MCP_AI_Media_Command_Center_Page {
 		$items = array();
 
 		$label_map = array(
-			'image/jpeg'  => 'JPEG',
-			'image/png'   => 'PNG',
-			'image/gif'   => 'GIF',
-			'image/webp'  => 'WebP',
-			'image/avif'  => 'AVIF',
-			'image/svg+xml' => 'SVG',
-			'video/mp4'   => 'MP4',
-			'audio/mpeg'  => 'MP3',
+			'image/jpeg'      => 'JPEG',
+			'image/png'       => 'PNG',
+			'image/gif'       => 'GIF',
+			'image/webp'      => 'WebP',
+			'image/avif'      => 'AVIF',
+			'image/svg+xml'   => 'SVG',
+			'video/mp4'       => 'MP4',
+			'audio/mpeg'      => 'MP3',
 			'application/pdf' => 'PDF',
 		);
 
 		foreach ( $results as $row ) {
-			$mime = $row['post_mime_type'];
-			$cnt  = (int) $row['cnt'];
+			$mime    = $row['post_mime_type'];
+			$cnt     = (int) $row['cnt'];
 			$items[] = array(
 				'mime'  => $mime,
 				'label' => isset( $label_map[ $mime ] ) ? $label_map[ $mime ] : $mime,
@@ -2143,14 +2149,14 @@ class WP_MCP_AI_Media_Command_Center_Page {
 			return array();
 		}
 
-		$slugs = WP_MCP_AI_Blueprint_Installer::list_blueprints( $blueprints_dir );
+		$slugs           = WP_MCP_AI_Blueprint_Installer::list_blueprints( $blueprints_dir );
 		$installed_names = array();
 
-		$assistants = get_posts(
+		$assistants      = get_posts(
 			array(
 				'post_type'      => 'mcp_ai_assistant',
 				'post_status'    => 'any',
-				'posts_per_page' => 200,
+				'posts_per_page' => 200, // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page
 				'fields'         => 'post_title',
 			)
 		);
@@ -2207,13 +2213,13 @@ class WP_MCP_AI_Media_Command_Center_Page {
 			}
 
 			$items[] = array(
-				'slug'      => $slug,
-				'name'      => $preset['name'],
-				'category'  => isset( $preset['category'] ) ? $preset['category'] : '',
-				'type'      => $type_label,
-				'schedule'  => isset( $preset['schedule'] ) ? $preset['schedule'] : '',
-				'status'    => 'idle',
-				'ran_today' => false,
+				'slug'       => $slug,
+				'name'       => $preset['name'],
+				'category'   => isset( $preset['category'] ) ? $preset['category'] : '',
+				'type'       => $type_label,
+				'schedule'   => isset( $preset['schedule'] ) ? $preset['schedule'] : '',
+				'status'     => 'idle',
+				'ran_today'  => false,
 				'is_overdue' => false,
 			);
 		}
@@ -2273,7 +2279,7 @@ class WP_MCP_AI_Media_Command_Center_Page {
 				foreach ( $matches[1] as $att_id ) {
 					$attachment = get_post( (int) $att_id );
 					if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
-						$broken++;
+						++$broken;
 					}
 				}
 			}
@@ -2340,23 +2346,23 @@ class WP_MCP_AI_Media_Command_Center_Page {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$attachments       = self::get_attachment_stats();
-		$storage           = self::get_storage_used();
-		$alt_pct           = self::get_alt_text_compliance();
-		$nextgen_pct       = self::get_nextgen_format_pct();
-		$compression       = self::get_compression_savings();
-		$queue             = self::get_processing_queue_status();
-		$schedule          = self::get_schedule_health_summary();
+		$attachments = self::get_attachment_stats();
+		$storage     = self::get_storage_used();
+		$alt_pct     = self::get_alt_text_compliance();
+		$nextgen_pct = self::get_nextgen_format_pct();
+		$compression = self::get_compression_savings();
+		$queue       = self::get_processing_queue_status();
+		$schedule    = self::get_schedule_health_summary();
 
 		wp_send_json_success(
 			array(
-				'attachments'   => $attachments,
-				'storage'       => $storage,
-				'alt_pct'       => $alt_pct,
-				'nextgen_pct'   => $nextgen_pct,
-				'compression'   => $compression,
-				'queue'         => $queue,
-				'schedule'      => $schedule,
+				'attachments' => $attachments,
+				'storage'     => $storage,
+				'alt_pct'     => $alt_pct,
+				'nextgen_pct' => $nextgen_pct,
+				'compression' => $compression,
+				'queue'       => $queue,
+				'schedule'    => $schedule,
 			)
 		);
 	}
@@ -2401,7 +2407,7 @@ class WP_MCP_AI_Media_Command_Center_Page {
 					$stats['with_alt'],
 					$stats['total_images']
 				),
-				'stats' => $stats,
+				'stats'   => $stats,
 			)
 		);
 	}
