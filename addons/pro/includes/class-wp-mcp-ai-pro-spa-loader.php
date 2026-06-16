@@ -131,18 +131,6 @@ class WP_MCP_AI_Pro_SPA_Loader {
 				array(),
 				$version
 			);
-
-			// Bridge class-name mismatches between updated JS and un-rebuilt CSS.
-			// TODO: Remove once `npm run build` is re-run with matching source.
-			$overrides_path = $dist_dir . 'pro-spa-overrides.css';
-			if ( file_exists( $overrides_path ) ) {
-				wp_enqueue_style(
-					'wp-mcp-ai-pro-spa-v2-overrides',
-					$dist_url . 'pro-spa-overrides.css',
-					array( 'wp-mcp-ai-pro-spa-v2' ),
-					$version
-				);
-			}
 		}
 
 		/**

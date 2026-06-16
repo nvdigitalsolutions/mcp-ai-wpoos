@@ -1642,3 +1642,86 @@
 	opacity: 0.5;
 	cursor: not-allowed;
 }
+
+/* ------------------------------------------------------------------ */
+/* screen-reader-only utility (AgentPanel label)                      */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-screen-reader-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* sidebar – action bar (New Chat / New Thread button wrapper)        */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-sidebar__actions {
+	display: flex;
+	gap: 8px;
+	padding: 8px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+/* ------------------------------------------------------------------ */
+/* sidebar – item inner button (clickable conversation / thread)      */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-sidebar__item-btn {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	font-size: inherit;
+	font-family: inherit;
+	text-align: left;
+	cursor: pointer;
+	color: inherit;
+}
+
+/* ------------------------------------------------------------------ */
+/* sidebar – item title (truncated)                                   */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-sidebar__item-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 13px;
+}
+
+/* ------------------------------------------------------------------ */
+/* sidebar – active item state                                        */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-sidebar__item--active {
+	background: var(--nvoos-selected-bg, #e5e5ff);
+}
+
+.nvoos-pro-spa-sidebar__item--active .nvoos-pro-spa-sidebar__item-delete {
+	opacity: 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* sidebar – archived thread state                                    */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-sidebar__item--archived {
+	opacity: 0.5;
+}
+
+/* ------------------------------------------------------------------ */
+/* sidebar – notice / loading placeholders                            */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-sidebar__notice,
+.nvoos-pro-spa-sidebar__loading {
+	padding: 12px 8px;
+	text-align: center;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
