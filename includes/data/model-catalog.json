@@ -499,10 +499,10 @@
       "supports_vision": false,
       "cost_per_1k_input_tokens": 0,
       "cost_per_1k_output_tokens": 0,
-      "fallback_model": "",
-      "status": "active",
-      "sunset_date": "",
-      "notes": "Imagen 4 - Google image generation model (April 2026). Replaces Imagen 3."
+      "fallback_model": "gemini-3.1-flash-image",
+      "status": "deprecated",
+      "sunset_date": "2026-08-17",
+      "notes": "Imagen 4 - DEPRECATED. Shutting down August 17, 2026. Migrate to gemini-3.1-flash-image (Nano Banana 2)."
     },
     {
       "model_name": "gemini-omni-flash",
@@ -585,6 +585,26 @@
       "sunset_date": ""
     },
     {
+      "model_name": "gemini-3.1-flash-image",
+      "provider": "gemini",
+      "tpm_limit": 1000000,
+      "rpm_limit": 1000,
+      "context_window": 131072,
+      "max_output_tokens": 32768,
+      "tier": "tier-2",
+      "supports_streaming": false,
+      "supports_function_calling": false,
+      "supports_vision": true,
+      "cost_per_1k_input_tokens": 0,
+      "cost_per_1k_output_tokens": 0.06,
+      "notes": "Nano Banana 2 — latest image generation model. 0.5K/1K/2K/4K resolutions, 1:4/4:1/1:8/8:1 aspect ratios, Image Search Grounding, Thinking mode. $0.50/$60 per 1M. ~$0.067/image at 1K.",
+      "status": "active",
+      "tpd_limit": 0,
+      "rpd_limit": 0,
+      "fallback_model": "",
+      "sunset_date": ""
+    },
+    {
       "model_name": "gemini-2.5-flash-image",
       "provider": "gemini",
       "tpm_limit": 1000000,
@@ -597,11 +617,11 @@
       "supports_vision": true,
       "cost_per_1k_input_tokens": 0,
       "cost_per_1k_output_tokens": 0.03,
-      "notes": "Advanced image generation with editing, multi-image blending, character consistency. ~$0.039 per image. SynthID watermarking included.",
-      "status": "active",
+      "notes": "[LEGACY] Nano Banana — previous generation. Migrate to gemini-3.1-flash-image for better quality, new resolutions and aspect ratios.",
+      "status": "deprecated",
       "tpd_limit": 0,
       "rpd_limit": 0,
-      "fallback_model": "",
+      "fallback_model": "gemini-3.1-flash-image",
       "sunset_date": ""
     },
     {

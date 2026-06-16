@@ -119,7 +119,7 @@ class WP_MCP_AI_Image_Tool_Settings_Test extends WP_UnitTestCase {
 		// Verify hardcoded defaults are used.
 		$this->assertArrayHasKey( 'properties', $schema );
 		$this->assertArrayHasKey( 'default', $schema['properties']['model'] );
-		$this->assertEquals( 'gemini-2.5-flash-image', $schema['properties']['model']['default'] );
+		$this->assertEquals( 'gemini-3.1-flash-image', $schema['properties']['model']['default'] );
 
 		$this->assertArrayHasKey( 'default', $schema['properties']['mime_type'] );
 		$this->assertEquals( 'image/png', $schema['properties']['mime_type']['default'] );

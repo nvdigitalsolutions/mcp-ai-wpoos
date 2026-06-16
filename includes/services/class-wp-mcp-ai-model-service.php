@@ -329,7 +329,7 @@ class WP_MCP_AI_Model_Service {
 		$requires_image_gen = isset( $args['requires_image_gen'] ) ? $args['requires_image_gen'] : false;
 
 		// Gemini 3.5 series (May 2026 GA - latest flagship).
-		$models['gemini-3.5-flash']      = 'Gemini 3.5 Flash (Recommended)';
+		$models['gemini-3.5-flash'] = 'Gemini 3.5 Flash (Recommended)';
 
 		// Gemini 3.1 series (April 2026 GA).
 		$models['gemini-3.1-pro']        = 'Gemini 3.1 Pro';
@@ -350,7 +350,8 @@ class WP_MCP_AI_Model_Service {
 
 		// Image generation model - only for image generation/editing tools.
 		if ( $requires_image_gen ) {
-			$models['gemini-2.5-flash-image'] = 'Gemini 2.5 Flash Image';
+			$models['gemini-3.1-flash-image'] = 'Gemini 3.1 Flash Image — Nano Banana 2 (Recommended)';
+			$models['gemini-2.5-flash-image'] = 'Gemini 2.5 Flash Image — Nano Banana (Legacy)';
 		}
 
 		// Gemini 2.0 series (stable).
@@ -367,10 +368,10 @@ class WP_MCP_AI_Model_Service {
 		$models['gemini-1.5-flash'] = 'Gemini 1.5 Flash (Legacy)';
 
 		// Gemma 4 models (Google's latest open models - multimodal).
-		$models['gemma-4-31b-it']  = 'Gemma 4 31B Dense (Multimodal, 256K)';
-		$models['gemma-4-26b-it']  = 'Gemma 4 26B MoE (Multimodal, 256K)';
-		$models['gemma-4-e4b-it']  = 'Gemma 4 E4B (Multimodal, 128K, Edge)';
-		$models['gemma-4-e2b-it']  = 'Gemma 4 E2B (Multimodal, 128K, Edge)';
+		$models['gemma-4-31b-it'] = 'Gemma 4 31B Dense (Multimodal, 256K)';
+		$models['gemma-4-26b-it'] = 'Gemma 4 26B MoE (Multimodal, 256K)';
+		$models['gemma-4-e4b-it'] = 'Gemma 4 E4B (Multimodal, 128K, Edge)';
+		$models['gemma-4-e2b-it'] = 'Gemma 4 E2B (Multimodal, 128K, Edge)';
 
 		// Gemma 2 models (Google's open models - text-only, legacy).
 		if ( ! $requires_vision && ! $requires_multimodal ) {
@@ -552,26 +553,26 @@ class WP_MCP_AI_Model_Service {
 		if ( ! $live_fetch_success && ! $requires_vision && ! $requires_multimodal ) {
 			$common_ollama_models = array(
 				// Latest flagship models (2025-2026).
-				'llama4'        => 'Llama 4 (Latest Meta flagship)',
-				'deepseek-r1'   => 'DeepSeek R1 (Reasoning)',
-				'deepseek-v3'   => 'DeepSeek V3',
-				'qwen3'         => 'Qwen 3',
-				'qwen3.6'       => 'Qwen 3.6',
+				'llama4'             => 'Llama 4 (Latest Meta flagship)',
+				'deepseek-r1'        => 'DeepSeek R1 (Reasoning)',
+				'deepseek-v3'        => 'DeepSeek V3',
+				'qwen3'              => 'Qwen 3',
+				'qwen3.6'            => 'Qwen 3.6',
 				// Established models.
-				'llama3.3'      => 'Llama 3.3',
-				'llama3.2'      => 'Llama 3.2',
-				'llama3.1'      => 'Llama 3.1',
-				'llama3'        => 'Llama 3',
-				'mistral'       => 'Mistral',
-				'mistral-large' => 'Mistral Large',
-				'mixtral'       => 'Mixtral',
-				'gemma4'        => 'Gemma 4',
-				'gemma3'        => 'Gemma 3',
-				'gemma2'        => 'Gemma 2',
-				'phi4'          => 'Phi-4',
-				'phi3'          => 'Phi-3',
-				'codellama'     => 'CodeLlama',
-				'qwen2.5'       => 'Qwen 2.5',
+				'llama3.3'           => 'Llama 3.3',
+				'llama3.2'           => 'Llama 3.2',
+				'llama3.1'           => 'Llama 3.1',
+				'llama3'             => 'Llama 3',
+				'mistral'            => 'Mistral',
+				'mistral-large'      => 'Mistral Large',
+				'mixtral'            => 'Mixtral',
+				'gemma4'             => 'Gemma 4',
+				'gemma3'             => 'Gemma 3',
+				'gemma2'             => 'Gemma 2',
+				'phi4'               => 'Phi-4',
+				'phi3'               => 'Phi-3',
+				'codellama'          => 'CodeLlama',
+				'qwen2.5'            => 'Qwen 2.5',
 				// Cloud-hosted models accessible via Ollama cloud (:cloud suffix).
 				'gemma4:31b-cloud'   => 'Gemma 4 31B ☁ (Cloud)',
 				'qwen3.5:397b-cloud' => 'Qwen 3.5 397B ☁ (Cloud)',
@@ -763,10 +764,10 @@ class WP_MCP_AI_Model_Service {
 		$models['microsoft/phi-3-small-8k-instruct']    = 'Phi-3 Small 8K Instruct (Free)';
 
 		// Google Gemma 4 Models (Multimodal, Apache 2.0).
-		$models['google/gemma-4-31b-it']  = 'Gemma 4 31B Dense (Multimodal, 256K)';
-		$models['google/gemma-4-26b-it']  = 'Gemma 4 26B MoE (Multimodal, 256K)';
-		$models['google/gemma-4-e4b-it']  = 'Gemma 4 E4B (Multimodal, 128K, Edge)';
-		$models['google/gemma-4-e2b-it']  = 'Gemma 4 E2B (Multimodal, 128K, Edge)';
+		$models['google/gemma-4-31b-it'] = 'Gemma 4 31B Dense (Multimodal, 256K)';
+		$models['google/gemma-4-26b-it'] = 'Gemma 4 26B MoE (Multimodal, 256K)';
+		$models['google/gemma-4-e4b-it'] = 'Gemma 4 E4B (Multimodal, 128K, Edge)';
+		$models['google/gemma-4-e2b-it'] = 'Gemma 4 E2B (Multimodal, 128K, Edge)';
 
 		// Google Gemma 2 Models.
 		$models['google/gemma-2-27b-it'] = 'Gemma 2 27B IT (Free)';
@@ -1029,25 +1030,25 @@ class WP_MCP_AI_Model_Service {
 		$models = array();
 
 		// OpenAI models via OpenRouter.
-		$models['openai/gpt-5.4']         = 'OpenAI GPT-5.4 (1M Context)';
-		$models['openai/gpt-5.4-mini']    = 'OpenAI GPT-5.4 Mini (Budget)';
-		$models['openai/gpt-4.1']         = 'OpenAI GPT-4.1';
+		$models['openai/gpt-5.4']      = 'OpenAI GPT-5.4 (1M Context)';
+		$models['openai/gpt-5.4-mini'] = 'OpenAI GPT-5.4 Mini (Budget)';
+		$models['openai/gpt-4.1']      = 'OpenAI GPT-4.1';
 
 		// Anthropic models via OpenRouter.
 		$models['anthropic/claude-sonnet-4-6'] = 'Anthropic Claude Sonnet 4.6';
 		$models['anthropic/claude-haiku-4-5']  = 'Anthropic Claude Haiku 4.5';
 
 		// Google models via OpenRouter.
-		$models['google/gemini-2.5-pro']  = 'Google Gemini 2.5 Pro';
+		$models['google/gemini-2.5-pro']   = 'Google Gemini 2.5 Pro';
 		$models['google/gemini-2.5-flash'] = 'Google Gemini 2.5 Flash';
 
 		// Meta models via OpenRouter.
 		$models['meta-llama/llama-4-maverick-17b-128e-instruct'] = 'Meta Llama 4 Maverick 17Bx128E';
-		$models['meta-llama/llama-4-scout-17b-16e-instruct']    = 'Meta Llama 4 Scout 17Bx16E';
+		$models['meta-llama/llama-4-scout-17b-16e-instruct']     = 'Meta Llama 4 Scout 17Bx16E';
 
 		// DeepSeek models via OpenRouter.
-		$models['deepseek/deepseek-chat']     = 'DeepSeek V3 (Chat)';
-		$models['deepseek/deepseek-r1']       = 'DeepSeek R1 (Reasoning)';
+		$models['deepseek/deepseek-chat']                 = 'DeepSeek V3 (Chat)';
+		$models['deepseek/deepseek-r1']                   = 'DeepSeek R1 (Reasoning)';
 		$models['deepseek/deepseek-r1-distill-llama-70b'] = 'DeepSeek R1 Distill Llama 70B';
 
 		return $models;
@@ -1093,9 +1094,9 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		$models['kimi-latest']   = 'Kimi Latest (1M Context)';
-		$models['moonshot-v1-8k']  = 'Moonshot V1 (8K)';
-		$models['moonshot-v1-32k'] = 'Moonshot V1 (32K)';
+		$models['kimi-latest']      = 'Kimi Latest (1M Context)';
+		$models['moonshot-v1-8k']   = 'Moonshot V1 (8K)';
+		$models['moonshot-v1-32k']  = 'Moonshot V1 (32K)';
 		$models['moonshot-v1-128k'] = 'Moonshot V1 (128K)';
 
 		return $models;
@@ -1142,7 +1143,7 @@ class WP_MCP_AI_Model_Service {
 	 */
 	public function get_provider_default_models_by_lane( $provider ) {
 		$provider_lanes = array(
-			'openai'      => array(
+			'openai'       => array(
 				'stable'    => 'gpt-4.1',
 				'latest'    => 'gpt-5.4',
 				'budget'    => 'gpt-5.4-mini',
@@ -1151,43 +1152,43 @@ class WP_MCP_AI_Model_Service {
 				'audio_in'  => 'gpt-4o-mini-transcribe',
 				'audio_out' => 'gpt-4o-mini-tts',
 			),
-			'anthropic'   => array(
+			'anthropic'    => array(
 				'stable' => 'claude-sonnet-4-6',
 				'latest' => 'claude-opus-4-6',
 				'budget' => 'claude-haiku-4-5',
 				'vision' => 'claude-sonnet-4-6',
 			),
-			'gemini'      => array(
+			'gemini'       => array(
 				'stable' => 'gemini-2.5-flash',
 				'latest' => 'gemini-2.5-pro',
 				'budget' => 'gemini-2.5-flash',
 				'vision' => 'gemini-2.5-flash',
-				'image'  => 'gemini-2.5-flash-image',
+				'image'  => 'gemini-3.1-flash-image',
 			),
-			'huggingface' => array(
+			'huggingface'  => array(
 				'stable' => 'meta-llama/Llama-3.3-70B-Instruct',
 			),
-			'ollama'      => array(
+			'ollama'       => array(
 				'stable' => 'llama4',
 			),
-			'lm_studio'   => array(
+			'lm_studio'    => array(
 				'stable' => 'meta-llama/llama-4-scout-17b-16e-instruct',
 			),
-			'cloudflare'  => array(
+			'cloudflare'   => array(
 				'stable' => '@cf/meta/llama-4-scout-17b-16e-instruct',
 				'latest' => '@cf/meta/llama-4-scout-17b-16e-instruct',
 				'budget' => '@cf/meta/llama-3.2-3b-instruct',
 				'image'  => '@cf/black-forest-labs/flux-2-dev',
 			),
-			'embedded'    => array(
+			'embedded'     => array(
 				'stable' => 'gemma-2-2b-it-q4f16_1-MLC',
 			),
-			'deepseek'    => array(
+			'deepseek'     => array(
 				'stable' => 'deepseek-v4-flash',
 				'latest' => 'deepseek-v4-pro',
 				'budget' => 'deepseek-v4-flash',
 			),
-			'openrouter'  => array(
+			'openrouter'   => array(
 				'stable' => 'openai/gpt-4.1',
 				'latest' => 'openai/gpt-5.4',
 				'budget' => 'openai/gpt-5.4-mini',
@@ -1195,10 +1196,10 @@ class WP_MCP_AI_Model_Service {
 			'digitalocean' => array(
 				'stable' => 'meta-llama/llama-3.3-70b-instruct',
 			),
-			'kimi'        => array(
+			'kimi'         => array(
 				'stable' => 'kimi-latest',
 			),
-			'baseten'     => array(
+			'baseten'      => array(
 				'stable' => '',
 			),
 		);

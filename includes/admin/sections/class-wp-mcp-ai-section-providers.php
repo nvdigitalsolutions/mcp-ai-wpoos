@@ -702,12 +702,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'gemini_image_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Image Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for image generation via Gemini. gemini-2.5-flash-image is the latest specialized image generation model. gemini-exp-1206 provides experimental features.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for image generation via Gemini. gemini-3.1-flash-image (Nano Banana 2) is the latest specialized image generation model with support for new resolutions (0.5K/2K/4K), aspect ratios (1:4/4:1/1:8/8:1), Image Search Grounding, and Thinking mode. gemini-2.5-flash-image is the previous generation.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gemini-2.5-flash-image' => 'Gemini 2.5 Flash Image (Latest)',
+						'gemini-3.1-flash-image' => 'Gemini 3.1 Flash Image — Nano Banana 2 (Latest)',
+						'gemini-2.5-flash-image' => 'Gemini 2.5 Flash Image — Nano Banana (Legacy)',
 						'gemini-exp-1206'        => 'Gemini Exp 1206 (Experimental)',
 					),
-					'default'     => 'gemini-2.5-flash-image',
+					'default'     => 'gemini-3.1-flash-image',
 				),
 				'gemini_image_mime_type'             => array(
 					'type'        => 'select',

@@ -47,7 +47,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Image_Response;
 
-	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
+	const DEFAULT_MODEL        = 'gemini-3.1-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
 	const DEFAULT_ASPECT_RATIO = '4:3';
 
@@ -1336,7 +1336,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'model_requirements'    => array(
 				'providers' => array( 'gemini' ),
-				'models'    => array( 'gemini-2.5-flash-image', 'gemini-exp-1206' ),
+				'models'    => array( 'gemini-3.1-flash-image', 'gemini-2.5-flash-image', 'gemini-exp-1206' ),
 				'required'  => true,
 			),
 			'parameter_constraints' => array(

@@ -815,7 +815,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * AI-integrate the product into a scene using Gemini image editing.
 	 *
-	 * Gemini's nano-banana (gemini-2.5-flash-image) model is used by default for
+	 * Gemini's nano-banana (gemini-3.1-flash-image) model is used by default for
 	 * fast, high-quality scene integration with the product naturally embedded.
 	 *
 	 * @param string $product_path Path to the product image.
