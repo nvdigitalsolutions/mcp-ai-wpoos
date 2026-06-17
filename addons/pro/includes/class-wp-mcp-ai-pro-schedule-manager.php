@@ -91,6 +91,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			add_action( self::DISPATCH_HOOK, array( __CLASS__, 'dispatch' ), 10, 1 );
 
 			// Register custom cron intervals used by pro schedules.
+			// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- 5-minute intervals are intentional for real-time scheduling use cases; the plugin also supports Action Scheduler for production deployments.
 			add_filter( 'cron_schedules', array( __CLASS__, 'register_custom_intervals' ) );
 
 			// Prune stale schedules on init.
@@ -346,6 +347,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				? $data['notify_channel_credentials']
 				: array();
 			$tags                       = isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array();
+			// result_delivery: unified on-success and on-failure delivery channel configuration.
+			$result_delivery = isset( $data['result_delivery'] ) && is_array( $data['result_delivery'] )
+				? self::sanitize_result_delivery( $data['result_delivery'] )
+				: self::get_default_result_delivery();
 
 			// timeout: maximum execution time in seconds (0 = no limit). Industry-standard safeguard against hung tasks.
 			$timeout = isset( $data['timeout'] ) ? max( 0, (int) $data['timeout'] ) : 0;
@@ -402,6 +407,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'notify_email'               => $notify_email,
 				'notify_channels'            => $notify_channels,
 				'notify_channel_credentials' => $notify_channel_credentials,
+				'result_delivery'            => $result_delivery,
 				'max_retries'                => $max_retries,
 				'retry_delay'                => $retry_delay,
 				'retry_count'                => 0,
@@ -525,6 +531,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			if ( isset( $data['display'] ) && is_array( $data['display'] ) ) {
 				$existing_display   = isset( $existing['display'] ) && is_array( $existing['display'] ) ? $existing['display'] : array();
 				$updated['display'] = self::sanitize_display_fields( array_merge( $existing_display, $data['display'] ) );
+			}
+			if ( isset( $data['result_delivery'] ) && is_array( $data['result_delivery'] ) ) {
+				$existing_rd                = isset( $existing['result_delivery'] ) && is_array( $existing['result_delivery'] )
+					? $existing['result_delivery']
+					: self::get_default_result_delivery();
+				$updated['result_delivery'] = self::sanitize_result_delivery( array_replace_recursive( $existing_rd, $data['result_delivery'] ) );
 			}
 			if ( isset( $data['schedule'] ) ) {
 				$new_schedule = sanitize_key( $data['schedule'] );
@@ -870,6 +882,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			}
 
 			// Pure-PHP fputcsv fallback.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- php://temp is an in-memory stream, not a filesystem file.
 			$handle = fopen( 'php://temp', 'r+' );
 			fputcsv( $handle, array( 'schedule_name', 'schedule_id', 'status', 'start_time', 'duration_s', 'error', 'action_log' ) );
 			foreach ( $rows as $row ) {
@@ -877,6 +890,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			}
 			rewind( $handle );
 			$csv = stream_get_contents( $handle );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 			fclose( $handle );
 
 			return $csv;
@@ -1156,6 +1170,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$schedules[ $schedule_id ]['retry_count']     = 0;
 				$schedules[ $schedule_id ]['last_run_status'] = 'success';
 				self::save_schedules( $schedules );
+
+				// Deliver successful result to configured channels.
+				self::deliver_result( $schedule_id, $schedule, true, '', $action_log );
 			}
 
 			// Webhook callback: POST run results to the external callback URL if configured.
@@ -2328,15 +2345,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$schedules[ $schedule_id ]['retry_count'] = 0;
 				self::save_schedules( $schedules );
 
-				// Send failure notification (email and/or channel).
-				if ( ! empty( $schedule['notify_on_failure'] ) ) {
-					if ( ! empty( $schedule['notify_email'] ) ) {
-						self::send_failure_notification( $schedule, $error_msg );
-					}
-					if ( ! empty( $schedule['notify_channels'] ) && is_array( $schedule['notify_channels'] ) ) {
-						self::send_channel_failure_notification( $schedule, $error_msg );
-					}
-				}
+				// Delegate to the Result Delivery Service (handles both legacy notify_* fields
+				// and new result_delivery config).
+				self::deliver_result( $schedule_id, $schedule, false, $error_msg, array() );
 			}
 		}
 
@@ -2801,6 +2812,212 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'result_retention' => $retention,
 				'widget_defaults'  => $widget_defaults,
 			);
+		}
+
+		/**
+		 * Sanitize result_delivery configuration for a schedule.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $delivery Raw result_delivery array.
+		 * @return array Sanitized result_delivery with on_success and on_failure keys.
+		 */
+		public static function sanitize_result_delivery( array $delivery ) {
+			$default = self::get_default_result_delivery();
+
+			$sanitized = array(
+				'on_success' => isset( $delivery['on_success']['channels'] ) && is_array( $delivery['on_success']['channels'] )
+					? self::sanitize_delivery_channels( $delivery['on_success']['channels'] )
+					: $default['on_success']['channels'],
+				'on_failure' => isset( $delivery['on_failure']['channels'] ) && is_array( $delivery['on_failure']['channels'] )
+					? self::sanitize_delivery_channels( $delivery['on_failure']['channels'] )
+					: $default['on_failure']['channels'],
+			);
+
+			return $sanitized;
+		}
+
+		/**
+		 * Sanitize a set of delivery channel configs.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $channels Raw channel configs keyed by slug.
+		 * @return array Sanitized channel configs.
+		 */
+		protected static function sanitize_delivery_channels( array $channels ) {
+			$allowed         = array( 'email', 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp', 'sms', 'paper_store', 'webhook', 'wordpress' );
+			$email_templates = array( 'full', 'summary', 'error' );
+			$chat_templates  = array( 'summary', 'error' );
+
+			$sanitized = array();
+			foreach ( $channels as $channel => $config ) {
+				$channel = sanitize_key( $channel );
+				if ( ! in_array( $channel, $allowed, true ) || ! is_array( $config ) ) {
+					continue;
+				}
+
+				$entry = array(
+					'enabled'  => ! empty( $config['enabled'] ),
+					'template' => 'email' === $channel
+						? ( isset( $config['template'] ) && in_array( $config['template'], $email_templates, true ) ? $config['template'] : 'summary' )
+						: ( isset( $config['template'] ) && in_array( $config['template'], $chat_templates, true ) ? $config['template'] : 'summary' ),
+				);
+
+				// Channel-specific fields.
+				if ( 'email' === $channel && isset( $config['to'] ) ) {
+					$entry['to'] = sanitize_email( $config['to'] );
+				}
+				if ( 'sms' === $channel && isset( $config['to'] ) ) {
+					$entry['to'] = sanitize_text_field( $config['to'] );
+				}
+				if ( in_array( $channel, array( 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp' ), true ) && isset( $config[ $channel . '_credentials' ] ) ) {
+					$entry[ $channel . '_credentials' ] = $config[ $channel . '_credentials' ];
+				}
+				if ( 'paper_store' === $channel ) {
+					if ( isset( $config['collection'] ) ) {
+						$entry['collection'] = sanitize_key( $config['collection'] );
+					}
+					if ( isset( $config['driver'] ) ) {
+						$entry['driver'] = in_array( $config['driver'], array( 'json', 'markdown_yaml' ), true ) ? $config['driver'] : 'json';
+					}
+					$entry['retention']  = isset( $config['retention'] ) ? max( 0, min( 100, (int) $config['retention'] ) ) : 0;
+					$entry['git_commit'] = ! empty( $config['git_commit'] );
+				}
+				if ( 'webhook' === $channel && isset( $config['url'] ) ) {
+					$url = esc_url_raw( $config['url'] );
+					if ( filter_var( $url, FILTER_VALIDATE_URL ) ) {
+						$entry['url'] = $url;
+					}
+					if ( isset( $config['secret'] ) ) {
+						$entry['secret'] = sanitize_text_field( $config['secret'] );
+					}
+				}
+				if ( 'WordPress' === $channel ) {
+					$entry['post_type']   = isset( $config['post_type'] ) ? sanitize_key( $config['post_type'] ) : 'post';
+					$entry['post_status'] = isset( $config['post_status'] ) ? sanitize_key( $config['post_status'] ) : 'draft';
+					$entry['category']    = isset( $config['category'] ) ? absint( $config['category'] ) : 0;
+				}
+
+				$sanitized[ $channel ] = $entry;
+			}
+
+			return $sanitized;
+		}
+
+		/**
+		 * Return the default result_delivery structure (all channels off).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return array Default result_delivery array.
+		 */
+		public static function get_default_result_delivery() {
+			return array(
+				'on_success' => array(
+					'channels' => array(),
+				),
+				'on_failure' => array(
+					'channels' => array(),
+				),
+			);
+		}
+
+		/**
+		 * Deliver a schedule result (success or failure) to configured channels.
+		 *
+		 * Bridges the Schedule Manager to {@see WP_MCP_AI_Result_Delivery_Service}.
+		 * Called from {@see dispatch()} after record_run() completes.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string              $schedule_id Schedule identifier.
+		 * @param array               $schedule    Schedule record.
+		 * @param bool                $success     Whether the run succeeded.
+		 * @param string              $error_msg   Error message (only relevant on failure).
+		 * @param array<string,mixed> $action_log  Raw action log from the dispatcher.
+		 */
+		protected static function deliver_result( $schedule_id, array $schedule, $success, $error_msg, array $action_log ) {
+			if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
+				// Fall back to legacy notification if service is not loaded.
+				if ( ! $success ) {
+					if ( ! empty( $schedule['notify_on_failure'] ) && ! empty( $schedule['notify_email'] ) ) {
+						self::send_failure_notification( $schedule, $error_msg );
+					}
+					if ( ! empty( $schedule['notify_channels'] ) && is_array( $schedule['notify_channels'] ) ) {
+						self::send_channel_failure_notification( $schedule, $error_msg );
+					}
+				}
+				return;
+			}
+
+			$delivery_statuses = array();
+			if ( $success ) {
+				$envelope = self::get_latest_result( $schedule_id );
+				if ( $envelope ) {
+					$delivery_statuses = WP_MCP_AI_Result_Delivery_Service::deliver_success( $schedule_id, $envelope, $schedule, $action_log );
+				}
+			} else {
+				$delivery_statuses = WP_MCP_AI_Result_Delivery_Service::deliver_failure( $schedule_id, $error_msg, $schedule );
+			}
+
+			// Append delivery status to the most recent run history entry.
+			if ( ! empty( $delivery_statuses ) ) {
+				self::append_delivery_to_history( $schedule_id, $delivery_statuses );
+				self::append_delivery_to_results( $schedule_id, $delivery_statuses );
+			}
+		}
+
+		/**
+		 * Append per-channel delivery status to the most recent run history entry.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $schedule_id       Schedule identifier.
+		 * @param array  $delivery_statuses Per-channel delivery statuses from the service.
+		 */
+		protected static function append_delivery_to_history( $schedule_id, array $delivery_statuses ) {
+			$history = self::load_history();
+			$id      = (string) $schedule_id;
+
+			if ( empty( $history[ $id ] ) || ! is_array( $history[ $id ] ) ) {
+				return;
+			}
+
+			// Get the most recent entry.
+			$last_key = array_key_last( $history[ $id ] );
+			if ( null === $last_key || ! isset( $history[ $id ][ $last_key ] ) ) {
+				return;
+			}
+
+			$history[ $id ][ $last_key ]['delivery'] = $delivery_statuses;
+			self::save_history( $history );
+		}
+
+		/**
+		 * Append per-channel delivery status to the most recent result envelope.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $schedule_id       Schedule identifier.
+		 * @param array  $delivery_statuses Per-channel delivery statuses.
+		 */
+		protected static function append_delivery_to_results( $schedule_id, array $delivery_statuses ) {
+			$results = self::load_results();
+			$id      = (string) $schedule_id;
+
+			if ( empty( $results[ $id ] ) || ! is_array( $results[ $id ] ) ) {
+				return;
+			}
+
+			// Get the most recent envelope.
+			$last_key = array_key_last( $results[ $id ] );
+			if ( null === $last_key || ! isset( $results[ $id ][ $last_key ] ) ) {
+				return;
+			}
+
+			$results[ $id ][ $last_key ]['delivery'] = $delivery_statuses;
+			self::save_results( $results );
 		}
 
 		/**
