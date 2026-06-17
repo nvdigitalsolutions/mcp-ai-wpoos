@@ -5,6 +5,18 @@
  */
 
 const path = require( 'path' );
+const fs = require( 'fs' );
+
+// Probe for setup file — CI may not materialize committed files
+// (sparse-checkout / export-ignore interactions in actions/checkout).
+// Use __dirname (directory of this config file) for reliability.
+const SETUP_CANDIDATES = [
+	path.resolve( __dirname, 'jest.setup.js' ),
+	path.resolve( __dirname, 'tests', 'js', 'setup.js' ),
+];
+const SETUP_FILES = SETUP_CANDIDATES.filter( f => {
+	try { fs.accessSync( f ); return true; } catch (e) { return false; }
+} );
 
 module.exports = {
 	// Use the directory of this config file as the root
@@ -36,19 +48,8 @@ module.exports = {
 	// Module paths
 	modulePaths: [ '<rootDir>' ],
 
-	// Setup files - resolved at config load time relative to cwd
-	setupFilesAfterEnv: ( () => {
-		const cwd = process.cwd();
-		const candidates = [
-			path.resolve( cwd, 'jest.setup.js' ),
-			path.resolve( cwd, 'tests', 'js', 'setup.js' ),
-		];
-		const found = candidates.filter( f => { try { require( 'fs' ).accessSync( f ); return true; } catch (e) { return false; } } );
-		if ( found.length === 0 ) {
-			console.error( '[jest.config.js] WARNING: No setup file found at any of:', candidates );
-		}
-		return found.length > 0 ? found : [];
-	} )(),
+	// Setup files — probed at config load time; falls back to empty array
+	setupFilesAfterEnv: SETUP_FILES.length > 0 ? SETUP_FILES : [],
 
 	// Ensure proper module resolution
 	resolver: undefined,
