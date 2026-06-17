@@ -1395,7 +1395,75 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					add_filter( 'wp_mcp_ai_max_agentic_iterations', $schedule_iterations_filter, 15 );
 				}
 				add_filter( 'wp_mcp_ai_max_agentic_iterations', array( __CLASS__, 'get_scheduled_run_max_agentic_iterations' ), 10, 2 );
-				$response = rest_do_request( $request );
+
+				// Pre-flight: verify the REST server is initialised so that
+				// rest_do_request() does not throw a fatal error on a null server.
+				$rest_server = rest_get_server();
+				if ( ! $rest_server ) {
+					self::debug_log( '[assistant_run] REST server not available — rest_get_server() returned null' );
+
+					// Restore user context before returning.
+					if ( $user_id > 0 && $user_id !== $previous_user ) {
+						wp_set_current_user( $previous_user );
+					}
+
+					// Clean up filters.
+					remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( __CLASS__, 'get_scheduled_run_max_agentic_iterations' ), 10 );
+					if ( $schedule_max_iterations > 0 ) {
+						remove_filter( 'wp_mcp_ai_max_agentic_iterations', $schedule_iterations_filter, 15 );
+					}
+
+					$result_log['status']   = 'error';
+					$result_log['response'] = __( 'REST API server is not available.', 'mcp-ai-wpoos-pro' );
+					return $result_log;
+				}
+
+				try {
+					$response = rest_do_request( $request );
+				} catch ( \Throwable $e ) {
+					self::debug_log(
+						sprintf(
+							'[assistant_run] rest_do_request threw %s: %s in %s:%d',
+							get_class( $e ),
+							$e->getMessage(),
+							str_replace( ABSPATH, '', $e->getFile() ),
+							$e->getLine()
+						)
+					);
+
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_error(
+							'Pro schedule assistant run: rest_do_request fatal error',
+							array(
+								'schedule_id'  => $schedule_id,
+								'assistant_id' => $assistant_id,
+								'error'        => $e->getMessage(),
+								'file'         => str_replace( ABSPATH, '', $e->getFile() ),
+								'line'         => $e->getLine(),
+							)
+						);
+					}
+
+					// Restore user context before returning.
+					if ( $user_id > 0 && $user_id !== $previous_user ) {
+						wp_set_current_user( $previous_user );
+					}
+
+					// Clean up filters.
+					remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( __CLASS__, 'get_scheduled_run_max_agentic_iterations' ), 10 );
+					if ( $schedule_max_iterations > 0 ) {
+						remove_filter( 'wp_mcp_ai_max_agentic_iterations', $schedule_iterations_filter, 15 );
+					}
+
+					$result_log['status']   = 'error';
+					$result_log['response'] = sprintf(
+						/* translators: %s: error message */
+						__( 'Internal REST dispatch error: %s', 'mcp-ai-wpoos-pro' ),
+						$e->getMessage()
+					);
+					return $result_log;
+				}
+
 				remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( __CLASS__, 'get_scheduled_run_max_agentic_iterations' ), 10 );
 				if ( $schedule_max_iterations > 0 ) {
 					remove_filter( 'wp_mcp_ai_max_agentic_iterations', $schedule_iterations_filter, 15 );
