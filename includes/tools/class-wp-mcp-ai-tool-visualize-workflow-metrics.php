@@ -94,10 +94,7 @@ class WP_MCP_AI_Tool_Visualize_Workflow_Metrics implements WP_MCP_AI_Tool_Interf
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate results.
 		if ( empty( $arguments['workflow_results'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Workflow results are required.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Workflow results are required.', 'mcp-ai-wpoos' ) );
 		}
 
 		$results    = $arguments['workflow_results'];

@@ -368,9 +368,13 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 	 * Enqueue auto-refresh script.
 	 */
 	protected function enqueue_auto_refresh_script() {
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
+		static $printed = false;
+
+		$ajax_url = admin_url( 'admin-ajax.php' );
+		$nonce    = wp_create_nonce( 'wp_mcp_ai_performance' );
+
+		ob_start();
 		?>
-		<script>
 		(function($) {
 			setInterval(function() {
 				$('.wp-mcp-ai-performance-metrics[data-auto-refresh="yes"]').each(function() {
@@ -379,13 +383,13 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 					var period = widget.data('period');
 
 					$.ajax({
-						url: '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>',
+						url: <?php echo wp_json_encode( $ajax_url ); ?>,
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_get_performance_metrics',
 							component: component,
 							period: period,
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_performance' ) ); ?>'
+							nonce: <?php echo wp_json_encode( $nonce ); ?>
 						},
 						success: function(response) {
 							if (response.success && response.data) {
@@ -397,81 +401,34 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 				});
 			}, 30000); // Refresh every 30 seconds.
 		})(jQuery);
-		</script>
-		<style>
-		.wp-mcp-ai-performance-metrics {
-			padding: 20px;
-			background: #fff;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-		}
-		.wp-mcp-ai-performance-metrics__title {
-			margin-top: 0;
-			margin-bottom: 20px;
-		}
-		.wp-mcp-ai-performance-metrics__grid {
-			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-			gap: 15px;
-			margin-bottom: 20px;
-		}
-		.wp-mcp-ai-performance-metrics__metric {
-			padding: 15px;
-			background: #f9f9f9;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-			position: relative;
-		}
-		.wp-mcp-ai-performance-metrics__label {
-			font-size: 13px;
-			color: #666;
-			margin-bottom: 5px;
-		}
-		.wp-mcp-ai-performance-metrics__value {
-			font-size: 24px;
-			font-weight: bold;
-			color: #333;
-		}
-		.wp-mcp-ai-performance-metrics__status {
-			position: absolute;
-			top: 10px;
-			right: 10px;
-			width: 12px;
-			height: 12px;
-			border-radius: 50%;
-		}
-		.status-good {
-			background: #46b450;
-		}
-		.status-warning {
-			background: #ffb900;
-		}
-		.status-critical {
-			background: #dc3232;
-		}
-		.wp-mcp-ai-performance-metrics__distribution-grid {
-			display: flex;
-			gap: 15px;
-			flex-wrap: wrap;
-		}
-		.wp-mcp-ai-performance-metrics__distribution-item {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			padding: 8px 12px;
-			background: #f9f9f9;
-			border-radius: 4px;
-		}
-		.status-passed {
-			color: #46b450;
-		}
-		.status-warning {
-			color: #ffb900;
-		}
-		.status-failed {
-			color: #dc3232;
-		}
-		</style>
 		<?php
+		$js = ob_get_clean();
+
+		wp_print_inline_script_tag( $js );
+
+		if ( ! $printed ) {
+			$printed = true;
+
+			wp_register_style( 'wp-mcp-ai-el-perf-metrics', false );
+			wp_enqueue_style( 'wp-mcp-ai-el-perf-metrics' );
+			wp_add_inline_style(
+				'wp-mcp-ai-el-perf-metrics',
+				'.wp-mcp-ai-performance-metrics{padding:20px;background:#fff;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-performance-metrics__title{margin-top:0;margin-bottom:20px}'
+				. '.wp-mcp-ai-performance-metrics__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:20px}'
+				. '.wp-mcp-ai-performance-metrics__metric{padding:15px;background:#f9f9f9;border:1px solid #ddd;border-radius:4px;position:relative}'
+				. '.wp-mcp-ai-performance-metrics__label{font-size:13px;color:#666;margin-bottom:5px}'
+				. '.wp-mcp-ai-performance-metrics__value{font-size:24px;font-weight:bold;color:#333}'
+				. '.wp-mcp-ai-performance-metrics__status{position:absolute;top:10px;right:10px;width:12px;height:12px;border-radius:50%}'
+				. '.status-good{background:#46b450}'
+				. '.status-warning{background:#ffb900}'
+				. '.status-critical{background:#dc3232}'
+				. '.wp-mcp-ai-performance-metrics__distribution{display:flex;gap:15px;flex-wrap:wrap}'
+				. '.wp-mcp-ai-performance-metrics__distribution-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f9f9f9;border-radius:4px}'
+				. '.status-passed{color:#46b450}'
+				. '.status-warning{color:#ffb900}'
+				. '.status-failed{color:#dc3232}'
+			);
+		}
 	}
 }

@@ -70,23 +70,23 @@ class WP_MCP_AI_Tool_CMBS_Defeasance_Calculator implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'loan_balance'               => array(
+				'loan_balance'                 => array(
 					'type'        => 'number',
 					'description' => __( 'Current outstanding loan balance.', 'mcp-ai-wpoos-pro' ),
 				),
-				'coupon_rate'                => array(
+				'coupon_rate'                  => array(
 					'type'        => 'number',
 					'description' => __( 'Loan coupon rate as decimal (e.g. 0.055 for 5.5%).', 'mcp-ai-wpoos-pro' ),
 				),
-				'remaining_months'           => array(
+				'remaining_months'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of months remaining to maturity.', 'mcp-ai-wpoos-pro' ),
 				),
-				'treasury_rate'              => array(
+				'treasury_rate'                => array(
 					'type'        => 'number',
 					'description' => __( 'Current matching treasury rate as decimal.', 'mcp-ai-wpoos-pro' ),
 				),
-				'transaction_costs'          => array(
+				'transaction_costs'            => array(
 					'type'        => 'number',
 					'description' => __( 'Estimated transaction costs (legal, consultants, etc.). Default: $50,000.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -107,7 +107,20 @@ class WP_MCP_AI_Tool_CMBS_Defeasance_Calculator implements WP_MCP_AI_Tool_Interf
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -150,14 +163,14 @@ class WP_MCP_AI_Tool_CMBS_Defeasance_Calculator implements WP_MCP_AI_Tool_Interf
 		);
 
 		// Calculate monthly debt service for context.
-		$monthly_payment = $calc::calculate_monthly_payment( $loan_balance, $coupon_rate, $remaining_months );
+		$monthly_payment        = $calc::calculate_monthly_payment( $loan_balance, $coupon_rate, $remaining_months );
 		$remaining_debt_service = $monthly_payment * $remaining_months;
 
 		// Defeasance as percentage of balance.
 		$defeasance_pct = ( $loan_balance > 0 ) ? $defeasance['total_cost'] / $loan_balance : 0;
 
 		// Rate differential analysis.
-		$rate_diff    = $coupon_rate - $treasury_rate;
+		$rate_diff     = $coupon_rate - $treasury_rate;
 		$rate_diff_bps = $rate_diff * 10000;
 
 		$defeasance_result = array(
@@ -189,8 +202,8 @@ class WP_MCP_AI_Tool_CMBS_Defeasance_Calculator implements WP_MCP_AI_Tool_Interf
 				$treasury_rate
 			);
 
-			$ym_total   = $ym_cost + $transaction_costs;
-			$ym_pct     = ( $loan_balance > 0 ) ? $ym_total / $loan_balance : 0;
+			$ym_total = $ym_cost + $transaction_costs;
+			$ym_pct   = ( $loan_balance > 0 ) ? $ym_total / $loan_balance : 0;
 
 			$ym_result = array(
 				'yield_maintenance_penalty' => $calc::format_currency( $ym_cost ),
@@ -199,15 +212,15 @@ class WP_MCP_AI_Tool_CMBS_Defeasance_Calculator implements WP_MCP_AI_Tool_Interf
 				'cost_as_pct_of_balance'    => $calc::format_percentage( $ym_pct ),
 			);
 
-			$savings     = $defeasance['total_cost'] - $ym_total;
-			$cheaper     = ( $ym_total < $defeasance['total_cost'] ) ? 'yield_maintenance' : 'defeasance';
+			$savings = $defeasance['total_cost'] - $ym_total;
+			$cheaper = ( $ym_total < $defeasance['total_cost'] ) ? 'yield_maintenance' : 'defeasance';
 
 			$comparison = array(
-				'defeasance_total'          => $calc::format_currency( $defeasance['total_cost'] ),
-				'yield_maintenance_total'   => $calc::format_currency( $ym_total ),
-				'savings_with_cheaper'      => $calc::format_currency( abs( $savings ) ),
-				'recommended_method'        => $cheaper,
-				'recommendation'            => ( 'yield_maintenance' === $cheaper )
+				'defeasance_total'        => $calc::format_currency( $defeasance['total_cost'] ),
+				'yield_maintenance_total' => $calc::format_currency( $ym_total ),
+				'savings_with_cheaper'    => $calc::format_currency( abs( $savings ) ),
+				'recommended_method'      => $cheaper,
+				'recommendation'          => ( 'yield_maintenance' === $cheaper )
 					? __( 'Yield maintenance is less expensive for this scenario.', 'mcp-ai-wpoos-pro' )
 					: __( 'Defeasance is less expensive for this scenario.', 'mcp-ai-wpoos-pro' ),
 			);
@@ -220,8 +233,8 @@ class WP_MCP_AI_Tool_CMBS_Defeasance_Calculator implements WP_MCP_AI_Tool_Interf
 		$sensitivity = array();
 		$rate_shifts = array( -0.01, -0.005, 0, 0.005, 0.01, 0.02 );
 		foreach ( $rate_shifts as $shift ) {
-			$shifted_rate = max( 0.001, $treasury_rate + $shift );
-			$shifted_def  = $calc::calculate_defeasance_cost(
+			$shifted_rate  = max( 0.001, $treasury_rate + $shift );
+			$shifted_def   = $calc::calculate_defeasance_cost(
 				$loan_balance,
 				$coupon_rate,
 				$remaining_months,
@@ -239,14 +252,14 @@ class WP_MCP_AI_Tool_CMBS_Defeasance_Calculator implements WP_MCP_AI_Tool_Interf
 		$data['disclaimer']       = __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' );
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: 1: total defeasance cost, 2: percentage of balance */
 				__( 'Defeasance cost: %1$s (%2$s of balance).', 'mcp-ai-wpoos-pro' ),
 				$defeasance_result['total_defeasance_cost'],
 				$defeasance_result['cost_as_pct_of_balance']
 			),
-			'data'       => $data,
+			'data'    => $data,
 		);
 	}
 }

@@ -102,9 +102,9 @@ class WP_MCP_AI_CRE_Debt_Dashboard_Page {
 				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
 				'nonce'      => wp_create_nonce( 'wp_mcp_ai_cre_dashboard' ),
 				'thresholds' => array(
-					'min_dscr'       => isset( $cre_settings['default_dscr_minimum'] ) ? (float) $cre_settings['default_dscr_minimum'] : 1.25,
-					'max_ltv'        => isset( $cre_settings['default_max_ltv'] ) ? (float) $cre_settings['default_max_ltv'] : 75,
-					'min_debt_yield' => isset( $cre_settings['default_min_debt_yield'] ) ? (float) $cre_settings['default_min_debt_yield'] : 9,
+					'min_dscr'        => isset( $cre_settings['default_dscr_minimum'] ) ? (float) $cre_settings['default_dscr_minimum'] : 1.25,
+					'max_ltv'         => isset( $cre_settings['default_max_ltv'] ) ? (float) $cre_settings['default_max_ltv'] : 75,
+					'min_debt_yield'  => isset( $cre_settings['default_min_debt_yield'] ) ? (float) $cre_settings['default_min_debt_yield'] : 9,
 					'target_cap_rate' => isset( $cre_settings['default_cap_rate'] ) ? (float) $cre_settings['default_cap_rate'] : 6.5,
 				),
 				'strings'    => array(
@@ -177,29 +177,29 @@ class WP_MCP_AI_CRE_Debt_Dashboard_Page {
 		$loans = get_posts( $query_args );
 
 		$data = array(
-			'total_loans'         => count( $loans ),
-			'total_balance'       => 0,
-			'avg_rate'            => 0,
-			'avg_dscr'            => 0,
-			'avg_ltv'             => 0,
-			'avg_debt_yield'      => 0,
-			'by_status'           => array(),
-			'by_loan_type'        => array(),
-			'by_property_type'    => array(),
-			'maturity_schedule'   => array(),
-			'rate_distribution'   => array(),
-			'loan_list'           => array(),
+			'total_loans'       => count( $loans ),
+			'total_balance'     => 0,
+			'avg_rate'          => 0,
+			'avg_dscr'          => 0,
+			'avg_ltv'           => 0,
+			'avg_debt_yield'    => 0,
+			'by_status'         => array(),
+			'by_loan_type'      => array(),
+			'by_property_type'  => array(),
+			'maturity_schedule' => array(),
+			'rate_distribution' => array(),
+			'loan_list'         => array(),
 		);
 
 		if ( empty( $loans ) ) {
 			return $data;
 		}
 
-		$rates        = array();
-		$dscrs        = array();
-		$ltvs         = array();
-		$debt_yields  = array();
-		$balances     = array();
+		$rates       = array();
+		$dscrs       = array();
+		$ltvs        = array();
+		$debt_yields = array();
+		$balances    = array();
 
 		foreach ( $loans as $loan_id ) {
 			$balance = (float) get_post_meta( $loan_id, '_cre_current_balance', true );
@@ -323,10 +323,10 @@ class WP_MCP_AI_CRE_Debt_Dashboard_Page {
 		$portfolio = self::get_portfolio_data();
 
 		// Load thresholds from settings for status indicators (like Health dashboard goals).
-		$cre_settings    = get_option( 'wp_mcp_ai_cre_debt_settings', array() );
-		$min_dscr        = isset( $cre_settings['default_dscr_minimum'] ) ? (float) $cre_settings['default_dscr_minimum'] : 1.25;
-		$max_ltv         = isset( $cre_settings['default_max_ltv'] ) ? (float) $cre_settings['default_max_ltv'] : 75;
-		$min_debt_yield  = isset( $cre_settings['default_min_debt_yield'] ) ? (float) $cre_settings['default_min_debt_yield'] : 9;
+		$cre_settings   = get_option( 'wp_mcp_ai_cre_debt_settings', array() );
+		$min_dscr       = isset( $cre_settings['default_dscr_minimum'] ) ? (float) $cre_settings['default_dscr_minimum'] : 1.25;
+		$max_ltv        = isset( $cre_settings['default_max_ltv'] ) ? (float) $cre_settings['default_max_ltv'] : 75;
+		$min_debt_yield = isset( $cre_settings['default_min_debt_yield'] ) ? (float) $cre_settings['default_min_debt_yield'] : 9;
 
 		// Get available loan types and statuses for the filter bar.
 		$loan_type_terms = get_terms(
@@ -646,13 +646,12 @@ class WP_MCP_AI_CRE_Debt_Dashboard_Page {
 	 * @return string
 	 */
 	private static function get_dashboard_js() {
-		return <<<'JS'
-(function($){
-'use strict';
+		return '(function($){
+\'use strict\';
 
-if(typeof creDashData==='undefined') var creDashData=null;
+if(typeof creDashData===\'undefined\') var creDashData=null;
 
-var PALETTE = ['#1565c0','#2e7d32','#e65100','#6a1b9a','#00838f','#c62828','#f9a825','#00695c','#ad1457','#4527a0','#37474f','#ef6c00'];
+var PALETTE = [\'#1565c0\',\'#2e7d32\',\'#e65100\',\'#6a1b9a\',\'#00838f\',\'#c62828\',\'#f9a825\',\'#00695c\',\'#ad1457\',\'#4527a0\',\'#37474f\',\'#ef6c00\'];
 
 /* ── Chart registry (destroy before rebuilding — mirrors Health dashboard pattern) ── */
 var chartInsts = {};
@@ -668,9 +667,9 @@ var keys=Object.keys(labelMap);
 var vals=keys.map(function(k){return labelMap[k];});
 var colors=keys.map(function(_,i){return PALETTE[i%PALETTE.length];});
 chartInsts[id] = new Chart(el,{
-type:'doughnut',
+type:\'doughnut\',
 data:{labels:keys,datasets:[{data:vals,backgroundColor:colors,borderWidth:1}]},
-options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:\'right\',labels:{boxWidth:12,font:{size:11}}}}}
 });
 }
 
@@ -680,42 +679,42 @@ var el=document.getElementById(id);if(!el)return;
 var keys=Object.keys(labelMap);
 var vals=keys.map(function(k){return labelMap[k];});
 chartInsts[id] = new Chart(el,{
-type:'bar',
-data:{labels:keys,datasets:[{label:labelText||'',data:vals,backgroundColor:color||PALETTE[0],borderRadius:3}]},
+type:\'bar\',
+data:{labels:keys,datasets:[{label:labelText||\'\',data:vals,backgroundColor:color||PALETTE[0],borderRadius:3}]},
 options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{maxTicksLimit:6}},x:{ticks:{maxRotation:45}}}}
 });
 }
 
 /* Friendly status labels */
 var statusLabels = {
-performing: 'Performing',
-watchlist: 'Watchlist',
-special_service: 'Special Servicing',
-delinquent_30: 'Delinquent 30+',
-delinquent_60: 'Delinquent 60+',
-delinquent_90: 'Delinquent 90+',
-foreclosure: 'Foreclosure',
-reo: 'REO',
-paid_off: 'Paid Off',
-defeased: 'Defeased'
+performing: \'Performing\',
+watchlist: \'Watchlist\',
+special_service: \'Special Servicing\',
+delinquent_30: \'Delinquent 30+\',
+delinquent_60: \'Delinquent 60+\',
+delinquent_90: \'Delinquent 90+\',
+foreclosure: \'Foreclosure\',
+reo: \'REO\',
+paid_off: \'Paid Off\',
+defeased: \'Defeased\'
 };
 
 /* ── Render all charts and KPIs from portfolio data ── */
 function renderDashboard(data){
 /* KPIs */
-$('#cre-kpi-loans').text(data.total_loans.toLocaleString());
-$('#cre-kpi-balance').text('$'+data.total_balance.toLocaleString());
-$('#cre-kpi-rate').text(data.avg_rate+'%');
-$('#cre-kpi-dscr').text(data.avg_dscr+'x');
-$('#cre-kpi-ltv').text(data.avg_ltv+'%');
-$('#cre-kpi-dy').text(data.avg_debt_yield+'%');
+$(\'#cre-kpi-loans\').text(data.total_loans.toLocaleString());
+$(\'#cre-kpi-balance\').text(\'$\'+data.total_balance.toLocaleString());
+$(\'#cre-kpi-rate\').text(data.avg_rate+\'%\');
+$(\'#cre-kpi-dscr\').text(data.avg_dscr+\'x\');
+$(\'#cre-kpi-ltv\').text(data.avg_ltv+\'%\');
+$(\'#cre-kpi-dy\').text(data.avg_debt_yield+\'%\');
 
 /* Threshold status indicators (mirrors Health dashboard sodium/BP status) */
-if(typeof wpMcpAiCreDashboard!=='undefined'){
+if(typeof wpMcpAiCreDashboard!==\'undefined\'){
 var t=wpMcpAiCreDashboard.thresholds;
-updateKpiStatus('#cre-kpi-dscr-status', data.avg_dscr, t.min_dscr, true, t.min_dscr+'x min');
-updateKpiStatus('#cre-kpi-ltv-status', data.avg_ltv, t.max_ltv, false, t.max_ltv+'% max');
-updateKpiStatus('#cre-kpi-dy-status', data.avg_debt_yield, t.min_debt_yield, true, t.min_debt_yield+'% min');
+updateKpiStatus(\'#cre-kpi-dscr-status\', data.avg_dscr, t.min_dscr, true, t.min_dscr+\'x min\');
+updateKpiStatus(\'#cre-kpi-ltv-status\', data.avg_ltv, t.max_ltv, false, t.max_ltv+\'% max\');
+updateKpiStatus(\'#cre-kpi-dy-status\', data.avg_debt_yield, t.min_debt_yield, true, t.min_debt_yield+\'% min\');
 }
 
 /* Status map */
@@ -724,63 +723,62 @@ Object.keys(data.by_status).forEach(function(k){
 friendlyStatus[statusLabels[k]||k] = data.by_status[k];
 });
 
-buildDoughnut('cre-chart-loan-type', data.by_loan_type);
-buildDoughnut('cre-chart-property-type', data.by_property_type);
-buildDoughnut('cre-chart-status', friendlyStatus);
-buildBar('cre-chart-maturity', data.maturity_schedule, '#1565c0', 'Maturing Balance ($)');
-buildBar('cre-chart-rate-dist', data.rate_distribution, '#e65100', 'Loans');
+buildDoughnut(\'cre-chart-loan-type\', data.by_loan_type);
+buildDoughnut(\'cre-chart-property-type\', data.by_property_type);
+buildDoughnut(\'cre-chart-status\', friendlyStatus);
+buildBar(\'cre-chart-maturity\', data.maturity_schedule, \'#1565c0\', \'Maturing Balance ($)\');
+buildBar(\'cre-chart-rate-dist\', data.rate_distribution, \'#e65100\', \'Loans\');
 }
 
 function updateKpiStatus(sel, val, threshold, isMin, label){
 var $el = $(sel);
 if(!$el.length||!val) return;
 var ok = isMin ? val >= threshold : val <= threshold;
-$el.removeClass('status-normal status-warning status-alert');
-$el.addClass(ok?'status-normal':'status-alert');
-$el.text((ok?'✓ ':'⚠ ')+(isMin?'Above ':'Under ')+label);
+$el.removeClass(\'status-normal status-warning status-alert\');
+$el.addClass(ok?\'status-normal\':\'status-alert\');
+$el.text((ok?\'✓ \':\'⚠ \')+(isMin?\'Above \':\'Under \')+label);
 }
 
 /* ── AJAX filter handler (mirrors Health dashboard member selector reload) ── */
-$(document).on('click','#cre-dash-filter-btn',function(){
-var loanType = $('#cre-dash-type-select').val();
-var loanStatus = $('#cre-dash-status-select').val();
-$('#cre-dash-loading').show();
-$('#cre-dash-content').css('opacity','0.5');
+$(document).on(\'click\',\'#cre-dash-filter-btn\',function(){
+var loanType = $(\'#cre-dash-type-select\').val();
+var loanStatus = $(\'#cre-dash-status-select\').val();
+$(\'#cre-dash-loading\').show();
+$(\'#cre-dash-content\').css(\'opacity\',\'0.5\');
 
 $.post(wpMcpAiCreDashboard.ajaxUrl,{
-action:'wp_mcp_ai_cre_dashboard_filter',
+action:\'wp_mcp_ai_cre_dashboard_filter\',
 nonce: wpMcpAiCreDashboard.nonce,
 loan_type: loanType,
 loan_status: loanStatus
 },function(resp){
-$('#cre-dash-loading').hide();
-$('#cre-dash-content').css('opacity','1');
+$(\'#cre-dash-loading\').hide();
+$(\'#cre-dash-content\').css(\'opacity\',\'1\');
 if(resp.success && resp.data){
 if(resp.data.total_loans>0){
-$('#cre-dash-empty-notice').hide();
-$('#cre-dash-content').show();
+$(\'#cre-dash-empty-notice\').hide();
+$(\'#cre-dash-content\').show();
 renderDashboard(resp.data);
 } else {
-$('#cre-dash-content').hide();
-$('#cre-dash-empty-notice').show().find('p').first().text(wpMcpAiCreDashboard.strings.noData);
+$(\'#cre-dash-content\').hide();
+$(\'#cre-dash-empty-notice\').show().find(\'p\').first().text(wpMcpAiCreDashboard.strings.noData);
 }
 }
 }).fail(function(){
-$('#cre-dash-loading').hide();
-$('#cre-dash-content').css('opacity','1');
+$(\'#cre-dash-loading\').hide();
+$(\'#cre-dash-content\').css(\'opacity\',\'1\');
 });
 });
 
-$(document).on('click','#cre-dash-reset-btn',function(){
-$('#cre-dash-type-select').val('');
-$('#cre-dash-status-select').val('');
-$('#cre-dash-filter-btn').trigger('click');
+$(document).on(\'click\',\'#cre-dash-reset-btn\',function(){
+$(\'#cre-dash-type-select\').val(\'\');
+$(\'#cre-dash-status-select\').val(\'\');
+$(\'#cre-dash-filter-btn\').trigger(\'click\');
 });
 
 /* ── Initial render ── */
 if(creDashData) renderDashboard(creDashData);
 
-})(jQuery);
-JS;
+})(jQuery);';
 	}
 }

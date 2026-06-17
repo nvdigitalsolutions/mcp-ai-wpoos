@@ -159,7 +159,20 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -204,12 +217,12 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 	 * @return array|WP_Error
 	 */
 	private function handle_add( array $arguments, array $records ) {
-		$loan_name  = sanitize_text_field( $arguments['loan_name'] ?? '' );
-		$balance    = (float) ( $arguments['balance'] ?? 0 );
-		$transfer   = sanitize_text_field( $arguments['transfer_date'] ?? '' );
-		$reason     = sanitize_text_field( $arguments['transfer_reason'] ?? '' );
-		$workout    = sanitize_text_field( $arguments['workout_strategy'] ?? '' );
-		$mod_terms  = sanitize_text_field( $arguments['modification_terms'] ?? '' );
+		$loan_name = sanitize_text_field( $arguments['loan_name'] ?? '' );
+		$balance   = (float) ( $arguments['balance'] ?? 0 );
+		$transfer  = sanitize_text_field( $arguments['transfer_date'] ?? '' );
+		$reason    = sanitize_text_field( $arguments['transfer_reason'] ?? '' );
+		$workout   = sanitize_text_field( $arguments['workout_strategy'] ?? '' );
+		$mod_terms = sanitize_text_field( $arguments['modification_terms'] ?? '' );
 
 		if ( empty( $loan_name ) || $balance <= 0 ) {
 			return new WP_Error( 'invalid_input', __( 'Loan name and positive balance are required.', 'mcp-ai-wpoos-pro' ) );
@@ -246,14 +259,14 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: 1: loan name, 2: loan ID */
 				__( 'Special servicing record added for %1$s (ID: %2$s).', 'mcp-ai-wpoos-pro' ),
 				$loan_name,
 				$loan_id
 			),
-			'data'       => array(
+			'data'    => array(
 				'record'     => $record,
 				'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			),
@@ -278,8 +291,14 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 
 		// Update allowed fields.
 		$updatable = array(
-			'loan_name', 'balance', 'transfer_date', 'transfer_reason',
-			'workout_strategy', 'modification_terms', 'resolution_date', 'recovery_amount',
+			'loan_name',
+			'balance',
+			'transfer_date',
+			'transfer_reason',
+			'workout_strategy',
+			'modification_terms',
+			'resolution_date',
+			'recovery_amount',
 		);
 
 		foreach ( $updatable as $field ) {
@@ -313,13 +332,13 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 		update_option( self::OPTION_KEY, $records, false );
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: %s: loan name */
 				__( 'Special servicing record updated for %s.', 'mcp-ai-wpoos-pro' ),
 				$record['loan_name']
 			),
-			'data'       => array(
+			'data'    => array(
 				'record'     => $record,
 				'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			),
@@ -354,13 +373,13 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 				$active_balance += (float) $record['balance'];
 			}
 
-			$reason = $record['transfer_reason'] ?: 'unspecified';
+			$reason = $record['transfer_reason'] ? $record['transfer_reason'] : 'unspecified';
 			if ( ! isset( $by_reason[ $reason ] ) ) {
 				$by_reason[ $reason ] = 0;
 			}
 			++$by_reason[ $reason ];
 
-			$strategy = $record['workout_strategy'] ?: 'pending';
+			$strategy = $record['workout_strategy'] ? $record['workout_strategy'] : 'pending';
 			if ( ! isset( $by_strategy[ $strategy ] ) ) {
 				$by_strategy[ $strategy ] = 0;
 			}
@@ -372,16 +391,16 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 		$recovery_rate    = ( $resolved_balance > 0 ) ? $total_recovered / $resolved_balance : 0;
 
 		$summary = array(
-			'total_records'     => count( $records ),
-			'active_count'      => $active_count,
-			'active_balance'    => $calc::format_currency( $active_balance ),
-			'resolved_count'    => $resolved_count,
-			'total_balance'     => $calc::format_currency( $total_balance ),
-			'total_recovered'   => $calc::format_currency( $total_recovered ),
-			'resolution_rate'   => $calc::format_percentage( $resolution_rate ),
-			'recovery_rate'     => $calc::format_percentage( $recovery_rate ),
-			'by_reason'         => $by_reason,
-			'by_strategy'       => $by_strategy,
+			'total_records'   => count( $records ),
+			'active_count'    => $active_count,
+			'active_balance'  => $calc::format_currency( $active_balance ),
+			'resolved_count'  => $resolved_count,
+			'total_balance'   => $calc::format_currency( $total_balance ),
+			'total_recovered' => $calc::format_currency( $total_recovered ),
+			'resolution_rate' => $calc::format_percentage( $resolution_rate ),
+			'recovery_rate'   => $calc::format_percentage( $recovery_rate ),
+			'by_reason'       => $by_reason,
+			'by_strategy'     => $by_strategy,
 		);
 
 		// Format records for output.
@@ -401,15 +420,15 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 		}
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: 1: total records, 2: active, 3: resolved */
 				__( '%1$d special servicing records: %2$d active, %3$d resolved.', 'mcp-ai-wpoos-pro' ),
 				count( $records ),
 				$active_count,
 				$resolved_count
 			),
-			'data'       => array(
+			'data'    => array(
 				'summary'    => $summary,
 				'records'    => $formatted,
 				'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
@@ -437,9 +456,9 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 		// Calculate days in special servicing.
 		$days_in_ss = 0;
 		if ( ! empty( $record['transfer_date'] ) ) {
-			$end_date   = ! empty( $record['resolution_date'] ) ? $record['resolution_date'] : gmdate( 'Y-m-d' );
-			$start_ts   = strtotime( $record['transfer_date'] );
-			$end_ts     = strtotime( $end_date );
+			$end_date = ! empty( $record['resolution_date'] ) ? $record['resolution_date'] : gmdate( 'Y-m-d' );
+			$start_ts = strtotime( $record['transfer_date'] );
+			$end_ts   = strtotime( $end_date );
 			if ( false !== $start_ts && false !== $end_ts ) {
 				$days_in_ss = max( 0, (int) ( ( $end_ts - $start_ts ) / 86400 ) );
 			}
@@ -467,13 +486,13 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 		);
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: %s: loan name */
 				__( 'Special servicing record retrieved for %s.', 'mcp-ai-wpoos-pro' ),
 				$record['loan_name']
 			),
-			'data'       => array(
+			'data'    => array(
 				'record'     => $detailed,
 				'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			),

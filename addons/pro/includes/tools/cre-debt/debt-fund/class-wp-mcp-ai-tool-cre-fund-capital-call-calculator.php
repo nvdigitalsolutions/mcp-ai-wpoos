@@ -69,11 +69,11 @@ class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'call_amount'       => array(
+				'call_amount'        => array(
 					'type'        => 'number',
 					'description' => __( 'Total capital call amount.', 'mcp-ai-wpoos-pro' ),
 				),
-				'lps'               => array(
+				'lps'                => array(
 					'type'        => 'array',
 					'description' => __( 'Array of LP objects.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_
 						'required'   => array( 'name', 'commitment', 'called_to_date', 'ownership_pct' ),
 					),
 				),
-				'overcall_pct'      => array(
+				'overcall_pct'       => array(
 					'type'        => 'number',
 					'description' => __( 'Overcall buffer percentage (0-25).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
@@ -109,7 +109,7 @@ class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_
 					'description' => __( 'Management fee percentage to include in call (0 if none).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'purpose'           => array(
+				'purpose'            => array(
 					'type'        => 'string',
 					'description' => __( 'Purpose of the capital call.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -126,7 +126,20 @@ class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -153,7 +166,7 @@ class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
 		// Management fee amount allocated across the call.
-		$fee_amount = $call_amount * ( $mgmt_fee / 100 );
+		$fee_amount          = $call_amount * ( $mgmt_fee / 100 );
 		$total_call_with_fee = $call_amount + $fee_amount;
 
 		$lp_details       = array();
@@ -166,10 +179,10 @@ class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_
 		$flagged_lps      = array();
 
 		foreach ( $lps as $lp ) {
-			$name          = sanitize_text_field( $lp['name'] ?? '' );
-			$commitment    = (float) ( $lp['commitment'] ?? 0 );
+			$name           = sanitize_text_field( $lp['name'] ?? '' );
+			$commitment     = (float) ( $lp['commitment'] ?? 0 );
 			$called_to_date = (float) ( $lp['called_to_date'] ?? 0 );
-			$ownership_pct = (float) ( $lp['ownership_pct'] ?? 0 );
+			$ownership_pct  = (float) ( $lp['ownership_pct'] ?? 0 );
 
 			$pro_rata_share  = $call_amount * $ownership_pct;
 			$overcall_amount = $pro_rata_share * ( $overcall / 100 );
@@ -192,17 +205,17 @@ class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_
 			$total_called     += $called_to_date;
 
 			$lp_details[] = array(
-				'name'              => $name,
-				'commitment'        => $calc::format_currency( $commitment ),
-				'called_to_date'    => $calc::format_currency( $called_to_date ),
-				'ownership_pct'     => $calc::format_percentage( $ownership_pct ),
-				'pro_rata_share'    => $calc::format_currency( $pro_rata_share ),
-				'overcall_amount'   => $calc::format_currency( $overcall_amount ),
-				'fee_share'         => $calc::format_currency( $fee_share ),
-				'total_due'         => $calc::format_currency( $total_due_lp ),
+				'name'               => $name,
+				'commitment'         => $calc::format_currency( $commitment ),
+				'called_to_date'     => $calc::format_currency( $called_to_date ),
+				'ownership_pct'      => $calc::format_percentage( $ownership_pct ),
+				'pro_rata_share'     => $calc::format_currency( $pro_rata_share ),
+				'overcall_amount'    => $calc::format_currency( $overcall_amount ),
+				'fee_share'          => $calc::format_currency( $fee_share ),
+				'total_due'          => $calc::format_currency( $total_due_lp ),
 				'remaining_unfunded' => $calc::format_currency( max( 0, $remaining ) ),
-				'pct_funded_after'  => $calc::format_percentage( min( 1, $pct_funded ) ),
-				'exceeds_unfunded'  => $exceeds_unfunded,
+				'pct_funded_after'   => $calc::format_percentage( min( 1, $pct_funded ) ),
+				'exceeds_unfunded'   => $exceeds_unfunded,
 			);
 		}
 
@@ -210,22 +223,22 @@ class WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator implements WP_MCP_AI_Tool_
 			'success'    => true,
 			'message'    => __( 'Capital call calculated. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'       => array(
-				'call_amount'       => $calc::format_currency( $call_amount ),
-				'purpose'           => $purpose,
-				'overcall_pct'      => $overcall . '%',
+				'call_amount'        => $calc::format_currency( $call_amount ),
+				'purpose'            => $purpose,
+				'overcall_pct'       => $overcall . '%',
 				'management_fee_pct' => $mgmt_fee . '%',
-				'fee_amount'        => $calc::format_currency( $fee_amount ),
-				'total_call_due'    => $calc::format_currency( $total_due ),
-				'lp_details'        => $lp_details,
-				'summary'           => array(
-					'total_pro_rata'    => $calc::format_currency( $total_pro_rata ),
-					'total_overcall'    => $calc::format_currency( $total_overcall ),
-					'total_fee_alloc'   => $calc::format_currency( $total_fee_alloc ),
-					'total_due'         => $calc::format_currency( $total_due ),
-					'total_commitment'  => $calc::format_currency( $total_commitment ),
+				'fee_amount'         => $calc::format_currency( $fee_amount ),
+				'total_call_due'     => $calc::format_currency( $total_due ),
+				'lp_details'         => $lp_details,
+				'summary'            => array(
+					'total_pro_rata'     => $calc::format_currency( $total_pro_rata ),
+					'total_overcall'     => $calc::format_currency( $total_overcall ),
+					'total_fee_alloc'    => $calc::format_currency( $total_fee_alloc ),
+					'total_due'          => $calc::format_currency( $total_due ),
+					'total_commitment'   => $calc::format_currency( $total_commitment ),
 					'total_called_after' => $calc::format_currency( $total_called + $total_pro_rata ),
-					'num_lps'           => count( $lp_details ),
-					'flagged_lps'       => $flagged_lps,
+					'num_lps'            => count( $lp_details ),
+					'flagged_lps'        => $flagged_lps,
 				),
 			),
 			'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),

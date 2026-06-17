@@ -337,64 +337,72 @@ class WP_MCP_AI_Optional_Components {
 					<strong><?php esc_html_e( 'Open Operator System:', 'mcp-ai-wpoos' ); ?></strong>
 					<?php esc_html_e( 'Optional components are available for download to enhance your experience (vectorizer library and complete knowledge base with 218 profession playbooks). These are downloaded from the plugin\'s GitHub releases.', 'mcp-ai-wpoos' ); ?>
 				</p>
-				<p>
+				<p style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
 					<button type="button" class="button button-primary" id="wp-mcp-ai-download-components-btn" data-nonce="<?php echo esc_attr( $nonce ); ?>">
 						<?php esc_html_e( 'Download Optional Components', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<button type="button" class="button" id="wp-mcp-ai-dismiss-components-btn">
 						<?php esc_html_e( 'No Thanks', 'mcp-ai-wpoos' ); ?>
 					</button>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=data_management' ) ); ?>" class="button">
+						<?php esc_html_e( 'Go to Data Management', 'mcp-ai-wpoos' ); ?>
+					</a>
 				</p>
 			</div>
-			<script>
-			(function() {
-				var downloadBtn = document.getElementById('wp-mcp-ai-download-components-btn');
-				var dismissBtn = document.getElementById('wp-mcp-ai-dismiss-components-btn');
-				if (downloadBtn) {
-					downloadBtn.addEventListener('click', function() {
-						downloadBtn.disabled = true;
-						downloadBtn.textContent = '<?php echo esc_js( __( 'Downloading...', 'mcp-ai-wpoos' ) ); ?>';
-						var data = new FormData();
-						data.append('action', 'wp_mcp_ai_download_all_components');
-						data.append('nonce', downloadBtn.getAttribute('data-nonce'));
-						fetch(ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
-							.then(function(response) {
-								if (!response.ok) { throw new Error('HTTP ' + response.status); }
-								downloadBtn.textContent = '<?php echo esc_js( __( 'Download started!', 'mcp-ai-wpoos' ) ); ?>';
-								var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
-								if (notice) {
-									var statusP = notice.querySelector('p:last-child');
-									statusP.textContent = '';
-									var em = document.createElement('em');
-									em.textContent = '<?php echo esc_js( __( 'Components are downloading in the background. Please refresh in a few minutes.', 'mcp-ai-wpoos' ) ); ?>';
-									statusP.appendChild(em);
-								}
-							})
-							.catch(function() {
-								downloadBtn.disabled = false;
-								downloadBtn.textContent = '<?php echo esc_js( __( 'Download Optional Components', 'mcp-ai-wpoos' ) ); ?>';
-								var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
-								if (notice) {
-									var errorP = document.createElement('p');
-									errorP.style.color = '#d63638';
-									errorP.textContent = '<?php echo esc_js( __( 'Download failed. Please try again or download manually from the Components page.', 'mcp-ai-wpoos' ) ); ?>';
-									notice.appendChild(errorP);
-								}
+			<?php
+				ob_start();
+				?>
+					(function() {
+						var downloadBtn = document.getElementById('wp-mcp-ai-download-components-btn');
+						var dismissBtn = document.getElementById('wp-mcp-ai-dismiss-components-btn');
+						if (downloadBtn) {
+							downloadBtn.addEventListener('click', function() {
+								downloadBtn.disabled = true;
+								downloadBtn.textContent = <?php echo wp_json_encode( __( 'Downloading...', 'mcp-ai-wpoos' ) ); ?>;
+								var data = new FormData();
+								data.append('action', 'wp_mcp_ai_download_all_components');
+								data.append('nonce', downloadBtn.getAttribute('data-nonce'));
+								fetch(ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
+									.then(function(response) {
+										if (!response.ok) { throw new Error('HTTP ' + response.status); }
+										downloadBtn.textContent = <?php echo wp_json_encode( __( 'Download started!', 'mcp-ai-wpoos' ) ); ?>;
+										var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
+										if (notice) {
+											var statusP = notice.querySelector('p:last-child');
+											statusP.textContent = '';
+											var em = document.createElement('em');
+											em.textContent = <?php echo wp_json_encode( __( 'Components are downloading in the background. Please refresh in a few minutes.', 'mcp-ai-wpoos' ) ); ?>;
+											statusP.appendChild(em);
+										}
+									})
+									.catch(function() {
+										downloadBtn.disabled = false;
+										downloadBtn.textContent = <?php echo wp_json_encode( __( 'Download Optional Components', 'mcp-ai-wpoos' ) ); ?>;
+										var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
+										if (notice) {
+											var errorP = document.createElement('p');
+											errorP.style.color = '#d63638';
+											errorP.innerHTML = <?php echo wp_json_encode( sprintf( __( 'Download failed. Please try again or manage your data on the <a href="%s">Data Management</a> page.', 'mcp-ai-wpoos' ), esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=data_management' ) ) ) ); ?>;
+											notice.appendChild(errorP);
+										}
+									});
 							});
-					});
-				}
-				if (dismissBtn) {
-					dismissBtn.addEventListener('click', function() {
-						var data = new FormData();
-						data.append('action', 'wp_mcp_ai_dismiss_optional_components');
-						data.append('_wpnonce', '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dismiss_components' ) ); ?>');
-						fetch(ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' });
-						var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
-						if (notice) { notice.style.display = 'none'; }
-					});
-				}
-			})();
-			</script>
+						}
+						if (dismissBtn) {
+							dismissBtn.addEventListener('click', function() {
+								var data = new FormData();
+								data.append('action', 'wp_mcp_ai_dismiss_optional_components');
+								data.append('_wpnonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_dismiss_components' ) ); ?>);
+								fetch(ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' });
+								var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
+								if (notice) { notice.style.display = 'none'; }
+							});
+						}
+					})();
+					<?php
+					$js = ob_get_clean();
+					wp_print_inline_script_tag( $js );
+					?>
 			<?php
 			return;
 		}

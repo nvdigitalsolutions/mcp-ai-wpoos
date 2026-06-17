@@ -81,13 +81,16 @@ class NV_oOS_Graphify_Detector {
 			$since = NV_oOS_Graphify_DB::get_meta( 'last_build_completed', '' );
 		}
 
-		$posts = self::detect_posts( $since );
-		$ccts  = self::detect_ccts( $since );
-		$terms = self::detect_terms( $posts );
-		$users = self::detect_users( $posts, $ccts );
-		$media = self::detect_media( $posts );
+		$posts    = self::detect_posts( $since );
+		$ccts     = self::detect_ccts( $since );
+		$terms    = self::detect_terms( $posts );
+		$users    = self::detect_users( $posts, $ccts );
+		$media    = self::detect_media( $posts );
+		$external = class_exists( 'NV_oOS_Graphify_NV_oOS_Bridge' )
+			? self::detect_external_rows( $since )
+			: array();
 
-		return compact( 'posts', 'ccts', 'terms', 'users', 'media' );
+		return compact( 'posts', 'ccts', 'terms', 'users', 'media', 'external' );
 	}
 
 	// -------------------------------------------------------------------------
@@ -377,8 +380,21 @@ class NV_oOS_Graphify_Detector {
 		}
 
 		// Build the indexed-slug allowlist once, before iterating.
-		$default_slugs = array_map( 'sanitize_key', wp_list_pluck( $types, 'slug' ) );
-		$default_slugs = array_values( array_filter( $default_slugs ) );
+		//
+		// JetEngine's CCT type objects don't expose `slug` as a public
+		// property — it lives in `$type->args['slug']` (with newer versions
+		// also surfacing it via `$type->slug`). Reuse the same resolution
+		// helper as the iteration loop below so we don't end up with a list
+		// of nulls (which would empty the allowlist and skip every CCT,
+		// surfacing as the `all_content_types_empty_or_unindexed` reason).
+		$default_slugs = array();
+		foreach ( $types as $type_key => $type ) {
+			$slug = self::resolve_cct_slug( $type, $type_key );
+			if ( '' !== $slug ) {
+				$default_slugs[] = $slug;
+			}
+		}
+		$default_slugs = array_values( array_unique( $default_slugs ) );
 
 		/**
 		 * Filter the list of CCT slugs indexed by the knowledge graph.
@@ -395,14 +411,8 @@ class NV_oOS_Graphify_Detector {
 
 		$rows = array();
 
-		foreach ( $types as $type ) {
-			$slug = '';
-			if ( ! empty( $type->slug ) ) {
-				$slug = $type->slug;
-			} elseif ( ! empty( $type->args ) && ! empty( $type->args['slug'] ) ) {
-				$slug = $type->args['slug'];
-			}
-			$slug = sanitize_key( $slug );
+		foreach ( $types as $type_key => $type ) {
+			$slug = self::resolve_cct_slug( $type, $type_key );
 			if ( '' === $slug ) {
 				continue;
 			}
@@ -413,20 +423,25 @@ class NV_oOS_Graphify_Detector {
 
 			// Resolve human-readable name.
 			$name = '';
-			if ( ! empty( $type->name ) ) {
+			if ( is_object( $type ) && ! empty( $type->name ) ) {
 				$name = $type->name;
-			} elseif ( ! empty( $type->args ) && ! empty( $type->args['name'] ) ) {
+			} elseif ( is_object( $type ) && ! empty( $type->args ) && ! empty( $type->args['name'] ) ) {
 				$name = $type->args['name'];
+			} elseif ( is_array( $type ) && ! empty( $type['name'] ) ) {
+				$name = $type['name'];
+			} elseif ( is_array( $type ) && ! empty( $type['args']['name'] ) ) {
+				$name = $type['args']['name'];
 			} else {
 				$name = $slug;
 			}
 
-			if ( empty( $type->db ) || ! method_exists( $type->db, 'query' ) ) {
+			$db = is_object( $type ) && ! empty( $type->db ) ? $type->db : null;
+			if ( null === $db || ! method_exists( $db, 'query' ) ) {
 				continue;
 			}
 
-			if ( method_exists( $type->db, 'set_format_flag' ) ) {
-				$type->db->set_format_flag( ARRAY_A );
+			if ( method_exists( $db, 'set_format_flag' ) ) {
+				$db->set_format_flag( ARRAY_A );
 			}
 
 			$filter_args = array();
@@ -440,7 +455,7 @@ class NV_oOS_Graphify_Detector {
 				);
 			}
 
-			$items = $type->db->query( $filter_args, $per_type_limit, 0 );
+			$items = $db->query( $filter_args, $per_type_limit, 0 );
 			if ( ! is_array( $items ) || empty( $items ) ) {
 				continue;
 			}
@@ -465,6 +480,269 @@ class NV_oOS_Graphify_Detector {
 		}
 
 		return $rows;
+	}
+
+	/**
+	 * Resolve a sanitised CCT slug from a JetEngine content-type entry.
+	 *
+	 * JetEngine's CCT type instances historically expose the slug only via
+	 * `$type->args['slug']` (older builds) and may also expose a public
+	 * `$type->slug` property (newer builds). Some integration shims pass the
+	 * type as an associative array, and the manager always indexes the
+	 * content-types map by slug — so the array key is a reliable last-resort
+	 * fallback.
+	 *
+	 * Centralising this fallback chain ensures the indexed-slug allowlist
+	 * built up-front and the per-type iteration agree on the same slug for
+	 * the same type, which is what makes the `nvoos_graphify_indexed_cct_slugs`
+	 * filter behave predictably.
+	 *
+	 * @since 0.7.1
+	 *
+	 * @param object|array $type     JetEngine content-type entry.
+	 * @param string|int   $type_key Associative key from the content-types map.
+	 * @return string Sanitised slug, or empty string when none could be resolved.
+	 */
+	private static function resolve_cct_slug( $type, $type_key = '' ) {
+		$slug = '';
+		if ( is_object( $type ) && ! empty( $type->slug ) ) {
+			$slug = $type->slug;
+		} elseif ( is_object( $type ) && ! empty( $type->args ) && ! empty( $type->args['slug'] ) ) {
+			$slug = $type->args['slug'];
+		} elseif ( is_array( $type ) && ! empty( $type['slug'] ) ) {
+			$slug = $type['slug'];
+		} elseif ( is_array( $type ) && ! empty( $type['args']['slug'] ) ) {
+			$slug = $type['args']['slug'];
+		} elseif ( is_string( $type_key ) && '' !== $type_key ) {
+			$slug = $type_key;
+		}
+
+		return sanitize_key( $slug );
+	}
+
+	/**
+	 * Collect rows from NV oOS-owned custom $wpdb tables.
+	 *
+	 * Returns a flat array of row descriptors, each shaped:
+	 * ```php
+	 * array(
+	 *   'node_id'    => string  // e.g. `ext_slash_cmd_audit_42`
+	 *   'node_type'  => string  // e.g. `ext_slash_cmd_audit`
+	 *   'label'      => string  // Human-readable label for the node.
+	 *   'content'    => string  // Body text for semantic extraction.
+	 *   'properties' => array   // Arbitrary key→value properties stored on the node.
+	 *   'fk_edges'   => array[] // Pre-built FK edge descriptors.
+	 * )
+	 * ```
+	 *
+	 * The full table registry comes from the `nvoos_graphify_external_tables`
+	 * filter (populated by `NV_oOS_Graphify_NV_oOS_Bridge::register_external_tables()`).
+	 * Each descriptor supplies a `label_field` / `label_callback` and
+	 * `content_field` / `content_callback` for flexible extraction.
+	 *
+	 * A per-table row cap is enforced via the
+	 * `nvoos_graphify_external_table_limit` filter (default 1 000).
+	 *
+	 * @since 0.8.0
+	 *
+	 * @param string $since Optional ISO-8601 datetime; when supplied, only rows
+	 *                      with a `modified_field` column value > $since are
+	 *                      returned (incremental builds).
+	 * @return array[]
+	 */
+	public static function detect_external_rows( $since = '' ) {
+		global $wpdb;
+
+		self::$last_external_skip_reason = '';
+
+		/**
+		 * Filter the list of external table descriptors to index.
+		 *
+		 * Each element is an associative array (see method docblock for shape).
+		 * Populated by `NV_oOS_Graphify_NV_oOS_Bridge::register_external_tables()`.
+		 *
+		 * @since 0.8.0
+		 *
+		 * @param array[] $tables Empty array; bridges append descriptors.
+		 */
+		$table_descriptors = apply_filters( 'nvoos_graphify_external_tables', array() );
+
+		if ( empty( $table_descriptors ) || ! is_array( $table_descriptors ) ) {
+			self::$last_external_skip_reason = 'no_external_tables_registered';
+			return array();
+		}
+
+		/**
+		 * Filter the maximum number of rows pulled per external table.
+		 *
+		 * @since 0.8.0
+		 *
+		 * @param int $limit Maximum rows per table (default 1 000).
+		 */
+		$per_table_limit = (int) apply_filters(
+			'nvoos_graphify_external_table_limit',
+			NV_oOS_Graphify_NV_oOS_Bridge::DEFAULT_EXTERNAL_TABLE_LIMIT
+		);
+		if ( $per_table_limit <= 0 ) {
+			$per_table_limit = NV_oOS_Graphify_NV_oOS_Bridge::DEFAULT_EXTERNAL_TABLE_LIMIT;
+		}
+
+		$rows = array();
+
+		foreach ( $table_descriptors as $descriptor ) {
+			if ( empty( $descriptor['table'] ) || empty( $descriptor['primary_key'] ) ) {
+				continue;
+			}
+
+			$table       = $wpdb->prefix . sanitize_key( $descriptor['table'] );
+			$primary_key = sanitize_key( $descriptor['primary_key'] );
+			$node_type   = sanitize_key( isset( $descriptor['node_type'] ) ? $descriptor['node_type'] : 'ext_' . sanitize_key( $descriptor['table'] ) );
+			$label_field = isset( $descriptor['label_field'] ) ? sanitize_key( (string) $descriptor['label_field'] ) : '';
+			$content_fld = isset( $descriptor['content_field'] ) ? sanitize_key( (string) $descriptor['content_field'] ) : '';
+			$mod_field   = isset( $descriptor['modified_field'] ) ? sanitize_key( (string) $descriptor['modified_field'] ) : '';
+			$fk_defs     = isset( $descriptor['foreign_keys'] ) && is_array( $descriptor['foreign_keys'] )
+				? $descriptor['foreign_keys']
+				: array();
+
+			// Verify the table exists.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( $table !== $exists ) {
+				continue;
+			}
+
+			// Build WHERE clause for incremental builds.
+			$where_clause = '';
+			if ( $since && '' !== $mod_field ) {
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnsupportedIdentifierPlaceholder
+				$where_clause = $wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					" WHERE `{$mod_field}` > %s",
+					sanitize_text_field( $since )
+				);
+			}
+
+			// Determine columns to fetch: PK + label + content + FK locals.
+			$columns = array( '`' . $primary_key . '`' );
+			if ( '' !== $label_field ) {
+				$columns[] = '`' . $label_field . '`';
+			}
+			if ( '' !== $content_fld ) {
+				$columns[] = '`' . $content_fld . '`';
+			}
+			foreach ( $fk_defs as $fk ) {
+				if ( ! empty( $fk['local_column'] ) ) {
+					$col = '`' . sanitize_key( $fk['local_column'] ) . '`';
+					if ( ! in_array( $col, $columns, true ) ) {
+						$columns[] = $col;
+					}
+				}
+			}
+			$columns_sql = implode( ', ', $columns );
+
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$db_rows = $wpdb->get_results(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->prepare(
+					"SELECT {$columns_sql} FROM `{$table}`{$where_clause} ORDER BY `{$primary_key}` DESC LIMIT %d",
+					$per_table_limit
+				),
+				ARRAY_A
+			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+			if ( empty( $db_rows ) || ! is_array( $db_rows ) ) {
+				continue;
+			}
+
+			foreach ( $db_rows as $db_row ) {
+				$pk_value = isset( $db_row[ $primary_key ] ) ? absint( $db_row[ $primary_key ] ) : 0;
+				if ( 0 === $pk_value ) {
+					continue;
+				}
+
+				$node_id = self::external_node_id( $node_type, $pk_value );
+
+				// Resolve label.
+				$label = '';
+				if ( ! empty( $descriptor['label_callback'] ) && is_callable( $descriptor['label_callback'] ) ) {
+					$label = (string) call_user_func( $descriptor['label_callback'], $db_row );
+				} elseif ( '' !== $label_field && ! empty( $db_row[ $label_field ] ) && is_scalar( $db_row[ $label_field ] ) ) {
+					$label = (string) $db_row[ $label_field ];
+				}
+				if ( '' === $label ) {
+					/* translators: 1: node type, 2: numeric ID */
+					$label = sprintf( __( '%1$s #%2$d', 'nvoos-graphify' ), $node_type, $pk_value );
+				}
+
+				// Resolve content.
+				$content = '';
+				if ( ! empty( $descriptor['content_callback'] ) && is_callable( $descriptor['content_callback'] ) ) {
+					$content = (string) call_user_func( $descriptor['content_callback'], $db_row );
+				} elseif ( '' !== $content_fld && ! empty( $db_row[ $content_fld ] ) && is_scalar( $db_row[ $content_fld ] ) ) {
+					$content = (string) $db_row[ $content_fld ];
+				}
+
+				// Build FK edges.
+				$fk_edges = array();
+				foreach ( $fk_defs as $fk ) {
+					if ( empty( $fk['local_column'] ) || empty( $fk['target_type'] ) || empty( $fk['relation'] ) ) {
+						continue;
+					}
+					$local_col = sanitize_key( $fk['local_column'] );
+					if ( empty( $db_row[ $local_col ] ) ) {
+						continue;
+					}
+					$target_pk      = absint( $db_row[ $local_col ] );
+					$target_node_id = self::external_node_id( sanitize_key( $fk['target_type'] ), $target_pk );
+					$fk_edges[]     = array(
+						'source_node_id' => $node_id,
+						'target_node_id' => $target_node_id,
+						'relation'       => sanitize_text_field( $fk['relation'] ),
+						'confidence'     => 1.0,
+						'provenance'     => 'EXTRACTED',
+					);
+				}
+
+				// Build node properties from scalar columns.
+				$properties = array( 'table' => $descriptor['table'] );
+				foreach ( $db_row as $col => $val ) {
+					if ( is_scalar( $val ) && '' !== (string) $val ) {
+						$properties[ sanitize_key( $col ) ] = (string) $val;
+					}
+				}
+
+				$rows[] = array(
+					'node_id'    => $node_id,
+					'node_type'  => $node_type,
+					'label'      => $label,
+					'content'    => $content,
+					'properties' => $properties,
+					'fk_edges'   => $fk_edges,
+				);
+			}
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * Reason the last external-row detection pass returned no rows, if any.
+	 *
+	 * @since 0.8.0
+	 * @var string
+	 */
+	private static $last_external_skip_reason = '';
+
+	/**
+	 * Return the reason external-row detection was skipped on the most recent call.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @return string Empty string when detection ran normally.
+	 */
+	public static function get_last_external_skip_reason() {
+		return self::$last_external_skip_reason;
 	}
 
 	// -------------------------------------------------------------------------
@@ -641,6 +919,19 @@ class NV_oOS_Graphify_Detector {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Generate a stable node_id for a custom $wpdb table row.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @param string $node_type  Node type string (e.g. `ext_slash_cmd_audit`).
+	 * @param int    $primary_key_value Integer primary-key value.
+	 * @return string
+	 */
+	public static function external_node_id( $node_type, $primary_key_value ) {
+		return sanitize_key( $node_type ) . '_' . absint( $primary_key_value );
 	}
 
 	/**

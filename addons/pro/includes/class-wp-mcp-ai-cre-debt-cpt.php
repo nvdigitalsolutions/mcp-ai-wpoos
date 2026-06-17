@@ -75,22 +75,22 @@ class WP_MCP_AI_CRE_Debt_CPT {
 		register_post_type(
 			self::LOAN_POST_TYPE,
 			array(
-				'labels'              => $loan_labels,
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => true,
-				'menu_icon'           => 'dashicons-building',
-				'menu_position'       => 57,
-				'query_var'           => true,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'supports'            => array( 'title', 'author' ),
-				'show_in_rest'        => true,
-				'rest_base'           => 'cre-loans',
-				'rest_namespace'      => 'mcp-ai/v1',
+				'labels'             => $loan_labels,
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => true,
+				'menu_icon'          => 'dashicons-building',
+				'menu_position'      => 57,
+				'query_var'          => true,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'has_archive'        => false,
+				'hierarchical'       => false,
+				'supports'           => array( 'title', 'author' ),
+				'show_in_rest'       => true,
+				'rest_base'          => 'cre-loans',
+				'rest_namespace'     => 'mcp-ai/v1',
 			)
 		);
 
@@ -115,20 +115,20 @@ class WP_MCP_AI_CRE_Debt_CPT {
 		register_post_type(
 			self::PROPERTY_POST_TYPE,
 			array(
-				'labels'              => $property_labels,
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => 'edit.php?post_type=' . self::LOAN_POST_TYPE,
-				'query_var'           => true,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'supports'            => array( 'title', 'author' ),
-				'show_in_rest'        => true,
-				'rest_base'           => 'cre-properties',
-				'rest_namespace'      => 'mcp-ai/v1',
+				'labels'             => $property_labels,
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => 'edit.php?post_type=' . self::LOAN_POST_TYPE,
+				'query_var'          => true,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'has_archive'        => false,
+				'hierarchical'       => false,
+				'supports'           => array( 'title', 'author' ),
+				'show_in_rest'       => true,
+				'rest_base'          => 'cre-properties',
+				'rest_namespace'     => 'mcp-ai/v1',
 			)
 		);
 	}
@@ -139,15 +139,15 @@ class WP_MCP_AI_CRE_Debt_CPT {
 	public static function register_taxonomies() {
 		// ── Loan Type taxonomy ────────────────────────────────────────
 		$loan_type_labels = array(
-			'name'              => __( 'Loan Types', 'mcp-ai-wpoos-pro' ),
-			'singular_name'     => __( 'Loan Type', 'mcp-ai-wpoos-pro' ),
-			'search_items'      => __( 'Search Loan Types', 'mcp-ai-wpoos-pro' ),
-			'all_items'         => __( 'All Loan Types', 'mcp-ai-wpoos-pro' ),
-			'edit_item'         => __( 'Edit Loan Type', 'mcp-ai-wpoos-pro' ),
-			'update_item'       => __( 'Update Loan Type', 'mcp-ai-wpoos-pro' ),
-			'add_new_item'      => __( 'Add New Loan Type', 'mcp-ai-wpoos-pro' ),
-			'new_item_name'     => __( 'New Loan Type Name', 'mcp-ai-wpoos-pro' ),
-			'menu_name'         => __( 'Loan Types', 'mcp-ai-wpoos-pro' ),
+			'name'          => __( 'Loan Types', 'mcp-ai-wpoos-pro' ),
+			'singular_name' => __( 'Loan Type', 'mcp-ai-wpoos-pro' ),
+			'search_items'  => __( 'Search Loan Types', 'mcp-ai-wpoos-pro' ),
+			'all_items'     => __( 'All Loan Types', 'mcp-ai-wpoos-pro' ),
+			'edit_item'     => __( 'Edit Loan Type', 'mcp-ai-wpoos-pro' ),
+			'update_item'   => __( 'Update Loan Type', 'mcp-ai-wpoos-pro' ),
+			'add_new_item'  => __( 'Add New Loan Type', 'mcp-ai-wpoos-pro' ),
+			'new_item_name' => __( 'New Loan Type Name', 'mcp-ai-wpoos-pro' ),
+			'menu_name'     => __( 'Loan Types', 'mcp-ai-wpoos-pro' ),
 		);
 
 		register_taxonomy(
@@ -165,14 +165,14 @@ class WP_MCP_AI_CRE_Debt_CPT {
 
 		// Seed default loan types (CREFC / industry standard).
 		$default_loan_types = array(
-			'Permanent'      => __( 'Fixed-rate permanent / stabilized CRE loan', 'mcp-ai-wpoos-pro' ),
-			'Bridge'         => __( 'Short-term bridge or transitional loan', 'mcp-ai-wpoos-pro' ),
-			'Construction'   => __( 'Construction or development loan', 'mcp-ai-wpoos-pro' ),
-			'Mezzanine'      => __( 'Mezzanine debt (subordinate to senior)', 'mcp-ai-wpoos-pro' ),
-			'CMBS'           => __( 'CMBS conduit securitized loan', 'mcp-ai-wpoos-pro' ),
-			'Agency'         => __( 'Fannie Mae / Freddie Mac agency loan', 'mcp-ai-wpoos-pro' ),
-			'SBA'            => __( 'SBA 504 or 7(a) commercial loan', 'mcp-ai-wpoos-pro' ),
-			'CRE CLO'        => __( 'CRE CLO securitized transitional loan', 'mcp-ai-wpoos-pro' ),
+			'Permanent'        => __( 'Fixed-rate permanent / stabilized CRE loan', 'mcp-ai-wpoos-pro' ),
+			'Bridge'           => __( 'Short-term bridge or transitional loan', 'mcp-ai-wpoos-pro' ),
+			'Construction'     => __( 'Construction or development loan', 'mcp-ai-wpoos-pro' ),
+			'Mezzanine'        => __( 'Mezzanine debt (subordinate to senior)', 'mcp-ai-wpoos-pro' ),
+			'CMBS'             => __( 'CMBS conduit securitized loan', 'mcp-ai-wpoos-pro' ),
+			'Agency'           => __( 'Fannie Mae / Freddie Mac agency loan', 'mcp-ai-wpoos-pro' ),
+			'SBA'              => __( 'SBA 504 or 7(a) commercial loan', 'mcp-ai-wpoos-pro' ),
+			'CRE CLO'          => __( 'CRE CLO securitized transitional loan', 'mcp-ai-wpoos-pro' ),
 			'Preferred Equity' => __( 'Preferred equity position', 'mcp-ai-wpoos-pro' ),
 		);
 
@@ -188,15 +188,15 @@ class WP_MCP_AI_CRE_Debt_CPT {
 
 		// ── Property Type taxonomy ────────────────────────────────────
 		$property_type_labels = array(
-			'name'              => __( 'Property Types', 'mcp-ai-wpoos-pro' ),
-			'singular_name'     => __( 'Property Type', 'mcp-ai-wpoos-pro' ),
-			'search_items'      => __( 'Search Property Types', 'mcp-ai-wpoos-pro' ),
-			'all_items'         => __( 'All Property Types', 'mcp-ai-wpoos-pro' ),
-			'edit_item'         => __( 'Edit Property Type', 'mcp-ai-wpoos-pro' ),
-			'update_item'       => __( 'Update Property Type', 'mcp-ai-wpoos-pro' ),
-			'add_new_item'      => __( 'Add New Property Type', 'mcp-ai-wpoos-pro' ),
-			'new_item_name'     => __( 'New Property Type Name', 'mcp-ai-wpoos-pro' ),
-			'menu_name'         => __( 'Property Types', 'mcp-ai-wpoos-pro' ),
+			'name'          => __( 'Property Types', 'mcp-ai-wpoos-pro' ),
+			'singular_name' => __( 'Property Type', 'mcp-ai-wpoos-pro' ),
+			'search_items'  => __( 'Search Property Types', 'mcp-ai-wpoos-pro' ),
+			'all_items'     => __( 'All Property Types', 'mcp-ai-wpoos-pro' ),
+			'edit_item'     => __( 'Edit Property Type', 'mcp-ai-wpoos-pro' ),
+			'update_item'   => __( 'Update Property Type', 'mcp-ai-wpoos-pro' ),
+			'add_new_item'  => __( 'Add New Property Type', 'mcp-ai-wpoos-pro' ),
+			'new_item_name' => __( 'New Property Type Name', 'mcp-ai-wpoos-pro' ),
+			'menu_name'     => __( 'Property Types', 'mcp-ai-wpoos-pro' ),
 		);
 
 		register_taxonomy(
@@ -500,16 +500,16 @@ class WP_MCP_AI_CRE_Debt_CPT {
 		wp_nonce_field( 'mcp_ai_cre_property_details', 'mcp_ai_cre_property_nonce' );
 
 		$fields = array(
-			'_cre_prop_address'   => get_post_meta( $post->ID, '_cre_prop_address', true ),
-			'_cre_prop_city'      => get_post_meta( $post->ID, '_cre_prop_city', true ),
-			'_cre_prop_state'     => get_post_meta( $post->ID, '_cre_prop_state', true ),
-			'_cre_prop_zip'       => get_post_meta( $post->ID, '_cre_prop_zip', true ),
-			'_cre_prop_sqft'      => get_post_meta( $post->ID, '_cre_prop_sqft', true ),
-			'_cre_prop_units'     => get_post_meta( $post->ID, '_cre_prop_units', true ),
+			'_cre_prop_address'    => get_post_meta( $post->ID, '_cre_prop_address', true ),
+			'_cre_prop_city'       => get_post_meta( $post->ID, '_cre_prop_city', true ),
+			'_cre_prop_state'      => get_post_meta( $post->ID, '_cre_prop_state', true ),
+			'_cre_prop_zip'        => get_post_meta( $post->ID, '_cre_prop_zip', true ),
+			'_cre_prop_sqft'       => get_post_meta( $post->ID, '_cre_prop_sqft', true ),
+			'_cre_prop_units'      => get_post_meta( $post->ID, '_cre_prop_units', true ),
 			'_cre_prop_year_built' => get_post_meta( $post->ID, '_cre_prop_year_built', true ),
-			'_cre_prop_occupancy' => get_post_meta( $post->ID, '_cre_prop_occupancy', true ),
-			'_cre_prop_market'    => get_post_meta( $post->ID, '_cre_prop_market', true ),
-			'_cre_prop_notes'     => get_post_meta( $post->ID, '_cre_prop_notes', true ),
+			'_cre_prop_occupancy'  => get_post_meta( $post->ID, '_cre_prop_occupancy', true ),
+			'_cre_prop_market'     => get_post_meta( $post->ID, '_cre_prop_market', true ),
+			'_cre_prop_notes'      => get_post_meta( $post->ID, '_cre_prop_notes', true ),
 		);
 		?>
 		<table class="form-table">

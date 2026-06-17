@@ -26,6 +26,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool slug.
 	 *
 	 * @return string Tool slug.
@@ -106,17 +113,17 @@ class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
 		// Validate chart type.
 		$valid_types = array( 'line', 'bar', 'pie', 'doughnut', 'scatter', 'radar' );
 		if ( ! isset( $arguments['type'] ) || ! in_array( $arguments['type'], $valid_types, true ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Invalid chart type. Must be one of: ' . implode( ', ', $valid_types ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				'Invalid chart type. Must be one of: ' . implode( ', ', $valid_types )
 			);
 		}
 
 		// Validate data.
 		if ( ! isset( $arguments['data'] ) || ! is_array( $arguments['data'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Chart data is required',
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				'Chart data is required'
 			);
 		}
 
@@ -150,24 +157,31 @@ class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
 			}
 		}
 
-		// Generate HTML with embedded Chart.js code.
+		// Generate HTML with Chart.js code via wp_print_inline_script_tag().
+		$script_js = sprintf(
+			'(function() {
+				if (typeof Chart === "undefined") {
+					console.error("Chart.js not loaded");
+					return;
+				}
+				const ctx = document.getElementById("%s").getContext("2d");
+				new Chart(ctx, %s);
+			})();',
+			esc_js( $chart_id ),
+			wp_json_encode( $chart_config )
+		);
+
+		ob_start();
+		wp_print_inline_script_tag( $script_js );
+		$script_tag = ob_get_clean();
+
 		$html = sprintf(
 			'<div class="wp-mcp-ai-chart-container">
 				<canvas id="%s" width="400" height="200"></canvas>
-				<script>
-				(function() {
-					if (typeof Chart === "undefined") {
-						console.error("Chart.js not loaded");
-						return;
-					}
-					const ctx = document.getElementById("%s").getContext("2d");
-					new Chart(ctx, %s);
-				})();
-				</script>
+				%s
 			</div>',
 			esc_attr( $chart_id ),
-			esc_attr( $chart_id ),
-			wp_json_encode( $chart_config )
+			$script_tag
 		);
 
 		return array(

@@ -172,10 +172,10 @@ class WP_MCP_AI_PM_Notification_Manager {
 			return;
 		}
 
-		$due_date    = get_post_meta( $task->ID, '_task_due_date', true );
-		$priority    = get_post_meta( $task->ID, '_task_priority', true ) ?: 'medium';
-		$project_id  = (int) get_post_meta( $task->ID, '_task_project_id', true );
-		$project     = $project_id ? get_post( $project_id ) : null;
+		$due_date   = get_post_meta( $task->ID, '_task_due_date', true );
+		$priority   = get_post_meta( $task->ID, '_task_priority', true ) ? get_post_meta( $task->ID, '_task_priority', true ) : 'medium';
+		$project_id = (int) get_post_meta( $task->ID, '_task_project_id', true );
+		$project    = $project_id ? get_post( $project_id ) : null;
 
 		$site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
 
@@ -229,7 +229,7 @@ class WP_MCP_AI_PM_Notification_Manager {
 			);
 		}
 
-		$admin_url = admin_url( 'post.php?post=' . $task->ID . '&action=edit' );
+		$admin_url       = admin_url( 'post.php?post=' . $task->ID . '&action=edit' );
 		$message_parts[] = '';
 		$message_parts[] = sprintf(
 			/* translators: %s: admin URL */
@@ -443,7 +443,7 @@ class WP_MCP_AI_PM_Notification_Manager {
 			);
 
 			foreach ( $tasks as $task ) {
-				$priority = get_post_meta( $task->ID, '_task_priority', true ) ?: 'medium';
+				$priority        = get_post_meta( $task->ID, '_task_priority', true ) ? get_post_meta( $task->ID, '_task_priority', true ) : 'medium';
 				$message_parts[] = sprintf(
 					/* translators: 1: task title, 2: priority */
 					__( '• %1$s [%2$s]', 'mcp-ai-wpoos-pro' ),

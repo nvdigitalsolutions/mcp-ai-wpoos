@@ -268,6 +268,105 @@ class WP_MCP_AI_Pro_CLI_Project_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	}
 
 	/**
+	 * Update an existing project.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <id>
+	 * : The project post ID.
+	 *
+	 * [--title=<title>]
+	 * : New project title.
+	 *
+	 * [--status=<status>]
+	 * : New post status.
+	 * ---
+	 * options:
+	 *   - publish
+	 *   - draft
+	 * ---
+	 *
+	 * [--description=<text>]
+	 * : New project description (post_content).
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Rename a project.
+	 *     $ wp mcp-ai project update 42 --title="New Name"
+	 *
+	 *     # Change status to draft.
+	 *     $ wp mcp-ai project update 42 --status=draft
+	 *
+	 *     # Update title and description.
+	 *     $ wp mcp-ai project update 42 --title="Relaunch" --description="Phase 2 scope"
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 * @when after_wp_load
+	 */
+	public function update( $args, $assoc_args ) {
+		$this->assert_pro_loaded();
+		$this->assert_toolkit_enabled( 'enable_project_management', 'Project Management' );
+
+		$id          = isset( $args[0] ) ? absint( $args[0] ) : 0;
+		$title       = \WP_CLI\Utils\get_flag_value( $assoc_args, 'title', null );
+		$status      = \WP_CLI\Utils\get_flag_value( $assoc_args, 'status', null );
+		$description = \WP_CLI\Utils\get_flag_value( $assoc_args, 'description', null );
+
+		if ( ! $id ) {
+			WP_CLI::error( __( 'Please provide a valid project ID.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$post = get_post( $id );
+
+		if ( ! $post || 'mcp_ai_project' !== $post->post_type ) {
+			/* translators: %d: project ID */
+			WP_CLI::error( sprintf( __( 'Project %d not found.', 'mcp-ai-wpoos-pro' ), $id ) );
+		}
+
+		$update_data = array(
+			'ID' => $id,
+		);
+
+		if ( null !== $title ) {
+			$title = sanitize_text_field( $title );
+			if ( '' === $title ) {
+				WP_CLI::error( __( 'Project title cannot be empty.', 'mcp-ai-wpoos-pro' ) );
+			}
+			$update_data['post_title'] = $title;
+		}
+
+		if ( null !== $status ) {
+			$status                     = sanitize_key( $status );
+			$status                     = in_array( $status, array( 'publish', 'draft' ), true ) ? $status : 'publish';
+			$update_data['post_status'] = $status;
+		}
+
+		if ( null !== $description ) {
+			$update_data['post_content'] = sanitize_textarea_field( $description );
+		}
+
+		if ( 1 === count( $update_data ) ) {
+			WP_CLI::warning( __( 'No fields provided to update.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$result = wp_update_post( $update_data, true );
+
+		if ( is_wp_error( $result ) ) {
+			WP_CLI::error( $result->get_error_message() );
+		}
+
+		if ( 0 === $result ) {
+			/* translators: %d: project ID */
+			WP_CLI::error( sprintf( __( 'Failed to update project %d.', 'mcp-ai-wpoos-pro' ), $id ) );
+		}
+
+		/* translators: 1: updated post title, 2: project ID */
+		WP_CLI::success( sprintf( __( 'Updated project "%1$s" (ID: %2$d).', 'mcp-ai-wpoos-pro' ), get_the_title( $result ), $result ) );
+	}
+
+	/**
 	 * Delete a project.
 	 *
 	 * ## OPTIONS
@@ -315,9 +414,9 @@ class WP_MCP_AI_Pro_CLI_Project_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		if ( ! $yes ) {
 			$action = $force
 				? /* translators: 1: project title, 2: project ID */
-				  sprintf( __( 'Permanently delete project "%1$s" (ID %2$d)?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id )
+					sprintf( __( 'Permanently delete project "%1$s" (ID %2$d)?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id )
 				: /* translators: 1: project title, 2: project ID */
-				  sprintf( __( 'Move project "%1$s" (ID %2$d) to trash?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id );
+					sprintf( __( 'Move project "%1$s" (ID %2$d) to trash?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id );
 			WP_CLI::confirm( $action );
 		}
 

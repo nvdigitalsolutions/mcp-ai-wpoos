@@ -410,7 +410,10 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'outlook',
 				$sender_email,
-				array( 'display_name' => $sender_email, 'connection_id' => $connection_id )
+				array(
+					'display_name'  => $sender_email,
+					'connection_id' => $connection_id,
+				)
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -847,7 +850,7 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 		$endpoint = self::GRAPH_API_BASE . '/me/sendMail';
 
 		$payload = array(
-			'message' => array(
+			'message'         => array(
 				'subject'      => $reply_subject,
 				'body'         => array(
 					'contentType' => 'Text',

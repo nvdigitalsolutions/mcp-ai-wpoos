@@ -142,7 +142,20 @@ class WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor implements WP_MCP_AI_Tool_I
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -167,11 +180,11 @@ class WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor implements WP_MCP_AI_Tool_I
 
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
-		$total_balance   = 0.0;
-		$by_borrower     = array();
-		$by_property     = array();
-		$by_state        = array();
-		$single_loan_max = 0.0;
+		$total_balance    = 0.0;
+		$by_borrower      = array();
+		$by_property      = array();
+		$by_state         = array();
+		$single_loan_max  = 0.0;
 		$single_loan_name = '';
 
 		foreach ( $loans as $loan ) {
@@ -215,25 +228,25 @@ class WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor implements WP_MCP_AI_Tool_I
 		$check_group = function ( array $group, float $limit_pct, string $category ) use ( $total_balance, $calc, &$breaches, &$warnings ) {
 			$details = array();
 			foreach ( $group as $key => $balance ) {
-				$pct = ( $balance / $total_balance ) * 100;
+				$pct    = ( $balance / $total_balance ) * 100;
 				$status = 'ok';
 				if ( $pct > $limit_pct ) {
-					$status    = 'breach';
+					$status     = 'breach';
 					$breaches[] = array(
-						'category'  => $category,
-						'name'      => $key,
-						'current'   => round( $pct, 2 ) . '%',
-						'limit'     => $limit_pct . '%',
-						'excess'    => $calc::format_currency( $balance - ( $total_balance * $limit_pct / 100 ) ),
+						'category' => $category,
+						'name'     => $key,
+						'current'  => round( $pct, 2 ) . '%',
+						'limit'    => $limit_pct . '%',
+						'excess'   => $calc::format_currency( $balance - ( $total_balance * $limit_pct / 100 ) ),
 					);
 				} elseif ( $pct >= $limit_pct * 0.90 ) {
 					$status     = 'warning';
 					$warnings[] = array(
-						'category'  => $category,
-						'name'      => $key,
-						'current'   => round( $pct, 2 ) . '%',
-						'limit'     => $limit_pct . '%',
-						'headroom'  => $calc::format_currency( ( $total_balance * $limit_pct / 100 ) - $balance ),
+						'category' => $category,
+						'name'     => $key,
+						'current'  => round( $pct, 2 ) . '%',
+						'limit'    => $limit_pct . '%',
+						'headroom' => $calc::format_currency( ( $total_balance * $limit_pct / 100 ) - $balance ),
 					);
 				}
 				$details[ $key ] = array(
@@ -284,25 +297,25 @@ class WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor implements WP_MCP_AI_Tool_I
 				strtoupper( $overall_status )
 			),
 			'data'       => array(
-				'overall_status'          => $overall_status,
-				'total_portfolio_balance' => $calc::format_currency( $total_balance ),
-				'num_loans'               => count( $loans ),
-				'limits_applied'          => array(
+				'overall_status'            => $overall_status,
+				'total_portfolio_balance'   => $calc::format_currency( $total_balance ),
+				'num_loans'                 => count( $loans ),
+				'limits_applied'            => array(
 					'max_single_borrower_pct' => $max_borrower_pct . '%',
 					'max_property_type_pct'   => $max_proptype_pct . '%',
 					'max_geographic_pct'      => $max_geo_pct . '%',
 					'max_single_loan_pct'     => $max_loan_pct . '%',
 				),
-				'borrower_concentrations'  => $borrower_detail,
-				'property_concentrations'  => $property_detail,
+				'borrower_concentrations'   => $borrower_detail,
+				'property_concentrations'   => $property_detail,
 				'geographic_concentrations' => $geo_detail,
-				'largest_single_loan'      => array(
+				'largest_single_loan'       => array(
 					'name'       => $single_loan_name,
 					'balance'    => $calc::format_currency( $single_loan_max ),
 					'percentage' => round( $single_loan_pct, 2 ) . '%',
 				),
-				'breaches'                 => $breaches,
-				'warnings'                 => $warnings,
+				'breaches'                  => $breaches,
+				'warnings'                  => $warnings,
 			),
 			'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);

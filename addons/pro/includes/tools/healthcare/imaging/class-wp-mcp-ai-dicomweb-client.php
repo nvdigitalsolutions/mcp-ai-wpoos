@@ -65,6 +65,12 @@ class WP_MCP_AI_DICOMweb_Client {
 	/**
 	 * Persist a DICOMweb connection.
 	 *
+	 * @security Credentials (basic auth username/password and bearer tokens)
+	 *           are stored in WordPress options in plaintext. For production
+	 *           deployments, set up encryption-at-rest via
+	 *           WP_MCP_AI_Vault_Encryption_Service by hooking
+	 *           {@see wp_mcp_ai_healthcare_dicomweb_connection}.
+	 *
 	 * @param array $connection Connection settings.
 	 * @return bool
 	 */
@@ -80,6 +86,18 @@ class WP_MCP_AI_DICOMweb_Client {
 		if ( ! in_array( $clean['auth_type'], array( 'none', 'basic', 'bearer' ), true ) ) {
 			$clean['auth_type'] = 'none';
 		}
+
+		// Reject private/reserved IPs and localhost (SSRF guard).
+		$host = strtolower( wp_parse_url( $clean['base_url'], PHP_URL_HOST ) );
+		if ( ! $host || 'localhost' === $host ) {
+			return false;
+		}
+		if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			if ( ! filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				return false;
+			}
+		}
+
 		return (bool) update_option( self::OPTION_CONNECTION, $clean, false );
 	}
 
@@ -100,10 +118,12 @@ class WP_MCP_AI_DICOMweb_Client {
 			$headers['Authorization'] = 'Basic ' . base64_encode( $conn['username'] . ':' . $conn['password'] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		}
 		$args = array(
-			'headers'    => $headers,
-			'timeout'    => isset( $conn['timeout'] ) ? (int) $conn['timeout'] : 30,
-			'sslverify'  => true,
-			'user-agent' => 'NV-oOS-DICOMweb/1.0',
+			'headers'             => $headers,
+			'timeout'             => isset( $conn['timeout'] ) ? (int) $conn['timeout'] : 30,
+			'sslverify'           => true,
+			'user-agent'          => 'NV-oOS-DICOMweb/1.0',
+			'reject_unsafe_urls'  => true,
+			'redirection'         => 0,
 		);
 
 		/**
@@ -158,7 +178,7 @@ class WP_MCP_AI_DICOMweb_Client {
 		if ( '' === $conn['base_url'] ) {
 			return new WP_Error( 'wp_mcp_ai_dicomweb_missing_base', __( 'DICOMweb base URL is not configured.', 'mcp-ai-wpoos-pro' ) );
 		}
-		$url      = trailingslashit( $conn['base_url'] ) . 'studies';
+		$url = trailingslashit( $conn['base_url'] ) . 'studies';
 		if ( ! empty( $params ) ) {
 			$url = add_query_arg( array_map( 'rawurlencode', $params ), $url );
 		}
@@ -247,8 +267,8 @@ class WP_MCP_AI_DICOMweb_Client {
 		if ( '' === $conn['base_url'] ) {
 			return new WP_Error( 'wp_mcp_ai_dicomweb_missing_base', __( 'DICOMweb base URL is not configured.', 'mcp-ai-wpoos-pro' ) );
 		}
-		$url      = trailingslashit( $conn['base_url'] ) . 'studies';
-		$args     = self::build_args( $conn, 'application/dicom+json' );
+		$url                             = trailingslashit( $conn['base_url'] ) . 'studies';
+		$args                            = self::build_args( $conn, 'application/dicom+json' );
 		$args['headers']['Content-Type'] = 'application/dicom+json';
 		$args['method']                  = 'POST';
 		$args['body']                    = wp_json_encode( $instances );

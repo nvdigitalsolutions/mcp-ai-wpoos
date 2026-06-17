@@ -30,6 +30,7 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 
 		// Create a mock tool that returns a nested async response.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *
@@ -143,6 +144,7 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 
 		// Create a mock tool that returns a normal result.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *
@@ -256,6 +258,7 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 
 		// Create a mock tool that returns nested async.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *
@@ -357,6 +360,7 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 		// 2. It will merge its own metadata (like operation_name) into the transient
 		// 3. It will return the same job_id as the parent (unified flow)
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *

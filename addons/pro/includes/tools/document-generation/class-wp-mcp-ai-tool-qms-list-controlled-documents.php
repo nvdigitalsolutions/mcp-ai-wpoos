@@ -13,39 +13,99 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Tool_QMS_List_Controlled_Documents tool.
+ */
 class WP_MCP_AI_Tool_QMS_List_Controlled_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'qms_list_controlled_documents';
 	}
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'QMS: List Controlled Documents', 'mcp-ai-wpoos-pro' );
 	}
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Master document register. List controlled documents with filters for status (draft/in_review/approved/released/superseded/obsolete), doc type, owner, or review-due-by date.', 'mcp-ai-wpoos-pro' );
 	}
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'status'         => array(
+				'status'        => array(
 					'type' => 'string',
 					'enum' => array( 'draft', 'in_review', 'approved', 'released', 'superseded', 'obsolete' ),
 				),
-				'doc_type_slug'  => array( 'type' => 'string' ),
-				'owner_id'       => array( 'type' => 'integer', 'minimum' => 1 ),
-				'review_due_by'  => array( 'type' => 'string', 'pattern' => '^\d{4}-\d{2}-\d{2}$' ),
-				'limit'          => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 25 ),
+				'doc_type_slug' => array( 'type' => 'string' ),
+				'owner_id'      => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
+				'review_due_by' => array(
+					'type'    => 'string',
+					'pattern' => '^\d{4}-\d{2}-\d{2}$',
+				),
+				'limit'         => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+					'maximum' => 100,
+					'default' => 25,
+				),
 			),
 			'additionalProperties' => false,
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'read-only', 'paginated' );
 	}
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		return class_exists( 'WP_MCP_AI_QMS_Capabilities' ) && WP_MCP_AI_QMS_Capabilities::is_enabled();
 	}
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, WP_MCP_AI_QMS_Capabilities::CAP ) ) {

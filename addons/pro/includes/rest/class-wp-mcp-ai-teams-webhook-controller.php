@@ -370,7 +370,11 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'teams',
 				$inbox_contact_id,
-				array( 'display_name' => '' !== $display_name ? $display_name : $inbox_contact_id, 'connection_id' => $connection_id, 'conversation_type' => $inbox_conv_type )
+				array(
+					'display_name'      => '' !== $display_name ? $display_name : $inbox_contact_id,
+					'connection_id'     => $connection_id,
+					'conversation_type' => $inbox_conv_type,
+				)
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -459,21 +463,21 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$assistant_id      = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
-		$message_text      = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
-		$user_id           = isset( $args['user_id'] ) ? (string) $args['user_id'] : '';
-		$channel_id        = isset( $args['channel_id'] ) ? (string) $args['channel_id'] : '';
-		$team_id           = isset( $args['team_id'] ) ? (string) $args['team_id'] : '';
-		$service_url       = isset( $args['service_url'] ) ? esc_url_raw( (string) $args['service_url'] ) : '';
-		$conversation      = isset( $args['conversation'] ) && is_array( $args['conversation'] ) ? $args['conversation'] : array();
-		$connection_id     = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		$assistant_id  = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
+		$message_text  = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
+		$user_id       = isset( $args['user_id'] ) ? (string) $args['user_id'] : '';
+		$channel_id    = isset( $args['channel_id'] ) ? (string) $args['channel_id'] : '';
+		$team_id       = isset( $args['team_id'] ) ? (string) $args['team_id'] : '';
+		$service_url   = isset( $args['service_url'] ) ? esc_url_raw( (string) $args['service_url'] ) : '';
+		$conversation  = isset( $args['conversation'] ) && is_array( $args['conversation'] ) ? $args['conversation'] : array();
+		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
 		// conversation_type: 'channel', 'groupChat', or 'personal'.
 		$conversation_type = isset( $args['conversation_type'] ) ? sanitize_key( $args['conversation_type'] ) : 'channel';
 		// activity_id / reply_to_id: used for thread-aware replies in channels.
-		$activity_id       = isset( $args['activity_id'] ) ? sanitize_text_field( $args['activity_id'] ) : '';
-		$reply_to_id       = isset( $args['reply_to_id'] ) ? sanitize_text_field( $args['reply_to_id'] ) : '';
+		$activity_id = isset( $args['activity_id'] ) ? sanitize_text_field( $args['activity_id'] ) : '';
+		$reply_to_id = isset( $args['reply_to_id'] ) ? sanitize_text_field( $args['reply_to_id'] ) : '';
 		// retry_count incremented each time the job is rescheduled due to a 429.
-		$retry_count       = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
+		$retry_count = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
 
 		if ( ! $assistant_id || '' === $message_text || '' === $connection_id ) {
 			return;
@@ -511,7 +515,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		$is_dm            = ( 'personal' === $conversation_type || 'groupChat' === $conversation_type );
 		$inbox_contact_id = ( 'channel' === $conversation_type ) ? $channel_id : $user_id;
 		$inbox_conv_type  = ( 'channel' === $conversation_type ) ? 'channel' : 'dm';
-		$thread_id = '' !== $reply_to_id ? $reply_to_id : $activity_id;
+		$thread_id        = '' !== $reply_to_id ? $reply_to_id : $activity_id;
 
 		$history_key = $this->get_conversation_history_key(
 			$user_id,
@@ -808,7 +812,14 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$ms_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'teams', $inbox_contact_id, array( 'connection_id' => $connection_id, 'conversation_type' => $inbox_conv_type ) );
+			$ms_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'teams',
+				$inbox_contact_id,
+				array(
+					'connection_id'     => $connection_id,
+					'conversation_type' => $inbox_conv_type,
+				)
+			);
 			if ( $ms_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $ms_contact_row_id );
 			}
@@ -843,7 +854,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// 1. Extract fenced code blocks and replace with placeholders so that
-		//    content inside them is not processed by subsequent regex rules.
+		// content inside them is not processed by subsequent regex rules.
 		$code_blocks            = array();
 		$code_block_placeholder = "\x07TMSCB:";
 		$cb_index               = 0;
@@ -851,9 +862,9 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		$text = preg_replace_callback(
 			'/```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/s',
 			function ( $m ) use ( &$code_blocks, &$cb_index, $code_block_placeholder ) {
-				$lang              = '' !== $m[1] ? ' class="language-' . esc_attr( $m[1] ) . '"' : '';
-				$key               = $code_block_placeholder . $cb_index . "\x07";
-				$code_blocks[$key] = '<pre><code' . $lang . '>' . esc_html( rtrim( $m[2], "\n" ) ) . '</code></pre>';
+				$lang                = '' !== $m[1] ? ' class="language-' . esc_attr( $m[1] ) . '"' : '';
+				$key                 = $code_block_placeholder . $cb_index . "\x07";
+				$code_blocks[ $key ] = '<pre><code' . $lang . '>' . esc_html( rtrim( $m[2], "\n" ) ) . '</code></pre>';
 				++$cb_index;
 				return $key;
 			},
@@ -868,8 +879,8 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		$text = preg_replace_callback(
 			'/`([^`\n]+?)`/',
 			function ( $m ) use ( &$inline_codes, &$ic_index, $inline_code_placeholder ) {
-				$key                = $inline_code_placeholder . $ic_index . "\x07";
-				$inline_codes[$key] = '<code>' . esc_html( $m[1] ) . '</code>';
+				$key                  = $inline_code_placeholder . $ic_index . "\x07";
+				$inline_codes[ $key ] = '<code>' . esc_html( $m[1] ) . '</code>';
 				++$ic_index;
 				return $key;
 			},
@@ -877,7 +888,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		);
 
 		// 3. Preserve existing HTML anchor tags — AI responses sometimes emit
-		//    raw <a href="…">…</a> which Teams renders correctly.
+		// raw <a href="…">…</a> which Teams renders correctly.
 		$anchors            = array();
 		$anchor_placeholder = "\x07TMSAN:";
 		$an_index           = 0;
@@ -890,8 +901,8 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 				if ( '' === $url ) {
 					return $body;
 				}
-				$key           = $anchor_placeholder . $an_index . "\x07";
-				$anchors[$key] = '<a href="' . $url . '">' . esc_html( $body ) . '</a>';
+				$key             = $anchor_placeholder . $an_index . "\x07";
+				$anchors[ $key ] = '<a href="' . $url . '">' . esc_html( $body ) . '</a>';
 				++$an_index;
 				return $key;
 			},
@@ -903,7 +914,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		$text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 
 		// 5. Headings (# … through ######) → <strong> bold line.
-		//    Teams renders headings inconsistently; bold is the safest equivalent.
+		// Teams renders headings inconsistently; bold is the safest equivalent.
 		$text = preg_replace( '/^#{1,6}\s+(.+)$/m', '<strong>$1</strong>', $text );
 
 		// 6. Bold: **text** or __text__ → <strong>text</strong>.
@@ -911,7 +922,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		$text = preg_replace( '/__(.+?)__/s', '<strong>$1</strong>', $text );
 
 		// 7. Italic: *text* → <em>text</em>.
-		//    Use lookbehind/lookahead to avoid matching <strong> tokens.
+		// Use lookbehind/lookahead to avoid matching <strong> tokens.
 		$text = preg_replace( '/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '<em>$1</em>', $text );
 
 		// 8. Underscored italic: _text_ → <em>text</em>.
@@ -1558,28 +1569,28 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		$new_expires_in    = isset( $decoded['expires_in'] ) ? absint( $decoded['expires_in'] ) : 3600;
 
 		// Persist the refreshed token back to the connection.
-		$update = array(
-			'id'              => $connection['id'],
-			'name'            => $connection['name'],
-			'url'             => $connection['url'],
-			'connection_type' => 'microsoft_teams',
-			'auth_type'       => 'none',
-			'client_id'       => $client_id,
+		$update                              = array(
+			'id'                     => $connection['id'],
+			'name'                   => $connection['name'],
+			'url'                    => $connection['url'],
+			'connection_type'        => 'microsoft_teams',
+			'auth_type'              => 'none',
+			'client_id'              => $client_id,
 			// Empty string + _client_secret_encrypted flag tells save_connection to
 			// preserve the existing encrypted client_secret without re-encrypting it.
-			'client_secret'   => '',
-			'token'           => $new_access_token,
-			'refresh_token'   => $new_refresh_token,
-			'token_expiry'    => time() + $new_expires_in,
-			'tenant_id'       => isset( $connection['tenant_id'] ) ? $connection['tenant_id'] : '',
-			'app_id'          => isset( $connection['app_id'] ) ? $connection['app_id'] : '',
+			'client_secret'          => '',
+			'token'                  => $new_access_token,
+			'refresh_token'          => $new_refresh_token,
+			'token_expiry'           => time() + $new_expires_in,
+			'tenant_id'              => isset( $connection['tenant_id'] ) ? $connection['tenant_id'] : '',
+			'app_id'                 => isset( $connection['app_id'] ) ? $connection['app_id'] : '',
 			// Empty string + _signing_secret_encrypted flag preserves the existing encrypted signing_secret.
-			'signing_secret'  => '',
-			'require_mention' => ! empty( $connection['require_mention'] ),
-			'enabled'         => $connection['enabled'],
+			'signing_secret'         => '',
+			'require_mention'        => ! empty( $connection['require_mention'] ),
+			'enabled'                => $connection['enabled'],
 			'assigned_assistant_ids' => isset( $connection['assigned_assistant_ids'] ) ? $connection['assigned_assistant_ids'] : array(),
 		);
-		$update['_client_secret_encrypted'] = true;
+		$update['_client_secret_encrypted']  = true;
 		$update['_signing_secret_encrypted'] = true;
 
 		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update );

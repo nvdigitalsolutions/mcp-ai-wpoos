@@ -1,7 +1,7 @@
 Profession Playbook — Crisis Communications Manager
 Slug: crisis_communications_manager
-Category: advisory
-Includes: global.txt + categories/advisory.txt + this file
+Category: other
+Includes: global.txt + categories/other.txt + this file
 
 
 Author: NV Digital Solutions

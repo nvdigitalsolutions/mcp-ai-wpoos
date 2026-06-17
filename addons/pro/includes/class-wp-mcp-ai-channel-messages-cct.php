@@ -125,7 +125,7 @@ class WP_MCP_AI_Channel_Messages_CCT {
 	 * messages are never silently dropped. When JetEngine IS available, the
 	 * item_handler is used so that JetEngine indexing stays in sync.
 	 *
-	 * @param array $data {
+	 * @param array $data { // phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Nested param structure.
 	 *   @type string $channel          Platform slug, e.g. 'whatsapp'.
 	 *   @type string $channel_contact_id  Platform-side contact ID.
 	 *   @type string $contact_name     Display name of the contact.
@@ -167,27 +167,43 @@ class WP_MCP_AI_Channel_Messages_CCT {
 		// Store Unix timestamp as integer.
 		$row['message_timestamp'] = isset( $data['timestamp'] ) ? absint( $data['timestamp'] ) : time();
 
+		$message_id = false;
+
 		if ( $handler && method_exists( $handler, 'create_item' ) ) {
-			$result = $handler->create_item( $row );
-			return is_numeric( $result ) ? (int) $result : false;
+			$result     = $handler->create_item( $row );
+			$message_id = is_numeric( $result ) ? (int) $result : false;
 		}
 
 		// Fallback: direct DB insert when JetEngine is not available but table exists.
-		if ( self::table_exists() ) {
+		if ( ! $message_id && self::table_exists() ) {
 			global $wpdb;
 			$table = self::get_table_name();
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->insert( $table, $row );
-			return $wpdb->insert_id ? $wpdb->insert_id : false;
+			$message_id = $wpdb->insert_id ? (int) $wpdb->insert_id : false;
 		}
 
 		// Final fallback: use the CPT store when neither JetEngine nor the table
 		// is available (e.g. first run without JetEngine installed).
-		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
-			return WP_MCP_AI_Channel_Messages_CPT::insert( $data );
+		if ( ! $message_id && class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
+			$message_id = WP_MCP_AI_Channel_Messages_CPT::insert( $data );
 		}
 
-		return false;
+		// Fire the message-received hook so CRM and other toolkits can react.
+		if ( $message_id && 'inbound' === $row['direction'] ) {
+			do_action(
+				'wp_mcp_ai_chat_channel_message_received',
+				$message_id,
+				$row['channel'],
+				$row['channel_contact_id'],
+				$row['contact_name'],
+				$row['content'],
+				$row['message_type'],
+				$row['connection_id']
+			);
+		}
+
+		return $message_id;
 	}
 
 	/**
@@ -230,7 +246,7 @@ class WP_MCP_AI_Channel_Messages_CCT {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				"SELECT direction, content FROM {$table}
+				"SELECT direction, content FROM `{$table}`
 				 WHERE channel = %s
 				   AND channel_contact_id = %s
 				   AND connection_id = %s
@@ -413,13 +429,31 @@ class WP_MCP_AI_Channel_Messages_CCT {
 			'rest_post_access'    => 'edit_posts',
 			'rest_delete_access'  => 'edit_posts',
 			'admin_columns'       => array(
-				'_ID'                => array( 'enabled' => true, 'prefix' => '#', 'is_sortable' => true, 'is_num' => true ),
-				'channel'            => array( 'enabled' => true, 'is_sortable' => true ),
+				'_ID'                => array(
+					'enabled'     => true,
+					'prefix'      => '#',
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'channel'            => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
 				'channel_contact_id' => array( 'enabled' => true ),
-				'direction'          => array( 'enabled' => true, 'is_sortable' => true ),
+				'direction'          => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
 				'content'            => array( 'enabled' => true ),
-				'message_timestamp'  => array( 'enabled' => true, 'is_sortable' => true, 'is_num' => true ),
-				'cct_created'        => array( 'enabled' => true, 'is_sortable' => true ),
+				'message_timestamp'  => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'cct_created'        => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
 			),
 		);
 	}
@@ -442,15 +476,42 @@ class WP_MCP_AI_Channel_Messages_CCT {
 				'width'       => '100%',
 				'default_val' => 'whatsapp',
 				'options'     => array(
-					array( 'key' => 'whatsapp', 'value' => 'WhatsApp' ),
-					array( 'key' => 'telegram', 'value' => 'Telegram' ),
-					array( 'key' => 'slack', 'value' => 'Slack' ),
-					array( 'key' => 'discord', 'value' => 'Discord' ),
-					array( 'key' => 'teams', 'value' => 'Microsoft Teams' ),
-					array( 'key' => 'messenger', 'value' => 'Facebook Messenger' ),
-					array( 'key' => 'google_chat', 'value' => 'Google Chat' ),
-					array( 'key' => 'twitter', 'value' => 'Twitter/X' ),
-					array( 'key' => 'webchat', 'value' => 'WebChat' ),
+					array(
+						'key'   => 'whatsapp',
+						'value' => 'WhatsApp',
+					),
+					array(
+						'key'   => 'telegram',
+						'value' => 'Telegram',
+					),
+					array(
+						'key'   => 'slack',
+						'value' => 'Slack',
+					),
+					array(
+						'key'   => 'discord',
+						'value' => 'Discord',
+					),
+					array(
+						'key'   => 'teams',
+						'value' => 'Microsoft Teams',
+					),
+					array(
+						'key'   => 'messenger',
+						'value' => 'Facebook Messenger',
+					),
+					array(
+						'key'   => 'google_chat',
+						'value' => 'Google Chat',
+					),
+					array(
+						'key'   => 'twitter',
+						'value' => 'Twitter/X',
+					),
+					array(
+						'key'   => 'webchat',
+						'value' => 'WebChat',
+					),
 				),
 				'description' => __( 'Chat platform', 'mcp-ai-wpoos-pro' ),
 			),
@@ -483,8 +544,14 @@ class WP_MCP_AI_Channel_Messages_CCT {
 				'width'       => '100%',
 				'default_val' => 'inbound',
 				'options'     => array(
-					array( 'key' => 'inbound', 'value' => __( 'Inbound', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'outbound', 'value' => __( 'Outbound', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'inbound',
+						'value' => __( 'Inbound', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'outbound',
+						'value' => __( 'Outbound', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 				'description' => __( 'Whether this message was received or sent', 'mcp-ai-wpoos-pro' ),
 			),
@@ -507,14 +574,38 @@ class WP_MCP_AI_Channel_Messages_CCT {
 				'width'       => '100%',
 				'default_val' => 'text',
 				'options'     => array(
-					array( 'key' => 'text', 'value' => __( 'Text', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'image', 'value' => __( 'Image', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'video', 'value' => __( 'Video', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'audio', 'value' => __( 'Audio', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'document', 'value' => __( 'Document', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'interactive', 'value' => __( 'Interactive', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'location', 'value' => __( 'Location', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'other', 'value' => __( 'Other', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'text',
+						'value' => __( 'Text', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'image',
+						'value' => __( 'Image', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'video',
+						'value' => __( 'Video', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'audio',
+						'value' => __( 'Audio', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'document',
+						'value' => __( 'Document', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'interactive',
+						'value' => __( 'Interactive', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'location',
+						'value' => __( 'Location', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'other',
+						'value' => __( 'Other', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 				'description' => __( 'Type of message content', 'mcp-ai-wpoos-pro' ),
 			),
@@ -547,11 +638,26 @@ class WP_MCP_AI_Channel_Messages_CCT {
 				'width'       => '100%',
 				'default_val' => 'received',
 				'options'     => array(
-					array( 'key' => 'received', 'value' => __( 'Received', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'sent', 'value' => __( 'Sent', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'delivered', 'value' => __( 'Delivered', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'read', 'value' => __( 'Read', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'failed', 'value' => __( 'Failed', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'received',
+						'value' => __( 'Received', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'sent',
+						'value' => __( 'Sent', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'delivered',
+						'value' => __( 'Delivered', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'read',
+						'value' => __( 'Read', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'failed',
+						'value' => __( 'Failed', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 				'description' => __( 'Message delivery status', 'mcp-ai-wpoos-pro' ),
 			),
@@ -615,9 +721,18 @@ class WP_MCP_AI_Channel_Messages_CCT {
 				'width'       => '100%',
 				'default_val' => 'dm',
 				'options'     => array(
-					array( 'key' => 'dm',      'value' => __( 'Direct Message', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'channel', 'value' => __( 'Channel', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'group',   'value' => __( 'Group', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'dm',
+						'value' => __( 'Direct Message', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'channel',
+						'value' => __( 'Channel', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'group',
+						'value' => __( 'Group', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 				'description' => __( 'Whether this message is from a DM, channel, or group conversation', 'mcp-ai-wpoos-pro' ),
 			),

@@ -46,6 +46,7 @@ class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface
 			return;
 		}
 		register_post_type(
+			// phpcs:ignore WordPress.NamingConventions.ValidPostTypeSlug.TooLong
 			'mcp_ai_radiology_report',
 			array(
 				'labels'              => array(
@@ -134,6 +135,13 @@ class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -174,8 +182,8 @@ class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface
 				$study->post_title
 			);
 
-		$body  = "<h3>" . esc_html__( 'Findings', 'mcp-ai-wpoos-pro' ) . "</h3>\n" . wpautop( $findings );
-		$body .= "<h3>" . esc_html__( 'Impression', 'mcp-ai-wpoos-pro' ) . "</h3>\n" . wpautop( $impression );
+		$body  = '<h3>' . esc_html__( 'Findings', 'mcp-ai-wpoos-pro' ) . "</h3>\n" . wpautop( $findings );
+		$body .= '<h3>' . esc_html__( 'Impression', 'mcp-ai-wpoos-pro' ) . "</h3>\n" . wpautop( $impression );
 
 		$report_id = wp_insert_post(
 			array(
@@ -246,44 +254,98 @@ class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface
 	private function generate_sr_document( WP_Post $study, $findings, $impression, $reporting ) {
 		$study_uid = (string) get_post_meta( $study->ID, '_imaging_study_instance_uid', true );
 		return array(
-			'00080005' => array( 'vr' => 'CS', 'Value' => array( 'ISO_IR 192' ) ),
-			'00080016' => array( 'vr' => 'UI', 'Value' => array( '1.2.840.10008.5.1.4.1.1.88.11' ) ), // Basic Text SR.
-			'00080060' => array( 'vr' => 'CS', 'Value' => array( 'SR' ) ),
-			'00080070' => array( 'vr' => 'LO', 'Value' => array( 'NV oOS' ) ),
-			'00080090' => array( 'vr' => 'PN', 'Value' => array( array( 'Alphabetic' => $reporting ) ) ),
-			'00081030' => array( 'vr' => 'LO', 'Value' => array( $study->post_title ) ),
-			'0020000D' => array( 'vr' => 'UI', 'Value' => array( $study_uid ) ),
-			'0040A040' => array( 'vr' => 'CS', 'Value' => array( 'CONTAINER' ) ),
+			'00080005' => array(
+				'vr'    => 'CS',
+				'Value' => array( 'ISO_IR 192' ),
+			),
+			'00080016' => array(
+				'vr'    => 'UI',
+				'Value' => array( '1.2.840.10008.5.1.4.1.1.88.11' ),
+			), // Basic Text SR.
+			'00080060' => array(
+				'vr'    => 'CS',
+				'Value' => array( 'SR' ),
+			),
+			'00080070' => array(
+				'vr'    => 'LO',
+				'Value' => array( 'NV oOS' ),
+			),
+			'00080090' => array(
+				'vr'    => 'PN',
+				'Value' => array( array( 'Alphabetic' => $reporting ) ),
+			),
+			'00081030' => array(
+				'vr'    => 'LO',
+				'Value' => array( $study->post_title ),
+			),
+			'0020000D' => array(
+				'vr'    => 'UI',
+				'Value' => array( $study_uid ),
+			),
+			'0040A040' => array(
+				'vr'    => 'CS',
+				'Value' => array( 'CONTAINER' ),
+			),
 			'0040A730' => array(
 				'vr'    => 'SQ',
 				'Value' => array(
 					array(
-						'0040A040' => array( 'vr' => 'CS', 'Value' => array( 'TEXT' ) ),
+						'0040A040' => array(
+							'vr'    => 'CS',
+							'Value' => array( 'TEXT' ),
+						),
 						'0040A043' => array(
 							'vr'    => 'SQ',
 							'Value' => array(
 								array(
-									'00080100' => array( 'vr' => 'SH', 'Value' => array( '121071' ) ),
-									'00080102' => array( 'vr' => 'SH', 'Value' => array( 'DCM' ) ),
-									'00080104' => array( 'vr' => 'LO', 'Value' => array( 'Findings' ) ),
+									'00080100' => array(
+										'vr'    => 'SH',
+										'Value' => array( '121071' ),
+									),
+									'00080102' => array(
+										'vr'    => 'SH',
+										'Value' => array( 'DCM' ),
+									),
+									'00080104' => array(
+										'vr'    => 'LO',
+										'Value' => array( 'Findings' ),
+									),
 								),
 							),
 						),
-						'0040A160' => array( 'vr' => 'UT', 'Value' => array( wp_strip_all_tags( $findings ) ) ),
+						'0040A160' => array(
+							'vr'    => 'UT',
+							'Value' => array( wp_strip_all_tags( $findings ) ),
+						),
 					),
 					array(
-						'0040A040' => array( 'vr' => 'CS', 'Value' => array( 'TEXT' ) ),
+						'0040A040' => array(
+							'vr'    => 'CS',
+							'Value' => array( 'TEXT' ),
+						),
 						'0040A043' => array(
 							'vr'    => 'SQ',
 							'Value' => array(
 								array(
-									'00080100' => array( 'vr' => 'SH', 'Value' => array( '121072' ) ),
-									'00080102' => array( 'vr' => 'SH', 'Value' => array( 'DCM' ) ),
-									'00080104' => array( 'vr' => 'LO', 'Value' => array( 'Impression' ) ),
+									'00080100' => array(
+										'vr'    => 'SH',
+										'Value' => array( '121072' ),
+									),
+									'00080102' => array(
+										'vr'    => 'SH',
+										'Value' => array( 'DCM' ),
+									),
+									'00080104' => array(
+										'vr'    => 'LO',
+										'Value' => array( 'Impression' ),
+									),
 								),
 							),
 						),
-						'0040A160' => array( 'vr' => 'UT', 'Value' => array( wp_strip_all_tags( $impression ) ) ),
+						'0040A160' => array(
+							'vr'    => 'UT',
+							'Value' => array( wp_strip_all_tags( $impression ) ),
+						),
 					),
 				),
 			),

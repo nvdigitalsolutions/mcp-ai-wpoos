@@ -99,19 +99,19 @@ class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'pool_balance'              => array(
+				'pool_balance'               => array(
 					'type'        => 'number',
 					'description' => __( 'Total pool balance.', 'mcp-ai-wpoos-pro' ),
 				),
-				'wa_dscr'                   => array(
+				'wa_dscr'                    => array(
 					'type'        => 'number',
 					'description' => __( 'Weighted average DSCR of the pool.', 'mcp-ai-wpoos-pro' ),
 				),
-				'wa_ltv'                    => array(
+				'wa_ltv'                     => array(
 					'type'        => 'number',
 					'description' => __( 'Weighted average LTV as decimal (e.g. 0.65 for 65%).', 'mcp-ai-wpoos-pro' ),
 				),
-				'property_type_mix'         => array(
+				'property_type_mix'          => array(
 					'type'        => 'object',
 					'description' => __( 'Property type mix as type => percentage (decimal). E.g. {"office": 0.30, "multifamily": 0.40}.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -121,13 +121,13 @@ class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Inter
 					'minimum'     => 1,
 					'maximum'     => 10,
 				),
-				'sponsor_quality_score'     => array(
+				'sponsor_quality_score'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Sponsor quality score from 1 (weak) to 10 (institutional).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 10,
 				),
-				'loan_structural_features'  => array(
+				'loan_structural_features'   => array(
 					'type'        => 'array',
 					'description' => __( 'Array of loan structural features present (e.g. lockbox, cash_sweep, reserves, interest_only).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -147,7 +147,20 @@ class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -159,13 +172,13 @@ class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Inter
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$pool_balance = (float) ( $arguments['pool_balance'] ?? 0 );
-		$wa_dscr      = (float) ( $arguments['wa_dscr'] ?? 0 );
-		$wa_ltv       = (float) ( $arguments['wa_ltv'] ?? 0 );
-		$type_mix     = $arguments['property_type_mix'] ?? array();
-		$geo_score    = (int) ( $arguments['geographic_diversity_score'] ?? 5 );
+		$pool_balance  = (float) ( $arguments['pool_balance'] ?? 0 );
+		$wa_dscr       = (float) ( $arguments['wa_dscr'] ?? 0 );
+		$wa_ltv        = (float) ( $arguments['wa_ltv'] ?? 0 );
+		$type_mix      = $arguments['property_type_mix'] ?? array();
+		$geo_score     = (int) ( $arguments['geographic_diversity_score'] ?? 5 );
 		$sponsor_score = (int) ( $arguments['sponsor_quality_score'] ?? 5 );
-		$structural   = $arguments['loan_structural_features'] ?? array();
+		$structural    = $arguments['loan_structural_features'] ?? array();
 
 		if ( $pool_balance <= 0 ) {
 			return new WP_Error( 'invalid_input', __( 'Pool balance must be positive.', 'mcp-ai-wpoos-pro' ) );
@@ -204,9 +217,9 @@ class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Inter
 		$total_type_weight  = 0.0;
 		if ( ! empty( $type_mix ) && is_array( $type_mix ) ) {
 			foreach ( $type_mix as $type => $pct ) {
-				$type = sanitize_text_field( $type );
-				$pct  = (float) $pct;
-				$mult = self::$property_loss_multipliers[ $type ] ?? 1.0;
+				$type                = sanitize_text_field( $type );
+				$pct                 = (float) $pct;
+				$mult                = self::$property_loss_multipliers[ $type ] ?? 1.0;
 				$wa_loss_multiplier += $mult * $pct;
 				$total_type_weight  += $pct;
 			}
@@ -281,7 +294,7 @@ class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Inter
 				),
 			),
 			'property_adjustment'   => array(
-				'factor'      => $calc::format_percentage( $property_adjustment ),
+				'factor'        => $calc::format_percentage( $property_adjustment ),
 				'wa_multiplier' => round( $wa_loss_multiplier, 3 ),
 			),
 			'geographic_adjustment' => array(
@@ -300,7 +313,7 @@ class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Inter
 		);
 
 		// Pool quality assessment.
-		$quality_score = 50; // Start at midpoint.
+		$quality_score  = 50; // Start at midpoint.
 		$quality_score += min( 15, max( -15, ( $wa_dscr - 1.25 ) * 30 ) );
 		$quality_score += min( 15, max( -15, ( 0.70 - $wa_ltv ) * 50 ) );
 		$quality_score += ( $geo_score - 5 ) * 2;
@@ -325,20 +338,20 @@ class WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer implements WP_MCP_AI_Tool_Inter
 		}
 
 		$pool_quality = array(
-			'score'       => round( $quality_score, 1 ),
-			'grade'       => $quality_grade,
-			'assessment'  => $quality_label,
+			'score'      => round( $quality_score, 1 ),
+			'grade'      => $quality_grade,
+			'assessment' => $quality_label,
 		);
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: 1: quality grade, 2: AAA subordination */
 				__( 'Rating analysis complete. Pool grade: %1$s. Est. AAA subordination: %2$s.', 'mcp-ai-wpoos-pro' ),
 				$quality_grade,
 				$subordination_levels[0]['adjusted_subordination']
 			),
-			'data'       => array(
+			'data'    => array(
 				'subordination_levels' => $subordination_levels,
 				'adjustment_details'   => $adjustment_details,
 				'pool_quality'         => $pool_quality,

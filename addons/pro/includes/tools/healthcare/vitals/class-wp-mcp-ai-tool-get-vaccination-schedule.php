@@ -102,6 +102,13 @@ class WP_MCP_AI_Tool_Get_Vaccination_Schedule implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -113,7 +120,7 @@ class WP_MCP_AI_Tool_Get_Vaccination_Schedule implements WP_MCP_AI_Tool_Interfac
 			return new WP_Error( 'wp_mcp_ai_unavailable', __( 'Vaccination schedule registry not loaded.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$species = isset( $arguments['species'] ) ? sanitize_key( $arguments['species'] ) : 'human';
+		$species  = isset( $arguments['species'] ) ? sanitize_key( $arguments['species'] ) : 'human';
 		$age_days = null;
 		if ( isset( $arguments['age_days'] ) && '' !== $arguments['age_days'] ) {
 			$age_days = max( 0, (int) $arguments['age_days'] );
@@ -143,16 +150,16 @@ class WP_MCP_AI_Tool_Get_Vaccination_Schedule implements WP_MCP_AI_Tool_Interfac
 		$evaluated = WP_MCP_AI_Healthcare_Vaccination_Schedules::evaluate( $pack, $age_days, $given_codes );
 
 		return array(
-			'success'      => true,
-			'pack_slug'    => $pack_slug,
-			'pack_name'    => isset( $pack['name'] ) ? $pack['name'] : '',
-			'pack_source'  => isset( $pack['source'] ) ? $pack['source'] : '',
-			'species'      => $species,
-			'age_days'     => $age_days,
-			'due'          => $evaluated['due'],
-			'overdue'      => $evaluated['overdue'],
-			'upcoming'     => $evaluated['upcoming'],
-			'given'        => $evaluated['given'],
+			'success'     => true,
+			'pack_slug'   => $pack_slug,
+			'pack_name'   => isset( $pack['name'] ) ? $pack['name'] : '',
+			'pack_source' => isset( $pack['source'] ) ? $pack['source'] : '',
+			'species'     => $species,
+			'age_days'    => $age_days,
+			'due'         => $evaluated['due'],
+			'overdue'     => $evaluated['overdue'],
+			'upcoming'    => $evaluated['upcoming'],
+			'given'       => $evaluated['given'],
 		);
 	}
 

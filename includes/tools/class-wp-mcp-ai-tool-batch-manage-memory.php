@@ -143,6 +143,13 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -152,16 +159,16 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['action'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Action is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Action is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $arguments['agent_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent ID is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent ID is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -190,9 +197,9 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 				return $this->manage_tags( $agent_id, $action, $arguments, $dry_run );
 
 			default:
-				return array(
-					'success' => false,
-					'message' => __( 'Invalid action.', 'mcp-ai-wpoos' ),
+				return new WP_Error(
+					'wp_mcp_ai_error',
+					__( 'Invalid action.', 'mcp-ai-wpoos' )
 				);
 		}
 	}
@@ -209,16 +216,16 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 		$context_ids = $this->get_context_ids( $agent_id, $arguments );
 
 		if ( empty( $context_ids ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No contexts found matching the criteria.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'No contexts found matching the criteria.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $arguments['updates'] ) || ! is_array( $arguments['updates'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Updates object is required for bulk_update action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Updates object is required for bulk_update action.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -321,9 +328,9 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 		$context_ids = $this->get_context_ids( $agent_id, $arguments );
 
 		if ( empty( $context_ids ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No contexts found matching the criteria.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'No contexts found matching the criteria.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -412,18 +419,18 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	private function import_memories( $agent_id, $arguments, $dry_run ) {
 		if ( empty( $arguments['export_data'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Export data is required for import action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Export data is required for import action.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		$import_data = json_decode( $arguments['export_data'], true );
 
 		if ( ! $import_data || ! isset( $import_data['contexts'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Invalid export data format.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Invalid export data format.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -484,16 +491,16 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 		$context_ids = $this->get_context_ids( $agent_id, $arguments );
 
 		if ( empty( $context_ids ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No contexts found matching the criteria.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'No contexts found matching the criteria.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $arguments['tags'] ) || ! is_array( $arguments['tags'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Tags array is required for tag operations.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Tags array is required for tag operations.', 'mcp-ai-wpoos' )
 			);
 		}
 

@@ -25,7 +25,7 @@ class Test_Healthcare_Engine extends WP_UnitTestCase {
 	}
 
 	/**
-	 * kg <-> lb round trip.
+	 * Kg <-> lb round trip.
 	 */
 	public function test_kg_lb_roundtrip() {
 		$kg   = 70.0;
@@ -36,7 +36,7 @@ class Test_Healthcare_Engine extends WP_UnitTestCase {
 	}
 
 	/**
-	 * cm <-> in round trip.
+	 * Cm <-> in round trip.
 	 */
 	public function test_cm_in_roundtrip() {
 		$cm   = 175.0;

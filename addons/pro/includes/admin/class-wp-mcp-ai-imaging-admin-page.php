@@ -103,7 +103,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 	/**
 	 * Pinned esm.sh CDN URL for @cornerstonejs/dicom-image-loader.
 	 *
-	 * dcmjs (a transitive dependency of the loader) depends on xmlbuilder2.
+	 * Dcmjs (a transitive dependency of the loader) depends on xmlbuilder2.
 	 * xmlbuilder2 is listed as `?external=` on the CDN import so esm.sh emits
 	 * it as a bare specifier rather than bundling its es2022 build (which does
 	 * not expose the `create` named export correctly).  The importmap entry
@@ -178,18 +178,18 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		if ( function_exists( 'nvoos_cornerstone3d_is_available' ) && nvoos_cornerstone3d_is_available() ) {
 			$base = nvoos_cornerstone3d_get_url();
 			return array(
-				'core'                  => esc_url( $base . 'cornerstone-core.esm.js' ),
-				'tools'                 => esc_url( $base . 'cornerstone-tools.esm.js' ),
-				'dicomLoader'           => esc_url( $base . 'cornerstone-dicom-loader.esm.js' ),
-				'importCornerstone'     => esc_url( $base . 'cornerstone-core.esm.js' ),
-				'importDicomParser'     => esc_url( $base . 'dicom-parser.esm.js' ),
-				'importXmlbuilder2'     => esc_url( $base . 'xmlbuilder2.esm.js' ),
-				'source'                => 'addon',
+				'core'              => esc_url( $base . 'cornerstone-core.esm.js' ),
+				'tools'             => esc_url( $base . 'cornerstone-tools.esm.js' ),
+				'dicomLoader'       => esc_url( $base . 'cornerstone-dicom-loader.esm.js' ),
+				'importCornerstone' => esc_url( $base . 'cornerstone-core.esm.js' ),
+				'importDicomParser' => esc_url( $base . 'dicom-parser.esm.js' ),
+				'importXmlbuilder2' => esc_url( $base . 'xmlbuilder2.esm.js' ),
+				'source'            => 'addon',
 			);
 		}
 
 		// Check pro addon's own vendor directory.
-		$pro_base = WP_MCP_AI_PRO_PATH . self::VENDOR_CORNERSTONE_DIR . '/';
+		$pro_base       = WP_MCP_AI_PRO_PATH . self::VENDOR_CORNERSTONE_DIR . '/';
 		$has_pro_vendor = file_exists( $pro_base . 'cornerstone-core.esm.js' )
 			&& file_exists( $pro_base . 'cornerstone-tools.esm.js' )
 			&& file_exists( $pro_base . 'cornerstone-dicom-loader.esm.js' )
@@ -199,31 +199,31 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		if ( $has_pro_vendor ) {
 			$base = WP_MCP_AI_PRO_URL . self::VENDOR_CORNERSTONE_DIR . '/';
 			return array(
-				'core'                  => esc_url( $base . 'cornerstone-core.esm.js' ),
-				'tools'                 => esc_url( $base . 'cornerstone-tools.esm.js' ),
-				'dicomLoader'           => esc_url( $base . 'cornerstone-dicom-loader.esm.js' ),
-				'importCornerstone'     => esc_url( $base . 'cornerstone-core.esm.js' ),
-				'importDicomParser'     => esc_url( $base . 'dicom-parser.esm.js' ),
-				'importXmlbuilder2'     => esc_url( $base . 'xmlbuilder2.esm.js' ),
-				'source'                => 'vendor',
+				'core'              => esc_url( $base . 'cornerstone-core.esm.js' ),
+				'tools'             => esc_url( $base . 'cornerstone-tools.esm.js' ),
+				'dicomLoader'       => esc_url( $base . 'cornerstone-dicom-loader.esm.js' ),
+				'importCornerstone' => esc_url( $base . 'cornerstone-core.esm.js' ),
+				'importDicomParser' => esc_url( $base . 'dicom-parser.esm.js' ),
+				'importXmlbuilder2' => esc_url( $base . 'xmlbuilder2.esm.js' ),
+				'source'            => 'vendor',
 			);
 		}
 
 		// CDN fallback — same URLs that were hard-coded before vendoring support.
 		return array(
-			'core'                  => self::CORNERSTONE_CORE_CDN,
-			'tools'                 => self::CORNERSTONE_TOOLS_CDN . '?external=@cornerstonejs/core',
+			'core'              => self::CORNERSTONE_CORE_CDN,
+			'tools'             => self::CORNERSTONE_TOOLS_CDN . '?external=@cornerstonejs/core',
 			// Only @cornerstonejs/core is externalised so that tools and
 			// dicom-image-loader share a single core instance via the importmap.
 			// dicom-parser and xmlbuilder2 are CommonJS internally and cannot be
 			// externalised in an ESM bundle without esbuild emitting a runtime
 			// `require("dicom-parser")` shim that throws "Dynamic require ... is
 			// not supported".  Letting esm.sh inline them keeps the bundle ESM-pure.
-			'dicomLoader'           => self::CORNERSTONE_DICOM_LOADER_CDN . '?external=@cornerstonejs/core',
-			'importCornerstone'     => self::CORNERSTONE_CORE_CDN,
-			'importDicomParser'     => self::DICOM_PARSER_CDN,
-			'importXmlbuilder2'     => self::XMLBUILDER2_CDN,
-			'source'                => 'cdn',
+			'dicomLoader'       => self::CORNERSTONE_DICOM_LOADER_CDN . '?external=@cornerstonejs/core',
+			'importCornerstone' => self::CORNERSTONE_CORE_CDN,
+			'importDicomParser' => self::DICOM_PARSER_CDN,
+			'importXmlbuilder2' => self::XMLBUILDER2_CDN,
+			'source'            => 'cdn',
 		);
 	}
 
@@ -304,10 +304,10 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				'interpretUrl' => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/interpret' ) ),
 				'activeTab'    => $active_tab_for_js,
 				'cornerstone'  => array(
-					'coreUrl'       => esc_url_raw( $cs_urls['core'] ),
-					'toolsUrl'      => esc_url_raw( $cs_urls['tools'] ),
+					'coreUrl'        => esc_url_raw( $cs_urls['core'] ),
+					'toolsUrl'       => esc_url_raw( $cs_urls['tools'] ),
 					'dicomLoaderUrl' => esc_url_raw( $cs_urls['dicomLoader'] ),
-					'source'        => $cs_urls['source'],
+					'source'         => $cs_urls['source'],
 				),
 				'i18n'         => array(
 					'loadingStudy'         => __( 'Loading study…', 'mcp-ai-wpoos-pro' ),
@@ -808,15 +808,15 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		$all_audit_entries = class_exists( 'WP_MCP_AI_Imaging_Audit_Log' )
 			? get_option( WP_MCP_AI_Imaging_Audit_Log::OPTION_KEY, array() )
 			: array();
-		$audit_total   = count( $all_audit_entries );
-		$audit_entries = array_slice( array_reverse( array_values( $all_audit_entries ) ), 0, 10 );
+		$audit_total       = count( $all_audit_entries );
+		$audit_entries     = array_slice( array_reverse( array_values( $all_audit_entries ) ), 0, 10 );
 
 		$classes_to_check = array(
-			'WP_MCP_AI_Imaging_Admin_Page'       => __( 'Admin Page', 'mcp-ai-wpoos-pro' ),
-			'WP_MCP_AI_Imaging_REST_Controller'  => __( 'REST Controller', 'mcp-ai-wpoos-pro' ),
-			'WP_MCP_AI_Imaging_Study_CPT'        => __( 'Study CPT', 'mcp-ai-wpoos-pro' ),
-			'WP_MCP_AI_Imaging_Audit_Log'        => __( 'Audit Log', 'mcp-ai-wpoos-pro' ),
-			'WP_MCP_AI_Imaging_Capabilities'     => __( 'Capabilities Helper', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Admin_Page'      => __( 'Admin Page', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_REST_Controller' => __( 'REST Controller', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Study_CPT'       => __( 'Study CPT', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Audit_Log'       => __( 'Audit Log', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Capabilities'    => __( 'Capabilities Helper', 'mcp-ai-wpoos-pro' ),
 		);
 
 		$caps_to_check = array(

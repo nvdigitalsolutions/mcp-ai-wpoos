@@ -21,7 +21,7 @@ const AudioForRendering_js_1 = require("./AudioForRendering.js");
 const shared_audio_tags_js_1 = require("./shared-audio-tags.js");
 const AudioRefForwardingFunction = (props, ref) => {
     var _a, _b, _c;
-    const audioContext = (0, react_1.useContext)(shared_audio_tags_js_1.SharedAudioContext);
+    const audioTagsContext = (0, react_1.useContext)(shared_audio_tags_js_1.SharedAudioTagsContext);
     const { startFrom, endAt, trimBefore, trimAfter, name, stack, pauseWhenBuffering, showInTimeline, onError: onRemotionError, ...otherProps } = props;
     const { loop, ...propsOtherThanLoop } = props;
     const { fps } = (0, use_video_config_js_1.useVideoConfig)();
@@ -66,25 +66,25 @@ const AudioRefForwardingFunction = (props, ref) => {
     });
     if (loop && durationFetched !== undefined) {
         if (!Number.isFinite(durationFetched)) {
-            return ((0, jsx_runtime_1.jsx)(exports.Html5Audio, { ...propsOtherThanLoop, ref: ref, _remotionInternalNativeLoopPassed: true }));
+            return (jsx_runtime_1.jsx(exports.Html5Audio, { ...propsOtherThanLoop, ref: ref, _remotionInternalNativeLoopPassed: true }));
         }
         const duration = durationFetched * fps;
-        return ((0, jsx_runtime_1.jsx)(index_js_1.Loop, { layout: "none", durationInFrames: (0, calculate_media_duration_js_1.calculateMediaDuration)({
+        return (jsx_runtime_1.jsx(index_js_1.Loop, { layout: "none", durationInFrames: (0, calculate_media_duration_js_1.calculateMediaDuration)({
                 trimAfter: trimAfterValue,
                 mediaDurationInFrames: duration,
                 playbackRate: (_b = props.playbackRate) !== null && _b !== void 0 ? _b : 1,
                 trimBefore: trimBeforeValue,
-            }), children: (0, jsx_runtime_1.jsx)(exports.Html5Audio, { ...propsOtherThanLoop, ref: ref, _remotionInternalNativeLoopPassed: true }) }));
+            }), children: jsx_runtime_1.jsx(exports.Html5Audio, { ...propsOtherThanLoop, ref: ref, _remotionInternalNativeLoopPassed: true }) }));
     }
     if (typeof trimBeforeValue !== 'undefined' ||
         typeof trimAfterValue !== 'undefined') {
-        return ((0, jsx_runtime_1.jsx)(Sequence_js_1.Sequence, { layout: "none", from: 0 - (trimBeforeValue !== null && trimBeforeValue !== void 0 ? trimBeforeValue : 0), showInTimeline: false, durationInFrames: trimAfterValue, name: name, children: (0, jsx_runtime_1.jsx)(exports.Html5Audio, { _remotionInternalNeedsDurationCalculation: Boolean(loop), pauseWhenBuffering: pauseWhenBuffering !== null && pauseWhenBuffering !== void 0 ? pauseWhenBuffering : false, ...otherProps, ref: ref }) }));
+        return (jsx_runtime_1.jsx(Sequence_js_1.Sequence, { layout: "none", from: 0 - (trimBeforeValue !== null && trimBeforeValue !== void 0 ? trimBeforeValue : 0), showInTimeline: false, durationInFrames: trimAfterValue, name: name, children: jsx_runtime_1.jsx(exports.Html5Audio, { _remotionInternalNeedsDurationCalculation: Boolean(loop), pauseWhenBuffering: pauseWhenBuffering !== null && pauseWhenBuffering !== void 0 ? pauseWhenBuffering : false, ...otherProps, ref: ref }) }));
     }
     (0, validate_media_props_js_1.validateMediaProps)({ playbackRate: props.playbackRate, volume: props.volume }, 'Html5Audio');
     if (environment.isRendering) {
-        return ((0, jsx_runtime_1.jsx)(AudioForRendering_js_1.AudioForRendering, { onDuration: onDuration, ...props, ref: ref, onNativeError: onError, _remotionInternalNeedsDurationCalculation: Boolean(loop) }));
+        return (jsx_runtime_1.jsx(AudioForRendering_js_1.AudioForRendering, { onDuration: onDuration, ...props, ref: ref, onNativeError: onError, _remotionInternalNeedsDurationCalculation: Boolean(loop) }));
     }
-    return ((0, jsx_runtime_1.jsx)(AudioForPreview_js_1.AudioForPreview, { _remotionInternalNativeLoopPassed: (_c = props._remotionInternalNativeLoopPassed) !== null && _c !== void 0 ? _c : false, _remotionInternalStack: stack !== null && stack !== void 0 ? stack : null, shouldPreMountAudioTags: audioContext !== null && audioContext.numberOfAudioTags > 0, ...props, ref: ref, onNativeError: onError, onDuration: onDuration, 
+    return (jsx_runtime_1.jsx(AudioForPreview_js_1.AudioForPreview, { _remotionInternalNativeLoopPassed: (_c = props._remotionInternalNativeLoopPassed) !== null && _c !== void 0 ? _c : false, _remotionInternalStack: stack !== null && stack !== void 0 ? stack : null, shouldPreMountAudioTags: audioTagsContext !== null && audioTagsContext.numberOfAudioTags > 0, ...props, ref: ref, onNativeError: onError, onDuration: onDuration, 
         // Proposal: Make this default to true in v5
         pauseWhenBuffering: pauseWhenBuffering !== null && pauseWhenBuffering !== void 0 ? pauseWhenBuffering : false, _remotionInternalNeedsDurationCalculation: Boolean(loop), showInTimeline: showInTimeline !== null && showInTimeline !== void 0 ? showInTimeline : true }));
 };

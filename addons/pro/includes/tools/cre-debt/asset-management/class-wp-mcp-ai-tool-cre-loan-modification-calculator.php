@@ -127,7 +127,20 @@ class WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator implements WP_MCP_AI_Tool_
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -170,17 +183,17 @@ class WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator implements WP_MCP_AI_Tool_
 		$original_dscr            = $calc::calculate_dscr( $noi, $original_annual_ds );
 
 		// Modified analysis.
-		$effective_rate          = ( null !== $modified_rate ) ? $modified_rate : $original_rate;
-		$modified_balance        = $original_balance - $principal_forbearance;
-		$new_term                = $remaining_months + $extended_months;
+		$effective_rate           = ( null !== $modified_rate ) ? $modified_rate : $original_rate;
+		$modified_balance         = $original_balance - $principal_forbearance;
+		$new_term                 = $remaining_months + $extended_months;
 		$modified_monthly_payment = $calc::calculate_io_payment( $modified_balance, $effective_rate );
-		$modified_annual_ds      = $modified_monthly_payment * 12;
-		$modified_dscr           = $calc::calculate_dscr( $noi, $modified_annual_ds );
+		$modified_annual_ds       = $modified_monthly_payment * 12;
+		$modified_dscr            = $calc::calculate_dscr( $noi, $modified_annual_ds );
 
 		// Modification concession.
-		$monthly_savings       = $original_monthly_payment - $modified_monthly_payment;
+		$monthly_savings         = $original_monthly_payment - $modified_monthly_payment;
 		$total_savings_over_term = $monthly_savings * $new_term;
-		$rate_concession       = $original_rate - $effective_rate;
+		$rate_concession         = $original_rate - $effective_rate;
 
 		// NPV of concession: monthly_savings * (1 - (1+r/12)^-n) / (r/12).
 		$npv_concession = 0.0;
@@ -190,34 +203,34 @@ class WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator implements WP_MCP_AI_Tool_
 		}
 
 		$data = array(
-			'original_loan'   => array(
-				'balance'        => $calc::format_currency( $original_balance ),
-				'rate'           => $calc::format_percentage( $original_rate ),
-				'term_months'    => $original_term_months,
-				'remaining'      => $remaining_months,
+			'original_loan'       => array(
+				'balance'         => $calc::format_currency( $original_balance ),
+				'rate'            => $calc::format_percentage( $original_rate ),
+				'term_months'     => $original_term_months,
+				'remaining'       => $remaining_months,
 				'monthly_payment' => $calc::format_currency( $original_monthly_payment ),
-				'annual_ds'      => $calc::format_currency( $original_annual_ds ),
-				'dscr'           => round( $original_dscr, 2 ) . 'x',
+				'annual_ds'       => $calc::format_currency( $original_annual_ds ),
+				'dscr'            => round( $original_dscr, 2 ) . 'x',
 			),
-			'modified_loan'   => array(
-				'balance'        => $calc::format_currency( $modified_balance ),
-				'rate'           => $calc::format_percentage( $effective_rate ),
-				'new_term'       => $new_term,
+			'modified_loan'       => array(
+				'balance'         => $calc::format_currency( $modified_balance ),
+				'rate'            => $calc::format_percentage( $effective_rate ),
+				'new_term'        => $new_term,
 				'monthly_payment' => $calc::format_currency( $modified_monthly_payment ),
-				'annual_ds'      => $calc::format_currency( $modified_annual_ds ),
-				'dscr'           => round( $modified_dscr, 2 ) . 'x',
+				'annual_ds'       => $calc::format_currency( $modified_annual_ds ),
+				'dscr'            => round( $modified_dscr, 2 ) . 'x',
 			),
-			'modification_terms' => array(
-				'rate_concession'        => $calc::format_percentage( $rate_concession ),
-				'term_extension_months'  => $extended_months,
-				'principal_forbearance'  => $calc::format_currency( $principal_forbearance ),
+			'modification_terms'  => array(
+				'rate_concession'       => $calc::format_percentage( $rate_concession ),
+				'term_extension_months' => $extended_months,
+				'principal_forbearance' => $calc::format_currency( $principal_forbearance ),
 			),
 			'concession_analysis' => array(
-				'monthly_savings'        => $calc::format_currency( $monthly_savings ),
+				'monthly_savings'         => $calc::format_currency( $monthly_savings ),
 				'total_savings_over_term' => $calc::format_currency( $total_savings_over_term ),
-				'npv_of_concession'      => $calc::format_currency( $npv_concession ),
+				'npv_of_concession'       => $calc::format_currency( $npv_concession ),
 			),
-			'before_after'    => array(
+			'before_after'        => array(
 				'monthly_payment_change' => $calc::format_currency( $modified_monthly_payment - $original_monthly_payment ),
 				'annual_ds_change'       => $calc::format_currency( $modified_annual_ds - $original_annual_ds ),
 				'dscr_change'            => round( $modified_dscr - $original_dscr, 2 ) . 'x',
@@ -235,13 +248,13 @@ class WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator implements WP_MCP_AI_Tool_
 			$a_note_dscr             = $calc::calculate_dscr( $noi, $a_note_payment * 12 );
 
 			$data['ab_note_split'] = array(
-				'a_note' => array(
-					'balance'        => $calc::format_currency( $a_note_balance ),
-					'pct'            => $calc::format_percentage( $a_note_pct / 100 ),
+				'a_note'                         => array(
+					'balance'         => $calc::format_currency( $a_note_balance ),
+					'pct'             => $calc::format_percentage( $a_note_pct / 100 ),
 					'monthly_payment' => $calc::format_currency( $a_note_payment ),
-					'dscr'           => round( $a_note_dscr, 2 ) . 'x',
+					'dscr'            => round( $a_note_dscr, 2 ) . 'x',
 				),
-				'b_note' => array(
+				'b_note'                         => array(
 					'balance'                 => $calc::format_currency( $b_note_balance ),
 					'pct'                     => $calc::format_percentage( ( 100 - $a_note_pct ) / 100 ),
 					'monthly_payment'         => $calc::format_currency( $b_note_payment ),

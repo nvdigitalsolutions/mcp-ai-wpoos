@@ -24,7 +24,8 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  */
 class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
-	/** @var float Annual discount rate for NPV calculations. */
+	/**
+	 * Performs the operation.
 	const DISCOUNT_RATE = 0.10;
 
 	/**
@@ -95,25 +96,25 @@ class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Inte
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'strategy'                   => array(
+							'strategy'                    => array(
 								'type'        => 'string',
 								'description' => __( 'Workout strategy type.', 'mcp-ai-wpoos-pro' ),
 								'enum'        => array( 'extension', 'modification', 'restructure', 'note_sale', 'foreclosure', 'reo_disposition' ),
 							),
-							'modified_rate'              => array(
+							'modified_rate'               => array(
 								'type'        => 'number',
 								'description' => __( 'Modified annual interest rate as decimal.', 'mcp-ai-wpoos-pro' ),
 							),
-							'extended_term_months'       => array(
+							'extended_term_months'        => array(
 								'type'        => 'integer',
 								'description' => __( 'Extended loan term in months.', 'mcp-ai-wpoos-pro' ),
 							),
-							'principal_reduction'        => array(
+							'principal_reduction'         => array(
 								'type'        => 'number',
 								'description' => __( 'Principal reduction amount. Default 0.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 0,
 							),
-							'note_sale_price_pct'        => array(
+							'note_sale_price_pct'         => array(
 								'type'        => 'number',
 								'description' => __( 'Note sale price as percentage of face (e.g. 0.65 for 65%). Default 0.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 0,
@@ -123,12 +124,12 @@ class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Inte
 								'description' => __( 'Foreclosure timeline in months. Default 18.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 18,
 							),
-							'reo_sale_price'             => array(
+							'reo_sale_price'              => array(
 								'type'        => 'number',
 								'description' => __( 'REO disposition sale price. Default 0 (uses property_value).', 'mcp-ai-wpoos-pro' ),
 								'default'     => 0,
 							),
-							'workout_costs'              => array(
+							'workout_costs'               => array(
 								'type'        => 'number',
 								'description' => __( 'Total workout-related costs (legal, advisory, etc.). Default 0.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 0,
@@ -150,7 +151,20 @@ class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -182,12 +196,12 @@ class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Inte
 		$results      = array();
 
 		foreach ( $scenarios as $scenario ) {
-			$strategy       = sanitize_text_field( $scenario['strategy'] ?? '' );
-			$workout_costs  = (float) ( $scenario['workout_costs'] ?? 0 );
-			$net_recovery   = 0.0;
+			$strategy        = sanitize_text_field( $scenario['strategy'] ?? '' );
+			$workout_costs   = (float) ( $scenario['workout_costs'] ?? 0 );
+			$net_recovery    = 0.0;
 			$timeline_months = 0;
-			$loss           = 0.0;
-			$details        = array();
+			$loss            = 0.0;
+			$details         = array();
 
 			switch ( $strategy ) {
 				case 'extension':
@@ -204,45 +218,45 @@ class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Inte
 					break;
 
 				case 'modification':
-					$modified_rate      = (float) ( $scenario['modified_rate'] ?? $current_rate );
+					$modified_rate       = (float) ( $scenario['modified_rate'] ?? $current_rate );
 					$principal_reduction = (float) ( $scenario['principal_reduction'] ?? 0 );
-					$extended_months    = absint( $scenario['extended_term_months'] ?? 12 );
-					$new_balance        = $loan_balance - $principal_reduction;
-					$modified_payment   = $new_balance * $modified_rate / 12;
-					$original_payment   = $loan_balance * $current_rate / 12;
-					$total_modified     = $modified_payment * $extended_months;
-					$net_recovery       = $total_modified + $new_balance - $workout_costs;
-					$payment_diff       = ( $original_payment - $modified_payment ) * $extended_months;
-					$loss               = $principal_reduction + $payment_diff;
-					$timeline_months    = $extended_months;
-					$details            = array(
-						'new_balance'        => $calc::format_currency( $new_balance ),
-						'modified_rate'      => $calc::format_percentage( $modified_rate ),
-						'modified_payment'   => $calc::format_currency( $modified_payment ),
-						'original_payment'   => $calc::format_currency( $original_payment ),
-						'principal_reduction' => $calc::format_currency( $principal_reduction ),
+					$extended_months     = absint( $scenario['extended_term_months'] ?? 12 );
+					$new_balance         = $loan_balance - $principal_reduction;
+					$modified_payment    = $new_balance * $modified_rate / 12;
+					$original_payment    = $loan_balance * $current_rate / 12;
+					$total_modified      = $modified_payment * $extended_months;
+					$net_recovery        = $total_modified + $new_balance - $workout_costs;
+					$payment_diff        = ( $original_payment - $modified_payment ) * $extended_months;
+					$loss                = $principal_reduction + $payment_diff;
+					$timeline_months     = $extended_months;
+					$details             = array(
+						'new_balance'          => $calc::format_currency( $new_balance ),
+						'modified_rate'        => $calc::format_percentage( $modified_rate ),
+						'modified_payment'     => $calc::format_currency( $modified_payment ),
+						'original_payment'     => $calc::format_currency( $original_payment ),
+						'principal_reduction'  => $calc::format_currency( $principal_reduction ),
 						'payment_savings_loss' => $calc::format_currency( $payment_diff ),
 					);
 					break;
 
 				case 'restructure':
-					$modified_rate      = (float) ( $scenario['modified_rate'] ?? $current_rate );
+					$modified_rate       = (float) ( $scenario['modified_rate'] ?? $current_rate );
 					$principal_reduction = (float) ( $scenario['principal_reduction'] ?? 0 );
-					$extended_months    = absint( $scenario['extended_term_months'] ?? 12 );
-					$new_balance        = $loan_balance - $principal_reduction;
-					$modified_payment   = $new_balance * $modified_rate / 12;
-					$original_payment   = $loan_balance * $current_rate / 12;
-					$total_modified     = $modified_payment * $extended_months;
-					$net_recovery       = $total_modified + $new_balance - $workout_costs;
-					$payment_diff       = ( $original_payment - $modified_payment ) * $extended_months;
-					$loss               = $principal_reduction + $payment_diff;
-					$timeline_months    = $extended_months;
-					$details            = array(
-						'new_balance'        => $calc::format_currency( $new_balance ),
-						'modified_rate'      => $calc::format_percentage( $modified_rate ),
-						'modified_payment'   => $calc::format_currency( $modified_payment ),
-						'extended_term'      => $extended_months . ' months',
-						'principal_reduction' => $calc::format_currency( $principal_reduction ),
+					$extended_months     = absint( $scenario['extended_term_months'] ?? 12 );
+					$new_balance         = $loan_balance - $principal_reduction;
+					$modified_payment    = $new_balance * $modified_rate / 12;
+					$original_payment    = $loan_balance * $current_rate / 12;
+					$total_modified      = $modified_payment * $extended_months;
+					$net_recovery        = $total_modified + $new_balance - $workout_costs;
+					$payment_diff        = ( $original_payment - $modified_payment ) * $extended_months;
+					$loss                = $principal_reduction + $payment_diff;
+					$timeline_months     = $extended_months;
+					$details             = array(
+						'new_balance'          => $calc::format_currency( $new_balance ),
+						'modified_rate'        => $calc::format_percentage( $modified_rate ),
+						'modified_payment'     => $calc::format_currency( $modified_payment ),
+						'extended_term'        => $extended_months . ' months',
+						'principal_reduction'  => $calc::format_currency( $principal_reduction ),
 						'payment_savings_loss' => $calc::format_currency( $payment_diff ),
 					);
 					break;
@@ -271,18 +285,18 @@ class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Inte
 					break;
 
 				case 'reo_disposition':
-					$fc_months         = absint( $scenario['foreclosure_timeline_months'] ?? 18 );
-					$reo_price         = (float) ( $scenario['reo_sale_price'] ?? 0 );
+					$fc_months = absint( $scenario['foreclosure_timeline_months'] ?? 18 );
+					$reo_price = (float) ( $scenario['reo_sale_price'] ?? 0 );
 					if ( $reo_price <= 0 ) {
 						$reo_price = $property_value;
 					}
-					$marketing_months  = 6;
-					$total_timeline    = $fc_months + $marketing_months;
-					$monthly_carrying  = $property_value * 0.01 / 12;
-					$total_carrying    = $monthly_carrying * $total_timeline;
-					$net_recovery      = $reo_price - $total_carrying - $workout_costs;
-					$timeline_months   = $total_timeline;
-					$details           = array(
+					$marketing_months = 6;
+					$total_timeline   = $fc_months + $marketing_months;
+					$monthly_carrying = $property_value * 0.01 / 12;
+					$total_carrying   = $monthly_carrying * $total_timeline;
+					$net_recovery     = $reo_price - $total_carrying - $workout_costs;
+					$timeline_months  = $total_timeline;
+					$details          = array(
 						'foreclosure_timeline' => $fc_months . ' months',
 						'marketing_period'     => $marketing_months . ' months',
 						'total_timeline'       => $total_timeline . ' months',
@@ -303,23 +317,26 @@ class WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler implements WP_MCP_AI_Tool_Inte
 				: $net_recovery;
 
 			$results[] = array(
-				'strategy'          => $strategy,
-				'net_recovery'      => $net_recovery,
-				'net_recovery_fmt'  => $calc::format_currency( $net_recovery ),
+				'strategy'           => $strategy,
+				'net_recovery'       => $net_recovery,
+				'net_recovery_fmt'   => $calc::format_currency( $net_recovery ),
 				'loss_given_default' => $calc::format_currency( $loss_given_default ),
-				'recovery_rate'     => $calc::format_percentage( $recovery_rate ),
-				'timeline_months'   => $timeline_months,
-				'workout_costs'     => $calc::format_currency( $workout_costs ),
-				'npv'               => $npv,
-				'npv_fmt'           => $calc::format_currency( $npv ),
-				'details'           => $details,
+				'recovery_rate'      => $calc::format_percentage( $recovery_rate ),
+				'timeline_months'    => $timeline_months,
+				'workout_costs'      => $calc::format_currency( $workout_costs ),
+				'npv'                => $npv,
+				'npv_fmt'            => $calc::format_currency( $npv ),
+				'details'            => $details,
 			);
 		}
 
 		// Rank by NPV descending.
-		usort( $results, function ( $a, $b ) {
-			return $b['npv'] <=> $a['npv'];
-		} );
+		usort(
+			$results,
+			function ( $a, $b ) {
+				return $b['npv'] <=> $a['npv'];
+			}
+		);
 
 		$ranked = array();
 		foreach ( $results as $index => $result ) {

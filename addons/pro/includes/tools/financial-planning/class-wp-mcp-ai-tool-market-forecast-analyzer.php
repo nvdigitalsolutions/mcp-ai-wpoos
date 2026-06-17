@@ -32,6 +32,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.1.0
@@ -107,7 +114,7 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'historical_data'             => array(
+				'historical_data'              => array(
 					'type'        => 'array',
 					'description' => __( 'Array of historical data points with date and value.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -124,34 +131,34 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 						),
 					),
 				),
-				'forecast_periods'            => array(
+				'forecast_periods'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of periods to forecast.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 7,
 					'minimum'     => 1,
 					'maximum'     => 90,
 				),
-				'method'                      => array(
+				'method'                       => array(
 					'type'        => 'string',
 					'description' => __( 'Forecasting method to use.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'linear_regression', 'moving_average', 'exponential_smoothing' ),
 					'default'     => 'linear_regression',
 				),
-				'moving_average_window'       => array(
+				'moving_average_window'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Window size for moving average method.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 5,
 					'minimum'     => 2,
 					'maximum'     => 50,
 				),
-				'smoothing_factor'            => array(
+				'smoothing_factor'             => array(
 					'type'        => 'number',
 					'description' => __( 'Alpha parameter for exponential smoothing (0.0-1.0).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0.3,
 					'minimum'     => 0.0,
 					'maximum'     => 1.0,
 				),
-				'sentiment_adjustment'        => array(
+				'sentiment_adjustment'         => array(
 					'type'        => 'number',
 					'description' => __( 'Sentiment-based adjustment factor (-1.0 to +1.0).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
@@ -217,12 +224,12 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		$forecast_periods  = isset( $arguments['forecast_periods'] ) ? min( absint( $arguments['forecast_periods'] ), 90 ) : 7;
-		$method            = isset( $arguments['method'] ) ? sanitize_text_field( $arguments['method'] ) : 'linear_regression';
-		$ma_window         = isset( $arguments['moving_average_window'] ) ? max( 2, min( absint( $arguments['moving_average_window'] ), 50 ) ) : 5;
-		$alpha             = isset( $arguments['smoothing_factor'] ) ? max( 0.0, min( floatval( $arguments['smoothing_factor'] ), 1.0 ) ) : 0.3;
-		$sentiment_adj     = isset( $arguments['sentiment_adjustment'] ) ? max( -1.0, min( floatval( $arguments['sentiment_adjustment'] ), 1.0 ) ) : 0.0;
-		$include_ci        = isset( $arguments['include_confidence_intervals'] ) ? (bool) $arguments['include_confidence_intervals'] : true;
+		$forecast_periods = isset( $arguments['forecast_periods'] ) ? min( absint( $arguments['forecast_periods'] ), 90 ) : 7;
+		$method           = isset( $arguments['method'] ) ? sanitize_text_field( $arguments['method'] ) : 'linear_regression';
+		$ma_window        = isset( $arguments['moving_average_window'] ) ? max( 2, min( absint( $arguments['moving_average_window'] ), 50 ) ) : 5;
+		$alpha            = isset( $arguments['smoothing_factor'] ) ? max( 0.0, min( floatval( $arguments['smoothing_factor'] ), 1.0 ) ) : 0.3;
+		$sentiment_adj    = isset( $arguments['sentiment_adjustment'] ) ? max( -1.0, min( floatval( $arguments['sentiment_adjustment'] ), 1.0 ) ) : 0.0;
+		$include_ci       = isset( $arguments['include_confidence_intervals'] ) ? (bool) $arguments['include_confidence_intervals'] : true;
 
 		if ( $forecast_periods < 1 ) {
 			$forecast_periods = 7;
@@ -288,23 +295,23 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 		$trend_strength  = $this->determine_trend_strength( $values );
 
 		return array(
-			'success'              => true,
-			'method'               => $method,
-			'data_points'          => count( $values ),
-			'forecast_periods'     => $forecast_periods,
-			'forecast'             => $forecast,
-			'statistics'           => $stats,
-			'trend'                => array(
+			'success'          => true,
+			'method'           => $method,
+			'data_points'      => count( $values ),
+			'forecast_periods' => $forecast_periods,
+			'forecast'         => $forecast,
+			'statistics'       => $stats,
+			'trend'            => array(
 				'direction' => $trend_direction,
 				'strength'  => $trend_strength,
 			),
-			'parameters'           => array(
-				'method'               => $method,
+			'parameters'       => array(
+				'method'                => $method,
 				'moving_average_window' => $ma_window,
-				'smoothing_factor'     => $alpha,
-				'sentiment_adjustment' => $sentiment_adj,
+				'smoothing_factor'      => $alpha,
+				'sentiment_adjustment'  => $sentiment_adj,
 			),
-			'disclaimer'           => __( 'EDUCATIONAL ONLY. These forecasts are purely statistical projections based on historical data and do NOT predict actual future market performance. Past performance does not guarantee future results. Markets are inherently unpredictable. Do not make investment decisions based solely on these projections. Consult a licensed financial advisor. Not investment advice.', 'mcp-ai-wpoos-pro' ),
+			'disclaimer'       => __( 'EDUCATIONAL ONLY. These forecasts are purely statistical projections based on historical data and do NOT predict actual future market performance. Past performance does not guarantee future results. Markets are inherently unpredictable. Do not make investment decisions based solely on these projections. Consult a licensed financial advisor. Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -366,7 +373,7 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 	 * @return array Forecast data with r_squared.
 	 */
 	private function forecast_linear_regression( $values, $dates, $forecast_periods ) {
-		$n    = count( $values );
+		$n      = count( $values );
 		$sum_x  = 0;
 		$sum_y  = 0;
 		$sum_xy = 0;
@@ -391,7 +398,7 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Calculate R² value.
-		$mean  = $sum_y / $n;
+		$mean   = $sum_y / $n;
 		$ss_res = 0;
 		$ss_tot = 0;
 		for ( $i = 0; $i < $n; $i++ ) {
@@ -402,11 +409,11 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 		$r_squared = $ss_tot > 0 ? 1 - ( $ss_res / $ss_tot ) : 0;
 
 		// Generate forecast points.
-		$forecast = array();
+		$forecast  = array();
 		$last_date = end( $dates );
 		for ( $i = 0; $i < $forecast_periods; $i++ ) {
-			$x_val     = $n + $i;
-			$predicted = $intercept + ( $slope * $x_val );
+			$x_val      = $n + $i;
+			$predicted  = $intercept + ( $slope * $x_val );
 			$forecast[] = array(
 				'period'         => $i + 1,
 				'date'           => $this->add_days_to_date( $last_date, $i + 1 ),
@@ -415,8 +422,8 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 		}
 
 		return array(
-			'points'     => $forecast,
-			'model'      => array(
+			'points' => $forecast,
+			'model'  => array(
 				'slope'     => round( $slope, 6 ),
 				'intercept' => round( $intercept, 4 ),
 				'r_squared' => round( $r_squared, 4 ),
@@ -436,7 +443,7 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 	 * @return array Forecast data.
 	 */
 	private function forecast_moving_average( $values, $dates, $forecast_periods, $window ) {
-		$n = count( $values );
+		$n                = count( $values );
 		$effective_window = min( $window, $n );
 
 		// Calculate the last moving average.
@@ -456,8 +463,8 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'points' => $forecast,
 			'model'  => array(
-				'window'           => $effective_window,
-				'last_ma_value'    => round( $ma_value, 4 ),
+				'window'        => $effective_window,
+				'last_ma_value' => round( $ma_value, 4 ),
 			),
 		);
 	}
@@ -565,7 +572,7 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 			return 'sideways';
 		}
 
-		$first_half = array_slice( $values, 0, (int) floor( $n / 2 ) );
+		$first_half  = array_slice( $values, 0, (int) floor( $n / 2 ) );
 		$second_half = array_slice( $values, (int) floor( $n / 2 ) );
 
 		$first_avg  = array_sum( $first_half ) / count( $first_half );

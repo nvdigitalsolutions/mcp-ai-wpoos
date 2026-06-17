@@ -127,10 +127,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 
 		// Block SSRF: if a URL was supplied, ensure it resolves to a public address.
 		if ( '' !== $url && ! wp_mcp_ai_is_safe_outbound_url( $url ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The provided URL resolves to a blocked address. Only public HTTP and HTTPS URLs are supported.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'The provided URL resolves to a blocked address. Only public HTTP and HTTPS URLs are supported.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Before execution hook.
@@ -155,10 +152,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 				break;
 
 			default:
-				$result = array(
-					'success' => false,
-					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
-				);
+				$result = new WP_Error( 'wp_mcp_ai_error', __( 'Invalid action specified', 'mcp-ai-wpoos' ) );
 		}
 
 		// After execution hook.
@@ -187,19 +181,13 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 		if ( $post_id > 0 ) {
 			$post = get_post( $post_id );
 			if ( ! $post ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Post not found', 'mcp-ai-wpoos' ),
-				);
+				return new WP_Error( 'wp_mcp_ai_error', __( 'Post not found', 'mcp-ai-wpoos' ) );
 			}
 			$content = $post->post_content;
 		} elseif ( ! empty( $url ) ) {
 			$content = $this->fetch_page_content( $url );
 		} else {
-			return array(
-				'success' => false,
-				'error'   => __( 'Either URL or post_id must be provided', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Either URL or post_id must be provided', 'mcp-ai-wpoos' ) );
 		}
 
 		// Extract images from content.
@@ -258,10 +246,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 */
 	private function handle_validate_images( $image_ids, $check_formats, $check_lazy_load, $check_dimensions ) {
 		if ( empty( $image_ids ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No image IDs provided', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'No image IDs provided', 'mcp-ai-wpoos' ) );
 		}
 
 		$results = array();
@@ -299,10 +284,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 		}
 
 		if ( empty( $url ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'URL or post_id required', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'URL or post_id required', 'mcp-ai-wpoos' ) );
 		}
 
 		// Identify LCP element.
@@ -338,10 +320,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 		}
 
 		if ( empty( $url ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'URL or post_id required', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'URL or post_id required', 'mcp-ai-wpoos' ) );
 		}
 
 		return array(
@@ -737,7 +716,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @return string Page content.
 	 */
 	private function fetch_page_content( $url ) {
-		$response = wp_remote_get( $url );
+		$response = wp_safe_remote_get( $url, array( 'timeout' => 20 ) );
 
 		if ( is_wp_error( $response ) ) {
 			return '';

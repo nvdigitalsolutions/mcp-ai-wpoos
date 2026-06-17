@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 		}
 
 		// ── Try MJML responsive HTML email ────────────────────────────────────
-		$html_body  = '';
+		$html_body   = '';
 		$send_method = 'wp_mail';
 
 		$mjml_service = class_exists( 'WP_MCP_AI_MJML_Service' ) ? new WP_MCP_AI_MJML_Service() : null;
@@ -159,11 +159,13 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 			$mjml .= '<mj-section background-color="#ffffff" padding="20px 24px">';
 			$mjml .= '<mj-column>';
 			$mjml .= '<mj-text font-size="15px">';
-			$mjml .= esc_html( sprintf(
+			$mjml .= esc_html(
+				sprintf(
 				/* translators: %s: client name */
-				__( 'Dear %s,', 'mcp-ai-wpoos-pro' ),
-				$client_name
-			) );
+					__( 'Dear %s,', 'mcp-ai-wpoos-pro' ),
+					$client_name
+				)
+			);
 			$mjml .= '<br/><br/>';
 			$mjml .= esc_html__( 'Thank you for booking our DJ services! We are excited to be part of your special event.', 'mcp-ai-wpoos-pro' );
 			$mjml .= '</mj-text>';
@@ -204,11 +206,11 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 		}
 
 		// ── Try Nodemailer for enhanced SMTP delivery ─────────────────────────
-		$sent = false;
+		$sent               = false;
 		$nodemailer_service = class_exists( 'WP_MCP_AI_Nodemailer_Service' ) ? new WP_MCP_AI_Nodemailer_Service() : null;
 
 		if ( $nodemailer_service && $nodemailer_service->is_available() && '' !== $html_body ) {
-			$plain_text  = sprintf(
+			$plain_text = sprintf(
 				/* translators: %s: client name */
 				__( "Dear %s,\n\nThank you for booking our DJ services!\n\nEvent: %s\nDate: %s\nTime: %s - %s\nVenue: %s\n", 'mcp-ai-wpoos-pro' ),
 				$client_name,
@@ -239,12 +241,22 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 		if ( ! $sent ) {
 			if ( '' !== $html_body ) {
 				// Send as HTML via wp_mail.
-				add_filter( 'wp_mail_content_type', static function () { return 'text/html'; } );
+				add_filter(
+					'wp_mail_content_type',
+					static function () {
+						return 'text/html';
+					}
+				);
 				$sent = wp_mail( $client_email, $subject, $html_body );
-				remove_filter( 'wp_mail_content_type', static function () { return 'text/html'; } );
+				remove_filter(
+					'wp_mail_content_type',
+					static function () {
+						return 'text/html';
+					}
+				);
 			} else {
 				// Plain-text fallback.
-				$plain  = sprintf(
+				$plain = sprintf(
 					/* translators: %s: client name */
 					__( "Dear %s,\n\nThank you for booking our DJ services! We are excited to be part of your special event.\n\n", 'mcp-ai-wpoos-pro' ),
 					$client_name
@@ -276,7 +288,7 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 					}
 				}
 				$plain .= __( "\nIf you have any questions, please don't hesitate to contact us.\n\nBest regards,\nYour DJ Service", 'mcp-ai-wpoos-pro' );
-				$sent = wp_mail( $client_email, $subject, $plain );
+				$sent   = wp_mail( $client_email, $subject, $plain );
 			}
 		}
 

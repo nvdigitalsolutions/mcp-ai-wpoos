@@ -21,6 +21,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool slug
 	 *
 	 * @return string
@@ -139,10 +146,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 				return $this->update_session( $arguments );
 
 			default:
-				return array(
-					'success' => false,
-					'error'   => sprintf( 'Unknown action: %s', $action ),
-				);
+				return new WP_Error( 'wp_mcp_ai_error', sprintf( 'Unknown action: %s', $action ) );
 		}
 	}
 
@@ -155,10 +159,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 	 */
 	private function start_session( $arguments, $context ) {
 		if ( empty( $arguments['plan_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: plan_id',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Missing required argument: plan_id' );
 		}
 
 		$plan_id = intval( $arguments['plan_id'] );
@@ -198,10 +199,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 		$stored = $this->store_session( $session_data );
 
 		if ( ! $stored ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to create session',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Failed to create session' );
 		}
 
 		return array(
@@ -228,20 +226,14 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 	 */
 	private function pause_session( $arguments ) {
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Missing required argument: session_id' );
 		}
 
 		$session_id = $arguments['session_id'];
 		$session    = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', sprintf( 'Session %s not found', $session_id ) );
 		}
 
 		$updated = $this->update_session_storage(
@@ -253,10 +245,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 		);
 
 		if ( ! $updated ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to pause session',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Failed to pause session' );
 		}
 
 		return array(
@@ -275,28 +264,19 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 	 */
 	private function resume_session( $arguments ) {
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Missing required argument: session_id' );
 		}
 
 		$session_id = $arguments['session_id'];
 		$session    = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', sprintf( 'Session %s not found', $session_id ) );
 		}
 
 		// Check if expired.
 		if ( ! empty( $session['expires_at'] ) && strtotime( $session['expires_at'] ) < time() ) {
-			return array(
-				'success' => false,
-				'error'   => 'Session has expired',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Session has expired' );
 		}
 
 		$updated = $this->update_session_storage(
@@ -308,10 +288,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 		);
 
 		if ( ! $updated ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to resume session',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Failed to resume session' );
 		}
 
 		return array(
@@ -330,20 +307,14 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 	 */
 	private function stop_session( $arguments ) {
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Missing required argument: session_id' );
 		}
 
 		$session_id = $arguments['session_id'];
 		$session    = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', sprintf( 'Session %s not found', $session_id ) );
 		}
 
 		$updated = $this->update_session_storage(
@@ -356,10 +327,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 		);
 
 		if ( ! $updated ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to stop session',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Failed to stop session' );
 		}
 
 		return array(
@@ -378,17 +346,11 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 	 */
 	private function update_session( $arguments ) {
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Missing required argument: session_id' );
 		}
 
 		if ( empty( $arguments['metrics'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: metrics',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Missing required argument: metrics' );
 		}
 
 		$session_id = $arguments['session_id'];
@@ -397,10 +359,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 		$session = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', sprintf( 'Session %s not found', $session_id ) );
 		}
 
 		// Prepare update data.
@@ -428,10 +387,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 		$updated = $this->update_session_storage( $session_id, $update_data );
 
 		if ( ! $updated ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to update session',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Failed to update session' );
 		}
 
 		return array(

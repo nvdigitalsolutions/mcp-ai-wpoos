@@ -24,24 +24,31 @@ class WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer implements WP_MCP_AI_Tool_Interf
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Practice area base risk weights (0-25 scale).
 	 *
 	 * @var array
 	 */
 	private static $practice_area_weights = array(
-		'medical_malpractice' => 22,
-		'personal_injury'     => 18,
-		'real_estate'         => 16,
-		'family_law'          => 15,
-		'criminal_defense'    => 20,
-		'immigration'         => 17,
-		'corporate'           => 12,
-		'employment'          => 14,
+		'medical_malpractice'   => 22,
+		'personal_injury'       => 18,
+		'real_estate'           => 16,
+		'family_law'            => 15,
+		'criminal_defense'      => 20,
+		'immigration'           => 17,
+		'corporate'             => 12,
+		'employment'            => 14,
 		'intellectual_property' => 11,
-		'bankruptcy'          => 13,
-		'tax'                 => 16,
-		'estate_planning'     => 10,
-		'general_litigation'  => 15,
+		'bankruptcy'            => 13,
+		'tax'                   => 16,
+		'estate_planning'       => 10,
+		'general_litigation'    => 15,
 	);
 
 	/**
@@ -112,6 +119,9 @@ class WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -153,9 +163,9 @@ class WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer implements WP_MCP_AI_Tool_Interf
 		);
 
 		// Factor 2: Deadline proximity (0-25 points).
-		$deadline_score  = $this->score_deadline_proximity( $matter_id );
-		$total_score    += $deadline_score;
-		$risk_factors[]  = array(
+		$deadline_score = $this->score_deadline_proximity( $matter_id );
+		$total_score   += $deadline_score;
+		$risk_factors[] = array(
 			'factor'      => 'deadline_proximity',
 			'description' => __( 'Proximity and number of upcoming deadlines', 'mcp-ai-wpoos-pro' ),
 			'score'       => $deadline_score,
@@ -163,9 +173,9 @@ class WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer implements WP_MCP_AI_Tool_Interf
 		);
 
 		// Factor 3: Communication frequency (0-25 points).
-		$comm_score      = $this->score_communication_frequency( $matter_id );
-		$total_score    += $comm_score;
-		$risk_factors[]  = array(
+		$comm_score     = $this->score_communication_frequency( $matter_id );
+		$total_score   += $comm_score;
+		$risk_factors[] = array(
 			'factor'      => 'communication_frequency',
 			'description' => __( 'Frequency and recency of client communications', 'mcp-ai-wpoos-pro' ),
 			'score'       => $comm_score,
@@ -233,10 +243,10 @@ class WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer implements WP_MCP_AI_Tool_Interf
 			return 15;
 		}
 
-		$score           = 0;
-		$now             = time();
-		$urgent_count    = 0;
-		$overdue_count   = 0;
+		$score         = 0;
+		$now           = time();
+		$urgent_count  = 0;
+		$overdue_count = 0;
 
 		foreach ( $deadlines as $deadline ) {
 			if ( empty( $deadline['date'] ) ) {

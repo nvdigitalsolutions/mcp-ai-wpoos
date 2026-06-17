@@ -31,6 +31,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.1.0
@@ -285,7 +292,7 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 	 * @return array Trending topics.
 	 */
 	protected function get_trending_topics( $platform, $industry ) {
-		// In a production environment, this would integrate with social media APIs
+		// In a production environment, this would integrate with social media APIs.
 		// or trend detection services. For now, return sample data.
 		$trends = array(
 			'facebook'  => array( 'Small Business Success', 'Work From Home', 'Sustainability', 'AI Technology' ),
@@ -366,6 +373,7 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 		foreach ( $strategies as $strategy => $ratio ) {
 			$strategy_count = ceil( $ideas_count * $ratio );
 
+			// phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found
 			for ( $i = 0; $i < $strategy_count && count( $ideas ) < $ideas_count; $i++ ) {
 				$idea = $this->generate_single_idea(
 					$strategy,
@@ -637,7 +645,7 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Add points for trending strategy.
-		if ( $idea['strategy'] === 'trending' ) {
+		if ( 'trending' === $idea['strategy'] ) {
 			$score += 25;
 		}
 

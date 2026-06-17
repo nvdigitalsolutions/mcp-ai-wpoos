@@ -77,12 +77,12 @@ class WP_MCP_AI_Tool_Calculate_Seismic_Loads implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'country_code'      => array(
+				'country_code'       => array(
 					'type'        => 'string',
 					'description' => __( 'ISO 3166-1 alpha-2 country code.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'LK', 'JM', 'US' ),
 				),
-				'seismic_zone'      => array(
+				'seismic_zone'       => array(
 					'type'        => 'string',
 					'description' => __( 'Country-specific seismic zone (LK: zone2/zone3; JM: low/moderate/high; US: a-f).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -91,37 +91,37 @@ class WP_MCP_AI_Tool_Calculate_Seismic_Loads implements WP_MCP_AI_Tool_Interface
 					'description' => __( 'Total seismic weight of the building in kilonewtons.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'storey_weights_kn' => array(
+				'storey_weights_kn'  => array(
 					'type'        => 'array',
 					'description' => __( 'Optional list of per-storey seismic weights (kN), bottom to top. If omitted the building weight is split equally across the supplied number of storeys.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'number' ),
 					'default'     => array(),
 				),
-				'storey_heights_m'  => array(
+				'storey_heights_m'   => array(
 					'type'        => 'array',
 					'description' => __( 'Optional list of cumulative storey heights (m), bottom to top. Defaults to 3.0 m per storey.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'number' ),
 					'default'     => array(),
 				),
-				'num_storeys'       => array(
+				'num_storeys'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of storeys (used when storey arrays omitted).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'default'     => 1,
 				),
-				'r_factor'          => array(
+				'r_factor'           => array(
 					'type'        => 'number',
 					'description' => __( 'Response modification coefficient R. Defaults to 5.0 (ordinary moment frame).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0.1,
 					'default'     => 5.0,
 				),
-				'importance_factor' => array(
+				'importance_factor'  => array(
 					'type'        => 'number',
 					'description' => __( 'Importance factor Ie. 1.0 standard, 1.5 essential.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0.1,
 					'default'     => 1.0,
 				),
-				'sds_override'      => array(
+				'sds_override'       => array(
 					'type'        => 'number',
 					'description' => __( 'Optional override for SDS in g (e.g., from USGS Seismic Design Maps). Bypasses the registry zone lookup.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -142,6 +142,13 @@ class WP_MCP_AI_Tool_Calculate_Seismic_Loads implements WP_MCP_AI_Tool_Interface
 			'read-only',
 			'cacheable',
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -186,8 +193,8 @@ class WP_MCP_AI_Tool_Calculate_Seismic_Loads implements WP_MCP_AI_Tool_Interface
 			$sds      = $sds_override;
 			$standard = __( 'Site-specific override', 'mcp-ai-wpoos-pro' );
 		} else {
-			$params = WP_MCP_AI_Architectural_Engine::get_seismic_design_parameters( $country_code, $seismic_zone );
-			$sds    = (float) $params['sds'];
+			$params   = WP_MCP_AI_Architectural_Engine::get_seismic_design_parameters( $country_code, $seismic_zone );
+			$sds      = (float) $params['sds'];
 			$standard = (string) $params['standard'];
 			if ( $sds <= 0 ) {
 				return new WP_Error( 'wp_mcp_ai_unknown_zone', __( 'No seismic table is registered for the supplied country / zone.', 'mcp-ai-wpoos-pro' ) );
@@ -202,8 +209,9 @@ class WP_MCP_AI_Tool_Calculate_Seismic_Loads implements WP_MCP_AI_Tool_Interface
 			$storey_weights = array_fill( 0, $num_storeys, $even );
 		}
 		if ( empty( $storey_heights ) ) {
-			$h = 3.0;
+			$h              = 3.0;
 			$storey_heights = array();
+			// phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found
 			for ( $i = 1; $i <= count( $storey_weights ); $i++ ) {
 				$storey_heights[] = $h * $i;
 			}
@@ -217,14 +225,14 @@ class WP_MCP_AI_Tool_Calculate_Seismic_Loads implements WP_MCP_AI_Tool_Interface
 		$storey_forces = array();
 		if ( $denom > 0 ) {
 			for ( $i = 0; $i < $count; $i++ ) {
-				$cv = ( $storey_weights[ $i ] * $storey_heights[ $i ] ) / $denom;
-				$fx = $cv * $shear['base_shear_kn'];
+				$cv              = ( $storey_weights[ $i ] * $storey_heights[ $i ] ) / $denom;
+				$fx              = $cv * $shear['base_shear_kn'];
 				$storey_forces[] = array(
-					'storey'      => $i + 1,
-					'weight_kn'   => round( $storey_weights[ $i ], 2 ),
-					'height_m'    => round( $storey_heights[ $i ], 2 ),
-					'cv'          => round( $cv, 4 ),
-					'force_kn'    => round( $fx, 2 ),
+					'storey'    => $i + 1,
+					'weight_kn' => round( $storey_weights[ $i ], 2 ),
+					'height_m'  => round( $storey_heights[ $i ], 2 ),
+					'cv'        => round( $cv, 4 ),
+					'force_kn'  => round( $fx, 2 ),
 				);
 			}
 		}

@@ -69,55 +69,55 @@ class WP_MCP_AI_Tool_CRE_LP_Report_Generator implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'fund_name'          => array(
+				'fund_name'         => array(
 					'type'        => 'string',
 					'description' => __( 'Name of the fund.', 'mcp-ai-wpoos-pro' ),
 				),
-				'reporting_period'   => array(
+				'reporting_period'  => array(
 					'type'        => 'string',
 					'description' => __( 'Reporting period label (e.g. "Q4 2025").', 'mcp-ai-wpoos-pro' ),
 				),
-				'vintage_year'       => array(
+				'vintage_year'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Fund vintage year.', 'mcp-ai-wpoos-pro' ),
 				),
-				'total_commitments'  => array(
+				'total_commitments' => array(
 					'type'        => 'number',
 					'description' => __( 'Total LP + GP commitments.', 'mcp-ai-wpoos-pro' ),
 				),
-				'called_capital'     => array(
+				'called_capital'    => array(
 					'type'        => 'number',
 					'description' => __( 'Total capital called to date.', 'mcp-ai-wpoos-pro' ),
 				),
-				'distributions'      => array(
+				'distributions'     => array(
 					'type'        => 'number',
 					'description' => __( 'Total distributions paid to date.', 'mcp-ai-wpoos-pro' ),
 				),
-				'nav'                => array(
+				'nav'               => array(
 					'type'        => 'number',
 					'description' => __( 'Current net asset value.', 'mcp-ai-wpoos-pro' ),
 				),
-				'net_irr'            => array(
+				'net_irr'           => array(
 					'type'        => 'number',
 					'description' => __( 'Net IRR as decimal (e.g. 0.12 for 12%).', 'mcp-ai-wpoos-pro' ),
 				),
-				'gross_irr'          => array(
+				'gross_irr'         => array(
 					'type'        => 'number',
 					'description' => __( 'Gross IRR as decimal.', 'mcp-ai-wpoos-pro' ),
 				),
-				'equity_multiple'    => array(
+				'equity_multiple'   => array(
 					'type'        => 'number',
 					'description' => __( 'Net equity multiple (e.g. 1.45).', 'mcp-ai-wpoos-pro' ),
 				),
-				'deployment_pct'     => array(
+				'deployment_pct'    => array(
 					'type'        => 'number',
 					'description' => __( 'Capital deployment percentage as decimal.', 'mcp-ai-wpoos-pro' ),
 				),
-				'num_investments'    => array(
+				'num_investments'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of investments in portfolio.', 'mcp-ai-wpoos-pro' ),
 				),
-				'portfolio_summary'  => array(
+				'portfolio_summary' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of portfolio investment summary objects.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -139,7 +139,7 @@ class WP_MCP_AI_Tool_CRE_LP_Report_Generator implements WP_MCP_AI_Tool_Interface
 						'required'   => array( 'name', 'balance', 'status' ),
 					),
 				),
-				'market_commentary'  => array(
+				'market_commentary' => array(
 					'type'        => 'string',
 					'description' => __( 'Market commentary text for the reporting period.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -156,7 +156,20 @@ class WP_MCP_AI_Tool_CRE_LP_Report_Generator implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -169,32 +182,32 @@ class WP_MCP_AI_Tool_CRE_LP_Report_Generator implements WP_MCP_AI_Tool_Interface
 
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
-		$fund_name        = sanitize_text_field( $arguments['fund_name'] ?? '' );
-		$period           = sanitize_text_field( $arguments['reporting_period'] ?? '' );
-		$vintage          = (int) ( $arguments['vintage_year'] ?? 0 );
-		$commitments      = (float) ( $arguments['total_commitments'] ?? 0 );
-		$called           = (float) ( $arguments['called_capital'] ?? 0 );
-		$distributions    = (float) ( $arguments['distributions'] ?? 0 );
-		$nav              = (float) ( $arguments['nav'] ?? 0 );
-		$net_irr          = (float) ( $arguments['net_irr'] ?? 0 );
-		$gross_irr        = (float) ( $arguments['gross_irr'] ?? 0 );
-		$equity_multiple  = (float) ( $arguments['equity_multiple'] ?? 0 );
-		$deployment_pct   = (float) ( $arguments['deployment_pct'] ?? 0 );
-		$num_investments  = (int) ( $arguments['num_investments'] ?? 0 );
-		$portfolio        = $arguments['portfolio_summary'] ?? array();
-		$commentary       = sanitize_textarea_field( $arguments['market_commentary'] ?? '' );
+		$fund_name       = sanitize_text_field( $arguments['fund_name'] ?? '' );
+		$period          = sanitize_text_field( $arguments['reporting_period'] ?? '' );
+		$vintage         = (int) ( $arguments['vintage_year'] ?? 0 );
+		$commitments     = (float) ( $arguments['total_commitments'] ?? 0 );
+		$called          = (float) ( $arguments['called_capital'] ?? 0 );
+		$distributions   = (float) ( $arguments['distributions'] ?? 0 );
+		$nav             = (float) ( $arguments['nav'] ?? 0 );
+		$net_irr         = (float) ( $arguments['net_irr'] ?? 0 );
+		$gross_irr       = (float) ( $arguments['gross_irr'] ?? 0 );
+		$equity_multiple = (float) ( $arguments['equity_multiple'] ?? 0 );
+		$deployment_pct  = (float) ( $arguments['deployment_pct'] ?? 0 );
+		$num_investments = (int) ( $arguments['num_investments'] ?? 0 );
+		$portfolio       = $arguments['portfolio_summary'] ?? array();
+		$commentary      = sanitize_textarea_field( $arguments['market_commentary'] ?? '' );
 
 		if ( empty( $fund_name ) || empty( $period ) ) {
 			return new \WP_Error( 'invalid_input', __( 'Fund name and reporting period are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Derived metrics.
-		$unfunded = max( 0, $commitments - $called );
+		$unfunded    = max( 0, $commitments - $called );
 		$total_value = $distributions + $nav;
-		$dpi  = ( $called > 0 ) ? $distributions / $called : 0;
-		$rvpi = ( $called > 0 ) ? $nav / $called : 0;
-		$tvpi = $dpi + $rvpi;
-		$pct_called = ( $commitments > 0 ) ? $called / $commitments : 0;
+		$dpi         = ( $called > 0 ) ? $distributions / $called : 0;
+		$rvpi        = ( $called > 0 ) ? $nav / $called : 0;
+		$tvpi        = $dpi + $rvpi;
+		$pct_called  = ( $commitments > 0 ) ? $called / $commitments : 0;
 
 		// Build report sections.
 		$sections = array();
@@ -203,9 +216,9 @@ class WP_MCP_AI_Tool_CRE_LP_Report_Generator implements WP_MCP_AI_Tool_Interface
 		$sections['executive_summary'] = sprintf(
 			"%s — %s Quarterly Report\n%s\n\n" .
 			"Fund vintage: %s | Investments: %d | Deployment: %s\n\n" .
-			"The fund has called %s of %s in total commitments (%s). " .
-			"Total value to date stands at %s, comprising %s in distributions and %s in residual NAV. " .
-			"The net equity multiple is %sx with a net IRR of %s.",
+			'The fund has called %s of %s in total commitments (%s). ' .
+			'Total value to date stands at %s, comprising %s in distributions and %s in residual NAV. ' .
+			'The net equity multiple is %sx with a net IRR of %s.',
 			$fund_name,
 			$period,
 			str_repeat( '=', 60 ),
@@ -246,7 +259,7 @@ class WP_MCP_AI_Tool_CRE_LP_Report_Generator implements WP_MCP_AI_Tool_Interface
 		// 4. Portfolio Summary.
 		$portfolio_rows = array();
 		foreach ( $portfolio as $inv ) {
-			$inv_balance = (float) ( $inv['balance'] ?? 0 );
+			$inv_balance      = (float) ( $inv['balance'] ?? 0 );
 			$portfolio_rows[] = array(
 				'name'    => sanitize_text_field( $inv['name'] ?? '' ),
 				'balance' => $calc::format_currency( $inv_balance ),
@@ -262,7 +275,7 @@ class WP_MCP_AI_Tool_CRE_LP_Report_Generator implements WP_MCP_AI_Tool_Interface
 			: __( 'No market commentary provided for this period.', 'mcp-ai-wpoos-pro' );
 
 		// Generate full formatted report text.
-		$report_text = $sections['executive_summary'] . "\n\n";
+		$report_text  = $sections['executive_summary'] . "\n\n";
 		$report_text .= "FUND PERFORMANCE\n" . str_repeat( '-', 40 ) . "\n";
 		foreach ( $sections['fund_performance'] as $label => $val ) {
 			$report_text .= sprintf( "  %-20s %s\n", str_replace( '_', ' ', ucfirst( $label ) ) . ':', $val );

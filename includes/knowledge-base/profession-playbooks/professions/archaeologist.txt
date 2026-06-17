@@ -1,7 +1,7 @@
 Profession Playbook — Archaeologist
 Slug: archaeologist
-Category: other
-Includes: global.txt + categories/other.txt + this file
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
 
 
 Author: NV Digital Solutions

@@ -179,22 +179,25 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					</a>
 				</p>
 			</div>
-			<script>
-			/* Minimal inline dismiss handler — runs outside the wizard page. */
-			(function(){
-				var n = document.querySelector('.wp-mcp-ai-welcome-notice');
-				if (!n) return;
-				n.addEventListener('click', function(e){
-					if (e.target.classList.contains('notice-dismiss')) {
-						var fd = new FormData();
-						fd.append('action', 'wp_mcp_ai_dismiss_welcome_notice');
-						fd.append('nonce', n.dataset.nonce);
-						fetch(ajaxurl, {method:'POST', credentials:'same-origin', body:fd});
-					}
-				});
-			})();
-			</script>
 			<?php
+				ob_start();
+			?>
+				/* Minimal inline dismiss handler — runs outside the wizard page. */
+				(function(){
+					var n = document.querySelector('.wp-mcp-ai-welcome-notice');
+					if (!n) return;
+					n.addEventListener('click', function(e){
+						if (e.target.classList.contains('notice-dismiss')) {
+							var fd = new FormData();
+							fd.append('action', 'wp_mcp_ai_dismiss_welcome_notice');
+							fd.append('nonce', n.dataset.nonce);
+							fetch(ajaxurl, {method:'POST', credentials:'same-origin', body:fd});
+						}
+					});
+				})();
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
 		}
 
 		// -------------------------------------------------------------------------
@@ -1168,7 +1171,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified in the calling ajax_save_step() method via check_ajax_referer().
 			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( ! in_array( $provider, $valid_providers, true ) ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid provider.', 'mcp-ai-wpoos' ) ) );
 			}
@@ -1626,7 +1629,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			$fallbacks = array(
 				'openai'      => 'gpt-4.1',
 				'anthropic'   => 'claude-sonnet-4-6',
-				'gemini'      => 'gemini-3.1-flash',
+				'gemini'      => 'gemini-3.5-flash',
 				'ollama'      => 'llama4',
 				'lm_studio'   => 'local',
 				'cloudflare'  => '@cf/meta/llama-4-scout-17b-16e-instruct',

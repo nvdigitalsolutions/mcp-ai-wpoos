@@ -67,7 +67,7 @@ class WP_MCP_AI_Pro_Rubric_Presets {
 	 * @return WP_MCP_AI_Pro_Rubric_Verifier
 	 */
 	public static function prompt_adherence( array $overrides = array() ) {
-		$defaults = array(
+		$defaults  = array(
 			'min_words'          => 5,
 			'max_words'          => 500,
 			'prohibited_phrases' => array( 'as an ai language model', 'i cannot help with that' ),
@@ -276,9 +276,9 @@ class WP_MCP_AI_Pro_Rubric_Presets {
 			'citation_pattern' => '/(\[[^\]]+\]\([^)]+\))|(\[\d+\])|(https?:\/\/\S+)/',
 			'pass_threshold'   => 0.7,
 		);
-		$config  = array_merge( $defaults, $overrides );
-		$minimum = max( 1, (int) $config['minimum'] );
-		$pattern = (string) $config['citation_pattern'];
+		$config   = array_merge( $defaults, $overrides );
+		$minimum  = max( 1, (int) $config['minimum'] );
+		$pattern  = (string) $config['citation_pattern'];
 
 		$extract = static function ( $subject ) use ( $pattern ) {
 			$text = self::subject_text( $subject );

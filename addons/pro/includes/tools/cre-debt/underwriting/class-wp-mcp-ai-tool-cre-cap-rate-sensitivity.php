@@ -69,15 +69,15 @@ class WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'noi'            => array(
+				'noi'           => array(
 					'type'        => 'number',
 					'description' => __( 'Annual Net Operating Income.', 'mcp-ai-wpoos-pro' ),
 				),
-				'base_cap_rate'  => array(
+				'base_cap_rate' => array(
 					'type'        => 'number',
 					'description' => __( 'Base cap rate as decimal (e.g. 0.06 for 6%).', 'mcp-ai-wpoos-pro' ),
 				),
-				'scenarios_bps'  => array(
+				'scenarios_bps' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of BPS offsets from the base cap rate (e.g. [-100, -50, 0, 50, 100, 150, 200]).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -85,7 +85,7 @@ class WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity implements WP_MCP_AI_Tool_Interfac
 					),
 					'default'     => array( -100, -50, 0, 50, 100, 150, 200 ),
 				),
-				'loan_amount'    => array(
+				'loan_amount'   => array(
 					'type'        => 'number',
 					'description' => __( 'Loan amount (optional, for LTV & equity calculations).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
@@ -103,7 +103,20 @@ class WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -141,10 +154,10 @@ class WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity implements WP_MCP_AI_Tool_Interfac
 			$equity = ( $loan > 0 ) ? $value - $loan : null;
 
 			$row = array(
-				'cap_rate'        => $calc::format_percentage( $cap_rate ),
-				'bps_offset'      => $bps,
-				'property_value'  => $calc::format_currency( $value ),
-				'value_change'    => $calc::format_currency( $value - $base_value ),
+				'cap_rate'         => $calc::format_percentage( $cap_rate ),
+				'bps_offset'       => $bps,
+				'property_value'   => $calc::format_currency( $value ),
+				'value_change'     => $calc::format_currency( $value - $base_value ),
 				'value_change_pct' => ( $base_value > 0 ) ? $calc::format_percentage( ( $value - $base_value ) / $base_value ) : 'N/A',
 			);
 
@@ -160,13 +173,13 @@ class WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity implements WP_MCP_AI_Tool_Interfac
 			'success' => true,
 			'message' => __( 'Cap rate sensitivity analysis complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
-				'base_case'          => array(
+				'base_case'         => array(
 					'noi'            => $calc::format_currency( $noi ),
 					'cap_rate'       => $calc::format_percentage( $base_cap ),
 					'property_value' => $calc::format_currency( $base_value ),
 				),
-				'loan_amount'        => ( $loan > 0 ) ? $calc::format_currency( $loan ) : null,
-				'sensitivity_table'  => $table,
+				'loan_amount'       => ( $loan > 0 ) ? $calc::format_currency( $loan ) : null,
+				'sensitivity_table' => $table,
 			),
 		);
 	}

@@ -78,9 +78,9 @@ class WP_MCP_AI_Tool_Generate_Visit_Summary implements WP_MCP_AI_Tool_Interface,
 					'description' => __( 'Inclusive end date (YYYY-MM-DD); defaults to today.', 'mcp-ai-wpoos-pro' ),
 				),
 				'format'    => array(
-					'type'        => 'string',
-					'enum'        => array( 'structured', 'markdown' ),
-					'default'     => 'structured',
+					'type'    => 'string',
+					'enum'    => array( 'structured', 'markdown' ),
+					'default' => 'structured',
 				),
 			),
 			'required'   => array( 'member_id' ),
@@ -92,6 +92,13 @@ class WP_MCP_AI_Tool_Generate_Visit_Summary implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'read-only', 'pii-data' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -159,21 +166,21 @@ class WP_MCP_AI_Tool_Generate_Visit_Summary implements WP_MCP_AI_Tool_Interface,
 		}
 
 		$summary = array(
-			'member' => array(
+			'member'   => array(
 				'id'   => $member_id,
 				'name' => $member->post_title,
 			),
-			'period' => array(
+			'period'   => array(
 				'from' => false !== $ts_from ? gmdate( 'Y-m-d', $ts_from ) : '',
 				'to'   => gmdate( 'Y-m-d', $ts_to ),
 			),
 			'sections' => array(
-				'visits'                 => $checkups,
-				'prescriptions'          => $prescriptions,
-				'vital_logs'             => $vitals,
-				'medical_records'        => $records,
+				'visits'          => $checkups,
+				'prescriptions'   => $prescriptions,
+				'vital_logs'      => $vitals,
+				'medical_records' => $records,
 			),
-			'totals' => array(
+			'totals'   => array(
 				'visits'          => count( $checkups ),
 				'prescriptions'   => count( $prescriptions ),
 				'vital_logs'      => count( $vitals ),

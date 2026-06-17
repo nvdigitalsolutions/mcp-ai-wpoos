@@ -101,18 +101,22 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
 		if ( ! current_user_can( 'read' ) ) {
 			return array(
 				'success' => false,
 				'error'   => 'permission_denied',
-				'report'  => __( '❌ **Permission Denied**
+				'report'  => __(
+					'❌ **Permission Denied**
 
-You do not have permission to access files.', 'mcp-ai-wpoos-pro' ),
+You do not have permission to access files.',
+					'mcp-ai-wpoos-pro'
+				),
 			);
 		}
 
@@ -130,9 +134,12 @@ You do not have permission to access files.', 'mcp-ai-wpoos-pro' ),
 					'error'   => 'file_not_found',
 					'report'  => sprintf(
 						/* translators: %d: attachment ID */
-						__( '❌ **PDF File Not Found**
+						__(
+							'❌ **PDF File Not Found**
 
-The PDF file with attachment ID %d could not be found.', 'mcp-ai-wpoos-pro' ),
+The PDF file with attachment ID %d could not be found.',
+							'mcp-ai-wpoos-pro'
+						),
 						$attachment_id
 					),
 				);
@@ -147,9 +154,12 @@ The PDF file with attachment ID %d could not be found.', 'mcp-ai-wpoos-pro' ),
 					'error'   => $resolved->get_error_code(),
 					'report'  => sprintf(
 						/* translators: %s: error message */
-						__( '❌ **Provider File Not Found**
+						__(
+							'❌ **Provider File Not Found**
 
-%s', 'mcp-ai-wpoos-pro' ),
+%s',
+							'mcp-ai-wpoos-pro'
+						),
 						$resolved->get_error_message()
 					),
 				);
@@ -167,9 +177,12 @@ The PDF file with attachment ID %d could not be found.', 'mcp-ai-wpoos-pro' ),
 				return array(
 					'success' => false,
 					'error'   => 'invalid_url',
-					'report'  => __( '❌ **Invalid URL**
+					'report'  => __(
+						'❌ **Invalid URL**
 
-Only http and https URLs are supported.', 'mcp-ai-wpoos-pro' ),
+Only http and https URLs are supported.',
+						'mcp-ai-wpoos-pro'
+					),
 				);
 			}
 			$host = wp_parse_url( $url, PHP_URL_HOST );
@@ -177,9 +190,12 @@ Only http and https URLs are supported.', 'mcp-ai-wpoos-pro' ),
 				return array(
 					'success' => false,
 					'error'   => 'invalid_url',
-					'report'  => __( '❌ **Invalid URL**
+					'report'  => __(
+						'❌ **Invalid URL**
 
-Could not determine host from the provided URL.', 'mcp-ai-wpoos-pro' ),
+Could not determine host from the provided URL.',
+						'mcp-ai-wpoos-pro'
+					),
 				);
 			}
 			// Resolve the hostname and reject private / reserved IP ranges (SSRF guard).
@@ -188,22 +204,28 @@ Could not determine host from the provided URL.', 'mcp-ai-wpoos-pro' ),
 				return array(
 					'success' => false,
 					'error'   => 'invalid_url',
-					'report'  => __( '❌ **Invalid URL**
+					'report'  => __(
+						'❌ **Invalid URL**
 
-URL hostname could not be resolved.', 'mcp-ai-wpoos-pro' ),
+URL hostname could not be resolved.',
+						'mcp-ai-wpoos-pro'
+					),
 				);
 			}
 			if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
 				return array(
 					'success' => false,
 					'error'   => 'invalid_url',
-					'report'  => __( '❌ **Invalid URL**
+					'report'  => __(
+						'❌ **Invalid URL**
 
-URL resolves to a private or reserved address and cannot be fetched.', 'mcp-ai-wpoos-pro' ),
+URL resolves to a private or reserved address and cannot be fetched.',
+						'mcp-ai-wpoos-pro'
+					),
 				);
 			}
-			// Download PDF to a temp file, pinning the TCP connection to the already-resolved
-			// IP address to prevent DNS-rebinding SSRF (a second gethostbyname() call inside
+			// Download PDF to a temp file, pinning the TCP connection to the already-resolved.
+			// IP address to prevent DNS-rebinding SSRF (a second gethostbyname() call inside.
 			// download_url() could return a different address after a short TTL expires).
 			$url_port  = wp_parse_url( $url, PHP_URL_PORT );
 			$url_path  = wp_parse_url( $url, PHP_URL_PATH );
@@ -228,9 +250,12 @@ URL resolves to a private or reserved address and cannot be fetched.', 'mcp-ai-w
 					'error'   => 'download_failed',
 					'report'  => sprintf(
 						/* translators: %s: error message */
-						__( '❌ **Download Failed**
+						__(
+							'❌ **Download Failed**
 
-Failed to download PDF from URL: %s', 'mcp-ai-wpoos-pro' ),
+Failed to download PDF from URL: %s',
+							'mcp-ai-wpoos-pro'
+						),
 						$response->get_error_message()
 					),
 				);
@@ -243,9 +268,12 @@ Failed to download PDF from URL: %s', 'mcp-ai-wpoos-pro' ),
 					'error'   => 'download_failed',
 					'report'  => sprintf(
 						/* translators: %d: HTTP response code */
-						__( '❌ **Download Failed**
+						__(
+							'❌ **Download Failed**
 
-The server returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+The server returned HTTP %d.',
+							'mcp-ai-wpoos-pro'
+						),
 						(int) $response_code
 					),
 				);
@@ -256,9 +284,12 @@ The server returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
 				return array(
 					'success' => false,
 					'error'   => 'download_failed',
-					'report'  => __( '❌ **Download Failed**
+					'report'  => __(
+						'❌ **Download Failed**
 
-The downloaded file is empty.', 'mcp-ai-wpoos-pro' ),
+The downloaded file is empty.',
+						'mcp-ai-wpoos-pro'
+					),
 				);
 			}
 
@@ -275,9 +306,12 @@ The downloaded file is empty.', 'mcp-ai-wpoos-pro' ),
 				return array(
 					'success' => false,
 					'error'   => 'download_failed',
-					'report'  => __( '❌ **Download Failed**
+					'report'  => __(
+						'❌ **Download Failed**
 
-Failed to write downloaded PDF to a temporary file.', 'mcp-ai-wpoos-pro' ),
+Failed to write downloaded PDF to a temporary file.',
+						'mcp-ai-wpoos-pro'
+					),
 				);
 			}
 
@@ -286,9 +320,12 @@ Failed to write downloaded PDF to a temporary file.', 'mcp-ai-wpoos-pro' ),
 			return array(
 				'success' => false,
 				'error'   => 'missing_input',
-				'report'  => __( '❌ **Missing Input**
+				'report'  => __(
+					'❌ **Missing Input**
 
-Either `attachment_id`, `file_id`, or `url` parameter is required.', 'mcp-ai-wpoos-pro' ),
+Either `attachment_id`, `file_id`, or `url` parameter is required.',
+					'mcp-ai-wpoos-pro'
+				),
 			);
 		}
 
@@ -303,16 +340,19 @@ Either `attachment_id`, `file_id`, or `url` parameter is required.', 'mcp-ai-wpo
 				'error'   => 'invalid_file_type',
 				'report'  => sprintf(
 					/* translators: %s: detected MIME type */
-					__( '❌ **Invalid File Type**
+					__(
+						'❌ **Invalid File Type**
 
-File is not a valid PDF document (detected: %s).', 'mcp-ai-wpoos-pro' ),
+File is not a valid PDF document (detected: %s).',
+						'mcp-ai-wpoos-pro'
+					),
 					$mime_type
 				),
 			);
 		}
 
-		$max_pages   = ! empty( $arguments['max_pages'] ) ? absint( $arguments['max_pages'] ) : 0;
-		$enable_ocr  = isset( $arguments['enable_ocr'] ) ? (bool) $arguments['enable_ocr'] : true;
+		$max_pages    = ! empty( $arguments['max_pages'] ) ? absint( $arguments['max_pages'] ) : 0;
+		$enable_ocr   = isset( $arguments['enable_ocr'] ) ? (bool) $arguments['enable_ocr'] : true;
 		$ocr_provider = ! empty( $arguments['ocr_provider'] ) ? sanitize_text_field( $arguments['ocr_provider'] ) : 'auto';
 
 		try {
@@ -323,27 +363,27 @@ File is not a valid PDF document (detected: %s).', 'mcp-ai-wpoos-pro' ),
 			$used_ocr = false;
 			if ( ! is_wp_error( $text ) && $enable_ocr ) {
 				$clean_text = trim( preg_replace( '/\s+/', '', $text ) );
-				
+
 				// If very little text extracted, try OCR.
 				if ( strlen( $clean_text ) < 50 ) {
 					// Load OCR service if available.
 					$ocr_service_path = WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-ocr-service.php';
 					if ( file_exists( $ocr_service_path ) ) {
 						require_once $ocr_service_path;
-						
+
 						$ocr_service = new WP_MCP_AI_OCR_Service();
 						$ocr_options = array(
 							'max_pages' => $max_pages > 0 ? $max_pages : 10, // Limit OCR to 10 pages by default.
 							'provider'  => $ocr_provider,
 							'dpi'       => 300,
 						);
-						
+
 						$ocr_text = $ocr_service->extract_text_from_pdf( $file_path, $ocr_options );
-						
+
 						if ( ! is_wp_error( $ocr_text ) && strlen( $ocr_text ) > strlen( $text ) ) {
 							$text     = $ocr_text;
 							$used_ocr = true;
-							
+
 							WP_MCP_AI_Logger::log_event(
 								'pdf_ocr_fallback',
 								'Used OCR for scanned PDF',
@@ -369,9 +409,12 @@ File is not a valid PDF document (detected: %s).', 'mcp-ai-wpoos-pro' ),
 					'error'   => 'extraction_failed',
 					'report'  => sprintf(
 						/* translators: %s: error message */
-						__( '❌ **Extraction Failed**
+						__(
+							'❌ **Extraction Failed**
 
-%s', 'mcp-ai-wpoos-pro' ),
+%s',
+							'mcp-ai-wpoos-pro'
+						),
 						$text->get_error_message()
 					),
 				);
@@ -384,7 +427,8 @@ File is not a valid PDF document (detected: %s).', 'mcp-ai-wpoos-pro' ),
 			if ( $used_ocr ) {
 				$report = sprintf(
 					/* translators: 1: word count, 2: OCR provider */
-					__( '## ✅ PDF Text Extraction Complete (with OCR)
+					__(
+						'## ✅ PDF Text Extraction Complete (with OCR)
 
 **Extracted:** %1$d words
 **Method:** OCR (scanned PDF detected)
@@ -392,29 +436,34 @@ File is not a valid PDF document (detected: %s).', 'mcp-ai-wpoos-pro' ),
 
 ---
 
-✨ *Text extracted successfully from scanned PDF and is available for use.*', 'mcp-ai-wpoos-pro' ),
+✨ *Text extracted successfully from scanned PDF and is available for use.*',
+						'mcp-ai-wpoos-pro'
+					),
 					$word_count,
 					ucfirst( $ocr_provider )
 				);
 			} else {
 				$report = sprintf(
 					/* translators: %d: word count */
-					__( '## ✅ PDF Text Extraction Complete
+					__(
+						'## ✅ PDF Text Extraction Complete
 
 **Extracted:** %d words
 **Method:** Standard (digital PDF)
 
 ---
 
-✨ *Text extracted successfully and is available for use.*', 'mcp-ai-wpoos-pro' ),
+✨ *Text extracted successfully and is available for use.*',
+						'mcp-ai-wpoos-pro'
+					),
 					$word_count
 				);
 			}
 
 			return array(
-				'success'          => true,
-				'report'           => $report,
-				'extraction_data'  => array(
+				'success'         => true,
+				'report'          => $report,
+				'extraction_data' => array(
 					'text'              => $text,
 					'word_count'        => $word_count,
 					'char_count'        => $char_count,
@@ -434,9 +483,12 @@ File is not a valid PDF document (detected: %s).', 'mcp-ai-wpoos-pro' ),
 				'error'   => 'exception',
 				'report'  => sprintf(
 					/* translators: %s: error message */
-					__( '❌ **Unexpected Error**
+					__(
+						'❌ **Unexpected Error**
 
-Failed to extract text from PDF: %s', 'mcp-ai-wpoos-pro' ),
+Failed to extract text from PDF: %s',
+						'mcp-ai-wpoos-pro'
+					),
 					$e->getMessage()
 				),
 			);
@@ -465,7 +517,7 @@ Failed to extract text from PDF: %s', 'mcp-ai-wpoos-pro' ),
 			if ( is_wp_error( $output_file ) ) {
 				$output_file = tempnam( sys_get_temp_dir(), 'txt_' ); // fallback
 			}
-			$cmd         = sprintf(
+			$cmd = sprintf(
 				'pdftotext %s %s %s 2>&1',
 				$max_pages > 0 ? '-l ' . (int) $max_pages : '',
 				escapeshellarg( $file_path ),
@@ -486,20 +538,20 @@ Failed to extract text from PDF: %s', 'mcp-ai-wpoos-pro' ),
 			try {
 				$parser = new \Smalot\PdfParser\Parser();
 				$pdf    = $parser->parseFile( $file_path );
-				
+
 				// Extract text from all pages or limited pages.
 				if ( $max_pages > 0 ) {
 					$text  = '';
 					$pages = $pdf->getPages();
 					$count = min( $max_pages, count( $pages ) );
-					
+
 					for ( $i = 0; $i < $count; $i++ ) {
 						$text .= $pages[ $i ]->getText();
 					}
 				} else {
 					$text = $pdf->getText();
 				}
-				
+
 				return $text;
 			} catch ( \Exception $e ) {
 				// If all methods fail, return error with exception details.

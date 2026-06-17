@@ -156,6 +156,14 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $payload;
 			}
 
+			// Pre-flight context-window validation (shared with all providers).
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'gemini', $options, $messages );
+				if ( is_wp_error( $preflight ) ) {
+					return $preflight;
+				}
+			}
+
 			$endpoint = $this->resolve_endpoint( sprintf( self::API_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
@@ -2097,6 +2105,13 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 				if ( ! empty( $system_parts ) ) {
 					$payload['system_instruction'] = array( 'parts' => $system_parts );
+
+					// Prompt caching: mark the last system instruction part with cache_control.
+					// This tells Gemini to cache the system prompt for reuse across turns.
+					if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $payload['system_instruction']['parts'] ) ) {
+						$last_part_idx = count( $payload['system_instruction']['parts'] ) - 1;
+						$payload['system_instruction']['parts'][ $last_part_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
+					}
 				}
 			}
 
@@ -2336,6 +2351,14 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				} else {
 					$payload['tools'] = array( $retrieval_tool );
 				}
+			}
+
+			// Prompt caching: when cache_system_prompt is enabled and tools are present,
+			// mark the last tool definition with cache_control so Gemini can cache the
+			// tool definitions across turns (mirrors what Anthropic does).
+			if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $payload['tools'] ) && is_array( $payload['tools'] ) ) {
+				$last_tool_idx = count( $payload['tools'] ) - 1;
+				$payload['tools'][ $last_tool_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
 			}
 
 			// Tool config: controls function calling behaviour (function_calling_mode: AUTO, ANY, NONE).
@@ -3659,6 +3682,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 				if ( isset( $response['usageMetadata']['totalTokenCount'] ) ) {
 					$usage['total_tokens'] = (int) $response['usageMetadata']['totalTokenCount'];
+				}
+
+				// Extract cached tokens from Gemini's usageMetadata.
+				if ( isset( $response['usageMetadata']['cachedContentTokenCount'] ) ) {
+					$usage['cached_tokens'] = (int) $response['usageMetadata']['cachedContentTokenCount'];
 				}
 
 				if ( ! empty( $usage ) ) {

@@ -1,0 +1,24 @@
+{
+  "name": "nvoos-librechat",
+  "version": "0.1.0",
+  "description": "NV oOS LibreChat — React chat surface using LibreChat UI patterns backed by NV oOS REST chat endpoints",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.cjs --prod",
+    "build:dev": "node esbuild.config.cjs",
+    "watch": "node esbuild.config.cjs --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.17",
+    "@types/react": "19.1.4",
+    "@types/react-dom": "19.1.4",
+    "esbuild": "^0.27.0",
+    "typescript": "5.8.3"
+  }
+}

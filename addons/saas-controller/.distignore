@@ -1,0 +1,14 @@
+# Development files — excluded from distribution ZIP
+.distignore
+.gitignore
+node_modules/
+package-lock.json
+package.json
+tests/
+composer.lock
+.editorconfig
+.eslintrc.json
+.wrangler/
+assets/src/
+worker/src/
+tsconfig.json

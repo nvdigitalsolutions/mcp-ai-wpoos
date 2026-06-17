@@ -60,35 +60,103 @@ The root directory contains **3 essential markdown documentation files** that ev
 
 ## Documentation Directory Structure
 
-All other documentation is organized in the `docs/` directory:
+All documentation is organized in `docs/` using Unix-theory separation of concerns:
 
 ```
 docs/
 ├── README.md                       # Documentation overview
 ├── DOCUMENTATION_INDEX.md          # Comprehensive file index
-├── QUICK_REFERENCE.md              # Quick start guide
+├── QUICK_REFERENCE.md              # Fast lookup card
+├── ROADMAP.md                      # Release roadmap
+├── DOCUMENTATION_ORGANIZATION.md   # This file
 │
-├── admin/                          # Admin UI documentation
-├── api/                            # REST API documentation
-├── architecture/                   # System architecture
-├── deployment/                     # Deployment guides
-├── features/                       # Feature-specific docs
-│   └── TOOLKIT_MEMORY_TRACKING.md  # Pro toolkit memory system
-├── fixes/                          # Bug fix documentation
-│   └── menu-fixes/                 # Menu structure fixes
-│       ├── MENU_FIXES_CONSOLIDATED.md  # All menu fixes
-│       └── README.md
-├── guides/                         # How-to guides
-├── implementation-history/         # Development history
-├── proposals/                      # Feature proposals
-├── reference/                      # Technical references
-├── troubleshooting/               # Troubleshooting guides
-└── [many more...]
-
-Total: 650+ files
+├── getting-started/                # Installation, setup, quick starts
+│   ├── installation-setup/         # Plugin setup, deployment troubleshooting
+│   ├── quick-starts/               # LM Studio, MCP testing, remote client
+│   ├── first-steps/                # First steps after installation
+│   └── USE_CASES_AND_QUICKSTARTS.md
+│
+├── user-guides/                    # How-to guides for end users
+│   ├── assistants/                 # Building and testing assistants
+│   ├── chat/                       # Chat interface, history, templates
+│   ├── media/                      # Media handling
+│   ├── professionals/              # Profession knowledge base
+│   └── slash-commands/             # Slash command user guide
+│
+├── admin-guides/                   # Configuration and management
+│   ├── settings/                   # Plugin settings architecture
+│   ├── tools/                      # Tools manager interface
+│   ├── cron/                       # Cron job management
+│   └── monitoring/                 # Performance, error tracking
+│
+├── developer/                      # Technical docs for contributors
+│   ├── architecture/               # System design, orchestration, patterns
+│   ├── tool-development/           # Creating custom tools
+│   ├── testing-docs/               # Testing strategies and coverage
+│   ├── best-practices/             # Coding standards
+│   ├── integration/                # Third-party integration
+│   └── addons/                     # Addon documentation
+│
+├── features/                       # Feature-specific documentation
+│   ├── ai-providers/               # Gemini, OpenAI, LM Studio, etc.
+│   ├── chat/                       # Chat features, async, cron-status
+│   ├── memory/                     # Agent memory, RAG, transcript mining
+│   ├── performance/                # Rate limiting, token management
+│   ├── security/                   # Hardening, key rotation
+│   ├── federation/                 # Mesh networking
+│   ├── multi-agent/                # Multi-agent orchestration
+│   ├── tools/                      # Image, video, design, crawl4ai
+│   ├── streaming/                  # SSE streaming
+│   ├── integrations/               # Third-party integrations
+│   └── ...
+│
+├── reference/                      # Complete technical reference
+│   ├── api/                        # REST API, MCP, authentication
+│   ├── tools/                      # Tool reference, inventory
+│   ├── models/                     # AI model specifications
+│   ├── technical/                  # Token counting, compatibility
+│   ├── measurement/                # Metrics, budgets, evals
+│   ├── orchestration/              # Orchestration reference
+│   ├── playbooks/                  # Professional playbooks
+│   └── slash-commands/             # Slash command definitions
+│
+├── operations/                     # Deployment, security, troubleshooting
+│   ├── deployment/                 # Production deployment
+│   ├── troubleshooting/            # Problem-solving guides
+│   ├── security/                   # Security hardening and posture
+│   └── compliance/                 # ISO 27001, SOC 2, HIPAA
+│
+├── project/                        # Planning, decisions, releases
+│   ├── proposals/                  # Feature proposals and research
+│   ├── architecture-decisions/     # ADRs and RFDs
+│   ├── code-reviews/               # Quality assessments
+│   ├── releases/                   # Build, NPM, release process
+│   └── audits/                     # Security and compliance audits
+│
+├── history/                        # Historical records and archives
+│   ├── 2025/                       # 2025 implementation records
+│   ├── 2026/                       # 2026 records
+│   ├── archive/                    # Pre-2025 archival content
+│   └── implementations/            # Cross-era summaries
+│
+├── screenshots/                    # Screenshots for wp.org
+├── examples/                       # Usage examples and demos
+└── visual-guides/                  # Visual guides and diagrams
 ```
 
 ## Recent Reorganizations
+
+### June 3, 2026 — Unix-Theory Reorganization (Current)
+
+Complete reorganization applying Unix-theory separation of concerns:
+- **216 loose root files** sorted into appropriate subdirectories
+- **Guides split** into `user-guides/`, `admin-guides/`, and `developer/`
+- **Operations consolidated** — `deployment/`, `troubleshooting/`, `security/`, `compliance/` under `operations/`
+- **Project planning centralized** — `proposals/`, `ADRs`, `code-reviews/`, `releases/`, `audits/` under `project/`
+- **History unified** — `implementation-history/`, `archive/`, `implementations/`, `implementation-summaries/` under `history/`
+- **Reference expanded** — `measurement/`, `playbooks/`, `slash-commands/`, `tools/`, `model-catalogs/` under `reference/`
+- **All nesting flattened**, duplicate directories merged
+- **All README files updated** with new paths
 
 ### February 12, 2026 - Fix Summaries Archive
 
@@ -233,24 +301,23 @@ Moved 14 MD files from root to proper subdirectories:
 
 ## Finding Documentation
 
+### By Audience
+
+1. **End Users** → `user-guides/` (chat, assistants, professionals)
+2. **Administrators** → `admin-guides/` (settings, cron, monitoring)
+3. **Developers** → `developer/` (architecture, tools, testing)
+4. **Operators** → `operations/` (deployment, security, troubleshooting)
+5. **Project Managers** → `project/` (proposals, roadmap, releases)
+
 ### By Topic
 
-1. **Getting Started** → `README.md`, `docs/QUICK_REFERENCE.md`
-2. **Installation** → `README.md`, `docs/deployment/`
-3. **Features** → `docs/features/`, `README.md`
-4. **API** → `docs/api/`, `README.md`
-5. **Development** → `CONTRIBUTING.md`, `BUILD.md`, `docs/development/`
-6. **Troubleshooting** → `docs/troubleshooting/`, `docs/fixes/`
-7. **Architecture** → `docs/architecture/`
-8. **Security** → `SECURITY.md`, `docs/security/`
-
-### By File Type
-
-1. **Guides** → `docs/guides/`
-2. **Reference** → `docs/reference/`
-3. **API Docs** → `docs/api/`
-4. **Fix Documentation** → `docs/fixes/`
-5. **Proposals** → `docs/proposals/`
+1. **Getting Started** → `getting-started/`
+2. **API Reference** → `reference/api/`
+3. **Tool Reference** → `reference/tools/`
+4. **Features** → `features/`
+5. **Architecture** → `developer/architecture/`
+6. **Compliance** → `operations/compliance/`
+7. **History** → `history/`
 
 ### Using the Index
 
@@ -334,13 +401,12 @@ All documentation files should include:
 
 ## See Also
 
-- [Documentation Index](DOCUMENTATION_INDEX.md) - Complete file listing
-- [Quick Reference](QUICK_REFERENCE.md) - Fast reference guide
-- [Documentation Review](DOCUMENTATION_REVIEW_SUMMARY.md) - Quality assessment
-- [README](../README.md) - Project overview
-- [Documentation Directory README](README.md) - Quick navigation
+- [Documentation Index](DOCUMENTATION_INDEX.md) — Complete file listing
+- [Quick Reference](QUICK_REFERENCE.md) — Fast reference guide
+- [Docs README](README.md) — Quick navigation
+- [Repository README](../README.md) — Project overview
 
 ---
 
-**Last Updated**: January 29, 2026  
+**Last Updated**: June 3, 2026  
 **Maintained By**: NV Digital Solutions

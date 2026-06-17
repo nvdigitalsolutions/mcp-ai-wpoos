@@ -122,7 +122,20 @@ class WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -157,24 +170,34 @@ class WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler implements WP_MCP_AI_Tool_Inter
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
 		// Convert annual rates to monthly SMM (Single Monthly Mortality).
-		$monthly_default  = 1 - pow( 1 - $cdr, 1 / 12 );
-		$monthly_prepay   = 1 - pow( 1 - $cpr, 1 / 12 );
+		$monthly_default = 1 - pow( 1 - $cdr, 1 / 12 );
+		$monthly_prepay  = 1 - pow( 1 - $cpr, 1 / 12 );
 
 		// Loss absorption priority: equity absorbs first, junior second, etc.
-		$loss_priority = array( 'equity' => 1, 'junior' => 2, 'mezzanine' => 3, 'senior' => 4 );
+		$loss_priority = array(
+			'equity'    => 1,
+			'junior'    => 2,
+			'mezzanine' => 3,
+			'senior'    => 4,
+		);
 		$position_rank = isset( $loss_priority[ $position ] ) ? $loss_priority[ $position ] : 4;
 
-		$current_pool       = $pool_balance;
-		$current_tranche    = $tranche_balance;
-		$cumulative_loss    = 0.0;
-		$sub_below_tranche  = $pool_balance - $tranche_balance;
-		$total_interest     = 0.0;
-		$total_principal    = 0.0;
-		$total_loss         = 0.0;
-		$schedule           = array();
+		$current_pool      = $pool_balance;
+		$current_tranche   = $tranche_balance;
+		$cumulative_loss   = 0.0;
+		$sub_below_tranche = $pool_balance - $tranche_balance;
+		$total_interest    = 0.0;
+		$total_principal   = 0.0;
+		$total_loss        = 0.0;
+		$schedule          = array();
 
 		// Subordination below this tranche based on position.
-		$sub_pct_map = array( 'senior' => 0.30, 'mezzanine' => 0.12, 'junior' => 0.04, 'equity' => 0.0 );
+		$sub_pct_map = array(
+			'senior'    => 0.30,
+			'mezzanine' => 0.12,
+			'junior'    => 0.04,
+			'equity'    => 0.0,
+		);
 		$sub_below   = $pool_balance * ( $sub_pct_map[ $position ] ?? 0 );
 
 		for ( $month = 1; $month <= $projection_months; $month++ ) {
@@ -195,8 +218,8 @@ class WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler implements WP_MCP_AI_Tool_Inter
 			$recoveries = $defaults_amount * ( 1 - $loss_severity );
 
 			// Prepayments on performing balance.
-			$performing   = $current_pool - $defaults_amount;
-			$prepayments  = $performing * $monthly_prepay;
+			$performing  = $current_pool - $defaults_amount;
+			$prepayments = $performing * $monthly_prepay;
 
 			// Scheduled principal (simple amortization assumption).
 			$scheduled_principal = $current_pool * ( $pool_coupon / 12 ) * 0.1;
@@ -226,9 +249,9 @@ class WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler implements WP_MCP_AI_Tool_Inter
 			$tranche_interest = $current_tranche * $coupon_rate / 12;
 
 			// Tranche principal allocation (pro-rata simplified).
-			$tranche_share    = ( $pool_balance > 0 ) ? $tranche_balance / $pool_balance : 0;
-			$tranche_prin     = $total_paydown * $tranche_share;
-			$tranche_prin     = min( $tranche_prin, $current_tranche );
+			$tranche_share = ( $pool_balance > 0 ) ? $tranche_balance / $pool_balance : 0;
+			$tranche_prin  = $total_paydown * $tranche_share;
+			$tranche_prin  = min( $tranche_prin, $current_tranche );
 
 			// Apply losses.
 			$current_tranche -= $loss_to_tranche;
@@ -263,23 +286,23 @@ class WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler implements WP_MCP_AI_Tool_Inter
 		$wal_numerator = 0.0;
 		$wal_total_cf  = 0.0;
 		foreach ( $schedule as $row ) {
-			$prin = $row['scheduled_principal'] + $row['prepayments'];
+			$prin           = $row['scheduled_principal'] + $row['prepayments'];
 			$wal_numerator += $prin * ( $row['month'] / 12 );
 			$wal_total_cf  += $prin;
 		}
 		$wal = ( $wal_total_cf > 0 ) ? $wal_numerator / $wal_total_cf : 0;
 
 		$summary = array(
-			'tranche_position'       => $position,
-			'original_tranche'       => $calc::format_currency( $tranche_balance ),
-			'remaining_tranche'      => $calc::format_currency( $current_tranche ),
-			'total_interest_paid'    => $calc::format_currency( $total_interest ),
-			'total_principal_paid'   => $calc::format_currency( $total_principal ),
-			'total_losses_absorbed'  => $calc::format_currency( $total_loss ),
-			'loss_pct_of_tranche'    => $calc::format_percentage( ( $tranche_balance > 0 ) ? $total_loss / $tranche_balance : 0 ),
-			'weighted_average_life'  => round( $wal, 2 ) . ' years',
-			'pool_factor'            => round( ( $pool_balance > 0 ) ? $current_pool / $pool_balance : 0, 4 ),
-			'assumptions'            => array(
+			'tranche_position'      => $position,
+			'original_tranche'      => $calc::format_currency( $tranche_balance ),
+			'remaining_tranche'     => $calc::format_currency( $current_tranche ),
+			'total_interest_paid'   => $calc::format_currency( $total_interest ),
+			'total_principal_paid'  => $calc::format_currency( $total_principal ),
+			'total_losses_absorbed' => $calc::format_currency( $total_loss ),
+			'loss_pct_of_tranche'   => $calc::format_percentage( ( $tranche_balance > 0 ) ? $total_loss / $tranche_balance : 0 ),
+			'weighted_average_life' => round( $wal, 2 ) . ' years',
+			'pool_factor'           => round( ( $pool_balance > 0 ) ? $current_pool / $pool_balance : 0, 4 ),
+			'assumptions'           => array(
 				'cdr'           => $calc::format_percentage( $cdr ),
 				'cpr'           => $calc::format_percentage( $cpr ),
 				'loss_severity' => $calc::format_percentage( $loss_severity ),
@@ -287,9 +310,9 @@ class WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler implements WP_MCP_AI_Tool_Inter
 		);
 
 		return array(
-			'success'    => true,
-			'message'    => __( 'CMBS bond cash flow projection completed.', 'mcp-ai-wpoos-pro' ),
-			'data'       => array(
+			'success' => true,
+			'message' => __( 'CMBS bond cash flow projection completed.', 'mcp-ai-wpoos-pro' ),
+			'data'    => array(
 				'summary'    => $summary,
 				'schedule'   => $schedule,
 				'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),

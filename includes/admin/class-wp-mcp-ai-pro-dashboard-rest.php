@@ -350,7 +350,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			if ( empty( $controls ) ) {
 				return new WP_Error(
 					'soa_not_found',
-					__( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ),
+					__( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/operations/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -879,7 +879,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			}
 
 			// Fallback to parsing markdown file (development/debugging).
-			$soa_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Statement-of-Applicability.md';
+			$soa_file = WP_MCP_AI_PATH . 'docs/operations/compliance/iso27001/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $soa_file ) ) {
 				return array();

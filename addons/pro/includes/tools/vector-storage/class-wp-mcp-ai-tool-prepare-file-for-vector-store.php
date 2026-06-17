@@ -101,6 +101,9 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check capability.
@@ -375,14 +378,14 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 		// Add header if present.
 		if ( isset( $data['headers'] ) && is_array( $data['headers'] ) ) {
 			$output .= "# Data Structure\n\n";
-			$output .= "Columns: " . implode( ', ', $data['headers'] ) . "\n\n";
+			$output .= 'Columns: ' . implode( ', ', $data['headers'] ) . "\n\n";
 			$output .= "---\n\n";
 		}
 
 		// Add rows.
 		if ( isset( $data['rows'] ) && is_array( $data['rows'] ) ) {
 			foreach ( $data['rows'] as $index => $row ) {
-				$output .= "## Record " . ( $index + 1 ) . "\n\n";
+				$output .= '## Record ' . ( $index + 1 ) . "\n\n";
 
 				if ( isset( $data['headers'] ) && count( $data['headers'] ) === count( $row ) ) {
 					// Format as key-value pairs.

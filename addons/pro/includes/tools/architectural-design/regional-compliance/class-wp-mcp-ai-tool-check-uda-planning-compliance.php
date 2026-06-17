@@ -84,7 +84,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 					'enum'        => array( '2021', '2025' ),
 					'default'     => '2025',
 				),
-				'lot' => array(
+				'lot'             => array(
 					'type'        => 'object',
 					'description' => __( 'Lot description: lot_area_m2 or lot_perches.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -92,7 +92,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 						'lot_perches' => array( 'type' => 'number' ),
 					),
 				),
-				'building' => array(
+				'building'        => array(
 					'type'        => 'object',
 					'description' => __( 'Building description.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -115,7 +115,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 						),
 					),
 				),
-				'site' => array(
+				'site'            => array(
 					'type'        => 'object',
 					'description' => __( 'Optional site context.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -131,7 +131,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 						),
 					),
 				),
-				'professional' => array(
+				'professional'    => array(
 					'type'        => 'object',
 					'description' => __( 'Professional/SLIA signoff state.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -157,6 +157,13 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -176,10 +183,10 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 		}
 
 		$gazette_vintage = isset( $arguments['gazette_vintage'] ) ? sanitize_text_field( $arguments['gazette_vintage'] ) : '2025';
-		$lot      = isset( $arguments['lot'] ) ? (array) $arguments['lot'] : array();
-		$building = isset( $arguments['building'] ) ? (array) $arguments['building'] : array();
-		$site     = isset( $arguments['site'] ) ? (array) $arguments['site'] : array();
-		$pro      = isset( $arguments['professional'] ) ? (array) $arguments['professional'] : array();
+		$lot             = isset( $arguments['lot'] ) ? (array) $arguments['lot'] : array();
+		$building        = isset( $arguments['building'] ) ? (array) $arguments['building'] : array();
+		$site            = isset( $arguments['site'] ) ? (array) $arguments['site'] : array();
+		$pro             = isset( $arguments['professional'] ) ? (array) $arguments['professional'] : array();
 
 		$pack_id = ( '2025' === $gazette_vintage ) ? 'lk_uda_2025_gazette' : 'lk_uda_2021';
 		$packs   = array( $pack_id, 'lk_nbro_landslide' );
@@ -233,7 +240,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 
 		// Setbacks.
 		if ( ! empty( $setbacks ) ) {
-			$req = array(
+			$req        = array(
 				'front' => isset( $zoning['min_setback_front_m'] ) ? floatval( $zoning['min_setback_front_m'] ) : 0.0,
 				'rear'  => isset( $zoning['min_setback_rear_m'] ) ? floatval( $zoning['min_setback_rear_m'] ) : 0.0,
 				'left'  => isset( $zoning['min_setback_side_m'] ) ? floatval( $zoning['min_setback_side_m'] ) : 0.0,
@@ -257,8 +264,8 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 		}
 
 		// NBRO landslide.
-		$zone = isset( $site['nbro_landslide_zone'] ) ? sanitize_text_field( $site['nbro_landslide_zone'] ) : '';
-		$slope = isset( $site['slope_deg'] ) ? floatval( $site['slope_deg'] ) : 0.0;
+		$zone      = isset( $site['nbro_landslide_zone'] ) ? sanitize_text_field( $site['nbro_landslide_zone'] ) : '';
+		$slope     = isset( $site['slope_deg'] ) ? floatval( $site['slope_deg'] ) : 0.0;
 		$req_zones = isset( $zoning['landslide_clearance_required_in_zones'] ) ? (array) $zoning['landslide_clearance_required_in_zones'] : array();
 		if ( $zone && in_array( $zone, $req_zones, true ) ) {
 			$checks[] = $this->mk( 'planning', __( 'NBRO landslide clearance required in high/moderate hazard zones.', 'mcp-ai-wpoos-pro' ), 'fail', __( 'Site is in a hazard zone — NBRO clearance required.', 'mcp-ai-wpoos-pro' ) );
@@ -275,13 +282,16 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 		}
 
 		// SLIA signoff.
-		$slia = ! empty( $pro['slia_registered_architect'] );
+		$slia     = ! empty( $pro['slia_registered_architect'] );
 		$checks[] = $this->mk( 'planning', __( 'SLIA registered architect signoff required.', 'mcp-ai-wpoos-pro' ), $slia ? 'pass' : 'fail', $slia ? __( 'Registered architect engaged.', 'mcp-ai-wpoos-pro' ) : __( 'Engage a SLIA-registered architect before submission.', 'mcp-ai-wpoos-pro' ) );
 
-		$overall  = 'pass';
+		$overall = 'pass';
 		foreach ( $checks as $c ) {
-			if ( 'fail' === $c['status'] ) { $overall = 'fail'; break; }
-			if ( 'warning' === $c['status'] && 'fail' !== $overall ) { $overall = 'conditional'; }
+			if ( 'fail' === $c['status'] ) {
+				$overall = 'fail';
+				break; }
+			if ( 'warning' === $c['status'] && 'fail' !== $overall ) {
+				$overall = 'conditional'; }
 		}
 
 		return array(
@@ -302,7 +312,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 	 *
 	 * @param string $category    Category.
 	 * @param string $requirement Requirement text.
-	 * @param string $status      pass|warning|fail.
+	 * @param string $status      Pass|warning|fail.
 	 * @param string $details     Detail text.
 	 * @return array
 	 */

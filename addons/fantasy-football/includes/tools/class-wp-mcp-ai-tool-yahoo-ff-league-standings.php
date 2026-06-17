@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Retrieves and visualizes league standings with Chart.js.
  */
 class WP_MCP_AI_Tool_Yahoo_FF_League_Standings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**

@@ -15,12 +15,73 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- File contains a stub trait and the main class.
+
+// ---------------------------------------------------------------------------
+// Inline-async-tick trait — load from the base plugin when available, or
+// define a no-op stub so this file can be parsed in bare unit-test
+// environments that don't have the base plugin active.
+// ---------------------------------------------------------------------------
+if ( ! trait_exists( 'WP_MCP_AI_Inline_Async_Tick_Trait' ) ) {
+	if ( defined( 'WP_MCP_AI_PATH' ) && file_exists( WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
+	} else {
+		// Stub — all methods are no-ops so the class loads cleanly.
+		trait WP_MCP_AI_Inline_Async_Tick_Trait { // phpcs:ignore
+			/**
+			 * Check if inline async kick is enabled.
+			 *
+			 * @param string $job_id Job ID.
+			 * @param string $class  Class name.
+			 * @return bool
+			 */
+			protected static function inline_async_kick_enabled( $job_id, $class ) {
+				return false; }
+			/**
+			 * Acquire a tick lock.
+			 *
+			 * @param string $lock_key    Lock key.
+			 * @param string $cache_group Cache group.
+			 * @param int    $ttl_seconds TTL in seconds.
+			 * @return bool
+			 */
+			protected static function inline_async_acquire_tick_lock( $lock_key, $cache_group, $ttl_seconds = 60 ) {
+				return true; }
+			/**
+			 * Release a tick lock.
+			 *
+			 * @param string $lock_key    Lock key.
+			 * @param string $cache_group Cache group.
+			 * @return void
+			 */
+			protected static function inline_async_release_tick_lock( $lock_key, $cache_group ) {}
+			/**
+			 * Detach worker from client.
+			 *
+			 * @return void
+			 */
+			protected static function inline_async_detach_worker_from_client() {}
+			/**
+			 * Run inline async kick.
+			 *
+			 * @param string   $class    Class name.
+			 * @param string   $job_id   Job ID.
+			 * @param callable $callable Callable to execute.
+			 * @return void
+			 */
+			protected static function inline_async_run_kick( $class, $job_id, $callable ) {}
+		}
+	}
+}
+
 /**
  * Core singleton for the NV oOS Graphify addon.
  *
  * @since 0.5.0
  */
 class NV_oOS_Graphify {
+
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
 
 	/**
 	 * WordPress option key for addon settings.
@@ -42,6 +103,36 @@ class NV_oOS_Graphify {
 	 * @var string
 	 */
 	const CRON_ENRICH_HOOK = 'nvoos_graphify_cron_enrich';
+
+	/**
+	 * Fixed key for the build tick lock (global across all build triggers,
+	 * since only one full/incremental build should run at a time).
+	 *
+	 * Used with {@see inline_async_acquire_tick_lock()} /
+	 * {@see inline_async_release_tick_lock()}.
+	 *
+	 * @since 0.6.1
+	 * @var string
+	 */
+	const TICK_LOCK_KEY = 'nvoos_graphify_build_tick_lock';
+
+	/**
+	 * Object-cache group for the build tick lock.
+	 *
+	 * @since 0.6.1
+	 * @var string
+	 */
+	const TICK_LOCK_CACHE_GROUP = 'nvoos_graphify';
+
+	/**
+	 * Tick lock TTL in seconds. Graphify builds can take 10-30s on large
+	 * sites, so 60s provides a comfortable window before the lock expires
+	 * and a second attempt is allowed.
+	 *
+	 * @since 0.6.1
+	 * @var int
+	 */
+	const TICK_LOCK_TTL = 60;
 
 	// -------------------------------------------------------------------------
 	// Boot
@@ -82,7 +173,7 @@ class NV_oOS_Graphify {
 
 		// Upgrade DB schema if needed.
 		$installed_ver = get_option( 'nvoos_graphify_db_version', '0' );
-		if ( $installed_ver !== NVOOS_GRAPHIFY_DB_VERSION ) {
+		if ( NVOOS_GRAPHIFY_DB_VERSION !== $installed_ver ) {
 			NV_oOS_Graphify_DB::upgrade();
 		}
 
@@ -214,11 +305,34 @@ class NV_oOS_Graphify {
 	/**
 	 * Run the scheduled full rebuild.
 	 *
+	 * Acquires the cooperative tick lock before delegating to {@see do_build()}
+	 * so that a WP-Cron loopback and an inline-async shutdown kick cannot run
+	 * two concurrent builds simultaneously.
+	 *
 	 * @since 0.5.0
 	 *
 	 * @return void
 	 */
 	public static function run_scheduled_build() {
+		if ( ! self::inline_async_acquire_tick_lock( self::TICK_LOCK_KEY, self::TICK_LOCK_CACHE_GROUP, self::TICK_LOCK_TTL ) ) {
+			return; // Another build is already in progress.
+		}
+		try {
+			self::do_build();
+		} finally {
+			self::inline_async_release_tick_lock( self::TICK_LOCK_KEY, self::TICK_LOCK_CACHE_GROUP );
+		}
+	}
+
+	/**
+	 * Inner build body — extracted so tests can call it directly without
+	 * going through the tick lock.
+	 *
+	 * @since 0.6.1
+	 *
+	 * @return void
+	 */
+	protected static function do_build() {
 		$settings = self::get_settings();
 		NV_oOS_Graphify_Builder::build(
 			array(
@@ -256,24 +370,29 @@ class NV_oOS_Graphify {
 		return wp_parse_args(
 			get_option( self::OPTION_KEY, array() ),
 			array(
-				'enabled'              => true,
-				'post_types'           => NV_oOS_Graphify_Detector::get_default_post_types(),
-				'semantic_extraction'  => true,
-				'incremental_builds'   => true,
-				'auto_rebuild'         => false,
-				'rebuild_schedule'     => 'daily',
-				'schema_injection'     => true,
-				'related_content'      => true,
-				'max_related'          => 5,
-				'openai_api_key'       => '',
-				'cytoscape_height'     => '600px',
-				'max_display_nodes'    => 300,
+				'enabled'               => true,
+				// 'post_types' is intentionally NOT listed here as a computed default.
+				// detect_posts() calls get_default_post_types() directly when the key
+				// is absent. Including it here would cause infinite recursion because
+				// get_default_post_types() applies the nvoos_graphify_indexed_post_types
+				// filter, which (when the NV oOS bridge is active) calls back into
+				// get_settings() via filter_indexed_post_types().
+				'semantic_extraction'   => true,
+				'incremental_builds'    => true,
+				'auto_rebuild'          => false,
+				'rebuild_schedule'      => 'daily',
+				'schema_injection'      => true,
+				'related_content'       => true,
+				'max_related'           => 5,
+				'openai_api_key'        => '',
+				'cytoscape_height'      => '600px',
+				'max_display_nodes'     => 300,
 				'remote_enrich_enabled' => false,
-				'remote_enrich_budget' => 50,
-				'embeddings_enabled'   => false,
-				'embeddings_model'     => 'text-embedding-3-small',
-				'embed_on_ingest'      => true,
-				'remote_enrich_async'  => true,
+				'remote_enrich_budget'  => 50,
+				'embeddings_enabled'    => false,
+				'embeddings_model'      => 'text-embedding-3-small',
+				'embed_on_ingest'       => true,
+				'remote_enrich_async'   => true,
 			)
 		);
 	}
@@ -285,7 +404,12 @@ class NV_oOS_Graphify {
 	/**
 	 * Trigger an incremental rebuild when a post is saved.
 	 *
-	 * Runs via WP Cron to avoid slowing down the save request.
+	 * Schedules a WP-Cron event for 5 seconds out (the existing behaviour)
+	 * AND registers an inline-async shutdown kick so the rebuild begins
+	 * immediately on the current request's shutdown, rather than waiting
+	 * for the cron loopback. The tick lock in {@see run_scheduled_build()}
+	 * ensures only one build runs if both the shutdown kick and the cron
+	 * loopback fire at almost the same time.
 	 *
 	 * @since 0.5.0
 	 *
@@ -303,7 +427,29 @@ class NV_oOS_Graphify {
 		if ( ! $post || 'publish' !== $post->post_status ) {
 			return;
 		}
+
+		// Legacy cron path — still registered so builds run even without
+		// an object cache (the tick lock degrades to transient-only).
 		wp_schedule_single_event( time() + 5, self::CRON_BUILD_HOOK );
+
+		// Inline-async-tick: fire the first build chunk on the shutdown of
+		// the save request so incremental reindexing begins immediately.
+		if ( self::inline_async_kick_enabled( $post_id, __CLASS__ ) ) {
+			add_action(
+				'shutdown',
+				function () use ( $post_id ) {
+					self::inline_async_detach_worker_from_client();
+					self::inline_async_run_kick(
+						__CLASS__,
+						(string) $post_id,
+						function () {
+							self::run_scheduled_build();
+						}
+					);
+				},
+				22
+			);
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -545,12 +691,28 @@ class NV_oOS_Graphify {
 		register_block_type(
 			'nvoos-graphify/graph',
 			array(
+				'api_version'     => 3,
 				'attributes'      => array(
-					'mode'         => array( 'type' => 'string', 'default' => 'full' ),
-					'community_id' => array( 'type' => 'string', 'default' => '' ),
-					'post_id'      => array( 'type' => 'integer', 'default' => 0 ),
-					'height'       => array( 'type' => 'string', 'default' => '600px' ),
-					'max_nodes'    => array( 'type' => 'integer', 'default' => 300 ),
+					'mode'         => array(
+						'type'    => 'string',
+						'default' => 'full',
+					),
+					'community_id' => array(
+						'type'    => 'string',
+						'default' => '',
+					),
+					'post_id'      => array(
+						'type'    => 'integer',
+						'default' => 0,
+					),
+					'height'       => array(
+						'type'    => 'string',
+						'default' => '600px',
+					),
+					'max_nodes'    => array(
+						'type'    => 'integer',
+						'default' => 300,
+					),
 				),
 				'render_callback' => array( __CLASS__, 'render_block' ),
 			)
@@ -615,7 +777,7 @@ class NV_oOS_Graphify {
 
 		$edges = NV_oOS_Graphify_DB::get_edges_for_node( $node->node_id );
 
-		$about        = array();
+		$about         = array();
 		$related_links = array();
 
 		foreach ( $edges as $edge ) {
@@ -680,6 +842,14 @@ class NV_oOS_Graphify {
 			return $content;
 		}
 
+		// Only append to the main queried post — not to synthetic
+		// `apply_filters( 'the_content', … )` calls made inside the
+		// main loop by shortcodes, blocks, or other plugins.
+		$queried_id = get_queried_object_id();
+		if ( $post_id !== $queried_id ) {
+			return $content;
+		}
+
 		$node = NV_oOS_Graphify_DB::get_node_by_post_id( $post_id );
 		if ( ! $node ) {
 			return $content;
@@ -718,6 +888,11 @@ class NV_oOS_Graphify {
 			$widget .= '<li><a href="' . esc_url( $n->url ) . '">' . esc_html( $n->label ) . '</a></li>';
 		}
 		$widget .= '</ul></div>';
+
+		// Remove the filter so that nested `apply_filters( 'the_content', … )`
+		// calls (e.g. from shortcodes rendered inside this same content)
+		// cannot leak the widget into other page sections.
+		remove_filter( 'the_content', array( __CLASS__, 'append_related_content' ) );
 
 		return $content . $widget;
 	}

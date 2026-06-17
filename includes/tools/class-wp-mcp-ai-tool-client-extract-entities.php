@@ -107,6 +107,13 @@ class WP_MCP_AI_Tool_Client_Extract_Entities implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -116,18 +123,18 @@ class WP_MCP_AI_Tool_Client_Extract_Entities implements WP_MCP_AI_Tool_Interface
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! class_exists( 'WP_MCP_AI_Transformers_Enqueue' ) ||
 			! WP_MCP_AI_Transformers_Enqueue::is_transformers_enabled() ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Browser-native AI tasks are not enabled.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Browser-native AI tasks are not enabled.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		$text = isset( $arguments['text'] ) ? $arguments['text'] : '';
 
 		if ( empty( $text ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Text parameter is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Text parameter is required.', 'mcp-ai-wpoos' )
 			);
 		}
 

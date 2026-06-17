@@ -187,10 +187,10 @@ class WP_MCP_AI_Healthcare_FHIR {
 	 */
 	public static function build_medication_request( array $data ) {
 		$resource = array(
-			'resourceType' => 'MedicationRequest',
-			'id'           => self::sanitize_id( $data['id'] ?? '' ),
-			'status'       => sanitize_key( $data['status'] ?? 'active' ),
-			'intent'       => sanitize_key( $data['intent'] ?? 'order' ),
+			'resourceType'              => 'MedicationRequest',
+			'id'                        => self::sanitize_id( $data['id'] ?? '' ),
+			'status'                    => sanitize_key( $data['status'] ?? 'active' ),
+			'intent'                    => sanitize_key( $data['intent'] ?? 'order' ),
 			'medicationCodeableConcept' => self::build_codeable_concept( $data['medication'] ?? array(), 'http://www.nlm.nih.gov/research/umls/rxnorm' ),
 		);
 		if ( ! empty( $data['patient_id'] ) ) {
@@ -377,9 +377,11 @@ class WP_MCP_AI_Healthcare_FHIR {
 		return apply_filters( 'wp_mcp_ai_healthcare_fhir_resource', $bundle, array( 'resourceType' => 'Bundle' ) );
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Internal helpers
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Build a CodeableConcept from { code, display } or { coding: [ … ] } data.

@@ -18,6 +18,7 @@ const use_unsafe_video_config_js_1 = require("../use-unsafe-video-config.js");
 const volume_prop_js_1 = require("../volume-prop.js");
 const volume_safeguard_js_1 = require("../volume-safeguard.js");
 const get_current_time_js_1 = require("./get-current-time.js");
+const MediaPlaybackError_js_1 = require("./MediaPlaybackError.js");
 const seek_until_right_js_1 = require("./seek-until-right.js");
 const VideoForRenderingForwardFunction = ({ onError, volume: volumeProp, allowAmplificationDuringRender, playbackRate, onDuration, toneFrequency, name, acceptableTimeShiftInSeconds, delayRenderRetries, delayRenderTimeoutInMilliseconds, loopVolumeCurveBehavior, audioStreamIndex, onVideoFrame, ...props }, ref) => {
     const absoluteFrame = (0, timeline_position_state_js_1.useTimelinePosition)();
@@ -155,10 +156,16 @@ const VideoForRenderingForwardFunction = ({ onError, volume: volumeProp, allowAm
                 if (onError) {
                     return;
                 }
-                throw new Error(`The browser threw an error while playing the video ${props.src}: Code ${current.error.code} - ${(_a = current === null || current === void 0 ? void 0 : current.error) === null || _a === void 0 ? void 0 : _a.message}. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.`);
+                throw new MediaPlaybackError_js_1.MediaPlaybackError({
+                    message: `The browser threw an error while playing the video ${props.src}: Code ${current.error.code} - ${(_a = current === null || current === void 0 ? void 0 : current.error) === null || _a === void 0 ? void 0 : _a.message}. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.`,
+                    src: props.src,
+                });
             }
             else {
-                throw new Error('The browser threw an error');
+                throw new MediaPlaybackError_js_1.MediaPlaybackError({
+                    message: 'The browser threw an error',
+                    src: props.src,
+                });
             }
         };
         current.addEventListener('error', errorHandler, { once: true });

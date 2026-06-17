@@ -1,11 +1,20 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.11  
-**Last Updated:** April 27, 2026
+**Version:** 1.1.19  
+**Last Updated:** May 17, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
-## 🆕 Recent Updates (April 2026)
+## 🆕 Recent Updates (May 2026)
+
+- **Documentation refresh** (May 17): `USE_CASES_AND_QUICKSTARTS.md` moved to independent doc revision 2.0 with `docs/getting-started/_USE_CASES_FACT_SHEET.md` as the point-in-time count source. Current framing: ~830 tools (~195 base + ~635 Pro), ~190 profession templates, 10 GA SPA-manifested Pro toolkits; live registry remains authoritative.
+- **v1.1.19** (May 18): **Kimi (Moonshot AI)** as 10th first-class provider (`WP_MCP_AI_Kimi_Client`, 256K context, kimi-k2-thinking CoT); **ACP Server** (JSON-RPC 2.0 + HTTP/SSE — `WP_MCP_AI_ACP_Server` + IDE integration + `/.well-known/ai-peer` ACP advertisement); **MCP Bridge** (`bin/mcp-bridge.js` stdio relay for Claude Desktop/Cursor/Zed); **Unix Theory P7** (folder README convention backfilled across all `includes/` subdirs; `composer run docs:check-folder-readmes`); **GDPR** (JetEngine privacy exporters); **Security** (settings-key encryption, webhook secret enforcement, SSRF hardening, attachment URL validation, client-log debug-gate); **Chat Bubble sweep** (13 PRs — self-init via wpMcpAiChatInit, kses form controls, Test Model restored, panel-fit + scoped CSS)
+- **v1.1.18** (May 14): **Unix Theory Compliance Phases P0–P6** (canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` sniff, capability-fence audit, `WP_MCP_AI_Tool_Data_Contract_Interface`, tool-lifecycle descriptor 5th arg + OTel `data_type`/`duration_ms`, back-compat alias infrastructure, `WPMCPAI.Tools.SanitizeAtEntry` sniff); **DigitalOcean Serverless Inference** provider (9th provider); **Async chat continuation** slices 1–6 (durable store, dispatcher, LLM re-entry, SSE frame buffer, Pro webhook notifier, OTel + Jest); **Jobs/Tasks Drawer + cron-status** PRs A–G (inline progress cards, cancel/retry routes, OTel hooks); **Toolkit MCP Servers Phase 7** admin UI; **JetEngine CCT memory mirror** hydration; **UI/UX Pro Max Skill Bundle** (45th bundled skill with design system data for 15+ frameworks); agent-surface refresh across `.bmad/` `.codex/` `.context/` `.devcontainer/` `.github/agents/` `.vscode/` `.zed/`
+- **v1.1.17** (May 10): WP.org compliance hardening B1–B13 all resolved; **Chat SPA addon** v0.6.0 (Phases 1–7 complete); **Docs Hub** v0.3.8; **Toolkit SPA Blueprint** Phases 5–12; PHPUnit + Vitest coverage campaign (PRs #1–#11, 271 AJAX handlers covered); build-pipeline split (WP.org vs full GitHub Release ZIPs); Dependabot security sweep (33 alerts resolved)
+- **v1.1.16** (May 6): **SaaS Controller** v0.1.0 (11 phases, NV oOS Cloud control plane); **Structured Logging** integration across all addons and core; **Docs Hub** v0.1.0; inline-async-tick pattern (8 consumers); **Toolkit MCP servers** all 7 phases complete; Rev 2.0 distinguishes 10 GA SPA-manifested Pro toolkits from the broader settings-page/module inventory; addon licensing split
+- **v1.1.15** (May 5): **OpenRouter + DeepSeek** as first-class providers; **LM Studio** native cURL SSE streaming; **Orchestration Phases 1–7** GA (HITL, OTel, DAG builder, durable runs, triggers/webhooks, sub-agents); **LLM Harnessing GA** (Layers A–H); 19 new slash commands; **Chat-client Memory Bridge** G-series; **Graphify** NV oOS data-source bridge
+
+### Previous Updates (April 2026)
 
 - **Harmonization Sub-Toolkit** 🎨 — 14 new Pro tools under `addons/pro/includes/tools/image-production/harmonization/` that complement the end-to-end `product_actualization` tool with composable AI-compositing primitives (color harmonization, relighting, shadow synthesis, reflection, boundary refinement, AI-assisted background generation, outpainting, placement suggestion, lighting analysis, and an end-to-end orchestrator). See [`docs/harmonization-architecture.md`](harmonization-architecture.md). Example LLM prompts:
   - *"Place this product photo on an AI-generated kitchen counter."*
@@ -20,7 +29,7 @@ This quick reference provides fast access to the most common tasks and commands 
 - **Graphify Knowledge Graph Addon v0.5.0** (v1.1.9) — Optional WordPress Knowledge Graph addon restored under `addons/graphify/`.
 - **Orchestration Reference Doc** (v1.1.9) — New [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) documents every workflow preset, resource preset, the PSO algorithm, and all orchestration hooks / filters / storage keys in one place.
 - **Erlang C Queuing Theory Tools** (v1.1.8) – 4 workforce-management tools built on the Erlang C formula. `calculate_erlang_c` (general staffing solver), `erlang_c_concurrency_advisor` (AI session tuning), `erlang_c_staffing_advisor` (multi-channel with bot-deflection and WFM endpoint), `erlang_c_queue_health` (real-time SLA monitoring with `wp_mcp_ai_queue_alert` action hook). All four ship in the base plugin with no external dependencies. See [`docs/features/erlang-c-staffing-tools.md`](features/erlang-c-staffing-tools.md).
-- **tool-reference.md fully updated** – All 230+ tools in `load_default_tools` (base + extended) are now documented. Added 14 new sections covering: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queue tools.
+- **tool-reference.md fully updated** – historical April audit superseded by current ~830-tool framing; use `WP_MCP_AI_Tool_Registry::get_tools()` for live counts. Added 14 new sections covering: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queue tools.
 - **MCP Protocol Completion** ⭐ (v1.1.7) – Full MCP 2024-11-05 spec compliance: `resources/read`, `prompts/get`, `ping`, `completion/complete`, `logging/setLevel`, `notifications/cancelled`, JSON-RPC batching (up to 20 messages), tool annotations, `Mcp-Session-Id` management.
 - **MCP Apps (SEP-1865)** ⭐ (v1.1.7) – Per-assistant remote MCP server connections (up to 10) with JSON-RPC 2.0 tool bridging, transient-cached discovery, admin metabox.
 - **CRE Debt & Securitization Pro Toolkit** ⭐ (v1.1.7) – 57 new tools across 5 modules (Originations, Underwriting, CMBS, Debt Fund, Asset Management). 36 new professions, 17 new team configurations.
@@ -28,7 +37,7 @@ This quick reference provides fast access to the most common tasks and commands 
 ### Previous Updates (April 2026 — v1.1.6)
 
 - **Getting Started Wizard** ⭐ NEW – 4-step onboarding wizard with 8 use-case presets (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, General Purpose). Selecting a preset creates a fully-configured assistant with tools, system prompt, and tuned temperature — working out of the box. WCAG 2.1 accessible with keyboard navigation. Access via **NV oOS → Getting Started**.
-- **Quick Tool Selection Presets** ⭐ NEW – All 760 tools now covered across 61 one-click presets on the assistant CPT edit page. New `📋 Registration & Compliance` preset (44 tools). Expanded 20+ existing presets with Shopify, full cross-platform messaging, tool scaffolding, cloud storage, site builder sections, appointment management, and more.
+- **Quick Tool Selection Presets** ⭐ NEW – broad preset coverage on the assistant CPT edit page; verify exact live coverage against the registry (~830 current framing). New `📋 Registration & Compliance` preset (44 tools). Expanded 20+ existing presets with Shopify, full cross-platform messaging, tool scaffolding, cloud storage, site builder sections, appointment management, and more.
 - **Security Hardening** ⭐ NEW – AES-256-GCM encryption upgrade, finfo fail-closed MIME detection, Discord replay attack protection, HTTPS enforcement, ZIP bomb protection, OCR error info-disclosure fix.
 - **Chat Channels** – Fixed Slack @mentions, Google Chat OIDC/route issues, Teams multi-connection with OAuth one-click, Telegram typing indicator and slash-command integration.
 - **Telegram Mini App** – Doctor tab now uses connection-assigned assistant; AI replies rendered as Markdown HTML; vitals log import improved.
@@ -91,7 +100,8 @@ This quick reference provides fast access to the most common tasks and commands 
 ```bash
 # SSH into your server and clone directly into plugins directory
 cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
-git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+# Use --depth 1 for a fast shallow clone (repo is very large)
+git clone --depth 1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 # Activate the plugin in WordPress admin — it is ready to use.
 ```
 
@@ -99,11 +109,13 @@ git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 ```bash
 # Option 1: Clone directly into WordPress (recommended)
 cd /path/to/wordpress/wp-content/plugins/
-git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+# Use --depth 1 for a fast shallow clone (repo is very large)
+git clone --depth 1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 # Activate the plugin — pre-built assets included, no npm needed.
 
 # Option 2 (development): Clone, rebuild assets, then copy
-git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+# Use --depth 1 for a fast shallow clone (repo is very large)
+git clone --depth 1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
 # Only on a machine with proper write access and Node.js installed:
 npm install && npm run build
@@ -144,6 +156,8 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 - **Crawl4AI URL** - For web crawling capabilities
 - **Mailjet API** - For email automation
 - **QuickBooks API** - For financial reporting
+- **OpenRouter API Key** — For OpenRouter unified gateway (OpenAI/Anthropic/Google/Meta via one key)
+- **DeepSeek API Key** — For DeepSeek provider (reasoning_content passthrough)
 
 ---
 
@@ -606,12 +620,30 @@ Settings → NV oOS → Chat Theme
 
 ---
 
+## 🧠 LLM Harness Quick Toggle
+
+Per-assistant opt-in: Edit Assistant → **LLM Harness** metabox → Enable → check the layers you want (A–H). All layers are off by default. Reference: [docs/llm-harness.md](llm-harness.md).
+
+---
+
+## ✅ HITL Approval Queue
+
+Admin: **NV oOS → Orchestration → Approvals**. Tool: `request_user_approval`. REST: `GET/POST/PATCH /wp-json/mcp-ai/v1/approvals/*`. Pending → Publish = approved; Private = denied.
+
+---
+
+## 🔗 Toolkit MCP Discovery
+
+Discovery endpoint: `GET /.well-known/mcp` (returns JSON array of all enabled toolkit server URLs). Credentials: **NV oOS → Orchestration → Toolkit MCP → {Toolkit} → Credentials**. CLI: `wp mcp-ai mcp-server token-generate {slug}`. Reference: [docs/mcp-servers.md](mcp-servers.md).
+
+---
+
 ## 📚 Additional Resources
 
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All 568 tools detailed (166 base + 402 pro)
+- [Tool Reference](reference/tools/tool-reference.md) - All ~830 tools detailed (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 

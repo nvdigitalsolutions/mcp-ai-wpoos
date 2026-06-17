@@ -1,7 +1,7 @@
 # NV oOS Roadmap
 
-**Last Updated:** March 15, 2026  
-**Version:** 1.1.4
+**Last Updated:** May 28, 2026  
+**Version:** 1.1.24
 
 ---
 
@@ -19,25 +19,121 @@
 
 ---
 
-## Current Release (v1.1.4) - March 2026 ✅
+## Released: v1.1.24 — May 2026 ✅
 
-**Release Date:** March 15, 2026  
-**Focus:** Security hardening, chat channel reliability, Telegram Mini App improvements, AI-powered product actualization, PDF bundling, WordPress.org plugin check compliance
+**Release Date:** May 27–28, 2026
 
-### What's Included in v1.1.4
+### What was delivered in v1.1.24
 
-**Core Features:**
-- ✅ 165 built-in tools (base version)
-- ✅ 519 total tools (full version with Pro addon)
-- ✅ **Security Hardening** – AES-256-GCM encryption upgrade, finfo fail-closed, Discord replay attack protection, HTTPS enforcement, ZIP bomb guard
-- ✅ **Chat Channels** – Fixed Slack @mentions, Google Chat routing/OIDC, Teams OAuth 1-click + multi-connection, Telegram slash commands + typing indicator
-- ✅ **Telegram Mini App** – Doctor tab uses connection-assigned assistant; AI replies rendered as Markdown HTML
-- ✅ **Gemini Embeddings** – embedding-001 model, output_dimensionality, 9 new task types
-- ✅ **AI Product Actualization** – Provider-agnostic AI integration mode (Gemini/OpenAI)
-- ✅ **PDF Generation** – pdfkit/cheerio/docx/exceljs bundled; no server-side node_modules needed
-- ✅ **WordPress.org Compliance** – Plugin check errors resolved (.gitattributes, composer.json, languages/)
+- ✅ **Bug-Fix & Stabilisation Sweep.** Paper Store Pro interface load order fix (deferred to `wp_mcp_ai_bootstrapped`). Chat SPA duplicate-message and SSE protocol-mismatch fixes. Markdown rendering enabled in Chat SPA responses via `marked`.
+- ✅ **Skill Manager Canonical Return Envelope — Unix Theory P0/P1.** Skill manager fixed to return canonical envelope (`WP_Error` on failure) instead of legacy `array('success' => false, ...)`. Skills sync endpoint added. YAML frontmatter parsing hardened against colons.
+- ✅ **Assistant Tool Presets — 24 Missing Tools Added.** Tool coverage gap filled in assistant creation presets. Out-of-date tests fixed.
+- ✅ **CVE Patches.** `tmp` >=0.2.6, `symfony/cache` ^6.4.40. Composer vendor state committed. All release ZIPs rebuilt.
+- ✅ **Paper Store Admin CRUD.** Full CRUD admin UI under Assistants menu, matching Skills admin convention.
+- ✅ **CLI Coverage Enhancements.** Comprehensive WP-CLI command coverage improvements.
+- ✅ **Folder README Convention — Unix Theory P7 Complete.** Every `includes/` and `addons/pro/includes/` PHP subdirectory now ships a `README.md`. CI enforcement via `composer run docs:check-folder-readmes`.
+- ✅ **Agent Context Docs Synced.** `CLAUDE.md`, `AGENTS.md`, and `.github/agents/` synced with recent features (v2.4/v1.4).
+- ✅ **Build & CI.** `build-spa-addons` workflow added. Missing SPA addon ZIPs restored. All SPA bundles rebuilt.
 
-**See** [CHANGELOG.md](../CHANGELOG.md) for the complete v1.1.4 change log.
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
+
+---
+
+## Released: v1.1.23 — May 2026 ✅
+
+**Release Date:** May 25–26, 2026
+
+### What was delivered in v1.1.23
+
+- ✅ **Zed-Inspired SPA Architecture (Pro + Base).** 9-phase React SPA admin interface: Threads Sidebar, Agent Panel, Command Palette (Cmd+K), Agent Profiles (Write/Ask/Minimal/Custom), @-mention Context (8 entity types), Checkpoints & Diff Review, Inline Assistant (Gutenberg), Multi-Model Comparison, Collaborative Presence (Heartbeat API). ~75 files, ~10,800 lines. Base: 6 PHP manager classes + 5 REST controllers + 4 DB tables (PHP 7.4).
+- ✅ **Antigravity Interactions API Rewrite.** Gemini Managed Agent service rewritten for real Antigravity API (`POST /v1beta/interactions`) with code execution, Google Search grounding, and sandbox environments. `enable_managed_agents` toggle in Orchestration settings.
+- ✅ **TypeScript Upgrade + Orchestration Toggles.** Shared TS types, services, admin screens, chat drawer, React SPA builds. "Use TypeScript-Compiled Assets" checkbox in Settings → Orchestration.
+- ✅ **Comic Reader Addon (`addons/comic-reader/`).** React-based CBR/CBZ/CB7/CBT reader with dual-page modes, zoom, keyboard nav, touch, fullscreen, shortcode + Gutenberg block.
+- ✅ **Media Studio v0.3.0.** Zoom/pan, drawing tools (Konva canvas), save-to-WP-Media-Library. Image editor now feature-complete.
+- ✅ **SPA Blueprint v3.0.** External React template ingestion & gap analysis pipeline. Adapter automation (API, i18n, CSS scope, bundle optimizer).
+- ✅ **LLM Prompt Cache Optimization v1.5.1.**
+- ✅ **30+ Reliability Fixes.** Cron status diagnostics (HTTP status + body), PHP 8.2+ compatibility ($namespace/$rest_base), PHPUnit 11 (6 batches across base+pro+addons), WP.org compliance re-audit & findings (section 14), May 2026 audit findings (F-AUTHZ-05/06, F-AGENT-01), PHPCS 353→0 errors across 18 files, Docs Hub fixes (browse-repo, folder tree picker, DNS, autocomplete), qs CVE-2026-8723, DeepSeek fallback, test suite stability (wp_die handler, AJAX fixes), net worth calculator parse error.
+- ✅ **Dev Dependencies.** `wp-phpunit/wp-phpunit` 6.9.4→7.0.0, `php-stubs/wordpress-stubs` 6.9.1→7.0.0.
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
+
+---
+
+## Released: v1.1.22 / v1.1.21 / v1.1.20 / v1.1.19 / v1.1.18 — May 2026 ✅
+
+**Release Dates:** May 14–23, 2026
+
+### What was delivered across these five releases
+
+- ✅ **Baseten AI — 11th first-class provider.** OpenAI-compatible chat/tools/streaming/reasoning at `api.baseten.co/v1`. Settings → Providers → Baseten subtab. Service doc in `docs/EXTERNAL_SERVICES.md`.
+- ✅ **CoSAI Secure-by-Design Agentic System.** Four new `includes/agents/` classes: capability boundary + per-session tool allow-lists, cryptographic audit trail (CPT + options, immutable events), risk-tiered approval gate (low/medium/high/critical), isolated code sandbox (Python/Node.js/Bash/PHP). All provider-agnostic.
+- ✅ **Gemini I/O 2026 Model Refresh.** Gemini 3.5 Flash as recommended model (4x faster, dynamic thinking, $1.50/M input). Gemini Omni Flash as video default (10s, native audio, AI avatars). 3.1 Flash deprecated.
+- ✅ **Continual Harness P5.** Self-improving agent system with execution history learning and tool selection feedback loops.
+- ✅ **SaaS Controller Phase 2 & 4.** Stripe + OpenRouter deployment editors from WP-Admin.
+- ✅ **npm packages — nvoos-vad, nvoos-chat-bubble, nvoos-chat-memory-ui.** VAD, chat bubble widget, memory drawer component with TypeScript declarations.
+- ✅ **WordPress Studio Test Environment.** Auto-detect Studio DB/ABSPATH/site URL in test bootstrap.
+- ✅ **Security fixes.** UUID buffer bounds (saas-controller). `map_meta_cap=false` for audit trail CPT (WP 6.1+). AV false positives in test suite.
+- ✅ **Allowed providers expanded.** DeepSeek, OpenRouter, DigitalOcean, Kimi, Baseten added to validation gate.
+- ✅ **LM Studio URLs fixed.** All `lmstudio.ai` → GitHub org after upstream 500 errors.
+- ✅ **Addons PHPCS — 93% reduction (1,143 → 82).** Two-batch cleanup with 12 new `bin/` helper scripts.
+- ✅ **v1.1.21/v1.1.20/v1.1.19/v1.1.18 — WordPress.org Compliance Complete (F1–F10).** All inline JS/CSS removed from 53 files and converted to WP enqueue APIs. 11 PHP parse errors fixed. All 10 reviewer findings resolved + re-audit verified. Build pipeline hardened. Zero bare `phpcs:ignore` comments. ⭐ **READY FOR RE-SUBMISSION**
+- ✅ **Canonical Return Envelope — Unix Theory P0/P1 Complete.** 191 non-canonical `array('success' => false, ...)` returns converted to `new WP_Error()` across 105 files. `WPMCPAI.Tools.CanonicalReturnEnvelope` + `SanitizeAtEntry` PHPCS sniffs clean. Caller sites hardened.
+- ✅ **Capability Fence P2b — Full Rollout.** `get_required_capability()` deployed to all ~830 tool classes (base + Pro + all addons) via `WP_MCP_AI_Tool_Interface`. Central `WP_MCP_AI_Tool_Capability_Map`. New `WPMCPAI.Tools.RequiredCapabilityDeclared` sniff.
+- ✅ **Security Center.** 5-tab admin page: Posture (live security scoring), Compliance Report, OTel Telemetry, Deprecated-Alias Tracking, MCP Token Inventory.
+- ✅ **Semantic Caveman Compression.** New `WP_MCP_AI_Semantic_Compressor` service (1,988 lines + 1,156 test lines). Opt-in prompt token optimization preserving facts/numbers/terms.
+- ✅ **AI Prompt Caching — All Providers.** `WP_MCP_AI_Chat_Response_Cache` + `WP_MCP_AI_Prompt_Optimizer` across all 5 AI providers. Cache Performance dashboard.
+- ✅ **Memory Layer 2026 — Phases 3–8 Merged.** Auto-capture with SHA-256 dedup (P3), RRF fusion retrieval — BM25 + vector + graph (P4), confidence decay + contradiction detection (P5), provenance tracer tool (P6), Memory Health + Retrieval Waterfall + Session Replay (P7), documentation + v1.1.20 bump (P8). CCT migrator disabled by default.
+- ✅ **Kimi (Moonshot AI) provider — 10th first-class provider.** `WP_MCP_AI_Kimi_Client` at `api.moonshot.cn/v1` with kimi-k2.6 (256K, default), kimi-k2-thinking (CoT), moonshot-v1-*.
+- ✅ **ACP Server** — Full Agent Client Protocol implementation (JSON-RPC 2.0 over HTTP/SSE). `/.well-known/ai-peer` extended.
+- ✅ **MCP Bridge** — `bin/mcp-bridge.js` stdio-to-HTTP relay for Claude Desktop, Cursor, Zed.
+- ✅ **Unix Theory P0–P6** — canonical return envelope (P0/P1), capability-fence audit (P2), data-contract metadata (P3), tool-lifecycle descriptor (P4), back-compat alias infrastructure (P5), sanitize-at-entry sniff (P6).
+- ✅ **DigitalOcean Serverless Inference provider** (9th provider) — OpenAI-compatible chat/tools/streaming/embeddings.
+- ✅ **Async Chat Continuation** (slices 1–6) — durable store, dispatcher, LLM re-entry, SSE frame buffer.
+- ✅ **Jobs/Tasks Drawer + Cron-Status** — inline job-progress cards, cancel/retry routes, Tasks Drawer + toasts.
+- ✅ **Model Catalog May 2026 Refresh.** DeepSeek V4 model family added. Gemini entries consolidated. All pricing refreshed.
+- ✅ **GDPR — JetEngine Privacy Exporters.** CCT data exporters for transcripts, memory, and approvals.
+- ✅ **Security Hardening (5 patches).** Settings-key encryption, webhook secret enforcement, SSRF via `wp_safe_remote_get`, attachment URL allowlist, client-log debug-gate.
+- ✅ **Folder README Convention Phase P7.** Every `includes/` and `addons/pro/includes/` PHP subdirectory ships a `README.md` — completing Unix Theory P0–P7.
+- ✅ **@wordpress/env Dev Dependency.** Zero-config local WP environments via `wp-env`.
+- ✅ **Domain Migration.** All `nvoos.com` references → `nvoos.pro` / `nvoos.cloud`.
+- ✅ **Addons/pro Security Scan Fixes.** Remote-sites pagination, uninstall.php, stale tag removal.
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
+
+---
+
+## Released: v1.1.17 / v1.1.16 / v1.1.15 / v1.1.14 — May 2026 ✅
+
+**Release Dates:** May 1–10, 2026
+
+### What was delivered across these four releases
+
+- ✅ **Orchestration Phases 1–7** — HITL approval queue, prompt-injection detector, structured output + OTel span exporter, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store adapter, Pro team budget manager
+- ✅ **LLM Harnessing Subsystem (Layers A–H)** — seven opt-in per-assistant epistemic layers (prompt cues, reasoning/self-consistency, tool router, retrieval+citation, self-refine, memory scoping+PII, eval scheduler) + Pro Layer H fine-tune curriculum export
+- ✅ **Toolkit MCP Servers — all 7 phases complete** — 26 toolkits (19 Tier-1 + 7 Tier-2) exposed as per-toolkit MCP servers; `/.well-known/mcp` discovery endpoint; toolkit-scoped credentials; cross-mount audit trail; `/mcp-server` slash command; WP-CLI token management
+- ✅ **New AI providers** — OpenRouter (unified gateway for 100+ models), DeepSeek (reasoning_content passthrough), LM Studio native cURL SSE streaming + full May 2026 parity, Kimi K2.6 + Qwen 3.6 in catalog
+- ✅ **Chat SPA addon (v0.6.0, Phases 1–7)** — React replacement for legacy chat shortcode (Vercel AI SDK UI, SSE adapter, tool-call cards, memory drawer, HITL bar, attachments, branching, legacy opt-out constant)
+- ✅ **SaaS Controller addon (v0.1.0, 11 phases)** + **Cloud Worker (Phase 3)** — full NV oOS Cloud control plane management from WP-Admin
+- ✅ **Docs Hub addon (v0.1.0 → v0.3.8)** — remote-first React SPA documentation portal
+- ✅ **Toolkit SPA Blueprint Phases 5–12** — a11y, i18n, PHPUnit tests, bundle-size CI guardrail, scaffolder auto-patch; 10 Tier-A manifests; canvas-toolkit v0.2.0; document-editor v0.2.0; media-studio Phase 4
+- ✅ **Inline-async-tick pattern** — 8 Tier-1 consumers (transcript mining, async tool executor, SaaS Apply, Crawl4AI, Docs Hub rebuild, Graphify reindex, Harness eval, Gemini Veo polling)
+- ✅ **WordPress.org Compliance Hardening (B1–B13)** — all reviewer findings resolved; build-pipeline split (--wp-org flag)
+- ✅ **PHPUnit + Vitest coverage campaign** (PRs #1–#11) — 271 AJAX handlers covered; non-regression CI gate; Vitest for all 6 SPA addons
+- ✅ **Dependabot security sweep** — 33 alerts resolved across all manifests
+- ✅ **Agent Skills Phases 1–4** — 28+ bundled Pro WP-developer skills, remote catalogues, progressive disclosure, skill packs
+- ✅ **Markup Subsystem (Base)** — in-loop Konva canvas widget for image annotation
+- ✅ **MemPalace Capture Framework Phases A + B1** — five capture tools onto the durable memory bridge
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
+
+---
+
+---
+
+## Next Minor (v1.2.0) - Q2 2026 ⚡
+
+**Target:** June 2026  
+**Focus:** AI Provider enhancements, developer experience improvements
 
 ---
 
@@ -136,9 +232,9 @@
   - Competitor analysis
   - Influencer identification
 - ✅ **Pro Toolkit Memory-Based Tracking** - Replaced hard 5-toolkit limit with transparent memory usage display
-- ✅ **Cloudflare Image Generation Models** - 3 new models (Flux-2 Dev, Leonardo Lucid Origin, Phoenix 1.0)
+- ✅ **Cloudflare Workers AI provider work** - historical roadmap item; current catalog-backed docs list active Cloudflare LLM rows rather than fabricated image-model prices
 - ✅ **7 Critical Bug Fixes** - Settings persistence, API keys, transcripts, OAuth, model dropdowns
-- ✅ **100% ISO 27001/SOC 2/HIPAA Compliance** - Up from 56% (83/83 controls implemented)
+- ✅ **Compliance posture documentation** - historical framework work; current public docs avoid unbacked percentage claims and point operators to posture references
 
 **AI Integrations:**
 - ✅ OpenAI Batch API (50% cost savings)
@@ -300,6 +396,7 @@
 - [ ] Gemini context caching (68% cost savings)
 - [ ] Gemini thinking mode support
 - [ ] OpenAI batch embeddings
+- [x] Transformer-inspired attention routing — semantic tool selection via QKV embedding similarity, 5-head multi-head scoring, pre-computed tool embedding KV cache, sliding-window conversation compression, Reciprocal Rank Fusion (RRF) into harness Layer C (delivered June 2026, PR #5290)
 
 **Developer Experience:**
 - [ ] Improved error messages
@@ -394,7 +491,26 @@ Potential future toolkits based on community demand:
 
 ### Major Features
 
-#### 1. Advanced Workflow Automation
+#### 1. Cross-Platform Extraction (🟡 In Progress)
+- [x] Domain contracts (9 interfaces) — `lib/core/src/Domain/Contract/`
+- [x] Domain entities (10 value objects) — `lib/core/src/Domain/Entity/`
+- [x] Domain errors (5 typed exceptions) — `lib/core/src/Domain/Error/`
+- [x] Domain events (8 events) — `lib/core/src/Domain/Event/`
+- [x] Application services (ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry)
+- [x] 12 provider clients (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, Ollama, LM Studio, DigitalOcean, Nvidia Nim, Cloudflare, HuggingFace)
+- [x] SSE streaming handler + cost calculator
+- [x] 8 WordPress adapter implementations
+- [x] Feature flag activation (`?engine=oos`)
+- [x] 43 migrated tools (Tier 1 + select Tier 2)
+- [ ] ~152 remaining tool migrations
+- [ ] Test suite for extracted packages
+- [ ] Laravel adapter
+- [ ] Craft CMS adapter
+- [ ] Monorepo CI/CD + Packagist publishing
+
+See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](project/proposals/cross-platform-extraction-gap-analysis.md) for detailed status.
+
+#### 2. Advanced Workflow Automation
 - [ ] Custom workflow builder UI
 - [ ] Trigger-action automation system
 - [ ] Conditional logic for workflows
@@ -658,11 +774,16 @@ We evaluate features using these criteria:
 | Version | Type | Release Date | Focus |
 |---------|------|--------------|-------|
 | v1.0.1 | Patch | Jan 15, 2026 | Stability |
-| v1.1.0 | Minor | Feb 28, 2026 | PM Enhancements |
-| v1.2.0 | Minor | Apr 30, 2026 | AI Provider Enhancements |
-| v1.3.0 | Minor | Jun 30, 2026 | Developer Experience |
-| v2.0.0 | Major | Sep 30, 2026 | Enterprise Features |
-| v2.1.0 | Minor | Nov 30, 2026 | Post-2.0 Improvements |
+| v1.1.0 | Minor | Jan 28, 2026 | Multi-Agent Orchestration |
+| v1.1.1 | Patch | Feb 6, 2026 | Security + Chat Channels |
+| v1.1.2 | Patch | Feb 16, 2026 | WP.org Compliance |
+| v1.1.3 | Patch | Mar 3, 2026 | Gemini RAG + Media Tab |
+| v1.1.4 | Patch | Mar 15, 2026 | Security Hardening |
+| v1.1.14–v1.1.17 | Minor | May 1–10, 2026 | Providers + Orchestration + Coverage |
+| v1.1.18–v1.1.21 | Minor | May 14–21, 2026 | WP.org Compliance Final + P0/P1 + Compression |
+| v1.2.0 | Minor | Jun 2026 | AI Provider Enhancements |
+| v1.3.0 | Minor | Aug 2026 | Developer Experience |
+| v2.0.0 | Major | Q4 2026 | Enterprise Features |
 
 **Note:** Dates are targets and may shift based on development progress and community feedback.
 
@@ -697,6 +818,7 @@ A: They may be in the [Backlog](https://github.com/nvdigitalsolutions/mcp-ai-wpo
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-05-21 | 1.1.21 | Added v1.1.18–v1.1.21 releases; updated release calendar with actual dates; removed stale v1.1.4 "current release" section |
 | 2025-12-24 | 1.0 | Initial roadmap published |
 
 ---

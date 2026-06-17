@@ -105,7 +105,20 @@ class WP_MCP_AI_Tool_Generate_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Delegate to Pro PDF tool with simplified parameters.

@@ -72,7 +72,7 @@ class Test_Seed_Template_Library_Tool extends WP_UnitTestCase {
 	public function test_tool_instantiation() {
 		// Load the tool class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Seed_Template_Library' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php';
 		}
 
 		$tool = new WP_MCP_AI_Pro_Tool_Seed_Template_Library();
@@ -85,7 +85,7 @@ class Test_Seed_Template_Library_Tool extends WP_UnitTestCase {
 	public function test_tool_slug() {
 		// Load the tool class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Seed_Template_Library' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php';
 		}
 
 		$tool = new WP_MCP_AI_Pro_Tool_Seed_Template_Library();
@@ -98,7 +98,7 @@ class Test_Seed_Template_Library_Tool extends WP_UnitTestCase {
 	public function test_tool_definition() {
 		// Load the tool class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Seed_Template_Library' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php';
 		}
 
 		$tool       = new WP_MCP_AI_Pro_Tool_Seed_Template_Library();
@@ -117,7 +117,7 @@ class Test_Seed_Template_Library_Tool extends WP_UnitTestCase {
 	public function test_execute_creates_templates_cpt() {
 		// Load the tool class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Seed_Template_Library' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php';
 		}
 
 		$tool   = new WP_MCP_AI_Pro_Tool_Seed_Template_Library();
@@ -149,7 +149,7 @@ class Test_Seed_Template_Library_Tool extends WP_UnitTestCase {
 	public function test_execute_skips_existing_templates() {
 		// Load the tool class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Seed_Template_Library' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php';
 		}
 
 		$tool = new WP_MCP_AI_Pro_Tool_Seed_Template_Library();
@@ -178,7 +178,7 @@ class Test_Seed_Template_Library_Tool extends WP_UnitTestCase {
 	public function test_templates_are_published() {
 		// Load the tool class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Seed_Template_Library' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php';
 		}
 
 		$tool = new WP_MCP_AI_Pro_Tool_Seed_Template_Library();
@@ -204,7 +204,7 @@ class Test_Seed_Template_Library_Tool extends WP_UnitTestCase {
 	public function test_templates_have_metadata() {
 		// Load the tool class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Seed_Template_Library' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php';
 		}
 
 		$tool   = new WP_MCP_AI_Pro_Tool_Seed_Template_Library();

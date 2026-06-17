@@ -158,10 +158,10 @@ class WP_MCP_AI_Erlang_C {
 	 * @return int Minimum number of agents required.
 	 */
 	public static function min_agents_for_sl( $traffic_intensity, $aht_seconds, $target_sl_pct, $target_seconds ) {
-		$a           = (float) $traffic_intensity;
-		$target_pct  = (float) $target_sl_pct;
-		$n           = max( 1, (int) ceil( $a ) + 1 );
-		$max_n       = $n + self::MAX_AGENTS_CAP;
+		$a          = (float) $traffic_intensity;
+		$target_pct = (float) $target_sl_pct;
+		$n          = max( 1, (int) ceil( $a ) + 1 );
+		$max_n      = $n + self::MAX_AGENTS_CAP;
 
 		while ( $n <= $max_n ) {
 			if ( self::service_level( $a, $n, $aht_seconds, $target_seconds ) >= $target_pct ) {

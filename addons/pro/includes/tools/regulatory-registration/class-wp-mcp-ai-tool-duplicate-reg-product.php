@@ -104,8 +104,23 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * {@inheritdoc}
 	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 * @param array $context   Execution context.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
@@ -248,7 +263,7 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 		$registrations = get_posts(
 			array(
 				'post_type'      => 'mcp_ai_registration',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'duplicate_reg_product', 0, 1000 ) : 1000,
 				'meta_key'       => 'product_id',
 				'meta_value'     => $source_id,
 			)
@@ -292,7 +307,7 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 		$documents = get_posts(
 			array(
 				'post_type'      => 'mcp_ai_reg_document',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'duplicate_reg_product', 0, 1000 ) : 1000,
 				'meta_key'       => 'product_id',
 				'meta_value'     => $source_id,
 			)

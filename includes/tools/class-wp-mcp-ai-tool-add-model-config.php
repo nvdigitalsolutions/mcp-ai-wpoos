@@ -67,7 +67,7 @@ class WP_MCP_AI_Tool_Add_Model_Config implements WP_MCP_AI_Tool_Interface, WP_MC
 						'provider'       => array(
 							'type'        => 'string',
 							'description' => __( 'Provider name.', 'mcp-ai-wpoos' ),
-							'enum'        => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ),
+							'enum'        => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ),
 						),
 						'context_window' => array(
 							'type'        => 'integer',
@@ -159,6 +159,13 @@ class WP_MCP_AI_Tool_Add_Model_Config implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -212,7 +219,7 @@ class WP_MCP_AI_Tool_Add_Model_Config implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Validate provider.
-		$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+		$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 		if ( ! in_array( $config['provider'], $valid_providers, true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_provider',

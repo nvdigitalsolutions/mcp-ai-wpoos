@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_Client_Portal_Manager implements WP_MCP_AI_Tool_Interfac
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -103,6 +110,9 @@ class WP_MCP_AI_Tool_LF_Client_Portal_Manager implements WP_MCP_AI_Tool_Interfac
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -231,12 +241,12 @@ class WP_MCP_AI_Tool_LF_Client_Portal_Manager implements WP_MCP_AI_Tool_Interfac
 					'success'    => true,
 					'message'    => __( 'Document shared with client portal. ', 'mcp-ai-wpoos-pro' ) . self::DISCLAIMER,
 					'data'       => array(
-						'action'        => 'share_document',
-						'client_id'     => $client_id,
-						'client_name'   => $client_post->post_title,
-						'document_id'   => $document_id,
+						'action'         => 'share_document',
+						'client_id'      => $client_id,
+						'client_name'    => $client_post->post_title,
+						'document_id'    => $document_id,
 						'document_title' => $doc_post->post_title,
-						'shared_at'     => current_time( 'Y-m-d H:i:s' ),
+						'shared_at'      => current_time( 'Y-m-d H:i:s' ),
 					),
 					'disclaimer' => self::DISCLAIMER,
 				);

@@ -325,11 +325,7 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
 
 		if ( ! $handler ) {
-			return array(
-				'success' => false,
-				'error'   => 'handler_not_available',
-				'message' => __( 'Command handler not available.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Command handler not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		foreach ( $commands as $index => $command ) {

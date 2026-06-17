@@ -1,0 +1,11 @@
+# AJAX coverage allow-list
+#
+# Handler names (without the wp_ajax_ prefix) listed here are exempt from the
+# coverage CI guard run by `php bin/audit-ajax-handlers.php --check`.
+#
+# All 188 handlers that were untested when the gap-fill plan was adopted are
+# now covered by the test suite. This file is intentionally empty so the CI
+# guard enforces full 4-point coverage on any NEW wp_ajax_* handler added
+# going forward.
+#
+# Lines beginning with # are comments. Blank lines are ignored.

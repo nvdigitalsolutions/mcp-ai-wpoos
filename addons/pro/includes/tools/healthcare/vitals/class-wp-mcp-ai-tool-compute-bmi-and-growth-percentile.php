@@ -112,6 +112,13 @@ class WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile implements WP_MCP_AI_Tool
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -142,10 +149,10 @@ class WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile implements WP_MCP_AI_Tool
 			? $height / WP_MCP_AI_Healthcare_Engine::IN_PER_CM
 			: $height;
 
-		$bmi          = WP_MCP_AI_Healthcare_Engine::bmi( $weight_kg, $height_cm );
-		$adult_band   = WP_MCP_AI_Healthcare_Engine::bmi_category( $bmi );
-		$pediatric    = null;
-		$band         = $adult_band;
+		$bmi        = WP_MCP_AI_Healthcare_Engine::bmi( $weight_kg, $height_cm );
+		$adult_band = WP_MCP_AI_Healthcare_Engine::bmi_category( $bmi );
+		$pediatric  = null;
+		$band       = $adult_band;
 
 		if ( null !== $age_years && $age_years >= 2 && $age_years < 20 ) {
 			$pediatric = self::pediatric_band( $bmi, $age_years, $sex );
@@ -163,13 +170,13 @@ class WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile implements WP_MCP_AI_Tool
 		$band = apply_filters( 'wp_mcp_ai_healthcare_growth_percentile', $band, $bmi, $age_years, $sex );
 
 		return array(
-			'success'      => true,
-			'bmi'          => round( $bmi, 2 ),
-			'weight_kg'    => round( $weight_kg, 2 ),
-			'height_cm'    => round( $height_cm, 2 ),
-			'adult_band'   => $adult_band,
-			'pediatric'    => $pediatric,
-			'band'         => $band,
+			'success'    => true,
+			'bmi'        => round( $bmi, 2 ),
+			'weight_kg'  => round( $weight_kg, 2 ),
+			'height_cm'  => round( $height_cm, 2 ),
+			'adult_band' => $adult_band,
+			'pediatric'  => $pediatric,
+			'band'       => $band,
 		);
 	}
 
@@ -186,7 +193,7 @@ class WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile implements WP_MCP_AI_Tool
 	 * @return array{band:string, thresholds:array}
 	 */
 	private static function pediatric_band( $bmi, $age_years, $sex ) {
-		// Boys and girls use slightly different reference curves; we approximate
+		// Boys and girls use slightly different reference curves; we approximate.
 		// with single age-banded thresholds derived from the CDC/WHO charts.
 		$age_int = (int) floor( $age_years );
 		// thresholds[ age ] = { underweight_max, healthy_max, overweight_max }.

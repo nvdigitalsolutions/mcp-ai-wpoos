@@ -123,6 +123,13 @@ class WP_MCP_AI_Tool_Client_Summarize_Text implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -133,9 +140,9 @@ class WP_MCP_AI_Tool_Client_Summarize_Text implements WP_MCP_AI_Tool_Interface, 
 		// Check if Transformers.js is enabled.
 		if ( ! class_exists( 'WP_MCP_AI_Transformers_Enqueue' ) ||
 			! WP_MCP_AI_Transformers_Enqueue::is_transformers_enabled() ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Browser-native AI tasks are not enabled. Please enable Transformers.js in settings.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Browser-native AI tasks are not enabled. Please enable Transformers.js in settings.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -144,9 +151,9 @@ class WP_MCP_AI_Tool_Client_Summarize_Text implements WP_MCP_AI_Tool_Interface, 
 		$min_length = isset( $arguments['min_length'] ) ? absint( $arguments['min_length'] ) : 30;
 
 		if ( empty( $text ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Text parameter is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Text parameter is required.', 'mcp-ai-wpoos' )
 			);
 		}
 

@@ -118,6 +118,13 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -345,6 +352,9 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 			case 'huggingface':
 				return $this->fetch_huggingface_models();
 
+			case 'digitalocean':
+				return $this->fetch_digitalocean_models();
+
 			default:
 				return new WP_Error(
 					'wp_mcp_ai_unsupported_provider',
@@ -473,6 +483,40 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 					$models[ $model['id'] ] = array(
 						'name'  => $model['id'],
 						'owner' => isset( $model['owned_by'] ) ? $model['owned_by'] : '',
+					);
+				}
+			}
+		}
+
+		return $models;
+	}
+
+	/**
+	 * Fetch DigitalOcean Serverless Inference models from API.
+	 *
+	 * @return array|WP_Error Models array or error.
+	 */
+	protected function fetch_digitalocean_models() {
+		if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
+			return new WP_Error( 'wp_mcp_ai_client_unavailable', __( 'DigitalOcean client not available.', 'mcp-ai-wpoos' ) );
+		}
+
+		$client = new WP_MCP_AI_DigitalOcean_Client();
+		$result = $client->list_models();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$models = array();
+
+		if ( is_array( $result ) ) {
+			foreach ( $result as $model ) {
+				if ( isset( $model['id'] ) ) {
+					$models[ $model['id'] ] = array(
+						'name'           => isset( $model['name'] ) && '' !== $model['name'] ? $model['name'] : $model['id'],
+						'owner'          => 'digitalocean',
+						'context_length' => isset( $model['context_length'] ) ? (int) $model['context_length'] : 0,
 					);
 				}
 			}

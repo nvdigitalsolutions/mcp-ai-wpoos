@@ -82,6 +82,13 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -117,7 +124,7 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 			array(
 				'post_type'      => 'mcp_ai_registration',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'generate_pipeline_report', 0, 1000 ) : 1000,
 			)
 		);
 
@@ -134,7 +141,7 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 						$group_key = ! empty( $statuses ) && ! is_wp_error( $statuses ) ? $statuses[0]->name : 'Unknown';
 						break;
 					case 'country':
-						$group_key = get_post_meta( $post->ID, 'country', true ) ?: 'Unknown';
+						$group_key = get_post_meta( $post->ID, 'country', true ) ? get_post_meta( $post->ID, 'country', true ) : 'Unknown';
 						break;
 					case 'product':
 						$product_id = get_post_meta( $post->ID, 'product_id', true );

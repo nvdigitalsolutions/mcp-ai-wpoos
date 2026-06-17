@@ -377,19 +377,19 @@ class WP_MCP_AI_Markup_Rasterizer {
 			$htaccess = $private_dir . '/.htaccess';
 			if ( ! file_exists( $htaccess ) ) {
 				// Best-effort hardening: ignore failures (e.g. read-only host).
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required for .htaccess hardening; WP_Filesystem not available in this execution context.
 				@file_put_contents( $htaccess, "Options -Indexes\nDeny from all\n" );
 			}
 			$index = $private_dir . '/index.php';
 			if ( ! file_exists( $index ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required for directory hardening; WP_Filesystem not available in this execution context.
 				@file_put_contents( $index, "<?php // Silence is golden.\n" );
 			}
 		}
 
 		$filename = 'mask-' . $request->get_request_id() . '.png';
 		$path     = $private_dir . '/' . $filename;
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required for PNG write; WP_Filesystem not available in this execution context.
 		$bytes = file_put_contents( $path, $png );
 		if ( false === $bytes ) {
 			return new WP_Error( 'wp_mcp_ai_markup_write_failed', __( 'Could not write mask PNG.', 'mcp-ai-wpoos' ) );

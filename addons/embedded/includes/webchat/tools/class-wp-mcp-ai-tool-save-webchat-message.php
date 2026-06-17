@@ -19,10 +19,13 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Saves messages to the WebChat messages CCT.
  */
 class WP_MCP_AI_Tool_Save_WebChat_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Check if this tool is available.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return bool True if WebChat is enabled and JetEngine is active.
 	 */
@@ -278,6 +281,11 @@ class WP_MCP_AI_Tool_Save_WebChat_Message implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+	/**
+	 * Get capability flags for this tool.
+	 *
+	 * @return array Capability flags.
+	 */
 	public function get_capability_flags() {
 		return array(
 			'pro',

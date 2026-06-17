@@ -31,6 +31,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.1.0
@@ -328,7 +335,7 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 				}
 
 				// Move to next day in the week.
-				if ( $day_of_week === 7 || ( ! $include_weekends && $day_of_week === 5 ) ) {
+				if ( 7 === $day_of_week || ( ! $include_weekends && 5 === $day_of_week ) ) {
 					++$week_count;
 					$post_count = 0;
 				}
@@ -484,7 +491,7 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 			$end_time   = $start_time + ( 30 * 60 ); // 30 minute duration.
 
 			$ics .= "BEGIN:VEVENT\r\n";
-			$ics .= 'UID:' . md5( $post['scheduled_at'] . $post['platform'] . $index ) . "@nvoos.com\r\n";
+			$ics .= 'UID:' . md5( $post['scheduled_at'] . $post['platform'] . $index ) . "@nvoos.pro\r\n";
 			$ics .= 'DTSTAMP:' . gmdate( 'Ymd\THis\Z' ) . "\r\n";
 			$ics .= 'DTSTART:' . gmdate( 'Ymd\THis\Z', $start_time ) . "\r\n";
 			$ics .= 'DTEND:' . gmdate( 'Ymd\THis\Z', $end_time ) . "\r\n";

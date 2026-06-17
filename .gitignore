@@ -1,5 +1,9 @@
 /.codex-wordpress/
+/phpcs/
 /.phpunit.result.cache
+
+# wp-env local overrides (each developer customises their own)
+/.wp-env.override.json
 /node_modules/
 node_modules/
 .DS_Store
@@ -42,11 +46,8 @@ composer.phar
 # Allow tma-woo-shop compiled assets in Pro addon (needed for plugin to work)
 !/addons/pro/build/tma-woo-shop/
 
-# Ignore ZIP files everywhere except the final build output in build/
+# Ignore ZIP files everywhere (build artifacts should not be committed)
 *.zip
-!/build/*.zip
-!/build/toolkit-addons/
-!/build/toolkit-addons/*.zip
 
 # Ignore all vendor by default
 /vendor/*
@@ -144,6 +145,12 @@ composer.phar
 # Exclude Symfony translations (saves ~2MB)
 /vendor/symfony/*/Resources/translations/
 /vendor/symfony/*/Resources/bin/
+
+# Exclude vendor directories from lib/core extraction packages
+# These are standalone Composer packages; their vendors are not committed.
+lib/*/vendor/
+lib/*/composer.lock
+lib/*/tests/vendor/
 
 # Pro addon dependencies
 # Exclude node_modules (development only)
@@ -249,3 +256,21 @@ test-transcript-routes.php
 /assets/js/vendor/neplex-vectorizer/**/*.node
 test-modal-fix.html
 tests/wp-tests-config-local.php
+
+# Zed editor — keep shared project config (.zed/settings.json, .zed/README.md)
+# tracked, but ignore per-user local overrides.
+.zed/*.local.json
+.zed/.local/
+docker/laravel/app/*
+docker/craft/app/*
+!docker/laravel/app/.gitkeep
+!docker/craft/app/.gitkeep
+lib/core/.phpstan-cache/
+lib/core/.phpunit.cache/
+
+# Demo video output (build artifacts — regenerated on each release)
+docs/videos/base/*.webm
+docs/videos/base/*.mp4
+docs/videos/pro/*.webm
+docs/videos/pro/*.mp4
+docs/videos/narration/audio/

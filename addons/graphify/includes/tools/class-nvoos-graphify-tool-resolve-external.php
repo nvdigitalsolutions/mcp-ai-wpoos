@@ -20,6 +20,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Graphify_Tool_Resolve_External implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	/** {@inheritdoc} */
 	public function get_slug() {
 		return 'graphify_resolve_external';
@@ -61,13 +70,22 @@ class NV_oOS_Graphify_Tool_Resolve_External implements WP_MCP_AI_Tool_Interface,
 		return array( 'read-only', 'external-api' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$ref         = sanitize_text_field( $arguments['ref'] ?? '' );
 		$auto_ingest = isset( $arguments['auto_ingest'] ) ? (bool) $arguments['auto_ingest'] : true;
 
 		if ( empty( $ref ) ) {
-			return array( 'success' => false, 'error' => __( 'ref is required.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'ref is required.', 'nvoos-graphify' ),
+			);
 		}
 
 		// Step 1: detect ref type.
@@ -84,16 +102,21 @@ class NV_oOS_Graphify_Tool_Resolve_External implements WP_MCP_AI_Tool_Interface,
 
 		if ( $local_node ) {
 			return array(
-				'success'    => true,
-				'found'      => true,
-				'ingested'   => false,
-				'node'       => $this->format_node( $local_node ),
+				'success'  => true,
+				'found'    => true,
+				'ingested' => false,
+				'node'     => $this->format_node( $local_node ),
 			);
 		}
 
 		// Step 3: auto-ingest if requested.
 		if ( ! $auto_ingest ) {
-			return array( 'success' => true, 'found' => false, 'ingested' => false, 'node' => null );
+			return array(
+				'success'  => true,
+				'found'    => false,
+				'ingested' => false,
+				'node'     => null,
+			);
 		}
 
 		$node = null;
@@ -105,7 +128,12 @@ class NV_oOS_Graphify_Tool_Resolve_External implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( ! $node ) {
-			return array( 'success' => true, 'found' => false, 'ingested' => false, 'node' => null );
+			return array(
+				'success'  => true,
+				'found'    => false,
+				'ingested' => false,
+				'node'     => null,
+			);
 		}
 
 		return array(
@@ -147,11 +175,11 @@ class NV_oOS_Graphify_Tool_Resolve_External implements WP_MCP_AI_Tool_Interface,
 	private function ingest_from_wikidata( $qid ) {
 		$url = add_query_arg(
 			array(
-				'action' => 'wbgetentities',
-				'ids'    => $qid,
-				'props'  => 'labels|descriptions|sitelinks/urls',
+				'action'    => 'wbgetentities',
+				'ids'       => $qid,
+				'props'     => 'labels|descriptions|sitelinks/urls',
 				'languages' => 'en',
-				'format' => 'json',
+				'format'    => 'json',
 			),
 			'https://www.wikidata.org/w/api.php'
 		);
@@ -179,19 +207,21 @@ class NV_oOS_Graphify_Tool_Resolve_External implements WP_MCP_AI_Tool_Interface,
 		}
 
 		$node_id = 'entity_wikidata_' . sanitize_key( $qid );
-		NV_oOS_Graphify_DB::upsert_node( array(
-			'node_id'     => $node_id,
-			'label'       => $label,
-			'type'        => 'entity',
-			'post_id'     => 0,
-			'url'         => $wiki_url,
-			'properties'  => array(
-				'description' => $desc,
-				'qid'         => $qid,
-			),
-			'external_id' => $qid,
-			'provenance'  => 'REMOTE',
-		) );
+		NV_oOS_Graphify_DB::upsert_node(
+			array(
+				'node_id'     => $node_id,
+				'label'       => $label,
+				'type'        => 'entity',
+				'post_id'     => 0,
+				'url'         => $wiki_url,
+				'properties'  => array(
+					'description' => $desc,
+					'qid'         => $qid,
+				),
+				'external_id' => $qid,
+				'provenance'  => 'REMOTE',
+			)
+		);
 
 		return NV_oOS_Graphify_DB::get_node( $node_id );
 	}
@@ -209,16 +239,18 @@ class NV_oOS_Graphify_Tool_Resolve_External implements WP_MCP_AI_Tool_Interface,
 		$path    = wp_parse_url( $url, PHP_URL_PATH );
 		$label   = $path ? trim( $path, '/' ) : $url;
 
-		NV_oOS_Graphify_DB::upsert_node( array(
-			'node_id'    => $node_id,
-			'label'      => sanitize_text_field( $label ),
-			'type'       => 'remote_url',
-			'post_id'    => 0,
-			'url'        => $url,
-			'properties' => array(),
-			'external_id' => $url,
-			'provenance' => 'REMOTE',
-		) );
+		NV_oOS_Graphify_DB::upsert_node(
+			array(
+				'node_id'     => $node_id,
+				'label'       => sanitize_text_field( $label ),
+				'type'        => 'remote_url',
+				'post_id'     => 0,
+				'url'         => $url,
+				'properties'  => array(),
+				'external_id' => $url,
+				'provenance'  => 'REMOTE',
+			)
+		);
 
 		return NV_oOS_Graphify_DB::get_node( $node_id );
 	}

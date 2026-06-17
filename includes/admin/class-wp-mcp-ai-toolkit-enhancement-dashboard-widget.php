@@ -49,19 +49,22 @@ class WP_MCP_AI_Toolkit_Enhancement_Dashboard_Widget {
 
 		?>
 		<div class="wp-mcp-ai-toolkit-dashboard">
-			<style>
-				.wp-mcp-ai-toolkit-dashboard { font-size: 13px; }
-				.wp-mcp-ai-toolkit-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 15px 0; }
-				.wp-mcp-ai-toolkit-stat-box { background: #f0f0f1; padding: 12px; border-radius: 4px; text-align: center; }
-				.wp-mcp-ai-toolkit-stat-box .stat-value { font-size: 28px; font-weight: 600; color: #2271b1; line-height: 1; }
-				.wp-mcp-ai-toolkit-stat-box .stat-label { font-size: 12px; color: #646970; margin-top: 5px; }
-				.wp-mcp-ai-toolkit-list { list-style: none; padding: 0; margin: 15px 0; }
-				.wp-mcp-ai-toolkit-list li { padding: 8px 0; border-bottom: 1px solid #f0f0f1; display: flex; justify-content: space-between; align-items: center; }
-				.wp-mcp-ai-toolkit-list li:last-child { border-bottom: none; }
-				.wp-mcp-ai-toolkit-badge { background: #2271b1; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-				.wp-mcp-ai-toolkit-actions { margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f1; }
-				.wp-mcp-ai-toolkit-actions a { margin-right: 10px; }
-			</style>
+			<?php
+			wp_add_inline_style(
+				'wp-mcp-ai-toolkit-enhancement-dashboard',
+				'.wp-mcp-ai-toolkit-dashboard{font-size:13px;}'
+				. '.wp-mcp-ai-toolkit-stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin:15px 0;}'
+				. '.wp-mcp-ai-toolkit-stat-box{background:#f0f0f1;padding:12px;border-radius:4px;text-align:center;}'
+				. '.wp-mcp-ai-toolkit-stat-box .stat-value{font-size:28px;font-weight:600;color:#2271b1;line-height:1;}'
+				. '.wp-mcp-ai-toolkit-stat-box .stat-label{font-size:12px;color:#646970;margin-top:5px;}'
+				. '.wp-mcp-ai-toolkit-list{list-style:none;padding:0;margin:15px 0;}'
+				. '.wp-mcp-ai-toolkit-list li{padding:8px 0;border-bottom:1px solid #f0f0f1;display:flex;justify-content:space-between;align-items:center;}'
+				. '.wp-mcp-ai-toolkit-list li:last-child{border-bottom:none;}'
+				. '.wp-mcp-ai-toolkit-badge{background:#2271b1;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}'
+				. '.wp-mcp-ai-toolkit-actions{margin-top:15px;padding-top:15px;border-top:1px solid #f0f0f1;}'
+				. '.wp-mcp-ai-toolkit-actions a{margin-right:10px;}'
+			);
+			?>
 
 			<h3 style="margin-top: 0;"><?php esc_html_e( 'System Overview', 'mcp-ai-wpoos' ); ?></h3>
 

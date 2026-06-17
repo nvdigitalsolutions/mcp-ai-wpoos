@@ -78,9 +78,9 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( empty( $vector_store_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No vector store ID provided and none configured for this assistant.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'No vector store ID provided and none configured for this assistant.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -88,10 +88,7 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 		$result = $client->retrieve_vector_store( $vector_store_id );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'error'   => $result->get_error_message(),
-			);
+			return $result;
 		}
 
 		$vector_store_name = isset( $result['name'] ) ? $result['name'] : null;

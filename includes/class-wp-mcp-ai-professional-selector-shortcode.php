@@ -287,7 +287,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 				<div class="wp-mcp-ai-professional-selector-modal__backdrop" data-modal-backdrop></div>
 				<div class="wp-mcp-ai-professional-selector-modal__panel">
 					<div class="wp-mcp-ai-professional-selector-modal__header">
-						<h2 class="wp-mcp-ai-professional-selector-modal__title" data-modal-title">
+						<h2 class="wp-mcp-ai-professional-selector-modal__title" data-modal-title>
 							<?php esc_html_e( 'Professional Chat', 'mcp-ai-wpoos' ); ?>
 						</h2>
 						<button type="button" class="wp-mcp-ai-professional-selector-modal__close" data-modal-close aria-label="<?php echo esc_attr__( 'Close', 'mcp-ai-wpoos' ); ?>">
@@ -411,7 +411,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	protected function get_available_providers() {
 		$providers = apply_filters(
 			'wp_mcp_ai_allowed_providers',
-			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' )
+			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' )
 		);
 
 		$labels = array(
@@ -580,9 +580,19 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 			return;
 		}
 
+		// Use the chat-specific kses allowlist so that `data-wp-mcp-ai-chat`,
+		// SVG icon markup, and form data-* attributes survive sanitisation.
+		// wp_kses_post() strips all of those, leaving the rendered chat
+		// container in the DOM but invisible to chat.js's discovery selector
+		// `[data-wp-mcp-ai-chat]` — which is why every button on the Test Model
+		// page was inert until this fix. Mirrors PR #4967.
+		$sanitized_html = class_exists( 'WP_MCP_AI_Shortcode' )
+			? WP_MCP_AI_Shortcode::kses_chat_output( $html )
+			: wp_kses_post( $html );
+
 		wp_send_json_success(
 			array(
-				'html'   => wp_kses_post( $html ),
+				'html'   => $sanitized_html,
 				'config' => $config,
 			)
 		);

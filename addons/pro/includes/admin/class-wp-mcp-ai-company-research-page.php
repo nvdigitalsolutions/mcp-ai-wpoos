@@ -43,14 +43,14 @@ class WP_MCP_AI_Company_Research_Page {
 	 * Initialize the page.
 	 */
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 26 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_company_from_research', array( __CLASS__, 'handle_create_from_research' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_import_company', array( __CLASS__, 'ajax_handle_import' ) );
 	}
 
 	/**
-	 * Add submenu page under Companies menu.
+	 * Add submenu page under Companies CPT menu.
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
@@ -69,9 +69,12 @@ class WP_MCP_AI_Company_Research_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public static function enqueue_assets( $hook ) {
-		// Only load on our research page.
+		// Only load on our research page (now under Companies CPT menu).
 		if ( 'mcp_ai_company_page_' . self::PAGE_SLUG !== $hook ) {
-			return;
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page slug check for asset enqueue.
+			if ( ! isset( $_GET['page'] ) || self::PAGE_SLUG !== $_GET['page'] ) {
+				return;
+			}
 		}
 
 		// Enqueue chat assets.
@@ -104,20 +107,9 @@ class WP_MCP_AI_Company_Research_Page {
 			'wp-mcp-ai-enhanced-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
-				'nonce'          => wp_create_nonce( 'wp_mcp_ai_research_page' ),
-				'entityType'     => 'company',
-				'createAction'   => 'wp_mcp_ai_create_company_from_research',
-				'importAction'   => 'wp_mcp_ai_import_company',
-				'i18n'           => array(
-					'creating'       => __( 'Creating company...', 'mcp-ai-wpoos-pro' ),
-					'created'        => __( 'Company created successfully!', 'mcp-ai-wpoos-pro' ),
-					'createError'    => __( 'Error creating company.', 'mcp-ai-wpoos-pro' ),
-					'importing'      => __( 'Importing company...', 'mcp-ai-wpoos-pro' ),
-					'imported'       => __( 'Company imported successfully!', 'mcp-ai-wpoos-pro' ),
-					'importError'    => __( 'Error importing company.', 'mcp-ai-wpoos-pro' ),
-					'requiredFields' => __( 'Please fill in all required fields.', 'mcp-ai-wpoos-pro' ),
-				),
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_page' ),
+				'entityType' => 'company',
 			)
 		);
 	}
@@ -126,6 +118,46 @@ class WP_MCP_AI_Company_Research_Page {
 	 * Render the research page.
 	 */
 	public static function render_page() {
+		// Get CRM toolkit settings for the assigned research assistant.
+		$crm_settings       = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_toolkit_settings() : array();
+		$assigned_assistant = isset( $crm_settings['research_assistant'] ) ? $crm_settings['research_assistant'] : 'default';
+
+		// Resolve assistant name to ID if needed.
+		$assistant_id = 0;
+		if ( is_numeric( $assigned_assistant ) ) {
+			$assistant_id = absint( $assigned_assistant );
+		} elseif ( 'default' !== $assigned_assistant && ! empty( $assigned_assistant ) ) {
+			// Look up assistant by slug/title.
+			$assistant_post = get_page_by_path( $assigned_assistant, OBJECT, 'mcp_ai_assistant' );
+			if ( ! $assistant_post ) {
+				$assistant_post = get_posts(
+					array(
+						'post_type'      => 'mcp_ai_assistant',
+						'title'          => $assigned_assistant,
+						'posts_per_page' => 1,
+					)
+				);
+				$assistant_post = ! empty( $assistant_post ) ? $assistant_post[0] : null;
+			}
+			if ( $assistant_post ) {
+				$assistant_id = $assistant_post->ID;
+			}
+		}
+
+		// Fallback: get first available assistant.
+		if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
+			$assistants   = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'orderby'        => 'date',
+					'order'          => 'DESC',
+				)
+			);
+			$assistant_id = ! empty( $assistants ) ? $assistants[0]->ID : 0;
+		}
+
 		?>
 		<div class="wrap wp-mcp-ai-research-page">
 			<h1 class="wp-heading-inline">
@@ -134,239 +166,343 @@ class WP_MCP_AI_Company_Research_Page {
 
 			<hr class="wp-header-end">
 
-			<div class="wp-mcp-ai-research-info-box">
-				<h3><?php esc_html_e( 'AI-Powered Company Research', 'mcp-ai-wpoos-pro' ); ?></h3>
-				<p>
-					<?php esc_html_e( 'Use AI to research companies, identify target prospects, and analyze industry best practices before adding them to your CRM.', 'mcp-ai-wpoos-pro' ); ?>
-				</p>
-				<ul class="wp-mcp-ai-feature-list">
-					<li><strong><?php esc_html_e( 'Web Search Integration:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Ask the AI to search for companies in specific industries or locations', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><strong><?php esc_html_e( 'Industry Standards:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Research best practices and trends in target industries', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><strong><?php esc_html_e( 'Company Intelligence:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Get company size, revenue, and contact information', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><strong><?php esc_html_e( 'Target Identification:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Identify which companies to target for your services', 'mcp-ai-wpoos-pro' ); ?></li>
-				</ul>
-				<p class="description">
-					<?php
-					echo wp_kses_post(
-						sprintf(
-							/* translators: 1: Newsletter plugin link, 2: WP Mail SMTP plugin link */
-							__( 'This toolkit works with <a href="%1$s" target="_blank">Newsletter</a> and <a href="%2$s" target="_blank">WP Mail SMTP</a> plugins for email marketing integration.', 'mcp-ai-wpoos-pro' ),
-							'https://wordpress.org/plugins/newsletter/',
-							'https://wordpress.org/plugins/wp-mail-smtp/'
-						)
-					);
-					?>
-				</p>
+			<?php self::render_chat_interface( $assistant_id ); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the enhanced chat interface with workflow selector.
+	 *
+	 * @param int $assistant_id Assistant post ID.
+	 */
+	protected static function render_chat_interface( $assistant_id ) {
+		// CRM-specific tools available for company research.
+		$company_tools = array(
+			// Company CRUD.
+			'create_company',
+			'get_companies',
+			'research_company',
+			// CRM contact management.
+			'manage_crm_contact',
+			'crm_capture_interaction',
+			// CRM email integration.
+			'crm_email_search_leads',
+			'crm_email_search_correspondence',
+			'crm_email_search_accounting',
+			// Activities.
+			'create_crm_activity',
+			'list_crm_activities',
+			'complete_crm_activity',
+			// Web research.
+			'web_search',
+			'search_content',
+			'semantic_content_search',
+			'crawl_website',
+			'scrape_structured_data',
+			// Command center.
+			'get_workflow_inbox',
+			'create_workflow_rule',
+			'get_owner_workload',
+		);
+
+		// Get current mode from query string for initial workflow.
+		$current_mode     = self::get_current_mode();
+		$initial_workflow = ( 'import' === $current_mode ) ? 'import' : ( ( 'consolidate' === $current_mode ) ? 'review' : 'research' );
+		?>
+		<script>
+			window.wpMcpAiResearchPage = window.wpMcpAiResearchPage || {};
+			window.wpMcpAiResearchPage.initialWorkflow = <?php echo wp_json_encode( $initial_workflow ); ?>;
+		</script>
+
+		<div class="wp-mcp-ai-research-container">
+			<!-- Sidebar -->
+			<div class="wp-mcp-ai-research-sidebar">
+				<div class="wp-mcp-ai-research-intro">
+					<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
+					<ol>
+						<li><?php esc_html_e( 'Research companies by industry, location, or name', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Analyze company data with AI assistance', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Identify target prospects and decision makers', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Create company records directly in your CRM', 'mcp-ai-wpoos-pro' ); ?></li>
+					</ol>
+				</div>
+
+				<div class="wp-mcp-ai-research-tips">
+					<h3><?php esc_html_e( 'Research Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<ul>
+						<li><strong><?php esc_html_e( 'Industry:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Research best practices and trends', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><strong><?php esc_html_e( 'Size:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Filter by employee count or revenue', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><strong><?php esc_html_e( 'Location:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Target by city, state, or country', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><strong><?php esc_html_e( 'Intel:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Gather LinkedIn, website, and news data', 'mcp-ai-wpoos-pro' ); ?></li>
+					</ul>
+				</div>
+
+				<div class="wp-mcp-ai-research-examples">
+					<h3><?php esc_html_e( 'Example Queries', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<ul class="wp-mcp-ai-example-list">
+						<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Find SaaS companies in California with 50-200 employees">
+							<?php esc_html_e( '"Find SaaS companies in..."', 'mcp-ai-wpoos-pro' ); ?>
+						</button></li>
+						<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research the top 5 fintech startups in New York">
+							<?php esc_html_e( '"Research top fintech startups..."', 'mcp-ai-wpoos-pro' ); ?>
+						</button></li>
+						<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Create a company profile for Acme Corp including industry analysis">
+							<?php esc_html_e( '"Create company profile..."', 'mcp-ai-wpoos-pro' ); ?>
+						</button></li>
+						<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="List all companies in my CRM and analyze their target status">
+							<?php esc_html_e( '"List all companies in CRM..."', 'mcp-ai-wpoos-pro' ); ?>
+						</button></li>
+					</ul>
+				</div>
+
+				<div class="wp-mcp-ai-research-actions">
+					<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<p>
+						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_company' ) ); ?>" class="button">
+							<?php esc_html_e( 'View All Companies', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</p>
+					<p>
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_company' ) ); ?>" class="button">
+							<?php esc_html_e( 'Add Company Manually', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</p>
+				</div>
 			</div>
 
-			<div class="wp-mcp-ai-research-container">
-				<div class="wp-mcp-ai-research-chat">
-					<h2><?php esc_html_e( 'AI Research Assistant', 'mcp-ai-wpoos-pro' ); ?></h2>
-					<div class="wp-mcp-ai-research-chat-container">
-						<?php
-						// Get the assigned assistant for CRM research.
-						$assigned_assistant = get_option( 'wp_mcp_ai_crm_research_assistant', 'default' );
-						
-						// Render the AI chat interface with the assigned assistant.
-						if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
-							$shortcode_instance = new WP_MCP_AI_Shortcode();
-							$shortcode          = sprintf(
-								'[nvoos_chat assistant="%s" placeholder="%s"]',
-								esc_attr( $assigned_assistant ),
-								esc_attr__( 'Ask me to research companies, industries, or help identify target prospects...', 'mcp-ai-wpoos-pro' )
-							);
-							echo do_shortcode( $shortcode );
-						} else {
-							echo '<p>' . esc_html__( 'Chat interface not available. Please ensure the plugin is properly installed.', 'mcp-ai-wpoos-pro' ) . '</p>';
-						}
-						?>
+			<!-- Main Content -->
+			<div class="wp-mcp-ai-research-main">
+				<!-- Workflow Mode Selector -->
+				<div class="wp-mcp-ai-workflow-selector">
+					<h2><?php esc_html_e( 'Choose Your Workflow', 'mcp-ai-wpoos-pro' ); ?></h2>
+					<div class="workflow-options">
+						<button type="button" class="workflow-option active" data-workflow="research">
+							<span class="dashicons dashicons-format-chat"></span>
+							<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<p><?php esc_html_e( 'Research and create companies with AI assistance', 'mcp-ai-wpoos-pro' ); ?></p>
+						</button>
+						<button type="button" class="workflow-option" data-workflow="import">
+							<span class="dashicons dashicons-upload"></span>
+							<strong><?php esc_html_e( 'Import Data', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<p><?php esc_html_e( 'Bulk import company data', 'mcp-ai-wpoos-pro' ); ?></p>
+						</button>
+						<button type="button" class="workflow-option" data-workflow="review">
+							<span class="dashicons dashicons-analytics"></span>
+							<strong><?php esc_html_e( 'Review & Quality', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<p><?php esc_html_e( 'View company data quality and completeness', 'mcp-ai-wpoos-pro' ); ?></p>
+						</button>
 					</div>
 				</div>
 
-				<div class="wp-mcp-ai-research-form">
-					<h2><?php esc_html_e( 'Company Details', 'mcp-ai-wpoos-pro' ); ?></h2>
-					<p class="description">
-						<?php esc_html_e( 'Fill in company information below, or ask the AI assistant to help you research and populate these fields.', 'mcp-ai-wpoos-pro' ); ?>
-					</p>
-
-					<form id="wp-mcp-ai-company-research-form" class="wp-mcp-ai-research-form-fields">
-						<div class="form-field required">
-							<label for="company_name"><?php esc_html_e( 'Company Name', 'mcp-ai-wpoos-pro' ); ?></label>
-							<input type="text" id="company_name" name="company_name" required>
+				<!-- AI Research Workflow (Default) -->
+				<div id="workflow-research" class="workflow-content active">
+					<?php if ( $assistant_id > 0 ) : ?>
+						<div class="wp-mcp-ai-research-chat">
+							<?php
+							echo do_shortcode(
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $company_tools ) ) . '"]'
+							);
+							?>
 						</div>
-
-						<div class="form-row">
-							<div class="form-field required">
-								<label for="industry"><?php esc_html_e( 'Industry', 'mcp-ai-wpoos-pro' ); ?></label>
-								<input type="text" id="industry" name="industry" required>
-							</div>
-
-							<div class="form-field">
-								<label for="company_size"><?php esc_html_e( 'Company Size', 'mcp-ai-wpoos-pro' ); ?></label>
-								<select id="company_size" name="company_size">
-									<option value=""><?php esc_html_e( 'Select size...', 'mcp-ai-wpoos-pro' ); ?></option>
-									<option value="1-10"><?php esc_html_e( '1-10 employees', 'mcp-ai-wpoos-pro' ); ?></option>
-									<option value="11-50"><?php esc_html_e( '11-50 employees', 'mcp-ai-wpoos-pro' ); ?></option>
-									<option value="51-200"><?php esc_html_e( '51-200 employees', 'mcp-ai-wpoos-pro' ); ?></option>
-									<option value="201-500"><?php esc_html_e( '201-500 employees', 'mcp-ai-wpoos-pro' ); ?></option>
-									<option value="501-1000"><?php esc_html_e( '501-1,000 employees', 'mcp-ai-wpoos-pro' ); ?></option>
-									<option value="1001-5000"><?php esc_html_e( '1,001-5,000 employees', 'mcp-ai-wpoos-pro' ); ?></option>
-									<option value="5001+"><?php esc_html_e( '5,001+ employees', 'mcp-ai-wpoos-pro' ); ?></option>
-								</select>
-							</div>
+					<?php else : ?>
+						<div class="notice notice-error">
+							<p>
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: Link to create assistant */
+										__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first.', 'mcp-ai-wpoos-pro' ),
+										admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+									)
+								);
+								?>
+							</p>
 						</div>
+					<?php endif; ?>
+				</div>
 
-						<div class="form-field">
-							<label for="website"><?php esc_html_e( 'Website', 'mcp-ai-wpoos-pro' ); ?></label>
-							<input type="url" id="website" name="website" placeholder="https://">
-						</div>
+				<!-- Import Data Workflow -->
+				<div id="workflow-import" class="workflow-content">
+					<?php self::render_import_workflow(); ?>
+				</div>
 
-						<div class="form-field">
-							<label for="description"><?php esc_html_e( 'Company Description', 'mcp-ai-wpoos-pro' ); ?></label>
-							<textarea id="description" name="description" rows="4"></textarea>
-						</div>
-
-						<div class="form-row">
-							<div class="form-field">
-								<label for="city"><?php esc_html_e( 'City', 'mcp-ai-wpoos-pro' ); ?></label>
-								<input type="text" id="city" name="city">
-							</div>
-
-							<div class="form-field">
-								<label for="state"><?php esc_html_e( 'State/Province', 'mcp-ai-wpoos-pro' ); ?></label>
-								<input type="text" id="state" name="state">
-							</div>
-
-							<div class="form-field">
-								<label for="country"><?php esc_html_e( 'Country', 'mcp-ai-wpoos-pro' ); ?></label>
-								<input type="text" id="country" name="country">
-							</div>
-						</div>
-
-						<div class="form-row">
-							<div class="form-field">
-								<label for="phone"><?php esc_html_e( 'Phone', 'mcp-ai-wpoos-pro' ); ?></label>
-								<input type="tel" id="phone" name="phone">
-							</div>
-
-							<div class="form-field">
-								<label for="revenue"><?php esc_html_e( 'Annual Revenue', 'mcp-ai-wpoos-pro' ); ?></label>
-								<input type="number" id="revenue" name="revenue" placeholder="0">
-							</div>
-						</div>
-
-						<div class="form-field">
-							<label for="target_status"><?php esc_html_e( 'Target Status', 'mcp-ai-wpoos-pro' ); ?></label>
-							<select id="target_status" name="target_status">
-								<option value="prospect"><?php esc_html_e( 'Prospect', 'mcp-ai-wpoos-pro' ); ?></option>
-								<option value="target" selected><?php esc_html_e( 'Target', 'mcp-ai-wpoos-pro' ); ?></option>
-								<option value="in_discussion"><?php esc_html_e( 'In Discussion', 'mcp-ai-wpoos-pro' ); ?></option>
-								<option value="client"><?php esc_html_e( 'Client', 'mcp-ai-wpoos-pro' ); ?></option>
-								<option value="not_interested"><?php esc_html_e( 'Not Interested', 'mcp-ai-wpoos-pro' ); ?></option>
-							</select>
-						</div>
-
-						<div class="form-row">
-							<div class="form-field">
-								<label for="linkedin"><?php esc_html_e( 'LinkedIn URL', 'mcp-ai-wpoos-pro' ); ?></label>
-								<input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/company/">
-							</div>
-
-							<div class="form-field">
-								<label for="twitter"><?php esc_html_e( 'Twitter/X Handle', 'mcp-ai-wpoos-pro' ); ?></label>
-								<input type="text" id="twitter" name="twitter" placeholder="@company">
-							</div>
-						</div>
-
-						<div class="form-field">
-							<label for="notes"><?php esc_html_e( 'Research Notes', 'mcp-ai-wpoos-pro' ); ?></label>
-							<textarea id="notes" name="notes" rows="4" placeholder="<?php esc_attr_e( 'Add any research findings, target strategy notes, or key insights about this company...', 'mcp-ai-wpoos-pro' ); ?>"></textarea>
-						</div>
-
-						<div class="form-actions">
-							<button type="submit" class="button button-primary button-large">
-								<?php esc_html_e( 'Create Company', 'mcp-ai-wpoos-pro' ); ?>
-							</button>
-							<button type="button" class="button button-secondary button-large" id="wp-mcp-ai-clear-form">
-								<?php esc_html_e( 'Clear Form', 'mcp-ai-wpoos-pro' ); ?>
-							</button>
-						</div>
-					</form>
+				<!-- Review & Quality Workflow -->
+				<div id="workflow-review" class="workflow-content">
+					<?php self::render_review_workflow(); ?>
 				</div>
 			</div>
 		</div>
+		<?php
+	}
 
-		<style>
-			.wp-mcp-ai-research-info-box {
-				background: #f0f6fc;
-				border-left: 4px solid #2271b1;
-				padding: 15px 20px;
-				margin: 20px 0;
+	/**
+	 * Render import workflow section.
+	 */
+	protected static function render_import_workflow() {
+		?>
+		<div class="wp-mcp-ai-import-section">
+			<h2><?php esc_html_e( 'Import Company Data', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Import companies from CSV, JSON, or paste structured data. The AI will automatically parse and organize the company information.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<div class="import-tips">
+				<h4><?php esc_html_e( 'Tips for better results:', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><?php esc_html_e( '✓ Include company name, industry, and website', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Specify company size and revenue if available', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Add location data (city, state, country)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Include target status and contact information', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="import-form">
+				<h3><?php esc_html_e( 'Upload File or Paste Data', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<form id="wp-mcp-ai-import-form" method="post" enctype="multipart/form-data">
+					<?php wp_nonce_field( 'wp_mcp_ai_import_companies', 'import_nonce' ); ?>
+
+					<div class="import-file-section">
+						<input type="file" id="wp-mcp-ai-import-file-input" name="import_file" accept=".csv,.json,.txt" style="display: none;">
+						<button type="button" class="button" onclick="document.getElementById('wp-mcp-ai-import-file-input').click();">
+							<span class="dashicons dashicons-upload"></span>
+							<?php esc_html_e( 'Choose File', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span class="import-file-selected" style="margin-left: 10px; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Supported: CSV, JSON, TXT', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+
+					<p><strong><?php esc_html_e( 'OR', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+
+					<textarea
+						id="wp-mcp-ai-import-text"
+						name="import_data"
+						class="widefat"
+						rows="12"
+						placeholder="<?php esc_attr_e( "Example:\n\nCompany Name: Acme Corp\nIndustry: Software\nWebsite: https://acme.com\nCompany Size: 51-200\nCity: San Francisco\nState: CA\nCountry: USA\nTarget Status: prospect\n\nCompany Name: Globex Inc\nIndustry: Manufacturing\nWebsite: https://globex.com", 'mcp-ai-wpoos-pro' ); ?>"
+					></textarea>
+
+					<div class="import-options">
+						<label for="auto-create-companies">
+							<input type="checkbox" id="auto-create-companies" name="auto_create" value="1" checked>
+							<?php esc_html_e( 'Automatically create companies (recommended)', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<label for="validate-company-data">
+							<input type="checkbox" id="validate-company-data" name="validate_data" value="1" checked>
+							<?php esc_html_e( 'Validate data quality before importing', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</div>
+
+					<p>
+						<button type="submit" class="button button-primary button-large">
+							<span class="dashicons dashicons-update"></span>
+							<?php esc_html_e( 'Import & Process', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</p>
+					<div class="import-result" style="display: none;"></div>
+				</form>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render review & quality workflow section.
+	 */
+	protected static function render_review_workflow() {
+		$total_companies = wp_count_posts( 'mcp_ai_company' );
+		$published_count = isset( $total_companies->publish ) ? $total_companies->publish : 0;
+
+		$companies = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_company',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$complete_count = 0;
+		$with_industry  = 0;
+		$with_website   = 0;
+		$with_location  = 0;
+
+		foreach ( $companies as $company ) {
+			$industry = get_post_meta( $company->ID, '_company_industry', true );
+			$website  = get_post_meta( $company->ID, '_company_website', true );
+			$city     = get_post_meta( $company->ID, '_company_city', true );
+
+			if ( $industry ) {
+				++$with_industry;
 			}
-			.wp-mcp-ai-research-info-box h3 {
-				margin-top: 0;
+			if ( $website ) {
+				++$with_website;
 			}
-			.wp-mcp-ai-feature-list {
-				list-style: none;
-				padding: 0;
+			if ( $city ) {
+				++$with_location;
 			}
-			.wp-mcp-ai-feature-list li {
-				margin: 8px 0;
-				padding-left: 25px;
-				position: relative;
+			if ( $industry && $website ) {
+				++$complete_count;
 			}
-			.wp-mcp-ai-feature-list li:before {
-				content: "✓";
-				color: #00a32a;
-				font-weight: bold;
-				position: absolute;
-				left: 0;
-			}
-			.wp-mcp-ai-research-container {
-				display: grid;
-				grid-template-columns: 1fr 1fr;
-				gap: 20px;
-				margin-top: 20px;
-			}
-			.wp-mcp-ai-research-chat,
-			.wp-mcp-ai-research-form {
-				background: #fff;
-				padding: 20px;
-				border: 1px solid #c3c4c7;
-				box-shadow: 0 1px 1px rgba(0,0,0,.04);
-			}
-			.wp-mcp-ai-research-form-fields .form-field {
-				margin-bottom: 15px;
-			}
-			.wp-mcp-ai-research-form-fields .form-row {
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-				gap: 15px;
-				margin-bottom: 15px;
-			}
-			.wp-mcp-ai-research-form-fields label {
-				display: block;
-				margin-bottom: 5px;
-				font-weight: 600;
-			}
-			.wp-mcp-ai-research-form-fields .required label:after {
-				content: " *";
-				color: #d63638;
-			}
-			.wp-mcp-ai-research-form-fields input[type="text"],
-			.wp-mcp-ai-research-form-fields input[type="url"],
-			.wp-mcp-ai-research-form-fields input[type="tel"],
-			.wp-mcp-ai-research-form-fields input[type="number"],
-			.wp-mcp-ai-research-form-fields select,
-			.wp-mcp-ai-research-form-fields textarea {
-				width: 100%;
-			}
-			.form-actions {
-				margin-top: 20px;
-				display: flex;
-				gap: 10px;
-			}
-		</style>
+		}
+
+		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
+		?>
+		<div class="wp-mcp-ai-consolidate-section">
+			<h2><?php esc_html_e( 'Company Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>
+
+			<div class="quality-dashboard">
+				<h3><?php esc_html_e( 'Overall Completeness', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<div class="completeness-indicator">
+					<div class="completeness-bar" style="width: <?php echo esc_attr( $completeness ); ?>%;"></div>
+					<span class="completeness-percentage"><?php echo esc_html( $completeness ); ?>%</span>
+				</div>
+
+				<div class="quality-metrics">
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $published_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Total Companies', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $complete_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Fully Complete', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_industry ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Industry', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_website ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Website', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+				</div>
+
+				<?php if ( $completeness < 80 ) : ?>
+					<div class="notice notice-warning inline">
+						<p>
+							<?php
+							printf(
+								/* translators: %d: Completeness percentage */
+								esc_html__( 'Company data completeness is %d%%. Ensure companies have industry and website for best results.', 'mcp-ai-wpoos-pro' ),
+								esc_html( $completeness )
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<div class="items-list-table">
+				<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_company' ) ); ?>" class="button button-primary">
+						<?php esc_html_e( 'View All Companies', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_company' ) ); ?>" class="button">
+						<?php esc_html_e( 'Add New Company', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+				</p>
+			</div>
+		</div>
 		<?php
 	}
 
@@ -403,18 +539,18 @@ class WP_MCP_AI_Company_Research_Page {
 
 		// Save company metadata.
 		$meta_fields = array(
-			'_company_industry'       => 'industry',
-			'_company_size'           => 'company_size',
-			'_company_website'        => 'website',
-			'_company_city'           => 'city',
-			'_company_state'          => 'state',
-			'_company_country'        => 'country',
-			'_company_phone'          => 'phone',
-			'_company_revenue'        => 'revenue',
-			'_company_target_status'  => 'target_status',
-			'_company_linkedin'       => 'linkedin',
-			'_company_twitter'        => 'twitter',
-			'_company_notes'          => 'notes',
+			'_company_industry'      => 'industry',
+			'_company_size'          => 'company_size',
+			'_company_website'       => 'website',
+			'_company_city'          => 'city',
+			'_company_state'         => 'state',
+			'_company_country'       => 'country',
+			'_company_phone'         => 'phone',
+			'_company_revenue'       => 'revenue',
+			'_company_target_status' => 'target_status',
+			'_company_linkedin'      => 'linkedin',
+			'_company_twitter'       => 'twitter',
+			'_company_notes'         => 'notes',
 		);
 
 		foreach ( $meta_fields as $meta_key => $post_key ) {
@@ -429,8 +565,8 @@ class WP_MCP_AI_Company_Research_Page {
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Company created successfully!', 'mcp-ai-wpoos-pro' ),
-				'post_id' => $post_id,
+				'message'  => __( 'Company created successfully!', 'mcp-ai-wpoos-pro' ),
+				'post_id'  => $post_id,
 				'edit_url' => get_edit_post_link( $post_id, 'raw' ),
 			)
 		);

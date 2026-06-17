@@ -428,7 +428,10 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
 			$this->assertArrayHasKey( 'restUrl', $config, 'Instance config should have restUrl key.' );
 			$this->assertNotEmpty( $config['restUrl'], 'restUrl should not be empty.' );
-			$this->assertStringContainsString( '/wp-json/mcp-ai/v1', $config['restUrl'], 'restUrl should point to the MCP AI REST namespace.' );
+			// Use rest_url() for comparison so the test works with both pretty permalinks
+			// (/wp-json/mcp-ai/v1/) and plain permalink (?rest_route=/mcp-ai/v1/) formats.
+			$expected = rest_url( WP_MCP_AI_REST::REST_NAMESPACE );
+			$this->assertStringContainsString( $expected, $config['restUrl'], 'restUrl should point to the MCP AI REST namespace.' );
 		}
 	}
 
@@ -865,5 +868,90 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$script_counts = array_count_values( wp_scripts()->queue );
 		$this->assertArrayHasKey( $handle, $script_counts, 'Script should be in the queue.' );
 		$this->assertSame( 1, $script_counts[ $handle ], 'Script should be enqueued exactly once despite multiple shortcodes.' );
+	}
+
+	/**
+	 * chatTasksDrawer config key defaults to true as of v1.9.3 (PR-G flag flip).
+	 *
+	 * @covers WP_MCP_AI_Shortcode
+	 */
+	public function test_chat_tasks_drawer_flag_defaults_to_true() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Tasks Drawer Default Test',
+			)
+		);
+
+		wp_scripts()->reset();
+		do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+
+		$handle          = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$registered      = wp_scripts()->registered[ $handle ] ?? null;
+		$instance_config = $registered ? implode( "\n", $registered->extra['before'] ?? array() ) : '';
+
+		preg_match( '/wpMcpAiChatInstances\["[^"]+"\]\s*=\s*(\{.*?\});/', $instance_config, $matches );
+		$this->assertNotEmpty( $matches[1], 'Instance config JSON should be present.' );
+
+		$config = json_decode( $matches[1], true );
+		$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
+		$this->assertArrayHasKey( 'chatTasksDrawer', $config, 'chatTasksDrawer key should be present in instance config.' );
+		$this->assertTrue( $config['chatTasksDrawer'], 'chatTasksDrawer should default to true (v1.9.3+).' );
+	}
+
+	/**
+	 * chatTasksDrawer config key is false when the filter returns false (opt-out).
+	 *
+	 * @covers WP_MCP_AI_Shortcode
+	 */
+	public function test_chat_tasks_drawer_flag_respects_filter() {
+		add_filter( 'wp_mcp_ai_chat_tasks_drawer', '__return_false' );
+
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Tasks Drawer Filter Test',
+			)
+		);
+
+		wp_scripts()->reset();
+		do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+
+		$handle          = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$registered      = wp_scripts()->registered[ $handle ] ?? null;
+		$instance_config = $registered ? implode( "\n", $registered->extra['before'] ?? array() ) : '';
+
+		preg_match( '/wpMcpAiChatInstances\["[^"]+"\]\s*=\s*(\{.*?\});/', $instance_config, $matches );
+		$this->assertNotEmpty( $matches[1], 'Instance config JSON should be present.' );
+
+		$config = json_decode( $matches[1], true );
+		$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
+		$this->assertArrayHasKey( 'chatTasksDrawer', $config, 'chatTasksDrawer key should be present in instance config.' );
+		$this->assertFalse( $config['chatTasksDrawer'], 'chatTasksDrawer should be false when filter returns false (opt-out).' );
+
+		remove_filter( 'wp_mcp_ai_chat_tasks_drawer', '__return_false' );
+	}
+
+	/**
+	 * Shortcode HTML includes drawer button and drawer container markup.
+	 *
+	 * @covers WP_MCP_AI_Shortcode
+	 */
+	public function test_chat_shortcode_includes_tasks_drawer_markup() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Tasks Drawer Markup Test',
+			)
+		);
+
+		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__tasks-btn', $markup, 'Drawer trigger button should be present in markup.' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__tasks-drawer', $markup, 'Drawer container should be present in markup.' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__job-toast-container', $markup, 'Toast container should be present in markup.' );
 	}
 }

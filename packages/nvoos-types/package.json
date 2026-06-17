@@ -1,0 +1,53 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-types",
+  "version": "0.1.0-alpha.1",
+  "description": "Canonical TypeScript type definitions for the NV Open Operator System (oOS) — AI providers, chat messages, tool execution, SSE streaming, attachments, history, memory, agents, and WordPress global augmentations",
+  "main": "./dist/index.d.ts",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.d.ts"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-types",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-types"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "typescript",
+    "types",
+    "ai",
+    "chat",
+    "sse",
+    "openai",
+    "mcp",
+    "tools",
+    "wordpress",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Pure type definitions — no runtime tests\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

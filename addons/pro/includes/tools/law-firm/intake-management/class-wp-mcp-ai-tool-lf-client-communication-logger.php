@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_Client_Communication_Logger implements WP_MCP_AI_Tool_In
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -113,6 +120,9 @@ class WP_MCP_AI_Tool_LF_Client_Communication_Logger implements WP_MCP_AI_Tool_In
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -123,11 +133,11 @@ class WP_MCP_AI_Tool_LF_Client_Communication_Logger implements WP_MCP_AI_Tool_In
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$client_id  = isset( $arguments['client_id'] ) ? absint( $arguments['client_id'] ) : 0;
-		$matter_id  = isset( $arguments['matter_id'] ) ? absint( $arguments['matter_id'] ) : 0;
-		$comm_type  = isset( $arguments['communication_type'] ) ? sanitize_text_field( $arguments['communication_type'] ) : '';
-		$summary    = isset( $arguments['summary'] ) ? sanitize_textarea_field( $arguments['summary'] ) : '';
-		$date       = isset( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : current_time( 'Y-m-d' );
+		$client_id    = isset( $arguments['client_id'] ) ? absint( $arguments['client_id'] ) : 0;
+		$matter_id    = isset( $arguments['matter_id'] ) ? absint( $arguments['matter_id'] ) : 0;
+		$comm_type    = isset( $arguments['communication_type'] ) ? sanitize_text_field( $arguments['communication_type'] ) : '';
+		$summary      = isset( $arguments['summary'] ) ? sanitize_textarea_field( $arguments['summary'] ) : '';
+		$date         = isset( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : current_time( 'Y-m-d' );
 		$participants = array();
 		if ( ! empty( $arguments['participants'] ) && is_array( $arguments['participants'] ) ) {
 			$participants = array_map( 'sanitize_text_field', $arguments['participants'] );

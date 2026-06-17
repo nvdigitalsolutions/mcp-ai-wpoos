@@ -36,3 +36,8 @@
 
 # Tests
 /tests/ @nvdigitalsolutions
+/addons/pro/tests/ @nvdigitalsolutions
+/addons/*/tests/ @nvdigitalsolutions
+/tests/.coverage-baseline.json @nvdigitalsolutions
+/bin/find-untested-classes.sh @nvdigitalsolutions
+/phpunit.xml.dist @nvdigitalsolutions

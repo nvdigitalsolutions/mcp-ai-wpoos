@@ -9,12 +9,12 @@ This directory contains historical bug fix summaries and implementation document
 - **PRODUCT_RESEARCH_FIX_SUMMARY.md** (2026-02-10)
   - Fixed product consolidate page rendering (CSS/JS not loading)
   - Resolved duplicate "Research & Add" menu items
-  - **Detailed docs:** `/docs/fixes/product-page-admin-hook-detection-fix-2026-02-10.md`
+  - **Detailed docs:** `/docs/history/2026/fixes/product-page-admin-hook-detection-fix-2026-02-10.md`
 
 - **PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md** (2026-02-11)
   - Fixed all tabs displaying simultaneously instead of individually
   - Implemented flexible hook matching and inline styles
-  - **Detailed docs:** `/docs/fixes/product-research-tab-system-fix-2026-02-11.md`
+  - **Detailed docs:** `/docs/history/2026/fixes/product-research-tab-system-fix-2026-02-11.md`
 
 - **VARIABLE_PRODUCT_FIX_SUMMARY.md** (2026-02-12)
   - Added variable product support to `create_woo_product` tool
@@ -46,7 +46,7 @@ This directory contains historical bug fix summaries and implementation document
 
 For active bug tracking and current fixes:
 - **Bug Reports:** GitHub Issues at https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
-- **Active Fixes:** `/docs/fixes/` - Current fix documentation
+- **Active Fixes:** `/docs/history/2026/fixes/` - Current fix documentation
 - **Changelog:** `/CHANGELOG.md` - Version history with all fixes
 
 ## Purpose
@@ -60,7 +60,7 @@ These archived files serve as:
 ## Note
 
 These documents represent **completed fixes** and are kept for historical purposes. For current issues or to report new bugs, please:
-- Check `/docs/fixes/` for recent fixes
+- Check `/docs/history/2026/fixes/` for recent fixes
 - Review `/CHANGELOG.md` for fix history
 - Open an issue on GitHub for new bugs
 

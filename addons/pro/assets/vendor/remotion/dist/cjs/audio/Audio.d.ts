@@ -5,52 +5,52 @@ import type { RemotionMainAudioProps } from './props.js';
  * @see [Documentation](https://remotion.dev/docs/html5-audio)
  */
 export declare const Html5Audio: React.ForwardRefExoticComponent<Omit<import("./props.js").NativeAudioProps & {
-    name?: string;
-    volume?: import("../volume-prop.js").VolumeProp;
-    playbackRate?: number;
-    acceptableTimeShiftInSeconds?: number;
-    allowAmplificationDuringRender?: boolean;
-    _remotionInternalNeedsDurationCalculation?: boolean;
-    _remotionInternalNativeLoopPassed?: boolean;
-    toneFrequency?: number;
-    useWebAudioApi?: boolean;
-    pauseWhenBuffering?: boolean;
-    showInTimeline?: boolean;
-    delayRenderTimeoutInMilliseconds?: number;
-    delayRenderRetries?: number;
-    loopVolumeCurveBehavior?: import("./use-audio-frame.js").LoopVolumeCurveBehavior;
-    onError?: (err: Error) => void;
-    audioStreamIndex?: number;
+    name?: string | undefined;
+    volume?: import("../volume-prop.js").VolumeProp | undefined;
+    playbackRate?: number | undefined;
+    acceptableTimeShiftInSeconds?: number | undefined;
+    allowAmplificationDuringRender?: boolean | undefined;
+    _remotionInternalNeedsDurationCalculation?: boolean | undefined;
+    _remotionInternalNativeLoopPassed?: boolean | undefined;
+    toneFrequency?: number | undefined;
+    useWebAudioApi?: boolean | undefined;
+    pauseWhenBuffering?: boolean | undefined;
+    showInTimeline?: boolean | undefined;
+    delayRenderTimeoutInMilliseconds?: number | undefined;
+    delayRenderRetries?: number | undefined;
+    loopVolumeCurveBehavior?: import("./use-audio-frame.js").LoopVolumeCurveBehavior | undefined;
+    onError?: ((err: Error) => void) | undefined;
+    audioStreamIndex?: number | undefined;
 } & RemotionMainAudioProps & {
     /**
      * @deprecated For internal use only
      */
-    readonly stack?: string;
+    readonly stack?: string | undefined;
 }, "ref"> & React.RefAttributes<HTMLAudioElement>>;
 /**
  * @deprecated This component has been renamed to `Html5Audio`.
  * @see [Documentation](https://remotion.dev/docs/mediabunny/new-video)
  */
 export declare const Audio: React.ForwardRefExoticComponent<Omit<import("./props.js").NativeAudioProps & {
-    name?: string;
-    volume?: import("../volume-prop.js").VolumeProp;
-    playbackRate?: number;
-    acceptableTimeShiftInSeconds?: number;
-    allowAmplificationDuringRender?: boolean;
-    _remotionInternalNeedsDurationCalculation?: boolean;
-    _remotionInternalNativeLoopPassed?: boolean;
-    toneFrequency?: number;
-    useWebAudioApi?: boolean;
-    pauseWhenBuffering?: boolean;
-    showInTimeline?: boolean;
-    delayRenderTimeoutInMilliseconds?: number;
-    delayRenderRetries?: number;
-    loopVolumeCurveBehavior?: import("./use-audio-frame.js").LoopVolumeCurveBehavior;
-    onError?: (err: Error) => void;
-    audioStreamIndex?: number;
+    name?: string | undefined;
+    volume?: import("../volume-prop.js").VolumeProp | undefined;
+    playbackRate?: number | undefined;
+    acceptableTimeShiftInSeconds?: number | undefined;
+    allowAmplificationDuringRender?: boolean | undefined;
+    _remotionInternalNeedsDurationCalculation?: boolean | undefined;
+    _remotionInternalNativeLoopPassed?: boolean | undefined;
+    toneFrequency?: number | undefined;
+    useWebAudioApi?: boolean | undefined;
+    pauseWhenBuffering?: boolean | undefined;
+    showInTimeline?: boolean | undefined;
+    delayRenderTimeoutInMilliseconds?: number | undefined;
+    delayRenderRetries?: number | undefined;
+    loopVolumeCurveBehavior?: import("./use-audio-frame.js").LoopVolumeCurveBehavior | undefined;
+    onError?: ((err: Error) => void) | undefined;
+    audioStreamIndex?: number | undefined;
 } & RemotionMainAudioProps & {
     /**
      * @deprecated For internal use only
      */
-    readonly stack?: string;
+    readonly stack?: string | undefined;
 }, "ref"> & React.RefAttributes<HTMLAudioElement>>;

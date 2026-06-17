@@ -37,10 +37,7 @@ class WP_MCP_AI_Report_Generator {
 	 */
 	public function generate_report( $type, $scope = 'full' ) {
 		if ( ! in_array( $type, $this->report_types, true ) ) {
-			return array(
-				'success' => false,
-				'message' => 'Invalid report type',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Invalid report type' );
 		}
 
 		$report_id = wp_generate_uuid4();
@@ -61,20 +58,14 @@ class WP_MCP_AI_Report_Generator {
 			case 'pdf':
 			case 'docx':
 			case 'excel':
-				$result = array(
-					'success' => false,
-					'message' => sprintf( '%s report generation requires additional libraries. HTML/CSV/JSON are available now.', strtoupper( $type ) ),
-				);
+				$result = new WP_Error( 'wp_mcp_ai_error', sprintf( '%s report generation requires additional libraries. HTML/CSV/JSON are available now.', strtoupper( $type ) ) );
 				break;
 			default:
-				$result = array(
-					'success' => false,
-					'message' => 'Unsupported report type',
-				);
+				$result = new WP_Error( 'wp_mcp_ai_error', 'Unsupported report type' );
 		}
 
 		// Log report generation.
-		if ( $result['success'] && class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
+		if ( ! is_wp_error( $result ) && class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
 			WP_MCP_AI_Pro_Database::log_audit(
 				'report_generated',
 				'compliance',
@@ -303,14 +294,10 @@ class WP_MCP_AI_Report_Generator {
 		$result = file_put_contents( $filepath, $html ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( false === $result ) {
-			return array(
-				'success' => false,
-				'message' => 'Failed to write report file',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Failed to write report file' );
 		}
 
 		return array(
-			'success'   => true,
 			'report_id' => $report_id,
 			'filename'  => $filename,
 			'filepath'  => $filepath,
@@ -334,26 +321,25 @@ class WP_MCP_AI_Report_Generator {
 			<meta charset="UTF-8">
 			<title>ISO 27001 Compliance Report - <?php echo esc_html( $data['metadata']['site_name'] ); ?></title>
 			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Inline styles for ISO 27001 compliance report PDF generation only
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Inline styles for standalone report generation.
+				wp_add_inline_style(
+					'wp-mcp-ai-report-generator',
+					'body{font-family:Arial,sans-serif;margin:40px;color:#333;}'
+					. 'h1{color:#1565c0;border-bottom:3px solid #1565c0;padding-bottom:10px;}'
+					. 'h2{color:#42a5f5;margin-top:30px;border-bottom:2px solid #e3f2fd;padding-bottom:5px;}'
+					. 'table{width:100%;border-collapse:collapse;margin:20px 0;}'
+					. 'th,td{padding:12px;text-align:left;border:1px solid #ddd;}'
+					. 'th{background-color:#e3f2fd;color:#1565c0;font-weight:bold;}'
+					. 'tr:nth-child(even){background-color:#f9f9f9;}'
+					. '.metadata{background-color:#f5f5f5;padding:15px;border-radius:5px;margin-bottom:30px;}'
+					. '.metadata p{margin:5px 0;}'
+					. '.status-implemented{color:#4caf50;font-weight:bold;}'
+					. '.status-partial{color:#ff9800;font-weight:bold;}'
+					. '.status-planned{color:#2196f3;font-weight:bold;}'
+					. '.risk-high{color:#f44336;font-weight:bold;}'
+					. '.risk-medium{color:#ff9800;font-weight:bold;}'
+					. '.risk-low{color:#4caf50;font-weight:bold;}'
+				);
 			?>
-			<style>
-				body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-				h1 { color: #1565c0; border-bottom: 3px solid #1565c0; padding-bottom: 10px; }
-				h2 { color: #42a5f5; margin-top: 30px; border-bottom: 2px solid #e3f2fd; padding-bottom: 5px; }
-				table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-				th, td { padding: 12px; text-align: left; border: 1px solid #ddd; }
-				th { background-color: #e3f2fd; color: #1565c0; font-weight: bold; }
-				tr:nth-child(even) { background-color: #f9f9f9; }
-				.metadata { background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 30px; }
-				.metadata p { margin: 5px 0; }
-				.status-implemented { color: #4caf50; font-weight: bold; }
-				.status-partial { color: #ff9800; font-weight: bold; }
-				.status-planned { color: #2196f3; font-weight: bold; }
-				.risk-high { color: #f44336; font-weight: bold; }
-				.risk-medium { color: #ff9800; font-weight: bold; }
-				.risk-low { color: #4caf50; font-weight: bold; }
-			</style>
 		</head>
 		<body>
 			<h1>ISO 27001 Compliance Report</h1>
@@ -499,10 +485,7 @@ class WP_MCP_AI_Report_Generator {
 		$fp = fopen( $filepath, 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( false === $fp ) {
-			return array(
-				'success' => false,
-				'message' => 'Failed to create CSV file',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Failed to create CSV file' );
 		}
 
 		// Add metadata.
@@ -589,14 +572,10 @@ class WP_MCP_AI_Report_Generator {
 		$result = file_put_contents( $filepath, $json ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( false === $result ) {
-			return array(
-				'success' => false,
-				'message' => 'Failed to write JSON file',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Failed to write JSON file' );
 		}
 
 		return array(
-			'success'   => true,
 			'report_id' => $report_id,
 			'filename'  => $filename,
 			'filepath'  => $filepath,

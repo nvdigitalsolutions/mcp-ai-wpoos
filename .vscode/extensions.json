@@ -7,6 +7,8 @@
 		"felixfbecker.php-debug",
 		"wongjn.php-sniffer",
 		"ikappas.phpcs",
-		"wordpresstoolbox.wordpress-toolbox"
+		"wordpresstoolbox.wordpress-toolbox",
+		"github.copilot",
+		"github.copilot-chat"
 	]
 }

@@ -814,11 +814,11 @@ function wp_mcp_ai_chartjs_generate_image_handler( $result, $config ) {
 	}
 
 	// Build a temporary output path inside the WordPress uploads directory.
-	$upload_dir  = wp_upload_dir();
+	$upload_dir = wp_upload_dir();
 	if ( ! empty( $upload_dir['error'] ) ) {
 		return new WP_Error( 'canvas_upload_dir', $upload_dir['error'] );
 	}
-	$output_dir  = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/charts/';
+	$output_dir = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/charts/';
 	if ( ! wp_mkdir_p( $output_dir ) ) {
 		return new WP_Error( 'canvas_dir_failed', __( 'Failed to create chart output directory.', 'mcp-ai-wpoos-pro' ) );
 	}

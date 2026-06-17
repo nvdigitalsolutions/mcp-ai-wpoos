@@ -58,7 +58,7 @@ class WP_MCP_AI_Pro_Budget_Guarded_Reward {
 	 *             `budget` (string slug of the budget envelope).
 	 *   Optional: `warn_multiplier` (float, 0..1, default 1.0),
 	 *             `exceeded_multiplier` (float, 0..1, default 0.0).
-	 * }
+	 * }.
 	 * @return callable|WP_Error
 	 */
 	public static function make_callback( array $args ) {

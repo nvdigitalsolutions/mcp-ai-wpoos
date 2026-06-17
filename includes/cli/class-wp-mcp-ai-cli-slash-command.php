@@ -127,9 +127,14 @@ class WP_MCP_AI_CLI_Slash_Command extends WP_MCP_AI_CLI_Base_Command {
 			WP_CLI::error( 'Slash command handler not initialized' );
 		}
 
-		// Set current user for capability filtering.
+		// Set current user for capability filtering. WP-CLI runs as the
+		// system user, so we accept any valid user ID regardless of blog
+		// membership (network admins can list commands across sites).
 		if ( $user_id ) {
-			wp_set_current_user( $user_id );
+			WP_MCP_AI_User_Context_Helper::safe_set_current_user(
+				$user_id,
+				array( 'require_blog_membership' => false )
+			);
 		}
 
 		// Get commands.
@@ -238,8 +243,9 @@ class WP_MCP_AI_CLI_Slash_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 * @param mixed  $result Command result.
 	 * @param string $format Output format.
+	 * @param array  $fields Fields to include (unused, for signature compatibility).
 	 */
-	private function format_output( $result, $format ) {
+	protected function format_output( $result, $format = 'table', $fields = array() ) {
 		switch ( $format ) {
 			case 'json':
 				WP_CLI::line( wp_json_encode( $result, JSON_PRETTY_PRINT ) );

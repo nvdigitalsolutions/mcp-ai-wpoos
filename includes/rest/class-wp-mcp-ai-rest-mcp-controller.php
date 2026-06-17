@@ -135,6 +135,11 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					),
 				),
 				// OPTIONS - CORS preflight.
+				// `__return_true` is correct here: CORS preflight (OPTIONS)
+				// must be answered without authentication so the browser can
+				// proceed to the authenticated GET/POST. The handler
+				// `handle_mcp_options()` only emits CORS headers and never
+				// returns sensitive data.
 				array(
 					'methods'             => 'OPTIONS',
 					'permission_callback' => '__return_true',
@@ -231,10 +236,10 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'sanitize_callback' => 'wp_kses_post',
 						),
 						'provider'      => array(
-							'description'       => __( 'AI provider (openai, gemini, ollama, anthropic, lm_studio, huggingface, cloudflare, embedded).', 'mcp-ai-wpoos' ),
+							'description'       => __( 'AI provider.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
-							'enum'              => array( 'openai', 'gemini', 'ollama', 'anthropic', 'lm_studio', 'huggingface', 'cloudflare', 'embedded' ),
+							'enum'              => array( 'openai', 'gemini', 'ollama', 'anthropic', 'lm_studio', 'huggingface', 'cloudflare', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ),
 							'sanitize_callback' => 'sanitize_key',
 						),
 						'model'         => array(

@@ -59,7 +59,7 @@ class Test_Architectural_Design_Submenu_Registration extends WP_UnitTestCase {
 		$submenu = array();
 
 		// Load the architectural design toolkit init file.
-		$init_file = WP_MCP_AI_PRO_PATH . 'includes/architectural-design-toolkit-init.php';
+		$init_file = WP_MCP_AI_PRO_PATH . 'includes/tools/architectural-design/init.php';
 		if ( file_exists( $init_file ) ) {
 			require_once $init_file;
 		}

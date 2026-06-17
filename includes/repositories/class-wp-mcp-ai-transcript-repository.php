@@ -107,19 +107,27 @@ class WP_MCP_AI_Transcript_Repository {
 		$page         = max( 1, (int) $page );
 		$offset       = ( $page - 1 ) * $per_page;
 
-		// Try with user_id first (custom field defined in CCT schema).
-		$where_clauses = array( 'user_id = %d' );
-		$where_values  = array( $user_id );
+		// When user_id = 0 (e.g. background mining job, no specific user), skip the
+		// user filter entirely so all users' sessions for the assistant are returned.
+		// When user_id > 0 we first try the custom `user_id` field, then fall back
+		// to JetEngine's built-in `cct_author_id` field.
+		if ( $user_id > 0 ) {
+			$where_clauses = array( 'user_id = %d' );
+			$where_values  = array( $user_id );
+		} else {
+			$where_clauses = array();
+			$where_values  = array();
+		}
 
 		if ( $assistant_id > 0 ) {
 			$where_clauses[] = 'assistant_id = %s';
 			$where_values[]  = (string) $assistant_id;
 		}
 
-		$where_sql = implode( ' AND ', $where_clauses );
+		$where_part = ! empty( $where_clauses ) ? 'WHERE ' . implode( ' AND ', $where_clauses ) : '';
 
 		$query_values = array_merge( $where_values, array( $per_page, $offset ) );
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_part contains only hardcoded placeholders.
 		$query_template = "SELECT session_key,
                 MIN(request_started_at) AS started_at,
                 MAX(response_completed_at) AS completed_at,
@@ -128,8 +136,8 @@ class WP_MCP_AI_Transcript_Repository {
                 MAX(assistant_id) AS assistant_id,
                 MAX(assistant_model) AS assistant_model,
                 COUNT(*) AS turn_count
-         FROM {$table}
-         WHERE {$where_sql}
+         FROM `{$table}`
+         {$where_part}
          GROUP BY session_key
          ORDER BY MAX(cct_created) DESC, session_key ASC
          LIMIT %d OFFSET %d";
@@ -145,9 +153,10 @@ class WP_MCP_AI_Transcript_Repository {
 			$rows = array();
 		}
 
-		// Fallback: If no rows found with user_id, try with cct_author_id.
-		// This handles JetEngine's built-in author tracking field.
-		if ( empty( $rows ) ) {
+		// Fallback: If user_id > 0 and no rows found, try with JetEngine's built-in
+		// cct_author_id field. Skipped when user_id = 0 because we already queried
+		// all users above.
+		if ( empty( $rows ) && $user_id > 0 ) {
 			$fallback_where_clauses = array( 'cct_author_id = %d' );
 			$fallback_where_values  = array( $user_id );
 
@@ -168,7 +177,7 @@ class WP_MCP_AI_Transcript_Repository {
                 MAX(assistant_id) AS assistant_id,
                 MAX(assistant_model) AS assistant_model,
                 COUNT(*) AS turn_count
-         FROM {$table}
+         FROM `{$table}`
          WHERE {$fallback_where_sql}
          GROUP BY session_key
          ORDER BY MAX(cct_created) DESC, session_key ASC
@@ -186,17 +195,18 @@ class WP_MCP_AI_Transcript_Repository {
 			}
 		}
 
-		// Get total count.
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders.
-		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$where_sql}";
+		// Get total count using the same WHERE clause as the primary query.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_part contains only hardcoded placeholders.
+		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM `{$table}` {$where_part}";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
 		$total_query = $wpdb->prepare( $total_query_template, $where_values );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 		$total = (int) $wpdb->get_var( $total_query );
 
-		// If we used fallback for rows, also use fallback for total count.
-		if ( 0 === $total && ! empty( $rows ) ) {
+		// If user_id > 0 and we got rows from the cct_author_id fallback but total
+		// count is still 0, re-run the count with the fallback WHERE clause.
+		if ( 0 === $total && ! empty( $rows ) && $user_id > 0 ) {
 			$fallback_where_clauses = array( 'cct_author_id = %d' );
 			$fallback_where_values  = array( $user_id );
 
@@ -207,7 +217,7 @@ class WP_MCP_AI_Transcript_Repository {
 
 			$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $fallback_where_sql contains only hardcoded placeholders.
-			$fallback_total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$fallback_where_sql}";
+			$fallback_total_query_template = "SELECT COUNT(DISTINCT session_key) FROM `{$table}` WHERE {$fallback_where_sql}";
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
 			$fallback_total_query = $wpdb->prepare( $fallback_total_query_template, $fallback_where_values );
 
@@ -263,8 +273,14 @@ class WP_MCP_AI_Transcript_Repository {
 		$select_fields = $this->get_select_fields();
 
 		// Query 1: Try with session_key + user_id + assistant_id (custom user_id field).
-		$where_clauses = array( 'session_key = %s', 'user_id = %d' );
-		$where_values  = array( $session_key, $user_id );
+		// When user_id = 0 (background mining), skip the user filter so we match any user.
+		if ( $user_id > 0 ) {
+			$where_clauses = array( 'session_key = %s', 'user_id = %d' );
+			$where_values  = array( $session_key, $user_id );
+		} else {
+			$where_clauses = array( 'session_key = %s' );
+			$where_values  = array( $session_key );
+		}
 
 		if ( $assistant_id > 0 ) {
 			$where_clauses[] = 'assistant_id = %s';
@@ -274,7 +290,7 @@ class WP_MCP_AI_Transcript_Repository {
 		$where_sql = implode( ' AND ', $where_clauses );
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields and $where_sql contain only hardcoded strings/placeholders.
 		$query_template = "SELECT {$select_fields}
-         FROM {$table}
+         FROM `{$table}`
          WHERE {$where_sql}
          ORDER BY cct_created ASC, _ID ASC";
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -313,8 +329,9 @@ class WP_MCP_AI_Transcript_Repository {
 			);
 		}
 
-		// Query 2: If no rows, try with cct_author_id (JetEngine built-in field).
-		if ( empty( $rows ) ) {
+		// Query 2: If user_id > 0 and no rows, try with cct_author_id (JetEngine built-in field).
+		// Skipped when user_id = 0 because Query 1 already matched without a user filter.
+		if ( empty( $rows ) && $user_id > 0 ) {
 			$author_where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
 			$author_where_values  = array( $session_key, $user_id );
 
@@ -326,7 +343,7 @@ class WP_MCP_AI_Transcript_Repository {
 			$author_where_sql = implode( ' AND ', $author_where_clauses );
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields and $author_where_sql contain only hardcoded strings/placeholders.
 			$author_query_template = "SELECT {$select_fields}
-         FROM {$table}
+         FROM `{$table}`
          WHERE {$author_where_sql}
          ORDER BY cct_created ASC, _ID ASC";
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -370,7 +387,7 @@ class WP_MCP_AI_Transcript_Repository {
 			// Try with user_id only.
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields contains only hardcoded strings.
 			$simple_query_template = "SELECT {$select_fields}
-         FROM {$table}
+         FROM `{$table}`
          WHERE session_key = %s AND user_id = %d
          ORDER BY cct_created ASC, _ID ASC";
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -397,7 +414,7 @@ class WP_MCP_AI_Transcript_Repository {
 			if ( empty( $rows ) ) {
 				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields contains only hardcoded strings.
 				$simple_author_query_template = "SELECT {$select_fields}
-         FROM {$table}
+         FROM `{$table}`
          WHERE session_key = %s AND cct_author_id = %d
          ORDER BY cct_created ASC, _ID ASC";
 				// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -428,7 +445,7 @@ class WP_MCP_AI_Transcript_Repository {
 		if ( empty( $rows ) ) {
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields contains only hardcoded strings.
 			$session_only_query_template = "SELECT {$select_fields}
-         FROM {$table}
+         FROM `{$table}`
          WHERE session_key = %s
          ORDER BY cct_created ASC, _ID ASC";
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -610,7 +627,7 @@ class WP_MCP_AI_Transcript_Repository {
 		// Get the most recent record ID for this session.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders; spread operator used for values.
 		$query = $wpdb->prepare(
-			"SELECT _ID FROM {$table} WHERE {$where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
+			"SELECT _ID FROM `{$table}` WHERE {$where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
 			$where_values
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -635,7 +652,7 @@ class WP_MCP_AI_Transcript_Repository {
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $table is escaped with esc_sql(), $author_where_sql contains only hardcoded placeholders; spread operator used for values.
 		$author_query = $wpdb->prepare(
-			"SELECT _ID FROM {$table} WHERE {$author_where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
+			"SELECT _ID FROM `{$table}` WHERE {$author_where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
 			$author_where_values
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared

@@ -11,21 +11,54 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+/**
+ * WP_MCP_AI_Tool_Send_Appointment_Reminder tool.
+ */
 class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false; }
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $settings['enable_calendar_booking_toolkit'] );
 	}
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); }
+		/**
+		 * Get the tool slug.
+		 *
+		 * @return string
+		 */
 	public function get_slug() {
 		return 'send_appointment_reminder'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Send Appointment Reminder', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Send automated reminders for upcoming appointments.', 'mcp-ai-wpoos-pro' ); }
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -48,8 +81,27 @@ class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interfa
 			'required'   => array( 'appointment_id' ),
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'email', 'phase-2.6' ); }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'manage_options' ) ) {
@@ -72,7 +124,7 @@ class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interfa
 		$message      = sprintf( __( "Hello %1\$s,\n\nThis is a reminder about your upcoming appointment.\nTime: %2\$s\n\nSee you soon!", 'mcp-ai-wpoos-pro' ), $client_name, $start_time );
 		$sent         = wp_mail( $client_email, $subject, $message );
 		if ( $sent ) {
-			$reminders   = get_post_meta( $appointment_id, '_reminders_sent', true ) ?: array();
+			$reminders   = get_post_meta( $appointment_id, '_reminders_sent', true ) ? get_post_meta( $appointment_id, '_reminders_sent', true ) : array();
 			$reminders[] = array(
 				'sent_at'      => current_time( 'mysql' ),
 				'hours_before' => $hours_before,

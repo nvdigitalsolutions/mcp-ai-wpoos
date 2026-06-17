@@ -1,0 +1,198 @@
+# ───────────────────────────────────────────────────────────
+# NV oOS — QA Automation Docker Stack
+# ───────────────────────────────────────────────────────────
+#
+# PURPOSE:
+#   Spins up an isolated WordPress environment + Playwright
+#   browser-automation container. Runs automated E2E tests
+#   then shuts down. All artifacts (videos, traces, screenshots,
+#   reports) land in ../artifacts/.
+#
+# USAGE:
+#   docker compose -f tests/qa/docker/docker-compose.qa.yml up \
+#       --abort-on-container-exit --exit-code-from playwright
+#
+#   docker compose -f tests/qa/docker/docker-compose.qa.yml down -v
+#
+# MANUAL QA (no tests — just the WP site):
+#   docker compose up -d
+#   → http://localhost:8000
+#   → http://localhost:8000/wp-admin  (admin / password)
+#
+# ARCHITECTURE:
+#   [db] → [wordpress] → [setup] → [playwright]
+#    MySQL   WP 6.9       WP-CLI     Chromium + tests
+
+name: oos-qa
+
+services:
+
+  # ── WordPress Application Server ─────────────────────────
+  wordpress:
+    image: wordpress:6.9-php8.2-apache
+    container_name: oos-qa-wp
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DEBUG: "true"
+      WORDPRESS_CONFIG_EXTRA: |
+        /* ── QA overrides ── */
+        define( 'WP_DEBUG_LOG', true );
+        define( 'WP_DEBUG_DISPLAY', false );
+        define( 'WP_ENVIRONMENT_TYPE', 'development' );
+        define( 'WP_MEMORY_LIMIT', '256M' );
+        if ( ! defined( 'WP_MCP_AI_DEBUG' ) ) {
+            define( 'WP_MCP_AI_DEBUG', true );
+        }
+    volumes:
+      - wp_qa_core:/var/www/html
+      - ../../..:/var/www/html/wp-content/plugins/mcp-ai-wpoos
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  # ── MySQL 8.0 Database ──────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: oos-qa-db
+    restart: "no"
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --max_allowed_packet=256M
+    environment:
+      MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - wp_qa_db:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - -h
+        - localhost
+        - -u
+        - root
+        - -pwordpress
+        - --ssl-mode=DISABLED
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  # ── WP-CLI Setup (runs once, then exits) ────────────────
+  setup:
+    image: wordpress:cli-php8.2
+    container_name: oos-qa-setup
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    volumes:
+      - wp_qa_core:/var/www/html
+      - ../../..:/var/www/html/wp-content/plugins/mcp-ai-wpoos
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    entrypoint: |
+      sh -c '
+        set -e
+        echo "=== NV oOS QA: WordPress Setup ==="
+
+        # Install WordPress if not already installed
+        if ! wp core is-installed --allow-root 2>/dev/null; then
+          echo "Installing WordPress..."
+          wp core install \
+            --url="http://localhost:8000" \
+            --title="NV oOS QA Test Site" \
+            --admin_user="admin" \
+            --admin_password="password" \
+            --admin_email="admin@test.com" \
+            --skip-email \
+            --allow-root
+        else
+          echo "WordPress already installed."
+        fi
+
+        # Activate plugin
+        echo "Activating NV oOS plugin..."
+        wp plugin activate mcp-ai-wpoos --allow-root
+
+        # Configure pretty permalinks (needed for REST API)
+        wp rewrite structure "/%postname%/" --hard --allow-root
+
+        # Enable debug mode
+        wp option update wp_mcp_ai_debug 1 --allow-root || true
+
+        # Flush caches
+        wp cache flush --allow-root
+
+        echo "=== QA Environment Ready ==="
+        echo "  Frontend: http://localhost:8000"
+        echo "  Admin:    http://localhost:8000/wp-admin"
+        echo "  User:     admin / password"
+      '
+
+  # ── Playwright Test Runner ──────────────────────────────
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.60.0-noble
+    container_name: oos-qa-playwright
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    volumes:
+      - ../../playwright:/tests:ro
+      - ../../artifacts:/artifacts
+    working_dir: /tests
+    environment:
+      BASE_URL: http://wordpress:80
+      WP_ADMIN_USER: admin
+      WP_ADMIN_PASSWORD: password
+      CI: "${CI:-}"
+    ipc: host
+    entrypoint: |
+      sh -c '
+        set -e
+        echo "=== NV oOS QA: Playwright Tests ==="
+        echo "Base URL: $${BASE_URL}"
+
+        # Install dependencies
+        npm ci --prefer-offline --no-audit
+
+        # Create artifact directories
+        mkdir -p /artifacts/videos /artifacts/traces /artifacts/screenshots /artifacts/reports
+
+        # Run tests
+        npx playwright test \
+          --reporter=html,list,junit \
+          --trace=retain-on-failure \
+          --video=retain-on-failure \
+          --output=/artifacts/videos \
+          || TEST_EXIT_CODE=$$?
+
+        # Copy reports to artifacts
+        cp playwright-report/index.html /artifacts/reports/ 2>/dev/null || true
+        cp -r test-results/* /artifacts/traces/ 2>/dev/null || true
+
+        echo "=== Tests Complete ==="
+        echo "Artifacts available in tests/qa/artifacts/"
+        exit $${TEST_EXIT_CODE:-0}
+      '
+
+volumes:
+  wp_qa_core:
+  wp_qa_db:

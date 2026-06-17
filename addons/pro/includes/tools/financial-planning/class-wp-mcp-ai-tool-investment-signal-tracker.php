@@ -32,6 +32,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.1.0
@@ -231,6 +238,14 @@ class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interfa
 				return $this->update_signal( $arguments, $current_user_id );
 
 			case 'list':
+				// Only admins may view other users' signals.
+				if ( $target_user_id !== $current_user_id
+					&& ! user_can( $current_user_id, 'manage_options' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_forbidden',
+						__( 'You do not have permission to view another user\'s signals.', 'mcp-ai-wpoos-pro' )
+					);
+				}
 				return $this->list_signals( $target_user_id );
 
 			case 'evaluate':
@@ -298,7 +313,7 @@ class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interfa
 			'evaluations'        => array(),
 		);
 
-		$signals = $this->get_user_signals( $user_id );
+		$signals               = $this->get_user_signals( $user_id );
 		$signals[ $signal_id ] = $signal;
 		$this->save_user_signals( $user_id, $signals );
 
@@ -410,13 +425,13 @@ class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interfa
 		);
 
 		return array(
-			'success'        => true,
-			'action'         => 'list',
-			'signals'        => array_values( $signals ),
-			'total_count'    => count( $signals ),
-			'active_count'   => count( $active_signals ),
-			'closed_count'   => count( $signals ) - count( $active_signals ),
-			'disclaimer'     => __( 'EDUCATIONAL ONLY. Signal tracking is for informational purposes only. Not investment advice.', 'mcp-ai-wpoos-pro' ),
+			'success'      => true,
+			'action'       => 'list',
+			'signals'      => array_values( $signals ),
+			'total_count'  => count( $signals ),
+			'active_count' => count( $active_signals ),
+			'closed_count' => count( $signals ) - count( $active_signals ),
+			'disclaimer'   => __( 'EDUCATIONAL ONLY. Signal tracking is for informational purposes only. Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -453,8 +468,8 @@ class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interfa
 		// Price-based evaluation.
 		$price_analysis = array();
 		if ( $current_price > 0 && $signal['entry_price'] > 0 ) {
-			$pnl            = $current_price - $signal['entry_price'];
-			$pnl_pct        = ( $pnl / $signal['entry_price'] ) * 100;
+			$pnl     = $current_price - $signal['entry_price'];
+			$pnl_pct = ( $pnl / $signal['entry_price'] ) * 100;
 
 			if ( 'bearish' === $signal['direction'] ) {
 				$pnl     = -$pnl;
@@ -517,9 +532,9 @@ class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Apply confidence change.
-		$new_confidence             = min( 100, max( 0, $signal['confidence'] + $conf_change ) );
-		$signal['confidence']       = $new_confidence;
-		$signal['updated_at']       = current_time( 'mysql' );
+		$new_confidence       = min( 100, max( 0, $signal['confidence'] + $conf_change ) );
+		$signal['confidence'] = $new_confidence;
+		$signal['updated_at'] = current_time( 'mysql' );
 
 		if ( $current_price > 0 ) {
 			$signal['last_price'] = $current_price;
@@ -549,16 +564,16 @@ class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interfa
 		$this->save_user_signals( $user_id, $signals );
 
 		return array(
-			'success'          => true,
-			'action'           => 'evaluate',
-			'signal_id'        => $signal_id,
-			'evolution'        => $evolution,
+			'success'           => true,
+			'action'            => 'evaluate',
+			'signal_id'         => $signal_id,
+			'evolution'         => $evolution,
 			'confidence_change' => $conf_change,
-			'new_confidence'   => $new_confidence,
-			'price_analysis'   => $price_analysis,
-			'info_analysis'    => $info_analysis,
-			'signal'           => $signal,
-			'disclaimer'       => __( 'EDUCATIONAL ONLY. Signal evaluation is based on simplified rule-based analysis and should not be used as the sole basis for investment decisions. Markets are complex and unpredictable. Not investment advice.', 'mcp-ai-wpoos-pro' ),
+			'new_confidence'    => $new_confidence,
+			'price_analysis'    => $price_analysis,
+			'info_analysis'     => $info_analysis,
+			'signal'            => $signal,
+			'disclaimer'        => __( 'EDUCATIONAL ONLY. Signal evaluation is based on simplified rule-based analysis and should not be used as the sole basis for investment decisions. Markets are complex and unpredictable. Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -572,14 +587,14 @@ class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interfa
 	 * @return array Analysis result with evolution and confidence_change.
 	 */
 	private function analyze_information_impact( $information, $signal ) {
-		$info_lower  = strtolower( $information );
-		$direction   = $signal['direction'];
+		$info_lower = strtolower( $information );
+		$direction  = $signal['direction'];
 
 		$bullish_keywords = array( 'upgrade', 'beat', 'growth', 'profit', 'surge', 'rally', 'strong', 'outperform', 'buy', 'bullish', 'positive' );
 		$bearish_keywords = array( 'downgrade', 'miss', 'decline', 'loss', 'crash', 'weak', 'selloff', 'underperform', 'sell', 'bearish', 'negative' );
 
-		$bullish_count = 0;
-		$bearish_count = 0;
+		$bullish_count    = 0;
+		$bearish_count    = 0;
 		$matched_keywords = array();
 
 		foreach ( $bullish_keywords as $keyword ) {

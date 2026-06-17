@@ -119,6 +119,11 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 	 * Add settings submenu page under NV oOS Pro Dashboard.
 	 */
 	public function add_settings_page() {
+		static $registered = array();
+		if ( isset( $registered[ $this->page_slug ] ) ) {
+			return;
+		}
+		$registered[ $this->page_slug ] = true;
 		add_submenu_page(
 			$this->parent_slug,
 			$this->toolkit_name . ' ' . __( 'Settings', 'mcp-ai-wpoos-pro' ),
@@ -236,6 +241,9 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 					case 'help':
 						$this->render_help_tab();
 						break;
+					case 'mcp_server':
+						$this->render_mcp_server_tab();
+						break;
 					default:
 						$this->render_overview_tab();
 				}
@@ -283,6 +291,44 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 				display: inline-block;
 				min-width: 200px;
 			}
+
+			/* ── MCP Server tab enhancements (Phase B) ── */
+			.wp-mcp-ai-status-pill {
+				display: inline-block;
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				margin-right: 6px;
+				vertical-align: middle;
+			}
+			.wp-mcp-ai-status-pill.enabled {
+				background: #46b450;
+				box-shadow: 0 0 4px rgba(70,180,80,0.5);
+			}
+			.wp-mcp-ai-status-pill.disabled {
+				background: #dc3232;
+				box-shadow: 0 0 4px rgba(220,50,50,0.3);
+			}
+			.wp-mcp-ai-server-status-table td {
+				vertical-align: middle;
+				padding: 4px 20px 4px 0;
+				font-size: 13px;
+			}
+			.wp-mcp-ai-tools-badge {
+				background: #f0f0f1;
+				padding: 2px 10px;
+				border-radius: 10px;
+				font-size: 13px;
+				display: inline-block;
+			}
+			.wp-mcp-ai-tool-item.filtered-hidden {
+				display: none;
+			}
+			.wp-mcp-ai-copy-endpoint.copied {
+				background: #46b450;
+				color: #fff;
+				border-color: #46b450;
+			}
 		</style>
 		<?php
 	}
@@ -306,6 +352,11 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 
 		if ( $this->has_remote_sites ) {
 			$tabs['remote_sites'] = __( 'Remote Sites', 'mcp-ai-wpoos-pro' );
+		}
+
+		// Add the MCP Server tab when this toolkit has registered a per-toolkit MCP server.
+		if ( $this->get_mcp_server() ) {
+			$tabs['mcp_server'] = __( 'MCP Server', 'mcp-ai-wpoos-pro' );
 		}
 
 		?>
@@ -332,12 +383,12 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 				<?php
 				settings_fields( $this->option_name . '_group' );
 				do_settings_sections( $this->option_name );
+				$this->render_configuration_tab();
 				submit_button( __( 'Save Settings', 'mcp-ai-wpoos-pro' ) );
 				?>
 			</form>
 		</div><!-- .toolkit-card -->
 		<?php
-		$this->render_configuration_tab();
 	}
 
 	/**
@@ -731,4 +782,464 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 
 		return $sanitized;
 	}
-}
+
+	/**
+	 * Resolve the per-toolkit MCP server registered for this settings page.
+	 *
+	 * Tries the literal toolkit_slug then a kebab-case variant
+	 * ('architectural_design' → 'architectural-design').
+	 *
+	 * @return WP_MCP_AI_Toolkit_Server_Interface|null
+	 */
+	protected function get_mcp_server() {
+		if ( ! class_exists( 'WP_MCP_AI_Toolkit_Server_Registry' ) ) {
+			return null;
+		}
+		$registry = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
+		$server   = $registry->get( $this->toolkit_slug );
+		if ( null === $server ) {
+			$server = $registry->get( str_replace( '_', '-', $this->toolkit_slug ) );
+		}
+		return $server;
+	}
+
+	/**
+	 * Render the MCP Server tab.
+	 *
+	 * Provides a full server configuration interface with status indicators,
+	 * endpoint details, allowlist management, ingestion surface toggles, and
+	 * rate-limit overrides.  Form posts to admin-post.php action
+	 * `wp_mcp_ai_save_toolkit_mcp_server`.
+	 *
+	 * @since 1.2.0  Original implementation.
+	 * @since 1.4.0  Enhanced with status badge, copy URL, Select All / Deselect All,
+	 *               tool count badge, global-default hints, and well-known link.
+	 */
+	protected function render_mcp_server_tab() {
+		$server = $this->get_mcp_server();
+		if ( ! $server ) {
+			return;
+		}
+
+		// Settings-saved notice.
+		if ( isset( $_GET['mcp_saved'] ) && '1' === $_GET['mcp_saved'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			?>
+			<div class="notice notice-success is-dismissible">
+				<p><?php esc_html_e( 'MCP server settings saved.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+			<?php
+		}
+
+		$config         = $server->get_configuration();
+		$candidates     = $server->candidate_tool_slugs();
+		$native         = $server->ingestion_surfaces();
+		$mounted        = $server->mounted_surfaces();
+		$descriptor_url = rest_url( WP_MCP_AI_Toolkit_MCP_REST_Controller::REST_NAMESPACE . '/mcp/' . $server->get_slug() );
+
+		$is_enabled     = ! empty( $config['enabled'] );
+		$allowlist      = isset( $config['tools_allowlist'] ) ? (array) $config['tools_allowlist'] : array();
+		$candidate_count = count( $candidates );
+		$exposed_count   = empty( $allowlist ) ? $candidate_count : count( $allowlist );
+
+		// Global defaults for per-server limit hints.
+		$global_rpm = (int) apply_filters( 'wp_mcp_ai_default_mcp_requests_per_minute', 60 );
+		$global_mpb = (int) apply_filters( 'wp_mcp_ai_default_mcp_max_payload_bytes', 0 );
+		$global_mit = (int) apply_filters( 'wp_mcp_ai_max_agentic_iterations', 15 );
+
+		$rpm = isset( $config['requests_per_minute'] ) ? (int) $config['requests_per_minute'] : 0;
+		$mpb = isset( $config['max_payload_bytes'] ) ? (int) $config['max_payload_bytes'] : 0;
+		$mit = isset( $config['max_iterations'] ) ? (int) $config['max_iterations'] : 0;
+
+		// Last-activity timestamp from the cross-mount audit log.
+		$last_activity = '';
+		if ( class_exists( 'WP_MCP_AI_Toolkit_MCP_Audit_Log' ) ) {
+			$entries = WP_MCP_AI_Toolkit_MCP_Audit_Log::get_instance()->get_entries( 200 );
+			$latest  = 0;
+			foreach ( $entries as $entry ) {
+				if ( isset( $entry['source'] ) && $entry['source'] === $server->get_slug() && isset( $entry['ts'] ) ) {
+					if ( (int) $entry['ts'] > $latest ) {
+						$latest = (int) $entry['ts'];
+					}
+				}
+			}
+			if ( $latest > 0 ) {
+				$last_activity = human_time_diff( $latest ) . ' ' . __( 'ago', 'mcp-ai-wpoos-pro' );
+			}
+		}
+
+		// Token count.
+		$token_count = 0;
+		$token_option = get_option( 'wp_mcp_ai_tk_mcp_token_' . $server->get_slug(), array() );
+		if ( is_array( $token_option ) ) {
+			$token_count = count( $token_option );
+		}
+
+		$effective_tool_count = $server instanceof WP_MCP_AI_Toolkit_Server_Base
+			? count( $server->effective_tool_slugs() )
+			: $exposed_count;
+
+		?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<?php wp_nonce_field( 'wp_mcp_ai_save_toolkit_mcp_server_' . $server->get_slug() ); ?>
+			<input type="hidden" name="action" value="wp_mcp_ai_save_toolkit_mcp_server" />
+			<input type="hidden" name="server_slug" value="<?php echo esc_attr( $server->get_slug() ); ?>" />
+			<input type="hidden" name="redirect_page" value="<?php echo esc_attr( $this->page_slug ); ?>" />
+
+			<?php /* ── Card 1: MCP Server (status + endpoint + master switch) ── */ ?>
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'MCP Server', 'mcp-ai-wpoos-pro' ); ?></h2>
+
+				<table class="wp-mcp-ai-server-status-table" style="margin-bottom:16px;">
+					<tr>
+						<td style="padding-right:20px;">
+							<span class="wp-mcp-ai-status-pill <?php echo $is_enabled ? 'enabled' : 'disabled'; ?>"
+								title="<?php echo $is_enabled ? esc_attr__( 'Server is enabled', 'mcp-ai-wpoos-pro' ) : esc_attr__( 'Server is disabled', 'mcp-ai-wpoos-pro' ); ?>">
+							</span>
+							<strong>
+								<?php
+								if ( $is_enabled ) {
+									esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' );
+								} else {
+									esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' );
+								}
+								?>
+							</strong>
+						</td>
+						<td style="padding-right:20px;">
+							<span class="dashicons dashicons-admin-tools" style="vertical-align:middle;"></span>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %d: tool count */
+									_n(
+										'%d tool',
+										'%d tools',
+										$effective_tool_count,
+										'mcp-ai-wpoos-pro'
+									),
+									$effective_tool_count
+								)
+							);
+							?>
+						</td>
+						<td style="padding-right:20px;">
+							<span class="dashicons dashicons-admin-network" style="vertical-align:middle;"></span>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %d: token count */
+									_n(
+										'%d token',
+										'%d tokens',
+										$token_count,
+										'mcp-ai-wpoos-pro'
+									),
+									$token_count
+								)
+							);
+							?>
+						</td>
+						<?php if ( '' !== $last_activity ) : ?>
+						<td>
+							<span class="dashicons dashicons-clock" style="vertical-align:middle;"></span>
+							<?php
+							printf(
+								/* translators: %s: human-readable time diff, e.g. "5 mins ago" */
+								esc_html__( 'Last activity: %s', 'mcp-ai-wpoos-pro' ),
+								esc_html( $last_activity )
+							);
+							?>
+						</td>
+						<?php endif; ?>
+					</tr>
+				</table>
+
+				<p>
+					<label>
+						<input type="checkbox" name="enabled" value="1" <?php checked( $is_enabled ); ?> />
+						<?php esc_html_e( 'Enable this MCP server', 'mcp-ai-wpoos-pro' ); ?>
+					</label>
+				</p>
+				<p class="description">
+					<?php esc_html_e( 'When disabled, JSON-RPC clients will receive a method-not-found response for every method except initialize and ping.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+
+				<p style="margin-top:16px;">
+					<strong><?php esc_html_e( 'JSON-RPC Endpoint', 'mcp-ai-wpoos-pro' ); ?></strong><br/>
+					<code style="word-break:break-all;"><?php echo esc_html( $descriptor_url ); ?></code>
+					<button type="button" class="button button-small wp-mcp-ai-copy-endpoint"
+						data-endpoint="<?php echo esc_attr( $descriptor_url ); ?>"
+						title="<?php esc_attr_e( 'Copy to clipboard', 'mcp-ai-wpoos-pro' ); ?>">
+						<span class="dashicons dashicons-clipboard" style="vertical-align:middle;font-size:16px;width:16px;height:16px;"></span>
+						<?php esc_html_e( 'Copy URL', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+				</p>
+
+				<details style="margin-top:12px;">
+					<summary><?php esc_html_e( 'Test with curl', 'mcp-ai-wpoos-pro' ); ?></summary>
+					<pre style="background:#f0f0f1;padding:10px;overflow-x:auto;font-size:12px;"><code>curl -X POST <?php echo esc_html( $descriptor_url ); ?> \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'</code></pre>
+				</details>
+
+				<p style="margin-top:8px;">
+					<a href="<?php echo esc_url( home_url( '/.well-known/mcp' ) ); ?>" target="_blank" rel="noopener noreferrer">
+						<?php esc_html_e( 'View /.well-known/mcp discovery document →', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+				</p>
+			</div>
+
+			<?php /* ── Card 2: Tools (allowlist with Select All / search) ── */ ?>
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'Tools', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<?php if ( empty( $candidates ) ) : ?>
+					<p><em><?php esc_html_e( 'No candidate tools registered for this toolkit yet.', 'mcp-ai-wpoos-pro' ); ?></em></p>
+				<?php else : ?>
+					<p>
+						<span class="wp-mcp-ai-tools-badge" style="background:#f0f0f1;padding:2px 10px;border-radius:10px;font-size:13px;">
+							<?php
+							if ( empty( $allowlist ) ) {
+								/* translators: %d: tool count */
+								printf( esc_html__( '%d of %d tools exposed (all)', 'mcp-ai-wpoos-pro' ), $candidate_count, $candidate_count );
+							} else {
+								/* translators: 1: exposed count, 2: total count */
+								printf( esc_html__( '%1$d of %2$d tools exposed (restricted)', 'mcp-ai-wpoos-pro' ), $exposed_count, $candidate_count );
+							}
+							?>
+						</span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Leave all unchecked to expose every candidate tool. Check individual tools to restrict the set the MCP server surfaces.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+
+					<div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+						<button type="button" class="button button-small wp-mcp-ai-tools-select-all">
+							<?php esc_html_e( 'Select All', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<button type="button" class="button button-small wp-mcp-ai-tools-deselect-all">
+							<?php esc_html_e( 'Deselect All', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<input type="search" class="wp-mcp-ai-tools-search"
+							placeholder="<?php esc_attr_e( 'Filter tools…', 'mcp-ai-wpoos-pro' ); ?>"
+							style="max-width:200px;" />
+					</div>
+
+					<ul class="wp-mcp-ai-tools-checklist" style="columns: 2; -webkit-columns: 2; -moz-columns: 2;">
+					<?php foreach ( $candidates as $slug ) :
+						$checked = in_array( $slug, $allowlist, true );
+						?>
+						<li class="wp-mcp-ai-tool-item">
+							<label>
+								<input type="checkbox" class="wp-mcp-ai-tool-checkbox" name="tools_allowlist[]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( $checked ); ?> />
+								<code class="wp-mcp-ai-tool-slug"><?php echo esc_html( $slug ); ?></code>
+							</label>
+						</li>
+					<?php endforeach; ?>
+					</ul>
+				<?php endif; ?>
+			</div>
+
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'Ingestion Surfaces — Native', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<?php if ( empty( $native ) ) : ?>
+					<p><em><?php esc_html_e( 'No native ingestion surfaces registered.', 'mcp-ai-wpoos-pro' ); ?></em></p>
+				<?php else : ?>
+					<p class="description">
+						<?php esc_html_e( 'Disabled surfaces are hidden from prompts/list and resources/list.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th style="width: 50px;"><?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Page', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Entity', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+						<?php
+						$disabled_surfaces = isset( $config['disabled_surfaces'] ) ? (array) $config['disabled_surfaces'] : array();
+						foreach ( $native as $surface ) :
+							$page_slug = isset( $surface['page_slug'] ) ? $surface['page_slug'] : '';
+							$checked   = in_array( $page_slug, $disabled_surfaces, true );
+							?>
+							<tr>
+								<td>
+									<input type="checkbox" name="disabled_surfaces[]" value="<?php echo esc_attr( $page_slug ); ?>" <?php checked( $checked ); ?> />
+								</td>
+								<td>
+									<strong><?php echo esc_html( isset( $surface['label'] ) ? $surface['label'] : $page_slug ); ?></strong>
+									<br /><code><?php echo esc_html( $page_slug ); ?></code>
+								</td>
+								<td><code><?php echo esc_html( isset( $surface['type'] ) ? $surface['type'] : '' ); ?></code></td>
+								<td><code><?php echo esc_html( isset( $surface['entity_type'] ) ? $surface['entity_type'] : '' ); ?></code></td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+			</div>
+
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'Ingestion Surfaces — Mounted from other toolkits', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<?php if ( empty( $mounted ) ) : ?>
+					<p><em><?php esc_html_e( 'No mounted surfaces. This toolkit does not consume read-only ingestion surfaces from other toolkits.', 'mcp-ai-wpoos-pro' ); ?></em></p>
+				<?php else : ?>
+					<p class="description">
+						<?php esc_html_e( 'Disable a mount to hide the foreign surface from this toolkit\'s descriptor. The source toolkit retains write authority and can also revoke its own surface.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th style="width: 50px;"><?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Source toolkit', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Page', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Entity', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+						<?php
+						$disabled_mounts = isset( $config['disabled_mounts'] ) ? (array) $config['disabled_mounts'] : array();
+						foreach ( $mounted as $surface ) :
+							$page_slug = isset( $surface['page_slug'] ) ? $surface['page_slug'] : '';
+							$source    = isset( $surface['source_toolkit_slug'] ) ? $surface['source_toolkit_slug'] : '';
+							$mount_key = $source . '::' . $page_slug;
+							$checked   = in_array( $mount_key, $disabled_mounts, true );
+							?>
+							<tr>
+								<td>
+									<input type="checkbox" name="disabled_mounts[]" value="<?php echo esc_attr( $mount_key ); ?>" <?php checked( $checked ); ?> />
+								</td>
+								<td><code><?php echo esc_html( $source ); ?></code></td>
+								<td>
+									<strong><?php echo esc_html( isset( $surface['label'] ) ? $surface['label'] : $page_slug ); ?></strong>
+									<br /><code><?php echo esc_html( $page_slug ); ?></code>
+								</td>
+								<td><code><?php echo esc_html( isset( $surface['entity_type'] ) ? $surface['entity_type'] : '' ); ?></code></td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+			</div>
+
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'Limits', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Per-server overrides. Leave any value at 0 to inherit the global default shown in parentheses.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+				<table class="form-table" role="presentation">
+					<tbody>
+						<tr>
+							<th scope="row"><label for="requests_per_minute"><?php esc_html_e( 'Requests per minute', 'mcp-ai-wpoos-pro' ); ?></label></th>
+							<td>
+								<input type="number" min="0" id="requests_per_minute" name="requests_per_minute" value="<?php echo esc_attr( $rpm ); ?>" class="small-text" />
+								<?php if ( 0 === $rpm && $global_rpm > 0 ) : ?>
+									<span class="description" style="display:inline;margin-left:6px;">
+										<?php
+										/* translators: %d: global default value */
+										printf( esc_html__( '(global default: %d req/min)', 'mcp-ai-wpoos-pro' ), $global_rpm );
+										?>
+									</span>
+								<?php elseif ( $rpm > 0 ) : ?>
+									<span class="description" style="display:inline;margin-left:6px;">
+										<?php esc_html_e( '(override active)', 'mcp-ai-wpoos-pro' ); ?>
+									</span>
+								<?php else : ?>
+									<span class="description" style="display:inline;margin-left:6px;">
+										<?php esc_html_e( '(unlimited)', 'mcp-ai-wpoos-pro' ); ?>
+									</span>
+								<?php endif; ?>
+								<p class="description"><?php esc_html_e( 'Per-user JSON-RPC rate limit.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="max_payload_bytes"><?php esc_html_e( 'Max request body size (bytes)', 'mcp-ai-wpoos-pro' ); ?></label></th>
+							<td>
+								<input type="number" min="0" id="max_payload_bytes" name="max_payload_bytes" value="<?php echo esc_attr( $mpb ); ?>" class="regular-text" />
+								<?php if ( 0 === $mpb && $global_mpb > 0 ) : ?>
+									<span class="description" style="display:inline;margin-left:6px;">
+										<?php
+										printf( esc_html__( '(global default: %s bytes)', 'mcp-ai-wpoos-pro' ), number_format_i18n( $global_mpb ) );
+										?>
+									</span>
+								<?php elseif ( $mpb > 0 ) : ?>
+									<span class="description" style="display:inline;margin-left:6px;">
+										<?php esc_html_e( '(override active)', 'mcp-ai-wpoos-pro' ); ?>
+									</span>
+								<?php else : ?>
+									<span class="description" style="display:inline;margin-left:6px;">
+										<?php esc_html_e( '(no limit)', 'mcp-ai-wpoos-pro' ); ?>
+									</span>
+								<?php endif; ?>
+								<p class="description"><?php esc_html_e( 'Reject JSON-RPC bodies larger than this many bytes.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="max_iterations"><?php esc_html_e( 'Max agentic iterations', 'mcp-ai-wpoos-pro' ); ?></label></th>
+							<td>
+								<input type="number" min="0" id="max_iterations" name="max_iterations" value="<?php echo esc_attr( $mit ); ?>" class="small-text" />
+								<?php if ( 0 === $mit && $global_mit > 0 ) : ?>
+									<span class="description" style="display:inline;margin-left:6px;">
+										<?php
+										printf( esc_html__( '(global default: %d iterations)', 'mcp-ai-wpoos-pro' ), $global_mit );
+										?>
+									</span>
+								<?php elseif ( $mit > 0 ) : ?>
+									<span class="description" style="display:inline;margin-left:6px;">
+										<?php esc_html_e( '(override active)', 'mcp-ai-wpoos-pro' ); ?>
+									</span>
+								<?php else : ?>
+									<span class="description" style="display:inline;margin-left:6px;">
+										<?php esc_html_e( '(unlimited)', 'mcp-ai-wpoos-pro' ); ?>
+									</span>
+								<?php endif; ?>
+								<p class="description"><?php esc_html_e( 'Per-server cap on agentic loop iterations.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+
+			<?php submit_button( __( 'Save MCP Server Settings', 'mcp-ai-wpoos-pro' ) ); ?>
+			</form>
+
+			<script>
+			( function( $ ) {
+				$( '.wp-mcp-ai-copy-endpoint' ).on( 'click', function() {
+					var btn = $( this ), url = btn.data( 'endpoint' );
+					if ( navigator.clipboard ) {
+						navigator.clipboard.writeText( url ).catch( function() {} );
+					} else {
+						var t = $( '<textarea>' );
+						$( 'body' ).append( t );
+						t.val( url ).select();
+						document.execCommand( 'copy' );
+						t.remove();
+					}
+					var orig = btn.html();
+					btn.addClass( 'copied' ).html( '<span class="dashicons dashicons-yes" style="vertical-align:middle;"></span> <?php echo esc_js( __( 'Copied!', 'mcp-ai-wpoos-pro' ) ); ?>' );
+					setTimeout( function() { btn.removeClass( 'copied' ).html( orig ); }, 2000 );
+				} );
+
+				$( '.wp-mcp-ai-tools-select-all' ).on( 'click', function() {
+					$( this ).closest( '.toolkit-card' ).find( '.wp-mcp-ai-tool-checkbox' ).prop( 'checked', true );
+				} );
+
+				$( '.wp-mcp-ai-tools-deselect-all' ).on( 'click', function() {
+					$( this ).closest( '.toolkit-card' ).find( '.wp-mcp-ai-tool-checkbox' ).prop( 'checked', false );
+				} );
+
+				$( '.wp-mcp-ai-tools-search' ).on( 'keyup search', function() {
+					var q = $( this ).val().toLowerCase(),
+						list = $( this ).closest( '.toolkit-card' ).find( '.wp-mcp-ai-tools-checklist' );
+					list.find( '.wp-mcp-ai-tool-item' ).each( function() {
+						var item = $( this ), slug = item.find( '.wp-mcp-ai-tool-slug' ).text().toLowerCase();
+						item.toggleClass( 'filtered-hidden', q !== '' && slug.indexOf( q ) === -1 );
+					} );
+				} );
+			} )( jQuery );
+			</script>
+			<?php
+		}
+	}

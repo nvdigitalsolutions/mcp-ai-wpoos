@@ -115,14 +115,20 @@ class WP_MCP_AI_Skill_Parser {
 			return $validation;
 		}
 
+		$disable_model_invocation = false;
+		if ( isset( $metadata['disable-model-invocation'] ) ) {
+			$disable_model_invocation = (bool) $metadata['disable-model-invocation'];
+		}
+
 		return array(
-			'name'          => sanitize_text_field( $metadata['name'] ),
-			'description'   => sanitize_text_field( $metadata['description'] ),
-			'instructions'  => wp_kses_post( $instructions ),
-			'license'       => isset( $metadata['license'] ) ? sanitize_text_field( $metadata['license'] ) : '',
-			'compatibility' => isset( $metadata['compatibility'] ) ? sanitize_text_field( $metadata['compatibility'] ) : '',
-			'metadata'      => isset( $metadata['metadata'] ) && is_array( $metadata['metadata'] ) ? $this->sanitize_metadata_array( $metadata['metadata'] ) : array(),
-			'allowed_tools' => isset( $metadata['allowed-tools'] ) ? $this->parse_allowed_tools( $metadata['allowed-tools'] ) : array(),
+			'name'                       => sanitize_text_field( $metadata['name'] ),
+			'description'                => sanitize_text_field( $metadata['description'] ),
+			'instructions'               => wp_kses_post( $instructions ),
+			'license'                    => isset( $metadata['license'] ) ? sanitize_text_field( $metadata['license'] ) : '',
+			'compatibility'              => isset( $metadata['compatibility'] ) ? sanitize_text_field( $metadata['compatibility'] ) : '',
+			'metadata'                   => isset( $metadata['metadata'] ) && is_array( $metadata['metadata'] ) ? $this->sanitize_metadata_array( $metadata['metadata'] ) : array(),
+			'allowed_tools'              => isset( $metadata['allowed-tools'] ) ? $this->parse_allowed_tools( $metadata['allowed-tools'] ) : array(),
+			'disable_model_invocation'   => $disable_model_invocation,
 		);
 	}
 

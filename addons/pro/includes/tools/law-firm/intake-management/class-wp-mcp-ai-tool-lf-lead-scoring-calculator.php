@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator implements WP_MCP_AI_Tool_Interf
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -108,6 +115,9 @@ class WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -118,11 +128,11 @@ class WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator implements WP_MCP_AI_Tool_Interf
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$practice_area  = isset( $arguments['practice_area'] ) ? sanitize_text_field( $arguments['practice_area'] ) : '';
-		$case_value     = isset( $arguments['estimated_case_value'] ) ? floatval( $arguments['estimated_case_value'] ) : 0;
-		$urgency        = isset( $arguments['urgency'] ) ? sanitize_text_field( $arguments['urgency'] ) : 'medium';
-		$referral       = isset( $arguments['referral_source'] ) ? sanitize_text_field( $arguments['referral_source'] ) : '';
-		$client_type    = isset( $arguments['client_type'] ) ? sanitize_text_field( $arguments['client_type'] ) : 'individual';
+		$practice_area = isset( $arguments['practice_area'] ) ? sanitize_text_field( $arguments['practice_area'] ) : '';
+		$case_value    = isset( $arguments['estimated_case_value'] ) ? floatval( $arguments['estimated_case_value'] ) : 0;
+		$urgency       = isset( $arguments['urgency'] ) ? sanitize_text_field( $arguments['urgency'] ) : 'medium';
+		$referral      = isset( $arguments['referral_source'] ) ? sanitize_text_field( $arguments['referral_source'] ) : '';
+		$client_type   = isset( $arguments['client_type'] ) ? sanitize_text_field( $arguments['client_type'] ) : 'individual';
 
 		$score = 0;
 
@@ -140,7 +150,7 @@ class WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator implements WP_MCP_AI_Tool_Interf
 			'employment'      => 20,
 			'estate_planning' => 18,
 		);
-		$score += $area_scores[ $practice_area ] ?? 15;
+		$score      += $area_scores[ $practice_area ] ?? 15;
 
 		// Case value score (max 30).
 		$case_value_score = 0;
@@ -166,7 +176,7 @@ class WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator implements WP_MCP_AI_Tool_Interf
 			'medium'   => 10,
 			'low'      => 5,
 		);
-		$score += $urgency_scores[ $urgency ] ?? 10;
+		$score         += $urgency_scores[ $urgency ] ?? 10;
 
 		// Referral source score (max 15).
 		$referral_scores = array(
@@ -178,7 +188,7 @@ class WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator implements WP_MCP_AI_Tool_Interf
 			'social_media'      => 5,
 			'walk_in'           => 4,
 		);
-		$score += $referral_scores[ $referral ] ?? 7;
+		$score          += $referral_scores[ $referral ] ?? 7;
 
 		// Client type score (max 10).
 		$score += ( 'business' === $client_type ) ? 10 : 5;
@@ -213,11 +223,11 @@ class WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator implements WP_MCP_AI_Tool_Interf
 				'grade'          => $grade,
 				'recommendation' => $recommendation,
 				'breakdown'      => array(
-					'practice_area'  => $area_scores[ $practice_area ] ?? 15,
-					'case_value'     => $case_value_score,
-					'urgency'        => $urgency_scores[ $urgency ] ?? 10,
-					'referral'       => $referral_scores[ $referral ] ?? 7,
-					'client_type'    => ( 'business' === $client_type ) ? 10 : 5,
+					'practice_area' => $area_scores[ $practice_area ] ?? 15,
+					'case_value'    => $case_value_score,
+					'urgency'       => $urgency_scores[ $urgency ] ?? 10,
+					'referral'      => $referral_scores[ $referral ] ?? 7,
+					'client_type'   => ( 'business' === $client_type ) ? 10 : 5,
 				),
 			),
 			'disclaimer' => self::DISCLAIMER,

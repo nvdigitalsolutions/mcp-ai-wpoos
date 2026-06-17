@@ -1077,11 +1077,23 @@ return array(
 		'risk_level'            => 'info',
 	),
 	'import_elementor_template_kit'      => array(
-		'toolkit'               => 'developer_technical',
-		'pattern_compatibility' => array( 'sequential' ),
-		'profession_tags'       => array( 'web_developer', 'web_designer' ),
-		'risk_level'            => 'standard',
-	),
+			'toolkit'               => 'developer_technical',
+			'pattern_compatibility' => array( 'sequential' ),
+			'profession_tags'       => array( 'web_developer', 'web_designer' ),
+			'risk_level'            => 'standard',
+		),
+		'get_elementor_form_submissions'     => array(
+			'toolkit'               => 'integration_external',
+			'pattern_compatibility' => array( 'skill_router' ),
+			'profession_tags'       => array( 'web_developer', 'data_analyst', 'marketing_manager' ),
+			'risk_level'            => 'info',
+		),
+		'get_all_form_submissions'           => array(
+			'toolkit'               => 'data_analytics',
+			'pattern_compatibility' => array( 'skill_router' ),
+			'profession_tags'       => array( 'web_developer', 'data_analyst', 'marketing_manager', 'business_analyst' ),
+			'risk_level'            => 'info',
+		),
 
 	// ========================================
 	// JETENGINE INTEGRATION TOOLS

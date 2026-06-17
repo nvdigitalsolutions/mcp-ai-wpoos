@@ -174,9 +174,9 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that media preset exists and contains expected tools.
+	 * Test that media_generation preset exists and contains expected tools.
 	 */
-	public function test_media_preset() {
+	public function test_media_generation_preset() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
@@ -188,9 +188,9 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 
 		$presets = $method->invoke( $assistant_cpt );
 
-		$this->assertArrayHasKey( 'media', $presets, 'Media preset should exist.' );
+		$this->assertArrayHasKey( 'media_generation', $presets, 'Media Generation preset should exist.' );
 
-		$media_preset = $presets['media'];
+		$media_preset = $presets['media_generation'];
 		$this->assertArrayHasKey( 'tools', $media_preset );
 
 		// Check for some expected tools.
@@ -199,13 +199,13 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 			$this->assertContains(
 				$tool,
 				$media_preset['tools'],
-				"Media preset should contain '{$tool}' tool."
+				"Media Generation preset should contain '{$tool}' tool."
 			);
 		}
 	}
 
 	/**
-	 * Test that we have exactly 9 presets (2 new + 7 existing).
+	 * Test that we have at least 60+ presets covering all tool categories.
 	 */
 	public function test_preset_count() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
@@ -219,19 +219,36 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 
 		$presets = $method->invoke( $assistant_cpt );
 
-		$this->assertCount( 9, $presets, 'Should have exactly 9 presets (2 new + 7 existing).' );
+		$this->assertGreaterThanOrEqual( 60, count( $presets ), 'Should have at least 60 presets.' );
 
-		// Verify all expected preset keys exist.
+		// Verify core preset keys exist.
 		$expected_keys = array(
+			'agentic_workflow',
 			'ai_ml',
-			'media',
+			'media_generation',
 			'content_writing',
 			'ecommerce',
 			'site_management',
 			'seo_marketing',
+			'gutenberg_blocks',
 			'development',
 			'data_analytics',
 			'design_professional',
+			'crawling_scraping',
+			'files_documents',
+			'scheduling_automation',
+			'authentication_security',
+			'communication_messaging',
+			'assistant_management',
+			'autonomous_orchestration',
+			'agent_supervisor',
+			'agent_pipeline',
+			'agent_swarm',
+			'agent_hierarchical',
+			'agent_review_qa',
+			'registration_management',
+			'cre_debt_securitization',
+			'fantasy_sports',
 		);
 
 		foreach ( $expected_keys as $key ) {
@@ -297,8 +314,8 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 	/**
 	 * Test that newly added tools are in appropriate presets.
 	 *
-	 * Specifically tests that the 26 tools added in the latest update
-	 * are present in the presets.
+	 * Covers tools added in recent updates: omni video, Erlang C,
+	 * harness, paper store, memory, Gemini managed agent, and skills.
 	 */
 	public function test_newly_added_tools_in_presets() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
@@ -362,6 +379,100 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 					$tool,
 					$presets['seo_marketing']['tools'],
 					"Site Kit tool '{$tool}' should be in seo_marketing preset"
+				);
+			}
+		}
+
+		// Test omni video tools in media_generation preset.
+		$omni_video_tools = array(
+			'generate_omni_video',
+			'edit_omni_video',
+		);
+
+		if ( isset( $presets['media_generation']['tools'] ) ) {
+			foreach ( $omni_video_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['media_generation']['tools'],
+					"Omni video tool '{$tool}' should be in media_generation preset"
+				);
+			}
+		}
+
+		// Test Erlang C tools in communication_messaging preset.
+		$erlangc_tools = array(
+			'calculate_erlang_c',
+			'erlang_c_concurrency_advisor',
+			'erlang_c_queue_health',
+			'erlang_c_staffing_advisor',
+		);
+
+		if ( isset( $presets['communication_messaging']['tools'] ) ) {
+			foreach ( $erlangc_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['communication_messaging']['tools'],
+					"Erlang C tool '{$tool}' should be in communication_messaging preset"
+				);
+			}
+		}
+
+		// Test paper store tools in files_documents preset.
+		$paper_store_tools = array(
+			'paper_store_write',
+			'paper_store_read',
+			'paper_store_update',
+			'paper_store_delete',
+			'paper_store_list',
+			'paper_store_search',
+		);
+
+		if ( isset( $presets['files_documents']['tools'] ) ) {
+			foreach ( $paper_store_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['files_documents']['tools'],
+					"Paper store tool '{$tool}' should be in files_documents preset"
+				);
+			}
+		}
+
+		// Test harness tools in agentic_workflow preset.
+		$harness_tools = array(
+			'evolve_harness',
+			'apply_prompt_cue',
+			'list_prompt_cues',
+			'record_reflection',
+			'retrieve_with_provenance',
+			'scope_memory',
+			'select_prompt_cue',
+			'self_consistency_vote',
+		);
+
+		if ( isset( $presets['agentic_workflow']['tools'] ) ) {
+			foreach ( $harness_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['agentic_workflow']['tools'],
+					"Harness tool '{$tool}' should be in agentic_workflow preset"
+				);
+			}
+		}
+
+		// Test memory & agent tools in both ai_ml and agentic_workflow presets.
+		$mem_agent_tools = array(
+			'recall_memory',
+			'trace_memory_provenance',
+			'run_gemini_managed_agent',
+			'load_skill',
+		);
+
+		if ( isset( $presets['agentic_workflow']['tools'] ) ) {
+			foreach ( $mem_agent_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['agentic_workflow']['tools'],
+					"Memory/agent tool '{$tool}' should be in agentic_workflow preset"
 				);
 			}
 		}

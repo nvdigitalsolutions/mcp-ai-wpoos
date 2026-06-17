@@ -41,7 +41,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_JetEngine' ) ) {
-			$tool_path = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php';
+			$tool_path = WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/class-wp-mcp-ai-pro-tool-jetengine.php';
 			if ( ! file_exists( $tool_path ) ) {
 				$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_JetEngine file not found' );
 			}

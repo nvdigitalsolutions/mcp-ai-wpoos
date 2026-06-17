@@ -7,7 +7,6 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
  */
-
 class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 
 	/**
@@ -50,7 +49,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -62,7 +62,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		);
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -72,7 +73,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_MCP_AI_JetEngine_MCP_Client', $client );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -82,7 +84,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_MCP_AI_JetEngine_MCP_Client', $client );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -90,12 +93,16 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 	public function test_client_with_auth_credentials() {
 		$client = new WP_MCP_AI_JetEngine_MCP_Client(
 			'https://example.com',
-			array( 'username' => 'admin', 'password' => 'pass123' )
+			array(
+				'username' => 'admin',
+				'password' => 'pass123',
+			)
 		);
 		$this->assertInstanceOf( 'WP_MCP_AI_JetEngine_MCP_Client', $client );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -108,7 +115,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'mcp_invalid_tool', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -121,7 +129,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'mcp_invalid_prompt', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -141,7 +150,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertFalse( get_transient( 'wp_mcp_ai_je_mcp_prompts_list' ) );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -159,7 +169,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertEquals( $cached_data, $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -167,7 +178,10 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 	public function test_tools_list_uses_cache() {
 		$cached_data = array(
 			'tools' => array(
-				array( 'name' => 'create_post_type', 'description' => 'Create a post type' ),
+				array(
+					'name'        => 'create_post_type',
+					'description' => 'Create a post type',
+				),
 			),
 		);
 		set_transient( 'wp_mcp_ai_je_mcp_tools_list', $cached_data, 300 );
@@ -178,7 +192,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertEquals( $cached_data, $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -186,7 +201,10 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 	public function test_resources_list_uses_cache() {
 		$cached_data = array(
 			'resources' => array(
-				array( 'type' => 'post_types', 'data' => array() ),
+				array(
+					'type' => 'post_types',
+					'data' => array(),
+				),
 			),
 		);
 		set_transient( 'wp_mcp_ai_je_mcp_resources_list', $cached_data, 300 );
@@ -197,7 +215,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertEquals( $cached_data, $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -205,7 +224,10 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 	public function test_prompts_list_uses_cache() {
 		$cached_data = array(
 			'prompts' => array(
-				array( 'name' => 'code_review', 'description' => 'Review code' ),
+				array(
+					'name'        => 'code_review',
+					'description' => 'Review code',
+				),
 			),
 		);
 		set_transient( 'wp_mcp_ai_je_mcp_prompts_list', $cached_data, 300 );
@@ -216,7 +238,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertEquals( $cached_data, $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -235,7 +258,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		delete_option( 'wp_mcp_ai_settings' );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -254,7 +278,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		delete_option( 'wp_mcp_ai_settings' );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -281,7 +306,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertStringContainsString( '-32601', $result->get_error_message() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -306,7 +332,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'tools', $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -323,7 +350,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'mcp_invalid_response', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -332,7 +360,8 @@ class Test_JetEngine_MCP_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'jet-engine/v1/mcp', WP_MCP_AI_JetEngine_MCP_Client::REST_NAMESPACE );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp

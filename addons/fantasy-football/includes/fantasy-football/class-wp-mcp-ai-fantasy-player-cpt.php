@@ -21,22 +21,22 @@ class WP_MCP_AI_Fantasy_Player_CPT {
 	const POST_TYPE = 'ff_player';
 
 	// Meta keys.
-	const META_PLAYER_ID          = '_ff_player_id';
-	const META_PROVIDER           = '_ff_provider'; // 'espn' or 'yahoo'.
-	const META_ESPN_PLAYER_ID     = '_ff_espn_player_id';
-	const META_YAHOO_PLAYER_ID    = '_ff_yahoo_player_id';
-	const META_POSITION           = '_ff_position';
-	const META_PRO_TEAM           = '_ff_pro_team';
-	const META_PRO_TEAM_ABBREV    = '_ff_pro_team_abbrev';
-	const META_PLAYER_STATUS      = '_ff_player_status'; // 'active', 'injured', 'out', etc.
-	const META_INJURY_STATUS      = '_ff_injury_status';
-	const META_SEASON             = '_ff_season';
-	const META_TOTAL_POINTS       = '_ff_total_points';
-	const META_AVERAGE_POINTS     = '_ff_average_points';
-	const META_GAMES_PLAYED       = '_ff_games_played';
-	const META_ON_WATCHLIST       = '_ff_on_watchlist';
-	const META_WATCHLIST_NOTES    = '_ff_watchlist_notes';
-	const META_LAST_SYNC          = '_ff_last_sync';
+	const META_PLAYER_ID       = '_ff_player_id';
+	const META_PROVIDER        = '_ff_provider'; // 'espn' or 'yahoo'.
+	const META_ESPN_PLAYER_ID  = '_ff_espn_player_id';
+	const META_YAHOO_PLAYER_ID = '_ff_yahoo_player_id';
+	const META_POSITION        = '_ff_position';
+	const META_PRO_TEAM        = '_ff_pro_team';
+	const META_PRO_TEAM_ABBREV = '_ff_pro_team_abbrev';
+	const META_PLAYER_STATUS   = '_ff_player_status'; // 'active', 'injured', 'out', etc.
+	const META_INJURY_STATUS   = '_ff_injury_status';
+	const META_SEASON          = '_ff_season';
+	const META_TOTAL_POINTS    = '_ff_total_points';
+	const META_AVERAGE_POINTS  = '_ff_average_points';
+	const META_GAMES_PLAYED    = '_ff_games_played';
+	const META_ON_WATCHLIST    = '_ff_on_watchlist';
+	const META_WATCHLIST_NOTES = '_ff_watchlist_notes';
+	const META_LAST_SYNC       = '_ff_last_sync';
 
 	/**
 	 * Initialize the class.
@@ -259,7 +259,7 @@ class WP_MCP_AI_Fantasy_Player_CPT {
 		<th><?php esc_html_e( 'Team', 'mcp-ai-wpoos-pro' ); ?></th>
 		<td><?php echo esc_html( $pro_team_abbrev ? $pro_team_abbrev : $pro_team ); ?></td>
 	</tr>
-	<?php if ( $injury_status ) : ?>
+		<?php if ( $injury_status ) : ?>
 	<tr>
 		<th><?php esc_html_e( 'Injury Status', 'mcp-ai-wpoos-pro' ); ?></th>
 		<td><span style="color: #d63638; font-weight: bold;"><?php echo esc_html( strtoupper( $injury_status ) ); ?></span></td>
@@ -313,14 +313,14 @@ class WP_MCP_AI_Fantasy_Player_CPT {
 	 */
 	public static function customize_columns( $columns ) {
 		$new_columns = array(
-			'cb'           => $columns['cb'],
-			'title'        => $columns['title'],
-			'position'     => __( 'Position', 'mcp-ai-wpoos-pro' ),
-			'team'         => __( 'Team', 'mcp-ai-wpoos-pro' ),
-			'status'       => __( 'Status', 'mcp-ai-wpoos-pro' ),
-			'avg_points'   => __( 'Avg Points', 'mcp-ai-wpoos-pro' ),
-			'watchlist'    => __( 'Watchlist', 'mcp-ai-wpoos-pro' ),
-			'date'         => $columns['date'],
+			'cb'         => $columns['cb'],
+			'title'      => $columns['title'],
+			'position'   => __( 'Position', 'mcp-ai-wpoos-pro' ),
+			'team'       => __( 'Team', 'mcp-ai-wpoos-pro' ),
+			'status'     => __( 'Status', 'mcp-ai-wpoos-pro' ),
+			'avg_points' => __( 'Avg Points', 'mcp-ai-wpoos-pro' ),
+			'watchlist'  => __( 'Watchlist', 'mcp-ai-wpoos-pro' ),
+			'date'       => $columns['date'],
 		);
 
 		return $new_columns;

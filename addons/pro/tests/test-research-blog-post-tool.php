@@ -43,7 +43,7 @@ class Test_Research_Blog_Post_Tool extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------
-	// Metadata tests
+	// Metadata tests.
 	// -----------------------------------------------------------------
 
 	/**
@@ -79,7 +79,7 @@ class Test_Research_Blog_Post_Tool extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------
-	// Schema tests
+	// Schema tests.
 	// -----------------------------------------------------------------
 
 	/**
@@ -181,7 +181,7 @@ class Test_Research_Blog_Post_Tool extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------
-	// Availability tests
+	// Availability tests.
 	// -----------------------------------------------------------------
 
 	/**
@@ -255,7 +255,7 @@ class Test_Research_Blog_Post_Tool extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------
-	// Cleanup
+	// Cleanup.
 	// -----------------------------------------------------------------
 
 	/**

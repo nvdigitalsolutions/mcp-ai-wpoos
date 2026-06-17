@@ -73,35 +73,35 @@ class WP_MCP_AI_Tool_CRE_NOI_Calculator implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'number',
 					'description' => __( 'Total potential gross rental income (annual).', 'mcp-ai-wpoos-pro' ),
 				),
-				'vacancy_rate'          => array(
+				'vacancy_rate'           => array(
 					'type'        => 'number',
 					'description' => __( 'Vacancy & credit loss rate as decimal (e.g. 0.05 for 5%).', 'mcp-ai-wpoos-pro' ),
 				),
-				'concessions'           => array(
+				'concessions'            => array(
 					'type'        => 'number',
 					'description' => __( 'Annual rent concessions / free rent.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'other_income'          => array(
+				'other_income'           => array(
 					'type'        => 'number',
 					'description' => __( 'Other income (parking, laundry, fees, etc.).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'operating_expenses'    => array(
+				'operating_expenses'     => array(
 					'type'        => 'number',
 					'description' => __( 'Total annual operating expenses (before mgmt fee & reserves).', 'mcp-ai-wpoos-pro' ),
 				),
-				'management_fee_pct'    => array(
+				'management_fee_pct'     => array(
 					'type'        => 'number',
 					'description' => __( 'Management fee as percent of EGI (decimal, e.g. 0.04 for 4%).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'reserves_per_unit'     => array(
+				'reserves_per_unit'      => array(
 					'type'        => 'number',
 					'description' => __( 'Annual replacement reserves per unit.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'num_units'             => array(
+				'num_units'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of units (for reserves calculation).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
@@ -119,7 +119,20 @@ class WP_MCP_AI_Tool_CRE_NOI_Calculator implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -130,14 +143,14 @@ class WP_MCP_AI_Tool_CRE_NOI_Calculator implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$pgi              = (float) ( $arguments['potential_gross_income'] ?? 0 );
-		$vacancy_rate     = (float) ( $arguments['vacancy_rate'] ?? 0.05 );
-		$concessions      = (float) ( $arguments['concessions'] ?? 0 );
-		$other_income     = (float) ( $arguments['other_income'] ?? 0 );
-		$opex             = (float) ( $arguments['operating_expenses'] ?? 0 );
-		$mgmt_fee_pct     = (float) ( $arguments['management_fee_pct'] ?? 0 );
+		$pgi               = (float) ( $arguments['potential_gross_income'] ?? 0 );
+		$vacancy_rate      = (float) ( $arguments['vacancy_rate'] ?? 0.05 );
+		$concessions       = (float) ( $arguments['concessions'] ?? 0 );
+		$other_income      = (float) ( $arguments['other_income'] ?? 0 );
+		$opex              = (float) ( $arguments['operating_expenses'] ?? 0 );
+		$mgmt_fee_pct      = (float) ( $arguments['management_fee_pct'] ?? 0 );
 		$reserves_per_unit = (float) ( $arguments['reserves_per_unit'] ?? 0 );
-		$num_units        = (int) ( $arguments['num_units'] ?? 0 );
+		$num_units         = (int) ( $arguments['num_units'] ?? 0 );
 
 		if ( $pgi <= 0 ) {
 			return new WP_Error( 'invalid_input', __( 'Potential gross income must be greater than zero.', 'mcp-ai-wpoos-pro' ) );
@@ -169,27 +182,27 @@ class WP_MCP_AI_Tool_CRE_NOI_Calculator implements WP_MCP_AI_Tool_Interface, WP_
 			'success' => true,
 			'message' => __( 'NOI calculation complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
-				'income_waterfall'   => array(
+				'income_waterfall'     => array(
 					'potential_gross_income' => $calc::format_currency( $pgi ),
-					'less_vacancy_loss'     => $calc::format_currency( $vacancy_loss ),
-					'less_concessions'      => $calc::format_currency( $concessions ),
-					'plus_other_income'     => $calc::format_currency( $other_income ),
+					'less_vacancy_loss'      => $calc::format_currency( $vacancy_loss ),
+					'less_concessions'       => $calc::format_currency( $concessions ),
+					'plus_other_income'      => $calc::format_currency( $other_income ),
 					'effective_gross_income' => $calc::format_currency( $egi ),
 				),
-				'expense_detail'     => array(
-					'base_operating_expenses' => $calc::format_currency( $opex ),
-					'management_fee'          => $calc::format_currency( $management_fee ),
-					'replacement_reserves'    => $calc::format_currency( $reserves ),
+				'expense_detail'       => array(
+					'base_operating_expenses'  => $calc::format_currency( $opex ),
+					'management_fee'           => $calc::format_currency( $management_fee ),
+					'replacement_reserves'     => $calc::format_currency( $reserves ),
 					'total_operating_expenses' => $calc::format_currency( $total_opex ),
 				),
 				'net_operating_income' => $calc::format_currency( $noi_result['noi'] ),
-				'key_ratios'         => array(
-					'vacancy_rate'    => $calc::format_percentage( $vacancy_rate ),
-					'opex_ratio'      => $calc::format_percentage( $opex_ratio ),
-					'noi_margin'      => $calc::format_percentage( $noi_margin ),
-					'mgmt_fee_pct'    => $calc::format_percentage( $mgmt_fee_pct ),
+				'key_ratios'           => array(
+					'vacancy_rate' => $calc::format_percentage( $vacancy_rate ),
+					'opex_ratio'   => $calc::format_percentage( $opex_ratio ),
+					'noi_margin'   => $calc::format_percentage( $noi_margin ),
+					'mgmt_fee_pct' => $calc::format_percentage( $mgmt_fee_pct ),
 				),
-				'per_unit'           => ( $num_units > 0 ) ? array(
+				'per_unit'             => ( $num_units > 0 ) ? array(
 					'pgi_per_unit'  => $calc::format_currency( $pgi / $num_units ),
 					'egi_per_unit'  => $calc::format_currency( $egi / $num_units ),
 					'opex_per_unit' => $calc::format_currency( $total_opex / $num_units ),

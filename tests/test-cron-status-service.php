@@ -815,4 +815,487 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		// Clean up transient.
 		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
 	}
+
+	/**
+	 * Test that get_system_status() returns the documented shape with safe
+	 * defaults when no health monitors are present.
+	 *
+	 * Phase 0 wire-up: docs/features/chat/cron-status-tasks-drawer-plan.md.
+	 */
+	public function test_get_system_status_returns_default_shape() {
+		$status = $this->service->get_system_status();
+
+		$this->assertIsArray( $status );
+		$this->assertArrayHasKey( 'async', $status );
+		$this->assertArrayHasKey( 'health', $status );
+
+		$this->assertArrayHasKey( 'status', $status['async'] );
+		$this->assertArrayHasKey( 'stuck_jobs', $status['async'] );
+		$this->assertArrayHasKey( 'long_running', $status['async'] );
+
+		$this->assertArrayHasKey( 'status', $status['health'] );
+		$this->assertArrayHasKey( 'label', $status['health'] );
+
+		// stuck_jobs / long_running must always be ints so the JS comparator
+		// `systemStatus.async.stuck_jobs > 0` works without coercion bugs.
+		$this->assertIsInt( $status['async']['stuck_jobs'] );
+		$this->assertIsInt( $status['async']['long_running'] );
+	}
+
+	/**
+	 * Async/video jobs must win the limited window over regular cron entries
+	 * so a busy WP-Cron queue cannot starve assistant-scoped jobs out of the
+	 * chat UI's status bar.
+	 *
+	 * Phase 0 wire-up: docs/features/chat/cron-status-tasks-drawer-plan.md.
+	 */
+	public function test_get_status_summary_orders_async_jobs_before_regular_cron() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+
+		// Two regular cron entries.
+		$hook_a    = 'wp_mcp_ai_test_order_a';
+		$hook_b    = 'wp_mcp_ai_test_order_b';
+		$timestamp = time() + HOUR_IN_SECONDS;
+		wp_schedule_single_event( $timestamp, $hook_a, array() );
+		WP_MCP_AI_Cron_Manager::record_job( $hook_a, array(), 'single', $timestamp, $this->user_id );
+		wp_schedule_single_event( $timestamp + 60, $hook_b, array() );
+		WP_MCP_AI_Cron_Manager::record_job( $hook_b, array(), 'single', $timestamp + 60, $this->user_id );
+
+		// One async job that must show up even when limit=1.
+		$async_job_id = 'async_test_priority';
+		set_transient(
+			WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $async_job_id,
+			array(
+				'job_id'    => $async_job_id,
+				'tool_slug' => 'priority_tool',
+				'status'    => 'running',
+				'queued_at' => time() - 30,
+				'context'   => array( 'user_id' => $this->user_id ),
+			),
+			DAY_IN_SECONDS
+		);
+
+		$summary = $this->service->get_status_summary( $this->user_id, 1 );
+
+		$this->assertNotEmpty( $summary );
+		$this->assertCount( 1, $summary );
+		$this->assertEquals( $async_job_id, $summary[0]['job_id'], 'Async job must win the single available slot.' );
+
+		// Clean up.
+		delete_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $async_job_id );
+		wp_clear_scheduled_hook( $hook_a );
+		wp_clear_scheduled_hook( $hook_b );
+	}
+
+	/**
+	 * Phase 1 — Job-Source Registry: filter fires and a well-formed source contributes a job.
+	 */
+	public function test_registered_source_contributes_job_to_summary() {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+
+		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_test_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				return array(
+					array(
+						'job_id'       => 'job-abc',
+						'kind'         => 'transcript_mine',
+						'status'       => 'running',
+						'created_by'   => $user_id,
+						'assistant_id' => 0,
+						'started_at'   => time() - 10,
+						'updated_at'   => time(),
+						'eta'          => time() + 30,
+						'progress'     => 42,
+						'message'      => 'Mining transcript…',
+						'cancellable'  => true,
+						'retryable'    => false,
+					),
+				);
+			}
+		};
+
+		$callback = function ( $sources ) use ( $source ) {
+			$sources[ $source->get_slug() ] = $source;
+			return $sources;
+		};
+		add_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$summary = $this->service->get_status_summary( $this->user_id, 10 );
+
+		remove_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$found = null;
+		foreach ( $summary as $row ) {
+			if ( isset( $row['job_id'] ) && 'job-abc' === $row['job_id'] ) {
+				$found = $row;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $found, 'Job contributed via wp_mcp_ai_cron_status_job_sources should appear in the summary.' );
+		$this->assertSame( 'running', $found['status'] );
+		$this->assertSame( 'phase1_test_source', $found['source'] );
+		$this->assertSame( 'transcript_mine', $found['kind'] );
+		$this->assertSame( 42, $found['progress'] );
+		$this->assertTrue( $found['cancellable'] );
+		$this->assertFalse( $found['retryable'] );
+	}
+
+	/**
+	 * Phase 1: a job contributed by a registered source counts in get_status_counts().
+	 */
+	public function test_registered_source_job_appears_in_counts() {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+
+		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_counts_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				return array(
+					array(
+						'job_id'     => 'job-c1',
+						'kind'       => 'crawl',
+						'status'     => 'running',
+						'created_by' => $user_id,
+					),
+					array(
+						'job_id'     => 'job-c2',
+						'kind'       => 'crawl',
+						'status'     => 'failed',
+						'created_by' => $user_id,
+					),
+				);
+			}
+		};
+
+		$callback = function ( $sources ) use ( $source ) {
+			$sources[ $source->get_slug() ] = $source;
+			return $sources;
+		};
+		add_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$counts = $this->service->get_status_counts( $this->user_id );
+
+		remove_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$this->assertGreaterThanOrEqual( 1, $counts['running'], 'Running record should be tallied.' );
+		$this->assertGreaterThanOrEqual( 1, $counts['failed'], 'Failed record should be tallied.' );
+		$this->assertGreaterThanOrEqual( 2, $counts['total'] );
+	}
+
+	/**
+	 * Phase 1: invalid records (no job_id) are dropped silently.
+	 */
+	public function test_invalid_source_records_are_dropped() {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+
+		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_invalid_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				return array(
+					array( 'no_job_id_here' => true ),
+					'not-an-array',
+					array(
+						'job_id' => 'valid-1',
+						'status' => 'pending',
+					),
+				);
+			}
+		};
+
+		$callback = function ( $sources ) use ( $source ) {
+			$sources[ $source->get_slug() ] = $source;
+			return $sources;
+		};
+		add_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$summary = $this->service->get_status_summary( $this->user_id, 10 );
+		remove_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$valid_ids = wp_list_pluck( $summary, 'job_id' );
+		$this->assertContains( 'valid-1', $valid_ids );
+		$this->assertNotContains( '', $valid_ids );
+	}
+
+	/**
+	 * Phase 1: a throwing source does not break the REST response.
+	 */
+	public function test_throwing_source_is_isolated() {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+
+		$bad = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_bad_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				throw new \RuntimeException( 'simulated source failure' );
+			}
+		};
+
+		$good = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_good_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				return array(
+					array(
+						'job_id' => 'good-1',
+						'status' => 'queued',
+					),
+				);
+			}
+		};
+
+		$callback = function ( $sources ) use ( $bad, $good ) {
+			$sources[ $bad->get_slug() ]  = $bad;
+			$sources[ $good->get_slug() ] = $good;
+			return $sources;
+		};
+		add_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$error_slugs = array();
+		$error_cb    = function ( $slug ) use ( &$error_slugs ) {
+			$error_slugs[] = $slug;
+		};
+		add_action( 'wp_mcp_ai_cron_status_source_error', $error_cb );
+
+		$summary = $this->service->get_status_summary( $this->user_id, 10 );
+
+		remove_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+		remove_action( 'wp_mcp_ai_cron_status_source_error', $error_cb );
+
+		$this->assertContains( 'phase1_bad_source', $error_slugs, 'Throwing source must trigger wp_mcp_ai_cron_status_source_error.' );
+		$valid_ids = wp_list_pluck( $summary, 'job_id' );
+		$this->assertContains( 'good-1', $valid_ids, 'A throwing source must not block other sources.' );
+	}
+
+	/**
+	 * Phase 1: assistant-scoped queries drop unmatched source records.
+	 */
+	public function test_source_records_respect_assistant_scope() {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+
+		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_scope_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				return array(
+					array(
+						'job_id'       => 'mine-1',
+						'status'       => 'running',
+						'assistant_id' => 555,
+						'created_by'   => $user_id,
+					),
+					array(
+						'job_id'       => 'other-1',
+						'status'       => 'running',
+						'assistant_id' => 999,
+						'created_by'   => $user_id,
+					),
+				);
+			}
+		};
+
+		$callback = function ( $sources ) use ( $source ) {
+			$sources[ $source->get_slug() ] = $source;
+			return $sources;
+		};
+		add_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$summary = $this->service->get_status_summary( $this->user_id, 10, 555 );
+
+		remove_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$ids = wp_list_pluck( $summary, 'job_id' );
+		$this->assertContains( 'mine-1', $ids );
+		$this->assertNotContains( 'other-1', $ids );
+	}
+
+	/**
+	 * Test classify_job_diff_event with a new (previously unseen) job.
+	 *
+	 * Phase 2 slice 2b: covers the canonical event-name mapping when no
+	 * prior snapshot exists for the given job_id.
+	 */
+	public function test_classify_job_diff_event_new_job_status_mapping() {
+		// Pending → job:queued.
+		$this->assertSame(
+			'job:queued',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'pending' ) )
+		);
+		// Queued → job:queued.
+		$this->assertSame(
+			'job:queued',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'queued' ) )
+		);
+		// Running → job:started.
+		$this->assertSame(
+			'job:started',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'running' ) )
+		);
+		// Polling → job:started.
+		$this->assertSame(
+			'job:started',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'polling' ) )
+		);
+		// Completed → job:completed.
+		$this->assertSame(
+			'job:completed',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'completed' ) )
+		);
+		// Failed → job:failed.
+		$this->assertSame(
+			'job:failed',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'failed' ) )
+		);
+		// Cancelled → job:cancelled.
+		$this->assertSame(
+			'job:cancelled',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'cancelled' ) )
+		);
+		// Missing status → no event.
+		$this->assertSame( '', $this->service->classify_job_diff_event( null, array() ) );
+	}
+
+	/**
+	 * Test classify_job_diff_event with status transitions on existing jobs.
+	 */
+	public function test_classify_job_diff_event_transitions() {
+		// queued → running ⇒ job:started.
+		$this->assertSame(
+			'job:started',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'queued' ),
+				array( 'status' => 'running' )
+			)
+		);
+		// pending → running ⇒ job:started.
+		$this->assertSame(
+			'job:started',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'pending' ),
+				array( 'status' => 'running' )
+			)
+		);
+		// running → completed ⇒ job:completed.
+		$this->assertSame(
+			'job:completed',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'running' ),
+				array( 'status' => 'completed' )
+			)
+		);
+		// running → failed ⇒ job:failed.
+		$this->assertSame(
+			'job:failed',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'running' ),
+				array( 'status' => 'failed' )
+			)
+		);
+		// running → cancelled ⇒ job:cancelled.
+		$this->assertSame(
+			'job:cancelled',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'running' ),
+				array( 'status' => 'cancelled' )
+			)
+		);
+		// failed → queued ⇒ job:retried.
+		$this->assertSame(
+			'job:retried',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'failed' ),
+				array( 'status' => 'queued' )
+			)
+		);
+		// cancelled → pending ⇒ job:retried.
+		$this->assertSame(
+			'job:retried',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'cancelled' ),
+				array( 'status' => 'pending' )
+			)
+		);
+		// running → polling ⇒ job:progress (generic transition).
+		$this->assertSame(
+			'job:progress',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'running' ),
+				array( 'status' => 'polling' )
+			)
+		);
+	}
+
+	/**
+	 * Test classify_job_diff_event with unchanged status but progress/timestamp updates.
+	 */
+	public function test_classify_job_diff_event_progress_updates() {
+		// Same running status but progress changed ⇒ job:progress.
+		$this->assertSame(
+			'job:progress',
+			$this->service->classify_job_diff_event(
+				array(
+					'status'   => 'running',
+					'progress' => 25,
+				),
+				array(
+					'status'   => 'running',
+					'progress' => 50,
+				)
+			)
+		);
+		// Same running status, updated_at advanced ⇒ job:progress.
+		$this->assertSame(
+			'job:progress',
+			$this->service->classify_job_diff_event(
+				array(
+					'status'     => 'running',
+					'updated_at' => 1000,
+				),
+				array(
+					'status'     => 'running',
+					'updated_at' => 1500,
+				)
+			)
+		);
+		// Identical record ⇒ no event.
+		$this->assertSame(
+			'',
+			$this->service->classify_job_diff_event(
+				array(
+					'status'     => 'running',
+					'progress'   => 50,
+					'updated_at' => 1000,
+				),
+				array(
+					'status'     => 'running',
+					'progress'   => 50,
+					'updated_at' => 1000,
+				)
+			)
+		);
+		// Pending with updated_at change ⇒ no event (only running statuses
+		// promote updated_at into a progress signal).
+		$this->assertSame(
+			'',
+			$this->service->classify_job_diff_event(
+				array(
+					'status'     => 'pending',
+					'updated_at' => 1000,
+				),
+				array(
+					'status'     => 'pending',
+					'updated_at' => 1500,
+				)
+			)
+		);
+	}
 }

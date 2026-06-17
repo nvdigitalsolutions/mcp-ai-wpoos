@@ -26,6 +26,13 @@ class WP_MCP_AI_Tool_LF_Damages_Calculator implements WP_MCP_AI_Tool_Interface, 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -125,6 +132,9 @@ class WP_MCP_AI_Tool_LF_Damages_Calculator implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -148,30 +158,30 @@ class WP_MCP_AI_Tool_LF_Damages_Calculator implements WP_MCP_AI_Tool_Interface, 
 		$discount_rate    = max( 0, min( 0.20, $discount_rate ) );
 		$wage_growth_rate = max( 0, min( 0.10, $wage_growth_rate ) );
 
-		$economic_breakdown   = array();
-		$total_economic       = 0;
-		$total_non_economic   = 0;
-		$total_punitive       = 0;
-		$present_value_data   = array();
+		$economic_breakdown = array();
+		$total_economic     = 0;
+		$total_non_economic = 0;
+		$total_punitive     = 0;
+		$present_value_data = array();
 
 		// Economic damages calculation.
 		if ( 'economic' === $damages_type || 'all' === $damages_type ) {
 			// Past medical expenses.
 			if ( $medical_expenses > 0 ) {
 				$economic_breakdown['past_medical'] = round( $medical_expenses, 2 );
-				$total_economic += $medical_expenses;
+				$total_economic                    += $medical_expenses;
 			}
 
 			// Future medical expenses (present value).
 			if ( $future_medical > 0 ) {
-				$pv_future_medical = WP_MCP_AI_Law_Firm_Calculator::calculate_present_value(
+				$pv_future_medical                       = WP_MCP_AI_Law_Firm_Calculator::calculate_present_value(
 					$future_medical,
 					$discount_rate,
 					max( 1, $work_years_remaining > 0 ? $work_years_remaining : 5 )
 				);
 				$economic_breakdown['future_medical']    = round( $future_medical, 2 );
 				$economic_breakdown['future_medical_pv'] = $pv_future_medical;
-				$total_economic += $pv_future_medical;
+				$total_economic                         += $pv_future_medical;
 
 				$present_value_data['future_medical'] = array(
 					'nominal'       => round( $future_medical, 2 ),
@@ -189,19 +199,19 @@ class WP_MCP_AI_Tool_LF_Damages_Calculator implements WP_MCP_AI_Tool_Interface, 
 					$wage_growth_rate
 				);
 
-				$economic_breakdown['lost_wages_annual']    = round( $lost_wages_annual, 2 );
-				$economic_breakdown['lost_wages_total_pv']   = $wages_result['total_present_value'];
+				$economic_breakdown['lost_wages_annual']       = round( $lost_wages_annual, 2 );
+				$economic_breakdown['lost_wages_total_pv']     = $wages_result['total_present_value'];
 				$economic_breakdown['lost_wages_undiscounted'] = $wages_result['undiscounted_total'];
-				$total_economic += $wages_result['total_present_value'];
+				$total_economic                               += $wages_result['total_present_value'];
 
 				$present_value_data['lost_wages'] = array(
-					'annual_amount'    => round( $lost_wages_annual, 2 ),
-					'years_remaining'  => $work_years_remaining,
-					'present_value'    => $wages_result['total_present_value'],
-					'undiscounted'     => $wages_result['undiscounted_total'],
-					'growth_rate'      => $wage_growth_rate,
-					'discount_rate'    => $discount_rate,
-					'schedule'         => array_slice( $wages_result['schedule'], 0, 5 ),
+					'annual_amount'   => round( $lost_wages_annual, 2 ),
+					'years_remaining' => $work_years_remaining,
+					'present_value'   => $wages_result['total_present_value'],
+					'undiscounted'    => $wages_result['undiscounted_total'],
+					'growth_rate'     => $wage_growth_rate,
+					'discount_rate'   => $discount_rate,
+					'schedule'        => array_slice( $wages_result['schedule'], 0, 5 ),
 				);
 			}
 
@@ -237,12 +247,12 @@ class WP_MCP_AI_Tool_LF_Damages_Calculator implements WP_MCP_AI_Tool_Interface, 
 				WP_MCP_AI_Law_Firm_Calculator::format_currency( $total_damages )
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'total_damages'         => $total_damages,
-				'economic_breakdown'    => $economic_breakdown,
-				'non_economic_damages'  => $total_non_economic,
-				'punitive_damages'      => $total_punitive,
+				'total_damages'          => $total_damages,
+				'economic_breakdown'     => $economic_breakdown,
+				'non_economic_damages'   => $total_non_economic,
+				'punitive_damages'       => $total_punitive,
 				'present_value_analysis' => $present_value_data,
-				'parameters'            => array(
+				'parameters'             => array(
 					'damages_type'         => $damages_type,
 					'pain_multiplier'      => $pain_multiplier,
 					'discount_rate'        => $discount_rate,

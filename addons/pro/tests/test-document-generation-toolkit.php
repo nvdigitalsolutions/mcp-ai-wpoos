@@ -82,7 +82,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// Generate PDF Tool Tests
+	// Generate PDF Tool Tests.
 	// ============================================================================
 
 	/**
@@ -127,7 +127,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// Generate Word Tool Tests
+	// Generate Word Tool Tests.
 	// ============================================================================
 
 	/**
@@ -172,7 +172,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// Generate Excel Tool Tests
+	// Generate Excel Tool Tests.
 	// ============================================================================
 
 	/**
@@ -217,7 +217,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// Pro PDF Tool Tests
+	// Pro PDF Tool Tests.
 	// ============================================================================
 
 	/**
@@ -276,7 +276,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// Pro Word Tool Tests
+	// Pro Word Tool Tests.
 	// ============================================================================
 
 	/**
@@ -320,7 +320,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// Generate Invoice PDF Tool Tests
+	// Generate Invoice PDF Tool Tests.
 	// ============================================================================
 
 	/**
@@ -365,7 +365,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// HTML to PDF Tool Tests
+	// HTML to PDF Tool Tests.
 	// ============================================================================
 
 	/**
@@ -409,7 +409,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// Excel Data Import Tool Tests
+	// Excel Data Import Tool Tests.
 	// ============================================================================
 
 	/**
@@ -455,7 +455,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// OCR PDF Text Tool Tests
+	// OCR PDF Text Tool Tests.
 	// ============================================================================
 
 	/**
@@ -502,7 +502,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// Pro Document OCR Tool Tests
+	// Pro Document OCR Tool Tests.
 	// ============================================================================
 
 	/**
@@ -560,7 +560,7 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	}
 
 	// ============================================================================
-	// Integration Tests
+	// Integration Tests.
 	// ============================================================================
 
 	/**
@@ -569,14 +569,14 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	public function test_all_tools_have_required_capability() {
 		foreach ( $this->tools_list as $tool_class ) {
 			$class_file = $this->get_tool_file_path( $tool_class );
-			
+
 			if ( file_exists( $class_file ) ) {
 				require_once $class_file;
-				
+
 				if ( class_exists( $tool_class ) ) {
 					$tool       = new $tool_class();
 					$definition = $tool->get_definition();
-					
+
 					$this->assertArrayHasKey(
 						'required_capability',
 						$definition,
@@ -597,13 +597,13 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	public function test_all_tools_implement_base_interface() {
 		foreach ( $this->tools_list as $tool_class ) {
 			$class_file = $this->get_tool_file_path( $tool_class );
-			
+
 			if ( file_exists( $class_file ) ) {
 				require_once $class_file;
-				
+
 				if ( class_exists( $tool_class ) ) {
 					$tool = new $tool_class();
-					
+
 					$this->assertTrue(
 						method_exists( $tool, 'execute' ),
 						"$tool_class should implement execute method"

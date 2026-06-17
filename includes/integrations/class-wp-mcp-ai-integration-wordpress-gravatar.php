@@ -438,10 +438,17 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 			if ( ! empty( $profile['display_name'] ) ) {
 				$user = get_user_by( 'id', $user_id );
 				if ( $user instanceof WP_User && $user->display_name !== $profile['display_name'] ) {
+					// Security note: this `wp_update_user()` only mutates the
+					// display name and is reached only after the bearer
+					// token's identity claim has been verified by
+					// `map_bearer_to_user_id()` (the OAuth provider
+					// authenticated the user). The update is restricted to
+					// the `display_name` field — no role, capabilities,
+					// password, or email is changed here.
 					wp_update_user(
 						array(
 							'ID'           => $user_id,
-							'display_name' => $profile['display_name'],
+							'display_name' => sanitize_text_field( $profile['display_name'] ),
 						)
 					);
 				}

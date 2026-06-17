@@ -81,3 +81,13 @@ if [ -n "${composer_bin_dir}" ]; then
     fi
   fi
 fi
+
+echo
+echo "──────────────────────────────────────────────────────────────────────"
+echo "NV oOS · Codex sandbox bootstrap complete."
+echo "Next reads (canonical agent docs):"
+echo "  • AGENTS.md            — agent inventory + coordination + layering rule"
+echo "  • CLAUDE.md            — naming, PHP compat, tool pattern, security"
+echo "  • .context/conventions.md + .context/security-checklist.md (always)"
+echo "  • Subsystem context under .context/ — load on demand per task"
+echo "──────────────────────────────────────────────────────────────────────"

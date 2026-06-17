@@ -69,15 +69,15 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'noi'               => array(
+				'noi'              => array(
 					'type'        => 'number',
 					'description' => __( 'Annual NOI for income approach.', 'mcp-ai-wpoos-pro' ),
 				),
-				'cap_rate'          => array(
+				'cap_rate'         => array(
 					'type'        => 'number',
 					'description' => __( 'Market cap rate as decimal for income approach.', 'mcp-ai-wpoos-pro' ),
 				),
-				'comparable_sales'  => array(
+				'comparable_sales' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of comparable sale objects for sales comparison approach.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -98,37 +98,37 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 						),
 					),
 				),
-				'subject_sf'        => array(
+				'subject_sf'       => array(
 					'type'        => 'number',
 					'description' => __( 'Subject property square footage (for applying comps PSF).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'replacement_cost'  => array(
+				'replacement_cost' => array(
 					'type'        => 'number',
 					'description' => __( 'Estimated replacement/reproduction cost of improvements.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'land_value'        => array(
+				'land_value'       => array(
 					'type'        => 'number',
 					'description' => __( 'Estimated land value.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'depreciation_pct'  => array(
+				'depreciation_pct' => array(
 					'type'        => 'number',
 					'description' => __( 'Accrued depreciation as decimal (e.g. 0.20 for 20%).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'weight_income'     => array(
+				'weight_income'    => array(
 					'type'        => 'number',
 					'description' => __( 'Weight for income approach in reconciliation (0-1).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0.50,
 				),
-				'weight_sales'      => array(
+				'weight_sales'     => array(
 					'type'        => 'number',
 					'description' => __( 'Weight for sales comparison approach (0-1).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0.30,
 				),
-				'weight_cost'       => array(
+				'weight_cost'      => array(
 					'type'        => 'number',
 					'description' => __( 'Weight for cost approach (0-1).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0.20,
@@ -146,7 +146,20 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -178,17 +191,17 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 		$income_value = $calc::calculate_value_direct_cap( $noi, $cap_rate );
 
 		// 2) Sales Comparison Approach.
-		$sales_value   = 0.0;
-		$comps_detail  = array();
-		$has_comps     = ! empty( $comps ) && $subject_sf > 0;
+		$sales_value  = 0.0;
+		$comps_detail = array();
+		$has_comps    = ! empty( $comps ) && $subject_sf > 0;
 
 		if ( $has_comps ) {
 			$total_psf = 0.0;
 			foreach ( $comps as $c ) {
-				$c_price = (float) ( $c['price'] ?? 0 );
-				$c_sf    = (float) ( $c['sf'] ?? 0 );
-				$c_date  = sanitize_text_field( $c['sale_date'] ?? '' );
-				$psf     = ( $c_sf > 0 ) ? $c_price / $c_sf : 0;
+				$c_price    = (float) ( $c['price'] ?? 0 );
+				$c_sf       = (float) ( $c['sf'] ?? 0 );
+				$c_date     = sanitize_text_field( $c['sale_date'] ?? '' );
+				$psf        = ( $c_sf > 0 ) ? $c_price / $c_sf : 0;
 				$total_psf += $psf;
 
 				$comps_detail[] = array(
@@ -204,9 +217,9 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 		}
 
 		// 3) Cost Approach.
-		$cost_value     = 0.0;
-		$has_cost       = ( $replacement_cost > 0 || $land_value > 0 );
-		$depreciation   = $replacement_cost * $depreciation_pct;
+		$cost_value               = 0.0;
+		$has_cost                 = ( $replacement_cost > 0 || $land_value > 0 );
+		$depreciation             = $replacement_cost * $depreciation_pct;
 		$depreciated_improvements = $replacement_cost - $depreciation;
 
 		if ( $has_cost ) {
@@ -234,8 +247,8 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 		$reconciled = 0.0;
 
 		if ( $income_value > 0 ) {
-			$eff_w = $w_income / $total_weight;
-			$reconciled += $income_value * $eff_w;
+			$eff_w        = $w_income / $total_weight;
+			$reconciled  += $income_value * $eff_w;
 			$approaches[] = array(
 				'approach' => __( 'Income Approach (Direct Cap)', 'mcp-ai-wpoos-pro' ),
 				'value'    => $calc::format_currency( $income_value ),
@@ -245,8 +258,8 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 		}
 
 		if ( $has_comps && $sales_value > 0 ) {
-			$eff_w = $w_sales / $total_weight;
-			$reconciled += $sales_value * $eff_w;
+			$eff_w        = $w_sales / $total_weight;
+			$reconciled  += $sales_value * $eff_w;
 			$approaches[] = array(
 				'approach' => __( 'Sales Comparison Approach', 'mcp-ai-wpoos-pro' ),
 				'value'    => $calc::format_currency( $sales_value ),
@@ -256,8 +269,8 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 		}
 
 		if ( $has_cost && $cost_value > 0 ) {
-			$eff_w = $w_cost / $total_weight;
-			$reconciled += $cost_value * $eff_w;
+			$eff_w        = $w_cost / $total_weight;
+			$reconciled  += $cost_value * $eff_w;
 			$approaches[] = array(
 				'approach' => __( 'Cost Approach', 'mcp-ai-wpoos-pro' ),
 				'value'    => $calc::format_currency( $cost_value ),
@@ -267,12 +280,12 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 		}
 
 		$result = array(
-			'income_approach'  => array(
+			'income_approach' => array(
 				'noi'      => $calc::format_currency( $noi ),
 				'cap_rate' => $calc::format_percentage( $cap_rate ),
 				'value'    => $calc::format_currency( $income_value ),
 			),
-			'reconciliation'   => array(
+			'reconciliation'  => array(
 				'approaches'       => $approaches,
 				'reconciled_value' => $calc::format_currency( $reconciled ),
 			),
@@ -280,9 +293,9 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 
 		if ( $has_comps ) {
 			$result['sales_comparison'] = array(
-				'comparables'  => $comps_detail,
-				'avg_psf'      => round( ( count( $comps ) > 0 ) ? array_sum( array_column( $comps_detail, 'price_psf' ) ) / count( $comps_detail ) : 0, 2 ),
-				'subject_sf'   => round( $subject_sf, 0 ),
+				'comparables'   => $comps_detail,
+				'avg_psf'       => round( ( count( $comps ) > 0 ) ? array_sum( array_column( $comps_detail, 'price_psf' ) ) / count( $comps_detail ) : 0, 2 ),
+				'subject_sf'    => round( $subject_sf, 0 ),
 				'implied_value' => $calc::format_currency( $sales_value ),
 			);
 		}

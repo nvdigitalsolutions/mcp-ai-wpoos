@@ -42,13 +42,19 @@ const use_audio_frame_js_1 = require("./audio/use-audio-frame.js");
 const buffering_js_1 = require("./buffering.js");
 const calculate_media_duration_js_1 = require("./calculate-media-duration.js");
 const CanUseRemotionHooks_js_1 = require("./CanUseRemotionHooks.js");
+const composition_render_error_context_js_1 = require("./composition-render-error-context.js");
 const CompositionManager_js_1 = require("./CompositionManager.js");
 const CompositionManagerContext_js_1 = require("./CompositionManagerContext.js");
 const CompositionManagerProvider_js_1 = require("./CompositionManagerProvider.js");
 const CSSUtils = __importStar(require("./default-css.js"));
 const default_css_js_1 = require("./default-css.js");
 const EditorProps_js_1 = require("./EditorProps.js");
+const define_effect_js_1 = require("./effects/define-effect.js");
+const run_effect_chain_js_1 = require("./effects/run-effect-chain.js");
+const use_effect_chain_state_js_1 = require("./effects/use-effect-chain-state.js");
+const use_memoized_effects_js_1 = require("./effects/use-memoized-effects.js");
 const enable_sequence_stack_traces_js_1 = require("./enable-sequence-stack-traces.js");
+const flatten_schema_js_1 = require("./flatten-schema.js");
 const get_effective_visual_mode_value_js_1 = require("./get-effective-visual-mode-value.js");
 const get_preview_dom_element_js_1 = require("./get-preview-dom-element.js");
 const get_remotion_environment_js_1 = require("./get-remotion-environment.js");
@@ -69,6 +75,7 @@ const RemotionRoot_js_1 = require("./RemotionRoot.js");
 const RenderAssetManager_js_1 = require("./RenderAssetManager.js");
 const resolve_video_config_js_1 = require("./resolve-video-config.js");
 const ResolveCompositionConfig_js_1 = require("./ResolveCompositionConfig.js");
+const sequence_field_schema_js_1 = require("./sequence-field-schema.js");
 const sequence_stack_traces_js_1 = require("./sequence-stack-traces.js");
 const SequenceContext_js_1 = require("./SequenceContext.js");
 const SequenceManager_js_1 = require("./SequenceManager.js");
@@ -123,8 +130,11 @@ exports.Internals = {
     SequenceManager: SequenceManager_js_1.SequenceManager,
     SequenceStackTracesUpdateContext: sequence_stack_traces_js_1.SequenceStackTracesUpdateContext,
     SequenceVisibilityToggleContext: SequenceManager_js_1.SequenceVisibilityToggleContext,
-    useSchema: use_schema_js_1.useSchema,
     wrapInSchema: wrap_in_schema_js_1.wrapInSchema,
+    sequenceSchema: sequence_field_schema_js_1.sequenceSchema,
+    sequenceStyleSchema: sequence_field_schema_js_1.sequenceStyleSchema,
+    flattenActiveSchema: flatten_schema_js_1.flattenActiveSchema,
+    getFlatSchemaWithAllKeys: flatten_schema_js_1.getFlatSchemaWithAllKeys,
     useSequenceControlOverride: use_sequence_control_override_js_1.useSequenceControlOverride,
     RemotionRootContexts: RemotionRoot_js_1.RemotionRootContexts,
     CompositionManagerProvider: CompositionManagerProvider_js_1.CompositionManagerProvider,
@@ -146,6 +156,8 @@ exports.Internals = {
     getRemotionEnvironment: get_remotion_environment_js_1.getRemotionEnvironment,
     SharedAudioContext: shared_audio_tags_js_1.SharedAudioContext,
     SharedAudioContextProvider: shared_audio_tags_js_1.SharedAudioContextProvider,
+    SharedAudioTagsContext: shared_audio_tags_js_1.SharedAudioTagsContext,
+    SharedAudioTagsContextProvider: shared_audio_tags_js_1.SharedAudioTagsContextProvider,
     invalidCompositionErrorMessage: validate_composition_id_js_1.invalidCompositionErrorMessage,
     calculateMediaDuration: calculate_media_duration_js_1.calculateMediaDuration,
     isCompositionIdValid: validate_composition_id_js_1.isCompositionIdValid,
@@ -172,6 +184,7 @@ exports.Internals = {
     REMOTION_STUDIO_CONTAINER_ELEMENT: get_preview_dom_element_js_1.REMOTION_STUDIO_CONTAINER_ELEMENT,
     RenderAssetManager: RenderAssetManager_js_1.RenderAssetManager,
     persistCurrentFrame: timeline_position_state_js_1.persistCurrentFrame,
+    usePlaybackRate: timeline_position_state_js_1.usePlaybackRate,
     useTimelineContext: timeline_position_state_js_1.useTimelineContext,
     useTimelineSetFrame: timeline_position_state_js_1.useTimelineSetFrame,
     isIosSafari: video_fragment_js_1.isIosSafari,
@@ -184,8 +197,6 @@ exports.Internals = {
     CurrentScaleContext: use_current_scale_js_1.CurrentScaleContext,
     PreviewSizeContext: use_current_scale_js_1.PreviewSizeContext,
     calculateScale: use_current_scale_js_1.calculateScale,
-    editorPropsProviderRef: EditorProps_js_1.editorPropsProviderRef,
-    PROPS_UPDATED_EXTERNALLY: ResolveCompositionConfig_js_1.PROPS_UPDATED_EXTERNALLY,
     validateRenderAsset: validate_artifact_js_1.validateRenderAsset,
     Log: log_js_1.Log,
     LogLevelContext: log_level_context_js_1.LogLevelContext,
@@ -207,7 +218,15 @@ exports.Internals = {
     TimelinePosition,
     DelayRenderContextType: use_delay_render_js_1.DelayRenderContextType,
     TimelineContext: TimelineContext_js_1.TimelineContext,
+    PlaybackRateContext: TimelineContext_js_1.PlaybackRateContext,
     AbsoluteTimeContext: TimelineContext_js_1.AbsoluteTimeContext,
     RenderAssetManagerProvider: RenderAssetManager_js_1.RenderAssetManagerProvider,
     getEffectiveVisualModeValue: get_effective_visual_mode_value_js_1.getEffectiveVisualModeValue,
+    CompositionRenderErrorContext: composition_render_error_context_js_1.CompositionRenderErrorContext,
+    useEffectChainState: use_effect_chain_state_js_1.useEffectChainState,
+    runEffectChain: run_effect_chain_js_1.runEffectChain,
+    useMemoizedEffects: use_memoized_effects_js_1.useMemoizedEffects,
+    defineEffect: define_effect_js_1.defineEffect,
+    createDescriptor: define_effect_js_1.createDescriptor,
+    computeEffectiveSchemaValuesDotNotation: use_schema_js_1.computeEffectiveSchemaValuesDotNotation,
 };

@@ -1,0 +1,16 @@
+{
+  "apiVersion": 3,
+  "name": "nvoos/comic-reader",
+  "title": "NV oOS Comic Reader",
+  "category": "widgets",
+  "icon": "book",
+  "description": "Embeds the NV oOS Comic Reader for browsing and reading CBR/CBZ/CB7/CBT comic files.",
+  "textdomain": "nvoos-comic-reader",
+  "attributes": {
+    "id":        { "type": "integer", "default": 0 },
+    "mode":      { "type": "string",  "default": "library" },
+    "height":    { "type": "string",  "default": "" },
+    "direction": { "type": "string",  "default": "ltr" }
+  },
+  "supports": { "html": false }
+}

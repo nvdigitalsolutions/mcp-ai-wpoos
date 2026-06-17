@@ -915,7 +915,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		}
 
 		// Enforce 1 MB size limit.
-		$max_size = 1048576; // 1 MB.
+		$max_size  = 1048576; // 1 MB.
 		$file_size = filesize( $file_path );
 
 		if ( false === $file_size || $file_size > $max_size ) {
@@ -1068,8 +1068,8 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'provide_name'  => __( 'Include the "name" parameter matching an assistant slug from prompts/list.', 'mcp-ai-wpoos' ),
-						'list_prompts'  => __( 'Call prompts/list first to discover available prompt names.', 'mcp-ai-wpoos' ),
+						'provide_name' => __( 'Include the "name" parameter matching an assistant slug from prompts/list.', 'mcp-ai-wpoos' ),
+						'list_prompts' => __( 'Call prompts/list first to discover available prompt names.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -1202,7 +1202,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$arg_name = isset( $argument['name'] ) ? sanitize_text_field( $argument['name'] ) : '';
 		$arg_val  = isset( $argument['value'] ) ? sanitize_text_field( $argument['value'] ) : '';
 
-		$values  = array();
+		$values   = array();
 		$has_more = false;
 
 		if ( 'ref/tool' === $ref_type ) {
@@ -1273,8 +1273,8 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		// If the property has an enum, filter by partial match.
 		if ( isset( $prop['enum'] ) && is_array( $prop['enum'] ) ) {
-			$matches       = array();
-			$arg_value_lc  = strtolower( $arg_value );
+			$matches      = array();
+			$arg_value_lc = strtolower( $arg_value );
 			foreach ( $prop['enum'] as $candidate ) {
 				$candidate_str = (string) $candidate;
 				if ( '' === $arg_value || 0 === strpos( strtolower( $candidate_str ), $arg_value_lc ) ) {

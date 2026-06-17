@@ -247,9 +247,112 @@ class WP_MCP_AI_Ext_Cog_Settings {
 					'auto'                 => __( 'Auto (use assistant\'s provider)', 'mcp-ai-wpoos' ),
 					'gpt-4o'               => 'GPT-4o',
 					'gpt-4-vision-preview' => 'GPT-4 Vision Preview',
-					'gemini-pro-vision'    => 'Gemini Pro Vision',
-					'gemini-1.5-pro'       => 'Gemini 1.5 Pro',
+					'gemini-3.5-flash'     => 'Gemini 3.5 Flash',
+					'gemini-3.1-pro'       => 'Gemini 3.1 Pro',
 				),
+			)
+		);
+
+		// --- Vision Recognition section (new in 1.8.0) ---
+		add_settings_section(
+			'wp_mcp_ai_ext_cog_vision_recognition',
+			__( 'Vision Recognition', 'mcp-ai-wpoos-pro' ),
+			function () {
+				echo '<p>' . esc_html__( 'Configure HuggingFace vision models for product/brand detection and the taxonomized brand catalogue used for zero-shot classification.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'ext_cog_hf_detection_model',
+			__( 'Detection Model (HF)', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_ext_cog_vision_recognition',
+			array(
+				'setting_key' => 'ext_cog_hf_detection_model',
+				'description' => __( 'HuggingFace object-detection model ID. Default: google/owlv2-base-patch16.  Supports OWLv2, YOLO, DETR, and any HF object-detection pipeline.', 'mcp-ai-wpoos-pro' ),
+				'placeholder' => 'google/owlv2-base-patch16',
+			)
+		);
+
+		add_settings_field(
+			'ext_cog_hf_classification_model',
+			__( 'Classification Model (HF)', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_ext_cog_vision_recognition',
+			array(
+				'setting_key' => 'ext_cog_hf_classification_model',
+				'description' => __( 'HuggingFace zero-shot image classification model ID. Default: patrickjohncyh/fashion-clip.  Also supports openai/clip-vit-large-patch14 and other CLIP variants.', 'mcp-ai-wpoos-pro' ),
+				'placeholder' => 'patrickjohncyh/fashion-clip',
+			)
+		);
+
+		add_settings_field(
+			'ext_cog_hf_embedding_model',
+			__( 'Embedding Model (HF)', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_ext_cog_vision_recognition',
+			array(
+				'setting_key' => 'ext_cog_hf_embedding_model',
+				'description' => __( 'HuggingFace image feature-extraction model ID. Default: facebook/dinov2-large.  Used for the "similarity" search mode in recognize_products.', 'mcp-ai-wpoos-pro' ),
+				'placeholder' => 'facebook/dinov2-large',
+			)
+		);
+
+		add_settings_field(
+			'ext_cog_min_detection_confidence',
+			__( 'Min Detection Confidence', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_number' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_ext_cog_vision_recognition',
+			array(
+				'setting_key' => 'ext_cog_min_detection_confidence',
+				'min'         => 0.1,
+				'max'         => 1.0,
+				'step'        => 0.05,
+				'description' => __( 'Default minimum confidence threshold (0.0–1.0). Detections below this are filtered out. Default: 0.5.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+
+		add_settings_field(
+			'ext_cog_enable_video_analysis',
+			__( 'Enable Video Feed Analysis', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_checkbox' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_ext_cog_vision_recognition',
+			array(
+				'setting_key' => 'ext_cog_enable_video_analysis',
+				'description' => __( 'Enable the analyze_video_feed tool.  Uses more compute and may dispatch background jobs via Action Scheduler.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+
+		add_settings_field(
+			'ext_cog_max_video_frames',
+			__( 'Max Video Frames', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_number' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_ext_cog_vision_recognition',
+			array(
+				'setting_key' => 'ext_cog_max_video_frames',
+				'min'         => 1,
+				'max'         => 600,
+				'description' => __( 'Maximum number of frames to extract and analyze from a single video.  Default: 60.  Frames beyond 30 are dispatched to Action Scheduler background jobs.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+
+		add_settings_field(
+			'ext_cog_brand_catalog',
+			__( 'Default Brand Catalogue', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_textarea' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_ext_cog_vision_recognition',
+			array(
+				'setting_key' => 'ext_cog_brand_catalog',
+				'description' => __( 'Comma-separated brand names used as fallback zero-shot labels when no explicit labels are provided at tool-call time.  The Product Brands taxonomy (under the Ext. Cognition admin menu) is the primary catalogue; this textarea is a quick-start alternative.', 'mcp-ai-wpoos-pro' ),
+				'rows'        => 6,
 			)
 		);
 	}
@@ -289,17 +392,36 @@ class WP_MCP_AI_Ext_Cog_Settings {
 			? max( 100, min( 10240, absint( $input['ext_cog_max_capture_size_kb'] ) ) )
 			: 2048;
 
-		$allowed_models = array( 'auto', 'gpt-4o', 'gpt-4-vision-preview', 'gemini-pro-vision', 'gemini-1.5-pro' );
-		$submitted_model = isset( $input['ext_cog_vision_model'] ) ? $input['ext_cog_vision_model'] : 'auto';
-		$current['ext_cog_vision_model'] = in_array( $submitted_model, $allowed_models, true )
-			? sanitize_text_field( $submitted_model )
-			: 'auto';
+		$allowed_models                  = array( 'auto', 'gpt-4o', 'gpt-4-vision-preview', 'gemini-3.5-flash', 'gemini-3.1-pro' );
+			$submitted_model                 = isset( $input['ext_cog_vision_model'] ) ? $input['ext_cog_vision_model'] : 'auto';
+			$current['ext_cog_vision_model'] = in_array( $submitted_model, $allowed_models, true )
+				? sanitize_text_field( $submitted_model )
+				: 'auto';
 
-		if ( isset( $input['ext_cog_allowed_roles'] ) && is_array( $input['ext_cog_allowed_roles'] ) ) {
-			$current['ext_cog_allowed_roles'] = array_map( 'sanitize_text_field', $input['ext_cog_allowed_roles'] );
-		} elseif ( ! isset( $current['ext_cog_allowed_roles'] ) ) {
-			$current['ext_cog_allowed_roles'] = array( 'administrator', 'editor' );
-		}
+			// Vision recognition settings (1.8.0).
+			$current['ext_cog_hf_detection_model']      = isset( $input['ext_cog_hf_detection_model'] ) ? sanitize_text_field( $input['ext_cog_hf_detection_model'] ) : '';
+			$current['ext_cog_hf_classification_model'] = isset( $input['ext_cog_hf_classification_model'] ) ? sanitize_text_field( $input['ext_cog_hf_classification_model'] ) : '';
+			$current['ext_cog_hf_embedding_model']      = isset( $input['ext_cog_hf_embedding_model'] ) ? sanitize_text_field( $input['ext_cog_hf_embedding_model'] ) : '';
+
+			$current['ext_cog_min_detection_confidence'] = isset( $input['ext_cog_min_detection_confidence'] )
+				? max( 0.1, min( 1.0, (float) $input['ext_cog_min_detection_confidence'] ) )
+				: 0.5;
+
+			$current['ext_cog_enable_video_analysis'] = ! empty( $input['ext_cog_enable_video_analysis'] );
+
+			$current['ext_cog_max_video_frames'] = isset( $input['ext_cog_max_video_frames'] )
+				? max( 1, min( 600, absint( $input['ext_cog_max_video_frames'] ) ) )
+				: 60;
+
+			$current['ext_cog_brand_catalog'] = isset( $input['ext_cog_brand_catalog'] )
+				? sanitize_textarea_field( $input['ext_cog_brand_catalog'] )
+				: '';
+
+			if ( isset( $input['ext_cog_allowed_roles'] ) && is_array( $input['ext_cog_allowed_roles'] ) ) {
+				$current['ext_cog_allowed_roles'] = array_map( 'sanitize_text_field', $input['ext_cog_allowed_roles'] );
+			} elseif ( ! isset( $current['ext_cog_allowed_roles'] ) ) {
+				$current['ext_cog_allowed_roles'] = array( 'administrator', 'editor' );
+			}
 
 		return $current;
 	}
@@ -389,6 +511,48 @@ class WP_MCP_AI_Ext_Cog_Settings {
 				</option>
 			<?php endforeach; ?>
 		</select>
+		<?php if ( ! empty( $args['description'] ) ) : ?>
+			<p class="description"><?php echo esc_html( $args['description'] ); ?></p>
+		<?php endif; ?>
+		<?php
+	}
+
+	/**
+	 * Render a text field.
+	 *
+	 * @param array $args Field arguments including 'setting_key', 'placeholder', 'description'.
+	 * @return void
+	 */
+	public static function render_text( $args ) {
+		$all   = get_option( self::OPTION_NAME, array() );
+		$value = isset( $all[ $args['setting_key'] ] ) ? $all[ $args['setting_key'] ] : '';
+		?>
+		<input type="text"
+			name="<?php echo esc_attr( self::OPTION_NAME . '[' . $args['setting_key'] . ']' ); ?>"
+			value="<?php echo esc_attr( $value ); ?>"
+			placeholder="<?php echo esc_attr( $args['placeholder'] ?? '' ); ?>"
+			class="regular-text" />
+		<?php if ( ! empty( $args['description'] ) ) : ?>
+			<p class="description"><?php echo esc_html( $args['description'] ); ?></p>
+		<?php endif; ?>
+		<?php
+	}
+
+	/**
+	 * Render a textarea field.
+	 *
+	 * @param array $args Field arguments including 'setting_key', 'rows', 'description'.
+	 * @return void
+	 */
+	public static function render_textarea( $args ) {
+		$all   = get_option( self::OPTION_NAME, array() );
+		$value = isset( $all[ $args['setting_key'] ] ) ? $all[ $args['setting_key'] ] : '';
+		$rows  = isset( $args['rows'] ) ? absint( $args['rows'] ) : 5;
+		?>
+		<textarea
+			name="<?php echo esc_attr( self::OPTION_NAME . '[' . $args['setting_key'] . ']' ); ?>"
+			rows="<?php echo esc_attr( $rows ); ?>"
+			class="large-text"><?php echo esc_textarea( $value ); ?></textarea>
 		<?php if ( ! empty( $args['description'] ) ) : ?>
 			<p class="description"><?php echo esc_html( $args['description'] ); ?></p>
 		<?php endif; ?>

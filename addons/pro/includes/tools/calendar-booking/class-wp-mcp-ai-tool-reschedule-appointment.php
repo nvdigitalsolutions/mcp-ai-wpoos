@@ -33,6 +33,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 2.6.0
@@ -311,7 +318,7 @@ class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface,
 		$args = array(
 			'post_type'      => 'mcp_appointment',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'reschedule_appointment', 0, 500 ) : 500,
 			'post__not_in'   => array( $appointment_id ),
 			'meta_query'     => array(
 				'relation' => 'AND',

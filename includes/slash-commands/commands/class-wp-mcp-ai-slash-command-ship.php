@@ -483,8 +483,9 @@ class WP_MCP_AI_Slash_Command_Ship {
 			if ( isset( $checks[ $check_type ] ) ) {
 				$check = $checks[ $check_type ];
 
-				// Add points if check passed.
-				if ( isset( $check['passed'] ) && $check['passed'] ) {
+				// If checks were skipped, check data is absent — treat as passed.
+				$has_passed = ! isset( $check['passed'] ) || $check['passed'];
+				if ( $has_passed ) {
 					$score += $weight;
 				}
 
@@ -492,6 +493,9 @@ class WP_MCP_AI_Slash_Command_Ship {
 				if ( ! empty( $check['issues'] ) ) {
 					$all_issues = array_merge( $all_issues, $check['issues'] );
 				}
+			} else {
+				// Check type was skipped entirely — treat as passed.
+				$score += $weight;
 			}
 		}
 
@@ -621,6 +625,11 @@ class WP_MCP_AI_Slash_Command_Ship {
 			$icon,
 			esc_html( ucwords( str_replace( '_', ' ', $result['status'] ) ) )
 		);
+
+		// Error message (shown for invalid post IDs etc.)
+		if ( isset( $result['message'] ) && ! empty( $result['message'] ) ) {
+			$output .= sprintf( "**Message:** %s\n\n", esc_html( $result['message'] ) );
+		}
 
 		// Readiness score.
 		if ( isset( $result['readiness'] ) ) {

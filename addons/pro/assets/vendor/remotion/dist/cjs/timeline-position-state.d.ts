@@ -1,5 +1,5 @@
 import type { MutableRefObject } from 'react';
-import { type TimelineContextValue } from './TimelineContext.js';
+import { type PlaybackRateContextValue, type TimelineContextValue } from './TimelineContext.js';
 export type PlayableMediaTag = {
     play: (reason: string) => void;
     id: string;
@@ -9,6 +9,7 @@ export declare const persistCurrentFrame: (time: CurrentTimePerComposition) => v
 export declare const getInitialFrameState: () => CurrentTimePerComposition;
 export declare const getFrameForComposition: (composition: string) => number;
 export declare const useTimelineContext: () => TimelineContextValue;
+export declare const usePlaybackRate: () => PlaybackRateContextValue;
 export declare const useTimelinePosition: () => number;
 export declare const useAbsoluteTimelinePosition: () => number;
 export declare const useTimelineSetFrame: () => ((u: React.SetStateAction<Record<string, number>>) => void);

@@ -69,43 +69,43 @@ class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'property_value'    => array(
+				'property_value'   => array(
 					'type'        => 'number',
 					'description' => __( 'Appraised property value.', 'mcp-ai-wpoos-pro' ),
 				),
-				'noi'               => array(
+				'noi'              => array(
 					'type'        => 'number',
 					'description' => __( 'Annual Net Operating Income.', 'mcp-ai-wpoos-pro' ),
 				),
-				'interest_rate'     => array(
+				'interest_rate'    => array(
 					'type'        => 'number',
 					'description' => __( 'Annual interest rate as decimal (e.g. 0.065 for 6.5%).', 'mcp-ai-wpoos-pro' ),
 				),
-				'amort_years'       => array(
+				'amort_years'      => array(
 					'type'        => 'number',
 					'description' => __( 'Amortization period in years (e.g. 30).', 'mcp-ai-wpoos-pro' ),
 				),
-				'max_ltv'           => array(
+				'max_ltv'          => array(
 					'type'        => 'number',
 					'description' => __( 'Maximum LTV as decimal (e.g. 0.75 for 75%).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0.75,
 				),
-				'min_dscr'          => array(
+				'min_dscr'         => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum DSCR (e.g. 1.25).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1.25,
 				),
-				'min_debt_yield'    => array(
+				'min_debt_yield'   => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum debt yield as decimal (e.g. 0.10 for 10%).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0.10,
 				),
-				'io_period_months'  => array(
+				'io_period_months' => array(
 					'type'        => 'integer',
 					'description' => __( 'Interest-only period in months (0 for none).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'loan_term_months'  => array(
+				'loan_term_months' => array(
 					'type'        => 'integer',
 					'description' => __( 'Loan term in months (e.g. 120 for 10 years).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 120,
@@ -123,7 +123,20 @@ class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -190,7 +203,7 @@ class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			$yr_principal += $row['principal'];
 			$yr_interest  += $row['interest'];
 			$yr_payments  += $row['payment'];
-			if ( $row['month'] % 12 === 0 || $row['month'] === $loan_term_months ) {
+			if ( 0 === $row['month'] % 12 || $loan_term_months === $row['month'] ) {
 				$yearly_summary[] = array(
 					'year'      => (int) ceil( $row['month'] / 12 ),
 					'principal' => round( $yr_principal, 2 ),
@@ -198,9 +211,9 @@ class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'payments'  => round( $yr_payments, 2 ),
 					'balance'   => $row['balance'],
 				);
-				$yr_principal = 0.0;
-				$yr_interest  = 0.0;
-				$yr_payments  = 0.0;
+				$yr_principal     = 0.0;
+				$yr_interest      = 0.0;
+				$yr_payments      = 0.0;
 			}
 		}
 
@@ -216,19 +229,19 @@ class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'binding_constraint' => $sizing['binding_constraint'],
 				),
 				'resulting_metrics' => array(
-					'ltv'                => $calc::format_percentage( $ltv ),
-					'dscr'               => round( $dscr, 2 ) . 'x',
-					'debt_yield'         => $calc::format_percentage( $debt_yield ),
+					'ltv'                 => $calc::format_percentage( $ltv ),
+					'dscr'                => round( $dscr, 2 ) . 'x',
+					'debt_yield'          => $calc::format_percentage( $debt_yield ),
 					'annual_debt_service' => $calc::format_currency( $annual_ds ),
-					'equity_required'    => $calc::format_currency( $equity ),
+					'equity_required'     => $calc::format_currency( $equity ),
 				),
 				'loan_terms'        => array(
-					'interest_rate'      => $calc::format_percentage( $interest_rate ),
-					'amort_period'       => $amort_years . ' years',
-					'loan_term'          => ( $loan_term_months / 12 ) . ' years',
-					'io_period'          => $io_months . ' months',
-					'balloon_payment'    => $calc::format_currency( $amort['balloon_payment'] ),
-					'total_interest'     => $calc::format_currency( $amort['total_interest'] ),
+					'interest_rate'   => $calc::format_percentage( $interest_rate ),
+					'amort_period'    => $amort_years . ' years',
+					'loan_term'       => ( $loan_term_months / 12 ) . ' years',
+					'io_period'       => $io_months . ' months',
+					'balloon_payment' => $calc::format_currency( $amort['balloon_payment'] ),
+					'total_interest'  => $calc::format_currency( $amort['total_interest'] ),
 				),
 				'annual_schedule'   => $yearly_summary,
 			),

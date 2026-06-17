@@ -179,6 +179,13 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -1147,6 +1154,17 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return new WP_Error(
 				'wp_mcp_ai_schedule_failed',
 				__( 'Failed to schedule background research. WordPress cron may not be working.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Register in Cron Manager so the job is visible and monitorable.
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			WP_MCP_AI_Cron_Manager::record_job(
+				'wp_mcp_ai_deep_research_background',
+				array( $job_id ),
+				'single',
+				time() + 10,
+				absint( $user_id )
 			);
 		}
 

@@ -157,7 +157,9 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				KEY created_at (created_at)
 			) $charset_collate;";
 
-			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			if ( ! function_exists( 'dbDelta' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			}
 			dbDelta( $sql );
 		}
 
@@ -257,7 +259,168 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				);
 			}
 
+			// Phase 4: when Action Scheduler is available, dispatch the job for
+			// immediate execution instead of waiting for the WP-Cron tick. The
+			// legacy `process_queue` path stays in place as a safety net.
+			self::maybe_enqueue_through_scheduler_bridge( $job_id );
+
 			return $job_id;
+		}
+
+		/**
+		 * Whether the Phase 4 Action Scheduler bridge is loaded and usable.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return bool
+		 */
+		protected static function is_scheduler_bridge_available() {
+			return class_exists( 'WP_MCP_AI_Async_Scheduler_Bridge' )
+				&& WP_MCP_AI_Async_Scheduler_Bridge::is_available();
+		}
+
+		/**
+		 * Dispatch a job through the Action Scheduler bridge if available.
+		 *
+		 * Safe no-op when the bridge isn't loaded — callers can invoke this
+		 * unconditionally and the legacy WP-Cron path takes over.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $job_id Job ID.
+		 * @return void
+		 */
+		protected static function maybe_enqueue_through_scheduler_bridge( $job_id ) {
+			if ( ! self::is_scheduler_bridge_available() ) {
+				return;
+			}
+			WP_MCP_AI_Async_Scheduler_Bridge::enqueue_job( (int) $job_id );
+		}
+
+		/**
+		 * Process a single queued job by ID.
+		 *
+		 * Mirrors `process_queue()` but targets a specific row, so the Action
+		 * Scheduler bridge can dispatch jobs individually instead of polling
+		 * once per minute. Idempotent: jobs that are already running, completed,
+		 * or cancelled are silently skipped.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $job_id Job ID.
+		 * @return void
+		 */
+		public static function process_specific_job( $job_id ) {
+			global $wpdb;
+
+			$job_id = (int) $job_id;
+			if ( $job_id <= 0 ) {
+				return;
+			}
+
+			$table_name = $wpdb->prefix . self::TABLE_NAME;
+
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
+			$job = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM $table_name WHERE id = %d AND status = %s",
+					$job_id,
+					self::STATUS_QUEUED
+				),
+				ARRAY_A
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+			if ( ! $job ) {
+				return;
+			}
+
+			// Update job status to running.
+			self::update_job(
+				$job['id'],
+				array(
+					'status'     => self::STATUS_RUNNING,
+					'started_at' => current_time( 'mysql' ),
+				)
+			);
+
+			// Decode job data with a defensive guard against corrupted rows.
+			$decoded_job_data = json_decode( $job['job_data'], true );
+			if ( ! is_array( $decoded_job_data ) ) {
+				self::update_job(
+					$job['id'],
+					array(
+						'status'       => self::STATUS_FAILED,
+						'error'        => array(
+							'message' => __( 'Job data is not valid JSON.', 'mcp-ai-wpoos' ),
+							'code'    => 'invalid_job_data',
+						),
+						'completed_at' => current_time( 'mysql' ),
+					)
+				);
+				return;
+			}
+			$job['job_data'] = $decoded_job_data;
+
+			// Defensive defaults for older rows that may pre-date these columns.
+			$retries     = isset( $job['retries'] ) ? (int) $job['retries'] : 0;
+			$max_retries = isset( $job['max_retries'] ) ? (int) $job['max_retries'] : self::MAX_RETRIES;
+
+			try {
+				$result = self::execute_job( $job );
+
+				self::update_job(
+					$job['id'],
+					array(
+						'status'       => self::STATUS_COMPLETED,
+						'progress'     => 100,
+						'result'       => $result,
+						'completed_at' => current_time( 'mysql' ),
+					)
+				);
+
+				self::send_webhook_notification( $job, $result );
+
+			} catch ( Exception $e ) {
+				$error = array(
+					'message' => $e->getMessage(),
+					'code'    => $e->getCode(),
+					'trace'   => $e->getTraceAsString(),
+				);
+
+				if ( $retries < $max_retries ) {
+					self::update_job(
+						$job['id'],
+						array(
+							'status'  => self::STATUS_QUEUED,
+							'error'   => $error,
+							'retries' => $retries + 1,
+						)
+					);
+
+					// Re-enqueue with Action Scheduler so the retry runs ASAP
+					// rather than waiting for the next WP-Cron tick.
+					self::maybe_enqueue_through_scheduler_bridge( (int) $job['id'] );
+				} else {
+					self::update_job(
+						$job['id'],
+						array(
+							'status'       => self::STATUS_FAILED,
+							'error'        => $error,
+							'completed_at' => current_time( 'mysql' ),
+						)
+					);
+
+					if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+						WP_MCP_AI_Dead_Letter_Queue::add_to_queue(
+							'async_job',
+							$job['job_data'],
+							$error
+						);
+					}
+				}
+			}
 		}
 
 		/**

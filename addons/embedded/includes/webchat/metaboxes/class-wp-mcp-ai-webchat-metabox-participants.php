@@ -177,7 +177,7 @@ class WP_MCP_AI_WebChat_Metabox_Participants extends WP_MCP_AI_WebChat_Metabox_B
 	 */
 	protected function get_participants( $post_id ) {
 		$participants = get_post_meta( $post_id, '_mcp_ai_webchat_participants', true );
-		
+
 		if ( ! is_array( $participants ) ) {
 			return array();
 		}
@@ -186,7 +186,7 @@ class WP_MCP_AI_WebChat_Metabox_Participants extends WP_MCP_AI_WebChat_Metabox_B
 		$current_time = time();
 		$participants = array_filter(
 			$participants,
-			function( $participant ) use ( $current_time ) {
+			function ( $participant ) use ( $current_time ) {
 				return isset( $participant['last_seen'] ) && ( $current_time - $participant['last_seen'] ) < 300;
 			}
 		);
@@ -220,9 +220,9 @@ class WP_MCP_AI_WebChat_Metabox_Participants extends WP_MCP_AI_WebChat_Metabox_B
 		if ( empty( $timestamp ) ) {
 			return __( 'Unknown', 'mcp-ai-wpoos-pro' );
 		}
-		
+
 		$time_diff = time() - $timestamp;
-		
+
 		if ( $time_diff < 60 ) {
 			return __( 'Just now', 'mcp-ai-wpoos-pro' );
 		} elseif ( $time_diff < 3600 ) {

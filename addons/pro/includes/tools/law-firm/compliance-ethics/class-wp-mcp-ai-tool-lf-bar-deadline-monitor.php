@@ -23,20 +23,27 @@ class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * State bar deadline data.
 	 *
 	 * @var array
 	 */
 	private static $state_bar_data = array(
 		'CA' => array(
-			'name'            => 'California',
-			'bar_name'        => 'State Bar of California',
-			'cle_hours'       => 25,
-			'cle_period'      => '3 years',
-			'ethics_hours'    => 4,
+			'name'             => 'California',
+			'bar_name'         => 'State Bar of California',
+			'cle_hours'        => 25,
+			'cle_period'       => '3 years',
+			'ethics_hours'     => 4,
 			'competence_hours' => 1,
-			'renewal_month'   => 2,
-			'deadlines'       => array(
+			'renewal_month'    => 2,
+			'deadlines'        => array(
 				array(
 					'type'        => 'cle_compliance',
 					'description' => 'CLE compliance reporting',
@@ -55,14 +62,14 @@ class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface
 			),
 		),
 		'NY' => array(
-			'name'            => 'New York',
-			'bar_name'        => 'New York State Bar Association',
-			'cle_hours'       => 24,
-			'cle_period'      => '2 years',
-			'ethics_hours'    => 4,
+			'name'             => 'New York',
+			'bar_name'         => 'New York State Bar Association',
+			'cle_hours'        => 24,
+			'cle_period'       => '2 years',
+			'ethics_hours'     => 4,
 			'competence_hours' => 1,
-			'renewal_month'   => 7,
-			'deadlines'       => array(
+			'renewal_month'    => 7,
+			'deadlines'        => array(
 				array(
 					'type'        => 'cle_compliance',
 					'description' => 'Biennial CLE compliance',
@@ -81,14 +88,14 @@ class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface
 			),
 		),
 		'TX' => array(
-			'name'            => 'Texas',
-			'bar_name'        => 'State Bar of Texas',
-			'cle_hours'       => 15,
-			'cle_period'      => '1 year',
-			'ethics_hours'    => 3,
+			'name'             => 'Texas',
+			'bar_name'         => 'State Bar of Texas',
+			'cle_hours'        => 15,
+			'cle_period'       => '1 year',
+			'ethics_hours'     => 3,
 			'competence_hours' => 0,
-			'renewal_month'   => 6,
-			'deadlines'       => array(
+			'renewal_month'    => 6,
+			'deadlines'        => array(
 				array(
 					'type'        => 'cle_compliance',
 					'description' => 'Annual MCLE compliance',
@@ -107,14 +114,14 @@ class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface
 			),
 		),
 		'FL' => array(
-			'name'            => 'Florida',
-			'bar_name'        => 'The Florida Bar',
-			'cle_hours'       => 33,
-			'cle_period'      => '3 years',
-			'ethics_hours'    => 5,
+			'name'             => 'Florida',
+			'bar_name'         => 'The Florida Bar',
+			'cle_hours'        => 33,
+			'cle_period'       => '3 years',
+			'ethics_hours'     => 5,
 			'competence_hours' => 3,
-			'renewal_month'   => 1,
-			'deadlines'       => array(
+			'renewal_month'    => 1,
+			'deadlines'        => array(
 				array(
 					'type'        => 'cle_compliance',
 					'description' => 'CLE compliance reporting',
@@ -133,14 +140,14 @@ class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface
 			),
 		),
 		'IL' => array(
-			'name'            => 'Illinois',
-			'bar_name'        => 'Attorney Registration and Disciplinary Commission',
-			'cle_hours'       => 30,
-			'cle_period'      => '2 years',
-			'ethics_hours'    => 6,
+			'name'             => 'Illinois',
+			'bar_name'         => 'Attorney Registration and Disciplinary Commission',
+			'cle_hours'        => 30,
+			'cle_period'       => '2 years',
+			'ethics_hours'     => 6,
 			'competence_hours' => 0,
-			'renewal_month'   => 1,
-			'deadlines'       => array(
+			'renewal_month'    => 1,
+			'deadlines'        => array(
 				array(
 					'type'        => 'cle_compliance',
 					'description' => 'Biennial MCLE compliance',
@@ -234,6 +241,9 @@ class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -276,7 +286,7 @@ class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		$deadlines         = $state_data['deadlines'];
+		$deadlines          = $state_data['deadlines'];
 		$attorney_deadlines = array();
 
 		// If an attorney ID is provided, check their stored deadline data.
@@ -300,7 +310,7 @@ class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface
 					$next_cle     = gmdate( 'Y-m-d', strtotime( $last_cle_report . ' + ' . $period_years . ' years' ) );
 
 					$attorney_deadlines['next_cle_deadline'] = $next_cle;
-					$days_until = ( strtotime( $next_cle ) - time() ) / DAY_IN_SECONDS;
+					$days_until                              = ( strtotime( $next_cle ) - time() ) / DAY_IN_SECONDS;
 
 					if ( $days_until < 0 ) {
 						$attorney_deadlines['cle_status'] = 'overdue';

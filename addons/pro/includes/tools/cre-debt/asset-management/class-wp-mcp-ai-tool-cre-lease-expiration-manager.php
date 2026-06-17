@@ -76,23 +76,23 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'tenant_name'            => array(
+							'tenant_name'             => array(
 								'type'        => 'string',
 								'description' => __( 'Tenant name.', 'mcp-ai-wpoos-pro' ),
 							),
-							'suite'                  => array(
+							'suite'                   => array(
 								'type'        => 'string',
 								'description' => __( 'Suite or unit number.', 'mcp-ai-wpoos-pro' ),
 							),
-							'sf'                     => array(
+							'sf'                      => array(
 								'type'        => 'number',
 								'description' => __( 'Leased square footage.', 'mcp-ai-wpoos-pro' ),
 							),
-							'annual_rent'            => array(
+							'annual_rent'             => array(
 								'type'        => 'number',
 								'description' => __( 'Annual base rent.', 'mcp-ai-wpoos-pro' ),
 							),
-							'lease_end'              => array(
+							'lease_end'               => array(
 								'type'        => 'string',
 								'description' => __( 'Lease expiration date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 							),
@@ -101,22 +101,22 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 								'description' => __( 'Probability the tenant renews (0-100). Default 70.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 70,
 							),
-							'downtime_months'        => array(
+							'downtime_months'         => array(
 								'type'        => 'number',
 								'description' => __( 'Expected months of vacancy if tenant vacates. Default 3.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 3,
 							),
-							'ti_per_sf'              => array(
+							'ti_per_sf'               => array(
 								'type'        => 'number',
 								'description' => __( 'Tenant improvement allowance per SF for new tenant. Default 20.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 20,
 							),
-							'lc_pct'                 => array(
+							'lc_pct'                  => array(
 								'type'        => 'number',
 								'description' => __( 'Leasing commission as percentage of annual rent. Default 5.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 5,
 							),
-							'market_rent_per_sf'     => array(
+							'market_rent_per_sf'      => array(
 								'type'        => 'number',
 								'description' => __( 'Current market rent per SF. If provided, enables mark-to-market analysis.', 'mcp-ai-wpoos-pro' ),
 							),
@@ -137,7 +137,20 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -156,8 +169,8 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
 		// Parse leases and group by expiration year.
-		$grand_total_sf  = 0.0;
-		$leases_by_year  = array();
+		$grand_total_sf = 0.0;
+		$leases_by_year = array();
 
 		foreach ( $raw_leases as $raw ) {
 			$sf = (float) ( $raw['sf'] ?? 0 );
@@ -165,15 +178,15 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 				continue;
 			}
 
-			$tenant_name  = sanitize_text_field( $raw['tenant_name'] ?? '' );
-			$suite        = sanitize_text_field( $raw['suite'] ?? '' );
-			$annual_rent  = (float) ( $raw['annual_rent'] ?? 0 );
-			$lease_end    = sanitize_text_field( $raw['lease_end'] ?? '' );
-			$renewal_pct  = (float) ( $raw['renewal_probability_pct'] ?? 70 );
-			$downtime_mo  = (float) ( $raw['downtime_months'] ?? 3 );
-			$ti_per_sf    = (float) ( $raw['ti_per_sf'] ?? 20 );
-			$lc_pct       = (float) ( $raw['lc_pct'] ?? 5 );
-			$market_psf   = isset( $raw['market_rent_per_sf'] ) ? (float) $raw['market_rent_per_sf'] : null;
+			$tenant_name = sanitize_text_field( $raw['tenant_name'] ?? '' );
+			$suite       = sanitize_text_field( $raw['suite'] ?? '' );
+			$annual_rent = (float) ( $raw['annual_rent'] ?? 0 );
+			$lease_end   = sanitize_text_field( $raw['lease_end'] ?? '' );
+			$renewal_pct = (float) ( $raw['renewal_probability_pct'] ?? 70 );
+			$downtime_mo = (float) ( $raw['downtime_months'] ?? 3 );
+			$ti_per_sf   = (float) ( $raw['ti_per_sf'] ?? 20 );
+			$lc_pct      = (float) ( $raw['lc_pct'] ?? 5 );
+			$market_psf  = isset( $raw['market_rent_per_sf'] ) ? (float) $raw['market_rent_per_sf'] : null;
 
 			$exp_year = (int) substr( $lease_end, 0, 4 );
 			if ( $exp_year <= 0 ) {
@@ -182,15 +195,15 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 
 			$grand_total_sf += $sf;
 
-			$current_psf       = ( $sf > 0 ) ? $annual_rent / $sf : 0;
-			$mtm_per_sf        = ( null !== $market_psf ) ? $market_psf - $current_psf : 0;
-			$mtm_total         = $mtm_per_sf * $sf;
-			$renewal_decimal   = $renewal_pct / 100;
-			$vacancy_cost      = $annual_rent / 12 * $downtime_mo * ( 1 - $renewal_decimal );
-			$new_tenant_ti     = $ti_per_sf * $sf * ( 1 - $renewal_decimal );
-			$renewal_ti        = $ti_per_sf * 0.5 * $sf * $renewal_decimal;
-			$total_ti          = $new_tenant_ti + $renewal_ti;
-			$lc_cost           = $annual_rent * $lc_pct / 100;
+			$current_psf     = ( $sf > 0 ) ? $annual_rent / $sf : 0;
+			$mtm_per_sf      = ( null !== $market_psf ) ? $market_psf - $current_psf : 0;
+			$mtm_total       = $mtm_per_sf * $sf;
+			$renewal_decimal = $renewal_pct / 100;
+			$vacancy_cost    = $annual_rent / 12 * $downtime_mo * ( 1 - $renewal_decimal );
+			$new_tenant_ti   = $ti_per_sf * $sf * ( 1 - $renewal_decimal );
+			$renewal_ti      = $ti_per_sf * 0.5 * $sf * $renewal_decimal;
+			$total_ti        = $new_tenant_ti + $renewal_ti;
+			$lc_cost         = $annual_rent * $lc_pct / 100;
 
 			$lease_detail = array(
 				'tenant_name'             => $tenant_name,
@@ -222,7 +235,7 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 				);
 			}
 
-			$leases_by_year[ $exp_year ]['leases'][]          = $lease_detail;
+			$leases_by_year[ $exp_year ]['leases'][]           = $lease_detail;
 			$leases_by_year[ $exp_year ]['total_sf']          += $sf;
 			$leases_by_year[ $exp_year ]['total_annual_rent'] += $annual_rent;
 			$leases_by_year[ $exp_year ]['weighted_renewal']  += $renewal_pct * $sf;
@@ -239,31 +252,31 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 		// Build year-level summaries.
 		ksort( $leases_by_year );
 
-		$year_summaries         = array();
-		$portfolio_vacancy      = 0.0;
-		$portfolio_ti           = 0.0;
-		$portfolio_lc           = 0.0;
-		$portfolio_mtm          = 0.0;
-		$portfolio_rent         = 0.0;
-		$portfolio_sf_expiring  = 0.0;
+		$year_summaries        = array();
+		$portfolio_vacancy     = 0.0;
+		$portfolio_ti          = 0.0;
+		$portfolio_lc          = 0.0;
+		$portfolio_mtm         = 0.0;
+		$portfolio_rent        = 0.0;
+		$portfolio_sf_expiring = 0.0;
 
 		foreach ( $leases_by_year as $year => $group ) {
-			$yr_sf           = $group['total_sf'];
-			$pct_portfolio   = ( $grand_total_sf > 0 ) ? $yr_sf / $grand_total_sf * 100 : 0;
-			$wtd_renewal     = ( $yr_sf > 0 ) ? $group['weighted_renewal'] / $yr_sf : 0;
+			$yr_sf         = $group['total_sf'];
+			$pct_portfolio = ( $grand_total_sf > 0 ) ? $yr_sf / $grand_total_sf * 100 : 0;
+			$wtd_renewal   = ( $yr_sf > 0 ) ? $group['weighted_renewal'] / $yr_sf : 0;
 
 			$year_summaries[] = array(
-				'year'                        => $year,
-				'lease_count'                 => count( $group['leases'] ),
-				'total_sf_expiring'           => $yr_sf,
-				'pct_of_portfolio'            => round( $pct_portfolio, 1 ) . '%',
-				'total_annual_rent'           => $calc::format_currency( $group['total_annual_rent'] ),
+				'year'                         => $year,
+				'lease_count'                  => count( $group['leases'] ),
+				'total_sf_expiring'            => $yr_sf,
+				'pct_of_portfolio'             => round( $pct_portfolio, 1 ) . '%',
+				'total_annual_rent'            => $calc::format_currency( $group['total_annual_rent'] ),
 				'weighted_renewal_probability' => round( $wtd_renewal, 1 ) . '%',
-				'total_vacancy_cost'          => $calc::format_currency( $group['total_vacancy'] ),
-				'total_ti_exposure'           => $calc::format_currency( $group['total_ti'] ),
-				'total_lc_exposure'           => $calc::format_currency( $group['total_lc'] ),
-				'net_mark_to_market'          => $calc::format_currency( $group['net_mtm'] ),
-				'leases'                      => $group['leases'],
+				'total_vacancy_cost'           => $calc::format_currency( $group['total_vacancy'] ),
+				'total_ti_exposure'            => $calc::format_currency( $group['total_ti'] ),
+				'total_lc_exposure'            => $calc::format_currency( $group['total_lc'] ),
+				'net_mark_to_market'           => $calc::format_currency( $group['net_mtm'] ),
+				'leases'                       => $group['leases'],
 			);
 
 			$portfolio_vacancy     += $group['total_vacancy'];
@@ -278,15 +291,15 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 			'success'    => true,
 			'message'    => __( 'Lease expiration analysis complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'       => array(
-				'portfolio_summary' => array(
-					'total_sf'               => $grand_total_sf,
-					'total_sf_expiring'      => $portfolio_sf_expiring,
-					'total_annual_rent'      => $calc::format_currency( $portfolio_rent ),
-					'total_vacancy_cost'     => $calc::format_currency( $portfolio_vacancy ),
-					'total_ti_exposure'      => $calc::format_currency( $portfolio_ti ),
-					'total_lc_exposure'      => $calc::format_currency( $portfolio_lc ),
-					'net_mark_to_market'     => $calc::format_currency( $portfolio_mtm ),
-					'total_exposure'         => $calc::format_currency( $portfolio_vacancy + $portfolio_ti + $portfolio_lc ),
+				'portfolio_summary'   => array(
+					'total_sf'           => $grand_total_sf,
+					'total_sf_expiring'  => $portfolio_sf_expiring,
+					'total_annual_rent'  => $calc::format_currency( $portfolio_rent ),
+					'total_vacancy_cost' => $calc::format_currency( $portfolio_vacancy ),
+					'total_ti_exposure'  => $calc::format_currency( $portfolio_ti ),
+					'total_lc_exposure'  => $calc::format_currency( $portfolio_lc ),
+					'net_mark_to_market' => $calc::format_currency( $portfolio_mtm ),
+					'total_exposure'     => $calc::format_currency( $portfolio_vacancy + $portfolio_ti + $portfolio_lc ),
 				),
 				'expiration_schedule' => $year_summaries,
 			),

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TimelineContextProvider = exports.AbsoluteTimeContext = exports.TimelineContext = exports.SetTimelineContext = void 0;
+exports.TimelineContextProvider = exports.AbsoluteTimeContext = exports.PlaybackRateContext = exports.TimelineContext = exports.SetTimelineContext = void 0;
 const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = require("react");
 const random_1 = require("./random");
@@ -15,6 +15,7 @@ exports.SetTimelineContext = (0, react_1.createContext)({
     },
 });
 exports.TimelineContext = (0, react_1.createContext)(null);
+exports.PlaybackRateContext = (0, react_1.createContext)(null);
 exports.AbsoluteTimeContext = (0, react_1.createContext)(null);
 const TimelineContextProvider = ({ children, frameState }) => {
     const [playing, setPlaying] = (0, react_1.useState)(false);
@@ -62,17 +63,21 @@ const TimelineContextProvider = ({ children, frameState }) => {
             playing,
             imperativePlaying,
             rootId: remotionRootId,
-            playbackRate,
-            setPlaybackRate,
             audioAndVideoTags,
         };
-    }, [frame, playbackRate, playing, remotionRootId]);
+    }, [frame, playing, remotionRootId]);
+    const playbackRateContextValue = (0, react_1.useMemo)(() => {
+        return {
+            playbackRate,
+            setPlaybackRate,
+        };
+    }, [playbackRate]);
     const setTimelineContextValue = (0, react_1.useMemo)(() => {
         return {
             setFrame,
             setPlaying,
         };
     }, []);
-    return ((0, jsx_runtime_1.jsx)(exports.AbsoluteTimeContext.Provider, { value: timelineContextValue, children: (0, jsx_runtime_1.jsx)(exports.TimelineContext.Provider, { value: timelineContextValue, children: (0, jsx_runtime_1.jsx)(exports.SetTimelineContext.Provider, { value: setTimelineContextValue, children: children }) }) }));
+    return ((0, jsx_runtime_1.jsx)(exports.AbsoluteTimeContext.Provider, { value: timelineContextValue, children: (0, jsx_runtime_1.jsx)(exports.PlaybackRateContext.Provider, { value: playbackRateContextValue, children: (0, jsx_runtime_1.jsx)(exports.TimelineContext.Provider, { value: timelineContextValue, children: (0, jsx_runtime_1.jsx)(exports.SetTimelineContext.Provider, { value: setTimelineContextValue, children: children }) }) }) }));
 };
 exports.TimelineContextProvider = TimelineContextProvider;

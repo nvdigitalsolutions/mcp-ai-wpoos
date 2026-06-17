@@ -1,0 +1,25 @@
+name: Sync nvoos-craft-adapter
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'lib/craft-adapter/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=lib/craft-adapter --branch=nvoos-craft-adapter-split
+
+      - name: Push to nvoos-craft-adapter
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.NVOOS_CRAFT_ADAPTER_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-craft-adapter.git nvoos-craft-adapter-split:main --force

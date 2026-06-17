@@ -56,4 +56,16 @@ This downloads the npm packages and bundles them with esbuild into ESM modules.
 
 ## License
 
-GPLv3 or later. The bundled Cornerstone3D libraries are MIT-licensed.
+Proprietary — © 2025-2026 NV Digital Solutions. All rights reserved. The bundled Cornerstone3D libraries retain their upstream MIT license.
+
+## Credits
+
+This addon redistributes pre-built ESM bundles of the [Cornerstone3D](https://github.com/cornerstonejs/cornerstone3D) medical-imaging stack — © OHIF and Cornerstone.js contributors, MIT-licensed:
+
+- `@cornerstonejs/core` 1.86.1
+- `@cornerstonejs/tools` 1.86.1
+- `@cornerstonejs/dicom-image-loader` 1.86.0
+- [`dicom-parser`](https://github.com/cornerstonejs/dicomParser) 1.8.21 (MIT)
+- [`xmlbuilder2`](https://github.com/oozcitak/xmlbuilder2) 3.0.2 (MIT)
+
+Each bundled file retains the upstream copyright header. For the full repo-wide attribution index, see [`CREDITS.md`](../../CREDITS.md) at the repository root.

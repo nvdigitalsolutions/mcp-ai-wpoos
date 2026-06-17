@@ -19,6 +19,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Graphify_Tool_Build_Graph implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
 	/** {@inheritdoc} */
 	public function get_slug() {
 		return 'graphify_build_graph';
@@ -69,7 +78,13 @@ class NV_oOS_Graphify_Tool_Build_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		return array( 'write', 'state-changing', 'async', 'long-running', 'performance-impact' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {

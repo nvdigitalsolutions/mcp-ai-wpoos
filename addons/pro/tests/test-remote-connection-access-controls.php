@@ -9,19 +9,21 @@
  */
 
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
-require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-wp-connection.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-wp-connection.php';
 
 /**
  * Tests for access control helpers on the Remote Site Manager.
  */
 class Test_Remote_Connection_Access_Controls extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var WP_MCP_AI_Tool_Remote_WP_Connection
 	 */
 	protected $tool;
 
-	/**
+	/** Summary.
+	 *
 	 * @var int
 	 */
 	protected $assistant_id;
@@ -212,15 +214,15 @@ class Test_Remote_Connection_Access_Controls extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * sanitize_access_controls strips invalid operation values.
+	 * Sanitize_access_controls strips invalid operation values.
 	 */
 	public function test_sanitize_access_controls_strips_invalid_operations() {
 		// Call the protected method via save_connection (which calls sanitize_access_controls internally).
 		$connection_data = array(
-			'name'            => 'Test Site',
-			'url'             => 'https://example.com',
-			'auth_type'       => 'none',
-			'enabled'         => true,
+			'name'             => 'Test Site',
+			'url'              => 'https://example.com',
+			'auth_type'        => 'none',
+			'enabled'          => true,
 			'post_type_access' => array(
 				'post' => array( 'read', 'exec', 'invalid_op', 'delete' ),
 			),
@@ -243,19 +245,19 @@ class Test_Remote_Connection_Access_Controls extends WP_UnitTestCase {
 	}
 
 	// -------------------------------------------------------------------------
-	// Tool access control enforcement
+	// Tool access control enforcement.
 	// -------------------------------------------------------------------------
 
 	/**
-	 * get_posts denies access when the post type is not in the allowlist.
+	 * Get_posts denies access when the post type is not in the allowlist.
 	 */
 	public function test_tool_get_posts_denied_when_post_type_not_in_allowlist() {
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
 			array(
-				'name'            => 'Restricted Connection',
-				'url'             => 'https://example.com',
-				'auth_type'       => 'none',
-				'enabled'         => true,
+				'name'             => 'Restricted Connection',
+				'url'              => 'https://example.com',
+				'auth_type'        => 'none',
+				'enabled'          => true,
 				'post_type_access' => array(
 					'page' => array( 'read' ),
 					// 'post' is intentionally absent.
@@ -279,15 +281,15 @@ class Test_Remote_Connection_Access_Controls extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_post is denied when create is not in the allowlist.
+	 * Create_post is denied when create is not in the allowlist.
 	 */
 	public function test_tool_create_post_denied_when_create_not_in_allowlist() {
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
 			array(
-				'name'            => 'Read Only Connection',
-				'url'             => 'https://example.com',
-				'auth_type'       => 'none',
-				'enabled'         => true,
+				'name'             => 'Read Only Connection',
+				'url'              => 'https://example.com',
+				'auth_type'        => 'none',
+				'enabled'          => true,
 				'post_type_access' => array(
 					'post' => array( 'read' ), // read only, no create.
 				),
@@ -310,7 +312,7 @@ class Test_Remote_Connection_Access_Controls extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_post returns access denied error when no access controls are configured.
+	 * Create_post returns access denied error when no access controls are configured.
 	 *
 	 * When post_type_access is empty, write operations are always denied regardless
 	 * of whether other arguments (like title) are valid.
@@ -374,7 +376,7 @@ class Test_Remote_Connection_Access_Controls extends WP_UnitTestCase {
 	}
 
 	/**
-	 * update_wc_order is denied when the orders resource does not include 'update'.
+	 * Update_wc_order is denied when the orders resource does not include 'update'.
 	 */
 	public function test_tool_update_wc_order_denied_when_update_not_in_allowlist() {
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(

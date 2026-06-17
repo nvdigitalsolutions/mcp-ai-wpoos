@@ -78,6 +78,12 @@ class WP_MCP_AI_Pro_Measurement_Bootstrap {
 		add_action( 'wp_mcp_ai_register_verifiers', array( __CLASS__, 'register_preset_rubrics' ), 25 );
 		add_action( 'wp_mcp_ai_register_budgets', array( __CLASS__, 'register_budgets' ), 20 );
 		add_action( 'wp_mcp_ai_register_reward_functions', array( __CLASS__, 'register_rewards' ), 30 );
+
+		// Boot the Pro Schedule OTel subscriber (registers metrics +
+		// subscribes to wp_mcp_ai_pro_schedule_run_completed).
+		if ( class_exists( 'WP_MCP_AI_Pro_Schedule_Otel_Subscriber' ) ) {
+			WP_MCP_AI_Pro_Schedule_Otel_Subscriber::boot();
+		}
 	}
 
 	/**
@@ -91,6 +97,10 @@ class WP_MCP_AI_Pro_Measurement_Bootstrap {
 		remove_action( 'wp_mcp_ai_register_verifiers', array( __CLASS__, 'register_preset_rubrics' ), 25 );
 		remove_action( 'wp_mcp_ai_register_budgets', array( __CLASS__, 'register_budgets' ), 20 );
 		remove_action( 'wp_mcp_ai_register_reward_functions', array( __CLASS__, 'register_rewards' ), 30 );
+
+		if ( class_exists( 'WP_MCP_AI_Pro_Schedule_Otel_Subscriber' ) ) {
+			WP_MCP_AI_Pro_Schedule_Otel_Subscriber::reset();
+		}
 	}
 
 	/**
@@ -244,8 +254,8 @@ class WP_MCP_AI_Pro_Measurement_Bootstrap {
 		}
 
 		$factories = array(
-			WP_MCP_AI_Pro_Rubric_Presets::SLUG_PROMPT_ADHERENCE  => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'prompt_adherence' ),
-			WP_MCP_AI_Pro_Rubric_Presets::SLUG_JSON_SCHEMA       => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'json_schema' ),
+			WP_MCP_AI_Pro_Rubric_Presets::SLUG_PROMPT_ADHERENCE => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'prompt_adherence' ),
+			WP_MCP_AI_Pro_Rubric_Presets::SLUG_JSON_SCHEMA => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'json_schema' ),
 			WP_MCP_AI_Pro_Rubric_Presets::SLUG_CITATION_PRESENCE => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'citation_presence' ),
 		);
 

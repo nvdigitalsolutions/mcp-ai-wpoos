@@ -1,5 +1,5 @@
 {
-    "name": "mcp-ai-wpoos/mcp-ai-wpoos",
+    "name": "nvdigitalsolutions/mcp-ai-wpoos",
     "description": "NV Digital Open Operator System (oOS) - WordPress plugin integrating MCP tools with AI workflows.",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
@@ -16,14 +16,17 @@
         "issues": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues",
         "source": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos"
     },
+    "_comment": "Symfony deps are pinned to the 6.4 LTS line because the base plugin's PHP floor is 7.4. Symfony 7.x requires PHP 8.2+ and uses readonly/enum syntax that fatal-parses on PHP 7.4 even when not executed. 6.4 LTS is supported until November 2027.",
     "require": {
+        "composer/installers": "^2.0",
         "rahul900day/tiktoken-php": "^1.0",
-        "symfony/http-client": "^6.1|^7.0",
+        "psr/event-dispatcher": "^1.0",
+        "symfony/http-client": "^6.4.36",
         "nyholm/psr7": "^1.8",
-        "symfony/validator": ">=6.4.36 <7.0|^7.0",
-        "symfony/cache": ">=6.4.36 <7.0|^7.0",
-        "symfony/filesystem": "^6.4|^7.0",
-        "symfony/process": "^6.4|^7.0",
+        "symfony/validator": "^6.4.36",
+        "symfony/cache": "^6.4.40",
+        "symfony/filesystem": "^6.4.34",
+        "symfony/process": "^6.4.33",
         "league/oauth2-client": "^2.7"
     },
     "require-dev": {
@@ -40,18 +43,27 @@
     "scripts": {
         "lint": "phpcs",
         "lint:errors-only": "phpcs --error-severity=1 --warning-severity=8",
-        "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
-        "lint:base": "phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,tests .",
-        "lint:base:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,tests .",
+        "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,docker,tests/helpers,tests/fixtures .",
+        "lint:base": "phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
+        "lint:base:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
         "format": "phpcbf",
         "pot": "wp i18n make-pot . languages/mcp-ai-wpoos.pot --exclude=vendor,node_modules",
         "test:install": "bash bin/install-wp-tests.sh wordpress_test root '' localhost latest",
         "test": "vendor/bin/phpunit",
+        "test:studio": "@php bin/test-studio-runner.php",
         "test:coverage": "vendor/bin/phpunit --coverage-html coverage/ --coverage-clover coverage.xml",
         "test:coverage-dashboard": "bash bin/generate-coverage-dashboard.sh",
+        "test:gaps": "bash bin/find-untested-classes.sh",
+        "test:gaps:check": "bash bin/find-untested-classes.sh --check",
+        "docs:check-folder-readmes": "php bin/check-folder-readmes.php --scope=base",
+        "docs:check-folder-readmes:all": "php bin/check-folder-readmes.php --scope=all",
+        "docs:check-folder-readmes:strict": "php bin/check-folder-readmes.php --scope=base --strict",
         "build:autoload": "composer install --no-dev --classmap-authoritative --no-interaction",
+        "skills:sync": "@php bin/sync-agent-skills.php",
         "ci:all": [
             "@lint:errors-only",
+            "@docs:check-folder-readmes",
+            "@test:gaps:check",
             "@test:coverage"
         ]
     },
@@ -79,11 +91,18 @@
         "allow-plugins": {
             "cweagans/composer-patches": true,
             "dealerdirect/phpcodesniffer-composer-installer": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "composer/installers": true
         },
         "classmap-authoritative": true,
         "platform": {
             "php": "8.3.0"
+        },
+        "preferred-install": {
+            "wp-phpunit/wp-phpunit": "source",
+            "league/oauth2-client": "source",
+            "phpunit/phpunit": "source",
+            "*": "dist"
         }
     }
 }

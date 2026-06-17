@@ -20,6 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Algorave_Tool_MIDI_Output implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -137,7 +139,7 @@ class NV_oOS_Algorave_Tool_MIDI_Output implements WP_MCP_AI_Tool_Interface, WP_M
 			. "// note(\"c1 ~ c1 e1 ~ c1 f#1 ~\")\n"
 			. "//   .midichan(9)%s\n\n"
 			. "// CC automation → MIDI\n"
-			. "// ccn(74).ccv(sine.slow(4).range(0,127))%s",
+			. '// ccn(74).ccv(sine.slow(4).range(0,127))%s',
 			! empty( $device_name ) ? esc_html( $device_name ) : 'first available MIDI output',
 			$channel_code,
 			$midi_target,
@@ -171,9 +173,9 @@ class NV_oOS_Algorave_Tool_MIDI_Output implements WP_MCP_AI_Tool_Interface, WP_M
 			'reference' => array(
 				'overview'  => __( 'Strudel can send MIDI notes, CC messages, and clock sync to external devices via WebMIDI API.', 'nvoos-algorave' ),
 				'functions' => array(
-					'.midi()'             => __( 'Send to first available MIDI output.', 'nvoos-algorave' ),
-					'.midi("Device")'     => __( 'Send to a named MIDI output device.', 'nvoos-algorave' ),
-					'.midichan(n)'        => __( 'Set MIDI channel (0-15, where 9 = drums).', 'nvoos-algorave' ),
+					'.midi()'              => __( 'Send to first available MIDI output.', 'nvoos-algorave' ),
+					'.midi("Device")'      => __( 'Send to a named MIDI output device.', 'nvoos-algorave' ),
+					'.midichan(n)'         => __( 'Set MIDI channel (0-15, where 9 = drums).', 'nvoos-algorave' ),
 					'ccn(n).ccv(v).midi()' => __( 'Send MIDI CC messages (n=CC number, v=value 0-127).', 'nvoos-algorave' ),
 				),
 				'setup'     => array(

@@ -89,8 +89,23 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * {@inheritdoc}
 	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 * @param array $context   Execution context.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
@@ -210,7 +225,7 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 	 * @return bool True if valid INCI format.
 	 */
 	private function check_inci_format( $ingredient ) {
-		// Basic format checks:
+		// Basic format checks:.
 		// - Should start with capital letter.
 		// - May contain spaces, hyphens, parentheses.
 		// - Should not contain numbers (except in special cases).

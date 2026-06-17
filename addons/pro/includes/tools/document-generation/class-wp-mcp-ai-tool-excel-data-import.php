@@ -89,7 +89,20 @@ class WP_MCP_AI_Tool_Excel_Data_Import implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
@@ -159,7 +172,7 @@ class WP_MCP_AI_Tool_Excel_Data_Import implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		// Validate it's an Excel file.
-		$mime_type = mime_content_type( $file_path );
+		$mime_type   = mime_content_type( $file_path );
 		$valid_types = array(
 			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx.
 			'application/vnd.ms-excel', // .xls.
@@ -206,7 +219,7 @@ class WP_MCP_AI_Tool_Excel_Data_Import implements WP_MCP_AI_Tool_Interface, WP_M
 			if ( ! empty( $data ) ) {
 				// Extract headers if specified.
 				if ( $has_headers && count( $data ) > 0 ) {
-					$headers = array_shift( $data );
+					$headers      = array_shift( $data );
 					$column_count = count( $headers );
 				} else {
 					// Determine column count from first row.

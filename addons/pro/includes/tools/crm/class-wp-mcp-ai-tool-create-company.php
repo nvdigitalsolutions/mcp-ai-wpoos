@@ -66,53 +66,53 @@ class WP_MCP_AI_Tool_Create_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'company_name' => array(
+				'company_name'  => array(
 					'type'        => 'string',
 					'description' => __( 'Name of the company or organization.', 'mcp-ai-wpoos-pro' ),
 				),
-				'industry'     => array(
+				'industry'      => array(
 					'type'        => 'string',
 					'description' => __( 'Industry sector (e.g., Technology, Healthcare, Finance, Manufacturing).', 'mcp-ai-wpoos-pro' ),
 				),
-				'company_size' => array(
+				'company_size'  => array(
 					'type'        => 'string',
 					'description' => __( 'Company size range: 1-10, 11-50, 51-200, 201-500, 501-1000, 1001-5000, or 5001+.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( '1-10', '11-50', '51-200', '201-500', '501-1000', '1001-5000', '5001+' ),
 				),
-				'website'      => array(
+				'website'       => array(
 					'type'        => 'string',
 					'description' => __( 'Company website URL.', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'uri',
 				),
-				'description'  => array(
+				'description'   => array(
 					'type'        => 'string',
 					'description' => __( 'Company description or overview.', 'mcp-ai-wpoos-pro' ),
 				),
-				'address'      => array(
+				'address'       => array(
 					'type'        => 'string',
 					'description' => __( 'Street address.', 'mcp-ai-wpoos-pro' ),
 				),
-				'city'         => array(
+				'city'          => array(
 					'type'        => 'string',
 					'description' => __( 'City.', 'mcp-ai-wpoos-pro' ),
 				),
-				'state'        => array(
+				'state'         => array(
 					'type'        => 'string',
 					'description' => __( 'State or province.', 'mcp-ai-wpoos-pro' ),
 				),
-				'zip'          => array(
+				'zip'           => array(
 					'type'        => 'string',
 					'description' => __( 'ZIP or postal code.', 'mcp-ai-wpoos-pro' ),
 				),
-				'country'      => array(
+				'country'       => array(
 					'type'        => 'string',
 					'description' => __( 'Country.', 'mcp-ai-wpoos-pro' ),
 				),
-				'phone'        => array(
+				'phone'         => array(
 					'type'        => 'string',
 					'description' => __( 'Main phone number.', 'mcp-ai-wpoos-pro' ),
 				),
-				'revenue'      => array(
+				'revenue'       => array(
 					'type'        => 'number',
 					'description' => __( 'Annual revenue (numeric value).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -122,20 +122,20 @@ class WP_MCP_AI_Tool_Create_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'enum'        => array( 'prospect', 'target', 'in_discussion', 'client', 'not_interested' ),
 					'default'     => 'prospect',
 				),
-				'linkedin'     => array(
+				'linkedin'      => array(
 					'type'        => 'string',
 					'description' => __( 'LinkedIn company page URL.', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'uri',
 				),
-				'twitter'      => array(
+				'twitter'       => array(
 					'type'        => 'string',
 					'description' => __( 'Twitter/X handle (with or without @).', 'mcp-ai-wpoos-pro' ),
 				),
-				'tags'         => array(
+				'tags'          => array(
 					'type'        => 'string',
 					'description' => __( 'Comma-separated tags for categorization.', 'mcp-ai-wpoos-pro' ),
 				),
-				'notes'        => array(
+				'notes'         => array(
 					'type'        => 'string',
 					'description' => __( 'Research notes or additional information about this company.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -143,6 +143,13 @@ class WP_MCP_AI_Tool_Create_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'required'             => array( 'company_name', 'industry' ),
 			'additionalProperties' => false,
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -230,12 +237,12 @@ class WP_MCP_AI_Tool_Create_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		do_action( 'wp_mcp_ai_company_created', $post_id, $arguments, $context );
 
 		return array(
-			'success'     => true,
-			'company_id'  => $post_id,
+			'success'      => true,
+			'company_id'   => $post_id,
 			'company_name' => $company_name,
-			'industry'    => $arguments['industry'],
-			'edit_url'    => get_edit_post_link( $post_id, 'raw' ),
-			'message'     => sprintf(
+			'industry'     => $arguments['industry'],
+			'edit_url'     => get_edit_post_link( $post_id, 'raw' ),
+			'message'      => sprintf(
 				/* translators: %s: Company name */
 				__( 'Company "%s" created successfully in the CRM.', 'mcp-ai-wpoos-pro' ),
 				$company_name

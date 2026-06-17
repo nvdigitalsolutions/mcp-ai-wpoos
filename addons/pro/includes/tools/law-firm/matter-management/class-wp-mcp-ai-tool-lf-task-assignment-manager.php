@@ -24,6 +24,13 @@ class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interf
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -117,6 +124,9 @@ class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -191,7 +201,7 @@ class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interf
 
 		$assignee_name = '';
 		if ( $assignee_id ) {
-			$user = get_userdata( $assignee_id );
+			$user          = get_userdata( $assignee_id );
 			$assignee_name = $user ? $user->display_name : '';
 		}
 
@@ -316,12 +326,12 @@ class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interf
 			array(
 				'post_type'      => 'mcp_ai_lf_matter',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_task_assignment_manager', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 			)
 		);
 
-		$pending_tasks  = array();
+		$pending_tasks   = array();
 		$completed_count = 0;
 
 		foreach ( $matters->posts as $mid ) {
@@ -334,7 +344,7 @@ class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interf
 					continue;
 				}
 				if ( ! empty( $task['completed'] ) ) {
-					$completed_count++;
+					++$completed_count;
 				} else {
 					$task['matter_id']    = $mid;
 					$task['matter_title'] = get_the_title( $mid );
@@ -365,10 +375,10 @@ class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interf
 				$completed_count
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'assignee_id'    => $assignee_id,
-				'assignee_name'  => $user ? $user->display_name : '',
-				'pending_tasks'  => $pending_tasks,
-				'pending_count'  => count( $pending_tasks ),
+				'assignee_id'     => $assignee_id,
+				'assignee_name'   => $user ? $user->display_name : '',
+				'pending_tasks'   => $pending_tasks,
+				'pending_count'   => count( $pending_tasks ),
 				'completed_count' => $completed_count,
 			),
 			'disclaimer' => self::DISCLAIMER,

@@ -87,6 +87,13 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -136,12 +143,12 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			$results[] = array(
 				'id'            => $order->get_id(),
 				'order_number'  => $order->get_order_number(),
-				'status'        => $order->get_status(),
+				'status'        => esc_html( $order->get_status() ),
 				'total'         => $order->get_total(),
-				'currency'      => $order->get_currency(),
+				'currency'      => esc_html( $order->get_currency() ),
 				'created_at'    => gmdate( DATE_W3C, $order->get_date_created() ? $order->get_date_created()->getTimestamp() : time() ),
-				'billing_name'  => trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
-				'billing_email' => $order->get_billing_email(),
+				'billing_name'  => esc_html( trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ) ),
+				'billing_email' => sanitize_email( $order->get_billing_email() ),
 			);
 		}
 

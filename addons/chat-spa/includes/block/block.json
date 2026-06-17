@@ -1,0 +1,17 @@
+{
+  "apiVersion": 3,
+  "name": "nvoos/chat-spa",
+  "title": "NV oOS Chat",
+  "category": "widgets",
+  "icon": "format-chat",
+  "description": "Embeds the NV oOS React chat SPA, talking to the existing NV oOS REST chat endpoints.",
+  "textdomain": "nvoos-chat-spa",
+  "attributes": {
+    "assistant_id": { "type": "integer", "default": 0 },
+    "theme":        { "type": "string",  "default": "auto" },
+    "height":       { "type": "string",  "default": "" },
+    "guest":        { "type": "boolean", "default": false }
+  },
+  "supports": { "html": false, "inserter": true },
+  "editorScript": "file:../../assets/js/block-editor.js"
+}

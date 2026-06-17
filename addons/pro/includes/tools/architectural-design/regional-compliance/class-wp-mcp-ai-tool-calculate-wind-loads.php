@@ -78,40 +78,40 @@ class WP_MCP_AI_Tool_Calculate_Wind_Loads implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'country_code'   => array(
+				'country_code'         => array(
 					'type'        => 'string',
 					'description' => __( 'ISO 3166-1 alpha-2 country code.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'LK', 'JM', 'US' ),
 				),
-				'wind_zone'      => array(
+				'wind_zone'            => array(
 					'type'        => 'string',
 					'description' => __( 'Country-specific wind zone identifier (LK: zone1/zone2/zone3; JM: inland/standard/coastal; US: inland/standard/coastal/hurricane).', 'mcp-ai-wpoos-pro' ),
 				),
-				'exposure'       => array(
+				'exposure'             => array(
 					'type'        => 'string',
 					'description' => __( 'ASCE 7 exposure category (B, C, or D). Default C (open terrain).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'B', 'C', 'D' ),
 					'default'     => 'C',
 				),
-				'building_height_m' => array(
+				'building_height_m'    => array(
 					'type'        => 'number',
 					'description' => __( 'Mean roof height in metres.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 6.0,
 				),
-				'topographic_factor' => array(
+				'topographic_factor'   => array(
 					'type'        => 'number',
 					'description' => __( 'Kzt topographic factor (default 1.0).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 1.0,
 				),
-				'importance_factor' => array(
+				'importance_factor'    => array(
 					'type'        => 'number',
 					'description' => __( 'Risk-importance factor (Iw). Default 1.0 (Risk Cat II).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 1.0,
 				),
-				'gust_factor'    => array(
+				'gust_factor'          => array(
 					'type'        => 'number',
 					'description' => __( 'Gust effect factor G. Default 0.85 for rigid structures.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -138,6 +138,13 @@ class WP_MCP_AI_Tool_Calculate_Wind_Loads implements WP_MCP_AI_Tool_Interface, W
 			'read-only',
 			'cacheable',
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -239,12 +246,21 @@ class WP_MCP_AI_Tool_Calculate_Wind_Loads implements WP_MCP_AI_Tool_Interface, W
 
 		// ASCE 7 Table 26.10-1 power-law coefficients.
 		$alpha_zg = array(
-			'B' => array( 'alpha' => 7.0, 'zg' => 365.76 ),
-			'C' => array( 'alpha' => 9.5, 'zg' => 274.32 ),
-			'D' => array( 'alpha' => 11.5, 'zg' => 213.36 ),
+			'B' => array(
+				'alpha' => 7.0,
+				'zg'    => 365.76,
+			),
+			'C' => array(
+				'alpha' => 9.5,
+				'zg'    => 274.32,
+			),
+			'D' => array(
+				'alpha' => 11.5,
+				'zg'    => 213.36,
+			),
 		);
-		$entry = $alpha_zg[ $exposure ];
-		$kz    = 2.01 * pow( $height_m / $entry['zg'], 2.0 / $entry['alpha'] );
+		$entry    = $alpha_zg[ $exposure ];
+		$kz       = 2.01 * pow( $height_m / $entry['zg'], 2.0 / $entry['alpha'] );
 		// ASCE 7 typically clamps Kz to >= 0.85 for low buildings.
 		return max( 0.85, $kz );
 	}

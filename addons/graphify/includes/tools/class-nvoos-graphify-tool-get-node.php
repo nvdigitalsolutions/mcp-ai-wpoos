@@ -19,6 +19,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Graphify_Tool_Get_Node implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	/** {@inheritdoc} */
 	public function get_slug() {
 		return 'graphify_get_node';
@@ -63,7 +72,13 @@ class NV_oOS_Graphify_Tool_Get_Node implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array( 'read-only', 'cacheable' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$node = null;
 
@@ -86,14 +101,14 @@ class NV_oOS_Graphify_Tool_Get_Node implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$edges     = NV_oOS_Graphify_DB::get_edges_for_node( $node->node_id );
 		$neighbors = array();
 		foreach ( $edges as $edge ) {
-			$nid       = ( $edge->source_node_id === $node->node_id ) ? $edge->target_node_id : $edge->source_node_id;
-			$nbr_node  = NV_oOS_Graphify_DB::get_node( $nid );
+			$nid         = ( $edge->source_node_id === $node->node_id ) ? $edge->target_node_id : $edge->source_node_id;
+			$nbr_node    = NV_oOS_Graphify_DB::get_node( $nid );
 			$neighbors[] = array(
-				'node_id'  => $nid,
-				'label'    => $nbr_node ? $nbr_node->label : $nid,
-				'type'     => $nbr_node ? $nbr_node->type : '',
-				'relation' => $edge->relation,
-				'direction'=> ( $edge->source_node_id === $node->node_id ) ? 'outgoing' : 'incoming',
+				'node_id'   => $nid,
+				'label'     => $nbr_node ? $nbr_node->label : $nid,
+				'type'      => $nbr_node ? $nbr_node->type : '',
+				'relation'  => $edge->relation,
+				'direction' => ( $edge->source_node_id === $node->node_id ) ? 'outgoing' : 'incoming',
 			);
 		}
 

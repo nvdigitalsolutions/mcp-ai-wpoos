@@ -33,6 +33,49 @@ PRO_DIR="${ROOT_DIR}/addons/pro"
 
 cd "$ROOT_DIR"
 
+# ---------------------------------------------------------------------------
+# WSL auto-detection: when running natively on Windows (Git Bash / MSYS2)
+# without a working rsync, automatically re-execute inside WSL where the
+# full Linux toolchain (rsync, zip, php) is available.
+# ---------------------------------------------------------------------------
+_wsl_rerun_if_needed() {
+	# Only applies to Windows-native shells (MINGW / MSYS)
+	case "$(uname -s)" in
+		MINGW*|MSYS*) ;;
+		*) return 0 ;;
+	esac
+
+	# Already running inside WSL? Skip (WSL uname reports "Linux")
+	# If rsync is already working natively, skip
+	if rsync --version >/dev/null 2>&1; then
+		return 0
+	fi
+
+	# Check if WSL is available
+	if ! command -v wsl >/dev/null 2>&1; then
+		return 0
+	fi
+
+	# Build WSL-safe paths from the current Git Bash absolute paths.
+	_wsl_root="$(echo "$ROOT_DIR" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+	_wsl_script="$(echo "$0" | sed 's|\\|/|g')"
+	case "$_wsl_script" in
+		/*) ;;
+		*) _wsl_script="$_wsl_root/$_wsl_script" ;;
+	esac
+	_wsl_script="$(echo "$_wsl_script" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+
+	# Build a safely-escaped argument string for the re-exec
+	_wsl_args=""
+	for _arg in "$@"; do
+		_wsl_args="$_wsl_args $(printf '%q' "$_arg")"
+	done
+	echo "ℹ️  Windows detected without working rsync → re-executing via WSL..."
+	echo ""
+	exec wsl bash -c "export PATH=/usr/bin:/bin:/usr/local/bin:$PATH; cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
+}
+_wsl_rerun_if_needed "$@"
+
 # Default values
 BUILD_SINGLE=""
 LIST_ONLY=false
@@ -197,11 +240,13 @@ mkdir -p "$OUTPUT_DIR"
 # Arguments:
 #   $1 - build_dir: path to the toolkit build directory
 #   $2 - vendor_packages: comma-separated list of package names
+#   $3 - is_vendor_only: if "true", skip Composer autoloader (direct include)
 #
 # Returns 0 if vendor packages were copied, 1 if none were needed.
 copy_vendor_packages() {
     local build_dir="$1"
     local vendor_packages="$2"
+    local is_vendor_only="${3:-false}"
     
     if [ -z "$vendor_packages" ]; then
         return 1
@@ -274,8 +319,12 @@ copy_vendor_packages() {
         fi
     done
     
-    # Copy the Composer autoloader infrastructure
-    if [ $copied_count -gt 0 ] && [ -d "${vendor_src}/composer" ]; then
+    # Copy the Composer autoloader infrastructure (skip for vendor-only
+    # supplements to avoid "Cannot declare class ComposerAutoloaderInit…"
+    # fatal errors when the main plugin has already loaded its autoloader).
+    if [ "$is_vendor_only" = "true" ]; then
+        echo "    ✓ Copied ${copied_count} vendor package(s) (vendor-only — no Composer autoloader)"
+    elif [ $copied_count -gt 0 ] && [ -d "${vendor_src}/composer" ]; then
         mkdir -p "${vendor_dest}/composer"
         # Copy the Composer autoloader files
         for f in autoload_classmap.php autoload_namespaces.php autoload_psr4.php \
@@ -304,6 +353,7 @@ generate_bootstrapper() {
     local tk_desc="$6"
     local output_file="$7"
     local has_vendor="$8"
+    local tk_vendor="$9"
     
     # Convert toolkit ID to slug (e.g., "ecommerce" -> "oos-toolkit-ecommerce")
     local plugin_slug="oos-toolkit-${tk_id}"
@@ -450,21 +500,73 @@ PHPEOF
 
     # Conditionally add vendor autoloader loading if this toolkit has vendor packages
     if [ "$has_vendor" = "true" ]; then
-        cat >> "$output_file" << 'VENDORPHPEOF'
+        local is_vendor_only="false"
+        if [ "$tk_tools_dir" = "_none_" ] && [ "$tk_init" = "_none_" ]; then
+            is_vendor_only="true"
+        fi
+
+        if [ "$is_vendor_only" = "true" ]; then
+            # Vendor-only supplement (e.g., oos-toolkit-tcpdf).
+            # Do NOT use the Composer autoloader — the main oOS Complete
+            # plugin already loaded its own copy (same hash), and loading
+            # another would fatal with "Cannot declare class
+            # ComposerAutoloaderInit…". Instead, directly include the
+            # library's own entry point so its classes become available
+            # to the main plugin's existing autoloader.
+            cat >> "$output_file" << 'VENDORONLYEOF'
+	// Vendor-only supplement: directly include the library instead of
+	// loading a duplicate Composer autoloader (which would fatal with
+	// "Cannot declare class ComposerAutoloaderInit…" when the main
+	// oOS Complete plugin has already loaded its autoloader).
+	if ( version_compare( PHP_VERSION, '8.1.0', '>=' ) ) {
+VENDORONLYEOF
+
+            # Generate require_once for each vendor package's main entry point.
+            IFS=',' read -ra VENDOR_ONLY_PKGS <<< "$tk_vendor"
+            for vpkg in "${VENDOR_ONLY_PKGS[@]}"; do
+                vpkg=$(echo "$vpkg" | xargs)
+                case "$vpkg" in
+                    tecnickcom/tcpdf)
+                        cat >> "$output_file" << VENDORONLYEOF2
+		\$tcpdf_main = WP_MCP_AI_TOOLKIT_${constant_prefix}_PATH . 'vendor/tecnickcom/tcpdf/tcpdf.php';
+		if ( file_exists( \$tcpdf_main ) ) {
+			require_once \$tcpdf_main;
+		}
+VENDORONLYEOF2
+                        ;;
+                    *)
+                        # Generic fallback: try the package's main file
+                        local vpkg_dir="${vpkg#*/}"
+                        cat >> "$output_file" << VENDORONLYEOF3
+		\$vendor_file = WP_MCP_AI_TOOLKIT_${constant_prefix}_PATH . 'vendor/${vpkg}/${vpkg_dir}.php';
+		if ( file_exists( \$vendor_file ) ) {
+			require_once \$vendor_file;
+		}
+VENDORONLYEOF3
+                        ;;
+                esac
+            done
+
+            cat >> "$output_file" << 'VENDORONLYEOF4'
+	}
+VENDORONLYEOF4
+        else
+            cat >> "$output_file" << 'VENDORPHPEOF'
 	// Load Composer vendor autoloader for toolkit dependencies.
 	// These packages require PHP 8.1+; tools gracefully degrade on older PHP.
 	if ( version_compare( PHP_VERSION, '8.1.0', '>=' ) ) {
 VENDORPHPEOF
-        cat >> "$output_file" << VENDORPHPEOF2
+            cat >> "$output_file" << VENDORPHPEOF2
 		\$vendor_autoload = WP_MCP_AI_TOOLKIT_${constant_prefix}_PATH . 'vendor/autoload.php';
 VENDORPHPEOF2
-        cat >> "$output_file" << 'VENDORPHPEOF3'
+            cat >> "$output_file" << 'VENDORPHPEOF3'
 		if ( file_exists( $vendor_autoload ) ) {
 			require_once $vendor_autoload;
 		}
 	}
 
 VENDORPHPEOF3
+        fi
     fi
     
     cat >> "$output_file" << PHPEOF
@@ -580,13 +682,17 @@ build_toolkit() {
     
     # 1. Copy vendor packages if needed (before generating bootstrapper)
     if [ -n "$tk_vendor" ]; then
-        if copy_vendor_packages "$build_dir" "$tk_vendor"; then
+        local is_vendor_only="false"
+        if [ "$tk_tools_dir" = "_none_" ] && [ "$tk_init" = "_none_" ]; then
+            is_vendor_only="true"
+        fi
+        if copy_vendor_packages "$build_dir" "$tk_vendor" "$is_vendor_only"; then
             has_vendor="true"
         fi
     fi
     
     # 2. Generate the bootstrapper plugin file
-    generate_bootstrapper "$tk_id" "$tk_name" "$tk_setting" "$tk_tools_dir" "$tk_init" "$tk_desc" "${build_dir}/${plugin_slug}.php" "$has_vendor"
+    generate_bootstrapper "$tk_id" "$tk_name" "$tk_setting" "$tk_tools_dir" "$tk_init" "$tk_desc" "${build_dir}/${plugin_slug}.php" "$has_vendor" "$tk_vendor"
     
     # 3. Copy the toolkit init file
     if [ "$tk_init" = "_none_" ]; then

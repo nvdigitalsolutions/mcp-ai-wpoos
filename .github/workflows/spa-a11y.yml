@@ -1,0 +1,90 @@
+# NV oOS Toolkit SPA — Accessibility Lint
+#
+# Runs eslint-plugin-jsx-a11y (WCAG 2.1 AA baseline) against all eight
+# Toolkit SPA addons on every pull request that touches their source.
+#
+# Failures are blocking: `--max-warnings 0` means even warnings fail the job.
+# Type-checking (tsc --noEmit) is also run so type regressions don't slip
+# through alongside a11y fixes.
+
+name: SPA Accessibility Lint
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'addons/toolkit-shell/src/**'
+      - 'addons/toolkit-shell/eslint.config.js'
+      - 'addons/canvas-toolkit/src/**'
+      - 'addons/canvas-toolkit/eslint.config.js'
+      - 'addons/document-editor/src/**'
+      - 'addons/document-editor/eslint.config.js'
+      - 'addons/media-studio/src/**'
+      - 'addons/media-studio/eslint.config.js'
+      - 'addons/chat-spa/src/**'
+      - 'addons/chat-spa/eslint.config.js'
+      - 'addons/docs-hub/src/**'
+      - 'addons/docs-hub/eslint.config.js'
+      - 'addons/comic-reader/src/**'
+      - 'addons/comic-reader/eslint.config.js'
+      - 'addons/cloudways-dashboard/src/**'
+      - 'addons/cloudways-dashboard/eslint.config.js'
+  pull_request:
+    paths:
+      - 'addons/toolkit-shell/src/**'
+      - 'addons/toolkit-shell/eslint.config.js'
+      - 'addons/canvas-toolkit/src/**'
+      - 'addons/canvas-toolkit/eslint.config.js'
+      - 'addons/document-editor/src/**'
+      - 'addons/document-editor/eslint.config.js'
+      - 'addons/media-studio/src/**'
+      - 'addons/media-studio/eslint.config.js'
+      - 'addons/chat-spa/src/**'
+      - 'addons/chat-spa/eslint.config.js'
+      - 'addons/docs-hub/src/**'
+      - 'addons/docs-hub/eslint.config.js'
+      - 'addons/comic-reader/src/**'
+      - 'addons/comic-reader/eslint.config.js'
+      - 'addons/cloudways-dashboard/src/**'
+      - 'addons/cloudways-dashboard/eslint.config.js'
+
+jobs:
+  a11y-lint:
+    name: a11y lint (${{ matrix.addon }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        addon:
+          - toolkit-shell
+          - canvas-toolkit
+          - document-editor
+          - media-studio
+          - chat-spa
+          - docs-hub
+          - comic-reader
+          - cloudways-dashboard
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: addons/${{ matrix.addon }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: addons/${{ matrix.addon }}
+        run: npm ci
+
+      - name: Type-check (tsc --noEmit)
+        working-directory: addons/${{ matrix.addon }}
+        run: npm run typecheck
+
+      - name: a11y lint (eslint-plugin-jsx-a11y, zero warnings)
+        working-directory: addons/${{ matrix.addon }}
+        run: npm run lint:a11y

@@ -39,6 +39,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.1.0
@@ -481,7 +488,7 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 		$sample_comments = array(
 			array(
 				'id'      => 'cmt_' . wp_generate_uuid4(),
-				'post_id' => $post_id ?: 'post_123',
+				'post_id' => $post_id ? $post_id : 'post_123',
 				'author'  => '@spammer123',
 				'content' => 'Buy cheap products here!!! Click link in bio!!!',
 				'date'    => gmdate( 'Y-m-d H:i:s' ),
@@ -489,7 +496,7 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 			),
 			array(
 				'id'      => 'cmt_' . wp_generate_uuid4(),
-				'post_id' => $post_id ?: 'post_123',
+				'post_id' => $post_id ? $post_id : 'post_123',
 				'author'  => '@customer456',
 				'content' => 'This product is terrible, wasted my money!',
 				'date'    => gmdate( 'Y-m-d H:i:s', strtotime( '-1 hour' ) ),
@@ -497,7 +504,7 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 			),
 			array(
 				'id'      => 'cmt_' . wp_generate_uuid4(),
-				'post_id' => $post_id ?: 'post_123',
+				'post_id' => $post_id ? $post_id : 'post_123',
 				'author'  => '@fan789',
 				'content' => 'Love this! Great quality!',
 				'date'    => gmdate( 'Y-m-d H:i:s', strtotime( '-2 hours' ) ),

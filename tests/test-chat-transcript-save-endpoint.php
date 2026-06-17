@@ -29,10 +29,22 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 	protected $transcript_handler;
 
 	/**
+	 * Main REST controller instance.
+	 *
+	 * @var WP_MCP_AI_REST
+	 */
+	protected $main_controller;
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// WordPress 6.9 registers the breadcrumbs block during wp_install; when
+		// rest_get_server() triggers init again in tests, WP_Block_Type_Registry
+		// emits a "block already registered" _doing_it_wrong. Suppress it.
+		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
 
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
@@ -53,7 +65,18 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_model', 'gpt-4' );
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
 
+		// Initialize REST controller and register routes.
+		try {
+			$this->main_controller = WP_MCP_AI_REST::get_instance();
+		} catch ( \Throwable $e ) {
+			fwrite( STDERR, "get_instance() threw: " . $e->getMessage() . "\n" );
+			throw $e;
+		}
+
+		// Force route registration via the normal WordPress flow.
+		// rest_get_server() triggers rest_api_init which calls register_routes().
 		rest_get_server();
+
 		do_action( 'init' );
 	}
 
@@ -101,9 +124,14 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 		// Check that POST method is registered.
 		$has_post = false;
 		foreach ( $route_definition as $handler ) {
-			if ( isset( $handler['methods'] ) && in_array( 'POST', (array) $handler['methods'], true ) ) {
-				$has_post = true;
-				break;
+			// WordPress 6.9+ stores methods as associative array keys
+			// (e.g. ['POST' => true]) rather than indexed arrays.
+			if ( isset( $handler['methods'] ) ) {
+				$methods = (array) $handler['methods'];
+				if ( isset( $methods['POST'] ) || array_key_exists( 'POST', $methods ) ) {
+					$has_post = true;
+					break;
+				}
 			}
 		}
 
@@ -131,7 +159,7 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( 400, $response->get_status(), 'Should return 400 when assistant_id is missing' );
 		$this->assertArrayHasKey( 'code', $data, 'Error response should include code' );
-		$this->assertEquals( 'wp_mcp_ai_transcripts_missing_assistant', $data['code'], 'Should return missing assistant error' );
+		$this->assertEquals( 'rest_missing_callback_param', $data['code'], 'Should return REST missing param error' );
 	}
 
 	/**
@@ -155,7 +183,7 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( 400, $response->get_status(), 'Should return 400 when session_key is missing' );
 		$this->assertArrayHasKey( 'code', $data, 'Error response should include code' );
-		$this->assertEquals( 'wp_mcp_ai_transcripts_missing_session', $data['code'], 'Should return missing session error' );
+		$this->assertEquals( 'rest_missing_callback_param', $data['code'], 'Should return REST missing param error' );
 	}
 
 	/**
@@ -171,7 +199,7 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( 400, $response->get_status(), 'Should return 400 when messages are missing' );
 		$this->assertArrayHasKey( 'code', $data, 'Error response should include code' );
-		$this->assertEquals( 'wp_mcp_ai_transcripts_missing_messages', $data['code'], 'Should return missing messages error' );
+		$this->assertEquals( 'rest_missing_callback_param', $data['code'], 'Should return REST missing param error' );
 	}
 
 	/**
@@ -181,6 +209,7 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'session_key', 'test-session-456' );
 		$request->set_param(
@@ -237,7 +266,7 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 
 		$response = rest_get_server()->dispatch( $request );
 
-		$this->assertEquals( 401, $response->get_status(), 'Should return 401 for unauthenticated users' );
+		$this->assertEquals( 403, $response->get_status(), 'Should return 403 for unauthenticated users' );
 	}
 
 	/**
@@ -282,6 +311,7 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'session_key', 'test-agentic-flow-123' );
 		$request->set_param(

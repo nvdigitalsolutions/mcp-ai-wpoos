@@ -1,6 +1,6 @@
 Profession Playbook — Bus Driver
 Slug: bus_driver
-Category: transportation
+Category: other
 Includes: global.txt + categories/other.txt + this file
 
 

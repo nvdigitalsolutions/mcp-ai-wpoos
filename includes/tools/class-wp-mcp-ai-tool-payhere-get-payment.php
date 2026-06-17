@@ -77,6 +77,33 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Check whether the tool can be registered.
+	 *
+	 * @since 1.1.22
+	 * @return bool
+	 */
+	public static function is_available() {
+		return class_exists( 'WP_MCP_AI_PayHere_Client' );
+	}
+
+	/**
+	 * Provide a message explaining why the tool is unavailable.
+	 *
+	 * @since 1.1.22
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'PayHere client is not available. The PayHere integration requires API credentials to be configured.', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

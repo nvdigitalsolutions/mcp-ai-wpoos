@@ -1,0 +1,30 @@
+{
+    "name": "nvdigitalsolutions/funiq-bridge",
+    "description": "Bridges the Funiq React PWA frontend to a WordPress backend with Payload-compatible REST API and embedded React SPA admin.",
+    "type": "wordpress-plugin",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "NV Digital Solutions",
+            "email": "developer@nvdigitalsolutions.com",
+            "homepage": "https://nvdigitalsolutions.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "FuniqBridge\\": "includes/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true
+        },
+        "preferred-install": {
+            "*": "dist"
+        }
+    }
+}

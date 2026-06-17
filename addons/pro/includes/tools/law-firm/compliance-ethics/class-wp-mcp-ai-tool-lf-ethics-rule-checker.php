@@ -23,19 +23,26 @@ class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface,
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * ABA Model Rules mapped by category.
 	 *
 	 * @var array
 	 */
 	private static $aba_rules = array(
-		'competence'          => array(
+		'competence'           => array(
 			array(
 				'rule'    => '1.1',
 				'title'   => 'Competence',
 				'summary' => 'A lawyer shall provide competent representation to a client, requiring legal knowledge, skill, thoroughness and preparation.',
 			),
 		),
-		'confidentiality'     => array(
+		'confidentiality'      => array(
 			array(
 				'rule'    => '1.6',
 				'title'   => 'Confidentiality of Information',
@@ -69,14 +76,14 @@ class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface,
 				'summary' => 'While lawyers are associated in a firm, none of them shall knowingly represent a client when any one of them would be prohibited from doing so.',
 			),
 		),
-		'fees'                => array(
+		'fees'                 => array(
 			array(
 				'rule'    => '1.5',
 				'title'   => 'Fees',
 				'summary' => 'A lawyer shall not make an agreement for, charge, or collect an unreasonable fee or an unreasonable amount for expenses.',
 			),
 		),
-		'advertising'         => array(
+		'advertising'          => array(
 			array(
 				'rule'    => '7.1',
 				'title'   => 'Communications Concerning a Lawyer\'s Services',
@@ -93,7 +100,7 @@ class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface,
 				'summary' => 'A lawyer shall not solicit professional employment by live person-to-person contact when a significant motive is pecuniary gain.',
 			),
 		),
-		'supervision'         => array(
+		'supervision'          => array(
 			array(
 				'rule'    => '5.1',
 				'title'   => 'Responsibilities of Partners, Managers, and Supervisory Lawyers',
@@ -110,7 +117,7 @@ class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface,
 				'summary' => 'A lawyer having supervisory authority over nonlawyers shall make reasonable efforts to ensure conduct compatible with lawyer obligations.',
 			),
 		),
-		'communications'      => array(
+		'communications'       => array(
 			array(
 				'rule'    => '1.4',
 				'title'   => 'Communications',
@@ -127,7 +134,7 @@ class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface,
 				'summary' => 'A lawyer shall not communicate about the subject of the representation with a person the lawyer knows to be represented by another lawyer.',
 			),
 		),
-		'duties_to_court'     => array(
+		'duties_to_court'      => array(
 			array(
 				'rule'    => '3.1',
 				'title'   => 'Meritorious Claims and Contentions',
@@ -238,6 +245,9 @@ class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface,
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -256,21 +266,21 @@ class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface,
 			return new WP_Error( 'missing_required', __( 'Scenario description is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$scenario_lower  = strtolower( $scenario );
+		$scenario_lower   = strtolower( $scenario );
 		$applicable_rules = array();
 		$risk_indicators  = 0;
 		$max_indicators   = 0;
 
 		// Keyword-to-category mapping for automatic detection.
 		$keyword_map = array(
-			'competence'          => array( 'competence', 'skill', 'knowledge', 'unfamiliar', 'inexperienced', 'new area', 'learning' ),
-			'confidentiality'     => array( 'confidential', 'secret', 'disclose', 'reveal', 'privacy', 'share information', 'leak' ),
+			'competence'           => array( 'competence', 'skill', 'knowledge', 'unfamiliar', 'inexperienced', 'new area', 'learning' ),
+			'confidentiality'      => array( 'confidential', 'secret', 'disclose', 'reveal', 'privacy', 'share information', 'leak' ),
 			'conflict_of_interest' => array( 'conflict', 'adverse', 'opposing', 'dual representation', 'former client', 'business transaction' ),
-			'fees'                => array( 'fee', 'billing', 'charge', 'retainer', 'contingent', 'hourly rate', 'payment', 'cost' ),
-			'advertising'         => array( 'advertis', 'marketing', 'solicit', 'website', 'social media', 'promotion', 'referral' ),
-			'supervision'         => array( 'supervis', 'paralegal', 'associate', 'staff', 'delegate', 'nonlawyer', 'oversight' ),
-			'communications'      => array( 'communicat', 'inform', 'respond', 'contact', 'represented party', 'opposing counsel' ),
-			'duties_to_court'     => array( 'court', 'tribunal', 'judge', 'candor', 'evidence', 'meritorious', 'frivolous', 'perjury' ),
+			'fees'                 => array( 'fee', 'billing', 'charge', 'retainer', 'contingent', 'hourly rate', 'payment', 'cost' ),
+			'advertising'          => array( 'advertis', 'marketing', 'solicit', 'website', 'social media', 'promotion', 'referral' ),
+			'supervision'          => array( 'supervis', 'paralegal', 'associate', 'staff', 'delegate', 'nonlawyer', 'oversight' ),
+			'communications'       => array( 'communicat', 'inform', 'respond', 'contact', 'represented party', 'opposing counsel' ),
+			'duties_to_court'      => array( 'court', 'tribunal', 'judge', 'candor', 'evidence', 'meritorious', 'frivolous', 'perjury' ),
 		);
 
 		// Determine which categories to analyze.
@@ -366,12 +376,12 @@ class WP_MCP_AI_Tool_LF_Ethics_Rule_Checker implements WP_MCP_AI_Tool_Interface,
 				$risk_level
 			) . ' ' . self::DISCLAIMER,
 			'data'       => array(
-				'applicable_rules'  => $applicable_rules,
-				'risk_level'        => $risk_level,
-				'risk_score'        => round( $risk_ratio * 100 ),
+				'applicable_rules'   => $applicable_rules,
+				'risk_level'         => $risk_level,
+				'risk_score'         => round( $risk_ratio * 100 ),
 				'categories_checked' => $categories_to_check,
-				'jurisdiction'      => $jurisdiction,
-				'recommendations'   => $recommendations,
+				'jurisdiction'       => $jurisdiction,
+				'recommendations'    => $recommendations,
 			),
 			'disclaimer' => self::DISCLAIMER,
 		);

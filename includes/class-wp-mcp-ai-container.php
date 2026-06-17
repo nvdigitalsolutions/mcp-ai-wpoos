@@ -318,6 +318,34 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'client.deepseek',
+			function () {
+				return new WP_MCP_AI_DeepSeek_Client();
+			}
+		);
+
+		$this->singleton(
+			'client.openrouter',
+			function () {
+				return new WP_MCP_AI_OpenRouter_Client();
+			}
+		);
+
+		$this->singleton(
+			'client.digitalocean',
+			function () {
+				return new WP_MCP_AI_DigitalOcean_Client();
+			}
+		);
+
+		$this->singleton(
+			'client.kimi',
+			function () {
+				return new WP_MCP_AI_Kimi_Client();
+			}
+		);
+
 		// Core managers.
 		$this->singleton(
 			'router',
@@ -328,7 +356,14 @@ class WP_MCP_AI_Container {
 					$container->get( 'client.ollama' ),
 					$container->get( 'client.lm_studio' ),
 					$container->get( 'client.anthropic' ),
-					$container->get( 'client.huggingface' )
+					$container->get( 'client.huggingface' ),
+					null,
+					null,
+					$container->get( 'client.nvidia' ),
+					$container->get( 'client.deepseek' ),
+					$container->get( 'client.openrouter' ),
+					$container->get( 'client.digitalocean' ),
+					$container->get( 'client.kimi' )
 				);
 			}
 		);
@@ -748,13 +783,20 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
-			'section.comments',
-			function () {
-				return new WP_MCP_AI_Section_Comments();
-			}
-		);
+					'section.comments',
+					function () {
+						return new WP_MCP_AI_Section_Comments();
+					}
+				);
 
-		// Services.
+				$this->singleton(
+					'section.form_submissions',
+					function () {
+						return new WP_MCP_AI_Section_Form_Submissions();
+					}
+				);
+
+				// Services.
 		$this->singleton(
 			'service.chat',
 			function ( $container ) {
@@ -868,6 +910,13 @@ class WP_MCP_AI_Container {
 			'provider.lm_studio',
 			function () {
 				return new WP_MCP_AI_LM_Studio_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.baseten',
+			function () {
+				return new WP_MCP_AI_Baseten_Provider_Client();
 			}
 		);
 	}

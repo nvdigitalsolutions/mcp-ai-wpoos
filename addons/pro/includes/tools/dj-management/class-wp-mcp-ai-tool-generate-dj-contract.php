@@ -189,6 +189,7 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 
 		$contract .= "EVENT DETAILS:\n";
 		$contract .= 'Event: ' . $event_name . "\n";
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$contract .= 'Date: ' . date( 'F j, Y', strtotime( $event_date ) ) . "\n";
 		$contract .= 'Time: ' . $start_time . ' - ' . $end_time . "\n";
 		$contract .= 'Venue: ' . $venue_name . "\n";

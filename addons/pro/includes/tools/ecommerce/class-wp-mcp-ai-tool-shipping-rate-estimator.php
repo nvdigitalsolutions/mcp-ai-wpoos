@@ -36,6 +36,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.2.0
@@ -109,23 +116,23 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'    => array(
+				'action'          => array(
 					'type'        => 'string',
 					'description' => __( 'Rate estimation action to perform.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'estimate_rates', 'estimate_order_rates', 'test_connection' ),
 					'default'     => 'estimate_rates',
 				),
-				'carrier'   => array(
+				'carrier'         => array(
 					'type'        => 'string',
 					'description' => __( 'Carrier API to use for rate-shopping. Defaults to "shipengine" (ShipStation API). Use "shipstation" for legacy ShipStation V1 API.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'shipengine', 'shipstation' ),
 				),
-				'order_id'  => array(
+				'order_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'WooCommerce order ID (required for estimate_order_rates action).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'items'     => array(
+				'items'           => array(
 					'type'        => 'array',
 					'description' => __( 'Items to pack and rate (required for estimate_rates action).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -165,39 +172,39 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 						'required'   => array( 'name', 'length', 'width', 'height', 'weight_oz' ),
 					),
 				),
-				'ship_to'   => array(
+				'ship_to'         => array(
 					'type'        => 'object',
 					'description' => __( 'Destination address for rate calculation.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'name'           => array(
+						'name'          => array(
 							'type'        => 'string',
 							'description' => __( 'Recipient name.', 'mcp-ai-wpoos-pro' ),
 						),
-						'company'        => array(
+						'company'       => array(
 							'type'        => 'string',
 							'description' => __( 'Company name (optional).', 'mcp-ai-wpoos-pro' ),
 						),
-						'address_line1'  => array(
+						'address_line1' => array(
 							'type'        => 'string',
 							'description' => __( 'Street address.', 'mcp-ai-wpoos-pro' ),
 						),
-						'address_line2'  => array(
+						'address_line2' => array(
 							'type'        => 'string',
 							'description' => __( 'Suite/unit (optional).', 'mcp-ai-wpoos-pro' ),
 						),
-						'city'           => array(
+						'city'          => array(
 							'type'        => 'string',
 							'description' => __( 'City.', 'mcp-ai-wpoos-pro' ),
 						),
-						'state'          => array(
+						'state'         => array(
 							'type'        => 'string',
 							'description' => __( 'State/province code (e.g. "CA").', 'mcp-ai-wpoos-pro' ),
 						),
-						'postal_code'    => array(
+						'postal_code'   => array(
 							'type'        => 'string',
 							'description' => __( 'ZIP/postal code.', 'mcp-ai-wpoos-pro' ),
 						),
-						'country_code'   => array(
+						'country_code'  => array(
 							'type'        => 'string',
 							'description' => __( 'Two-letter country code (default: "US").', 'mcp-ai-wpoos-pro' ),
 							'default'     => 'US',
@@ -205,15 +212,15 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 					),
 					'required'    => array( 'postal_code' ),
 				),
-				'ship_from' => array(
+				'ship_from'       => array(
 					'type'        => 'object',
 					'description' => __( 'Origin address override (optional, reads from plugin settings if not provided).', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'name'         => array(
+						'name'          => array(
 							'type'        => 'string',
 							'description' => __( 'Sender name.', 'mcp-ai-wpoos-pro' ),
 						),
-						'company'      => array(
+						'company'       => array(
 							'type'        => 'string',
 							'description' => __( 'Company name.', 'mcp-ai-wpoos-pro' ),
 						),
@@ -221,19 +228,19 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 							'type'        => 'string',
 							'description' => __( 'Street address.', 'mcp-ai-wpoos-pro' ),
 						),
-						'city'         => array(
+						'city'          => array(
 							'type'        => 'string',
 							'description' => __( 'City.', 'mcp-ai-wpoos-pro' ),
 						),
-						'state'        => array(
+						'state'         => array(
 							'type'        => 'string',
 							'description' => __( 'State/province code.', 'mcp-ai-wpoos-pro' ),
 						),
-						'postal_code'  => array(
+						'postal_code'   => array(
 							'type'        => 'string',
 							'description' => __( 'ZIP/postal code.', 'mcp-ai-wpoos-pro' ),
 						),
-						'country_code' => array(
+						'country_code'  => array(
 							'type'        => 'string',
 							'description' => __( 'Country code (default: "US").', 'mcp-ai-wpoos-pro' ),
 							'default'     => 'US',
@@ -347,7 +354,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Use the box packer tool to pack items first.
-		$packer   = new WP_MCP_AI_Tool_Shipping_Box_Packer();
+		$packer      = new WP_MCP_AI_Tool_Shipping_Box_Packer();
 		$pack_result = $packer->execute(
 			array(
 				'action' => 'pack_items',
@@ -368,22 +375,22 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		$carrier  = $this->get_carrier( $arguments );
-		$ship_to  = $this->build_ship_to_address( $arguments['ship_to'] );
+		$carrier   = $this->get_carrier( $arguments );
+		$ship_to   = $this->build_ship_to_address( $arguments['ship_to'] );
 		$ship_from = $this->get_ship_from_address( $arguments );
-		$creds    = $this->get_credentials( $arguments, $carrier );
+		$creds     = $this->get_credentials( $arguments, $carrier );
 
 		$result = array(
-			'success'             => true,
-			'carrier'             => $carrier,
-			'total_items'         => $pack_result['total_items'],
-			'total_packages'      => $pack_result['total_packages'],
-			'total_rate_amount'   => 0.0,
-			'currency'            => 'USD',
-			'sandbox_mode'        => ! empty( $creds['sandbox_mode'] ),
-			'packages'            => array(),
-			'pirateship_rows'     => array(),
-			'warnings'            => array(),
+			'success'           => true,
+			'carrier'           => $carrier,
+			'total_items'       => $pack_result['total_items'],
+			'total_packages'    => $pack_result['total_packages'],
+			'total_rate_amount' => 0.0,
+			'currency'          => 'USD',
+			'sandbox_mode'      => ! empty( $creds['sandbox_mode'] ),
+			'packages'          => array(),
+			'pirateship_rows'   => array(),
+			'warnings'          => array(),
 		);
 
 		foreach ( $pack_result['packages'] as $package ) {
@@ -407,10 +414,10 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 				continue;
 			}
 
-			$rated_package = array_merge( $package, $rate_result );
-			$result['packages'][] = $rated_package;
+			$rated_package                = array_merge( $package, $rate_result );
+			$result['packages'][]         = $rated_package;
 			$result['total_rate_amount'] += (float) $rate_result['rate_amount'];
-			$result['currency'] = $rate_result['currency'];
+			$result['currency']           = $rate_result['currency'];
 
 			// Build PirateShip-compatible row.
 			$result['pirateship_rows'][] = array(
@@ -492,18 +499,18 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		$creds     = $this->get_credentials( $arguments, $carrier );
 
 		$result = array(
-			'success'             => true,
-			'carrier'             => $carrier,
-			'order_id'            => $order->get_id(),
-			'order_number'        => $order->get_order_number(),
-			'total_items'         => $pack_result['total_items'],
-			'total_packages'      => $pack_result['total_packages'],
-			'total_rate_amount'   => 0.0,
-			'currency'            => 'USD',
-			'sandbox_mode'        => ! empty( $creds['sandbox_mode'] ),
-			'packages'            => array(),
-			'pirateship_rows'     => array(),
-			'warnings'            => array(),
+			'success'           => true,
+			'carrier'           => $carrier,
+			'order_id'          => $order->get_id(),
+			'order_number'      => $order->get_order_number(),
+			'total_items'       => $pack_result['total_items'],
+			'total_packages'    => $pack_result['total_packages'],
+			'total_rate_amount' => 0.0,
+			'currency'          => 'USD',
+			'sandbox_mode'      => ! empty( $creds['sandbox_mode'] ),
+			'packages'          => array(),
+			'pirateship_rows'   => array(),
+			'warnings'          => array(),
 		);
 
 		foreach ( $pack_result['packages'] as $package ) {
@@ -526,10 +533,10 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 				continue;
 			}
 
-			$rated_package = array_merge( $package, $rate_result );
-			$result['packages'][] = $rated_package;
+			$rated_package                = array_merge( $package, $rate_result );
+			$result['packages'][]         = $rated_package;
 			$result['total_rate_amount'] += (float) $rate_result['rate_amount'];
-			$result['currency'] = $rate_result['currency'];
+			$result['currency']           = $rate_result['currency'];
 
 			$result['pirateship_rows'][] = array(
 				'order_number'   => $order->get_order_number(),
@@ -624,7 +631,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 	 * @since 1.2.0
 	 *
 	 * @param string $url     Request URL.
-	 * @param array  $args    wp_remote_request() arguments (must include 'method').
+	 * @param array  $args    Wp_remote_request() arguments (must include 'method').
 	 * @param int    $retries Maximum number of retries (default 2).
 	 * @return array|WP_Error
 	 */

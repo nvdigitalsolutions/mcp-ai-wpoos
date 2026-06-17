@@ -17,12 +17,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var WP_MCP_AI_Reward_Function_Registry
 	 */
 	private $rewards;
 
-	/**
+	/** Summary.
+	 *
 	 * @var WP_MCP_AI_Budget_Registry
 	 */
 	private $budgets;
@@ -43,7 +45,8 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 				'slug'           => 'always_one',
 				'label'          => 'Always One',
 				'description'    => 'test',
-				'callback'       => static function () { return 1.0; },
+				'callback'       => static function () {
+					return 1.0; },
 				'inputs'         => array(),
 				'output_min'     => 0.0,
 				'output_max'     => 1.0,
@@ -84,7 +87,10 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 	 */
 	public function test_passthrough_when_budget_ok() {
 		$cb = WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback(
-			array( 'inner' => 'always_one', 'budget' => 'test_cost' )
+			array(
+				'inner'  => 'always_one',
+				'budget' => 'test_cost',
+			)
 		);
 		$this->assertIsCallable( $cb );
 		$this->assertSame( 1.0, $cb( array() ) );
@@ -111,7 +117,10 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 	public function test_exceeded_state_zeros_the_reward() {
 		$this->budgets->consume( 'test_cost', 1.5 );
 		$cb = WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback(
-			array( 'inner' => 'always_one', 'budget' => 'test_cost' )
+			array(
+				'inner'  => 'always_one',
+				'budget' => 'test_cost',
+			)
 		);
 		$this->assertSame( 0.0, $cb( array() ) );
 	}
@@ -121,7 +130,10 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 	 */
 	public function test_missing_inner_reward_returns_zero() {
 		$cb = WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback(
-			array( 'inner' => 'not_registered', 'budget' => 'test_cost' )
+			array(
+				'inner'  => 'not_registered',
+				'budget' => 'test_cost',
+			)
 		);
 		$this->assertSame( 0.0, $cb( array() ) );
 	}
@@ -131,7 +143,10 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 	 */
 	public function test_missing_budget_degrades_to_passthrough() {
 		$cb = WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback(
-			array( 'inner' => 'always_one', 'budget' => 'no_such_budget' )
+			array(
+				'inner'  => 'always_one',
+				'budget' => 'no_such_budget',
+			)
 		);
 		// Absent budget → treated as "ok" → passthrough.
 		$this->assertSame( 1.0, $cb( array() ) );
@@ -170,7 +185,10 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 	public function test_non_registry_returns_wp_error() {
 		$res = WP_MCP_AI_Pro_Budget_Guarded_Reward::register_wrapper(
 			'not a registry',
-			array( 'inner' => 'always_one', 'budget' => 'test_cost' )
+			array(
+				'inner'  => 'always_one',
+				'budget' => 'test_cost',
+			)
 		);
 		$this->assertInstanceOf( 'WP_Error', $res );
 	}

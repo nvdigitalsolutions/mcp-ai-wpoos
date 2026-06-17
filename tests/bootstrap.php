@@ -30,47 +30,110 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 
 $wordpress_path = getenv( 'WP_CORE_DIR' );
 if ( ! $wordpress_path ) {
-	$codex_path     = $plugin_root . '/.codex-wordpress/wordpress';
-	$startup_script = $plugin_root . '/bin/codex-startup.sh';
-
-	if ( ! file_exists( $codex_path . '/wp-load.php' ) && is_file( $startup_script ) ) {
-		fwrite( STDERR, "WordPress core not found. Running codex-startup provisioning script...\n" );
-
-		$startup_output = array();
-		$startup_result = 0;
-
-		// Check if exec() is available before attempting to run the script.
-		if ( function_exists( 'exec' ) ) {
-			exec( escapeshellcmd( $startup_script ) . ' 2>&1', $startup_output, $startup_result );
-
-			if ( ! empty( $startup_output ) ) {
-				fwrite( STDERR, implode( "\n", $startup_output ) . "\n" );
-			}
-
-			if ( 0 !== $startup_result ) {
-				fwrite( STDERR, "codex-startup.sh exited with a non-zero status ({$startup_result}).\n" );
-			}
+	// ── WordPress Studio detection ──────────────────────────────
+	// Studio stores sites in platform-specific directories.
+	// On Windows: %LOCALAPPDATA%\WordPress Studio\sites\{slug}
+	// On macOS:   ~/Library/Application Support/WordPress Studio/sites/{slug}
+	$studio_site_slug = getenv( 'WP_STUDIO_SITE_SLUG' );
+	if ( $studio_site_slug ) {
+		if ( 'WIN' === strtoupper( substr( PHP_OS, 0, 3 ) ) ) {
+			$studio_base = getenv( 'LOCALAPPDATA' ) . '/WordPress Studio/sites';
 		} else {
-			fwrite( STDERR, "Warning: exec() function is disabled. Cannot run automatic WordPress setup.\n" );
-			fwrite( STDERR, "Please set WP_CORE_DIR environment variable or manually run: {$startup_script}\n" );
+			$studio_base = getenv( 'HOME' ) . '/Library/Application Support/WordPress Studio/sites';
+		}
+		$studio_path = $studio_base . '/' . $studio_site_slug . '/app/public';
+		if ( file_exists( $studio_path . '/wp-load.php' ) ) {
+			$wordpress_path = $studio_path;
+			fwrite( STDOUT, "\n✓ Using WordPress Studio site: {$studio_site_slug}\n" );
+			fwrite( STDOUT, "  Path: {$wordpress_path}\n\n" );
 		}
 	}
 
-	if ( file_exists( $codex_path . '/wp-load.php' ) ) {
-		$wordpress_path = $codex_path;
+	// ── Auto-detect Studio sites (when no slug specified) ──────
+	if ( ! $wordpress_path ) {
+		$studio_candidates = array();
+		if ( 'WIN' === strtoupper( substr( PHP_OS, 0, 3 ) ) ) {
+			$studio_base = getenv( 'LOCALAPPDATA' ) . '/WordPress Studio/sites';
+		} else {
+			$studio_base = getenv( 'HOME' ) . '/Library/Application Support/WordPress Studio/sites';
+		}
+		if ( is_dir( $studio_base ) ) {
+			$sites = scandir( $studio_base );
+			if ( $sites ) {
+				foreach ( $sites as $site ) {
+					if ( '.' === $site || '..' === $site ) {
+						continue;
+					}
+					$candidate = $studio_base . '/' . $site . '/app/public/wp-load.php';
+					if ( file_exists( $candidate ) ) {
+						$studio_candidates[] = $studio_base . '/' . $site . '/app/public';
+					}
+				}
+			}
+		}
+		if ( 1 === count( $studio_candidates ) ) {
+			$wordpress_path = $studio_candidates[0];
+			fwrite( STDOUT, "\n✓ Auto-detected WordPress Studio site: {$wordpress_path}\n\n" );
+		} elseif ( count( $studio_candidates ) > 1 ) {
+			fwrite( STDOUT, "\nMultiple WordPress Studio sites found:\n" );
+			foreach ( $studio_candidates as $i => $candidate ) {
+				fwrite( STDOUT, "  [{$i}] {$candidate}\n" );
+			}
+			fwrite( STDOUT, "\nSet WP_STUDIO_SITE_SLUG environment variable to choose one.\n" );
+			fwrite( STDOUT, "Example: WP_STUDIO_SITE_SLUG=mysite vendor/bin/phpunit\n\n" );
+		}
+	}
+
+	// ── Codex environment ──────────────────────────────────────
+	if ( ! $wordpress_path ) {
+		$codex_path = $plugin_root . '/.codex-wordpress/wordpress';
+		if ( file_exists( $codex_path . '/wp-load.php' ) ) {
+			$wordpress_path = $codex_path;
+		}
+	}
+
+	// ── Docker / wp-env ────────────────────────────────────────
+	if ( ! $wordpress_path ) {
+		$wp_env_path = $plugin_root . '/.wp-env/wordpress';
+		if ( file_exists( $wp_env_path . '/wp-load.php' ) ) {
+			$wordpress_path = $wp_env_path;
+		}
 	}
 }
 
 if ( ! $wordpress_path ) {
-	fwrite( STDERR, "Could not locate a WordPress installation.\n" );
-	fwrite( STDERR, "Run 'bin/codex-startup.sh' or define the WP_CORE_DIR environment variable before executing the tests.\n" );
+	fwrite( STDERR, "\nCould not locate a WordPress installation.\n\n" );
+	fwrite( STDERR, "Options:\n" );
+	fwrite( STDERR, "  1. WordPress Studio:  Set WP_STUDIO_SITE_SLUG=your-site-slug\n" );
+	fwrite( STDERR, "  2. Codex environment: Run 'bin/codex-startup.sh'\n" );
+	fwrite( STDERR, "  3. Any WP install:    Set WP_CORE_DIR=/path/to/wordpress\n" );
+	fwrite( STDERR, "  4. wp-env:            Run 'npx wp-env start'\n\n" );
 	exit( 1 );
 }
 
-$tests_db_dir = $plugin_root . '/.codex-wordpress/tests-database';
+// Determine the test database directory.
+// For Studio environments, use a temp-dir based path to avoid
+// polluting the Studio site's own database directory.
+$studio_slug = getenv( 'WP_STUDIO_SITE_SLUG' );
+if ( $studio_slug ) {
+	$tests_db_dir = sys_get_temp_dir() . '/wp-mcp-ai-tests-database/' . $studio_slug;
+} else {
+	$tests_db_dir = $plugin_root . '/.codex-wordpress/tests-database';
+}
 if ( ! is_dir( $tests_db_dir ) && ! mkdir( $tests_db_dir, 0775, true ) && ! is_dir( $tests_db_dir ) ) {
 	fwrite( STDERR, "Unable to create the SQLite directory at {$tests_db_dir}.\n" );
 	exit( 1 );
+}
+
+// Wire up SQLite Database Integration drop-in when using SQLite.
+// The fixture provides a db.php drop-in that the WP test bootstrap loads.
+$_sqlite_fixture = $plugin_root . '/tests/fixtures/sqlite-database-integration';
+if ( is_dir( $_sqlite_fixture ) && ! getenv( 'WP_DB_HOST' ) ) {
+	// The drop-in is activated in wp-tests-config.php via DB_TYPE=sqlite.
+	// We just ensure the directory exists for the test environment to find it.
+	if ( ! defined( 'WP_TESTS_SQLITE_DROPIN_DIR' ) ) {
+		define( 'WP_TESTS_SQLITE_DROPIN_DIR', $_sqlite_fixture );
+	}
 }
 
 $polyfills_root = $plugin_root . '/vendor/yoast/phpunit-polyfills';
@@ -96,16 +159,77 @@ if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 	define( 'WP_MCP_AI_BASE_VERSION', false );
 }
 
+// ============================================================
+// PHPUnit 11 Compatibility: parseTestMethodAnnotations() was
+// removed in PHPUnit 10+. The wp-phpunit abstract-testcase.php
+// still calls it. Patch it at bootstrap time.
+// ============================================================
+if ( ! class_exists( 'WP_MCP_AI_PHPUnit11_Compat' ) ) {
+	class WP_MCP_AI_PHPUnit11_Compat {
+		public static function parseTestMethodAnnotations( $cn, $mn = null ) {
+			return array( 'class' => array(), 'method' => array() );
+		}
+	}
+}
+
+$abstract_testcase = $plugin_root . '/vendor/wp-phpunit/wp-phpunit/includes/abstract-testcase.php';
+if ( file_exists( $abstract_testcase ) ) {
+	$atc = file_get_contents( $abstract_testcase );
+	$atc = str_replace(
+		'\PHPUnit\Util\Test::parseTestMethodAnnotations',
+		'\WP_MCP_AI_PHPUnit11_Compat::parseTestMethodAnnotations',
+		$atc
+	);
+	// PHPUnit 11 removed TestCase::getName(); use name() instead
+	$atc = str_replace(
+		'$this->getName( false )',
+		'$this->name()',
+		$atc
+	);
+	file_put_contents( $abstract_testcase, $atc );
+}
+// ============================================================
+
 require_once $_tests_dir . '/includes/functions.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
+
+// NOTE: paper-store trait loaded after WP bootstrap below
+// (it has an ABSPATH guard that requires WordPress to be loaded first)
 
 /**
  * Manually load the plugin being tested.
  */
 function wp_mcp_ai_manually_load_plugin() {
 	require dirname( __DIR__ ) . '/mcp-ai-wpoos.php';
+
+	// Load the SaaS Controller addon if present so its tests can exercise
+	// its classes. The addon is a standalone WP plugin (not auto-loaded by
+	// the base plugin) and ships its own `nvoos_saas_controller_bootstrap`
+	// hook on `plugins_loaded` priority 20 — loading the file here is
+	// equivalent to activating the plugin in a real install.
+	$saas_controller = dirname( __DIR__ ) . '/addons/saas-controller/nvoos-saas-controller.php';
+	if ( file_exists( $saas_controller ) ) {
+		require $saas_controller;
+	}
+
+	// Ensure security/ISO classes are loaded (loader.php may stop short
+	// if intermediate class instantiations fail in CLI context).
+	$security_files = array(
+		'includes/class-wp-mcp-ai-security-audit.php',
+		'includes/class-wp-mcp-ai-security-training.php',
+		'includes/class-wp-mcp-ai-supplier-security.php',
+		'includes/class-wp-mcp-ai-asset-inventory.php',
+		'includes/class-wp-mcp-ai-information-labelling.php',
+		'includes/class-wp-mcp-ai-incident-learning.php',
+	);
+	foreach ( $security_files as $file ) {
+		$path = dirname( __DIR__ ) . '/' . $file;
+		if ( file_exists( $path ) ) {
+			require_once $path;
+		}
+	}
 }
 
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
@@ -115,7 +239,8 @@ tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
  * This allows integration tests to run when plugins are installed.
  */
 function wp_mcp_ai_load_optional_test_plugins() {
-	$wordpress_path = getenv( 'WP_CORE_DIR' ) ?: dirname( __DIR__ ) . '/.codex-wordpress/wordpress';
+	$wp_core_dir    = getenv( 'WP_CORE_DIR' );
+	$wordpress_path = $wp_core_dir ? $wp_core_dir : dirname( __DIR__ ) . '/.codex-wordpress/wordpress';
 	$plugins_dir    = $wordpress_path . '/wp-content/plugins';
 
 	// Track which plugins are loaded for test skipping.
@@ -182,17 +307,25 @@ function wp_mcp_ai_setup_test_environment() {
 	// Set auth cookie.
 	$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $admin_id, time() + HOUR_IN_SECONDS, 'logged_in' );
 
-	// Enable all capabilities for admin user in tests.
+	// Store admin ID for the capability filter.
+	$GLOBALS['wp_mcp_ai_test_admin_id'] = $admin_id;
+
+	// Grant full capabilities to the test admin user only.
 	add_filter(
 		'user_has_cap',
-		function ( $allcaps ) {
-			$allcaps['manage_options']    = true;
-			$allcaps['edit_posts']        = true;
-			$allcaps['upload_files']      = true;
-			$allcaps['edit_others_posts'] = true;
-			$allcaps['delete_posts']      = true;
+		function ( $allcaps, $caps, $args, $user ) {
+			$admin_id = isset( $GLOBALS['wp_mcp_ai_test_admin_id'] ) ? $GLOBALS['wp_mcp_ai_test_admin_id'] : 0;
+			if ( $user instanceof WP_User && (int) $user->ID === (int) $admin_id ) {
+				$allcaps['manage_options']    = true;
+				$allcaps['edit_posts']        = true;
+				$allcaps['upload_files']      = true;
+				$allcaps['edit_others_posts'] = true;
+				$allcaps['delete_posts']      = true;
+			}
 			return $allcaps;
-		}
+		},
+		10,
+		4
 	);
 }
 
@@ -210,4 +343,14 @@ function wp_mcp_ai_init_test_database_tables() {
 
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_init_test_database_tables', 20 );
 
+// Wrap WP PHPUnit bootstrap in output buffering to prevent output
+// from the WP test framework (WP_PHPUnit_Util_Getopt echoes) from
+// interfering with PHPUnit 11's test runner.
+ob_start();
 require $_tests_dir . '/includes/bootstrap.php';
+ob_end_clean();
+
+// Helpers that depend on classes provided by the WP test bootstrap (e.g.
+// `WP_Ajax_UnitTestCase`) must be loaded after it.
+require_once __DIR__ . '/helpers/class-wp-mcp-ai-ajax-testcase.php';
+require_once __DIR__ . '/paper-store/trait-paper-store-test-helpers.php';

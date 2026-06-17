@@ -19,6 +19,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	/** {@inheritdoc} */
 	public function get_slug() {
 		return 'graphify_content_gaps';
@@ -48,7 +57,13 @@ class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_
 		return array( 'read-only' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$gaps        = NV_oOS_Graphify_Analyzer::get_knowledge_gaps();
 		$suggestions = NV_oOS_Graphify_Analyzer::get_recommendations( 10 );
@@ -85,11 +100,11 @@ class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_
 			: implode( ', ', $summary_parts ) . '.';
 
 		return array(
-			'success'          => true,
-			'gaps'             => $gaps,
-			'recommendations'  => $suggestions,
-			'surprising'       => $surprising,
-			'summary'          => $summary,
+			'success'         => true,
+			'gaps'            => $gaps,
+			'recommendations' => $suggestions,
+			'surprising'      => $surprising,
+			'summary'         => $summary,
 		);
 	}
 }

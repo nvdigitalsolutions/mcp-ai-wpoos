@@ -69,15 +69,15 @@ class WP_MCP_AI_Tool_Export_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'study_uid'         => array(
+				'study_uid'  => array(
 					'type'        => 'string',
 					'description' => __( 'StudyInstanceUID of a locally stored study.', 'mcp-ai-wpoos-pro' ),
 				),
-				'study_id'          => array(
+				'study_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Local imaging study post ID. Either study_uid or study_id is required.', 'mcp-ai-wpoos-pro' ),
 				),
-				'deidentify'        => array(
+				'deidentify' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Hint to the export filter that PHI must be scrubbed.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -91,6 +91,13 @@ class WP_MCP_AI_Tool_Export_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing', 'external-api', 'phi-data', 'destructive' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -120,13 +127,13 @@ class WP_MCP_AI_Tool_Export_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'wp_mcp_ai_study_not_found', __( 'Local imaging study not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$study_uid    = (string) get_post_meta( $study->ID, '_imaging_study_instance_uid', true );
-		$modality     = (string) get_post_meta( $study->ID, '_imaging_modality', true );
-		$study_date   = (string) get_post_meta( $study->ID, '_imaging_study_date', true );
-		$description  = (string) get_post_meta( $study->ID, '_imaging_study_description', true );
-		$patient_id   = (string) get_post_meta( $study->ID, '_imaging_patient_id', true );
-		$series_json  = (string) get_post_meta( $study->ID, '_imaging_series', true );
-		$series       = '' !== $series_json ? json_decode( $series_json, true ) : array();
+		$study_uid   = (string) get_post_meta( $study->ID, '_imaging_study_instance_uid', true );
+		$modality    = (string) get_post_meta( $study->ID, '_imaging_modality', true );
+		$study_date  = (string) get_post_meta( $study->ID, '_imaging_study_date', true );
+		$description = (string) get_post_meta( $study->ID, '_imaging_study_description', true );
+		$patient_id  = (string) get_post_meta( $study->ID, '_imaging_patient_id', true );
+		$series_json = (string) get_post_meta( $study->ID, '_imaging_series', true );
+		$series      = '' !== $series_json ? json_decode( $series_json, true ) : array();
 		if ( ! is_array( $series ) ) {
 			$series = array();
 		}
@@ -138,21 +145,54 @@ class WP_MCP_AI_Tool_Export_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_
 				continue;
 			}
 			$instances[] = array(
-				'00080060' => array( 'vr' => 'CS', 'Value' => array( $modality ) ),
-				'00080020' => array( 'vr' => 'DA', 'Value' => array( $study_date ) ),
-				'00081030' => array( 'vr' => 'LO', 'Value' => array( $description ) ),
-				'00100020' => array( 'vr' => 'LO', 'Value' => array( $patient_id ) ),
-				'0020000D' => array( 'vr' => 'UI', 'Value' => array( $study_uid ) ),
-				'0020000E' => array( 'vr' => 'UI', 'Value' => array( $series_uid ) ),
+				'00080060' => array(
+					'vr'    => 'CS',
+					'Value' => array( $modality ),
+				),
+				'00080020' => array(
+					'vr'    => 'DA',
+					'Value' => array( $study_date ),
+				),
+				'00081030' => array(
+					'vr'    => 'LO',
+					'Value' => array( $description ),
+				),
+				'00100020' => array(
+					'vr'    => 'LO',
+					'Value' => array( $patient_id ),
+				),
+				'0020000D' => array(
+					'vr'    => 'UI',
+					'Value' => array( $study_uid ),
+				),
+				'0020000E' => array(
+					'vr'    => 'UI',
+					'Value' => array( $series_uid ),
+				),
 			);
 		}
 		if ( empty( $instances ) ) {
 			$instances[] = array(
-				'00080060' => array( 'vr' => 'CS', 'Value' => array( $modality ) ),
-				'00080020' => array( 'vr' => 'DA', 'Value' => array( $study_date ) ),
-				'00081030' => array( 'vr' => 'LO', 'Value' => array( $description ) ),
-				'00100020' => array( 'vr' => 'LO', 'Value' => array( $patient_id ) ),
-				'0020000D' => array( 'vr' => 'UI', 'Value' => array( $study_uid ) ),
+				'00080060' => array(
+					'vr'    => 'CS',
+					'Value' => array( $modality ),
+				),
+				'00080020' => array(
+					'vr'    => 'DA',
+					'Value' => array( $study_date ),
+				),
+				'00081030' => array(
+					'vr'    => 'LO',
+					'Value' => array( $description ),
+				),
+				'00100020' => array(
+					'vr'    => 'LO',
+					'Value' => array( $patient_id ),
+				),
+				'0020000D' => array(
+					'vr'    => 'UI',
+					'Value' => array( $study_uid ),
+				),
 			);
 		}
 

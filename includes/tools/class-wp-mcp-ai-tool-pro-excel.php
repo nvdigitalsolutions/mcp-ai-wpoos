@@ -114,6 +114,13 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool definition for LLM payload.
 	 *
 	 * @return array Tool definition including name, description, parameters, and required capability.

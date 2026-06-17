@@ -181442,7 +181442,7 @@ var require_runtime_features = __commonJS({
     var lazyLoaders = {
       __proto__: null,
       "node:crypto": () => require("node:crypto"),
-      "node:sqlite": () => require("sqlite"),
+      "node:sqlite": () => require("node:sqlite"),
       "node:worker_threads": () => require("node:worker_threads"),
       "node:zlib": () => require("node:zlib")
     };
@@ -194947,7 +194947,7 @@ var require_sqlite_cache_store = __commonJS({
           }
         }
         if (!DatabaseSync) {
-          DatabaseSync = require("sqlite").DatabaseSync;
+          DatabaseSync = require("node:sqlite").DatabaseSync;
         }
         __privateSet(this, _db, new DatabaseSync((opts == null ? void 0 : opts.location) ?? ":memory:"));
         __privateGet(this, _db).exec(`

@@ -97,6 +97,13 @@ class WP_MCP_AI_Tool_Load_Skill implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @since 1.11.0
@@ -182,7 +189,6 @@ class WP_MCP_AI_Tool_Load_Skill implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		do_action( 'wp_mcp_ai_skill_loaded', $skill['name'], $assistant_id );
 
 		return array(
-			'success'      => true,
 			'name'         => $skill['name'],
 			'description'  => $skill['description'],
 			'license'      => isset( $skill['license'] ) ? $skill['license'] : '',

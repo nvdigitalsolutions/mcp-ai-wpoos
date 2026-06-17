@@ -123,47 +123,20 @@ class WP_MCP_AI_Admin_Profession_Settings {
 			</div>
 		</div>
 
-		<style>
-			.profession-settings-nav {
-				border-bottom: 1px solid #ccd0d4;
-				margin: 20px 0;
-			}
-			.profession-settings-nav a {
-				display: inline-block;
-				padding: 10px 15px;
-				text-decoration: none;
-				border-bottom: 2px solid transparent;
-				margin-bottom: -1px;
-			}
-			.profession-settings-nav a.nav-tab-active {
-				border-bottom-color: #2271b1;
-				font-weight: 600;
-			}
-			.profession-settings-content {
-				margin-top: 20px;
-			}
-			.profession-card {
-				background: #fff;
-				border: 1px solid #ccd0d4;
-				box-shadow: 0 1px 1px rgba(0,0,0,.04);
-				padding: 20px;
-				margin-bottom: 20px;
-			}
-			.profession-card h2 {
-				margin-top: 0;
-			}
-			.tool-item {
-				padding: 10px;
-				border-bottom: 1px solid #f0f0f1;
-			}
-			.tool-item:last-child {
-				border-bottom: none;
-			}
-			.tool-item strong {
-				display: inline-block;
-				min-width: 200px;
-			}
-		</style>
+		<?php
+		wp_add_inline_style(
+			'wp-mcp-ai-profession-settings',
+			'.profession-settings-nav{border-bottom:1px solid #ccd0d4;margin:20px 0;}'
+			. '.profession-settings-nav a{display:inline-block;padding:10px 15px;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;}'
+			. '.profession-settings-nav a.nav-tab-active{border-bottom-color:#2271b1;font-weight:600;}'
+			. '.profession-settings-content{margin-top:20px;}'
+			. '.profession-card{background:#fff;border:1px solid #ccd0d4;box-shadow:0 1px 1px rgba(0,0,0,.04);padding:20px;margin-bottom:20px;}'
+			. '.profession-card h2{margin-top:0;}'
+			. '.tool-item{padding:10px;border-bottom:1px solid #f0f0f1;}'
+			. '.tool-item:last-child{border-bottom:none;}'
+			. '.tool-item strong{display:inline-block;min-width:200px;}'
+		);
+		?>
 		<?php
 	}
 

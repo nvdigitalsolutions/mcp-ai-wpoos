@@ -32,27 +32,117 @@ var Clipper = () => {
   throw new Error("<Clipper> has been removed as of Remotion v4.0.228. The native clipping APIs were experimental and subject to removal at any time. We removed them because they were sparingly used and made rendering often slower rather than faster.");
 };
 
-// src/enable-sequence-stack-traces.ts
-var componentsToAddStacksTo = [];
-var getComponentsToAddStacksTo = () => componentsToAddStacksTo;
-var addSequenceStackTraces = (component) => {
-  componentsToAddStacksTo.push(component);
-};
+// src/Composition.tsx
+import { Suspense, useCallback as useCallback4, useContext as useContext9, useEffect as useEffect2 } from "react";
+import { createPortal } from "react-dom";
 
-// src/is-player.tsx
-import { createContext as createContext2, useContext } from "react";
+// src/CanUseRemotionHooks.tsx
+import { createContext as createContext2 } from "react";
 import { jsx } from "react/jsx-runtime";
-var IsPlayerContext = createContext2(false);
-var IsPlayerContextProvider = ({
-  children
-}) => {
-  return /* @__PURE__ */ jsx(IsPlayerContext.Provider, {
+var CanUseRemotionHooks = createContext2(false);
+var CanUseRemotionHooksProvider = ({ children }) => {
+  return /* @__PURE__ */ jsx(CanUseRemotionHooks.Provider, {
     value: true,
     children
   });
 };
-var useIsPlayer = () => {
-  return useContext(IsPlayerContext);
+
+// src/composition-render-error-context.ts
+import { createContext as createContext3 } from "react";
+var CompositionRenderErrorContext = createContext3({
+  setError: () => {},
+  clearError: () => {}
+});
+
+// src/CompositionErrorBoundary.tsx
+import React2 from "react";
+
+class CompositionErrorBoundary extends React2.Component {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error) {
+    this.props.onError(error);
+  }
+  componentDidUpdate(_prevProps) {
+    if (!this.state.hasError) {
+      this.props.onClear();
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
+
+// src/CompositionManagerContext.tsx
+import { createContext as createContext4 } from "react";
+var CompositionManager = createContext4({
+  compositions: [],
+  folders: [],
+  currentCompositionMetadata: null,
+  canvasContent: null
+});
+var CompositionSetters = createContext4({
+  registerComposition: () => {
+    return;
+  },
+  unregisterComposition: () => {
+    return;
+  },
+  registerFolder: () => {
+    return;
+  },
+  unregisterFolder: () => {
+    return;
+  },
+  setCanvasContent: () => {
+    return;
+  },
+  onlyRenderComposition: null
+});
+
+// src/Folder.tsx
+import { createContext as createContext6, useContext as useContext2, useEffect, useMemo as useMemo2 } from "react";
+
+// src/nonce.ts
+import { createContext as createContext5, useCallback, useContext, useMemo, useRef } from "react";
+var NonceContext = createContext5({
+  getNonce: () => 0
+});
+var fastRefreshNonce = 0;
+try {
+  if (typeof __webpack_module__ !== "undefined") {
+    if (__webpack_module__.hot) {
+      __webpack_module__.hot.addStatusHandler((status) => {
+        if (status === "idle") {
+          fastRefreshNonce++;
+        }
+      });
+    }
+  }
+} catch {}
+var useNonce = () => {
+  const context = useContext(NonceContext);
+  const nonce = context.getNonce();
+  const nonceRef = useRef(nonce);
+  nonceRef.current = nonce;
+  const history = useRef([[fastRefreshNonce, nonce]]);
+  const get = useCallback(() => {
+    if (fastRefreshNonce !== history.current[history.current.length - 1][0]) {
+      history.current = [
+        ...history.current,
+        [fastRefreshNonce, nonceRef.current]
+      ];
+    }
+    return history.current;
+  }, [history]);
+  return useMemo(() => {
+    return { get };
+  }, [get]);
 };
 
 // src/truthy.ts
@@ -60,55 +150,163 @@ function truthy(value) {
   return Boolean(value);
 }
 
-// src/version.ts
-var VERSION = "4.0.436";
-
-// src/multiple-versions-warning.ts
-var checkMultipleRemotionVersions = () => {
-  if (typeof globalThis === "undefined") {
-    return;
+// src/validation/validate-folder-name.ts
+var getRegex = () => /^([a-zA-Z0-9-\u4E00-\u9FFF])+$/g;
+var isFolderNameValid = (name) => name.match(getRegex());
+var validateFolderName = (name) => {
+  if (name === undefined || name === null) {
+    throw new TypeError("You must pass a name to a <Folder />.");
   }
-  const set = () => {
-    globalThis.remotion_imported = VERSION;
-    if (typeof window !== "undefined") {
-      window.remotion_imported = VERSION;
-    }
+  if (typeof name !== "string") {
+    throw new TypeError(`The "name" you pass into <Folder /> must be a string. Got: ${typeof name}`);
+  }
+  if (!isFolderNameValid(name)) {
+    throw new Error(`Folder name can only contain a-z, A-Z, 0-9 and -. You passed ${name}`);
+  }
+};
+var invalidFolderNameErrorMessage = `Folder name must match ${String(getRegex())}`;
+
+// src/Folder.tsx
+import { jsx as jsx2 } from "react/jsx-runtime";
+var FolderContext = createContext6({
+  folderName: null,
+  parentName: null
+});
+var Folder = ({ name, children }) => {
+  const parent = useContext2(FolderContext);
+  const { registerFolder, unregisterFolder } = useContext2(CompositionSetters);
+  const nonce = useNonce();
+  validateFolderName(name);
+  const parentNameArr = [parent.parentName, parent.folderName].filter(truthy);
+  const parentName = parentNameArr.length === 0 ? null : parentNameArr.join("/");
+  const value = useMemo2(() => {
+    return {
+      folderName: name,
+      parentName
+    };
+  }, [name, parentName]);
+  useEffect(() => {
+    registerFolder(name, parentName, nonce.get());
+    return () => {
+      unregisterFolder(name, parentName);
+    };
+  }, [
+    name,
+    parent.folderName,
+    parentName,
+    registerFolder,
+    unregisterFolder,
+    nonce
+  ]);
+  return /* @__PURE__ */ jsx2(FolderContext.Provider, {
+    value,
+    children
+  });
+};
+
+// src/get-remotion-environment.ts
+function getNodeEnvString() {
+  return ["NOD", "E_EN", "V"].join("");
+}
+var getEnvString = () => {
+  return ["e", "nv"].join("");
+};
+var getRemotionEnvironment = () => {
+  const isPlayer = typeof window !== "undefined" && window.remotion_isPlayer;
+  const isRendering = typeof window !== "undefined" && typeof window.process !== "undefined" && typeof window.process.env !== "undefined" && (window.process[getEnvString()][getNodeEnvString()] === "test" || window.process[getEnvString()][getNodeEnvString()] === "production" && typeof window !== "undefined" && typeof window.remotion_puppeteerTimeout !== "undefined");
+  const isStudio = typeof window !== "undefined" && window.remotion_isStudio;
+  const isReadOnlyStudio = typeof window !== "undefined" && window.remotion_isReadOnlyStudio;
+  return {
+    isStudio,
+    isRendering,
+    isPlayer,
+    isReadOnlyStudio,
+    isClientSideRendering: false
   };
-  const alreadyImported = globalThis.remotion_imported || typeof window !== "undefined" && window.remotion_imported;
-  if (alreadyImported) {
-    if (alreadyImported === VERSION) {
-      return;
-    }
-    if (typeof alreadyImported === "string" && alreadyImported.includes("webcodecs")) {
-      set();
-      return;
-    }
-    throw new TypeError(`\uD83D\uDEA8 Multiple versions of Remotion detected: ${[
-      VERSION,
-      typeof alreadyImported === "string" ? alreadyImported : "an older version"
-    ].filter(truthy).join(" and ")}. This will cause things to break in an unexpected way.
-Check that all your Remotion packages are on the same version. If your dependencies depend on Remotion, make them peer dependencies. You can also run \`npx remotion versions\` from your terminal to see which versions are mismatching.`);
+};
+
+// src/input-props-serialization.ts
+var DATE_TOKEN = "remotion-date:";
+var FILE_TOKEN = "remotion-file:";
+var serializeJSONWithSpecialTypes = ({
+  data,
+  indent,
+  staticBase
+}) => {
+  let customDateUsed = false;
+  let customFileUsed = false;
+  let mapUsed = false;
+  let setUsed = false;
+  try {
+    const serializedString = JSON.stringify(data, function(key, value) {
+      const item = this[key];
+      if (item instanceof Date) {
+        customDateUsed = true;
+        return `${DATE_TOKEN}${item.toISOString()}`;
+      }
+      if (item instanceof Map) {
+        mapUsed = true;
+        return value;
+      }
+      if (item instanceof Set) {
+        setUsed = true;
+        return value;
+      }
+      if (typeof item === "string" && staticBase !== null && item.startsWith(staticBase)) {
+        customFileUsed = true;
+        return `${FILE_TOKEN}${item.replace(staticBase + "/", "")}`;
+      }
+      return value;
+    }, indent);
+    return { serializedString, customDateUsed, customFileUsed, mapUsed, setUsed };
+  } catch (err) {
+    throw new Error("Could not serialize the passed input props to JSON: " + err.message);
   }
-  set();
+};
+var deserializeJSONWithSpecialTypes = (data) => {
+  return JSON.parse(data, (_, value) => {
+    if (typeof value === "string" && value.startsWith(DATE_TOKEN)) {
+      return new Date(value.replace(DATE_TOKEN, ""));
+    }
+    if (typeof value === "string" && value.startsWith(FILE_TOKEN)) {
+      return `${window.remotion_staticBase}/${value.replace(FILE_TOKEN, "")}`;
+    }
+    return value;
+  });
+};
+var serializeThenDeserialize = (props) => {
+  return deserializeJSONWithSpecialTypes(serializeJSONWithSpecialTypes({
+    data: props,
+    indent: 2,
+    staticBase: window.remotion_staticBase
+  }).serializedString);
+};
+var serializeThenDeserializeInStudio = (props) => {
+  if (getRemotionEnvironment().isStudio) {
+    return serializeThenDeserialize(props);
+  }
+  return props;
 };
 
-// src/Null.tsx
-var Null = () => {
-  throw new Error("<Null> has been removed as of Remotion v4.0.228. The native clipping APIs were experimental and subject to removal at any time. We removed them because they were sparingly used and made rendering often slower rather than faster.");
+// src/is-player.tsx
+import { createContext as createContext7, useContext as useContext3 } from "react";
+import { jsx as jsx3 } from "react/jsx-runtime";
+var IsPlayerContext = createContext7(false);
+var IsPlayerContextProvider = ({
+  children
+}) => {
+  return /* @__PURE__ */ jsx3(IsPlayerContext.Provider, {
+    value: true,
+    children
+  });
 };
-
-// src/Sequence.tsx
-import {
-  forwardRef as forwardRef2,
-  useContext as useContext13,
-  useEffect,
-  useMemo as useMemo11,
-  useState as useState4
-} from "react";
+var useIsPlayer = () => {
+  return useContext3(IsPlayerContext);
+};
 
 // src/AbsoluteFill.tsx
-import { forwardRef, useMemo } from "react";
-import { jsx as jsx2 } from "react/jsx-runtime";
+import { forwardRef, useMemo as useMemo3 } from "react";
+import { jsx as jsx4 } from "react/jsx-runtime";
 var hasTailwindClassName = ({
   className,
   classPrefix,
@@ -131,7 +329,7 @@ var hasTailwindClassName = ({
 };
 var AbsoluteFillRefForwarding = (props, ref) => {
   const { style, ...other } = props;
-  const actualStyle = useMemo(() => {
+  const actualStyle = useMemo3(() => {
     return {
       position: "absolute",
       top: hasTailwindClassName({
@@ -194,7 +392,7 @@ var AbsoluteFillRefForwarding = (props, ref) => {
       ...style
     };
   }, [other.className, style]);
-  return /* @__PURE__ */ jsx2("div", {
+  return /* @__PURE__ */ jsx4("div", {
     ref,
     style: actualStyle,
     ...other
@@ -202,72 +400,338 @@ var AbsoluteFillRefForwarding = (props, ref) => {
 };
 var AbsoluteFill = forwardRef(AbsoluteFillRefForwarding);
 
-// src/freeze.tsx
-import { useContext as useContext11, useMemo as useMemo8 } from "react";
+// src/loading-indicator.tsx
+import { jsx as jsx5, jsxs } from "react/jsx-runtime";
+var rotate = {
+  transform: `rotate(90deg)`
+};
+var ICON_SIZE = 40;
+var label = {
+  color: "white",
+  fontSize: 14,
+  fontFamily: "sans-serif"
+};
+var container = {
+  justifyContent: "center",
+  alignItems: "center"
+};
+var Loading = () => {
+  return /* @__PURE__ */ jsxs(AbsoluteFill, {
+    style: container,
+    id: "remotion-comp-loading",
+    children: [
+      /* @__PURE__ */ jsx5("style", {
+        type: "text/css",
+        children: `
+				@keyframes anim {
+					from {
+						opacity: 0
+					}
+					to {
+						opacity: 1
+					}
+				}
+				#remotion-comp-loading {
+					animation: anim 2s;
+					animation-fill-mode: forwards;
+				}
+			`
+      }),
+      /* @__PURE__ */ jsx5("svg", {
+        width: ICON_SIZE,
+        height: ICON_SIZE,
+        viewBox: "-100 -100 400 400",
+        style: rotate,
+        children: /* @__PURE__ */ jsx5("path", {
+          fill: "#555",
+          stroke: "#555",
+          strokeWidth: "100",
+          strokeLinejoin: "round",
+          d: "M 2 172 a 196 100 0 0 0 195 5 A 196 240 0 0 0 100 2.259 A 196 240 0 0 0 2 172 z"
+        })
+      }),
+      /* @__PURE__ */ jsxs("p", {
+        style: label,
+        children: [
+          "Resolving ",
+          "<Suspense>",
+          "..."
+        ]
+      })
+    ]
+  });
+};
 
-// src/SequenceContext.tsx
-import { createContext as createContext3 } from "react";
-var SequenceContext = createContext3(null);
+// src/portal-node.ts
+var _portalNode = null;
+var portalNode = () => {
+  if (!_portalNode) {
+    if (typeof document === "undefined") {
+      throw new Error("Tried to call an API that only works in the browser from outside the browser");
+    }
+    _portalNode = document.createElement("div");
+    _portalNode.style.position = "absolute";
+    _portalNode.style.top = "0px";
+    _portalNode.style.left = "0px";
+    _portalNode.style.right = "0px";
+    _portalNode.style.bottom = "0px";
+    _portalNode.style.width = "100%";
+    _portalNode.style.height = "100%";
+    _portalNode.style.display = "flex";
+    _portalNode.style.flexDirection = "column";
+    const containerNode = document.createElement("div");
+    containerNode.style.position = "fixed";
+    containerNode.style.top = -999999 + "px";
+    containerNode.appendChild(_portalNode);
+    document.body.appendChild(containerNode);
+  }
+  return _portalNode;
+};
 
-// src/timeline-position-state.ts
-var exports_timeline_position_state = {};
-__export(exports_timeline_position_state, {
-  useTimelineSetFrame: () => useTimelineSetFrame,
-  useTimelinePosition: () => useTimelinePosition,
-  useTimelineContext: () => useTimelineContext,
-  usePlayingState: () => usePlayingState,
-  useAbsoluteTimelinePosition: () => useAbsoluteTimelinePosition,
-  persistCurrentFrame: () => persistCurrentFrame,
-  getInitialFrameState: () => getInitialFrameState,
-  getFrameForComposition: () => getFrameForComposition
+// src/ResolveCompositionConfig.tsx
+import { createContext as createContext9, createRef, useContext as useContext5, useMemo as useMemo5 } from "react";
+
+// src/input-props-override.ts
+var getKey = () => {
+  return `remotion_inputPropsOverride` + window.location.origin;
+};
+var getInputPropsOverride = () => {
+  if (typeof localStorage === "undefined")
+    return null;
+  const override = localStorage.getItem(getKey());
+  if (!override)
+    return null;
+  return JSON.parse(override);
+};
+var setInputPropsOverride = (override) => {
+  if (typeof localStorage === "undefined")
+    return;
+  if (override === null) {
+    localStorage.removeItem(getKey());
+    return;
+  }
+  localStorage.setItem(getKey(), JSON.stringify(override));
+};
+
+// src/config/input-props.ts
+var didWarnSSRImport = false;
+var warnOnceSSRImport = () => {
+  if (didWarnSSRImport) {
+    return;
+  }
+  didWarnSSRImport = true;
+  console.warn("Called `getInputProps()` on the server. This function is not available server-side and has returned an empty object.");
+  console.warn("To hide this warning, don't call this function on the server:");
+  console.warn("  typeof window === 'undefined' ? {} : getInputProps()");
+};
+var getInputProps = () => {
+  if (typeof window === "undefined") {
+    warnOnceSSRImport();
+    return {};
+  }
+  if (getRemotionEnvironment().isPlayer) {
+    throw new Error("You cannot call `getInputProps()` from a <Player>. Instead, the props are available as React props from component that you passed as `component` prop.");
+  }
+  const override = getInputPropsOverride();
+  if (override) {
+    return override;
+  }
+  if (typeof window === "undefined" || typeof window.remotion_inputProps === "undefined") {
+    throw new Error("Cannot call `getInputProps()` - window.remotion_inputProps is not set. This API is only available if you are in the Studio, or while you are rendering server-side.");
+  }
+  const param = window.remotion_inputProps;
+  if (!param) {
+    return {};
+  }
+  const parsed = deserializeJSONWithSpecialTypes(param);
+  return parsed;
+};
+
+// src/EditorProps.tsx
+import React4, { createContext as createContext8, useCallback as useCallback2, useMemo as useMemo4 } from "react";
+import { jsx as jsx6 } from "react/jsx-runtime";
+var EditorPropsContext = createContext8({
+  props: {},
+  updateProps: () => {
+    throw new Error("Not implemented");
+  }
 });
-import { useContext as useContext7, useMemo as useMemo6 } from "react";
+var timeValueRef = React4.createRef();
+var EditorPropsProvider = ({ children }) => {
+  const [props, setProps] = React4.useState({});
+  const updateProps = useCallback2(({
+    defaultProps,
+    id,
+    newProps
+  }) => {
+    setProps((prev) => {
+      return {
+        ...prev,
+        [id]: typeof newProps === "function" ? newProps(prev[id] ?? defaultProps) : newProps
+      };
+    });
+  }, []);
+  const ctx = useMemo4(() => {
+    return { props, updateProps };
+  }, [props, updateProps]);
+  return /* @__PURE__ */ jsx6(EditorPropsContext.Provider, {
+    value: ctx,
+    children
+  });
+};
 
-// src/TimelineContext.tsx
-import {
-  createContext as createContext6,
-  useLayoutEffect,
-  useMemo as useMemo2,
-  useRef,
-  useState as useState2
-} from "react";
+// src/use-remotion-environment.ts
+import { useContext as useContext4, useState } from "react";
 
-// src/random.ts
-function mulberry32(a) {
-  let t = a + 1831565813;
-  t = Math.imul(t ^ t >>> 15, t | 1);
-  t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+// src/remotion-environment-context.ts
+import React5 from "react";
+var RemotionEnvironmentContext = React5.createContext(null);
+
+// src/use-remotion-environment.ts
+var useRemotionEnvironment = () => {
+  const context = useContext4(RemotionEnvironmentContext);
+  const [env] = useState(() => getRemotionEnvironment());
+  return context ?? env;
+};
+
+// src/validation/validate-dimensions.ts
+function validateDimension(amount, nameOfProp, location) {
+  if (typeof amount !== "number") {
+    throw new Error(`The "${nameOfProp}" prop ${location} must be a number, but you passed a value of type ${typeof amount}`);
+  }
+  if (isNaN(amount)) {
+    throw new TypeError(`The "${nameOfProp}" prop ${location} must not be NaN, but is NaN.`);
+  }
+  if (!Number.isFinite(amount)) {
+    throw new TypeError(`The "${nameOfProp}" prop ${location} must be finite, but is ${amount}.`);
+  }
+  if (amount % 1 !== 0) {
+    throw new TypeError(`The "${nameOfProp}" prop ${location} must be an integer, but is ${amount}.`);
+  }
+  if (amount <= 0) {
+    throw new TypeError(`The "${nameOfProp}" prop ${location} must be positive, but got ${amount}.`);
+  }
 }
-function hashCode(str) {
-  let i = 0;
-  let chr = 0;
-  let hash = 0;
-  for (i = 0;i < str.length; i++) {
-    chr = str.charCodeAt(i);
-    hash = (hash << 5) - hash + chr;
-    hash |= 0;
+
+// src/validation/validate-duration-in-frames.ts
+function validateDurationInFrames(durationInFrames, options) {
+  const { allowFloats, component } = options;
+  if (typeof durationInFrames === "undefined") {
+    throw new Error(`The "durationInFrames" prop ${component} is missing.`);
   }
-  return hash;
+  if (typeof durationInFrames !== "number") {
+    throw new Error(`The "durationInFrames" prop ${component} must be a number, but you passed a value of type ${typeof durationInFrames}`);
+  }
+  if (durationInFrames <= 0) {
+    throw new TypeError(`The "durationInFrames" prop ${component} must be positive, but got ${durationInFrames}.`);
+  }
+  if (!allowFloats && durationInFrames % 1 !== 0) {
+    throw new TypeError(`The "durationInFrames" prop ${component} must be an integer, but got ${durationInFrames}.`);
+  }
+  if (!Number.isFinite(durationInFrames)) {
+    throw new TypeError(`The "durationInFrames" prop ${component} must be finite, but got ${durationInFrames}.`);
+  }
 }
-var random = (seed, dummy) => {
-  if (dummy !== undefined) {
-    throw new TypeError("random() takes only one argument");
+
+// src/validation/validate-fps.ts
+function validateFps(fps, location, isGif) {
+  if (typeof fps !== "number") {
+    throw new Error(`"fps" must be a number, but you passed a value of type ${typeof fps} ${location}`);
   }
-  if (seed === null) {
-    return Math.random();
+  if (!Number.isFinite(fps)) {
+    throw new Error(`"fps" must be a finite, but you passed ${fps} ${location}`);
   }
-  if (typeof seed === "string") {
-    return mulberry32(hashCode(seed));
+  if (isNaN(fps)) {
+    throw new Error(`"fps" must not be NaN, but got ${fps} ${location}`);
   }
-  if (typeof seed === "number") {
-    return mulberry32(seed * 10000000000);
+  if (fps <= 0) {
+    throw new TypeError(`"fps" must be positive, but got ${fps} ${location}`);
   }
-  throw new Error("random() argument must be a number or a string");
+  if (isGif && fps > 50) {
+    throw new TypeError(`The FPS for a GIF cannot be higher than 50. Use the --every-nth-frame option to lower the FPS: https://remotion.dev/docs/render-as-gif`);
+  }
+}
+
+// src/ResolveCompositionConfig.tsx
+var ResolveCompositionContext = createContext9(null);
+var resolveCompositionsRef = createRef();
+var needsResolution = (composition) => {
+  return Boolean(composition.calculateMetadata);
+};
+var useResolvedVideoConfig = (preferredCompositionId) => {
+  const context = useContext5(ResolveCompositionContext);
+  const { props: allEditorProps } = useContext5(EditorPropsContext);
+  const { compositions, canvasContent, currentCompositionMetadata } = useContext5(CompositionManager);
+  const currentComposition = canvasContent?.type === "composition" ? canvasContent.compositionId : null;
+  const compositionId = preferredCompositionId ?? currentComposition;
+  const composition = compositions.find((c) => c.id === compositionId);
+  const selectedEditorProps = useMemo5(() => {
+    return composition ? allEditorProps[composition.id] ?? {} : {};
+  }, [allEditorProps, composition]);
+  const env = useRemotionEnvironment();
+  return useMemo5(() => {
+    if (!composition) {
+      return null;
+    }
+    if (currentCompositionMetadata) {
+      return {
+        type: "success",
+        result: {
+          ...currentCompositionMetadata,
+          id: composition.id,
+          defaultProps: composition.defaultProps ?? {}
+        }
+      };
+    }
+    if (!needsResolution(composition)) {
+      validateDurationInFrames(composition.durationInFrames, {
+        allowFloats: false,
+        component: `in <Composition id="${composition.id}">`
+      });
+      validateFps(composition.fps, `in <Composition id="${composition.id}">`, false);
+      validateDimension(composition.width, "width", `in <Composition id="${composition.id}">`);
+      validateDimension(composition.height, "height", `in <Composition id="${composition.id}">`);
+      return {
+        type: "success",
+        result: {
+          width: composition.width,
+          height: composition.height,
+          fps: composition.fps,
+          id: composition.id,
+          durationInFrames: composition.durationInFrames,
+          defaultProps: composition.defaultProps ?? {},
+          props: {
+            ...composition.defaultProps ?? {},
+            ...selectedEditorProps ?? {},
+            ...typeof window === "undefined" || env.isPlayer || !window.remotion_inputProps ? {} : getInputProps() ?? {}
+          },
+          defaultCodec: null,
+          defaultOutName: null,
+          defaultVideoImageFormat: null,
+          defaultPixelFormat: null,
+          defaultProResProfile: null,
+          defaultSampleRate: null
+        }
+      };
+    }
+    if (!context) {
+      return null;
+    }
+    if (!context[composition.id]) {
+      return null;
+    }
+    return context[composition.id];
+  }, [
+    composition,
+    context,
+    currentCompositionMetadata,
+    selectedEditorProps,
+    env.isPlayer
+  ]);
 };
 
 // src/use-delay-render.tsx
-import { createContext as createContext5, useCallback, useContext as useContext4 } from "react";
+import { createContext as createContext11, useCallback as useCallback3, useContext as useContext7 } from "react";
 
 // src/cancel-render.ts
 var getErrorStackWithMessage = (error) => {
@@ -319,27 +783,6 @@ function cancelRenderInternal(scope, err) {
 function cancelRender(err) {
   return cancelRenderInternal(typeof window !== "undefined" ? window : undefined, err);
 }
-
-// src/get-remotion-environment.ts
-function getNodeEnvString() {
-  return ["NOD", "E_EN", "V"].join("");
-}
-var getEnvString = () => {
-  return ["e", "nv"].join("");
-};
-var getRemotionEnvironment = () => {
-  const isPlayer = typeof window !== "undefined" && window.remotion_isPlayer;
-  const isRendering = typeof window !== "undefined" && typeof window.process !== "undefined" && typeof window.process.env !== "undefined" && (window.process[getEnvString()][getNodeEnvString()] === "test" || window.process[getEnvString()][getNodeEnvString()] === "production" && typeof window !== "undefined" && typeof window.remotion_puppeteerTimeout !== "undefined");
-  const isStudio = typeof window !== "undefined" && window.remotion_isStudio;
-  const isReadOnlyStudio = typeof window !== "undefined" && window.remotion_isReadOnlyStudio;
-  return {
-    isStudio,
-    isRendering,
-    isPlayer,
-    isReadOnlyStudio,
-    isClientSideRendering: false
-  };
-};
 
 // src/log.ts
 var logLevels = ["trace", "verbose", "info", "warn", "error"];
@@ -410,11 +853,11 @@ var defaultTimeout = 30000;
 var delayRenderInternal = ({
   scope,
   environment,
-  label,
+  label: label2,
   options
 }) => {
-  if (typeof label !== "string" && label !== null) {
-    throw new Error("The label parameter of delayRender() must be a string or undefined, got: " + JSON.stringify(label));
+  if (typeof label2 !== "string" && label2 !== null) {
+    throw new Error("The label parameter of delayRender() must be a string or undefined, got: " + JSON.stringify(label2));
   }
   const handle = Math.random();
   scope.remotion_delayRenderHandles.push(handle);
@@ -423,12 +866,12 @@ var delayRenderInternal = ({
     const timeoutToUse = (options?.timeoutInMilliseconds ?? scope.remotion_puppeteerTimeout ?? defaultTimeout) - 2000;
     const retriesLeft = (options?.retries ?? 0) - (scope.remotion_attempt - 1);
     scope.remotion_delayRenderTimeouts[handle] = {
-      label: label ?? null,
+      label: label2 ?? null,
       startTime: Date.now(),
       timeout: setTimeout(() => {
         const message = [
           `A delayRender()`,
-          label ? `"${label}"` : null,
+          label2 ? `"${label2}"` : null,
           `was called but not cleared after ${timeoutToUse}ms. See https://remotion.dev/docs/timeout for help.`,
           retriesLeft > 0 ? DELAY_RENDER_RETRIES_LEFT + retriesLeft : null,
           retriesLeft > 0 ? DELAY_RENDER_RETRY_TOKEN : null,
@@ -446,14 +889,14 @@ var delayRenderInternal = ({
   scope.remotion_renderReady = false;
   return handle;
 };
-var delayRender = (label, options) => {
+var delayRender = (label2, options) => {
   if (typeof window === "undefined") {
     return Math.random();
   }
   return delayRenderInternal({
     scope: window,
     environment: getRemotionEnvironment(),
-    label: label ?? null,
+    label: label2 ?? null,
     options: options ?? {}
   });
 };
@@ -475,10 +918,10 @@ var continueRenderInternal = ({
         if (!scope.remotion_delayRenderTimeouts[handle]) {
           return false;
         }
-        const { label, startTime, timeout } = scope.remotion_delayRenderTimeouts[handle];
+        const { label: label2, startTime, timeout } = scope.remotion_delayRenderTimeouts[handle];
         clearTimeout(timeout);
         const message = [
-          label ? `"${label}"` : "A handle",
+          label2 ? `"${label2}"` : "A handle",
           DELAY_RENDER_CLEAR_TOKEN,
           `${Date.now() - startTime}ms`
         ].filter(truthy).join(" ");
@@ -506,59 +949,45 @@ var continueRender = (handle) => {
 };
 
 // src/log-level-context.tsx
-import { createContext as createContext4 } from "react";
-import * as React2 from "react";
-var LogLevelContext = createContext4({
+import { createContext as createContext10 } from "react";
+import * as React6 from "react";
+var LogLevelContext = createContext10({
   logLevel: "info",
   mountTime: 0
 });
 var useLogLevel = () => {
-  const { logLevel } = React2.useContext(LogLevelContext);
+  const { logLevel } = React6.useContext(LogLevelContext);
   if (logLevel === null) {
     throw new Error("useLogLevel must be used within a LogLevelProvider");
   }
   return logLevel;
 };
 var useMountTime = () => {
-  const { mountTime } = React2.useContext(LogLevelContext);
+  const { mountTime } = React6.useContext(LogLevelContext);
   if (mountTime === null) {
     throw new Error("useMountTime must be used within a LogLevelProvider");
   }
   return mountTime;
 };
 
-// src/use-remotion-environment.ts
-import { useContext as useContext3, useState } from "react";
-
-// src/remotion-environment-context.ts
-import React3 from "react";
-var RemotionEnvironmentContext = React3.createContext(null);
-
-// src/use-remotion-environment.ts
-var useRemotionEnvironment = () => {
-  const context = useContext3(RemotionEnvironmentContext);
-  const [env] = useState(() => getRemotionEnvironment());
-  return context ?? env;
-};
-
 // src/use-delay-render.tsx
-var DelayRenderContextType = createContext5(null);
+var DelayRenderContextType = createContext11(null);
 var useDelayRender = () => {
   const environment = useRemotionEnvironment();
-  const scope = useContext4(DelayRenderContextType) ?? (typeof window !== "undefined" ? window : undefined);
+  const scope = useContext7(DelayRenderContextType) ?? (typeof window !== "undefined" ? window : undefined);
   const logLevel = useLogLevel();
-  const delayRender2 = useCallback((label, options) => {
+  const delayRender2 = useCallback3((label2, options) => {
     if (!scope) {
       return Math.random();
     }
     return delayRenderInternal({
       scope,
       environment,
-      label: label ?? null,
+      label: label2 ?? null,
       options: options ?? {}
     });
   }, [environment, scope]);
-  const continueRender2 = useCallback((handle) => {
+  const continueRender2 = useCallback3((handle) => {
     if (!scope) {
       return;
     }
@@ -569,15 +998,309 @@ var useDelayRender = () => {
       logLevel
     });
   }, [environment, logLevel, scope]);
-  const cancelRender2 = useCallback((err) => {
+  const cancelRender2 = useCallback3((err) => {
     return cancelRenderInternal(scope ?? (typeof window !== "undefined" ? window : undefined), err);
   }, [scope]);
   return { delayRender: delayRender2, continueRender: continueRender2, cancelRender: cancelRender2 };
 };
 
+// src/use-lazy-component.ts
+import React7, { useMemo as useMemo6, useRef as useRef2 } from "react";
+var useLazyComponent = ({
+  compProps,
+  componentName,
+  noSuspense
+}) => {
+  const componentRef = useRef2(null);
+  if ("component" in compProps) {
+    componentRef.current = compProps.component;
+  }
+  const lazy = useMemo6(() => {
+    if ("component" in compProps) {
+      if (typeof document === "undefined" || noSuspense) {
+        return compProps.component;
+      }
+      if (typeof compProps.component === "undefined") {
+        throw new Error(`A value of \`undefined\` was passed to the \`component\` prop. Check the value you are passing to the <${componentName}/> component.`);
+      }
+      const Wrapper = (props) => {
+        const Comp = componentRef.current;
+        return React7.createElement(Comp, props);
+      };
+      return Wrapper;
+    }
+    if ("lazyComponent" in compProps && typeof compProps.lazyComponent !== "undefined") {
+      if (typeof compProps.lazyComponent === "undefined") {
+        throw new Error(`A value of \`undefined\` was passed to the \`lazyComponent\` prop. Check the value you are passing to the <${componentName}/> component.`);
+      }
+      return React7.lazy(compProps.lazyComponent);
+    }
+    throw new Error("You must pass either 'component' or 'lazyComponent'");
+  }, [compProps.lazyComponent]);
+  return lazy;
+};
+
+// src/use-video.ts
+import { useContext as useContext8, useMemo as useMemo7 } from "react";
+var useVideo = () => {
+  const { canvasContent, compositions, currentCompositionMetadata } = useContext8(CompositionManager);
+  const selected = compositions.find((c) => {
+    return canvasContent?.type === "composition" && c.id === canvasContent.compositionId;
+  });
+  const resolved = useResolvedVideoConfig(selected?.id ?? null);
+  return useMemo7(() => {
+    if (!resolved) {
+      return null;
+    }
+    if (resolved.type === "error") {
+      return null;
+    }
+    if (resolved.type === "loading") {
+      return null;
+    }
+    if (!selected) {
+      return null;
+    }
+    return {
+      ...resolved.result,
+      defaultProps: selected.defaultProps ?? {},
+      id: selected.id,
+      ...currentCompositionMetadata ?? {},
+      component: selected.component
+    };
+  }, [currentCompositionMetadata, resolved, selected]);
+};
+
+// src/validation/validate-composition-id.ts
+var getRegex2 = () => /^([a-zA-Z0-9-\u4E00-\u9FFF])+$/g;
+var isCompositionIdValid = (id) => id.match(getRegex2());
+var validateCompositionId = (id) => {
+  if (!isCompositionIdValid(id)) {
+    throw new Error(`Composition id can only contain a-z, A-Z, 0-9, CJK characters and -. You passed ${id}`);
+  }
+};
+var invalidCompositionErrorMessage = `Composition ID must match ${String(getRegex2())}`;
+
+// src/validation/validate-default-props.ts
+var validateDefaultAndInputProps = (defaultProps, name, compositionId) => {
+  if (!defaultProps) {
+    return;
+  }
+  if (typeof defaultProps !== "object") {
+    throw new Error(`"${name}" must be an object, but you passed a value of type ${typeof defaultProps}`);
+  }
+  if (Array.isArray(defaultProps)) {
+    throw new Error(`"${name}" must be an object, an array was passed ${compositionId ? `for composition "${compositionId}"` : ""}`);
+  }
+};
+
+// src/Composition.tsx
+import { jsx as jsx7 } from "react/jsx-runtime";
+var Fallback = () => {
+  const { continueRender: continueRender2, delayRender: delayRender2 } = useDelayRender();
+  useEffect2(() => {
+    const fallback = delayRender2("Waiting for Root component to unsuspend");
+    return () => continueRender2(fallback);
+  }, [continueRender2, delayRender2]);
+  return null;
+};
+var InnerComposition = ({
+  width,
+  height,
+  fps,
+  durationInFrames,
+  id,
+  defaultProps,
+  schema,
+  ...compProps
+}) => {
+  const compManager = useContext9(CompositionSetters);
+  const { registerComposition, unregisterComposition } = compManager;
+  const video = useVideo();
+  const lazy = useLazyComponent({
+    compProps,
+    componentName: "Composition",
+    noSuspense: false
+  });
+  const nonce = useNonce();
+  const isPlayer = useIsPlayer();
+  const environment = useRemotionEnvironment();
+  const canUseComposition = useContext9(CanUseRemotionHooks);
+  if (typeof window !== "undefined") {
+    window.remotion_seenCompositionIds = Array.from(new Set([...window.remotion_seenCompositionIds ?? [], id]));
+  }
+  if (canUseComposition) {
+    if (isPlayer) {
+      throw new Error("<Composition> was mounted inside the `component` that was passed to the <Player>. See https://remotion.dev/docs/wrong-composition-mount for help.");
+    }
+    throw new Error("<Composition> mounted inside another composition. See https://remotion.dev/docs/wrong-composition-mount for help.");
+  }
+  const { folderName, parentName } = useContext9(FolderContext);
+  const stack = compProps.stack ?? null;
+  useEffect2(() => {
+    if (!id) {
+      throw new Error("No id for composition passed.");
+    }
+    validateCompositionId(id);
+    validateDefaultAndInputProps(defaultProps, "defaultProps", id);
+    registerComposition({
+      durationInFrames: durationInFrames ?? undefined,
+      fps: fps ?? undefined,
+      height: height ?? undefined,
+      width: width ?? undefined,
+      id,
+      folderName,
+      component: lazy,
+      defaultProps: serializeThenDeserializeInStudio(defaultProps ?? {}),
+      nonce: nonce.get(),
+      parentFolderName: parentName,
+      schema: schema ?? null,
+      calculateMetadata: compProps.calculateMetadata ?? null,
+      stack
+    });
+    return () => {
+      unregisterComposition(id);
+    };
+  }, [
+    durationInFrames,
+    fps,
+    height,
+    lazy,
+    id,
+    folderName,
+    defaultProps,
+    width,
+    nonce,
+    parentName,
+    schema,
+    compProps.calculateMetadata,
+    stack,
+    registerComposition,
+    unregisterComposition
+  ]);
+  const resolved = useResolvedVideoConfig(id);
+  const { setError, clearError } = useContext9(CompositionRenderErrorContext);
+  const onError = useCallback4((error2) => {
+    setError(error2);
+  }, [setError]);
+  const onClear = useCallback4(() => {
+    clearError();
+  }, [clearError]);
+  if (environment.isStudio && video && video.component === lazy && video.id === id) {
+    const Comp = lazy;
+    if (resolved === null || resolved.type !== "success" && resolved.type !== "success-and-refreshing") {
+      return null;
+    }
+    return createPortal(/* @__PURE__ */ jsx7(CanUseRemotionHooksProvider, {
+      children: /* @__PURE__ */ jsx7(CompositionErrorBoundary, {
+        onError,
+        onClear,
+        children: /* @__PURE__ */ jsx7(Suspense, {
+          fallback: /* @__PURE__ */ jsx7(Loading, {}),
+          children: /* @__PURE__ */ jsx7(Comp, {
+            ...resolved.result.props ?? {}
+          })
+        })
+      })
+    }), portalNode());
+  }
+  if (environment.isRendering && video && video.component === lazy && video.id === id) {
+    const Comp = lazy;
+    if (resolved === null || resolved.type !== "success" && resolved.type !== "success-and-refreshing") {
+      return null;
+    }
+    return createPortal(/* @__PURE__ */ jsx7(CanUseRemotionHooksProvider, {
+      children: /* @__PURE__ */ jsx7(Suspense, {
+        fallback: /* @__PURE__ */ jsx7(Fallback, {}),
+        children: /* @__PURE__ */ jsx7(Comp, {
+          ...resolved.result.props ?? {}
+        })
+      })
+    }), portalNode());
+  }
+  return null;
+};
+var Composition = (props) => {
+  const { onlyRenderComposition } = useContext9(CompositionSetters);
+  if (onlyRenderComposition && onlyRenderComposition !== props.id) {
+    return null;
+  }
+  return /* @__PURE__ */ jsx7(InnerComposition, {
+    ...props
+  });
+};
+
+// src/effects/Solid.tsx
+import { useEffect as useEffect4, useMemo as useMemo11, useState as useState3 } from "react";
+
+// src/use-current-frame.ts
+import { useContext as useContext11 } from "react";
+
+// src/SequenceContext.tsx
+import { createContext as createContext12 } from "react";
+var SequenceContext = createContext12(null);
+
+// src/timeline-position-state.ts
+var exports_timeline_position_state = {};
+__export(exports_timeline_position_state, {
+  useTimelineSetFrame: () => useTimelineSetFrame,
+  useTimelinePosition: () => useTimelinePosition,
+  useTimelineContext: () => useTimelineContext,
+  usePlayingState: () => usePlayingState,
+  usePlaybackRate: () => usePlaybackRate,
+  useAbsoluteTimelinePosition: () => useAbsoluteTimelinePosition,
+  persistCurrentFrame: () => persistCurrentFrame,
+  getInitialFrameState: () => getInitialFrameState,
+  getFrameForComposition: () => getFrameForComposition
+});
+import { useContext as useContext10, useMemo as useMemo9 } from "react";
+
 // src/TimelineContext.tsx
-import { jsx as jsx3 } from "react/jsx-runtime";
-var SetTimelineContext = createContext6({
+import {
+  createContext as createContext13,
+  useLayoutEffect,
+  useMemo as useMemo8,
+  useRef as useRef3,
+  useState as useState2
+} from "react";
+
+// src/random.ts
+function mulberry32(a) {
+  let t = a + 1831565813;
+  t = Math.imul(t ^ t >>> 15, t | 1);
+  t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+}
+function hashCode(str) {
+  let i = 0;
+  let chr = 0;
+  let hash = 0;
+  for (i = 0;i < str.length; i++) {
+    chr = str.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0;
+  }
+  return hash;
+}
+var random = (seed, dummy) => {
+  if (dummy !== undefined) {
+    throw new TypeError("random() takes only one argument");
+  }
+  if (seed === null) {
+    return Math.random();
+  }
+  if (typeof seed === "string") {
+    return mulberry32(hashCode(seed));
+  }
+  if (typeof seed === "number") {
+    return mulberry32(seed * 10000000000);
+  }
+  throw new Error("random() argument must be a number or a string");
+};
+
+// src/TimelineContext.tsx
+import { jsx as jsx8 } from "react/jsx-runtime";
+var SetTimelineContext = createContext13({
   setFrame: () => {
     throw new Error("default");
   },
@@ -585,13 +1308,14 @@ var SetTimelineContext = createContext6({
     throw new Error("default");
   }
 });
-var TimelineContext = createContext6(null);
-var AbsoluteTimeContext = createContext6(null);
+var TimelineContext = createContext13(null);
+var PlaybackRateContext = createContext13(null);
+var AbsoluteTimeContext = createContext13(null);
 var TimelineContextProvider = ({ children, frameState }) => {
   const [playing, setPlaying] = useState2(false);
-  const imperativePlaying = useRef(false);
+  const imperativePlaying = useRef3(false);
   const [playbackRate, setPlaybackRate] = useState2(1);
-  const audioAndVideoTags = useRef([]);
+  const audioAndVideoTags = useRef3([]);
   const [remotionRootId] = useState2(() => String(random(null)));
   const [_frame, setFrame] = useState2(() => getInitialFrameState());
   const frame = frameState ?? _frame;
@@ -622,412 +1346,40 @@ var TimelineContextProvider = ({ children, frameState }) => {
       window.remotion_isPlayer = false;
     }, [continueRender2, delayRender2]);
   }
-  const timelineContextValue = useMemo2(() => {
+  const timelineContextValue = useMemo8(() => {
     return {
       frame,
       playing,
       imperativePlaying,
       rootId: remotionRootId,
-      playbackRate,
-      setPlaybackRate,
       audioAndVideoTags
     };
-  }, [frame, playbackRate, playing, remotionRootId]);
-  const setTimelineContextValue = useMemo2(() => {
+  }, [frame, playing, remotionRootId]);
+  const playbackRateContextValue = useMemo8(() => {
+    return {
+      playbackRate,
+      setPlaybackRate
+    };
+  }, [playbackRate]);
+  const setTimelineContextValue = useMemo8(() => {
     return {
       setFrame,
       setPlaying
     };
   }, []);
-  return /* @__PURE__ */ jsx3(AbsoluteTimeContext.Provider, {
+  return /* @__PURE__ */ jsx8(AbsoluteTimeContext.Provider, {
     value: timelineContextValue,
-    children: /* @__PURE__ */ jsx3(TimelineContext.Provider, {
-      value: timelineContextValue,
-      children: /* @__PURE__ */ jsx3(SetTimelineContext.Provider, {
-        value: setTimelineContextValue,
-        children
+    children: /* @__PURE__ */ jsx8(PlaybackRateContext.Provider, {
+      value: playbackRateContextValue,
+      children: /* @__PURE__ */ jsx8(TimelineContext.Provider, {
+        value: timelineContextValue,
+        children: /* @__PURE__ */ jsx8(SetTimelineContext.Provider, {
+          value: setTimelineContextValue,
+          children
+        })
       })
     })
   });
-};
-
-// src/use-video.ts
-import { useContext as useContext6, useMemo as useMemo5 } from "react";
-
-// src/CompositionManagerContext.tsx
-import { createContext as createContext7 } from "react";
-var CompositionManager = createContext7({
-  compositions: [],
-  folders: [],
-  currentCompositionMetadata: null,
-  canvasContent: null
-});
-var CompositionSetters = createContext7({
-  registerComposition: () => {
-    return;
-  },
-  unregisterComposition: () => {
-    return;
-  },
-  registerFolder: () => {
-    return;
-  },
-  unregisterFolder: () => {
-    return;
-  },
-  setCanvasContent: () => {
-    return;
-  },
-  updateCompositionDefaultProps: () => {
-    return;
-  },
-  onlyRenderComposition: null
-});
-
-// src/ResolveCompositionConfig.tsx
-import { createContext as createContext9, createRef, useContext as useContext5, useMemo as useMemo4 } from "react";
-
-// src/input-props-override.ts
-var getKey = () => {
-  return `remotion_inputPropsOverride` + window.location.origin;
-};
-var getInputPropsOverride = () => {
-  if (typeof localStorage === "undefined")
-    return null;
-  const override = localStorage.getItem(getKey());
-  if (!override)
-    return null;
-  return JSON.parse(override);
-};
-var setInputPropsOverride = (override) => {
-  if (typeof localStorage === "undefined")
-    return;
-  if (override === null) {
-    localStorage.removeItem(getKey());
-    return;
-  }
-  localStorage.setItem(getKey(), JSON.stringify(override));
-};
-
-// src/input-props-serialization.ts
-var DATE_TOKEN = "remotion-date:";
-var FILE_TOKEN = "remotion-file:";
-var serializeJSONWithSpecialTypes = ({
-  data,
-  indent,
-  staticBase
-}) => {
-  let customDateUsed = false;
-  let customFileUsed = false;
-  let mapUsed = false;
-  let setUsed = false;
-  try {
-    const serializedString = JSON.stringify(data, function(key, value) {
-      const item = this[key];
-      if (item instanceof Date) {
-        customDateUsed = true;
-        return `${DATE_TOKEN}${item.toISOString()}`;
-      }
-      if (item instanceof Map) {
-        mapUsed = true;
-        return value;
-      }
-      if (item instanceof Set) {
-        setUsed = true;
-        return value;
-      }
-      if (typeof item === "string" && staticBase !== null && item.startsWith(staticBase)) {
-        customFileUsed = true;
-        return `${FILE_TOKEN}${item.replace(staticBase + "/", "")}`;
-      }
-      return value;
-    }, indent);
-    return { serializedString, customDateUsed, customFileUsed, mapUsed, setUsed };
-  } catch (err) {
-    throw new Error("Could not serialize the passed input props to JSON: " + err.message);
-  }
-};
-var deserializeJSONWithSpecialTypes = (data) => {
-  return JSON.parse(data, (_, value) => {
-    if (typeof value === "string" && value.startsWith(DATE_TOKEN)) {
-      return new Date(value.replace(DATE_TOKEN, ""));
-    }
-    if (typeof value === "string" && value.startsWith(FILE_TOKEN)) {
-      return `${window.remotion_staticBase}/${value.replace(FILE_TOKEN, "")}`;
-    }
-    return value;
-  });
-};
-var serializeThenDeserialize = (props) => {
-  return deserializeJSONWithSpecialTypes(serializeJSONWithSpecialTypes({
-    data: props,
-    indent: 2,
-    staticBase: window.remotion_staticBase
-  }).serializedString);
-};
-var serializeThenDeserializeInStudio = (props) => {
-  if (getRemotionEnvironment().isStudio) {
-    return serializeThenDeserialize(props);
-  }
-  return props;
-};
-
-// src/config/input-props.ts
-var didWarnSSRImport = false;
-var warnOnceSSRImport = () => {
-  if (didWarnSSRImport) {
-    return;
-  }
-  didWarnSSRImport = true;
-  console.warn("Called `getInputProps()` on the server. This function is not available server-side and has returned an empty object.");
-  console.warn("To hide this warning, don't call this function on the server:");
-  console.warn("  typeof window === 'undefined' ? {} : getInputProps()");
-};
-var getInputProps = () => {
-  if (typeof window === "undefined") {
-    warnOnceSSRImport();
-    return {};
-  }
-  if (getRemotionEnvironment().isPlayer) {
-    throw new Error("You cannot call `getInputProps()` from a <Player>. Instead, the props are available as React props from component that you passed as `component` prop.");
-  }
-  const override = getInputPropsOverride();
-  if (override) {
-    return override;
-  }
-  if (typeof window === "undefined" || typeof window.remotion_inputProps === "undefined") {
-    throw new Error("Cannot call `getInputProps()` - window.remotion_inputProps is not set. This API is only available if you are in the Studio, or while you are rendering server-side.");
-  }
-  const param = window.remotion_inputProps;
-  if (!param) {
-    return {};
-  }
-  const parsed = deserializeJSONWithSpecialTypes(param);
-  return parsed;
-};
-
-// src/EditorProps.tsx
-import React5, {
-  createContext as createContext8,
-  useCallback as useCallback2,
-  useImperativeHandle,
-  useMemo as useMemo3
-} from "react";
-import { jsx as jsx4 } from "react/jsx-runtime";
-var EditorPropsContext = createContext8({
-  props: {},
-  updateProps: () => {
-    throw new Error("Not implemented");
-  },
-  resetUnsaved: () => {
-    throw new Error("Not implemented");
-  }
-});
-var editorPropsProviderRef = React5.createRef();
-var timeValueRef = React5.createRef();
-var EditorPropsProvider = ({ children }) => {
-  const [props, setProps] = React5.useState({});
-  const updateProps = useCallback2(({
-    defaultProps,
-    id,
-    newProps
-  }) => {
-    setProps((prev) => {
-      return {
-        ...prev,
-        [id]: typeof newProps === "function" ? newProps(prev[id] ?? defaultProps) : newProps
-      };
-    });
-  }, []);
-  const resetUnsaved = useCallback2((compositionId) => {
-    setProps((prev) => {
-      if (prev[compositionId]) {
-        const newProps = { ...prev };
-        delete newProps[compositionId];
-        return newProps;
-      }
-      return prev;
-    });
-  }, []);
-  useImperativeHandle(editorPropsProviderRef, () => {
-    return {
-      getProps: () => props,
-      setProps
-    };
-  }, [props]);
-  const ctx = useMemo3(() => {
-    return { props, updateProps, resetUnsaved };
-  }, [props, resetUnsaved, updateProps]);
-  return /* @__PURE__ */ jsx4(EditorPropsContext.Provider, {
-    value: ctx,
-    children
-  });
-};
-
-// src/validation/validate-dimensions.ts
-function validateDimension(amount, nameOfProp, location) {
-  if (typeof amount !== "number") {
-    throw new Error(`The "${nameOfProp}" prop ${location} must be a number, but you passed a value of type ${typeof amount}`);
-  }
-  if (isNaN(amount)) {
-    throw new TypeError(`The "${nameOfProp}" prop ${location} must not be NaN, but is NaN.`);
-  }
-  if (!Number.isFinite(amount)) {
-    throw new TypeError(`The "${nameOfProp}" prop ${location} must be finite, but is ${amount}.`);
-  }
-  if (amount % 1 !== 0) {
-    throw new TypeError(`The "${nameOfProp}" prop ${location} must be an integer, but is ${amount}.`);
-  }
-  if (amount <= 0) {
-    throw new TypeError(`The "${nameOfProp}" prop ${location} must be positive, but got ${amount}.`);
-  }
-}
-
-// src/validation/validate-duration-in-frames.ts
-function validateDurationInFrames(durationInFrames, options) {
-  const { allowFloats, component } = options;
-  if (typeof durationInFrames === "undefined") {
-    throw new Error(`The "durationInFrames" prop ${component} is missing.`);
-  }
-  if (typeof durationInFrames !== "number") {
-    throw new Error(`The "durationInFrames" prop ${component} must be a number, but you passed a value of type ${typeof durationInFrames}`);
-  }
-  if (durationInFrames <= 0) {
-    throw new TypeError(`The "durationInFrames" prop ${component} must be positive, but got ${durationInFrames}.`);
-  }
-  if (!allowFloats && durationInFrames % 1 !== 0) {
-    throw new TypeError(`The "durationInFrames" prop ${component} must be an integer, but got ${durationInFrames}.`);
-  }
-  if (!Number.isFinite(durationInFrames)) {
-    throw new TypeError(`The "durationInFrames" prop ${component} must be finite, but got ${durationInFrames}.`);
-  }
-}
-
-// src/validation/validate-fps.ts
-function validateFps(fps, location, isGif) {
-  if (typeof fps !== "number") {
-    throw new Error(`"fps" must be a number, but you passed a value of type ${typeof fps} ${location}`);
-  }
-  if (!Number.isFinite(fps)) {
-    throw new Error(`"fps" must be a finite, but you passed ${fps} ${location}`);
-  }
-  if (isNaN(fps)) {
-    throw new Error(`"fps" must not be NaN, but got ${fps} ${location}`);
-  }
-  if (fps <= 0) {
-    throw new TypeError(`"fps" must be positive, but got ${fps} ${location}`);
-  }
-  if (isGif && fps > 50) {
-    throw new TypeError(`The FPS for a GIF cannot be higher than 50. Use the --every-nth-frame option to lower the FPS: https://remotion.dev/docs/render-as-gif`);
-  }
-}
-
-// src/ResolveCompositionConfig.tsx
-var ResolveCompositionContext = createContext9(null);
-var resolveCompositionsRef = createRef();
-var needsResolution = (composition) => {
-  return Boolean(composition.calculateMetadata);
-};
-var PROPS_UPDATED_EXTERNALLY = "remotion.propsUpdatedExternally";
-var useResolvedVideoConfig = (preferredCompositionId) => {
-  const context = useContext5(ResolveCompositionContext);
-  const { props: allEditorProps } = useContext5(EditorPropsContext);
-  const { compositions, canvasContent, currentCompositionMetadata } = useContext5(CompositionManager);
-  const currentComposition = canvasContent?.type === "composition" ? canvasContent.compositionId : null;
-  const compositionId = preferredCompositionId ?? currentComposition;
-  const composition = compositions.find((c) => c.id === compositionId);
-  const selectedEditorProps = useMemo4(() => {
-    return composition ? allEditorProps[composition.id] ?? {} : {};
-  }, [allEditorProps, composition]);
-  const env = useRemotionEnvironment();
-  return useMemo4(() => {
-    if (!composition) {
-      return null;
-    }
-    if (currentCompositionMetadata) {
-      return {
-        type: "success",
-        result: {
-          ...currentCompositionMetadata,
-          id: composition.id,
-          defaultProps: composition.defaultProps ?? {}
-        }
-      };
-    }
-    if (!needsResolution(composition)) {
-      validateDurationInFrames(composition.durationInFrames, {
-        allowFloats: false,
-        component: `in <Composition id="${composition.id}">`
-      });
-      validateFps(composition.fps, `in <Composition id="${composition.id}">`, false);
-      validateDimension(composition.width, "width", `in <Composition id="${composition.id}">`);
-      validateDimension(composition.height, "height", `in <Composition id="${composition.id}">`);
-      return {
-        type: "success",
-        result: {
-          width: composition.width,
-          height: composition.height,
-          fps: composition.fps,
-          id: composition.id,
-          durationInFrames: composition.durationInFrames,
-          defaultProps: composition.defaultProps ?? {},
-          props: {
-            ...composition.defaultProps ?? {},
-            ...selectedEditorProps ?? {},
-            ...typeof window === "undefined" || env.isPlayer || !window.remotion_inputProps ? {} : getInputProps() ?? {}
-          },
-          defaultCodec: null,
-          defaultOutName: null,
-          defaultVideoImageFormat: null,
-          defaultPixelFormat: null,
-          defaultProResProfile: null
-        }
-      };
-    }
-    if (!context) {
-      return null;
-    }
-    if (!context[composition.id]) {
-      return null;
-    }
-    return context[composition.id];
-  }, [
-    composition,
-    context,
-    currentCompositionMetadata,
-    selectedEditorProps,
-    env.isPlayer
-  ]);
-};
-
-// src/use-video.ts
-var useVideo = () => {
-  const { canvasContent, compositions, currentCompositionMetadata } = useContext6(CompositionManager);
-  const selected = compositions.find((c) => {
-    return canvasContent?.type === "composition" && c.id === canvasContent.compositionId;
-  });
-  const resolved = useResolvedVideoConfig(selected?.id ?? null);
-  return useMemo5(() => {
-    if (!resolved) {
-      return null;
-    }
-    if (resolved.type === "error") {
-      return null;
-    }
-    if (resolved.type === "loading") {
-      return null;
-    }
-    if (!selected) {
-      return null;
-    }
-    return {
-      ...resolved.result,
-      defaultProps: selected.defaultProps ?? {},
-      id: selected.id,
-      ...currentCompositionMetadata ?? {},
-      component: selected.component
-    };
-  }, [currentCompositionMetadata, resolved, selected]);
 };
 
 // src/timeline-position-state.ts
@@ -1063,9 +1415,16 @@ var useTimelinePositionFromContext = (state) => {
   return Math.min(videoConfig.durationInFrames - 1, unclamped);
 };
 var useTimelineContext = () => {
-  const state = useContext7(TimelineContext);
+  const state = useContext10(TimelineContext);
   if (state === null) {
     throw new Error("TimelineContext is not available. This hook must be used inside a <Player> or the Remotion Studio.");
+  }
+  return state;
+};
+var usePlaybackRate = () => {
+  const state = useContext10(PlaybackRateContext);
+  if (state === null) {
+    throw new Error("PlaybackRateContext is not available. This hook must be used inside a <Player> or the Remotion Studio.");
   }
   return state;
 };
@@ -1074,39 +1433,25 @@ var useTimelinePosition = () => {
   return useTimelinePositionFromContext(state);
 };
 var useAbsoluteTimelinePosition = () => {
-  const state = useContext7(AbsoluteTimeContext);
+  const state = useContext10(AbsoluteTimeContext);
   if (state === null) {
     throw new Error("AbsoluteTimeContext is not available. This hook must be used inside a <Player> or the Remotion Studio.");
   }
   return useTimelinePositionFromContext(state);
 };
 var useTimelineSetFrame = () => {
-  const { setFrame } = useContext7(SetTimelineContext);
+  const { setFrame } = useContext10(SetTimelineContext);
   return setFrame;
 };
 var usePlayingState = () => {
   const { playing, imperativePlaying } = useTimelineContext();
-  const { setPlaying } = useContext7(SetTimelineContext);
-  return useMemo6(() => [playing, setPlaying, imperativePlaying], [imperativePlaying, playing, setPlaying]);
-};
-
-// src/use-current-frame.ts
-import { useContext as useContext8 } from "react";
-
-// src/CanUseRemotionHooks.tsx
-import { createContext as createContext10 } from "react";
-import { jsx as jsx5 } from "react/jsx-runtime";
-var CanUseRemotionHooks = createContext10(false);
-var CanUseRemotionHooksProvider = ({ children }) => {
-  return /* @__PURE__ */ jsx5(CanUseRemotionHooks.Provider, {
-    value: true,
-    children
-  });
+  const { setPlaying } = useContext10(SetTimelineContext);
+  return useMemo9(() => [playing, setPlaying, imperativePlaying], [imperativePlaying, playing, setPlaying]);
 };
 
 // src/use-current-frame.ts
 var useCurrentFrame = () => {
-  const canUseRemotionHooks = useContext8(CanUseRemotionHooks);
+  const canUseRemotionHooks = useContext11(CanUseRemotionHooks);
   const env = useRemotionEnvironment();
   if (!canUseRemotionHooks) {
     if (env.isPlayer) {
@@ -1115,23 +1460,441 @@ var useCurrentFrame = () => {
     throw new Error(`useCurrentFrame() can only be called inside a component that was registered as a composition. See https://www.remotion.dev/docs/the-fundamentals#defining-compositions`);
   }
   const frame = useTimelinePosition();
-  const context = useContext8(SequenceContext);
+  const context = useContext11(SequenceContext);
   const contextOffset = context ? context.cumulatedFrom + context.relativeFrom : 0;
   return frame - contextOffset;
 };
 
+// src/effects/canvas-pool.ts
+class CanvasPool {
+  width;
+  height;
+  pairs = new Map;
+  lostContexts = new Set;
+  constructor(width, height) {
+    this.width = width;
+    this.height = height;
+  }
+  getPair(backend) {
+    const existing = this.pairs.get(backend);
+    if (existing) {
+      return existing;
+    }
+    const pair = [
+      this.allocateCanvas(backend),
+      this.allocateCanvas(backend)
+    ];
+    this.pairs.set(backend, pair);
+    return pair;
+  }
+  assertContextNotLost(canvas) {
+    if (this.lostContexts.has(canvas)) {
+      throw new Error("WebGL context was lost during canvas effect rendering. " + "This typically happens in headless or memory-constrained environments (e.g. Remotion Lambda). " + "Try reducing concurrency or increasing the Lambda function memory.");
+    }
+  }
+  allocateCanvas(backend) {
+    const canvas = document.createElement("canvas");
+    canvas.width = this.width;
+    canvas.height = this.height;
+    switch (backend) {
+      case "2d": {
+        const ctx = canvas.getContext("2d", {
+          colorSpace: "srgb"
+        });
+        if (!ctx) {
+          throw new Error("Failed to acquire 2D context for canvas effect");
+        }
+        return canvas;
+      }
+      case "webgl2": {
+        const ctx = canvas.getContext("webgl2", {
+          premultipliedAlpha: true,
+          alpha: true,
+          preserveDrawingBuffer: true
+        });
+        if (!ctx) {
+          throw new Error("Failed to acquire WebGL2 context for canvas effect");
+        }
+        canvas.addEventListener("webglcontextlost", (e) => {
+          e.preventDefault();
+          this.lostContexts.add(canvas);
+        });
+        canvas.addEventListener("webglcontextrestored", () => {
+          this.lostContexts.delete(canvas);
+        });
+        ctx.pixelStorei(ctx.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        return canvas;
+      }
+      case "webgpu": {
+        if (typeof navigator === "undefined" || !("gpu" in navigator)) {
+          throw new Error("WebGPU is not available in this environment for canvas effect");
+        }
+        return canvas;
+      }
+      default: {
+        const exhaustive = backend;
+        throw new Error(`Unknown effect backend: ${exhaustive}`);
+      }
+    }
+  }
+}
+
+// src/effects/effect-internals.ts
+var flattenEffects = (effects) => {
+  const out = [];
+  for (const item of effects) {
+    if (Array.isArray(item)) {
+      for (const inner of item) {
+        out.push(inner);
+      }
+    } else {
+      out.push(item);
+    }
+  }
+  return out;
+};
+var groupByBackend = (effects) => {
+  const runs = [];
+  let current = [];
+  let currentBackend = null;
+  for (const eff of effects) {
+    const { backend } = eff.definition;
+    if (currentBackend === null || backend === currentBackend) {
+      current.push(eff);
+      currentBackend = backend;
+    } else {
+      runs.push({ backend: currentBackend, effects: current });
+      current = [eff];
+      currentBackend = backend;
+    }
+  }
+  if (currentBackend !== null && current.length > 0) {
+    runs.push({ backend: currentBackend, effects: current });
+  }
+  return runs;
+};
+
+// src/effects/gpu-device.ts
+var devicePromise = null;
+var getGpuDevice = () => {
+  if (devicePromise) {
+    return devicePromise;
+  }
+  devicePromise = (async () => {
+    if (typeof navigator === "undefined" || !("gpu" in navigator)) {
+      throw new Error("WebGPU is not available in this environment");
+    }
+    const { gpu } = navigator;
+    const adapter = await gpu.requestAdapter();
+    if (!adapter) {
+      throw new Error("No WebGPU adapter available");
+    }
+    return adapter.requestDevice();
+  })();
+  return devicePromise;
+};
+
+// src/effects/run-effect-chain.ts
+var createEffectChainState = (width, height) => ({
+  pool: new CanvasPool(width, height),
+  setupCache: new WeakMap,
+  cleanupRegistry: [],
+  currentRunId: 0
+});
+var cleanupEffectChainState = (state) => {
+  state.currentRunId++;
+  for (const entry of state.cleanupRegistry) {
+    entry.definition.cleanup(entry.state);
+  }
+};
+var ensureSetup = (state, def, target) => {
+  const widened = def;
+  if (state.setupCache.has(widened)) {
+    return state.setupCache.get(widened);
+  }
+  const setupState = def.setup(target);
+  state.setupCache.set(widened, setupState);
+  state.cleanupRegistry.push({ definition: widened, state: setupState });
+  return setupState;
+};
+var runEffectChain = async ({
+  state,
+  source,
+  effects,
+  output,
+  frame,
+  width,
+  height
+}) => {
+  const runId = ++state.currentRunId;
+  const isCancelled = () => state.currentRunId !== runId;
+  const flattened = flattenEffects(effects);
+  const runs = groupByBackend(flattened);
+  let currentImage = source;
+  let lastTarget = null;
+  if (runs.length === 0) {
+    if (source === output) {
+      return true;
+    }
+    const ctx = output.getContext("2d");
+    if (!ctx) {
+      throw new Error("Failed to acquire 2D context for output canvas");
+    }
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(currentImage, 0, 0, width, height);
+    return true;
+  }
+  let needsGpuDevice = false;
+  for (const run of runs) {
+    if (run.backend === "webgpu") {
+      needsGpuDevice = true;
+      break;
+    }
+  }
+  const gpuDevice = needsGpuDevice ? await getGpuDevice() : null;
+  if (isCancelled()) {
+    return false;
+  }
+  for (let runIndex = 0;runIndex < runs.length; runIndex++) {
+    const run = runs[runIndex];
+    const [a, b] = state.pool.getPair(run.backend);
+    let dst = a;
+    for (const eff of run.effects) {
+      const def = eff.definition;
+      const setupState = ensureSetup(state, def, dst);
+      def.apply({
+        source: currentImage,
+        target: dst,
+        state: setupState,
+        params: eff.params,
+        frame,
+        width,
+        height,
+        gpuDevice
+      });
+      if (run.backend === "webgl2") {
+        state.pool.assertContextNotLost(dst);
+      }
+      currentImage = dst;
+      dst = dst === a ? b : a;
+    }
+    lastTarget = currentImage ?? lastTarget;
+    const nextRun = runs[runIndex + 1];
+    if (nextRun && nextRun.backend !== run.backend && lastTarget) {
+      const bitmap = await createImageBitmap(lastTarget);
+      if (isCancelled()) {
+        bitmap.close();
+        return false;
+      }
+      currentImage = bitmap;
+    }
+  }
+  if (!lastTarget) {
+    return true;
+  }
+  const outCtx = output.getContext("2d");
+  if (!outCtx) {
+    throw new Error("Failed to acquire 2D context for output canvas");
+  }
+  outCtx.clearRect(0, 0, width, height);
+  outCtx.drawImage(lastTarget, 0, 0, width, height);
+  return true;
+};
+
+// src/effects/use-effect-chain-state.ts
+import { useEffect as useEffect3, useMemo as useMemo10, useRef as useRef4 } from "react";
+var useEffectChainState = () => {
+  const chainStateRef = useRef4(null);
+  const sizeRef = useRef4(null);
+  useEffect3(() => {
+    return () => {
+      if (chainStateRef.current) {
+        cleanupEffectChainState(chainStateRef.current);
+      }
+    };
+  }, []);
+  return useMemo10(() => ({
+    get: (width, height) => {
+      if (!sizeRef.current || sizeRef.current.width !== width || sizeRef.current.height !== height) {
+        if (chainStateRef.current) {
+          cleanupEffectChainState(chainStateRef.current);
+        }
+        chainStateRef.current = createEffectChainState(width, height);
+        sizeRef.current = { width, height };
+      }
+      return chainStateRef.current;
+    }
+  }), []);
+};
+
+// src/effects/Solid.tsx
+import { jsx as jsx9 } from "react/jsx-runtime";
+var Solid = ({
+  color,
+  width,
+  height,
+  _experimentalEffects: experimentalEffects = [],
+  className,
+  style,
+  pixelRatio = 1
+}) => {
+  const frame = useCurrentFrame();
+  const { delayRender: delayRender2, continueRender: continueRender2, cancelRender: cancelRender2 } = useDelayRender();
+  const [outputCanvas, setOutputCanvas] = useState3(null);
+  const sourceCanvas = useMemo11(() => {
+    if (typeof document === "undefined") {
+      return null;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    return canvas;
+  }, []);
+  const chainState = useEffectChainState();
+  useEffect4(() => {
+    if (!outputCanvas || !sourceCanvas) {
+      return;
+    }
+    const handle = delayRender2(`Solid effect chain (frame ${frame})`);
+    if (!chainState) {
+      continueRender2(handle);
+      return () => {
+        continueRender2(handle);
+      };
+    }
+    const ctx = sourceCanvas.getContext("2d", { colorSpace: "srgb" });
+    if (!ctx) {
+      cancelRender2(new Error("Failed to acquire 2D context for <Solid> source"));
+      return;
+    }
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 1, 1);
+    runEffectChain({
+      state: chainState.get(width, height),
+      source: sourceCanvas,
+      effects: experimentalEffects,
+      output: outputCanvas,
+      frame,
+      width,
+      height
+    }).then((completed) => {
+      if (completed) {
+        continueRender2(handle);
+      }
+    }).catch((err) => {
+      cancelRender2(err);
+    });
+    return () => {
+      continueRender2(handle);
+    };
+  }, [
+    frame,
+    color,
+    experimentalEffects,
+    outputCanvas,
+    sourceCanvas,
+    chainState,
+    width,
+    height,
+    pixelRatio,
+    delayRender2,
+    continueRender2,
+    cancelRender2
+  ]);
+  return /* @__PURE__ */ jsx9("canvas", {
+    ref: setOutputCanvas,
+    width,
+    height,
+    className,
+    style
+  });
+};
+
+// src/enable-sequence-stack-traces.ts
+var componentsToAddStacksTo = [];
+var getComponentsToAddStacksTo = () => componentsToAddStacksTo;
+var addSequenceStackTraces = (component) => {
+  componentsToAddStacksTo.push(component);
+};
+
+// src/version.ts
+var VERSION = "4.0.459";
+
+// src/multiple-versions-warning.ts
+var checkMultipleRemotionVersions = () => {
+  if (typeof globalThis === "undefined") {
+    return;
+  }
+  const set = () => {
+    globalThis.remotion_imported = VERSION;
+    if (typeof window !== "undefined") {
+      window.remotion_imported = VERSION;
+    }
+  };
+  const alreadyImported = globalThis.remotion_imported || typeof window !== "undefined" && window.remotion_imported;
+  if (alreadyImported) {
+    if (alreadyImported === VERSION) {
+      return;
+    }
+    if (typeof alreadyImported === "string" && alreadyImported.includes("webcodecs")) {
+      set();
+      return;
+    }
+    throw new TypeError(`\uD83D\uDEA8 Multiple versions of Remotion detected: ${[
+      VERSION,
+      typeof alreadyImported === "string" ? alreadyImported : "an older version"
+    ].filter(truthy).join(" and ")}. This will cause things to break in an unexpected way.
+Check that all your Remotion packages are on the same version. If your dependencies depend on Remotion, make them peer dependencies. You can also run \`npx remotion versions\` from your terminal to see which versions are mismatching.`);
+  }
+  set();
+};
+
+// src/Null.tsx
+var Null = () => {
+  throw new Error("<Null> has been removed as of Remotion v4.0.228. The native clipping APIs were experimental and subject to removal at any time. We removed them because they were sparingly used and made rendering often slower rather than faster.");
+};
+
+// src/Sequence.tsx
+import {
+  forwardRef as forwardRef3,
+  useContext as useContext16,
+  useEffect as useEffect5,
+  useMemo as useMemo16,
+  useState as useState6
+} from "react";
+
+// src/effects/use-memoized-effects.ts
+import { useRef as useRef5 } from "react";
+var useMemoizedEffects = (effects) => {
+  const previousRef = useRef5(null);
+  const previous = previousRef.current;
+  const isSame = previous !== null && previous.length === effects.length && previous.every((p, i) => p.definition === effects[i].definition && p.stack === effects[i].stack);
+  if (isSame) {
+    return previous;
+  }
+  const next = effects.map((e) => ({
+    definition: e.definition,
+    stack: e.stack
+  }));
+  previousRef.current = next;
+  return next;
+};
+
+// src/freeze.tsx
+import { useContext as useContext14, useMemo as useMemo13 } from "react";
+
 // src/use-video-config.ts
-import { useContext as useContext10 } from "react";
+import { useContext as useContext13 } from "react";
 
 // src/use-unsafe-video-config.ts
-import { useContext as useContext9, useMemo as useMemo7 } from "react";
+import { useContext as useContext12, useMemo as useMemo12 } from "react";
 var useUnsafeVideoConfig = () => {
-  const context = useContext9(SequenceContext);
+  const context = useContext12(SequenceContext);
   const ctxWidth = context?.width ?? null;
   const ctxHeight = context?.height ?? null;
   const ctxDuration = context?.durationInFrames ?? null;
   const video = useVideo();
-  return useMemo7(() => {
+  return useMemo12(() => {
     if (!video) {
       return null;
     }
@@ -1147,7 +1910,8 @@ var useUnsafeVideoConfig = () => {
       defaultOutName,
       defaultVideoImageFormat,
       defaultPixelFormat,
-      defaultProResProfile
+      defaultProResProfile,
+      defaultSampleRate
     } = video;
     return {
       id,
@@ -1161,7 +1925,8 @@ var useUnsafeVideoConfig = () => {
       defaultOutName,
       defaultVideoImageFormat,
       defaultPixelFormat,
-      defaultProResProfile
+      defaultProResProfile,
+      defaultSampleRate
     };
   }, [ctxDuration, ctxHeight, ctxWidth, video]);
 };
@@ -1169,7 +1934,7 @@ var useUnsafeVideoConfig = () => {
 // src/use-video-config.ts
 var useVideoConfig = () => {
   const videoConfig = useUnsafeVideoConfig();
-  const context = useContext10(CanUseRemotionHooks);
+  const context = useContext13(CanUseRemotionHooks);
   const isPlayer = useIsPlayer();
   if (!videoConfig) {
     if (typeof window !== "undefined" && window.remotion_isPlayer || isPlayer) {
@@ -1188,7 +1953,7 @@ var useVideoConfig = () => {
 };
 
 // src/freeze.tsx
-import { jsx as jsx6 } from "react/jsx-runtime";
+import { jsx as jsx10 } from "react/jsx-runtime";
 var Freeze = ({
   frame: frameToFreeze,
   children,
@@ -1208,7 +1973,7 @@ var Freeze = ({
   if (!Number.isFinite(frameToFreeze)) {
     throw new Error(`The 'frame' prop of <Freeze /> must be a finite number, but it is ${frameToFreeze}.`);
   }
-  const isActive = useMemo8(() => {
+  const isActive = useMemo13(() => {
     if (typeof active === "boolean") {
       return active;
     }
@@ -1217,9 +1982,9 @@ var Freeze = ({
     }
   }, [active, frame]);
   const timelineContext = useTimelineContext();
-  const sequenceContext = useContext11(SequenceContext);
+  const sequenceContext = useContext14(SequenceContext);
   const relativeFrom = sequenceContext?.relativeFrom ?? 0;
-  const timelineValue = useMemo8(() => {
+  const timelineValue = useMemo13(() => {
     if (!isActive) {
       return timelineContext;
     }
@@ -1234,7 +1999,7 @@ var Freeze = ({
       }
     };
   }, [isActive, timelineContext, videoConfig.id, frameToFreeze, relativeFrom]);
-  const newSequenceContext = useMemo8(() => {
+  const newSequenceContext = useMemo13(() => {
     if (!sequenceContext) {
       return null;
     }
@@ -1246,63 +2011,75 @@ var Freeze = ({
       cumulatedFrom: 0
     };
   }, [sequenceContext, isActive]);
-  return /* @__PURE__ */ jsx6(TimelineContext.Provider, {
+  return /* @__PURE__ */ jsx10(TimelineContext.Provider, {
     value: timelineValue,
-    children: /* @__PURE__ */ jsx6(SequenceContext.Provider, {
+    children: /* @__PURE__ */ jsx10(SequenceContext.Provider, {
       value: newSequenceContext,
       children
     })
   });
 };
 
-// src/nonce.ts
-import { createContext as createContext11, useCallback as useCallback3, useContext as useContext12, useMemo as useMemo9, useRef as useRef2 } from "react";
-var NonceContext = createContext11({
-  getNonce: () => 0
+// src/PremountContext.tsx
+import { createContext as createContext14 } from "react";
+var PremountContext = createContext14({
+  premountFramesRemaining: 0
 });
-var fastRefreshNonce = 0;
-try {
-  if (typeof __webpack_module__ !== "undefined") {
-    if (__webpack_module__.hot) {
-      __webpack_module__.hot.addStatusHandler((status) => {
-        if (status === "idle") {
-          fastRefreshNonce++;
-        }
-      });
+
+// src/sequence-field-schema.ts
+var sequenceStyleSchema = {
+  "style.translate": {
+    type: "translate",
+    step: 1,
+    default: "0px 0px",
+    description: "Offset"
+  },
+  "style.scale": {
+    type: "number",
+    min: 0.05,
+    max: 100,
+    step: 0.01,
+    default: 1,
+    description: "Scale"
+  },
+  "style.rotate": {
+    type: "rotation",
+    step: 1,
+    default: "0deg",
+    description: "Rotation"
+  },
+  "style.opacity": {
+    type: "number",
+    min: 0,
+    max: 1,
+    step: 0.01,
+    default: 1,
+    description: "Opacity"
+  }
+};
+var sequenceSchema = {
+  layout: {
+    type: "enum",
+    default: "absolute-fill",
+    description: "Layout",
+    variants: {
+      "absolute-fill": sequenceStyleSchema,
+      none: {}
     }
   }
-} catch {}
-var useNonce = () => {
-  const context = useContext12(NonceContext);
-  const nonce = context.getNonce();
-  const nonceRef = useRef2(nonce);
-  nonceRef.current = nonce;
-  const history = useRef2([[fastRefreshNonce, nonce]]);
-  const get = useCallback3(() => {
-    if (fastRefreshNonce !== history.current[history.current.length - 1][0]) {
-      history.current = [
-        ...history.current,
-        [fastRefreshNonce, nonceRef.current]
-      ];
-    }
-    return history.current;
-  }, [history]);
-  return useMemo9(() => {
-    return { get };
-  }, [get]);
+};
+var sequenceSchemaDefaultLayoutNone = {
+  ...sequenceSchema,
+  layout: {
+    ...sequenceSchema.layout,
+    default: "none"
+  }
 };
 
-// src/PremountContext.tsx
-import { createContext as createContext12 } from "react";
-var PremountContext = createContext12({
-  premountFramesRemaining: 0,
-  playing: false
-});
-
 // src/SequenceManager.tsx
-import React8, { useCallback as useCallback4, useMemo as useMemo10, useRef as useRef3, useState as useState3 } from "react";
-import { jsx as jsx7 } from "react/jsx-runtime";
-var SequenceManager = React8.createContext({
+import React12, { useCallback as useCallback5, useMemo as useMemo14, useRef as useRef6, useState as useState4 } from "react";
+import { jsx as jsx11 } from "react/jsx-runtime";
+var SequenceManager = React12.createContext({
   registerSequence: () => {
     throw new Error("SequenceManagerContext not initialized");
   },
@@ -1311,13 +2088,13 @@ var SequenceManager = React8.createContext({
   },
   sequences: []
 });
-var SequenceVisibilityToggleContext = React8.createContext({
+var SequenceVisibilityToggleContext = React12.createContext({
   hidden: {},
   setHidden: () => {
     throw new Error("SequenceVisibilityToggle not initialized");
   }
 });
-var VisualModeOverridesContext = React8.createContext({
+var VisualModeOverridesContext = React12.createContext({
   dragOverrides: {},
   setDragOverrides: () => {
     throw new Error("VisualModeOverridesContext not initialized");
@@ -1332,13 +2109,13 @@ var VisualModeOverridesContext = React8.createContext({
   visualModeEnabled: false
 });
 var SequenceManagerProvider = ({ children, visualModeEnabled }) => {
-  const [sequences, setSequences] = useState3([]);
-  const [hidden, setHidden] = useState3({});
-  const [dragOverrides, setControlOverrides] = useState3({});
-  const controlOverridesRef = useRef3(dragOverrides);
+  const [sequences, setSequences] = useState4([]);
+  const [hidden, setHidden] = useState4({});
+  const [dragOverrides, setControlOverrides] = useState4({});
+  const controlOverridesRef = useRef6(dragOverrides);
   controlOverridesRef.current = dragOverrides;
-  const [codeValues, setCodeValuesMapState] = useState3({});
-  const setDragOverrides = useCallback4((sequenceId, key, value) => {
+  const [codeValues, setCodeValuesMapState] = useState4({});
+  const setDragOverrides = useCallback5((sequenceId, key, value) => {
     setControlOverrides((prev) => ({
       ...prev,
       [sequenceId]: {
@@ -1347,7 +2124,7 @@ var SequenceManagerProvider = ({ children, visualModeEnabled }) => {
       }
     }));
   }, []);
-  const clearDragOverrides = useCallback4((sequenceId) => {
+  const clearDragOverrides = useCallback5((sequenceId) => {
     setControlOverrides((prev) => {
       if (!prev[sequenceId]) {
         return prev;
@@ -1357,7 +2134,7 @@ var SequenceManagerProvider = ({ children, visualModeEnabled }) => {
       return next;
     });
   }, []);
-  const setCodeValues = useCallback4((sequenceId, values) => {
+  const setCodeValues = useCallback5((sequenceId, values) => {
     setCodeValuesMapState((prev) => {
       if (prev[sequenceId] === values) {
         return prev;
@@ -1373,28 +2150,28 @@ var SequenceManagerProvider = ({ children, visualModeEnabled }) => {
       return { ...prev, [sequenceId]: values };
     });
   }, []);
-  const registerSequence = useCallback4((seq) => {
+  const registerSequence = useCallback5((seq) => {
     setSequences((seqs) => {
       return [...seqs, seq];
     });
   }, []);
-  const unregisterSequence = useCallback4((seq) => {
+  const unregisterSequence = useCallback5((seq) => {
     setSequences((seqs) => seqs.filter((s) => s.id !== seq));
   }, []);
-  const sequenceContext = useMemo10(() => {
+  const sequenceContext = useMemo14(() => {
     return {
       registerSequence,
       sequences,
       unregisterSequence
     };
   }, [registerSequence, sequences, unregisterSequence]);
-  const hiddenContext = useMemo10(() => {
+  const hiddenContext = useMemo14(() => {
     return {
       hidden,
       setHidden
     };
   }, [hidden]);
-  const overrideContext = useMemo10(() => {
+  const overrideContext = useMemo14(() => {
     return {
       visualModeEnabled,
       dragOverrides,
@@ -1411,11 +2188,11 @@ var SequenceManagerProvider = ({ children, visualModeEnabled }) => {
     codeValues,
     setCodeValues
   ]);
-  return /* @__PURE__ */ jsx7(SequenceManager.Provider, {
+  return /* @__PURE__ */ jsx11(SequenceManager.Provider, {
     value: sequenceContext,
-    children: /* @__PURE__ */ jsx7(SequenceVisibilityToggleContext.Provider, {
+    children: /* @__PURE__ */ jsx11(SequenceVisibilityToggleContext.Provider, {
       value: hiddenContext,
-      children: /* @__PURE__ */ jsx7(VisualModeOverridesContext.Provider, {
+      children: /* @__PURE__ */ jsx11(VisualModeOverridesContext.Provider, {
         value: overrideContext,
         children
       })
@@ -1426,8 +2203,217 @@ var SequenceManagerProvider = ({ children, visualModeEnabled }) => {
 // src/v5-flag.ts
 var ENABLE_V5_BREAKING_CHANGES = false;
 
+// src/wrap-in-schema.ts
+import React13, { forwardRef as forwardRef2, useState as useState5, useContext as useContext15, useMemo as useMemo15 } from "react";
+
+// src/flatten-schema.ts
+var flattenActiveSchema = (schema, resolve) => {
+  const out = {};
+  for (const key of Object.keys(schema)) {
+    const field = schema[key];
+    if (field.type === "enum") {
+      out[key] = field;
+      const current = resolve(key) ?? field.default;
+      const variant = field.variants[current];
+      if (variant) {
+        Object.assign(out, flattenActiveSchema(variant, resolve));
+      }
+    } else {
+      out[key] = field;
+    }
+  }
+  return out;
+};
+var getFlatSchemaWithAllKeys = (schema) => {
+  const out = {};
+  const addKey = (key, field) => {
+    if (key in out) {
+      throw new Error(`Duplicate key "${key}" in schema: discriminated union variants must not share keys`);
+    }
+    out[key] = field;
+  };
+  for (const key of Object.keys(schema)) {
+    const field = schema[key];
+    addKey(key, field);
+    if (field.type === "enum") {
+      for (const variant of Object.values(field.variants)) {
+        const flatVariant = getFlatSchemaWithAllKeys(variant);
+        for (const variantKey of Object.keys(flatVariant)) {
+          addKey(variantKey, flatVariant[variantKey]);
+        }
+      }
+    }
+  }
+  return out;
+};
+
+// src/get-effective-visual-mode-value.ts
+var getEffectiveVisualModeValue = ({
+  codeValue,
+  runtimeValue,
+  dragOverrideValue,
+  defaultValue,
+  shouldResortToDefaultValueIfUndefined = false
+}) => {
+  if (dragOverrideValue !== undefined) {
+    return dragOverrideValue;
+  }
+  if (!codeValue) {
+    return runtimeValue;
+  }
+  if (!codeValue.canUpdate) {
+    return runtimeValue;
+  }
+  if (codeValue.codeValue === undefined && shouldResortToDefaultValueIfUndefined) {
+    return defaultValue;
+  }
+  return codeValue.codeValue;
+};
+
+// src/use-schema.ts
+var findFieldInSchema = (schema, key) => {
+  if (key in schema) {
+    return schema[key];
+  }
+  for (const field of Object.values(schema)) {
+    if (field.type !== "enum") {
+      continue;
+    }
+    for (const variant of Object.values(field.variants)) {
+      const found = findFieldInSchema(variant, key);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return;
+};
+var computeEffectiveSchemaValuesDotNotation = ({
+  schema,
+  currentValue,
+  overrideValues,
+  propStatus
+}) => {
+  const merged = {};
+  for (const key of Object.keys(currentValue)) {
+    const codeValueStatus = propStatus?.[key] ?? null;
+    merged[key] = getEffectiveVisualModeValue({
+      codeValue: codeValueStatus,
+      runtimeValue: currentValue[key],
+      dragOverrideValue: overrideValues[key],
+      defaultValue: findFieldInSchema(schema, key)?.default,
+      shouldResortToDefaultValueIfUndefined: false
+    });
+  }
+  return merged;
+};
+
+// src/wrap-in-schema.ts
+var getNestedValue = (obj, key) => {
+  const parts = key.split(".");
+  let current = obj;
+  for (const part of parts) {
+    if (current === null || current === undefined || typeof current !== "object")
+      return;
+    current = current[part];
+  }
+  return current;
+};
+var readValuesFromProps = (props, keys) => {
+  const out = {};
+  for (const key of keys) {
+    out[key] = getNestedValue(props, key);
+  }
+  return out;
+};
+var selectActiveKeys = (schema, values) => {
+  return Object.keys(flattenActiveSchema(schema, (key) => values[key]));
+};
+var mergeValues = ({
+  props,
+  valuesDotNotation,
+  schemaKeys
+}) => {
+  const merged = { ...props };
+  for (const key of schemaKeys) {
+    const value = valuesDotNotation[key];
+    const parts = key.split(".");
+    if (parts.length === 1) {
+      merged[key] = value;
+      continue;
+    }
+    let current = merged;
+    for (let i = 0;i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (typeof current[part] === "object" && current[part] !== null) {
+        current[part] = { ...current[part] };
+      } else {
+        current[part] = {};
+      }
+      current = current[part];
+    }
+    current[parts[parts.length - 1]] = value;
+  }
+  return merged;
+};
+var wrapInSchema = (Component, schema) => {
+  if (typeof process === "undefined" || !process.env?.EXPERIMENTAL_VISUAL_MODE_ENABLED) {
+    return Component;
+  }
+  const flatSchema = getFlatSchemaWithAllKeys(schema);
+  const flatKeys = Object.keys(flatSchema);
+  const Wrapped = forwardRef2((props, ref) => {
+    const env = useRemotionEnvironment();
+    const { visualModeEnabled, dragOverrides, codeValues } = useContext15(VisualModeOverridesContext);
+    if (!env.isStudio || env.isReadOnlyStudio || env.isRendering || !visualModeEnabled) {
+      return React13.createElement(Component, {
+        ...props,
+        _experimentalControls: null,
+        ref
+      });
+    }
+    if (props._experimentalControls) {
+      return React13.createElement(Component, {
+        ...props,
+        ref
+      });
+    }
+    const [overrideId] = useState5(() => String(Math.random()));
+    const runtimeValues = flatKeys.map((k) => getNestedValue(props, k));
+    const currentRuntimeValueDotNotation = useMemo15(() => readValuesFromProps(props, flatKeys), runtimeValues);
+    const controls = useMemo15(() => {
+      return {
+        schema,
+        currentRuntimeValueDotNotation,
+        overrideId
+      };
+    }, [currentRuntimeValueDotNotation, overrideId]);
+    const valuesDotNotation = useMemo15(() => {
+      return computeEffectiveSchemaValuesDotNotation({
+        schema,
+        currentValue: currentRuntimeValueDotNotation,
+        overrideValues: dragOverrides[overrideId] ?? {},
+        propStatus: codeValues[overrideId]
+      });
+    }, [currentRuntimeValueDotNotation, dragOverrides, overrideId, codeValues]);
+    const activeKeys = selectActiveKeys(schema, valuesDotNotation);
+    const mergedProps = mergeValues({
+      props,
+      valuesDotNotation,
+      schemaKeys: activeKeys
+    });
+    return React13.createElement(Component, {
+      ...mergedProps,
+      _experimentalControls: controls,
+      ref
+    });
+  });
+  Wrapped.displayName = `wrapInSchema(${Component.displayName || Component.name || "Component"})`;
+  return Wrapped;
+};
+
 // src/Sequence.tsx
-import { jsx as jsx8 } from "react/jsx-runtime";
+import { jsx as jsx12 } from "react/jsx-runtime";
 var RegularSequenceRefForwardingFunction = ({
   from = 0,
   durationInFrames = Infinity,
@@ -1436,16 +2422,18 @@ var RegularSequenceRefForwardingFunction = ({
   height,
   width,
   showInTimeline = true,
-  controls,
+  _experimentalControls: controls,
+  _experimentalEffects,
   _remotionInternalLoopDisplay: loopDisplay,
   _remotionInternalStack: stack,
   _remotionInternalPremountDisplay: premountDisplay,
   _remotionInternalPostmountDisplay: postmountDisplay,
+  _remotionInternalIsMedia: isMedia,
   ...other
 }, ref) => {
   const { layout = "absolute-fill" } = other;
-  const [id] = useState4(() => String(Math.random()));
-  const parentSequence = useContext13(SequenceContext);
+  const [id] = useState6(() => String(Math.random()));
+  const parentSequence = useContext16(SequenceContext);
   const { rootId } = useTimelineContext();
   const cumulatedFrom = parentSequence ? parentSequence.cumulatedFrom + parentSequence.relativeFrom : 0;
   const nonce = useNonce();
@@ -1453,7 +2441,7 @@ var RegularSequenceRefForwardingFunction = ({
     throw new TypeError(`The layout prop of <Sequence /> expects either "absolute-fill" or "none", but you passed: ${layout}`);
   }
   if (layout === "none" && typeof other.style !== "undefined") {
-    throw new TypeError('If layout="none", you may not pass a style.');
+    throw new TypeError('If layout="none", you may not pass a style. Passed: ' + JSON.stringify(other.style));
   }
   if (typeof durationInFrames !== "number") {
     throw new TypeError(`You passed to durationInFrames an argument of type ${typeof durationInFrames}, but it must be a number.`);
@@ -1471,15 +2459,15 @@ var RegularSequenceRefForwardingFunction = ({
   const videoConfig = useVideoConfig();
   const parentSequenceDuration = parentSequence ? Math.min(parentSequence.durationInFrames - from, durationInFrames) : durationInFrames;
   const actualDurationInFrames = Math.max(0, Math.min(videoConfig.durationInFrames - from, parentSequenceDuration));
-  const { registerSequence, unregisterSequence } = useContext13(SequenceManager);
-  const { hidden } = useContext13(SequenceVisibilityToggleContext);
-  const premounting = useMemo11(() => {
+  const { registerSequence, unregisterSequence } = useContext16(SequenceManager);
+  const { hidden } = useContext16(SequenceVisibilityToggleContext);
+  const premounting = useMemo16(() => {
     return parentSequence?.premounting || Boolean(other._remotionInternalIsPremounting);
   }, [other._remotionInternalIsPremounting, parentSequence?.premounting]);
-  const postmounting = useMemo11(() => {
+  const postmounting = useMemo16(() => {
     return parentSequence?.postmounting || Boolean(other._remotionInternalIsPostmounting);
   }, [other._remotionInternalIsPostmounting, parentSequence?.postmounting]);
-  const contextValue = useMemo11(() => {
+  const contextValue = useMemo16(() => {
     return {
       cumulatedFrom,
       relativeFrom: from,
@@ -1506,14 +2494,42 @@ var RegularSequenceRefForwardingFunction = ({
     premountDisplay,
     postmountDisplay
   ]);
-  const timelineClipName = useMemo11(() => {
+  const timelineClipName = useMemo16(() => {
     return name ?? "";
   }, [name]);
   const env = useRemotionEnvironment();
   const inheritedStack = other?.stack ?? null;
-  useEffect(() => {
+  const memoizedEffects = useMemoizedEffects(flattenEffects(_experimentalEffects ?? []));
+  useEffect5(() => {
     if (!env.isStudio) {
       return;
+    }
+    if (isMedia) {
+      registerSequence({
+        type: isMedia.type,
+        controls: controls ?? null,
+        effects: memoizedEffects,
+        displayName: timelineClipName,
+        doesVolumeChange: isMedia.data.doesVolumeChange,
+        duration: actualDurationInFrames,
+        from,
+        id,
+        loopDisplay,
+        nonce: nonce.get(),
+        parent: parentSequence?.id ?? null,
+        playbackRate: isMedia.data.playbackRate,
+        postmountDisplay: postmountDisplay ?? null,
+        premountDisplay: premountDisplay ?? null,
+        rootId,
+        showInTimeline,
+        src: isMedia.data.src,
+        stack: stack ?? inheritedStack,
+        startMediaFrom: isMedia.data.startMediaFrom,
+        volume: isMedia.data.volumes
+      });
+      return () => {
+        unregisterSequence(id);
+      };
     }
     registerSequence({
       from,
@@ -1529,7 +2545,8 @@ var RegularSequenceRefForwardingFunction = ({
       stack: stack ?? inheritedStack,
       premountDisplay: premountDisplay ?? null,
       postmountDisplay: postmountDisplay ?? null,
-      controls: controls ?? null
+      controls: controls ?? null,
+      effects: memoizedEffects
     });
     return () => {
       unregisterSequence(id);
@@ -1553,12 +2570,14 @@ var RegularSequenceRefForwardingFunction = ({
     postmountDisplay,
     env.isStudio,
     inheritedStack,
-    controls
+    controls,
+    memoizedEffects,
+    isMedia
   ]);
   const endThreshold = Math.ceil(cumulatedFrom + from + durationInFrames - 1);
   const content = absoluteFrame < cumulatedFrom + from ? null : absoluteFrame > endThreshold ? null : children;
   const styleIfThere = other.layout === "none" ? undefined : other.style;
-  const defaultStyle = useMemo11(() => {
+  const defaultStyle = useMemo16(() => {
     return {
       flexDirection: undefined,
       ...width ? { width } : {},
@@ -1573,9 +2592,9 @@ var RegularSequenceRefForwardingFunction = ({
   if (isSequenceHidden) {
     return null;
   }
-  return /* @__PURE__ */ jsx8(SequenceContext.Provider, {
+  return /* @__PURE__ */ jsx12(SequenceContext.Provider, {
     value: contextValue,
-    children: content === null ? null : other.layout === "none" ? content : /* @__PURE__ */ jsx8(AbsoluteFill, {
+    children: content === null ? null : other.layout === "none" ? content : /* @__PURE__ */ jsx12(AbsoluteFill, {
       ref,
       style: defaultStyle,
       className: other.className,
@@ -1583,9 +2602,9 @@ var RegularSequenceRefForwardingFunction = ({
     })
   });
 };
-var RegularSequence = forwardRef2(RegularSequenceRefForwardingFunction);
+var RegularSequence = forwardRef3(RegularSequenceRefForwardingFunction);
 var PremountedPostmountedSequenceRefForwardingFunction = (props, ref) => {
-  const parentPremountContext = useContext13(PremountContext);
+  const parentPremountContext = useContext16(PremountContext);
   const frame = useCurrentFrame() - parentPremountContext.premountFramesRemaining;
   if (props.layout === "none") {
     throw new Error('`<Sequence>` with `premountFor` and `postmountFor` props does not support layout="none"');
@@ -1605,7 +2624,7 @@ var PremountedPostmountedSequenceRefForwardingFunction = (props, ref) => {
   const postmountingActive = frame > endThreshold && frame <= endThreshold + postmountFor;
   const freezeFrame = premountingActive ? from : postmountingActive ? from + durationInFrames - 1 : 0;
   const isFreezingActive = premountingActive || postmountingActive;
-  const style = useMemo11(() => {
+  const style = useMemo16(() => {
     return {
       ...passedStyle,
       opacity: premountingActive || postmountingActive ? 0 : 1,
@@ -1620,66 +2639,56 @@ var PremountedPostmountedSequenceRefForwardingFunction = (props, ref) => {
     styleWhilePremounted,
     styleWhilePostmounted
   ]);
-  const { playing } = useTimelineContext();
-  const premountFramesRemaining = premountingActive ? from - frame : 0;
-  const premountContextValue = useMemo11(() => {
-    return {
-      premountFramesRemaining,
-      playing: parentPremountContext.playing || playing
-    };
-  }, [premountFramesRemaining, parentPremountContext.playing, playing]);
-  return /* @__PURE__ */ jsx8(PremountContext.Provider, {
-    value: premountContextValue,
-    children: /* @__PURE__ */ jsx8(Freeze, {
-      frame: freezeFrame,
-      active: isFreezingActive,
-      children: /* @__PURE__ */ jsx8(Sequence, {
-        ref,
-        from,
-        durationInFrames,
-        style,
-        _remotionInternalPremountDisplay: premountFor,
-        _remotionInternalPostmountDisplay: postmountFor,
-        _remotionInternalIsPremounting: premountingActive,
-        _remotionInternalIsPostmounting: postmountingActive,
-        ...otherProps
-      })
+  return /* @__PURE__ */ jsx12(Freeze, {
+    frame: freezeFrame,
+    active: isFreezingActive,
+    children: /* @__PURE__ */ jsx12(SequenceInner, {
+      ref,
+      from,
+      durationInFrames,
+      style,
+      _remotionInternalPremountDisplay: premountFor,
+      _remotionInternalPostmountDisplay: postmountFor,
+      _remotionInternalIsPremounting: premountingActive,
+      _remotionInternalIsPostmounting: postmountingActive,
+      ...otherProps
     })
   });
 };
-var PremountedPostmountedSequence = forwardRef2(PremountedPostmountedSequenceRefForwardingFunction);
+var PremountedPostmountedSequence = forwardRef3(PremountedPostmountedSequenceRefForwardingFunction);
 var SequenceRefForwardingFunction = (props, ref) => {
   const env = useRemotionEnvironment();
   const { fps } = useVideoConfig();
   if (props.layout !== "none" && !env.isRendering) {
     const effectivePremountFor = ENABLE_V5_BREAKING_CHANGES ? props.premountFor ?? fps : props.premountFor;
     if (effectivePremountFor || props.postmountFor) {
-      return /* @__PURE__ */ jsx8(PremountedPostmountedSequence, {
+      return /* @__PURE__ */ jsx12(PremountedPostmountedSequence, {
         ref,
         ...props,
         premountFor: effectivePremountFor
       });
     }
   }
-  return /* @__PURE__ */ jsx8(RegularSequence, {
+  return /* @__PURE__ */ jsx12(RegularSequence, {
     ...props,
     ref
   });
 };
-var Sequence = forwardRef2(SequenceRefForwardingFunction);
+var SequenceInner = forwardRef3(SequenceRefForwardingFunction);
+var Sequence = wrapInSchema(SequenceInner, sequenceSchema);
 // src/animated-image/AnimatedImage.tsx
 import {
-  forwardRef as forwardRef3,
-  useEffect as useEffect2,
-  useImperativeHandle as useImperativeHandle3,
+  forwardRef as forwardRef4,
+  useEffect as useEffect6,
+  useImperativeHandle as useImperativeHandle2,
   useLayoutEffect as useLayoutEffect2,
-  useRef as useRef5,
-  useState as useState5
+  useRef as useRef8,
+  useState as useState7
 } from "react";
 
 // src/animated-image/canvas.tsx
-import React10, { useCallback as useCallback5, useImperativeHandle as useImperativeHandle2, useRef as useRef4 } from "react";
-import { jsx as jsx9 } from "react/jsx-runtime";
+import React15, { useCallback as useCallback6, useImperativeHandle, useRef as useRef7 } from "react";
+import { jsx as jsx13 } from "react/jsx-runtime";
 var calcArgs = (fit, frameSize, canvasSize) => {
   switch (fit) {
     case "fill": {
@@ -1729,8 +2738,8 @@ var calcArgs = (fit, frameSize, canvasSize) => {
   }
 };
 var CanvasRefForwardingFunction = ({ width, height, fit, className, style }, ref) => {
-  const canvasRef = useRef4(null);
-  const draw = useCallback5((imageData) => {
+  const canvasRef = useRef7(null);
+  const draw = useCallback6((imageData) => {
     const canvas = canvasRef.current;
     const canvasWidth = width ?? imageData.displayWidth;
     const canvasHeight = height ?? imageData.displayHeight;
@@ -1751,7 +2760,7 @@ var CanvasRefForwardingFunction = ({ width, height, fit, className, style }, ref
       height: canvasHeight
     }));
   }, [fit, height, width]);
-  useImperativeHandle2(ref, () => {
+  useImperativeHandle(ref, () => {
     return {
       draw,
       getCanvas: () => {
@@ -1769,13 +2778,13 @@ var CanvasRefForwardingFunction = ({ width, height, fit, className, style }, ref
       }
     };
   }, [draw]);
-  return /* @__PURE__ */ jsx9("canvas", {
+  return /* @__PURE__ */ jsx13("canvas", {
     ref: canvasRef,
     className,
     style
   });
 };
-var Canvas = React10.forwardRef(CanvasRefForwardingFunction);
+var Canvas = React15.forwardRef(CanvasRefForwardingFunction);
 
 // src/animated-image/decode-image.ts
 var CACHE_SIZE = 5;
@@ -1928,8 +2937,8 @@ var resolveAnimatedImageSource = (src) => {
 };
 
 // src/animated-image/AnimatedImage.tsx
-import { jsx as jsx10 } from "react/jsx-runtime";
-var AnimatedImage = forwardRef3(({
+import { jsx as jsx14 } from "react/jsx-runtime";
+var AnimatedImage = forwardRef4(({
   src,
   width,
   height,
@@ -1939,8 +2948,8 @@ var AnimatedImage = forwardRef3(({
   fit = "fill",
   ...props
 }, canvasRef) => {
-  const mountState = useRef5({ isMounted: true });
-  useEffect2(() => {
+  const mountState = useRef8({ isMounted: true });
+  useEffect6(() => {
     const { current } = mountState;
     current.isMounted = true;
     return () => {
@@ -1948,24 +2957,24 @@ var AnimatedImage = forwardRef3(({
     };
   }, []);
   const resolvedSrc = resolveAnimatedImageSource(src);
-  const [imageDecoder, setImageDecoder] = useState5(null);
+  const [imageDecoder, setImageDecoder] = useState7(null);
   const { delayRender: delayRender2, continueRender: continueRender2 } = useDelayRender();
-  const [decodeHandle] = useState5(() => delayRender2(`Rendering <AnimatedImage/> with src="${resolvedSrc}"`));
+  const [decodeHandle] = useState7(() => delayRender2(`Rendering <AnimatedImage/> with src="${resolvedSrc}"`));
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const currentTime = frame / playbackRate / fps;
-  const currentTimeRef = useRef5(currentTime);
+  const currentTimeRef = useRef8(currentTime);
   currentTimeRef.current = currentTime;
-  const ref = useRef5(null);
-  useImperativeHandle3(canvasRef, () => {
+  const ref = useRef8(null);
+  useImperativeHandle2(canvasRef, () => {
     const c = ref.current?.getCanvas();
     if (!c) {
       throw new Error("Canvas ref is not set");
     }
     return c;
   }, []);
-  const [initialLoopBehavior] = useState5(() => loopBehavior);
-  useEffect2(() => {
+  const [initialLoopBehavior] = useState7(() => loopBehavior);
+  useEffect6(() => {
     const controller = new AbortController;
     decodeImage({
       resolvedSrc,
@@ -2028,7 +3037,7 @@ var AnimatedImage = forwardRef3(({
     continueRender2,
     delayRender2
   ]);
-  return /* @__PURE__ */ jsx10(Canvas, {
+  return /* @__PURE__ */ jsx14(Canvas, {
     ref,
     width,
     height,
@@ -2036,18 +3045,255 @@ var AnimatedImage = forwardRef3(({
     ...props
   });
 });
+// src/HtmlInCanvas.tsx
+import {
+  createContext as createContext15,
+  forwardRef as forwardRef5,
+  useCallback as useCallback7,
+  useContext as useContext17,
+  useLayoutEffect as useLayoutEffect3,
+  useMemo as useMemo17,
+  useRef as useRef9,
+  useState as useState8
+} from "react";
+import { jsx as jsx15 } from "react/jsx-runtime";
+var cachedSupport = null;
+var isHtmlInCanvasSupported = () => {
+  if (cachedSupport !== null) {
+    return cachedSupport;
+  }
+  if (typeof document === "undefined") {
+    return false;
+  }
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  cachedSupport = typeof ctx?.drawElementImage === "function" && typeof canvas.requestPaint === "function" && typeof canvas.captureElementImage === "function";
+  return cachedSupport;
+};
+function assertHtmlInCanvasDimensions(width, height) {
+  if (typeof width !== "number" || typeof height !== "number") {
+    throw new Error(`HtmlInCanvas: \`width\` and \`height\` must be numbers. Received width=${String(width)}, height=${String(height)}.`);
+  }
+  if (!Number.isInteger(width) || width <= 0) {
+    throw new Error(`HtmlInCanvas: \`width\` must be a positive integer. Received: ${String(width)}.`);
+  }
+  if (!Number.isInteger(height) || height <= 0) {
+    throw new Error(`HtmlInCanvas: \`height\` must be a positive integer. Received: ${String(height)}.`);
+  }
+}
+var defaultOnPaint = ({
+  canvas,
+  element,
+  elementImage
+}) => {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Failed to acquire 2D context for <HtmlInCanvas> canvas");
+  }
+  ctx.reset();
+  const transform = ctx.drawElementImage(elementImage, 0, 0);
+  element.style.transform = transform.toString();
+};
+var HtmlInCanvasAncestorContext = createContext15(false);
+var HtmlInCanvasInner = forwardRef5(({
+  width,
+  height,
+  _experimentalEffects: effects = [],
+  children,
+  onPaint,
+  onInit,
+  _experimentalControls: controls,
+  style,
+  durationInFrames,
+  ...sequenceProps
+}, ref) => {
+  const isInsideAncestorHtmlInCanvas = useContext17(HtmlInCanvasAncestorContext);
+  assertHtmlInCanvasDimensions(width, height);
+  const { continueRender: continueRender2, cancelRender: cancelRender2 } = useDelayRender();
+  if (!isHtmlInCanvasSupported()) {
+    cancelRender2(new Error("HTML in Canvas is not supported. Open this page in Chrome Canary with chrome://flags/#canvas-draw-element enabled."));
+  }
+  const { durationInFrames: videoDuration } = useVideoConfig();
+  const resolvedDuration = durationInFrames ?? videoDuration;
+  const frame = useCurrentFrame();
+  const canvas2dRef = useRef9(null);
+  const divRef = useRef9(null);
+  const setLayoutCanvasRef = useCallback7((node) => {
+    canvas2dRef.current = node;
+    if (typeof ref === "function") {
+      ref(node);
+    } else if (ref) {
+      ref.current = node;
+    }
+  }, [ref]);
+  const [offscreenCanvas] = useState8(() => new OffscreenCanvas(1, 1));
+  const chainState = useEffectChainState();
+  const effectsRef = useRef9(effects);
+  effectsRef.current = effects;
+  const frameRef = useRef9(frame);
+  frameRef.current = frame;
+  const onPaintRef = useRef9(onPaint);
+  onPaintRef.current = onPaint;
+  const onInitRef = useRef9(onInit);
+  onInitRef.current = onInit;
+  const initializedRef = useRef9(false);
+  const onInitCleanupRef = useRef9(null);
+  const unmountedRef = useRef9(false);
+  const onPaintCb = useCallback7(async () => {
+    const element = divRef.current;
+    if (!element) {
+      throw new Error("Canvas or scene element not found");
+    }
+    offscreenCanvas.width = width;
+    offscreenCanvas.height = height;
+    try {
+      const layoutCanvas = canvas2dRef.current;
+      if (!layoutCanvas) {
+        throw new Error("Canvas not found");
+      }
+      const layout2d = layoutCanvas.getContext("2d");
+      if (!layout2d) {
+        throw new Error("Failed to acquire 2D context for <HtmlInCanvas> layout canvas");
+      }
+      const handle = delayRender("onPaint");
+      if (!initializedRef.current) {
+        initializedRef.current = true;
+        const initImage = layoutCanvas.captureElementImage(element);
+        const currentOnInit = onInitRef.current;
+        if (currentOnInit) {
+          const cleanup = await currentOnInit({
+            canvas: offscreenCanvas,
+            element,
+            elementImage: initImage
+          });
+          if (typeof cleanup !== "function") {
+            throw new Error("HtmlInCanvas: when `onInit` is provided, it must return a cleanup function, or a Promise that resolves to one.");
+          }
+          if (unmountedRef.current) {
+            cleanup();
+          } else {
+            onInitCleanupRef.current = cleanup;
+          }
+        }
+      }
+      const handler = onPaintRef.current ?? defaultOnPaint;
+      const elImage = layoutCanvas.captureElementImage(element);
+      await handler({
+        canvas: offscreenCanvas,
+        element,
+        elementImage: elImage
+      });
+      await runEffectChain({
+        state: chainState.get(width, height),
+        source: offscreenCanvas,
+        effects: effectsRef.current,
+        output: canvas2dRef.current,
+        frame: frameRef.current,
+        width,
+        height
+      });
+      continueRender2(handle);
+    } catch (error2) {
+      cancelRender2(error2);
+    }
+  }, [
+    chainState,
+    continueRender2,
+    cancelRender2,
+    width,
+    height,
+    offscreenCanvas
+  ]);
+  useLayoutEffect3(() => {
+    const canvas = canvas2dRef.current;
+    if (!canvas) {
+      throw new Error("Canvas not found");
+    }
+    canvas.layoutSubtree = true;
+    canvas.addEventListener("paint", onPaintCb);
+    return () => {
+      canvas.removeEventListener("paint", onPaintCb);
+      unmountedRef.current = true;
+      onInitCleanupRef.current?.();
+      onInitCleanupRef.current = null;
+    };
+  }, [onPaintCb, cancelRender2]);
+  const onPaintChangedRef = useRef9(false);
+  useLayoutEffect3(() => {
+    if (!onPaintChangedRef.current) {
+      onPaintChangedRef.current = true;
+      return;
+    }
+    const canvas = canvas2dRef.current;
+    if (!canvas) {
+      return;
+    }
+    canvas.requestPaint?.();
+  }, [onPaint]);
+  useLayoutEffect3(() => {
+    const canvas = canvas2dRef.current;
+    if (!canvas) {
+      return;
+    }
+    const handle = delayRender("waiting for first paint after canvas resize");
+    canvas.addEventListener("paint", () => {
+      continueRender2(handle);
+    }, { once: true });
+    return () => {
+      continueRender2(handle);
+    };
+  }, [width, height, continueRender2]);
+  const innerStyle = useMemo17(() => {
+    return {
+      width,
+      height
+    };
+  }, [width, height]);
+  if (isInsideAncestorHtmlInCanvas) {
+    throw new Error("<HtmlInCanvas> effects cannot be nested together. Chrome will only display the outer effect. Consider merging the effects into one if you can.");
+  }
+  return /* @__PURE__ */ jsx15(Sequence, {
+    durationInFrames: resolvedDuration,
+    name: "<HtmlInCanvas>",
+    _experimentalControls: controls,
+    _experimentalEffects: effects,
+    layout: "none",
+    ...sequenceProps,
+    children: /* @__PURE__ */ jsx15(HtmlInCanvasAncestorContext.Provider, {
+      value: true,
+      children: /* @__PURE__ */ jsx15("canvas", {
+        ref: setLayoutCanvasRef,
+        width,
+        height,
+        style,
+        children: /* @__PURE__ */ jsx15("div", {
+          ref: divRef,
+          style: innerStyle,
+          children
+        })
+      })
+    })
+  });
+});
+HtmlInCanvasInner.displayName = "HtmlInCanvas";
+var HtmlInCanvasWrapped = wrapInSchema(HtmlInCanvasInner, sequenceStyleSchema);
+var HtmlInCanvas = Object.assign(HtmlInCanvasWrapped, {
+  isSupported: isHtmlInCanvasSupported
+});
+HtmlInCanvas.displayName = "HtmlInCanvas";
+addSequenceStackTraces(HtmlInCanvas);
 // src/Artifact.tsx
-import { useContext as useContext14, useLayoutEffect as useLayoutEffect4, useState as useState7 } from "react";
+import { useContext as useContext18, useLayoutEffect as useLayoutEffect5, useState as useState10 } from "react";
 
 // src/RenderAssetManager.tsx
 import {
-  createContext as createContext13,
-  useCallback as useCallback6,
-  useImperativeHandle as useImperativeHandle4,
-  useLayoutEffect as useLayoutEffect3,
-  useMemo as useMemo12,
-  useRef as useRef6,
-  useState as useState6
+  createContext as createContext16,
+  useCallback as useCallback8,
+  useImperativeHandle as useImperativeHandle3,
+  useLayoutEffect as useLayoutEffect4,
+  useMemo as useMemo18,
+  useRef as useRef10,
+  useState as useState9
 } from "react";
 
 // src/validation/validate-artifact.ts
@@ -2082,8 +3328,8 @@ var validateRenderAsset = (artifact) => {
 };
 
 // src/RenderAssetManager.tsx
-import { jsx as jsx11 } from "react/jsx-runtime";
-var RenderAssetManager = createContext13({
+import { jsx as jsx16 } from "react/jsx-runtime";
+var RenderAssetManager = createContext16({
   registerRenderAsset: () => {
     return;
   },
@@ -2093,15 +3339,15 @@ var RenderAssetManager = createContext13({
   renderAssets: []
 });
 var RenderAssetManagerProvider = ({ children, collectAssets }) => {
-  const [renderAssets, setRenderAssets] = useState6([]);
-  const renderAssetsRef = useRef6([]);
-  const registerRenderAsset = useCallback6((renderAsset) => {
+  const [renderAssets, setRenderAssets] = useState9([]);
+  const renderAssetsRef = useRef10([]);
+  const registerRenderAsset = useCallback8((renderAsset) => {
     validateRenderAsset(renderAsset);
     renderAssetsRef.current = [...renderAssetsRef.current, renderAsset];
     setRenderAssets(renderAssetsRef.current);
   }, []);
   if (collectAssets) {
-    useImperativeHandle4(collectAssets, () => {
+    useImperativeHandle3(collectAssets, () => {
       return {
         collectAssets: () => {
           const assets = renderAssetsRef.current;
@@ -2112,11 +3358,11 @@ var RenderAssetManagerProvider = ({ children, collectAssets }) => {
       };
     }, []);
   }
-  const unregisterRenderAsset = useCallback6((id) => {
+  const unregisterRenderAsset = useCallback8((id) => {
     renderAssetsRef.current = renderAssetsRef.current.filter((a) => a.id !== id);
     setRenderAssets(renderAssetsRef.current);
   }, []);
-  useLayoutEffect3(() => {
+  useLayoutEffect4(() => {
     if (typeof window !== "undefined") {
       window.remotion_collectAssets = () => {
         const assets = renderAssetsRef.current;
@@ -2126,14 +3372,14 @@ var RenderAssetManagerProvider = ({ children, collectAssets }) => {
       };
     }
   }, []);
-  const contextValue = useMemo12(() => {
+  const contextValue = useMemo18(() => {
     return {
       registerRenderAsset,
       unregisterRenderAsset,
       renderAssets
     };
   }, [renderAssets, registerRenderAsset, unregisterRenderAsset]);
-  return /* @__PURE__ */ jsx11(RenderAssetManager.Provider, {
+  return /* @__PURE__ */ jsx16(RenderAssetManager.Provider, {
     value: contextValue,
     children
   });
@@ -2142,13 +3388,13 @@ var RenderAssetManagerProvider = ({ children, collectAssets }) => {
 // src/Artifact.tsx
 var ArtifactThumbnail = Symbol("Thumbnail");
 var Artifact = ({ filename, content, downloadBehavior }) => {
-  const { registerRenderAsset, unregisterRenderAsset } = useContext14(RenderAssetManager);
+  const { registerRenderAsset, unregisterRenderAsset } = useContext18(RenderAssetManager);
   const env = useRemotionEnvironment();
   const frame = useCurrentFrame();
-  const [id] = useState7(() => {
+  const [id] = useState10(() => {
     return String(Math.random());
   });
-  useLayoutEffect4(() => {
+  useLayoutEffect5(() => {
     if (!env.isRendering) {
       return;
     }
@@ -2198,8 +3444,8 @@ var Artifact = ({ filename, content, downloadBehavior }) => {
   return null;
 };
 Artifact.Thumbnail = ArtifactThumbnail;
-// src/audio/Audio.tsx
-import { forwardRef as forwardRef6, useCallback as useCallback11, useContext as useContext26 } from "react";
+// src/audio/html5-audio.tsx
+import { forwardRef as forwardRef8, useCallback as useCallback13, useContext as useContext30 } from "react";
 
 // src/absolute-src.ts
 var getAbsoluteSrc = (relativeSrc) => {
@@ -2231,13 +3477,20 @@ var calculateMediaDuration = ({
 };
 
 // src/loop/index.tsx
-import React11, { createContext as createContext14, useMemo as useMemo13 } from "react";
-import { jsx as jsx12 } from "react/jsx-runtime";
-var LoopContext = createContext14(null);
+import React17, { createContext as createContext17, useMemo as useMemo19 } from "react";
+import { jsx as jsx17 } from "react/jsx-runtime";
+var LoopContext = createContext17(null);
 var useLoop = () => {
-  return React11.useContext(LoopContext);
+  return React17.useContext(LoopContext);
 };
-var Loop = ({ durationInFrames, times = Infinity, children, name, ...props }) => {
+var Loop = ({
+  durationInFrames,
+  times = Infinity,
+  children,
+  name,
+  showInTimeline,
+  ...props
+}) => {
   const currentFrame = useCurrentFrame();
   const { durationInFrames: compDuration } = useVideoConfig();
   validateDurationInFrames(durationInFrames, {
@@ -2260,28 +3513,29 @@ var Loop = ({ durationInFrames, times = Infinity, children, name, ...props }) =>
   const iteration = Math.floor(currentFrame / durationInFrames);
   const start = iteration * durationInFrames;
   const from = Math.min(start, maxFrame);
-  const loopDisplay = useMemo13(() => {
+  const loopDisplay = useMemo19(() => {
     return {
       numberOfTimes: Math.min(compDuration / durationInFrames, times),
       startOffset: -from,
       durationInFrames
     };
   }, [compDuration, durationInFrames, from, times]);
-  const loopContext = useMemo13(() => {
+  const loopContext = useMemo19(() => {
     return {
       iteration: Math.floor(currentFrame / durationInFrames),
       durationInFrames
     };
   }, [currentFrame, durationInFrames]);
-  return /* @__PURE__ */ jsx12(LoopContext.Provider, {
+  return /* @__PURE__ */ jsx17(LoopContext.Provider, {
     value: loopContext,
-    children: /* @__PURE__ */ jsx12(Sequence, {
+    children: /* @__PURE__ */ jsx17(Sequence, {
       durationInFrames,
       from,
       name: name ?? "<Loop>",
       _remotionInternalLoopDisplay: loopDisplay,
       layout: props.layout,
       style,
+      showInTimeline,
       children
     })
   });
@@ -2289,7 +3543,7 @@ var Loop = ({ durationInFrames, times = Infinity, children, name, ...props }) =>
 Loop.useLoop = useLoop;
 
 // src/prefetch.ts
-import { useContext as useContext15 } from "react";
+import { useContext as useContext19 } from "react";
 
 // src/playback-logging.ts
 var playbackLogging = ({
@@ -2303,9 +3557,9 @@ var playbackLogging = ({
 };
 
 // src/prefetch-state.tsx
-import { createContext as createContext15, useEffect as useEffect3, useState as useState8 } from "react";
-import { jsx as jsx13 } from "react/jsx-runtime";
-var PreloadContext = createContext15({});
+import { createContext as createContext18, useEffect as useEffect7, useState as useState11 } from "react";
+import { jsx as jsx18 } from "react/jsx-runtime";
+var PreloadContext = createContext18({});
 var preloads = {};
 var updaters = [];
 var setPreloads = (updater) => {
@@ -2313,8 +3567,8 @@ var setPreloads = (updater) => {
   updaters.forEach((u) => u());
 };
 var PrefetchProvider = ({ children }) => {
-  const [_preloads, _setPreloads] = useState8(() => preloads);
-  useEffect3(() => {
+  const [_preloads, _setPreloads] = useState11(() => preloads);
+  useEffect7(() => {
     const updaterFunction = () => {
       _setPreloads(preloads);
     };
@@ -2323,7 +3577,7 @@ var PrefetchProvider = ({ children }) => {
       updaters = updaters.filter((u) => u !== updaterFunction);
     };
   }, []);
-  return /* @__PURE__ */ jsx13(PreloadContext.Provider, {
+  return /* @__PURE__ */ jsx18(PreloadContext.Provider, {
     value: _preloads,
     children
   });
@@ -2345,7 +3599,7 @@ var getSrcWithoutHash = (src) => {
   return src.slice(0, hashIndex);
 };
 var usePreload = (src) => {
-  const preloads2 = useContext15(PreloadContext);
+  const preloads2 = useContext19(PreloadContext);
   const hashFragmentIndex = removeAndGetHashFragment(src);
   const withoutHashFragment = getSrcWithoutHash(src);
   if (!preloads2[withoutHashFragment]) {
@@ -2618,8 +3872,8 @@ var resolveTrimProps = ({
 };
 
 // src/video/duration-state.tsx
-import { createContext as createContext16, useMemo as useMemo14, useReducer } from "react";
-import { jsx as jsx14 } from "react/jsx-runtime";
+import { createContext as createContext19, useMemo as useMemo20, useReducer } from "react";
+import { jsx as jsx19 } from "react/jsx-runtime";
 var durationReducer = (state, action) => {
   switch (action.type) {
     case "got-duration": {
@@ -2636,7 +3890,7 @@ var durationReducer = (state, action) => {
       return state;
   }
 };
-var DurationsContext = createContext16({
+var DurationsContext = createContext19({
   durations: {},
   setDurations: () => {
     throw new Error("context missing");
@@ -2644,27 +3898,27 @@ var DurationsContext = createContext16({
 });
 var DurationsContextProvider = ({ children }) => {
   const [durations, setDurations] = useReducer(durationReducer, {});
-  const value = useMemo14(() => {
+  const value = useMemo20(() => {
     return {
       durations,
       setDurations
     };
   }, [durations]);
-  return /* @__PURE__ */ jsx14(DurationsContext.Provider, {
+  return /* @__PURE__ */ jsx19(DurationsContext.Provider, {
     value,
     children
   });
 };
 
 // src/audio/AudioForPreview.tsx
-import React17, {
-  forwardRef as forwardRef4,
-  useContext as useContext24,
-  useEffect as useEffect10,
-  useImperativeHandle as useImperativeHandle5,
-  useMemo as useMemo22,
-  useRef as useRef14,
-  useState as useState13
+import React23, {
+  forwardRef as forwardRef6,
+  useContext as useContext28,
+  useEffect as useEffect14,
+  useImperativeHandle as useImperativeHandle4,
+  useMemo as useMemo28,
+  useRef as useRef18,
+  useState as useState16
 } from "react";
 
 // src/get-cross-origin-value.ts
@@ -2686,17 +3940,17 @@ var getCrossOriginValue = ({
 };
 
 // src/use-amplification.ts
-import { useContext as useContext17, useLayoutEffect as useLayoutEffect5, useRef as useRef9 } from "react";
+import { useContext as useContext21, useLayoutEffect as useLayoutEffect6, useRef as useRef13 } from "react";
 
 // src/audio/shared-audio-tags.tsx
-import React14, {
-  createContext as createContext17,
+import React20, {
+  createContext as createContext20,
   createRef as createRef2,
-  useCallback as useCallback7,
-  useContext as useContext16,
-  useMemo as useMemo16,
-  useRef as useRef7,
-  useState as useState9
+  useCallback as useCallback9,
+  useContext as useContext20,
+  useMemo as useMemo22,
+  useRef as useRef11,
+  useState as useState12
 } from "react";
 
 // src/play-and-handle-not-allowed-error.ts
@@ -2795,7 +4049,7 @@ var makeSharedElementSourceNode = ({
 };
 
 // src/audio/use-audio-context.ts
-import { useMemo as useMemo15 } from "react";
+import { useMemo as useMemo21 } from "react";
 var warned = false;
 var warnOnce = (logLevel) => {
   if (warned) {
@@ -2812,7 +4066,7 @@ var useSingletonAudioContext = ({
   audioEnabled
 }) => {
   const env = useRemotionEnvironment();
-  const audioContext = useMemo15(() => {
+  const context = useMemo21(() => {
     if (env.isRendering) {
       return null;
     }
@@ -2823,16 +4077,46 @@ var useSingletonAudioContext = ({
       warnOnce(logLevel);
       return null;
     }
-    return new AudioContext({
+    const audioContext = new AudioContext({
       latencyHint,
       sampleRate: 48000
     });
+    const gainNode = audioContext.createGain();
+    gainNode.connect(audioContext.destination);
+    Log.trace({ logLevel, tag: "audio" }, "Creating new audio context");
+    audioContext.suspend();
+    return {
+      audioContext,
+      gainNode
+    };
   }, [logLevel, latencyHint, env.isRendering, audioEnabled]);
-  return audioContext;
+  return context;
+};
+
+// src/audio/wait-until-actually-resumed.ts
+var waitUntilActuallyResumed = (audioContext, logLevel) => {
+  return new Promise((resolve) => {
+    const startCurrentTime = audioContext.currentTime;
+    const start = audioContext.getOutputTimestamp();
+    const startOutputPerformanceTime = start.performanceTime;
+    const startWallClock = performance.now();
+    const check = () => {
+      const { currentTime } = audioContext;
+      const outputTimestamp = audioContext.getOutputTimestamp();
+      const elapsedWallClock = performance.now() - startWallClock;
+      if (startOutputPerformanceTime !== undefined && outputTimestamp.performanceTime !== undefined && outputTimestamp.performanceTime > startOutputPerformanceTime && outputTimestamp.contextTime !== undefined && outputTimestamp.contextTime > startCurrentTime) {
+        Log.verbose({ logLevel, tag: "audio" }, `waitUntilActuallyResumed: getOutputTimestamp.performanceTime advanced from ${startOutputPerformanceTime.toFixed(6)} to ${outputTimestamp.performanceTime.toFixed(6)} after ${elapsedWallClock.toFixed(1)}ms. currentTime=${currentTime.toFixed(6)} (advanced by ${(currentTime - startCurrentTime).toFixed(6)}), getOutputTimestamp.performanceTime=${outputTimestamp.performanceTime?.toFixed(1) ?? "undefined"}`);
+        resolve();
+        return;
+      }
+      requestAnimationFrame(check);
+    };
+    requestAnimationFrame(check);
+  });
 };
 
 // src/audio/shared-audio-tags.tsx
-import { jsx as jsx15, jsxs } from "react/jsx-runtime";
+import { jsx as jsx20, jsxs as jsxs2 } from "react/jsx-runtime";
 var EMPTY_AUDIO = "data:audio/mp3;base64,/+MYxAAJcAV8AAgAABn//////+/gQ5BAMA+D4Pg+BAQBAEAwD4Pg+D4EBAEAQDAPg++hYBH///hUFQVBUFREDQNHmf///////+MYxBUGkAGIMAAAAP/29Xt6lUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxDUAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
 var compareProps = (obj1, obj2) => {
   const keysA = Object.keys(obj1).sort();
@@ -2859,77 +4143,161 @@ var didPropChange = (key, newProp, prevProp) => {
   }
   return true;
 };
-var SharedAudioContext = createContext17(null);
-var SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyHint, audioEnabled }) => {
-  const audios = useRef7([]);
-  const [initialNumberOfAudioTags] = useState9(numberOfAudioTags);
-  if (numberOfAudioTags !== initialNumberOfAudioTags) {
-    throw new Error("The number of shared audio tags has changed dynamically. Once you have set this property, you cannot change it afterwards.");
-  }
+var SharedAudioContext = createContext20(null);
+var SharedAudioTagsContext = createContext20(null);
+var SharedAudioContextProvider = ({ children, audioLatencyHint, audioEnabled }) => {
   const logLevel = useLogLevel();
-  const audioContext = useSingletonAudioContext({
+  const ctxAndGain = useSingletonAudioContext({
     logLevel,
     latencyHint: audioLatencyHint,
     audioEnabled
   });
-  const audioSyncAnchor = useMemo16(() => ({ value: 0 }), []);
-  const prevEndTimes = useRef7({ scheduledEndTime: null, mediaEndTime: null });
-  const scheduleAudioNode = useMemo16(() => {
+  const audioContextIsPlayingEventually = useRef11(false);
+  const isResuming = useRef11(null);
+  const audioSyncAnchor = useMemo22(() => ({ value: 0 }), []);
+  const audioSyncAnchorListeners = useRef11([]);
+  const audioSyncAnchorEmitter = useMemo22(() => {
+    return {
+      dispatch: (event) => {
+        audioSyncAnchorListeners.current.forEach((l) => l(event));
+      },
+      subscribe: (listener) => {
+        audioSyncAnchorListeners.current.push(listener);
+        return {
+          remove: () => {
+            audioSyncAnchorListeners.current = audioSyncAnchorListeners.current.filter((l) => l !== listener);
+          }
+        };
+      }
+    };
+  }, []);
+  const prevEndTimes = useRef11({ scheduledEndTime: null, mediaEndTime: null });
+  const nodesToResume = useRef11(new Map);
+  const unscheduleAudioNode = useCallback9((node) => {
+    nodesToResume.current.delete(node);
+  }, []);
+  const scheduleAudioNode = useMemo22(() => {
     return ({
       node,
       mediaTimestamp,
-      targetTime,
       currentTime,
-      sequenceEndTime,
-      sequenceStartTime,
-      debugAudioScheduling
+      scheduledTime,
+      duration,
+      offset,
+      originalUnloopedMediaTimestamp
     }) => {
-      if (!audioContext) {
+      if (!ctxAndGain) {
         throw new Error("Audio context not found");
       }
-      const bufferDuration = node.buffer?.duration ?? 0;
-      const unclampedMediaEndTime = mediaTimestamp + bufferDuration;
-      const needsTrimEnd = unclampedMediaEndTime > sequenceEndTime;
-      const needsTrimStart = mediaTimestamp < sequenceStartTime;
-      const offsetBecauseOfTrim = needsTrimStart ? sequenceStartTime - mediaTimestamp : 0;
-      const offsetBecauseOfTooLate = targetTime < 0 ? -targetTime : 0;
-      const offset = offsetBecauseOfTrim + offsetBecauseOfTooLate;
-      const duration = needsTrimEnd ? bufferDuration - Math.max(0, unclampedMediaEndTime - sequenceEndTime) - offset : bufferDuration - offset;
-      const scheduledTime = targetTime + currentTime + offset;
-      if (offset < 0) {
-        throw new Error("offset < 0: " + JSON.stringify({
-          offset,
-          targetTime,
-          currentTime,
-          offsetBecauseOfTrim,
-          offsetBecauseOfTooLate
-        }));
-      }
       if (duration > 0) {
-        node.start(scheduledTime, offset, duration);
+        if (ctxAndGain.audioContext.state === "suspended") {
+          nodesToResume.current.set(node, {
+            scheduledTime,
+            offset,
+            duration
+          });
+        } else {
+          node.start(scheduledTime, offset, duration);
+        }
       }
       const scheduledEndTime = scheduledTime + duration / node.playbackRate.value;
       const mediaTime = mediaTimestamp + offset;
       const mediaEndTime = mediaTime + duration;
-      const latency = audioContext.baseLatency + audioContext.outputLatency;
-      const timeDiff = scheduledTime - currentTime - latency;
+      const latency = ctxAndGain.audioContext.baseLatency + ctxAndGain.audioContext.outputLatency;
+      const timeDiff = scheduledTime - ctxAndGain.audioContext.currentTime;
       const prev = prevEndTimes.current;
       const scheduledMismatch = prev.scheduledEndTime !== null && Math.abs(scheduledTime - prev.scheduledEndTime) > 0.001;
       const mediaMismatch = prev.mediaEndTime !== null && Math.abs(mediaTime - prev.mediaEndTime) > 0.001;
-      if (debugAudioScheduling) {
-        Log.info({ logLevel, tag: "audio-scheduling" }, "scheduled %c%s%c %s %c%s%c %s %c%s%c %s %s %s", scheduledMismatch ? "color: red; font-weight: bold" : "", scheduledTime.toFixed(4), "", scheduledEndTime.toFixed(4), mediaMismatch ? "color: red; font-weight: bold" : "", mediaTime.toFixed(4), "", mediaEndTime.toFixed(4), duration < 0 ? "color: red; font-weight: bold" : timeDiff < 0 ? "color: red; font-weight: bold" : "color: blue; font-weight: bold", duration < 0 ? "missed " + Math.abs(offset).toFixed(2) + "s" : Math.abs(timeDiff).toFixed(2) + (timeDiff < 0 ? " delay" : " ahead"), "", "current=" + currentTime.toFixed(4), "offset=" + offset.toFixed(4), "latency=" + latency.toFixed(4), "state=" + audioContext.state);
-      }
+      Log.verbose({ logLevel, tag: "audio-scheduling" }, "scheduled %c%s%c %s %c%s%c %s %c%s%c %s %s %s", scheduledMismatch ? "color: red; font-weight: bold" : "", scheduledTime.toFixed(4), "", scheduledEndTime.toFixed(4), mediaMismatch ? "color: red; font-weight: bold" : "", mediaTime.toFixed(4), "", mediaEndTime.toFixed(4), duration < 0 ? "color: red; font-weight: bold" : timeDiff < 0 ? "color: red; font-weight: bold" : "color: blue; font-weight: bold", duration < 0 ? "missed " + Math.abs(offset).toFixed(2) + "s" : Math.abs(timeDiff).toFixed(2) + (timeDiff < 0 ? " delay" : " ahead"), "", "current=" + currentTime.toFixed(4), "offset=" + offset.toFixed(4), "latency=" + latency.toFixed(4), "state=" + ctxAndGain.audioContext.state, originalUnloopedMediaTimestamp !== mediaTime ? "original_ts=" + originalUnloopedMediaTimestamp.toFixed(4) : "");
       prev.scheduledEndTime = scheduledEndTime;
       prev.mediaEndTime = mediaEndTime;
       return duration > 0 ? {
         type: "started",
         scheduledTime
       } : {
-        type: "not-started"
+        type: "not-started",
+        reason: "missed " + Math.abs(offset).toFixed(2) + "s"
       };
     };
-  }, [audioContext, logLevel]);
-  const refs = useMemo16(() => {
+  }, [ctxAndGain, logLevel]);
+  const resume = useCallback9(() => {
+    if (!ctxAndGain) {
+      return Promise.resolve();
+    }
+    if (audioContextIsPlayingEventually.current) {
+      return Promise.resolve();
+    }
+    audioContextIsPlayingEventually.current = true;
+    const resumePromise = ctxAndGain.audioContext.resume();
+    isResuming.current = new Promise((resolve) => {
+      waitUntilActuallyResumed(ctxAndGain.audioContext, logLevel).then(resolve);
+      resumePromise.catch((err) => {
+        Log.warn({ logLevel, tag: "audio" }, "AudioContext resume rejected, continuing without audio sync", err);
+        resolve();
+      });
+    }).finally(() => {
+      isResuming.current = null;
+    });
+    ctxAndGain.gainNode.gain.cancelScheduledValues(ctxAndGain.audioContext.currentTime);
+    ctxAndGain.gainNode.gain.setValueAtTime(0, ctxAndGain.audioContext.currentTime);
+    ctxAndGain.gainNode.gain.linearRampToValueAtTime(1, ctxAndGain.audioContext.currentTime + 0.03);
+    nodesToResume.current.forEach((r, node) => node.start(r.scheduledTime, r.offset, r.duration));
+    nodesToResume.current.clear();
+    return resumePromise.catch(() => {});
+  }, [ctxAndGain, logLevel]);
+  const getIsResumingAudioContext = useCallback9(() => {
+    return isResuming.current;
+  }, []);
+  const suspend = useCallback9(() => {
+    if (!ctxAndGain) {
+      return;
+    }
+    if (!audioContextIsPlayingEventually.current) {
+      return;
+    }
+    audioContextIsPlayingEventually.current = false;
+    ctxAndGain.audioContext.suspend();
+  }, [ctxAndGain]);
+  const audioContextValue = useMemo22(() => {
+    return {
+      audioContext: ctxAndGain?.audioContext ?? null,
+      gainNode: ctxAndGain?.gainNode ?? null,
+      audioSyncAnchor,
+      audioSyncAnchorEmitter,
+      scheduleAudioNode,
+      resume,
+      suspend,
+      getIsResumingAudioContext,
+      unscheduleAudioNode
+    };
+  }, [
+    ctxAndGain,
+    audioSyncAnchor,
+    audioSyncAnchorEmitter,
+    scheduleAudioNode,
+    resume,
+    suspend,
+    getIsResumingAudioContext,
+    unscheduleAudioNode
+  ]);
+  return /* @__PURE__ */ jsx20(SharedAudioContext.Provider, {
+    value: audioContextValue,
+    children
+  });
+};
+var SharedAudioTagsContextProvider = ({ children, numberOfAudioTags }) => {
+  const audios = useRef11([]);
+  const [initialNumberOfAudioTags] = useState12(numberOfAudioTags);
+  if (numberOfAudioTags !== initialNumberOfAudioTags) {
+    throw new Error("The number of shared audio tags has changed dynamically. Once you have set this property, you cannot change it afterwards.");
+  }
+  const logLevel = useLogLevel();
+  const mountTime = useMountTime();
+  const env = useRemotionEnvironment();
+  const audioCtx = useContext20(SharedAudioContext);
+  const audioContext = audioCtx?.audioContext ?? null;
+  const resume = audioCtx?.resume;
+  const refs = useMemo22(() => {
     return new Array(numberOfAudioTags).fill(true).map(() => {
       const ref = createRef2();
       return {
@@ -2942,7 +4310,7 @@ var SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyHin
       };
     });
   }, [audioContext, numberOfAudioTags]);
-  const effectToUse = React14.useInsertionEffect ?? React14.useLayoutEffect;
+  const effectToUse = React20.useInsertionEffect ?? React20.useLayoutEffect;
   effectToUse(() => {
     return () => {
       requestAnimationFrame(() => {
@@ -2952,8 +4320,8 @@ var SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyHin
       });
     };
   }, [refs]);
-  const takenAudios = useRef7(new Array(numberOfAudioTags).fill(false));
-  const rerenderAudios = useCallback7(() => {
+  const takenAudios = useRef11(new Array(numberOfAudioTags).fill(false));
+  const rerenderAudios = useCallback9(() => {
     refs.forEach(({ ref, id }) => {
       const data = audios.current?.find((a) => a.id === id);
       const { current } = ref;
@@ -2974,7 +4342,7 @@ var SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyHin
       });
     });
   }, [refs]);
-  const registerAudio = useCallback7((options) => {
+  const registerAudio = useCallback9((options) => {
     const { aud, audioId, premounting, postmounting } = options;
     const found = audios.current?.find((a) => a.audioId === audioId);
     if (found) {
@@ -3003,7 +4371,7 @@ var SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyHin
     rerenderAudios();
     return newElem;
   }, [numberOfAudioTags, refs, rerenderAudios]);
-  const unregisterAudio = useCallback7((id) => {
+  const unregisterAudio = useCallback9((id) => {
     const cloned = [...takenAudios.current];
     const index = refs.findIndex((r) => r.id === id);
     if (index === -1) {
@@ -3014,7 +4382,7 @@ var SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyHin
     audios.current = audios.current?.filter((a) => a.id !== id);
     rerenderAudios();
   }, [refs, rerenderAudios]);
-  const updateAudio = useCallback7(({
+  const updateAudio = useCallback9(({
     aud,
     audioId,
     id,
@@ -3048,9 +4416,7 @@ var SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyHin
       rerenderAudios();
     }
   }, [rerenderAudios]);
-  const mountTime = useMountTime();
-  const env = useRemotionEnvironment();
-  const playAllAudios = useCallback7(() => {
+  const playAllAudios = useCallback9(() => {
     refs.forEach((ref) => {
       const audio = audios.current.find((a) => a.el === ref.ref);
       if (audio?.premounting) {
@@ -3066,34 +4432,28 @@ var SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyHin
         isPlayer: env.isPlayer
       });
     });
-    audioContext?.resume();
-  }, [audioContext, logLevel, mountTime, refs, env.isPlayer]);
-  const value = useMemo16(() => {
+    resume?.();
+  }, [logLevel, mountTime, refs, env.isPlayer, resume]);
+  const audioTagsValue = useMemo22(() => {
     return {
       registerAudio,
       unregisterAudio,
       updateAudio,
       playAllAudios,
-      numberOfAudioTags,
-      audioContext,
-      audioSyncAnchor,
-      scheduleAudioNode
+      numberOfAudioTags
     };
   }, [
     numberOfAudioTags,
     playAllAudios,
     registerAudio,
     unregisterAudio,
-    updateAudio,
-    audioContext,
-    audioSyncAnchor,
-    scheduleAudioNode
+    updateAudio
   ]);
-  return /* @__PURE__ */ jsxs(SharedAudioContext.Provider, {
-    value,
+  return /* @__PURE__ */ jsxs2(SharedAudioTagsContext.Provider, {
+    value: audioTagsValue,
     children: [
       refs.map(({ id, ref }) => {
-        return /* @__PURE__ */ jsx15("audio", {
+        return /* @__PURE__ */ jsx20("audio", {
           ref,
           preload: "metadata",
           src: EMPTY_AUDIO
@@ -3109,14 +4469,15 @@ var useSharedAudio = ({
   premounting,
   postmounting
 }) => {
-  const ctx = useContext16(SharedAudioContext);
-  const [elem] = useState9(() => {
-    if (ctx && ctx.numberOfAudioTags > 0) {
-      return ctx.registerAudio({ aud, audioId, premounting, postmounting });
+  const audioCtx = useContext20(SharedAudioContext);
+  const tagsCtx = useContext20(SharedAudioTagsContext);
+  const [elem] = useState12(() => {
+    if (tagsCtx && tagsCtx.numberOfAudioTags > 0) {
+      return tagsCtx.registerAudio({ aud, audioId, premounting, postmounting });
     }
-    const el = React14.createRef();
-    const mediaElementSourceNode = ctx?.audioContext ? makeSharedElementSourceNode({
-      audioContext: ctx.audioContext,
+    const el = React20.createRef();
+    const mediaElementSourceNode = audioCtx?.audioContext ? makeSharedElementSourceNode({
+      audioContext: audioCtx.audioContext,
       ref: el
     }) : null;
     return {
@@ -3133,20 +4494,26 @@ var useSharedAudio = ({
       }
     };
   });
-  const effectToUse = React14.useInsertionEffect ?? React14.useLayoutEffect;
+  const effectToUse = React20.useInsertionEffect ?? React20.useLayoutEffect;
   if (typeof document !== "undefined") {
     effectToUse(() => {
-      if (ctx && ctx.numberOfAudioTags > 0) {
-        ctx.updateAudio({ id: elem.id, aud, audioId, premounting, postmounting });
+      if (tagsCtx && tagsCtx.numberOfAudioTags > 0) {
+        tagsCtx.updateAudio({
+          id: elem.id,
+          aud,
+          audioId,
+          premounting,
+          postmounting
+        });
       }
-    }, [aud, ctx, elem.id, audioId, premounting, postmounting]);
+    }, [aud, tagsCtx, elem.id, audioId, premounting, postmounting]);
     effectToUse(() => {
       return () => {
-        if (ctx && ctx.numberOfAudioTags > 0) {
-          ctx.unregisterAudio(elem.id);
+        if (tagsCtx && tagsCtx.numberOfAudioTags > 0) {
+          tagsCtx.unregisterAudio(elem.id);
         }
       };
-    }, [ctx, elem.id]);
+    }, [tagsCtx, elem.id]);
   }
   return elem;
 };
@@ -3158,7 +4525,7 @@ var isApproximatelyTheSame = (num1, num2) => {
 };
 
 // src/video/video-fragment.ts
-import { useRef as useRef8 } from "react";
+import { useRef as useRef12 } from "react";
 var toSeconds = (time, fps) => {
   return Math.round(time / fps * 100) / 100;
 };
@@ -3245,9 +4612,9 @@ var useAppendVideoFragment = ({
   duration: initialDuration,
   fps
 }) => {
-  const actualFromRef = useRef8(initialActualFrom);
-  const actualDuration = useRef8(initialDuration);
-  const actualSrc = useRef8(initialActualSrc);
+  const actualFromRef = useRef12(initialActualFrom);
+  const actualDuration = useRef12(initialDuration);
+  const actualSrc = useRef12(initialActualSrc);
   if (!isSubsetOfDuration({
     prevStartFrom: actualFromRef.current,
     newStartFrom: initialActualFrom,
@@ -3286,16 +4653,16 @@ var useVolume = ({
   source,
   shouldUseWebAudioApi
 }) => {
-  const audioStuffRef = useRef9(null);
-  const currentVolumeRef = useRef9(volume);
+  const audioStuffRef = useRef13(null);
+  const currentVolumeRef = useRef13(volume);
   currentVolumeRef.current = volume;
-  const sharedAudioContext = useContext17(SharedAudioContext);
+  const sharedAudioContext = useContext21(SharedAudioContext);
   if (!sharedAudioContext) {
     throw new Error("useAmplification must be used within a SharedAudioContext");
   }
-  const { audioContext } = sharedAudioContext;
+  const { audioContext, gainNode: masterGainNode } = sharedAudioContext;
   if (typeof window !== "undefined") {
-    useLayoutEffect5(() => {
+    useLayoutEffect6(() => {
       if (!audioContext) {
         return;
       }
@@ -3312,12 +4679,15 @@ var useVolume = ({
       if (!source) {
         return;
       }
+      if (!masterGainNode) {
+        return;
+      }
       const gainNode = new GainNode(audioContext, {
         gain: currentVolumeRef.current
       });
       source.attemptToConnect();
       source.get().connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      gainNode.connect(masterGainNode);
       audioStuffRef.current = {
         gainNode
       };
@@ -3327,7 +4697,14 @@ var useVolume = ({
         gainNode.disconnect();
         source.get().disconnect();
       };
-    }, [logLevel, mediaRef, audioContext, source, shouldUseWebAudioApi]);
+    }, [
+      logLevel,
+      mediaRef,
+      audioContext,
+      source,
+      shouldUseWebAudioApi,
+      masterGainNode
+    ]);
   }
   if (audioStuffRef.current) {
     const valueToSet = volume;
@@ -3345,12 +4722,12 @@ var useVolume = ({
 };
 
 // src/use-media-in-timeline.ts
-import { useContext as useContext19, useEffect as useEffect4, useMemo as useMemo17, useState as useState10 } from "react";
+import { useContext as useContext23, useEffect as useEffect8, useMemo as useMemo23, useState as useState13 } from "react";
 
 // src/audio/use-audio-frame.ts
-import { useContext as useContext18 } from "react";
+import { useContext as useContext22 } from "react";
 var useMediaStartsAt = () => {
-  const parentSequence = useContext18(SequenceContext);
+  const parentSequence = useContext22(SequenceContext);
   const startsAt = Math.min(0, parentSequence?.relativeFrom ?? 0);
   return startsAt;
 };
@@ -3371,6 +4748,30 @@ var getAssetDisplayName = (filename) => {
   }
   const splitted = filename.split("/").map((s) => s.split("\\")).flat(1);
   return splitted[splitted.length - 1];
+};
+
+// src/get-timeline-duration.ts
+var getTimelineDuration = ({
+  compositionDurationInFrames,
+  playbackRate,
+  trimBefore,
+  trimAfter,
+  parentSequenceDurationInFrames,
+  loop
+}) => {
+  if (loop) {
+    return compositionDurationInFrames;
+  }
+  const mediaDuration = calculateMediaDuration({
+    mediaDurationInFrames: compositionDurationInFrames * playbackRate + (trimBefore ?? 0),
+    playbackRate,
+    trimBefore,
+    trimAfter
+  });
+  if (parentSequenceDurationInFrames !== null) {
+    return Math.floor(Math.min(parentSequenceDurationInFrames * playbackRate, mediaDuration));
+  }
+  return mediaDuration;
 };
 
 // src/volume-prop.ts
@@ -3415,35 +4816,37 @@ var useBasicMediaInTimeline = ({
   displayName,
   trimBefore,
   trimAfter,
-  playbackRate
+  playbackRate,
+  sequenceDurationInFrames,
+  mediaStartsAt,
+  loop
 }) => {
   if (!src) {
     throw new Error("No src passed");
   }
-  const startsAt = useMediaStartsAt();
-  const parentSequence = useContext19(SequenceContext);
-  const videoConfig = useVideoConfig();
-  const [initialVolume] = useState10(() => volume);
-  const mediaDuration = calculateMediaDuration({
-    mediaDurationInFrames: videoConfig.durationInFrames,
+  const parentSequence = useContext23(SequenceContext);
+  const [initialVolume] = useState13(() => volume);
+  const duration = getTimelineDuration({
+    compositionDurationInFrames: sequenceDurationInFrames,
     playbackRate,
     trimBefore,
-    trimAfter
+    trimAfter,
+    parentSequenceDurationInFrames: parentSequence?.durationInFrames ?? null,
+    loop
   });
-  const duration = parentSequence ? Math.min(parentSequence.durationInFrames, mediaDuration) : mediaDuration;
-  const volumes = useMemo17(() => {
+  const volumes = useMemo23(() => {
     if (typeof volume === "number") {
       return volume;
     }
-    return new Array(Math.floor(Math.max(0, duration + startsAt))).fill(true).map((_, i) => {
+    return new Array(Math.floor(Math.max(0, duration + mediaStartsAt))).fill(true).map((_, i) => {
       return evaluateVolume({
-        frame: i + startsAt,
+        frame: i + mediaStartsAt,
         volume,
         mediaVolume
       });
     }).join(",");
-  }, [duration, startsAt, volume, mediaVolume]);
-  useEffect4(() => {
+  }, [duration, mediaStartsAt, volume, mediaVolume]);
+  useEffect8(() => {
     if (typeof volume === "number" && volume !== initialVolume) {
       warnOnce2(`Remotion: The ${mediaType} with src ${src} has changed it's volume. Prefer the callback syntax for setting volume to get better timeline display: https://www.remotion.dev/docs/audio/volume`);
     }
@@ -3451,16 +4854,110 @@ var useBasicMediaInTimeline = ({
   const doesVolumeChange = typeof volume === "function";
   const nonce = useNonce();
   const { rootId } = useTimelineContext();
-  const env = useRemotionEnvironment();
-  return {
+  const startMediaFrom = 0 - mediaStartsAt + (trimBefore ?? 0);
+  const memoizedResult = useMemo23(() => {
+    return {
+      volumes,
+      duration,
+      doesVolumeChange,
+      nonce,
+      rootId,
+      finalDisplayName: displayName ?? getAssetDisplayName(src),
+      startMediaFrom,
+      src,
+      playbackRate
+    };
+  }, [
     volumes,
     duration,
     doesVolumeChange,
     nonce,
     rootId,
-    isStudio: env.isStudio,
-    finalDisplayName: displayName ?? getAssetDisplayName(src)
-  };
+    displayName,
+    src,
+    startMediaFrom,
+    playbackRate
+  ]);
+  return memoizedResult;
+};
+var useImageInTimeline = ({
+  src,
+  displayName,
+  id,
+  stack,
+  showInTimeline,
+  premountDisplay,
+  postmountDisplay,
+  loopDisplay,
+  controls
+}) => {
+  const parentSequence = useContext23(SequenceContext);
+  const { registerSequence, unregisterSequence } = useContext23(SequenceManager);
+  const { durationInFrames } = useVideoConfig();
+  const mediaStartsAt = useMediaStartsAt();
+  const { duration, nonce, rootId, finalDisplayName } = useBasicMediaInTimeline({
+    volume: undefined,
+    mediaVolume: 0,
+    mediaType: "image",
+    src,
+    displayName,
+    trimAfter: undefined,
+    trimBefore: undefined,
+    playbackRate: 1,
+    sequenceDurationInFrames: durationInFrames,
+    mediaStartsAt,
+    loop: false
+  });
+  const { isStudio } = useRemotionEnvironment();
+  useEffect8(() => {
+    if (!src) {
+      throw new Error("No src passed");
+    }
+    if (!isStudio && window.process?.env?.NODE_ENV !== "test") {
+      return;
+    }
+    if (!showInTimeline) {
+      return;
+    }
+    registerSequence({
+      type: "image",
+      src,
+      id,
+      duration,
+      from: 0,
+      parent: parentSequence?.id ?? null,
+      displayName: finalDisplayName,
+      rootId,
+      showInTimeline: true,
+      nonce: nonce.get(),
+      loopDisplay,
+      stack,
+      premountDisplay,
+      postmountDisplay,
+      controls,
+      effects: []
+    });
+    return () => {
+      unregisterSequence(id);
+    };
+  }, [
+    duration,
+    id,
+    parentSequence,
+    src,
+    registerSequence,
+    unregisterSequence,
+    nonce,
+    stack,
+    showInTimeline,
+    premountDisplay,
+    postmountDisplay,
+    isStudio,
+    loopDisplay,
+    rootId,
+    finalDisplayName,
+    controls
+  ]);
 };
 var useMediaInTimeline = ({
   volume,
@@ -3476,18 +4973,12 @@ var useMediaInTimeline = ({
   postmountDisplay,
   loopDisplay
 }) => {
-  const parentSequence = useContext19(SequenceContext);
+  const parentSequence = useContext23(SequenceContext);
   const startsAt = useMediaStartsAt();
-  const { registerSequence, unregisterSequence } = useContext19(SequenceManager);
-  const {
-    volumes,
-    duration,
-    doesVolumeChange,
-    nonce,
-    rootId,
-    isStudio,
-    finalDisplayName
-  } = useBasicMediaInTimeline({
+  const { registerSequence, unregisterSequence } = useContext23(SequenceManager);
+  const { durationInFrames } = useVideoConfig();
+  const mediaStartsAt = useMediaStartsAt();
+  const { volumes, duration, doesVolumeChange, nonce, rootId, finalDisplayName } = useBasicMediaInTimeline({
     volume,
     mediaVolume,
     mediaType,
@@ -3495,9 +4986,13 @@ var useMediaInTimeline = ({
     displayName,
     trimAfter: undefined,
     trimBefore: undefined,
-    playbackRate
+    playbackRate,
+    sequenceDurationInFrames: durationInFrames,
+    mediaStartsAt,
+    loop: false
   });
-  useEffect4(() => {
+  const { isStudio } = useRemotionEnvironment();
+  useEffect8(() => {
     if (!src) {
       throw new Error("No src passed");
     }
@@ -3526,7 +5021,8 @@ var useMediaInTimeline = ({
       stack,
       premountDisplay,
       postmountDisplay,
-      controls: null
+      controls: null,
+      effects: []
     });
     return () => {
       unregisterSequence(id);
@@ -3548,47 +5044,47 @@ var useMediaInTimeline = ({
     showInTimeline,
     premountDisplay,
     postmountDisplay,
-    isStudio,
     loopDisplay,
     rootId,
-    finalDisplayName
+    finalDisplayName,
+    isStudio
   ]);
 };
 
 // src/use-media-playback.ts
 import {
-  useCallback as useCallback10,
-  useContext as useContext22,
-  useEffect as useEffect8,
-  useLayoutEffect as useLayoutEffect7,
-  useRef as useRef13
+  useCallback as useCallback12,
+  useContext as useContext26,
+  useEffect as useEffect12,
+  useLayoutEffect as useLayoutEffect8,
+  useRef as useRef17
 } from "react";
 
 // src/buffer-until-first-frame.ts
-import { useCallback as useCallback9, useMemo as useMemo20, useRef as useRef11 } from "react";
+import { useCallback as useCallback11, useMemo as useMemo26, useRef as useRef15 } from "react";
 
 // src/use-buffer-state.ts
-import { useContext as useContext21, useMemo as useMemo19 } from "react";
+import { useContext as useContext25, useMemo as useMemo25 } from "react";
 
 // src/buffering.tsx
-import React15, {
-  useCallback as useCallback8,
-  useContext as useContext20,
-  useEffect as useEffect5,
-  useLayoutEffect as useLayoutEffect6,
-  useMemo as useMemo18,
-  useRef as useRef10,
-  useState as useState11
+import React21, {
+  useCallback as useCallback10,
+  useContext as useContext24,
+  useEffect as useEffect9,
+  useLayoutEffect as useLayoutEffect7,
+  useMemo as useMemo24,
+  useRef as useRef14,
+  useState as useState14
 } from "react";
-import { jsx as jsx16 } from "react/jsx-runtime";
+import { jsx as jsx21 } from "react/jsx-runtime";
 var useBufferManager = (logLevel, mountTime) => {
-  const [blocks, setBlocks] = useState11([]);
-  const [onBufferingCallbacks, setOnBufferingCallbacks] = useState11([]);
-  const [onResumeCallbacks, setOnResumeCallbacks] = useState11([]);
+  const [blocks, setBlocks] = useState14([]);
+  const [onBufferingCallbacks, setOnBufferingCallbacks] = useState14([]);
+  const [onResumeCallbacks, setOnResumeCallbacks] = useState14([]);
   const env = useRemotionEnvironment();
   const rendering = env.isRendering;
-  const buffering = useRef10(false);
-  const addBlock = useCallback8((block) => {
+  const buffering = useRef14(false);
+  const addBlock = useCallback10((block) => {
     if (rendering) {
       return {
         unblock: () => {
@@ -3609,7 +5105,7 @@ var useBufferManager = (logLevel, mountTime) => {
       }
     };
   }, [rendering]);
-  const listenForBuffering = useCallback8((callback) => {
+  const listenForBuffering = useCallback10((callback) => {
     setOnBufferingCallbacks((c) => [...c, callback]);
     return {
       remove: () => {
@@ -3617,7 +5113,7 @@ var useBufferManager = (logLevel, mountTime) => {
       }
     };
   }, []);
-  const listenForResume = useCallback8((callback) => {
+  const listenForResume = useCallback10((callback) => {
     setOnResumeCallbacks((c) => [...c, callback]);
     return {
       remove: () => {
@@ -3625,7 +5121,7 @@ var useBufferManager = (logLevel, mountTime) => {
       }
     };
   }, []);
-  useEffect5(() => {
+  useEffect9(() => {
     if (rendering) {
       return;
     }
@@ -3640,7 +5136,7 @@ var useBufferManager = (logLevel, mountTime) => {
     }
   }, [blocks]);
   if (typeof window !== "undefined") {
-    useLayoutEffect6(() => {
+    useLayoutEffect7(() => {
       if (rendering) {
         return;
       }
@@ -3655,22 +5151,22 @@ var useBufferManager = (logLevel, mountTime) => {
       }
     }, [blocks]);
   }
-  return useMemo18(() => {
+  return useMemo24(() => {
     return { addBlock, listenForBuffering, listenForResume, buffering };
   }, [addBlock, buffering, listenForBuffering, listenForResume]);
 };
-var BufferingContextReact = React15.createContext(null);
+var BufferingContextReact = React21.createContext(null);
 var BufferingProvider = ({ children }) => {
-  const { logLevel, mountTime } = useContext20(LogLevelContext);
+  const { logLevel, mountTime } = useContext24(LogLevelContext);
   const bufferManager = useBufferManager(logLevel ?? "info", mountTime);
-  return /* @__PURE__ */ jsx16(BufferingContextReact.Provider, {
+  return /* @__PURE__ */ jsx21(BufferingContextReact.Provider, {
     value: bufferManager,
     children
   });
 };
 var useIsPlayerBuffering = (bufferManager) => {
-  const [isBuffering, setIsBuffering] = useState11(bufferManager.buffering.current);
-  useEffect5(() => {
+  const [isBuffering, setIsBuffering] = useState14(bufferManager.buffering.current);
+  useEffect9(() => {
     const onBuffer = () => {
       setIsBuffering(true);
     };
@@ -3693,9 +5189,9 @@ var useIsPlayerBuffering = (bufferManager) => {
 
 // src/use-buffer-state.ts
 var useBufferState = () => {
-  const buffer = useContext21(BufferingContextReact);
+  const buffer = useContext25(BufferingContextReact);
   const addBlock = buffer ? buffer.addBlock : null;
-  return useMemo19(() => ({
+  return useMemo25(() => ({
     delayPlayback: () => {
       if (!addBlock) {
         throw new Error("Tried to enable the buffering state, but a Remotion context was not found. This API can only be called in a component that was passed to the Remotion Player or a <Composition>. Or you might have experienced a version mismatch - run `npx remotion versions` and ensure all packages have the same version. This error is thrown by the buffer state https://remotion.dev/docs/player/buffer-state");
@@ -3721,9 +5217,9 @@ var useBufferUntilFirstFrame = ({
   logLevel,
   mountTime
 }) => {
-  const bufferingRef = useRef11(false);
+  const bufferingRef = useRef15(false);
   const { delayPlayback } = useBufferState();
-  const bufferUntilFirstFrame = useCallback9((requestedTime) => {
+  const bufferUntilFirstFrame = useCallback11((requestedTime) => {
     if (mediaType !== "video") {
       return;
     }
@@ -3794,7 +5290,7 @@ var useBufferUntilFirstFrame = ({
     onVariableFpsVideoDetected,
     pauseWhenBuffering
   ]);
-  return useMemo20(() => {
+  return useMemo26(() => {
     return {
       isBuffering: () => bufferingRef.current,
       bufferUntilFirstFrame
@@ -3803,9 +5299,9 @@ var useBufferUntilFirstFrame = ({
 };
 
 // src/media-tag-current-time-timestamp.ts
-import React16 from "react";
+import React22 from "react";
 var useCurrentTimeOfMediaTagWithUpdateTimeStamp = (mediaRef) => {
-  const lastUpdate = React16.useRef({
+  const lastUpdate = React22.useRef({
     time: mediaRef.current?.currentTime ?? 0,
     lastUpdate: performance.now()
   });
@@ -3839,7 +5335,7 @@ var seek = ({
 };
 
 // src/use-media-buffering.ts
-import { useEffect as useEffect6, useState as useState12 } from "react";
+import { useEffect as useEffect10, useState as useState15 } from "react";
 var useMediaBuffering = ({
   element,
   shouldBuffer,
@@ -3850,8 +5346,8 @@ var useMediaBuffering = ({
   src
 }) => {
   const buffer = useBufferState();
-  const [isBuffering, setIsBuffering] = useState12(false);
-  useEffect6(() => {
+  const [isBuffering, setIsBuffering] = useState15(false);
+  useEffect10(() => {
     let cleanupFns = [];
     const { current } = element;
     if (!current) {
@@ -3979,15 +5475,15 @@ var useMediaBuffering = ({
 };
 
 // src/use-request-video-callback-time.ts
-import { useEffect as useEffect7, useRef as useRef12 } from "react";
+import { useEffect as useEffect11, useRef as useRef16 } from "react";
 var useRequestVideoCallbackTime = ({
   mediaRef,
   mediaType,
   lastSeek,
   onVariableFpsVideoDetected
 }) => {
-  const currentTime = useRef12(null);
-  useEffect7(() => {
+  const currentTime = useRef16(null);
+  useEffect11(() => {
     const { current } = mediaRef;
     if (current) {
       currentTime.current = {
@@ -4215,22 +5711,22 @@ var useMediaPlayback = ({
   isPostmounting,
   onAutoPlayError
 }) => {
-  const { playbackRate: globalPlaybackRate } = useTimelineContext();
+  const { playbackRate: globalPlaybackRate } = usePlaybackRate();
   const frame = useCurrentFrame();
   const absoluteFrame = useTimelinePosition();
   const [playing] = usePlayingState();
-  const buffering = useContext22(BufferingContextReact);
+  const buffering = useContext26(BufferingContextReact);
   const { fps } = useVideoConfig();
   const mediaStartsAt = useMediaStartsAt();
-  const lastSeekDueToShift = useRef13(null);
-  const lastSeek = useRef13(null);
+  const lastSeekDueToShift = useRef17(null);
+  const lastSeek = useRef17(null);
   const logLevel = useLogLevel();
   const mountTime = useMountTime();
   if (!buffering) {
     throw new Error("useMediaPlayback must be used inside a <BufferingContext>");
   }
-  const isVariableFpsVideoMap = useRef13({});
-  const onVariableFpsVideoDetected = useCallback10(() => {
+  const isVariableFpsVideoMap = useRef17({});
+  const onVariableFpsVideoDetected = useCallback12(() => {
     if (!src) {
       return;
     }
@@ -4281,7 +5777,7 @@ var useMediaPlayback = ({
     return acceptableTimeshift ?? defaultAcceptableTimeshift;
   })();
   const isPlayerBuffering = useIsPlayerBuffering(buffering);
-  useEffect8(() => {
+  useEffect12(() => {
     if (mediaRef.current?.paused) {
       return;
     }
@@ -4320,13 +5816,13 @@ var useMediaPlayback = ({
     isPostmounting
   ]);
   const env = useRemotionEnvironment();
-  useLayoutEffect7(() => {
+  useLayoutEffect8(() => {
     const playbackRateToSet = Math.max(0, playbackRate);
     if (mediaRef.current && mediaRef.current.playbackRate !== playbackRateToSet) {
       mediaRef.current.playbackRate = playbackRateToSet;
     }
   }, [mediaRef, playbackRate]);
-  useEffect8(() => {
+  useEffect12(() => {
     const tagName = mediaType === "audio" ? "<Html5Audio>" : "<Html5Video>";
     if (!mediaRef.current) {
       throw new Error(`No ${mediaType} ref found`);
@@ -4445,7 +5941,7 @@ var useMediaPlayback = ({
 };
 
 // src/use-media-tag.ts
-import { useEffect as useEffect9 } from "react";
+import { useEffect as useEffect13 } from "react";
 var useMediaTag = ({
   mediaRef,
   id,
@@ -4458,7 +5954,7 @@ var useMediaTag = ({
   const logLevel = useLogLevel();
   const mountTime = useMountTime();
   const env = useRemotionEnvironment();
-  useEffect9(() => {
+  useEffect13(() => {
     const tag = {
       id,
       play: (reason) => {
@@ -4499,12 +5995,12 @@ var useMediaTag = ({
 };
 
 // src/volume-position-state.ts
-import { createContext as createContext18, useContext as useContext23, useMemo as useMemo21 } from "react";
-var MediaVolumeContext = createContext18({
+import { createContext as createContext21, useContext as useContext27, useMemo as useMemo27 } from "react";
+var MediaVolumeContext = createContext21({
   mediaMuted: false,
   mediaVolume: 1
 });
-var SetMediaVolumeContext = createContext18({
+var SetMediaVolumeContext = createContext21({
   setMediaMuted: () => {
     throw new Error("default");
   },
@@ -4513,16 +6009,16 @@ var SetMediaVolumeContext = createContext18({
   }
 });
 var useMediaVolumeState = () => {
-  const { mediaVolume } = useContext23(MediaVolumeContext);
-  const { setMediaVolume } = useContext23(SetMediaVolumeContext);
-  return useMemo21(() => {
+  const { mediaVolume } = useContext27(MediaVolumeContext);
+  const { setMediaVolume } = useContext27(SetMediaVolumeContext);
+  return useMemo27(() => {
     return [mediaVolume, setMediaVolume];
   }, [mediaVolume, setMediaVolume]);
 };
 var useMediaMutedState = () => {
-  const { mediaMuted } = useContext23(MediaVolumeContext);
-  const { setMediaMuted } = useContext23(SetMediaVolumeContext);
-  return useMemo21(() => {
+  const { mediaMuted } = useContext27(MediaVolumeContext);
+  const { setMediaMuted } = useContext27(SetMediaVolumeContext);
+  return useMemo27(() => {
     return [mediaMuted, setMediaMuted];
   }, [mediaMuted, setMediaMuted]);
 };
@@ -4535,9 +6031,9 @@ var warnAboutTooHighVolume = (volume) => {
 };
 
 // src/audio/AudioForPreview.tsx
-import { jsx as jsx17 } from "react/jsx-runtime";
+import { jsx as jsx22 } from "react/jsx-runtime";
 var AudioForDevelopmentForwardRefFunction = (props, ref) => {
-  const [initialShouldPreMountAudioElements] = useState13(props.shouldPreMountAudioTags);
+  const [initialShouldPreMountAudioElements] = useState16(props.shouldPreMountAudioTags);
   if (props.shouldPreMountAudioTags !== initialShouldPreMountAudioElements) {
     throw new Error("Cannot change the behavior for pre-mounting audio tags dynamically.");
   }
@@ -4576,13 +6072,13 @@ var AudioForDevelopmentForwardRefFunction = (props, ref) => {
   const [mediaVolume] = useMediaVolumeState();
   const [mediaMuted] = useMediaMutedState();
   const volumePropFrame = useFrameForVolumeProp(loopVolumeCurveBehavior ?? "repeat");
-  const { hidden } = useContext24(SequenceVisibilityToggleContext);
+  const { hidden } = useContext28(SequenceVisibilityToggleContext);
   if (!src) {
     throw new TypeError("No 'src' was passed to <Html5Audio>.");
   }
   const preloadedSrc = usePreload(src);
-  const sequenceContext = useContext24(SequenceContext);
-  const [timelineId] = useState13(() => String(Math.random()));
+  const sequenceContext = useContext28(SequenceContext);
+  const [timelineId] = useState16(() => String(Math.random()));
   const isSequenceHidden = hidden[timelineId] ?? false;
   const userPreferredVolume = evaluateVolume({
     frame: volumePropFrame,
@@ -4595,7 +6091,7 @@ var AudioForDevelopmentForwardRefFunction = (props, ref) => {
     requestsVideoFrame: false,
     isClientSideRendering: false
   });
-  const propsToPass = useMemo22(() => {
+  const propsToPass = useMemo28(() => {
     return {
       muted: muted || mediaMuted || isSequenceHidden || userPreferredVolume <= 0,
       src: preloadedSrc,
@@ -4613,7 +6109,7 @@ var AudioForDevelopmentForwardRefFunction = (props, ref) => {
     userPreferredVolume,
     crossOriginValue
   ]);
-  const id = useMemo22(() => `audio-${random(src ?? "")}-${sequenceContext?.relativeFrom}-${sequenceContext?.cumulatedFrom}-${sequenceContext?.durationInFrames}-muted:${props.muted}-loop:${props.loop}`, [
+  const id = useMemo28(() => `audio-${random(src ?? "")}-${sequenceContext?.relativeFrom}-${sequenceContext?.cumulatedFrom}-${sequenceContext?.durationInFrames}-muted:${props.muted}-loop:${props.loop}`, [
     src,
     sequenceContext?.relativeFrom,
     sequenceContext?.cumulatedFrom,
@@ -4672,7 +6168,7 @@ var AudioForDevelopmentForwardRefFunction = (props, ref) => {
     volume: userPreferredVolume,
     shouldUseWebAudioApi: useWebAudioApi ?? false
   });
-  const effectToUse = React17.useInsertionEffect ?? React17.useLayoutEffect;
+  const effectToUse = React23.useInsertionEffect ?? React23.useLayoutEffect;
   effectToUse(() => {
     return () => {
       requestAnimationFrame(() => {
@@ -4680,12 +6176,12 @@ var AudioForDevelopmentForwardRefFunction = (props, ref) => {
       });
     };
   }, [cleanupOnMediaTagUnmount]);
-  useImperativeHandle5(ref, () => {
+  useImperativeHandle4(ref, () => {
     return audioRef.current;
   }, [audioRef]);
-  const currentOnDurationCallback = useRef14(onDuration);
+  const currentOnDurationCallback = useRef18(onDuration);
   currentOnDurationCallback.current = onDuration;
-  useEffect10(() => {
+  useEffect14(() => {
     const { current } = audioRef;
     if (!current) {
       return;
@@ -4705,28 +6201,28 @@ var AudioForDevelopmentForwardRefFunction = (props, ref) => {
   if (initialShouldPreMountAudioElements) {
     return null;
   }
-  return /* @__PURE__ */ jsx17("audio", {
+  return /* @__PURE__ */ jsx22("audio", {
     ref: audioRef,
     preload: "metadata",
     crossOrigin: crossOriginValue,
     ...propsToPass
   });
 };
-var AudioForPreview = forwardRef4(AudioForDevelopmentForwardRefFunction);
+var AudioForPreview = forwardRef6(AudioForDevelopmentForwardRefFunction);
 
 // src/audio/AudioForRendering.tsx
 import {
-  forwardRef as forwardRef5,
-  useContext as useContext25,
-  useEffect as useEffect11,
-  useImperativeHandle as useImperativeHandle6,
-  useLayoutEffect as useLayoutEffect8,
-  useMemo as useMemo23,
-  useRef as useRef15
+  forwardRef as forwardRef7,
+  useContext as useContext29,
+  useEffect as useEffect15,
+  useImperativeHandle as useImperativeHandle5,
+  useLayoutEffect as useLayoutEffect9,
+  useMemo as useMemo29,
+  useRef as useRef19
 } from "react";
-import { jsx as jsx18 } from "react/jsx-runtime";
+import { jsx as jsx23 } from "react/jsx-runtime";
 var AudioForRenderingRefForwardingFunction = (props, ref) => {
-  const audioRef = useRef15(null);
+  const audioRef = useRef19(null);
   const {
     volume: volumeProp,
     playbackRate,
@@ -4748,10 +6244,10 @@ var AudioForRenderingRefForwardingFunction = (props, ref) => {
   const absoluteFrame = useTimelinePosition();
   const volumePropFrame = useFrameForVolumeProp(loopVolumeCurveBehavior ?? "repeat");
   const frame = useCurrentFrame();
-  const sequenceContext = useContext25(SequenceContext);
-  const { registerRenderAsset, unregisterRenderAsset } = useContext25(RenderAssetManager);
+  const sequenceContext = useContext29(SequenceContext);
+  const { registerRenderAsset, unregisterRenderAsset } = useContext29(RenderAssetManager);
   const { delayRender: delayRender2, continueRender: continueRender2 } = useDelayRender();
-  const id = useMemo23(() => `audio-${random(props.src ?? "")}-${sequenceContext?.relativeFrom}-${sequenceContext?.cumulatedFrom}-${sequenceContext?.durationInFrames}`, [
+  const id = useMemo29(() => `audio-${random(props.src ?? "")}-${sequenceContext?.relativeFrom}-${sequenceContext?.cumulatedFrom}-${sequenceContext?.durationInFrames}`, [
     props.src,
     sequenceContext?.relativeFrom,
     sequenceContext?.cumulatedFrom,
@@ -4763,10 +6259,10 @@ var AudioForRenderingRefForwardingFunction = (props, ref) => {
     mediaVolume: 1
   });
   warnAboutTooHighVolume(volume);
-  useImperativeHandle6(ref, () => {
+  useImperativeHandle5(ref, () => {
     return audioRef.current;
   }, []);
-  useEffect11(() => {
+  useEffect15(() => {
     if (!props.src) {
       throw new Error("No src passed");
     }
@@ -4810,7 +6306,7 @@ var AudioForRenderingRefForwardingFunction = (props, ref) => {
   ]);
   const { src } = props;
   const needsToRenderAudioTag = ref || _remotionInternalNeedsDurationCalculation;
-  useLayoutEffect8(() => {
+  useLayoutEffect9(() => {
     if (window.process?.env?.NODE_ENV === "test") {
       return;
     }
@@ -4850,18 +6346,18 @@ var AudioForRenderingRefForwardingFunction = (props, ref) => {
   if (!needsToRenderAudioTag) {
     return null;
   }
-  return /* @__PURE__ */ jsx18("audio", {
+  return /* @__PURE__ */ jsx23("audio", {
     ref: audioRef,
     ...nativeProps,
     onError: onNativeError
   });
 };
-var AudioForRendering = forwardRef5(AudioForRenderingRefForwardingFunction);
+var AudioForRendering = forwardRef7(AudioForRenderingRefForwardingFunction);
 
-// src/audio/Audio.tsx
-import { jsx as jsx19 } from "react/jsx-runtime";
+// src/audio/html5-audio.tsx
+import { jsx as jsx24 } from "react/jsx-runtime";
 var AudioRefForwardingFunction = (props, ref) => {
-  const audioContext = useContext26(SharedAudioContext);
+  const audioTagsContext = useContext30(SharedAudioTagsContext);
   const {
     startFrom,
     endAt,
@@ -4880,12 +6376,12 @@ var AudioRefForwardingFunction = (props, ref) => {
   if (environment.isClientSideRendering) {
     throw new Error("<Html5Audio> is not supported in @remotion/web-renderer. Use <Audio> from @remotion/media instead. See https://remotion.dev/docs/client-side-rendering/limitations");
   }
-  const { durations, setDurations } = useContext26(DurationsContext);
+  const { durations, setDurations } = useContext30(DurationsContext);
   if (typeof props.src !== "string") {
     throw new TypeError(`The \`<Html5Audio>\` tag requires a string for \`src\`, but got ${JSON.stringify(props.src)} instead.`);
   }
   const preloadedSrc = usePreload(props.src);
-  const onError = useCallback11((e) => {
+  const onError = useCallback13((e) => {
     console.log(e.currentTarget.error);
     const errMessage = `Could not play audio with src ${preloadedSrc}: ${e.currentTarget.error}. See https://remotion.dev/docs/media-playback-error for help.`;
     if (loop) {
@@ -4899,7 +6395,7 @@ var AudioRefForwardingFunction = (props, ref) => {
       console.warn(errMessage);
     }
   }, [loop, onRemotionError, preloadedSrc]);
-  const onDuration = useCallback11((src, durationInSeconds) => {
+  const onDuration = useCallback13((src, durationInSeconds) => {
     setDurations({ type: "got-duration", durationInSeconds, src });
   }, [setDurations]);
   const durationFetched = durations[getAbsoluteSrc(preloadedSrc)] ?? durations[getAbsoluteSrc(props.src)];
@@ -4912,14 +6408,14 @@ var AudioRefForwardingFunction = (props, ref) => {
   });
   if (loop && durationFetched !== undefined) {
     if (!Number.isFinite(durationFetched)) {
-      return /* @__PURE__ */ jsx19(Html5Audio, {
+      return /* @__PURE__ */ jsx24(Html5Audio, {
         ...propsOtherThanLoop,
         ref,
         _remotionInternalNativeLoopPassed: true
       });
     }
     const duration = durationFetched * fps;
-    return /* @__PURE__ */ jsx19(Loop, {
+    return /* @__PURE__ */ jsx24(Loop, {
       layout: "none",
       durationInFrames: calculateMediaDuration({
         trimAfter: trimAfterValue,
@@ -4927,7 +6423,7 @@ var AudioRefForwardingFunction = (props, ref) => {
         playbackRate: props.playbackRate ?? 1,
         trimBefore: trimBeforeValue
       }),
-      children: /* @__PURE__ */ jsx19(Html5Audio, {
+      children: /* @__PURE__ */ jsx24(Html5Audio, {
         ...propsOtherThanLoop,
         ref,
         _remotionInternalNativeLoopPassed: true
@@ -4935,13 +6431,13 @@ var AudioRefForwardingFunction = (props, ref) => {
     });
   }
   if (typeof trimBeforeValue !== "undefined" || typeof trimAfterValue !== "undefined") {
-    return /* @__PURE__ */ jsx19(Sequence, {
+    return /* @__PURE__ */ jsx24(Sequence, {
       layout: "none",
       from: 0 - (trimBeforeValue ?? 0),
       showInTimeline: false,
       durationInFrames: trimAfterValue,
       name,
-      children: /* @__PURE__ */ jsx19(Html5Audio, {
+      children: /* @__PURE__ */ jsx24(Html5Audio, {
         _remotionInternalNeedsDurationCalculation: Boolean(loop),
         pauseWhenBuffering: pauseWhenBuffering ?? false,
         ...otherProps,
@@ -4951,7 +6447,7 @@ var AudioRefForwardingFunction = (props, ref) => {
   }
   validateMediaProps({ playbackRate: props.playbackRate, volume: props.volume }, "Html5Audio");
   if (environment.isRendering) {
-    return /* @__PURE__ */ jsx19(AudioForRendering, {
+    return /* @__PURE__ */ jsx24(AudioForRendering, {
       onDuration,
       ...props,
       ref,
@@ -4959,10 +6455,10 @@ var AudioRefForwardingFunction = (props, ref) => {
       _remotionInternalNeedsDurationCalculation: Boolean(loop)
     });
   }
-  return /* @__PURE__ */ jsx19(AudioForPreview, {
+  return /* @__PURE__ */ jsx24(AudioForPreview, {
     _remotionInternalNativeLoopPassed: props._remotionInternalNativeLoopPassed ?? false,
     _remotionInternalStack: stack ?? null,
-    shouldPreMountAudioTags: audioContext !== null && audioContext.numberOfAudioTags > 0,
+    shouldPreMountAudioTags: audioTagsContext !== null && audioTagsContext.numberOfAudioTags > 0,
     ...props,
     ref,
     onNativeError: onError,
@@ -4972,345 +6468,9 @@ var AudioRefForwardingFunction = (props, ref) => {
     showInTimeline: showInTimeline ?? true
   });
 };
-var Html5Audio = forwardRef6(AudioRefForwardingFunction);
+var Html5Audio = forwardRef8(AudioRefForwardingFunction);
 addSequenceStackTraces(Html5Audio);
 var Audio = Html5Audio;
-// src/Composition.tsx
-import { Suspense, useContext as useContext28, useEffect as useEffect13 } from "react";
-import { createPortal } from "react-dom";
-
-// src/Folder.tsx
-import { createContext as createContext19, useContext as useContext27, useEffect as useEffect12, useMemo as useMemo24 } from "react";
-
-// src/validation/validate-folder-name.ts
-var getRegex = () => /^([a-zA-Z0-9-\u4E00-\u9FFF])+$/g;
-var isFolderNameValid = (name) => name.match(getRegex());
-var validateFolderName = (name) => {
-  if (name === undefined || name === null) {
-    throw new TypeError("You must pass a name to a <Folder />.");
-  }
-  if (typeof name !== "string") {
-    throw new TypeError(`The "name" you pass into <Folder /> must be a string. Got: ${typeof name}`);
-  }
-  if (!isFolderNameValid(name)) {
-    throw new Error(`Folder name can only contain a-z, A-Z, 0-9 and -. You passed ${name}`);
-  }
-};
-var invalidFolderNameErrorMessage = `Folder name must match ${String(getRegex())}`;
-
-// src/Folder.tsx
-import { jsx as jsx20 } from "react/jsx-runtime";
-var FolderContext = createContext19({
-  folderName: null,
-  parentName: null
-});
-var Folder = ({ name, children }) => {
-  const parent = useContext27(FolderContext);
-  const { registerFolder, unregisterFolder } = useContext27(CompositionSetters);
-  const nonce = useNonce();
-  validateFolderName(name);
-  const parentNameArr = [parent.parentName, parent.folderName].filter(truthy);
-  const parentName = parentNameArr.length === 0 ? null : parentNameArr.join("/");
-  const value = useMemo24(() => {
-    return {
-      folderName: name,
-      parentName
-    };
-  }, [name, parentName]);
-  useEffect12(() => {
-    registerFolder(name, parentName, nonce.get());
-    return () => {
-      unregisterFolder(name, parentName);
-    };
-  }, [
-    name,
-    parent.folderName,
-    parentName,
-    registerFolder,
-    unregisterFolder,
-    nonce
-  ]);
-  return /* @__PURE__ */ jsx20(FolderContext.Provider, {
-    value,
-    children
-  });
-};
-
-// src/loading-indicator.tsx
-import { jsx as jsx21, jsxs as jsxs2 } from "react/jsx-runtime";
-var rotate = {
-  transform: `rotate(90deg)`
-};
-var ICON_SIZE = 40;
-var label = {
-  color: "white",
-  fontSize: 14,
-  fontFamily: "sans-serif"
-};
-var container = {
-  justifyContent: "center",
-  alignItems: "center"
-};
-var Loading = () => {
-  return /* @__PURE__ */ jsxs2(AbsoluteFill, {
-    style: container,
-    id: "remotion-comp-loading",
-    children: [
-      /* @__PURE__ */ jsx21("style", {
-        type: "text/css",
-        children: `
-				@keyframes anim {
-					from {
-						opacity: 0
-					}
-					to {
-						opacity: 1
-					}
-				}
-				#remotion-comp-loading {
-					animation: anim 2s;
-					animation-fill-mode: forwards;
-				}
-			`
-      }),
-      /* @__PURE__ */ jsx21("svg", {
-        width: ICON_SIZE,
-        height: ICON_SIZE,
-        viewBox: "-100 -100 400 400",
-        style: rotate,
-        children: /* @__PURE__ */ jsx21("path", {
-          fill: "#555",
-          stroke: "#555",
-          strokeWidth: "100",
-          strokeLinejoin: "round",
-          d: "M 2 172 a 196 100 0 0 0 195 5 A 196 240 0 0 0 100 2.259 A 196 240 0 0 0 2 172 z"
-        })
-      }),
-      /* @__PURE__ */ jsxs2("p", {
-        style: label,
-        children: [
-          "Resolving ",
-          "<Suspense>",
-          "..."
-        ]
-      })
-    ]
-  });
-};
-
-// src/portal-node.ts
-var _portalNode = null;
-var portalNode = () => {
-  if (!_portalNode) {
-    if (typeof document === "undefined") {
-      throw new Error("Tried to call an API that only works in the browser from outside the browser");
-    }
-    _portalNode = document.createElement("div");
-    _portalNode.style.position = "absolute";
-    _portalNode.style.top = "0px";
-    _portalNode.style.left = "0px";
-    _portalNode.style.right = "0px";
-    _portalNode.style.bottom = "0px";
-    _portalNode.style.width = "100%";
-    _portalNode.style.height = "100%";
-    _portalNode.style.display = "flex";
-    _portalNode.style.flexDirection = "column";
-    const containerNode = document.createElement("div");
-    containerNode.style.position = "fixed";
-    containerNode.style.top = -999999 + "px";
-    containerNode.appendChild(_portalNode);
-    document.body.appendChild(containerNode);
-  }
-  return _portalNode;
-};
-
-// src/use-lazy-component.ts
-import React20, { useMemo as useMemo25, useRef as useRef16 } from "react";
-var useLazyComponent = ({
-  compProps,
-  componentName,
-  noSuspense
-}) => {
-  const componentRef = useRef16(null);
-  if ("component" in compProps) {
-    componentRef.current = compProps.component;
-  }
-  const lazy = useMemo25(() => {
-    if ("component" in compProps) {
-      if (typeof document === "undefined" || noSuspense) {
-        return compProps.component;
-      }
-      if (typeof compProps.component === "undefined") {
-        throw new Error(`A value of \`undefined\` was passed to the \`component\` prop. Check the value you are passing to the <${componentName}/> component.`);
-      }
-      const Wrapper = (props2) => {
-        const Comp = componentRef.current;
-        return React20.createElement(Comp, props2);
-      };
-      return Wrapper;
-    }
-    if ("lazyComponent" in compProps && typeof compProps.lazyComponent !== "undefined") {
-      if (typeof compProps.lazyComponent === "undefined") {
-        throw new Error(`A value of \`undefined\` was passed to the \`lazyComponent\` prop. Check the value you are passing to the <${componentName}/> component.`);
-      }
-      return React20.lazy(compProps.lazyComponent);
-    }
-    throw new Error("You must pass either 'component' or 'lazyComponent'");
-  }, [compProps.lazyComponent]);
-  return lazy;
-};
-
-// src/validation/validate-composition-id.ts
-var getRegex2 = () => /^([a-zA-Z0-9-\u4E00-\u9FFF])+$/g;
-var isCompositionIdValid = (id) => id.match(getRegex2());
-var validateCompositionId = (id) => {
-  if (!isCompositionIdValid(id)) {
-    throw new Error(`Composition id can only contain a-z, A-Z, 0-9, CJK characters and -. You passed ${id}`);
-  }
-};
-var invalidCompositionErrorMessage = `Composition ID must match ${String(getRegex2())}`;
-
-// src/validation/validate-default-props.ts
-var validateDefaultAndInputProps = (defaultProps, name, compositionId) => {
-  if (!defaultProps) {
-    return;
-  }
-  if (typeof defaultProps !== "object") {
-    throw new Error(`"${name}" must be an object, but you passed a value of type ${typeof defaultProps}`);
-  }
-  if (Array.isArray(defaultProps)) {
-    throw new Error(`"${name}" must be an object, an array was passed ${compositionId ? `for composition "${compositionId}"` : ""}`);
-  }
-};
-
-// src/Composition.tsx
-import { jsx as jsx22 } from "react/jsx-runtime";
-var Fallback = () => {
-  const { continueRender: continueRender2, delayRender: delayRender2 } = useDelayRender();
-  useEffect13(() => {
-    const fallback = delayRender2("Waiting for Root component to unsuspend");
-    return () => continueRender2(fallback);
-  }, [continueRender2, delayRender2]);
-  return null;
-};
-var InnerComposition = ({
-  width,
-  height,
-  fps,
-  durationInFrames,
-  id,
-  defaultProps,
-  schema,
-  ...compProps
-}) => {
-  const compManager = useContext28(CompositionSetters);
-  const { registerComposition, unregisterComposition } = compManager;
-  const video = useVideo();
-  const lazy = useLazyComponent({
-    compProps,
-    componentName: "Composition",
-    noSuspense: false
-  });
-  const nonce = useNonce();
-  const isPlayer = useIsPlayer();
-  const environment = useRemotionEnvironment();
-  const canUseComposition = useContext28(CanUseRemotionHooks);
-  if (typeof window !== "undefined") {
-    window.remotion_seenCompositionIds = Array.from(new Set([...window.remotion_seenCompositionIds ?? [], id]));
-  }
-  if (canUseComposition) {
-    if (isPlayer) {
-      throw new Error("<Composition> was mounted inside the `component` that was passed to the <Player>. See https://remotion.dev/docs/wrong-composition-mount for help.");
-    }
-    throw new Error("<Composition> mounted inside another composition. See https://remotion.dev/docs/wrong-composition-mount for help.");
-  }
-  const { folderName, parentName } = useContext28(FolderContext);
-  useEffect13(() => {
-    if (!id) {
-      throw new Error("No id for composition passed.");
-    }
-    validateCompositionId(id);
-    validateDefaultAndInputProps(defaultProps, "defaultProps", id);
-    registerComposition({
-      durationInFrames: durationInFrames ?? undefined,
-      fps: fps ?? undefined,
-      height: height ?? undefined,
-      width: width ?? undefined,
-      id,
-      folderName,
-      component: lazy,
-      defaultProps: serializeThenDeserializeInStudio(defaultProps ?? {}),
-      nonce: nonce.get(),
-      parentFolderName: parentName,
-      schema: schema ?? null,
-      calculateMetadata: compProps.calculateMetadata ?? null
-    });
-    return () => {
-      unregisterComposition(id);
-    };
-  }, [
-    durationInFrames,
-    fps,
-    height,
-    lazy,
-    id,
-    folderName,
-    defaultProps,
-    width,
-    nonce,
-    parentName,
-    schema,
-    compProps.calculateMetadata,
-    registerComposition,
-    unregisterComposition
-  ]);
-  useEffect13(() => {
-    window.dispatchEvent(new CustomEvent(PROPS_UPDATED_EXTERNALLY, {
-      detail: {
-        resetUnsaved: id
-      }
-    }));
-  }, [defaultProps, id]);
-  const resolved = useResolvedVideoConfig(id);
-  if (environment.isStudio && video && video.component === lazy && video.id === id) {
-    const Comp = lazy;
-    if (resolved === null || resolved.type !== "success" && resolved.type !== "success-and-refreshing") {
-      return null;
-    }
-    return createPortal(/* @__PURE__ */ jsx22(CanUseRemotionHooksProvider, {
-      children: /* @__PURE__ */ jsx22(Suspense, {
-        fallback: /* @__PURE__ */ jsx22(Loading, {}),
-        children: /* @__PURE__ */ jsx22(Comp, {
-          ...resolved.result.props ?? {}
-        })
-      })
-    }), portalNode());
-  }
-  if (environment.isRendering && video && video.component === lazy && video.id === id) {
-    const Comp = lazy;
-    if (resolved === null || resolved.type !== "success" && resolved.type !== "success-and-refreshing") {
-      return null;
-    }
-    return createPortal(/* @__PURE__ */ jsx22(CanUseRemotionHooksProvider, {
-      children: /* @__PURE__ */ jsx22(Suspense, {
-        fallback: /* @__PURE__ */ jsx22(Fallback, {}),
-        children: /* @__PURE__ */ jsx22(Comp, {
-          ...resolved.result.props ?? {}
-        })
-      })
-    }), portalNode());
-  }
-  return null;
-};
-var Composition = (props2) => {
-  const { onlyRenderComposition } = useContext28(CompositionSetters);
-  if (onlyRenderComposition && onlyRenderComposition !== props2.id) {
-    return null;
-  }
-  return /* @__PURE__ */ jsx22(InnerComposition, {
-    ...props2
-  });
-};
 // src/bezier.ts
 var NEWTON_ITERATIONS = 4;
 var NEWTON_MIN_SLOPE = 0.001;
@@ -5522,8 +6682,8 @@ var getStaticFiles = () => {
   return window.remotion_staticFiles;
 };
 // src/IFrame.tsx
-import { forwardRef as forwardRef7, useCallback as useCallback12, useState as useState14 } from "react";
-import { jsx as jsx23 } from "react/jsx-runtime";
+import { forwardRef as forwardRef9, useCallback as useCallback14, useState as useState17 } from "react";
+import { jsx as jsx25 } from "react/jsx-runtime";
 var IFrameRefForwarding = ({
   onLoad,
   onError,
@@ -5532,15 +6692,15 @@ var IFrameRefForwarding = ({
   ...props2
 }, ref) => {
   const { delayRender: delayRender2, continueRender: continueRender2 } = useDelayRender();
-  const [handle] = useState14(() => delayRender2(`Loading <IFrame> with source ${props2.src}`, {
+  const [handle] = useState17(() => delayRender2(`Loading <IFrame> with source ${props2.src}`, {
     retries: delayRenderRetries ?? undefined,
     timeoutInMilliseconds: delayRenderTimeoutInMilliseconds ?? undefined
   }));
-  const didLoad = useCallback12((e) => {
+  const didLoad = useCallback14((e) => {
     continueRender2(handle);
     onLoad?.(e);
   }, [handle, onLoad, continueRender2]);
-  const didGetError = useCallback12((e) => {
+  const didGetError = useCallback14((e) => {
     continueRender2(handle);
     if (onError) {
       onError(e);
@@ -5548,7 +6708,7 @@ var IFrameRefForwarding = ({
       console.error("Error loading iframe:", e, "Handle the event using the onError() prop to make this message disappear.");
     }
   }, [handle, onError, continueRender2]);
-  return /* @__PURE__ */ jsx23("iframe", {
+  return /* @__PURE__ */ jsx25("iframe", {
     referrerPolicy: "strict-origin-when-cross-origin",
     ...props2,
     ref,
@@ -5556,21 +6716,27 @@ var IFrameRefForwarding = ({
     onLoad: didLoad
   });
 };
-var IFrame = forwardRef7(IFrameRefForwarding);
+var IFrame = forwardRef9(IFrameRefForwarding);
 // src/Img.tsx
 import {
-  forwardRef as forwardRef8,
-  useCallback as useCallback13,
-  useContext as useContext29,
-  useImperativeHandle as useImperativeHandle7,
-  useLayoutEffect as useLayoutEffect9,
-  useRef as useRef17
+  useCallback as useCallback15,
+  useContext as useContext31,
+  useImperativeHandle as useImperativeHandle6,
+  useLayoutEffect as useLayoutEffect10,
+  useRef as useRef20,
+  useState as useState18
 } from "react";
-import { jsx as jsx24 } from "react/jsx-runtime";
+import { jsx as jsx26 } from "react/jsx-runtime";
 function exponentialBackoff(errorCount) {
   return 1000 * 2 ** (errorCount - 1);
 }
-var ImgRefForwarding = ({
+function truncateSrcForLabel(src) {
+  if (src.startsWith("data:") && src.length > 100) {
+    return src.slice(0, 60) + "...[" + src.length + " chars total]";
+  }
+  return src;
+}
+var ImgInner = ({
   onError,
   maxRetries = 2,
   src,
@@ -5579,12 +6745,18 @@ var ImgRefForwarding = ({
   delayRenderTimeoutInMilliseconds,
   onImageFrame,
   crossOrigin,
+  showInTimeline,
+  name,
+  stack,
+  ref,
+  _experimentalControls: controls,
   ...props2
-}, ref) => {
-  const imageRef = useRef17(null);
-  const errors = useRef17({});
+}) => {
+  const imageRef = useRef20(null);
+  const errors = useRef20({});
   const { delayPlayback } = useBufferState();
-  const sequenceContext = useContext29(SequenceContext);
+  const sequenceContext = useContext31(SequenceContext);
+  const [timelineId] = useState18(() => String(Math.random()));
   if (!src) {
     throw new Error('No "src" prop was passed to <Img>.');
   }
@@ -5592,11 +6764,22 @@ var ImgRefForwarding = ({
   if (!_propsValid) {
     throw new Error("typecheck error");
   }
-  useImperativeHandle7(ref, () => {
+  useImperativeHandle6(ref, () => {
     return imageRef.current;
   }, []);
+  useImageInTimeline({
+    src,
+    displayName: name ?? null,
+    id: timelineId,
+    stack: stack ?? null,
+    showInTimeline: showInTimeline ?? true,
+    premountDisplay: sequenceContext?.premountDisplay ?? null,
+    postmountDisplay: sequenceContext?.postmountDisplay ?? null,
+    loopDisplay: undefined,
+    controls: controls ?? null
+  });
   const actualSrc = usePreload(src);
-  const retryIn = useCallback13((timeout) => {
+  const retryIn = useCallback15((timeout) => {
     if (!imageRef.current) {
       return;
     }
@@ -5614,7 +6797,7 @@ var ImgRefForwarding = ({
     }, timeout);
   }, []);
   const { delayRender: delayRender2, continueRender: continueRender2, cancelRender: cancelRender2 } = useDelayRender();
-  const didGetError = useCallback13((e) => {
+  const didGetError = useCallback15((e) => {
     if (!errors.current) {
       return;
     }
@@ -5625,18 +6808,18 @@ var ImgRefForwarding = ({
     }
     if ((errors.current[imageRef.current?.src] ?? 0) <= maxRetries) {
       const backoff = exponentialBackoff(errors.current[imageRef.current?.src] ?? 0);
-      console.warn(`Could not load image with source ${imageRef.current?.src}, retrying again in ${backoff}ms`);
+      console.warn(`Could not load image with source ${truncateSrcForLabel(imageRef.current?.src)}, retrying again in ${backoff}ms`);
       retryIn(backoff);
       return;
     }
     try {
-      cancelRender2("Error loading image with src: " + imageRef.current?.src);
+      cancelRender2("Error loading image with src: " + truncateSrcForLabel(imageRef.current?.src));
     } catch {}
   }, [cancelRender2, maxRetries, onError, retryIn]);
   if (typeof window !== "undefined") {
     const isPremounting = Boolean(sequenceContext?.premounting);
     const isPostmounting = Boolean(sequenceContext?.postmounting);
-    useLayoutEffect9(() => {
+    useLayoutEffect10(() => {
       if (window.process?.env?.NODE_ENV === "test") {
         if (imageRef.current) {
           imageRef.current.src = actualSrc;
@@ -5647,7 +6830,7 @@ var ImgRefForwarding = ({
       if (!current) {
         return;
       }
-      const newHandle = delayRender2("Loading <Img> with src=" + actualSrc, {
+      const newHandle = delayRender2("Loading <Img> with src=" + truncateSrcForLabel(actualSrc), {
         retries: delayRenderRetries ?? undefined,
         timeoutInMilliseconds: delayRenderTimeoutInMilliseconds ?? undefined
       });
@@ -5662,7 +6845,7 @@ var ImgRefForwarding = ({
         }
         if ((errors.current[imageRef.current?.src] ?? 0) > 0) {
           delete errors.current[imageRef.current?.src];
-          console.info(`Retry successful - ${imageRef.current?.src} is now loaded`);
+          console.info(`Retry successful - ${truncateSrcForLabel(imageRef.current?.src)} is now loaded`);
         }
         if (current) {
           onImageFrame?.(current);
@@ -5708,7 +6891,7 @@ var ImgRefForwarding = ({
     requestsVideoFrame: false,
     isClientSideRendering
   });
-  return /* @__PURE__ */ jsx24("img", {
+  return /* @__PURE__ */ jsx26("img", {
     ...props2,
     ref: imageRef,
     crossOrigin: crossOriginValue,
@@ -5716,23 +6899,24 @@ var ImgRefForwarding = ({
     decoding: "sync"
   });
 };
-var Img = forwardRef8(ImgRefForwarding);
+var Img = wrapInSchema(ImgInner, sequenceStyleSchema);
+addSequenceStackTraces(Img);
 // src/internals.ts
 import { createRef as createRef3 } from "react";
 
 // src/CompositionManager.tsx
-import React24 from "react";
-var compositionsRef = React24.createRef();
+import React28 from "react";
+var compositionsRef = React28.createRef();
 
 // src/CompositionManagerProvider.tsx
 import {
-  useCallback as useCallback14,
-  useImperativeHandle as useImperativeHandle8,
-  useMemo as useMemo26,
-  useRef as useRef18,
-  useState as useState15
+  useCallback as useCallback16,
+  useImperativeHandle as useImperativeHandle7,
+  useMemo as useMemo30,
+  useRef as useRef21,
+  useState as useState19
 } from "react";
-import { jsx as jsx25 } from "react/jsx-runtime";
+import { jsx as jsx27 } from "react/jsx-runtime";
 var CompositionManagerProvider = ({
   children,
   onlyRenderComposition,
@@ -5740,18 +6924,18 @@ var CompositionManagerProvider = ({
   initialCompositions,
   initialCanvasContent
 }) => {
-  const [folders, setFolders] = useState15([]);
-  const [canvasContent, setCanvasContent] = useState15(initialCanvasContent);
-  const [compositions, setCompositions] = useState15(initialCompositions);
-  const currentcompositionsRef = useRef18(compositions);
-  const updateCompositions = useCallback14((updateComps) => {
+  const [folders, setFolders] = useState19([]);
+  const [canvasContent, setCanvasContent] = useState19(initialCanvasContent);
+  const [compositions, setCompositions] = useState19(initialCompositions);
+  const currentcompositionsRef = useRef21(compositions);
+  const updateCompositions = useCallback16((updateComps) => {
     setCompositions((comps) => {
       const updated = updateComps(comps);
       currentcompositionsRef.current = updated;
       return updated;
     });
   }, []);
-  const registerComposition = useCallback14((comp) => {
+  const registerComposition = useCallback16((comp) => {
     updateCompositions((comps) => {
       if (comps.find((c2) => c2.id === comp.id)) {
         throw new Error(`Multiple composition with id ${comp.id} are registered.`);
@@ -5759,12 +6943,12 @@ var CompositionManagerProvider = ({
       return [...comps, comp];
     });
   }, [updateCompositions]);
-  const unregisterComposition = useCallback14((id) => {
+  const unregisterComposition = useCallback16((id) => {
     setCompositions((comps) => {
       return comps.filter((c2) => c2.id !== id);
     });
   }, []);
-  const registerFolder = useCallback14((name, parent, nonce) => {
+  const registerFolder = useCallback16((name, parent, nonce) => {
     setFolders((prevFolders) => {
       return [
         ...prevFolders,
@@ -5776,38 +6960,23 @@ var CompositionManagerProvider = ({
       ];
     });
   }, []);
-  const unregisterFolder = useCallback14((name, parent) => {
+  const unregisterFolder = useCallback16((name, parent) => {
     setFolders((prevFolders) => {
       return prevFolders.filter((p) => !(p.name === name && p.parent === parent));
     });
   }, []);
-  useImperativeHandle8(compositionsRef, () => {
+  useImperativeHandle7(compositionsRef, () => {
     return {
       getCompositions: () => currentcompositionsRef.current
     };
   }, []);
-  const updateCompositionDefaultProps = useCallback14((id, newDefaultProps) => {
-    setCompositions((comps) => {
-      const updated = comps.map((c2) => {
-        if (c2.id === id) {
-          return {
-            ...c2,
-            defaultProps: newDefaultProps
-          };
-        }
-        return c2;
-      });
-      return updated;
-    });
-  }, []);
-  const compositionManagerSetters = useMemo26(() => {
+  const compositionManagerSetters = useMemo30(() => {
     return {
       registerComposition,
       unregisterComposition,
       registerFolder,
       unregisterFolder,
       setCanvasContent,
-      updateCompositionDefaultProps,
       onlyRenderComposition
     };
   }, [
@@ -5815,10 +6984,9 @@ var CompositionManagerProvider = ({
     registerFolder,
     unregisterComposition,
     unregisterFolder,
-    updateCompositionDefaultProps,
     onlyRenderComposition
   ]);
-  const compositionManagerContextValue = useMemo26(() => {
+  const compositionManagerContextValue = useMemo30(() => {
     return {
       compositions,
       folders,
@@ -5826,9 +6994,9 @@ var CompositionManagerProvider = ({
       canvasContent
     };
   }, [compositions, folders, currentCompositionMetadata, canvasContent]);
-  return /* @__PURE__ */ jsx25(CompositionManager.Provider, {
+  return /* @__PURE__ */ jsx27(CompositionManager.Provider, {
     value: compositionManagerContextValue,
-    children: /* @__PURE__ */ jsx25(CompositionSetters.Provider, {
+    children: /* @__PURE__ */ jsx27(CompositionSetters.Provider, {
       value: compositionManagerSetters,
       children
     })
@@ -5895,27 +7063,14 @@ var makeDefaultPreviewCSS = (scope, backgroundColor) => {
   `;
 };
 
-// src/get-effective-visual-mode-value.ts
-var getEffectiveVisualModeValue = ({
-  codeValue,
-  runtimeValue,
-  dragOverrideValue,
-  defaultValue,
-  shouldResortToDefaultValueIfUndefined = false
-}) => {
-  if (dragOverrideValue !== undefined) {
-    return dragOverrideValue;
-  }
-  if (!codeValue) {
-    return runtimeValue;
-  }
-  if (!codeValue.canUpdate) {
-    return runtimeValue;
-  }
-  if (codeValue.codeValue === undefined && shouldResortToDefaultValueIfUndefined) {
-    return defaultValue;
-  }
-  return codeValue.codeValue;
+// src/effects/define-effect.ts
+var defineEffect = (definition) => definition;
+var createDescriptor = (definition, params) => {
+  return {
+    definition,
+    params,
+    stack: new Error().stack
+  };
 };
 
 // src/get-preview-dom-element.ts
@@ -5925,8 +7080,8 @@ var getPreviewDomElement = () => {
 };
 
 // src/max-video-cache-size.ts
-import React25 from "react";
-var MaxMediaCacheSizeContext = React25.createContext(null);
+import React29 from "react";
+var MaxMediaCacheSizeContext = React29.createContext(null);
 
 // src/register-root.ts
 var Root = null;
@@ -5960,14 +7115,14 @@ var waitForRoot = (fn) => {
 };
 
 // src/RemotionRoot.tsx
-import { useMemo as useMemo28 } from "react";
+import { useMemo as useMemo32 } from "react";
 
 // src/use-media-enabled.tsx
-import { createContext as createContext20, useContext as useContext30, useMemo as useMemo27 } from "react";
-import { jsx as jsx26 } from "react/jsx-runtime";
-var MediaEnabledContext = createContext20(null);
+import { createContext as createContext22, useContext as useContext32, useMemo as useMemo31 } from "react";
+import { jsx as jsx28 } from "react/jsx-runtime";
+var MediaEnabledContext = createContext22(null);
 var useVideoEnabled = () => {
-  const context = useContext30(MediaEnabledContext);
+  const context = useContext32(MediaEnabledContext);
   if (!context) {
     return window.remotion_videoEnabled;
   }
@@ -5977,7 +7132,7 @@ var useVideoEnabled = () => {
   return context.videoEnabled;
 };
 var useAudioEnabled = () => {
-  const context = useContext30(MediaEnabledContext);
+  const context = useContext32(MediaEnabledContext);
   if (!context) {
     return window.remotion_audioEnabled;
   }
@@ -5991,15 +7146,15 @@ var MediaEnabledProvider = ({
   videoEnabled,
   audioEnabled
 }) => {
-  const value = useMemo27(() => ({ videoEnabled, audioEnabled }), [videoEnabled, audioEnabled]);
-  return /* @__PURE__ */ jsx26(MediaEnabledContext.Provider, {
+  const value = useMemo31(() => ({ videoEnabled, audioEnabled }), [videoEnabled, audioEnabled]);
+  return /* @__PURE__ */ jsx28(MediaEnabledContext.Provider, {
     value,
     children
   });
 };
 
 // src/RemotionRoot.tsx
-import { jsx as jsx27 } from "react/jsx-runtime";
+import { jsx as jsx29 } from "react/jsx-runtime";
 var RemotionRootContexts = ({
   children,
   numberOfAudioTags,
@@ -6010,35 +7165,37 @@ var RemotionRootContexts = ({
   frameState,
   visualModeEnabled
 }) => {
-  const nonceContext = useMemo28(() => {
+  const nonceContext = useMemo32(() => {
     let counter = 0;
     return {
       getNonce: () => counter++
     };
   }, []);
-  const logging = useMemo28(() => {
+  const logging = useMemo32(() => {
     return { logLevel, mountTime: Date.now() };
   }, [logLevel]);
-  return /* @__PURE__ */ jsx27(LogLevelContext.Provider, {
+  return /* @__PURE__ */ jsx29(LogLevelContext.Provider, {
     value: logging,
-    children: /* @__PURE__ */ jsx27(NonceContext.Provider, {
+    children: /* @__PURE__ */ jsx29(NonceContext.Provider, {
       value: nonceContext,
-      children: /* @__PURE__ */ jsx27(TimelineContextProvider, {
+      children: /* @__PURE__ */ jsx29(TimelineContextProvider, {
         frameState,
-        children: /* @__PURE__ */ jsx27(MediaEnabledProvider, {
+        children: /* @__PURE__ */ jsx29(MediaEnabledProvider, {
           videoEnabled,
           audioEnabled,
-          children: /* @__PURE__ */ jsx27(EditorPropsProvider, {
-            children: /* @__PURE__ */ jsx27(PrefetchProvider, {
-              children: /* @__PURE__ */ jsx27(SequenceManagerProvider, {
+          children: /* @__PURE__ */ jsx29(EditorPropsProvider, {
+            children: /* @__PURE__ */ jsx29(PrefetchProvider, {
+              children: /* @__PURE__ */ jsx29(SequenceManagerProvider, {
                 visualModeEnabled,
-                children: /* @__PURE__ */ jsx27(SharedAudioContextProvider, {
-                  numberOfAudioTags,
-                  audioLatencyHint,
-                  audioEnabled,
-                  children: /* @__PURE__ */ jsx27(DurationsContextProvider, {
-                    children: /* @__PURE__ */ jsx27(BufferingProvider, {
-                      children
+                children: /* @__PURE__ */ jsx29(DurationsContextProvider, {
+                  children: /* @__PURE__ */ jsx29(BufferingProvider, {
+                    children: /* @__PURE__ */ jsx29(SharedAudioContextProvider, {
+                      audioLatencyHint,
+                      audioEnabled,
+                      children: /* @__PURE__ */ jsx29(SharedAudioTagsContextProvider, {
+                        numberOfAudioTags,
+                        children
+                      })
                     })
                   })
                 })
@@ -6057,6 +7214,7 @@ var validCodecs = [
   "h265",
   "vp8",
   "vp9",
+  "av1",
   "mp3",
   "aac",
   "wav",
@@ -6107,6 +7265,7 @@ var validateCalculated = ({
   const defaultVideoImageFormat = calculated?.defaultVideoImageFormat;
   const defaultPixelFormat = calculated?.defaultPixelFormat;
   const defaultProResProfile = calculated?.defaultProResProfile;
+  const defaultSampleRate = calculated?.defaultSampleRate;
   return {
     width,
     height,
@@ -6116,7 +7275,8 @@ var validateCalculated = ({
     defaultOutName,
     defaultVideoImageFormat,
     defaultPixelFormat,
-    defaultProResProfile
+    defaultProResProfile,
+    defaultSampleRate
   };
 };
 var resolveVideoConfig = ({
@@ -6148,7 +7308,8 @@ var resolveVideoConfig = ({
         defaultOutName,
         defaultVideoImageFormat,
         defaultPixelFormat,
-        defaultProResProfile
+        defaultProResProfile,
+        defaultSampleRate
       } = validateCalculated({
         calculated: c2,
         compositionDurationInFrames,
@@ -6169,7 +7330,8 @@ var resolveVideoConfig = ({
         defaultOutName: defaultOutName ?? null,
         defaultVideoImageFormat: defaultVideoImageFormat ?? null,
         defaultPixelFormat: defaultPixelFormat ?? null,
-        defaultProResProfile: defaultProResProfile ?? null
+        defaultProResProfile: defaultProResProfile ?? null,
+        defaultSampleRate: defaultSampleRate ?? null
       };
     });
   }
@@ -6191,7 +7353,8 @@ var resolveVideoConfig = ({
       defaultOutName: null,
       defaultVideoImageFormat: null,
       defaultPixelFormat: null,
-      defaultProResProfile: null
+      defaultProResProfile: null,
+      defaultSampleRate: null
     };
   }
   return {
@@ -6203,7 +7366,8 @@ var resolveVideoConfig = ({
     defaultOutName: calculatedProm.defaultOutName ?? null,
     defaultVideoImageFormat: calculatedProm.defaultVideoImageFormat ?? null,
     defaultPixelFormat: calculatedProm.defaultPixelFormat ?? null,
-    defaultProResProfile: calculatedProm.defaultProResProfile ?? null
+    defaultProResProfile: calculatedProm.defaultProResProfile ?? null,
+    defaultSampleRate: calculatedProm.defaultSampleRate ?? null
   };
 };
 var resolveVideoConfigOrCatch = (params) => {
@@ -6222,8 +7386,8 @@ var resolveVideoConfigOrCatch = (params) => {
 };
 
 // src/sequence-stack-traces.ts
-import React27 from "react";
-var SequenceStackTracesUpdateContext = React27.createContext(() => {});
+import React31 from "react";
+var SequenceStackTracesUpdateContext = React31.createContext(() => {});
 
 // src/setup-env-variables.ts
 var getEnvVariables = () => {
@@ -6253,9 +7417,9 @@ var setupEnvVariables = () => {
 };
 
 // src/use-current-scale.ts
-import React28, { createContext as createContext21 } from "react";
-var CurrentScaleContext = React28.createContext(null);
-var PreviewSizeContext = createContext21({
+import React32, { createContext as createContext23 } from "react";
+var CurrentScaleContext = React32.createContext(null);
+var PreviewSizeContext = createContext23({
   setSize: () => {
     return;
   },
@@ -6279,8 +7443,8 @@ var calculateScale = ({
   return Number(previewSize);
 };
 var useCurrentScale = (options) => {
-  const hasContext = React28.useContext(CurrentScaleContext);
-  const zoomContext = React28.useContext(PreviewSizeContext);
+  const hasContext = React32.useContext(CurrentScaleContext);
+  const zoomContext = React32.useContext(PreviewSizeContext);
   const config = useUnsafeVideoConfig();
   const env = useRemotionEnvironment();
   if (hasContext === null || config === null || zoomContext === null) {
@@ -6309,83 +7473,11 @@ var useCurrentScale = (options) => {
   });
 };
 
-// src/use-schema.ts
-import { useContext as useContext31, useMemo as useMemo29, useState as useState16 } from "react";
-var useSchema = (schema, currentValue) => {
-  const env = useRemotionEnvironment();
-  const earlyReturn = useMemo29(() => {
-    if (!env.isStudio || env.isReadOnlyStudio) {
-      return {
-        controls: undefined,
-        values: currentValue ?? {}
-      };
-    }
-    return;
-  }, [env.isStudio, env.isReadOnlyStudio, currentValue]);
-  if (earlyReturn) {
-    return earlyReturn;
-  }
-  const [overrideId] = useState16(() => String(Math.random()));
-  const {
-    visualModeEnabled,
-    dragOverrides: overrides,
-    codeValues
-  } = useContext31(VisualModeOverridesContext);
-  const controls = useMemo29(() => {
-    if (!visualModeEnabled) {
-      return;
-    }
-    if (schema === null || currentValue === null) {
-      return;
-    }
-    return {
-      schema,
-      currentValue,
-      overrideId
-    };
-  }, [schema, currentValue, overrideId, visualModeEnabled]);
-  return useMemo29(() => {
-    if (controls === undefined || currentValue === null || schema === null || !visualModeEnabled) {
-      return {
-        controls: undefined,
-        values: currentValue ?? {}
-      };
-    }
-    const overrideValues = overrides[overrideId] ?? {};
-    const propStatus = codeValues[overrideId];
-    const currentValueKeys = Object.keys(currentValue);
-    const keysToUpdate = new Set(currentValueKeys).values();
-    const merged = {};
-    for (const key of keysToUpdate) {
-      const codeValueStatus = propStatus?.[key] ?? null;
-      merged[key] = getEffectiveVisualModeValue({
-        codeValue: codeValueStatus,
-        runtimeValue: currentValue[key],
-        dragOverrideValue: overrideValues[key],
-        defaultValue: schema[key]?.default,
-        shouldResortToDefaultValueIfUndefined: false
-      });
-    }
-    return {
-      controls,
-      values: merged
-    };
-  }, [
-    controls,
-    currentValue,
-    overrideId,
-    overrides,
-    codeValues,
-    schema,
-    visualModeEnabled
-  ]);
-};
-
 // src/use-sequence-control-override.ts
-import { useContext as useContext32 } from "react";
+import { useContext as useContext33 } from "react";
 var useSequenceControlOverride = (key) => {
-  const seqContext = useContext32(SequenceContext);
-  const { dragOverrides: overrides } = useContext32(VisualModeOverridesContext);
+  const seqContext = useContext33(SequenceContext);
+  const { dragOverrides: overrides } = useContext33(VisualModeOverridesContext);
   if (!seqContext) {
     return;
   }
@@ -6393,16 +7485,16 @@ var useSequenceControlOverride = (key) => {
 };
 
 // src/video/OffthreadVideo.tsx
-import { useCallback as useCallback16 } from "react";
+import { useCallback as useCallback18 } from "react";
 
 // src/video/OffthreadVideoForRendering.tsx
 import {
-  useCallback as useCallback15,
-  useContext as useContext33,
-  useEffect as useEffect14,
-  useLayoutEffect as useLayoutEffect10,
-  useMemo as useMemo30,
-  useState as useState17
+  useCallback as useCallback17,
+  useContext as useContext34,
+  useEffect as useEffect16,
+  useLayoutEffect as useLayoutEffect11,
+  useMemo as useMemo33,
+  useState as useState20
 } from "react";
 
 // src/video/offthread-video-source.ts
@@ -6416,7 +7508,7 @@ var getOffthreadVideoSource = ({
 };
 
 // src/video/OffthreadVideoForRendering.tsx
-import { jsx as jsx28 } from "react/jsx-runtime";
+import { jsx as jsx30 } from "react/jsx-runtime";
 var OffthreadVideoForRendering = ({
   onError,
   volume: volumeProp,
@@ -6440,13 +7532,13 @@ var OffthreadVideoForRendering = ({
   const frame = useCurrentFrame();
   const volumePropsFrame = useFrameForVolumeProp(loopVolumeCurveBehavior);
   const videoConfig = useUnsafeVideoConfig();
-  const sequenceContext = useContext33(SequenceContext);
+  const sequenceContext = useContext34(SequenceContext);
   const mediaStartsAt = useMediaStartsAt();
-  const { registerRenderAsset, unregisterRenderAsset } = useContext33(RenderAssetManager);
+  const { registerRenderAsset, unregisterRenderAsset } = useContext34(RenderAssetManager);
   if (!src) {
     throw new TypeError("No `src` was passed to <OffthreadVideo>.");
   }
-  const id = useMemo30(() => `offthreadvideo-${random(src)}-${sequenceContext?.cumulatedFrom}-${sequenceContext?.relativeFrom}-${sequenceContext?.durationInFrames}`, [
+  const id = useMemo33(() => `offthreadvideo-${random(src)}-${sequenceContext?.cumulatedFrom}-${sequenceContext?.relativeFrom}-${sequenceContext?.durationInFrames}`, [
     src,
     sequenceContext?.cumulatedFrom,
     sequenceContext?.relativeFrom,
@@ -6461,7 +7553,7 @@ var OffthreadVideoForRendering = ({
     mediaVolume: 1
   });
   warnAboutTooHighVolume(volume);
-  useEffect14(() => {
+  useEffect16(() => {
     if (!src) {
       throw new Error("No src passed");
     }
@@ -6501,14 +7593,14 @@ var OffthreadVideoForRendering = ({
     sequenceContext?.relativeFrom,
     audioStreamIndex
   ]);
-  const currentTime = useMemo30(() => {
+  const currentTime = useMemo33(() => {
     return getExpectedMediaFrameUncorrected({
       frame,
       playbackRate: playbackRate || 1,
       startFrom: -mediaStartsAt
     }) / videoConfig.fps;
   }, [frame, mediaStartsAt, playbackRate, videoConfig.fps]);
-  const actualSrc = useMemo30(() => {
+  const actualSrc = useMemo33(() => {
     return getOffthreadVideoSource({
       src,
       currentTime,
@@ -6516,9 +7608,9 @@ var OffthreadVideoForRendering = ({
       toneMapped
     });
   }, [toneMapped, currentTime, src, transparent]);
-  const [imageSrc, setImageSrc] = useState17(null);
+  const [imageSrc, setImageSrc] = useState20(null);
   const { delayRender: delayRender2, continueRender: continueRender2 } = useDelayRender();
-  useLayoutEffect10(() => {
+  useLayoutEffect11(() => {
     if (!window.remotion_videoEnabled) {
       return;
     }
@@ -6589,17 +7681,17 @@ var OffthreadVideoForRendering = ({
     continueRender2,
     delayRender2
   ]);
-  const onErr = useCallback15(() => {
+  const onErr = useCallback17(() => {
     if (onError) {
       onError?.(new Error("Failed to load image with src " + imageSrc));
     } else {
       cancelRender("Failed to load image with src " + imageSrc);
     }
   }, [imageSrc, onError]);
-  const className = useMemo30(() => {
+  const className = useMemo33(() => {
     return [OBJECTFIT_CONTAIN_CLASS_NAME, props2.className].filter(truthy).join(" ");
   }, [props2.className]);
-  const onImageFrame = useCallback15((img) => {
+  const onImageFrame = useCallback17((img) => {
     if (onVideoFrame) {
       onVideoFrame(img);
     }
@@ -6608,7 +7700,7 @@ var OffthreadVideoForRendering = ({
     return null;
   }
   continueRender2(imageSrc.handle);
-  return /* @__PURE__ */ jsx28(Img, {
+  return /* @__PURE__ */ jsx30(Img, {
     src: imageSrc.src,
     delayRenderRetries,
     delayRenderTimeoutInMilliseconds,
@@ -6620,23 +7712,23 @@ var OffthreadVideoForRendering = ({
 };
 
 // src/video/VideoForPreview.tsx
-import React30, {
-  forwardRef as forwardRef9,
-  useContext as useContext34,
-  useEffect as useEffect16,
-  useImperativeHandle as useImperativeHandle9,
-  useMemo as useMemo31,
-  useRef as useRef19,
-  useState as useState18
+import React34, {
+  forwardRef as forwardRef10,
+  useContext as useContext35,
+  useEffect as useEffect18,
+  useImperativeHandle as useImperativeHandle8,
+  useMemo as useMemo34,
+  useRef as useRef22,
+  useState as useState21
 } from "react";
 
 // src/video/emit-video-frame.ts
-import { useEffect as useEffect15 } from "react";
+import { useEffect as useEffect17 } from "react";
 var useEmitVideoFrame = ({
   ref,
   onVideoFrame
 }) => {
-  useEffect15(() => {
+  useEffect17(() => {
     const { current } = ref;
     if (!current) {
       return;
@@ -6659,15 +7751,25 @@ var useEmitVideoFrame = ({
   }, [onVideoFrame, ref]);
 };
 
+// src/video/MediaPlaybackError.ts
+class MediaPlaybackError extends Error {
+  src;
+  constructor({ message, src }) {
+    super(message);
+    this.name = "MediaPlaybackError";
+    this.src = src;
+  }
+}
+
 // src/video/VideoForPreview.tsx
-import { jsx as jsx29 } from "react/jsx-runtime";
+import { jsx as jsx31 } from "react/jsx-runtime";
 var VideoForDevelopmentRefForwardingFunction = (props2, ref) => {
-  const context = useContext34(SharedAudioContext);
+  const context = useContext35(SharedAudioContext);
   if (!context) {
     throw new Error("SharedAudioContext not found");
   }
-  const videoRef = useRef19(null);
-  const sharedSource = useMemo31(() => {
+  const videoRef = useRef22(null);
+  const sharedSource = useMemo34(() => {
     if (!context.audioContext) {
       return null;
     }
@@ -6676,7 +7778,7 @@ var VideoForDevelopmentRefForwardingFunction = (props2, ref) => {
       ref: videoRef
     });
   }, [context.audioContext]);
-  const effectToUse = React30.useInsertionEffect ?? React30.useLayoutEffect;
+  const effectToUse = React34.useInsertionEffect ?? React34.useLayoutEffect;
   effectToUse(() => {
     return () => {
       requestAnimationFrame(() => {
@@ -6718,11 +7820,11 @@ var VideoForDevelopmentRefForwardingFunction = (props2, ref) => {
   }
   const volumePropFrame = useFrameForVolumeProp(loopVolumeCurveBehavior ?? "repeat");
   const { fps, durationInFrames } = useVideoConfig();
-  const parentSequence = useContext34(SequenceContext);
-  const { hidden } = useContext34(SequenceVisibilityToggleContext);
+  const parentSequence = useContext35(SequenceContext);
+  const { hidden } = useContext35(SequenceVisibilityToggleContext);
   const logLevel = useLogLevel();
   const mountTime = useMountTime();
-  const [timelineId] = useState18(() => String(Math.random()));
+  const [timelineId] = useState21(() => String(Math.random()));
   const isSequenceHidden = hidden[timelineId] ?? false;
   if (typeof acceptableTimeShift !== "undefined") {
     throw new Error("acceptableTimeShift has been removed. Use acceptableTimeShiftInSeconds instead.");
@@ -6785,16 +7887,16 @@ var VideoForDevelopmentRefForwardingFunction = (props2, ref) => {
     duration,
     fps
   });
-  useImperativeHandle9(ref, () => {
+  useImperativeHandle8(ref, () => {
     return videoRef.current;
   }, []);
-  useState18(() => playbackLogging({
+  useState21(() => playbackLogging({
     logLevel,
     message: `Mounting video with source = ${actualSrc}, v=${VERSION}, user agent=${typeof navigator === "undefined" ? "server" : navigator.userAgent}`,
     tag: "video",
     mountTime
   }));
-  useEffect16(() => {
+  useEffect18(() => {
     const { current } = videoRef;
     if (!current) {
       return;
@@ -6803,18 +7905,30 @@ var VideoForDevelopmentRefForwardingFunction = (props2, ref) => {
       if (current.error) {
         console.error("Error occurred in video", current?.error);
         if (onError) {
-          const err = new Error(`Code ${current.error.code}: ${current.error.message}`);
+          const err = new MediaPlaybackError({
+            message: `Code ${current.error.code}: ${current.error.message}`,
+            src
+          });
           onError(err);
           return;
         }
-        throw new Error(`The browser threw an error while playing the video ${src}: Code ${current.error.code} - ${current?.error?.message}. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.`);
+        throw new MediaPlaybackError({
+          message: `The browser threw an error while playing the video ${src}: Code ${current.error.code} - ${current?.error?.message}. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.`,
+          src
+        });
       } else {
         if (onError) {
-          const err = new Error(`The browser threw an error while playing the video ${src}`);
+          const err = new MediaPlaybackError({
+            message: `The browser threw an error while playing the video ${src}`,
+            src
+          });
           onError(err);
           return;
         }
-        throw new Error("The browser threw an error while playing the video");
+        throw new MediaPlaybackError({
+          message: "The browser threw an error while playing the video",
+          src
+        });
       }
     };
     current.addEventListener("error", errorHandler, { once: true });
@@ -6822,10 +7936,10 @@ var VideoForDevelopmentRefForwardingFunction = (props2, ref) => {
       current.removeEventListener("error", errorHandler);
     };
   }, [onError, src]);
-  const currentOnDurationCallback = useRef19(onDuration);
+  const currentOnDurationCallback = useRef22(onDuration);
   currentOnDurationCallback.current = onDuration;
   useEmitVideoFrame({ ref: videoRef, onVideoFrame });
-  useEffect16(() => {
+  useEffect18(() => {
     const { current } = videoRef;
     if (!current) {
       return;
@@ -6842,7 +7956,7 @@ var VideoForDevelopmentRefForwardingFunction = (props2, ref) => {
       current.removeEventListener("loadedmetadata", onLoadedMetadata);
     };
   }, [src]);
-  useEffect16(() => {
+  useEffect18(() => {
     const { current } = videoRef;
     if (!current) {
       return;
@@ -6853,7 +7967,7 @@ var VideoForDevelopmentRefForwardingFunction = (props2, ref) => {
       current.preload = "auto";
     }
   }, []);
-  const actualStyle = useMemo31(() => {
+  const actualStyle = useMemo34(() => {
     return {
       ...style,
       opacity: isSequenceHidden ? 0 : style?.opacity ?? 1
@@ -6864,7 +7978,7 @@ var VideoForDevelopmentRefForwardingFunction = (props2, ref) => {
     requestsVideoFrame: Boolean(onVideoFrame),
     isClientSideRendering: false
   });
-  return /* @__PURE__ */ jsx29("video", {
+  return /* @__PURE__ */ jsx31("video", {
     ref: videoRef,
     muted: muted || mediaMuted || isSequenceHidden || userPreferredVolume <= 0,
     playsInline: true,
@@ -6876,10 +7990,10 @@ var VideoForDevelopmentRefForwardingFunction = (props2, ref) => {
     ...nativeProps
   });
 };
-var VideoForPreview = forwardRef9(VideoForDevelopmentRefForwardingFunction);
+var VideoForPreview = forwardRef10(VideoForDevelopmentRefForwardingFunction);
 
 // src/video/OffthreadVideo.tsx
-import { jsx as jsx30 } from "react/jsx-runtime";
+import { jsx as jsx32 } from "react/jsx-runtime";
 var InnerOffthreadVideo = (props2) => {
   const {
     startFrom,
@@ -6896,7 +8010,7 @@ var InnerOffthreadVideo = (props2) => {
   if (environment.isClientSideRendering) {
     throw new Error("<OffthreadVideo> is not supported in @remotion/web-renderer. Use <Video> from @remotion/media instead. See https://remotion.dev/docs/client-side-rendering/limitations");
   }
-  const onDuration = useCallback16(() => {
+  const onDuration = useCallback18(() => {
     return;
   }, []);
   if (typeof props2.src !== "string") {
@@ -6910,13 +8024,13 @@ var InnerOffthreadVideo = (props2) => {
     trimAfter
   });
   if (typeof trimBeforeValue !== "undefined" || typeof trimAfterValue !== "undefined") {
-    return /* @__PURE__ */ jsx30(Sequence, {
+    return /* @__PURE__ */ jsx32(Sequence, {
       layout: "none",
       from: 0 - (trimBeforeValue ?? 0),
       showInTimeline: false,
       durationInFrames: trimAfterValue,
       name,
-      children: /* @__PURE__ */ jsx30(InnerOffthreadVideo, {
+      children: /* @__PURE__ */ jsx32(InnerOffthreadVideo, {
         pauseWhenBuffering: pauseWhenBuffering ?? false,
         ...otherProps,
         trimAfter: undefined,
@@ -6931,7 +8045,7 @@ var InnerOffthreadVideo = (props2) => {
   }
   validateMediaProps(props2, "Video");
   if (environment.isRendering) {
-    return /* @__PURE__ */ jsx30(OffthreadVideoForRendering, {
+    return /* @__PURE__ */ jsx32(OffthreadVideoForRendering, {
       pauseWhenBuffering: pauseWhenBuffering ?? false,
       ...otherProps,
       trimAfter: undefined,
@@ -6953,7 +8067,7 @@ var InnerOffthreadVideo = (props2) => {
     delayRenderTimeoutInMilliseconds,
     ...propsForPreview
   } = otherProps;
-  return /* @__PURE__ */ jsx30(VideoForPreview, {
+  return /* @__PURE__ */ jsx32(VideoForPreview, {
     _remotionInternalStack: stack ?? null,
     onDuration,
     onlyWarnForMediaSeekingError: true,
@@ -7002,7 +8116,7 @@ var OffthreadVideo = ({
   if (imageFormat) {
     throw new TypeError(`The \`<OffthreadVideo>\` tag does no longer accept \`imageFormat\`. Use the \`transparent\` prop if you want to render a transparent video.`);
   }
-  return /* @__PURE__ */ jsx30(InnerOffthreadVideo, {
+  return /* @__PURE__ */ jsx32(InnerOffthreadVideo, {
     acceptableTimeShiftInSeconds,
     allowAmplificationDuringRender: allowAmplificationDuringRender ?? true,
     audioStreamIndex: audioStreamIndex ?? 0,
@@ -7074,88 +8188,23 @@ var watchStaticFile = (fileName, callback) => {
   return { cancel };
 };
 
-// src/wrap-in-schema.ts
-import React32, { forwardRef as forwardRef10, useMemo as useMemo32 } from "react";
-var getNestedValue = (obj, key) => {
-  const parts = key.split(".");
-  let current = obj;
-  for (const part of parts) {
-    if (current === null || current === undefined || typeof current !== "object")
-      return;
-    current = current[part];
-  }
-  return current;
-};
-var mergeValues = (props2, values, schemaKeys) => {
-  const merged = { ...props2 };
-  for (const key of schemaKeys) {
-    const value = values[key];
-    const parts = key.split(".");
-    if (parts.length === 1) {
-      merged[key] = value;
-      continue;
-    }
-    let current = merged;
-    for (let i = 0;i < parts.length - 1; i++) {
-      const part = parts[i];
-      if (typeof current[part] === "object" && current[part] !== null) {
-        current[part] = { ...current[part] };
-      } else {
-        current[part] = {};
-      }
-      current = current[part];
-    }
-    current[parts[parts.length - 1]] = value;
-  }
-  return merged;
-};
-var wrapInSchema = (Component, schema) => {
-  const schemaKeys = Object.keys(schema);
-  const Wrapped = forwardRef10((props2, ref) => {
-    const env = useRemotionEnvironment();
-    if (!env.isStudio || env.isReadOnlyStudio || env.isRendering || !process.env.EXPERIMENTAL_VISUAL_MODE_ENABLED) {
-      return React32.createElement(Component, {
-        ...props2,
-        controls: null,
-        ref
-      });
-    }
-    const schemaInput = useMemo32(() => {
-      const input = {};
-      for (const key of schemaKeys) {
-        input[key] = getNestedValue(props2, key);
-      }
-      return input;
-    }, schemaKeys.map((key) => getNestedValue(props2, key)));
-    const { controls, values } = useSchema(schema, schemaInput);
-    const mergedProps = mergeValues(props2, values, schemaKeys);
-    return React32.createElement(Component, {
-      ...mergedProps,
-      controls,
-      ref
-    });
-  });
-  Wrapped.displayName = `wrapInSchema(${Component.displayName || Component.name || "Component"})`;
-  return Wrapped;
-};
-
 // src/wrap-remotion-context.tsx
-import React33, { useMemo as useMemo33 } from "react";
-import { jsx as jsx31 } from "react/jsx-runtime";
+import React36, { useMemo as useMemo35 } from "react";
+import { jsx as jsx33 } from "react/jsx-runtime";
 function useRemotionContexts() {
-  const compositionManagerCtx = React33.useContext(CompositionManager);
-  const timelineContext = React33.useContext(TimelineContext);
-  const setTimelineContext = React33.useContext(SetTimelineContext);
-  const sequenceContext = React33.useContext(SequenceContext);
-  const nonceContext = React33.useContext(NonceContext);
-  const canUseRemotionHooksContext = React33.useContext(CanUseRemotionHooks);
-  const preloadContext = React33.useContext(PreloadContext);
-  const resolveCompositionContext = React33.useContext(ResolveCompositionContext);
-  const renderAssetManagerContext = React33.useContext(RenderAssetManager);
-  const sequenceManagerContext = React33.useContext(SequenceManager);
-  const bufferManagerContext = React33.useContext(BufferingContextReact);
-  const logLevelContext = React33.useContext(LogLevelContext);
-  return useMemo33(() => ({
+  const compositionManagerCtx = React36.useContext(CompositionManager);
+  const timelineContext = React36.useContext(TimelineContext);
+  const setTimelineContext = React36.useContext(SetTimelineContext);
+  const sequenceContext = React36.useContext(SequenceContext);
+  const nonceContext = React36.useContext(NonceContext);
+  const canUseRemotionHooksContext = React36.useContext(CanUseRemotionHooks);
+  const preloadContext = React36.useContext(PreloadContext);
+  const resolveCompositionContext = React36.useContext(ResolveCompositionContext);
+  const renderAssetManagerContext = React36.useContext(RenderAssetManager);
+  const sequenceManagerContext = React36.useContext(SequenceManager);
+  const bufferManagerContext = React36.useContext(BufferingContextReact);
+  const logLevelContext = React36.useContext(LogLevelContext);
+  return useMemo35(() => ({
     compositionManagerCtx,
     timelineContext,
     setTimelineContext,
@@ -7185,29 +8234,29 @@ function useRemotionContexts() {
 }
 var RemotionContextProvider = (props2) => {
   const { children, contexts } = props2;
-  return /* @__PURE__ */ jsx31(LogLevelContext.Provider, {
+  return /* @__PURE__ */ jsx33(LogLevelContext.Provider, {
     value: contexts.logLevelContext,
-    children: /* @__PURE__ */ jsx31(CanUseRemotionHooks.Provider, {
+    children: /* @__PURE__ */ jsx33(CanUseRemotionHooks.Provider, {
       value: contexts.canUseRemotionHooksContext,
-      children: /* @__PURE__ */ jsx31(NonceContext.Provider, {
+      children: /* @__PURE__ */ jsx33(NonceContext.Provider, {
         value: contexts.nonceContext,
-        children: /* @__PURE__ */ jsx31(PreloadContext.Provider, {
+        children: /* @__PURE__ */ jsx33(PreloadContext.Provider, {
           value: contexts.preloadContext,
-          children: /* @__PURE__ */ jsx31(CompositionManager.Provider, {
+          children: /* @__PURE__ */ jsx33(CompositionManager.Provider, {
             value: contexts.compositionManagerCtx,
-            children: /* @__PURE__ */ jsx31(SequenceManager.Provider, {
+            children: /* @__PURE__ */ jsx33(SequenceManager.Provider, {
               value: contexts.sequenceManagerContext,
-              children: /* @__PURE__ */ jsx31(RenderAssetManager.Provider, {
+              children: /* @__PURE__ */ jsx33(RenderAssetManager.Provider, {
                 value: contexts.renderAssetManagerContext,
-                children: /* @__PURE__ */ jsx31(ResolveCompositionContext.Provider, {
+                children: /* @__PURE__ */ jsx33(ResolveCompositionContext.Provider, {
                   value: contexts.resolveCompositionContext,
-                  children: /* @__PURE__ */ jsx31(TimelineContext.Provider, {
+                  children: /* @__PURE__ */ jsx33(TimelineContext.Provider, {
                     value: contexts.timelineContext,
-                    children: /* @__PURE__ */ jsx31(SetTimelineContext.Provider, {
+                    children: /* @__PURE__ */ jsx33(SetTimelineContext.Provider, {
                       value: contexts.setTimelineContext,
-                      children: /* @__PURE__ */ jsx31(SequenceContext.Provider, {
+                      children: /* @__PURE__ */ jsx33(SequenceContext.Provider, {
                         value: contexts.sequenceContext,
-                        children: /* @__PURE__ */ jsx31(BufferingContextReact.Provider, {
+                        children: /* @__PURE__ */ jsx33(BufferingContextReact.Provider, {
                           value: contexts.bufferManagerContext,
                           children
                         })
@@ -7245,8 +8294,11 @@ var Internals = {
   SequenceManager,
   SequenceStackTracesUpdateContext,
   SequenceVisibilityToggleContext,
-  useSchema,
   wrapInSchema,
+  sequenceSchema,
+  sequenceStyleSchema,
+  flattenActiveSchema,
+  getFlatSchemaWithAllKeys,
   useSequenceControlOverride,
   RemotionRootContexts,
   CompositionManagerProvider,
@@ -7268,6 +8320,8 @@ var Internals = {
   getRemotionEnvironment,
   SharedAudioContext,
   SharedAudioContextProvider,
+  SharedAudioTagsContext,
+  SharedAudioTagsContextProvider,
   invalidCompositionErrorMessage,
   calculateMediaDuration,
   isCompositionIdValid,
@@ -7294,6 +8348,7 @@ var Internals = {
   REMOTION_STUDIO_CONTAINER_ELEMENT,
   RenderAssetManager,
   persistCurrentFrame,
+  usePlaybackRate,
   useTimelineContext,
   useTimelineSetFrame,
   isIosSafari,
@@ -7306,8 +8361,6 @@ var Internals = {
   CurrentScaleContext,
   PreviewSizeContext,
   calculateScale,
-  editorPropsProviderRef,
-  PROPS_UPDATED_EXTERNALLY,
   validateRenderAsset,
   Log,
   LogLevelContext,
@@ -7329,15 +8382,27 @@ var Internals = {
   TimelinePosition: exports_timeline_position_state,
   DelayRenderContextType,
   TimelineContext,
+  PlaybackRateContext,
   AbsoluteTimeContext,
   RenderAssetManagerProvider,
-  getEffectiveVisualModeValue
+  getEffectiveVisualModeValue,
+  CompositionRenderErrorContext,
+  useEffectChainState,
+  runEffectChain,
+  useMemoizedEffects,
+  defineEffect,
+  createDescriptor,
+  computeEffectiveSchemaValuesDotNotation
 };
 // src/interpolate-colors.ts
 var NUMBER = "[-+]?\\d*\\.?\\d+";
 var PERCENTAGE = NUMBER + "%";
 function call(...args) {
   return "\\(\\s*(" + args.join(")\\s*,\\s*(") + ")\\s*\\)";
+}
+var MODERN_VALUE = "(?:none|[-+]?\\d*\\.?\\d+(?:%|deg|rad|grad|turn)?)";
+function modernColorCall(name) {
+  return new RegExp(name + "\\(\\s*(" + MODERN_VALUE + ")\\s+(" + MODERN_VALUE + ")\\s+(" + MODERN_VALUE + ")(?:\\s*\\/\\s*(" + MODERN_VALUE + "))?\\s*\\)");
 }
 function getMatchers() {
   const cachedMatchers = {
@@ -7349,7 +8414,12 @@ function getMatchers() {
     hex4: undefined,
     hex5: undefined,
     hex6: undefined,
-    hex8: undefined
+    hex8: undefined,
+    oklch: undefined,
+    oklab: undefined,
+    lab: undefined,
+    lch: undefined,
+    hwb: undefined
   };
   if (cachedMatchers.rgb === undefined) {
     cachedMatchers.rgb = new RegExp("rgb" + call(NUMBER, NUMBER, NUMBER));
@@ -7360,6 +8430,11 @@ function getMatchers() {
     cachedMatchers.hex4 = /^#([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})$/;
     cachedMatchers.hex6 = /^#([0-9a-fA-F]{6})$/;
     cachedMatchers.hex8 = /^#([0-9a-fA-F]{8})$/;
+    cachedMatchers.oklch = modernColorCall("oklch");
+    cachedMatchers.oklab = modernColorCall("oklab");
+    cachedMatchers.lab = modernColorCall("lab");
+    cachedMatchers.lch = modernColorCall("lch");
+    cachedMatchers.hwb = modernColorCall("hwb");
   }
   return cachedMatchers;
 }
@@ -7422,6 +8497,96 @@ function parsePercentage(str) {
     return 1;
   }
   return int / 100;
+}
+function parseModernComponent(str, percentScale) {
+  if (str === "none")
+    return 0;
+  if (str.endsWith("%")) {
+    return Number.parseFloat(str) / 100 * percentScale;
+  }
+  return Number.parseFloat(str);
+}
+function parseHueAngle(str) {
+  if (str === "none")
+    return 0;
+  if (str.endsWith("rad")) {
+    return Number.parseFloat(str) * 180 / Math.PI;
+  }
+  if (str.endsWith("grad"))
+    return Number.parseFloat(str) * 0.9;
+  if (str.endsWith("turn"))
+    return Number.parseFloat(str) * 360;
+  return Number.parseFloat(str);
+}
+function parseModernAlpha(str) {
+  if (str === undefined || str === "none")
+    return 1;
+  if (str.endsWith("%")) {
+    return Math.max(0, Math.min(1, Number.parseFloat(str) / 100));
+  }
+  return Math.max(0, Math.min(1, Number.parseFloat(str)));
+}
+function linearToSrgb(c2) {
+  if (c2 <= 0.0031308)
+    return 12.92 * c2;
+  return 1.055 * c2 ** (1 / 2.4) - 0.055;
+}
+function clamp01(v) {
+  return Math.max(0, Math.min(1, v));
+}
+function rgbFloatToInt(r, g, b2, alpha) {
+  const ri = Math.round(clamp01(r) * 255);
+  const gi = Math.round(clamp01(g) * 255);
+  const bi = Math.round(clamp01(b2) * 255);
+  const ai = Math.round(clamp01(alpha) * 255);
+  return (ri << 24 | gi << 16 | bi << 8 | ai) >>> 0;
+}
+function oklabToSrgb(L, a2, b2) {
+  const l_ = L + 0.3963377774 * a2 + 0.2158037573 * b2;
+  const m_ = L - 0.1055613458 * a2 - 0.0638541728 * b2;
+  const s_ = L - 0.0894841775 * a2 - 1.291485548 * b2;
+  const l = l_ * l_ * l_;
+  const m = m_ * m_ * m_;
+  const s = s_ * s_ * s_;
+  const rLin = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  const gLin = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+  const bLin = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
+  return [linearToSrgb(rLin), linearToSrgb(gLin), linearToSrgb(bLin)];
+}
+function labToSrgb(L, a2, b2) {
+  const epsilon = 216 / 24389;
+  const kappa = 24389 / 27;
+  const Xn = 0.95047;
+  const Yn = 1;
+  const Zn = 1.08883;
+  const fy = (L + 16) / 116;
+  const fx = a2 / 500 + fy;
+  const fz = fy - b2 / 200;
+  const fx3 = fx * fx * fx;
+  const fz3 = fz * fz * fz;
+  const xr = fx3 > epsilon ? fx3 : (116 * fx - 16) / kappa;
+  const yr = L > kappa * epsilon ? ((L + 16) / 116) ** 3 : L / kappa;
+  const zr = fz3 > epsilon ? fz3 : (116 * fz - 16) / kappa;
+  const X = xr * Xn;
+  const Y = yr * Yn;
+  const Z = zr * Zn;
+  const rLin = 3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z;
+  const gLin = -0.969266 * X + 1.8760108 * Y + 0.041556 * Z;
+  const bLin = 0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z;
+  return [linearToSrgb(rLin), linearToSrgb(gLin), linearToSrgb(bLin)];
+}
+function hwbToSrgb(h, w, bk) {
+  if (w + bk >= 1) {
+    const gray = w / (w + bk);
+    return [gray, gray, gray];
+  }
+  const q = 1;
+  const p = 0;
+  const r = hue2rgb(p, q, h + 1 / 3);
+  const g = hue2rgb(p, q, h);
+  const bl = hue2rgb(p, q, h - 1 / 3);
+  const factor = 1 - w - bk;
+  return [r * factor + w, g * factor + w, bl * factor + w];
 }
 var colorNames = {
   transparent: 0,
@@ -7621,6 +8786,58 @@ function normalizeColor(color) {
       return (hslToRgb(parse360(match[1]), parsePercentage(match[2]), parsePercentage(match[3])) | parse1(match[4])) >>> 0;
     }
   }
+  if (matchers.oklch) {
+    if (match = matchers.oklch.exec(color)) {
+      const L = parseModernComponent(match[1], 1);
+      const C = parseModernComponent(match[2], 0.4);
+      const H = parseHueAngle(match[3]);
+      const alpha = parseModernAlpha(match[4]);
+      const hRad = H * Math.PI / 180;
+      const [r, g, b2] = oklabToSrgb(L, C * Math.cos(hRad), C * Math.sin(hRad));
+      return rgbFloatToInt(r, g, b2, alpha);
+    }
+  }
+  if (matchers.oklab) {
+    if (match = matchers.oklab.exec(color)) {
+      const L = parseModernComponent(match[1], 1);
+      const a2 = parseModernComponent(match[2], 0.4);
+      const b2 = parseModernComponent(match[3], 0.4);
+      const alpha = parseModernAlpha(match[4]);
+      const [r, g, bl] = oklabToSrgb(L, a2, b2);
+      return rgbFloatToInt(r, g, bl, alpha);
+    }
+  }
+  if (matchers.lab) {
+    if (match = matchers.lab.exec(color)) {
+      const L = parseModernComponent(match[1], 100);
+      const a2 = parseModernComponent(match[2], 125);
+      const b2 = parseModernComponent(match[3], 125);
+      const alpha = parseModernAlpha(match[4]);
+      const [r, g, bl] = labToSrgb(L, a2, b2);
+      return rgbFloatToInt(r, g, bl, alpha);
+    }
+  }
+  if (matchers.lch) {
+    if (match = matchers.lch.exec(color)) {
+      const L = parseModernComponent(match[1], 100);
+      const C = parseModernComponent(match[2], 150);
+      const H = parseHueAngle(match[3]);
+      const alpha = parseModernAlpha(match[4]);
+      const hRad = H * Math.PI / 180;
+      const [r, g, bl] = labToSrgb(L, C * Math.cos(hRad), C * Math.sin(hRad));
+      return rgbFloatToInt(r, g, bl, alpha);
+    }
+  }
+  if (matchers.hwb) {
+    if (match = matchers.hwb.exec(color)) {
+      const H = parseHueAngle(match[1]);
+      const W = parseModernComponent(match[2], 1);
+      const B = parseModernComponent(match[3], 1);
+      const alpha = parseModernAlpha(match[4]);
+      const [r, g, bl] = hwbToSrgb(H / 360, W, B);
+      return rgbFloatToInt(r, g, bl, alpha);
+    }
+  }
   throw new Error(`invalid color string ${color} provided`);
 }
 var opacity = (c2) => {
@@ -7697,14 +8914,14 @@ var validateFrame = ({
   }
 };
 // src/series/index.tsx
-import { Children, forwardRef as forwardRef11, useMemo as useMemo34 } from "react";
+import { Children, forwardRef as forwardRef11, useMemo as useMemo36 } from "react";
 
 // src/series/flatten-children.tsx
-import React34 from "react";
+import React37 from "react";
 var flattenChildren = (children) => {
-  const childrenArray = React34.Children.toArray(children);
+  const childrenArray = React37.Children.toArray(children);
   return childrenArray.reduce((flatChildren, child) => {
-    if (child.type === React34.Fragment) {
+    if (child.type === React37.Fragment) {
       return flatChildren.concat(flattenChildren(child.props.children));
     }
     flatChildren.push(child);
@@ -7713,39 +8930,39 @@ var flattenChildren = (children) => {
 };
 
 // src/series/is-inside-series.tsx
-import React35, { createContext as createContext22 } from "react";
-import { jsx as jsx32 } from "react/jsx-runtime";
-var IsInsideSeriesContext = createContext22(false);
+import React38, { createContext as createContext24 } from "react";
+import { jsx as jsx34 } from "react/jsx-runtime";
+var IsInsideSeriesContext = createContext24(false);
 var IsInsideSeriesContainer = ({ children }) => {
-  return /* @__PURE__ */ jsx32(IsInsideSeriesContext.Provider, {
+  return /* @__PURE__ */ jsx34(IsInsideSeriesContext.Provider, {
     value: true,
     children
   });
 };
 var IsNotInsideSeriesProvider = ({ children }) => {
-  return /* @__PURE__ */ jsx32(IsInsideSeriesContext.Provider, {
+  return /* @__PURE__ */ jsx34(IsInsideSeriesContext.Provider, {
     value: false,
     children
   });
 };
 var useRequireToBeInsideSeries = () => {
-  const isInsideSeries = React35.useContext(IsInsideSeriesContext);
+  const isInsideSeries = React38.useContext(IsInsideSeriesContext);
   if (!isInsideSeries) {
     throw new Error("This component must be inside a <Series /> component.");
   }
 };
 
 // src/series/index.tsx
-import { jsx as jsx33 } from "react/jsx-runtime";
+import { jsx as jsx35 } from "react/jsx-runtime";
 var SeriesSequenceRefForwardingFunction = ({ children }, _ref) => {
   useRequireToBeInsideSeries();
-  return /* @__PURE__ */ jsx33(IsNotInsideSeriesProvider, {
+  return /* @__PURE__ */ jsx35(IsNotInsideSeriesProvider, {
     children
   });
 };
 var SeriesSequence = forwardRef11(SeriesSequenceRefForwardingFunction);
-var Series = (props2) => {
-  const childrenValue = useMemo34(() => {
+var SeriesInner = (props2) => {
+  const childrenValue = useMemo36(() => {
     let startFrame = 0;
     const flattenedChildren = flattenChildren(props2.children);
     return Children.map(flattenedChildren, (child, i) => {
@@ -7789,7 +9006,7 @@ var Series = (props2) => {
       }
       const currentStartFrame = startFrame + offset;
       startFrame += durationInFramesProp + offset;
-      return /* @__PURE__ */ jsx33(Sequence, {
+      return /* @__PURE__ */ jsx35(Sequence, {
         name: name || "<Series.Sequence>",
         from: currentStartFrame,
         durationInFrames: durationInFramesProp,
@@ -7799,19 +9016,19 @@ var Series = (props2) => {
       });
     });
   }, [props2.children]);
-  if (ENABLE_V5_BREAKING_CHANGES) {
-    return /* @__PURE__ */ jsx33(IsInsideSeriesContainer, {
-      children: /* @__PURE__ */ jsx33(Sequence, {
-        ...props2,
-        children: childrenValue
-      })
-    });
-  }
-  return /* @__PURE__ */ jsx33(IsInsideSeriesContainer, {
-    children: childrenValue
+  return /* @__PURE__ */ jsx35(IsInsideSeriesContainer, {
+    children: /* @__PURE__ */ jsx35(Sequence, {
+      layout: "none",
+      name: "<Series>",
+      ...props2,
+      children: childrenValue
+    })
   });
 };
-Series.Sequence = SeriesSequence;
+var Series = Object.assign(wrapInSchema(SeriesInner, sequenceSchemaDefaultLayoutNone), {
+  Sequence: SeriesSequence
+});
+addSequenceStackTraces(Series);
 addSequenceStackTraces(SeriesSequence);
 // src/validation/validation-spring-duration.ts
 var validateSpringDuration = (dur) => {
@@ -8144,27 +9361,27 @@ var staticFile = (path) => {
   return preparsed;
 };
 // src/Still.tsx
-import React37 from "react";
+import React40 from "react";
 var Still = (props2) => {
   const newProps = {
     ...props2,
     durationInFrames: 1,
     fps: 1
   };
-  return React37.createElement(Composition, newProps);
+  return React40.createElement(Composition, newProps);
 };
-// src/video/Video.tsx
-import { forwardRef as forwardRef13, useCallback as useCallback17, useContext as useContext36 } from "react";
+// src/video/html5-video.tsx
+import { forwardRef as forwardRef13, useCallback as useCallback19, useContext as useContext37 } from "react";
 
 // src/video/VideoForRendering.tsx
 import {
   forwardRef as forwardRef12,
-  useContext as useContext35,
-  useEffect as useEffect17,
-  useImperativeHandle as useImperativeHandle10,
-  useLayoutEffect as useLayoutEffect11,
-  useMemo as useMemo35,
-  useRef as useRef20
+  useContext as useContext36,
+  useEffect as useEffect19,
+  useImperativeHandle as useImperativeHandle9,
+  useLayoutEffect as useLayoutEffect12,
+  useMemo as useMemo37,
+  useRef as useRef23
 } from "react";
 
 // src/video/seek-until-right.ts
@@ -8292,7 +9509,7 @@ var seekToTimeMultipleUntilRight = ({
 };
 
 // src/video/VideoForRendering.tsx
-import { jsx as jsx34 } from "react/jsx-runtime";
+import { jsx as jsx36 } from "react/jsx-runtime";
 var VideoForRenderingForwardFunction = ({
   onError,
   volume: volumeProp,
@@ -8313,15 +9530,15 @@ var VideoForRenderingForwardFunction = ({
   const frame = useCurrentFrame();
   const volumePropsFrame = useFrameForVolumeProp(loopVolumeCurveBehavior ?? "repeat");
   const videoConfig = useUnsafeVideoConfig();
-  const videoRef = useRef20(null);
-  const sequenceContext = useContext35(SequenceContext);
+  const videoRef = useRef23(null);
+  const sequenceContext = useContext36(SequenceContext);
   const mediaStartsAt = useMediaStartsAt();
   const environment = useRemotionEnvironment();
   const logLevel = useLogLevel();
   const mountTime = useMountTime();
   const { delayRender: delayRender2, continueRender: continueRender2 } = useDelayRender();
-  const { registerRenderAsset, unregisterRenderAsset } = useContext35(RenderAssetManager);
-  const id = useMemo35(() => `video-${random(props2.src ?? "")}-${sequenceContext?.cumulatedFrom}-${sequenceContext?.relativeFrom}-${sequenceContext?.durationInFrames}`, [
+  const { registerRenderAsset, unregisterRenderAsset } = useContext36(RenderAssetManager);
+  const id = useMemo37(() => `video-${random(props2.src ?? "")}-${sequenceContext?.cumulatedFrom}-${sequenceContext?.relativeFrom}-${sequenceContext?.durationInFrames}`, [
     props2.src,
     sequenceContext?.cumulatedFrom,
     sequenceContext?.relativeFrom,
@@ -8336,7 +9553,7 @@ var VideoForRenderingForwardFunction = ({
     mediaVolume: 1
   });
   warnAboutTooHighVolume(volume);
-  useEffect17(() => {
+  useEffect19(() => {
     if (!props2.src) {
       throw new Error("No src passed");
     }
@@ -8376,10 +9593,10 @@ var VideoForRenderingForwardFunction = ({
     sequenceContext?.relativeFrom,
     audioStreamIndex
   ]);
-  useImperativeHandle10(ref, () => {
+  useImperativeHandle9(ref, () => {
     return videoRef.current;
   }, []);
-  useEffect17(() => {
+  useEffect19(() => {
     if (!window.remotion_videoEnabled) {
       return;
     }
@@ -8434,9 +9651,15 @@ var VideoForRenderingForwardFunction = ({
         if (onError) {
           return;
         }
-        throw new Error(`The browser threw an error while playing the video ${props2.src}: Code ${current.error.code} - ${current?.error?.message}. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.`);
+        throw new MediaPlaybackError({
+          message: `The browser threw an error while playing the video ${props2.src}: Code ${current.error.code} - ${current?.error?.message}. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.`,
+          src: props2.src
+        });
       } else {
-        throw new Error("The browser threw an error");
+        throw new MediaPlaybackError({
+          message: "The browser threw an error",
+          src: props2.src
+        });
       }
     };
     current.addEventListener("error", errorHandler, { once: true });
@@ -8463,7 +9686,7 @@ var VideoForRenderingForwardFunction = ({
   ]);
   const { src } = props2;
   if (environment.isRendering) {
-    useLayoutEffect11(() => {
+    useLayoutEffect12(() => {
       if (window.process?.env?.NODE_ENV === "test") {
         return;
       }
@@ -8497,7 +9720,7 @@ var VideoForRenderingForwardFunction = ({
       delayRender2
     ]);
   }
-  return /* @__PURE__ */ jsx34("video", {
+  return /* @__PURE__ */ jsx36("video", {
     ref: videoRef,
     disableRemotePlayback: true,
     ...props2
@@ -8505,8 +9728,8 @@ var VideoForRenderingForwardFunction = ({
 };
 var VideoForRendering = forwardRef12(VideoForRenderingForwardFunction);
 
-// src/video/Video.tsx
-import { jsx as jsx35 } from "react/jsx-runtime";
+// src/video/html5-video.tsx
+import { jsx as jsx37 } from "react/jsx-runtime";
 var VideoForwardingFunction = (props2, ref) => {
   const {
     startFrom,
@@ -8527,7 +9750,7 @@ var VideoForwardingFunction = (props2, ref) => {
   if (environment.isClientSideRendering) {
     throw new Error("<Html5Video> is not supported in @remotion/web-renderer. Use <Video> from @remotion/media instead. See https://remotion.dev/docs/client-side-rendering/limitations");
   }
-  const { durations, setDurations } = useContext36(DurationsContext);
+  const { durations, setDurations } = useContext37(DurationsContext);
   if (typeof ref === "string") {
     throw new Error("string refs are not supported");
   }
@@ -8535,10 +9758,10 @@ var VideoForwardingFunction = (props2, ref) => {
     throw new TypeError(`The \`<Html5Video>\` tag requires a string for \`src\`, but got ${JSON.stringify(props2.src)} instead.`);
   }
   const preloadedSrc = usePreload(props2.src);
-  const onDuration = useCallback17((src, durationInSeconds) => {
+  const onDuration = useCallback19((src, durationInSeconds) => {
     setDurations({ type: "got-duration", durationInSeconds, src });
   }, [setDurations]);
-  const onVideoFrame = useCallback17(() => {}, []);
+  const onVideoFrame = useCallback19(() => {}, []);
   const durationFetched = durations[getAbsoluteSrc(preloadedSrc)] ?? durations[getAbsoluteSrc(props2.src)];
   validateMediaTrimProps({ startFrom, endAt, trimBefore, trimAfter });
   const { trimBeforeValue, trimAfterValue } = resolveTrimProps({
@@ -8549,7 +9772,7 @@ var VideoForwardingFunction = (props2, ref) => {
   });
   if (loop && durationFetched !== undefined) {
     if (!Number.isFinite(durationFetched)) {
-      return /* @__PURE__ */ jsx35(Html5Video, {
+      return /* @__PURE__ */ jsx37(Html5Video, {
         ...propsOtherThanLoop,
         ref,
         stack,
@@ -8557,7 +9780,7 @@ var VideoForwardingFunction = (props2, ref) => {
       });
     }
     const mediaDuration = durationFetched * fps;
-    return /* @__PURE__ */ jsx35(Loop, {
+    return /* @__PURE__ */ jsx37(Loop, {
       durationInFrames: calculateMediaDuration({
         trimAfter: trimAfterValue,
         mediaDurationInFrames: mediaDuration,
@@ -8566,7 +9789,8 @@ var VideoForwardingFunction = (props2, ref) => {
       }),
       layout: "none",
       name,
-      children: /* @__PURE__ */ jsx35(Html5Video, {
+      showInTimeline: false,
+      children: /* @__PURE__ */ jsx37(Html5Video, {
         ...propsOtherThanLoop,
         ref,
         stack,
@@ -8575,13 +9799,13 @@ var VideoForwardingFunction = (props2, ref) => {
     });
   }
   if (typeof trimBeforeValue !== "undefined" || typeof trimAfterValue !== "undefined") {
-    return /* @__PURE__ */ jsx35(Sequence, {
+    return /* @__PURE__ */ jsx37(Sequence, {
       layout: "none",
       from: 0 - (trimBeforeValue ?? 0),
       showInTimeline: false,
       durationInFrames: trimAfterValue === undefined ? undefined : trimAfterValue / (props2.playbackRate ?? 1),
       name,
-      children: /* @__PURE__ */ jsx35(Html5Video, {
+      children: /* @__PURE__ */ jsx37(Html5Video, {
         pauseWhenBuffering: pauseWhenBuffering ?? false,
         ...otherProps,
         ref,
@@ -8591,14 +9815,14 @@ var VideoForwardingFunction = (props2, ref) => {
   }
   validateMediaProps({ playbackRate: props2.playbackRate, volume: props2.volume }, "Html5Video");
   if (environment.isRendering) {
-    return /* @__PURE__ */ jsx35(VideoForRendering, {
+    return /* @__PURE__ */ jsx37(VideoForRendering, {
       onDuration,
       onVideoFrame: onVideoFrame ?? null,
       ...otherProps,
       ref
     });
   }
-  return /* @__PURE__ */ jsx35(VideoForPreview, {
+  return /* @__PURE__ */ jsx37(VideoForPreview, {
     onlyWarnForMediaSeekingError: false,
     ...otherProps,
     ref,
@@ -8619,6 +9843,7 @@ checkMultipleRemotionVersions();
 var Experimental = {
   Clipper,
   Null,
+  Solid,
   useIsPlayer
 };
 var proxyObj = {};
@@ -8643,6 +9868,7 @@ var Config = new Proxy(proxyObj, {
 });
 Sequence.displayName = "Sequence";
 addSequenceStackTraces(Sequence);
+addSequenceStackTraces(Composition);
 export {
   watchStaticFile,
   useVideoConfig,
@@ -8657,6 +9883,7 @@ export {
   random,
   prefetch,
   measureSpring,
+  isHtmlInCanvasSupported,
   interpolateColors,
   interpolate,
   getStaticFiles,
@@ -8671,10 +9898,12 @@ export {
   Series,
   Sequence,
   OffthreadVideo,
+  MediaPlaybackError,
   Loop,
   Internals,
   Img,
   IFrame,
+  HtmlInCanvas,
   Html5Video,
   Html5Audio,
   Freeze,

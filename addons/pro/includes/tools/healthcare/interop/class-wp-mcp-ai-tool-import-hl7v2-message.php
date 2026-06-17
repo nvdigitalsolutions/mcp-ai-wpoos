@@ -92,6 +92,13 @@ class WP_MCP_AI_Tool_Import_HL7v2_Message implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -259,7 +266,10 @@ class WP_MCP_AI_Tool_Import_HL7v2_Message implements WP_MCP_AI_Tool_Interface, W
 					'fields'         => 'ids',
 					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					'meta_query'     => array(
-						array( 'key' => '_member_mrn', 'value' => $identifier ),
+						array(
+							'key'   => '_member_mrn',
+							'value' => $identifier,
+						),
 					),
 				)
 			);
@@ -274,7 +284,12 @@ class WP_MCP_AI_Tool_Import_HL7v2_Message implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		if ( $existing > 0 ) {
-			wp_update_post( array( 'ID' => $existing, 'post_title' => $title ) );
+			wp_update_post(
+				array(
+					'ID'         => $existing,
+					'post_title' => $title,
+				)
+			);
 			$post_id = $existing;
 		} else {
 			$post_id = wp_insert_post(
@@ -318,10 +333,10 @@ class WP_MCP_AI_Tool_Import_HL7v2_Message implements WP_MCP_AI_Tool_Interface, W
 	 */
 	private function record_observation( $obx, $member_id, $dry_run ) {
 		// OBX-3 = identifier (^name^codingSystem); OBX-5 = value; OBX-6 = units.
-		$name  = '';
+		$name = '';
 		if ( isset( $obx[3] ) ) {
-			$comp  = explode( '^', (string) $obx[3] );
-			$name  = isset( $comp[1] ) && '' !== $comp[1] ? sanitize_text_field( $comp[1] ) : sanitize_text_field( $comp[0] ?? '' );
+			$comp = explode( '^', (string) $obx[3] );
+			$name = isset( $comp[1] ) && '' !== $comp[1] ? sanitize_text_field( $comp[1] ) : sanitize_text_field( $comp[0] ?? '' );
 		}
 		$value = isset( $obx[5] ) ? sanitize_text_field( (string) $obx[5] ) : '';
 		$units = isset( $obx[6] ) ? sanitize_text_field( (string) $obx[6] ) : '';
@@ -334,7 +349,7 @@ class WP_MCP_AI_Tool_Import_HL7v2_Message implements WP_MCP_AI_Tool_Interface, W
 		$post_id = wp_insert_post(
 			array(
 				'post_type'    => 'mcp_ai_med_record',
-				'post_title'   => $name !== '' ? $name : $value,
+				'post_title'   => '' !== $name ? $name : $value,
 				'post_content' => trim( $value . ' ' . $units ),
 				'post_status'  => 'publish',
 			),

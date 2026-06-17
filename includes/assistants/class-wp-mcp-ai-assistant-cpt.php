@@ -44,6 +44,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_SKILLS                  = '_wp_mcp_ai_skills';
 		const META_SKILLS_PROGRESSIVE      = '_wp_mcp_ai_skills_progressive';
 		const META_MCP_APPS                = '_wp_mcp_ai_mcp_apps';
+		const META_PROMPT_CACHING          = '_wp_mcp_ai_prompt_caching';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -76,14 +77,15 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$this->registry = $registry;
 
 			// Initialize metabox instances.
-			$this->metaboxes['credentials']    = new WP_MCP_AI_Metabox_Credentials( $this );
-			$this->metaboxes['defaults']       = new WP_MCP_AI_Metabox_Defaults( $this );
-			$this->metaboxes['primary-roles']  = new WP_MCP_AI_Metabox_Primary_Roles( $this );
-			$this->metaboxes['base-knowledge'] = new WP_MCP_AI_Metabox_Base_Knowledge( $this );
-			$this->metaboxes['mesh-routing']   = new WP_MCP_AI_Metabox_Mesh_Routing( $this );
-			$this->metaboxes['datasets']       = new WP_MCP_AI_Metabox_Datasets( $this );
-			$this->metaboxes['skills']         = new WP_MCP_AI_Metabox_Skills( $this );
-			$this->metaboxes['mcp-apps']       = new WP_MCP_AI_Metabox_MCP_Apps( $this );
+			$this->metaboxes['credentials']     = new WP_MCP_AI_Metabox_Credentials( $this );
+			$this->metaboxes['defaults']        = new WP_MCP_AI_Metabox_Defaults( $this );
+			$this->metaboxes['primary-roles']   = new WP_MCP_AI_Metabox_Primary_Roles( $this );
+			$this->metaboxes['base-knowledge']  = new WP_MCP_AI_Metabox_Base_Knowledge( $this );
+			$this->metaboxes['mesh-routing']    = new WP_MCP_AI_Metabox_Mesh_Routing( $this );
+			$this->metaboxes['datasets']        = new WP_MCP_AI_Metabox_Datasets( $this );
+			$this->metaboxes['skills']          = new WP_MCP_AI_Metabox_Skills( $this );
+			$this->metaboxes['mcp-apps']        = new WP_MCP_AI_Metabox_MCP_Apps( $this );
+			$this->metaboxes['harness-profile'] = new WP_MCP_AI_Metabox_Harness_Profile( $this );
 
 			add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
@@ -179,7 +181,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				</div>
 			</div>
 
-			<script type="text/javascript">
+			<?php
+			$no_tools_message = esc_js( __( 'No tools found matching your criteria.', 'mcp-ai-wpoos' ) );
+
+			ob_start();
+			?>
 			( function() {
 				document.addEventListener( 'DOMContentLoaded', function() {
 					var searchInput = document.getElementById( 'wp-mcp-ai-metabox-tool-search' );
@@ -279,7 +285,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								message.style.padding = '20px';
 								message.style.textAlign = 'center';
 								message.style.color = '#646970';
-								message.textContent = '<?php echo esc_js( __( 'No tools found matching your criteria.', 'mcp-ai-wpoos' ) ); ?>';
+								message.textContent = <?php echo wp_json_encode( $no_tools_message ); ?>;
 								toolsContainer.appendChild( message );
 							}
 						} else if ( existingMessage ) {
@@ -306,8 +312,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					} );
 				} );
 			} )();
-			</script>
 			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
 		}
 
 		/**
@@ -893,7 +900,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				</div>
 			</div>
 
-			<script type="text/javascript">
+			<?php
+			$no_tools_match_message = esc_js( __( 'No tools match your search criteria.', 'mcp-ai-wpoos' ) );
+
+			ob_start();
+			?>
 			( function() {
 				document.addEventListener( 'DOMContentLoaded', function() {
 					var searchInput = document.getElementById( 'wp-mcp-ai-shortcuts-search' );
@@ -973,7 +984,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								message.style.padding = '20px';
 								message.style.textAlign = 'center';
 								message.style.color = '#646970';
-								message.textContent = '<?php echo esc_js( __( 'No tools match your search criteria.', 'mcp-ai-wpoos' ) ); ?>';
+								message.textContent = <?php echo wp_json_encode( $no_tools_match_message ); ?>;
 								shortcutsContainer.appendChild( message );
 							}
 						} else if ( existingMessage ) {
@@ -1002,8 +1013,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					} );
 				} );
 			} )();
-			</script>
 			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
 		}
 
 		/**
@@ -1015,183 +1027,45 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return;
 			}
 			$styles_printed = true;
-			?>
-			<style>
-			.wp-mcp-ai-prebuilt-shortcuts__group {
-				margin-bottom: 2rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__group-title {
-				margin: 0 0 1rem 0;
-				padding: 0.75rem;
-				background: #f0f0f1;
-				border-left: 4px solid #2271b1;
-				font-size: 14px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__group-count {
-				color: #646970;
-				font-weight: normal;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__tool {
-				border: 1px solid #dcdcde;
-				border-radius: 4px;
-				margin-bottom: 0.5rem;
-				background: #fff;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary {
-				cursor: pointer;
-				padding: 1rem;
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				list-style: none;
-				user-select: none;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker {
-				display: none;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary:hover {
-				background: #f6f7f7;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-title {
-				font-weight: 600;
-				flex: 1;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-badge {
-				display: flex;
-				gap: 0.5rem;
-				align-items: center;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-count {
-				font-size: 0.875rem;
-				color: #646970;
-				background: #f0f0f1;
-				padding: 0.25rem 0.5rem;
-				border-radius: 3px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-mode {
-				font-size: 0.875rem;
-				padding: 0.25rem 0.5rem;
-				border-radius: 3px;
-				background: #e0e0e0;
-				color: #1d2327;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__tool[open] {
-				border-color: #2271b1;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary {
-				border-bottom: 1px solid #dcdcde;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__content {
-				padding: 1rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__tool-description {
-				margin: 0 0 1rem 0;
-				padding: 0.75rem;
-				background: #f6f7f7;
-				border-left: 3px solid #72aee6;
-				font-size: 13px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__mode-selector {
-				margin: 1rem 0;
-				padding: 1rem;
-				background: #f9f9f9;
-				border: 1px solid #ddd;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__mode-option {
-				display: block;
-				margin-bottom: 0.75rem;
-				padding: 0.5rem;
-				cursor: pointer;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__mode-option:hover {
-				background: #fff;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__mode-option input {
-				margin-right: 0.5rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-list {
-				margin: 0.5rem 0;
-				padding: 0;
-				list-style: none;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-list > li {
-				margin-bottom: 1rem;
-				padding: 0.75rem;
-				background: #fff;
-				border: 1px solid #ddd;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-label {
-				display: block;
-				margin-bottom: 0.5rem;
-				color: #1d2327;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-description {
-				margin: 0.5rem 0;
-				font-size: 13px;
-				color: #646970;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-summary {
-				margin: 0.5rem 0 0 0;
-				font-size: 12px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-summary code {
-				display: block;
-				padding: 0.5rem;
-				background: #f0f0f1;
-				border-left: 2px solid #2271b1;
-				word-wrap: break-word;
-				white-space: pre-wrap;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row {
-				margin: 1rem 0;
-				padding: 1rem;
-				background: #fff;
-				border: 1px solid #ddd;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row--hidden {
-				opacity: 0.6;
-				background: #f9f9f9;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row--hidden::before {
-				content: "Hidden";
-				display: inline-block;
-				padding: 0.25rem 0.5rem;
-				background: #f0f0f1;
-				color: #646970;
-				border-radius: 3px;
-				font-size: 11px;
-				font-weight: 600;
-				text-transform: uppercase;
-				margin-bottom: 0.5rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row-header {
-				margin-bottom: 1rem;
-				padding-bottom: 1rem;
-				border-bottom: 1px solid #ddd;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__hide-toggle {
-				display: inline-flex;
-				align-items: center;
-				gap: 0.5rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row p label strong {
-				display: block;
-				margin-bottom: 0.25rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row p label .description {
-				display: block;
-				margin-bottom: 0.5rem;
-				font-size: 13px;
-				color: #646970;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__add {
-				margin-top: 1rem;
-			}
-			</style>
-			<?php
+
+			wp_register_style( 'wp-mcp-ai-assistant-prebuilt-shortcuts', false, array(), WP_MCP_AI_VERSION );
+			wp_enqueue_style( 'wp-mcp-ai-assistant-prebuilt-shortcuts' );
+			wp_add_inline_style(
+				'wp-mcp-ai-assistant-prebuilt-shortcuts',
+				'.wp-mcp-ai-prebuilt-shortcuts__group{margin-bottom:2rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__group-title{margin:0 0 1rem 0;padding:0.75rem;background:#f0f0f1;border-left:4px solid #2271b1;font-size:14px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__group-count{color:#646970;font-weight:normal}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;margin-bottom:0.5rem;background:#fff}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary{cursor:pointer;padding:1rem;display:flex;align-items:center;justify-content:space-between;list-style:none;user-select:none}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary:hover{background:#f6f7f7}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-title{font-weight:600;flex:1}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-badge{display:flex;gap:0.5rem;align-items:center}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-count{font-size:0.875rem;color:#646970;background:#f0f0f1;padding:0.25rem 0.5rem;border-radius:3px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;padding:0.25rem 0.5rem;border-radius:3px;background:#e0e0e0;color:#1d2327}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool[open]{border-color:#2271b1}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool-description{margin:0 0 1rem 0;padding:0.75rem;background:#f6f7f7;border-left:3px solid #72aee6;font-size:13px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode-selector{margin:1rem 0;padding:1rem;background:#f9f9f9;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode-option{display:block;margin-bottom:0.75rem;padding:0.5rem;cursor:pointer}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode-option:hover{background:#fff}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode-option input{margin-right:0.5rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0;padding:0;list-style:none}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list>li{margin-bottom:1rem;padding:0.75rem;background:#fff;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-label{display:block;margin-bottom:0.5rem;color:#1d2327}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-description{margin:0.5rem 0;font-size:13px;color:#646970}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-summary{margin:0.5rem 0 0 0;font-size:12px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-summary code{display:block;padding:0.5rem;background:#f0f0f1;border-left:2px solid #2271b1;word-wrap:break-word;white-space:pre-wrap}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row{margin:1rem 0;padding:1rem;background:#fff;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row--hidden{opacity:0.6;background:#f9f9f9}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row--hidden::before{content:"Hidden";display:inline-block;padding:0.25rem 0.5rem;background:#f0f0f1;color:#646970;border-radius:3px;font-size:11px;font-weight:600;text-transform:uppercase;margin-bottom:0.5rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row-header{margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #ddd}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__hide-toggle{display:inline-flex;align-items:center;gap:0.5rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row p label strong{display:block;margin-bottom:0.25rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row p label .description{display:block;margin-bottom:0.5rem;font-size:13px;color:#646970}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__add{margin-top:1rem}'
+			);
 		}
 
 		/**
@@ -1258,73 +1132,26 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return;
 			}
 			$styles_printed = true;
-			?>
-			<style>
-			.wp-mcp-ai-tool-shortcuts__item {
-				border: 1px solid #dcdcde;
-				border-radius: 4px;
-				margin-bottom: 0.5rem;
-				background: #fff;
-			}
-			.wp-mcp-ai-tool-shortcuts__item--hidden {
-				opacity: 0.6;
-				background: #f9f9f9;
-			}
-			.wp-mcp-ai-tool-shortcuts__summary {
-				cursor: pointer;
-				padding: 1rem;
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				list-style: none;
-				user-select: none;
-			}
-			.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker {
-				display: none;
-			}
-			.wp-mcp-ai-tool-shortcuts__summary:hover {
-				background: #f6f7f7;
-			}
-			.wp-mcp-ai-tool-shortcuts__summary-title {
-				font-weight: 600;
-				flex: 1;
-			}
-			.wp-mcp-ai-tool-shortcuts__summary-tool {
-				font-size: 0.875rem;
-				color: #646970;
-				background: #f0f0f1;
-				padding: 0.25rem 0.5rem;
-				border-radius: 3px;
-			}
-			.wp-mcp-ai-tool-shortcuts__item[open] {
-				border-color: #2271b1;
-			}
-			.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary {
-				border-bottom: 1px solid #dcdcde;
-			}
-			.wp-mcp-ai-tool-shortcuts__row {
-				padding: 1rem;
-			}
-			.wp-mcp-ai-tool-shortcuts__row-header {
-				margin-bottom: 1rem;
-			}
-			.wp-mcp-ai-tool-shortcuts__hide-toggle {
-				display: inline-flex;
-				align-items: center;
-				gap: 0.5rem;
-			}
-			.wp-mcp-ai-tool-shortcuts__row p label strong {
-				display: block;
-				margin-bottom: 0.25rem;
-			}
-			.wp-mcp-ai-tool-shortcuts__row p label .description {
-				display: block;
-				margin-bottom: 0.5rem;
-				font-size: 13px;
-				color: #646970;
-			}
-			</style>
-			<?php
+
+			wp_register_style( 'wp-mcp-ai-assistant-custom-shortcuts', false, array(), WP_MCP_AI_VERSION );
+			wp_enqueue_style( 'wp-mcp-ai-assistant-custom-shortcuts' );
+			wp_add_inline_style(
+				'wp-mcp-ai-assistant-custom-shortcuts',
+				'.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;margin-bottom:0.5rem;background:#fff}'
+				. '.wp-mcp-ai-tool-shortcuts__item--hidden{opacity:0.6;background:#f9f9f9}'
+				. '.wp-mcp-ai-tool-shortcuts__summary{cursor:pointer;padding:1rem;display:flex;align-items:center;justify-content:space-between;list-style:none;user-select:none}'
+				. '.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker{display:none}'
+				. '.wp-mcp-ai-tool-shortcuts__summary:hover{background:#f6f7f7}'
+				. '.wp-mcp-ai-tool-shortcuts__summary-title{font-weight:600;flex:1}'
+				. '.wp-mcp-ai-tool-shortcuts__summary-tool{font-size:0.875rem;color:#646970;background:#f0f0f1;padding:0.25rem 0.5rem;border-radius:3px}'
+				. '.wp-mcp-ai-tool-shortcuts__item[open]{border-color:#2271b1}'
+				. '.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+				. '.wp-mcp-ai-tool-shortcuts__row{padding:1rem}'
+				. '.wp-mcp-ai-tool-shortcuts__row-header{margin-bottom:1rem}'
+				. '.wp-mcp-ai-tool-shortcuts__hide-toggle{display:inline-flex;align-items:center;gap:0.5rem}'
+				. '.wp-mcp-ai-tool-shortcuts__row p label strong{display:block;margin-bottom:0.25rem}'
+				. '.wp-mcp-ai-tool-shortcuts__row p label .description{display:block;margin-bottom:0.5rem;font-size:13px;color:#646970}'
+			);
 		}
 
 		/**
@@ -1647,6 +1474,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			register_post_meta(
 				self::POST_TYPE,
+				self::META_PROMPT_CACHING,
+				array(
+					'type'              => 'boolean',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_prompt_caching_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
+
+			register_post_meta(
+				self::POST_TYPE,
 				self::META_EXTERNAL_ACTION_ID,
 				array(
 					'type'              => 'string',
@@ -1794,9 +1633,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		public static function sanitize_provider_meta( $provider ) {
 			$provider = is_string( $provider ) ? sanitize_key( $provider ) : '';
 
-			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
+			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ) );
 			if ( ! is_array( $allowed_providers ) ) {
-				$allowed_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+				$allowed_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' );
 			}
 
 			if ( ! in_array( $provider, $allowed_providers, true ) ) {
@@ -1859,6 +1698,16 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			return wp_kses_post( $prompt );
+		}
+
+		/**
+		 * Sanitize prompt caching meta value.
+		 *
+		 * @param mixed $value Raw value.
+		 * @return bool
+		 */
+		public static function sanitize_prompt_caching_meta( $value ) {
+			return (bool) $value;
 		}
 
 		/**
@@ -2087,6 +1936,16 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return;
 			}
 
+			// Prompt Window Estimator: shows context window usage at the top of the edit page.
+			add_meta_box(
+				'wp-mcp-ai-prompt-window',
+				__( 'Context Window Estimator', 'mcp-ai-wpoos' ),
+				array( $this, 'render_prompt_window_estimator_meta_box' ),
+				self::POST_TYPE,
+				'normal',
+				'high'
+			);
+
 			add_meta_box(
 				'wp-mcp-ai-tools',
 				__( 'Available Tools', 'mcp-ai-wpoos' ),
@@ -2215,6 +2074,388 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$metabox->get_priority()
 				);
 			}
+
+			// Register the LLM Harness profile metabox (Layer A authoring UI).
+			if ( isset( $this->metaboxes['harness-profile'] ) && class_exists( 'WP_MCP_AI_Harness_Profile' ) ) {
+				$metabox = $this->metaboxes['harness-profile'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
+		}
+
+		/**
+		 * Render the context window estimator meta box.
+		 *
+		 * Shows estimated token usage for the assistant's prompt components
+		 * (system prompt, tools, primary roles, skills, memory files) against
+		 * the selected model's context window. Helps prevent silent failures
+		 * when the prompt exceeds the model's capacity.
+		 *
+		 * @since 2.7.0
+		 *
+		 * @param WP_Post $post Post object.
+		 */
+		public function render_prompt_window_estimator_meta_box( $post ) {
+			if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+				return;
+			}
+
+			// -----------------------------------------------------------------
+			// 1. Gather the assistant's current configuration.
+			// -----------------------------------------------------------------
+			$model         = trim( (string) get_post_meta( $post->ID, self::META_MODEL, true ) );
+			$system_prompt = trim( (string) get_post_meta( $post->ID, self::META_SYSTEM_PROMPT, true ) );
+			$provider      = trim( (string) get_post_meta( $post->ID, self::META_PROVIDER, true ) );
+
+			$selected_tools = get_post_meta( $post->ID, self::META_TOOLS, true );
+			if ( ! is_array( $selected_tools ) ) {
+				$selected_tools = array();
+			}
+			$tool_count = count( $selected_tools );
+
+			$primary_roles = get_post_meta( $post->ID, self::META_PRIMARY_ROLES, true );
+			if ( ! is_array( $primary_roles ) ) {
+				$primary_roles = array();
+			}
+
+			$skills = get_post_meta( $post->ID, self::META_SKILLS, true );
+			if ( ! is_array( $skills ) ) {
+				$skills = array();
+			}
+
+			$memory_files = get_post_meta( $post->ID, self::META_MEMORY_FILES, true );
+			if ( ! is_array( $memory_files ) ) {
+				$memory_files = array();
+			}
+
+			$mcp_apps = get_post_meta( $post->ID, self::META_MCP_APPS, true );
+			if ( ! is_array( $mcp_apps ) ) {
+				$mcp_apps = array();
+			}
+
+			// Resolve model label for display.
+			$model_display = '' !== $model ? $model : __( '(not set — using global default)', 'mcp-ai-wpoos' );
+
+			// -----------------------------------------------------------------
+			// 2. Resolve the effective context window size.
+			// -----------------------------------------------------------------
+			$context_window = 0;
+			$model_source   = '';
+
+			if ( '' !== $model && class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$context_window = WP_MCP_AI_Token_Budget_Manager::get_model_limit( $model );
+				$model_source   = __( 'Known model', 'mcp-ai-wpoos' );
+			} elseif ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				// Fall back to the global default model.
+				$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+				$default_model  = isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o-mini';
+				$context_window = WP_MCP_AI_Token_Budget_Manager::get_model_limit( $default_model );
+				$model_source   = sprintf(
+					/* translators: %s: default model slug */
+					__( 'Global default (%s)', 'mcp-ai-wpoos' ),
+					$default_model
+				);
+			}
+
+			if ( $context_window <= 0 ) {
+				$context_window = 128000; // Safe fallback for GPT-4o class.
+				$model_source   = __( 'Assumed (128K)', 'mcp-ai-wpoos' );
+			}
+
+			// -----------------------------------------------------------------
+			// 3. Estimate token consumption per component.
+			// -----------------------------------------------------------------
+			$estimator = class_exists( 'WP_MCP_AI_Token_Budget_Manager' )
+				? array( 'WP_MCP_AI_Token_Budget_Manager', 'estimate_tokens' )
+				: null;
+
+			$estimate = function ( $text ) use ( $estimator ) {
+				if ( null !== $estimator ) {
+					return (int) call_user_func( $estimator, $text );
+				}
+				$len = function_exists( 'mb_strlen' ) ? mb_strlen( $text, 'UTF-8' ) : strlen( $text );
+				return (int) ceil( $len / 4 );
+			};
+
+			// System prompt.
+			$system_tokens = $estimate( $system_prompt );
+
+			// Primary roles prompt (preview the built prompt).
+			$roles_tokens = 0;
+			if ( ! empty( $primary_roles ) ) {
+				$roles_prompt = self::build_prompt_from_primary_roles( $primary_roles );
+				$roles_tokens = $estimate( $roles_prompt );
+			}
+
+			// Skills prompt.
+			$skills_tokens = 0;
+			if ( ! empty( $skills ) && class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
+				$registry      = WP_MCP_AI_Skill_Registry::instance();
+				$skills_prompt = $registry->build_skills_prompt( $skills );
+				$skills_tokens = $estimate( $skills_prompt );
+			}
+
+			// Tool definitions — sum the serialized schema for each selected tool.
+			$tools_tokens      = 0;
+			$tools_with_errors = 0;
+			foreach ( $selected_tools as $slug ) {
+				$tool = $this->registry->get_tool( $slug );
+				if ( ! $tool ) {
+					continue;
+				}
+				try {
+					$schema        = $tool->get_parameters_schema();
+					$desc          = $tool->get_description();
+					$tool_def      = wp_json_encode(
+						array(
+							'type'     => 'function',
+							'function' => array(
+								'name'        => $slug,
+								'description' => $desc,
+								'parameters'  => is_array( $schema ) ? $schema : array(),
+							),
+						)
+					);
+					$tools_tokens += $estimate( $tool_def );
+				} catch ( Exception $e ) {
+					++$tools_with_errors;
+				}
+			}
+
+			// Memory files — rough estimate by file count (each contributes ~500 tokens on average).
+			$memory_tokens = count( $memory_files ) * 500;
+
+			// MCP Apps — rough estimate (each app definition ~200 tokens).
+			$mcp_tokens = count( $mcp_apps ) * 200;
+
+			// Conversation overhead: system framing, turn markers, function-call response format ~200 tokens.
+			$overhead_tokens = 200;
+
+			// Recommended output budget (10% of context, min 1K).
+			$output_budget = max( 1000, (int) ( $context_window * 0.1 ) );
+
+			// Total estimated usage.
+			$total_estimated = $system_tokens + $roles_tokens + $skills_tokens + $tools_tokens + $memory_tokens + $mcp_tokens + $overhead_tokens + $output_budget;
+			$usage_pct       = $context_window > 0 ? round( ( $total_estimated / $context_window ) * 100, 1 ) : 0;
+
+			// -----------------------------------------------------------------
+			// 4. Determine warning level.
+			// -----------------------------------------------------------------
+			$severity = 'ok';     // Green.
+			if ( $usage_pct > 90 || $tool_count > 128 ) {
+				$severity = 'critical'; // Red.
+			} elseif ( $usage_pct > 80 || $tool_count > 50 ) {
+				$severity = 'warning';  // Orange / red.
+			} elseif ( $usage_pct > 50 ) {
+				$severity = 'caution';  // Yellow.
+			}
+
+			$severity_colors = array(
+				'ok'       => array(
+					'bg'     => '#d4edda',
+					'border' => '#c3e6cb',
+					'text'   => '#155724',
+					'icon'   => '✅',
+				),
+				'caution'  => array(
+					'bg'     => '#fff3cd',
+					'border' => '#ffeeba',
+					'text'   => '#856404',
+					'icon'   => '⚠️',
+				),
+				'warning'  => array(
+					'bg'     => '#f8d7da',
+					'border' => '#f5c6cb',
+					'text'   => '#721c24',
+					'icon'   => '🔴',
+				),
+				'critical' => array(
+					'bg'     => '#f8d7da',
+					'border' => '#dc3545',
+					'text'   => '#721c24',
+					'icon'   => '🚫',
+				),
+			);
+			$c               = $severity_colors[ $severity ];
+			?>
+
+		<div class="wp-mcp-ai-prompt-window" style="margin: 0 0 1rem 0; padding: 1rem; background: <?php echo esc_attr( $c['bg'] ); ?>; border: 2px solid <?php echo esc_attr( $c['border'] ); ?>; border-radius: 4px;">
+			<h3 style="margin-top: 0;"><?php echo esc_html( $c['icon'] ); ?> <?php esc_html_e( 'Prompt Window Estimate', 'mcp-ai-wpoos' ); ?></h3>
+
+			<?php if ( 'critical' === $severity ) : ?>
+				<div style="padding: 0.75rem; background: #fff; border: 1px solid #dc3545; border-radius: 4px; margin-bottom: 1rem;">
+					<strong><?php esc_html_e( 'Critical: This configuration is likely to cause chat failures.', 'mcp-ai-wpoos' ); ?></strong>
+					<?php if ( $usage_pct > 90 ) : ?>
+						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'The estimated prompt size exceeds 90% of the model context window, leaving almost no room for conversation history. Reduce the system prompt, remove some tools, or switch to a model with a larger context window.', 'mcp-ai-wpoos' ); ?></p>
+					<?php elseif ( $tool_count > 128 ) : ?>
+						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'OpenAI has a hard limit of 128 tools per request. Reduce the number of selected tools to 128 or fewer.', 'mcp-ai-wpoos' ); ?></p>
+					<?php endif; ?>
+				</div>
+			<?php elseif ( 'warning' === $severity ) : ?>
+				<div style="padding: 0.75rem; background: #fff; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 1rem;">
+					<strong><?php esc_html_e( 'Warning: You may experience issues with this configuration.', 'mcp-ai-wpoos' ); ?></strong>
+					<?php if ( $tool_count > 50 ) : ?>
+						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'More than 50 tools are selected. The server caps tool payloads at 50 by default, so tools beyond that limit will be silently dropped. Consider reducing to 50 or fewer tools for reliable operation.', 'mcp-ai-wpoos' ); ?></p>
+					<?php endif; ?>
+					<?php if ( $usage_pct > 80 ) : ?>
+						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'The estimated prompt uses over 80% of the context window. Long conversations may exceed the limit and cause errors.', 'mcp-ai-wpoos' ); ?></p>
+					<?php endif; ?>
+				</div>
+			<?php elseif ( 'caution' === $severity ) : ?>
+				<div style="padding: 0.75rem; background: #fff; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 1rem;">
+					<strong><?php esc_html_e( 'Heads-up: Prompt window usage is above 50%.', 'mcp-ai-wpoos' ); ?></strong>
+					<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'Your configuration should work, but very long conversations or large tool results could push you toward the limit. Monitor chat performance and reduce components if you see errors.', 'mcp-ai-wpoos' ); ?></p>
+				</div>
+			<?php else : ?>
+				<p style="margin: 0.5rem 0 1rem 0;"><?php esc_html_e( 'Your configuration fits comfortably within the model context window.', 'mcp-ai-wpoos' ); ?></p>
+			<?php endif; ?>
+
+			<!-- Model info bar -->
+			<div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+				<div style="flex: 1; min-width: 200px;">
+					<strong><?php esc_html_e( 'Model:', 'mcp-ai-wpoos' ); ?></strong>
+					<code><?php echo esc_html( $model_display ); ?></code>
+				</div>
+				<div style="flex: 1; min-width: 200px;">
+					<strong><?php esc_html_e( 'Context Window:', 'mcp-ai-wpoos' ); ?></strong>
+					<?php echo esc_html( number_format_i18n( $context_window ) ); ?> <?php esc_html_e( 'tokens', 'mcp-ai-wpoos' ); ?>
+					<span style="color: #666; font-size: 0.9em;">(<?php echo esc_html( $model_source ); ?>)</span>
+				</div>
+				<div style="flex: 1; min-width: 200px;">
+					<strong><?php esc_html_e( 'Tools Selected:', 'mcp-ai-wpoos' ); ?></strong>
+					<strong style="color: <?php echo $tool_count > 50 ? '#721c24' : ( $tool_count > 30 ? '#856404' : '#155724' ); ?>;">
+						<?php echo esc_html( number_format_i18n( $tool_count ) ); ?>
+					</strong>
+					<?php if ( $tool_count > 50 ) : ?>
+						<span style="color: #721c24;">⚠️ <?php esc_html_e( '(capped at 50)', 'mcp-ai-wpoos' ); ?></span>
+					<?php endif; ?>
+				</div>
+			</div>
+
+			<!-- Usage bar -->
+			<div style="margin-bottom: 1rem;">
+				<div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+					<span><strong><?php esc_html_e( 'Estimated Usage:', 'mcp-ai-wpoos' ); ?></strong> ~<?php echo esc_html( number_format_i18n( $total_estimated ) ); ?> / <?php echo esc_html( number_format_i18n( $context_window ) ); ?> <?php esc_html_e( 'tokens', 'mcp-ai-wpoos' ); ?></span>
+					<span style="font-weight: bold; color: <?php echo esc_attr( $c['text'] ); ?>;"><?php echo esc_html( $usage_pct ); ?>%</span>
+				</div>
+				<div style="background: #e9ecef; border-radius: 4px; height: 20px; overflow: hidden; position: relative;">
+					<?php
+					$bar_color = '#28a745';
+					if ( $usage_pct > 90 ) {
+						$bar_color = '#dc3545';
+					} elseif ( $usage_pct > 80 ) {
+						$bar_color = '#fd7e14';
+					} elseif ( $usage_pct > 50 ) {
+						$bar_color = '#ffc107';
+					}
+					$bar_pct = min( 100, $usage_pct );
+					?>
+					<div style="width: <?php echo esc_attr( $bar_pct ); ?>%; background: <?php echo esc_attr( $bar_color ); ?>; height: 100%; border-radius: 4px; transition: width 0.3s;"></div>
+				</div>
+				<div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #666; margin-top: 0.25rem;">
+					<span>0</span>
+					<span>50% (<?php echo esc_html( number_format_i18n( (int) ( $context_window * 0.5 ) ) ); ?>)</span>
+					<span>100% (<?php echo esc_html( number_format_i18n( $context_window ) ); ?>)</span>
+				</div>
+			</div>
+
+			<!-- Breakdown table -->
+			<table class="widefat striped" style="margin-bottom: 0;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Component', 'mcp-ai-wpoos' ); ?></th>
+						<th style="text-align: right;"><?php esc_html_e( 'Est. Tokens', 'mcp-ai-wpoos' ); ?></th>
+						<th style="text-align: right;"><?php esc_html_e( '% of Window', 'mcp-ai-wpoos' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><?php esc_html_e( 'System Prompt', 'mcp-ai-wpoos' ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $system_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $system_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php if ( $roles_tokens > 0 ) : ?>
+					<tr>
+						<td><?php esc_html_e( 'Primary Roles', 'mcp-ai-wpoos' ); ?> (<?php echo esc_html( count( $primary_roles ) ); ?>)</td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $roles_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $roles_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php endif; ?>
+					<?php if ( $skills_tokens > 0 ) : ?>
+					<tr>
+						<td><?php esc_html_e( 'Agent Skills', 'mcp-ai-wpoos' ); ?> (<?php echo esc_html( count( $skills ) ); ?>)</td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $skills_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $skills_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php endif; ?>
+					<tr>
+						<td><?php esc_html_e( 'Tool Definitions', 'mcp-ai-wpoos' ); ?> (<?php echo esc_html( $tool_count ); ?>)</td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $tools_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $tools_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php if ( $memory_tokens > 0 ) : ?>
+					<tr>
+						<td><?php esc_html_e( 'Memory Files', 'mcp-ai-wpoos' ); ?> (<?php echo esc_html( count( $memory_files ) ); ?>)</td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $memory_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $memory_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php endif; ?>
+					<?php if ( $mcp_tokens > 0 ) : ?>
+					<tr>
+						<td><?php esc_html_e( 'MCP Apps', 'mcp-ai-wpoos' ); ?> (<?php echo esc_html( count( $mcp_apps ) ); ?>)</td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $mcp_tokens ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( $mcp_tokens / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<?php endif; ?>
+					<tr style="background: #f0f0f0;">
+						<td><em><?php esc_html_e( 'Overhead + Output Budget', 'mcp-ai-wpoos' ); ?></em></td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $overhead_tokens + $output_budget ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $context_window > 0 ? round( ( ( $overhead_tokens + $output_budget ) / $context_window ) * 100, 1 ) : 0 ); ?>%</td>
+					</tr>
+					<tr style="font-weight: bold; background: <?php echo esc_attr( $c['bg'] ); ?>;">
+						<td><?php esc_html_e( 'Total Estimated', 'mcp-ai-wpoos' ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( number_format_i18n( $total_estimated ) ); ?></td>
+						<td style="text-align: right;"><?php echo esc_html( $usage_pct ); ?>%</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<?php if ( $tools_with_errors > 0 ) : ?>
+				<p style="color: #856404; margin: 0.5rem 0 0 0;">
+					<?php
+					echo esc_html(
+						sprintf(
+						/* translators: %d: number of tools with schema errors */
+							_n(
+								'%d tool had a schema error and was excluded from the estimate.',
+								'%d tools had schema errors and were excluded from the estimate.',
+								$tools_with_errors,
+								'mcp-ai-wpoos'
+							),
+							$tools_with_errors
+						)
+					);
+					?>
+				</p>
+			<?php endif; ?>
+
+			<p style="font-size: 0.85em; color: #666; margin: 0.75rem 0 0 0;">
+				<?php esc_html_e( 'Estimates use the chars/4 heuristic. Actual token counts vary by model and tokenizer. The server caps tool payloads at 50 tools by default (configurable via the wp_mcp_ai_max_chat_tools filter). Reduce system prompt length, unselect tools, or choose a model with a larger context window if you see chat errors.', 'mcp-ai-wpoos' ); ?>
+			</p>
+
+			<p style="font-size: 0.85em; color: #666; margin: 0.25rem 0 0 0;">
+				<strong><?php esc_html_e( 'Industry best practice:', 'mcp-ai-wpoos' ); ?></strong>
+				<?php esc_html_e( 'Keep total prompt under 50% of the context window for reliable multi-turn conversations. Reserve at least 10-25% headroom for conversation history and tool results. OpenAI allows up to 128 tools, but 30-50 is the practical sweet spot for performance and cost.', 'mcp-ai-wpoos' ); ?>
+			</p>
+		</div>
+
+			<?php
 		}
 
 		/**
@@ -2366,66 +2607,68 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			self::$credential_action_script_printed = true;
+
+			ob_start();
 			?>
-		<script type="text/javascript">
-		( function() {
-			function submitCredentialAction( button ) {
-				if ( ! button ) {
-					return;
-				}
-
-				var confirmMessage = button.getAttribute( 'data-confirm' );
-				if ( confirmMessage && ! window.confirm( confirmMessage ) ) {
-					return;
-				}
-
-				var endpoint = button.getAttribute( 'data-endpoint' );
-				if ( ! endpoint ) {
-					return;
-				}
-
-				var form = document.createElement( 'form' );
-				form.method = 'post';
-				form.action = endpoint;
-				form.style.display = 'none';
-
-				var fields = {
-					action: button.getAttribute( 'data-action' ),
-					post_id: button.getAttribute( 'data-post-id' ),
-					credential_id: button.getAttribute( 'data-credential-id' )
-				};
-
-				var nonceName = button.getAttribute( 'data-nonce-name' );
-				var nonceValue = button.getAttribute( 'data-nonce-value' );
-
-				if ( nonceName && nonceValue ) {
-					fields[ nonceName ] = nonceValue;
-				}
-
-				for ( var key in fields ) {
-					if ( Object.prototype.hasOwnProperty.call( fields, key ) && fields[ key ] ) {
-						var input = document.createElement( 'input' );
-						input.type = 'hidden';
-						input.name = key;
-						input.value = fields[ key ];
-						form.appendChild( input );
+			( function() {
+				function submitCredentialAction( button ) {
+					if ( ! button ) {
+						return;
 					}
+
+					var confirmMessage = button.getAttribute( 'data-confirm' );
+					if ( confirmMessage && ! window.confirm( confirmMessage ) ) {
+						return;
+					}
+
+					var endpoint = button.getAttribute( 'data-endpoint' );
+					if ( ! endpoint ) {
+						return;
+					}
+
+					var form = document.createElement( 'form' );
+					form.method = 'post';
+					form.action = endpoint;
+					form.style.display = 'none';
+
+					var fields = {
+						action: button.getAttribute( 'data-action' ),
+						post_id: button.getAttribute( 'data-post-id' ),
+						credential_id: button.getAttribute( 'data-credential-id' )
+					};
+
+					var nonceName = button.getAttribute( 'data-nonce-name' );
+					var nonceValue = button.getAttribute( 'data-nonce-value' );
+
+					if ( nonceName && nonceValue ) {
+						fields[ nonceName ] = nonceValue;
+					}
+
+					for ( var key in fields ) {
+						if ( Object.prototype.hasOwnProperty.call( fields, key ) && fields[ key ] ) {
+							var input = document.createElement( 'input' );
+							input.type = 'hidden';
+							input.name = key;
+							input.value = fields[ key ];
+							form.appendChild( input );
+						}
+					}
+
+					document.body.appendChild( form );
+					form.submit();
 				}
 
-				document.body.appendChild( form );
-				form.submit();
-			}
-
-			document.addEventListener( 'click', function( event ) {
-				var target = event.target;
-				if ( target && target.classList && target.classList.contains( 'wp-mcp-ai-credential-action' ) ) {
-					event.preventDefault();
-					submitCredentialAction( target );
-				}
-			} );
-		} )();
-		</script>
+				document.addEventListener( 'click', function( event ) {
+					var target = event.target;
+					if ( target && target.classList && target.classList.contains( 'wp-mcp-ai-credential-action' ) ) {
+						event.preventDefault();
+						submitCredentialAction( target );
+					}
+				} );
+			} )();
 			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
 		}
 
 		/**
@@ -2644,75 +2887,80 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			if ( ! $tools_styles_printed ) {
 				$tools_styles_printed = true;
-				?>
-			<style>
-			.wp-mcp-ai-tools{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}
-			.wp-mcp-ai-tools__group{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}
-			.wp-mcp-ai-tools__group summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}
-			.wp-mcp-ai-tools__group summary::-webkit-details-marker{display:none}
-			.wp-mcp-ai-tools__summary-title{flex:1 1 auto}
-			.wp-mcp-ai-tools__summary-count{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}
-			.wp-mcp-ai-tools__group[open]{background:#fff}
-			.wp-mcp-ai-tools__group[open] summary{border-bottom:1px solid #dcdcde}
-			.wp-mcp-ai-tools__list{margin:0;padding:1rem;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
-			.wp-mcp-ai-tools__item{border:1px solid #dcdcde;border-radius:4px;background:#fff;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;transition:box-shadow 0.2s ease}
-			.wp-mcp-ai-tools__item:focus-within{box-shadow:0 0 0 1px #2271b1}
-			.wp-mcp-ai-tools__header{display:flex;align-items:flex-start;gap:0.75rem}
-			.wp-mcp-ai-tools__checkbox{margin-top:0.2rem}
-			.wp-mcp-ai-tools__name{display:block;font-weight:600;font-size:14px}
-			.wp-mcp-ai-tools__description{margin:0;color:#50575e;font-size:13px}
-			.wp-mcp-ai-tools__controls label{font-weight:600;font-size:13px;margin-bottom:0.25rem;display:block}
-			.wp-mcp-ai-tools__role-select{width:100%}
-			.wp-mcp-ai-tools__helper{margin:0;color:#646970;font-size:12px}
-			.wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}
-			.wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}
-			.wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}
-			.wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}
-			.wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}
-			.wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}
-			.wp-mcp-ai-prebuilt-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}
-			.wp-mcp-ai-prebuilt-shortcuts h3{margin:0;font-size:16px}
-			.wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}
-			.wp-mcp-ai-prebuilt-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}
-			.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-title{flex:1 1 auto}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}
-			.wp-mcp-ai-prebuilt-shortcuts__tool[open]{background:#fff}
-			.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}
-			.wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem;display:flex;flex-direction:column;gap:1rem;border-top:1px solid #dcdcde}
-			.wp-mcp-ai-prebuilt-shortcuts__mode{display:flex;flex-wrap:wrap;gap:1rem;margin:0}
-			.wp-mcp-ai-prebuilt-shortcuts__mode label{display:flex;align-items:center;gap:0.5rem;font-weight:600}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults{margin:0}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults p{margin:0;color:#50575e;font-size:13px}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0 0;padding-left:1.25rem}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-list li{margin-bottom:0.5rem;font-size:13px}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-summary{display:block;color:#50575e;font-size:12px;margin-top:0.25rem}
-			.wp-mcp-ai-prebuilt-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}
-			.wp-mcp-ai-prebuilt-shortcuts__row{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#fff}
-			.wp-mcp-ai-prebuilt-shortcuts__row hr{margin:1rem -1rem 0}
-			.wp-mcp-ai-tool-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}
-			.wp-mcp-ai-tool-shortcuts h3{margin:0;font-size:16px}
-			.wp-mcp-ai-tool-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}
-			.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}
-			.wp-mcp-ai-tool-shortcuts__item[open]{background:#fff}
-			.wp-mcp-ai-tool-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}
-			.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker{display:none}
-			.wp-mcp-ai-tool-shortcuts__summary-title{flex:1 1 auto}
-			.wp-mcp-ai-tool-shortcuts__summary-tool{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}
-			.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary{border-bottom:1px solid #dcdcde}
-			.wp-mcp-ai-tool-shortcuts__row{margin:0;padding:1rem;display:flex;flex-direction:column;gap:1rem;background:#fff;border-top:1px solid #dcdcde;border-radius:0 0 4px 4px}
-			.wp-mcp-ai-tool-shortcuts__row hr{display:none}
-			@media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}
-			</style>
-				<?php
+
+				// Register a dummy style handle so wp_add_inline_style has a target.
+				wp_register_style( 'wp-mcp-ai-assistant-tools', false, array(), WP_MCP_AI_VERSION );
+				wp_enqueue_style( 'wp-mcp-ai-assistant-tools' );
+
+				wp_add_inline_style(
+					'wp-mcp-ai-assistant-tools',
+					'.wp-mcp-ai-tools{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}'
+					. '.wp-mcp-ai-tools__group{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+					. '.wp-mcp-ai-tools__group summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+					. '.wp-mcp-ai-tools__group summary::-webkit-details-marker{display:none}'
+					. '.wp-mcp-ai-tools__summary-title{flex:1 1 auto}'
+					. '.wp-mcp-ai-tools__summary-count{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+					. '.wp-mcp-ai-tools__group[open]{background:#fff}'
+					. '.wp-mcp-ai-tools__group[open] summary{border-bottom:1px solid #dcdcde}'
+					. '.wp-mcp-ai-tools__list{margin:0;padding:1rem;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}'
+					. '.wp-mcp-ai-tools__item{border:1px solid #dcdcde;border-radius:4px;background:#fff;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;transition:box-shadow 0.2s ease}'
+					. '.wp-mcp-ai-tools__item:focus-within{box-shadow:0 0 0 1px #2271b1}'
+					. '.wp-mcp-ai-tools__header{display:flex;align-items:flex-start;gap:0.75rem}'
+					. '.wp-mcp-ai-tools__checkbox{margin-top:0.2rem}'
+					. '.wp-mcp-ai-tools__name{display:block;font-weight:600;font-size:14px}'
+					. '.wp-mcp-ai-tools__description{margin:0;color:#50575e;font-size:13px}'
+					. '.wp-mcp-ai-tools__controls label{font-weight:600;font-size:13px;margin-bottom:0.25rem;display:block}'
+					. '.wp-mcp-ai-tools__role-select{width:100%}'
+					. '.wp-mcp-ai-tools__helper{margin:0;color:#646970;font-size:12px}'
+					. '.wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}'
+					. '.wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}'
+					. '.wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}'
+					. '.wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}'
+					. '.wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}'
+					. '.wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}'
+					. '.wp-mcp-ai-prebuilt-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
+					. '.wp-mcp-ai-prebuilt-shortcuts h3{margin:0;font-size:16px}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__summary-title{flex:1 1 auto}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__tool[open]{background:#fff}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem;display:flex;flex-direction:column;gap:1rem;border-top:1px solid #dcdcde}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__mode{display:flex;flex-wrap:wrap;gap:1rem;margin:0}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__mode label{display:flex;align-items:center;gap:0.5rem;font-weight:600}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__defaults{margin:0}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__defaults p{margin:0;color:#50575e;font-size:13px}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0 0;padding-left:1.25rem}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list li{margin-bottom:0.5rem;font-size:13px}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-summary{display:block;color:#50575e;font-size:12px;margin-top:0.25rem}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__row{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#fff}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__row hr{margin:1rem -1rem 0}'
+					. '.wp-mcp-ai-tool-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
+					. '.wp-mcp-ai-tool-shortcuts h3{margin:0;font-size:16px}'
+					. '.wp-mcp-ai-tool-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
+					. '.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+					. '.wp-mcp-ai-tool-shortcuts__item[open]{background:#fff}'
+					. '.wp-mcp-ai-tool-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+					. '.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker{display:none}'
+					. '.wp-mcp-ai-tool-shortcuts__summary-title{flex:1 1 auto}'
+					. '.wp-mcp-ai-tool-shortcuts__summary-tool{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+					. '.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+					. '.wp-mcp-ai-tool-shortcuts__row{margin:0;padding:1rem;display:flex;flex-direction:column;gap:1rem;background:#fff;border-top:1px solid #dcdcde;border-radius:0 0 4px 4px}'
+					. '.wp-mcp-ai-tool-shortcuts__row hr{display:none}'
+					. '@media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}'
+				);
 			}
 
 			static $tools_script_printed = false;
 
 			if ( ! $tools_script_printed ) {
 				$tools_script_printed = true;
+
+				ob_start();
 				?>
-			<script>
 			( function() {
 				function syncToolControls( container ) {
 					if ( ! container ) {
@@ -2996,8 +3244,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					} );
 				} );
 			} )();
-			</script>
 				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
 			}
 
 			echo '<div class="wp-mcp-ai-tools" role="group" aria-label="' . esc_attr__( 'Assistant tool permissions', 'mcp-ai-wpoos' ) . '">';
@@ -3422,7 +3671,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			</details>
 		</template>
 
-		<script>
+			<?php
+			ob_start();
+			?>
 		( function() {
 			var container = document.getElementById( 'wp-mcp-ai-tool-shortcuts-rows' );
 			var addButton = document.getElementById( 'wp-mcp-ai-add-tool-shortcut' );
@@ -3604,8 +3855,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				bindItem( item );
 			} );
 		} )();
-		</script>
 			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
 		}
 
 		/**
@@ -3633,9 +3885,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$provider = $default_provider;
 			}
 
-			$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
+			$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ) );
 			if ( ! is_array( $provider_choices ) ) {
-				$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+				$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' );
 			}
 
 			if ( '' === $temperature ) {
@@ -3785,80 +4037,88 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			<input type="text" id="wp-mcp-ai-vector-store-id" name="wp_mcp_ai_vector_store_id" value="<?php echo esc_attr( $vector_store_id ); ?>" class="widefat" />
 			<span class="description"><?php esc_html_e( 'Optional identifier for an external vector store that should be associated with this assistant.', 'mcp-ai-wpoos' ); ?></span>
 		</p>
-		<style type="text/css">
-			.wp-mcp-ai-memory-file-size {
-				color: #646970;
-				font-size: 0.9em;
-				margin-left: 0.5em;
-			}
-		</style>
-		<script type="text/javascript">
-		jQuery( function( $ ) {
-			var frame;
-			var list = $( '#wp-mcp-ai-memory-files-list' );
+			<?php
+			wp_register_style( 'wp-mcp-ai-assistant-base-knowledge', false, array(), WP_MCP_AI_VERSION );
+			wp_enqueue_style( 'wp-mcp-ai-assistant-base-knowledge' );
+			wp_add_inline_style(
+				'wp-mcp-ai-assistant-base-knowledge',
+				'.wp-mcp-ai-memory-file-size{color:#646970;font-size:0.9em;margin-left:0.5em}'
+			);
 
-			function addAttachment( attachment ) {
-				var id = attachment.id || attachment.ID;
-				if ( ! id ) {
-					return;
-				}
+			$attachment_label   = esc_js( __( 'Attachment', 'mcp-ai-wpoos' ) );
+			$remove_label       = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
+			$select_files_title = esc_js( __( 'Select knowledge files', 'mcp-ai-wpoos' ) );
+			$use_files_text     = esc_js( __( 'Use files', 'mcp-ai-wpoos' ) );
 
-				if ( list.find( 'li[data-id="' + id + '"]' ).length ) {
-					return;
-				}
+			ob_start();
+			?>
+			jQuery( function( $ ) {
+				var frame;
+				var list = $( '#wp-mcp-ai-memory-files-list' );
 
-				var title = attachment.title || attachment.filename || attachment.name || '<?php echo esc_js( __( 'Attachment', 'mcp-ai-wpoos' ) ); ?>';
-				var label = title + ' (ID: ' + id + ')';
-				var filesize = attachment.filesizeHumanReadable || '';
-
-				var item = $( '<li />', { 'data-id': id } );
-				item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-title', 'text': label } ) );
-				if ( filesize ) {
-					item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-size', 'text': '(' + filesize + ')' } ) );
-				}
-				item.append( $( '<button />', { 'type': 'button', 'class': 'button-link wp-mcp-ai-remove-memory', 'text': '<?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?>' } ) );
-				item.append( $( '<input />', { 'type': 'hidden', 'name': 'wp_mcp_ai_memory_files[]', 'value': id } ) );
-
-				list.append( item );
-			}
-
-			$( '#wp-mcp-ai-memory-select' ).on( 'click', function( event ) {
-				event.preventDefault();
-
-				if ( frame ) {
-					frame.open();
-					return;
-				}
-
-				frame = wp.media({
-					title: '<?php echo esc_js( __( 'Select knowledge files', 'mcp-ai-wpoos' ) ); ?>',
-					button: {
-						text: '<?php echo esc_js( __( 'Use files', 'mcp-ai-wpoos' ) ); ?>'
-					},
-					multiple: true
-				});
-
-				frame.on( 'select', function() {
-					var selection = frame.state().get( 'selection' );
-					if ( ! selection ) {
+				function addAttachment( attachment ) {
+					var id = attachment.id || attachment.ID;
+					if ( ! id ) {
 						return;
 					}
 
-					selection.each( function( attachment ) {
-						addAttachment( attachment.toJSON() );
-					} );
-				});
+					if ( list.find( 'li[data-id="' + id + '"]' ).length ) {
+						return;
+					}
 
-				frame.open();
-			} );
+					var title = attachment.title || attachment.filename || attachment.name || <?php echo wp_json_encode( $attachment_label ); ?>;
+					var label = title + ' (ID: ' + id + ')';
+					var filesize = attachment.filesizeHumanReadable || '';
 
-			list.on( 'click', '.wp-mcp-ai-remove-memory', function( event ) {
-				event.preventDefault();
-				$( this ).closest( 'li' ).remove();
+					var item = $( '<li />', { 'data-id': id } );
+					item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-title', 'text': label } ) );
+					if ( filesize ) {
+						item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-size', 'text': '(' + filesize + ')' } ) );
+					}
+					item.append( $( '<button />', { 'type': 'button', 'class': 'button-link wp-mcp-ai-remove-memory', 'text': <?php echo wp_json_encode( $remove_label ); ?> } ) );
+					item.append( $( '<input />', { 'type': 'hidden', 'name': 'wp_mcp_ai_memory_files[]', 'value': id } ) );
+
+					list.append( item );
+				}
+
+				$( '#wp-mcp-ai-memory-select' ).on( 'click', function( event ) {
+					event.preventDefault();
+
+					if ( frame ) {
+						frame.open();
+						return;
+					}
+
+					frame = wp.media({
+						title: <?php echo wp_json_encode( $select_files_title ); ?>,
+						button: {
+							text: <?php echo wp_json_encode( $use_files_text ); ?>
+						},
+						multiple: true
+					});
+
+					frame.on( 'select', function() {
+						var selection = frame.state().get( 'selection' );
+						if ( ! selection ) {
+							return;
+						}
+
+						selection.each( function( attachment ) {
+							addAttachment( attachment.toJSON() );
+						} );
+					});
+
+					frame.open();
+				} );
+
+				list.on( 'click', '.wp-mcp-ai-remove-memory', function( event ) {
+					event.preventDefault();
+					$( this ).closest( 'li' ).remove();
+				} );
 			} );
-		} );
-		</script>
 			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
 		}
 
 		/**
@@ -3926,13 +4186,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			// Extract post_id before nonce verification to construct proper nonce action.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified immediately after on line 2506.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified immediately after.
 			$post_id = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0;
 			if ( ! $post_id ) {
 				wp_die( esc_html__( 'Invalid assistant.', 'mcp-ai-wpoos' ), '', array( 'response' => 400 ) );
 			}
 
-			check_admin_referer( 'wp_mcp_ai_issue_credential_' . $post_id, 'wp_mcp_ai_issue_nonce' );
+			check_admin_referer( 'wp_mcp_ai_issue_credential_' . $post_id, 'wp_mcp_ai_issue_credential_nonce' );
 
 			$post = get_post( $post_id );
 			if ( ! $post || self::POST_TYPE !== $post->post_type ) {
@@ -3977,7 +4237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				wp_die( esc_html__( 'Invalid credential request.', 'mcp-ai-wpoos' ), '', array( 'response' => 400 ) );
 			}
 
-			$nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_nonce', $credential_id );
+			$nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_credential_nonce', $credential_id );
 
 			check_admin_referer( 'wp_mcp_ai_revoke_credential_' . $post_id . '_' . $credential_id, $nonce_field );
 
@@ -4014,7 +4274,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				wp_die( esc_html__( 'Invalid credential request.', 'mcp-ai-wpoos' ), '', array( 'response' => 400 ) );
 			}
 
-			$nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_nonce', $credential_id );
+			$nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_credential_nonce', $credential_id );
 
 			check_admin_referer( 'wp_mcp_ai_delete_credential_' . $post_id . '_' . $credential_id, $nonce_field );
 
@@ -4066,9 +4326,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				delete_transient( $transient_key );
 
 				printf(
-					'<div class="notice notice-success"><p>%s</p></div>',
+					'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 					sprintf(
-					/* translators: %s: credential token */
+						/* translators: %s: credential token */
 						esc_html__( 'New credential issued. Copy this token now: %s', 'mcp-ai-wpoos' ),
 						'<code>' . esc_html( $token_notice['token'] ) . '</code>'
 					)
@@ -4093,7 +4353,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			$class = in_array( $notice, array( 'credential_created', 'credential_revoked', 'credential_deleted' ), true ) ? 'notice-success' : 'notice-error';
 
-			printf( '<div class="notice %1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
+			printf( '<div class="notice %1$s is-dismissible"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
 		}
 
 		/**
@@ -4164,7 +4424,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 * @param int     $post_id Post ID being deleted.
 		 * @param WP_Post $post    Post object being deleted (optional, provided by WordPress).
 		 */
-		public function cleanup_deleted_assistant_credentials( $post_id, $post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature.
+		public function cleanup_deleted_assistant_credentials( $post_id, $post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress hook signature.
 			// Post type check is no longer needed since we use delete_{post_type} hook.
 			WP_MCP_AI_Credentials::purge_assistant_credentials( $post_id );
 
@@ -4458,11 +4718,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			if ( isset( $_POST['wp_mcp_ai_datasets_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_datasets_meta_nonce'] ) ), 'wp_mcp_ai_datasets_meta' ) ) {
 				$preferred_datasets = array();
 				if ( isset( $_POST['wp_mcp_ai_preferred_datasets'] ) && is_array( $_POST['wp_mcp_ai_preferred_datasets'] ) ) {
-					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_text_field() and sanitize_preferred_datasets_meta().
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_preferred_datasets_meta() after json_decode.
 					$raw_datasets = wp_unslash( $_POST['wp_mcp_ai_preferred_datasets'] );
 					// Each checkbox value is a JSON-encoded dataset object.
+					// NOTE: Do NOT sanitize_text_field() before json_decode() — it corrupts JSON strings.
 					foreach ( $raw_datasets as $dataset_json ) {
-						$dataset = json_decode( sanitize_text_field( $dataset_json ), true );
+						$dataset = json_decode( $dataset_json, true );
 						if ( is_array( $dataset ) ) {
 							$preferred_datasets[] = $dataset;
 						}
@@ -4537,6 +4798,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_system_prompt_meta().
 				$system_prompt = isset( $_POST['wp_mcp_ai_system_prompt'] ) ? self::sanitize_system_prompt_meta( wp_unslash( $_POST['wp_mcp_ai_system_prompt'] ) ) : '';
 				update_post_meta( $post_id, self::META_SYSTEM_PROMPT, $system_prompt );
+
+				$prompt_caching = ! empty( $_POST['wp_mcp_ai_prompt_caching'] );
+				update_post_meta( $post_id, self::META_PROMPT_CACHING, $prompt_caching );
 			}
 
 			// Handle base knowledge meta.
@@ -4825,6 +5089,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'tool_prebuilt_shortcuts'    => get_post_meta( $assistant_id, self::META_TOOL_PREBUILT_SHORTCUTS, true ),
 				'tool_role_rules'            => get_post_meta( $assistant_id, self::META_TOOL_ROLE_RULES, true ),
 				'disable_prebuilt_shortcuts' => get_post_meta( $assistant_id, self::META_DISABLE_TOOL_SHORTCUTS, true ),
+				'prompt_caching'             => (bool) get_post_meta( $assistant_id, self::META_PROMPT_CACHING, true ),
 				'external_action_identifier' => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
 				'external_action_type'       => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
 				'required_capability'        => get_post_meta( $assistant_id, self::META_REQUIRED_CAPABILITY, true ),
@@ -4959,7 +5224,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			// Load MCP Apps configuration if available.
-			$mcp_apps = get_post_meta( $assistant_id, self::META_MCP_APPS, true );
+			$mcp_apps           = get_post_meta( $assistant_id, self::META_MCP_APPS, true );
 			$config['mcp_apps'] = is_array( $mcp_apps ) ? $mcp_apps : array();
 
 			return $config;
@@ -5539,12 +5804,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					</tr>
 				</table>
 
-				<script type="text/javascript">
+				<?php
+				$peer_options = wp_json_encode( array_column( $peer_sites, 'name' ) );
+				$select_peer  = esc_js( __( '-- Select Peer --', 'mcp-ai-wpoos' ) );
+				$remove_label = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
+
+				ob_start();
+				?>
 				jQuery(document).ready(function($) {
-					var peerOptions = <?php echo wp_json_encode( array_column( $peer_sites, 'name' ) ); ?>;
+					var peerOptions = <?php echo $peer_options; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode already escaped. ?>;
 
 					$('#wp-mcp-ai-add-preferred-peer').on('click', function() {
-						var optionsHtml = '<option value=""><?php echo esc_js( __( '-- Select Peer --', 'mcp-ai-wpoos' ) ); ?></option>';
+						var optionsHtml = '<option value=""><?php echo esc_js( $select_peer ); ?></option>';
 						peerOptions.forEach(function(peerName) {
 							optionsHtml += '<option value="' + peerName + '">' + peerName + '</option>';
 						});
@@ -5553,7 +5824,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							'<select name="wp_mcp_ai_mesh_routing[preferred_peers][]" class="regular-text">' +
 							optionsHtml +
 							'</select> ' +
-							'<button type="button" class="button wp-mcp-ai-remove-preferred-peer"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?></button>' +
+							'<button type="button" class="button wp-mcp-ai-remove-preferred-peer"><?php echo esc_js( $remove_label ); ?></button>' +
 							'</div>');
 						$('#wp-mcp-ai-preferred-peers-list').append(newRow);
 					});
@@ -5562,7 +5833,10 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						$(this).closest('.wp-mcp-ai-preferred-peer-row').remove();
 					});
 				});
-				</script>
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+				?>
 			</div>
 			<?php
 		}

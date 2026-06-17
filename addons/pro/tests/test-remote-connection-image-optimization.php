@@ -27,7 +27,7 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 
 		// Load required classes.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-wp-connection.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-wp-connection.php';
 
 		$this->tool = new WP_MCP_AI_Tool_Remote_WP_Connection();
 	}

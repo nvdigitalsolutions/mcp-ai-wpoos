@@ -26,6 +26,13 @@ class WP_MCP_AI_Tool_LF_Calendar_Rule_Calculator implements WP_MCP_AI_Tool_Inter
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -112,6 +119,9 @@ class WP_MCP_AI_Tool_LF_Calendar_Rule_Calculator implements WP_MCP_AI_Tool_Inter
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();

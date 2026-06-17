@@ -183,6 +183,13 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -658,7 +665,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 
 			// Download image from URL (for external URLs or if local file reading failed).
-			$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
+			$response = wp_safe_remote_get( $image_url, array( 'timeout' => 30 ) );
 
 			if ( is_wp_error( $response ) ) {
 				return new WP_Error( 'wp_mcp_ai_download_error', __( 'Failed to download the source image.', 'mcp-ai-wpoos' ), array( 'error' => $response->get_error_message() ) );

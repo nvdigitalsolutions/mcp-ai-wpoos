@@ -6,6 +6,7 @@
  */
 
 if ( ! class_exists( 'WP_MCP_AI_Architectural_Codes' ) ) {
+	// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 	$path = dirname( __DIR__ ) . '/includes/tools/architectural-design/class-wp-mcp-ai-architectural-codes.php';
 	if ( file_exists( $path ) ) {
 		require_once $path;

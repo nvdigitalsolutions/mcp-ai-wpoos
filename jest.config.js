@@ -11,12 +11,16 @@ module.exports = {
 	// Test match patterns
 	testMatch: [
 		'**/tests/js/**/*.test.js',
+		'**/tests/js/**/*.test.ts',
 		'**/tests/js/**/*.spec.js',
+		'**/tests/js/**/*.spec.ts',
 	],
 
 	// Coverage configuration
 	collectCoverageFrom: [
 		'assets/js/**/*.js',
+		'assets/js/src/**/*.ts',
+		'assets/js/src/**/*.tsx',
 		'!assets/js/**/*.min.js',
 		'!assets/js/vendor/**',
 	],
@@ -38,11 +42,21 @@ module.exports = {
 
 	// Transform files
 	transform: {
+		'^.+\\.tsx?$': [
+			'ts-jest',
+			{
+				tsconfig: './tsconfig.json',
+			},
+		],
 		'^.+\\.js$': [ 'babel-jest', { configFile: './babel.config.js' } ],
 	},
 
 	// Module name mapper for aliases
 	moduleNameMapper: {
+		'^@shared/(.*)$': '<rootDir>/assets/js/src/shared/$1',
+		'^@services/(.*)$': '<rootDir>/assets/js/src/services/$1',
+		'^@chat/(.*)$': '<rootDir>/assets/js/src/chat/$1',
+		'^@admin/(.*)$': '<rootDir>/assets/js/src/admin/$1',
 		'^@/(.*)$': '<rootDir>/assets/js/$1',
 	},
 

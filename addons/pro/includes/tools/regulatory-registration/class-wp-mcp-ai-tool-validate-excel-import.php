@@ -90,6 +90,13 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -172,8 +179,8 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 		$file_path = $this->resolve_file_path( $file_path );
 
 		// Verify the resolved path is within the uploads directory (prevents path traversal).
-		$upload_dir    = wp_upload_dir();
-		$validated     = wp_mcp_ai_validate_path( $file_path, $upload_dir['basedir'] );
+		$upload_dir = wp_upload_dir();
+		$validated  = wp_mcp_ai_validate_path( $file_path, $upload_dir['basedir'] );
 		if ( is_wp_error( $validated ) ) {
 			return $validated;
 		}

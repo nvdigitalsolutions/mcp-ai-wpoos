@@ -63,12 +63,12 @@ class NV_oOS_Graphify_Report {
 	 * @return array
 	 */
 	public static function build() {
-		$stats        = NV_oOS_Graphify_DB::get_stats();
-		$god_nodes    = NV_oOS_Graphify_Analyzer::get_god_nodes( 10 );
-		$surprising   = NV_oOS_Graphify_Analyzer::get_surprising_connections( 10 );
-		$gaps         = NV_oOS_Graphify_Analyzer::get_knowledge_gaps();
-		$recommends   = NV_oOS_Graphify_Analyzer::get_recommendations( 10 );
-		$build_meta   = NV_oOS_Graphify_DB::get_meta( 'last_build_completed', 'never' );
+		$stats      = NV_oOS_Graphify_DB::get_stats();
+		$god_nodes  = NV_oOS_Graphify_Analyzer::get_god_nodes( 10 );
+		$surprising = NV_oOS_Graphify_Analyzer::get_surprising_connections( 10 );
+		$gaps       = NV_oOS_Graphify_Analyzer::get_knowledge_gaps();
+		$recommends = NV_oOS_Graphify_Analyzer::get_recommendations( 10 );
+		$build_meta = NV_oOS_Graphify_DB::get_meta( 'last_build_completed', 'never' );
 
 		// Build community index.
 		$communities = array();
@@ -84,22 +84,22 @@ class NV_oOS_Graphify_Report {
 				),
 				ARRAY_A
 			);
-			$communities = is_array( $community_rows ) ? $community_rows : array();
+			$communities    = is_array( $community_rows ) ? $community_rows : array();
 		}
 
 		// Generate AI questions.
 		$questions = self::generate_questions( $stats, $god_nodes, $gaps );
 
 		return array(
-			'generated_at'   => gmdate( 'Y-m-d H:i:s' ),
-			'last_build'     => $build_meta,
-			'stats'          => $stats,
-			'god_nodes'      => $god_nodes,
-			'surprising'     => $surprising,
-			'communities'    => $communities,
-			'gaps'           => $gaps,
-			'recommendations'=> $recommends,
-			'questions'      => $questions,
+			'generated_at'    => gmdate( 'Y-m-d H:i:s' ),
+			'last_build'      => $build_meta,
+			'stats'           => $stats,
+			'god_nodes'       => $god_nodes,
+			'surprising'      => $surprising,
+			'communities'     => $communities,
+			'gaps'            => $gaps,
+			'recommendations' => $recommends,
+			'questions'       => $questions,
 		);
 	}
 
@@ -113,7 +113,7 @@ class NV_oOS_Graphify_Report {
 	 */
 	public static function to_markdown( array $report ) {
 		$md  = "# Knowledge Graph Report\n\n";
-		$md .= '_Generated: ' . esc_html( $report['generated_at'] ) . " — Last build: " . esc_html( $report['last_build'] ) . "_\n\n";
+		$md .= '_Generated: ' . esc_html( $report['generated_at'] ) . ' — Last build: ' . esc_html( $report['last_build'] ) . "_\n\n";
 
 		// Stats.
 		$md .= "## Summary Statistics\n\n";
@@ -202,7 +202,7 @@ class NV_oOS_Graphify_Report {
 		);
 
 		if ( ! empty( $god_nodes ) ) {
-			$top = is_object( $god_nodes[0] ) ? $god_nodes[0]->label : $god_nodes[0]['label'];
+			$top         = is_object( $god_nodes[0] ) ? $god_nodes[0]->label : $god_nodes[0]['label'];
 			$questions[] = sprintf(
 				/* translators: %s: top god node label */
 				__( 'What content is connected to "%s" in the knowledge graph?', 'nvoos-graphify' ),

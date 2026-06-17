@@ -75,23 +75,23 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'name'              => array(
+							'name'               => array(
 								'type'        => 'string',
 								'description' => __( 'Tenant name.', 'mcp-ai-wpoos-pro' ),
 							),
-							'sf'                => array(
+							'sf'                 => array(
 								'type'        => 'number',
 								'description' => __( 'Leased square footage.', 'mcp-ai-wpoos-pro' ),
 							),
-							'annual_rent'       => array(
+							'annual_rent'        => array(
 								'type'        => 'number',
 								'description' => __( 'Annual base rent.', 'mcp-ai-wpoos-pro' ),
 							),
-							'lease_start'       => array(
+							'lease_start'        => array(
 								'type'        => 'string',
 								'description' => __( 'Lease start date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 							),
-							'lease_end'         => array(
+							'lease_end'          => array(
 								'type'        => 'string',
 								'description' => __( 'Lease end date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 							),
@@ -115,7 +115,20 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -131,14 +144,14 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 			return new WP_Error( 'invalid_input', __( 'At least one tenant is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$calc        = WP_MCP_AI_CRE_Debt_Calculator::class;
-		$now         = new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) );
-		$total_rent  = 0.0;
-		$total_sf    = 0.0;
-		$walt_num    = 0.0; // numerator: rent * remaining years
-		$rollover    = array(); // year => array of tenant data
+		$calc          = WP_MCP_AI_CRE_Debt_Calculator::class;
+		$now           = new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) );
+		$total_rent    = 0.0;
+		$total_sf      = 0.0;
+		$walt_num      = 0.0; // numerator: rent * remaining years
+		$rollover      = array(); // year => array of tenant data
 		$concentration = array();
-		$mtm_details = array();
+		$mtm_details   = array();
 
 		foreach ( $tenants as $t ) {
 			$name        = sanitize_text_field( $t['name'] ?? 'Unknown' );
@@ -155,8 +168,8 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 			$remaining_years = 0;
 			if ( $lease_end ) {
 				try {
-					$end_dt = new \DateTimeImmutable( $lease_end );
-					$diff   = $now->diff( $end_dt );
+					$end_dt          = new \DateTimeImmutable( $lease_end );
+					$diff            = $now->diff( $end_dt );
 					$remaining_years = max( 0, ( $diff->days / 365.25 ) * ( $diff->invert ? -1 : 1 ) );
 				} catch ( \Exception $e ) {
 					$remaining_years = 0;
@@ -169,11 +182,15 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 			$expiry_year = $lease_end ? (int) substr( $lease_end, 0, 4 ) : 0;
 			if ( $expiry_year > 0 ) {
 				if ( ! isset( $rollover[ $expiry_year ] ) ) {
-					$rollover[ $expiry_year ] = array( 'sf' => 0, 'rent' => 0, 'tenants' => 0 );
+					$rollover[ $expiry_year ] = array(
+						'sf'      => 0,
+						'rent'    => 0,
+						'tenants' => 0,
+					);
 				}
 				$rollover[ $expiry_year ]['sf']      += $sf;
-				$rollover[ $expiry_year ]['rent']     += $annual_rent;
-				$rollover[ $expiry_year ]['tenants']  += 1;
+				$rollover[ $expiry_year ]['rent']    += $annual_rent;
+				$rollover[ $expiry_year ]['tenants'] += 1;
 			}
 
 			// Concentration.
@@ -186,8 +203,8 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 
 			// Mark-to-market.
 			if ( $sf > 0 && $market_psf > 0 ) {
-				$in_place_psf = $annual_rent / $sf;
-				$market_rent  = $market_psf * $sf;
+				$in_place_psf  = $annual_rent / $sf;
+				$market_rent   = $market_psf * $sf;
 				$mtm_details[] = array(
 					'name'              => $name,
 					'in_place_rent_psf' => round( $in_place_psf, 2 ),
@@ -207,9 +224,12 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 		$walt = ( $total_rent > 0 ) ? $walt_num / $total_rent : 0;
 
 		// Concentration percentages.
-		usort( $concentration, function ( $a, $b ) {
-			return $b['annual_rent'] <=> $a['annual_rent'];
-		} );
+		usort(
+			$concentration,
+			function ( $a, $b ) {
+				return $b['annual_rent'] <=> $a['annual_rent'];
+			}
+		);
 		foreach ( $concentration as &$c ) {
 			$c['pct_of_total_rent'] = ( $total_rent > 0 )
 				? $calc::format_percentage( $c['annual_rent'] / $total_rent )
@@ -225,12 +245,12 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 		$rollover_table = array();
 		foreach ( $rollover as $year => $data ) {
 			$rollover_table[] = array(
-				'year'        => $year,
-				'sf_expiring' => round( $data['sf'], 2 ),
-				'pct_sf'      => ( $total_sf > 0 ) ? $calc::format_percentage( $data['sf'] / $total_sf ) : '0.00%',
+				'year'          => $year,
+				'sf_expiring'   => round( $data['sf'], 2 ),
+				'pct_sf'        => ( $total_sf > 0 ) ? $calc::format_percentage( $data['sf'] / $total_sf ) : '0.00%',
 				'rent_expiring' => $calc::format_currency( $data['rent'] ),
-				'pct_rent'    => ( $total_rent > 0 ) ? $calc::format_percentage( $data['rent'] / $total_rent ) : '0.00%',
-				'num_tenants' => $data['tenants'],
+				'pct_rent'      => ( $total_rent > 0 ) ? $calc::format_percentage( $data['rent'] / $total_rent ) : '0.00%',
+				'num_tenants'   => $data['tenants'],
 			);
 		}
 
@@ -245,7 +265,7 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 			'success' => true,
 			'message' => __( 'Rent roll analysis complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
-				'summary'          => array(
+				'summary'              => array(
 					'total_tenants'     => count( $tenants ),
 					'total_sf'          => round( $total_sf, 2 ),
 					'total_annual_rent' => $calc::format_currency( $total_rent ),

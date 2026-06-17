@@ -91,6 +91,13 @@ class WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Default per-modality hanging protocols.
 	 *
 	 * @return array
@@ -98,19 +105,35 @@ class WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol implements WP_MCP_AI_Tool_Inte
 	public static function default_protocols() {
 		$base = array(
 			'CT' => array(
-				'name'    => 'CT default',
-				'layout'  => '2x2',
-				'stages'  => array(
-					array( 'series' => 'axial', 'window_preset' => 'soft-tissue', 'sync' => 'mpr' ),
-					array( 'series' => 'coronal', 'window_preset' => 'soft-tissue', 'sync' => 'mpr' ),
-					array( 'series' => 'sagittal', 'window_preset' => 'soft-tissue', 'sync' => 'mpr' ),
-					array( 'series' => 'axial', 'window_preset' => 'lung', 'sync' => 'mpr' ),
+				'name'   => 'CT default',
+				'layout' => '2x2',
+				'stages' => array(
+					array(
+						'series'        => 'axial',
+						'window_preset' => 'soft-tissue',
+						'sync'          => 'mpr',
+					),
+					array(
+						'series'        => 'coronal',
+						'window_preset' => 'soft-tissue',
+						'sync'          => 'mpr',
+					),
+					array(
+						'series'        => 'sagittal',
+						'window_preset' => 'soft-tissue',
+						'sync'          => 'mpr',
+					),
+					array(
+						'series'        => 'axial',
+						'window_preset' => 'lung',
+						'sync'          => 'mpr',
+					),
 				),
 			),
 			'MR' => array(
-				'name'    => 'MR default',
-				'layout'  => '2x2',
-				'stages'  => array(
+				'name'   => 'MR default',
+				'layout' => '2x2',
+				'stages' => array(
 					array( 'series' => 't1' ),
 					array( 'series' => 't2' ),
 					array( 'series' => 'flair' ),
@@ -118,32 +141,44 @@ class WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol implements WP_MCP_AI_Tool_Inte
 				),
 			),
 			'CR' => array(
-				'name'    => 'CR / DX default',
-				'layout'  => '1x2',
-				'stages'  => array(
-					array( 'series' => 'pa', 'window_preset' => 'bone' ),
-					array( 'series' => 'lateral', 'window_preset' => 'bone' ),
+				'name'   => 'CR / DX default',
+				'layout' => '1x2',
+				'stages' => array(
+					array(
+						'series'        => 'pa',
+						'window_preset' => 'bone',
+					),
+					array(
+						'series'        => 'lateral',
+						'window_preset' => 'bone',
+					),
 				),
 			),
 			'DX' => array(
-				'name'    => 'CR / DX default',
-				'layout'  => '1x2',
-				'stages'  => array(
-					array( 'series' => 'pa', 'window_preset' => 'bone' ),
-					array( 'series' => 'lateral', 'window_preset' => 'bone' ),
+				'name'   => 'CR / DX default',
+				'layout' => '1x2',
+				'stages' => array(
+					array(
+						'series'        => 'pa',
+						'window_preset' => 'bone',
+					),
+					array(
+						'series'        => 'lateral',
+						'window_preset' => 'bone',
+					),
 				),
 			),
 			'US' => array(
-				'name'    => 'Ultrasound default',
-				'layout'  => '1x1',
-				'stages'  => array(
+				'name'   => 'Ultrasound default',
+				'layout' => '1x1',
+				'stages' => array(
 					array( 'series' => 'cine' ),
 				),
 			),
 			'MG' => array(
-				'name'    => 'Mammography default',
-				'layout'  => '2x2',
-				'stages'  => array(
+				'name'   => 'Mammography default',
+				'layout' => '2x2',
+				'stages' => array(
 					array( 'series' => 'r-cc' ),
 					array( 'series' => 'l-cc' ),
 					array( 'series' => 'r-mlo' ),
@@ -151,21 +186,33 @@ class WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol implements WP_MCP_AI_Tool_Inte
 				),
 			),
 			'NM' => array(
-				'name'    => 'Nuclear medicine default',
-				'layout'  => '1x2',
-				'stages'  => array(
+				'name'   => 'Nuclear medicine default',
+				'layout' => '1x2',
+				'stages' => array(
 					array( 'series' => 'planar-anterior' ),
 					array( 'series' => 'planar-posterior' ),
 				),
 			),
 			'PT' => array(
-				'name'    => 'PET / PET-CT default',
-				'layout'  => '2x2',
-				'stages'  => array(
-					array( 'series' => 'pet-axial', 'window_preset' => 'pet' ),
-					array( 'series' => 'ct-axial', 'window_preset' => 'soft-tissue' ),
-					array( 'series' => 'fused-axial', 'window_preset' => 'pet-ct' ),
-					array( 'series' => 'mip', 'window_preset' => 'pet' ),
+				'name'   => 'PET / PET-CT default',
+				'layout' => '2x2',
+				'stages' => array(
+					array(
+						'series'        => 'pet-axial',
+						'window_preset' => 'pet',
+					),
+					array(
+						'series'        => 'ct-axial',
+						'window_preset' => 'soft-tissue',
+					),
+					array(
+						'series'        => 'fused-axial',
+						'window_preset' => 'pet-ct',
+					),
+					array(
+						'series'        => 'mip',
+						'window_preset' => 'pet',
+					),
 				),
 			),
 			'SR' => array(

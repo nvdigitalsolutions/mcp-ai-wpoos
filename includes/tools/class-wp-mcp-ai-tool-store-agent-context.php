@@ -173,6 +173,13 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -180,25 +187,35 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 	 * @return array Tool results.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check user permissions before storing context data.
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to store agent context.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
+		}
+
 		// Validate required parameters.
 		if ( empty( $arguments['agent_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent ID is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'store_agent_context_missing_agent_id',
+				__( 'Agent ID is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $arguments['context_type'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context type is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'store_agent_context_missing_context_type',
+				__( 'Context type is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $arguments['context_data'] ) || ! is_array( $arguments['context_data'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context data is required and must be an object.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'store_agent_context_invalid_context_data',
+				__( 'Context data is required and must be an object.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -221,10 +238,7 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! empty( $arguments['content_source'] ) && is_array( $arguments['content_source'] ) ) {
 			$ingestion_result = $this->ingest_content_source( $arguments['content_source'], $context );
 			if ( is_wp_error( $ingestion_result ) ) {
-				return array(
-					'success' => false,
-					'message' => $ingestion_result->get_error_message(),
-				);
+					return $ingestion_result;
 			}
 			if ( is_array( $ingestion_result ) ) {
 				$ingested_source = $ingestion_result;
@@ -253,9 +267,9 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 
 		// Validate context_data has required fields.
 		if ( empty( $context_data['title'] ) || empty( $context_data['content'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context data must include title and content fields.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'store_agent_context_missing_title_content',
+				__( 'Context data must include title and content fields.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -304,6 +318,41 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 
 		// Generate unique context ID.
 		$context_id = 'ctx_' . wp_generate_password( 12, false );
+
+		// Memory Layer 2026 Phase 5 — contradiction detection (additive, gated).
+		//
+		// Runs AFTER the privacy filter + pre-store transform but BEFORE persistence,
+		// so the detector sees the same content that will be written. Wrapped in a
+		// guarded block so a misbehaving detector NEVER blocks the store: every
+		// failure is logged and the write proceeds unchanged.
+		if ( (bool) apply_filters( 'wp_mcp_ai_memory_contradiction_detection_on_store', true )
+			&& class_exists( 'WP_MCP_AI_Memory_Contradiction_Detector' )
+		) {
+			try {
+				WP_MCP_AI_Memory_Contradiction_Detector::get_instance()->detect(
+					array_merge(
+						$context_data,
+						array(
+							'context_id' => $context_id,
+							'agent_id'   => $agent_id,
+							'wing'       => $wing,
+							'room'       => $room,
+						)
+					)
+				);
+			} catch ( Throwable $contradiction_exception ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						'store_agent_context: contradiction detector threw; store proceeds unaffected.',
+						array(
+							'context_id' => $context_id,
+							'agent_id'   => $agent_id,
+							'message'    => $contradiction_exception->getMessage(),
+						)
+					);
+				}
+			}
+		}
 
 		// Prepare context record.
 		$context_record = array(

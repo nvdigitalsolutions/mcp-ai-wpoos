@@ -69,15 +69,15 @@ class WP_MCP_AI_Tool_CRE_Debt_Yield_Analyzer implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'noi'              => array(
+				'noi'               => array(
 					'type'        => 'number',
 					'description' => __( 'Annual Net Operating Income.', 'mcp-ai-wpoos-pro' ),
 				),
-				'loan_amount'      => array(
+				'loan_amount'       => array(
 					'type'        => 'number',
 					'description' => __( 'Loan amount.', 'mcp-ai-wpoos-pro' ),
 				),
-				'stress_scenarios' => array(
+				'stress_scenarios'  => array(
 					'type'        => 'array',
 					'description' => __( 'Array of NOI adjustment percentages as decimals (e.g. [-0.05, -0.10, -0.15, -0.20]).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -103,7 +103,20 @@ class WP_MCP_AI_Tool_CRE_Debt_Yield_Analyzer implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -114,10 +127,10 @@ class WP_MCP_AI_Tool_CRE_Debt_Yield_Analyzer implements WP_MCP_AI_Tool_Interface
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$noi        = (float) ( $arguments['noi'] ?? 0 );
-		$loan       = (float) ( $arguments['loan_amount'] ?? 0 );
-		$scenarios  = $arguments['stress_scenarios'] ?? array( -0.05, -0.10, -0.15, -0.20 );
-		$min_dy     = (float) ( $arguments['min_acceptable_dy'] ?? 0.10 );
+		$noi       = (float) ( $arguments['noi'] ?? 0 );
+		$loan      = (float) ( $arguments['loan_amount'] ?? 0 );
+		$scenarios = $arguments['stress_scenarios'] ?? array( -0.05, -0.10, -0.15, -0.20 );
+		$min_dy    = (float) ( $arguments['min_acceptable_dy'] ?? 0.10 );
 
 		if ( $noi <= 0 || $loan <= 0 ) {
 			return new WP_Error( 'invalid_input', __( 'NOI and loan amount must be greater than zero.', 'mcp-ai-wpoos-pro' ) );
@@ -146,27 +159,27 @@ class WP_MCP_AI_Tool_CRE_Debt_Yield_Analyzer implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Breakeven NOI.
-		$breakeven_noi  = $loan * $min_dy;
-		$noi_cushion    = $noi - $breakeven_noi;
-		$cushion_pct    = ( $noi > 0 ) ? $noi_cushion / $noi : 0;
+		$breakeven_noi = $loan * $min_dy;
+		$noi_cushion   = $noi - $breakeven_noi;
+		$cushion_pct   = ( $noi > 0 ) ? $noi_cushion / $noi : 0;
 
 		return array(
 			'success' => true,
 			'message' => __( 'Debt yield analysis complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
-				'base_case'       => array(
+				'base_case'      => array(
 					'noi'             => $calc::format_currency( $noi ),
 					'loan_amount'     => $calc::format_currency( $loan ),
 					'debt_yield'      => $calc::format_percentage( $base_dy ),
 					'meets_threshold' => $base_dy >= $min_dy,
 				),
-				'threshold'       => $calc::format_percentage( $min_dy ),
-				'stress_results'  => $results,
-				'breakeven'       => array(
-					'breakeven_noi'     => $calc::format_currency( $breakeven_noi ),
-					'noi_cushion'       => $calc::format_currency( $noi_cushion ),
+				'threshold'      => $calc::format_percentage( $min_dy ),
+				'stress_results' => $results,
+				'breakeven'      => array(
+					'breakeven_noi'      => $calc::format_currency( $breakeven_noi ),
+					'noi_cushion'        => $calc::format_currency( $noi_cushion ),
 					'cushion_pct_of_noi' => $calc::format_percentage( $cushion_pct ),
-					'max_noi_decline'   => $calc::format_percentage( -$cushion_pct ),
+					'max_noi_decline'    => $calc::format_percentage( -$cushion_pct ),
 				),
 			),
 		);

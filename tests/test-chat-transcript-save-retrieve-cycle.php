@@ -61,8 +61,14 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_model', 'gpt-4' );
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
 
+		WP_MCP_AI_REST::get_instance();
 		rest_get_server();
 		do_action( 'init' );
+
+		// This test saves and retrieves transcripts, which requires JetEngine CCT.
+		if ( ! function_exists( 'jet_engine' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine for transcript storage' );
+		}
 	}
 
 	/**
@@ -156,6 +162,7 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 
 		// Step 1: Save the conversation via POST /chat-transcripts.
 		$save_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$save_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$save_request->set_header( 'Content-Type', 'application/json' );
 		$save_request->set_body(
 			wp_json_encode(
@@ -196,6 +203,7 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 
 		// Step 2: Retrieve the conversation via GET /chat-transcripts?session_key=xxx.
 		$retrieve_request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$retrieve_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$retrieve_request->set_param( 'session_key', $session_key );
 		$retrieve_request->set_param( 'user_id', $this->admin_id );
 		$retrieve_request->set_param( 'assistant_id', $this->assistant_id );

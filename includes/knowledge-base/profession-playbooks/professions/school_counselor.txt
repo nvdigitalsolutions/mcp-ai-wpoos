@@ -74,7 +74,7 @@ School counseling roles and frameworks vary by region:
 **Certification & Credentialing:**
 - **US**: State-specific school counselor licenses, master's degree required, supervised experience, exams (Praxis)
 - **UK**: No universal school counselor credential, BACP accreditation for counselors, teaching background common
-- **Student-to-counselor ratios**: ASCA recommends 250:1, reality varies (US average 430:1, varies dramatically by state)
+- **Student-to-counselor ratios**: ASCA recommends 250:1, reality varies (US average 372:1 for 2024-2025, varies dramatically by state)
 
 **Role & Responsibilities:**
 - **US**: Academic, career, social-emotional counseling, college admissions support, crisis intervention
@@ -842,7 +842,7 @@ Key Terms:
 - **ASCA National Model**: Comprehensive framework for school counseling programs with four components: Foundation, Delivery, Management, and Accountability
 - **ASCA Mindsets & Behaviors**: 35 standards organized into 3 domains (academic, career, social-emotional) guiding what students should achieve
 - **Comprehensive School Counseling Program**: Preventive, developmental program addressing academic, career, and social-emotional needs of ALL students
-- **Student-to-Counselor Ratio**: ASCA recommends maximum 250:1 ratio (actual US average is 430:1 as of 2023)
+- **Student-to-Counselor Ratio**: ASCA recommends maximum 250:1 ratio (actual US average is 372:1 for 2024-2025)
 - **Direct Services**: School counselor-student interaction (individual/group counseling, classroom guidance, crisis response)
 - **Indirect Services**: School counselor actions on behalf of students (consultation, collaboration, referrals, advocacy)
 - **Closing-the-Gap**: Targeted interventions to address achievement/opportunity gaps for underserved student populations
@@ -866,7 +866,7 @@ Standards & Frameworks (2024):
 - **Title IX**: Federal law prohibiting sex-based discrimination in education (includes sexual harassment, assault, dating violence)
 - **Every Student Succeeds Act (ESSA, 2015)**: Federal education law recognizing school counselors as part of well-rounded education
 - **SAMHSA Suicide Prevention Resource Center**: Evidence-based suicide prevention practices and protocols (safeTALK, ASIST, Columbia Protocol)
-- **National Office for School Counselor Advocacy (NOSCA)**: Eight components of college and career readiness counseling
+- **National Office for School Counselor Advocacy (NOSCA, ~2011)**: Historical framework — eight components of college and career readiness counseling
 - **Common Core State Standards / State Learning Standards**: Academic standards driving college and career readiness
 
 Common Tools:

@@ -337,136 +337,38 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 		}
 	}
 }
-// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor system health status widget layout and styling
-?>
-<style>
-.wp-mcp-ai-system-health {
-	padding: 20px;
-	background: #fff;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-}
-.wp-mcp-ai-system-health__title {
-	margin-top: 0;
-	margin-bottom: 20px;
-}
-.wp-mcp-ai-system-health__overall {
-	display: flex;
-	align-items: center;
-	gap: 20px;
-	padding: 20px;
-	border-radius: 8px;
-	margin-bottom: 20px;
-}
-.status-good {
-	background: #d4edda;
-	border: 2px solid #46b450;
-}
-.status-warning {
-	background: #fff3cd;
-	border: 2px solid #ffb900;
-}
-.status-critical {
-	background: #f8d7da;
-	border: 2px solid #dc3232;
-}
-.status-unknown {
-	background: #f0f0f1;
-	border: 2px solid #999;
-}
-.wp-mcp-ai-system-health__status-icon {
-	font-size: 48px;
-	line-height: 1;
-}
-.status-good .dashicons {
-	color: #46b450;
-}
-.status-warning .dashicons {
-	color: #ffb900;
-}
-.status-critical .dashicons {
-	color: #dc3232;
-}
-.status-unknown .dashicons {
-	color: #999;
-}
-.wp-mcp-ai-system-health__status-label {
-	font-size: 20px;
-	font-weight: 600;
-	margin-bottom: 5px;
-}
-.wp-mcp-ai-system-health__status-score {
-	font-size: 14px;
-	opacity: 0.8;
-}
-.wp-mcp-ai-system-health__critical-alert {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 12px;
-	background: #f8d7da;
-	border-left: 4px solid #dc3232;
-	border-radius: 4px;
-	margin-bottom: 20px;
-	color: #721c24;
-	font-weight: 500;
-}
-.wp-mcp-ai-system-health__critical-alert .dashicons {
-	color: #dc3232;
-}
-.wp-mcp-ai-system-health__components h4 {
-	margin-top: 0;
-	margin-bottom: 15px;
-}
-.wp-mcp-ai-system-health__components-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-	gap: 15px;
-}
-.wp-mcp-ai-system-health__component {
-	padding: 15px;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	position: relative;
-}
-.wp-mcp-ai-system-health__component.status-good {
-	background: #f0f9f1;
-	border-color: #46b450;
-}
-.wp-mcp-ai-system-health__component.status-warning {
-	background: #fffbf0;
-	border-color: #ffb900;
-}
-.wp-mcp-ai-system-health__component.status-critical {
-	background: #fef5f5;
-	border-color: #dc3232;
-}
-.wp-mcp-ai-system-health__component-name {
-	font-weight: 600;
-	margin-bottom: 5px;
-}
-.wp-mcp-ai-system-health__component-indicator {
-	width: 10px;
-	height: 10px;
-	border-radius: 50%;
-	position: absolute;
-	top: 15px;
-	right: 15px;
-}
-.status-good .wp-mcp-ai-system-health__component-indicator {
-	background: #46b450;
-}
-.status-warning .wp-mcp-ai-system-health__component-indicator {
-	background: #ffb900;
-}
-.status-critical .wp-mcp-ai-system-health__component-indicator {
-	background: #dc3232;
-}
-.status-unknown .wp-mcp-ai-system-health__component-indicator {
-	background: #999;
-}
-.wp-mcp-ai-system-health__component-meta {
-	font-size: 12px;
-	color: #666;
-}
-</style>
+// Enqueue inline styles via wp_add_inline_style for WordPress.org compliance.
+wp_register_style( 'wp-mcp-ai-el-system-health', false );
+wp_enqueue_style( 'wp-mcp-ai-el-system-health' );
+wp_add_inline_style(
+	'wp-mcp-ai-el-system-health',
+	'.wp-mcp-ai-system-health{padding:20px;background:#fff;border:1px solid #ddd;border-radius:4px}'
+	. '.wp-mcp-ai-system-health__title{margin-top:0;margin-bottom:20px}'
+	. '.wp-mcp-ai-system-health__overall{display:flex;align-items:center;gap:20px;padding:20px;border-radius:8px;margin-bottom:20px}'
+	. '.status-good{background:#d4edda;border:2px solid #46b450}'
+	. '.status-warning{background:#fff3cd;border:2px solid #ffb900}'
+	. '.status-critical{background:#f8d7da;border:2px solid #dc3232}'
+	. '.status-unknown{background:#f0f0f1;border:2px solid #999}'
+	. '.wp-mcp-ai-system-health__status-icon{font-size:48px;line-height:1}'
+	. '.status-good .dashicons{color:#46b450}'
+	. '.status-warning .dashicons{color:#ffb900}'
+	. '.status-critical .dashicons{color:#dc3232}'
+	. '.status-unknown .dashicons{color:#999}'
+	. '.wp-mcp-ai-system-health__status-label{font-size:20px;font-weight:600;margin-bottom:5px}'
+	. '.wp-mcp-ai-system-health__status-score{font-size:14px;opacity:0.8}'
+	. '.wp-mcp-ai-system-health__critical-alert{display:flex;align-items:center;gap:10px;padding:12px;background:#f8d7da;border-left:4px solid #dc3232;border-radius:4px;margin-bottom:20px;color:#721c24;font-weight:500}'
+	. '.wp-mcp-ai-system-health__critical-alert .dashicons{color:#dc3232}'
+	. '.wp-mcp-ai-system-health__components h4{margin-top:0;margin-bottom:15px}'
+	. '.wp-mcp-ai-system-health__components-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px}'
+	. '.wp-mcp-ai-system-health__component{padding:15px;border:1px solid #ddd;border-radius:4px;position:relative}'
+	. '.wp-mcp-ai-system-health__component.status-good{background:#f0f9f1;border-color:#46b450}'
+	. '.wp-mcp-ai-system-health__component.status-warning{background:#fffbf0;border-color:#ffb900}'
+	. '.wp-mcp-ai-system-health__component.status-critical{background:#fef5f5;border-color:#dc3232}'
+	. '.wp-mcp-ai-system-health__component-name{font-weight:600;margin-bottom:5px}'
+	. '.wp-mcp-ai-system-health__component-indicator{width:10px;height:10px;border-radius:50%;position:absolute;top:15px;right:15px}'
+	. '.status-good .wp-mcp-ai-system-health__component-indicator{background:#46b450}'
+	. '.status-warning .wp-mcp-ai-system-health__component-indicator{background:#ffb900}'
+	. '.status-critical .wp-mcp-ai-system-health__component-indicator{background:#dc3232}'
+	. '.status-unknown .wp-mcp-ai-system-health__component-indicator{background:#999}'
+	. '.wp-mcp-ai-system-health__component-meta{font-size:12px;color:#666}'
+);

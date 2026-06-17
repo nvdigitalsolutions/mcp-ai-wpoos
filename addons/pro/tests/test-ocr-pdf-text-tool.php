@@ -23,12 +23,12 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Load tool.
 		require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-ocr-service.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-ocr-pdf-text.php';
-		
+
 		$this->tool = new WP_MCP_AI_Tool_OCR_PDF_Text();
 	}
 
@@ -70,11 +70,11 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 	 */
 	public function test_get_parameters_schema() {
 		$schema = $this->tool->get_parameters_schema();
-		
+
 		$this->assertIsArray( $schema );
 		$this->assertEquals( 'object', $schema['type'] );
 		$this->assertArrayHasKey( 'properties', $schema );
-		
+
 		// Check for key parameters.
 		$this->assertArrayHasKey( 'attachment_id', $schema['properties'] );
 		$this->assertArrayHasKey( 'url', $schema['properties'] );
@@ -89,7 +89,7 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 	 */
 	public function test_get_capability_flags() {
 		$flags = $this->tool->get_capability_flags();
-		
+
 		$this->assertIsArray( $flags );
 		$this->assertContains( 'pro', $flags );
 		$this->assertContains( 'requires-capability', $flags );
@@ -106,7 +106,7 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		$result = $this->tool->execute( array(), array() );
-		
+
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'success', $result );
 		$this->assertFalse( $result['success'] );
@@ -126,7 +126,7 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 			array( 'attachment_id' => 1 ),
 			array()
 		);
-		
+
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'success', $result );
 		$this->assertFalse( $result['success'] );
@@ -147,7 +147,7 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 			array( 'attachment_id' => 99999 ),
 			array()
 		);
-		
+
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'success', $result );
 		$this->assertFalse( $result['success'] );
@@ -160,9 +160,9 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 	 * Test provider parameter validation.
 	 */
 	public function test_provider_parameter_values() {
-		$schema = $this->tool->get_parameters_schema();
+		$schema          = $this->tool->get_parameters_schema();
 		$provider_schema = $schema['properties']['provider'];
-		
+
 		$this->assertArrayHasKey( 'enum', $provider_schema );
 		$this->assertContains( 'auto', $provider_schema['enum'] );
 		$this->assertContains( 'openai', $provider_schema['enum'] );

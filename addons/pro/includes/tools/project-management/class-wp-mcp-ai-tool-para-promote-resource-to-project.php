@@ -19,24 +19,54 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'para_promote_resource_to_project';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'PARA: Promote Resource to Project', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Promote a PARA Resource into a new actionable Project. Creates a `mcp_ai_project` from the resource title/description and links the new project to the source resource via the `_para_source_resource_id` post meta.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'resource_post_id' => array( 'type' => 'integer', 'minimum' => 1 ),
-				'project_title'    => array( 'type' => 'string', 'maxLength' => 200 ),
+				'resource_post_id' => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
+				'project_title'    => array(
+					'type'      => 'string',
+					'maxLength' => 200,
+				),
 				'project_status'   => array(
 					'type' => 'string',
 					'enum' => array( 'planning', 'active' ),
@@ -51,14 +81,38 @@ class WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project implements WP_MCP_AI_Tool_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing' );
 	}
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		return class_exists( 'WP_MCP_AI_PARA_Taxonomy' ) && WP_MCP_AI_PARA_Taxonomy::is_enabled();
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
@@ -108,10 +162,10 @@ class WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project implements WP_MCP_AI_Tool_
 		WP_MCP_AI_PARA_Taxonomy::assign( $project_id, 'projects', __( 'Promoted from resource.', 'mcp-ai-wpoos-pro' ) );
 
 		return array(
-			'success'         => true,
-			'project_id'      => (int) $project_id,
-			'resource_id'     => $resource_id,
-			'message'         => __( 'Resource promoted to project.', 'mcp-ai-wpoos-pro' ),
+			'success'     => true,
+			'project_id'  => (int) $project_id,
+			'resource_id' => $resource_id,
+			'message'     => __( 'Resource promoted to project.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

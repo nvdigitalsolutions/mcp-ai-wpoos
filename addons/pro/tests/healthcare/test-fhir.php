@@ -113,9 +113,9 @@ class Test_Healthcare_FHIR extends WP_UnitTestCase {
 	public function test_build_medication_request() {
 		$resource = WP_MCP_AI_Healthcare_FHIR::build_medication_request(
 			array(
-				'id'         => 'mr-1',
-				'patient_id' => 42,
-				'medication' => array(
+				'id'          => 'mr-1',
+				'patient_id'  => 42,
+				'medication'  => array(
 					'code'    => '6809',
 					'display' => 'Metformin',
 				),
@@ -138,9 +138,9 @@ class Test_Healthcare_FHIR extends WP_UnitTestCase {
 	public function test_build_allergy_intolerance() {
 		$resource = WP_MCP_AI_Healthcare_FHIR::build_allergy_intolerance(
 			array(
-				'id'         => 'al-1',
-				'patient_id' => 42,
-				'code'       => array(
+				'id'          => 'al-1',
+				'patient_id'  => 42,
+				'code'        => array(
 					'code'    => '227037002',
 					'display' => 'Peanut',
 				),

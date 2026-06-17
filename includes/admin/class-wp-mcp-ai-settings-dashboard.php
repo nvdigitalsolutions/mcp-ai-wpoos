@@ -145,12 +145,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$main_submenu = $submenu[ self::PAGE_SLUG ];
 
 			// Define desired order: Getting Started (0), General Settings (10), Orchestration (20), Task Plans (30).
-			$ordered_items          = array();
-			$getting_started_item   = null;
-			$general_settings_item  = null;
-			$orchestration_item     = null;
-			$task_plans_item        = null;
-			$other_items            = array();
+			$ordered_items         = array();
+			$getting_started_item  = null;
+			$general_settings_item = null;
+			$orchestration_item    = null;
+			$task_plans_item       = null;
+			$other_items           = array();
 
 			// Categorize menu items.
 			foreach ( $main_submenu as $item ) {
@@ -655,6 +655,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'gemini_api_key',
 					'anthropic_api_key',
 					'huggingface_api_key',
+					'kimi_api_key',
 					'ollama_endpoint_url',
 					'lm_studio_endpoint_url',
 					'cloudflare_account_id',
@@ -1073,6 +1074,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					array( 'wp-mcp-ai-dashboard' ),
 					$tools_css['version']
 				);
+			}
+
+			$inline_style_handles = array(
+				'wp-mcp-ai-orchestration-renderer',
+				'wp-mcp-ai-section-providers',
+				'wp-mcp-ai-section-security',
+			);
+
+			foreach ( $inline_style_handles as $inline_style_handle ) {
+				// Register dummy stylesheet handles for section renderers that print inline styles later.
+				// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Dummy handle; version not applicable.
+				wp_register_style( $inline_style_handle, false );
+				wp_enqueue_style( $inline_style_handle );
 			}
 
 			// Enqueue AJAX error service (must be loaded before other scripts) with filemtime for cache busting.

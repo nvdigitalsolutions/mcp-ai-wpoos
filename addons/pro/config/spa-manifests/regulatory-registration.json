@@ -1,0 +1,32 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "regulatory-registration",
+	"label": "Regulatory Registrations",
+	"icon": "shield-alt",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "edit_posts",
+	"resources": [
+		{
+			"name": "registrations",
+			"label": "Registrations",
+			"endpoint": "/regulatory/registrations",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",            "type": "integer",  "label": "ID",            "readonly": true },
+				{ "name": "title",         "type": "string",   "label": "Title",         "required": true },
+				{ "name": "jurisdiction",  "type": "string",   "label": "Jurisdiction" },
+				{ "name": "agency",        "type": "string",   "label": "Agency" },
+				{ "name": "reference",     "type": "string",   "label": "Reference #" },
+				{ "name": "status",        "type": "enum",     "label": "Status",        "options": ["draft","submitted","under_review","approved","rejected","expired"] },
+				{ "name": "submitted_at",  "type": "date",     "label": "Submitted" },
+				{ "name": "expires_at",    "type": "date",     "label": "Expires" },
+				{ "name": "notes",         "type": "text",     "label": "Notes" }
+			]
+		}
+	],
+	"views": [
+		{ "name": "all",       "type": "table",  "resource": "registrations", "default": true, "label": "All registrations" },
+		{ "name": "by_status", "type": "kanban", "resource": "registrations", "group_by": "status", "label": "By status" }
+	]
+}

@@ -23,6 +23,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_REST_Analytics_Manager {
 
 	/**
+	 * REST API namespace.
+	 *
+	 * @since 1.1.22
+	 * @var string
+	 */
+	const REST_NAMESPACE = 'mcp-ai/v1';
+
+	/**
 	 * Register REST API routes.
 	 *
 	 * Registers analytics-related REST API endpoints for data analysis and insights:
@@ -47,111 +55,111 @@ class WP_MCP_AI_REST_Analytics_Manager {
 	 * @since 1.0.0
 	 */
 	public static function register_routes() {
-		// Get user trends.
-		register_rest_route(
-			'mcp-ai/v1',
-			'/analytics/trends/(?P<user_id>\d+)',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'get_user_trends' ),
-				'permission_callback' => array( __CLASS__, 'check_analytics_permission' ),
-				'args'                => array(
-					'user_id' => array(
-						'required'          => true,
-						'type'              => 'integer',
-						'sanitize_callback' => 'absint',
-						'validate_callback' => array( __CLASS__, 'validate_user_id' ),
+			// Get user trends.
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/analytics/trends/(?P<user_id>\d+)',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_user_trends' ),
+					'permission_callback' => array( __CLASS__, 'check_analytics_permission' ),
+					'args'                => array(
+						'user_id' => array(
+							'required'          => true,
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'validate_callback' => array( __CLASS__, 'validate_user_id' ),
+						),
+						'days'    => array(
+							'required'          => false,
+							'type'              => 'integer',
+							'default'           => 30,
+							'sanitize_callback' => 'absint',
+						),
 					),
-					'days'    => array(
-						'required'          => false,
-						'type'              => 'integer',
-						'default'           => 30,
-						'sanitize_callback' => 'absint',
-					),
-				),
-			)
-		);
+				)
+			);
 
-		// Get user patterns.
-		register_rest_route(
-			'mcp-ai/v1',
-			'/analytics/patterns/(?P<user_id>\d+)',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'get_user_patterns' ),
-				'permission_callback' => array( __CLASS__, 'check_analytics_permission' ),
-				'args'                => array(
-					'user_id' => array(
-						'required'          => true,
-						'type'              => 'integer',
-						'sanitize_callback' => 'absint',
-						'validate_callback' => array( __CLASS__, 'validate_user_id' ),
+			// Get user patterns.
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/analytics/patterns/(?P<user_id>\d+)',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_user_patterns' ),
+					'permission_callback' => array( __CLASS__, 'check_analytics_permission' ),
+					'args'                => array(
+						'user_id' => array(
+							'required'          => true,
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'validate_callback' => array( __CLASS__, 'validate_user_id' ),
+						),
 					),
-				),
-			)
-		);
+				)
+			);
 
-		// Compare users.
-		register_rest_route(
-			'mcp-ai/v1',
-			'/analytics/compare',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'compare_users' ),
-				'permission_callback' => array( __CLASS__, 'check_analytics_permission' ),
-				'args'                => array(
-					'user_ids' => array(
-						'required'          => true,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-						'validate_callback' => array( __CLASS__, 'validate_user_ids' ),
+			// Compare users.
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/analytics/compare',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'compare_users' ),
+					'permission_callback' => array( __CLASS__, 'check_analytics_permission' ),
+					'args'                => array(
+						'user_ids' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'validate_callback' => array( __CLASS__, 'validate_user_ids' ),
+						),
+						'days'     => array(
+							'required'          => false,
+							'type'              => 'integer',
+							'default'           => 30,
+							'sanitize_callback' => 'absint',
+						),
 					),
-					'days'     => array(
-						'required'          => false,
-						'type'              => 'integer',
-						'default'           => 30,
-						'sanitize_callback' => 'absint',
-					),
-				),
-			)
-		);
+				)
+			);
 
-		// Get anomalies.
-		register_rest_route(
-			'mcp-ai/v1',
-			'/analytics/anomalies',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'get_anomalies' ),
-				'permission_callback' => array( __CLASS__, 'check_analytics_permission' ),
-				'args'                => array(
-					'user_id'   => array(
-						'required'          => false,
-						'type'              => 'integer',
-						'sanitize_callback' => 'absint',
-						'validate_callback' => array( __CLASS__, 'validate_user_id' ),
+			// Get anomalies.
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/analytics/anomalies',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_anomalies' ),
+					'permission_callback' => array( __CLASS__, 'check_analytics_permission' ),
+					'args'                => array(
+						'user_id'   => array(
+							'required'          => false,
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'validate_callback' => array( __CLASS__, 'validate_user_id' ),
+						),
+						'severity'  => array(
+							'required'          => false,
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_key',
+							'enum'              => array( '', 'low', 'medium', 'high', 'critical' ),
+						),
+						'threshold' => array(
+							'required'          => false,
+							'type'              => 'number',
+							'default'           => 3.0,
+							'sanitize_callback' => 'floatval',
+						),
 					),
-					'severity'  => array(
-						'required'          => false,
-						'type'              => 'string',
-						'default'           => '',
-						'sanitize_callback' => 'sanitize_key',
-						'enum'              => array( '', 'low', 'medium', 'high', 'critical' ),
-					),
-					'threshold' => array(
-						'required'          => false,
-						'type'              => 'number',
-						'default'           => 3.0,
-						'sanitize_callback' => 'floatval',
-					),
-				),
-			)
-		);
+				)
+			);
 
-		// Compare tools.
-		register_rest_route(
-			'mcp-ai/v1',
-			'/analytics/tools/compare',
+			// Compare tools.
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/analytics/tools/compare',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( __CLASS__, 'compare_tools' ),
@@ -185,12 +193,10 @@ class WP_MCP_AI_REST_Analytics_Manager {
 		$days    = $request->get_param( 'days' );
 
 		if ( ! class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) {
-			return new WP_REST_Response(
-				array(
-					'error'   => 'analytics_unavailable',
-					'message' => __( 'Analytics engine is not available.', 'mcp-ai-wpoos' ),
-				),
-				500
+			return new WP_Error(
+				'analytics_unavailable',
+				__( 'Analytics engine is not available.', 'mcp-ai-wpoos' ),
+				array( 'status' => 500 )
 			);
 		}
 
@@ -217,12 +223,10 @@ class WP_MCP_AI_REST_Analytics_Manager {
 		$user_id = $request->get_param( 'user_id' );
 
 		if ( ! class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) {
-			return new WP_REST_Response(
-				array(
-					'error'   => 'analytics_unavailable',
-					'message' => __( 'Analytics engine is not available.', 'mcp-ai-wpoos' ),
-				),
-				500
+			return new WP_Error(
+				'analytics_unavailable',
+				__( 'Analytics engine is not available.', 'mcp-ai-wpoos' ),
+				array( 'status' => 500 )
 			);
 		}
 
@@ -252,12 +256,10 @@ class WP_MCP_AI_REST_Analytics_Manager {
 		$user_ids = array_map( 'absint', explode( ',', $user_ids_str ) );
 
 		if ( count( $user_ids ) !== 2 ) {
-			return new WP_REST_Response(
-				array(
-					'error'   => 'invalid_params',
-					'message' => __( 'Exactly two user IDs are required for comparison.', 'mcp-ai-wpoos' ),
-				),
-				400
+			return new WP_Error(
+				'invalid_params',
+				__( 'Exactly two user IDs are required for comparison.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
 			);
 		}
 

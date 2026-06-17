@@ -1,0 +1,140 @@
+<?php
+/**
+ * ReliefWeb Reports — retrieves humanitarian reports from ReliefWeb.
+ *
+ * Calls the public ReliefWeb API (no auth required). Zero WordPress dependencies.
+ *
+ * @package Nvoos\Core
+ * @since   1.0.0
+ * @license MIT
+ */
+
+declare(strict_types=1);
+
+namespace Nvoos\Core\Tool;
+
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
+
+class ReliefwebReportsTool extends AbstractTool {
+
+	private const API_URL = 'https://api.reliefweb.int/v1/reports';
+
+	public function __construct(
+		ErrorFactoryInterface $errors,
+		private readonly HttpClientInterface $http,
+	) {
+		parent::__construct( $errors );
+	}
+
+	public function getSlug(): string {
+		return 'reliefweb_reports'; }
+	public function getName(): string {
+		return 'ReliefWeb Reports'; }
+
+	public function getDescription(): string {
+		return 'Retrieves humanitarian reports from ReliefWeb, the UN OCHA information service.';
+	}
+
+	public function getParametersSchema(): array {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'query'   => array(
+					'type'        => 'string',
+					'description' => 'Search query for reports.',
+				),
+				'country' => array(
+					'type'        => 'string',
+					'description' => 'Filter by country (ISO code or name).',
+				),
+				'limit'   => array(
+					'type'        => 'integer',
+					'description' => 'Max results (1-50). Default: 10.',
+					'minimum'     => 1,
+					'maximum'     => 50,
+					'default'     => 10,
+				),
+			),
+			'required'             => array( 'query' ),
+			'additionalProperties' => false,
+		);
+	}
+
+	public function getRequiredCapability(): string {
+		return 'read'; }
+
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
+		$query   = $this->stringParam( $arguments, 'query' );
+		$country = $this->stringParam( $arguments, 'country' );
+		$limit   = $this->intParam( $arguments, 'limit', 10 );
+
+		$filter = array(
+			'field' => 'title',
+			'value' => $query,
+		);
+
+		if ( '' !== $country ) {
+			$filter = array(
+				'operator'   => 'AND',
+				'conditions' => array(
+					$filter,
+					array(
+						'field' => 'country.name',
+						'value' => $country,
+					),
+				),
+			);
+		}
+
+		$body = \json_encode(
+			array(
+				'appname' => 'o-os-core',
+				'query'   => array( 'value' => '' ),
+				'filter'  => array( 'conditions' => array( $filter ) ),
+				'limit'   => $limit,
+				'sort'    => array( 'date.created:desc' ),
+				'fields'  => array( 'include' => array( 'title', 'body', 'date', 'source', 'url', 'country', 'format' ) ),
+			)
+		);
+
+		try {
+			$response = $this->http->send(
+				'POST',
+				self::API_URL,
+				array( 'Content-Type' => 'application/json' ),
+				$body,
+			);
+			$data     = \json_decode( $response->body, true );
+
+			if ( ! is_array( $data ) || ! isset( $data['data'] ) ) {
+				return $this->emptyResult( 'No ReliefWeb reports found.' );
+			}
+
+			$reports = \array_map(
+				function ( array $r ): array {
+					$fields = $r['fields'] ?? array();
+					return array(
+						'title'   => $fields['title'] ?? '',
+						'date'    => $fields['date']['created'] ?? '',
+						'source'  => $fields['source'][0]['name'] ?? '',
+						'country' => \implode( ', ', \array_column( $fields['country'] ?? array(), 'name' ) ),
+						'url'     => $fields['url'] ?? $r['href'] ?? '',
+						'format'  => $fields['format'][0]['name'] ?? '',
+						'summary' => \mb_substr( \strip_tags( (string) ( $fields['body'] ?? '' ) ), 0, 500 ),
+					);
+				},
+				$data['data']
+			);
+
+			return $this->collection(
+				'Found ' . \count( $reports ) . ' ReliefWeb reports.',
+				$reports,
+				(int) ( $data['totalCount'] ?? \count( $reports ) ),
+			);
+
+		} catch ( \Exception $e ) {
+			return $this->errors->create( 'reliefweb_failed', "ReliefWeb request failed: {$e->getMessage()}" );
+		}
+	}
+}

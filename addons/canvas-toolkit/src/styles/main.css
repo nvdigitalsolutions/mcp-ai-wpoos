@@ -1,0 +1,65 @@
+/* Skip link — visually hidden until focused */
+.nvoos-skip-link {
+	position: absolute;
+	top: -9999px;
+	left: -9999px;
+	z-index: 9999;
+	padding: 8px 16px;
+	background: #2271b1;
+	color: #fff;
+	text-decoration: none;
+	border-radius: 4px;
+	font-size: 14px;
+}
+.nvoos-skip-link:focus {
+	top: 8px;
+	left: 8px;
+}
+
+.nvoos-canvas-toolkit-app {
+	font: inherit;
+	color: inherit;
+	display: flex;
+	flex-direction: column;
+	min-height: 480px;
+	height: 100%;
+}
+.nvoos-canvas-toolkit-app[data-theme="dark"] {
+	background: #111;
+	color: #eee;
+}
+.nvoos-canvas-toolkit-flow {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	min-height: 480px;
+}
+.nvoos-canvas-toolkit-flow-header {
+	display: flex;
+	gap: 0.75em;
+	align-items: baseline;
+	padding: 0.5em 0.75em;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+.nvoos-canvas-toolkit-app[data-theme="dark"] .nvoos-canvas-toolkit-flow-header {
+	border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+.nvoos-canvas-toolkit-flow-toolkit {
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	opacity: 0.7;
+}
+.nvoos-canvas-toolkit-flow-surface {
+	flex: 1 1 auto;
+	min-height: 420px;
+	position: relative;
+}
+.nvoos-canvas-toolkit-coming-soon {
+	padding: 2em;
+	text-align: center;
+	margin: auto;
+	max-width: 32em;
+}
+.nvoos-canvas-toolkit-coming-soon p {
+	margin: 0.5em 0;
+}
+

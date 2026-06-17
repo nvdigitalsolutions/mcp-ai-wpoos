@@ -25,6 +25,8 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * Tool for retrieving ESPN Fantasy Football team roster.
  */
 class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Roster implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -198,9 +200,9 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Roster implements WP_MCP_AI_Tool_Interface
 			$entries = array();
 		}
 
-		$starters    = array();
-		$bench       = array();
-		$ir          = array();
+		$starters     = array();
+		$bench        = array();
+		$ir           = array();
 		$total_points = 0;
 
 		foreach ( $entries as $entry ) {
@@ -209,27 +211,27 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Roster implements WP_MCP_AI_Tool_Interface
 			// Categorize by lineup slot.
 			$lineup_slot = isset( $entry['lineupSlotId'] ) ? absint( $entry['lineupSlotId'] ) : 20;
 
-			if ( $lineup_slot === 20 ) {
+			if ( 20 === $lineup_slot ) {
 				// Bench.
 				$bench[] = $player_data;
-			} elseif ( $lineup_slot === 21 ) {
+			} elseif ( 21 === $lineup_slot ) {
 				// IR.
 				$ir[] = $player_data;
 			} else {
 				// Starter.
-				$starters[] = $player_data;
+				$starters[]    = $player_data;
 				$total_points += $player_data['points'];
 			}
 		}
 
 		return array(
-			'starters'      => $starters,
-			'bench'         => $bench,
+			'starters'        => $starters,
+			'bench'           => $bench,
 			'injured_reserve' => $ir,
-			'total_starters' => count( $starters ),
-			'total_bench'   => count( $bench ),
-			'total_points'  => round( $total_points, 2 ),
-			'players'       => array_merge( $starters, $bench, $ir ),
+			'total_starters'  => count( $starters ),
+			'total_bench'     => count( $bench ),
+			'total_points'    => round( $total_points, 2 ),
+			'players'         => array_merge( $starters, $bench, $ir ),
 		);
 	}
 

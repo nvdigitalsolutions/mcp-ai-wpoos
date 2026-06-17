@@ -24,6 +24,7 @@ class WP_MCP_AI_Job_Notifier {
 	const CACHE_DURATION       = 3600; // 1 hour.
 	const WEBHOOK_OPTION_KEY   = 'wp_mcp_ai_job_webhooks';
 	const MAX_WEBHOOKS_PER_JOB = 10;
+	const MAX_STEPS_PER_JOB    = 50;
 
 	/**
 	 * Initialize hooks and filters.
@@ -178,6 +179,99 @@ class WP_MCP_AI_Job_Notifier {
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'progress', $status );
 		self::emit_sse_event( $job_id, 'progress', $status );
+	}
+
+	/**
+	 * Record a progressive-disclosure step for an async job.
+	 *
+	 * Tools that perform a multi-stage operation (e.g. "Parsing prompt" →
+	 * "Generating frames" → "Uploading…") can call this method to publish
+	 * each step to the chat UI's progress card without overwriting the
+	 * overall job progress percentage.
+	 *
+	 * Steps are stored in a ring buffer capped at MAX_STEPS_PER_JOB (50) on
+	 * the cached job status. The Phase 2 chat-tasks drawer plan documents
+	 * `job:step` as one of the canonical typed SSE event names — this method
+	 * is the entry point producers use to populate that frame.
+	 *
+	 * @since 1.1.16
+	 *
+	 * @param string $job_id   Job identifier. Required, must be non-empty.
+	 * @param string $label    Short human-readable label for the step (e.g. "Uploading frames").
+	 * @param string $status   Step status: `pending`, `running`, `completed`, or `failed`.
+	 *                         Defaults to `running`. Unknown values fall back to `running`.
+	 * @param array  $metadata Optional metadata (duration_ms, message, context, …).
+	 *                         Same `context.{user_id,assistant_id,…}` tracking IDs
+	 *                         are merged as in handle_job_started/progress.
+	 * @return bool True when the step was recorded, false when input is invalid.
+	 */
+	public static function record_step( $job_id, $label, $status = 'running', $metadata = array() ) {
+		$job_id = is_string( $job_id ) ? trim( $job_id ) : '';
+		$label  = is_string( $label ) ? trim( $label ) : '';
+
+		if ( '' === $job_id || '' === $label ) {
+			return false;
+		}
+
+		$valid_statuses = array( 'pending', 'running', 'completed', 'failed' );
+		if ( ! in_array( $status, $valid_statuses, true ) ) {
+			$status = 'running';
+		}
+
+		$metadata = is_array( $metadata ) ? $metadata : array();
+
+		// Extract context if embedded in metadata for ID tracking.
+		$context  = isset( $metadata['context'] ) && is_array( $metadata['context'] ) ? $metadata['context'] : array();
+		$metadata = self::ensure_tracking_ids( $metadata, $context );
+
+		$existing = self::get_job_status( $job_id );
+		if ( ! is_array( $existing ) ) {
+			$existing = array(
+				'job_id' => $job_id,
+				'status' => 'running',
+			);
+		}
+
+		$steps = isset( $existing['steps'] ) && is_array( $existing['steps'] ) ? $existing['steps'] : array();
+
+		$step_record = array(
+			'label'      => $label,
+			'status'     => $status,
+			'recorded_at' => current_time( 'mysql', true ),
+			'metadata'   => $metadata,
+		);
+
+		$steps[] = $step_record;
+
+		// Enforce ring-buffer cap so a runaway producer can't blow up the cache.
+		if ( count( $steps ) > self::MAX_STEPS_PER_JOB ) {
+			$steps = array_slice( $steps, -self::MAX_STEPS_PER_JOB );
+		}
+
+		$existing['steps']      = $steps;
+		$existing['updated_at'] = current_time( 'mysql', true );
+
+		self::cache_job_status( $job_id, $existing );
+
+		/**
+		 * Fires after a job step has been recorded.
+		 *
+		 * Subscribers (e.g. the OTel exporter, REST polling loops, or
+		 * the chat-tasks drawer SSE diff emitter) can observe progressive
+		 * tool disclosure here without coupling to the cache layout.
+		 *
+		 * @since 1.1.16
+		 *
+		 * @param string $job_id      Job identifier.
+		 * @param array  $step_record The step record just appended (label, status, recorded_at, metadata).
+		 * @param array  $status      Full cached job status after the step was appended.
+		 */
+		do_action( 'wp_mcp_ai_job_step', $job_id, $step_record, $existing );
+
+		self::dispatch_webhooks( $job_id, 'step', $existing );
+		self::emit_sse_event( $job_id, 'step', $existing );
+
+		return true;
 	}
 
 	/**

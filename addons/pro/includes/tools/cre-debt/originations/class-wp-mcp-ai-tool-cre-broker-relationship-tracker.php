@@ -21,7 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
-	/** @var string Option key for broker data. */
+	/**
+	 * Performs the operation.
 	const OPTION_KEY = 'wp_mcp_ai_cre_broker_relationships';
 
 	/**
@@ -120,7 +121,20 @@ class WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker implements WP_MCP_AI_Tool_I
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -233,8 +247,8 @@ class WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker implements WP_MCP_AI_Tool_I
 		}
 
 		// Recalculate conversion rate.
-		$ref = $brokers[ $broker_id ]['deals_referred'];
-		$cls = $brokers[ $broker_id ]['deals_closed'];
+		$ref                                      = $brokers[ $broker_id ]['deals_referred'];
+		$cls                                      = $brokers[ $broker_id ]['deals_closed'];
 		$brokers[ $broker_id ]['conversion_rate'] = ( $ref > 0 ) ? round( $cls / $ref, 4 ) : 0.0;
 		$brokers[ $broker_id ]['updated_at']      = current_time( 'mysql' );
 
@@ -256,9 +270,12 @@ class WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker implements WP_MCP_AI_Tool_I
 		$brokers = get_option( self::OPTION_KEY, array() );
 		$list    = array_values( $brokers );
 
-		usort( $list, function ( $a, $b ) {
-			return ( $b['total_volume'] ?? 0 ) <=> ( $a['total_volume'] ?? 0 );
-		} );
+		usort(
+			$list,
+			function ( $a, $b ) {
+				return ( $b['total_volume'] ?? 0 ) <=> ( $a['total_volume'] ?? 0 );
+			}
+		);
 
 		$total_volume = 0.0;
 		$total_deals  = 0;
@@ -303,12 +320,12 @@ class WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker implements WP_MCP_AI_Tool_I
 		$broker = $brokers[ $broker_id ];
 
 		// Calculate additional metrics.
-		$all_volumes = array_column( array_values( $brokers ), 'total_volume' );
-		$total_all   = array_sum( $all_volumes );
+		$all_volumes  = array_column( array_values( $brokers ), 'total_volume' );
+		$total_all    = array_sum( $all_volumes );
 		$volume_share = ( $total_all > 0 ) ? $broker['total_volume'] / $total_all : 0.0;
 
 		// Activity status.
-		$last_dt = $broker['last_activity_date'] ?? '';
+		$last_dt       = $broker['last_activity_date'] ?? '';
 		$days_inactive = 0;
 		if ( $last_dt ) {
 			$last_ts = strtotime( $last_dt );

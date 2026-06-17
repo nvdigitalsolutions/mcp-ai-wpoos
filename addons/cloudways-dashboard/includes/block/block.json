@@ -1,0 +1,15 @@
+{
+  "apiVersion": 3,
+  "name": "nvoos/cloudways-dashboard",
+  "title": "NV oOS Cloudways Dashboard",
+  "category": "widgets",
+  "icon": "cloud",
+  "description": "Embeds the NV oOS Cloudways operator dashboard for managing servers, sites, and toolkits.",
+  "textdomain": "nvoos-cloudways-dashboard",
+  "attributes": {
+    "view":   { "type": "string", "default": "" },
+    "theme":  { "type": "string", "default": "auto" },
+    "height": { "type": "string", "default": "" }
+  },
+  "supports": { "html": false }
+}

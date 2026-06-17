@@ -100,8 +100,8 @@ class WP_MCP_AI_Language_Detection_Service {
 	 * @return bool True if at least one detection package is present.
 	 */
 	public function is_available() {
-		$franc    = WP_MCP_AI_PRO_PATH . 'node_modules/franc';
-		$iso6391  = WP_MCP_AI_PRO_PATH . 'node_modules/iso-639-1';
+		$franc   = WP_MCP_AI_PRO_PATH . 'node_modules/franc';
+		$iso6391 = WP_MCP_AI_PRO_PATH . 'node_modules/iso-639-1';
 		return is_dir( $franc ) || is_dir( $iso6391 );
 	}
 

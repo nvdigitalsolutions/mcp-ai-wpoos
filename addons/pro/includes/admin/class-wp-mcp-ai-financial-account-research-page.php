@@ -737,10 +737,10 @@ class WP_MCP_AI_Financial_Account_Research_Page {
 			)
 		);
 
-		$complete_count    = 0;
-		$with_institution  = 0;
-		$with_balance      = 0;
-		$total_balance     = 0;
+		$complete_count   = 0;
+		$with_institution = 0;
+		$with_balance     = 0;
+		$total_balance    = 0;
 
 		foreach ( $accounts as $account ) {
 			$institution = get_post_meta( $account->ID, '_institution', true );

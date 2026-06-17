@@ -6,7 +6,7 @@
  * Supports both public and private leagues with cookie-based authentication.
  *
  * @package WP_MCP_AI
- * @since 1.0.0
+ * @since 0.1.0
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
@@ -35,7 +35,7 @@ if ( ! class_exists( 'WP_MCP_AI_ESPN_Fantasy_Client' ) ) {
 	 *
 	 * ESPN API Base URL: https://fantasy.espn.com/apis/v3/games/ffl/seasons/{seasonId}/segments/0/leagues/{leagueId}
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 */
 	class WP_MCP_AI_ESPN_Fantasy_Client {
 		/**
@@ -134,8 +134,8 @@ if ( ! class_exists( 'WP_MCP_AI_ESPN_Fantasy_Client' ) ) {
 		/**
 		 * Get league information.
 		 *
-		 * @param int $league_id League ID.
-		 * @param int $season_id Season year (e.g., 2024).
+		 * @param int   $league_id League ID.
+		 * @param int   $season_id Season year (e.g., 2024).
 		 * @param array $options Optional. Additional options.
 		 * @return array|WP_Error League data or error.
 		 */
@@ -174,8 +174,8 @@ if ( ! class_exists( 'WP_MCP_AI_ESPN_Fantasy_Client' ) ) {
 		/**
 		 * Get all teams in a league.
 		 *
-		 * @param int $league_id League ID.
-		 * @param int $season_id Season year.
+		 * @param int   $league_id League ID.
+		 * @param int   $season_id Season year.
 		 * @param array $options Optional. Additional options.
 		 * @return array|WP_Error Teams data or error.
 		 */
@@ -216,9 +216,9 @@ if ( ! class_exists( 'WP_MCP_AI_ESPN_Fantasy_Client' ) ) {
 		/**
 		 * Get team roster.
 		 *
-		 * @param int $league_id League ID.
-		 * @param int $season_id Season year.
-		 * @param int $team_id   Team ID.
+		 * @param int   $league_id League ID.
+		 * @param int   $season_id Season year.
+		 * @param int   $team_id   Team ID.
 		 * @param array $options Optional. Additional options like 'week'.
 		 * @return array|WP_Error Roster data or error.
 		 */
@@ -274,8 +274,8 @@ if ( ! class_exists( 'WP_MCP_AI_ESPN_Fantasy_Client' ) ) {
 		/**
 		 * Get league standings.
 		 *
-		 * @param int $league_id League ID.
-		 * @param int $season_id Season year.
+		 * @param int   $league_id League ID.
+		 * @param int   $season_id Season year.
 		 * @param array $options Optional. Additional options.
 		 * @return array|WP_Error Standings data or error.
 		 */
@@ -335,9 +335,9 @@ if ( ! class_exists( 'WP_MCP_AI_ESPN_Fantasy_Client' ) ) {
 		/**
 		 * Get matchup information for a specific week.
 		 *
-		 * @param int $league_id League ID.
-		 * @param int $season_id Season year.
-		 * @param int $week      Week number.
+		 * @param int   $league_id League ID.
+		 * @param int   $season_id Season year.
+		 * @param int   $week      Week number.
 		 * @param array $options Optional. Additional options.
 		 * @return array|WP_Error Matchup data or error.
 		 */
@@ -392,10 +392,10 @@ if ( ! class_exists( 'WP_MCP_AI_ESPN_Fantasy_Client' ) ) {
 		/**
 		 * Get boxscore for a specific matchup period.
 		 *
-		 * @param int $league_id         League ID.
-		 * @param int $season_id         Season year.
-		 * @param int $matchup_period_id Matchup period ID.
-		 * @param int $scoring_period_id Optional. Scoring period ID.
+		 * @param int   $league_id         League ID.
+		 * @param int   $season_id         Season year.
+		 * @param int   $matchup_period_id Matchup period ID.
+		 * @param int   $scoring_period_id Optional. Scoring period ID.
 		 * @param array $options         Optional. Additional options.
 		 * @return array|WP_Error Boxscore data or error.
 		 */
@@ -572,7 +572,7 @@ if ( ! class_exists( 'WP_MCP_AI_ESPN_Fantasy_Client' ) ) {
 				$requests = 0;
 			}
 
-			$requests++;
+			++$requests;
 			set_transient( $rate_key, $requests, MINUTE_IN_SECONDS );
 		}
 

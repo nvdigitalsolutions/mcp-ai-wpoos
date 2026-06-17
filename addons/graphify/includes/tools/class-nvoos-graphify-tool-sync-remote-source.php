@@ -20,6 +20,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Graphify_Tool_Sync_Remote_Source implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
 	/** {@inheritdoc} */
 	public function get_slug() {
 		return 'graphify_sync_remote_source';
@@ -61,17 +70,29 @@ class NV_oOS_Graphify_Tool_Sync_Remote_Source implements WP_MCP_AI_Tool_Interfac
 		return array( 'write', 'state-changing', 'external-api' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return array( 'success' => false, 'error' => __( 'Permission denied.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'Permission denied.', 'nvoos-graphify' ),
+			);
 		}
 
 		$slug  = sanitize_key( $arguments['slug'] ?? '' );
 		$async = isset( $arguments['async'] ) ? (bool) $arguments['async'] : true;
 
 		if ( empty( $slug ) ) {
-			return array( 'success' => false, 'error' => __( 'slug is required.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'slug is required.', 'nvoos-graphify' ),
+			);
 		}
 
 		// Validate source exists.
@@ -91,7 +112,10 @@ class NV_oOS_Graphify_Tool_Sync_Remote_Source implements WP_MCP_AI_Tool_Interfac
 		$summary  = $enricher->sync_source( $slug, $async );
 
 		if ( is_wp_error( $summary ) ) {
-			return array( 'success' => false, 'error' => $summary->get_error_message() );
+			return array(
+				'success' => false,
+				'error'   => $summary->get_error_message(),
+			);
 		}
 
 		return array(

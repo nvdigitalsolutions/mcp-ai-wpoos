@@ -12,23 +12,56 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Tool_Get_Available_Slots tool.
+ */
 class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false; }
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $settings['enable_calendar_booking_toolkit'] );
 	}
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
+		/**
+		 * Get the tool slug.
+		 *
+		 * @return string
+		 */
 	public function get_slug() {
 		return 'get_available_slots'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Get Available Slots', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Get list of available time slots for booking appointments.', 'mcp-ai-wpoos-pro' );
 	}
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -46,8 +79,27 @@ class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP
 			'required'   => array( 'date' ),
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'phase-2.6' ); }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
 			return new WP_Error( 'toolkit_not_available', self::get_unavailable_reason() );
@@ -66,6 +118,13 @@ class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP
 			'total_slots'      => count( $slots ),
 		);
 	}
+	/**
+	 * Calculate_available_slots.
+	 *
+	 * @param mixed $date Parameter.
+	 * @param mixed $duration Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	private function calculate_available_slots( $date, $duration ) {
 		$day_of_week    = strtolower( gmdate( 'l', strtotime( $date ) ) );
 		$business_hours = get_option( 'wp_mcp_ai_business_hours', array() );

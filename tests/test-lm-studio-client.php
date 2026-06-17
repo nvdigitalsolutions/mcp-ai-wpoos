@@ -483,8 +483,7 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		$this->client->test_connection();
 
-		// Verify URL is correctly formed: http://localhost:1234/v1/models
-		// NOT: http://localhost:1234/v1/v1/models
+		// Verify URL is correctly formed: http://localhost:1234/v1/models, NOT http://localhost:1234/v1/v1/models.
 		$this->assertNotNull( $captured_url, 'URL should be captured' );
 		$this->assertStringEndsWith( '/v1/models', $captured_url, 'URL should end with /v1/models' );
 		$this->assertStringNotContainsString( '/v1/v1/', $captured_url, 'URL should NOT contain /v1/v1/ (double v1)' );
@@ -1810,5 +1809,1325 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		$this->assertEquals( 'user', $payload['messages'][2]['role'], 'Third should be user' );
 
 		remove_all_filters( 'pre_http_request' );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 1 – SSE streaming
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that streaming request sets stream:true in the payload and calls the callback.
+	 *
+	 * @group lm-studio-streaming
+	 */
+	public function test_streaming_request_sets_stream_true_and_invokes_callback() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_payload  = null;
+		$callback_invoked  = 0;
+		$callback_chunks   = array();
+
+		// Compose a minimal SSE body with two content chunks + [DONE].
+		$chunk1 = wp_json_encode(
+			array(
+				'id'      => 'chatcmpl-stream1',
+				'choices' => array(
+					array(
+						'delta' => array( 'content' => 'Hello' ),
+						'index' => 0,
+					),
+				),
+			)
+		);
+		$chunk2 = wp_json_encode(
+			array(
+				'id'      => 'chatcmpl-stream1',
+				'choices' => array(
+					array(
+						'delta'         => array( 'content' => ' world' ),
+						'index'         => 0,
+						'finish_reason' => 'stop',
+					),
+				),
+			)
+		);
+
+		$sse_body = "data: {$chunk1}\n\ndata: {$chunk2}\n\ndata: [DONE]\n\n";
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( $sse_body, &$captured_payload ) {
+				$captured_payload = json_decode( $args['body'], true );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $sse_body,
+				);
+			},
+			10,
+			3
+		);
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hi',
+			),
+		);
+
+		$result = $this->client->create_chat_completion(
+			$messages,
+			array(
+				'stream'          => true,
+				'stream_callback' => function ( $chunk ) use ( &$callback_invoked, &$callback_chunks ) {
+					++$callback_invoked;
+					$callback_chunks[] = $chunk;
+				},
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		// Payload must have stream: true.
+		$this->assertNotNull( $captured_payload );
+		$this->assertTrue( $captured_payload['stream'], 'stream flag should be true in request payload' );
+
+		// Callback should have been invoked for each data chunk (not [DONE]).
+		$this->assertSame( 2, $callback_invoked, 'stream_callback should be called once per SSE data chunk' );
+
+		// Result should be an assembled chat.completion.
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'choices', $result );
+		$this->assertNotEmpty( $result['choices'] );
+
+		// Assembled content should be both chunks concatenated.
+		$content = $result['choices'][0]['message']['content'];
+		if ( is_array( $content ) ) {
+			$content = $content[0]['text'];
+		}
+		$this->assertSame( 'Hello world', $content );
+
+		// Provider must be set.
+		$this->assertSame( 'lm_studio', $result['provider'] );
+	}
+
+	/**
+	 * Test streaming with tool_calls delta accumulation.
+	 *
+	 * @group lm-studio-streaming
+	 */
+	public function test_streaming_accumulates_tool_calls() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$tc_chunk1 = wp_json_encode(
+			array(
+				'choices' => array(
+					array(
+						'delta' => array(
+							'tool_calls' => array(
+								array(
+									'index'    => 0,
+									'id'       => 'call_abc',
+									'type'     => 'function',
+									'function' => array(
+										'name'      => 'my_func',
+										'arguments' => '{"p',
+									),
+								),
+							),
+						),
+						'index' => 0,
+					),
+				),
+			)
+		);
+
+		$tc_chunk2 = wp_json_encode(
+			array(
+				'choices' => array(
+					array(
+						'delta' => array(
+							'tool_calls' => array(
+								array(
+									'index'    => 0,
+									'function' => array( 'arguments' => 'aram":"val"}' ),
+								),
+							),
+						),
+						'index'         => 0,
+						'finish_reason' => 'tool_calls',
+					),
+				),
+			)
+		);
+
+		$sse_body = "data: {$tc_chunk1}\n\ndata: {$tc_chunk2}\n\ndata: [DONE]\n\n";
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( $sse_body ) {
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $sse_body,
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'call a tool',
+				),
+			),
+			array( 'stream' => true )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertIsArray( $result );
+		$this->assertNotEmpty( $result['choices'][0]['message']['tool_calls'] );
+		$tc = $result['choices'][0]['message']['tool_calls'][0];
+		$this->assertSame( 'my_func', $tc['function']['name'] );
+		$this->assertSame( '{"param":"val"}', $tc['function']['arguments'] );
+	}
+
+	/**
+	 * Test that non-streaming request does NOT set stream: true.
+	 *
+	 * @group lm-studio-streaming
+	 */
+	public function test_non_streaming_request_sets_stream_false() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_payload = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_payload ) {
+				$captured_payload = json_decode( $args['body'], true );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotNull( $captured_payload );
+		$this->assertFalse( $captured_payload['stream'], 'stream flag should default to false' );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 2 – Native /api/v0 opt-in
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that with lm_studio_use_native_api enabled the URL uses /api/v0.
+	 *
+	 * @group lm-studio-native-api
+	 */
+	public function test_native_api_uses_api_v0_url() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url'   => 'http://localhost:1234',
+				'lm_studio_model'          => 'test-model',
+				'lm_studio_use_native_api' => true,
+			)
+		);
+
+		$captured_url = '';
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_url ) {
+				$captured_url = $url;
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertStringContainsString( '/api/v0/chat/completions', $captured_url );
+	}
+
+	/**
+	 * Test that stats from native API are passed to usage_stats in normalized response.
+	 *
+	 * @group lm-studio-native-api
+	 */
+	public function test_native_api_stats_surfaced_in_normalized_response() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url'   => 'http://localhost:1234',
+				'lm_studio_model'          => 'test-model',
+				'lm_studio_use_native_api' => true,
+			)
+		);
+
+		$native_body = wp_json_encode(
+			array(
+				'id'      => 'x',
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => 'hi',
+						),
+					),
+				),
+				'stats'   => array(
+					'tokens_per_second'   => 42.5,
+					'time_to_first_token' => 150.0,
+					'generation_time'     => 1200.0,
+					'stop_reason'         => 'stop',
+				),
+			)
+		);
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( $native_body ) {
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $native_body,
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'usage_stats', $result );
+		$this->assertEqualsWithDelta( 42.5, $result['usage_stats']['tokens_per_second'], 0.001 );
+		$this->assertSame( 'stop', $result['usage_stats']['stop_reason'] );
+	}
+
+	/**
+	 * Test that list_models with native API includes extra metadata fields.
+	 *
+	 * @group lm-studio-native-api
+	 */
+	public function test_list_models_native_api_includes_extra_fields() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url'   => 'http://localhost:1234',
+				'lm_studio_use_native_api' => true,
+			)
+		);
+
+		$models_body = wp_json_encode(
+			array(
+				'data' => array(
+					array(
+						'id'                    => 'llama-3-8b',
+						'arch'                  => 'llama',
+						'quantization'          => 'Q4_K_M',
+						'state'                 => 'loaded',
+						'max_context_length'    => 8192,
+						'loaded_context_length' => 4096,
+						'capabilities'          => array( 'completion', 'tool_use' ),
+					),
+				),
+			)
+		);
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( $models_body ) {
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $models_body,
+				);
+			},
+			10,
+			3
+		);
+
+		$models = $this->client->list_models();
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertIsArray( $models );
+		$this->assertCount( 1, $models );
+		$m = $models[0];
+		$this->assertSame( 'llama', $m['arch'] );
+		$this->assertSame( 'Q4_K_M', $m['quantization'] );
+		$this->assertSame( 'loaded', $m['state'] );
+		$this->assertSame( 8192, $m['max_context_length'] );
+		$this->assertContains( 'tool_use', $m['capabilities'] );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 3 – Embeddings
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test create_embedding returns a valid response.
+	 *
+	 * @group lm-studio-embeddings
+	 */
+	public function test_create_embedding_returns_embeddings() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'nomic-embed-text',
+			)
+		);
+
+		$embed_body = wp_json_encode(
+			array(
+				'object' => 'list',
+				'data'   => array(
+					array(
+						'object'    => 'embedding',
+						'index'     => 0,
+						'embedding' => array( 0.1, 0.2, 0.3 ),
+					),
+				),
+				'model'  => 'nomic-embed-text',
+			)
+		);
+
+		$captured_url  = '';
+		$captured_body = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( $embed_body, &$captured_url, &$captured_body ) {
+				$captured_url  = $url;
+				$captured_body = json_decode( $args['body'], true );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $embed_body,
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->create_embedding( 'hello world' );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'data', $result );
+		$this->assertSame( 'lm_studio', $result['provider'] );
+
+		// Endpoint must use /v1/embeddings.
+		$this->assertStringContainsString( '/v1/embeddings', $captured_url );
+
+		// Input should be passed correctly.
+		$this->assertSame( 'hello world', $captured_body['input'] );
+	}
+
+	/**
+	 * Test create_embedding with no endpoint returns WP_Error.
+	 *
+	 * @group lm-studio-embeddings
+	 */
+	public function test_create_embedding_no_endpoint_returns_error() {
+		// No settings.
+		$result = $this->client->create_embedding( 'test' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_missing_lm_studio_endpoint', $result->get_error_code() );
+	}
+
+	/**
+	 * Test create_embedding with empty input returns WP_Error.
+	 *
+	 * @group lm-studio-embeddings
+	 */
+	public function test_create_embedding_empty_input_returns_error() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'lm_studio_endpoint_url' => 'http://localhost:1234' )
+		);
+		$result = $this->client->create_embedding( '' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_missing_input', $result->get_error_code() );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 4 – Optional bearer-token auth
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that a configured API key is sent as Authorization Bearer header.
+	 *
+	 * @group lm-studio-auth
+	 */
+	public function test_api_key_sent_as_authorization_header() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+				'lm_studio_api_key'      => 'secret-key-123',
+			)
+		);
+
+		$captured_headers = array();
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_headers ) {
+				$captured_headers = $args['headers'];
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertArrayHasKey( 'Authorization', $captured_headers );
+		$this->assertSame( 'Bearer secret-key-123', $captured_headers['Authorization'] );
+	}
+
+	/**
+	 * Test that no Authorization header is sent when API key is empty.
+	 *
+	 * @group lm-studio-auth
+	 */
+	public function test_no_authorization_header_when_no_api_key() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_headers = array();
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_headers ) {
+				$captured_headers = $args['headers'];
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertArrayNotHasKey( 'Authorization', $captured_headers );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 5 – Reasoning content + <think> stripping + capability guard
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that reasoning_content field is preserved in normalized response.
+	 *
+	 * @group lm-studio-reasoning
+	 */
+	public function test_reasoning_content_preserved_in_normalized_response() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'deepseek-r1',
+			)
+		);
+
+		$body = wp_json_encode(
+			array(
+				'id'      => 'x',
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'              => 'assistant',
+							'content'           => 'The answer is 42.',
+							'reasoning_content' => 'I thought about it carefully.',
+						),
+					),
+				),
+			)
+		);
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( $body ) {
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $body,
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'what is the answer?',
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertIsArray( $result );
+		$message = $result['choices'][0]['message'];
+		$this->assertArrayHasKey( 'reasoning_content', $message );
+		$this->assertSame( 'I thought about it carefully.', $message['reasoning_content'] );
+	}
+
+	/**
+	 * Test that <think>…</think> tags are stripped from content and put in reasoning_content.
+	 *
+	 * @group lm-studio-reasoning
+	 */
+	public function test_think_tags_stripped_and_moved_to_reasoning_content() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'qwen-qwq',
+			)
+		);
+
+		$body = wp_json_encode(
+			array(
+				'id'      => 'x',
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => "<think>Let me think step by step.</think>\nThe answer is 42.",
+						),
+					),
+				),
+			)
+		);
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( $body ) {
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $body,
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'What?',
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$message = $result['choices'][0]['message'];
+		$this->assertArrayHasKey( 'reasoning_content', $message );
+		$this->assertStringContainsString( 'Let me think step by step', $message['reasoning_content'] );
+
+		// The <think> block must be removed from the visible content.
+		$content = is_array( $message['content'] ) ? $message['content'][0]['text'] : $message['content'];
+		$this->assertStringNotContainsString( '<think>', $content );
+		$this->assertStringContainsString( 'The answer is 42', $content );
+	}
+
+	/**
+	 * Test that malformed tool-call arguments (nested object) are re-encoded.
+	 *
+	 * @group lm-studio-tool-calls
+	 */
+	public function test_tool_call_arguments_object_is_reencoded_to_string() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		// LM Studio occasionally sends arguments as a decoded object rather than a JSON string.
+		$body = wp_json_encode(
+			array(
+				'id'      => 'x',
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'       => 'assistant',
+							'content'    => '',
+							'tool_calls' => array(
+								array(
+									'id'       => 'call_1',
+									'type'     => 'function',
+									'function' => array(
+										'name'      => 'my_tool',
+										// Wrong: should be a string.
+										'arguments' => array( 'param' => 'value' ),
+									),
+								),
+							),
+						),
+					),
+				),
+			)
+		);
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( $body ) {
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $body,
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'call tool',
+				),
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$tc_args = $result['choices'][0]['message']['tool_calls'][0]['function']['arguments'];
+		$this->assertIsString( $tc_args, 'arguments should be a JSON string after normalization' );
+
+		$decoded = json_decode( $tc_args, true );
+		$this->assertSame( JSON_ERROR_NONE, json_last_error() );
+		$this->assertSame( 'value', $decoded['param'] );
+	}
+
+	/**
+	 * Test capability guard blocks tool request for non-tool-capable model.
+	 *
+	 * @group lm-studio-capabilities
+	 */
+	public function test_capability_guard_blocks_tool_request_when_tool_use_absent() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url'   => 'http://localhost:1234',
+				'lm_studio_model'          => 'no-tools-model',
+				'lm_studio_use_native_api' => true,
+			)
+		);
+
+		// Prime the capabilities transient: model does NOT have tool_use.
+		set_transient(
+			WP_MCP_AI_LM_Studio_Client::CAPABILITIES_TRANSIENT,
+			array( 'no-tools-model' => array( 'completion' ) ),
+			5 * MINUTE_IN_SECONDS
+		);
+
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'use a tool',
+				),
+			),
+			array(
+				'tools' => array(
+					array(
+						'type'     => 'function',
+						'function' => array( 'name' => 'noop' ),
+					),
+				),
+			)
+		);
+
+		delete_transient( WP_MCP_AI_LM_Studio_Client::CAPABILITIES_TRANSIENT );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_tools_unsupported_by_model', $result->get_error_code() );
+	}
+
+	/**
+	 * Test capability guard passes when model has tool_use.
+	 *
+	 * @group lm-studio-capabilities
+	 */
+	public function test_capability_guard_passes_when_tool_use_present() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url'   => 'http://localhost:1234',
+				'lm_studio_model'          => 'tools-model',
+				'lm_studio_use_native_api' => true,
+			)
+		);
+
+		// Prime capabilities — model has tool_use.
+		set_transient(
+			WP_MCP_AI_LM_Studio_Client::CAPABILITIES_TRANSIENT,
+			array( 'tools-model' => array( 'completion', 'tool_use' ) ),
+			5 * MINUTE_IN_SECONDS
+		);
+
+		$http_called = false;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$http_called ) {
+				$http_called = true;
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'done',
+									),
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'use a tool',
+				),
+			),
+			array(
+				'tools' => array(
+					array(
+						'type'     => 'function',
+						'function' => array( 'name' => 'noop' ),
+					),
+				),
+			)
+		);
+
+		delete_transient( WP_MCP_AI_LM_Studio_Client::CAPABILITIES_TRANSIENT );
+		remove_all_filters( 'pre_http_request' );
+
+		// Request should have gone through.
+		$this->assertTrue( $http_called );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'choices', $result );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 6 – TTL + response_format pass-through
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that ttl option is forwarded in the payload.
+	 *
+	 * @group lm-studio-ttl
+	 */
+	public function test_ttl_option_forwarded_in_payload() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_payload = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_payload ) {
+				$captured_payload = json_decode( $args['body'], true );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			),
+			array( 'ttl' => 300 )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotNull( $captured_payload );
+		$this->assertArrayHasKey( 'ttl', $captured_payload );
+		$this->assertSame( 300, $captured_payload['ttl'] );
+	}
+
+	/**
+	 * Test that response_format json_schema is forwarded in the payload.
+	 *
+	 * @group lm-studio-structured-output
+	 */
+	public function test_response_format_json_schema_forwarded_in_payload() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_payload = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_payload ) {
+				$captured_payload = json_decode( $args['body'], true );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => '{}',
+									),
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$schema = array(
+			'type'        => 'json_schema',
+			'json_schema' => array(
+				'name'   => 'my_schema',
+				'strict' => true,
+				'schema' => array( 'type' => 'object' ),
+			),
+		);
+
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'give me json',
+				),
+			),
+			array( 'response_format' => $schema )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotNull( $captured_payload );
+		$this->assertArrayHasKey( 'response_format', $captured_payload );
+		$this->assertSame( 'json_schema', $captured_payload['response_format']['type'] );
+	}
+
+	/**
+	 * Test that unsupported response_format types are NOT forwarded.
+	 *
+	 * @group lm-studio-structured-output
+	 */
+	public function test_unsupported_response_format_type_not_forwarded() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_payload = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_payload ) {
+				$captured_payload = json_decode( $args['body'], true );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			),
+			array( 'response_format' => array( 'type' => 'invalid_type' ) )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertArrayNotHasKey( 'response_format', $captured_payload );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 7 – test_connection improvements
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that test_connection includes x-lm-studio-version in the result.
+	 *
+	 * @group lm-studio-connection
+	 */
+	public function test_connection_includes_version_header() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'lm_studio_endpoint_url' => 'http://localhost:1234' )
+		);
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'headers'  => new WP_HTTP_Headers( array( 'x-lm-studio-version' => '0.3.15' ) ),
+					'body'     => wp_json_encode( array( 'data' => array() ) ),
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->test_connection();
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertArrayHasKey( 'version', $result );
+		$this->assertSame( '0.3.15', $result['version'] );
+	}
+
+	/**
+	 * Test that test_connection falls back to /api/v0/models on 404 from /v1/models.
+	 *
+	 * @group lm-studio-connection
+	 */
+	public function test_connection_falls_back_to_api_v0_on_404() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'lm_studio_endpoint_url' => 'http://localhost:1234' )
+		);
+
+		$requests = array();
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$requests ) {
+				$requests[] = $url;
+				if ( false !== strpos( $url, '/v1/models' ) ) {
+					return array(
+						'response' => array(
+							'code'    => 404,
+							'message' => 'Not Found',
+						),
+						'body'     => '',
+					);
+				}
+				// /api/v0/models succeeds.
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode( array( 'data' => array() ) ),
+				);
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->test_connection();
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		// Both URLs should have been tried.
+		$this->assertCount( 2, $requests );
+		$this->assertStringContainsString( '/v1/models', $requests[0] );
+		$this->assertStringContainsString( '/api/v0/models', $requests[1] );
+	}
+
+	/**
+	 * Test get_api_key returns empty string when not configured.
+	 *
+	 * @group lm-studio-auth
+	 */
+	public function test_get_api_key_returns_empty_when_not_set() {
+		$this->assertSame( '', $this->client->get_api_key() );
+	}
+
+	/**
+	 * Test get_api_key returns configured value.
+	 *
+	 * @group lm-studio-auth
+	 */
+	public function test_get_api_key_returns_configured_value() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'lm_studio_api_key' => 'my-secret' )
+		);
+		$this->assertSame( 'my-secret', $this->client->get_api_key() );
+	}
+
+	/**
+	 * Test get_api_prefix returns /v1 by default.
+	 *
+	 * @group lm-studio-native-api
+	 */
+	public function test_get_api_prefix_returns_v1_by_default() {
+		$this->assertSame( '/v1', $this->client->get_api_prefix() );
+	}
+
+	/**
+	 * Test get_api_prefix returns /api/v0 when native API enabled.
+	 *
+	 * @group lm-studio-native-api
+	 */
+	public function test_get_api_prefix_returns_api_v0_when_native_enabled() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'lm_studio_use_native_api' => true )
+		);
+		$this->assertSame( '/api/v0', $this->client->get_api_prefix() );
 	}
 }

@@ -6,7 +6,7 @@
  * API credentials are configured in the main NV oOS Integrations settings page.
  *
  * @package NV_oOS_Fantasy_Football
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Admin settings page handler.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Fantasy_Football_Settings {
 
@@ -100,7 +100,7 @@ class NV_oOS_Fantasy_Football_Settings {
 	/**
 	 * Sanitize settings on save.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param array $input Raw input values.
 	 * @return array Sanitized values.

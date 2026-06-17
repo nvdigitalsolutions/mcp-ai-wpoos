@@ -27,6 +27,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool slug.
 	 *
 	 * @return string Tool slug.
@@ -84,17 +91,17 @@ class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
 		// Validate diagram type.
 		$valid_types = array( 'flowchart', 'sequence', 'gantt', 'class' );
 		if ( ! isset( $arguments['type'] ) || ! in_array( $arguments['type'], $valid_types, true ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Invalid diagram type. Must be one of: ' . implode( ', ', $valid_types ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				'Invalid diagram type. Must be one of: ' . implode( ', ', $valid_types )
 			);
 		}
 
 		// Validate code.
 		if ( empty( $arguments['code'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Mermaid diagram code is required',
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				'Mermaid diagram code is required'
 			);
 		}
 
@@ -112,30 +119,37 @@ class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
 		// Note: We use wp_kses_post to allow basic HTML but strip dangerous tags.
 		$mermaid_code = wp_kses_post( $arguments['code'] );
 
-		// Generate HTML with embedded Mermaid.js code.
+		// Generate HTML with Mermaid.js code via wp_print_inline_script_tag().
+		$script_js = sprintf(
+			'(function() {
+				if (typeof mermaid === "undefined") {
+					console.error("Mermaid.js not loaded");
+					return;
+				}
+				mermaid.initialize({ 
+					startOnLoad: true,
+					theme: "%s",
+					securityLevel: "strict"
+				});
+			})();',
+			esc_js( $theme )
+		);
+
+		ob_start();
+		wp_print_inline_script_tag( $script_js );
+		$script_tag = ob_get_clean();
+
 		$html = sprintf(
 			'<div class="wp-mcp-ai-mermaid-container">
 				<div class="mermaid" id="%s" data-theme="%s">
 %s
 				</div>
-				<script>
-				(function() {
-					if (typeof mermaid === "undefined") {
-						console.error("Mermaid.js not loaded");
-						return;
-					}
-					mermaid.initialize({ 
-						startOnLoad: true,
-						theme: "%s",
-						securityLevel: "strict"
-					});
-				})();
-				</script>
+				%s
 			</div>',
 			esc_attr( $diagram_id ),
 			esc_attr( $theme ),
 			$mermaid_code,
-			esc_attr( $theme )
+			$script_tag
 		);
 
 		return array(

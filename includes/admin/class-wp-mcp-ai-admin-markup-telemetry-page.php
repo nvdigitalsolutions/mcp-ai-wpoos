@@ -54,6 +54,7 @@ class WP_MCP_AI_Admin_Markup_Telemetry_Page {
 	 */
 	public function register() {
 		add_action( 'admin_menu', array( $this, 'register_page' ), 16 );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_page_styles' ) );
 		add_action( 'admin_post_' . self::RESET_ACTION, array( $this, 'handle_reset' ) );
 	}
 
@@ -69,6 +70,25 @@ class WP_MCP_AI_Admin_Markup_Telemetry_Page {
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
 		);
+	}
+
+	/**
+	 * Enqueue scoped inline CSS for this admin page only.
+	 *
+	 * Uses wp_add_inline_style() rather than a raw <style> echo to comply
+	 * with WordPress.org coding standards.
+	 *
+	 * @param string $hook_suffix Current admin page hook suffix.
+	 */
+	public function enqueue_page_styles( $hook_suffix ) {
+		if ( $hook_suffix !== $this->page_hook ) {
+			return;
+		}
+		// Register a handle with no source file; wp_add_inline_style() will
+		// emit the CSS inline when this handle is printed.
+		wp_register_style( 'wp-mcp-ai-markup-telemetry', false, array(), WP_MCP_AI_VERSION ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- version passed via WP_MCP_AI_VERSION constant.
+		wp_enqueue_style( 'wp-mcp-ai-markup-telemetry' );
+		wp_add_inline_style( 'wp-mcp-ai-markup-telemetry', $this->build_inline_css() );
 	}
 
 	/**
@@ -125,12 +145,7 @@ class WP_MCP_AI_Admin_Markup_Telemetry_Page {
 
 		$completion_rate = $created > 0 ? ( $completed / $created ) * 100 : 0.0;
 
-		$reset_done = isset( $_GET['reset'] ) && '1' === $_GET['reset']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only flash notice.
-
-		$css = $this->build_inline_css();
-		// CSS is statically authored above and contains no user input,
-		// so it is safe to emit verbatim inside a <style> tag.
-		echo '<style id="wp-mcp-ai-markup-telemetry-css">' . $css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static CSS literal.
+		$reset_done = isset( $_GET['reset'] ) && '1' === sanitize_key( wp_unslash( $_GET['reset'] ) );
 
 		echo '<div class="wrap wp-mcp-ai-markup-telemetry">';
 		printf( '<h1>%s</h1>', esc_html__( 'NV oOS Markup Telemetry', 'mcp-ai-wpoos' ) );

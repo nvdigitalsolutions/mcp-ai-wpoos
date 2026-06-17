@@ -39,7 +39,7 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-log-vital-signs.php';
+		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-log-vital-signs.php';
 		if ( ! file_exists( $tool_file ) ) {
 			$this->markTestSkipped( 'Pro add-on not present – skipping log_vital_signs embedding tests.' );
 		}

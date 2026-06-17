@@ -135,7 +135,6 @@ class WP_MCP_AI_SSE_Handler {
 	public function finish() {
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
 			fastcgi_finish_request();
-			return;
 		}
 		exit;
 	}
@@ -152,6 +151,52 @@ class WP_MCP_AI_SSE_Handler {
 	 * @param array  $data  Event data.
 	 */
 	public function send_sse_event( $event, $data ) {
+		$this->emit_sse_frame( $event, $data, '' );
+	}
+
+	/**
+	 * Send an SSE event with an explicit event ID.
+	 *
+	 * Emits an `id:` line before the `event:` / `data:` pair so the browser
+	 * EventSource exposes the value as `event.lastEventId` and reissues it
+	 * via the `Last-Event-ID` header on reconnect. Used by the chat-tasks
+	 * drawer's `/cron-status` polling loop to support resumable streams
+	 * (Phase 2 of the cron-status / tasks-drawer plan).
+	 *
+	 * @since 1.1.16
+	 *
+	 * @param string     $event    Event name.
+	 * @param array      $data     Event data.
+	 * @param string|int $event_id Monotonic event identifier. Empty string skips the `id:` line.
+	 */
+	public function send_sse_event_with_id( $event, $data, $event_id ) {
+		$this->emit_sse_frame( $event, $data, $event_id );
+	}
+
+	/**
+	 * Emit an SSE frame.
+	 *
+	 * Internal helper shared by send_sse_event() and send_sse_event_with_id().
+	 *
+	 * @since 1.1.16
+	 *
+	 * @param string     $event    Event name.
+	 * @param array      $data     Event data.
+	 * @param string|int $event_id Optional monotonic event identifier; empty string skips it.
+	 */
+	protected function emit_sse_frame( $event, $data, $event_id = '' ) {
+		// Emit the optional `id:` line first per the SSE spec — EventSource
+		// stores this value and replays it as the `Last-Event-ID` header on
+		// reconnect. Empty/whitespace identifiers are skipped so the field
+		// stays optional (default frames remain identical to pre-1.1.16).
+		if ( '' !== $event_id && null !== $event_id ) {
+			$id_string = is_scalar( $event_id ) ? (string) $event_id : '';
+			$id_string = trim( $id_string );
+			if ( '' !== $id_string ) {
+				echo 'id: ' . esc_html( $id_string ) . "\n";
+			}
+		}
+
 		echo 'event: ' . esc_html( $event ) . "\n";
 
 		// Attempt to JSON encode the data.

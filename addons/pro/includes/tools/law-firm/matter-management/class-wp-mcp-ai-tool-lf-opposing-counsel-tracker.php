@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker implements WP_MCP_AI_Tool_Inter
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -119,6 +126,9 @@ class WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker implements WP_MCP_AI_Tool_Inter
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -189,9 +199,9 @@ class WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker implements WP_MCP_AI_Tool_Inter
 						count( $counsel_list )
 					) . self::DISCLAIMER,
 					'data'       => array(
-						'matter_id'       => $matter_id,
+						'matter_id'        => $matter_id,
 						'opposing_counsel' => $counsel_list,
-						'total'           => count( $counsel_list ),
+						'total'            => count( $counsel_list ),
 					),
 					'disclaimer' => self::DISCLAIMER,
 				);
@@ -207,7 +217,7 @@ class WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker implements WP_MCP_AI_Tool_Inter
 					array(
 						'post_type'      => 'mcp_ai_lf_matter',
 						'post_status'    => 'publish',
-						'posts_per_page' => -1,
+						'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_opposing_counsel_tracker', 0, 1000 ) : 1000,
 						'fields'         => 'ids',
 					)
 				);

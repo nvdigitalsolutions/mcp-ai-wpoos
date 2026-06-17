@@ -203,9 +203,21 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 	 * Enqueue the test runner JavaScript.
 	 */
 	protected function enqueue_test_runner_script() {
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
+		static $printed = false;
+
+		$ajax_url       = admin_url( 'admin-ajax.php' );
+		$nonce          = wp_create_nonce( 'wp_mcp_ai_performance' );
+		$running_test   = __( 'Running test...', 'mcp-ai-wpoos' );
+		$test_complete  = __( 'Test completed successfully!', 'mcp-ai-wpoos' );
+		$unknown_error  = __( 'Unknown error', 'mcp-ai-wpoos' );
+		$test_failed    = __( 'Test failed:', 'mcp-ai-wpoos' );
+		$test_output    = __( 'Test Output (Click to expand)', 'mcp-ai-wpoos' );
+		$cli_command    = __( 'CLI Command:', 'mcp-ai-wpoos' );
+		$setup_command  = __( 'Setup Command:', 'mcp-ai-wpoos' );
+		$ajax_error     = __( 'An error occurred while running the test.', 'mcp-ai-wpoos' );
+
+		ob_start();
 		?>
-		<script>
 		(function($) {
 			// Helper function to escape HTML and prevent XSS.
 			function escapeHtml(text) {
@@ -224,6 +236,17 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 			}
 
 			$(document).ready(function() {
+				var l10n = <?php echo wp_json_encode( array(
+					'runningTest'  => $running_test,
+					'testComplete' => $test_complete,
+					'unknownError' => $unknown_error,
+					'testFailed'   => $test_failed,
+					'testOutput'   => $test_output,
+					'cliCommand'   => $cli_command,
+					'setupCommand' => $setup_command,
+					'ajaxError'    => $ajax_error,
+				) ); ?>;
+
 				$('.wp-mcp-ai-test-runner__button').on('click', function(e) {
 					e.preventDefault();
 					var button = $(this);
@@ -233,20 +256,20 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 					var resultsDiv = runner.find('.wp-mcp-ai-test-runner__results');
 
 					button.prop('disabled', true);
-					statusDiv.show().html('<p><?php echo esc_js( __( 'Running test...', 'mcp-ai-wpoos' ) ); ?></p>');
+					statusDiv.show().html('<p>' + l10n.runningTest + '</p>');
 
 					$.ajax({
-						url: '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>',
+						url: <?php echo wp_json_encode( $ajax_url ); ?>,
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_run_performance_test',
 							test_type: testType,
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_performance' ) ); ?>'
+							nonce: <?php echo wp_json_encode( $nonce ); ?>
 						},
 						success: function(response) {
 							button.prop('disabled', false);
 							if (response.success) {
-								statusDiv.html('<p class="wp-mcp-ai-success"><?php echo esc_js( __( 'Test completed successfully!', 'mcp-ai-wpoos' ) ); ?></p>');
+								statusDiv.html('<p class="wp-mcp-ai-success">' + l10n.testComplete + '</p>');
 								if (response.data && resultsDiv.length) {
 									resultsDiv.show();
 									resultsDiv.find('.wp-mcp-ai-test-runner__results-content').html(
@@ -255,14 +278,14 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 								}
 							} else {
 								// Handle both string and object error responses.
-								var errorMessage = '<?php echo esc_js( __( 'Unknown error', 'mcp-ai-wpoos' ) ); ?>';
+								var errorMessage = l10n.unknownError;
 								if (response.data) {
 									if (typeof response.data === 'object') {
 										// Extract message from object.
 										errorMessage = response.data.message || errorMessage;
 
 										// Build detailed error HTML with proper escaping.
-										var errorHtml = '<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'mcp-ai-wpoos' ) ); ?> ' + escapeHtml(errorMessage) + '</p>';
+										var errorHtml = '<p class="wp-mcp-ai-error">' + l10n.testFailed + ' ' + escapeHtml(errorMessage) + '</p>';
 
 										// Add additional details if available.
 										if (response.data.details) {
@@ -270,137 +293,66 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 										}
 										// Add test output if available (contains the actual failure details).
 										if (response.data.output) {
-											var outputLabel = '<?php echo esc_js( __( 'Test Output (Click to expand)', 'mcp-ai-wpoos' ) ); ?>';
 											errorHtml += '<details class="wp-mcp-ai-test-output">' +
-												'<summary><strong>' + outputLabel + '</strong></summary>' +
+												'<summary><strong>' + l10n.testOutput + '</strong></summary>' +
 												'<pre>' + escapeHtml(response.data.output) + '</pre>' +
 												'</details>';
 										}
 										if (response.data.cli_command) {
-											errorHtml += '<p class="wp-mcp-ai-cli-command"><strong><?php echo esc_js( __( 'CLI Command:', 'mcp-ai-wpoos' ) ); ?></strong> <code>' + escapeHtml(response.data.cli_command) + '</code></p>';
+											errorHtml += '<p class="wp-mcp-ai-cli-command"><strong>' + l10n.cliCommand + '</strong> <code>' + escapeHtml(response.data.cli_command) + '</code></p>';
 										}
 										if (response.data.setup_command) {
-											errorHtml += '<p class="wp-mcp-ai-setup-command"><strong><?php echo esc_js( __( 'Setup Command:', 'mcp-ai-wpoos' ) ); ?></strong> <code>' + escapeHtml(response.data.setup_command) + '</code></p>';
+											errorHtml += '<p class="wp-mcp-ai-setup-command"><strong>' + l10n.setupCommand + '</strong> <code>' + escapeHtml(response.data.setup_command) + '</code></p>';
 										}
 
 										statusDiv.html(errorHtml);
 									} else {
 										// Handle string error.
-										statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'mcp-ai-wpoos' ) ); ?> ' + escapeHtml(response.data) + '</p>');
+										statusDiv.html('<p class="wp-mcp-ai-error">' + l10n.testFailed + ' ' + escapeHtml(response.data) + '</p>');
 									}
 								} else {
-									statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'mcp-ai-wpoos' ) ); ?> ' + escapeHtml(errorMessage) + '</p>');
+									statusDiv.html('<p class="wp-mcp-ai-error">' + l10n.testFailed + ' ' + escapeHtml(errorMessage) + '</p>');
 								}
 							}
 						},
 						error: function() {
 							button.prop('disabled', false);
-							statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'An error occurred while running the test.', 'mcp-ai-wpoos' ) ); ?></p>');
+							statusDiv.html('<p class="wp-mcp-ai-error">' + l10n.ajaxError + '</p>');
 						}
 					});
 				});
 			});
 		})(jQuery);
-		</script>
-		<style>
-		.wp-mcp-ai-test-runner {
-			padding: 20px;
-			background: #fff;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-		}
-		.wp-mcp-ai-test-runner__title {
-			margin-top: 0;
-		}
-		.wp-mcp-ai-test-runner__controls {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 10px;
-			margin: 15px 0;
-		}
-		.wp-mcp-ai-test-runner__button {
-			padding: 10px 20px;
-			background: #2271b1;
-			color: #fff;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-		}
-		.wp-mcp-ai-test-runner__button:hover {
-			background: #135e96;
-		}
-		.wp-mcp-ai-test-runner__button:disabled {
-			opacity: 0.5;
-			cursor: not-allowed;
-		}
-		.wp-mcp-ai-test-runner__results {
-			margin-top: 20px;
-			padding: 15px;
-			background: #f9f9f9;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-		}
-		.wp-mcp-ai-test-runner__results pre {
-			overflow-x: auto;
-			font-size: 12px;
-		}
-		.wp-mcp-ai-success {
-			color: #46b450;
-		}
-		.wp-mcp-ai-error {
-			color: #dc3232;
-		}
-		.wp-mcp-ai-error-details {
-			color: #646970;
-			font-size: 14px;
-			margin-top: 10px;
-		}
-		.wp-mcp-ai-cli-command,
-		.wp-mcp-ai-setup-command {
-			background: #f0f0f1;
-			padding: 10px;
-			margin-top: 10px;
-			border-left: 3px solid #2271b1;
-			font-size: 13px;
-		}
-		.wp-mcp-ai-cli-command code,
-		.wp-mcp-ai-setup-command code {
-			background: #fff;
-			padding: 2px 6px;
-			border-radius: 3px;
-			font-family: Consolas, Monaco, monospace;
-			display: inline-block;
-			margin-top: 5px;
-		}
-		.wp-mcp-ai-test-output {
-			margin-top: 10px;
-			background: #f0f0f1;
-			border: 1px solid #ccd0d4;
-			border-radius: 3px;
-		}
-		.wp-mcp-ai-test-output summary {
-			padding: 10px;
-			cursor: pointer;
-			font-size: 13px;
-			user-select: none;
-		}
-		.wp-mcp-ai-test-output summary:hover {
-			background: #e5e5e5;
-		}
-		.wp-mcp-ai-test-output pre {
-			margin: 0;
-			padding: 15px;
-			background: #23282d;
-			color: #f0f0f1;
-			border-radius: 0 0 3px 3px;
-			overflow-x: auto;
-			font-family: Consolas, Monaco, monospace;
-			font-size: 12px;
-			line-height: 1.6;
-			max-height: 400px;
-			overflow-y: auto;
-		}
-		</style>
 		<?php
+		$js = ob_get_clean();
+
+		wp_print_inline_script_tag( $js );
+
+		if ( ! $printed ) {
+			$printed = true;
+
+			wp_register_style( 'wp-mcp-ai-el-test-runner', false );
+			wp_enqueue_style( 'wp-mcp-ai-el-test-runner' );
+			wp_add_inline_style(
+				'wp-mcp-ai-el-test-runner',
+				'.wp-mcp-ai-test-runner{padding:20px;background:#fff;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-test-runner__title{margin-top:0}'
+				. '.wp-mcp-ai-test-runner__controls{display:flex;flex-wrap:wrap;gap:10px;margin:15px 0}'
+				. '.wp-mcp-ai-test-runner__button{padding:10px 20px;background:#2271b1;color:#fff;border:none;border-radius:4px;cursor:pointer}'
+				. '.wp-mcp-ai-test-runner__button:hover{background:#135e96}'
+				. '.wp-mcp-ai-test-runner__button:disabled{opacity:0.5;cursor:not-allowed}'
+				. '.wp-mcp-ai-test-runner__results{margin-top:20px;padding:15px;background:#f9f9f9;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-test-runner__results pre{overflow-x:auto;font-size:12px}'
+				. '.wp-mcp-ai-success{color:#46b450}'
+				. '.wp-mcp-ai-error{color:#dc3232}'
+				. '.wp-mcp-ai-error-details{color:#646970;font-size:14px;margin-top:10px}'
+				. '.wp-mcp-ai-cli-command,.wp-mcp-ai-setup-command{background:#f0f0f1;padding:10px;margin-top:10px;border-left:3px solid #2271b1;font-size:13px}'
+				. '.wp-mcp-ai-cli-command code,.wp-mcp-ai-setup-command code{background:#fff;padding:2px 6px;border-radius:3px;font-family:Consolas,Monaco,monospace;display:inline-block;margin-top:5px}'
+				. '.wp-mcp-ai-test-output{margin-top:10px;background:#f0f0f1;border:1px solid #ccd0d4;border-radius:3px}'
+				. '.wp-mcp-ai-test-output summary{padding:10px;cursor:pointer;font-size:13px;user-select:none}'
+				. '.wp-mcp-ai-test-output summary:hover{background:#e5e5e5}'
+				. '.wp-mcp-ai-test-output pre{margin:0;padding:15px;background:#23282d;color:#f0f0f1;border-radius:0 0 3px 3px;overflow-x:auto;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.6;max-height:400px;overflow-y:auto}'
+			);
+		}
 	}
 }

@@ -9,15 +9,17 @@
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
- * License: GPLv3 or later
- * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * License: AGPL-3.0-or-later
+ * License URI: https://www.gnu.org/licenses/agpl-3.0.html
  * Text Domain: nvoos-algorave
  * Domain Path: /languages
  *
  * @package NV_oOS_Algorave
  *
  * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
- * This plugin is licensed under the GNU General Public License v3 or later.
+ * This plugin is licensed under the GNU Affero General Public License v3 or
+ * later. The combined-work license is AGPL-3.0 because this addon bundles
+ * `@strudel/web` (AGPL-3.0) under `assets/js/vendor/strudel/`.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

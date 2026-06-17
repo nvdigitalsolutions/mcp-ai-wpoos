@@ -1,5 +1,7 @@
 <?php
 /**
+ * Performs the operation.
+ // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
  * eDiscovery Document Analyzer Tool
  *
  * Analyzes documents for relevance scoring, privilege flags, and key term
@@ -22,6 +24,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
 
 	/**
 	 * Check if the tool is available.
@@ -104,6 +113,9 @@ class WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer implements WP_MCP_AI_Tool_I
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -164,12 +176,12 @@ class WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer implements WP_MCP_AI_Tool_I
 		// Privilege analysis.
 		if ( 'privilege' === $analysis_type || 'all' === $analysis_type ) {
 			$privilege_keywords = array(
-				'attorney-client'    => array( 'privileged', 'confidential', 'attorney-client', 'legal advice', 'counsel' ),
-				'work_product'       => array( 'work product', 'trial preparation', 'litigation strategy', 'case analysis' ),
-				'deliberative'       => array( 'deliberative', 'draft', 'internal memo', 'preliminary' ),
-				'common_interest'    => array( 'common interest', 'joint defense', 'joint privilege' ),
+				'attorney-client' => array( 'privileged', 'confidential', 'attorney-client', 'legal advice', 'counsel' ),
+				'work_product'    => array( 'work product', 'trial preparation', 'litigation strategy', 'case analysis' ),
+				'deliberative'    => array( 'deliberative', 'draft', 'internal memo', 'preliminary' ),
+				'common_interest' => array( 'common interest', 'joint defense', 'joint privilege' ),
 			);
-			$privilege_flags = array();
+			$privilege_flags    = array();
 			foreach ( $privilege_keywords as $flag => $keywords ) {
 				foreach ( $keywords as $keyword ) {
 					if ( false !== strpos( $lower, strtolower( $keyword ) ) ) {
@@ -184,11 +196,27 @@ class WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer implements WP_MCP_AI_Tool_I
 
 		// Key terms analysis.
 		if ( 'key_terms' === $analysis_type || 'all' === $analysis_type ) {
-			$legal_terms = array(
-				'liability', 'damages', 'negligence', 'breach', 'contract',
-				'defendant', 'plaintiff', 'jurisdiction', 'discovery', 'deposition',
-				'motion', 'summary judgment', 'injunction', 'settlement', 'verdict',
-				'testimony', 'evidence', 'subpoena', 'complaint', 'counterclaim',
+			$legal_terms     = array(
+				'liability',
+				'damages',
+				'negligence',
+				'breach',
+				'contract',
+				'defendant',
+				'plaintiff',
+				'jurisdiction',
+				'discovery',
+				'deposition',
+				'motion',
+				'summary judgment',
+				'injunction',
+				'settlement',
+				'verdict',
+				'testimony',
+				'evidence',
+				'subpoena',
+				'complaint',
+				'counterclaim',
 			);
 			$key_terms_found = array();
 			foreach ( $legal_terms as $term ) {
@@ -208,7 +236,7 @@ class WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer implements WP_MCP_AI_Tool_I
 			'privileged'     => array( 'privileged', 'attorney-client', 'work product' ),
 			'confidential'   => array( 'confidential', 'trade secret', 'proprietary' ),
 		);
-		$classification = 'unclassified';
+		$classification  = 'unclassified';
 		if ( ! empty( $result['privilege_flags'] ) ) {
 			$classification = 'privileged';
 		} elseif ( isset( $result['relevance_score'] ) && $result['relevance_score'] >= 60 ) {

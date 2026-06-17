@@ -31,6 +31,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.1.0
@@ -98,7 +105,7 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'holdings'  => array(
+				'holdings'          => array(
 					'type'        => 'array',
 					'description' => __( 'Portfolio holdings with ticker, shares, and current price', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(

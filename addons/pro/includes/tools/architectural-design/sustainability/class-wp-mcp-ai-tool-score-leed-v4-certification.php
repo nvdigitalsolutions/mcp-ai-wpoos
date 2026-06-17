@@ -78,17 +78,20 @@ class WP_MCP_AI_Tool_Score_Leed_V4_Certification implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'awarded_credits'    => array(
-					'type'        => 'object',
-					'description' => __( 'Map of credit-id (e.g. EA_c2) to awarded points.', 'mcp-ai-wpoos-pro' ),
-					'additionalProperties' => array( 'type' => 'integer', 'minimum' => 0 ),
+				'awarded_credits'   => array(
+					'type'                 => 'object',
+					'description'          => __( 'Map of credit-id (e.g. EA_c2) to awarded points.', 'mcp-ai-wpoos-pro' ),
+					'additionalProperties' => array(
+						'type'    => 'integer',
+						'minimum' => 0,
+					),
 				),
-				'met_prerequisites'  => array(
-					'type'        => 'object',
-					'description' => __( 'Map of prerequisite-id (e.g. EA_p2) to boolean.', 'mcp-ai-wpoos-pro' ),
+				'met_prerequisites' => array(
+					'type'                 => 'object',
+					'description'          => __( 'Map of prerequisite-id (e.g. EA_p2) to boolean.', 'mcp-ai-wpoos-pro' ),
 					'additionalProperties' => array( 'type' => 'boolean' ),
 				),
-				'include_catalog'    => array(
+				'include_catalog'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include the full LEED v4 BD+C catalog in the response.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -109,6 +112,13 @@ class WP_MCP_AI_Tool_Score_Leed_V4_Certification implements WP_MCP_AI_Tool_Inter
 			'read-only',
 			'cacheable',
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**

@@ -503,7 +503,12 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 		}
 
 		if ( get_current_user_id() !== $user_id ) {
-			wp_set_current_user( $user_id );
+			if ( ! WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_user',
+					__( 'The authenticated user could not be resolved on this site.', 'mcp-ai-wpoos' )
+				);
+			}
 		}
 
 		return $user_id;
@@ -727,7 +732,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 			return $result;
 		}
 
-		wp_set_current_user( $user_id );
+		WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id );
 
 		return $result;
 	}
@@ -895,15 +900,18 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 			$status = (int) $data;
 		}
 
-		return array(
-			'success'   => false,
-			'transport' => $transport,
-			'status'    => $status,
-			'error'     => array(
-				'code'    => $code,
-				'message' => $message,
-				'data'    => $data,
-			),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			$message,
+			array(
+				'transport' => $transport,
+				'status'    => $status,
+				'error'     => array(
+					'code'    => $code,
+					'message' => $message,
+					'data'    => $data,
+				),
+			)
 		);
 	}
 
@@ -934,15 +942,18 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 			$message = sprintf( __( 'JetEngine request returned HTTP %d.', 'mcp-ai-wpoos' ), (int) $status );
 		}
 
-		return array(
-			'success'   => false,
-			'transport' => $transport,
-			'status'    => (int) $status,
-			'error'     => array(
-				'code'    => $code,
-				'message' => $message,
-				'data'    => $data,
-			),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			$message,
+			array(
+				'transport' => $transport,
+				'status'    => (int) $status,
+				'error'     => array(
+					'code'    => $code,
+					'message' => $message,
+					'data'    => $data,
+				),
+			)
 		);
 	}
 }

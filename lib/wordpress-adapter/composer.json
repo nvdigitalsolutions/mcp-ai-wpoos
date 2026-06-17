@@ -1,0 +1,17 @@
+{
+    "name": "nvoos/wordpress-adapter",
+    "description": "WordPress adapter implementations for the oOS Core engine.",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "require": {
+        "php": "^8.1",
+        "nvoos/core": "dev-main"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Nvoos\\WordPress\\": "src/"
+        }
+    }
+}

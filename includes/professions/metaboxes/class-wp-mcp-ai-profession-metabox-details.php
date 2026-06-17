@@ -43,7 +43,7 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 	 * @return string
 	 */
 	public function get_documentation_url() {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/user-guides/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md';
 	}
 
 	/**
@@ -156,12 +156,16 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 			</tbody>
 		</table>
 
-		<script type="text/javascript">
+		<?php
+		$remove_label = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
+
+		ob_start();
+		?>
 		jQuery(document).ready(function($) {
 			$('#add-profession-warning').on('click', function() {
 				var warningHtml = '<div class="profession-warning-item" style="margin-bottom: 10px;">' +
 					'<input type="text" name="profession_warnings[]" value="" class="large-text" />' +
-					'<button type="button" class="button button-small remove-warning"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?></button>' +
+					'<button type="button" class="button button-small remove-warning"><?php echo esc_js( $remove_label ); ?></button>' +
 					'</div>';
 				$('#profession-warnings-list').append(warningHtml);
 			});
@@ -170,70 +174,71 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 				$(this).closest('.profession-warning-item').remove();
 			});
 		});
-		</script>
 		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
 		$this->render_documentation_link();
-	}
-
-	/**
-	 * Save metabox data.
-	 *
-	 * @param int     $post_id Post ID.
-	 * @param WP_Post $post    Post object.
-	 * @return void
-	 */
-	public function save( $post_id, $post ) {
-		if ( ! $this->can_save( $post_id ) ) {
-			return;
 		}
 
-		// Verify nonce.
-		if ( ! isset( $_POST['wp_mcp_ai_profession_details_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_details_nonce'] ) ), 'wp_mcp_ai_profession_details_save' ) ) {
-			return;
-		}
-
-		// Save category.
-		if ( isset( $_POST['profession_category'] ) ) {
-			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, sanitize_key( wp_unslash( $_POST['profession_category'] ) ) );
-		}
-
-		// Save region.
-		if ( isset( $_POST['profession_region'] ) ) {
-			$region = sanitize_key( wp_unslash( $_POST['profession_region'] ) );
-
-			// Validate against allowed region values.
-			$allowed_regions = array(
-				'',
-				'north_america',
-				'united_states',
-				'canada',
-				'europe',
-				'european_union',
-				'united_kingdom',
-				'asia_pacific',
-				'latin_america_caribbean',
-				'caribbean',
-				'middle_east_africa',
-				'africa',
-			);
-
-			if ( in_array( $region, $allowed_regions, true ) ) {
-				update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_REGION, $region );
+		/**
+		 * Save metabox data.
+		 *
+		 * @param int     $post_id Post ID.
+		 * @param WP_Post $post    Post object.
+		 * @return void
+		 */
+		public function save( $post_id, $post ) {
+			if ( ! $this->can_save( $post_id ) ) {
+				return;
 			}
-		}
 
-		// Save role description.
-		if ( isset( $_POST['profession_role_description'] ) ) {
-			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, wp_kses_post( wp_unslash( $_POST['profession_role_description'] ) ) );
-		}
+			// Verify nonce.
+			if ( ! isset( $_POST['wp_mcp_ai_profession_details_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_details_nonce'] ) ), 'wp_mcp_ai_profession_details_save' ) ) {
+				return;
+			}
 
-		// Save warnings.
-		if ( isset( $_POST['profession_warnings'] ) && is_array( $_POST['profession_warnings'] ) ) {
-			$warnings = array_map( 'sanitize_text_field', wp_unslash( $_POST['profession_warnings'] ) );
-			$warnings = array_filter( $warnings ); // Remove empty values.
-			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_WARNINGS, array_values( $warnings ) );
-		} else {
-			delete_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_WARNINGS );
-		}
+			// Save category.
+			if ( isset( $_POST['profession_category'] ) ) {
+				update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, sanitize_key( wp_unslash( $_POST['profession_category'] ) ) );
+			}
+
+			// Save region.
+			if ( isset( $_POST['profession_region'] ) ) {
+				$region = sanitize_key( wp_unslash( $_POST['profession_region'] ) );
+
+				// Validate against allowed region values.
+				$allowed_regions = array(
+					'',
+					'north_america',
+					'united_states',
+					'canada',
+					'europe',
+					'european_union',
+					'united_kingdom',
+					'asia_pacific',
+					'latin_america_caribbean',
+					'caribbean',
+					'middle_east_africa',
+					'africa',
+				);
+
+				if ( in_array( $region, $allowed_regions, true ) ) {
+					update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_REGION, $region );
+				}
+			}
+
+			// Save role description.
+			if ( isset( $_POST['profession_role_description'] ) ) {
+				update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, wp_kses_post( wp_unslash( $_POST['profession_role_description'] ) ) );
+			}
+
+			// Save warnings.
+			if ( isset( $_POST['profession_warnings'] ) && is_array( $_POST['profession_warnings'] ) ) {
+				$warnings = array_map( 'sanitize_text_field', wp_unslash( $_POST['profession_warnings'] ) );
+				$warnings = array_filter( $warnings ); // Remove empty values.
+				update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_WARNINGS, array_values( $warnings ) );
+			} else {
+				delete_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_WARNINGS );
+			}
 	}
 }

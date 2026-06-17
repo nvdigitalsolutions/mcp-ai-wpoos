@@ -354,9 +354,18 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 
 		<?php
 		if ( $enabled && $extension_loaded ) :
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			$admin_nonce_js      = wp_json_encode( wp_create_nonce( 'wp_mcp_ai_admin' ) );
+			$setting_up_js       = wp_json_encode( __( 'Setting up...', 'mcp-ai-wpoos' ) );
+			$setup_complete_js   = wp_json_encode( __( 'RabbitMQ infrastructure setup complete!', 'mcp-ai-wpoos' ) );
+			$setup_failed_js     = wp_json_encode( __( 'Setup failed: ', 'mcp-ai-wpoos' ) );
+			$request_failed_js   = wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos' ) );
+			$setup_queues_js     = wp_json_encode( __( 'Setup Queues', 'mcp-ai-wpoos' ) );
+			$checking_js         = wp_json_encode( __( 'Checking...', 'mcp-ai-wpoos' ) );
+			$connected_js        = wp_json_encode( __( 'Connected', 'mcp-ai-wpoos' ) );
+			$conn_failed_js      = wp_json_encode( __( 'Connection failed', 'mcp-ai-wpoos' ) );
+			$req_failed_short_js = wp_json_encode( __( 'Request failed', 'mcp-ai-wpoos' ) );
+			ob_start();
 			?>
-			<script>
 			jQuery(document).ready(function($) {
 				// Test connection on page load.
 				checkRabbitMQConnection();
@@ -367,58 +376,59 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 
 				$('#setup-rabbitmq-infrastructure').on('click', function() {
 					var $button = $(this);
-					$button.prop('disabled', true).text('<?php echo esc_js( __( 'Setting up...', 'mcp-ai-wpoos' ) ); ?>');
+					$button.prop('disabled', true).text(<?php echo wp_json_encode( __( 'Setting up...', 'mcp-ai-wpoos' ) ); ?>);
 
 					$.ajax({
 						url: ajaxurl,
 						method: 'POST',
 						data: {
 							action: 'wp_mcp_ai_rabbitmq_setup',
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_admin' ) ); ?>'
+							nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_admin' ) ); ?>
 						},
 						success: function(response) {
 							if (response.success) {
-								alert('<?php echo esc_js( __( 'RabbitMQ infrastructure setup complete!', 'mcp-ai-wpoos' ) ); ?>');
+								alert(<?php echo wp_json_encode( __( 'RabbitMQ infrastructure setup complete!', 'mcp-ai-wpoos' ) ); ?>);
 							} else {
-								alert('<?php echo esc_js( __( 'Setup failed: ', 'mcp-ai-wpoos' ) ); ?>' + (response.data.message || 'Unknown error'));
+								alert(<?php echo wp_json_encode( __( 'Setup failed: ', 'mcp-ai-wpoos' ) ); ?> + (response.data.message || 'Unknown error'));
 							}
 						},
 						error: function() {
-							alert('<?php echo esc_js( __( 'Request failed. Please try again.', 'mcp-ai-wpoos' ) ); ?>');
+							alert(<?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos' ) ); ?>);
 						},
 						complete: function() {
-							$button.prop('disabled', false).text('<?php echo esc_js( __( 'Setup Queues', 'mcp-ai-wpoos' ) ); ?>');
+							$button.prop('disabled', false).text(<?php echo wp_json_encode( __( 'Setup Queues', 'mcp-ai-wpoos' ) ); ?>);
 						}
 					});
 				});
 
 				function checkRabbitMQConnection() {
 					var $status = $('#rabbitmq-connection-status');
-					$status.html('<span style="color: gray;">○ <?php echo esc_js( __( 'Checking...', 'mcp-ai-wpoos' ) ); ?></span>');
+					$status.html('<span style="color: gray;">○ ' + <?php echo wp_json_encode( __( 'Checking...', 'mcp-ai-wpoos' ) ); ?> + '</span>');
 
 					$.ajax({
 						url: ajaxurl,
 						method: 'POST',
 						data: {
 							action: 'wp_mcp_ai_rabbitmq_health',
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_admin' ) ); ?>'
+							nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_admin' ) ); ?>
 						},
 						success: function(response) {
 							if (response.success && response.data.status === 'healthy') {
-								$status.html('<span style="color: green;">✓ <?php echo esc_js( __( 'Connected', 'mcp-ai-wpoos' ) ); ?></span>');
+								$status.html('<span style="color: green;">✓ ' + <?php echo wp_json_encode( __( 'Connected', 'mcp-ai-wpoos' ) ); ?> + '</span>');
 							} else {
-								var error = response.data.error || response.data.message || '<?php echo esc_js( __( 'Connection failed', 'mcp-ai-wpoos' ) ); ?>';
+								var error = response.data.error || response.data.message || <?php echo wp_json_encode( __( 'Connection failed', 'mcp-ai-wpoos' ) ); ?>;
 								$status.html('<span style="color: red;">✗ ' + error + '</span>');
 							}
 						},
 						error: function() {
-							$status.html('<span style="color: red;">✗ <?php echo esc_js( __( 'Request failed', 'mcp-ai-wpoos' ) ); ?></span>');
+							$status.html('<span style="color: red;">✗ ' + <?php echo wp_json_encode( __( 'Request failed', 'mcp-ai-wpoos' ) ); ?> + '</span>');
 						}
 					});
 				}
 			});
-			</script>
 			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
 		endif;
 	}
 

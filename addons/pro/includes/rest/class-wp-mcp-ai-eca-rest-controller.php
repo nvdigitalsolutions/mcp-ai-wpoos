@@ -359,11 +359,11 @@ class WP_MCP_AI_ECA_REST_Controller extends WP_REST_Controller {
 			);
 		}
 
-		$tool         = new WP_MCP_AI_Tool_Update_ECA();
-		$args         = $request->get_params();
+		$tool           = new WP_MCP_AI_Tool_Update_ECA();
+		$args           = $request->get_params();
 		$args['eca_id'] = $request->get_param( 'id' );
-		$context      = array( 'user_id' => get_current_user_id() );
-		$result       = $tool->execute( $args, $context );
+		$context        = array( 'user_id' => get_current_user_id() );
+		$result         = $tool->execute( $args, $context );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -515,11 +515,11 @@ class WP_MCP_AI_ECA_REST_Controller extends WP_REST_Controller {
 			);
 		}
 
-		$tool                = new WP_MCP_AI_Tool_Update_Student();
-		$args                = $request->get_params();
+		$tool               = new WP_MCP_AI_Tool_Update_Student();
+		$args               = $request->get_params();
 		$args['student_id'] = $request->get_param( 'id' );
-		$context             = array( 'user_id' => get_current_user_id() );
-		$result              = $tool->execute( $args, $context );
+		$context            = array( 'user_id' => get_current_user_id() );
+		$result             = $tool->execute( $args, $context );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;

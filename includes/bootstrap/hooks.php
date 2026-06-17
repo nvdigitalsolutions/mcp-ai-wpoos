@@ -150,6 +150,9 @@ function wp_mcp_ai_setup_cache_invalidation_hooks() {
 		add_action( 'wp_trash_post', array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_assistant_delete' ), 10, 1 );
 		add_action( 'update_option_' . WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_settings_save' ) );
 	}
+
+	// Invalidate chat response cache when assistant config changes.
+	add_action( 'save_post_mcp_ai_assistant', 'wp_mcp_ai_invalidate_chat_response_cache', 10, 1 );
 }
 
 /**
@@ -203,6 +206,18 @@ function wp_mcp_ai_invalidate_assistant_cache_on_meta_update( $meta_id, $object_
 	}
 }
 
+/**
+ * Invalidate chat response cache for the saved assistant.
+ *
+ * @param int $post_id Assistant post ID.
+ */
+function wp_mcp_ai_invalidate_chat_response_cache( $post_id ) {
+	if ( class_exists( 'WP_MCP_AI_Chat_Response_Cache' ) ) {
+		$cache = new WP_MCP_AI_Chat_Response_Cache();
+		$cache->invalidate_for_assistant( $post_id );
+	}
+}
+
 // Initialize cache invalidation hooks.
 add_action( 'init', 'wp_mcp_ai_setup_cache_invalidation_hooks', 20 );
 
@@ -236,7 +251,9 @@ if ( ! function_exists( 'wp_mcp_ai_plugin_directory_pending_notice' ) ) {
 				<?php esc_html_e( 'This plugin is currently pending approval in the WordPress Plugin Directory. We are committed to maintaining high quality and security standards.', 'mcp-ai-wpoos' ); ?>
 			</p>
 		</div>
-		<script type="text/javascript">
+		<?php
+		ob_start();
+		?>
 		jQuery(document).ready(function($) {
 			$(document).on('click', '[data-dismissible="wp_mcp_ai_directory_notice"] .notice-dismiss', function() {
 				$.ajax({
@@ -244,12 +261,15 @@ if ( ! function_exists( 'wp_mcp_ai_plugin_directory_pending_notice' ) ) {
 					type: 'POST',
 					data: {
 						action: 'wp_mcp_ai_dismiss_directory_notice',
-						nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dismiss_directory_notice' ) ); ?>'
+						nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_dismiss_directory_notice' ) ); ?>
 					}
 				});
 			});
 		});
-		</script>
+		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+		?>
 		<?php
 	}
 }

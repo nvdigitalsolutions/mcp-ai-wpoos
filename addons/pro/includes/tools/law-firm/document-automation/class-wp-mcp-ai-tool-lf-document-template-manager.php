@@ -20,9 +20,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
-	const DISCLAIMER  = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
-	const OPTION_KEY  = 'wp_mcp_ai_lf_document_templates';
+	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
+	const OPTION_KEY = 'wp_mcp_ai_lf_document_templates';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -31,31 +36,102 @@ class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Inte
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_document_template_manager'; }
-	public function get_name() { return __( 'Document Template Manager', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Manages reusable document templates for legal document assembly. Supports create, list, get, and delete operations.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_document_template_manager'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Document Template Manager', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Manages reusable document templates for legal document assembly. Supports create, list, get, and delete operations.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'        => array( 'type' => 'string', 'description' => __( 'Template action.', 'mcp-ai-wpoos-pro' ), 'enum' => array( 'create', 'list', 'get', 'delete' ) ),
-				'template_name' => array( 'type' => 'string', 'description' => __( 'Name of the template.', 'mcp-ai-wpoos-pro' ) ),
-				'template_type' => array( 'type' => 'string', 'description' => __( 'Document type for the template.', 'mcp-ai-wpoos-pro' ) ),
-				'content'       => array( 'type' => 'string', 'description' => __( 'Template content.', 'mcp-ai-wpoos-pro' ) ),
-				'practice_area' => array( 'type' => 'string', 'description' => __( 'Practice area.', 'mcp-ai-wpoos-pro' ) ),
-				'template_id'   => array( 'type' => 'string', 'description' => __( 'Template ID (for get/delete).', 'mcp-ai-wpoos-pro' ) ),
+				'action'        => array(
+					'type'        => 'string',
+					'description' => __( 'Template action.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'create', 'list', 'get', 'delete' ),
+				),
+				'template_name' => array(
+					'type'        => 'string',
+					'description' => __( 'Name of the template.', 'mcp-ai-wpoos-pro' ),
+				),
+				'template_type' => array(
+					'type'        => 'string',
+					'description' => __( 'Document type for the template.', 'mcp-ai-wpoos-pro' ),
+				),
+				'content'       => array(
+					'type'        => 'string',
+					'description' => __( 'Template content.', 'mcp-ai-wpoos-pro' ),
+				),
+				'practice_area' => array(
+					'type'        => 'string',
+					'description' => __( 'Practice area.', 'mcp-ai-wpoos-pro' ),
+				),
+				'template_id'   => array(
+					'type'        => 'string',
+					'description' => __( 'Template ID (for get/delete).', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array( 'action' ),
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'write', 'state-changing' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'write', 'state-changing' ); }
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'manage_options' ) ) {
@@ -77,7 +153,7 @@ class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Inte
 				if ( empty( $name ) ) {
 					return new WP_Error( 'missing_required', __( 'Template name is required.', 'mcp-ai-wpoos-pro' ) );
 				}
-				$id = 'tmpl_' . wp_generate_uuid4();
+				$id               = 'tmpl_' . wp_generate_uuid4();
 				$templates[ $id ] = array(
 					'id'            => $id,
 					'name'          => $name,
@@ -89,19 +165,36 @@ class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Inte
 				);
 				update_option( self::OPTION_KEY, $templates, false );
 				return array(
-					'success' => true, 'message' => __( 'Template created. ', 'mcp-ai-wpoos-pro' ) . self::DISCLAIMER,
-					'data' => array( 'template_id' => $id, 'template' => $templates[ $id ] ), 'disclaimer' => self::DISCLAIMER,
+					'success'    => true,
+					'message'    => __( 'Template created. ', 'mcp-ai-wpoos-pro' ) . self::DISCLAIMER,
+					'data'       => array(
+						'template_id' => $id,
+						'template'    => $templates[ $id ],
+					),
+					'disclaimer' => self::DISCLAIMER,
 				);
 
 			case 'list':
 				$list = array_values( $templates );
 				$pa   = isset( $arguments['practice_area'] ) ? sanitize_text_field( $arguments['practice_area'] ) : '';
 				if ( $pa ) {
-					$list = array_values( array_filter( $list, function ( $t ) use ( $pa ) { return ( $t['practice_area'] ?? '' ) === $pa; } ) );
+					$list = array_values(
+						array_filter(
+							$list,
+							function ( $t ) use ( $pa ) {
+								return ( $t['practice_area'] ?? '' ) === $pa;
+							}
+						)
+					);
 				}
 				return array(
-					'success' => true, 'message' => sprintf( __( '%d templates found. ', 'mcp-ai-wpoos-pro' ), count( $list ) ) . self::DISCLAIMER,
-					'data' => array( 'templates' => $list, 'total' => count( $list ) ), 'disclaimer' => self::DISCLAIMER,
+					'success'    => true,
+					'message'    => sprintf( __( '%d templates found. ', 'mcp-ai-wpoos-pro' ), count( $list ) ) . self::DISCLAIMER,
+					'data'       => array(
+						'templates' => $list,
+						'total'     => count( $list ),
+					),
+					'disclaimer' => self::DISCLAIMER,
 				);
 
 			case 'get':
@@ -110,8 +203,10 @@ class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Inte
 					return new WP_Error( 'not_found', __( 'Template not found.', 'mcp-ai-wpoos-pro' ) );
 				}
 				return array(
-					'success' => true, 'message' => __( 'Template retrieved. ', 'mcp-ai-wpoos-pro' ) . self::DISCLAIMER,
-					'data' => array( 'template' => $templates[ $tid ] ), 'disclaimer' => self::DISCLAIMER,
+					'success'    => true,
+					'message'    => __( 'Template retrieved. ', 'mcp-ai-wpoos-pro' ) . self::DISCLAIMER,
+					'data'       => array( 'template' => $templates[ $tid ] ),
+					'disclaimer' => self::DISCLAIMER,
 				);
 
 			case 'delete':
@@ -122,8 +217,10 @@ class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Inte
 				unset( $templates[ $tid ] );
 				update_option( self::OPTION_KEY, $templates, false );
 				return array(
-					'success' => true, 'message' => __( 'Template deleted. ', 'mcp-ai-wpoos-pro' ) . self::DISCLAIMER,
-					'data' => array( 'deleted_template_id' => $tid ), 'disclaimer' => self::DISCLAIMER,
+					'success'    => true,
+					'message'    => __( 'Template deleted. ', 'mcp-ai-wpoos-pro' ) . self::DISCLAIMER,
+					'data'       => array( 'deleted_template_id' => $tid ),
+					'disclaimer' => self::DISCLAIMER,
 				);
 
 			default:

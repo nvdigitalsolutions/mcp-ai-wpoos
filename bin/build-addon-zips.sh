@@ -2,16 +2,27 @@
 #
 # Build NV oOS standalone addon ZIPs
 #
-# Outputs:
-#   build/nvoos-canvas-linux-x64-vX.Y.Z.zip
-#   build/nvoos-algorave-linux-x64-vX.Y.Z.zip
-#   build/nvoos-fantasy-football-vX.Y.Z.zip
-#   build/nvoos-cornerstone3d-vX.Y.Z.zip
-#   build/nvoos-graphify-vX.Y.Z.zip
+# Each addon ZIP is versioned from its own plugin header (e.g. "Version: 0.6.0"),
+# independent of the base plugin version. Only the base and pro packages share
+# a version number.
+#
+# Outputs (version read from each addon's PHP header):
+#   build/nvoos-canvas-linux-x64-v<canvas-version>.zip
+#   build/nvoos-algorave-linux-x64-v<algorave-version>.zip
+#   build/nvoos-fantasy-football-v<fantasy-football-version>.zip
+#   build/nvoos-cornerstone3d-v<cornerstone3d-version>.zip
+#   build/nvoos-graphify-v<graphify-version>.zip
+#   build/nvoos-embedded-v<embedded-version>.zip
+#   build/nvoos-saas-controller-v<saas-controller-version>.zip
+#   build/nvoos-comic-reader-v<comic-reader-version>.zip
+#   build/nvoos-chat-spa-v<chat-spa-version>.zip
+#   build/nvoos-librechat-v<librechat-version>.zip
+#   build/nvoos-cloudways-dashboard-v<cloudways-dashboard-version>.zip
+#   build/nvoos-funiq-bridge-v<funiq-bridge-version>.zip
+#   build/nvoos-schedule-anything-platform-v<schedule-anything-platform-version>.zip
 #
 # Usage:
 #   ./bin/build-addon-zips.sh
-#   ./bin/build-addon-zips.sh --version 1.0.0
 #
 
 set -e
@@ -21,16 +32,44 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$ROOT_DIR"
 
-VERSION=""
+# ---------------------------------------------------------------------------
+# WSL auto-detection: when running natively on Windows (Git Bash / MSYS2)
+# without a working rsync, automatically re-execute inside WSL.
+# ---------------------------------------------------------------------------
+_wsl_rerun_if_needed() {
+	case "$(uname -s)" in
+		MINGW*|MSYS*) ;;
+		*) return 0 ;;
+	esac
+	if rsync --version >/dev/null 2>&1; then
+		return 0
+	fi
+	if ! command -v wsl >/dev/null 2>&1; then
+		return 0
+	fi
+	_wsl_root="$(echo "$ROOT_DIR" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+	_wsl_script="$(echo "$0" | sed 's|\\|/|g')"
+	case "$_wsl_script" in
+		/*) ;;
+		*) _wsl_script="$_wsl_root/$_wsl_script" ;;
+	esac
+	_wsl_script="$(echo "$_wsl_script" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+	# Build a safely-escaped argument string for the re-exec
+	_wsl_args=""
+	for _arg in "$@"; do
+		_wsl_args="$_wsl_args $(printf '%q' "$_arg")"
+	done
+	echo "ℹ️  Windows detected without working rsync → re-executing via WSL..."
+	echo ""
+	exec wsl bash -c "export PATH=/usr/bin:/bin:/usr/local/bin:$PATH; cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
+}
+_wsl_rerun_if_needed "$@"
+
 SKIP_CANVAS=false
 STRICT_CANVAS=false
 
 while [[ $# -gt 0 ]]; do
 case $1 in
---version)
-VERSION="$2"
-shift 2
-;;
 --skip-canvas)
 SKIP_CANVAS=true
 shift
@@ -40,7 +79,10 @@ STRICT_CANVAS=true
 shift
 ;;
 -h|--help)
-echo "Usage: $0 [--version X.Y.Z] [--skip-canvas] [--strict-canvas]"
+echo "Usage: $0 [--skip-canvas] [--strict-canvas]"
+echo ""
+echo "  Each addon ZIP is versioned from its own plugin header, independent"
+echo "  of the base plugin version."
 echo ""
 echo "  --skip-canvas    Skip the canvas addon build entirely."
 echo "  --strict-canvas  Exit non-zero if the canvas docker build fails."
@@ -56,12 +98,52 @@ exit 1
 esac
 done
 
-if [ -z "$VERSION" ]; then
-VERSION=$(grep -E "^\s*\*\s*Version:" mcp-ai-wpoos.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
-if [ -z "$VERSION" ]; then
-VERSION="dev"
-fi
-fi
+# Read each standalone addon's version from its own plugin header.
+_read_addon_version() {
+grep -E "^\s*\*\s*Version:" "$1" | sed 's/.*Version:\s*//' | tr -d '[:space:]'
+}
+
+ALGORAVE_VERSION=$(_read_addon_version "addons/algorave/nvoos-algorave.php")
+ALGORAVE_VERSION=${ALGORAVE_VERSION:-dev}
+
+FF_VERSION=$(_read_addon_version "addons/fantasy-football/nvoos-fantasy-football.php")
+FF_VERSION=${FF_VERSION:-dev}
+
+CS3D_VERSION=$(_read_addon_version "addons/cornerstone3d/nvoos-cornerstone3d.php")
+CS3D_VERSION=${CS3D_VERSION:-dev}
+
+EMBEDDED_VERSION=$(_read_addon_version "addons/embedded/nvoos-embedded.php")
+EMBEDDED_VERSION=${EMBEDDED_VERSION:-dev}
+
+GRAPHIFY_VERSION=$(_read_addon_version "addons/graphify/nvoos-graphify.php")
+GRAPHIFY_VERSION=${GRAPHIFY_VERSION:-dev}
+
+SAAS_VERSION=$(_read_addon_version "addons/saas-controller/nvoos-saas-controller.php")
+SAAS_VERSION=${SAAS_VERSION:-dev}
+
+CANVAS_VERSION=$(_read_addon_version "addons/canvas/nvoos-canvas.php")
+CANVAS_VERSION=${CANVAS_VERSION:-dev}
+
+DOCS_HUB_VERSION=$(_read_addon_version "addons/docs-hub/nvoos-docs-hub.php")
+DOCS_HUB_VERSION=${DOCS_HUB_VERSION:-dev}
+
+COMIC_READER_VERSION=$(_read_addon_version "addons/comic-reader/nvoos-comic-reader.php")
+COMIC_READER_VERSION=${COMIC_READER_VERSION:-dev}
+
+CHAT_SPA_VERSION=$(_read_addon_version "addons/chat-spa/nvoos-chat-spa.php")
+CHAT_SPA_VERSION=${CHAT_SPA_VERSION:-dev}
+
+LIBRECHAT_VERSION=$(_read_addon_version "addons/librechat/nvoos-librechat.php")
+LIBRECHAT_VERSION=${LIBRECHAT_VERSION:-dev}
+
+CW_DASHBOARD_VERSION=$(_read_addon_version "addons/cloudways-dashboard/nvoos-cloudways-dashboard.php")
+CW_DASHBOARD_VERSION=${CW_DASHBOARD_VERSION:-dev}
+
+FUNIQ_BRIDGE_VERSION=$(_read_addon_version "addons/funiq-bridge/funiq-bridge.php")
+FUNIQ_BRIDGE_VERSION=${FUNIQ_BRIDGE_VERSION:-dev}
+
+SAP_VERSION=$(_read_addon_version "addons/schedule-anything-platform/schedule-anything-platform.php")
+SAP_VERSION=${SAP_VERSION:-dev}
 
 if ! command -v zip >/dev/null 2>&1; then
 echo "❌ Error: zip is required but not installed."
@@ -91,8 +173,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, and addons/graphify must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, and addons/schedule-anything-platform must exist."
 exit 1
 fi
 
@@ -107,35 +189,58 @@ mkdir -p "$OUTPUT_DIR"
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
-CANVAS_ZIP="${OUTPUT_DIR}/nvoos-canvas-linux-x64-v${VERSION}.zip"
-ALGORAVE_ZIP="${OUTPUT_DIR}/nvoos-algorave-linux-x64-v${VERSION}.zip"
-FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${VERSION}.zip"
-CS3D_ZIP="${OUTPUT_DIR}/nvoos-cornerstone3d-v${VERSION}.zip"
-EMBEDDED_ZIP="${OUTPUT_DIR}/nvoos-embedded-v${VERSION}.zip"
-GRAPHIFY_ZIP="${OUTPUT_DIR}/nvoos-graphify-v${VERSION}.zip"
+CANVAS_ZIP="${OUTPUT_DIR}/nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
+ALGORAVE_ZIP="${OUTPUT_DIR}/nvoos-algorave-linux-x64-v${ALGORAVE_VERSION}.zip"
+FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${FF_VERSION}.zip"
+CS3D_ZIP="${OUTPUT_DIR}/nvoos-cornerstone3d-v${CS3D_VERSION}.zip"
+EMBEDDED_ZIP="${OUTPUT_DIR}/nvoos-embedded-v${EMBEDDED_VERSION}.zip"
+GRAPHIFY_ZIP="${OUTPUT_DIR}/nvoos-graphify-v${GRAPHIFY_VERSION}.zip"
+DOCS_HUB_ZIP="${OUTPUT_DIR}/nvoos-docs-hub-v${DOCS_HUB_VERSION}.zip"
+SAAS_CONTROLLER_ZIP="${OUTPUT_DIR}/nvoos-saas-controller-v${SAAS_VERSION}.zip"
+COMIC_READER_ZIP="${OUTPUT_DIR}/nvoos-comic-reader-v${COMIC_READER_VERSION}.zip"
+CHAT_SPA_ZIP="${OUTPUT_DIR}/nvoos-chat-spa-v${CHAT_SPA_VERSION}.zip"
+LIBRECHAT_ZIP="${OUTPUT_DIR}/nvoos-librechat-v${LIBRECHAT_VERSION}.zip"
+CW_DASHBOARD_ZIP="${OUTPUT_DIR}/nvoos-cloudways-dashboard-v${CW_DASHBOARD_VERSION}.zip"
+FUNIQ_BRIDGE_ZIP="${OUTPUT_DIR}/nvoos-funiq-bridge-v${FUNIQ_BRIDGE_VERSION}.zip"
+SAP_ZIP="${OUTPUT_DIR}/nvoos-schedule-anything-platform-v${SAP_VERSION}.zip"
 
-rm -f "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP" "$EMBEDDED_ZIP" "$GRAPHIFY_ZIP"
+# Remove any previously built ZIPs for these slugs (they may carry a stale version stamp).
+rm -f "$OUTPUT_DIR"/nvoos-algorave-linux-x64-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-fantasy-football-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-cornerstone3d-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-embedded-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-graphify-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-docs-hub-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-saas-controller-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-comic-reader-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-chat-spa-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-librechat-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-cloudways-dashboard-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-funiq-bridge-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-schedule-anything-platform-v*.zip
 if [ "$SKIP_CANVAS" = false ]; then
-rm -f "$CANVAS_ZIP"
+rm -f "$OUTPUT_DIR"/nvoos-canvas-linux-x64-v*.zip
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=5
+TOTAL_STEPS=14
 else
-TOTAL_STEPS=6
+TOTAL_STEPS=15
 fi
 
 echo "=========================================="
-echo "Building Standalone Addon ZIPs v${VERSION}"
+echo "Building Standalone Addon ZIPs"
 echo "=========================================="
 echo ""
 
-echo "[1/${TOTAL_STEPS}] Building nvoos-algorave-linux-x64-v${VERSION}.zip"
+echo "[1/${TOTAL_STEPS}] Building nvoos-algorave-linux-x64-v${ALGORAVE_VERSION}.zip"
 mkdir -p "${TMP_DIR}/algorave-stage/nvoos-algorave"
 rsync -a "addons/algorave/" "${TMP_DIR}/algorave-stage/nvoos-algorave/" \
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude '.distignore' \
 --exclude 'tests/' \
 --exclude 'package-lock.json'
 (
@@ -146,12 +251,13 @@ ALGORAVE_SIZE=$(du -h "$ALGORAVE_ZIP" | cut -f1)
 echo "✅ ${ALGORAVE_ZIP} (${ALGORAVE_SIZE})"
 echo ""
 
-echo "[2/${TOTAL_STEPS}] Building nvoos-embedded-v${VERSION}.zip"
+echo "[2/${TOTAL_STEPS}] Building nvoos-embedded-v${EMBEDDED_VERSION}.zip"
 mkdir -p "${TMP_DIR}/embedded-stage/nvoos-embedded"
 rsync -a "addons/embedded/" "${TMP_DIR}/embedded-stage/nvoos-embedded/" \
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
 --exclude 'tests/' \
 --exclude 'package-lock.json'
 (
@@ -162,12 +268,14 @@ EMBEDDED_SIZE=$(du -h "$EMBEDDED_ZIP" | cut -f1)
 echo "✅ ${EMBEDDED_ZIP} (${EMBEDDED_SIZE})"
 echo ""
 
-echo "[3/${TOTAL_STEPS}] Building nvoos-fantasy-football-v${VERSION}.zip"
+echo "[3/${TOTAL_STEPS}] Building nvoos-fantasy-football-v${FF_VERSION}.zip"
 mkdir -p "${TMP_DIR}/ff-stage/nvoos-fantasy-football"
 rsync -a "addons/fantasy-football/" "${TMP_DIR}/ff-stage/nvoos-fantasy-football/" \
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude '.distignore' \
 --exclude 'tests/'
 (
 cd "${TMP_DIR}/ff-stage"
@@ -177,7 +285,7 @@ FF_SIZE=$(du -h "$FF_ZIP" | cut -f1)
 echo "✅ ${FF_ZIP} (${FF_SIZE})"
 echo ""
 
-echo "[4/${TOTAL_STEPS}] Building nvoos-cornerstone3d-v${VERSION}.zip"
+echo "[4/${TOTAL_STEPS}] Building nvoos-cornerstone3d-v${CS3D_VERSION}.zip"
 # Build ESM bundles if they don't exist yet.
 VENDOR_CORNERSTONE_DIR="addons/pro/assets/vendor/cornerstone"
 if [ ! -f "${VENDOR_CORNERSTONE_DIR}/cornerstone-core.esm.js" ]; then
@@ -213,12 +321,13 @@ CS3D_SIZE=$(du -h "$CS3D_ZIP" | cut -f1)
 echo "✅ ${CS3D_ZIP} (${CS3D_SIZE})"
 echo ""
 
-echo "[5/${TOTAL_STEPS}] Building nvoos-graphify-v${VERSION}.zip"
+echo "[5/${TOTAL_STEPS}] Building nvoos-graphify-v${GRAPHIFY_VERSION}.zip"
 mkdir -p "${TMP_DIR}/graphify-stage/nvoos-graphify"
 rsync -a "addons/graphify/" "${TMP_DIR}/graphify-stage/nvoos-graphify/" \
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
 --exclude 'tests/' \
 --exclude 'package-lock.json'
 (
@@ -227,6 +336,301 @@ zip -r -q "${ROOT_DIR}/${GRAPHIFY_ZIP}" nvoos-graphify/
 )
 GRAPHIFY_SIZE=$(du -h "$GRAPHIFY_ZIP" | cut -f1)
 echo "✅ ${GRAPHIFY_ZIP} (${GRAPHIFY_SIZE})"
+echo ""
+
+echo "[6/${TOTAL_STEPS}] Building nvoos-docs-hub-v${DOCS_HUB_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/docs-hub/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/docs-hub/node_modules" ]; then
+echo "  ℹ️  Installing docs-hub npm dependencies (npm ci)..."
+( cd addons/docs-hub && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for docs-hub — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/docs-hub/node_modules" ]; then
+echo "  ℹ️  Building docs-hub artifacts (npm run build)..."
+( cd addons/docs-hub && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for docs-hub — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/docs-hub-stage/nvoos-docs-hub"
+rsync -a "addons/docs-hub/" "${TMP_DIR}/docs-hub-stage/nvoos-docs-hub/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'esbuild.config.js' \
+--exclude 'eslint.config.js' \
+--exclude 'vitest.config.ts' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/docs-hub-stage"
+zip -r -q "${ROOT_DIR}/${DOCS_HUB_ZIP}" nvoos-docs-hub/
+)
+DOCS_HUB_SIZE=$(du -h "$DOCS_HUB_ZIP" | cut -f1)
+echo "✅ ${DOCS_HUB_ZIP} (${DOCS_HUB_SIZE})"
+echo ""
+
+echo "[7/${TOTAL_STEPS}] Building nvoos-saas-controller-v${SAAS_VERSION}.zip"
+# Build the addon's two compiled artifacts (admin UI + Cloudflare Worker)
+# from source if Node is available. The release ZIP ships only the built
+# artifacts under assets/build/ and worker/dist/ — never node_modules/ or
+# the TypeScript / TSX sources.
+if [ -d "addons/saas-controller/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/saas-controller/node_modules" ]; then
+echo "  ℹ️  Installing saas-controller npm dependencies (npm ci)..."
+( cd addons/saas-controller && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for saas-controller — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/saas-controller/node_modules" ]; then
+echo "  ℹ️  Building saas-controller artifacts (npm run build)..."
+( cd addons/saas-controller && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for saas-controller — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/build/ and worker/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/saas-controller-stage/nvoos-saas-controller"
+rsync -a "addons/saas-controller/" "${TMP_DIR}/saas-controller-stage/nvoos-saas-controller/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude '.distignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'assets/src/' \
+--exclude 'worker/src/' \
+--exclude '.wrangler/'
+(
+cd "${TMP_DIR}/saas-controller-stage"
+zip -r -q "${ROOT_DIR}/${SAAS_CONTROLLER_ZIP}" nvoos-saas-controller/
+)
+SAAS_CONTROLLER_SIZE=$(du -h "$SAAS_CONTROLLER_ZIP" | cut -f1)
+echo "✅ ${SAAS_CONTROLLER_ZIP} (${SAAS_CONTROLLER_SIZE})"
+echo ""
+
+echo "[8/${TOTAL_STEPS}] Building nvoos-comic-reader-v${COMIC_READER_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/comic-reader/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/comic-reader/node_modules" ]; then
+echo "  ℹ️  Installing comic-reader npm dependencies (npm ci)..."
+( cd addons/comic-reader && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for comic-reader — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/comic-reader/node_modules" ]; then
+echo "  ℹ️  Building comic-reader artifacts (npm run build)..."
+( cd addons/comic-reader && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for comic-reader — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/comic-reader-stage/nvoos-comic-reader"
+rsync -a "addons/comic-reader/" "${TMP_DIR}/comic-reader-stage/nvoos-comic-reader/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'vitest.config.ts' \
+--exclude 'esbuild.config.cjs' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/comic-reader-stage"
+zip -r -q "${ROOT_DIR}/${COMIC_READER_ZIP}" nvoos-comic-reader/
+)
+COMIC_READER_SIZE=$(du -h "$COMIC_READER_ZIP" | cut -f1)
+echo "✅ ${COMIC_READER_ZIP} (${COMIC_READER_SIZE})"
+echo ""
+
+echo "[9/${TOTAL_STEPS}] Building nvoos-chat-spa-v${CHAT_SPA_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/chat-spa/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/chat-spa/node_modules" ]; then
+echo "  ℹ️  Installing chat-spa npm dependencies (npm ci)..."
+( cd addons/chat-spa && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for chat-spa — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/chat-spa/node_modules" ]; then
+echo "  ℹ️  Building chat-spa artifacts (npm run build)..."
+( cd addons/chat-spa && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for chat-spa — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/chat-spa-stage/nvoos-chat-spa"
+rsync -a "addons/chat-spa/" "${TMP_DIR}/chat-spa-stage/nvoos-chat-spa/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'vitest.config.ts' \
+--exclude 'esbuild.config.cjs' \
+--exclude 'eslint.config.js' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/chat-spa-stage"
+zip -r -q "${ROOT_DIR}/${CHAT_SPA_ZIP}" nvoos-chat-spa/
+)
+CHAT_SPA_SIZE=$(du -h "$CHAT_SPA_ZIP" | cut -f1)
+echo "✅ ${CHAT_SPA_ZIP} (${CHAT_SPA_SIZE})"
+echo ""
+
+echo "[10/${TOTAL_STEPS}] Building nvoos-librechat-v${LIBRECHAT_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/librechat/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/librechat/node_modules" ]; then
+echo "  ℹ️  Installing librechat npm dependencies (npm ci)..."
+( cd addons/librechat && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for librechat — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/librechat/node_modules" ]; then
+echo "  ℹ️  Building librechat artifacts (npm run build)..."
+( cd addons/librechat && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for librechat — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/librechat-stage/nvoos-librechat"
+rsync -a "addons/librechat/" "${TMP_DIR}/librechat-stage/nvoos-librechat/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'esbuild.config.cjs' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/librechat-stage"
+zip -r -q "${ROOT_DIR}/${LIBRECHAT_ZIP}" nvoos-librechat/
+)
+LIBRECHAT_SIZE=$(du -h "$LIBRECHAT_ZIP" | cut -f1)
+echo "✅ ${LIBRECHAT_ZIP} (${LIBRECHAT_SIZE})"
+echo ""
+
+echo "[11/${TOTAL_STEPS}] Building nvoos-cloudways-dashboard-v${CW_DASHBOARD_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/cloudways-dashboard/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/cloudways-dashboard/node_modules" ]; then
+echo "  ℹ️  Installing cloudways-dashboard npm dependencies (npm ci)..."
+( cd addons/cloudways-dashboard && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for cloudways-dashboard — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/cloudways-dashboard/node_modules" ]; then
+echo "  ℹ️  Building cloudways-dashboard artifacts (npm run build)..."
+( cd addons/cloudways-dashboard && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for cloudways-dashboard — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/cw-dashboard-stage/nvoos-cloudways-dashboard"
+rsync -a "addons/cloudways-dashboard/" "${TMP_DIR}/cw-dashboard-stage/nvoos-cloudways-dashboard/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'esbuild.config.cjs' \
+--exclude 'eslint.config.js' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/cw-dashboard-stage"
+zip -r -q "${ROOT_DIR}/${CW_DASHBOARD_ZIP}" nvoos-cloudways-dashboard/
+)
+CW_DASHBOARD_SIZE=$(du -h "$CW_DASHBOARD_ZIP" | cut -f1)
+echo "✅ ${CW_DASHBOARD_ZIP} (${CW_DASHBOARD_SIZE})"
+echo ""
+
+echo "[12/${TOTAL_STEPS}] Building nvoos-funiq-bridge-v${FUNIQ_BRIDGE_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/funiq-bridge/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/funiq-bridge/node_modules" ]; then
+echo "  ℹ️  Installing funiq-bridge npm dependencies (npm ci)..."
+( cd addons/funiq-bridge && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for funiq-bridge — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/funiq-bridge/node_modules" ]; then
+echo "  ℹ️  Building funiq-bridge artifacts (npm run build)..."
+( cd addons/funiq-bridge && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for funiq-bridge — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/funiq-bridge-stage/nvoos-funiq-bridge"
+rsync -a "addons/funiq-bridge/" "${TMP_DIR}/funiq-bridge-stage/nvoos-funiq-bridge/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'esbuild.config.cjs' \
+--exclude 'eslint.config.js' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/funiq-bridge-stage"
+zip -r -q "${ROOT_DIR}/${FUNIQ_BRIDGE_ZIP}" nvoos-funiq-bridge/
+)
+FUNIQ_BRIDGE_SIZE=$(du -h "$FUNIQ_BRIDGE_ZIP" | cut -f1)
+echo "✅ ${FUNIQ_BRIDGE_ZIP} (${FUNIQ_BRIDGE_SIZE})"
+echo ""
+
+echo "[13/${TOTAL_STEPS}] Building nvoos-schedule-anything-platform-v${SAP_VERSION}.zip"
+mkdir -p "${TMP_DIR}/sap-stage/nvoos-schedule-anything-platform"
+rsync -a "addons/schedule-anything-platform/" "${TMP_DIR}/sap-stage/nvoos-schedule-anything-platform/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json'
+(
+cd "${TMP_DIR}/sap-stage"
+zip -r -q "${ROOT_DIR}/${SAP_ZIP}" nvoos-schedule-anything-platform/
+)
+SAP_SIZE=$(du -h "$SAP_ZIP" | cut -f1)
+echo "✅ ${SAP_ZIP} (${SAP_SIZE})"
 echo ""
 
 # Canvas builds a native Linux binary (canvas.node) inside a Docker
@@ -251,7 +655,7 @@ echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavail
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[6/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
+echo "[14/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
 
 # Defensive re-check: in long-running pipelines the docker daemon may have
 # disappeared between the start-of-script check and now. Bail out softly
@@ -338,6 +742,13 @@ echo "  - ${EMBEDDED_ZIP}"
 echo "  - ${FF_ZIP}"
 echo "  - ${CS3D_ZIP}"
 echo "  - ${GRAPHIFY_ZIP}"
+echo "  - ${SAAS_CONTROLLER_ZIP}"
+echo "  - ${COMIC_READER_ZIP}"
+echo "  - ${CHAT_SPA_ZIP}"
+echo "  - ${LIBRECHAT_ZIP}"
+echo "  - ${CW_DASHBOARD_ZIP}"
+echo "  - ${FUNIQ_BRIDGE_ZIP}"
+echo "  - ${SAP_ZIP}"
 if [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 0 ]; then
 echo "  - ${CANVAS_ZIP}"
 elif [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 1 ]; then

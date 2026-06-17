@@ -155,7 +155,20 @@ class WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -176,13 +189,13 @@ class WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer implements WP_MCP_AI_Tool_Inter
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 		$now  = time();
 
-		$results         = array();
-		$total_balance   = 0.0;
-		$at_risk_balance = 0.0;
-		$at_risk_count   = 0;
-		$payoff_likely   = 0;
+		$results          = array();
+		$total_balance    = 0.0;
+		$at_risk_balance  = 0.0;
+		$at_risk_count    = 0;
+		$payoff_likely    = 0;
 		$extension_likely = 0;
-		$default_risk    = 0;
+		$default_risk     = 0;
 
 		foreach ( $loans as $loan ) {
 			$name          = sanitize_text_field( $loan['name'] ?? 'Unnamed' );
@@ -201,7 +214,7 @@ class WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer implements WP_MCP_AI_Tool_Inter
 			$total_balance += $balance;
 
 			// Months to maturity.
-			$mat_ts   = strtotime( $maturity_date );
+			$mat_ts        = strtotime( $maturity_date );
 			$months_to_mat = 0;
 			if ( false !== $mat_ts && $mat_ts > $now ) {
 				$months_to_mat = (int) ceil( ( $mat_ts - $now ) / ( 30.44 * 86400 ) );
@@ -212,9 +225,9 @@ class WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer implements WP_MCP_AI_Tool_Inter
 			$min_dscr    = self::$min_dscr_reqs[ $property_type ] ?? 1.25;
 
 			// Calculate projected debt service at market rate (30-year amortization standard).
-			$refi_amort     = 360;
-			$new_monthly    = $calc::calculate_monthly_payment( $balance, $market_rate, $refi_amort );
-			$new_annual_ds  = $new_monthly * 12;
+			$refi_amort    = 360;
+			$new_monthly   = $calc::calculate_monthly_payment( $balance, $market_rate, $refi_amort );
+			$new_annual_ds = $new_monthly * 12;
 
 			// Projected DSCR at market rate.
 			$projected_dscr = ( $new_annual_ds > 0 ) ? $current_noi / $new_annual_ds : 0;
@@ -225,8 +238,8 @@ class WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer implements WP_MCP_AI_Tool_Inter
 				// Debt service constant.
 				$mr = $market_rate / 12;
 				if ( $mr > 0 ) {
-					$factor       = pow( 1 + $mr, $refi_amort );
-					$ds_constant  = ( $mr * $factor / ( $factor - 1 ) ) * 12;
+					$factor        = pow( 1 + $mr, $refi_amort );
+					$ds_constant   = ( $mr * $factor / ( $factor - 1 ) ) * 12;
 					$max_refi_loan = ( $ds_constant > 0 ) ? $current_noi / ( $min_dscr * $ds_constant ) : 0;
 				}
 			}
@@ -284,33 +297,36 @@ class WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer implements WP_MCP_AI_Tool_Inter
 			$ds_increase     = $new_annual_ds - ( $calc::calculate_monthly_payment( $balance, $current_rate, $refi_amort ) * 12 );
 
 			$results[] = array(
-				'loan_name'             => $name,
-				'balance'               => $calc::format_currency( $balance ),
-				'maturity_date'         => $maturity_date,
-				'months_to_maturity'    => $months_to_mat,
-				'current_rate'          => $calc::format_percentage( $current_rate ),
-				'market_refi_rate'      => $calc::format_percentage( $market_rate ),
-				'rate_shock_bps'        => round( $rate_change_bps ),
-				'current_dscr'          => round( $current_dscr, 2 ),
+				'loan_name'              => $name,
+				'balance'                => $calc::format_currency( $balance ),
+				'maturity_date'          => $maturity_date,
+				'months_to_maturity'     => $months_to_mat,
+				'current_rate'           => $calc::format_percentage( $current_rate ),
+				'market_refi_rate'       => $calc::format_percentage( $market_rate ),
+				'rate_shock_bps'         => round( $rate_change_bps ),
+				'current_dscr'           => round( $current_dscr, 2 ),
 				'projected_dscr_at_refi' => round( $projected_dscr, 2 ),
-				'min_dscr_required'     => round( $min_dscr, 2 ),
-				'dscr_passes'           => $projected_dscr >= $min_dscr,
-				'current_ltv'           => $calc::format_percentage( $current_ltv ),
-				'max_refi_loan'         => $calc::format_currency( $max_refi_loan ),
+				'min_dscr_required'      => round( $min_dscr, 2 ),
+				'dscr_passes'            => $projected_dscr >= $min_dscr,
+				'current_ltv'            => $calc::format_percentage( $current_ltv ),
+				'max_refi_loan'          => $calc::format_currency( $max_refi_loan ),
 				'equity_infusion_needed' => $calc::format_currency( $total_equity_needed ),
-				'equity_infusion_pct'   => $calc::format_percentage( ( $balance > 0 ) ? $total_equity_needed / $balance : 0 ),
-				'annual_ds_increase'    => $calc::format_currency( $ds_increase ),
-				'payoff_probability'    => round( $payoff_score ),
-				'extension_likelihood'  => round( $extension_score ),
-				'risk_category'         => $risk_category,
-				'property_type'         => $property_type,
+				'equity_infusion_pct'    => $calc::format_percentage( ( $balance > 0 ) ? $total_equity_needed / $balance : 0 ),
+				'annual_ds_increase'     => $calc::format_currency( $ds_increase ),
+				'payoff_probability'     => round( $payoff_score ),
+				'extension_likelihood'   => round( $extension_score ),
+				'risk_category'          => $risk_category,
+				'property_type'          => $property_type,
 			);
 		}
 
 		// Sort by payoff probability ascending (most at-risk first).
-		usort( $results, function ( $a, $b ) {
-			return $a['payoff_probability'] <=> $b['payoff_probability'];
-		} );
+		usort(
+			$results,
+			function ( $a, $b ) {
+				return $a['payoff_probability'] <=> $b['payoff_probability'];
+			}
+		);
 
 		$summary = array(
 			'total_loans'            => count( $results ),
@@ -327,15 +343,15 @@ class WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer implements WP_MCP_AI_Tool_Inter
 		);
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: 1: total loans, 2: at-risk count, 3: at-risk balance */
 				__( 'Maturity risk analyzed: %1$d loans, %2$d at risk (%3$s).', 'mcp-ai-wpoos-pro' ),
 				count( $results ),
 				$at_risk_count,
 				$summary['at_risk_balance']
 			),
-			'data'       => array(
+			'data'    => array(
 				'summary'    => $summary,
 				'loans'      => $results,
 				'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),

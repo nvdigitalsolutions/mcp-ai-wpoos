@@ -28,12 +28,15 @@ require_once __DIR__ . '/class-wp-mcp-ai-cli-base-command.php';
 class WP_MCP_AI_CLI_Credential_Command extends WP_MCP_AI_CLI_Base_Command {
 
 	/**
-	 * List credentials issued for an assistant.
+	 * List credentials issued for an assistant, or across all assistants.
+	 *
+	 * When an assistant ID is provided, lists credentials for that assistant
+	 * only. When omitted, lists credentials across all assistants.
 	 *
 	 * ## OPTIONS
 	 *
-	 * <assistant-id>
-	 * : The assistant post ID.
+	 * [<assistant-id>]
+	 * : The assistant post ID. If omitted, all assistants are queried.
 	 *
 	 * [--format=<format>]
 	 * : Render output in the given format.
@@ -43,6 +46,7 @@ class WP_MCP_AI_CLI_Credential_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *   - table
 	 *   - json
 	 *   - yaml
+	 *   - ids
 	 * ---
 	 *
 	 * ## EXAMPLES
@@ -50,8 +54,14 @@ class WP_MCP_AI_CLI_Credential_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     # List all credentials for assistant 42.
 	 *     $ wp mcp-ai credential list 42
 	 *
+	 *     # List credentials across all assistants.
+	 *     $ wp mcp-ai credential list
+	 *
 	 *     # Output as JSON.
 	 *     $ wp mcp-ai credential list 42 --format=json
+	 *
+	 *     # Export credential IDs only.
+	 *     $ wp mcp-ai credential list --format=ids
 	 *
 	 * @subcommand list
 	 * @param array $args       Positional arguments.
@@ -62,37 +72,87 @@ class WP_MCP_AI_CLI_Credential_Command extends WP_MCP_AI_CLI_Base_Command {
 		$assistant_id = isset( $args[0] ) ? absint( $args[0] ) : 0;
 		$format       = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 
-		if ( ! $assistant_id ) {
-			WP_CLI::error( __( 'Please provide a valid assistant ID.', 'mcp-ai-wpoos' ) );
-		}
-
-		$this->assert_assistant_exists( $assistant_id );
-
 		if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 			WP_CLI::error( __( 'Credentials class is not available.', 'mcp-ai-wpoos' ) );
 		}
 
-		$credentials = WP_MCP_AI_Credentials::get_credentials( $assistant_id );
+		$items = array();
 
-		if ( empty( $credentials ) ) {
-			WP_CLI::log(
-				/* translators: %d: assistant ID */
-				sprintf( __( 'No credentials found for assistant %d.', 'mcp-ai-wpoos' ), $assistant_id )
+		if ( $assistant_id ) {
+			// Single assistant: keep existing behaviour.
+			$this->assert_assistant_exists( $assistant_id );
+
+			$credentials = WP_MCP_AI_Credentials::get_credentials( $assistant_id );
+
+			if ( empty( $credentials ) ) {
+				WP_CLI::log(
+					/* translators: %d: assistant ID */
+					sprintf( __( 'No credentials found for assistant %d.', 'mcp-ai-wpoos' ), $assistant_id )
+				);
+				return;
+			}
+
+			foreach ( $credentials as $cred ) {
+				$items[] = array(
+					'id'           => isset( $cred['id'] ) ? $cred['id'] : '',
+					'assistant_id' => $assistant_id,
+					'user_id'      => isset( $cred['user_id'] ) ? $cred['user_id'] : '',
+					'created_at'   => isset( $cred['created_at'] ) ? $cred['created_at'] : '',
+					'label'        => isset( $cred['label'] ) ? $cred['label'] : '',
+				);
+			}
+		} else {
+			// No assistant ID: query all assistants.
+			$posts = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'any',
+					'posts_per_page' => -1,
+					'fields'         => 'ids',
+				)
 			);
+
+			if ( empty( $posts ) ) {
+				WP_CLI::log( __( 'No assistants found.', 'mcp-ai-wpoos' ) );
+				return;
+			}
+
+			foreach ( $posts as $aid ) {
+				$credentials = WP_MCP_AI_Credentials::get_credentials( $aid );
+
+				if ( empty( $credentials ) ) {
+					continue;
+				}
+
+				foreach ( $credentials as $cred ) {
+					$items[] = array(
+						'id'           => isset( $cred['id'] ) ? $cred['id'] : '',
+						'assistant_id' => $aid,
+						'user_id'      => isset( $cred['user_id'] ) ? $cred['user_id'] : '',
+						'created_at'   => isset( $cred['created_at'] ) ? $cred['created_at'] : '',
+						'label'        => isset( $cred['label'] ) ? $cred['label'] : '',
+					);
+				}
+			}
+
+			if ( empty( $items ) ) {
+				WP_CLI::log( __( 'No credentials found across any assistant.', 'mcp-ai-wpoos' ) );
+				return;
+			}
+		}
+
+		if ( 'ids' === $format ) {
+			$ids = array();
+			foreach ( $items as $item ) {
+				if ( ! empty( $item['id'] ) ) {
+					$ids[] = $item['id'];
+				}
+			}
+			WP_CLI::line( implode( ' ', $ids ) );
 			return;
 		}
 
-		$items = array();
-		foreach ( $credentials as $cred ) {
-			$items[] = array(
-				'id'         => isset( $cred['id'] ) ? $cred['id'] : '',
-				'user_id'    => isset( $cred['user_id'] ) ? $cred['user_id'] : '',
-				'created_at' => isset( $cred['created_at'] ) ? $cred['created_at'] : '',
-				'label'      => isset( $cred['label'] ) ? $cred['label'] : '',
-			);
-		}
-
-		\WP_CLI\Utils\format_items( $format, $items, array( 'id', 'user_id', 'created_at', 'label' ) );
+		\WP_CLI\Utils\format_items( $format, $items, array( 'id', 'assistant_id', 'user_id', 'created_at', 'label' ) );
 	}
 
 	/**
@@ -193,10 +253,10 @@ class WP_MCP_AI_CLI_Credential_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * @when after_wp_load
 	 */
 	public function revoke( $args, $assoc_args ) {
-		$assistant_id   = isset( $args[0] ) ? absint( $args[0] ) : 0;
-		$credential_id  = isset( $args[1] ) ? sanitize_key( $args[1] ) : '';
-		$user_id        = absint( \WP_CLI\Utils\get_flag_value( $assoc_args, 'user', 1 ) );
-		$yes            = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
+		$assistant_id  = isset( $args[0] ) ? absint( $args[0] ) : 0;
+		$credential_id = isset( $args[1] ) ? sanitize_key( $args[1] ) : '';
+		$user_id       = absint( \WP_CLI\Utils\get_flag_value( $assoc_args, 'user', 1 ) );
+		$yes           = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
 
 		if ( ! $assistant_id ) {
 			WP_CLI::error( __( 'Please provide a valid assistant ID.', 'mcp-ai-wpoos' ) );

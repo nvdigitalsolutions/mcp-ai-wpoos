@@ -68,6 +68,75 @@ class WP_MCP_AI_Memory_Tier_Manager {
 	const DEMOTE_INACTIVITY_DAYS_DEFAULT = 30;
 
 	/**
+	 * Default Ebbinghaus half-life (in days) used by the Phase 5 decay sweep.
+	 *
+	 * After this many days without access, a record's confidence_score halves
+	 * (multiplied by 0.5). The decay curve is `exp( -days * ln(2) / half_life )`.
+	 *
+	 * Filterable: `wp_mcp_ai_memory_decay_half_life_days`.
+	 *
+	 * @since 1.1.20
+	 */
+	const DECAY_HALF_LIFE_DAYS_DEFAULT = 30;
+
+	/**
+	 * Minimum confidence floor — records do not decay below this value.
+	 *
+	 * Prevents long-tail rows from collapsing to numerical zero where they
+	 * become indistinguishable from un-scored rows.
+	 *
+	 * Filterable: `wp_mcp_ai_memory_decay_floor`.
+	 *
+	 * @since 1.1.20
+	 */
+	const DECAY_FLOOR_DEFAULT = 0.1;
+
+	/**
+	 * Additive bump applied to `confidence_score` each time
+	 * {@see strengthen_on_access()} is called.
+	 *
+	 * The new confidence is `min( 1.0, current + bump )`.
+	 *
+	 * Filterable: `wp_mcp_ai_memory_access_strengthen`.
+	 *
+	 * @since 1.1.20
+	 */
+	const ACCESS_STRENGTHEN_DEFAULT = 0.05;
+
+	/**
+	 * Default decay batch size — chunks of candidates processed per pass
+	 * inside {@see decay_sweep()}.
+	 *
+	 * Filterable: `wp_mcp_ai_memory_decay_batch_size`.
+	 *
+	 * @since 1.1.20
+	 */
+	const DECAY_BATCH_SIZE_DEFAULT = 100;
+
+	/**
+	 * Hard upper bound on candidates processed by a single decay sweep.
+	 *
+	 * Keeps the daily cron under ~30s on typical sites even when the corpus
+	 * grows to tens of thousands of rows.
+	 *
+	 * Filterable: `wp_mcp_ai_memory_decay_max_per_sweep`.
+	 *
+	 * @since 1.1.20
+	 */
+	const DECAY_MAX_PER_SWEEP_DEFAULT = 1000;
+
+	/**
+	 * Minimum absolute delta between old and new confidence before the
+	 * Phase 5 decay sweep treats a row as "changed".
+	 *
+	 * Avoids wasteful CCT writes when an already-floored row is re-examined
+	 * day after day.
+	 *
+	 * @since 1.1.20
+	 */
+	const DECAY_WRITE_EPSILON = 0.001;
+
+	/**
 	 * Singleton.
 	 *
 	 * @var WP_MCP_AI_Memory_Tier_Manager|null
@@ -119,6 +188,12 @@ class WP_MCP_AI_Memory_Tier_Manager {
 
 		$candidates = $this->load_candidates();
 		if ( empty( $candidates ) ) {
+			// Memory Layer 2026 Phase 5 — confidence decay pass.
+			// Decay loads its own candidate pool, so it must still run even
+			// when the tier-transition candidate pool is empty.
+			if ( (bool) apply_filters( 'wp_mcp_ai_memory_decay_enabled', true ) ) {
+				$summary['decayed'] = $this->decay_sweep();
+			}
 			return $summary;
 		}
 
@@ -148,6 +223,11 @@ class WP_MCP_AI_Memory_Tier_Manager {
 		 * @param array $summary Counts of transitions applied.
 		 */
 		do_action( 'wp_mcp_ai_memory_tier_sweep_completed', $summary );
+
+		// Memory Layer 2026 Phase 5 — confidence decay pass.
+		if ( (bool) apply_filters( 'wp_mcp_ai_memory_decay_enabled', true ) ) {
+			$summary['decayed'] = $this->decay_sweep();
+		}
 
 		return $summary;
 	}
@@ -362,6 +442,445 @@ class WP_MCP_AI_Memory_Tier_Manager {
 		return $demoted;
 	}
 
+	/*
+	 ==================================================================
+	 * Memory Layer 2026 Phase 5 — Confidence decay
+	 * ==================================================================
+	 *
+	 * The decay sweep is an *additive* third pass on top of the existing
+	 * promote/demote/consolidate lifecycle. It does NOT change a record's
+	 * tier; it only adjusts the `confidence_score` field that Phase 4's RRF
+	 * fusion and Phase 7a's Memory Health UI consume.
+	 *
+	 * Algorithm (Ebbinghaus-inspired exponential decay):
+	 *
+	 *   days = ( now - last_accessed_at ) / 86400
+	 *   factor = exp( -days * ln(2) / half_life_days )
+	 *   new_confidence = max( floor, base * factor )
+	 *
+	 * Legacy rows (no `confidence_score`, no `last_accessed_at`) use the
+	 * documented Phase 2 fallbacks: confidence defaults to 1.0, last access
+	 * defaults to `stored_at` / `transaction_time`.
+	 * ----------------------------------------------------------------- */
+
+	/**
+	 * Run a single decay sweep.
+	 *
+	 * Iterates the candidate pool in batches, recomputes confidence using the
+	 * Ebbinghaus curve, and — when the delta exceeds {@see DECAY_WRITE_EPSILON} —
+	 * writes the new value back to the CCT row and emits
+	 * `wp_mcp_ai_memory_decayed`.
+	 *
+	 * Performance bounds:
+	 *   - batches of `wp_mcp_ai_memory_decay_batch_size` rows (default 100)
+	 *   - hard cap of `wp_mcp_ai_memory_decay_max_per_sweep` rows (default 1000)
+	 *
+	 * @since 1.1.20
+	 *
+	 * @return int Count of rows whose confidence changed by more than
+	 *             {@see DECAY_WRITE_EPSILON}.
+	 */
+	public function decay_sweep() {
+		$candidates = $this->load_decay_candidates();
+		if ( empty( $candidates ) ) {
+			return 0;
+		}
+
+		$half_life  = (float) apply_filters( 'wp_mcp_ai_memory_decay_half_life_days', self::DECAY_HALF_LIFE_DAYS_DEFAULT );
+		$floor      = (float) apply_filters( 'wp_mcp_ai_memory_decay_floor', self::DECAY_FLOOR_DEFAULT );
+		$batch_size = max( 1, (int) apply_filters( 'wp_mcp_ai_memory_decay_batch_size', self::DECAY_BATCH_SIZE_DEFAULT ) );
+		$max_total  = max( 1, (int) apply_filters( 'wp_mcp_ai_memory_decay_max_per_sweep', self::DECAY_MAX_PER_SWEEP_DEFAULT ) );
+
+		// Clamp the candidate list to the per-sweep cap before chunking so the
+		// caller's filter-supplied pool can be larger than the cap without paying
+		// the cost of unused tail items.
+		if ( count( $candidates ) > $max_total ) {
+			$candidates = array_slice( $candidates, 0, $max_total );
+		}
+
+		$now_ts  = time();
+		$changed = 0;
+
+		$batches = array_chunk( $candidates, $batch_size );
+		foreach ( $batches as $batch ) {
+			foreach ( $batch as $record ) {
+				if ( ! is_array( $record ) ) {
+					continue;
+				}
+
+				$context_id = isset( $record['context_id'] ) ? (string) $record['context_id'] : '';
+				if ( '' === $context_id ) {
+					continue;
+				}
+
+				$base       = $this->extract_base_confidence( $record );
+				$timestamp  = $this->extract_last_access_timestamp( $record );
+				$days_since = max( 0.0, (float) ( $now_ts - $timestamp ) / DAY_IN_SECONDS );
+				$new_value  = self::compute_decayed_confidence( $base, $days_since, $half_life, $floor );
+
+				if ( abs( $base - $new_value ) <= self::DECAY_WRITE_EPSILON ) {
+					continue;
+				}
+
+				$this->persist_confidence_update(
+					isset( $record['_ID'] ) ? (int) $record['_ID'] : 0,
+					$context_id,
+					$new_value
+				);
+
+				/**
+				 * Fires once per record whose `confidence_score` was changed by the
+				 * Phase 5 decay sweep.
+				 *
+				 * @since 1.1.20
+				 *
+				 * @param string $context_id     Memory context identifier.
+				 * @param float  $old_confidence Confidence before decay.
+				 * @param float  $new_confidence Confidence after decay.
+				 */
+				do_action( 'wp_mcp_ai_memory_decayed', $context_id, $base, $new_value );
+
+				++$changed;
+			}
+		}
+
+		return $changed;
+	}
+
+	/**
+	 * Pure-math helper computing the decayed confidence value.
+	 *
+	 * Extracted as `public static` so test suites and admin diagnostics can
+	 * verify the curve without going through the full sweep.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param float $base_confidence   Current confidence score (0.0–1.0).
+	 * @param float $days_since_access Days elapsed since last access (>= 0).
+	 * @param float $half_life_days    Half-life in days (> 0).
+	 * @param float $floor             Minimum confidence value.
+	 * @return float Decayed confidence, clamped to `[ floor, 1.0 ]`.
+	 */
+	public static function compute_decayed_confidence( $base_confidence, $days_since_access, $half_life_days, $floor ) {
+		$base      = is_numeric( $base_confidence ) ? (float) $base_confidence : 1.0;
+		$days      = max( 0.0, (float) $days_since_access );
+		$half_life = (float) $half_life_days;
+		$floor     = max( 0.0, min( 1.0, (float) $floor ) );
+
+		if ( $half_life <= 0.0 ) {
+			// Defensive: a non-positive half-life would explode the exp(); fall
+			// back to the floor so the sweep degrades gracefully instead of
+			// emitting NaN/Inf into the CCT.
+			return $floor;
+		}
+
+		$factor = exp( -$days * M_LN2 / $half_life );
+		$value  = max( $floor, $base * $factor );
+
+		// Clamp upper bound — base may have been > 1.0 due to a misbehaving caller.
+		return min( 1.0, $value );
+	}
+
+	/**
+	 * Strengthen a memory record on read — the inverse of decay.
+	 *
+	 * Called by Phase 4's RRF fusion service when a record is returned in a
+	 * result set so that frequently-accessed memories resist decay. Updates
+	 * both `confidence_score` (bumped by `wp_mcp_ai_memory_access_strengthen`,
+	 * default 0.05, capped at 1.0) and `last_accessed_at` (set to the current
+	 * MySQL timestamp).
+	 *
+	 * Tolerates JetEngine being absent — returns `false` rather than raising
+	 * when the CCT handler is not available.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param string     $context_id         Memory context identifier.
+	 * @param float|null $current_confidence Optional pre-fetched confidence score.
+	 *                                       When null, the helper reads it from the
+	 *                                       CCT row before computing the bump.
+	 * @return float|false New confidence score on success, or `false` when the
+	 *                     CCT handler is unavailable / the row is unknown.
+	 */
+	public static function strengthen_on_access( $context_id, $current_confidence = null ) {
+		$context_id = is_scalar( $context_id ) ? (string) $context_id : '';
+		if ( '' === $context_id ) {
+			return false;
+		}
+
+		$bump = (float) apply_filters( 'wp_mcp_ai_memory_access_strengthen', self::ACCESS_STRENGTHEN_DEFAULT );
+
+		$row = null;
+		if ( null === $current_confidence ) {
+			$row = self::fetch_cct_row_by_context_id( $context_id );
+			if ( null === $row ) {
+				return false;
+			}
+			$current_confidence = ( isset( $row['confidence_score'] ) && '' !== $row['confidence_score'] && is_numeric( $row['confidence_score'] ) )
+				? (float) $row['confidence_score']
+				: 1.0;
+		}
+
+		$old_value = max( 0.0, min( 1.0, (float) $current_confidence ) );
+		$new_value = min( 1.0, $old_value + $bump );
+		$timestamp = current_time( 'mysql' );
+
+		/**
+		 * Fires immediately before the strengthened confidence is persisted to
+		 * the CCT row. Useful for tests and audit listeners; do not mutate.
+		 *
+		 * @since 1.1.20
+		 *
+		 * @param string $context_id Memory context identifier.
+		 * @param float  $old_value  Confidence before the bump.
+		 * @param float  $new_value  Confidence after the bump (capped at 1.0).
+		 * @param string $timestamp  MySQL timestamp written to `last_accessed_at`.
+		 */
+		do_action( 'wp_mcp_ai_memory_strengthened', $context_id, $old_value, $new_value, $timestamp );
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			return false;
+		}
+
+		$handler = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_item_handler();
+		if ( ! is_object( $handler ) || ! method_exists( $handler, 'update_item' ) ) {
+			return false;
+		}
+
+		$row_id = isset( $row['_ID'] ) ? (int) $row['_ID'] : self::find_cct_row_id_by_context_id( $context_id );
+		if ( ! $row_id ) {
+			return false;
+		}
+
+		try {
+			$result = $handler->update_item(
+				array(
+					'_ID'              => $row_id,
+					'confidence_score' => (string) $new_value,
+					'last_accessed_at' => $timestamp,
+				)
+			);
+			if ( is_wp_error( $result ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						'Memory tier manager: strengthen_on_access CCT update failed.',
+						array(
+							'context_id' => $context_id,
+							'cct_row_id' => $row_id,
+							'error_code' => $result->get_error_code(),
+						)
+					);
+				}
+				return false;
+			}
+		} catch ( Throwable $exception ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_warning(
+					'Memory tier manager: strengthen_on_access threw during CCT update.',
+					array(
+						'context_id' => $context_id,
+						'message'    => $exception->getMessage(),
+					)
+				);
+			}
+			return false;
+		}
+
+		return $new_value;
+	}
+
+	/**
+	 * Load candidate records for the decay pass.
+	 *
+	 * Default implementation: dispatches to the existing tier-manager candidate
+	 * filter so headless tests / sites that already feed candidates into the
+	 * tier sweep do not need a second filter wired. Sites that want to feed a
+	 * decay-specific pool (e.g. a paged CCT scan keyed on `last_accessed_at`)
+	 * can hook `wp_mcp_ai_memory_decay_candidates` directly.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	protected function load_decay_candidates() {
+		$base = $this->load_candidates();
+
+		/**
+		 * Filter the candidate pool fed to the Phase 5 decay sweep.
+		 *
+		 * Each record SHOULD include at minimum `context_id` (string), and MAY
+		 * include `confidence_score`, `last_accessed_at`, `stored_at`,
+		 * `transaction_time`, and `_ID` (CCT row id). Missing fields fall back
+		 * to documented Phase 2 defaults.
+		 *
+		 * @since 1.1.20
+		 *
+		 * @param array $records Candidate records (defaults to the tier-manager pool).
+		 */
+		$records = apply_filters( 'wp_mcp_ai_memory_decay_candidates', is_array( $base ) ? $base : array() );
+
+		return is_array( $records ) ? $records : array();
+	}
+
+	/**
+	 * Read the current `confidence_score` from a record, with Phase 2 fallback.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param array<string,mixed> $record Memory record.
+	 * @return float Base confidence in `[0.0, 1.0]`.
+	 */
+	protected function extract_base_confidence( array $record ) {
+		if ( isset( $record['confidence_score'] ) && '' !== $record['confidence_score'] && is_numeric( $record['confidence_score'] ) ) {
+			return max( 0.0, min( 1.0, (float) $record['confidence_score'] ) );
+		}
+		return 1.0;
+	}
+
+	/**
+	 * Resolve the last-access timestamp for a record (Phase 2 fallback chain).
+	 *
+	 * Order of preference:
+	 *   1. `last_accessed_at`
+	 *   2. `stored_at`
+	 *   3. `transaction_time`
+	 *   4. now() — prevents the sweep from collapsing a malformed row to floor.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param array<string,mixed> $record Memory record.
+	 * @return int Unix timestamp.
+	 */
+	protected function extract_last_access_timestamp( array $record ) {
+		foreach ( array( 'last_accessed_at', 'stored_at', 'transaction_time' ) as $key ) {
+			if ( ! empty( $record[ $key ] ) && is_string( $record[ $key ] ) ) {
+				$ts = strtotime( $record[ $key ] );
+				if ( false !== $ts ) {
+					return (int) $ts;
+				}
+			}
+		}
+		return time();
+	}
+
+	/**
+	 * Persist a decayed `confidence_score` back to the CCT row.
+	 *
+	 * Best-effort — silently no-ops when JetEngine isn't available. The decay
+	 * event is emitted by the caller regardless so headless tests can observe
+	 * the sweep without a live CCT table.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param int    $row_id     CCT `_ID` (0 when unknown — helper will resolve).
+	 * @param string $context_id Memory context identifier (used as fallback lookup).
+	 * @param float  $new_value  New confidence score (already clamped).
+	 * @return void
+	 */
+	protected function persist_confidence_update( $row_id, $context_id, $new_value ) {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			return;
+		}
+
+		$handler = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_item_handler();
+		if ( ! is_object( $handler ) || ! method_exists( $handler, 'update_item' ) ) {
+			return;
+		}
+
+		$row_id = (int) $row_id;
+		if ( $row_id <= 0 ) {
+			$row_id = self::find_cct_row_id_by_context_id( $context_id );
+		}
+		if ( $row_id <= 0 ) {
+			return;
+		}
+
+		try {
+			$result = $handler->update_item(
+				array(
+					'_ID'              => $row_id,
+					'confidence_score' => (string) $new_value,
+				)
+			);
+			if ( is_wp_error( $result ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_warning(
+					'Memory tier manager: decay sweep CCT update failed.',
+					array(
+						'context_id' => $context_id,
+						'cct_row_id' => $row_id,
+						'error_code' => $result->get_error_code(),
+					)
+				);
+			}
+		} catch ( Throwable $exception ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_warning(
+					'Memory tier manager: decay sweep threw during CCT update.',
+					array(
+						'context_id' => $context_id,
+						'message'    => $exception->getMessage(),
+					)
+				);
+			}
+		}
+	}
+
+	/**
+	 * Resolve the CCT `_ID` for a context_id without going through reflection.
+	 *
+	 * Mirrors the lookup used by {@see WP_MCP_AI_Agent_Memory_CCT_Bridge}, but
+	 * is duplicated here so the tier manager doesn't gain a hard dependency on
+	 * the bridge's private static helpers. Returns 0 when the table is missing.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param string $context_id Memory context identifier.
+	 * @return int CCT row id, or 0 when not found.
+	 */
+	protected static function find_cct_row_id_by_context_id( $context_id ) {
+		$row = self::fetch_cct_row_by_context_id( $context_id );
+		return ( null !== $row && isset( $row['_ID'] ) ) ? (int) $row['_ID'] : 0;
+	}
+
+	/**
+	 * Fetch one CCT row (raw associative array) by context_id.
+	 *
+	 * Returns null when:
+	 *   - JetEngine / the CCT class is not loaded;
+	 *   - the `{prefix}jet_cct_ai_agent_memories` table has not been provisioned;
+	 *   - no row matches the supplied context_id.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param string $context_id Memory context identifier.
+	 * @return array<string,mixed>|null Raw row or null.
+	 */
+	protected static function fetch_cct_row_by_context_id( $context_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			return null;
+		}
+
+		global $wpdb;
+		$slug  = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
+		$table = $wpdb->prefix . 'jet_cct_' . $slug;
+
+		$suppress_state = $wpdb->suppress_errors( true );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name composed from a trusted slug + $wpdb->prefix; value passed via prepare().
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name trusted (see comment above).
+				"SELECT * FROM `{$table}` WHERE context_id = %s LIMIT 1",
+				$context_id
+			),
+			ARRAY_A
+		);
+
+		$wpdb->suppress_errors( $suppress_state );
+
+		return is_array( $row ) ? $row : null;
+	}
+
 	/**
 	 * Load candidate records for evaluation.
 	 *
@@ -453,3 +972,11 @@ class WP_MCP_AI_Memory_Tier_Manager {
 }
 
 WP_MCP_AI_Memory_Tier_Manager::bootstrap();
+
+// Memory Layer 2026 Phase 5 — contradiction detector. Loaded alongside the
+// tier manager so the `store_agent_context` integration's `class_exists()`
+// gate finds it at runtime even before any caller has invoked the singleton.
+if ( ! class_exists( 'WP_MCP_AI_Memory_Contradiction_Detector' ) ) {
+	require_once __DIR__ . '/class-wp-mcp-ai-memory-contradiction-detector.php';
+}
+WP_MCP_AI_Memory_Contradiction_Detector::bootstrap();

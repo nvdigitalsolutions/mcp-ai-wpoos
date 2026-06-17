@@ -1,0 +1,49 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "social-media",
+	"label": "Social Media",
+	"icon": "share-nodes",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "edit_posts",
+	"resources": [
+		{
+			"name": "posts",
+			"label": "Posts",
+			"endpoint": "/social/posts",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",           "type": "integer",  "label": "ID",         "readonly": true },
+				{ "name": "title",        "type": "string",   "label": "Title",      "required": true },
+				{ "name": "body",         "type": "text",     "label": "Body",       "required": true },
+				{ "name": "channel",      "type": "enum",     "label": "Channel",    "options": ["twitter","linkedin","facebook","instagram","threads","bluesky"] },
+				{ "name": "status",       "type": "enum",     "label": "Status",     "options": ["draft","scheduled","published","failed"] },
+				{ "name": "scheduled_at", "type": "datetime", "label": "Scheduled" },
+				{ "name": "published_at", "type": "datetime", "label": "Published",  "readonly": true },
+				{ "name": "tags",         "type": "string",   "label": "Tags" }
+			]
+		},
+		{
+			"name": "campaigns",
+			"label": "Campaigns",
+			"endpoint": "/social/campaigns",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer",  "label": "ID",        "readonly": true },
+				{ "name": "name",       "type": "string",   "label": "Name",      "required": true },
+				{ "name": "goal",       "type": "string",   "label": "Goal" },
+				{ "name": "start_date", "type": "date",     "label": "Start date" },
+				{ "name": "end_date",   "type": "date",     "label": "End date" },
+				{ "name": "status",     "type": "enum",     "label": "Status",    "options": ["draft","active","paused","completed"] },
+				{ "name": "budget",     "type": "number",   "label": "Budget" },
+				{ "name": "notes",      "type": "text",     "label": "Notes" }
+			]
+		}
+	],
+	"views": [
+		{ "name": "posts_list",    "type": "table",  "resource": "posts",     "default": true, "label": "All posts" },
+		{ "name": "post_calendar", "type": "calendar","resource": "posts",    "date_field": "scheduled_at", "label": "Content calendar" },
+		{ "name": "by_status",     "type": "kanban", "resource": "posts",     "group_by": "status",        "label": "Post pipeline" },
+		{ "name": "campaigns_list","type": "table",  "resource": "campaigns",                              "label": "Campaigns" }
+	]
+}

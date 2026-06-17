@@ -114,7 +114,20 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
@@ -182,18 +195,20 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 		$total    = $subtotal + $tax;
 
 		// Build invoice HTML content.
-		$html = $this->build_invoice_html( array(
-			'invoice_number' => $invoice_number,
-			'date'           => $date,
-			'due_date'       => $due_date,
-			'bill_to'        => $data['bill_to'] ?? array(),
-			'items'          => $items,
-			'subtotal'       => $subtotal,
-			'tax_rate'       => $tax_rate,
-			'tax'            => $tax,
-			'total'          => $total,
-			'currency'       => $currency,
-		) );
+		$html = $this->build_invoice_html(
+			array(
+				'invoice_number' => $invoice_number,
+				'date'           => $date,
+				'due_date'       => $due_date,
+				'bill_to'        => $data['bill_to'] ?? array(),
+				'items'          => $items,
+				'subtotal'       => $subtotal,
+				'tax_rate'       => $tax_rate,
+				'tax'            => $tax,
+				'total'          => $total,
+				'currency'       => $currency,
+			)
+		);
 
 		// Try DomPDF first.
 		if ( class_exists( '\Dompdf\Dompdf' ) ) {
@@ -314,12 +329,12 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 	 * @return string HTML content.
 	 */
 	protected function build_invoice_html( $data ) {
-		$html = '<html><body>';
+		$html  = '<html><body>';
 		$html .= '<h1>INVOICE</h1>';
 		$html .= '<p><strong>Invoice #:</strong> ' . esc_html( $data['invoice_number'] ) . '</p>';
 		$html .= '<p><strong>Date:</strong> ' . esc_html( $data['date'] ) . '</p>';
 		$html .= '<p><strong>Due Date:</strong> ' . esc_html( $data['due_date'] ) . '</p>';
-		
+
 		// Items table.
 		$html .= '<table border="1" style="width:100%; border-collapse:collapse;"><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>';
 		foreach ( $data['items'] as $item ) {
@@ -331,14 +346,14 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 			$html .= '</tr>';
 		}
 		$html .= '</table>';
-		
+
 		// Totals.
 		$html .= '<p style="text-align:right;"><strong>Subtotal:</strong> ' . number_format( $data['subtotal'], 2 ) . '</p>';
 		if ( $data['tax_rate'] > 0 ) {
 			$html .= '<p style="text-align:right;"><strong>Tax (' . $data['tax_rate'] . '%):</strong> ' . number_format( $data['tax'], 2 ) . '</p>';
 		}
 		$html .= '<p style="text-align:right;"><strong>Total:</strong> ' . $data['currency'] . ' ' . number_format( $data['total'], 2 ) . '</p>';
-		
+
 		$html .= '</body></html>';
 		return $html;
 	}

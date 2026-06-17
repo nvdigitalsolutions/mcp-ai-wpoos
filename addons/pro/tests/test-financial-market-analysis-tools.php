@@ -97,7 +97,7 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Financial News Aggregator
+	// Financial News Aggregator.
 	// =========================================================================
 
 	/**
@@ -170,7 +170,7 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Stock Data Fetcher
+	// Stock Data Fetcher.
 	// =========================================================================
 
 	/**
@@ -217,7 +217,7 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Market Sentiment Analyzer
+	// Market Sentiment Analyzer.
 	// =========================================================================
 
 	/**
@@ -360,7 +360,7 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Market Forecast Analyzer
+	// Market Forecast Analyzer.
 	// =========================================================================
 
 	/**
@@ -405,8 +405,14 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 		$result = $tool->execute(
 			array(
 				'historical_data' => array(
-					array( 'date' => '2024-01-01', 'value' => 100 ),
-					array( 'date' => '2024-01-02', 'value' => 102 ),
+					array(
+						'date'  => '2024-01-01',
+						'value' => 100,
+					),
+					array(
+						'date'  => '2024-01-02',
+						'value' => 102,
+					),
 				),
 			),
 			array()
@@ -424,11 +430,26 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 		$result = $tool->execute(
 			array(
 				'historical_data'  => array(
-					array( 'date' => '2024-01-01', 'value' => 1 ),
-					array( 'date' => '2024-01-02', 'value' => 2 ),
-					array( 'date' => '2024-01-03', 'value' => 3 ),
-					array( 'date' => '2024-01-04', 'value' => 4 ),
-					array( 'date' => '2024-01-05', 'value' => 5 ),
+					array(
+						'date'  => '2024-01-01',
+						'value' => 1,
+					),
+					array(
+						'date'  => '2024-01-02',
+						'value' => 2,
+					),
+					array(
+						'date'  => '2024-01-03',
+						'value' => 3,
+					),
+					array(
+						'date'  => '2024-01-04',
+						'value' => 4,
+					),
+					array(
+						'date'  => '2024-01-05',
+						'value' => 5,
+					),
 				),
 				'method'           => 'linear_regression',
 				'forecast_periods' => 3,
@@ -459,11 +480,26 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 		$result = $tool->execute(
 			array(
 				'historical_data'       => array(
-					array( 'date' => '2024-01-01', 'value' => 10 ),
-					array( 'date' => '2024-01-02', 'value' => 12 ),
-					array( 'date' => '2024-01-03', 'value' => 14 ),
-					array( 'date' => '2024-01-04', 'value' => 16 ),
-					array( 'date' => '2024-01-05', 'value' => 18 ),
+					array(
+						'date'  => '2024-01-01',
+						'value' => 10,
+					),
+					array(
+						'date'  => '2024-01-02',
+						'value' => 12,
+					),
+					array(
+						'date'  => '2024-01-03',
+						'value' => 14,
+					),
+					array(
+						'date'  => '2024-01-04',
+						'value' => 16,
+					),
+					array(
+						'date'  => '2024-01-05',
+						'value' => 18,
+					),
 				),
 				'method'                => 'moving_average',
 				'moving_average_window' => 3,
@@ -490,9 +526,18 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 		$result = $tool->execute(
 			array(
 				'historical_data'  => array(
-					array( 'date' => '2024-01-01', 'value' => 100 ),
-					array( 'date' => '2024-01-02', 'value' => 110 ),
-					array( 'date' => '2024-01-03', 'value' => 120 ),
+					array(
+						'date'  => '2024-01-01',
+						'value' => 100,
+					),
+					array(
+						'date'  => '2024-01-02',
+						'value' => 110,
+					),
+					array(
+						'date'  => '2024-01-03',
+						'value' => 120,
+					),
 				),
 				'method'           => 'exponential_smoothing',
 				'smoothing_factor' => 0.5,
@@ -514,15 +559,24 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 	 * Test forecast analyzer sentiment adjustment modifies forecast values.
 	 */
 	public function test_forecast_analyzer_sentiment_adjustment() {
-		$tool        = new WP_MCP_AI_Tool_Market_Forecast_Analyzer();
-		$base_args   = array(
-			'historical_data'  => array(
-				array( 'date' => '2024-01-01', 'value' => 100 ),
-				array( 'date' => '2024-01-02', 'value' => 100 ),
-				array( 'date' => '2024-01-03', 'value' => 100 ),
+		$tool      = new WP_MCP_AI_Tool_Market_Forecast_Analyzer();
+		$base_args = array(
+			'historical_data'              => array(
+				array(
+					'date'  => '2024-01-01',
+					'value' => 100,
+				),
+				array(
+					'date'  => '2024-01-02',
+					'value' => 100,
+				),
+				array(
+					'date'  => '2024-01-03',
+					'value' => 100,
+				),
 			),
-			'method'           => 'linear_regression',
-			'forecast_periods' => 1,
+			'method'                       => 'linear_regression',
+			'forecast_periods'             => 1,
 			'include_confidence_intervals' => false,
 		);
 
@@ -549,7 +603,7 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Investment Signal Tracker
+	// Investment Signal Tracker.
 	// =========================================================================
 
 	/**
@@ -697,7 +751,7 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Financial Logic Visualizer
+	// Financial Logic Visualizer.
 	// =========================================================================
 
 	/**
@@ -742,13 +796,35 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 			array(
 				'chain_type'  => 'transmission_chain',
 				'nodes'       => array(
-					array( 'id' => 'A', 'label' => 'Rate Hike', 'type' => 'event' ),
-					array( 'id' => 'B', 'label' => 'Bond Yields Rise', 'type' => 'factor' ),
-					array( 'id' => 'C', 'label' => 'Stocks Decline', 'type' => 'outcome' ),
+					array(
+						'id'    => 'A',
+						'label' => 'Rate Hike',
+						'type'  => 'event',
+					),
+					array(
+						'id'    => 'B',
+						'label' => 'Bond Yields Rise',
+						'type'  => 'factor',
+					),
+					array(
+						'id'    => 'C',
+						'label' => 'Stocks Decline',
+						'type'  => 'outcome',
+					),
 				),
 				'connections' => array(
-					array( 'from' => 'A', 'to' => 'B', 'label' => 'causes', 'strength' => 'strong' ),
-					array( 'from' => 'B', 'to' => 'C', 'label' => 'leads to', 'strength' => 'moderate' ),
+					array(
+						'from'     => 'A',
+						'to'       => 'B',
+						'label'    => 'causes',
+						'strength' => 'strong',
+					),
+					array(
+						'from'     => 'B',
+						'to'       => 'C',
+						'label'    => 'leads to',
+						'strength' => 'moderate',
+					),
 				),
 				'direction'   => 'LR',
 			),
@@ -780,13 +856,35 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 			array(
 				'chain_type'  => 'decision_tree',
 				'nodes'       => array(
-					array( 'id' => 'D1', 'label' => 'Invest?', 'type' => 'decision' ),
-					array( 'id' => 'O1', 'label' => 'Buy Stocks', 'type' => 'outcome' ),
-					array( 'id' => 'O2', 'label' => 'Hold Cash', 'type' => 'outcome' ),
+					array(
+						'id'    => 'D1',
+						'label' => 'Invest?',
+						'type'  => 'decision',
+					),
+					array(
+						'id'    => 'O1',
+						'label' => 'Buy Stocks',
+						'type'  => 'outcome',
+					),
+					array(
+						'id'    => 'O2',
+						'label' => 'Hold Cash',
+						'type'  => 'outcome',
+					),
 				),
 				'connections' => array(
-					array( 'from' => 'D1', 'to' => 'O1', 'label' => 'Yes', 'strength' => 'strong' ),
-					array( 'from' => 'D1', 'to' => 'O2', 'label' => 'No', 'strength' => 'weak' ),
+					array(
+						'from'     => 'D1',
+						'to'       => 'O1',
+						'label'    => 'Yes',
+						'strength' => 'strong',
+					),
+					array(
+						'from'     => 'D1',
+						'to'       => 'O2',
+						'label'    => 'No',
+						'strength' => 'weak',
+					),
 				),
 			),
 			array()
@@ -807,7 +905,7 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Financial Report Generator
+	// Financial Report Generator.
 	// =========================================================================
 
 	/**
@@ -930,7 +1028,7 @@ class Test_Financial_Market_Analysis_Tools extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Financial Search
+	// Financial Search.
 	// =========================================================================
 
 	/**

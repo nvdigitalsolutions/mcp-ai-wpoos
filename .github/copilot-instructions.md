@@ -14,6 +14,8 @@ This repo is developed by multiple AI agents. Before doing work, be aware of:
 
 When making changes, check `git log` first — another agent may have already addressed part of the task. Do not duplicate scopes that are owned by an agent declared in `.github/agents/` or in the `AGENTS.md` inventory.
 
+**Folder context (per-folder READMEs):** Every PHP-bearing subdirectory under `includes/` and `addons/pro/includes/` ships a `README.md` declaring that folder's purpose, public surface, neighbors, and which `.context/*.md` files to load alongside it. **When editing files in `includes/<folder>/`, read `includes/<folder>/README.md` first.** Convention details in [`docs/developer/folder-readme-convention.md`](../docs/developer/folder-readme-convention.md); enforcement via `composer run docs:check-folder-readmes` (part of `composer run ci:all`).
+
 
 ## Repository Structure
 
@@ -129,6 +131,7 @@ bin/codex-startup.sh
   - Use nonces for form submissions
   - Validate file uploads and MIME types
 - **Documentation**: All classes, methods, and functions must have PHPDoc blocks
+- **Tool authoring rules (Unix Theory P0–P6)**: Tool `execute()` returns the canonical envelope (success array or `WP_Error`, **never** `array( 'success' => false, ... )`) and obeys the two-gate sanitisation rule (sanitize `$arguments[...]` at entry, escape every value at exit). Two custom PHPCS sniffs (`WPMCPAI.Tools.CanonicalReturnEnvelope`, `WPMCPAI.Tools.SanitizeAtEntry`) enforce this at severity 5. See [`CLAUDE.md`](../CLAUDE.md) → "Tool Return Format — Canonical Envelope" and "Tool Sanitisation — Two-Gate Rule" for full rationale and examples.
 
 ### JavaScript Standards
 

@@ -125,7 +125,20 @@ class WP_MCP_AI_Tool_CMBS_Pool_Analyzer implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -171,10 +184,10 @@ class WP_MCP_AI_Tool_CMBS_Pool_Analyzer implements WP_MCP_AI_Tool_Interface, WP_
 				continue;
 			}
 
-			$total_balance  += $balance;
-			$wa_dscr_num    += $dscr * $balance;
-			$wa_ltv_num     += $ltv * $balance;
-			$wa_rate_num    += $rate * $balance;
+			$total_balance += $balance;
+			$wa_dscr_num   += $dscr * $balance;
+			$wa_ltv_num    += $ltv * $balance;
+			$wa_rate_num   += $rate * $balance;
 
 			if ( ! empty( $maturity ) ) {
 				$mat_ts = strtotime( $maturity );
@@ -218,22 +231,25 @@ class WP_MCP_AI_Tool_CMBS_Pool_Analyzer implements WP_MCP_AI_Tool_Interface, WP_
 		$wa_maturity = ( $maturity_count > 0 ) ? $wa_maturity_num / $total_balance : 0;
 
 		// Top 10 loans by balance.
-		usort( $parsed_loans, function ( $a, $b ) {
-			return $b['balance'] <=> $a['balance'];
-		} );
+		usort(
+			$parsed_loans,
+			function ( $a, $b ) {
+				return $b['balance'] <=> $a['balance'];
+			}
+		);
 
-		$top_10          = array_slice( $parsed_loans, 0, 10 );
-		$top_10_balance  = 0.0;
-		$top_10_output   = array();
+		$top_10         = array_slice( $parsed_loans, 0, 10 );
+		$top_10_balance = 0.0;
+		$top_10_output  = array();
 		foreach ( $top_10 as $tl ) {
 			$top_10_balance += $tl['balance'];
 			$top_10_output[] = array(
-				'loan_name'  => $tl['loan_name'],
-				'balance'    => $calc::format_currency( $tl['balance'] ),
-				'pct_pool'   => $calc::format_percentage( $tl['balance'] / $total_balance ),
-				'dscr'       => round( $tl['dscr'], 2 ),
-				'ltv'        => $calc::format_percentage( $tl['ltv'] ),
-				'type'       => $tl['property_type'],
+				'loan_name' => $tl['loan_name'],
+				'balance'   => $calc::format_currency( $tl['balance'] ),
+				'pct_pool'  => $calc::format_percentage( $tl['balance'] / $total_balance ),
+				'dscr'      => round( $tl['dscr'], 2 ),
+				'ltv'       => $calc::format_percentage( $tl['ltv'] ),
+				'type'      => $tl['property_type'],
 			);
 		}
 
@@ -337,33 +353,33 @@ class WP_MCP_AI_Tool_CMBS_Pool_Analyzer implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$pool_stats = array(
-			'num_loans'        => count( $parsed_loans ),
-			'total_balance'    => $calc::format_currency( $total_balance ),
-			'wa_dscr'          => round( $wa_dscr, 2 ),
-			'wa_ltv'           => $calc::format_percentage( $wa_ltv ),
-			'wa_rate'          => $calc::format_percentage( $wa_rate ),
+			'num_loans'          => count( $parsed_loans ),
+			'total_balance'      => $calc::format_currency( $total_balance ),
+			'wa_dscr'            => round( $wa_dscr, 2 ),
+			'wa_ltv'             => $calc::format_percentage( $wa_ltv ),
+			'wa_rate'            => $calc::format_percentage( $wa_rate ),
 			'wa_maturity_months' => round( $wa_maturity, 1 ),
-			'avg_loan_size'    => $calc::format_currency( $total_balance / count( $parsed_loans ) ),
-			'top_10_pct'       => $calc::format_percentage( $top_10_balance / $total_balance ),
-			'herfindahl_index' => round( $herfindahl, 4 ),
+			'avg_loan_size'      => $calc::format_currency( $total_balance / count( $parsed_loans ) ),
+			'top_10_pct'         => $calc::format_percentage( $top_10_balance / $total_balance ),
+			'herfindahl_index'   => round( $herfindahl, 4 ),
 		);
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: 1: loan count, 2: total balance */
 				__( 'Pool analysis complete: %1$d loans totaling %2$s.', 'mcp-ai-wpoos-pro' ),
 				count( $parsed_loans ),
 				$calc::format_currency( $total_balance )
 			),
-			'data'       => array(
-				'pool_stats'             => $pool_stats,
-				'top_10_loans'           => $top_10_output,
-				'property_concentration' => $property_concentration,
+			'data'    => array(
+				'pool_stats'               => $pool_stats,
+				'top_10_loans'             => $top_10_output,
+				'property_concentration'   => $property_concentration,
 				'geographic_concentration' => $geo_concentration,
-				'dscr_distribution'      => $dscr_distribution,
-				'ltv_distribution'       => $ltv_distribution,
-				'disclaimer'             => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
+				'dscr_distribution'        => $dscr_distribution,
+				'ltv_distribution'         => $ltv_distribution,
+				'disclaimer'               => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 	}

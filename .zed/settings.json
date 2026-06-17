@@ -1,0 +1,352 @@
+// Zed project settings for NV oOS (Open Operator System).
+//
+// This file mirrors the GitHub Custom Agent roster in `examples/agents/` as
+// native Zed agent profiles, so each example becomes a one-click profile in
+// Zed's Agent Panel. The shared rules (naming, security, PHP-compat, tool
+// patterns, architecture) are not restated here — Zed automatically loads
+// `AGENTS.md` and `CLAUDE.md` as agent rules from the repo root.
+//
+// See .zed/README.md for usage and the rationale behind the tool mapping.
+{
+  // ---------------------------------------------------------------------------
+  // Editor defaults — kept in sync with .vscode/settings.json so contributors
+  // who switch editors get the same indentation, formatter, and exclusions.
+  // ---------------------------------------------------------------------------
+  "tab_size": 4,
+  "hard_tabs": true,
+  "ensure_final_newline_on_save": true,
+  "remove_trailing_whitespace_on_save": true,
+  "format_on_save": "off",
+  "languages": {
+    "PHP": { "tab_size": 4, "hard_tabs": true },
+    "JavaScript": { "tab_size": 2, "hard_tabs": true },
+    "JSON": { "tab_size": 2, "hard_tabs": true },
+    "Markdown": { "remove_trailing_whitespace_on_save": false }
+  },
+  "file_scan_exclusions": [
+    "**/.git",
+    "**/.svn",
+    "**/.hg",
+    "**/CVS",
+    "**/.DS_Store",
+    "**/node_modules",
+    "**/vendor",
+    "**/coverage",
+    "**/.phpunit.result.cache"
+  ],
+
+  // ---------------------------------------------------------------------------
+  // MCP (Model Context Protocol) servers exposed to the Zed Agent Panel.
+  //
+  // These are commented templates — uncomment and fill in the matching env vars
+  // (typically via Zed's secret store) to enable them. Nothing here will run
+  // until a maintainer opts in, so a fresh clone stays inert.
+  //
+  // Reference: https://zed.dev/docs/ai/mcp
+  // ---------------------------------------------------------------------------
+  "context_servers": {
+    // GitHub MCP server — issues, PRs, workflow runs, code search.
+    // Requires a fine-scoped PAT with `repo` and `actions:read`.
+    // "github": {
+    //   "source": "custom",
+    //   "command": {
+    //     "path": "npx",
+    //     "args": ["-y", "@modelcontextprotocol/server-github"],
+    //     "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_…" }
+    //   }
+    // },
+
+    // Filesystem MCP server — sandbox the agent to this repo only.
+    // "filesystem": {
+    //   "source": "custom",
+    //   "command": {
+    //     "path": "npx",
+    //     "args": [
+    //       "-y",
+    //       "@modelcontextprotocol/server-filesystem",
+    //       "${ZED_WORKTREE_ROOT}"
+    //     ]
+    //   }
+    // },
+
+    // NV oOS itself exposes an MCP-compatible endpoint at
+    // /wp-json/mcp-ai/v1/ once the plugin is active in a local WordPress
+    // site. Point this at your Docker site to give the agent live access to
+    // the ~830 in-product tools while developing.
+    //
+    // Two equivalent options — uncomment ONE:
+    //
+    // Option A: Node.js bridge script (uses bin/mcp-bridge.js in this repo)
+    // "nv-oos-local": {
+    //   "source": "custom",
+    //   "command": {
+    //     "path": "node",
+    //     "args": ["bin/mcp-bridge.js"],
+    //     "env": {
+    //       "MCP_AI_BASE_URL": "http://localhost:8000/wp-json/mcp-ai/v1/mcp",
+    //       "MCP_AI_TOKEN":    "cred_…"
+    //     }
+    //   }
+    // }
+    //
+    // Option B: npx relay — no extra files needed (requires network + npm)
+    // "nv-oos-local": {
+    //   "source": "custom",
+    //   "command": {
+    //     "path": "npx",
+    //     "args": ["-y", "@modelcontextprotocol/server-http", "http://localhost:8000/wp-json/mcp-ai/v1/mcp"],
+    //     "env": { "AUTHORIZATION": "Bearer cred_…" }
+    //   }
+    // }
+  },
+
+  // ---------------------------------------------------------------------------
+  // Agent profiles — one per file in examples/agents/.
+  //
+  // Tool mapping (from the *.agent.md `tools:` line to Zed's tool registry):
+  //   read, view     → read_file
+  //   grep           → grep
+  //   glob           → find_path + list_directory
+  //   edit           → edit_file + create_directory + move_path
+  //   bash           → terminal
+  //
+  // Read-only reviewers never get edit_file, terminal, delete_path, or move_path.
+  // Writers without `bash` (e.g. docs-maintainer) never get terminal.
+  //
+  // Every profile inherits the repo's AGENTS.md + CLAUDE.md as rules, so the
+  // shared layering rule from AGENTS.md §2 is respected automatically.
+  // ---------------------------------------------------------------------------
+  "agent": {
+    "default_profile": "ask",
+    "always_allow_tool_actions": false,
+    "profiles": {
+      // ─── Read-only reviewers ─────────────────────────────────────────────
+      "wp-rest-reviewer": {
+        "name": "NV oOS · WP REST Reviewer",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "thinking": true,
+          "diagnostics": true,
+          "fetch": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+      "wp-security-reviewer": {
+        "name": "NV oOS · WP Security Reviewer",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "thinking": true,
+          "diagnostics": true,
+          "fetch": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+      "wp-org-compliance-auditor": {
+        "name": "NV oOS · WordPress.org Compliance Auditor",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "thinking": true,
+          "diagnostics": true,
+          "fetch": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+      "php-compat-reviewer": {
+        "name": "NV oOS · PHP Compatibility Reviewer",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "thinking": true,
+          "diagnostics": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+
+      // ─── Writers (with terminal) ─────────────────────────────────────────
+      "tool-author": {
+        "name": "NV oOS · Tool Author",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "edit_file": true,
+          "create_directory": true,
+          "move_path": true,
+          "terminal": true,
+          "thinking": true,
+          "diagnostics": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+      "slash-command-author": {
+        "name": "NV oOS · Slash Command Author",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "edit_file": true,
+          "create_directory": true,
+          "move_path": true,
+          "terminal": true,
+          "thinking": true,
+          "diagnostics": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+      "chat-ui-author": {
+        "name": "NV oOS · Chat UI Author",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "edit_file": true,
+          "create_directory": true,
+          "move_path": true,
+          "terminal": true,
+          "thinking": true,
+          "diagnostics": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+      "phpunit-test-author": {
+        "name": "NV oOS · PHPUnit Test Author",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "edit_file": true,
+          "create_directory": true,
+          "move_path": true,
+          "terminal": true,
+          "thinking": true,
+          "diagnostics": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+      "agent-skill-curator": {
+        "name": "NV oOS · Agent Skill Curator",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "edit_file": true,
+          "create_directory": true,
+          "move_path": true,
+          "terminal": true,
+          "thinking": true,
+          "diagnostics": true,
+          "fetch": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+      "addon-maintainer": {
+        "name": "NV oOS · Addon Maintainer",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "edit_file": true,
+          "create_directory": true,
+          "move_path": true,
+          "terminal": true,
+          "thinking": true,
+          "diagnostics": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+      "toolkit-spa-maintainer": {
+        "name": "NV oOS · Toolkit SPA Maintainer",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "edit_file": true,
+          "create_directory": true,
+          "move_path": true,
+          "terminal": true,
+          "thinking": true,
+          "diagnostics": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+      "release-engineer": {
+        "name": "NV oOS · Release Engineer",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "edit_file": true,
+          "create_directory": true,
+          "move_path": true,
+          "terminal": true,
+          "thinking": true,
+          "diagnostics": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
+
+      // ─── Writer (no terminal) ────────────────────────────────────────────
+      "docs-maintainer": {
+        "name": "NV oOS · Docs Maintainer",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "edit_file": true,
+          "create_directory": true,
+          "move_path": true,
+          "thinking": true,
+          "diagnostics": true,
+          "fetch": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      }
+    }
+  },
+
+  // ---------------------------------------------------------------------------
+  // Recommended Zed extensions for NV oOS contributors.
+  //
+  // PHP / WordPress: phpactor language server, ESLint for the chat UI,
+  // Prettier for JSON/Markdown. Mirrors .vscode/extensions.json intent.
+  // ---------------------------------------------------------------------------
+  "auto_install_extensions": {
+    "php": true,
+    "phpactor": true,
+    "html": true,
+    "scss": true
+  }
+}

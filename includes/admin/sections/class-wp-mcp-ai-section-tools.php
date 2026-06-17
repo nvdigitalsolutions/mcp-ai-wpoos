@@ -979,6 +979,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$subtab_groups = $this->get_subtab_groups();
 			$active_subtab = $this->get_active_subtab();
 
+			// Register inline style handle for section tools CSS (populated via
+			// wp_add_inline_style in render_features_footer when features subtab is active).
+			wp_register_style( 'wp-mcp-ai-section-tools', false );
+			wp_enqueue_style( 'wp-mcp-ai-section-tools' );
+
 			// Get the active group.
 			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
 				return;
@@ -1149,27 +1154,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					</div>
 
 					<?php
-					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
-					?>
-					<style>
-						.toolkit-limit-good { color: #00a32a; }
+					wp_add_inline_style(
+						'wp-mcp-ai-section-tools',
+						'.toolkit-limit-good { color: #00a32a; }
 						.toolkit-limit-warning { color: #dba617; }
 						.toolkit-limit-maximum { color: #b32d2e; }
 						.toolkit-status-badge { background: #f0f0f1; color: #2c3338; display: inline-block; }
 						.toolkit-limit-good + .toolkit-status-badge { background: #d4edda; color: #155724; }
 						.toolkit-limit-warning + .toolkit-status-badge { background: #fff3cd; color: #856404; }
-						.toolkit-limit-maximum + .toolkit-status-badge { background: #f8d7da; color: #721c24; }
-					</style>
-					<?php
-					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+						.toolkit-limit-maximum + .toolkit-status-badge { background: #f8d7da; color: #721c24; }'
+					);
+
+					$toolkit_memory_json = wp_json_encode( $this->get_toolkit_memory_requirements() );
+					ob_start();
 					?>
-					<script>
 					jQuery(document).ready(function($) {
-						<?php
-						// Store the result once to avoid redundant function calls.
-						$toolkit_memory_json = wp_json_encode( $this->get_toolkit_memory_requirements() );
-						?>
-						var toolkitMemory = <?php echo $toolkit_memory_json ? $toolkit_memory_json : '{}'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() output is safe for inline script context. ?>;
+					var toolkitMemory = <?php echo $toolkit_memory_json ? $toolkit_memory_json : '{}'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() output is safe for inline script context. ?>;
 						
 						// Fallback to empty object if encoding failed.
 						if (!toolkitMemory || typeof toolkitMemory !== 'object') {
@@ -1243,7 +1243,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						toolkitCheckboxes.on('change', updateToolkitMemory);
 						updateToolkitMemory();
 					});
-					</script>
+					<?php
+					$js = ob_get_clean();
+					wp_print_inline_script_tag( $js );
+					?>
 				</td>
 			</tr>
 			<?php
@@ -1428,10 +1431,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Render Plugins Integration footer content.
 		 */
 		private function render_plugins_footer() {
-			$jetengine_active   = class_exists( 'Jet_Engine' );
-			$woocommerce_active = class_exists( 'WooCommerce' );
-			$elementor_active   = did_action( 'elementor/loaded' );
-			$sitekit_active     = class_exists( 'Google\\Site_Kit\\Plugin' );
+			$jetengine_active      = class_exists( 'Jet_Engine' );
+			$jetformbuilder_active = class_exists( 'Jet_Form_Builder\\Plugin' );
+			$woocommerce_active    = class_exists( 'WooCommerce' );
+			$elementor_active      = did_action( 'elementor/loaded' );
+			$sitekit_active        = class_exists( 'Google\\Site_Kit\\Plugin' );
 			?>
 			<tr>
 				<th scope="row"></th>
@@ -1443,6 +1447,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<li>
 							<strong><?php esc_html_e( 'JetEngine:', 'mcp-ai-wpoos' ); ?></strong>
 							<?php if ( $jetengine_active ) : ?>
+								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
+							<?php else : ?>
+								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>
+							<?php endif; ?>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'JetFormBuilder:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php if ( $jetformbuilder_active ) : ?>
 								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
 							<?php else : ?>
 								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>
@@ -1937,9 +1949,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Render JavaScript for media library selection.
 		 */
 		protected function render_elementor_kit_import_script() {
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			ob_start();
 			?>
-			<script type="text/javascript">
 			jQuery(document).ready(function($) {
 				var mediaFrame;
 
@@ -1971,8 +1982,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					mediaFrame.open();
 				});
 			});
-			</script>
 			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
 		}
 
 		/**
@@ -2150,50 +2162,52 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						</div>
 					</div>
 					<?php
-					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+					ob_start();
 					?>
-					<script>
 					(function($) {
-						$('#wp-mcp-ai-filter-tools').on('click', function() {
-							const $button = $(this);
+					$('#wp-mcp-ai-filter-tools').on('click', function() {
+					 const $button = $(this);
 
-							// Add loading state
-							$button.addClass('is-loading').prop('disabled', true);
+					 // Add loading state
+					  $button.addClass('is-loading').prop('disabled', true);
 
-							const search = $('#tool_search').val();
-							const group = $('#tool_group').val();
-							const url = new URL(window.location.href);
+					 const search = $('#tool_search').val();
+					  const group = $('#tool_group').val();
+					  const url = new URL(window.location.href);
 
-							// Update URL parameters.
-							url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
-							url.searchParams.set('tab', 'tools');
-							url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
+					 // Update URL parameters.
+					  url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
+					  url.searchParams.set('tab', 'tools');
+					  url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
 
-							if (search) {
-								url.searchParams.set('tool_search', search);
-							} else {
-								url.searchParams.delete('tool_search');
-							}
+					 if (search) {
+					 url.searchParams.set('tool_search', search);
+					  } else {
+					 url.searchParams.delete('tool_search');
+					  }
 
-							if (group) {
-								url.searchParams.set('tool_group', group);
-							} else {
-								url.searchParams.delete('tool_group');
-							}
+					 if (group) {
+					 url.searchParams.set('tool_group', group);
+					  } else {
+					 url.searchParams.delete('tool_group');
+					  }
 
-							// Navigate to filtered URL.
-							window.location.href = url.toString();
-						});
+					 // Navigate to filtered URL.
+					  window.location.href = url.toString();
+					 });
 
-						// Allow Enter key to trigger filter.
-						$('#tool_search, #tool_group').on('keypress', function(e) {
-							if (e.which === 13) {
-								e.preventDefault();
-								$('#wp-mcp-ai-filter-tools').click();
-							}
-						});
+					 // Allow Enter key to trigger filter.
+					 $('#tool_search, #tool_group').on('keypress', function(e) {
+					if (e.which === 13) {
+					 e.preventDefault();
+					   $('#wp-mcp-ai-filter-tools').click();
+					  }
+					 });
 					})(jQuery);
-					</script>
+					<?php
+					$js = ob_get_clean();
+					wp_print_inline_script_tag( $js );
+					?>
 				</div>
 
 				<!-- Tools by Category -->
@@ -2564,15 +2578,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			// Check for plugin-specific tools.
 			$plugin_requirements = array(
 				'get_elementor_templates'        => array(
-					'plugin' => 'Elementor',
-					'check'  => 'class_exists',
-					'value'  => '\Elementor\Plugin',
-				),
-				'import_elementor_template_kit'  => array(
-					'plugin' => 'Elementor',
-					'check'  => 'class_exists',
-					'value'  => '\Elementor\Plugin',
-				),
+									'plugin' => 'Elementor',
+									'check'  => 'class_exists',
+									'value'  => '\Elementor\Plugin',
+								),
+								'import_elementor_template_kit'  => array(
+									'plugin' => 'Elementor',
+									'check'  => 'class_exists',
+									'value'  => '\Elementor\Plugin',
+								),
+								'get_elementor_form_submissions' => array(
+									'plugin' => 'Elementor Pro',
+									'check'  => 'class_exists',
+									'value'  => '\ElementorPro\Plugin',
+								),
+								'get_all_form_submissions'       => array(
+									'plugin' => 'JetFormBuilder or Elementor Pro',
+									'checks' => array(
+										array(
+											'check' => 'class_exists',
+											'value' => 'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions',
+										),
+										array(
+											'check' => 'class_exists',
+											'value' => 'WP_MCP_AI_Tool_Get_Elementor_Form_Submissions',
+										),
+									),
+									'require_all' => false,
+								),
 				'get_woo_recent_orders'          => array(
 					'plugin' => 'WooCommerce',
 					'check'  => 'class_exists',
@@ -2642,25 +2675,50 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				$requirement = $plugin_requirements[ $slug ];
 
 				// Support both single check and multiple checks.
-				if ( isset( $requirement['checks'] ) ) {
-					// Multiple checks - all must pass.
-					foreach ( $requirement['checks'] as $check_config ) {
-						$check_func  = $check_config['check'];
-						$check_value = $check_config['value'];
+								if ( isset( $requirement['checks'] ) ) {
+									$require_all = ! isset( $requirement['require_all'] ) || $requirement['require_all'];
 
-						// Validate check function is in allowlist.
-						if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
-							// Invalid check function - mark tool as unavailable.
-							$missing[] = $requirement['plugin'];
-							break;
-						}
+									if ( $require_all ) {
+										// Multiple checks - all must pass.
+										foreach ( $requirement['checks'] as $check_config ) {
+											$check_func  = $check_config['check'];
+											$check_value = $check_config['value'];
 
-						if ( ! $check_func( $check_value ) ) {
-							$missing[] = $requirement['plugin'];
-							break; // No need to check further once one fails.
-						}
-					}
-				} else {
+											// Validate check function is in allowlist.
+											if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
+												// Invalid check function - mark tool as unavailable.
+												$missing[] = $requirement['plugin'];
+												break;
+											}
+
+											if ( ! $check_func( $check_value ) ) {
+												$missing[] = $requirement['plugin'];
+												break; // No need to check further once one fails.
+											}
+										}
+									} else {
+										// Multiple checks - at least one must pass (OR logic).
+										$any_passed = false;
+										foreach ( $requirement['checks'] as $check_config ) {
+											$check_func  = $check_config['check'];
+											$check_value = $check_config['value'];
+
+											// Validate check function is in allowlist.
+											if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
+												continue;
+											}
+
+											if ( $check_func( $check_value ) ) {
+												$any_passed = true;
+												break;
+											}
+										}
+
+										if ( ! $any_passed ) {
+											$missing[] = $requirement['plugin'];
+										}
+									}
+								} else {
 					// Single check.
 					$check_func  = $requirement['check'];
 					$check_value = $requirement['value'];

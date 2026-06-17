@@ -34,7 +34,7 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 		);
 
 		foreach ( $woo_tool_classes as $class_name ) {
-			$class_file = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/' . str_replace( '_', '-', strtolower( str_replace( 'WP_MCP_AI_Pro_Tool_', 'class-wp-mcp-ai-pro-tool-', $class_name ) ) ) . '.php';
+			$class_file = WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/' . str_replace( '_', '-', strtolower( str_replace( 'WP_MCP_AI_Pro_Tool_', 'class-wp-mcp-ai-pro-tool-', $class_name ) ) ) . '.php';
 			$this->assertFileExists(
 				$class_file,
 				"WooCommerce tool file should exist: {$class_name}"

@@ -182,112 +182,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 
 			<?php
 			$this->render_pro_banner();
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
-			?>
-			<style>
-				.wp-mcp-ai-overview-dashboard {
-					max-width: 1200px;
-				}
-				.wp-mcp-ai-status-cards {
-					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-					gap: 20px;
-					margin-bottom: 30px;
-				}
-				.wp-mcp-ai-status-card {
-					background: #fff;
-					border: 1px solid #ddd;
-					border-radius: 4px;
-					padding: 20px;
-					box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-				}
-				.wp-mcp-ai-status-card h3 {
-					margin-top: 0;
-					font-size: 16px;
-					display: flex;
-					align-items: center;
-					gap: 8px;
-				}
-				.wp-mcp-ai-status-card h3 .dashicons {
-					font-size: 20px;
-					width: 20px;
-					height: 20px;
-				}
-				.wp-mcp-ai-status-item {
-					display: flex;
-					justify-content: space-between;
-					align-items: center;
-					padding: 10px 0;
-					border-bottom: 1px solid #f0f0f0;
-				}
-				.wp-mcp-ai-status-item:last-child {
-					border-bottom: none;
-				}
-				.wp-mcp-ai-status-badge {
-					display: inline-block;
-					padding: 4px 10px;
-					border-radius: 3px;
-					font-size: 12px;
-					font-weight: 600;
-					text-transform: uppercase;
-				}
-				.wp-mcp-ai-status-badge.configured {
-					background: #d4edda;
-					color: #155724;
-				}
-				.wp-mcp-ai-status-badge.not-configured {
-					background: #f8d7da;
-					color: #721c24;
-				}
-				.wp-mcp-ai-status-badge.enabled {
-					background: #d1ecf1;
-					color: #0c5460;
-				}
-				.wp-mcp-ai-quick-links {
-					margin-top: 30px;
-				}
-				.wp-mcp-ai-quick-links h3 {
-					font-size: 18px;
-					margin-bottom: 15px;
-				}
-				.wp-mcp-ai-links-grid {
-					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-					gap: 15px;
-				}
-				.wp-mcp-ai-link-card {
-					display: flex;
-					flex-direction: column;
-					gap: 8px;
-					padding: 16px;
-					background: #fff;
-					border: 1px solid #ddd;
-					border-radius: 4px;
-					text-decoration: none;
-					color: inherit;
-					transition: all 0.2s ease;
-				}
-				.wp-mcp-ai-link-card:hover {
-					border-color: #2271b1;
-					box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-					transform: translateY(-2px);
-				}
-				.wp-mcp-ai-link-card .dashicons {
-					font-size: 24px;
-					width: 24px;
-					height: 24px;
-					color: #2271b1;
-				}
-				.wp-mcp-ai-link-card strong {
-					font-size: 14px;
-					color: #1d2327;
-				}
-				.wp-mcp-ai-link-card .description {
-					font-size: 12px;
-					color: #646970;
-				}
-			</style>
-			<?php
+
+			// Emit inline styles following the orchestration renderer pattern:
+			// register, enqueue, add inline, and print all at render time so that
+			// the CSS is output inside the body (after WordPress has processed the
+			// head).  Using a handle that is NOT pre-enqueued in enqueue_assets()
+			// avoids the "already done" guard in WP_Styles.
+			$overview_css = '.wp-mcp-ai-overview-dashboard{max-width:1200px;}'
+				. '.wp-mcp-ai-status-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:30px;}'
+				. '.wp-mcp-ai-status-card{background:#fff;border:1px solid #ddd;border-radius:4px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.05);}'
+				. '.wp-mcp-ai-status-card h3{margin-top:0;font-size:16px;display:flex;align-items:center;gap:8px;}'
+				. '.wp-mcp-ai-status-card h3 .dashicons{font-size:20px;width:20px;height:20px;}'
+				. '.wp-mcp-ai-status-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;}'
+				. '.wp-mcp-ai-status-item:last-child{border-bottom:none;}'
+				. '.wp-mcp-ai-status-badge{display:inline-block;padding:4px 10px;border-radius:3px;font-size:12px;font-weight:600;text-transform:uppercase;}'
+				. '.wp-mcp-ai-status-badge.configured{background:#d4edda;color:#155724;}'
+				. '.wp-mcp-ai-status-badge.not-configured{background:#f8d7da;color:#721c24;}'
+				. '.wp-mcp-ai-status-badge.enabled{background:#d1ecf1;color:#0c5460;}'
+				. '.wp-mcp-ai-quick-links{margin-top:30px;}'
+				. '.wp-mcp-ai-quick-links h3{font-size:18px;margin-bottom:15px;}'
+				. '.wp-mcp-ai-links-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px;}'
+				. '.wp-mcp-ai-link-card{display:flex;flex-direction:column;gap:8px;padding:16px;background:#fff;border:1px solid #ddd;border-radius:4px;text-decoration:none;color:inherit;transition:all 0.2s ease;}'
+				. '.wp-mcp-ai-link-card:hover{border-color:#2271b1;box-shadow:0 2px 6px rgba(0,0,0,0.1);transform:translateY(-2px);}'
+				. '.wp-mcp-ai-link-card .dashicons{font-size:24px;width:24px;height:24px;color:#2271b1;}'
+				. '.wp-mcp-ai-link-card strong{font-size:14px;color:#1d2327;}'
+				. '.wp-mcp-ai-link-card .description{font-size:12px;color:#646970;}';
+			wp_register_style( 'wp-mcp-ai-overview', false, array(), WP_MCP_AI_VERSION );
+			wp_enqueue_style( 'wp-mcp-ai-overview' );
+			wp_add_inline_style( 'wp-mcp-ai-overview', $overview_css );
+			wp_print_styles( 'wp-mcp-ai-overview' );
 		}
 
 		/**

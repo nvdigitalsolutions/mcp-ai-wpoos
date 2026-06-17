@@ -53,6 +53,13 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -65,37 +72,23 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 		$required_capability = apply_filters( 'wp_mcp_ai_profession_stats_capability', 'read', $context, $arguments );
 
 		if ( $required_capability && $user_id && ! user_can( $user_id, $required_capability ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'You do not have permission to view profession statistics.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'You do not have permission to view profession statistics.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get profession service.
 		if ( ! function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Profession system not available. The professions module may not be loaded.', 'mcp-ai-wpoos' ),
-				'code'    => 'profession_system_unavailable',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Profession system not available. The professions module may not be loaded.', 'mcp-ai-wpoos' ) );
 		}
 
 		try {
 			$profession_service = wp_mcp_ai_get_profession_service();
 
 			if ( ! $profession_service ) {
-				return array(
-					'success' => false,
-					'message' => __( 'Profession service could not be initialized.', 'mcp-ai-wpoos' ),
-					'code'    => 'profession_service_initialization_failed',
-				);
+				return new WP_Error( 'wp_mcp_ai_error', __( 'Profession service could not be initialized.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Get all professions.
@@ -113,14 +106,13 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 				)
 			);
 
-			return array(
-				'success' => false,
-				'message' => sprintf(
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Error retrieving profession statistics: %s', 'mcp-ai-wpoos' ),
 					$e->getMessage()
-				),
-				'code'    => 'profession_stats_exception',
+				)
 			);
 		} catch ( Error $e ) {
 			WP_MCP_AI_Logger::log_error(
@@ -132,14 +124,13 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 				)
 			);
 
-			return array(
-				'success' => false,
-				'message' => sprintf(
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Fatal error retrieving profession statistics: %s', 'mcp-ai-wpoos' ),
 					$e->getMessage()
-				),
-				'code'    => 'profession_stats_fatal_error',
+				)
 			);
 		}
 

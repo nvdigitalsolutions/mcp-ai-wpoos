@@ -49,7 +49,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	 * and execute validation tests.
 	 *
 	 * @param string $class_name PHP class name.
-	 * @param string $file_name  File name inside includes/src/Tools/ChatChannels/.
+	 * @param string $file_name  File name inside includes/tools/chat-channels/.
 	 */
 	private function load_channel_tool( $class_name, $file_name ) {
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
@@ -65,7 +65,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 			require_once $interface_path;
 		}
 
-		$path = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/' . $file_name;
+		$path = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/' . $file_name;
 		if ( ! file_exists( $path ) ) {
 			$this->markTestSkipped( $class_name . ' file not found at ' . $path );
 		}
@@ -698,14 +698,14 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	 * Helper: assert a ChatChannels tool file exists and the class is loadable.
 	 *
 	 * @param string $class_name PHP class name.
-	 * @param string $file_name  File name inside includes/src/Tools/ChatChannels/.
+	 * @param string $file_name  File name inside includes/tools/chat-channels/.
 	 */
 	private function assert_chat_channels_tool_loadable( $class_name, $file_name ) {
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 			$this->markTestSkipped( 'Pro addon not available' );
 		}
 
-		$path = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/' . $file_name;
+		$path = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/' . $file_name;
 		$this->assertFileExists( $path, $file_name . ' must exist in ChatChannels directory' );
 
 		if ( ! class_exists( $class_name ) ) {
@@ -954,7 +954,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Pro addon not available' );
 		}
 
-		$path = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php';
+		$path = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php';
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast' ) && file_exists( $path ) ) {
 			if ( file_exists( WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
@@ -1153,7 +1153,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_tool_get_slug() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
 		);
 
 		$tool = new WP_MCP_AI_Pro_Tool_Send_Apple_Message();
@@ -1166,7 +1166,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_tool_is_available() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
 		);
 
 		$this->assertTrue( WP_MCP_AI_Pro_Tool_Send_Apple_Message::is_available() );
@@ -1178,7 +1178,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_tool_returns_error_without_api_key() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
 		);
 
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -1207,7 +1207,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_tool_rejects_http_url() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
 		);
 
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -1236,7 +1236,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_tool_capability_flags() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
 		);
 
 		$tool  = new WP_MCP_AI_Pro_Tool_Send_Apple_Message();
@@ -1253,7 +1253,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_get_apple_messages_tool_get_slug() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Get_Apple_Messages',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-apple-messages.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-apple-messages.php'
 		);
 
 		$tool = new WP_MCP_AI_Pro_Tool_Get_Apple_Messages();
@@ -1266,7 +1266,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_get_apple_messages_tool_capability_flags_include_read_only() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Get_Apple_Messages',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-apple-messages.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-apple-messages.php'
 		);
 
 		$tool  = new WP_MCP_AI_Pro_Tool_Get_Apple_Messages();
@@ -1282,7 +1282,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_interactive_tool_get_slug() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php'
 		);
 
 		$tool = new WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive();
@@ -1295,7 +1295,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_interactive_rejects_invalid_type() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php'
 		);
 
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -1325,7 +1325,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_interactive_supported_types() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php'
 		);
 
 		$expected_types = array( 'list_picker', 'time_picker', 'rich_link', 'authenticate' );
@@ -1341,7 +1341,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_group_tool_get_slug() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-group.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message-group.php'
 		);
 
 		$tool = new WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group();
@@ -1354,7 +1354,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_group_tool_rejects_too_many_participants() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-group.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message-group.php'
 		);
 
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -1392,7 +1392,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_send_apple_message_group_max_participants_constant() {
 		$this->load_pro_class(
 			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group',
-			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-group.php'
+			'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-apple-message-group.php'
 		);
 
 		$this->assertSame( 32, WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group::MAX_PARTICIPANTS );

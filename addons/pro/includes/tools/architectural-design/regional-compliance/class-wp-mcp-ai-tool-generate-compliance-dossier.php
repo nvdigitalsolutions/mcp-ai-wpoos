@@ -86,27 +86,27 @@ class WP_MCP_AI_Tool_Generate_Compliance_Dossier implements WP_MCP_AI_Tool_Inter
 					'type'        => 'object',
 					'description' => __( 'Project metadata for the dossier cover page.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'title'       => array( 'type' => 'string' ),
-						'address'     => array( 'type' => 'string' ),
-						'client'      => array( 'type' => 'string' ),
-						'architect'   => array( 'type' => 'string' ),
-						'engineer'    => array( 'type' => 'string' ),
-						'date'        => array( 'type' => 'string' ),
+						'title'     => array( 'type' => 'string' ),
+						'address'   => array( 'type' => 'string' ),
+						'client'    => array( 'type' => 'string' ),
+						'architect' => array( 'type' => 'string' ),
+						'engineer'  => array( 'type' => 'string' ),
+						'date'      => array( 'type' => 'string' ),
 					),
 				),
 				'sections'     => array(
 					'type'        => 'object',
 					'description' => __( 'Pre-computed result sections to bundle. Any subset is accepted; missing sections are listed as "not provided".', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'planning_compliance'  => array( 'type' => 'object' ),
-						'wind_loads'           => array( 'type' => 'object' ),
-						'seismic_loads'        => array( 'type' => 'object' ),
-						'setbacks_far'         => array( 'type' => 'object' ),
-						'building_code'        => array( 'type' => 'object' ),
-						'sustainability'       => array( 'type' => 'object' ),
-						'natural_ventilation'  => array( 'type' => 'object' ),
-						'daylight_solar_gain'  => array( 'type' => 'object' ),
-						'thermal_comfort'      => array( 'type' => 'object' ),
+						'planning_compliance' => array( 'type' => 'object' ),
+						'wind_loads'          => array( 'type' => 'object' ),
+						'seismic_loads'       => array( 'type' => 'object' ),
+						'setbacks_far'        => array( 'type' => 'object' ),
+						'building_code'       => array( 'type' => 'object' ),
+						'sustainability'      => array( 'type' => 'object' ),
+						'natural_ventilation' => array( 'type' => 'object' ),
+						'daylight_solar_gain' => array( 'type' => 'object' ),
+						'thermal_comfort'     => array( 'type' => 'object' ),
 					),
 				),
 			),
@@ -125,6 +125,13 @@ class WP_MCP_AI_Tool_Generate_Compliance_Dossier implements WP_MCP_AI_Tool_Inter
 			'read-only',
 			'cacheable',
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -163,16 +170,22 @@ class WP_MCP_AI_Tool_Generate_Compliance_Dossier implements WP_MCP_AI_Tool_Inter
 
 		// Aggregate per-section status.
 		$section_summary = array();
-		$known_sections = array(
-			'planning_compliance', 'wind_loads', 'seismic_loads', 'setbacks_far',
-			'building_code', 'sustainability', 'natural_ventilation',
-			'daylight_solar_gain', 'thermal_comfort',
+		$known_sections  = array(
+			'planning_compliance',
+			'wind_loads',
+			'seismic_loads',
+			'setbacks_far',
+			'building_code',
+			'sustainability',
+			'natural_ventilation',
+			'daylight_solar_gain',
+			'thermal_comfort',
 		);
-		$failed = 0;
-		$warned = 0;
-		$passed = 0;
+		$failed          = 0;
+		$warned          = 0;
+		$passed          = 0;
 		foreach ( $known_sections as $key ) {
-			$body = isset( $sections[ $key ] ) ? $sections[ $key ] : null;
+			$body   = isset( $sections[ $key ] ) ? $sections[ $key ] : null;
 			$status = 'not_provided';
 			if ( is_array( $body ) ) {
 				if ( isset( $body['overall_status'] ) ) {
@@ -214,9 +227,9 @@ class WP_MCP_AI_Tool_Generate_Compliance_Dossier implements WP_MCP_AI_Tool_Inter
 			'submissions'     => $submissions,
 			'overall_status'  => $overall,
 			'totals'          => array(
-				'sections_passed'      => $passed,
-				'sections_warning'     => $warned,
-				'sections_failed'      => $failed,
+				'sections_passed'       => $passed,
+				'sections_warning'      => $warned,
+				'sections_failed'       => $failed,
 				'sections_not_provided' => count( $known_sections ) - $passed - $warned - $failed,
 			),
 			'disclaimer'      => __( 'Analytical / advisory dossier only. Final submission must be signed and stamped by the relevant registered professionals.', 'mcp-ai-wpoos-pro' ),
@@ -281,24 +294,72 @@ class WP_MCP_AI_Tool_Generate_Compliance_Dossier implements WP_MCP_AI_Tool_Inter
 	protected function statutory_submissions_for( $country ) {
 		$out = array();
 		if ( 'LK' === $country ) {
-			$out[] = array( 'authority' => 'Urban Development Authority (UDA)', 'purpose' => __( 'Planning and Building approval', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'Local Pradeshiya Sabha / Municipal Council', 'purpose' => __( 'Building permit issuance', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'NBRO', 'purpose' => __( 'Landslide / hazard clearance (where required)', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'CEA', 'purpose' => __( 'Environmental Protection Licence (industrial uses)', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'SLIA', 'purpose' => __( 'Architect signoff', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'IESL', 'purpose' => __( 'Chartered structural engineer signoff', 'mcp-ai-wpoos-pro' ) );
+			$out[] = array(
+				'authority' => 'Urban Development Authority (UDA)',
+				'purpose'   => __( 'Planning and Building approval', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'Local Pradeshiya Sabha / Municipal Council',
+				'purpose'   => __( 'Building permit issuance', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'NBRO',
+				'purpose'   => __( 'Landslide / hazard clearance (where required)', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'CEA',
+				'purpose'   => __( 'Environmental Protection Licence (industrial uses)', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'SLIA',
+				'purpose'   => __( 'Architect signoff', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'IESL',
+				'purpose'   => __( 'Chartered structural engineer signoff', 'mcp-ai-wpoos-pro' ),
+			);
 		} elseif ( 'JM' === $country ) {
-			$out[] = array( 'authority' => 'Parish Council', 'purpose' => __( 'Building permit', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'KSAMC (if Kingston / St. Andrew)', 'purpose' => __( 'Local development order compliance', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'NEPA', 'purpose' => __( 'Environmental permit (where applicable)', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'Bureau of Standards Jamaica', 'purpose' => __( 'JNBC compliance', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'JIA', 'purpose' => __( 'Registered architect signoff', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'JIE', 'purpose' => __( 'Chartered engineer signoff', 'mcp-ai-wpoos-pro' ) );
+			$out[] = array(
+				'authority' => 'Parish Council',
+				'purpose'   => __( 'Building permit', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'KSAMC (if Kingston / St. Andrew)',
+				'purpose'   => __( 'Local development order compliance', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'NEPA',
+				'purpose'   => __( 'Environmental permit (where applicable)', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'Bureau of Standards Jamaica',
+				'purpose'   => __( 'JNBC compliance', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'JIA',
+				'purpose'   => __( 'Registered architect signoff', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'JIE',
+				'purpose'   => __( 'Chartered engineer signoff', 'mcp-ai-wpoos-pro' ),
+			);
 		} elseif ( 'US' === $country ) {
-			$out[] = array( 'authority' => 'Local Building Department (AHJ)', 'purpose' => __( 'Building permit', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'Planning / Zoning Board', 'purpose' => __( 'Zoning approval', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'Fire Marshal', 'purpose' => __( 'Life-safety review', 'mcp-ai-wpoos-pro' ) );
-			$out[] = array( 'authority' => 'State Architect / PE Board', 'purpose' => __( 'Licensed signature & seal', 'mcp-ai-wpoos-pro' ) );
+			$out[] = array(
+				'authority' => 'Local Building Department (AHJ)',
+				'purpose'   => __( 'Building permit', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'Planning / Zoning Board',
+				'purpose'   => __( 'Zoning approval', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'Fire Marshal',
+				'purpose'   => __( 'Life-safety review', 'mcp-ai-wpoos-pro' ),
+			);
+			$out[] = array(
+				'authority' => 'State Architect / PE Board',
+				'purpose'   => __( 'Licensed signature & seal', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 		return $out;
 	}

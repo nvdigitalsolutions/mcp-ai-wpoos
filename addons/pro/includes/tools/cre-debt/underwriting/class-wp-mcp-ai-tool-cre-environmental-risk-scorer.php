@@ -112,7 +112,20 @@ class WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -123,12 +136,12 @@ class WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer implements WP_MCP_AI_Tool_Int
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$phase_one   = sanitize_text_field( $arguments['phase_one_status'] ?? 'clean' );
-		$phase_two   = (bool) ( $arguments['phase_two_required'] ?? false );
-		$flood_zone  = sanitize_text_field( $arguments['flood_zone'] ?? 'X' );
-		$seismic     = min( 4, max( 0, (int) ( $arguments['seismic_zone'] ?? 0 ) ) );
-		$brownfield  = sanitize_text_field( $arguments['brownfield_status'] ?? 'none' );
-		$climate     = min( 10, max( 1, (int) ( $arguments['climate_risk_score'] ?? 1 ) ) );
+		$phase_one  = sanitize_text_field( $arguments['phase_one_status'] ?? 'clean' );
+		$phase_two  = (bool) ( $arguments['phase_two_required'] ?? false );
+		$flood_zone = sanitize_text_field( $arguments['flood_zone'] ?? 'X' );
+		$seismic    = min( 4, max( 0, (int) ( $arguments['seismic_zone'] ?? 0 ) ) );
+		$brownfield = sanitize_text_field( $arguments['brownfield_status'] ?? 'none' );
+		$climate    = min( 10, max( 1, (int) ( $arguments['climate_risk_score'] ?? 1 ) ) );
 
 		// Category weights (total = 100).
 		$weights = array(
@@ -161,7 +174,7 @@ class WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer implements WP_MCP_AI_Tool_Int
 			'V'  => 0.80,
 			'VE' => 1.00,
 		);
-		$flood_score = $flood_scores[ $flood_zone ] ?? 0.0;
+		$flood_score  = $flood_scores[ $flood_zone ] ?? 0.0;
 
 		// Seismic sub-score (0–1).
 		$seismic_score = $seismic / 4.0;
@@ -218,28 +231,28 @@ class WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer implements WP_MCP_AI_Tool_Int
 				'max_score'       => 100,
 				'category_scores' => array(
 					array(
-						'category'   => __( 'Contamination (Phase I/II & Brownfield)', 'mcp-ai-wpoos-pro' ),
-						'raw_score'  => round( $contam_score, 2 ),
-						'weight'     => $weights['contamination'],
-						'weighted'   => round( $contam_score * $weights['contamination'], 1 ),
+						'category'  => __( 'Contamination (Phase I/II & Brownfield)', 'mcp-ai-wpoos-pro' ),
+						'raw_score' => round( $contam_score, 2 ),
+						'weight'    => $weights['contamination'],
+						'weighted'  => round( $contam_score * $weights['contamination'], 1 ),
 					),
 					array(
-						'category'   => __( 'Flood Risk', 'mcp-ai-wpoos-pro' ),
-						'raw_score'  => round( $flood_score, 2 ),
-						'weight'     => $weights['flood'],
-						'weighted'   => round( $flood_score * $weights['flood'], 1 ),
+						'category'  => __( 'Flood Risk', 'mcp-ai-wpoos-pro' ),
+						'raw_score' => round( $flood_score, 2 ),
+						'weight'    => $weights['flood'],
+						'weighted'  => round( $flood_score * $weights['flood'], 1 ),
 					),
 					array(
-						'category'   => __( 'Seismic Risk', 'mcp-ai-wpoos-pro' ),
-						'raw_score'  => round( $seismic_score, 2 ),
-						'weight'     => $weights['seismic'],
-						'weighted'   => round( $seismic_score * $weights['seismic'], 1 ),
+						'category'  => __( 'Seismic Risk', 'mcp-ai-wpoos-pro' ),
+						'raw_score' => round( $seismic_score, 2 ),
+						'weight'    => $weights['seismic'],
+						'weighted'  => round( $seismic_score * $weights['seismic'], 1 ),
 					),
 					array(
-						'category'   => __( 'Climate Risk', 'mcp-ai-wpoos-pro' ),
-						'raw_score'  => round( $climate_score, 2 ),
-						'weight'     => $weights['climate'],
-						'weighted'   => round( $climate_score * $weights['climate'], 1 ),
+						'category'  => __( 'Climate Risk', 'mcp-ai-wpoos-pro' ),
+						'raw_score' => round( $climate_score, 2 ),
+						'weight'    => $weights['climate'],
+						'weighted'  => round( $climate_score * $weights['climate'], 1 ),
 					),
 				),
 				'inputs'          => array(

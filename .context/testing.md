@@ -246,6 +246,31 @@ REST endpoint stories need at minimum:
 
 ## Running Tests
 
+### Option A: Docker (recommended for Windows / no local PHP)
+
+```bash
+# Prerequisites (once):
+composer install                        # install dev dependencies
+docker compose up -d                    # start WP + MySQL containers
+
+# Run tests:
+bash bin/run-tests-docker.sh                                   # all tests
+bash bin/run-tests-docker.sh tests/test-admin-settings.php     # single file
+bash bin/run-tests-docker.sh --filter='test_default_provider' tests/test-admin-settings.php
+```
+
+The script automatically:
+- Creates the `wordpress_test` database if missing
+- Refreshes the Composer autoloader (fixes stale bind-mount caches)
+- Handles Git Bash path mangling (`MSYS_NO_PATHCONV`)
+- Passes all arguments through to PHPUnit
+
+> **Note:** After `composer install` or `composer dump-autoload`, restart Docker
+> if tests fail with class-not-found errors — the bind mount can cache stale files.
+> Shortcut: `docker compose down && docker compose up -d`
+
+### Option B: Local PHP + MySQL
+
 ```bash
 # Install test dependencies (first time only):
 composer run test:install
@@ -262,3 +287,80 @@ vendor/bin/phpunit --verbose
 # Run with coverage (requires Xdebug):
 vendor/bin/phpunit --coverage-html coverage/
 ```
+
+### Option C: Codex / SQLite (self-contained, no Docker)
+
+```bash
+bash bin/codex-startup.sh               # download WP + SQLite, start server
+composer run test                       # run tests against the Codex WP
+```
+
+---
+
+## Coverage Policy (PHPUnit Test Coverage Gap-Filling Plan)
+
+**Every PR that adds new code must add at least one PHPUnit test in the same PR.** Specifically:
+
+| Change | Required tests |
+|---|---|
+| New base tool (`includes/tools/class-*.php`) | `tests/test-tool-{slug}.php` covering at minimum the unauthorised-user case + one happy path |
+| New pro tool (`addons/pro/includes/tools/class-*.php`) | Test under `addons/pro/tests/` referencing the tool class name |
+| New REST controller / route | Permission callback + schema + at least one happy path under `tests/rest/` or `tests/rest-api/` |
+| New slash command (`includes/slash-commands/commands/class-*.php`) | `tests/test-slash-command-{name}.php` with output shape + capability gate + alias resolution |
+| New harness layer (`includes/harness/`, `addons/pro/includes/harness/`) | Layer enable/disable + documented filter (`wp_mcp_ai_harness_*`) firing |
+| New service class | Either a direct unit test or coverage via the REST/tool surface that consumes it |
+
+### Baseline & non-regression gate
+
+- The per-subsystem coverage floors live in [`tests/.coverage-baseline.json`](../tests/.coverage-baseline.json).
+- The `PHPUnit` GitHub workflow runs `bin/find-untested-classes.sh --check` and fails any PR that drops the count of covered classes for a subsystem below its baseline.
+- Floors **must only ratchet upward**. Never lower a floor without an explicit justification in the PR description.
+- Locally, run `composer run test:gaps` to see the full list of untested classes per subsystem, or `composer run test:gaps:check` to verify the baseline before opening a PR.
+
+### Recomputing the baseline after coverage improves
+
+```bash
+# Print current covered counts for all subsystems
+bin/find-untested-classes.sh --check
+# Then update tests/.coverage-baseline.json so subsystem_floors.<name>.covered_classes_min
+# matches the new (higher) covered count, and bump test_file_floor.min_count if it grew.
+```
+
+The baseline file's `subsystem_floors` keys correspond 1:1 to the categories in §2 of the PHPUnit Test Coverage Gap-Filling Plan.
+
+---
+
+## Tool registry coverage smoke test
+
+`tests/test-tool-registry-coverage.php` is a single data-driven smoke test that locks the contract for every registered tool in one place. It asserts:
+
+1. `get_slug()` returns a non-empty string that survives `sanitize_key()` unchanged.
+2. The parameter schema (from `get_parameters_schema()` or `get_definition()['parameters']`) contains no `'mixed'` types and every `type:'array'` declares `items`.
+3. `get_required_capability()` (when present) resolves to a non-empty string or array of strings.
+4. `execute()` does not throw when invoked by an unauthenticated caller (a logged-out user with no capabilities).
+
+It is paired with two manifest files that list every tool-class file basename so `bin/find-untested-classes.sh` recognises the smoke test as covering the entire tool registry:
+
+- `tests/tools/.coverage-manifest.txt` — base tools under `includes/tools/`
+- `addons/pro/tests/tools/.coverage-manifest.txt` — pro tools under `addons/pro/includes/tools/`
+
+**Whenever you add, remove or rename a tool class, regenerate the manifest:**
+
+```bash
+bin/generate-tool-coverage-manifest.sh
+```
+
+The smoke test itself includes an assertion that fails when the manifest is stale, so CI catches drift even if a contributor forgets the regen step.
+
+When you want to add behavioural coverage for a high-risk tool (write/state-changing, external API, file/upload), add a dedicated test under `tests/tools/` (base) or `addons/pro/tests/tools/` (pro) — those tests stack on top of the smoke test rather than replacing it.
+
+### Coverage matcher: kebab → PascalCase
+
+`bin/find-untested-classes.sh` recognises a class as "covered" if any test file under `tests/` or `addons/*/tests/` references **either**:
+
+1. The kebab-case file basename (e.g. `wp-mcp-ai-harness-profile`), as appears in the coverage manifests, or
+2. The PascalCase class name derived from that basename (e.g. `WP_MCP_AI_Harness_Profile`), as appears in normal PHPUnit `use`/instance-of references.
+
+The acronyms `WP`, `MCP`, and `AI` stay fully uppercase; every other segment is title-cased. So `wp-mcp-ai-pii-filter` matches `WP_MCP_AI_Pii_Filter`, and `wp-mcp-ai-tool-router-harness` matches `WP_MCP_AI_Tool_Router_Harness`.
+
+Tests therefore do not need to mention class file basenames; referencing the class symbol naturally is enough to credit coverage.

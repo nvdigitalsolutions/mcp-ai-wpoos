@@ -191,7 +191,7 @@ class WP_MCP_AI_JetEngine_MCP_Resources {
 		if ( ! empty( $relations ) ) {
 			$site_info .= "\n### Relations\n";
 			foreach ( $relations as $rel ) {
-				$name = isset( $rel['name'] ) ? $rel['name'] : 'Unknown';
+				$name       = isset( $rel['name'] ) ? $rel['name'] : 'Unknown';
 				$site_info .= "- {$name}\n";
 			}
 		}

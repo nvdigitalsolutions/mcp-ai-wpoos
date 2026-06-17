@@ -112,6 +112,13 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -121,9 +128,9 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['agent_results'] ) || ! is_array( $arguments['agent_results'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent results array is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent results array is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -134,9 +141,9 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 
 		// Get communication service.
 		if ( ! class_exists( 'WP_MCP_AI_Agent_Communication_Service' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent communication system not available.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent communication system not available.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -159,9 +166,9 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 		}
 
 		if ( empty( $prepared_results ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No valid agent results to aggregate.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'No valid agent results to aggregate.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -178,10 +185,10 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 		$aggregated = $communication_service->aggregate_results( $prepared_results, $strategy, $aggregation_options );
 
 		if ( is_wp_error( $aggregated ) ) {
-			return array(
-				'success' => false,
-				'message' => $aggregated->get_error_message(),
-				'code'    => $aggregated->get_error_code(),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$aggregated->get_error_message(),
+				array( 'code' => $aggregated->get_error_code() )
 			);
 		}
 

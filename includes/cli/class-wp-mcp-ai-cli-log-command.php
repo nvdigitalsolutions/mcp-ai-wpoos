@@ -200,6 +200,76 @@ class WP_MCP_AI_CLI_Log_Command extends WP_MCP_AI_CLI_Base_Command {
 	}
 
 	/**
+	 * Clear the ring-buffer logs (recent errors and/or activity entries).
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--type=<type>]
+	 * : Which log buffer to clear.
+	 * ---
+	 * default: all
+	 * options:
+	 *   - errors
+	 *   - activity
+	 *   - all
+	 * ---
+	 *
+	 * [--yes]
+	 * : Skip the confirmation prompt.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Clear all log buffers.
+	 *     $ wp mcp-ai log clear
+	 *
+	 *     # Clear only error entries without prompting.
+	 *     $ wp mcp-ai log clear --type=errors --yes
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 * @when after_wp_load
+	 */
+	public function clear( $args, $assoc_args ) {
+		$type = sanitize_key( \WP_CLI\Utils\get_flag_value( $assoc_args, 'type', 'all' ) );
+		$yes  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
+
+		if ( ! in_array( $type, array( 'errors', 'activity', 'all' ), true ) ) {
+			WP_CLI::error( __( 'Invalid --type. Accepted values: errors, activity, all.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( ! $yes ) {
+			$type_label = 'all' === $type ? __( 'all log buffers', 'mcp-ai-wpoos' ) : $type;
+			WP_CLI::confirm(
+				sprintf(
+					/* translators: %s: log type label */
+					__( 'Are you sure you want to clear %s?', 'mcp-ai-wpoos' ),
+					$type_label
+				)
+			);
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'clear_log_entries' ) ) {
+			WP_MCP_AI_Logger::clear_log_entries( $type );
+		} else {
+			// Fallback: delete the options directly.
+			if ( in_array( $type, array( 'errors', 'all' ), true ) ) {
+				delete_option( 'wp_mcp_ai_recent_errors' );
+			}
+			if ( in_array( $type, array( 'activity', 'all' ), true ) ) {
+				delete_option( 'wp_mcp_ai_recent_activity' );
+			}
+		}
+
+		WP_CLI::success(
+			sprintf(
+				/* translators: %s: type of log cleared */
+				__( 'Log buffer cleared: %s.', 'mcp-ai-wpoos' ),
+				$type
+			)
+		);
+	}
+
+	/**
 	 * Normalise an array of raw log entries into a consistent display format.
 	 *
 	 * @param array $entries Raw log entries from the logger.

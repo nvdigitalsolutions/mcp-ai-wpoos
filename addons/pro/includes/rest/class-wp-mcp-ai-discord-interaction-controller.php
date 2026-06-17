@@ -298,7 +298,11 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 							$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 								'discord',
 								$channel_id,
-								array( 'display_name' => '#' . $channel_id, 'connection_id' => $connection_id, 'conversation_type' => 'channel' )
+								array(
+									'display_name'      => '#' . $channel_id,
+									'connection_id'     => $connection_id,
+									'conversation_type' => 'channel',
+								)
 							);
 							if ( $contact_row_id ) {
 								WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -575,7 +579,14 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 						}
 						// Touch the contact record to update last_message_at.
 						if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-							$ds_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'discord', $channel_id, array( 'connection_id' => $connection_id, 'conversation_type' => 'channel' ) );
+							$ds_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+								'discord',
+								$channel_id,
+								array(
+									'connection_id'     => $connection_id,
+									'conversation_type' => 'channel',
+								)
+							);
 							if ( $ds_contact_row_id ) {
 								WP_MCP_AI_Channel_Contacts_CCT::touch( $ds_contact_row_id );
 							}
@@ -672,7 +683,14 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 			}
 			// Touch the contact record to update last_message_at.
 			if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-				$ds_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'discord', $channel_id, array( 'connection_id' => $connection_id, 'conversation_type' => 'channel' ) );
+				$ds_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+					'discord',
+					$channel_id,
+					array(
+						'connection_id'     => $connection_id,
+						'conversation_type' => 'channel',
+					)
+				);
 				if ( $ds_contact_row_id ) {
 					WP_MCP_AI_Channel_Contacts_CCT::touch( $ds_contact_row_id );
 				}

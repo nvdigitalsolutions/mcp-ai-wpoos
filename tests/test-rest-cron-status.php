@@ -205,6 +205,14 @@ class Test_REST_Cron_Status extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'pending', $data['counts'] );
 		$this->assertArrayHasKey( 'completed', $data['counts'] );
 		$this->assertArrayHasKey( 'total', $data['counts'] );
+
+		// system_status must be exposed by the production handler so the
+		// chat-UI health pill receives signal. Phase 0 wire-up:
+		// docs/features/chat/cron-status-tasks-drawer-plan.md.
+		$this->assertArrayHasKey( 'system_status', $data );
+		$this->assertIsArray( $data['system_status'] );
+		$this->assertArrayHasKey( 'async', $data['system_status'] );
+		$this->assertArrayHasKey( 'health', $data['system_status'] );
 	}
 
 	/**

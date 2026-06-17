@@ -435,100 +435,100 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Prepare connection data.
 		$connection = array(
-			'id'              => $connection_id,
-			'name'            => sanitize_text_field( $connection_data['name'] ),
-			'url'             => esc_url_raw( trailingslashit( $connection_data['url'] ) ),
-			'connection_type' => isset( $connection_data['connection_type'] ) ? sanitize_key( $connection_data['connection_type'] ) : 'wordpress',
-			'auth_type'       => sanitize_key( $connection_data['auth_type'] ),
-			'username'        => isset( $connection_data['username'] ) ? sanitize_text_field( $connection_data['username'] ) : '',
-			'password'        => isset( $connection_data['password'] ) ? $connection_data['password'] : '',
-			'token'           => isset( $connection_data['token'] ) ? $connection_data['token'] : '',
-			'consumer_key'    => isset( $connection_data['consumer_key'] ) ? $connection_data['consumer_key'] : '',
-			'consumer_secret' => isset( $connection_data['consumer_secret'] ) ? $connection_data['consumer_secret'] : '',
-			'api_key'         => isset( $connection_data['api_key'] ) ? $connection_data['api_key'] : '',
-			'api_secret'      => isset( $connection_data['api_secret'] ) ? $connection_data['api_secret'] : '',
-			'client_id'       => isset( $connection_data['client_id'] ) ? sanitize_text_field( $connection_data['client_id'] ) : '',
-			'client_secret'   => isset( $connection_data['client_secret'] ) ? $connection_data['client_secret'] : '',
-			'app_id'          => isset( $connection_data['app_id'] ) ? sanitize_text_field( $connection_data['app_id'] ) : '',
-			'app_secret'      => isset( $connection_data['app_secret'] ) ? $connection_data['app_secret'] : '',
-			'location_id'     => isset( $connection_data['location_id'] ) ? sanitize_text_field( $connection_data['location_id'] ) : '',
-			'company_id'      => isset( $connection_data['company_id'] ) ? sanitize_text_field( $connection_data['company_id'] ) : '',
-			'sandbox_mode'    => ! empty( $connection_data['sandbox_mode'] ),
-			'has_woocommerce' => ! empty( $connection_data['has_woocommerce'] ),
-			'enabled'         => ! empty( $connection_data['enabled'] ),
-			'created'         => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
-			'updated'         => current_time( 'mysql' ),
+			'id'                             => $connection_id,
+			'name'                           => sanitize_text_field( $connection_data['name'] ),
+			'url'                            => esc_url_raw( trailingslashit( $connection_data['url'] ) ),
+			'connection_type'                => isset( $connection_data['connection_type'] ) ? sanitize_key( $connection_data['connection_type'] ) : 'wordpress',
+			'auth_type'                      => sanitize_key( $connection_data['auth_type'] ),
+			'username'                       => isset( $connection_data['username'] ) ? sanitize_text_field( $connection_data['username'] ) : '',
+			'password'                       => isset( $connection_data['password'] ) ? $connection_data['password'] : '',
+			'token'                          => isset( $connection_data['token'] ) ? $connection_data['token'] : '',
+			'consumer_key'                   => isset( $connection_data['consumer_key'] ) ? $connection_data['consumer_key'] : '',
+			'consumer_secret'                => isset( $connection_data['consumer_secret'] ) ? $connection_data['consumer_secret'] : '',
+			'api_key'                        => isset( $connection_data['api_key'] ) ? $connection_data['api_key'] : '',
+			'api_secret'                     => isset( $connection_data['api_secret'] ) ? $connection_data['api_secret'] : '',
+			'client_id'                      => isset( $connection_data['client_id'] ) ? sanitize_text_field( $connection_data['client_id'] ) : '',
+			'client_secret'                  => isset( $connection_data['client_secret'] ) ? $connection_data['client_secret'] : '',
+			'app_id'                         => isset( $connection_data['app_id'] ) ? sanitize_text_field( $connection_data['app_id'] ) : '',
+			'app_secret'                     => isset( $connection_data['app_secret'] ) ? $connection_data['app_secret'] : '',
+			'location_id'                    => isset( $connection_data['location_id'] ) ? sanitize_text_field( $connection_data['location_id'] ) : '',
+			'company_id'                     => isset( $connection_data['company_id'] ) ? sanitize_text_field( $connection_data['company_id'] ) : '',
+			'sandbox_mode'                   => ! empty( $connection_data['sandbox_mode'] ),
+			'has_woocommerce'                => ! empty( $connection_data['has_woocommerce'] ),
+			'enabled'                        => ! empty( $connection_data['enabled'] ),
+			'created'                        => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
+			'updated'                        => current_time( 'mysql' ),
 			// Gmail-specific fields.
-			'refresh_token'   => isset( $connection_data['refresh_token'] ) ? $connection_data['refresh_token'] : '',
-			'user_email'      => isset( $connection_data['user_email'] ) ? sanitize_email( $connection_data['user_email'] ) : '',
+			'refresh_token'                  => isset( $connection_data['refresh_token'] ) ? $connection_data['refresh_token'] : '',
+			'user_email'                     => isset( $connection_data['user_email'] ) ? sanitize_email( $connection_data['user_email'] ) : '',
 			// Google Drive-specific fields.
-			'folder_id'       => isset( $connection_data['folder_id'] ) ? sanitize_text_field( $connection_data['folder_id'] ) : '',
+			'folder_id'                      => isset( $connection_data['folder_id'] ) ? sanitize_text_field( $connection_data['folder_id'] ) : '',
 			// Telegram-specific fields.
-			'bot_username'    => isset( $connection_data['bot_username'] ) ? sanitize_text_field( $connection_data['bot_username'] ) : '',
-			'enable_groups'   => ! empty( $connection_data['enable_groups'] ),
+			'bot_username'                   => isset( $connection_data['bot_username'] ) ? sanitize_text_field( $connection_data['bot_username'] ) : '',
+			'enable_groups'                  => ! empty( $connection_data['enable_groups'] ),
 			// Telegram Web Login feature flag and after-login redirect URL.
-			'enable_web_login'       => ! empty( $connection_data['enable_web_login'] ),
-			'web_login_redirect_url' => isset( $connection_data['web_login_redirect_url'] ) ? esc_url_raw( $connection_data['web_login_redirect_url'] ) : '',
+			'enable_web_login'               => ! empty( $connection_data['enable_web_login'] ),
+			'web_login_redirect_url'         => isset( $connection_data['web_login_redirect_url'] ) ? esc_url_raw( $connection_data['web_login_redirect_url'] ) : '',
 			// Telegram WordPress account creation for new Telegram users.
-			'auto_create_wp_user'    => ! empty( $connection_data['auto_create_wp_user'] ),
-			'new_user_role'          => isset( $connection_data['new_user_role'] ) ? sanitize_key( $connection_data['new_user_role'] ) : 'subscriber',
+			'auto_create_wp_user'            => ! empty( $connection_data['auto_create_wp_user'] ),
+			'new_user_role'                  => isset( $connection_data['new_user_role'] ) ? sanitize_key( $connection_data['new_user_role'] ) : 'subscriber',
 			// Telegram Mini App settings.
-			'enable_mini_app'            => ! empty( $connection_data['enable_mini_app'] ),
-			'mini_app_assistant_id'      => isset( $connection_data['mini_app_assistant_id'] ) ? absint( $connection_data['mini_app_assistant_id'] ) : 0,
-			'mini_app_template'          => isset( $connection_data['mini_app_template'] ) ? sanitize_key( $connection_data['mini_app_template'] ) : '',
-			'mini_app_woo_source'        => ( isset( $connection_data['mini_app_woo_source'] ) && 'remote' === $connection_data['mini_app_woo_source'] ) ? 'remote' : 'local',
+			'enable_mini_app'                => ! empty( $connection_data['enable_mini_app'] ),
+			'mini_app_assistant_id'          => isset( $connection_data['mini_app_assistant_id'] ) ? absint( $connection_data['mini_app_assistant_id'] ) : 0,
+			'mini_app_template'              => isset( $connection_data['mini_app_template'] ) ? sanitize_key( $connection_data['mini_app_template'] ) : '',
+			'mini_app_woo_source'            => ( isset( $connection_data['mini_app_woo_source'] ) && 'remote' === $connection_data['mini_app_woo_source'] ) ? 'remote' : 'local',
 			'mini_app_woo_connection_id'     => isset( $connection_data['mini_app_woo_connection_id'] ) ? sanitize_key( $connection_data['mini_app_woo_connection_id'] ) : '',
 			'mini_app_shopify_connection_id' => isset( $connection_data['mini_app_shopify_connection_id'] ) ? sanitize_key( $connection_data['mini_app_shopify_connection_id'] ) : '',
 			// WhatsApp-specific fields.
-			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
-			'display_phone_number' => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',
-			'business_account_id' => isset( $connection_data['business_account_id'] ) ? sanitize_text_field( $connection_data['business_account_id'] ) : '',
-			'system_user_id'      => isset( $connection_data['system_user_id'] ) ? sanitize_text_field( $connection_data['system_user_id'] ) : '',
-			'verify_token'        => isset( $connection_data['verify_token'] ) ? sanitize_text_field( $connection_data['verify_token'] ) : '',
-			'channel_description' => isset( $connection_data['channel_description'] ) ? sanitize_text_field( $connection_data['channel_description'] ) : '',
-			'channel_url'         => isset( $connection_data['channel_url'] ) ? esc_url_raw( $connection_data['channel_url'] ) : '',
-			'group_id'            => isset( $connection_data['group_id'] ) ? sanitize_text_field( $connection_data['group_id'] ) : '',
+			'phone_number_id'                => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
+			'display_phone_number'           => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',
+			'business_account_id'            => isset( $connection_data['business_account_id'] ) ? sanitize_text_field( $connection_data['business_account_id'] ) : '',
+			'system_user_id'                 => isset( $connection_data['system_user_id'] ) ? sanitize_text_field( $connection_data['system_user_id'] ) : '',
+			'verify_token'                   => isset( $connection_data['verify_token'] ) ? sanitize_text_field( $connection_data['verify_token'] ) : '',
+			'channel_description'            => isset( $connection_data['channel_description'] ) ? sanitize_text_field( $connection_data['channel_description'] ) : '',
+			'channel_url'                    => isset( $connection_data['channel_url'] ) ? esc_url_raw( $connection_data['channel_url'] ) : '',
+			'group_id'                       => isset( $connection_data['group_id'] ) ? sanitize_text_field( $connection_data['group_id'] ) : '',
 			// Slack-specific fields.
-			'workspace_id'      => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
+			'workspace_id'                   => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
 			// Bot's Slack user ID (U-prefixed), populated by the admin connection test.
 			// Used to detect native Slack @mentions (<@USER_ID>) in incoming messages.
-			'slack_bot_user_id' => isset( $connection_data['slack_bot_user_id'] ) ? sanitize_text_field( $connection_data['slack_bot_user_id'] ) : '',
+			'slack_bot_user_id'              => isset( $connection_data['slack_bot_user_id'] ) ? sanitize_text_field( $connection_data['slack_bot_user_id'] ) : '',
 			// Discord-specific fields.
-			'application_id'  => isset( $connection_data['application_id'] ) ? sanitize_text_field( $connection_data['application_id'] ) : '',
-			'guild_id'        => isset( $connection_data['guild_id'] ) ? sanitize_text_field( $connection_data['guild_id'] ) : '',
+			'application_id'                 => isset( $connection_data['application_id'] ) ? sanitize_text_field( $connection_data['application_id'] ) : '',
+			'guild_id'                       => isset( $connection_data['guild_id'] ) ? sanitize_text_field( $connection_data['guild_id'] ) : '',
 			// Discord Ed25519 public key for interaction signature verification.
-			'public_key'      => isset( $connection_data['public_key'] ) ? sanitize_text_field( $connection_data['public_key'] ) : '',
+			'public_key'                     => isset( $connection_data['public_key'] ) ? sanitize_text_field( $connection_data['public_key'] ) : '',
 			// Microsoft Teams-specific fields.
-			'tenant_id'       => isset( $connection_data['tenant_id'] ) ? sanitize_text_field( $connection_data['tenant_id'] ) : '',
+			'tenant_id'                      => isset( $connection_data['tenant_id'] ) ? sanitize_text_field( $connection_data['tenant_id'] ) : '',
 			// Unix timestamp when the OAuth access token expires (Teams / Office 365 OAuth connections).
-			'token_expiry'    => isset( $connection_data['token_expiry'] ) ? absint( $connection_data['token_expiry'] ) : 0,
+			'token_expiry'                   => isset( $connection_data['token_expiry'] ) ? absint( $connection_data['token_expiry'] ) : 0,
 			// HMAC-SHA256 signing secret (Slack Events API / Teams outgoing webhooks).
-			'signing_secret'  => isset( $connection_data['signing_secret'] ) ? $connection_data['signing_secret'] : '',
+			'signing_secret'                 => isset( $connection_data['signing_secret'] ) ? $connection_data['signing_secret'] : '',
 			// Telegram webhook secret token (X-Telegram-Bot-Api-Secret-Token).
-			'secret_token'    => isset( $connection_data['secret_token'] ) ? $connection_data['secret_token'] : '',
+			'secret_token'                   => isset( $connection_data['secret_token'] ) ? $connection_data['secret_token'] : '',
 			// Facebook Messenger-specific fields.
-			'page_id'         => isset( $connection_data['page_id'] ) ? sanitize_text_field( $connection_data['page_id'] ) : '',
+			'page_id'                        => isset( $connection_data['page_id'] ) ? sanitize_text_field( $connection_data['page_id'] ) : '',
 			// Graph API version (WhatsApp and Facebook Messenger).
-			'graph_api_version' => isset( $connection_data['graph_api_version'] ) && preg_match( '/^v\d+\.\d+$/', $connection_data['graph_api_version'] ) ? $connection_data['graph_api_version'] : '',
+			'graph_api_version'              => isset( $connection_data['graph_api_version'] ) && preg_match( '/^v\d+\.\d+$/', $connection_data['graph_api_version'] ) ? $connection_data['graph_api_version'] : '',
 			// WebChat P2P-specific fields.
-			'p2p_connection_id' => isset( $connection_data['p2p_connection_id'] ) ? sanitize_text_field( $connection_data['p2p_connection_id'] ) : '',
+			'p2p_connection_id'              => isset( $connection_data['p2p_connection_id'] ) ? sanitize_text_field( $connection_data['p2p_connection_id'] ) : '',
 			// Google Chat-specific fields.
-			'google_chat_space'  => isset( $connection_data['google_chat_space'] ) ? sanitize_text_field( $connection_data['google_chat_space'] ) : '',
+			'google_chat_space'              => isset( $connection_data['google_chat_space'] ) ? sanitize_text_field( $connection_data['google_chat_space'] ) : '',
 			// Google Chat incoming webhook URL for sending AI replies (no OAuth needed).
-			'reply_webhook_url'  => isset( $connection_data['reply_webhook_url'] ) ? esc_url_raw( $connection_data['reply_webhook_url'] ) : '',
+			'reply_webhook_url'              => isset( $connection_data['reply_webhook_url'] ) ? esc_url_raw( $connection_data['reply_webhook_url'] ) : '',
 			// When true, OIDC token validation is skipped for incoming webhook events.
 			// Useful for environments where the Authorization header is stripped by a proxy or WAF.
-			'disable_oidc_verification' => ! empty( $connection_data['disable_oidc_verification'] ),
+			'disable_oidc_verification'      => ! empty( $connection_data['disable_oidc_verification'] ),
 			// Google Chat authentication method: service_account | oauth | webhook.
-			'connection_method'  => isset( $connection_data['connection_method'] ) ? sanitize_key( $connection_data['connection_method'] ) : '',
+			'connection_method'              => isset( $connection_data['connection_method'] ) ? sanitize_key( $connection_data['connection_method'] ) : '',
 			// Channel routing: assistant IDs that listen on this connection (used by all chat-channel types).
-			'assigned_assistant_ids' => isset( $connection_data['assigned_assistant_ids'] ) && is_array( $connection_data['assigned_assistant_ids'] )
+			'assigned_assistant_ids'         => isset( $connection_data['assigned_assistant_ids'] ) && is_array( $connection_data['assigned_assistant_ids'] )
 				? array_values( array_map( 'absint', $connection_data['assigned_assistant_ids'] ) )
 				: array(),
 			// Chat-channel setting: only auto-reply when an assigned assistant is @mentioned.
-			'require_mention'  => ! empty( $connection_data['require_mention'] ),
+			'require_mention'                => ! empty( $connection_data['require_mention'] ),
 			// Telegram allowlist: numeric user/chat IDs permitted to interact with the bot.
-			'allowed_chat_ids' => isset( $connection_data['allowed_chat_ids'] ) && is_array( $connection_data['allowed_chat_ids'] )
+			'allowed_chat_ids'               => isset( $connection_data['allowed_chat_ids'] ) && is_array( $connection_data['allowed_chat_ids'] )
 				? array_values(
 					array_filter(
 						array_map( 'sanitize_text_field', $connection_data['allowed_chat_ids'] ),
@@ -539,31 +539,31 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				)
 				: array(),
 			// Generic API test endpoint.
-			'test_endpoint'   => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
+			'test_endpoint'                  => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
 			// Cache TTL.
-			'cache_ttl'       => isset( $connection_data['cache_ttl'] ) ? max( 0, min( 3600, absint( $connection_data['cache_ttl'] ) ) ) : 300,
+			'cache_ttl'                      => isset( $connection_data['cache_ttl'] ) ? max( 0, min( 3600, absint( $connection_data['cache_ttl'] ) ) ) : 300,
 			// Shopify-specific fields.
-			'shopify_api_version' => isset( $connection_data['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $connection_data['shopify_api_version'] )
+			'shopify_api_version'            => isset( $connection_data['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $connection_data['shopify_api_version'] )
 				? sanitize_text_field( $connection_data['shopify_api_version'] )
 				: '2025-01',
-			'shopify_api_mode'    => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
+			'shopify_api_mode'               => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
 				? $connection_data['shopify_api_mode']
 				: 'admin_api',
-			'shopify_catalog_shop_id' => isset( $connection_data['shopify_catalog_shop_id'] )
+			'shopify_catalog_shop_id'        => isset( $connection_data['shopify_catalog_shop_id'] )
 				? sanitize_text_field( $connection_data['shopify_catalog_shop_id'] )
 				: '',
 			// ShipEngine-specific fields.
-			'shipengine_carrier_id' => isset( $connection_data['shipengine_carrier_id'] )
+			'shipengine_carrier_id'          => isset( $connection_data['shipengine_carrier_id'] )
 				? sanitize_text_field( $connection_data['shipengine_carrier_id'] )
 				: '',
 			// ShipStation-specific fields.
-			'shipstation_carrier_code' => isset( $connection_data['shipstation_carrier_code'] )
+			'shipstation_carrier_code'       => isset( $connection_data['shipstation_carrier_code'] )
 				? sanitize_text_field( $connection_data['shipstation_carrier_code'] )
 				: 'stamps_com',
 			// WordPress/WooCommerce granular access controls.
-			'post_type_access'   => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
-			'wc_resource_access' => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
-			'custom_post_types'  => isset( $connection_data['custom_post_types'] ) ? sanitize_text_field( $connection_data['custom_post_types'] ) : '',
+			'post_type_access'               => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
+			'wc_resource_access'             => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
+			'custom_post_types'              => isset( $connection_data['custom_post_types'] ) ? sanitize_text_field( $connection_data['custom_post_types'] ) : '',
 		);
 
 		// Encrypt sensitive data (only if not already encrypted).
@@ -1062,7 +1062,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Load the Google Service Account helper.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php';
 		}
 
 		$access_token = '';
@@ -1077,9 +1077,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 			if ( ! is_wp_error( $token_result ) ) {
 				$access_token = $token_result;
-			} elseif ( $has_refresh ) {
-				// Service account failed; fall through to OAuth refresh token below.
-			} else {
+			} elseif ( ! $has_refresh ) {
 				return $token_result;
 			}
 		}
@@ -1256,7 +1254,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$is_sandbox = ! empty( $connection['sandbox_mode'] ) || 0 === strpos( $api_key, 'TEST_' );
 
 		// Verify carrier_id if provided.
-		$carrier_id = isset( $connection['shipengine_carrier_id'] ) ? $connection['shipengine_carrier_id'] : '';
+		$carrier_id   = isset( $connection['shipengine_carrier_id'] ) ? $connection['shipengine_carrier_id'] : '';
 		$carrier_info = '';
 		if ( '' !== $carrier_id ) {
 			$found = false;
@@ -1493,11 +1491,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			: __( 'Shopify connection successful.', 'mcp-ai-wpoos-pro' );
 
 		return array(
-			'success'    => true,
-			'shopify'    => true,
-			'shop_name'  => $shop_name,
-			'shop_plan'  => $shop_plan,
-			'message'    => $message,
+			'success'   => true,
+			'shopify'   => true,
+			'shop_name' => $shop_name,
+			'shop_plan' => $shop_plan,
+			'message'   => $message,
 		);
 	}
 
@@ -1754,15 +1752,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
-		$connection_id     = isset( $connection['id'] ) ? $connection['id'] : '';
-		$webhook_path      = $connection_id
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+		$webhook_path  = $connection_id
 			? '/wp-json/mcp-ai/v1/webhooks/slack/' . $connection_id
 			: '/wp-json/mcp-ai/v1/webhooks/slack';
-		$webhook_url       = home_url( $webhook_path );
-		$team              = isset( $body['team'] ) ? sanitize_text_field( $body['team'] ) : '';
-		$bot_user          = isset( $body['user'] ) ? sanitize_text_field( $body['user'] ) : '';
-		$team_id           = isset( $body['team_id'] ) ? sanitize_text_field( $body['team_id'] ) : '';
-		$bot_user_id       = isset( $body['user_id'] ) ? sanitize_text_field( $body['user_id'] ) : '';
+		$webhook_url   = home_url( $webhook_path );
+		$team          = isset( $body['team'] ) ? sanitize_text_field( $body['team'] ) : '';
+		$bot_user      = isset( $body['user'] ) ? sanitize_text_field( $body['user'] ) : '';
+		$team_id       = isset( $body['team_id'] ) ? sanitize_text_field( $body['team_id'] ) : '';
+		$bot_user_id   = isset( $body['user_id'] ) ? sanitize_text_field( $body['user_id'] ) : '';
 
 		$message = sprintf(
 			/* translators: 1: Slack team name, 2: bot username, 3: Slack team ID, 4: bot user ID, 5: webhook URL */
@@ -1862,17 +1860,17 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$bot = isset( $get_me_data['result'] ) ? $get_me_data['result'] : array();
 
 		$results = array(
-			'success'      => true,
-			'telegram'     => true,
-			'bot_id'       => isset( $bot['id'] ) ? $bot['id'] : '',
-			'bot_username' => isset( $bot['username'] ) ? $bot['username'] : '',
-			'bot_name'     => isset( $bot['first_name'] ) ? $bot['first_name'] : '',
-			'can_join_groups'        => ! empty( $bot['can_join_groups'] ),
-			'can_read_all_messages'  => ! empty( $bot['can_read_all_group_messages'] ),
+			'success'                 => true,
+			'telegram'                => true,
+			'bot_id'                  => isset( $bot['id'] ) ? $bot['id'] : '',
+			'bot_username'            => isset( $bot['username'] ) ? $bot['username'] : '',
+			'bot_name'                => isset( $bot['first_name'] ) ? $bot['first_name'] : '',
+			'can_join_groups'         => ! empty( $bot['can_join_groups'] ),
+			'can_read_all_messages'   => ! empty( $bot['can_read_all_group_messages'] ),
 			'supports_inline_queries' => ! empty( $bot['supports_inline_queries'] ),
-			'webhook_url'  => '',
-			'pending_updates' => 0,
-			'message'      => __( 'Telegram bot token verified successfully.', 'mcp-ai-wpoos-pro' ),
+			'webhook_url'             => '',
+			'pending_updates'         => 0,
+			'message'                 => __( 'Telegram bot token verified successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		// Call getWebhookInfo to retrieve the current webhook configuration.
@@ -1884,7 +1882,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( ! is_wp_error( $webhook_response ) && 200 === (int) wp_remote_retrieve_response_code( $webhook_response ) ) {
 			$webhook_data = json_decode( wp_remote_retrieve_body( $webhook_response ), true );
 			if ( ! empty( $webhook_data['ok'] ) && isset( $webhook_data['result'] ) ) {
-				$wh = $webhook_data['result'];
+				$wh                         = $webhook_data['result'];
 				$results['webhook_url']     = isset( $wh['url'] ) ? $wh['url'] : '';
 				$results['pending_updates'] = isset( $wh['pending_update_count'] ) ? (int) $wh['pending_update_count'] : 0;
 				if ( ! empty( $wh['last_error_message'] ) ) {
@@ -2022,7 +2020,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					$retry_query_args,
 					sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
 				);
-				$retry_response = wp_remote_get(
+				$retry_response   = wp_remote_get(
 					$retry_endpoint,
 					array(
 						'headers' => array(
@@ -2045,18 +2043,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					);
 				}
 
-			// When no appsecret_proof was sent but Meta still returns 400 "Invalid appsecret_proof",
-			// the app has "Require App Secret Proof" enabled.  Guide the user to enter the App Secret.
+				// When no appsecret_proof was sent but Meta still returns 400 "Invalid appsecret_proof",
+				// the app has "Require App Secret Proof" enabled.  Guide the user to enter the App Secret.
 			} elseif ( 400 === (int) $phone_code && ! $appsecret_proof && false !== stripos( $error_message, 'appsecret_proof' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_whatsapp_appsecret_required',
 					__( 'The Meta app requires App Secret Proof for API calls. Please enter your Meta App Secret in the App Secret field of this connection and try again.', 'mcp-ai-wpoos-pro' )
 				);
 
-			// When the token lacks field-level access (Facebook error code 200 = permission
-			// error on a specific field), fall back to the base endpoint which returns only
-			// the phone number ID.  This lets tokens that have whatsapp_business_messaging
-			// for sending but cannot read phone-number fields still pass the connection test.
+				// When the token lacks field-level access (Facebook error code 200 = permission
+				// error on a specific field), fall back to the base endpoint which returns only
+				// the phone number ID.  This lets tokens that have whatsapp_business_messaging
+				// for sending but cannot read phone-number fields still pass the connection test.
 			} elseif ( 403 === (int) $phone_code && 200 === $fb_error_code ) {
 				$fallback_base     = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
 				$fallback_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $fallback_base ) : $fallback_base;
@@ -2096,10 +2094,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					}
 				}
 
-			// When the API returns HTTP 400 with FB error code 100 ("Tried accessing nonexisting
-			// field"), the token cannot read display_phone_number or verified_name as explicit
-			// field parameters. Fall back to the base phone number endpoint which returns default
-			// fields for tokens with sufficient permissions, or just the ID for messaging-only tokens.
+				// When the API returns HTTP 400 with FB error code 100 ("Tried accessing nonexisting
+				// field"), the token cannot read display_phone_number or verified_name as explicit
+				// field parameters. Fall back to the base phone number endpoint which returns default
+				// fields for tokens with sufficient permissions, or just the ID for messaging-only tokens.
 			} elseif ( 400 === (int) $phone_code && 100 === $fb_error_code ) {
 				$fallback_base     = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
 				$fallback_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $fallback_base ) : $fallback_base;
@@ -2154,8 +2152,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Optionally get quality rating — requires whatsapp_business_management permission.
 		// This is not available with App Access Tokens, so treat it as advisory only.
-		$quality              = 'unknown';
-		$quality_query_args   = array( 'fields' => 'quality_rating' );
+		$quality            = 'unknown';
+		$quality_query_args = array( 'fields' => 'quality_rating' );
 		if ( $appsecret_proof ) {
 			$quality_query_args['appsecret_proof'] = $appsecret_proof;
 		}
@@ -2163,7 +2161,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$quality_query_args,
 			sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
 		);
-		$quality_response      = wp_remote_get(
+		$quality_response = wp_remote_get(
 			$quality_endpoint,
 			array(
 				'headers' => array(
@@ -2206,15 +2204,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Build success response.
 		$results = array(
-			'success'         => true,
-			'whatsapp'        => true,
-			'phone_number'    => $display_phone,
-			'verified_name'   => $verified,
-			'quality_rating'  => $quality,
-			'business_name'   => $business_name,
-			'webhook_url'     => home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp' ),
-			'has_app_secret'  => ! empty( $app_secret ),
-			'message'         => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'mcp-ai-wpoos-pro' ),
+			'success'        => true,
+			'whatsapp'       => true,
+			'phone_number'   => $display_phone,
+			'verified_name'  => $verified,
+			'quality_rating' => $quality,
+			'business_name'  => $business_name,
+			'webhook_url'    => home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp' ),
+			'has_app_secret' => ! empty( $app_secret ),
+			'message'        => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		// Warn if app secret is missing (needed for webhook signature validation).
@@ -2236,7 +2234,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Note when the token lacks permission to read phone-number details.
 		if ( $limited_field_access ) {
-			$field_note = __( 'Note: Phone number details are unavailable because the access token lacks permission to read phone number fields. Messaging will still work if the token has the whatsapp_business_messaging scope.', 'mcp-ai-wpoos-pro' );
+			$field_note         = __( 'Note: Phone number details are unavailable because the access token lacks permission to read phone number fields. Messaging will still work if the token has the whatsapp_business_messaging scope.', 'mcp-ai-wpoos-pro' );
 			$results['warning'] = isset( $results['warning'] )
 				? $results['warning'] . ' ' . $field_note
 				: $field_note;
@@ -2713,7 +2711,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					__( 'OAuth Client ID and client secret are required for Gmail connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
-			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
 		}
 
 		if ( 'google_drive' === $connection_type ) {
@@ -2723,8 +2721,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					__( 'OAuth Client ID and client secret are required for Google Drive connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
-			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
-			// Note: folder_id is optional - if not provided, full drive access within granted scopes
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
+			// Note: folder_id is optional - if not provided, full drive access within granted scopes.
 		}
 
 		if ( 'upwork' === $connection_type ) {
@@ -2734,7 +2732,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					__( 'OAuth Client ID and client secret are required for Upwork connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
-			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
 		}
 
 		return true;
@@ -2860,9 +2858,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return '';
 		}
 
-		$decrypted    = '';
-		$key_length   = strlen( $key );
-		$data_length  = strlen( $data );
+		$decrypted   = '';
+		$key_length  = strlen( $key );
+		$data_length = strlen( $data );
 
 		for ( $i = 0; $i < $data_length; $i++ ) {
 			$decrypted .= chr( ord( $data[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );

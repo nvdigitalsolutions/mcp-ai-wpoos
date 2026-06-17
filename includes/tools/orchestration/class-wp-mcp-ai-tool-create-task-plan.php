@@ -21,6 +21,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Create_Task_Plan {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool slug
 	 *
 	 * @return string
@@ -94,10 +101,7 @@ class WP_MCP_AI_Tool_Create_Task_Plan {
 	public function execute( array $arguments = array(), array $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface.
 		// Validate arguments.
 		if ( empty( $arguments['plan_name'] ) || empty( $arguments['goal'] ) || empty( $arguments['tasks'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required arguments: plan_name, goal, and tasks are required',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Missing required arguments: plan_name, goal, and tasks are required' );
 		}
 
 		// Generate markdown content.
@@ -110,10 +114,7 @@ class WP_MCP_AI_Tool_Create_Task_Plan {
 		$plan_id = $this->create_plan_storage( $arguments, $markdown, $task_count );
 
 		if ( is_wp_error( $plan_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $plan_id->get_error_message(),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', $plan_id->get_error_message() );
 		}
 
 		return array(
@@ -140,8 +141,11 @@ class WP_MCP_AI_Tool_Create_Task_Plan {
 	 * @return string
 	 */
 	private function generate_markdown( $arguments ) {
-		$markdown  = "# {$arguments['plan_name']}\n\n";
-		$markdown .= "## Goal\n{$arguments['goal']}\n\n";
+		$plan_name = sanitize_text_field( $arguments['plan_name'] );
+		$goal      = sanitize_textarea_field( $arguments['goal'] );
+
+		$markdown  = "# {$plan_name}\n\n";
+		$markdown .= "## Goal\n{$goal}\n\n";
 		$markdown .= "## Tasks\n";
 
 		foreach ( $arguments['tasks'] as $task ) {

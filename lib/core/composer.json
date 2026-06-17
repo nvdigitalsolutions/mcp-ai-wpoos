@@ -1,0 +1,52 @@
+{
+    "name": "nvoos/core",
+    "description": "Framework-agnostic AI orchestration engine â€” agentic loop, tool registry, provider routing, SSE streaming.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "NV Digital Solutions",
+            "email": "developer@nvdigitalsolutions.com",
+            "homepage": "https://nvdigitalsolutions.com",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
+    "support": {
+        "issues": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues",
+        "source": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/lib/core"
+    },
+    "require": {
+        "php": "^8.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0 || ^11.0",
+        "phpstan/phpstan": "^1.10",
+        "mockery/mockery": "^1.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nvoos\\Core\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nvoos\\Core\\Tests\\": "tests/"
+        }
+    },
+    "suggest": {
+        "nvoos/wordpress-adapter": "WordPress integration via the adapter layer",
+        "nvoos/laravel-adapter": "Laravel integration via the adapter layer",
+        "nvoos/craft-adapter": "Craft CMS integration via the adapter layer"
+    },
+    "scripts": {
+        "lint": "phpstan analyse --no-progress",
+        "lint:level8": "phpstan analyse --level 8 --no-progress",
+        "test": "phpunit --no-configuration --bootstrap tests/bootstrap.php tests/Unit/",
+        "test:with-config": "phpunit",
+        "ci": [
+            "@lint",
+            "@test"
+        ]
+    }
+}

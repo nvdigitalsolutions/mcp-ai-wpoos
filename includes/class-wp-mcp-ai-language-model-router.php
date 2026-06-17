@@ -75,6 +75,42 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		protected $nvidia_client;
 
 		/**
+		 * DeepSeek client instance.
+		 *
+		 * @var WP_MCP_AI_DeepSeek_Client
+		 */
+		protected $deepseek_client;
+
+		/**
+		 * OpenRouter client instance.
+		 *
+		 * @var WP_MCP_AI_OpenRouter_Client
+		 */
+		protected $openrouter_client;
+
+		/**
+		 * DigitalOcean Serverless Inference client instance.
+		 *
+		 * @var WP_MCP_AI_DigitalOcean_Client
+		 */
+		protected $digitalocean_client;
+
+		/**
+		 * Kimi (Moonshot AI) client instance.
+		 *
+		 * @var WP_MCP_AI_Kimi_Client
+		 */
+		protected $kimi_client;
+
+		/**
+		 * Baseten client instance.
+		 *
+		 * @var WP_MCP_AI_Baseten_Client
+		 */
+		protected $baseten_client;
+
+		/**
+		 * Embedded LLM client instance
 		 * Embedded LLM client instance (server-side GGUF inference, Pro-only).
 		 *
 		 * Null when the Pro addon is not present.
@@ -95,8 +131,13 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 * @param WP_MCP_AI_Cloudflare_Client  $cloudflare_client    Cloudflare client instance (optional).
 		 * @param object|null                  $embedded_client      Embedded LLM client instance (Pro-only, optional).
 		 * @param WP_MCP_AI_Nvidia_Client      $nvidia_client        NVIDIA NIM client instance (optional).
+		 * @param WP_MCP_AI_DeepSeek_Client    $deepseek_client      DeepSeek client instance (optional).
+		 * @param WP_MCP_AI_OpenRouter_Client  $openrouter_client    OpenRouter client instance (optional).
+		 * @param WP_MCP_AI_DigitalOcean_Client $digitalocean_client DigitalOcean client instance (optional).
+		 * @param WP_MCP_AI_Kimi_Client        $kimi_client         Kimi client instance (optional).
+		 * @param WP_MCP_AI_Baseten_Client     $baseten_client      Baseten client instance (optional).
 		 */
-		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null, $embedded_client = null, WP_MCP_AI_Nvidia_Client $nvidia_client = null ) {
+		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null, $embedded_client = null, WP_MCP_AI_Nvidia_Client $nvidia_client = null, WP_MCP_AI_DeepSeek_Client $deepseek_client = null, WP_MCP_AI_OpenRouter_Client $openrouter_client = null, WP_MCP_AI_DigitalOcean_Client $digitalocean_client = null, WP_MCP_AI_Kimi_Client $kimi_client = null, WP_MCP_AI_Baseten_Client $baseten_client = null ) {
 			$this->openai_client      = $openai_client;
 			$this->gemini_client      = $gemini_client;
 			$this->ollama_client      = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
@@ -105,6 +146,11 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$this->huggingface_client = $huggingface_client ? $huggingface_client : new WP_MCP_AI_Huggingface_Client();
 			$this->cloudflare_client  = $cloudflare_client ? $cloudflare_client : new WP_MCP_AI_Cloudflare_Client();
 			$this->nvidia_client      = $nvidia_client ? $nvidia_client : new WP_MCP_AI_Nvidia_Client();
+			$this->deepseek_client    = $deepseek_client ? $deepseek_client : new WP_MCP_AI_DeepSeek_Client();
+			$this->openrouter_client  = $openrouter_client ? $openrouter_client : new WP_MCP_AI_OpenRouter_Client();
+			$this->digitalocean_client = $digitalocean_client ? $digitalocean_client : new WP_MCP_AI_DigitalOcean_Client();
+			$this->kimi_client        = $kimi_client ? $kimi_client : ( class_exists( 'WP_MCP_AI_Kimi_Client' ) ? new WP_MCP_AI_Kimi_Client() : null );
+			$this->baseten_client     = $baseten_client ? $baseten_client : new WP_MCP_AI_Baseten_Client();
 			// Embedded client is Pro-only; only instantiate when the class is available.
 			$this->embedded_client    = $embedded_client ?? ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null );
 		}
@@ -152,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
 			$priority_list = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
-				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'baseten', 'digitalocean', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 
 			$last_error = null;
 
@@ -248,6 +294,26 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 * @return array|WP_Error
 		 */
 		protected function route_to_provider( $provider, array $messages, array $options ) {
+			/**
+			 * Filter to allow add-ons to handle routing for custom provider IDs.
+			 *
+			 * Return a non-null value (chat-completion array or WP_Error) to short-circuit
+			 * the default routing switch. Used by the NV oOS Cloud Pro module to register
+			 * the `nv_hosted` provider, but available to any add-on that wants to add a
+			 * new provider id without forking the base router.
+			 *
+			 * @since 2026.05
+			 *
+			 * @param array|WP_Error|null $result   Pre-routed result. Default null = fall through to switch.
+			 * @param string              $provider Sanitised provider key.
+			 * @param array               $messages Chat messages array.
+			 * @param array               $options  Request options.
+			 */
+			$pre = apply_filters( 'wp_mcp_ai_route_to_provider', null, $provider, $messages, $options );
+			if ( null !== $pre ) {
+				return $pre;
+			}
+
 			switch ( $provider ) {
 				case 'anthropic':
 					return $this->anthropic_client->create_chat_completion( $messages, $options );
@@ -270,6 +336,15 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 				case 'nvidia':
 					return $this->nvidia_client->create_chat_completion( $messages, $options );
 
+				case 'deepseek':
+					return $this->deepseek_client->create_chat_completion( $messages, $options );
+
+				case 'openrouter':
+					return $this->openrouter_client->create_chat_completion( $messages, $options );
+
+				case 'digitalocean':
+					return $this->digitalocean_client->create_chat_completion( $messages, $options );
+
 				case 'embedded':
 					// Server-side embedded LLM using GGUF models via llama.cpp.
 					// Delegates to the Embedded addon (or Pro addon) via filter.
@@ -286,6 +361,18 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 						'embedded_client_unavailable',
 						__( 'Embedded LLM requires the NV oOS Embedded addon or Pro addon.', 'mcp-ai-wpoos' )
 					);
+
+				case 'kimi':
+					if ( null === $this->kimi_client ) {
+						return new WP_Error(
+							'wp_mcp_ai_kimi_unavailable',
+							__( 'Kimi client is not available. Ensure the Kimi API key is configured.', 'mcp-ai-wpoos' )
+						);
+					}
+					return $this->kimi_client->create_chat_completion( $messages, $options );
+
+				case 'baseten':
+					return $this->baseten_client->create_chat_completion( $messages, $options );
 
 				case 'openai':
 				default:

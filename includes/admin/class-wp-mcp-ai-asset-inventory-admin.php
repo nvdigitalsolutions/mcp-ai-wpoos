@@ -47,7 +47,13 @@ class WP_MCP_AI_Asset_Inventory_Admin {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'nvoos-pro-dashboard_page_nvoos-asset-inventory' !== $hook ) {
+		$allowed_hooks = array(
+			'nvoos-pro-dashboard_page_nvoos-asset-inventory',
+			'nvoos-pro_page_nvoos-asset-inventory',
+			'nv-oos-pro_page_nvoos-asset-inventory',
+		);
+
+		if ( ! in_array( $hook, $allowed_hooks, true ) ) {
 			return;
 		}
 
@@ -74,6 +80,7 @@ class WP_MCP_AI_Asset_Inventory_Admin {
 				'apiUrl'  => rest_url( 'mcp-ai/v1/assets' ),
 				'strings' => array(
 					'discovering'      => __( 'Discovering assets...', 'mcp-ai-wpoos' ),
+					'discoverButton'   => __( 'Discover Assets', 'mcp-ai-wpoos' ),
 					'discoverySuccess' => __( 'Asset discovery completed successfully!', 'mcp-ai-wpoos' ),
 					'discoveryError'   => __( 'Asset discovery failed. Please try again.', 'mcp-ai-wpoos' ),
 				),

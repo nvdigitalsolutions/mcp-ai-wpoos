@@ -557,37 +557,36 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 	 * @return string
 	 */
 	private static function get_dashboard_js() {
-		return <<<'JS'
-(function($){
-'use strict';
+		return '(function($){
+\'use strict\';
 
 /* ── Colour palettes ─────────────────────────────────────────── */
 var MV_COLORS = {
-	systolic:   '#c62828',
-	diastolic:  '#e57373',
-	hr:         '#e91e63',
-	spo2:       '#0288d1',
-	temp:       '#ff6f00',
-	glucose:    '#6a1b9a',
-	egfr:       '#1565c0',
-	creatinine: '#4a148c',
-	bun:        '#880e4f',
-	potassium:  '#1b5e20',
-	sodium_mv:  '#006064',
-	phosphorus: '#bf360c',
-	albumin:    '#37474f',
-	hemoglobin: '#b71c1c',
-	hematocrit: '#c62828',
-	wbc:        '#00838f',
-	platelets:  '#6a1b9a',
-	chloride:   '#00695c',
-	co2:        '#4e342e',
-	calcium:    '#558b2f',
-	magnesium:  '#283593',
-	bilirubin:  '#f57f17',
-	ast:        '#e65100',
-	alt:        '#bf360c',
-	total_protein: '#546e7a'
+	systolic:   \'#c62828\',
+	diastolic:  \'#e57373\',
+	hr:         \'#e91e63\',
+	spo2:       \'#0288d1\',
+	temp:       \'#ff6f00\',
+	glucose:    \'#6a1b9a\',
+	egfr:       \'#1565c0\',
+	creatinine: \'#4a148c\',
+	bun:        \'#880e4f\',
+	potassium:  \'#1b5e20\',
+	sodium_mv:  \'#006064\',
+	phosphorus: \'#bf360c\',
+	albumin:    \'#37474f\',
+	hemoglobin: \'#b71c1c\',
+	hematocrit: \'#c62828\',
+	wbc:        \'#00838f\',
+	platelets:  \'#6a1b9a\',
+	chloride:   \'#00695c\',
+	co2:        \'#4e342e\',
+	calcium:    \'#558b2f\',
+	magnesium:  \'#283593\',
+	bilirubin:  \'#f57f17\',
+	ast:        \'#e65100\',
+	alt:        \'#bf360c\',
+	total_protein: \'#546e7a\'
 };
 
 /* ── Chart registry (so we can destroy before rebuilding) ────── */
@@ -603,26 +602,26 @@ function buildLineChart(canvasId,labels,data,color,refLine,refLabel,maxY){
 	var el = document.getElementById(canvasId);
 	if(!el) return;
 	var datasets = [{
-		label: '',
+		label: \'\',
 		data: data,
 		borderColor: color,
-		backgroundColor: color+'22',
+		backgroundColor: color+\'22\',
 		tension: 0.3,
 		pointRadius: data.length <= 30 ? 3 : 1,
 		fill: true
 	}];
 	if(refLine!==undefined){
 		datasets.push({
-			label: refLabel||'Goal',
+			label: refLabel||\'Goal\',
 			data: labels.map(function(){return refLine;}),
-			borderColor: '#bdbdbd',
+			borderColor: \'#bdbdbd\',
 			borderDash: [6,4],
 			pointRadius: 0,
 			fill: false
 		});
 	}
 	chartInsts[canvasId] = new Chart(el,{
-		type:'line',
+		type:\'line\',
 		data:{labels:labels,datasets:datasets},
 		options:{
 			responsive:true,
@@ -641,12 +640,12 @@ function buildMultiLineChart(canvasId,labels,datasets){
 	var el = document.getElementById(canvasId);
 	if(!el) return;
 	chartInsts[canvasId] = new Chart(el,{
-		type:'line',
+		type:\'line\',
 		data:{labels:labels,datasets:datasets},
 		options:{
 			responsive:true,
 			maintainAspectRatio:false,
-			plugins:{legend:{display:true,position:'top'}},
+			plugins:{legend:{display:true,position:\'top\'}},
 			scales:{
 				y:{beginAtZero:false,ticks:{maxTicksLimit:5}},
 				x:{ticks:{maxTicksLimit:8,maxRotation:45}}
@@ -657,8 +656,8 @@ function buildMultiLineChart(canvasId,labels,datasets){
 
 /* ── Temperature normalisation helper ───────────────────────── */
 function normTempToF(value, unit){
-	var u=(unit||'F').toUpperCase();
-	if(u==='C') return Math.round(((value*9/5)+32)*10)/10;
+	var u=(unit||\'F\').toUpperCase();
+	if(u===\'C\') return Math.round(((value*9/5)+32)*10)/10;
 	return value;
 }
 
@@ -667,11 +666,11 @@ function extractVitalValue(entry, fieldOrPath){
 	/* Temperature: handle first (before the generic early-return) so that
 	   normTempToF is always applied — legacy Celsius entries stored in both
 	   flat CCT rows and nested options-storage objects are converted to °F. */
-	if(fieldOrPath==='temperature'){
+	if(fieldOrPath===\'temperature\'){
 		if(entry.measurements&&entry.measurements.temperature)
-			return normTempToF(entry.measurements.temperature.value||0, entry.measurements.temperature.unit||'F');
+			return normTempToF(entry.measurements.temperature.value||0, entry.measurements.temperature.unit||\'F\');
 		if(entry.temperature!==undefined)
-			return normTempToF(parseFloat(entry.temperature)||0, entry.temperature_unit||'F');
+			return normTempToF(parseFloat(entry.temperature)||0, entry.temperature_unit||\'F\');
 		return 0;
 	}
 	/* Supports both flat (from JetEngine CCT: bp_systolic) and
@@ -680,68 +679,68 @@ function extractVitalValue(entry, fieldOrPath){
 	/* Try nested measurements object */
 	if(entry.measurements){
 		var m=entry.measurements;
-		if(fieldOrPath==='bp_systolic'&&m.blood_pressure)  return m.blood_pressure.systolic||0;
-		if(fieldOrPath==='bp_diastolic'&&m.blood_pressure) return m.blood_pressure.diastolic||0;
-		if(fieldOrPath==='heart_rate'&&m.heart_rate)        return m.heart_rate.value||0;
-		if(fieldOrPath==='oxygen_saturation'&&m.oxygen_saturation) return m.oxygen_saturation.value||0;
-		if(fieldOrPath==='blood_glucose'&&m.blood_glucose) return m.blood_glucose.value||0;
-		if(fieldOrPath==='egfr'&&m.egfr)                   return m.egfr.value||0;
-		if(fieldOrPath==='creatinine'&&m.creatinine)       return m.creatinine.value||0;
-		if(fieldOrPath==='bun'&&m.bun)                     return m.bun.value||0;
-		if(fieldOrPath==='potassium'&&m.potassium)         return m.potassium.value||0;
-		if(fieldOrPath==='sodium'&&m.sodium)               return m.sodium.value||0;
-		if(fieldOrPath==='phosphorus'&&m.phosphorus)       return m.phosphorus.value||0;
-		if(fieldOrPath==='albumin'&&m.albumin)             return m.albumin.value||0;
-		if(fieldOrPath==='hemoglobin'&&m.hemoglobin)       return m.hemoglobin.value||0;
-		if(fieldOrPath==='hematocrit'&&m.hematocrit)       return m.hematocrit.value||0;
-		if(fieldOrPath==='rbc'&&m.rbc)                     return m.rbc.value||0;
-		if(fieldOrPath==='wbc'&&m.wbc)                     return m.wbc.value||0;
-		if(fieldOrPath==='platelets'&&m.platelets)         return m.platelets.value||0;
-		if(fieldOrPath==='mcv'&&m.mcv)                     return m.mcv.value||0;
-		if(fieldOrPath==='mch'&&m.mch)                     return m.mch.value||0;
-		if(fieldOrPath==='mchc'&&m.mchc)                   return m.mchc.value||0;
-		if(fieldOrPath==='rdw'&&m.rdw)                     return m.rdw.value||0;
-		if(fieldOrPath==='neutrophils_percent'&&m.neutrophils_percent) return m.neutrophils_percent.value||0;
-		if(fieldOrPath==='lymphocytes_percent'&&m.lymphocytes_percent) return m.lymphocytes_percent.value||0;
-		if(fieldOrPath==='monocytes_percent'&&m.monocytes_percent)     return m.monocytes_percent.value||0;
-		if(fieldOrPath==='eosinophils_percent'&&m.eosinophils_percent) return m.eosinophils_percent.value||0;
-		if(fieldOrPath==='basophils_percent'&&m.basophils_percent)     return m.basophils_percent.value||0;
+		if(fieldOrPath===\'bp_systolic\'&&m.blood_pressure)  return m.blood_pressure.systolic||0;
+		if(fieldOrPath===\'bp_diastolic\'&&m.blood_pressure) return m.blood_pressure.diastolic||0;
+		if(fieldOrPath===\'heart_rate\'&&m.heart_rate)        return m.heart_rate.value||0;
+		if(fieldOrPath===\'oxygen_saturation\'&&m.oxygen_saturation) return m.oxygen_saturation.value||0;
+		if(fieldOrPath===\'blood_glucose\'&&m.blood_glucose) return m.blood_glucose.value||0;
+		if(fieldOrPath===\'egfr\'&&m.egfr)                   return m.egfr.value||0;
+		if(fieldOrPath===\'creatinine\'&&m.creatinine)       return m.creatinine.value||0;
+		if(fieldOrPath===\'bun\'&&m.bun)                     return m.bun.value||0;
+		if(fieldOrPath===\'potassium\'&&m.potassium)         return m.potassium.value||0;
+		if(fieldOrPath===\'sodium\'&&m.sodium)               return m.sodium.value||0;
+		if(fieldOrPath===\'phosphorus\'&&m.phosphorus)       return m.phosphorus.value||0;
+		if(fieldOrPath===\'albumin\'&&m.albumin)             return m.albumin.value||0;
+		if(fieldOrPath===\'hemoglobin\'&&m.hemoglobin)       return m.hemoglobin.value||0;
+		if(fieldOrPath===\'hematocrit\'&&m.hematocrit)       return m.hematocrit.value||0;
+		if(fieldOrPath===\'rbc\'&&m.rbc)                     return m.rbc.value||0;
+		if(fieldOrPath===\'wbc\'&&m.wbc)                     return m.wbc.value||0;
+		if(fieldOrPath===\'platelets\'&&m.platelets)         return m.platelets.value||0;
+		if(fieldOrPath===\'mcv\'&&m.mcv)                     return m.mcv.value||0;
+		if(fieldOrPath===\'mch\'&&m.mch)                     return m.mch.value||0;
+		if(fieldOrPath===\'mchc\'&&m.mchc)                   return m.mchc.value||0;
+		if(fieldOrPath===\'rdw\'&&m.rdw)                     return m.rdw.value||0;
+		if(fieldOrPath===\'neutrophils_percent\'&&m.neutrophils_percent) return m.neutrophils_percent.value||0;
+		if(fieldOrPath===\'lymphocytes_percent\'&&m.lymphocytes_percent) return m.lymphocytes_percent.value||0;
+		if(fieldOrPath===\'monocytes_percent\'&&m.monocytes_percent)     return m.monocytes_percent.value||0;
+		if(fieldOrPath===\'eosinophils_percent\'&&m.eosinophils_percent) return m.eosinophils_percent.value||0;
+		if(fieldOrPath===\'basophils_percent\'&&m.basophils_percent)     return m.basophils_percent.value||0;
 	}
 	return 0;
 }
 
 function getEntryDate(entry){
-	return entry.measurement_date || entry.date || (entry.timestamp ? new Date(entry.timestamp*1000).toISOString().slice(0,10) : '');
+	return entry.measurement_date || entry.date || (entry.timestamp ? new Date(entry.timestamp*1000).toISOString().slice(0,10) : \'\');
 }
 
 /* ── Status helpers ──────────────────────────────────────────── */
 function bpStatusClass(sys,dia){
-	if(sys<120&&dia<80) return 'status-normal';
-	if(sys<130&&dia<80) return 'status-warning';
-	return 'status-alert';
+	if(sys<120&&dia<80) return \'status-normal\';
+	if(sys<130&&dia<80) return \'status-warning\';
+	return \'status-alert\';
 }
-function hrStatus(v){ return (v>=60&&v<=100)?'status-normal':(v<50||v>110)?'status-alert':'status-warning'; }
-function spo2Status(v){ return v>=95?'status-normal':v>=90?'status-warning':'status-alert'; }
-function tempStatus(v){ return (v>=97&&v<=99)?'status-normal':(v>=99.1&&v<=100.4)?'status-warning':'status-alert'; }
+function hrStatus(v){ return (v>=60&&v<=100)?\'status-normal\':(v<50||v>110)?\'status-alert\':\'status-warning\'; }
+function spo2Status(v){ return v>=95?\'status-normal\':v>=90?\'status-warning\':\'status-alert\'; }
+function tempStatus(v){ return (v>=97&&v<=99)?\'status-normal\':(v>=99.1&&v<=100.4)?\'status-warning\':\'status-alert\'; }
 function egfrCkd(v){
-	if(!v||v===0) return '—';
-	if(v>=90) return 'Stage 1 (Normal)';
-	if(v>=60) return 'Stage 2 (Mild)';
-	if(v>=45) return 'Stage 3a (Moderate)';
-	if(v>=30) return 'Stage 3b (Moderate)';
-	if(v>=15) return 'Stage 4 (Severe)';
-	return 'Stage 5 (Kidney Failure)';
+	if(!v||v===0) return \'—\';
+	if(v>=90) return \'Stage 1 (Normal)\';
+	if(v>=60) return \'Stage 2 (Mild)\';
+	if(v>=45) return \'Stage 3a (Moderate)\';
+	if(v>=30) return \'Stage 3b (Moderate)\';
+	if(v>=15) return \'Stage 4 (Severe)\';
+	return \'Stage 5 (Kidney Failure)\';
 }
-function egfrStatusClass(v){ return v>=60?'status-normal':v>=30?'status-warning':'status-alert'; }
-function hgbStatus(v){ return v>=12?'status-normal':v>=11?'status-warning':'status-alert'; }
-function wbcStatus(v){ return (v>=4&&v<=11)?'status-normal':v<=15?'status-warning':'status-alert'; }
-function pltStatus(v){ return (v>=150&&v<=400)?'status-normal':v>=100?'status-warning':'status-alert'; }
-function hctStatus(v){ return (v>=36&&v<=52)?'status-normal':v>=30?'status-warning':'status-alert'; }
+function egfrStatusClass(v){ return v>=60?\'status-normal\':v>=30?\'status-warning\':\'status-alert\'; }
+function hgbStatus(v){ return v>=12?\'status-normal\':v>=11?\'status-warning\':\'status-alert\'; }
+function wbcStatus(v){ return (v>=4&&v<=11)?\'status-normal\':v<=15?\'status-warning\':\'status-alert\'; }
+function pltStatus(v){ return (v>=150&&v<=400)?\'status-normal\':v>=100?\'status-warning\':\'status-alert\'; }
+function hctStatus(v){ return (v>=36&&v<=52)?\'status-normal\':v>=30?\'status-warning\':\'status-alert\'; }
 
 /* ── Medical Vitals rendering ────────────────────────────────── */
 function renderMVDashboard(history){
 	if(!history||!history.length){
-		$('#mv-dash-vitals-tbody').html('<tr><td colspan="8" class="hw-dash-placeholder">'+wpMcpAiMvDashboard.strings.noData+'</td></tr>');
+		$(\'#mv-dash-vitals-tbody\').html(\'<tr><td colspan="8" class="hw-dash-placeholder">\'+wpMcpAiMvDashboard.strings.noData+\'</td></tr>\');
 		return;
 	}
 
@@ -768,67 +767,67 @@ function renderMVDashboard(history){
 			var v=parseFloat(extractVitalValue(history[i],field));
 			if(v>0) return getEntryDate(history[i]);
 		}
-		return '';
+		return \'\';
 	}
-	var sys   = latestFor('bp_systolic');
-	var dia   = latestFor('bp_diastolic');
-	var hr    = latestFor('heart_rate');
-	var spo2  = latestFor('oxygen_saturation');
-	var temp  = latestFor('temperature');
-	var egfr  = latestFor('egfr');
-	var creat = latestFor('creatinine');
-	var bun   = latestFor('bun');
-	var pot   = latestFor('potassium');
-	var sodMv = latestFor('sodium');
-	var phos  = latestFor('phosphorus');
-	var alb   = latestFor('albumin');
-	var hgb   = latestFor('hemoglobin');
-	var wbc   = latestFor('wbc');
-	var hct   = latestFor('hematocrit');
-	var plt   = latestFor('platelets');
-	var chlor = latestFor('chloride');
-	var co2   = latestFor('co2');
-	var calc  = latestFor('calcium');
-	var mag   = latestFor('magnesium');
-	var bili  = latestFor('bilirubin');
-	var ast   = latestFor('ast');
-	var alt   = latestFor('alt');
-	var tprot = latestFor('total_protein');
+	var sys   = latestFor(\'bp_systolic\');
+	var dia   = latestFor(\'bp_diastolic\');
+	var hr    = latestFor(\'heart_rate\');
+	var spo2  = latestFor(\'oxygen_saturation\');
+	var temp  = latestFor(\'temperature\');
+	var egfr  = latestFor(\'egfr\');
+	var creat = latestFor(\'creatinine\');
+	var bun   = latestFor(\'bun\');
+	var pot   = latestFor(\'potassium\');
+	var sodMv = latestFor(\'sodium\');
+	var phos  = latestFor(\'phosphorus\');
+	var alb   = latestFor(\'albumin\');
+	var hgb   = latestFor(\'hemoglobin\');
+	var wbc   = latestFor(\'wbc\');
+	var hct   = latestFor(\'hematocrit\');
+	var plt   = latestFor(\'platelets\');
+	var chlor = latestFor(\'chloride\');
+	var co2   = latestFor(\'co2\');
+	var calc  = latestFor(\'calcium\');
+	var mag   = latestFor(\'magnesium\');
+	var bili  = latestFor(\'bilirubin\');
+	var ast   = latestFor(\'ast\');
+	var alt   = latestFor(\'alt\');
+	var tprot = latestFor(\'total_protein\');
 
 	/* BP KPI */
 	if(sys||dia){
-		$('#mv-kpi-bp').text(sys+'/'+dia+' mmHg');
+		$(\'#mv-kpi-bp\').text(sys+\'/\'+dia+\' mmHg\');
 		var bpCls=bpStatusClass(sys,dia);
-		var bpLabel=bpCls==='status-normal'?'Normal':bpCls==='status-warning'?'Monitor':'Alert';
-		$('#mv-kpi-bp-status').text(bpLabel).removeClass().addClass('hw-dash-kpi-sub '+bpCls);
+		var bpLabel=bpCls===\'status-normal\'?\'Normal\':bpCls===\'status-warning\'?\'Monitor\':\'Alert\';
+		$(\'#mv-kpi-bp-status\').text(bpLabel).removeClass().addClass(\'hw-dash-kpi-sub \'+bpCls);
 	}
-	if(hr){ $('#mv-kpi-hr').text(hr+' bpm'); $('#mv-kpi-hr-status').text(hr>=60&&hr<=100?'Normal':'Out of range').removeClass().addClass('hw-dash-kpi-sub '+hrStatus(hr)); }
-	if(spo2){ $('#mv-kpi-spo2').text(spo2+'%'); $('#mv-kpi-spo2-status').text(spo2>=95?'Normal':spo2>=90?'Low':'Critical').removeClass().addClass('hw-dash-kpi-sub '+spo2Status(spo2)); }
-	if(temp){ $('#mv-kpi-temp').text(temp+'°F'); $('#mv-kpi-temp-status').text(temp>=97&&temp<=99?'Normal':'Abnormal').removeClass().addClass('hw-dash-kpi-sub '+tempStatus(temp)); }
-	if(egfr){ $('#mv-kpi-egfr').text(egfr); $('#mv-kpi-egfr-stage').text(egfrCkd(egfr)).removeClass().addClass('hw-dash-kpi-sub '+egfrStatusClass(egfr)); }
-	if(hgb){ $('#mv-kpi-hgb').text(hgb+' g/dL'); $('#mv-kpi-hgb-status').text(hgb>=12?'Normal':hgb>=11?'Low':'Anaemia').removeClass().addClass('hw-dash-kpi-sub '+hgbStatus(hgb)); }
-	if(wbc){ $('#mv-kpi-wbc').text(wbc); $('#mv-kpi-wbc-status').text((wbc>=4&&wbc<=11)?'Normal':wbc<4?'Low':'High').removeClass().addClass('hw-dash-kpi-sub '+wbcStatus(wbc)); }
-	if(plt){ $('#mv-kpi-plt').text(plt); $('#mv-kpi-plt-status').text((plt>=150&&plt<=400)?'Normal':plt<150?'Low':'High').removeClass().addClass('hw-dash-kpi-sub '+pltStatus(plt)); }
+	if(hr){ $(\'#mv-kpi-hr\').text(hr+\' bpm\'); $(\'#mv-kpi-hr-status\').text(hr>=60&&hr<=100?\'Normal\':\'Out of range\').removeClass().addClass(\'hw-dash-kpi-sub \'+hrStatus(hr)); }
+	if(spo2){ $(\'#mv-kpi-spo2\').text(spo2+\'%\'); $(\'#mv-kpi-spo2-status\').text(spo2>=95?\'Normal\':spo2>=90?\'Low\':\'Critical\').removeClass().addClass(\'hw-dash-kpi-sub \'+spo2Status(spo2)); }
+	if(temp){ $(\'#mv-kpi-temp\').text(temp+\'°F\'); $(\'#mv-kpi-temp-status\').text(temp>=97&&temp<=99?\'Normal\':\'Abnormal\').removeClass().addClass(\'hw-dash-kpi-sub \'+tempStatus(temp)); }
+	if(egfr){ $(\'#mv-kpi-egfr\').text(egfr); $(\'#mv-kpi-egfr-stage\').text(egfrCkd(egfr)).removeClass().addClass(\'hw-dash-kpi-sub \'+egfrStatusClass(egfr)); }
+	if(hgb){ $(\'#mv-kpi-hgb\').text(hgb+\' g/dL\'); $(\'#mv-kpi-hgb-status\').text(hgb>=12?\'Normal\':hgb>=11?\'Low\':\'Anaemia\').removeClass().addClass(\'hw-dash-kpi-sub \'+hgbStatus(hgb)); }
+	if(wbc){ $(\'#mv-kpi-wbc\').text(wbc); $(\'#mv-kpi-wbc-status\').text((wbc>=4&&wbc<=11)?\'Normal\':wbc<4?\'Low\':\'High\').removeClass().addClass(\'hw-dash-kpi-sub \'+wbcStatus(wbc)); }
+	if(plt){ $(\'#mv-kpi-plt\').text(plt); $(\'#mv-kpi-plt-status\').text((plt>=150&&plt<=400)?\'Normal\':plt<150?\'Low\':\'High\').removeClass().addClass(\'hw-dash-kpi-sub \'+pltStatus(plt)); }
 
 	/* Build chart data */
-	var labels    = history.map(function(r){var d=getEntryDate(r);return d?d.slice(5):'';});
-	var sysArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'bp_systolic'))||null;});
-	var diaArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'bp_diastolic'))||null;});
-	var hrArr     = history.map(function(r){return parseFloat(extractVitalValue(r,'heart_rate'))||null;});
-	var spo2Arr   = history.map(function(r){return parseFloat(extractVitalValue(r,'oxygen_saturation'))||null;});
-	var tempArr   = history.map(function(r){return parseFloat(extractVitalValue(r,'temperature'))||null;});
-	var glucArr   = history.map(function(r){return parseFloat(extractVitalValue(r,'blood_glucose'))||null;});
-	var egfrArr   = history.map(function(r){return parseFloat(extractVitalValue(r,'egfr'))||null;});
-	var creatArr  = history.map(function(r){return parseFloat(extractVitalValue(r,'creatinine'))||null;});
-	var bunArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'bun'))||null;});
-	var potArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'potassium'))||null;});
-	var sodMvArr  = history.map(function(r){return parseFloat(extractVitalValue(r,'sodium'))||null;});
-	var phosArr   = history.map(function(r){return parseFloat(extractVitalValue(r,'phosphorus'))||null;});
-	var albArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'albumin'))||null;});
-	var hgbArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'hemoglobin'))||null;});
-	var wbcArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'wbc'))||null;});
-	var hctArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'hematocrit'))||null;});
-	var pltArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'platelets'))||null;});
+	var labels    = history.map(function(r){var d=getEntryDate(r);return d?d.slice(5):\'\';});
+	var sysArr    = history.map(function(r){return parseFloat(extractVitalValue(r,\'bp_systolic\'))||null;});
+	var diaArr    = history.map(function(r){return parseFloat(extractVitalValue(r,\'bp_diastolic\'))||null;});
+	var hrArr     = history.map(function(r){return parseFloat(extractVitalValue(r,\'heart_rate\'))||null;});
+	var spo2Arr   = history.map(function(r){return parseFloat(extractVitalValue(r,\'oxygen_saturation\'))||null;});
+	var tempArr   = history.map(function(r){return parseFloat(extractVitalValue(r,\'temperature\'))||null;});
+	var glucArr   = history.map(function(r){return parseFloat(extractVitalValue(r,\'blood_glucose\'))||null;});
+	var egfrArr   = history.map(function(r){return parseFloat(extractVitalValue(r,\'egfr\'))||null;});
+	var creatArr  = history.map(function(r){return parseFloat(extractVitalValue(r,\'creatinine\'))||null;});
+	var bunArr    = history.map(function(r){return parseFloat(extractVitalValue(r,\'bun\'))||null;});
+	var potArr    = history.map(function(r){return parseFloat(extractVitalValue(r,\'potassium\'))||null;});
+	var sodMvArr  = history.map(function(r){return parseFloat(extractVitalValue(r,\'sodium\'))||null;});
+	var phosArr   = history.map(function(r){return parseFloat(extractVitalValue(r,\'phosphorus\'))||null;});
+	var albArr    = history.map(function(r){return parseFloat(extractVitalValue(r,\'albumin\'))||null;});
+	var hgbArr    = history.map(function(r){return parseFloat(extractVitalValue(r,\'hemoglobin\'))||null;});
+	var wbcArr    = history.map(function(r){return parseFloat(extractVitalValue(r,\'wbc\'))||null;});
+	var hctArr    = history.map(function(r){return parseFloat(extractVitalValue(r,\'hematocrit\'))||null;});
+	var pltArr    = history.map(function(r){return parseFloat(extractVitalValue(r,\'platelets\'))||null;});
 	var chlorArr  = history.map(function(r){return parseFloat(r.chloride)||null;});
 	var co2Arr    = history.map(function(r){return parseFloat(r.co2)||null;});
 	var calcArr   = history.map(function(r){return parseFloat(r.calcium)||null;});
@@ -839,214 +838,214 @@ function renderMVDashboard(history){
 	var tprotArr  = history.map(function(r){return parseFloat(r.total_protein)||null;});
 
 	/* BP dual-line */
-	buildMultiLineChart('mv-chart-bp', labels, [
-		{label:'Systolic',data:sysArr,borderColor:MV_COLORS.systolic,backgroundColor:MV_COLORS.systolic+'22',tension:.3,fill:false},
-		{label:'Diastolic',data:diaArr,borderColor:MV_COLORS.diastolic,backgroundColor:MV_COLORS.diastolic+'22',tension:.3,fill:false},
-		{label:'Normal <120',data:labels.map(function(){return 120;}),borderColor:'#bdbdbd',borderDash:[6,4],pointRadius:0,fill:false}
+	buildMultiLineChart(\'mv-chart-bp\', labels, [
+		{label:\'Systolic\',data:sysArr,borderColor:MV_COLORS.systolic,backgroundColor:MV_COLORS.systolic+\'22\',tension:.3,fill:false},
+		{label:\'Diastolic\',data:diaArr,borderColor:MV_COLORS.diastolic,backgroundColor:MV_COLORS.diastolic+\'22\',tension:.3,fill:false},
+		{label:\'Normal <120\',data:labels.map(function(){return 120;}),borderColor:\'#bdbdbd\',borderDash:[6,4],pointRadius:0,fill:false}
 	]);
-	buildLineChart('mv-chart-hr',        labels, hrArr,    MV_COLORS.hr,        null,  null, null);
-	buildLineChart('mv-chart-spo2',      labels, spo2Arr,  MV_COLORS.spo2,      95,    'Normal ≥95%', null);
-	buildLineChart('mv-chart-temp',      labels, tempArr,  MV_COLORS.temp,      null,  null, null);
-	buildLineChart('mv-chart-glucose',   labels, glucArr,  MV_COLORS.glucose,   99,    'Normal <100', null);
-	buildLineChart('mv-chart-egfr',      labels, egfrArr,  MV_COLORS.egfr,      60,    'Normal ≥60',  null);
-	buildLineChart('mv-chart-creatinine',labels, creatArr, MV_COLORS.creatinine,1.2,   'Normal ≤1.2', null);
-	buildLineChart('mv-chart-bun',       labels, bunArr,   MV_COLORS.bun,       20,    'Normal ≤20',  null);
-	buildMultiLineChart('mv-chart-electrolytes', labels, [
-		{label:'K⁺ Potassium',data:potArr,borderColor:MV_COLORS.potassium,tension:.3,fill:false},
-		{label:'Na⁺ Sodium',data:sodMvArr.map(function(v){return v?v/10:null;}),borderColor:MV_COLORS.sodium_mv,tension:.3,fill:false,borderDash:[4,2]}
+	buildLineChart(\'mv-chart-hr\',        labels, hrArr,    MV_COLORS.hr,        null,  null, null);
+	buildLineChart(\'mv-chart-spo2\',      labels, spo2Arr,  MV_COLORS.spo2,      95,    \'Normal ≥95%\', null);
+	buildLineChart(\'mv-chart-temp\',      labels, tempArr,  MV_COLORS.temp,      null,  null, null);
+	buildLineChart(\'mv-chart-glucose\',   labels, glucArr,  MV_COLORS.glucose,   99,    \'Normal <100\', null);
+	buildLineChart(\'mv-chart-egfr\',      labels, egfrArr,  MV_COLORS.egfr,      60,    \'Normal ≥60\',  null);
+	buildLineChart(\'mv-chart-creatinine\',labels, creatArr, MV_COLORS.creatinine,1.2,   \'Normal ≤1.2\', null);
+	buildLineChart(\'mv-chart-bun\',       labels, bunArr,   MV_COLORS.bun,       20,    \'Normal ≤20\',  null);
+	buildMultiLineChart(\'mv-chart-electrolytes\', labels, [
+		{label:\'K⁺ Potassium\',data:potArr,borderColor:MV_COLORS.potassium,tension:.3,fill:false},
+		{label:\'Na⁺ Sodium\',data:sodMvArr.map(function(v){return v?v/10:null;}),borderColor:MV_COLORS.sodium_mv,tension:.3,fill:false,borderDash:[4,2]}
 	]);
-	buildLineChart('mv-chart-phosphorus',labels, phosArr,  MV_COLORS.phosphorus,4.5,   'Normal ≤4.5', null);
-	buildLineChart('mv-chart-albumin',   labels, albArr,   MV_COLORS.albumin,   null,  null, null);
-	buildLineChart('mv-chart-hemoglobin',labels, hgbArr,   MV_COLORS.hemoglobin,12,    'Normal ≥12 g/dL', null);
-	buildLineChart('mv-chart-wbc',        labels, wbcArr,   MV_COLORS.wbc,       null,  null, null);
-	buildLineChart('mv-chart-hematocrit', labels, hctArr,   MV_COLORS.hematocrit,null,  null, null);
-	buildLineChart('mv-chart-platelets',  labels, pltArr,   MV_COLORS.platelets, 150,   'Low <150', null);
-	buildMultiLineChart('mv-chart-electrolytes-ext', labels, [
-		{label:'Cl⁻ Chloride',data:chlorArr,borderColor:MV_COLORS.chloride,tension:.3,fill:false},
-		{label:'HCO₃⁻ CO2',data:co2Arr,borderColor:MV_COLORS.co2,tension:.3,fill:false,borderDash:[4,2]}
+	buildLineChart(\'mv-chart-phosphorus\',labels, phosArr,  MV_COLORS.phosphorus,4.5,   \'Normal ≤4.5\', null);
+	buildLineChart(\'mv-chart-albumin\',   labels, albArr,   MV_COLORS.albumin,   null,  null, null);
+	buildLineChart(\'mv-chart-hemoglobin\',labels, hgbArr,   MV_COLORS.hemoglobin,12,    \'Normal ≥12 g/dL\', null);
+	buildLineChart(\'mv-chart-wbc\',        labels, wbcArr,   MV_COLORS.wbc,       null,  null, null);
+	buildLineChart(\'mv-chart-hematocrit\', labels, hctArr,   MV_COLORS.hematocrit,null,  null, null);
+	buildLineChart(\'mv-chart-platelets\',  labels, pltArr,   MV_COLORS.platelets, 150,   \'Low <150\', null);
+	buildMultiLineChart(\'mv-chart-electrolytes-ext\', labels, [
+		{label:\'Cl⁻ Chloride\',data:chlorArr,borderColor:MV_COLORS.chloride,tension:.3,fill:false},
+		{label:\'HCO₃⁻ CO2\',data:co2Arr,borderColor:MV_COLORS.co2,tension:.3,fill:false,borderDash:[4,2]}
 	]);
-	buildLineChart('mv-chart-calcium',    labels, calcArr,  MV_COLORS.calcium,   10.2,  'Normal ≤10.2', null);
-	buildLineChart('mv-chart-magnesium',  labels, magArr,   MV_COLORS.magnesium, null,  null, null);
-	buildMultiLineChart('mv-chart-liver', labels, [
-		{label:'AST',data:astArr,borderColor:MV_COLORS.ast,tension:.3,fill:false},
-		{label:'ALT',data:altArr,borderColor:MV_COLORS.alt,tension:.3,fill:false,borderDash:[4,2]}
+	buildLineChart(\'mv-chart-calcium\',    labels, calcArr,  MV_COLORS.calcium,   10.2,  \'Normal ≤10.2\', null);
+	buildLineChart(\'mv-chart-magnesium\',  labels, magArr,   MV_COLORS.magnesium, null,  null, null);
+	buildMultiLineChart(\'mv-chart-liver\', labels, [
+		{label:\'AST\',data:astArr,borderColor:MV_COLORS.ast,tension:.3,fill:false},
+		{label:\'ALT\',data:altArr,borderColor:MV_COLORS.alt,tension:.3,fill:false,borderDash:[4,2]}
 	]);
-	buildLineChart('mv-chart-bilirubin',  labels, biliArr,  MV_COLORS.bilirubin, 1.2,   'Normal ≤1.2', null);
-	buildLineChart('mv-chart-total-protein', labels, tprotArr, MV_COLORS.total_protein, null, null, null);
+	buildLineChart(\'mv-chart-bilirubin\',  labels, biliArr,  MV_COLORS.bilirubin, 1.2,   \'Normal ≤1.2\', null);
+	buildLineChart(\'mv-chart-total-protein\', labels, tprotArr, MV_COLORS.total_protein, null, null, null);
 
 	/* Vitals table (last 20 entries, newest first)
 	   Notes are rendered as a full-width second row beneath each data record.
 	   Index-based mv-row-odd/mv-row-even classes are stamped so stripes alternate
 	   correctly even when every record has a notes sub-row. */
-	var tbody = $('#mv-dash-vitals-tbody').empty();
+	var tbody = $(\'#mv-dash-vitals-tbody\').empty();
 	var tableRows = history.slice().reverse().slice(0,20);
 	$.each(tableRows,function(idx,r){
-		var rowParity = idx%2===0 ? 'mv-row-odd' : 'mv-row-even';
-		var rSys   = parseFloat(extractVitalValue(r,'bp_systolic'))||'';
-		var rDia   = parseFloat(extractVitalValue(r,'bp_diastolic'))||'';
-		var rHr    = parseFloat(extractVitalValue(r,'heart_rate'))||'';
-		var rSpo2  = parseFloat(extractVitalValue(r,'oxygen_saturation'))||'';
-		var rTemp  = parseFloat(extractVitalValue(r,'temperature'))||'';
-		var rGluc  = parseFloat(extractVitalValue(r,'blood_glucose'))||'';
-		var rEgfr  = parseFloat(extractVitalValue(r,'egfr'))||'';
-		var rCreat = parseFloat(extractVitalValue(r,'creatinine'))||'';
-		var rHgb   = parseFloat(extractVitalValue(r,'hemoglobin'))||'';
-		var rNotes = r.notes||'';
+		var rowParity = idx%2===0 ? \'mv-row-odd\' : \'mv-row-even\';
+		var rSys   = parseFloat(extractVitalValue(r,\'bp_systolic\'))||\'\';
+		var rDia   = parseFloat(extractVitalValue(r,\'bp_diastolic\'))||\'\';
+		var rHr    = parseFloat(extractVitalValue(r,\'heart_rate\'))||\'\';
+		var rSpo2  = parseFloat(extractVitalValue(r,\'oxygen_saturation\'))||\'\';
+		var rTemp  = parseFloat(extractVitalValue(r,\'temperature\'))||\'\';
+		var rGluc  = parseFloat(extractVitalValue(r,\'blood_glucose\'))||\'\';
+		var rEgfr  = parseFloat(extractVitalValue(r,\'egfr\'))||\'\';
+		var rCreat = parseFloat(extractVitalValue(r,\'creatinine\'))||\'\';
+		var rHgb   = parseFloat(extractVitalValue(r,\'hemoglobin\'))||\'\';
+		var rNotes = r.notes||\'\';
 
 		tbody.append(
-			'<tr class="mv-vitals-data-row '+rowParity+'">'+
-			'<td data-label="Date"><span class="mv-cell-label">Date</span>'+getEntryDate(r)+'</td>'+
-			'<td data-label="BP (sys/dia)"><span class="mv-cell-label">BP (sys/dia)</span>'+(rSys&&rDia?rSys+'/'+rDia:'—')+'</td>'+
-			'<td data-label="HR"><span class="mv-cell-label">HR</span>'+(rHr||'—')+'</td>'+
-			'<td data-label="SpO₂"><span class="mv-cell-label">SpO₂</span>'+(rSpo2||'—')+'</td>'+
-			'<td data-label="Temp °F"><span class="mv-cell-label">Temp °F</span>'+(rTemp||'—')+'</td>'+
-			'<td data-label="Glucose"><span class="mv-cell-label">Glucose</span>'+(rGluc||'—')+'</td>'+
-			'<td data-label="eGFR"><span class="mv-cell-label">eGFR</span>'+(rEgfr||'—')+'</td>'+
-			'<td data-label="Creatinine"><span class="mv-cell-label">Creatinine</span>'+(rCreat||'—')+'</td>'+
-			'<td data-label="Hgb (g/dL)"><span class="mv-cell-label">Hgb (g/dL)</span>'+(rHgb||'—')+'</td>'+
-			'</tr>'
+			\'<tr class="mv-vitals-data-row \'+rowParity+\'">\'+
+			\'<td data-label="Date"><span class="mv-cell-label">Date</span>\'+getEntryDate(r)+\'</td>\'+
+			\'<td data-label="BP (sys/dia)"><span class="mv-cell-label">BP (sys/dia)</span>\'+(rSys&&rDia?rSys+\'/\'+rDia:\'—\')+\'</td>\'+
+			\'<td data-label="HR"><span class="mv-cell-label">HR</span>\'+(rHr||\'—\')+\'</td>\'+
+			\'<td data-label="SpO₂"><span class="mv-cell-label">SpO₂</span>\'+(rSpo2||\'—\')+\'</td>\'+
+			\'<td data-label="Temp °F"><span class="mv-cell-label">Temp °F</span>\'+(rTemp||\'—\')+\'</td>\'+
+			\'<td data-label="Glucose"><span class="mv-cell-label">Glucose</span>\'+(rGluc||\'—\')+\'</td>\'+
+			\'<td data-label="eGFR"><span class="mv-cell-label">eGFR</span>\'+(rEgfr||\'—\')+\'</td>\'+
+			\'<td data-label="Creatinine"><span class="mv-cell-label">Creatinine</span>\'+(rCreat||\'—\')+\'</td>\'+
+			\'<td data-label="Hgb (g/dL)"><span class="mv-cell-label">Hgb (g/dL)</span>\'+(rHgb||\'—\')+\'</td>\'+
+			\'</tr>\'
 		);
 
 		if(rNotes){
 			tbody.append(
-				'<tr class="mv-vitals-notes-row '+rowParity+'">'+
-				'<td colspan="9">'+rNotes+'</td>'+
-				'</tr>'
+				\'<tr class="mv-vitals-notes-row \'+rowParity+\'">\'+
+				\'<td colspan="9">\'+rNotes+\'</td>\'+
+				\'</tr>\'
 			);
 		}
 	});
 	if(!tableRows.length){
-		tbody.html('<tr><td colspan="9" class="hw-dash-placeholder">'+wpMcpAiMvDashboard.strings.noData+'</td></tr>');
+		tbody.html(\'<tr><td colspan="9" class="hw-dash-placeholder">\'+wpMcpAiMvDashboard.strings.noData+\'</td></tr>\');
 	}
 
 	/* Kidney health markers table */
 	var kidneyMarkers=[
-		{label:'eGFR',       value:egfr,   unit:'mL/min/1.73m²',normal:'≥60',   cls:egfrStatusClass(egfr),  date:latestDateFor('egfr')},
-		{label:'Creatinine', value:creat,  unit:'mg/dL',         normal:'0.6–1.2',cls:(creat>0&&creat<=1.2)?'status-normal':creat<=1.5?'status-warning':'status-alert', date:latestDateFor('creatinine')},
-		{label:'BUN',        value:bun,    unit:'mg/dL',         normal:'7–20',  cls:(bun>=7&&bun<=20)?'status-normal':bun<=25?'status-warning':'status-alert', date:latestDateFor('bun')},
-		{label:'K⁺ Potassium',value:pot,  unit:'mEq/L',         normal:'3.5–5.0',cls:(pot>=3.5&&pot<=5.0)?'status-normal':pot<=5.5?'status-warning':'status-alert', date:latestDateFor('potassium')},
-		{label:'Na⁺ Sodium', value:sodMv, unit:'mEq/L',         normal:'136–145',cls:(sodMv>=136&&sodMv<=145)?'status-normal':sodMv>=130?'status-warning':'status-alert', date:latestDateFor('sodium')},
-		{label:'Phosphorus', value:phos,  unit:'mg/dL',         normal:'2.5–4.5',cls:(phos>=2.5&&phos<=4.5)?'status-normal':phos<=5.5?'status-warning':'status-alert', date:latestDateFor('phosphorus')},
-		{label:'Albumin',    value:alb,   unit:'g/dL',          normal:'3.5–5.0',cls:(alb>=3.5&&alb<=5.0)?'status-normal':alb>=3.0?'status-warning':'status-alert', date:latestDateFor('albumin')},
-		{label:'Hemoglobin', value:hgb,   unit:'g/dL',          normal:'≥12.0', cls:hgbStatus(hgb), date:latestDateFor('hemoglobin')}
+		{label:\'eGFR\',       value:egfr,   unit:\'mL/min/1.73m²\',normal:\'≥60\',   cls:egfrStatusClass(egfr),  date:latestDateFor(\'egfr\')},
+		{label:\'Creatinine\', value:creat,  unit:\'mg/dL\',         normal:\'0.6–1.2\',cls:(creat>0&&creat<=1.2)?\'status-normal\':creat<=1.5?\'status-warning\':\'status-alert\', date:latestDateFor(\'creatinine\')},
+		{label:\'BUN\',        value:bun,    unit:\'mg/dL\',         normal:\'7–20\',  cls:(bun>=7&&bun<=20)?\'status-normal\':bun<=25?\'status-warning\':\'status-alert\', date:latestDateFor(\'bun\')},
+		{label:\'K⁺ Potassium\',value:pot,  unit:\'mEq/L\',         normal:\'3.5–5.0\',cls:(pot>=3.5&&pot<=5.0)?\'status-normal\':pot<=5.5?\'status-warning\':\'status-alert\', date:latestDateFor(\'potassium\')},
+		{label:\'Na⁺ Sodium\', value:sodMv, unit:\'mEq/L\',         normal:\'136–145\',cls:(sodMv>=136&&sodMv<=145)?\'status-normal\':sodMv>=130?\'status-warning\':\'status-alert\', date:latestDateFor(\'sodium\')},
+		{label:\'Phosphorus\', value:phos,  unit:\'mg/dL\',         normal:\'2.5–4.5\',cls:(phos>=2.5&&phos<=4.5)?\'status-normal\':phos<=5.5?\'status-warning\':\'status-alert\', date:latestDateFor(\'phosphorus\')},
+		{label:\'Albumin\',    value:alb,   unit:\'g/dL\',          normal:\'3.5–5.0\',cls:(alb>=3.5&&alb<=5.0)?\'status-normal\':alb>=3.0?\'status-warning\':\'status-alert\', date:latestDateFor(\'albumin\')},
+		{label:\'Hemoglobin\', value:hgb,   unit:\'g/dL\',          normal:\'≥12.0\', cls:hgbStatus(hgb), date:latestDateFor(\'hemoglobin\')}
 	];
 	var hasKidney = egfr||creat||bun||pot||sodMv||phos||alb||hgb;
 	if(hasKidney){
-		var kTbody=$('#mv-kidney-tbody').empty();
+		var kTbody=$(\'#mv-kidney-tbody\').empty();
 		$.each(kidneyMarkers,function(_,m){
-			var displayVal = m.value ? m.value+' '+m.unit : '—';
-			var statusText = m.value ? (m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert') : '—';
+			var displayVal = m.value ? m.value+\' \'+m.unit : \'—\';
+			var statusText = m.value ? (m.cls===\'status-normal\'?\'Normal\':m.cls===\'status-warning\'?\'Monitor\':\'Alert\') : \'—\';
 			kTbody.append(
-				'<tr>'+
-				'<td data-label="Marker"><span class="mv-cell-label">Marker</span><strong>'+m.label+'</strong></td>'+
-				'<td data-label="Value"><span class="mv-cell-label">Value</span>'+displayVal+'</td>'+
-				'<td data-label="Normal Range"><span class="mv-cell-label">Normal Range</span>'+m.normal+'</td>'+
-				'<td data-label="Status" class="'+m.cls+'"><span class="mv-cell-label">Status</span>'+statusText+'</td>'+
-				'<td data-label="Date"><span class="mv-cell-label">Date</span>'+(m.date||'—')+'</td>'+
-				'</tr>'
+				\'<tr>\'+
+				\'<td data-label="Marker"><span class="mv-cell-label">Marker</span><strong>\'+m.label+\'</strong></td>\'+
+				\'<td data-label="Value"><span class="mv-cell-label">Value</span>\'+displayVal+\'</td>\'+
+				\'<td data-label="Normal Range"><span class="mv-cell-label">Normal Range</span>\'+m.normal+\'</td>\'+
+				\'<td data-label="Status" class="\'+m.cls+\'"><span class="mv-cell-label">Status</span>\'+statusText+\'</td>\'+
+				\'<td data-label="Date"><span class="mv-cell-label">Date</span>\'+(m.date||\'—\')+\'</td>\'+
+				\'</tr>\'
 			);
 		});
-		$('#mv-kidney-table-wrap').show();
+		$(\'#mv-kidney-table-wrap\').show();
 	}
 
 	/* CBC / anemia panel table */
-	var rbc  = latestFor('rbc');
-	var mcv  = latestFor('mcv');
-	var mch  = latestFor('mch');
-	var mchc = latestFor('mchc');
-	var rdw  = latestFor('rdw');
-	var neutPct  = latestFor('neutrophils_percent');
-	var lymphPct = latestFor('lymphocytes_percent');
-	var monoPct  = latestFor('monocytes_percent');
-	var eoPct    = latestFor('eosinophils_percent');
-	var bsoPct   = latestFor('basophils_percent');
+	var rbc  = latestFor(\'rbc\');
+	var mcv  = latestFor(\'mcv\');
+	var mch  = latestFor(\'mch\');
+	var mchc = latestFor(\'mchc\');
+	var rdw  = latestFor(\'rdw\');
+	var neutPct  = latestFor(\'neutrophils_percent\');
+	var lymphPct = latestFor(\'lymphocytes_percent\');
+	var monoPct  = latestFor(\'monocytes_percent\');
+	var eoPct    = latestFor(\'eosinophils_percent\');
+	var bsoPct   = latestFor(\'basophils_percent\');
 
 	var cbcMarkers = [
-		{label:'Hemoglobin', value:hgb, unit:'g/dL',       normal:'≥12.0',    cls:hgbStatus(hgb),                                                                         date:latestDateFor('hemoglobin')},
-		{label:'Hematocrit', value:hct, unit:'%',           normal:'36–52',    cls:hctStatus(hct),                                                                         date:latestDateFor('hematocrit')},
-		{label:'RBC',        value:rbc, unit:'x10⁶/µL',    normal:'4.0–5.5',  cls:(rbc>=4.0&&rbc<=5.5)?'status-normal':rbc>=3.5?'status-warning':'status-alert',         date:latestDateFor('rbc')},
-		{label:'WBC',        value:wbc, unit:'x10³/µL',    normal:'4.0–11.0', cls:wbcStatus(wbc),                                                                         date:latestDateFor('wbc')},
-		{label:'Platelets',  value:plt, unit:'x10³/µL',    normal:'150–400',  cls:pltStatus(plt),                                                                         date:latestDateFor('platelets')},
-		{label:'MCV',        value:mcv, unit:'fL',          normal:'80–100',   cls:(mcv>=80&&mcv<=100)?'status-normal':mcv>=70?'status-warning':'status-alert',           date:latestDateFor('mcv')},
-		{label:'MCH',        value:mch, unit:'pg',          normal:'27–33',    cls:(mch>=27&&mch<=33)?'status-normal':mch>=24?'status-warning':'status-alert',            date:latestDateFor('mch')},
-		{label:'MCHC',       value:mchc,unit:'g/dL',       normal:'32–36',    cls:(mchc>=32&&mchc<=36)?'status-normal':mchc>=30?'status-warning':'status-alert',         date:latestDateFor('mchc')},
-		{label:'RDW',        value:rdw, unit:'%',           normal:'11.5–14.5',cls:(rdw>=11.5&&rdw<=14.5)?'status-normal':rdw<=16?'status-warning':'status-alert',       date:latestDateFor('rdw')},
-		{label:'Neutrophils %', value:neutPct, unit:'%',   normal:'50–70',    cls:(neutPct>=50&&neutPct<=70)?'status-normal':'status-warning',                           date:latestDateFor('neutrophils_percent')},
-		{label:'Lymphocytes %', value:lymphPct,unit:'%',   normal:'20–40',    cls:(lymphPct>=20&&lymphPct<=40)?'status-normal':'status-warning',                         date:latestDateFor('lymphocytes_percent')},
-		{label:'Monocytes %',   value:monoPct, unit:'%',   normal:'2–8',      cls:(monoPct>=2&&monoPct<=8)?'status-normal':'status-warning',                             date:latestDateFor('monocytes_percent')},
-		{label:'Eosinophils %', value:eoPct,   unit:'%',   normal:'1–4',      cls:(eoPct>=1&&eoPct<=4)?'status-normal':eoPct<=6?'status-warning':'status-alert',        date:latestDateFor('eosinophils_percent')},
-		{label:'Basophils %',   value:bsoPct,  unit:'%',   normal:'0–1',      cls:(bsoPct>=0&&bsoPct<=1)?'status-normal':'status-warning',                              date:latestDateFor('basophils_percent')}
+		{label:\'Hemoglobin\', value:hgb, unit:\'g/dL\',       normal:\'≥12.0\',    cls:hgbStatus(hgb),                                                                         date:latestDateFor(\'hemoglobin\')},
+		{label:\'Hematocrit\', value:hct, unit:\'%\',           normal:\'36–52\',    cls:hctStatus(hct),                                                                         date:latestDateFor(\'hematocrit\')},
+		{label:\'RBC\',        value:rbc, unit:\'x10⁶/µL\',    normal:\'4.0–5.5\',  cls:(rbc>=4.0&&rbc<=5.5)?\'status-normal\':rbc>=3.5?\'status-warning\':\'status-alert\',         date:latestDateFor(\'rbc\')},
+		{label:\'WBC\',        value:wbc, unit:\'x10³/µL\',    normal:\'4.0–11.0\', cls:wbcStatus(wbc),                                                                         date:latestDateFor(\'wbc\')},
+		{label:\'Platelets\',  value:plt, unit:\'x10³/µL\',    normal:\'150–400\',  cls:pltStatus(plt),                                                                         date:latestDateFor(\'platelets\')},
+		{label:\'MCV\',        value:mcv, unit:\'fL\',          normal:\'80–100\',   cls:(mcv>=80&&mcv<=100)?\'status-normal\':mcv>=70?\'status-warning\':\'status-alert\',           date:latestDateFor(\'mcv\')},
+		{label:\'MCH\',        value:mch, unit:\'pg\',          normal:\'27–33\',    cls:(mch>=27&&mch<=33)?\'status-normal\':mch>=24?\'status-warning\':\'status-alert\',            date:latestDateFor(\'mch\')},
+		{label:\'MCHC\',       value:mchc,unit:\'g/dL\',       normal:\'32–36\',    cls:(mchc>=32&&mchc<=36)?\'status-normal\':mchc>=30?\'status-warning\':\'status-alert\',         date:latestDateFor(\'mchc\')},
+		{label:\'RDW\',        value:rdw, unit:\'%\',           normal:\'11.5–14.5\',cls:(rdw>=11.5&&rdw<=14.5)?\'status-normal\':rdw<=16?\'status-warning\':\'status-alert\',       date:latestDateFor(\'rdw\')},
+		{label:\'Neutrophils %\', value:neutPct, unit:\'%\',   normal:\'50–70\',    cls:(neutPct>=50&&neutPct<=70)?\'status-normal\':\'status-warning\',                           date:latestDateFor(\'neutrophils_percent\')},
+		{label:\'Lymphocytes %\', value:lymphPct,unit:\'%\',   normal:\'20–40\',    cls:(lymphPct>=20&&lymphPct<=40)?\'status-normal\':\'status-warning\',                         date:latestDateFor(\'lymphocytes_percent\')},
+		{label:\'Monocytes %\',   value:monoPct, unit:\'%\',   normal:\'2–8\',      cls:(monoPct>=2&&monoPct<=8)?\'status-normal\':\'status-warning\',                             date:latestDateFor(\'monocytes_percent\')},
+		{label:\'Eosinophils %\', value:eoPct,   unit:\'%\',   normal:\'1–4\',      cls:(eoPct>=1&&eoPct<=4)?\'status-normal\':eoPct<=6?\'status-warning\':\'status-alert\',        date:latestDateFor(\'eosinophils_percent\')},
+		{label:\'Basophils %\',   value:bsoPct,  unit:\'%\',   normal:\'0–1\',      cls:(bsoPct>=0&&bsoPct<=1)?\'status-normal\':\'status-warning\',                              date:latestDateFor(\'basophils_percent\')}
 	];
 	var hasCbc = hgb||hct||rbc||wbc||plt||mcv||mch||mchc||rdw;
 	if(hasCbc){
-		var cTbody=$('#mv-cbc-tbody').empty();
+		var cTbody=$(\'#mv-cbc-tbody\').empty();
 		$.each(cbcMarkers,function(_,m){
 			if(!m.value) return; // skip absent markers.
-			var displayVal = m.value+' '+m.unit;
-			var statusText = m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert';
+			var displayVal = m.value+\' \'+m.unit;
+			var statusText = m.cls===\'status-normal\'?\'Normal\':m.cls===\'status-warning\'?\'Monitor\':\'Alert\';
 			cTbody.append(
-				'<tr>'+
-				'<td data-label="Marker"><span class="mv-cell-label">Marker</span><strong>'+m.label+'</strong></td>'+
-				'<td data-label="Value"><span class="mv-cell-label">Value</span>'+displayVal+'</td>'+
-				'<td data-label="Normal Range"><span class="mv-cell-label">Normal Range</span>'+m.normal+'</td>'+
-				'<td data-label="Status" class="'+m.cls+'"><span class="mv-cell-label">Status</span>'+statusText+'</td>'+
-				'<td data-label="Date"><span class="mv-cell-label">Date</span>'+(m.date||'—')+'</td>'+
-				'</tr>'
+				\'<tr>\'+
+				\'<td data-label="Marker"><span class="mv-cell-label">Marker</span><strong>\'+m.label+\'</strong></td>\'+
+				\'<td data-label="Value"><span class="mv-cell-label">Value</span>\'+displayVal+\'</td>\'+
+				\'<td data-label="Normal Range"><span class="mv-cell-label">Normal Range</span>\'+m.normal+\'</td>\'+
+				\'<td data-label="Status" class="\'+m.cls+\'"><span class="mv-cell-label">Status</span>\'+statusText+\'</td>\'+
+				\'<td data-label="Date"><span class="mv-cell-label">Date</span>\'+(m.date||\'—\')+\'</td>\'+
+				\'</tr>\'
 			);
 		});
-		$('#mv-cbc-table-wrap').show();
+		$(\'#mv-cbc-table-wrap\').show();
 	}
 
 	/* Extended BMP / Liver function table */
 	var lftMarkers = [
-		{label:'Chloride Cl⁻',  value:chlor, unit:'mEq/L', normal:'98–107',  cls:(chlor>=98&&chlor<=107)?'status-normal':chlor>=95?'status-warning':'status-alert', date:latestDateFor('chloride')},
-		{label:'CO2/HCO₃⁻',    value:co2,   unit:'mEq/L', normal:'22–29',   cls:(co2>=22&&co2<=29)?'status-normal':co2>=18?'status-warning':'status-alert',        date:latestDateFor('co2')},
-		{label:'Calcium Ca2+',  value:calc,  unit:'mg/dL', normal:'8.5–10.2',cls:(calc>=8.5&&calc<=10.2)?'status-normal':calc>=8.0?'status-warning':'status-alert', date:latestDateFor('calcium')},
-		{label:'Magnesium Mg2+',value:mag,   unit:'mg/dL', normal:'1.7–2.2', cls:(mag>=1.7&&mag<=2.2)?'status-normal':mag>=1.5?'status-warning':'status-alert',    date:latestDateFor('magnesium')},
-		{label:'Bilirubin (T)', value:bili,  unit:'mg/dL', normal:'0.1–1.2', cls:(bili<=1.2)?'status-normal':bili<=2.0?'status-warning':'status-alert',            date:latestDateFor('bilirubin')},
-		{label:'AST / SGOT',    value:ast,   unit:'U/L',   normal:'10–40',   cls:(ast>=10&&ast<=40)?'status-normal':ast<=80?'status-warning':'status-alert',        date:latestDateFor('ast')},
-		{label:'ALT / SGPT',    value:alt,   unit:'U/L',   normal:'7–56',    cls:(alt>=7&&alt<=56)?'status-normal':alt<=100?'status-warning':'status-alert',        date:latestDateFor('alt')},
-		{label:'Total Protein', value:tprot, unit:'g/dL',  normal:'6.0–8.3', cls:(tprot>=6.0&&tprot<=8.3)?'status-normal':tprot>=5.0?'status-warning':'status-alert', date:latestDateFor('total_protein')}
+		{label:\'Chloride Cl⁻\',  value:chlor, unit:\'mEq/L\', normal:\'98–107\',  cls:(chlor>=98&&chlor<=107)?\'status-normal\':chlor>=95?\'status-warning\':\'status-alert\', date:latestDateFor(\'chloride\')},
+		{label:\'CO2/HCO₃⁻\',    value:co2,   unit:\'mEq/L\', normal:\'22–29\',   cls:(co2>=22&&co2<=29)?\'status-normal\':co2>=18?\'status-warning\':\'status-alert\',        date:latestDateFor(\'co2\')},
+		{label:\'Calcium Ca2+\',  value:calc,  unit:\'mg/dL\', normal:\'8.5–10.2\',cls:(calc>=8.5&&calc<=10.2)?\'status-normal\':calc>=8.0?\'status-warning\':\'status-alert\', date:latestDateFor(\'calcium\')},
+		{label:\'Magnesium Mg2+\',value:mag,   unit:\'mg/dL\', normal:\'1.7–2.2\', cls:(mag>=1.7&&mag<=2.2)?\'status-normal\':mag>=1.5?\'status-warning\':\'status-alert\',    date:latestDateFor(\'magnesium\')},
+		{label:\'Bilirubin (T)\', value:bili,  unit:\'mg/dL\', normal:\'0.1–1.2\', cls:(bili<=1.2)?\'status-normal\':bili<=2.0?\'status-warning\':\'status-alert\',            date:latestDateFor(\'bilirubin\')},
+		{label:\'AST / SGOT\',    value:ast,   unit:\'U/L\',   normal:\'10–40\',   cls:(ast>=10&&ast<=40)?\'status-normal\':ast<=80?\'status-warning\':\'status-alert\',        date:latestDateFor(\'ast\')},
+		{label:\'ALT / SGPT\',    value:alt,   unit:\'U/L\',   normal:\'7–56\',    cls:(alt>=7&&alt<=56)?\'status-normal\':alt<=100?\'status-warning\':\'status-alert\',        date:latestDateFor(\'alt\')},
+		{label:\'Total Protein\', value:tprot, unit:\'g/dL\',  normal:\'6.0–8.3\', cls:(tprot>=6.0&&tprot<=8.3)?\'status-normal\':tprot>=5.0?\'status-warning\':\'status-alert\', date:latestDateFor(\'total_protein\')}
 	];
 	var hasLft = chlor||co2||calc||mag||bili||ast||alt||tprot;
 	if(hasLft){
-		var lTbody=$('#mv-lft-tbody').empty();
+		var lTbody=$(\'#mv-lft-tbody\').empty();
 		$.each(lftMarkers,function(_,m){
 			if(!m.value) return; // skip absent markers.
-			var displayVal = m.value+' '+m.unit;
-			var statusText = m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert';
+			var displayVal = m.value+\' \'+m.unit;
+			var statusText = m.cls===\'status-normal\'?\'Normal\':m.cls===\'status-warning\'?\'Monitor\':\'Alert\';
 			lTbody.append(
-				'<tr>'+
-				'<td data-label="Marker"><span class="mv-cell-label">Marker</span><strong>'+m.label+'</strong></td>'+
-				'<td data-label="Value"><span class="mv-cell-label">Value</span>'+displayVal+'</td>'+
-				'<td data-label="Normal Range"><span class="mv-cell-label">Normal Range</span>'+m.normal+'</td>'+
-				'<td data-label="Status" class="'+m.cls+'"><span class="mv-cell-label">Status</span>'+statusText+'</td>'+
-				'<td data-label="Date"><span class="mv-cell-label">Date</span>'+(m.date||'—')+'</td>'+
-				'</tr>'
+				\'<tr>\'+
+				\'<td data-label="Marker"><span class="mv-cell-label">Marker</span><strong>\'+m.label+\'</strong></td>\'+
+				\'<td data-label="Value"><span class="mv-cell-label">Value</span>\'+displayVal+\'</td>\'+
+				\'<td data-label="Normal Range"><span class="mv-cell-label">Normal Range</span>\'+m.normal+\'</td>\'+
+				\'<td data-label="Status" class="\'+m.cls+\'"><span class="mv-cell-label">Status</span>\'+statusText+\'</td>\'+
+				\'<td data-label="Date"><span class="mv-cell-label">Date</span>\'+(m.date||\'—\')+\'</td>\'+
+				\'</tr>\'
 			);
 		});
-		$('#mv-lft-table-wrap').show();
+		$(\'#mv-lft-table-wrap\').show();
 	}
 }
 
 /* ── Main load flow ──────────────────────────────────────────── */
 function loadDashboard(){
-	var memberId = $('#mv-dash-member-select').val();
-	var daysBack = $('#mv-dash-days-select').val();
+	var memberId = $(\'#mv-dash-member-select\').val();
+	var daysBack = $(\'#mv-dash-days-select\').val();
 
 	if(!memberId){
 		alert(wpMcpAiMvDashboard.strings.selectMember);
 		return;
 	}
 
-	$('#mv-dash-loading').show();
-	$('#mv-dash-content').hide();
+	$(\'#mv-dash-loading\').show();
+	$(\'#mv-dash-content\').hide();
 
 	$.ajax({
 		url:  wpMcpAiMvDashboard.ajaxUrl,
-		type: 'POST',
+		type: \'POST\',
 		data: {
-			action:    'wp_mcp_ai_mv_dashboard_get_vital_signs',
+			action:    \'wp_mcp_ai_mv_dashboard_get_vital_signs\',
 			nonce:     wpMcpAiMvDashboard.nonce,
 			member_id: memberId,
 			days_back: daysBack
@@ -1058,25 +1057,24 @@ function loadDashboard(){
 		},
 		error: function(){ /* silent — show empty state */ },
 		complete: function(){
-			$('#mv-dash-loading').hide();
-			$('#mv-dash-content').show();
+			$(\'#mv-dash-loading\').hide();
+			$(\'#mv-dash-content\').show();
 		}
 	});
 }
 
 /* ── Wire up UI ──────────────────────────────────────────────── */
 $(document).ready(function(){
-	$('#mv-dash-load-btn').on('click',function(){ loadDashboard(); });
+	$(\'#mv-dash-load-btn\').on(\'click\',function(){ loadDashboard(); });
 
-	/* Auto-load if there's only one member */
-	if($('#mv-dash-member-select option').length===2){
-		$('#mv-dash-member-select option:last').prop('selected',true);
+	/* Auto-load if there\'s only one member */
+	if($(\'#mv-dash-member-select option\').length===2){
+		$(\'#mv-dash-member-select option:last\').prop(\'selected\',true);
 		loadDashboard();
 	}
 });
 
-})(jQuery);
-JS;
+})(jQuery);';
 	}
 }
 

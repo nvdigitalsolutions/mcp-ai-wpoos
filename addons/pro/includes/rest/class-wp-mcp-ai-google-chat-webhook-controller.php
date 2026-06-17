@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
-require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php';
 
 // Load channel CCT helpers when available.
 $_cc_messages_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-messages-cct.php';
@@ -253,9 +253,9 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		$rest_request->set_body( is_string( $raw_body ) ? $raw_body : '{}' );
 
 		// Process the event via the existing REST handler.
-		$response      = $this->handle_webhook( $rest_request );
-		$data          = $response instanceof WP_REST_Response ? $response->get_data() : new stdClass();
-		$status        = $response instanceof WP_REST_Response ? $response->get_status() : 200;
+		$response = $this->handle_webhook( $rest_request );
+		$data     = $response instanceof WP_REST_Response ? $response->get_data() : new stdClass();
+		$status   = $response instanceof WP_REST_Response ? $response->get_status() : 200;
 
 		wp_send_json( $data, $status );
 	}
@@ -388,7 +388,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			$space_name_for_lookup = isset( $body['space']['name'] )
 				? sanitize_text_field( $body['space']['name'] )
 				: '';
-			$connection = $this->get_active_google_chat_connection( $space_name_for_lookup );
+			$connection            = $this->get_active_google_chat_connection( $space_name_for_lookup );
 		}
 
 		// When OIDC verification is disabled for this connection, accept any POST
@@ -444,10 +444,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat webhook rejected: missing or malformed Authorization Bearer header.'
 			);
-			$this->store_webhook_log_entry( array(
-				'status' => 'rejected',
-				'reason' => 'Missing or malformed Authorization Bearer header — Google Chat cannot reach this endpoint or the header is being stripped by a proxy/WAF.',
-			) );
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'Missing or malformed Authorization Bearer header — Google Chat cannot reach this endpoint or the header is being stripped by a proxy/WAF.',
+				)
+			);
 			return false;
 		}
 
@@ -455,10 +457,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		if ( empty( $token ) ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: empty Bearer token.' );
-			$this->store_webhook_log_entry( array(
-				'status' => 'rejected',
-				'reason' => 'Authorization Bearer header present but token value is empty.',
-			) );
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'Authorization Bearer header present but token value is empty.',
+				)
+			);
 			return false;
 		}
 
@@ -513,10 +517,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'Google Chat webhook rejected: tokeninfo API call failed.',
 				array( 'error' => $response->get_error_message() )
 			);
-			$this->store_webhook_log_entry( array(
-				'status' => 'rejected',
-				'reason' => 'OIDC tokeninfo API call failed: ' . $response->get_error_message(),
-			) );
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'OIDC tokeninfo API call failed: ' . $response->get_error_message(),
+				)
+			);
 			return false;
 		}
 
@@ -527,10 +533,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'Google Chat webhook rejected: tokeninfo API returned non-200 status.',
 				array( 'status' => $status_code )
 			);
-			$this->store_webhook_log_entry( array(
-				'status' => 'rejected',
-				'reason' => 'OIDC tokeninfo API returned HTTP ' . $status_code . ' — token may be expired or invalid.',
-			) );
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'OIDC tokeninfo API returned HTTP ' . $status_code . ' — token may be expired or invalid.',
+				)
+			);
 			return false;
 		}
 
@@ -538,10 +546,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		if ( ! is_array( $info ) ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: tokeninfo response is not valid JSON.' );
-			$this->store_webhook_log_entry( array(
-				'status' => 'rejected',
-				'reason' => 'OIDC tokeninfo response was not valid JSON.',
-			) );
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'OIDC tokeninfo response was not valid JSON.',
+				)
+			);
 			return false;
 		}
 
@@ -558,10 +568,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'Google Chat webhook rejected: OIDC token issuer is not a recognised Google issuer.',
 				array( 'iss' => '' !== $token_iss ? substr( $token_iss, 0, 40 ) : '(empty)' )
 			);
-			$this->store_webhook_log_entry( array(
-				'status' => 'rejected',
-				'reason' => 'OIDC token issuer not recognised: ' . ( '' !== $token_iss ? substr( $token_iss, 0, 40 ) : '(empty)' ),
-			) );
+			$this->store_webhook_log_entry(
+				array(
+					'status' => 'rejected',
+					'reason' => 'OIDC token issuer not recognised: ' . ( '' !== $token_iss ? substr( $token_iss, 0, 40 ) : '(empty)' ),
+				)
+			);
 			return false;
 		}
 
@@ -581,10 +593,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 						'Google Chat webhook rejected: OIDC token audience array does not contain the expected audience.',
 						array( 'expected' => $audience )
 					);
-					$this->store_webhook_log_entry( array(
-						'status' => 'rejected',
-						'reason' => 'OIDC audience mismatch — token audience array does not contain the configured Audience URL. Check the Audience URL field on this connection.',
-					) );
+					$this->store_webhook_log_entry(
+						array(
+							'status' => 'rejected',
+							'reason' => 'OIDC audience mismatch — token audience array does not contain the configured Audience URL. Check the Audience URL field on this connection.',
+						)
+					);
 					return false;
 				}
 			} elseif ( $token_aud !== $audience ) {
@@ -595,10 +609,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 						'received' => is_string( $token_aud ) ? substr( $token_aud, 0, 20 ) . '***' : gettype( $token_aud ),
 					)
 				);
-				$this->store_webhook_log_entry( array(
-					'status' => 'rejected',
-					'reason' => 'OIDC audience mismatch — token aud does not match the configured Audience URL. Check the Audience URL field on this connection.',
-				) );
+				$this->store_webhook_log_entry(
+					array(
+						'status' => 'rejected',
+						'reason' => 'OIDC audience mismatch — token aud does not match the configured Audience URL. Check the Audience URL field on this connection.',
+					)
+				);
 				return false;
 			}
 		}
@@ -683,19 +699,21 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// Extract space name, space type, thread name, and sender for routing.
-		$space_name  = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
-		$space_type  = $this->get_space_type( $payload );
-		$sender_name = isset( $payload['message']['sender']['name'] ) ? sanitize_text_field( $payload['message']['sender']['name'] ) : '';
-		$thread_name = isset( $payload['message']['thread']['name'] ) ? sanitize_text_field( $payload['message']['thread']['name'] ) : '';
+		$space_name   = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
+		$space_type   = $this->get_space_type( $payload );
+		$sender_name  = isset( $payload['message']['sender']['name'] ) ? sanitize_text_field( $payload['message']['sender']['name'] ) : '';
+		$thread_name  = isset( $payload['message']['thread']['name'] ) ? sanitize_text_field( $payload['message']['thread']['name'] ) : '';
 		$gc_conv_type = ( 'DIRECT_MESSAGE' === $space_type ) ? 'dm' : ( ( 'ROOM' === $space_type || 'SPACE' === $space_type ) ? 'channel' : 'group' );
 
 		if ( '' === $space_name ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: unable to determine space name.' );
-			$this->store_webhook_log_entry( array(
-				'status'     => 'rejected',
-				'reason'     => 'Unable to determine space name from payload.',
-				'event_type' => $event_type,
-			) );
+			$this->store_webhook_log_entry(
+				array(
+					'status'     => 'rejected',
+					'reason'     => 'Unable to determine space name from payload.',
+					'event_type' => $event_type,
+				)
+			);
 			return rest_ensure_response( $this->empty_response() );
 		}
 
@@ -718,21 +736,25 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat webhook: no active Google Chat connection found.'
 			);
-			$this->store_webhook_log_entry( array(
-				'status'     => 'rejected',
-				'reason'     => 'No active Google Chat connection found for this space. Check that a connection is saved and enabled, and that the Space Name field (if set) matches this space.',
-				'event_type' => $event_type,
-				'space'      => $space_name,
-			) );
+			$this->store_webhook_log_entry(
+				array(
+					'status'     => 'rejected',
+					'reason'     => 'No active Google Chat connection found for this space. Check that a connection is saved and enabled, and that the Space Name field (if set) matches this space.',
+					'event_type' => $event_type,
+					'space'      => $space_name,
+				)
+			);
 			return rest_ensure_response( $this->empty_response() );
 		}
 
-		$this->store_webhook_log_entry( array(
-			'status'     => 'accepted',
-			'reason'     => 'Message received and queued for AI reply.',
-			'event_type' => $event_type,
-			'space'      => $space_name,
-		) );
+		$this->store_webhook_log_entry(
+			array(
+				'status'     => 'accepted',
+				'reason'     => 'Message received and queued for AI reply.',
+				'event_type' => $event_type,
+				'space'      => $space_name,
+			)
+		);
 
 		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
 			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
@@ -796,7 +818,11 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'google_chat',
 				$sender_name,
-				array( 'display_name' => $sender_name, 'connection_id' => $connection_id, 'conversation_type' => $gc_conv_type )
+				array(
+					'display_name'      => $sender_name,
+					'connection_id'     => $connection_id,
+					'conversation_type' => $gc_conv_type,
+				)
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -886,7 +912,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 					WP_MCP_AI_Logger::log_event(
 						'google_chat_human_takeover_triggered',
 						'Human takeover triggered by keyword.',
-						array( 'sender_name' => $sender_name, 'keyword' => $kw )
+						array(
+							'sender_name' => $sender_name,
+							'keyword'     => $kw,
+						)
 					);
 					return; // Do not auto-reply; human agent will respond.
 				}
@@ -909,7 +938,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 					WP_MCP_AI_Logger::log_event(
 						'google_chat_ai_resumed',
 						'AI auto-reply resumed by keyword.',
-						array( 'sender_name' => $sender_name, 'keyword' => $kw )
+						array(
+							'sender_name' => $sender_name,
+							'keyword'     => $kw,
+						)
 					);
 					break; // Continue and allow AI to reply.
 				}
@@ -1590,7 +1622,14 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$gc_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'google_chat', $sender_name, array( 'connection_id' => $connection_id, 'conversation_type' => $gc_conv_type ) );
+			$gc_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'google_chat',
+				$sender_name,
+				array(
+					'connection_id'     => $connection_id,
+					'conversation_type' => $gc_conv_type,
+				)
+			);
 			if ( $gc_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $gc_contact_row_id );
 			}
@@ -1884,8 +1923,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return null;
 		}
 
-		$fallback     = null; // First generic (no specific space) connection.
-		$last_resort  = null; // First enabled google_chat connection of any kind.
+		$fallback    = null; // First generic (no specific space) connection.
+		$last_resort = null; // First enabled google_chat connection of any kind.
 
 		foreach ( $connections as $connection ) {
 			if ( ! isset( $connection['connection_type'] ) || 'google_chat' !== $connection['connection_type'] ) {
@@ -2344,15 +2383,15 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			$log = array();
 		}
 
-		$client_ip  = '';
-		$raw_ip     = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) : ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '' );
-		$raw_ip     = explode( ',', $raw_ip );
-		$raw_ip     = trim( reset( $raw_ip ) );
+		$client_ip = '';
+		$raw_ip    = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) : ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '' );
+		$raw_ip    = explode( ',', $raw_ip );
+		$raw_ip    = trim( reset( $raw_ip ) );
 		if ( filter_var( $raw_ip, FILTER_VALIDATE_IP ) ) {
 			// Mask the last octet (IPv4) or last segment (IPv6) for privacy.
 			$parts = explode( '.', $raw_ip );
 			if ( count( $parts ) === 4 ) {
-				$parts[3] = 'xxx';
+				$parts[3]  = 'xxx';
 				$client_ip = implode( '.', $parts );
 			} else {
 				$colon_pos = strrpos( $raw_ip, ':' );
@@ -2393,13 +2432,13 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	protected function get_any_assistant_id() {
 		$posts = get_posts(
 			array(
-				'post_type'      => 'mcp_ai_assistant',
-				'post_status'    => 'publish',
-				'numberposts'    => 1,
-				'fields'         => 'ids',
-				'orderby'        => 'date',
-				'order'          => 'ASC',
-				'no_found_rows'  => true,
+				'post_type'              => 'mcp_ai_assistant',
+				'post_status'            => 'publish',
+				'numberposts'            => 1,
+				'fields'                 => 'ids',
+				'orderby'                => 'date',
+				'order'                  => 'ASC',
+				'no_found_rows'          => true,
 				'update_post_meta_cache' => false,
 				'update_post_term_cache' => false,
 			)

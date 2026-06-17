@@ -83,21 +83,21 @@ class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Inter
 					'enum'        => array( 'LK', 'JM', 'US' ),
 					'default'     => 'LK',
 				),
-				'space' => array(
+				'space'        => array(
 					'type'        => 'object',
 					'description' => __( 'Space description.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'occupants'    => array( 'type' => 'integer' ),
-						'area_sqm'     => array( 'type' => 'number' ),
-						'height_m'     => array( 'type' => 'number' ),
-						'space_type'   => array(
-							'type' => 'string',
-							'enum' => array( 'residential', 'office', 'classroom', 'kitchen', 'bathroom', 'retail' ),
+						'occupants'  => array( 'type' => 'integer' ),
+						'area_sqm'   => array( 'type' => 'number' ),
+						'height_m'   => array( 'type' => 'number' ),
+						'space_type' => array(
+							'type'    => 'string',
+							'enum'    => array( 'residential', 'office', 'classroom', 'kitchen', 'bathroom', 'retail' ),
 							'default' => 'residential',
 						),
 					),
 				),
-				'openings' => array(
+				'openings'     => array(
 					'type'        => 'object',
 					'description' => __( 'Opening areas in m² and the strategy.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -105,17 +105,17 @@ class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Inter
 						'outlet_area_sqm' => array( 'type' => 'number' ),
 						'stack_height_m'  => array( 'type' => 'number' ),
 						'strategy'        => array(
-							'type' => 'string',
-							'enum' => array( 'cross_flow', 'stack', 'wind_driven', 'courtyard', 'mechanical_assist' ),
+							'type'    => 'string',
+							'enum'    => array( 'cross_flow', 'stack', 'wind_driven', 'courtyard', 'mechanical_assist' ),
 							'default' => 'cross_flow',
 						),
 					),
 				),
-				'wind' => array(
+				'wind'         => array(
 					'type'        => 'object',
 					'description' => __( 'Local wind context.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'mean_speed_ms'   => array( 'type' => 'number' ),
+						'mean_speed_ms'             => array( 'type' => 'number' ),
 						'pressure_coefficient_diff' => array( 'type' => 'number' ),
 					),
 				),
@@ -143,6 +143,13 @@ class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Inter
 			'read-only',
 			'cacheable',
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -181,11 +188,32 @@ class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Inter
 
 		// Per-country / per-type minimum ACH.
 		$min_ach_table = array(
-			'LK' => array( 'residential' => 6.0, 'office' => 6.0, 'classroom' => 6.0, 'kitchen' => 15.0, 'bathroom' => 8.0, 'retail' => 6.0 ),
-			'JM' => array( 'residential' => 6.0, 'office' => 6.0, 'classroom' => 6.0, 'kitchen' => 15.0, 'bathroom' => 8.0, 'retail' => 6.0 ),
-			'US' => array( 'residential' => 0.35, 'office' => 4.0, 'classroom' => 4.0, 'kitchen' => 7.0, 'bathroom' => 5.0, 'retail' => 4.0 ),
+			'LK' => array(
+				'residential' => 6.0,
+				'office'      => 6.0,
+				'classroom'   => 6.0,
+				'kitchen'     => 15.0,
+				'bathroom'    => 8.0,
+				'retail'      => 6.0,
+			),
+			'JM' => array(
+				'residential' => 6.0,
+				'office'      => 6.0,
+				'classroom'   => 6.0,
+				'kitchen'     => 15.0,
+				'bathroom'    => 8.0,
+				'retail'      => 6.0,
+			),
+			'US' => array(
+				'residential' => 0.35,
+				'office'      => 4.0,
+				'classroom'   => 4.0,
+				'kitchen'     => 7.0,
+				'bathroom'    => 5.0,
+				'retail'      => 4.0,
+			),
 		);
-		$min_ach = isset( $min_ach_table[ $country_code ][ $type ] ) ? (float) $min_ach_table[ $country_code ][ $type ] : 6.0;
+		$min_ach       = isset( $min_ach_table[ $country_code ][ $type ] ) ? (float) $min_ach_table[ $country_code ][ $type ] : 6.0;
 
 		// ASHRAE-based requirement.
 		$ashrae = WP_MCP_AI_Architectural_Engine::calculate_ventilation_airflow( $occupants, $area, $height, $min_ach );
@@ -195,9 +223,9 @@ class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Inter
 
 		// Strategy dispatch.
 		$strategy = isset( $openings['strategy'] ) ? sanitize_text_field( $openings['strategy'] ) : 'cross_flow';
-		$inlet   = isset( $openings['inlet_area_sqm'] ) ? max( 0.0, floatval( $openings['inlet_area_sqm'] ) ) : 0.0;
-		$outlet  = isset( $openings['outlet_area_sqm'] ) ? max( 0.0, floatval( $openings['outlet_area_sqm'] ) ) : 0.0;
-		$stackh  = isset( $openings['stack_height_m'] ) ? max( 0.0, floatval( $openings['stack_height_m'] ) ) : 0.0;
+		$inlet    = isset( $openings['inlet_area_sqm'] ) ? max( 0.0, floatval( $openings['inlet_area_sqm'] ) ) : 0.0;
+		$outlet   = isset( $openings['outlet_area_sqm'] ) ? max( 0.0, floatval( $openings['outlet_area_sqm'] ) ) : 0.0;
+		$stackh   = isset( $openings['stack_height_m'] ) ? max( 0.0, floatval( $openings['stack_height_m'] ) ) : 0.0;
 
 		$wind_speed = isset( $wind['mean_speed_ms'] ) ? max( 0.0, floatval( $wind['mean_speed_ms'] ) ) : 0.0;
 		$delta_cp   = isset( $wind['pressure_coefficient_diff'] ) ? max( 0.0, floatval( $wind['pressure_coefficient_diff'] ) ) : 0.5;
@@ -211,8 +239,8 @@ class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Inter
 			$a_eff = 1.0 / sqrt( ( 1.0 / ( $inlet * $inlet ) ) + ( 1.0 / ( $outlet * $outlet ) ) );
 		}
 
-		$cd = 0.6; // discharge coefficient.
-		$q_wind = 0.0;
+		$cd      = 0.6; // discharge coefficient.
+		$q_wind  = 0.0;
 		$q_stack = 0.0;
 
 		if ( in_array( $strategy, array( 'cross_flow', 'wind_driven', 'courtyard' ), true ) && $a_eff > 0 ) {
@@ -220,8 +248,8 @@ class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Inter
 		}
 		if ( ( 'stack' === $strategy || 'cross_flow' === $strategy ) && $a_eff > 0 && $stackh > 0 ) {
 			// Tk = average absolute K. Q = Cd*A*sqrt( 2 g h |Ti-To| / Ti ).
-			$ti = $indoor + 273.15;
-			$dt = abs( $indoor - $outdoor );
+			$ti      = $indoor + 273.15;
+			$dt      = abs( $indoor - $outdoor );
 			$q_stack = $cd * $a_eff * sqrt( ( 2.0 * 9.81 * $stackh * $dt ) / max( 1.0, $ti ) );
 		}
 		// Total Q (m³/s) — combine in quadrature when both apply.
@@ -235,28 +263,28 @@ class WP_MCP_AI_Tool_Analyze_Natural_Ventilation implements WP_MCP_AI_Tool_Inter
 		$ach = ( $volume > 0 ) ? ( ( $q_total * 3600.0 ) / $volume ) : 0.0;
 		$lps = $q_total * 1000.0;
 
-		$meets_min_ach   = ( $ach + 1e-6 >= $min_ach );
-		$meets_ashrae    = ( $lps + 1e-6 >= (float) $ashrae['ashrae_lps'] );
+		$meets_min_ach = ( $ach + 1e-6 >= $min_ach );
+		$meets_ashrae  = ( $lps + 1e-6 >= (float) $ashrae['ashrae_lps'] );
 
 		return array(
-			'success'         => true,
-			'country_code'    => $country_code,
-			'space_type'      => $type,
-			'volume_m3'       => round( $volume, 2 ),
-			'min_required_ach' => round( $min_ach, 2 ),
-			'ashrae_lps'      => round( (float) $ashrae['ashrae_lps'], 2 ),
-			'design_strategy' => $strategy,
+			'success'                    => true,
+			'country_code'               => $country_code,
+			'space_type'                 => $type,
+			'volume_m3'                  => round( $volume, 2 ),
+			'min_required_ach'           => round( $min_ach, 2 ),
+			'ashrae_lps'                 => round( (float) $ashrae['ashrae_lps'], 2 ),
+			'design_strategy'            => $strategy,
 			'effective_opening_area_sqm' => round( $a_eff, 3 ),
-			'wind_driven_q_m3s'  => round( $q_wind, 4 ),
-			'stack_driven_q_m3s' => round( $q_stack, 4 ),
-			'total_q_m3s'        => round( $q_total, 4 ),
-			'total_lps'          => round( $lps, 2 ),
-			'achieved_ach'       => round( $ach, 2 ),
-			'meets_min_ach'      => $meets_min_ach,
-			'meets_ashrae_62_1'  => $meets_ashrae,
-			'overall_status'     => ( $meets_min_ach && $meets_ashrae ) ? 'pass' : ( $meets_min_ach || $meets_ashrae ? 'conditional' : 'fail' ),
-			'recommendations'    => $this->recommendations( $country_code, $strategy, $meets_min_ach, $meets_ashrae ),
-			'disclaimer'         => __( 'Analytical / advisory output. Confirm with CFD or measurement for critical spaces.', 'mcp-ai-wpoos-pro' ),
+			'wind_driven_q_m3s'          => round( $q_wind, 4 ),
+			'stack_driven_q_m3s'         => round( $q_stack, 4 ),
+			'total_q_m3s'                => round( $q_total, 4 ),
+			'total_lps'                  => round( $lps, 2 ),
+			'achieved_ach'               => round( $ach, 2 ),
+			'meets_min_ach'              => $meets_min_ach,
+			'meets_ashrae_62_1'          => $meets_ashrae,
+			'overall_status'             => ( $meets_min_ach && $meets_ashrae ) ? 'pass' : ( $meets_min_ach || $meets_ashrae ? 'conditional' : 'fail' ),
+			'recommendations'            => $this->recommendations( $country_code, $strategy, $meets_min_ach, $meets_ashrae ),
+			'disclaimer'                 => __( 'Analytical / advisory output. Confirm with CFD or measurement for critical spaces.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

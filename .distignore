@@ -15,10 +15,12 @@
 .wordpress-org
 
 # Development configuration
+.agents
 .bmad
 .codex
 .context
 .devcontainer
+.zed
 .eslintrc.json
 .eslintignore
 .editorconfig
@@ -32,6 +34,7 @@ MAINTAINER_MAP.md
 # Build tools and dependencies
 node_modules
 vendor-dev
+composer.json
 composer.lock
 package.json
 package-lock.json
@@ -64,6 +67,7 @@ coverage
 
 # Docker
 docker-compose.yml
+docker/
 Dockerfile
 
 # Documentation (keep only readme.txt and essential files)
@@ -76,6 +80,7 @@ docs
 !includes/bundled-skills/
 !includes/bundled-skills/*/
 !includes/bundled-skills/*/SKILL.md
+!includes/bundled-skills/THIRD_PARTY_NOTICES.md
 
 # Other development files
 Makefile
@@ -84,6 +89,7 @@ Gulpfile.js
 
 # Source files (only include built bundles)
 src/
+packages/
 
 # Archives
 *.zip
@@ -135,6 +141,7 @@ svn-*
 addons
 core
 shared
+lib
 
 # Specific exclusions for this plugin
 # Note: test-capability-flags-integration.php moved to bin/ which is already excluded
@@ -168,6 +175,4 @@ assets/js/workers
 !LICENSE
 
 # AI-generated documentation and development files (WordPress.org compliance)
-archive/wordpress-org-submission/
-archive/development-phases/
-archive/production-status/
+archive/

@@ -125,7 +125,20 @@ class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -159,7 +172,7 @@ class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool
 			}
 		}
 
-		$comparisons      = array();
+		$comparisons       = array();
 		$total_actual      = 0.0;
 		$total_benchmark   = 0.0;
 		$total_variance    = 0.0;
@@ -167,26 +180,26 @@ class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool
 		$outlier_threshold = 0.20; // 20% above benchmark = outlier
 
 		foreach ( $opex_cats as $cat ) {
-			$category = sanitize_text_field( $cat['category'] ?? '' );
-			$amount   = (float) ( $cat['amount'] ?? 0 );
-			$actual_psf = $amount / $total_sf;
+			$category      = sanitize_text_field( $cat['category'] ?? '' );
+			$amount        = (float) ( $cat['amount'] ?? 0 );
+			$actual_psf    = $amount / $total_sf;
 			$total_actual += $amount;
 
-			$bench_psf = $bench_map[ $category ] ?? null;
-			$bench_total = ( $bench_psf !== null ) ? $bench_psf * $total_sf : null;
+			$bench_psf   = $bench_map[ $category ] ?? null;
+			$bench_total = ( null !== $bench_psf ) ? $bench_psf * $total_sf : null;
 
-			if ( $bench_psf !== null ) {
+			if ( null !== $bench_psf ) {
 				$total_benchmark += $bench_total;
 			}
 
-			$variance_psf = ( $bench_psf !== null ) ? $actual_psf - $bench_psf : null;
+			$variance_psf = ( null !== $bench_psf ) ? $actual_psf - $bench_psf : null;
 			$variance_pct = ( $bench_psf !== null && $bench_psf > 0 )
 				? ( $actual_psf - $bench_psf ) / $bench_psf
 				: null;
 
 			$is_outlier = ( $variance_pct !== null && $variance_pct > $outlier_threshold );
 
-			if ( $variance_psf !== null ) {
+			if ( null !== $variance_psf ) {
 				$total_variance += $variance_psf * $total_sf;
 			}
 
@@ -201,7 +214,7 @@ class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool
 				'actual_psf'   => round( $actual_psf, 2 ),
 			);
 
-			if ( $bench_psf !== null ) {
+			if ( null !== $bench_psf ) {
 				$row['benchmark_psf']   = round( $bench_psf, 2 );
 				$row['benchmark_total'] = $calc::format_currency( $bench_total );
 				$row['variance_psf']    = round( $variance_psf, 2 );
@@ -231,7 +244,7 @@ class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool
 					'benchmark_opex_psf'   => ( $total_benchmark > 0 ) ? round( $total_benchmark / $total_sf, 2 ) : 'N/A',
 				),
 				'category_detail'   => $comparisons,
-				'savings_potential'  => array(
+				'savings_potential' => array(
 					'annual_savings_if_at_benchmark' => $calc::format_currency( $savings_potential ),
 					'savings_per_sf'                 => round( $savings_potential / $total_sf, 2 ),
 				),

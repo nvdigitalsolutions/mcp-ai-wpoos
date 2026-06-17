@@ -2024,18 +2024,12 @@ class WP_MCP_AI_Tool_Token_Limits {
 		global $wpdb;
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check if migration has already been performed.
 		if ( get_option( 'wp_mcp_ai_tiered_limits_migrated' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Migration has already been performed.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Migration has already been performed.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get all users with usage data.

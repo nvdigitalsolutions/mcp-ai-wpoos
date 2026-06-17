@@ -83,6 +83,7 @@ class WP_MCP_AI_HTML_Formatter {
 		$styles = $this->generate_base_styles( $options );
 		$meta   = $this->generate_meta_tags( $options );
 
+		// phpcs:ignore Squiz.PHP.Heredoc
 		$html = <<<HTML
 <!DOCTYPE html>
 <html lang="en">
@@ -118,6 +119,7 @@ HTML;
 		$page_width  = esc_attr( $options['page_width'] );
 		$text_align  = esc_attr( $options['text_align'] );
 
+		// phpcs:ignore Squiz.PHP.Heredoc
 		return <<<CSS
 		* {
 			margin: 0;

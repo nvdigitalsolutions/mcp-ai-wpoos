@@ -12,14 +12,67 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
+
 /**
  * Coordinates background polling of remote Crawl4AI tasks using WP-Cron.
+ *
+ * Adopts {@see WP_MCP_AI_Inline_Async_Tick_Trait} (Slice 3 of the inline-async-tick
+ * campaign) so that the first poll for a newly-queued Crawl4AI job fires inline on the
+ * shutdown of the request that registered it, rather than waiting up to 30 s for the next
+ * WP-Cron loopback. On hosts where `DISABLE_WP_CRON` is true the cron loopback never
+ * fires at all; the lock prevents the inline kick and a concurrent cron event from both
+ * executing `handle_poll_event()` for the same task simultaneously.
  */
 class WP_MCP_AI_Crawler {
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
+
 	const JOB_STORAGE_PREFIX    = 'wp_mcp_ai_crawl4ai_job_';
 	const CRON_HOOK             = 'wp_mcp_ai_crawl4ai_poll_task';
 	const DEFAULT_POLL_INTERVAL = 30;
 	const DEFAULT_MAX_RUNTIME   = 600;
+
+	/**
+	 * Prefix for the per-task cooperative tick lock.
+	 *
+	 * Combined with a hash of the task_id to form the full lock key passed
+	 * to {@see inline_async_acquire_tick_lock()} /
+	 * {@see inline_async_release_tick_lock()}.
+	 *
+	 * @since 1.2.0
+	 * @var string
+	 */
+	const TICK_LOCK_PREFIX = 'wp_mcp_ai_crawl4ai_poll_lock_';
+
+	/**
+	 * Object-cache group used by the tick-lock entries.
+	 *
+	 * @since 1.2.0
+	 * @var string
+	 */
+	const TICK_LOCK_CACHE_GROUP = 'wp_mcp_ai_crawl4ai';
+
+	/**
+	 * Tick-lock TTL in seconds.
+	 *
+	 * Should exceed the longest realistic single poll round-trip. A single
+	 * Crawl4AI status check via HTTP typically completes in < 5 s; 30 s
+	 * gives generous headroom while releasing the lock quickly if a request
+	 * hangs.
+	 *
+	 * @since 1.2.0
+	 * @var int
+	 */
+	const TICK_LOCK_TTL = 30;
+
+	/**
+	 * Minimum age (in seconds) of a newly-queued job before the REST
+	 * self-heal path triggers an additional inline kick.
+	 *
+	 * @since 1.2.0
+	 * @var int
+	 */
+	const STALE_QUEUED_THRESHOLD_SECONDS = 5;
 
 	/**
 	 * Register action hooks.
@@ -77,6 +130,26 @@ class WP_MCP_AI_Crawler {
 
 		self::save_job( $job );
 		self::schedule_next_poll( $task_id, $job );
+
+		// Inline-async-tick: fire the first poll on the shutdown of the current
+		// request so that fast jobs (those that Crawl4AI processes in < 30 s) are
+		// resolved without waiting for the next WP-Cron loopback.
+		if ( self::inline_async_kick_enabled( $task_id, __CLASS__ ) ) {
+			add_action(
+				'shutdown',
+				function () use ( $task_id ) {
+					self::inline_async_detach_worker_from_client();
+					self::inline_async_run_kick(
+						__CLASS__,
+						$task_id,
+						function () use ( $task_id ) {
+							self::handle_poll_event( $task_id );
+						}
+					);
+				},
+				22
+			);
+		}
 
 		if ( isset( $job_args['initial_result'] ) && is_array( $job_args['initial_result'] ) ) {
 			$initial             = $job_args['initial_result'];
@@ -192,6 +265,11 @@ class WP_MCP_AI_Crawler {
 	/**
 	 * Handle the WP-Cron poll event.
 	 *
+	 * Protected by the cooperative tick lock ({@see WP_MCP_AI_Inline_Async_Tick_Trait})
+	 * so that the inline kick (fired on the shutdown of the request that registered the
+	 * job) and the first scheduled WP-Cron loopback cannot both execute
+	 * `check_remote_task()` concurrently for the same `$task_id`.
+	 *
 	 * @param string $task_id Task identifier.
 	 */
 	public static function handle_poll_event( $task_id ) {
@@ -200,6 +278,29 @@ class WP_MCP_AI_Crawler {
 			return;
 		}
 
+		// Cooperative lock: prevents the inline shutdown kick and the WP-Cron
+		// loopback from polling the same task simultaneously.
+		$lock_key = self::TICK_LOCK_PREFIX . md5( $task_id );
+		if ( ! self::inline_async_acquire_tick_lock( $lock_key, self::TICK_LOCK_CACHE_GROUP, self::TICK_LOCK_TTL ) ) {
+			return;
+		}
+
+		try {
+			self::do_poll_event( $task_id );
+		} finally {
+			self::inline_async_release_tick_lock( $lock_key, self::TICK_LOCK_CACHE_GROUP );
+		}
+	}
+
+	/**
+	 * Inner poll logic — executes while the tick lock is held.
+	 *
+	 * Extracted from {@see handle_poll_event()} so unit tests can call it
+	 * directly without going through the lock machinery.
+	 *
+	 * @param string $task_id Task identifier (already sanitized).
+	 */
+	protected static function do_poll_event( $task_id ) {
 		$job = self::get_job( $task_id );
 		if ( ! $job ) {
 			return;

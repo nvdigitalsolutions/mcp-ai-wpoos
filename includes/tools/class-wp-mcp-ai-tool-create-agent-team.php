@@ -109,6 +109,13 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -118,9 +125,9 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate task_type.
 		if ( empty( $arguments['task_type'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Task type is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Task type is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -130,9 +137,9 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Get orchestrator service.
 		if ( ! class_exists( 'WP_MCP_AI_Agent_Team_Orchestrator' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent orchestration system not available.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent orchestration system not available.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -148,10 +155,10 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 		$team = $orchestrator->compose_team( $task_requirements );
 
 		if ( is_wp_error( $team ) ) {
-			return array(
-				'success' => false,
-				'message' => $team->get_error_message(),
-				'code'    => $team->get_error_code(),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$team->get_error_message(),
+				array( 'code' => $team->get_error_code() )
 			);
 		}
 

@@ -72,31 +72,52 @@ class WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer implements WP_MCP_AI_Tool_Interfac
 					'description' => __( 'Subject property type.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'office', 'retail', 'industrial', 'multifamily', 'hotel', 'other' ),
 				),
-				'subject_sf'           => array(
+				'subject_sf'            => array(
 					'type'        => 'number',
 					'description' => __( 'Subject property square footage.', 'mcp-ai-wpoos-pro' ),
 				),
-				'subject_noi'          => array(
+				'subject_noi'           => array(
 					'type'        => 'number',
 					'description' => __( 'Subject property annual NOI.', 'mcp-ai-wpoos-pro' ),
 				),
-				'subject_price'        => array(
+				'subject_price'         => array(
 					'type'        => 'number',
 					'description' => __( 'Subject property price or value.', 'mcp-ai-wpoos-pro' ),
 				),
-				'comparables'          => array(
+				'comparables'           => array(
 					'type'        => 'array',
 					'description' => __( 'Array of comparable properties.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'name'           => array( 'type' => 'string', 'description' => __( 'Comp name/address.', 'mcp-ai-wpoos-pro' ) ),
-							'price'          => array( 'type' => 'number', 'description' => __( 'Sale price.', 'mcp-ai-wpoos-pro' ) ),
-							'sf'             => array( 'type' => 'number', 'description' => __( 'Square footage.', 'mcp-ai-wpoos-pro' ) ),
-							'noi'            => array( 'type' => 'number', 'description' => __( 'Annual NOI.', 'mcp-ai-wpoos-pro' ) ),
-							'cap_rate'       => array( 'type' => 'number', 'description' => __( 'Cap rate as decimal.', 'mcp-ai-wpoos-pro' ) ),
-							'sale_date'      => array( 'type' => 'string', 'description' => __( 'Sale date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ) ),
-							'distance_miles' => array( 'type' => 'number', 'description' => __( 'Distance from subject in miles.', 'mcp-ai-wpoos-pro' ) ),
+							'name'           => array(
+								'type'        => 'string',
+								'description' => __( 'Comp name/address.', 'mcp-ai-wpoos-pro' ),
+							),
+							'price'          => array(
+								'type'        => 'number',
+								'description' => __( 'Sale price.', 'mcp-ai-wpoos-pro' ),
+							),
+							'sf'             => array(
+								'type'        => 'number',
+								'description' => __( 'Square footage.', 'mcp-ai-wpoos-pro' ),
+							),
+							'noi'            => array(
+								'type'        => 'number',
+								'description' => __( 'Annual NOI.', 'mcp-ai-wpoos-pro' ),
+							),
+							'cap_rate'       => array(
+								'type'        => 'number',
+								'description' => __( 'Cap rate as decimal.', 'mcp-ai-wpoos-pro' ),
+							),
+							'sale_date'      => array(
+								'type'        => 'string',
+								'description' => __( 'Sale date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+							),
+							'distance_miles' => array(
+								'type'        => 'number',
+								'description' => __( 'Distance from subject in miles.', 'mcp-ai-wpoos-pro' ),
+							),
 						),
 					),
 				),
@@ -113,7 +134,20 @@ class WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -142,10 +176,10 @@ class WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer implements WP_MCP_AI_Tool_Interfac
 		$subject_noi_psf  = $subject_noi / $subject_sf;
 
 		// Process comparables.
-		$comp_details  = array();
-		$cap_rates     = array();
-		$prices_psf    = array();
-		$noi_psf_arr   = array();
+		$comp_details = array();
+		$cap_rates    = array();
+		$prices_psf   = array();
+		$noi_psf_arr  = array();
 
 		foreach ( $comps_raw as $comp ) {
 			$c_name     = sanitize_text_field( $comp['name'] ?? 'Unknown' );
@@ -168,8 +202,8 @@ class WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer implements WP_MCP_AI_Tool_Interfac
 			$c_psf     = $c_price / $c_sf;
 			$c_noi_psf = ( $c_noi > 0 ) ? $c_noi / $c_sf : 0.0;
 
-			$cap_rates[]   = $c_cap;
-			$prices_psf[]  = $c_psf;
+			$cap_rates[]  = $c_cap;
+			$prices_psf[] = $c_psf;
 			if ( $c_noi_psf > 0 ) {
 				$noi_psf_arr[] = $c_noi_psf;
 			}
@@ -293,9 +327,9 @@ class WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer implements WP_MCP_AI_Tool_Interfac
 
 		// Recency (up to 30 pts).
 		if ( ! empty( $sale_date ) ) {
-			$sale_ts   = strtotime( $sale_date );
-			$now_ts    = time();
-			$months    = ( $sale_ts > 0 ) ? ( $now_ts - $sale_ts ) / ( 30 * DAY_IN_SECONDS ) : 999;
+			$sale_ts = strtotime( $sale_date );
+			$now_ts  = time();
+			$months  = ( $sale_ts > 0 ) ? ( $now_ts - $sale_ts ) / ( 30 * DAY_IN_SECONDS ) : 999;
 
 			if ( $months <= 3 ) {
 				$score += 30;
@@ -330,7 +364,7 @@ class WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer implements WP_MCP_AI_Tool_Interfac
 		sort( $values );
 		$count = count( $values );
 		$mid   = (int) floor( $count / 2 );
-		if ( $count % 2 === 0 ) {
+		if ( 0 === $count % 2 ) {
 			return ( $values[ $mid - 1 ] + $values[ $mid ] ) / 2;
 		}
 		return $values[ $mid ];

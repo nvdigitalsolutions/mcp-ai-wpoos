@@ -205,6 +205,10 @@ var PERCENTAGE = NUMBER + "%";
 function call(...args) {
   return "\\(\\s*(" + args.join(")\\s*,\\s*(") + ")\\s*\\)";
 }
+var MODERN_VALUE = "(?:none|[-+]?\\d*\\.?\\d+(?:%|deg|rad|grad|turn)?)";
+function modernColorCall(name) {
+  return new RegExp(name + "\\(\\s*(" + MODERN_VALUE + ")\\s+(" + MODERN_VALUE + ")\\s+(" + MODERN_VALUE + ")(?:\\s*\\/\\s*(" + MODERN_VALUE + "))?\\s*\\)");
+}
 function getMatchers() {
   const cachedMatchers = {
     rgb: undefined,
@@ -215,7 +219,12 @@ function getMatchers() {
     hex4: undefined,
     hex5: undefined,
     hex6: undefined,
-    hex8: undefined
+    hex8: undefined,
+    oklch: undefined,
+    oklab: undefined,
+    lab: undefined,
+    lch: undefined,
+    hwb: undefined
   };
   if (cachedMatchers.rgb === undefined) {
     cachedMatchers.rgb = new RegExp("rgb" + call(NUMBER, NUMBER, NUMBER));
@@ -226,6 +235,11 @@ function getMatchers() {
     cachedMatchers.hex4 = /^#([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})$/;
     cachedMatchers.hex6 = /^#([0-9a-fA-F]{6})$/;
     cachedMatchers.hex8 = /^#([0-9a-fA-F]{8})$/;
+    cachedMatchers.oklch = modernColorCall("oklch");
+    cachedMatchers.oklab = modernColorCall("oklab");
+    cachedMatchers.lab = modernColorCall("lab");
+    cachedMatchers.lch = modernColorCall("lch");
+    cachedMatchers.hwb = modernColorCall("hwb");
   }
   return cachedMatchers;
 }
@@ -288,6 +302,96 @@ function parsePercentage(str) {
     return 1;
   }
   return int / 100;
+}
+function parseModernComponent(str, percentScale) {
+  if (str === "none")
+    return 0;
+  if (str.endsWith("%")) {
+    return Number.parseFloat(str) / 100 * percentScale;
+  }
+  return Number.parseFloat(str);
+}
+function parseHueAngle(str) {
+  if (str === "none")
+    return 0;
+  if (str.endsWith("rad")) {
+    return Number.parseFloat(str) * 180 / Math.PI;
+  }
+  if (str.endsWith("grad"))
+    return Number.parseFloat(str) * 0.9;
+  if (str.endsWith("turn"))
+    return Number.parseFloat(str) * 360;
+  return Number.parseFloat(str);
+}
+function parseModernAlpha(str) {
+  if (str === undefined || str === "none")
+    return 1;
+  if (str.endsWith("%")) {
+    return Math.max(0, Math.min(1, Number.parseFloat(str) / 100));
+  }
+  return Math.max(0, Math.min(1, Number.parseFloat(str)));
+}
+function linearToSrgb(c) {
+  if (c <= 0.0031308)
+    return 12.92 * c;
+  return 1.055 * c ** (1 / 2.4) - 0.055;
+}
+function clamp01(v) {
+  return Math.max(0, Math.min(1, v));
+}
+function rgbFloatToInt(r, g, b, alpha) {
+  const ri = Math.round(clamp01(r) * 255);
+  const gi = Math.round(clamp01(g) * 255);
+  const bi = Math.round(clamp01(b) * 255);
+  const ai = Math.round(clamp01(alpha) * 255);
+  return (ri << 24 | gi << 16 | bi << 8 | ai) >>> 0;
+}
+function oklabToSrgb(L, a, b) {
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.291485548 * b;
+  const l = l_ * l_ * l_;
+  const m = m_ * m_ * m_;
+  const s = s_ * s_ * s_;
+  const rLin = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  const gLin = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+  const bLin = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
+  return [linearToSrgb(rLin), linearToSrgb(gLin), linearToSrgb(bLin)];
+}
+function labToSrgb(L, a, b) {
+  const epsilon = 216 / 24389;
+  const kappa = 24389 / 27;
+  const Xn = 0.95047;
+  const Yn = 1;
+  const Zn = 1.08883;
+  const fy = (L + 16) / 116;
+  const fx = a / 500 + fy;
+  const fz = fy - b / 200;
+  const fx3 = fx * fx * fx;
+  const fz3 = fz * fz * fz;
+  const xr = fx3 > epsilon ? fx3 : (116 * fx - 16) / kappa;
+  const yr = L > kappa * epsilon ? ((L + 16) / 116) ** 3 : L / kappa;
+  const zr = fz3 > epsilon ? fz3 : (116 * fz - 16) / kappa;
+  const X = xr * Xn;
+  const Y = yr * Yn;
+  const Z = zr * Zn;
+  const rLin = 3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z;
+  const gLin = -0.969266 * X + 1.8760108 * Y + 0.041556 * Z;
+  const bLin = 0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z;
+  return [linearToSrgb(rLin), linearToSrgb(gLin), linearToSrgb(bLin)];
+}
+function hwbToSrgb(h, w, bk) {
+  if (w + bk >= 1) {
+    const gray = w / (w + bk);
+    return [gray, gray, gray];
+  }
+  const q = 1;
+  const p = 0;
+  const r = hue2rgb(p, q, h + 1 / 3);
+  const g = hue2rgb(p, q, h);
+  const bl = hue2rgb(p, q, h - 1 / 3);
+  const factor = 1 - w - bk;
+  return [r * factor + w, g * factor + w, bl * factor + w];
 }
 var colorNames = {
   transparent: 0,
@@ -487,6 +591,58 @@ function normalizeColor(color) {
       return (hslToRgb(parse360(match[1]), parsePercentage(match[2]), parsePercentage(match[3])) | parse1(match[4])) >>> 0;
     }
   }
+  if (matchers.oklch) {
+    if (match = matchers.oklch.exec(color)) {
+      const L = parseModernComponent(match[1], 1);
+      const C = parseModernComponent(match[2], 0.4);
+      const H = parseHueAngle(match[3]);
+      const alpha = parseModernAlpha(match[4]);
+      const hRad = H * Math.PI / 180;
+      const [r, g, b] = oklabToSrgb(L, C * Math.cos(hRad), C * Math.sin(hRad));
+      return rgbFloatToInt(r, g, b, alpha);
+    }
+  }
+  if (matchers.oklab) {
+    if (match = matchers.oklab.exec(color)) {
+      const L = parseModernComponent(match[1], 1);
+      const a = parseModernComponent(match[2], 0.4);
+      const b = parseModernComponent(match[3], 0.4);
+      const alpha = parseModernAlpha(match[4]);
+      const [r, g, bl] = oklabToSrgb(L, a, b);
+      return rgbFloatToInt(r, g, bl, alpha);
+    }
+  }
+  if (matchers.lab) {
+    if (match = matchers.lab.exec(color)) {
+      const L = parseModernComponent(match[1], 100);
+      const a = parseModernComponent(match[2], 125);
+      const b = parseModernComponent(match[3], 125);
+      const alpha = parseModernAlpha(match[4]);
+      const [r, g, bl] = labToSrgb(L, a, b);
+      return rgbFloatToInt(r, g, bl, alpha);
+    }
+  }
+  if (matchers.lch) {
+    if (match = matchers.lch.exec(color)) {
+      const L = parseModernComponent(match[1], 100);
+      const C = parseModernComponent(match[2], 150);
+      const H = parseHueAngle(match[3]);
+      const alpha = parseModernAlpha(match[4]);
+      const hRad = H * Math.PI / 180;
+      const [r, g, bl] = labToSrgb(L, C * Math.cos(hRad), C * Math.sin(hRad));
+      return rgbFloatToInt(r, g, bl, alpha);
+    }
+  }
+  if (matchers.hwb) {
+    if (match = matchers.hwb.exec(color)) {
+      const H = parseHueAngle(match[1]);
+      const W = parseModernComponent(match[2], 1);
+      const B = parseModernComponent(match[3], 1);
+      const alpha = parseModernAlpha(match[4]);
+      const [r, g, bl] = hwbToSrgb(H / 360, W, B);
+      return rgbFloatToInt(r, g, bl, alpha);
+    }
+  }
   throw new Error(`invalid color string ${color} provided`);
 }
 function processColor(color) {
@@ -539,6 +695,7 @@ var validCodecs = [
   "h265",
   "vp8",
   "vp9",
+  "av1",
   "mp3",
   "aac",
   "wav",

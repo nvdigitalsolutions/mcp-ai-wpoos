@@ -1,0 +1,14 @@
+{
+  "name": "nvoos-graphify",
+  "version": "1.0.0-dev",
+  "description": "Visual knowledge graph for WordPress — maps your content into an interactive, navigable graph. Zero API keys required.",
+  "private": true,
+  "scripts": {
+    "postinstall": "node scripts/copy-vendor.js",
+    "install:vendor": "node scripts/copy-vendor.js"
+  },
+  "dependencies": {
+    "cytoscape": "^3.28.1",
+    "cytoscape-fcose": "^2.2.0"
+  }
+}

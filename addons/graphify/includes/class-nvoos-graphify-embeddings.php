@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 0.6.0
  */
+// phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid,Squiz.Commenting.ClassComment.Missing -- NV_oOS intentional branding; consistent with all other addon classes.
 class NV_oOS_Graphify_Embeddings {
 
 	/**
@@ -39,9 +40,9 @@ class NV_oOS_Graphify_Embeddings {
 	 *
 	 * @since 0.6.0
 	 *
-	 * @param string $node_id Node identifier.
+	 * @param string  $node_id Node identifier.
 	 * @param float[] $vector  Float array (embedding vector).
-	 * @param string $model   Model identifier.
+	 * @param string  $model   Model identifier.
 	 * @return bool True on success.
 	 */
 	public static function store( $node_id, array $vector, $model = self::DEFAULT_MODEL ) {
@@ -59,12 +60,14 @@ class NV_oOS_Graphify_Embeddings {
 			$binary .= pack( 'f', (float) $v );
 		}
 
-		$result = NV_oOS_Graphify_DB::upsert_embedding( array(
-			'node_id' => $node_id,
-			'model'   => $model,
-			'dim'     => $dim,
-			'vector'  => $binary,
-		) );
+		$result = NV_oOS_Graphify_DB::upsert_embedding(
+			array(
+				'node_id' => $node_id,
+				'model'   => $model,
+				'dim'     => $dim,
+				'vector'  => $binary,
+			)
+		);
 
 		return false !== $result;
 	}
@@ -98,7 +101,7 @@ class NV_oOS_Graphify_Embeddings {
 	 */
 	public static function cosine_similarity( array $a, array $b ) {
 		$len = count( $a );
-		if ( $len !== count( $b ) || 0 === $len ) {
+		if ( count( $b ) !== $len || 0 === $len ) {
 			return 0.0;
 		}
 
@@ -107,9 +110,9 @@ class NV_oOS_Graphify_Embeddings {
 		$norm_b = 0.0;
 
 		for ( $i = 0; $i < $len; $i++ ) {
-			$ai     = (float) $a[ $i ];
-			$bi     = (float) $b[ $i ];
-			$dot   += $ai * $bi;
+			$ai      = (float) $a[ $i ];
+			$bi      = (float) $b[ $i ];
+			$dot    += $ai * $bi;
 			$norm_a += $ai * $ai;
 			$norm_b += $bi * $bi;
 		}
@@ -151,13 +154,19 @@ class NV_oOS_Graphify_Embeddings {
 			if ( $score < self::SIMILARITY_THRESHOLD ) {
 				continue;
 			}
-			$scores[] = array( 'node_id' => $row->node_id, 'score' => $score );
+			$scores[] = array(
+				'node_id' => $row->node_id,
+				'score'   => $score,
+			);
 		}
 
 		// Sort descending.
-		usort( $scores, function( $a, $b ) {
-			return $b['score'] <=> $a['score'];
-		} );
+		usort(
+			$scores,
+			function ( $a, $b ) {
+				return $b['score'] <=> $a['score'];
+			}
+		);
 
 		return array_slice( $scores, 0, absint( $limit ) );
 	}
@@ -196,6 +205,15 @@ class NV_oOS_Graphify_Embeddings {
 		// Fallback: OpenAI embeddings API.
 		if ( null === $vector ) {
 			$api_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+			// NV oOS stores the OpenAI key inside the `wp_mcp_ai_settings` array,
+			// not as a top-level option, so check that location before falling back
+			// to the legacy top-level option name.
+			if ( empty( $api_key ) ) {
+				$nvoos_settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+				if ( is_array( $nvoos_settings ) && ! empty( $nvoos_settings['openai_api_key'] ) ) {
+					$api_key = sanitize_text_field( $nvoos_settings['openai_api_key'] );
+				}
+			}
 			if ( empty( $api_key ) && function_exists( 'wp_mcp_ai_get_option' ) ) {
 				$api_key = wp_mcp_ai_get_option( 'openai_api_key', '' );
 			}
@@ -211,10 +229,12 @@ class NV_oOS_Graphify_Embeddings {
 						'Authorization' => 'Bearer ' . $api_key,
 						'Content-Type'  => 'application/json',
 					),
-					'body'    => wp_json_encode( array(
-						'model' => $model,
-						'input' => $text,
-					) ),
+					'body'    => wp_json_encode(
+						array(
+							'model' => $model,
+							'input' => $text,
+						)
+					),
 				)
 			);
 
@@ -249,23 +269,32 @@ class NV_oOS_Graphify_Embeddings {
 	public static function reindex_all( $model = self::DEFAULT_MODEL, $limit = 50 ) {
 		$settings = NV_oOS_Graphify::get_settings();
 		if ( empty( $settings['embeddings_enabled'] ) ) {
-			return array( 'processed' => 0, 'remaining' => false );
+			return array(
+				'processed' => 0,
+				'remaining' => false,
+			);
 		}
 
-		$offset  = (int) get_option( 'nvoos_graphify_reindex_offset', 0 );
-		$nodes   = NV_oOS_Graphify_DB::list_nodes( array(
-			'order_by' => 'updated_at',
-			'order'    => 'ASC',
-			'limit'    => $limit,
-			'offset'   => $offset,
-		) );
+		$offset = (int) get_option( 'nvoos_graphify_reindex_offset', 0 );
+		$nodes  = NV_oOS_Graphify_DB::list_nodes(
+			array(
+				'order_by' => 'updated_at',
+				'order'    => 'ASC',
+				'limit'    => $limit,
+				'offset'   => $offset,
+			)
+		);
 
 		if ( empty( $nodes ) ) {
 			delete_option( 'nvoos_graphify_reindex_offset' );
-			return array( 'processed' => 0, 'remaining' => false );
+			return array(
+				'processed' => 0,
+				'remaining' => false,
+			);
 		}
 
 		$processed = 0;
+		$failed    = 0;
 		foreach ( $nodes as $node ) {
 			$text = $node->label;
 			if ( ! empty( $node->properties ) ) {
@@ -274,19 +303,28 @@ class NV_oOS_Graphify_Embeddings {
 					$text .= ' ' . $props['excerpt'];
 				}
 			}
-			self::generate_and_store( $node->node_id, $text );
-			$processed++;
+			$ok = self::generate_and_store( $node->node_id, $text );
+			if ( $ok ) {
+				++$processed;
+			} else {
+				++$failed;
+			}
 		}
 
-		$remaining = count( $nodes ) >= $limit;
+		$total_seen = $processed + $failed;
+		$remaining  = $total_seen >= $limit;
 		if ( $remaining ) {
-			update_option( 'nvoos_graphify_reindex_offset', $offset + $processed );
+			update_option( 'nvoos_graphify_reindex_offset', $offset + $total_seen );
 			wp_schedule_single_event( time() + 60, 'nvoos_graphify_cron_reindex_embeddings' );
 		} else {
 			delete_option( 'nvoos_graphify_reindex_offset' );
 		}
 
-		return array( 'processed' => $processed, 'remaining' => $remaining );
+		return array(
+			'processed' => $processed,
+			'failed'    => $failed,
+			'remaining' => $remaining,
+		);
 	}
 
 	/**
@@ -301,8 +339,8 @@ class NV_oOS_Graphify_Embeddings {
 		if ( empty( $binary ) ) {
 			return null;
 		}
-		$len     = strlen( $binary );
-		$count   = (int) ( $len / 4 );
+		$len      = strlen( $binary );
+		$count    = (int) ( $len / 4 );
 		$unpacked = unpack( 'f' . $count, $binary );
 		if ( false === $unpacked || empty( $unpacked ) ) {
 			return null;

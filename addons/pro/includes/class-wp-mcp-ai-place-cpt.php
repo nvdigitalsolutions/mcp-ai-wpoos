@@ -72,7 +72,7 @@ class WP_MCP_AI_Place_CPT {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$post_type     = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		$is_place_page = ( $post_type === self::POST_TYPE );
+		$is_place_page = ( self::POST_TYPE === $post_type );
 
 		if ( ! $is_place_page ) {
 			return;

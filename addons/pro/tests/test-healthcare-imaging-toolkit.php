@@ -85,7 +85,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// DICOM metadata
+	// DICOM metadata.
 	// =========================================================================
 
 	/**
@@ -120,7 +120,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract() should return WP_Error when file does not exist.
+	 * Extract() should return WP_Error when file does not exist.
 	 */
 	public function test_dicom_extract_returns_error_for_missing_file() {
 		$result = WP_MCP_AI_DICOM_Metadata::extract( '/nonexistent/path/file.dcm' );
@@ -128,7 +128,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract() should correctly read UIDs that appear after an undefined-length
+	 * Extract() should correctly read UIDs that appear after an undefined-length
 	 * SQ sequence element in the DICOM dataset.
 	 *
 	 * This is a regression test for the bug where the parser issued `break` on
@@ -139,12 +139,12 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 		// Build a minimal synthetic DICOM file (Explicit Little Endian).
 		//
 		// Layout:
-		//   132-byte preamble+magic
-		//   (0002,0010) TransferSyntaxUID = "1.2.840.10008.1.2.1" (Explicit LE)
-		//   (0008,0018) SOPInstanceUID    = "1.2.3.4.5.sop.test"
-		//   (0008,1110) SQ undefined length — the undefined-length element under test
-		//       FFFE,E0DD (empty sequence body, immediately terminated)
-		//   (0020,000D) StudyInstanceUID  = "1.2.3.4.5.study.test"
+		// 132-byte preamble+magic.
+		// (0002,0010) TransferSyntaxUID = "1.2.840.10008.1.2.1" (Explicit LE)
+		// (0008,0018) SOPInstanceUID    = "1.2.3.4.5.sop.test"
+		// (0008,1110) SQ undefined length — the undefined-length element under test
+		// FFFE,E0DD (empty sequence body, immediately terminated).
+		// (0020,000D) StudyInstanceUID  = "1.2.3.4.5.study.test".
 
 		// Preamble: 128 zero bytes + 'DICM'.
 		$dcm = str_repeat( "\x00", 128 ) . 'DICM';
@@ -185,7 +185,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract() should read UIDs even when the undefined-length SQ contains
+	 * Extract() should read UIDs even when the undefined-length SQ contains
 	 * a defined-length item before the sequence delimiter.
 	 */
 	public function test_dicom_extract_reads_uids_after_sequence_with_items() {
@@ -202,7 +202,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 		$dcm .= pack( 'vv', 0x0008, 0x1115 ) . 'SQ' . "\x00\x00" . pack( 'V', 0xFFFFFFFF );
 		// Item: FFFE,E000 with a defined length of 10 bytes of dummy data.
 		$item_data = str_repeat( "\x00", 10 );
-		$dcm .= pack( 'vv', 0xFFFE, 0xE000 ) . pack( 'V', strlen( $item_data ) ) . $item_data;
+		$dcm      .= pack( 'vv', 0xFFFE, 0xE000 ) . pack( 'V', strlen( $item_data ) ) . $item_data;
 		// Sequence Delimitation Item.
 		$dcm .= pack( 'vv', 0xFFFE, 0xE0DD ) . pack( 'V', 0x00000000 );
 
@@ -222,7 +222,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Capabilities
+	// Capabilities.
 	// =========================================================================
 
 	/**
@@ -237,7 +237,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * current_user_can helper maps action names to capabilities.
+	 * Current_user_can helper maps action names to capabilities.
 	 */
 	public function test_capabilities_helper_view_action() {
 		WP_MCP_AI_Imaging_Capabilities::add_caps();
@@ -252,7 +252,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Audit log
+	// Audit log.
 	// =========================================================================
 
 	/**
@@ -279,7 +279,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// Study CPT
+	// Study CPT.
 	// =========================================================================
 
 	/**
@@ -306,7 +306,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_by_uid should return the correct post.
+	 * Get_by_uid should return the correct post.
 	 */
 	public function test_study_cpt_get_by_uid() {
 		$uid = '1.2.3.4.5.findme';
@@ -323,7 +323,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * add_series should append a series to the study.
+	 * Add_series should append a series to the study.
 	 */
 	public function test_study_cpt_add_series() {
 		$post_id = WP_MCP_AI_Imaging_Study_CPT::create(
@@ -339,20 +339,23 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 				'series_instance_uid' => '1.2.3.4.5.6.series1',
 				'modality'            => 'PT',
 				'instances'           => array(
-					array( 'sop_instance_uid' => '1.2.3.4.5.6.7.inst1', 'file_path' => '/tmp/test.dcm' ),
+					array(
+						'sop_instance_uid' => '1.2.3.4.5.6.7.inst1',
+						'file_path'        => '/tmp/test.dcm',
+					),
 				),
 			)
 		);
 
 		$series_json = get_post_meta( $post_id, '_imaging_series', true );
-		$series = json_decode( $series_json, true );
+		$series      = json_decode( $series_json, true );
 		$this->assertIsArray( $series );
 		$this->assertCount( 1, $series );
 		$this->assertEquals( '1.2.3.4.5.6.series1', $series[0]['series_instance_uid'] );
 	}
 
 	// =========================================================================
-	// manage_imaging_studies tool
+	// manage_imaging_studies tool.
 	// =========================================================================
 
 	/**
@@ -426,7 +429,12 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	 */
 	public function test_tool_get_returns_error_for_unknown_study() {
 		$tool   = new WP_MCP_AI_Tool_Manage_Imaging_Studies();
-		$result = $tool->execute( array( 'action' => 'get', 'study_uid' => 'NONEXISTENT.UID' ) );
+		$result = $tool->execute(
+			array(
+				'action'    => 'get',
+				'study_uid' => 'NONEXISTENT.UID',
+			)
+		);
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertEquals( 'imaging_not_found', $result->get_error_code() );
 	}
@@ -445,7 +453,12 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 		);
 
 		$tool   = new WP_MCP_AI_Tool_Manage_Imaging_Studies();
-		$result = $tool->execute( array( 'action' => 'get', 'study_uid' => $uid ) );
+		$result = $tool->execute(
+			array(
+				'action'    => 'get',
+				'study_uid' => $uid,
+			)
+		);
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( $uid, $result['study_uid'] );
@@ -471,12 +484,24 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 			array(
 				'series_instance_uid' => '1.2.3.summarize.series1',
 				'modality'            => 'PT',
-				'instances'           => array_fill( 0, 60, array( 'sop_instance_uid' => uniqid( '', true ), 'file_path' => '/tmp/fake.dcm' ) ),
+				'instances'           => array_fill(
+					0,
+					60,
+					array(
+						'sop_instance_uid' => uniqid( '', true ),
+						'file_path'        => '/tmp/fake.dcm',
+					)
+				),
 			)
 		);
 
 		$tool   = new WP_MCP_AI_Tool_Manage_Imaging_Studies();
-		$result = $tool->execute( array( 'action' => 'summarize', 'study_uid' => $uid ) );
+		$result = $tool->execute(
+			array(
+				'action'    => 'summarize',
+				'study_uid' => $uid,
+			)
+		);
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'summary', $result );
@@ -509,11 +534,11 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// interpret_imaging_study tool
+	// interpret_imaging_study tool.
 	// =========================================================================
 
 	/**
-	 * interpret_imaging_study tool slug should be 'interpret_imaging_study'.
+	 * Interpret_imaging_study tool slug should be 'interpret_imaging_study'.
 	 */
 	public function test_interpret_tool_slug() {
 		$tool = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
@@ -521,7 +546,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * interpret_imaging_study requires view_medical_imaging capability.
+	 * Interpret_imaging_study requires view_medical_imaging capability.
 	 */
 	public function test_interpret_tool_requires_capability() {
 		$subscriber = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -537,7 +562,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * interpret_imaging_study returns error when study_uid is omitted.
+	 * Interpret_imaging_study returns error when study_uid is omitted.
 	 */
 	public function test_interpret_tool_requires_study_uid() {
 		$tool   = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
@@ -548,7 +573,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * interpret_imaging_study returns not-found for an unknown study UID.
+	 * Interpret_imaging_study returns not-found for an unknown study UID.
 	 */
 	public function test_interpret_tool_returns_error_for_unknown_study() {
 		$tool   = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
@@ -559,7 +584,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * interpret_imaging_study returns no-provider error when no AI keys are configured.
+	 * Interpret_imaging_study returns no-provider error when no AI keys are configured.
 	 */
 	public function test_interpret_tool_returns_error_without_ai_provider() {
 		$uid = '1.2.3.interpret.test';
@@ -572,7 +597,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 		);
 
 		// Ensure no AI keys are configured.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings       = get_option( 'wp_mcp_ai_settings', array() );
 		$orig_openai    = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
 		$orig_gemini    = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 		$orig_anthropic = isset( $settings['anthropic_api_key'] ) ? $settings['anthropic_api_key'] : '';
@@ -596,7 +621,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_all() should return all studies ordered by date DESC.
+	 * Get_all() should return all studies ordered by date DESC.
 	 *
 	 * This validates that the study browser shows every uploaded study, not just
 	 * the most recent one.
@@ -639,7 +664,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_by_uid should retrieve the correct study when two studies exist.
+	 * Get_by_uid should retrieve the correct study when two studies exist.
 	 *
 	 * Verifies study lookup works even when multiple studies share the same
 	 * post type (guards against the upload batch routing bug).
@@ -670,7 +695,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * interpret_imaging_study parameter schema has the expected required fields.
+	 * Interpret_imaging_study parameter schema has the expected required fields.
 	 */
 	public function test_interpret_tool_parameter_schema() {
 		$tool   = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
@@ -685,7 +710,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * interpret_imaging_study capability flags include expected values.
+	 * Interpret_imaging_study capability flags include expected values.
 	 */
 	public function test_interpret_tool_capability_flags() {
 		$tool  = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
@@ -696,11 +721,11 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
-	// sanitize_uid_for_path — dot-preservation regression tests
+	// sanitize_uid_for_path — dot-preservation regression tests.
 	// =========================================================================
 
 	/**
-	 * sanitize_uid_for_path must preserve every dot in a standard DICOM UID.
+	 * Sanitize_uid_for_path must preserve every dot in a standard DICOM UID.
 	 *
 	 * This is the core regression guard for the "only 1 study showing" bug:
 	 * if dots were stripped by sanitize_file_name() (via a third-party filter),
@@ -721,7 +746,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * sanitize_uid_for_path must produce distinct output for UIDs that differ
+	 * Sanitize_uid_for_path must produce distinct output for UIDs that differ
 	 * only in where the dots appear ("dot-position collision" scenario).
 	 *
 	 * Without dot-preservation, "1.2.3.4.56" and "1.2.3.4.5.6" both reduce to
@@ -743,7 +768,7 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * sanitize_uid_for_path replaces characters outside [0-9.] with underscores
+	 * Sanitize_uid_for_path replaces characters outside [0-9.] with underscores
 	 * rather than silently dropping them.
 	 *
 	 * A malformed or non-standard UID should still produce a safe path component;

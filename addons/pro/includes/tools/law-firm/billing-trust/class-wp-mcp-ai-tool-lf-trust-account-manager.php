@@ -22,6 +22,11 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -30,32 +35,106 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_trust_account_manager'; }
-	public function get_name() { return __( 'Trust Account Manager', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Manages client trust (IOLTA) account deposits, disbursements, balance inquiries, and ledger retrieval.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_trust_account_manager'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Trust Account Manager', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Manages client trust (IOLTA) account deposits, disbursements, balance inquiries, and ledger retrieval.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'       => array( 'type' => 'string', 'description' => __( 'Trust account action.', 'mcp-ai-wpoos-pro' ), 'enum' => array( 'deposit', 'disburse', 'get_balance', 'get_ledger' ) ),
-				'matter_id'    => array( 'type' => 'integer', 'description' => __( 'Matter ID.', 'mcp-ai-wpoos-pro' ) ),
-				'client_id'    => array( 'type' => 'integer', 'description' => __( 'Client ID.', 'mcp-ai-wpoos-pro' ) ),
-				'amount'       => array( 'type' => 'number', 'description' => __( 'Transaction amount.', 'mcp-ai-wpoos-pro' ) ),
-				'description'  => array( 'type' => 'string', 'description' => __( 'Transaction description.', 'mcp-ai-wpoos-pro' ) ),
-				'check_number' => array( 'type' => 'string', 'description' => __( 'Check number if applicable.', 'mcp-ai-wpoos-pro' ) ),
-				'date'         => array( 'type' => 'string', 'description' => __( 'Transaction date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ) ),
+				'action'       => array(
+					'type'        => 'string',
+					'description' => __( 'Trust account action.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'deposit', 'disburse', 'get_balance', 'get_ledger' ),
+				),
+				'matter_id'    => array(
+					'type'        => 'integer',
+					'description' => __( 'Matter ID.', 'mcp-ai-wpoos-pro' ),
+				),
+				'client_id'    => array(
+					'type'        => 'integer',
+					'description' => __( 'Client ID.', 'mcp-ai-wpoos-pro' ),
+				),
+				'amount'       => array(
+					'type'        => 'number',
+					'description' => __( 'Transaction amount.', 'mcp-ai-wpoos-pro' ),
+				),
+				'description'  => array(
+					'type'        => 'string',
+					'description' => __( 'Transaction description.', 'mcp-ai-wpoos-pro' ),
+				),
+				'check_number' => array(
+					'type'        => 'string',
+					'description' => __( 'Check number if applicable.', 'mcp-ai-wpoos-pro' ),
+				),
+				'date'         => array(
+					'type'        => 'string',
+					'description' => __( 'Transaction date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array( 'action', 'matter_id' ),
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'write', 'state-changing' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'write', 'state-changing' ); }
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'manage_options' ) ) {
@@ -92,13 +171,16 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 					}
 				}
 
-				$post_id = wp_insert_post( array(
-					'post_type'    => 'mcp_ai_lf_trust_txn',
-					'post_title'   => sprintf( '%s - %s - $%s', ucfirst( $action ), $date, number_format( $amount, 2 ) ),
-					'post_content' => $description,
-					'post_status'  => 'publish',
-					'post_author'  => $uid,
-				), true );
+				$post_id = wp_insert_post(
+					array(
+						'post_type'    => 'mcp_ai_lf_trust_txn',
+						'post_title'   => sprintf( '%s - %s - $%s', ucfirst( $action ), $date, number_format( $amount, 2 ) ),
+						'post_content' => $description,
+						'post_status'  => 'publish',
+						'post_author'  => $uid,
+					),
+					true
+				);
 
 				if ( is_wp_error( $post_id ) ) {
 					return $post_id;
@@ -116,7 +198,13 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 				return array(
 					'success'    => true,
 					'message'    => sprintf( __( 'Trust %s of $%s recorded. New balance: $%s. ', 'mcp-ai-wpoos-pro' ), $action, number_format( $amount, 2 ), number_format( $new_balance, 2 ) ) . self::DISCLAIMER,
-					'data'       => array( 'transaction_id' => $post_id, 'matter_id' => $matter_id, 'type' => $action, 'amount' => $amount, 'balance' => $new_balance ),
+					'data'       => array(
+						'transaction_id' => $post_id,
+						'matter_id'      => $matter_id,
+						'type'           => $action,
+						'amount'         => $amount,
+						'balance'        => $new_balance,
+					),
 					'disclaimer' => self::DISCLAIMER,
 				);
 
@@ -125,25 +213,35 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 				return array(
 					'success'    => true,
 					'message'    => sprintf( __( 'Trust balance: $%s. ', 'mcp-ai-wpoos-pro' ), number_format( $balance, 2 ) ) . self::DISCLAIMER,
-					'data'       => array( 'matter_id' => $matter_id, 'balance' => $balance ),
+					'data'       => array(
+						'matter_id' => $matter_id,
+						'balance'   => $balance,
+					),
 					'disclaimer' => self::DISCLAIMER,
 				);
 
 			case 'get_ledger':
-				$txns = get_posts( array(
-					'post_type'      => 'mcp_ai_lf_trust_txn',
-					'posts_per_page' => 200,
-					'meta_query'     => array( array( 'key' => '_lf_matter_id', 'value' => $matter_id ) ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-					'orderby'        => 'meta_value',
-					'meta_key'       => '_lf_date', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-					'order'          => 'ASC',
-				) );
+				$txns = get_posts(
+					array(
+						'post_type'      => 'mcp_ai_lf_trust_txn',
+						'posts_per_page' => 200,
+						'meta_query'     => array(
+						array(
+						'key'   => '_lf_matter_id',
+						'value' => $matter_id,
+							),
+						), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					'orderby'            => 'meta_value',
+					'meta_key'           => '_lf_date', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+					'order'              => 'ASC',
+					)
+				);
 
 				$ledger  = array();
 				$running = 0;
 				foreach ( $txns as $txn ) {
-					$type = get_post_meta( $txn->ID, '_lf_txn_type', true );
-					$amt  = (float) get_post_meta( $txn->ID, '_lf_amount', true );
+					$type     = get_post_meta( $txn->ID, '_lf_txn_type', true );
+					$amt      = (float) get_post_meta( $txn->ID, '_lf_amount', true );
 					$running += ( 'deposit' === $type ) ? $amt : -$amt;
 					$ledger[] = array(
 						'id'          => $txn->ID,
@@ -158,7 +256,11 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 				return array(
 					'success'    => true,
 					'message'    => sprintf( __( 'Ledger contains %d transactions. ', 'mcp-ai-wpoos-pro' ), count( $ledger ) ) . self::DISCLAIMER,
-					'data'       => array( 'matter_id' => $matter_id, 'ledger' => $ledger, 'current_balance' => $running ),
+					'data'       => array(
+						'matter_id'       => $matter_id,
+						'ledger'          => $ledger,
+						'current_balance' => $running,
+					),
 					'disclaimer' => self::DISCLAIMER,
 				);
 
@@ -167,17 +269,30 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 		}
 	}
 
+	/**
+	 * Calculate_balance.
+	 *
+	 * @param int $matter_id Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	private function calculate_balance( int $matter_id ): float {
-		$txns = get_posts( array(
-			'post_type'      => 'mcp_ai_lf_trust_txn',
-			'posts_per_page' => -1,
-			'meta_query'     => array( array( 'key' => '_lf_matter_id', 'value' => $matter_id ) ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-		) );
+		$txns = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lf_trust_txn',
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_trust_account_manager', 0, 1000 ) : 1000,
+				'meta_query'     => array(
+					array(
+						'key'   => '_lf_matter_id',
+						'value' => $matter_id,
+					),
+				), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			)
+		);
 
 		$balance = 0;
 		foreach ( $txns as $txn ) {
-			$type = get_post_meta( $txn->ID, '_lf_txn_type', true );
-			$amt  = (float) get_post_meta( $txn->ID, '_lf_amount', true );
+			$type     = get_post_meta( $txn->ID, '_lf_txn_type', true );
+			$amt      = (float) get_post_meta( $txn->ID, '_lf_amount', true );
 			$balance += ( 'deposit' === $type ) ? $amt : -$amt;
 		}
 		return round( $balance, 2 );

@@ -165,6 +165,28 @@ Every class, method, and function **must** have a PHPDoc block:
  */
 ```
 
+### Third-Party Attribution Header (when applicable)
+
+If a file is **derived from**, **heavily inspired by**, or **wraps** an upstream open-source project, add `@link` and `@credit` tags to the file-level docblock so the source of the idea or code is preserved:
+
+```php
+/**
+ * Class summary.
+ *
+ * @link    <upstream URL>
+ * @credit  <upstream project name> by <author> (<license>)
+ * @package WP_MCP_AI
+ */
+```
+
+Use this pattern for:
+
+- Wrappers around vendored libraries (e.g. Strudel, Cytoscape, Konva integration glue).
+- Files that materially derive from an upstream project (e.g. the agent-memory subsystem citing MemPalace).
+- Tool classes that adapt or implement an external protocol or specification.
+
+Do **not** apply this header to trivial utility files that merely call a vendored library — one citation at the top of the wrapper file is enough. The full repo-wide attribution index lives in [`CREDITS.md`](../CREDITS.md) at the repository root.
+
 ## Security Requirements (Always Apply)
 
 ### Input Sanitization
@@ -301,6 +323,29 @@ class WP_MCP_AI_Tool_Example_Tool extends WP_MCP_AI_Tool_Base {
     }
 }
 ```
+
+## Tool Return Envelope (Canonical)
+
+Every tool's `execute()` returns **exactly one of two shapes**. This is the canonical envelope landed by Phase P0 of the [Unix Theory Compliance Proposal](../docs/project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope).
+
+```php
+// SUCCESS — array with success/message/data:
+return array(
+    'success' => true,
+    'message' => __( 'Done.', 'mcp-ai-wpoos' ),  // Translated, human-readable.
+    'data'    => $payload,                        // Serialisable via wp_json_encode().
+);
+
+// FAILURE — ALWAYS WP_Error, never an array with 'success' => false:
+return new WP_Error( 'error_code', __( 'Error message.', 'mcp-ai-wpoos' ), $extra_data );
+```
+
+Rules:
+
+- ✅ Success arrays MUST include `success => true` and a translated `message`. `data` is the only pipeable field — keep it `wp_json_encode()`-safe.
+- ✅ Failure MUST use `WP_Error`. The agentic loop normalises `WP_Error` correctly; observability hooks (`wp_mcp_ai_after_tool_execution`, OTel, audit log, token tracking) read `is_wp_error( $result )` to classify outcomes.
+- ❌ DO NOT return `array( 'success' => false, 'message' => ... )` for errors. It is forbidden in new code; the `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (landed in Phase P1) warns on this pattern at default severity 5 — visible under `composer run lint`, silent under `composer run lint:base`.
+- 🛠️ For success shapes, compose `format_success_response( $message, $data )` from [`trait-wp-mcp-ai-tool-envelope.php`](../includes/tools/trait-wp-mcp-ai-tool-envelope.php) — `use WP_MCP_AI_Tool_Envelope;`. Tools that also need the broader chat-response behaviour (`format_chat_response`, `format_collection_response`, `format_empty_result_response`, `ensure_response_message`) should `use WP_MCP_AI_Tool_Chat_Response;` instead — it composes the envelope trait, so `format_success_response()` is identical from either path.
 
 ## Commit Message Convention
 

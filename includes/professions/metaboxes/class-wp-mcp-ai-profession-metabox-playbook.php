@@ -61,7 +61,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 	 * @return string
 	 */
 	public function get_documentation_url() {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md#playbooks';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/user-guides/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md#playbooks';
 	}
 
 	/**
@@ -188,20 +188,21 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 			</details>
 		</div>
 
-		<style type="text/css">
-			.wp-mcp-ai-regenerate-playbook .dashicons {
-				margin-top: 3px;
-			}
-			.wp-mcp-ai-regenerate-playbook.updating .dashicons {
-				animation: rotation 1s linear infinite;
-			}
-			@keyframes rotation {
-				from { transform: rotate(0deg); }
-				to { transform: rotate(359deg); }
-			}
-		</style>
+		<?php
+		wp_add_inline_style(
+			'wp-mcp-ai-metabox-playbook',
+			'.wp-mcp-ai-regenerate-playbook .dashicons{margin-top:3px}'
+			. '.wp-mcp-ai-regenerate-playbook.updating .dashicons{animation:rotation 1s linear infinite}'
+			. '@keyframes rotation{from{transform:rotate(0deg)}to{transform:rotate(359deg)}}'
+		);
 
-		<script type="text/javascript">
+		$playbook_nonce          = wp_create_nonce( 'wp_mcp_ai_regenerate_playbook' );
+		$success_message         = __( 'Playbook regenerated successfully!', 'mcp-ai-wpoos' );
+		$failure_message         = __( 'Failed to regenerate playbook.', 'mcp-ai-wpoos' );
+		$ajax_error_prefix       = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+
+		ob_start();
+		?>
 		jQuery(document).ready(function($) {
 			$('.wp-mcp-ai-regenerate-playbook').on('click', function(e) {
 				e.preventDefault();
@@ -223,14 +224,14 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 					data: {
 						action: 'wp_mcp_ai_regenerate_playbook',
 						profession_id: professionId,
-						nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_regenerate_playbook' ) ); ?>
+						nonce: <?php echo wp_json_encode( $playbook_nonce ); ?>
 					},
 					success: function(response) {
 						if (response.success) {
 							$message
 								.removeClass('notice-error notice-warning')
 								.addClass('notice-success')
-								.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'Playbook regenerated successfully!', 'mcp-ai-wpoos' ) ); ?>);
+								.find('p').html(response.data.message || <?php echo wp_json_encode( $success_message ); ?>);
 							$message.show();
 
 							// Reload the page after a short delay to show updated info.
@@ -241,7 +242,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 							$message
 								.removeClass('notice-success notice-warning')
 								.addClass('notice-error')
-								.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'Failed to regenerate playbook.', 'mcp-ai-wpoos' ) ); ?>);
+								.find('p').html(response.data.message || <?php echo wp_json_encode( $failure_message ); ?>);
 							$message.show();
 
 							$button.removeClass('updating').prop('disabled', false);
@@ -251,7 +252,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 						$message
 							.removeClass('notice-success notice-warning')
 							.addClass('notice-error')
-							.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
+							.find('p').html(<?php echo wp_json_encode( $ajax_error_prefix ); ?> + error);
 						$message.show();
 
 						$button.removeClass('updating').prop('disabled', false);
@@ -259,8 +260,10 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 				});
 			});
 		});
-		</script>
 		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+
 		$this->render_documentation_link();
 	}
 

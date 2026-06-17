@@ -108,6 +108,13 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool definition for LLM payload.
 	 *
 	 * @return array Tool definition including name, description, parameters, and required capability.
@@ -262,7 +269,7 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// Ensure the resolved path is within the plugin directory.
-		// Append a slash to both sides so that a directory whose name is a prefix of
+		// Append a slash to both sides so that a directory whose name is a prefix of.
 		// another directory cannot bypass the check (e.g. /plugins/mcp vs /plugins/mcp-addon).
 		$real_plugin_dir_norm = rtrim( $real_plugin_dir, '/' ) . '/';
 		$real_path_norm       = rtrim( (string) $real_path, '/' ) . '/';
@@ -344,7 +351,7 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
-		// Restrict write operations to safe, non-executable file extensions to prevent
+		// Restrict write operations to safe, non-executable file extensions to prevent.
 		// an AI assistant (or a prompt-injected payload) from writing PHP webshells.
 		$allowed_extensions = array( 'txt', 'json', 'md', 'css', 'js', 'ts', 'html', 'htm', 'xml', 'yaml', 'yml', 'ini', 'env.example', 'svg', 'csv', 'log' );
 		$extension          = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );

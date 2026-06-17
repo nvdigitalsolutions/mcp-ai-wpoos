@@ -279,10 +279,7 @@ class WP_MCP_AI_Token_Performance_Service {
 	 */
 	public static function run_optimization() {
 		if ( ! class_exists( 'WP_MCP_AI_Token_DB_Optimizer' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Database optimizer not available.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Database optimizer not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		try {
@@ -294,13 +291,13 @@ class WP_MCP_AI_Token_Performance_Service {
 				'stats'   => WP_MCP_AI_Token_DB_Optimizer::get_optimization_stats(),
 			);
 		} catch ( Exception $e ) {
-			return array(
-				'success' => false,
-				'message' => sprintf(
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Optimization failed: %s', 'mcp-ai-wpoos' ),
 					$e->getMessage()
-				),
+				)
 			);
 		}
 	}

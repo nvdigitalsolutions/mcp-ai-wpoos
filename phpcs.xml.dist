@@ -19,18 +19,64 @@
 <exclude-pattern>*/node_modules/*</exclude-pattern>
 <exclude-pattern>*/assets/examples/*</exclude-pattern>
 <exclude-pattern>*/bin/*</exclude-pattern>
+<exclude-pattern>*/lib/*</exclude-pattern>
+<exclude-pattern>*/docker/*</exclude-pattern>
+<!--
+	The phpcs/ directory contains custom PHPCS sniff classes which follow the
+	upstream PHPCS naming convention (CamelCase class files, camelCase variables
+	like $phpcsFile/$stackPtr) — not WordPress Coding Standards. Skip WPCS rules
+	on this tree.
+-->
+<exclude-pattern>*/phpcs/*</exclude-pattern>
 <exclude-pattern>*/tests/helpers/*</exclude-pattern>
+<exclude-pattern>*/tests/fixtures/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
-<exclude-pattern>*/addons/pro/*</exclude-pattern>
 <exclude-pattern>*-backup.php</exclude-pattern>
+<!-- Cloud-worker wp-config-local.php is a local Docker/development config, not addon code. -->
+<exclude-pattern>*/addons/cloud-worker/wp-config-local.php</exclude-pattern>
+<!-- These files trigger a PHPCS parse error in PHPCSUtils AbstractArrayDeclarationSniff (PHP 8.3 bug). -->
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-accounting.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-correspondence.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-leads.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-crm-capture-interaction.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-get-companies.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-research-company.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/financial-planning/class-wp-mcp-ai-tool-cash-flow-analyzer.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/financial-planning/class-wp-mcp-ai-tool-net-worth-calculator.php</exclude-pattern>
+
+<!-- oos-bridge.php wires the OOS core package (camelCase classes) into WordPress;
+     variable names intentionally follow the upstream OOS\Core\* convention. -->
+<exclude-pattern>*/includes/bootstrap/oos-bridge.php</exclude-pattern>
+
+<!-- NV oOS Graphify is a standalone plugin with its own PSR-4 architecture
+     and phpcs.xml.dist. Exclude it from the base plugin's WPCS scan. -->
+<exclude-pattern>*/plugins/nvoos-graphify/**</exclude-pattern>
+
+<!-- NV oOS Graphify — AI is a standalone addon plugin with its own PSR-4
+     architecture and phpcs.xml.dist. Exclude from the base plugin's scan. -->
+<exclude-pattern>*/plugins/nvoos-graphify-ai/**</exclude-pattern>
+
+<!-- NV oOS Graphify — AI Platform is a standalone addon plugin with its own
+     PSR-4 architecture and phpcs.xml.dist. Exclude from the base plugin's scan. -->
+<exclude-pattern>*/plugins/nvoos-graphify-ai-platform/**</exclude-pattern>
 
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
 <!-- class-wp-mcp-ai-plugin.php contains the WP_MCP_AI singleton; the '-plugin' suffix
      clarifies the file role. Class rename would break existing hooks and the autoloader. -->
 <exclude-pattern>class-wp-mcp-ai-plugin\.php$</exclude-pattern>
-<!-- Test files that intentionally contain multiple stub/test classes -->
-<exclude-pattern>test-provider-client-adapters\.php$</exclude-pattern>
+<!-- Test files: PHPUnit test files use the test-*.php naming convention, which does not
+     match the WordPress class-*.php convention. The filename sniff is not applicable. -->
+<exclude-pattern>*/tests/test-*</exclude-pattern>
+	<!-- Addons intentionally use the NVOOS_* class/file naming scheme. -->
+	<exclude-pattern>*/addons/*</exclude-pattern>
+	<!-- Test files that intentionally contain multiple stub/test classes -->
+	<exclude-pattern>test-provider-client-adapters\.php$</exclude-pattern>
+</rule>
+
+<rule ref="PEAR.NamingConventions.ValidClassName">
+	<!-- Addons intentionally use the NVOOS_* class naming scheme. -->
+	<exclude-pattern>*/addons/*</exclude-pattern>
 </rule>
 
 <rule ref="Universal.Files.SeparateFunctionsFromOO">
@@ -59,6 +105,60 @@
 <rule ref="WordPress.WP.GlobalVariablesOverride">
 <exclude-pattern>*/includes/domain/*</exclude-pattern>
 </rule>
+
+<!--
+	R-T-06 compliance gate: enforce the base-plugin text domain on every
+	gettext call. Any domain other than "mcp-ai-wpoos" is a lint error.
+	Foreign domains (nvoos-*, nvdigital-open-operator-system-oos-pro, etc.)
+	only exist in addons/ which is excluded from the WordPress.org submission;
+	if any creep into includes/ this rule will catch them.
+	See: docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md B6.
+-->
+<rule ref="WordPress.WP.I18n">
+	<exclude-pattern>*/addons/docs-hub/includes/*</exclude-pattern>
+	<exclude-pattern>*/addons/*</exclude-pattern>
+	<properties>
+		<property name="text_domain" type="array">
+			<element value="mcp-ai-wpoos"/>
+		</property>
+	</properties>
+</rule>
+
+<!--
+	R-T-14 compliance gate: HEREDOC/NOWDOC syntax is prohibited in the base
+	plugin because it prevents proper escaping of interpolated variables.
+	Use sprintf()/printf() with literal format strings and escaped values
+	instead. Confirmed 0 occurrences after PR #4892 — this rule locks it in.
+	See: docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md B14.
+
+	NOTE: WPCS 3.x removed the legacy `WordPress.PHP.PreventUseOfHereDocSyntax`
+	sniff. The equivalent rule lives in PHPCS core's Squiz standard, which
+	WPCS already pulls in transitively, so referencing it here keeps the
+	compliance gate in place.
+-->
+<rule ref="Squiz.PHP.Heredoc"/>
+
+<!--
+	Phase P1 of the Unix Theory Compliance Enhancement Proposal: warn when a
+	tool returns `array( 'success' => false, ... )` instead of `WP_Error` on
+	the failure path. The canonical envelope is documented in CLAUDE.md and
+	`.context/conventions.md`.
+
+	The custom sniff lives at phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php
+	and is referenced by path so no global PHPCS `installed_paths` change is
+	required.
+-->
+<rule ref="./phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php"/>
+
+<!--
+	Phase P6 of the Unix Theory Compliance Enhancement Proposal: warn when a
+	tool interpolates or concatenates `$arguments[...]` directly into a string
+	without first running it through a sanitiser. Codifies Gate 1 of the
+	two-gate rule (sanitize-at-entry, escape-at-exit) documented in
+	`.context/security-checklist.md` and audited at
+	`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`.
+-->
+<rule ref="./phpcs/WPMCPAI/Sniffs/Tools/SanitizeAtEntrySniff.php"/>
 
 <file>.</file>
 </ruleset>

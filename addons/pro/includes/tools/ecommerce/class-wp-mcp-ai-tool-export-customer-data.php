@@ -31,6 +31,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.1.0
@@ -404,8 +411,8 @@ class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, W
 			file_put_contents( $htaccess, $htaccess_content );
 		}
 
-		// Use a cryptographically random, non-guessable filename so that an
-		// attacker who knows the customer's e-mail address and export timestamp
+		// Use a cryptographically random, non-guessable filename so that an.
+		// attacker who knows the customer's e-mail address and export timestamp.
 		// cannot enumerate the file via a public URL.
 		$filename = 'export-' . wp_generate_password( 32, false ) . '-' . time();
 

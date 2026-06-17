@@ -188,9 +188,9 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 				break;
 
 			default:
-				$result = array(
-					'success' => false,
-					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
+				$result = new WP_Error(
+					'wp_mcp_ai_error',
+					__( 'Invalid action specified', 'mcp-ai-wpoos' )
 				);
 		}
 
@@ -335,9 +335,9 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 */
 	private function handle_track_interaction( $post_id, $user_id, $interaction_type ) {
 		if ( 0 === $post_id ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Post ID required', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Post ID required', 'mcp-ai-wpoos' )
 			);
 		}
 

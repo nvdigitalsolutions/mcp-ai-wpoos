@@ -600,6 +600,19 @@
 				data.notify_channel_credentials = notifyChannelData.credentials;
 			}
 
+			// Collect result-capture / display settings.
+			data.display = {
+				result_capture:   $( '#sm-result-capture' ).val() || 'summary',
+				result_retention: parseInt( $( '#sm-result-retention' ).val(), 10 ) || 10,
+				public_render:    $( '#sm-public-render' ).is( ':checked' ),
+				// split(',').map(trim).filter(Boolean) cleanly handles empty input and extra commas.
+				public_fields:    $( '#sm-public-fields' ).val().split( ',' ).map( function ( f ) { return f.trim(); } ).filter( Boolean ),
+				widget_defaults: {
+					render_mode:      $( '#sm-widget-render-mode' ).val() || 'summary-card',
+					refresh_interval: parseInt( $( '#sm-widget-refresh-interval' ).val(), 10 ) || 0,
+				},
+			};
+
 			return data;
 		},
 
@@ -618,6 +631,13 @@
 			$( '#sm-type' ).val( 'task' ).trigger( 'change' );
 			$( '#sm-schedule' ).val( 'single' );
 			$( '#sm-timestamp' ).val( '' );
+			// Reset result-capture display fields.
+			$( '#sm-result-capture' ).val( 'summary' );
+			$( '#sm-result-retention' ).val( '10' );
+			$( '#sm-public-render' ).prop( 'checked', false );
+			$( '#sm-public-fields' ).val( '' );
+			$( '#sm-widget-render-mode' ).val( 'summary-card' );
+			$( '#sm-widget-refresh-interval' ).val( '0' );
 		},
 
 		/** ------------------------------------------------------------------ *
@@ -1020,6 +1040,35 @@
 				);
 			}
 
+			// Result capture / display settings.
+			const disp    = schedule.display || {};
+			const dWd     = disp.widget_defaults || {};
+			// v comes from a hardcoded allow-list; escape defensively so this pattern
+			// remains safe if the array is ever made dynamic.
+			const captureOpts = [ 'summary', 'full', 'disabled' ]
+				.map( function ( v ) {
+					const sel = v === ( disp.result_capture || 'summary' ) ? ' selected' : '';
+					return '<option value="' + this.esc( v ) + '"' + sel + '>' + this.esc( v ) + '</option>';
+				}.bind( this ) )
+				.join( '' );
+			const renderModeOpts = [ 'summary-card', 'list', 'table', 'metric', 'timeline', 'raw' ]
+				.map( function ( v ) {
+					const sel = v === ( dWd.render_mode || 'summary-card' ) ? ' selected' : '';
+					return '<option value="' + this.esc( v ) + '"' + sel + '>' + this.esc( v ) + '</option>';
+				}.bind( this ) )
+				.join( '' );
+			html += '<tr><td colspan="2"><hr><strong>Result Capture</strong></td></tr>';
+			html += this.editRow( 'Capture Mode', '<select id="edit-result-capture">' + captureOpts + '</select>' );
+			html += this.editRow( 'Retention (runs)', '<input type="number" id="edit-result-retention" class="small-text" min="1" max="100" value="' + ( parseInt( disp.result_retention, 10 ) || 10 ) + '"><br><span class="description">1–100</span>' );
+			html += this.editRow(
+				'Public rendering',
+				'<label><input type="checkbox" id="edit-public-render" ' + ( disp.public_render ? 'checked' : '' ) + '> Allow unauthenticated access</label>'
+			);
+			// placeholder is a static string literal; value is escaped via this.esc().
+			html += this.editRow( 'Public fields (allow-list)', '<input type="text" id="edit-public-fields" class="regular-text" value="' + this.esc( ( disp.public_fields || [] ).join( ', ' ) ) + '" placeholder="summary, data.items"><br><span class="description">Comma-separated dotted JSON paths</span>' );
+			html += this.editRow( 'Widget render mode', '<select id="edit-widget-render-mode">' + renderModeOpts + '</select>' );
+			html += this.editRow( 'Widget auto-refresh (s)', '<input type="number" id="edit-widget-refresh-interval" class="small-text" min="0" max="3600" value="' + ( parseInt( dWd.refresh_interval, 10 ) || 0 ) + '"><br><span class="description">0 = off</span>' );
+
 			html += '</table>';
 
 			$body.html( html );
@@ -1065,6 +1114,18 @@
 				}
 				data.workflow_steps = steps;
 			}
+
+			// Result capture / display settings.
+			data.display = {
+				result_capture:   $( '#edit-result-capture' ).val() || 'summary',
+				result_retention: parseInt( $( '#edit-result-retention' ).val(), 10 ) || 10,
+				public_render:    $( '#edit-public-render' ).is( ':checked' ),
+				public_fields:    $( '#edit-public-fields' ).val().split( ',' ).map( function ( f ) { return f.trim(); } ).filter( Boolean ),
+				widget_defaults: {
+					render_mode:      $( '#edit-widget-render-mode' ).val() || 'summary-card',
+					refresh_interval: parseInt( $( '#edit-widget-refresh-interval' ).val(), 10 ) || 0,
+				},
+			};
 
 			this.ajax(
 				'wp_mcp_ai_sm_update_schedule',

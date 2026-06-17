@@ -70,34 +70,34 @@ class WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'property_type'          => array(
+				'property_type'           => array(
 					'type'        => 'string',
 					'description' => __( 'Property type (e.g. office, retail, industrial, multifamily).', 'mcp-ai-wpoos-pro' ),
 				),
-				'total_sf'               => array(
+				'total_sf'                => array(
 					'type'        => 'number',
 					'description' => __( 'Total building square footage.', 'mcp-ai-wpoos-pro' ),
 				),
-				'year_built'             => array(
+				'year_built'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Year the building was constructed.', 'mcp-ai-wpoos-pro' ),
 				),
-				'items'                  => array(
+				'items'                   => array(
 					'type'        => 'array',
 					'description' => __( 'Array of CapEx project items.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'category'         => array(
+							'category'          => array(
 								'type'        => 'string',
 								'description' => __( 'Project category.', 'mcp-ai-wpoos-pro' ),
 								'enum'        => array( 'structural', 'mep', 'ti', 'common_area', 'deferred_maintenance' ),
 							),
-							'description'      => array(
+							'description'       => array(
 								'type'        => 'string',
 								'description' => __( 'Project description.', 'mcp-ai-wpoos-pro' ),
 							),
-							'estimated_cost'   => array(
+							'estimated_cost'    => array(
 								'type'        => 'number',
 								'description' => __( 'Estimated project cost.', 'mcp-ai-wpoos-pro' ),
 							),
@@ -105,7 +105,7 @@ class WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner implements WP_MCP_AI_Tool_Interfa
 								'type'        => 'integer',
 								'description' => __( 'Useful life of the improvement in years.', 'mcp-ai-wpoos-pro' ),
 							),
-							'year_due'         => array(
+							'year_due'          => array(
 								'type'        => 'integer',
 								'description' => __( 'Year the expenditure is expected.', 'mcp-ai-wpoos-pro' ),
 							),
@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner implements WP_MCP_AI_Tool_Interfa
 					'description' => __( 'Current reserve fund balance. Default 0.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'annual_contribution'    => array(
+				'annual_contribution'     => array(
 					'type'        => 'number',
 					'description' => __( 'Annual contribution to the reserve fund. Default 0.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
@@ -136,7 +136,20 @@ class WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -212,12 +225,12 @@ class WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner implements WP_MCP_AI_Tool_Interfa
 			$capex_by_year[ $year_due ] += $estimated_cost;
 
 			$items[] = array(
-				'category'         => $category,
-				'description'      => $description,
-				'estimated_cost'   => $calc::format_currency( $estimated_cost ),
+				'category'          => $category,
+				'description'       => $description,
+				'estimated_cost'    => $calc::format_currency( $estimated_cost ),
 				'useful_life_years' => $useful_life,
-				'year_due'         => $year_due,
-				'horizon'          => $horizon,
+				'year_due'          => $year_due,
+				'horizon'           => $horizon,
 			);
 		}
 
@@ -226,9 +239,9 @@ class WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Per-SF metrics over the 10-year window.
-		$ten_year_capex             = $near_term_total + $long_term_total;
-		$total_capex_per_sf         = ( $total_sf > 0 ) ? $total_capex / $total_sf : 0;
-		$recommended_annual_per_sf  = ( $total_sf > 0 && $ten_year_capex > 0 ) ? $ten_year_capex / $total_sf / 10 : 0;
+		$ten_year_capex            = $near_term_total + $long_term_total;
+		$total_capex_per_sf        = ( $total_sf > 0 ) ? $total_capex / $total_sf : 0;
+		$recommended_annual_per_sf = ( $total_sf > 0 && $ten_year_capex > 0 ) ? $ten_year_capex / $total_sf / 10 : 0;
 
 		// Contingency factor based on building age.
 		$contingency_pct = 0;
@@ -249,10 +262,10 @@ class WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// 10-year reserve fund projection.
-		$projection    = array();
-		$balance       = $reserve_balance;
-		$min_balance   = $reserve_balance;
-		$shortfall     = 0.0;
+		$projection     = array();
+		$balance        = $reserve_balance;
+		$min_balance    = $reserve_balance;
+		$shortfall      = 0.0;
 		$is_underfunded = false;
 
 		for ( $yr = $current_year; $yr <= $current_year + 9; $yr++ ) {
@@ -286,22 +299,22 @@ class WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner implements WP_MCP_AI_Tool_Interfa
 			'success'    => true,
 			'message'    => __( 'CapEx reserve plan generated. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'       => array(
-				'property_info'     => array(
+				'property_info'      => array(
 					'property_type' => $property_type,
 					'total_sf'      => $total_sf,
 					'year_built'    => $year_built,
 					'building_age'  => $building_age,
 				),
-				'capex_summary'     => array(
-					'total_items'       => count( $items ),
-					'near_term_total'   => $calc::format_currency( $near_term_total ),
-					'long_term_total'   => $calc::format_currency( $long_term_total ),
-					'total_capex'       => $calc::format_currency( $total_capex ),
-					'total_capex_per_sf' => $calc::format_currency( $total_capex_per_sf ),
+				'capex_summary'      => array(
+					'total_items'                       => count( $items ),
+					'near_term_total'                   => $calc::format_currency( $near_term_total ),
+					'long_term_total'                   => $calc::format_currency( $long_term_total ),
+					'total_capex'                       => $calc::format_currency( $total_capex ),
+					'total_capex_per_sf'                => $calc::format_currency( $total_capex_per_sf ),
 					'recommended_annual_reserve_per_sf' => $calc::format_currency( $recommended_annual_per_sf ),
 				),
 				'category_breakdown' => $category_summary,
-				'contingency'       => array(
+				'contingency'        => array(
 					'building_age'    => $building_age,
 					'contingency_pct' => $contingency_pct . '%',
 					'recommendation'  => ( $contingency_pct > 0 )
@@ -313,7 +326,7 @@ class WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner implements WP_MCP_AI_Tool_Interfa
 						: __( 'Building age within normal range — no additional contingency recommended.', 'mcp-ai-wpoos-pro' ),
 				),
 				'reserve_projection' => $projection,
-				'reserve_adequacy'  => array(
+				'reserve_adequacy'   => array(
 					'status'    => $reserve_adequacy,
 					'shortfall' => $is_underfunded ? $calc::format_currency( $shortfall ) : $calc::format_currency( 0 ),
 					'message'   => $is_underfunded
@@ -324,7 +337,7 @@ class WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner implements WP_MCP_AI_Tool_Interfa
 						)
 						: __( 'Reserve fund is projected to remain adequate over the 10-year horizon.', 'mcp-ai-wpoos-pro' ),
 				),
-				'items'             => $items,
+				'items'              => $items,
 			),
 			'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);

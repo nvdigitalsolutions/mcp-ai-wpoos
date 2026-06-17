@@ -91,7 +91,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		}
 
 		// ------------------------------------------------------------------ //
-		//  Static helpers                                                       //
+		// Static helpers                                                       //
 		// ------------------------------------------------------------------ //
 
 		/**
@@ -121,7 +121,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		}
 
 		// ------------------------------------------------------------------ //
-		//  Credential helpers                                                  //
+		// Credential helpers                                                  //
 		// ------------------------------------------------------------------ //
 
 		/**
@@ -346,7 +346,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 			$token      = $decoded['access_token'];
 			$expires_in = isset( $decoded['expires_in'] ) ? absint( $decoded['expires_in'] ) : 3600;
 			// Cache with a 60-second safety buffer to avoid using an expired token.
-			$cache_ttl  = max( 60, $expires_in - 60 );
+			$cache_ttl = max( 60, $expires_in - 60 );
 
 			set_transient( $transient_key, $token, $cache_ttl );
 
@@ -401,10 +401,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 				'method'  => 'POST',
 				'timeout' => self::DEFAULT_TIMEOUT,
 				'headers' => array(
-					'Content-Type'            => 'application/json',
-					'X-Shopify-Access-Token'  => $access_token,
-					'Accept'                  => 'application/json',
-					'User-Agent'              => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+					'Content-Type'           => 'application/json',
+					'X-Shopify-Access-Token' => $access_token,
+					'Accept'                 => 'application/json',
+					'User-Agent'             => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
 				),
 				'body'    => wp_json_encode( $body ),
 			);
@@ -479,7 +479,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		}
 
 		// ------------------------------------------------------------------ //
-		//  Convenience methods – products                                      //
+		// Convenience methods – products                                      //
 		// ------------------------------------------------------------------ //
 
 		/**
@@ -624,7 +624,7 @@ mutation UpdateProduct($input: ProductInput!) {
 		}
 
 		// ------------------------------------------------------------------ //
-		//  Convenience methods – orders                                        //
+		// Convenience methods – orders                                        //
 		// ------------------------------------------------------------------ //
 
 		/**
@@ -738,7 +738,7 @@ query GetOrder($id: ID!) {
 		}
 
 		// ------------------------------------------------------------------ //
-		//  Convenience methods – customers                                     //
+		// Convenience methods – customers                                     //
 		// ------------------------------------------------------------------ //
 
 		/**
@@ -816,7 +816,7 @@ query GetCustomer($id: ID!) {
 		}
 
 		// ------------------------------------------------------------------ //
-		//  Convenience methods – inventory                                     //
+		// Convenience methods – inventory                                     //
 		// ------------------------------------------------------------------ //
 
 		/**
@@ -925,7 +925,7 @@ mutation AdjustInventory($input: InventoryAdjustQuantitiesInput!) {
 		}
 
 		// ------------------------------------------------------------------ //
-		//  Convenience methods – shop info                                     //
+		// Convenience methods – shop info                                     //
 		// ------------------------------------------------------------------ //
 
 		/**
@@ -974,7 +974,7 @@ query GetLocations($first: Int!) {
 		}
 
 		// ------------------------------------------------------------------ //
-		//  Catalog API helpers (global agentic commerce, JWT bearer auth)      //
+		// Catalog API helpers (global agentic commerce, JWT bearer auth)      //
 		// ------------------------------------------------------------------ //
 
 		/**

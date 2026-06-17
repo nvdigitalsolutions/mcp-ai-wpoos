@@ -230,14 +230,14 @@ echo '</div>';
  * print — e.g. with aggressive script deferral or caching plugins.
  */
 if ( ! empty( $inline_configs ) ) {
-	echo '<script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline config must live in the block markup for reliable delivery; the main chat script is already enqueued.
-	echo 'window.wpMcpAiChatInstances=window.wpMcpAiChatInstances||{};';
 	// JSON_HEX_TAG prevents </script> breakout; JSON_HEX_AMP prevents HTML entity injection.
 	$json_flags = JSON_HEX_TAG | JSON_HEX_AMP;
+	$js         = 'window.wpMcpAiChatInstances=window.wpMcpAiChatInstances||{};';
 	foreach ( $inline_configs as $config_id => $cfg ) {
-		echo 'window.wpMcpAiChatInstances[' . wp_json_encode( $config_id, $json_flags ) . ']=' . wp_json_encode( $cfg, $json_flags ) . ';';
+		$js .= 'window.wpMcpAiChatInstances[' . wp_json_encode( $config_id, $json_flags ) . ']=' . wp_json_encode( $cfg, $json_flags ) . ';';
 	}
-	echo '</script>';
+	// Plugin requires WP 6.0+; wp_print_inline_script_tag() (added in WP 5.7) is always available.
+	wp_print_inline_script_tag( $js );
 }
 
 echo '</div>';

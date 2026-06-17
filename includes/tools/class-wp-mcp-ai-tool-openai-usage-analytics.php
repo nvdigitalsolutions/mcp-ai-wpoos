@@ -131,10 +131,7 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 		// Determine date range.
 		$date_range = $this->get_date_range( $period, $arguments );
 		if ( is_wp_error( $date_range ) ) {
-			return array(
-				'success' => false,
-				'error'   => $date_range->get_error_message(),
-			);
+			return $date_range;
 		}
 
 		// Get usage statistics from WordPress logs/metadata.

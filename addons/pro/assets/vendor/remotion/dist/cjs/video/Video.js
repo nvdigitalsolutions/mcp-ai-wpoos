@@ -48,27 +48,27 @@ const VideoForwardingFunction = (props, ref) => {
     });
     if (loop && durationFetched !== undefined) {
         if (!Number.isFinite(durationFetched)) {
-            return ((0, jsx_runtime_1.jsx)(exports.Html5Video, { ...propsOtherThanLoop, ref: ref, stack: stack, _remotionInternalNativeLoopPassed: true }));
+            return (jsx_runtime_1.jsx(exports.Html5Video, { ...propsOtherThanLoop, ref: ref, stack: stack, _remotionInternalNativeLoopPassed: true }));
         }
         const mediaDuration = durationFetched * fps;
-        return ((0, jsx_runtime_1.jsx)(index_js_1.Loop, { durationInFrames: (0, calculate_media_duration_js_1.calculateMediaDuration)({
+        return (jsx_runtime_1.jsx(index_js_1.Loop, { durationInFrames: (0, calculate_media_duration_js_1.calculateMediaDuration)({
                 trimAfter: trimAfterValue,
                 mediaDurationInFrames: mediaDuration,
                 playbackRate: (_b = props.playbackRate) !== null && _b !== void 0 ? _b : 1,
                 trimBefore: trimBeforeValue,
-            }), layout: "none", name: name, children: (0, jsx_runtime_1.jsx)(exports.Html5Video, { ...propsOtherThanLoop, ref: ref, stack: stack, _remotionInternalNativeLoopPassed: true }) }));
+            }), layout: "none", name: name, children: jsx_runtime_1.jsx(exports.Html5Video, { ...propsOtherThanLoop, ref: ref, stack: stack, _remotionInternalNativeLoopPassed: true }) }));
     }
     if (typeof trimBeforeValue !== 'undefined' ||
         typeof trimAfterValue !== 'undefined') {
-        return ((0, jsx_runtime_1.jsx)(Sequence_js_1.Sequence, { layout: "none", from: 0 - (trimBeforeValue !== null && trimBeforeValue !== void 0 ? trimBeforeValue : 0), showInTimeline: false, durationInFrames: trimAfterValue === undefined
+        return (jsx_runtime_1.jsx(Sequence_js_1.Sequence, { layout: "none", from: 0 - (trimBeforeValue !== null && trimBeforeValue !== void 0 ? trimBeforeValue : 0), showInTimeline: false, durationInFrames: trimAfterValue === undefined
                 ? undefined
-                : trimAfterValue / ((_c = props.playbackRate) !== null && _c !== void 0 ? _c : 1), name: name, children: (0, jsx_runtime_1.jsx)(exports.Html5Video, { pauseWhenBuffering: pauseWhenBuffering !== null && pauseWhenBuffering !== void 0 ? pauseWhenBuffering : false, ...otherProps, ref: ref, stack: stack }) }));
+                : trimAfterValue / ((_c = props.playbackRate) !== null && _c !== void 0 ? _c : 1), name: name, children: jsx_runtime_1.jsx(exports.Html5Video, { pauseWhenBuffering: pauseWhenBuffering !== null && pauseWhenBuffering !== void 0 ? pauseWhenBuffering : false, ...otherProps, ref: ref, stack: stack }) }));
     }
     (0, validate_media_props_js_1.validateMediaProps)({ playbackRate: props.playbackRate, volume: props.volume }, 'Html5Video');
     if (environment.isRendering) {
-        return ((0, jsx_runtime_1.jsx)(VideoForRendering_js_1.VideoForRendering, { onDuration: onDuration, onVideoFrame: onVideoFrame !== null && onVideoFrame !== void 0 ? onVideoFrame : null, ...otherProps, ref: ref }));
+        return (jsx_runtime_1.jsx(VideoForRendering_js_1.VideoForRendering, { onDuration: onDuration, onVideoFrame: onVideoFrame !== null && onVideoFrame !== void 0 ? onVideoFrame : null, ...otherProps, ref: ref }));
     }
-    return ((0, jsx_runtime_1.jsx)(VideoForPreview_js_1.VideoForPreview, { onlyWarnForMediaSeekingError: false, ...otherProps, ref: ref, onVideoFrame: null, 
+    return (jsx_runtime_1.jsx(VideoForPreview_js_1.VideoForPreview, { onlyWarnForMediaSeekingError: false, ...otherProps, ref: ref, onVideoFrame: null, 
         // Proposal: Make this default to true in v5
         pauseWhenBuffering: pauseWhenBuffering !== null && pauseWhenBuffering !== void 0 ? pauseWhenBuffering : false, onDuration: onDuration, _remotionInternalStack: stack !== null && stack !== void 0 ? stack : null, _remotionInternalNativeLoopPassed: _remotionInternalNativeLoopPassed !== null && _remotionInternalNativeLoopPassed !== void 0 ? _remotionInternalNativeLoopPassed : false, showInTimeline: showInTimeline !== null && showInTimeline !== void 0 ? showInTimeline : true, onAutoPlayError: onAutoPlayError !== null && onAutoPlayError !== void 0 ? onAutoPlayError : undefined }));
 };

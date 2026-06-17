@@ -76,24 +76,24 @@ class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_I
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'name'                       => array(
+							'name'                        => array(
 								'type'        => 'string',
 								'description' => __( 'Loan or property name.', 'mcp-ai-wpoos-pro' ),
 							),
-							'balance'                    => array(
+							'balance'                     => array(
 								'type'        => 'number',
 								'description' => __( 'Current outstanding loan balance.', 'mcp-ai-wpoos-pro' ),
 							),
-							'payment_status'             => array(
+							'payment_status'              => array(
 								'type'        => 'string',
 								'description' => __( 'Payment status of the loan.', 'mcp-ai-wpoos-pro' ),
 								'enum'        => array( 'current', '30day', '60day', '90plus', 'default' ),
 							),
-							'dscr'                       => array(
+							'dscr'                        => array(
 								'type'        => 'number',
 								'description' => __( 'Debt service coverage ratio.', 'mcp-ai-wpoos-pro' ),
 							),
-							'occupancy_pct'              => array(
+							'occupancy_pct'               => array(
 								'type'        => 'number',
 								'description' => __( 'Current occupancy percentage (0-100).', 'mcp-ai-wpoos-pro' ),
 							),
@@ -102,11 +102,11 @@ class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_I
 								'description' => __( 'Whether financial reporting is current. Default true.', 'mcp-ai-wpoos-pro' ),
 								'default'     => true,
 							),
-							'maturity_date'              => array(
+							'maturity_date'               => array(
 								'type'        => 'string',
 								'description' => __( 'Loan maturity date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 							),
-							'last_inspection_date'       => array(
+							'last_inspection_date'        => array(
 								'type'        => 'string',
 								'description' => __( 'Date of last property inspection (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 							),
@@ -127,7 +127,20 @@ class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_I
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -143,9 +156,9 @@ class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_I
 			return new WP_Error( 'invalid_input', __( 'loans array is required and must not be empty.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$calc      = WP_MCP_AI_CRE_Debt_Calculator::class;
-		$today     = gmdate( 'Y-m-d' );
-		$today_ts  = strtotime( $today );
+		$calc       = WP_MCP_AI_CRE_Debt_Calculator::class;
+		$today      = gmdate( 'Y-m-d' );
+		$today_ts   = strtotime( $today );
 		$loan_count = count( $loans );
 
 		// Accumulators.
@@ -161,25 +174,61 @@ class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_I
 		$non_compliant_loans = array();
 
 		$status_breakdown = array(
-			'current' => array( 'count' => 0, 'balance' => 0.0 ),
-			'30day'   => array( 'count' => 0, 'balance' => 0.0 ),
-			'60day'   => array( 'count' => 0, 'balance' => 0.0 ),
-			'90plus'  => array( 'count' => 0, 'balance' => 0.0 ),
-			'default' => array( 'count' => 0, 'balance' => 0.0 ),
+			'current' => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'30day'   => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'60day'   => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'90plus'  => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'default' => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
 		);
 
 		$occupancy_dist = array(
-			'below_80'  => array( 'count' => 0, 'balance' => 0.0 ),
-			'80_to_90'  => array( 'count' => 0, 'balance' => 0.0 ),
-			'90_to_95'  => array( 'count' => 0, 'balance' => 0.0 ),
-			'above_95'  => array( 'count' => 0, 'balance' => 0.0 ),
+			'below_80' => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'80_to_90' => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'90_to_95' => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'above_95' => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
 		);
 
-		$maturity_6mo    = array( 'count' => 0, 'balance' => 0.0 );
-		$maturity_12mo   = array( 'count' => 0, 'balance' => 0.0 );
-		$maturity_24mo   = array( 'count' => 0, 'balance' => 0.0 );
-		$overdue_loans   = array();
-		$loan_details    = array();
+		$maturity_6mo  = array(
+			'count'   => 0,
+			'balance' => 0.0,
+		);
+		$maturity_12mo = array(
+			'count'   => 0,
+			'balance' => 0.0,
+		);
+		$maturity_24mo = array(
+			'count'   => 0,
+			'balance' => 0.0,
+		);
+		$overdue_loans = array();
+		$loan_details  = array();
 
 		foreach ( $loans as $loan ) {
 			$name              = sanitize_text_field( $loan['name'] ?? '' );
@@ -271,16 +320,16 @@ class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_I
 			}
 
 			$loan_details[] = array(
-				'name'                => $name,
-				'balance'             => $calc::format_currency( $balance ),
-				'payment_status'      => $payment_status,
-				'dscr'                => round( $dscr, 2 ),
-				'occupancy_pct'       => round( $occupancy_pct, 1 ) . '%',
-				'reporting_current'   => $reporting_flag,
-				'maturity_date'       => $maturity_date_str,
-				'months_to_maturity'  => $months_to_maturity,
-				'last_inspection'     => $inspection_str ? $inspection_str : __( 'N/A', 'mcp-ai-wpoos-pro' ),
-				'inspection_overdue'  => $inspection_overdue,
+				'name'               => $name,
+				'balance'            => $calc::format_currency( $balance ),
+				'payment_status'     => $payment_status,
+				'dscr'               => round( $dscr, 2 ),
+				'occupancy_pct'      => round( $occupancy_pct, 1 ) . '%',
+				'reporting_current'  => $reporting_flag,
+				'maturity_date'      => $maturity_date_str,
+				'months_to_maturity' => $months_to_maturity,
+				'last_inspection'    => $inspection_str ? $inspection_str : __( 'N/A', 'mcp-ai-wpoos-pro' ),
+				'inspection_overdue' => $inspection_overdue,
 			);
 		}
 
@@ -318,49 +367,49 @@ class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_I
 			),
 			'data'       => array(
 				'portfolio_summary'      => array(
-					'total_loans'              => $loan_count,
-					'total_book'               => $calc::format_currency( $total_book ),
+					'total_loans' => $loan_count,
+					'total_book'  => $calc::format_currency( $total_book ),
 				),
 				'delinquency'            => array(
-					'delinquent_balance'       => $calc::format_currency( $delinquent_balance ),
-					'delinquency_rate_dollar'  => $calc::format_percentage( $delinquency_rate_dollar ),
-					'delinquent_count'         => $delinquent_count,
-					'delinquency_rate_count'   => $calc::format_percentage( $delinquency_rate_count ),
-					'status_breakdown'         => $formatted_status,
+					'delinquent_balance'      => $calc::format_currency( $delinquent_balance ),
+					'delinquency_rate_dollar' => $calc::format_percentage( $delinquency_rate_dollar ),
+					'delinquent_count'        => $delinquent_count,
+					'delinquency_rate_count'  => $calc::format_percentage( $delinquency_rate_count ),
+					'status_breakdown'        => $formatted_status,
 				),
 				'dscr_coverage'          => array(
-					'avg_dscr'                 => round( $avg_dscr, 2 ) . 'x',
-					'loans_below_1x_dscr'      => array(
+					'avg_dscr'            => round( $avg_dscr, 2 ) . 'x',
+					'loans_below_1x_dscr' => array(
 						'count'   => $below_1x_count,
 						'balance' => $calc::format_currency( $below_1x_balance ),
 					),
-					'loans_below_1_25x'        => array(
+					'loans_below_1_25x'   => array(
 						'count'   => $below_1_25x_count,
 						'balance' => $calc::format_currency( $below_1_25x_balance ),
 					),
 				),
 				'occupancy_distribution' => $formatted_occupancy,
 				'reporting_compliance'   => array(
-					'compliance_pct'           => round( $reporting_compliance, 1 ) . '%',
-					'non_compliant_loans'      => $non_compliant_loans,
+					'compliance_pct'      => round( $reporting_compliance, 1 ) . '%',
+					'non_compliant_loans' => $non_compliant_loans,
 				),
 				'maturity_analysis'      => array(
-					'within_6_months'          => array(
+					'within_6_months'  => array(
 						'count'   => $maturity_6mo['count'],
 						'balance' => $calc::format_currency( $maturity_6mo['balance'] ),
 					),
-					'within_12_months'         => array(
+					'within_12_months' => array(
 						'count'   => $maturity_12mo['count'],
 						'balance' => $calc::format_currency( $maturity_12mo['balance'] ),
 					),
-					'within_24_months'         => array(
+					'within_24_months' => array(
 						'count'   => $maturity_24mo['count'],
 						'balance' => $calc::format_currency( $maturity_24mo['balance'] ),
 					),
 				),
 				'inspection_analysis'    => array(
-					'overdue_count'            => count( $overdue_loans ),
-					'overdue_loans'            => $overdue_loans,
+					'overdue_count' => count( $overdue_loans ),
+					'overdue_loans' => $overdue_loans,
 				),
 				'loan_details'           => $loan_details,
 			),

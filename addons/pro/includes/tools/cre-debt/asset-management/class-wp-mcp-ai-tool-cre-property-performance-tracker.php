@@ -123,7 +123,20 @@ class WP_MCP_AI_Tool_CRE_Property_Performance_Tracker implements WP_MCP_AI_Tool_
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -146,15 +159,15 @@ class WP_MCP_AI_Tool_CRE_Property_Performance_Tracker implements WP_MCP_AI_Tool_
 
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
-		$period_details     = array();
-		$total_revenue      = 0.0;
-		$total_opex         = 0.0;
-		$total_noi          = 0.0;
-		$total_capex        = 0.0;
-		$sum_occupancy      = 0.0;
-		$sum_collections    = 0.0;
-		$sum_noi_margin     = 0.0;
-		$sum_opex_ratio     = 0.0;
+		$period_details  = array();
+		$total_revenue   = 0.0;
+		$total_opex      = 0.0;
+		$total_noi       = 0.0;
+		$total_capex     = 0.0;
+		$sum_occupancy   = 0.0;
+		$sum_collections = 0.0;
+		$sum_noi_margin  = 0.0;
+		$sum_opex_ratio  = 0.0;
 
 		foreach ( $raw_periods as $raw ) {
 			$period          = sanitize_text_field( $raw['period'] ?? '' );
@@ -270,14 +283,14 @@ class WP_MCP_AI_Tool_CRE_Property_Performance_Tracker implements WP_MCP_AI_Tool_
 				'period_count'   => $period_count,
 				'period_details' => $clean_details,
 				'summary'        => array(
-					'total_revenue'      => $calc::format_currency( $total_revenue ),
-					'total_opex'         => $calc::format_currency( $total_opex ),
-					'total_noi'          => $calc::format_currency( $total_noi ),
-					'total_capex'        => $calc::format_currency( $total_capex ),
-					'avg_occupancy'      => $calc::format_percentage( $avg_occupancy / 100 ),
-					'avg_collections'    => $calc::format_percentage( $avg_collections / 100 ),
-					'avg_noi_margin'     => $calc::format_percentage( $avg_noi_margin ),
-					'avg_opex_ratio'     => $calc::format_percentage( $avg_opex_ratio ),
+					'total_revenue'   => $calc::format_currency( $total_revenue ),
+					'total_opex'      => $calc::format_currency( $total_opex ),
+					'total_noi'       => $calc::format_currency( $total_noi ),
+					'total_capex'     => $calc::format_currency( $total_capex ),
+					'avg_occupancy'   => $calc::format_percentage( $avg_occupancy / 100 ),
+					'avg_collections' => $calc::format_percentage( $avg_collections / 100 ),
+					'avg_noi_margin'  => $calc::format_percentage( $avg_noi_margin ),
+					'avg_opex_ratio'  => $calc::format_percentage( $avg_opex_ratio ),
 				),
 				'trends'         => array(
 					'noi'         => $noi_trend,

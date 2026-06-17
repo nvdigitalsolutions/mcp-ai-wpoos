@@ -77,24 +77,24 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'country_code'   => array(
+				'country_code'  => array(
 					'type'        => 'string',
 					'description' => __( 'ISO country code (LK, JM, US).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'LK', 'JM', 'US' ),
 				),
-				'code_packs'     => array(
+				'code_packs'    => array(
 					'type'        => 'array',
 					'description' => __( 'Optional list of code-pack identifiers; defaults to the country pack.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 					'default'     => array(),
 				),
-				'building_type'  => array(
+				'building_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Building type: residential, commercial, industrial, mixed-use.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'residential', 'commercial', 'industrial', 'mixed-use' ),
 					'default'     => 'residential',
 				),
-				'lot' => array(
+				'lot'           => array(
 					'type'        => 'object',
 					'description' => __( 'Lot description.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -102,7 +102,7 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 						'lot_perches' => array( 'type' => 'number' ),
 					),
 				),
-				'building' => array(
+				'building'      => array(
 					'type'        => 'object',
 					'description' => __( 'Building geometry description.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -135,6 +135,13 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 			'read-only',
 			'cacheable',
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -173,7 +180,7 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 			}
 		}
 
-		$rules = WP_MCP_AI_Architectural_Codes::merge_rules( $code_packs );
+		$rules  = WP_MCP_AI_Architectural_Codes::merge_rules( $code_packs );
 		$zoning = isset( $rules['zoning'] ) && is_array( $rules['zoning'] ) ? $rules['zoning'] : array();
 
 		// Resolve lot area.
@@ -238,7 +245,7 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 
 		// Setbacks.
 		if ( ! empty( $setbacks ) ) {
-			$req = array(
+			$req    = array(
 				'front' => isset( $zoning['min_setback_front_m'] ) ? floatval( $zoning['min_setback_front_m'] ) : 0.0,
 				'rear'  => isset( $zoning['min_setback_rear_m'] ) ? floatval( $zoning['min_setback_rear_m'] ) : 0.0,
 				'left'  => isset( $zoning['min_setback_side_m'] ) ? floatval( $zoning['min_setback_side_m'] ) : 0.0,
@@ -249,8 +256,8 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 				if ( $req[ $side ] <= 0 ) {
 					continue;
 				}
-				$prov = isset( $setbacks[ $side ] ) ? floatval( $setbacks[ $side ] ) : 0.0;
-				$pass = ( $prov + 1e-6 >= $req[ $side ] );
+				$prov     = isset( $setbacks[ $side ] ) ? floatval( $setbacks[ $side ] ) : 0.0;
+				$pass     = ( $prov + 1e-6 >= $req[ $side ] );
 				$checks[] = array(
 					'rule'        => 'min_setback_' . $side . '_m',
 					'requirement' => sprintf( __( 'Minimum %s setback %.2f m.', 'mcp-ai-wpoos-pro' ), $side, $req[ $side ] ),
@@ -268,14 +275,14 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 		);
 
 		return array(
-			'success'      => true,
-			'country_code' => $country_code,
-			'code_packs'   => $code_packs,
-			'building_type' => $building_type,
-			'lot_area_m2'  => round( $lot_area_m2, 2 ),
-			'checks'       => $checks,
+			'success'        => true,
+			'country_code'   => $country_code,
+			'code_packs'     => $code_packs,
+			'building_type'  => $building_type,
+			'lot_area_m2'    => round( $lot_area_m2, 2 ),
+			'checks'         => $checks,
 			'overall_status' => empty( $failures ) ? 'pass' : 'fail',
-			'disclaimer'   => __( 'Analytical / advisory output only. Confirm with the local planning authority.', 'mcp-ai-wpoos-pro' ),
+			'disclaimer'     => __( 'Analytical / advisory output only. Confirm with the local planning authority.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

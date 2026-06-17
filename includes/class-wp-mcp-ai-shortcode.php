@@ -72,6 +72,22 @@ class WP_MCP_AI_Shortcode {
 	 */
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_assets' ) );
+
+		// Defer user-dependent localisation (nonce, currentUserId, memory
+		// endpoints) until after WordPress has determined the current user.
+		// On init, get_current_user_id() returns 0, producing a nonce that
+		// fails rest_cookie_check_errors for logged-in users.
+		add_action( 'wp', array( $this, 'localize_user_dependent_data' ) );
+
+		// Only register the legacy [mcp_ai_chat] shortcode when legacy mode is
+		// active. Set define( 'WP_MCP_AI_LEGACY_CHAT_JS', false ) in wp-config.php
+		// to disable legacy mode and use [nvoos_chat_spa] instead.
+		if ( defined( 'WP_MCP_AI_LEGACY_CHAT_JS' ) && ! WP_MCP_AI_LEGACY_CHAT_JS ) {
+			add_action( 'enqueue_block_assets', array( $this, 'maybe_enqueue_style_for_block_themes' ) );
+			add_action( 'elementor/frontend/after_register_scripts', array( $this, 'register_assets' ) );
+			return;
+		}
+
 		add_shortcode( self::SHORTCODE, array( $this, 'render_shortcode' ) );
 
 		add_action( 'enqueue_block_assets', array( $this, 'maybe_enqueue_style_for_block_themes' ) );
@@ -97,15 +113,17 @@ class WP_MCP_AI_Shortcode {
 	 * - chat.js (main chat application)
 	 */
 	public function register_assets() {
-		// Skip script localization in Elementor editor to prevent JavaScript conflicts.
-		// Styles and script registration will proceed, but localization (which can cause conflicts) is skipped.
 		$is_elementor_editor = $this->is_elementor_editor_init();
 
-		// Use bundled JavaScript file that combines all chat services.
-		// The chat-bundle.js is an entry point for esbuild with ES6 imports,.
+		// Use TypeScript-compiled bundle when WP_MCP_AI_USE_TS_BUILD constant
+		// or the orchestration settings option is enabled.
+		$ts_build = ( defined( 'WP_MCP_AI_USE_TS_BUILD' ) && WP_MCP_AI_USE_TS_BUILD )
+			|| ( class_exists( 'WP_MCP_AI_Settings_Registry' )
+				&& WP_MCP_AI_Settings_Registry::get_setting( 'use_ts_build', false ) );
+		$js_dir   = $ts_build ? 'assets/js/dist/' : 'assets/js/';
+		$js_ext   = $ts_build ? '.js' : '.min.js';
 
-		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
-		$script_relative            = 'assets/js/chat-bundle.min.js';
+		$script_relative            = $js_dir . 'chat-bundle' . $js_ext;
 		$style_relative             = 'assets/css/chat.css';
 		$cron_status_style_relative = 'assets/css/cron-status.css';
 
@@ -131,6 +149,15 @@ class WP_MCP_AI_Shortcode {
 			$style_path,
 			array( 'wp-mcp-ai-cron-status' ), // Depend on cron status CSS.
 			$style_version
+		);
+
+		// Register voice chat styles.
+		$voice_style_relative = 'assets/css/voice-chat.css';
+		wp_register_style(
+			'wp-mcp-ai-voice-chat',
+			WP_MCP_AI_URL . $voice_style_relative,
+			array( self::STYLE_HANDLE ),
+			$this->get_asset_version( $voice_style_relative )
 		);
 
 		// Register embedded LLM client scripts via the Embedded addon (or Pro addon).
@@ -164,6 +191,41 @@ class WP_MCP_AI_Shortcode {
 			true
 		);
 
+		// Register realtime voice service (standalone, loaded on demand).
+		$voice_realtime_relative = $this->resolve_js_asset_path( $js_dir, 'chat-voice-realtime-service', $js_ext );
+		wp_register_script(
+			'wp-mcp-ai-voice-realtime',
+			WP_MCP_AI_URL . $voice_realtime_relative,
+			array(),
+			$this->get_asset_version( $voice_realtime_relative ),
+			true
+		);
+
+		// Register browser voice service (standalone, loaded on demand).
+		$voice_browser_relative = $this->resolve_js_asset_path( $js_dir, 'chat-browser-voice-service', $js_ext );
+		wp_register_script(
+			'wp-mcp-ai-voice-browser',
+			WP_MCP_AI_URL . $voice_browser_relative,
+			array(),
+			$this->get_asset_version( $voice_browser_relative ),
+			true
+		);
+
+		// Register voice mode integration (glues voice services to chat UI).
+		$voice_integration_relative = $this->resolve_js_asset_path( $js_dir, 'chat-voice-mode-integration', $js_ext );
+		wp_register_script(
+			'wp-mcp-ai-voice-integration',
+			WP_MCP_AI_URL . $voice_integration_relative,
+			array( self::SCRIPT_HANDLE ),
+			$this->get_asset_version( $voice_integration_relative ),
+			true
+		);
+
+		// Memory endpoints are injected after user authentication via the
+		// localize_user_dependent_data() method (hooked to 'wp'). Calling
+		// get_chat_memory_endpoints_inline_script() here on 'init' would
+		// return empty because get_current_user_id() is still 0.
+
 		// Register chat bubble assets (floating chat widget).
 		$bubble_script_relative = 'assets/js/chat-bubble.js';
 		$bubble_style_relative  = 'assets/css/chat-bubble.css';
@@ -190,7 +252,8 @@ class WP_MCP_AI_Shortcode {
 		// Skip localization in Elementor editor to prevent JavaScript conflicts.
 		if ( $is_elementor_editor ) {
 			// Provide minimal localization for Elementor editor to support voice chat and file uploads.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$chat_debug_mode = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
 			wp_localize_script(
 				self::SCRIPT_HANDLE,
 				'wpMcpAiChat',
@@ -202,6 +265,8 @@ class WP_MCP_AI_Shortcode {
 					'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 					'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 					'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+					'voiceEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/session' ) ) ),
+					'voiceConfigEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/config' ) ) ),
 					'historyPerPage'      => 20,
 					'maxHistoryMessages'  => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 					'currentUserId'       => get_current_user_id(),
@@ -209,6 +274,7 @@ class WP_MCP_AI_Shortcode {
 					'showUsageCosts'      => false,
 					'showCapabilityFlags' => false,
 					'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+					'chatDebugMode'       => $chat_debug_mode,
 					'isElementorEditor'   => true,
 					'strings'             => array(
 						'placeholder' => __( 'Ask something…', 'mcp-ai-wpoos' ),
@@ -220,6 +286,7 @@ class WP_MCP_AI_Shortcode {
 
 		// Get plugin settings for cost display configuration.
 		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+		$chat_debug_mode  = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
 		$show_usage_costs = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
 
 		// Allow filtering of cost display setting.
@@ -242,6 +309,8 @@ class WP_MCP_AI_Shortcode {
 				'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'voiceEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/session' ) ) ),
+				'voiceConfigEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/config' ) ) ),
 				'historyPerPage'      => 20,
 				'maxHistoryMessages'  => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 				'currentUserId'       => get_current_user_id(),
@@ -249,6 +318,9 @@ class WP_MCP_AI_Shortcode {
 				'showUsageCosts'      => $show_usage_costs,
 				'showCapabilityFlags' => $show_capability_flags,
 				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+				'chatDebugMode'       => $chat_debug_mode,
+				'voiceMode'           => isset( $settings['voice_mode'] ) ? $settings['voice_mode'] : 'chained',
+				'voiceAutoPlay'       => isset( $settings['voice_auto_play'] ) ? (bool) $settings['voice_auto_play'] : false,
 				'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
 				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
 				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
@@ -256,6 +328,66 @@ class WP_MCP_AI_Shortcode {
 				'strings'             => $this->get_strings(),
 			)
 		);
+	}
+
+	/**
+	 * Overwrite user-dependent localisation keys (nonce, currentUserId) with
+	 * values generated after WordPress has authenticated the current user.
+	 *
+	 * Also injects the chat-memory bridge endpoints so that
+	 * chat-memory-service.js can locate the REST routes. Both operations
+	 * must happen after user authentication because:
+	 *   - wp_create_nonce('wp_rest') uses the current user's session token.
+	 *     On init the user is still 0, producing a nonce that fails
+	 *     rest_cookie_check_errors for logged-in users ("Cookie check failed").
+	 *   - get_chat_memory_endpoints_inline_script() skips guests, but on
+	 *     init every user appears to be a guest.
+	 *
+	 * Hooked to 'wp' so that determine_current_user has already run.
+	 * For admin pages the enqueue_chat_assets() path in the test-page base
+	 * class also calls wp_localize_script later (on admin_enqueue_scripts),
+	 * but the 'wp' hook provides a single safe correction point for the
+	 * frontend shortcode, block, and Elementor widget surfaces.
+	 *
+	 * @since 1.1.29
+	 *
+	 * @return void
+	 */
+	public function localize_user_dependent_data() {
+		// Only localise when the handle is registered (should always be true
+		// after init, but defensive).
+		if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
+			return;
+		}
+
+		$user_id = get_current_user_id();
+
+		// Preserve chatDebugMode from the initial register_assets() call
+		// so the second wp_localize_script call (which WordPress appends
+		// as a new `var wpMcpAiChat = {...}` declaration) does not strip
+		// the debugging flag from the JS global.
+		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+		$chat_debug_mode  = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
+
+		// Overwrite the nonce and current user ID that were set (with user 0)
+		// during register_assets() on init.
+		//
+		// Use wp_add_inline_script to merge individual properties onto the
+		// existing window.wpMcpAiChat object instead of calling
+		// wp_localize_script, which would create a new `var wpMcpAiChat = ...`
+		// declaration that strips every other key (messagesEndpoint, restUrl,
+		// etc.) that was set during register_assets().
+		$update_script  = 'window.wpMcpAiChat = window.wpMcpAiChat || {};';
+		$update_script .= 'window.wpMcpAiChat.nonce = ' . wp_json_encode( wp_create_nonce( 'wp_rest' ) ) . ';';
+		$update_script .= 'window.wpMcpAiChat.currentUserId = ' . wp_json_encode( $user_id ) . ';';
+		$update_script .= 'window.wpMcpAiChat.chatDebugMode = ' . wp_json_encode( $chat_debug_mode ) . ';';
+		wp_add_inline_script( self::SCRIPT_HANDLE, $update_script, 'after' );
+
+		// Inject the chat-memory bridge endpoints now that we know the user.
+		$memory_endpoints = self::get_chat_memory_endpoints_inline_script();
+		if ( '' !== $memory_endpoints ) {
+			wp_add_inline_script( self::SCRIPT_HANDLE, $memory_endpoints, 'after' );
+		}
 	}
 
 	/**
@@ -279,6 +411,34 @@ class WP_MCP_AI_Shortcode {
 		}
 
 		return WP_MCP_AI_VERSION;
+	}
+
+	/**
+	 * Resolve the best available JS file extension for a given basename.
+	 *
+	 * When the build system produces .min.js files but one is missing on disk,
+	 * gracefully fall back to the non-minified .js source to prevent MIME-type
+	 * errors (404s served as text/html by the web server).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $js_dir   Directory path relative to plugin root (e.g. 'assets/js/').
+	 * @param string $basename File basename without extension.
+	 * @param string $js_ext   Preferred extension (e.g. '.min.js' or '.js').
+	 * @return string Relative path with the best available extension.
+	 */
+	protected function resolve_js_asset_path( $js_dir, $basename, $js_ext ) {
+		$relative = $js_dir . $basename . $js_ext;
+
+		// If we prefer .min.js but it doesn't exist, try .js.
+		if ( '.min.js' === $js_ext && ! file_exists( WP_MCP_AI_PATH . $relative ) ) {
+			$fallback = $js_dir . $basename . '.js';
+			if ( file_exists( WP_MCP_AI_PATH . $fallback ) ) {
+				return $fallback;
+			}
+		}
+
+		return $relative;
 	}
 
 	/**
@@ -873,6 +1033,12 @@ class WP_MCP_AI_Shortcode {
 			// This prevents conflicts when multiple widgets with different providers are on the same page.
 			wp_enqueue_script( self::SCRIPT_HANDLE );
 			wp_enqueue_style( self::STYLE_HANDLE );
+			wp_enqueue_style( 'wp-mcp-ai-voice-chat' );
+
+			// Enqueue voice mode integration when voice mode is enabled.
+			if ( isset( $settings['voice_mode'] ) && 'off' !== $settings['voice_mode'] ) {
+				wp_enqueue_script( 'wp-mcp-ai-voice-integration' );
+			}
 
 			// Enqueue slash commands integration if available.
 			if ( wp_script_is( 'wp-mcp-ai-slash-commands', 'registered' ) ) {
@@ -961,6 +1127,7 @@ class WP_MCP_AI_Shortcode {
 				'toolsEndpoint'              => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'filesEndpoint'              => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 				'transcriptsEndpoint'        => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'chatFeedbackEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-feedback' ) ) ),
 				'embeddedConfigEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/embedded-client-config' ) ) ),
 				'vectorStorePreloadEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/vector-store-preload' ) ) ),
 				'crawl4aiTaskEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
@@ -975,10 +1142,36 @@ class WP_MCP_AI_Shortcode {
 				'historyPerPage'             => 20,
 				'maxHistoryMessages'         => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 				'restNonce'                  => wp_create_nonce( 'wp_rest' ),
+				'assistantName'              => $is_profession_test && isset( $profession ) && $profession ? get_the_title( $profession->ID ) : get_the_title( $assistant_id ),
+				'assistantAvatar'            => $is_profession_test ? '' : ( has_post_thumbnail( $assistant_id ) ? get_the_post_thumbnail_url( $assistant_id, 'thumbnail' ) : '' ),
+				'assistantBio'               => $is_profession_test ? '' : $assistant_content,
 			);
 
 			// Add async tool timeout using helper method (reuses $settings already fetched).
 			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
+
+			// Chat-session stream endpoint for async continuation delivery.
+			// The {session_id} placeholder is replaced client-side when the session ID is known.
+			$config['sessionStreamEndpoint'] = esc_url_raw(
+				WP_MCP_AI_Request_Context::normalise_rest_url(
+					rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-sessions/{session_id}/stream' )
+				)
+			);
+
+			/**
+			 * Feature flag: async chat continuation (server-side LLM re-entry after
+			 * an async tool finishes).  Defaults to true for new installs.
+			 *
+			 * @since 1.9.4
+			 *
+			 * @param bool $enabled Whether the client-side SSE session stream is enabled.
+			 */
+			$config['asyncChatContinuation'] = (bool) apply_filters( 'wp_mcp_ai_chat_continuation_enabled', true );
+
+			// Feature flag: replace the 4-counter strip with the full Tasks drawer + toasts.
+			// Off by default; flip on once the flag has been tested in production for one patch cycle.
+			// See docs/features/chat/cron-status-tasks-drawer-plan.md Phase 3b / PR-D.
+			$config['chatTasksDrawer'] = (bool) apply_filters( 'wp_mcp_ai_chat_tasks_drawer', true );
 
 			// Add provider and model for client-side execution (embedded provider).
 			// Also include system_prompt and temperature for embedded provider to use assistant defaults.
@@ -999,7 +1192,23 @@ class WP_MCP_AI_Shortcode {
 			// Add assistant defaults (system_prompt, temperature) for client-side execution.
 			// This ensures embedded providers have access to the same defaults as server-side providers.
 			if ( ! empty( $assistant_config_for_provider['system_prompt'] ) ) {
-				$config['systemPrompt'] = $assistant_config_for_provider['system_prompt'];
+				$resolved_assistant_id = is_numeric( $assistant_id ) ? (int) $assistant_id : 0;
+
+				/**
+				 * Apply the harness Prompt Cue injector to the system prompt
+				 * pre-localised into the page render. This is the third
+				 * (initial) chat surface alongside the REST chat path and
+				 * embedded-config endpoint; running the same filter here
+				 * keeps the three surfaces in sync.
+				 *
+				 * @since 1.4.0
+				 */
+				$config['systemPrompt'] = (string) apply_filters(
+					'wp_mcp_ai_resolved_system_prompt',
+					(string) $assistant_config_for_provider['system_prompt'],
+					$resolved_assistant_id,
+					array( 'surface' => 'shortcode_bootstrap' )
+				);
 			}
 			if ( isset( $assistant_config_for_provider['temperature'] ) && '' !== $assistant_config_for_provider['temperature'] ) {
 				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
@@ -1133,6 +1342,18 @@ class WP_MCP_AI_Shortcode {
 				$config['toolShortcuts'] = $tool_shortcuts;
 			}
 
+			// Get suggested prompts if available (post meta on assistant).
+			$suggested_prompts = array();
+			if ( ! $is_profession_test ) {
+				$prompts_raw = get_post_meta( $assistant_id, '_wp_mcp_ai_suggested_prompts', true );
+				if ( is_array( $prompts_raw ) && ! empty( $prompts_raw ) ) {
+					$suggested_prompts = array_values( array_filter( array_map( 'sanitize_text_field', $prompts_raw ) ) );
+				}
+			}
+			if ( ! empty( $suggested_prompts ) ) {
+				$config['suggestedPrompts'] = $suggested_prompts;
+			}
+
 			// Parse CPT action buttons if provided.
 			$cpt_actions = array();
 			if ( ! empty( $atts['cpt_actions'] ) ) {
@@ -1258,22 +1479,65 @@ class WP_MCP_AI_Shortcode {
 			}
 			?>
 			<div class="wp-mcp-ai-chat__assistant">
-				<label class="wp-mcp-ai-chat__label" for="<?php echo esc_attr( $textarea_id ); ?>">
-					<?php
-					// For profession tests, display the profession title.
-					// For regular assistants, display the assistant title.
-					if ( $is_profession_test && isset( $profession ) && $profession ) {
-						echo esc_html( get_the_title( $profession->ID ) );
-					} else {
-						echo esc_html( get_the_title( $assistant_id ) );
-					}
-					?>
-				</label>
-				<?php if ( $assistant_content ) : ?>
-					<div class="wp-mcp-ai-chat__assistant-content">
-						<?php echo wp_kses_post( $assistant_content ); ?>
+				<div class="wp-mcp-ai-chat__profile">
+					<div class="wp-mcp-ai-chat__profile-avatar">
+						<?php
+						$avatar_url = '';
+						if ( ! $is_profession_test && has_post_thumbnail( $assistant_id ) ) {
+							$avatar_url = get_the_post_thumbnail_url( $assistant_id, 'thumbnail' );
+						}
+						if ( $avatar_url ) :
+							?>
+							<img src="<?php echo esc_url( $avatar_url ); ?>" alt="" class="wp-mcp-ai-chat__profile-img" width="48" height="48" loading="lazy">
+						<?php else : ?>
+							<span class="wp-mcp-ai-chat__profile-icon" aria-hidden="true">
+								<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+							</span>
+						<?php endif; ?>
 					</div>
-				<?php endif; ?>
+					<div class="wp-mcp-ai-chat__profile-info">
+						<div class="wp-mcp-ai-chat__profile-header">
+							<span class="wp-mcp-ai-chat__profile-name">
+								<?php
+								if ( $is_profession_test && isset( $profession ) && $profession ) {
+									echo esc_html( get_the_title( $profession->ID ) );
+								} else {
+									echo esc_html( get_the_title( $assistant_id ) );
+								}
+								?>
+							</span>
+							<?php if ( ! empty( $assistant_provider ) ) : ?>
+								<span class="wp-mcp-ai-chat__profile-badges">
+									<span class="wp-mcp-ai-chat__profile-badge wp-mcp-ai-chat__profile-badge--provider">
+										<?php echo esc_html( ucfirst( $assistant_provider ) ); ?>
+									</span>
+									<?php if ( ! empty( $assistant_model ) ) : ?>
+										<span class="wp-mcp-ai-chat__profile-badge wp-mcp-ai-chat__profile-badge--model">
+											<?php echo esc_html( $assistant_model ); ?>
+										</span>
+									<?php endif; ?>
+									<?php if ( $profession_data && ! empty( $profession_data->post_title ) ) : ?>
+										<span class="wp-mcp-ai-chat__profile-badge wp-mcp-ai-chat__profile-badge--profession">
+											<?php echo esc_html( $profession_data->post_title ); ?>
+										</span>
+									<?php endif; ?>
+								</span>
+							<?php endif; ?>
+						</div>
+						<?php if ( $assistant_content && ! $is_profession_test ) : ?>
+							<button type="button" class="wp-mcp-ai-chat__profile-toggle" aria-expanded="false" aria-controls="<?php echo esc_attr( $instance_id ); ?>-bio">
+								<span class="wp-mcp-ai-chat__profile-toggle-text"><?php esc_html_e( 'About this assistant', 'mcp-ai-wpoos' ); ?></span>
+								<svg class="wp-mcp-ai-chat__profile-toggle-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 15.5a1 1 0 01-.7-.29l-5-5a1 1 0 011.4-1.42L12 13.09l4.3-4.3a1 1 0 011.4 1.42l-5 5a1 1 0 01-.7.29z"/></svg>
+							</button>
+							<div id="<?php echo esc_attr( $instance_id ); ?>-bio" class="wp-mcp-ai-chat__profile-bio" hidden>
+								<?php echo wp_kses_post( $assistant_content ); ?>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+				<label class="wp-mcp-ai-chat__label screen-reader-text" for="<?php echo esc_attr( $textarea_id ); ?>">
+					<?php esc_html_e( 'Chat message', 'mcp-ai-wpoos' ); ?>
+				</label>
 			</div>
 			<div class="wp-mcp-ai-chat__transcript-controls">
 				<button
@@ -1316,7 +1580,8 @@ class WP_MCP_AI_Shortcode {
 					</div>
 				</div>
 			</div>
-			<form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
+				<div class="wp-mcp-ai-chat__prompts" role="group" aria-label="<?php echo esc_attr__( 'Suggested questions', 'mcp-ai-wpoos' ); ?>"></div>
+				<form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
 				<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
 				<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>
 					<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed" aria-expanded="false" aria-controls="<?php echo esc_attr( $instance_id . '-tool-shortcuts' ); ?>">
@@ -1387,6 +1652,39 @@ class WP_MCP_AI_Shortcode {
 						<span class="wp-mcp-ai-chat__cron-status-icon">●</span>
 					</span>
 				</div>
+				<?php /* Tasks-drawer button (only visible when the chatTasksDrawer feature flag is on). */ ?>
+				<button type="button" class="wp-mcp-ai-chat__tasks-btn" hidden aria-haspopup="dialog" aria-expanded="false">
+					<span class="wp-mcp-ai-chat__tasks-btn__label"><?php esc_html_e( 'Jobs', 'mcp-ai-wpoos' ); ?></span>
+					<span class="wp-mcp-ai-chat__tasks-btn__badge" aria-hidden="true">0</span>
+				</button>
+				<?php /* Tasks drawer panel — populated and toggled by chat.js. */ ?>
+				<div class="wp-mcp-ai-chat__tasks-drawer" hidden role="dialog" aria-label="<?php esc_attr_e( 'Tasks', 'mcp-ai-wpoos' ); ?>">
+					<div class="wp-mcp-ai-chat__tasks-drawer__header">
+						<span class="wp-mcp-ai-chat__tasks-drawer__health" data-status="unknown" aria-hidden="true">●</span>
+						<span class="wp-mcp-ai-chat__tasks-drawer__title"><?php esc_html_e( 'Tasks', 'mcp-ai-wpoos' ); ?></span>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__close" aria-label="<?php esc_attr_e( 'Close Tasks drawer', 'mcp-ai-wpoos' ); ?>">✕</button>
+					</div>
+					<div class="wp-mcp-ai-chat__tasks-drawer__filters" role="tablist">
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__filter wp-mcp-ai-chat__tasks-drawer__filter--active" role="tab" aria-selected="true" data-filter="all"><?php esc_html_e( 'All', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__filter" role="tab" aria-selected="false" data-filter="running"><?php esc_html_e( 'Running', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__filter" role="tab" aria-selected="false" data-filter="queued"><?php esc_html_e( 'Pending', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__filter" role="tab" aria-selected="false" data-filter="completed"><?php esc_html_e( 'Completed', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__filter" role="tab" aria-selected="false" data-filter="failed"><?php esc_html_e( 'Failed', 'mcp-ai-wpoos' ); ?></button>
+					</div>
+					<div class="wp-mcp-ai-chat__tasks-drawer__batch" hidden>
+						<label class="wp-mcp-ai-chat__tasks-drawer__batch-select">
+							<input type="checkbox" class="wp-mcp-ai-chat__tasks-drawer__select-all" aria-label="<?php esc_attr_e( 'Select all jobs', 'mcp-ai-wpoos' ); ?>">
+							<span><?php esc_html_e( 'Select all', 'mcp-ai-wpoos' ); ?></span>
+						</label>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__batch-cancel" hidden><?php esc_html_e( 'Cancel selected', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__batch-retry" hidden><?php esc_html_e( 'Retry selected', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__batch-dismiss" hidden><?php esc_html_e( 'Dismiss selected', 'mcp-ai-wpoos' ); ?></button>
+					</div>
+					<ul class="wp-mcp-ai-chat__tasks-drawer__list" role="list"></ul>
+					<p class="wp-mcp-ai-chat__tasks-drawer__empty" hidden><?php esc_html_e( 'No tasks found.', 'mcp-ai-wpoos' ); ?></p>
+				</div>
+				<?php /* Toast container — showJobToast() appends/removes items here. */ ?>
+				<div class="wp-mcp-ai-chat__job-toast-container" aria-live="polite" role="status"></div>
 				<div class="wp-mcp-ai-chat__control-buttons">
 					<button
 						type="button"
@@ -1435,6 +1733,15 @@ class WP_MCP_AI_Shortcode {
 							<path d="M12 4a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H5a1 1 0 110-2h6V5a1 1 0 011-1z" />
 						</svg>
 						<span class="screen-reader-text"><?php esc_html_e( 'Start new conversation', 'mcp-ai-wpoos' ); ?></span>
+					</button>
+					<button
+						type="button"
+						class="wp-mcp-ai-chat__dark-toggle"
+						aria-label="<?php echo esc_attr__( 'Switch to dark mode', 'mcp-ai-wpoos' ); ?>"
+						title="<?php echo esc_attr__( 'Toggle dark mode', 'mcp-ai-wpoos' ); ?>"
+						hidden
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 7a5 5 0 100 10 5 5 0 000-10z"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
 					</button>
 					<?php if ( ! empty( $team_data ) && $supports_unified_mode ) : ?>
 					<button
@@ -1598,11 +1905,8 @@ class WP_MCP_AI_Shortcode {
 		$reinit_js = 'if(window.wpMcpAiChatInit&&window.wpMcpAiChatInit.init){window.wpMcpAiChatInit.init();}'
 			. 'if(window.wpMcpAiChatBubble&&window.wpMcpAiChatBubble.init){window.wpMcpAiChatBubble.init();}';
 
-		if ( function_exists( 'wp_get_inline_script_tag' ) ) {
-			echo wp_get_inline_script_tag( $reinit_js ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_get_inline_script_tag() escapes and adds CSP nonce.
-		} else {
-			echo '<script>' . $reinit_js . '</script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript,WordPress.Security.EscapeOutput.OutputNotEscaped -- Fallback for WP < 5.7; content is a static string.
-		}
+		// Plugin requires WP 6.0+; wp_get_inline_script_tag() (added in WP 5.7) is always available.
+		echo wp_get_inline_script_tag( $reinit_js ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_get_inline_script_tag() escapes and adds CSP nonce.
 
 		self::$footer_bubbles = array();
 	}
@@ -1654,16 +1958,97 @@ class WP_MCP_AI_Shortcode {
 				}
 			}
 
-			// Additional form element attributes.
-			if ( isset( $tags['input'] ) && is_array( $tags['input'] ) ) {
-				$tags['input']['accept']   = true;
-				$tags['input']['multiple'] = true;
-			}
+			// Form element tags must be allowed unconditionally because wp_kses_allowed_html('post')
+			// does not include them in all WordPress versions.  Relying on isset( $tags['form'] )
+			// meant that the <form> tag — and therefore the chat submit handler — was silently
+			// stripped by kses whenever WordPress's default 'post' allowlist lacked form elements,
+			// leaving the rendered chat container with inert buttons.
+			//
+			// Pattern: merge any attrs already on the tag (if WordPress added it), then apply ours.
+			$form_base    = ( isset( $tags['form'] ) && is_array( $tags['form'] ) ) ? $tags['form'] : array();
+			$tags['form'] = array_merge(
+				$form_base,
+				$extra_attrs,
+				array(
+					'id'               => true,
+					'class'            => true,
+					'method'           => true,
+					'action'           => true,
+					'data-instance-id' => true,
+				)
+			);
 
-			if ( isset( $tags['textarea'] ) && is_array( $tags['textarea'] ) ) {
-				$tags['textarea']['required']    = true;
-				$tags['textarea']['placeholder'] = true;
-			}
+			$button_base    = ( isset( $tags['button'] ) && is_array( $tags['button'] ) ) ? $tags['button'] : array();
+			$tags['button'] = array_merge(
+				$button_base,
+				$extra_attrs,
+				array(
+					'type'          => true,
+					'name'          => true,
+					'value'         => true,
+					'title'         => true,
+					'disabled'      => true,
+					'aria-haspopup' => true,
+					'aria-atomic'   => true,
+					'aria-selected' => true,
+				)
+			);
+
+			$input_base    = ( isset( $tags['input'] ) && is_array( $tags['input'] ) ) ? $tags['input'] : array();
+			$tags['input'] = array_merge(
+				$input_base,
+				$extra_attrs,
+				array(
+					'type'      => true,
+					'name'      => true,
+					'value'     => true,
+					'disabled'  => true,
+					'checked'   => true,
+					'accept'    => true,
+					'multiple'  => true,
+					'min'       => true,
+					'max'       => true,
+					'step'      => true,
+					'maxlength' => true,
+				)
+			);
+
+			$select_base    = ( isset( $tags['select'] ) && is_array( $tags['select'] ) ) ? $tags['select'] : array();
+			$tags['select'] = array_merge(
+				$select_base,
+				$extra_attrs,
+				array(
+					'name'     => true,
+					'disabled' => true,
+					'required' => true,
+				)
+			);
+
+			$option_base    = ( isset( $tags['option'] ) && is_array( $tags['option'] ) ) ? $tags['option'] : array();
+			$tags['option'] = array_merge(
+				$option_base,
+				$extra_attrs,
+				array(
+					'value'    => true,
+					'selected' => true,
+				)
+			);
+
+			$textarea_base    = ( isset( $tags['textarea'] ) && is_array( $tags['textarea'] ) ) ? $tags['textarea'] : array();
+			$tags['textarea'] = array_merge(
+				$textarea_base,
+				$extra_attrs,
+				array(
+					'id'          => true,
+					'class'       => true,
+					'rows'        => true,
+					'name'        => true,
+					'disabled'    => true,
+					'maxlength'   => true,
+					'required'    => true,
+					'placeholder' => true,
+				)
+			);
 
 			// Safe SVG elements for chat UI icons (no script, foreignObject,
 			// or event-handler attributes).
@@ -1705,10 +2090,10 @@ class WP_MCP_AI_Shortcode {
 			);
 
 			$tags['circle'] = array(
-				'cx'   => true,
-				'cy'   => true,
-				'r'    => true,
-				'fill' => true,
+				'cx'    => true,
+				'cy'    => true,
+				'r'     => true,
+				'fill'  => true,
 				'class' => true,
 			);
 
@@ -2066,6 +2451,55 @@ class WP_MCP_AI_Shortcode {
 
 		$async_timeout_seconds = isset( $settings['async_tool_timeout'] ) ? absint( $settings['async_tool_timeout'] ) : self::ASYNC_TOOL_TIMEOUT_DEFAULT;
 		return max( self::ASYNC_TOOL_TIMEOUT_MIN, $async_timeout_seconds ) * 1000;
+	}
+
+	/**
+	 * Build an inline JS snippet that augments the localized `wpMcpAiChat`
+	 * object with the chat-client ⇄ memory bridge endpoints.
+	 *
+	 * The snippet is appended after every `wp_localize_script( SCRIPT_HANDLE, 'wpMcpAiChat', ... )`
+	 * call in the plugin (block render, shortcode, Elementor widget, embedded
+	 * client), so the chat-memory-service.js can locate the REST routes.
+	 *
+	 * Returns an empty string when the user is not logged in (the bridge
+	 * disallows guest access) or when the kill-switch filter disables it.
+	 *
+	 * @since 1.6.0
+	 *
+	 * @return string Inline JS snippet ready for wp_add_inline_script.
+	 */
+	public static function get_chat_memory_endpoints_inline_script() {
+		$user_id = get_current_user_id();
+		if ( $user_id <= 0 ) {
+			return '';
+		}
+
+		if (
+			class_exists( 'WP_MCP_AI_REST_Chat_Memory_Controller' )
+			&& ! WP_MCP_AI_REST_Chat_Memory_Controller::is_chat_memory_enabled( $user_id )
+		) {
+			return '';
+		}
+
+		$base = WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-memory' ) );
+		$base = esc_url_raw( $base );
+
+		$endpoints = array(
+			'preferences' => $base . '/preferences',
+			'wakeUp'      => $base . '/wake-up',
+			'recall'      => $base . '/recall',
+			'store'       => $base . '/store',
+			'audit'       => $base . '/audit',
+			'sessionBase' => $base . '/sessions/',
+			'itemBase'    => $base . '/',
+		);
+
+		$json = wp_json_encode( $endpoints );
+		if ( false === $json ) {
+			return '';
+		}
+
+		return 'window.wpMcpAiChat = window.wpMcpAiChat || {}; window.wpMcpAiChat.memoryEndpoints = ' . $json . ';';
 	}
 
 	/**

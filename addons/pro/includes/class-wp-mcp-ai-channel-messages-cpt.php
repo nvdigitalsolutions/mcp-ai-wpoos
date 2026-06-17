@@ -74,7 +74,7 @@ class WP_MCP_AI_Channel_Messages_CPT {
 	 *
 	 * Accepts the same $data array shape as WP_MCP_AI_Channel_Messages_CCT::insert().
 	 *
-	 * @param array $data {
+	 * @param array $data { // phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Inline array specification.
 	 *   @type string $channel            Platform slug, e.g. 'whatsapp'.
 	 *   @type string $channel_contact_id Platform-side contact ID.
 	 *   @type string $contact_name       Display name of the contact.

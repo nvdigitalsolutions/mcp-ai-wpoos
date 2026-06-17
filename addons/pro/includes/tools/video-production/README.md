@@ -2,6 +2,13 @@
 
 This directory contains all tools for the Video Production Toolkit.
 
+## AI Video Generation
+
+### Gemini Omni Flash (May 2026 — replaces Veo)
+- [ ] generate_omni_video - Any-to-any multimodal video generation (Planned)
+- [ ] edit_omni_video - Conversational multi-turn video editing (Planned)
+- [x] generate_veo_video - Veo 3.1/2.0 (Legacy, maintained as fallback)
+
 ## Tool Categories
 
 ### Video Creation (4 tools)
@@ -27,7 +34,8 @@ This directory contains all tools for the Video Production Toolkit.
 ## Implementation Status
 
 **Phase 1 (Foundation)**: ✅ Directory created  
-**Phase 6 (Tools)**: ✅ Complete (12/12 tools implemented)
+**Phase 6 (Tools)**: ✅ Complete (12/12 tools implemented)  
+**Phase 7 (Omni Integration)**: 🔄 Planned — Omni Flash video generation + conversational editing
 
 ## Dependencies
 

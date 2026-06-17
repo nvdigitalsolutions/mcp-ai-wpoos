@@ -24,7 +24,8 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  */
 class WP_MCP_AI_Tool_CRE_Watchlist_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
-	/** @var string Option key for watchlist storage. */
+	/**
+	 * Performs the operation.
 	const OPTION_KEY = 'wp_mcp_ai_cre_watchlist';
 
 	/**
@@ -125,7 +126,20 @@ class WP_MCP_AI_Tool_CRE_Watchlist_Manager implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -297,14 +311,23 @@ class WP_MCP_AI_Tool_CRE_Watchlist_Manager implements WP_MCP_AI_Tool_Interface, 
 		$all_entries = array_values( $watchlist );
 		$calc        = WP_MCP_AI_CRE_Debt_Calculator::class;
 
-		$total_balance      = 0.0;
-		$total_days         = 0.0;
+		$total_balance       = 0.0;
+		$total_days          = 0.0;
 		$count_by_escalation = array(
-			'watch'    => array( 'count' => 0, 'balance' => 0.0 ),
-			'elevated' => array( 'count' => 0, 'balance' => 0.0 ),
-			'critical' => array( 'count' => 0, 'balance' => 0.0 ),
+			'watch'    => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'elevated' => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'critical' => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
 		);
-		$count_by_status = array(
+		$count_by_status     = array(
 			'open'        => array( 'count' => 0 ),
 			'in_progress' => array( 'count' => 0 ),
 			'resolved'    => array( 'count' => 0 ),
@@ -334,10 +357,10 @@ class WP_MCP_AI_Tool_CRE_Watchlist_Manager implements WP_MCP_AI_Tool_Interface, 
 				++$count_by_status[ $status ]['count'];
 			}
 
-			$output                       = $entry;
-			$output['balance']            = $calc::format_currency( $balance );
-			$output['days_on_watchlist']  = $days_on_watchlist;
-			$formatted[]                  = $output;
+			$output                      = $entry;
+			$output['balance']           = $calc::format_currency( $balance );
+			$output['days_on_watchlist'] = $days_on_watchlist;
+			$formatted[]                 = $output;
 		}
 
 		$entry_count = count( $formatted );
@@ -360,14 +383,14 @@ class WP_MCP_AI_Tool_CRE_Watchlist_Manager implements WP_MCP_AI_Tool_Interface, 
 				$entry_count
 			),
 			'data'       => array(
-				'total_entries'           => $entry_count,
-				'summary'                 => array(
+				'total_entries' => $entry_count,
+				'summary'       => array(
 					'total_watchlist_balance' => $calc::format_currency( $total_balance ),
 					'count_by_escalation'     => $formatted_escalation,
 					'count_by_status'         => $count_by_status,
 					'avg_days_on_watchlist'   => $avg_days,
 				),
-				'entries'                 => $formatted,
+				'entries'       => $formatted,
 			),
 			'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);

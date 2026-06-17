@@ -1,0 +1,17 @@
+{
+  "apiVersion": 3,
+  "name": "nvoos/docs-hub",
+  "title": "NV oOS Docs Hub",
+  "category": "widgets",
+  "icon": "book",
+  "description": "Embeds the NV oOS Docs Hub documentation browser.",
+  "textdomain": "nvoos-docs-hub",
+  "attributes": {
+    "section": { "type": "string", "default": "all" },
+    "theme": { "type": "string", "default": "auto" },
+    "search": { "type": "string", "default": "true" },
+    "sidebar": { "type": "string", "default": "true" },
+    "home": { "type": "string", "default": "" }
+  },
+  "supports": { "html": false }
+}

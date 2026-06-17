@@ -151,6 +151,20 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 			'attachments'      => isset( $event['attachments'] ) && is_array( $event['attachments'] )
 				? wp_json_encode( $event['attachments'] )
 				: '',
+			// Memory Layer 2026 Enhancements Phase 2 — schema v2 fields.
+			// Each field is optional in the event payload; legacy callers that
+			// don't pass these continue to work — sensible defaults are written
+			// and read consumers (Phase 5 decay sweep, Phase 3 dedup) fall back
+			// gracefully when the field is empty on legacy rows.
+			'content_hash'     => self::resolve_content_hash( $event ),
+			'confidence_score' => isset( $event['confidence_score'] ) && is_numeric( $event['confidence_score'] )
+				? (string) max( 0.0, min( 1.0, (float) $event['confidence_score'] ) )
+				: '1.0',
+			'last_accessed_at' => isset( $event['last_accessed_at'] ) && '' !== $event['last_accessed_at']
+				? sanitize_text_field( (string) $event['last_accessed_at'] )
+				: $stored_at,
+			'superseded_by'    => isset( $event['superseded_by'] ) ? sanitize_text_field( (string) $event['superseded_by'] ) : '',
+			'auto_captured'    => ! empty( $event['auto_captured'] ) ? 1 : 0,
 		);
 
 		/**
@@ -170,6 +184,64 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 	}
 
 	/**
+	 * Resolve the content hash for a stored-memory event.
+	 *
+	 * Uses the caller-supplied `content_hash` when present (e.g. from Phase 3's
+	 * auto-capture service which computes it before the dedup window check).
+	 * Otherwise computes a SHA-256 over normalised content so legacy callers
+	 * still produce hashable records for downstream contradiction detection.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param array $event Memory event payload.
+	 * @return string Lower-case 64-char hex SHA-256, or '' when no content is available.
+	 */
+	protected static function resolve_content_hash( array $event ) {
+		if ( isset( $event['content_hash'] ) && is_string( $event['content_hash'] ) && '' !== $event['content_hash'] ) {
+			return sanitize_text_field( $event['content_hash'] );
+		}
+
+		$content = isset( $event['content'] ) ? (string) $event['content'] : '';
+		if ( '' === $content ) {
+			return '';
+		}
+
+		// Normalise before hashing so trivial whitespace / case differences
+		// don't fragment the dedup window in Phase 3.
+		$normalised = self::normalise_for_hash( $content );
+
+		return hash( 'sha256', $normalised );
+	}
+
+	/**
+	 * Normalise text for content-hash computation.
+	 *
+	 * Lower-cases (where multibyte support is available), collapses runs of
+	 * whitespace to single spaces, and trims. Stateless; safe to call from any
+	 * thread or hook context.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param string $text Raw text.
+	 * @return string Normalised text.
+	 */
+	public static function normalise_for_hash( $text ) {
+		if ( ! is_string( $text ) || '' === $text ) {
+			return '';
+		}
+
+		if ( function_exists( 'mb_strtolower' ) ) {
+			$text = mb_strtolower( $text, 'UTF-8' );
+		} else {
+			$text = strtolower( $text );
+		}
+
+		$text = preg_replace( '/\s+/u', ' ', $text );
+
+		return null === $text ? '' : trim( $text );
+	}
+
+	/**
 	 * Listener: mirror a stored memory into the CCT.
 	 *
 	 * Tolerant of every failure mode — JetEngine missing, CCT not registered,
@@ -184,12 +256,31 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			self::warn_once(
+				'jetengine_cct_class_missing',
+				__( 'Agent memory CCT bridge: WP_MCP_AI_JetEngine_Agent_Memories_CCT class is missing — memory not mirrored to JetEngine CCT.', 'mcp-ai-wpoos' ),
+				array(
+					'context_id' => isset( $event['context_id'] ) ? (string) $event['context_id'] : '',
+					'agent_id'   => isset( $event['agent_id'] ) ? (string) $event['agent_id'] : '',
+				)
+			);
 			return;
 		}
 
 		$handler = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_item_handler();
 
 		if ( ! is_object( $handler ) || ! method_exists( $handler, 'update_item' ) ) {
+			self::warn_once(
+				'jetengine_handler_unavailable',
+				__( 'Agent memory CCT bridge: JetEngine item handler unavailable — memory not mirrored to JetEngine CCT.', 'mcp-ai-wpoos' ),
+				array_merge(
+					array(
+						'context_id' => isset( $event['context_id'] ) ? (string) $event['context_id'] : '',
+						'agent_id'   => isset( $event['agent_id'] ) ? (string) $event['agent_id'] : '',
+					),
+					self::collect_jetengine_status()
+				)
+			);
 			return;
 		}
 
@@ -314,17 +405,17 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 		$table = $wpdb->prefix . 'jet_cct_' . $slug;
 
 		// Confirm the table exists before querying (CCT may not be registered yet).
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared -- Direct query on JetEngine CCT table; table name from class constant. WP_Query does not support SHOW TABLES.
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 		if ( $exists !== $table ) {
 			$cache[ $context_id ] = null;
 			return null;
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on JetEngine CCT table; table name from class constant, not user input.
 		$row_id = $wpdb->get_var(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from class constant, not user input.
 				"SELECT _ID FROM `{$table}` WHERE context_id = %s LIMIT 1",
 				$context_id
 			)
@@ -332,6 +423,86 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 
 		$cache[ $context_id ] = $row_id ? (int) $row_id : null;
 		return $cache[ $context_id ];
+	}
+
+	/**
+	 * Per-request flag set used by `warn_once`.
+	 *
+	 * @var array<string,bool>
+	 */
+	protected static $warned_reasons = array();
+
+	/**
+	 * Reset the rate-limited warning state. Used by tests to assert
+	 * "logs exactly once per request" semantics across multiple cases.
+	 *
+	 * @return void
+	 */
+	public static function reset_warn_state() {
+		self::$warned_reasons = array();
+	}
+
+	/**
+	 * Emit a single warning per (reason) per request to the activity log.
+	 *
+	 * Prevents a 50-item mining batch from spamming `wp_mcp_ai_recent_errors`
+	 * with the same "JetEngine handler missing" message 50 times.
+	 *
+	 * @param string $reason  Stable reason key (used for de-duplication).
+	 * @param string $message Human-readable warning message.
+	 * @param array  $context Additional structured context for the log entry.
+	 * @return void
+	 */
+	protected static function warn_once( $reason, $message, array $context = array() ) {
+		$reason = (string) $reason;
+		if ( '' === $reason || isset( self::$warned_reasons[ $reason ] ) ) {
+			return;
+		}
+		self::$warned_reasons[ $reason ] = true;
+
+		if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+			return;
+		}
+
+		$context['reason'] = $reason;
+		WP_MCP_AI_Logger::log_warning( $message, $context );
+	}
+
+	/**
+	 * Collect a snapshot of the JetEngine module status to attach to bridge
+	 * warnings. All keys are best-effort; absence is normal when JetEngine
+	 * isn't installed.
+	 *
+	 * @return array<string,mixed>
+	 */
+	protected static function collect_jetengine_status() {
+		$status = array(
+			'jet_engine_loaded'    => function_exists( 'jet_engine' ),
+			'data_stores_active'   => false,
+			'cct_module_loaded'    => false,
+			'agent_memories_table' => false,
+		);
+
+		if ( $status['jet_engine_loaded'] ) {
+			$engine = jet_engine();
+			if ( ! empty( $engine->modules ) && method_exists( $engine->modules, 'is_module_active' ) ) {
+				$status['data_stores_active'] = (bool) $engine->modules->is_module_active( 'data-stores' );
+			}
+			if ( class_exists( '\\Jet_Engine\\Modules\\Custom_Content_Types\\Module' ) ) {
+				$status['cct_module_loaded'] = true;
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			global $wpdb;
+			$slug  = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
+			$table = $wpdb->prefix . 'jet_cct_' . $slug;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct diagnostic query on JetEngine CCT table; table name from class constant. WP_Query does not support SHOW TABLES.
+			$found                          = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			$status['agent_memories_table'] = ( $found === $table );
+		}
+
+		return $status;
 	}
 }
 

@@ -464,36 +464,108 @@ class WP_MCP_AI_Usage_Tracker {
 	protected static function get_fallback_pricing( $model ) {
 		$model = strtolower( sanitize_text_field( $model ) );
 
-		// Common model pricing (as of November 2024).
+		// Common model pricing (as of June 2026).
+		// https://openai.com/api/pricing/
 		$pricing_map = array(
+			// OpenAI GPT-5.5 series (April 2026).
+			'gpt-5.5'                                      => array(
+				'input_cost_per_1k'  => 0.005,  // $5.00/1M.
+				'output_cost_per_1k' => 0.03,   // $30.00/1M.
+			),
+			'gpt-5.5-pro'                                  => array(
+				'input_cost_per_1k'  => 0.03,   // $30.00/1M.
+				'output_cost_per_1k' => 0.18,   // $180.00/1M.
+			),
+			// OpenAI GPT-5.4 series (March 2026).
+			'gpt-5.4'                                      => array(
+				'input_cost_per_1k'  => 0.0025, // $2.50/1M.
+				'output_cost_per_1k' => 0.015,  // $15.00/1M.
+			),
+			'gpt-5.4-mini'                                 => array(
+				'input_cost_per_1k'  => 0.00075, // $0.75/1M.
+				'output_cost_per_1k' => 0.0045,  // $4.50/1M.
+			),
+			'gpt-5.4-nano'                                 => array(
+				'input_cost_per_1k'  => 0.0002,  // $0.20/1M.
+				'output_cost_per_1k' => 0.00125, // $1.25/1M.
+			),
+			'gpt-5.4-pro'                                  => array(
+				'input_cost_per_1k'  => 0.03,   // $30.00/1M.
+				'output_cost_per_1k' => 0.18,   // $180.00/1M.
+			),
+			// OpenAI GPT-5.x legacy.
+			'gpt-5.3-codex'                                => array(
+				'input_cost_per_1k'  => 0.00175, // $1.75/1M.
+				'output_cost_per_1k' => 0.014,   // $14.00/1M.
+			),
+			'gpt-5.2'                                      => array(
+				'input_cost_per_1k'  => 0.00175, // $1.75/1M.
+				'output_cost_per_1k' => 0.014,   // $14.00/1M.
+			),
+			'gpt-5.2-pro'                                  => array(
+				'input_cost_per_1k'  => 0.021,  // $21.00/1M.
+				'output_cost_per_1k' => 0.168,  // $168.00/1M.
+			),
+			'gpt-5.1'                                      => array(
+				'input_cost_per_1k'  => 0.00125, // $1.25/1M.
+				'output_cost_per_1k' => 0.01,    // $10.00/1M.
+			),
 			'gpt-5'                                        => array(
-				'input_cost_per_1k'  => 0.01,
-				'output_cost_per_1k' => 0.03,
+				'input_cost_per_1k'  => 0.00125, // $1.25/1M.
+				'output_cost_per_1k' => 0.01,    // $10.00/1M.
 			),
 			'gpt-5-mini'                                   => array(
-				'input_cost_per_1k'  => 0.002,
-				'output_cost_per_1k' => 0.006,
+				'input_cost_per_1k'  => 0.00025, // $0.25/1M.
+				'output_cost_per_1k' => 0.002,   // $2.00/1M.
 			),
+			'gpt-5-nano'                                   => array(
+				'input_cost_per_1k'  => 0.00005, // $0.05/1M.
+				'output_cost_per_1k' => 0.0004,  // $0.40/1M.
+			),
+			// OpenAI GPT-4.1 series.
 			'gpt-4.1'                                      => array(
-				'input_cost_per_1k'  => 0.001,
-				'output_cost_per_1k' => 0.004,
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M.
+				'output_cost_per_1k' => 0.008,  // $8.00/1M.
 			),
 			'gpt-4.1-mini'                                 => array(
-				'input_cost_per_1k'  => 0.0004,
-				'output_cost_per_1k' => 0.0016,
+				'input_cost_per_1k'  => 0.0004, // $0.40/1M.
+				'output_cost_per_1k' => 0.0016, // $1.60/1M.
 			),
 			'gpt-4.1-nano'                                 => array(
-				'input_cost_per_1k'  => 0.0002,
-				'output_cost_per_1k' => 0.0008,
+				'input_cost_per_1k'  => 0.0001, // $0.10/1M.
+				'output_cost_per_1k' => 0.0004, // $0.40/1M.
 			),
+			// OpenAI GPT-4o series.
 			'gpt-4o'                                       => array(
-				'input_cost_per_1k'  => 0.0025,
-				'output_cost_per_1k' => 0.01,
+				'input_cost_per_1k'  => 0.0025, // $2.50/1M.
+				'output_cost_per_1k' => 0.01,   // $10.00/1M.
 			),
 			'gpt-4o-mini'                                  => array(
-				'input_cost_per_1k'  => 0.00015,
-				'output_cost_per_1k' => 0.0006,
+				'input_cost_per_1k'  => 0.00015, // $0.15/1M.
+				'output_cost_per_1k' => 0.0006,  // $0.60/1M.
 			),
+			// OpenAI o-series reasoning.
+			'o3'                                           => array(
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M.
+				'output_cost_per_1k' => 0.008,  // $8.00/1M.
+			),
+			'o4-mini'                                      => array(
+				'input_cost_per_1k'  => 0.0011, // $1.10/1M.
+				'output_cost_per_1k' => 0.0044, // $4.40/1M.
+			),
+			'o1'                                           => array(
+				'input_cost_per_1k'  => 0.015,  // $15.00/1M.
+				'output_cost_per_1k' => 0.06,   // $60.00/1M.
+			),
+			'o1-mini'                                      => array(
+				'input_cost_per_1k'  => 0.003,  // $3.00/1M.
+				'output_cost_per_1k' => 0.012,  // $12.00/1M.
+			),
+			'o3-mini'                                      => array(
+				'input_cost_per_1k'  => 0.0011, // $1.10/1M.
+				'output_cost_per_1k' => 0.0044, // $4.40/1M.
+			),
+			// Legacy OpenAI.
 			'gpt-4-turbo'                                  => array(
 				'input_cost_per_1k'  => 0.01,
 				'output_cost_per_1k' => 0.03,
@@ -505,22 +577,6 @@ class WP_MCP_AI_Usage_Tracker {
 			'gpt-3.5-turbo'                                => array(
 				'input_cost_per_1k'  => 0.0005,
 				'output_cost_per_1k' => 0.0015,
-			),
-			'o1-2024-12-17'                                => array(
-				'input_cost_per_1k'  => 0.015,
-				'output_cost_per_1k' => 0.06,
-			),
-			'o1-preview'                                   => array(
-				'input_cost_per_1k'  => 0.015,
-				'output_cost_per_1k' => 0.06,
-			),
-			'o1-mini'                                      => array(
-				'input_cost_per_1k'  => 0.003,
-				'output_cost_per_1k' => 0.012,
-			),
-			'o3-mini'                                      => array(
-				'input_cost_per_1k'  => 0.00110,
-				'output_cost_per_1k' => 0.00440,
 			),
 			'gemini-1.5-pro'                               => array(
 				'input_cost_per_1k'  => 0.00125,
@@ -553,9 +609,17 @@ class WP_MCP_AI_Usage_Tracker {
 			// Anthropic Claude 4.6 series (February 2026).
 			'claude-sonnet-4-6'                            => array(
 				'input_cost_per_1k'  => 0.003,
-				'output_cost_per_1k' => 0.012,
+				'output_cost_per_1k' => 0.015,
 			),
 			'claude-opus-4-6'                              => array(
+				'input_cost_per_1k'  => 0.005,
+				'output_cost_per_1k' => 0.025,
+			),
+			'claude-opus-4-7'                              => array(
+				'input_cost_per_1k'  => 0.005,
+				'output_cost_per_1k' => 0.025,
+			),
+			'claude-opus-4-8'                              => array(
 				'input_cost_per_1k'  => 0.005,
 				'output_cost_per_1k' => 0.025,
 			),
@@ -573,12 +637,12 @@ class WP_MCP_AI_Usage_Tracker {
 				'output_cost_per_1k' => 0.005,
 			),
 			'claude-haiku-4-5-20251001'                    => array(
-				'input_cost_per_1k'  => 0.0008,
-				'output_cost_per_1k' => 0.004,
+				'input_cost_per_1k'  => 0.001,
+				'output_cost_per_1k' => 0.005,
 			),
 			'claude-opus-4-5'                              => array(
-				'input_cost_per_1k'  => 0.015,
-				'output_cost_per_1k' => 0.075,
+				'input_cost_per_1k'  => 0.005,
+				'output_cost_per_1k' => 0.025,
 			),
 			'claude-opus-4-1-20250805'                     => array(
 				'input_cost_per_1k'  => 0.015,
@@ -713,6 +777,64 @@ class WP_MCP_AI_Usage_Tracker {
 			'qwen/qwen2.5-7b-instruct'                     => array(
 				'input_cost_per_1k'  => 0.0002, // $0.20 per 1M tokens = $0.0002 per 1K.
 				'output_cost_per_1k' => 0.0002,
+			),
+			// Baseten Model APIs (as of June 2026).
+			// https://www.baseten.co/pricing/
+			'deepseek-ai/deepseek-v3'                      => array(
+				'input_cost_per_1k'  => 0.0005, // $0.50 per 1M tokens = $0.0005 per 1K.
+				'output_cost_per_1k' => 0.0015, // $1.50 per 1M tokens = $0.0015 per 1K.
+			),
+			'deepseek-ai/deepseek-r1'                      => array(
+				'input_cost_per_1k'  => 0.0008, // $0.80 per 1M tokens = $0.0008 per 1K.
+				'output_cost_per_1k' => 0.003,   // $3.00 per 1M tokens = $0.003 per 1K.
+			),
+			// DeepSeek direct API models (as of June 2026).
+			// https://api-docs.deepseek.com/quick_start/pricing
+			'deepseek-v4-flash'                            => array(
+				'input_cost_per_1k'  => 0.00014, // $0.14 per 1M tokens = $0.00014 per 1K (cache miss).
+				'output_cost_per_1k' => 0.00028, // $0.28 per 1M tokens = $0.00028 per 1K.
+			),
+			'deepseek-v4-pro'                              => array(
+				'input_cost_per_1k'  => 0.000435, // Promotional: $0.435/1M (regular: $1.74/1M).
+				'output_cost_per_1k' => 0.00087,  // Promotional: $0.87/1M (regular: $3.48/1M).
+			),
+			'deepseek-chat'                                => array(
+				'input_cost_per_1k'  => 0.00027, // $0.27 per 1M tokens (deprecated, use v4-flash).
+				'output_cost_per_1k' => 0.0011,  // $1.10 per 1M tokens.
+			),
+			'deepseek-reasoner'                            => array(
+				'input_cost_per_1k'  => 0.00055, // $0.55 per 1M tokens (deprecated, use v4-flash thinking).
+				'output_cost_per_1k' => 0.00219, // $2.19 per 1M tokens.
+			),
+			'deepseek-coder'                               => array(
+				'input_cost_per_1k'  => 0.00027, // $0.27 per 1M tokens (deprecated, use v4-flash/v4-pro).
+				'output_cost_per_1k' => 0.0011,  // $1.10 per 1M tokens.
+			),
+			'zai-org/glm-4'                                => array(
+				'input_cost_per_1k'  => 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K.
+				'output_cost_per_1k' => 0.0022, // $2.20 per 1M tokens = $0.0022 per 1K.
+			),
+			'moonshotai/kimi-k2'                           => array(
+				'input_cost_per_1k'  => 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K.
+				'output_cost_per_1k' => 0.0025, // $2.50 per 1M tokens = $0.0025 per 1K.
+			),
+			// Kimi (Moonshot AI) direct models (as of June 2026).
+			// https://platform.moonshot.ai/docs/pricing/chat
+			'kimi-k2.6'                                    => array(
+				'input_cost_per_1k'  => 0.00095, // $0.95 per 1M tokens = $0.00095 per 1K.
+				'output_cost_per_1k' => 0.004,   // $4.00 per 1M tokens = $0.004 per 1K.
+			),
+			'kimi-k2.5'                                    => array(
+				'input_cost_per_1k'  => 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K.
+				'output_cost_per_1k' => 0.003,   // $3.00 per 1M tokens = $0.003 per 1K.
+			),
+			'kimi-k2'                                      => array(
+				'input_cost_per_1k'  => 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K.
+				'output_cost_per_1k' => 0.0025, // $2.50 per 1M tokens = $0.0025 per 1K.
+			),
+			'kimi-k2-thinking'                             => array(
+				'input_cost_per_1k'  => 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K.
+				'output_cost_per_1k' => 0.0025, // $2.50 per 1M tokens = $0.0025 per 1K.
 			),
 		);
 

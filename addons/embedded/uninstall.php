@@ -6,7 +6,7 @@
  * Cleans up options and transients created by the addon.
  *
  * @package NV_oOS_Embedded
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {

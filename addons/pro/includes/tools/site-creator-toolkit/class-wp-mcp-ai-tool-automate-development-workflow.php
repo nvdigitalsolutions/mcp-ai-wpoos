@@ -88,6 +88,13 @@ class WP_MCP_AI_Tool_Automate_Development_Workflow implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @since 1.2.0

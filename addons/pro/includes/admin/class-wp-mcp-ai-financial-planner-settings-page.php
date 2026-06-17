@@ -154,7 +154,7 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 					<th scope="row"><?php esc_html_e( 'Enable yfinance Service', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<?php
-						$settings = get_option( 'wp_mcp_ai_settings', array() );
+						$settings   = get_option( 'wp_mcp_ai_settings', array() );
 						$is_enabled = ! empty( $settings['enable_yfinance_service'] );
 						?>
 						<label>
@@ -183,7 +183,7 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 								require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-yfinance-service.php';
 							}
 							$yf_service = WP_MCP_AI_YFinance_Service::get_instance();
-							$health = $yf_service->check_health();
+							$health     = $yf_service->check_health();
 							?>
 							<p>
 								<strong><?php esc_html_e( 'Service Status:', 'mcp-ai-wpoos-pro' ); ?></strong>
@@ -309,8 +309,11 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 	}
 }
 
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed -- Legacy AJAX handler must remain at file scope.
 /**
- * AJAX handler to clear yfinance cache
+ * AJAX handler to clear yfinance cache.
+ *
+ * @deprecated This function is a legacy AJAX handler that must remain at file scope.
  */
 function wp_mcp_ai_ajax_clear_yfinance_cache() {
 	// Check nonce.
@@ -318,9 +321,11 @@ function wp_mcp_ai_ajax_clear_yfinance_cache() {
 
 	// Check capabilities.
 	if ( ! current_user_can( 'manage_options' ) ) {
-		wp_send_json_error( array(
-			'message' => __( 'You do not have permission to clear cache.', 'mcp-ai-wpoos-pro' ),
-		) );
+		wp_send_json_error(
+			array(
+				'message' => __( 'You do not have permission to clear cache.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
 	}
 
 	// Load service class.
@@ -331,13 +336,15 @@ function wp_mcp_ai_ajax_clear_yfinance_cache() {
 	$service = WP_MCP_AI_YFinance_Service::get_instance();
 	$cleared = $service->clear_all_caches();
 
-	wp_send_json_success( array(
-		'message' => sprintf(
+	wp_send_json_success(
+		array(
+			'message' => sprintf(
 			/* translators: %d: number of caches cleared */
-			__( 'Successfully cleared %d cached prices.', 'mcp-ai-wpoos-pro' ),
-			$cleared
-		),
-	) );
+				__( 'Successfully cleared %d cached prices.', 'mcp-ai-wpoos-pro' ),
+				$cleared
+			),
+		)
+	);
 }
 add_action( 'wp_ajax_wp_mcp_ai_clear_yfinance_cache', 'wp_mcp_ai_ajax_clear_yfinance_cache' );
 

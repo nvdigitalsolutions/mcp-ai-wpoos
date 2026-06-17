@@ -1,0 +1,269 @@
+# ==============================================================================
+# NV oOS — E2E QA Workflow (Playwright + Docker)
+# ==============================================================================
+#
+# Runs automated browser tests against a fresh WordPress instance.
+# Docker Compose spins up WP + MySQL + Playwright, runs tests, captures
+# videos/traces/screenshots, then tears down.
+#
+# TRIGGERS:
+#   • Every PR that touches PHP, JS, CSS, or test files
+#   • Manual dispatch from GitHub Actions UI
+#
+# ARTIFACTS:
+#   • Playwright HTML report
+#   • JUnit XML test results
+#   • Videos of failed tests (.webm)
+#   • Trace files of failed tests (.zip)
+#   • Screenshots of failures
+#
+# ==============================================================================
+
+name: E2E QA (Playwright + Docker)
+
+on:
+  # TODO: Enable automatic PR trigger after initial testing phase
+  # pull_request:
+  #   paths:
+  #     - '**.php'
+  #     - '**.js'
+  #     - '**.ts'
+  #     - '**.tsx'
+  #     - '**.css'
+  #     - '**.scss'
+  #     - 'tests/qa/**'
+  #     - 'assets/**'
+  #     - 'includes/**'
+  #     - 'templates/**'
+  #     - 'docker-compose.yml'
+  #     - '.github/workflows/qa-e2e.yml'
+  workflow_dispatch:
+    inputs:
+      browsers:
+        description: 'Browsers to test (comma-separated: chromium,firefox,webkit,mobile-chrome)'
+        required: false
+        default: 'chromium'
+      grep:
+        description: 'Test filter (e.g., @smoke, @auth, @visual)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  e2e:
+    name: E2E QA — ${{ matrix.browser }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium]
+        # Expand to [chromium, firefox, webkit] for full cross-browser coverage
+        # when CI resources allow.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          df -h
+
+      - name: Create artifact directories
+        run: |
+          mkdir -p tests/qa/artifacts/videos
+          mkdir -p tests/qa/artifacts/traces
+          mkdir -p tests/qa/artifacts/screenshots
+          mkdir -p tests/qa/artifacts/reports
+
+      - name: Pull Docker images
+        run: |
+          docker pull wordpress:6.9-php8.2-apache
+          docker pull mysql:8.0
+          docker pull wordpress:cli-php8.2
+          docker pull mcr.microsoft.com/playwright:v1.60.0-noble
+
+      - name: Start QA Docker stack (WordPress + MySQL)
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml up -d wordpress db
+          echo "Waiting for WordPress to be healthy..."
+          timeout 120 bash -c '
+            while ! docker compose -f tests/qa/docker/docker-compose.qa.yml ps wordpress | grep -q "healthy"; do
+              echo "  ... waiting for WordPress ..."
+              sleep 5
+            done
+          '
+          echo "WordPress healthy"
+
+      - name: Run WordPress setup
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml run --rm setup
+          echo "WordPress setup complete"
+
+      - name: Run Playwright tests
+        id: playwright
+        run: |
+          # Prepare grep filter
+          GREP_FLAG=""
+          if [ -n "${{ github.event.inputs.grep }}" ]; then
+            GREP_FLAG="--grep ${{ github.event.inputs.grep }}"
+          fi
+
+          docker compose -f tests/qa/docker/docker-compose.qa.yml run --rm \
+            -e PLAYWRIGHT_PROJECT="${{ matrix.browser }}" \
+            playwright \
+            sh -c '
+              set -e
+              echo "=== Running Playwright Tests ==="
+              echo "Browser project: $PLAYWRIGHT_PROJECT"
+              npm ci --prefer-offline --no-audit
+              mkdir -p /artifacts/videos /artifacts/traces /artifacts/screenshots /artifacts/reports
+
+              # Run tests — capture exit code
+              npx playwright test \
+                --project="$PLAYWRIGHT_PROJECT" \
+                --reporter=html,list,junit \
+                --trace=retain-on-failure \
+                --video=retain-on-failure \
+                '"$GREP_FLAG"' \
+                || TEST_EXIT_CODE=$?
+
+              # Copy reports to mounted artifacts
+              cp -r playwright-report/* /artifacts/reports/ 2>/dev/null || true
+              cp -r test-results/* /artifacts/traces/ 2>/dev/null || true
+
+              exit ${TEST_EXIT_CODE:-0}
+            '
+        continue-on-error: true
+
+      - name: Collect Docker logs on failure
+        if: failure()
+        run: |
+          echo "=== WordPress Container Logs ==="
+          docker compose -f tests/qa/docker/docker-compose.qa.yml logs wordpress || true
+          echo "=== Database Container Logs ==="
+          docker compose -f tests/qa/docker/docker-compose.qa.yml logs db || true
+
+      - name: Upload Playwright HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: tests/qa/artifacts/reports/
+          retention-days: 30
+
+      - name: Upload Test Videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos-${{ matrix.browser }}
+          path: tests/qa/artifacts/videos/
+          retention-days: 30
+
+      - name: Upload Test Traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-traces-${{ matrix.browser }}
+          path: tests/qa/artifacts/traces/
+          retention-days: 30
+
+      - name: Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.browser }}
+          path: tests/qa/artifacts/screenshots/
+          retention-days: 30
+
+      - name: Upload JUnit Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-results-${{ matrix.browser }}
+          path: tests/qa/playwright/test-results/junit.xml
+          retention-days: 30
+
+      - name: Tear down QA stack
+        if: always()
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml down -v --remove-orphans || true
+
+      - name: Post PR comment with test summary
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const junitPath = 'tests/qa/playwright/test-results/junit.xml';
+            let summary = '';
+
+            if (fs.existsSync(junitPath)) {
+              const xml = fs.readFileSync(junitPath, 'utf8');
+              const testsMatch = xml.match(/tests="(\d+)"/);
+              const failuresMatch = xml.match(/failures="(\d+)"/);
+              const errorsMatch = xml.match(/errors="(\d+)"/);
+              const skippedMatch = xml.match(/skipped="(\d+)"/);
+
+              const tests = testsMatch ? testsMatch[1] : '?';
+              const failures = failuresMatch ? failuresMatch[1] : '0';
+              const errors = errorsMatch ? errorsMatch[1] : '0';
+              const skipped = skippedMatch ? skippedMatch[1] : '0';
+              const passed = parseInt(tests) - parseInt(failures) - parseInt(errors) - parseInt(skipped);
+
+              const statusIcon = parseInt(failures) === 0 && parseInt(errors) === 0 ? '✅' : '❌';
+
+              summary = `## ${statusIcon} E2E QA Results — \`${{ matrix.browser }}\`
+
+              | Metric   | Count |
+              |----------|-------|
+              | Total    | ${tests} |
+              | Passed   | ${passed} |
+              | Failed   | ${failures} |
+              | Errors   | ${errors} |
+              | Skipped  | ${skipped} |
+
+              📊 [View Playwright Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              `;
+            } else {
+              summary = `## ⚠️ E2E QA — \`${{ matrix.browser }}\`
+
+              No JUnit results found. Check the workflow logs for details.
+              `;
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.body.includes('E2E QA Results') && c.body.includes('${{ matrix.browser }}')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: summary,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: summary,
+              });
+            }

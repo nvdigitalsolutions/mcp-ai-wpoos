@@ -261,10 +261,14 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	 */
 	protected function enqueue_chart_script( $trends, $chart_height, $chart_id ) {
 		// Chart.js is loaded via get_script_depends().
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor widget layout and styling
+		static $printed = false;
+
+		$response_time_label = __( 'Response Time (ms)', 'mcp-ai-wpoos' );
+		$memory_usage_label  = __( 'Memory Usage (MB)', 'mcp-ai-wpoos' );
+		$memory_label        = __( 'Memory (MB)', 'mcp-ai-wpoos' );
+
+		ob_start();
 		?>
-		<script>
 		(function() {
 			// Global registry for chart instances to enable proper cleanup.
 			if (typeof window.wpMcpAiCharts === 'undefined') {
@@ -280,7 +284,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 				}
 
 				// Destroy existing chart instance if it exists (prevents "canvas already in use" error).
-				var chartId = '<?php echo esc_js( $chart_id ); ?>';
+				var chartId = <?php echo wp_json_encode( $chart_id ); ?>;
 				if (window.wpMcpAiCharts[chartId]) {
 					try {
 						window.wpMcpAiCharts[chartId].destroy();
@@ -294,16 +298,21 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 				if (!ctx) return;
 
 				// Sample data - in real implementation, this would come from $trends.
+				var chartLabels = <?php echo wp_json_encode( $response_time_label ); ?>;
+				var memoryLabel = <?php echo wp_json_encode( $memory_usage_label ); ?>;
+				var yAxisLabel  = <?php echo wp_json_encode( $response_time_label ); ?>;
+				var y1AxisLabel = <?php echo wp_json_encode( $memory_label ); ?>;
+
 				var chartData = {
 					labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
 					datasets: [{
-						label: '<?php echo esc_js( __( 'Response Time (ms)', 'mcp-ai-wpoos' ) ); ?>',
+						label: chartLabels,
 						data: [250, 300, 280, 320, 290, 310, 275],
 						borderColor: 'rgb(75, 192, 192)',
 						backgroundColor: 'rgba(75, 192, 192, 0.2)',
 						tension: 0.4
 					}, {
-						label: '<?php echo esc_js( __( 'Memory Usage (MB)', 'mcp-ai-wpoos' ) ); ?>',
+						label: memoryLabel,
 						data: [64, 68, 66, 72, 65, 70, 63],
 						borderColor: 'rgb(255, 99, 132)',
 						backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -330,7 +339,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 								position: 'left',
 								title: {
 									display: true,
-									text: '<?php echo esc_js( __( 'Response Time (ms)', 'mcp-ai-wpoos' ) ); ?>'
+									text: yAxisLabel
 								}
 							},
 							y1: {
@@ -339,7 +348,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 								position: 'right',
 								title: {
 									display: true,
-									text: '<?php echo esc_js( __( 'Memory (MB)', 'mcp-ai-wpoos' ) ); ?>'
+									text: y1AxisLabel
 								},
 								grid: {
 									drawOnChartArea: false,
@@ -362,48 +371,27 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 				}
 			}
 		})();
-		</script>
-		<style>
-		.wp-mcp-ai-performance-trends {
-			padding: 20px;
-			background: #fff;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-		}
-		.wp-mcp-ai-performance-trends__title {
-			margin-top: 0;
-			margin-bottom: 15px;
-		}
-		.wp-mcp-ai-performance-trends__summary {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			padding: 10px;
-			margin-bottom: 20px;
-			border-radius: 4px;
-			font-weight: 500;
-		}
-		.trend-improving {
-			background: #d4edda;
-			color: #155724;
-		}
-		.trend-degrading {
-			background: #f8d7da;
-			color: #721c24;
-		}
-		.trend-stable {
-			background: #d1ecf1;
-			color: #0c5460;
-		}
-		.trend-no_data {
-			background: #f9f9f9;
-			color: #666;
-		}
-		.wp-mcp-ai-performance-trends__chart-container {
-			position: relative;
-			width: 100%;
-		}
-		</style>
 		<?php
+		$js = ob_get_clean();
+
+		wp_print_inline_script_tag( $js );
+
+		if ( ! $printed ) {
+			$printed = true;
+
+			wp_register_style( 'wp-mcp-ai-el-perf-trends', false );
+			wp_enqueue_style( 'wp-mcp-ai-el-perf-trends' );
+			wp_add_inline_style(
+				'wp-mcp-ai-el-perf-trends',
+				'.wp-mcp-ai-performance-trends{padding:20px;background:#fff;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-performance-trends__title{margin-top:0;margin-bottom:15px}'
+				. '.wp-mcp-ai-performance-trends__summary{display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:20px;border-radius:4px;font-weight:500}'
+				. '.trend-improving{background:#d4edda;color:#155724}'
+				. '.trend-degrading{background:#f8d7da;color:#721c24}'
+				. '.trend-stable{background:#d1ecf1;color:#0c5460}'
+				. '.trend-no_data{background:#f9f9f9;color:#666}'
+				. '.wp-mcp-ai-performance-trends__chart-container{position:relative;width:100%}'
+			);
+		}
 	}
 }

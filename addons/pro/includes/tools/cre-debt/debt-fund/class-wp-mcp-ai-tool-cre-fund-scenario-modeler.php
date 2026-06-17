@@ -95,26 +95,26 @@ class WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler implements WP_MCP_AI_Tool_Interfa
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'name'               => array(
+							'name'                => array(
 								'type'        => 'string',
 								'description' => __( 'Scenario name.', 'mcp-ai-wpoos-pro' ),
 							),
-							'rate_shock_bps'     => array(
+							'rate_shock_bps'      => array(
 								'type'        => 'integer',
 								'description' => __( 'Interest rate shock in basis points.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 0,
 							),
-							'default_rate_pct'   => array(
+							'default_rate_pct'    => array(
 								'type'        => 'number',
 								'description' => __( 'Assumed default rate percentage.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 0,
 							),
-							'prepay_rate_pct'    => array(
+							'prepay_rate_pct'     => array(
 								'type'        => 'number',
 								'description' => __( 'Assumed prepayment rate percentage.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 0,
 							),
-							'loss_severity_pct'  => array(
+							'loss_severity_pct'   => array(
 								'type'        => 'number',
 								'description' => __( 'Loss severity percentage on defaults.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 40,
@@ -141,7 +141,20 @@ class WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -182,19 +195,19 @@ class WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler implements WP_MCP_AI_Tool_Interfa
 			$new_rate = $wa_rate + ( $rate_shock / 10000 );
 
 			// Default impact.
-			$defaults      = $balance * ( $default_rate / 100 );
-			$losses        = $defaults * ( $loss_severity / 100 );
-			$recoveries    = $defaults - $losses;
+			$defaults   = $balance * ( $default_rate / 100 );
+			$losses     = $defaults * ( $loss_severity / 100 );
+			$recoveries = $defaults - $losses;
 
 			// Prepayment impact.
-			$prepays       = $balance * ( $prepay_rate / 100 );
+			$prepays = $balance * ( $prepay_rate / 100 );
 
 			// Remaining portfolio.
-			$remaining     = $balance - $defaults - $prepays;
-			$remaining     = max( 0, $remaining );
+			$remaining = $balance - $defaults - $prepays;
+			$remaining = max( 0, $remaining );
 
 			// NAV impact from losses.
-			$nav_impact    = -1.0 * $losses;
+			$nav_impact = -1.0 * $losses;
 
 			// Annual interest income impact from rate shock.
 			$income_before = $balance * $wa_rate;
@@ -205,15 +218,15 @@ class WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler implements WP_MCP_AI_Tool_Interfa
 			$new_dscr = $wa_dscr;
 			if ( $wa_rate > 0 && $wa_dscr > 0 ) {
 				$debt_service_change = ( $new_rate > 0 ) ? $wa_rate / $new_rate : 1.0;
-				$new_dscr = $wa_dscr * $debt_service_change;
+				$new_dscr            = $wa_dscr * $debt_service_change;
 			}
 
 			// LTV impact estimate (losses reduce collateral value proportionally).
 			$new_ltv = $wa_ltv;
 			if ( $wa_ltv > 0 && $balance > 0 ) {
 				$value_reduction = ( $defaults > 0 ) ? $losses / $balance : 0;
-				$new_ltv = $wa_ltv * ( 1 + $value_reduction );
-				$new_ltv = min( 1.0, $new_ltv );
+				$new_ltv         = $wa_ltv * ( 1 + $value_reduction );
+				$new_ltv         = min( 1.0, $new_ltv );
 			}
 
 			$results[] = array(
@@ -251,7 +264,7 @@ class WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler implements WP_MCP_AI_Tool_Interfa
 		foreach ( $results as $r ) {
 			unset( $r['loss_amount_raw'] );
 			$r['severity_rank'] = $rank;
-			$ranked[] = $r;
+			$ranked[]           = $r;
 			++$rank;
 		}
 

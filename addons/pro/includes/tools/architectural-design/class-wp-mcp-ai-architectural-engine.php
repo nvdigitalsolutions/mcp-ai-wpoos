@@ -159,7 +159,7 @@ class WP_MCP_AI_Architectural_Engine {
 		 *
 		 * @since 1.2.0
 		 *
-		 * @param array $rates Rates keyed by ISO-4217 code, expressed as
+		 * @param array $rates Rates keyed by ISO-4217 code, expressed as.
 		 *                     units-per-1-USD.
 		 */
 		return apply_filters( 'wp_mcp_ai_arch_currency_rates', $defaults );
@@ -246,9 +246,9 @@ class WP_MCP_AI_Architectural_Engine {
 			$req_val  = isset( $required[ $side ] ) ? (float) $required[ $side ] : 0.0;
 			if ( $prop_val + 1e-6 < $req_val ) {
 				$violations[] = array(
-					'side'     => $side,
-					'proposed' => $prop_val,
-					'required' => $req_val,
+					'side'      => $side,
+					'proposed'  => $prop_val,
+					'required'  => $req_val,
 					'shortfall' => $req_val - $prop_val,
 				);
 			}
@@ -282,14 +282,14 @@ class WP_MCP_AI_Architectural_Engine {
 		$occupancy_type = strtolower( (string) $occupancy_type );
 
 		$factors = array(
-			'business'                 => 9.3,
-			'residential'              => 18.6,
-			'assembly_concentrated'    => 0.65,
-			'assembly_unconcentrated'  => 1.4,
-			'mercantile'               => 5.6,
-			'educational_classroom'    => 1.9,
-			'industrial'               => 9.3,
-			'storage'                  => 46.5,
+			'business'                => 9.3,
+			'residential'             => 18.6,
+			'assembly_concentrated'   => 0.65,
+			'assembly_unconcentrated' => 1.4,
+			'mercantile'              => 5.6,
+			'educational_classroom'   => 1.9,
+			'industrial'              => 9.3,
+			'storage'                 => 46.5,
 		);
 
 		/**
@@ -395,22 +395,22 @@ class WP_MCP_AI_Architectural_Engine {
 		$wind_zone    = strtolower( (string) $wind_zone );
 
 		// Country-specific basic-wind-speed lookup tables (m/s).
-		// Values are indicative defaults extracted from public code summaries
+		// Values are indicative defaults extracted from public code summaries.
 		// and are filterable for jurisdictional refinement.
 		$tables = array(
 			'LK' => array(
 				// Sri Lanka: SLS / IESL basic wind zones (post-2009 revision).
-				'standard'  => 'BS 6399-2 / IS 875-3 (referenced via SLS guidance)',
-				'zones'     => array(
-					'zone1' => 33.0, // Coastal SW & N: ~33 m/s.
-					'zone2' => 38.0, // South & east coast.
-					'zone3' => 49.0, // High-exposure coastal (post-tsunami review).
+				'standard' => 'BS 6399-2 / IS 875-3 (referenced via SLS guidance)',
+				'zones'    => array(
+					'zone1'   => 33.0, // Coastal SW & N: ~33 m/s.
+					'zone2'   => 38.0, // South & east coast.
+					'zone3'   => 49.0, // High-exposure coastal (post-tsunami review).
 					'default' => 38.0,
 				),
 			),
 			'JM' => array(
-				// Jamaica: JNBC 2018 references ASCE 7 with Caribbean basic
-				// wind speeds in the 60-67 m/s (~135-150 mph) range for
+				// Jamaica: JNBC 2018 references ASCE 7 with Caribbean basic.
+				// wind speeds in the 60-67 m/s (~135-150 mph) range for.
 				// hurricane-exposure zones.
 				'standard' => 'JNBC 2018 (per ASCE 7)',
 				'zones'    => array(
@@ -424,11 +424,11 @@ class WP_MCP_AI_Architectural_Engine {
 				// USA: ASCE 7-22 risk category II.
 				'standard' => 'ASCE 7-22',
 				'zones'    => array(
-					'inland'        => 50.0, // ~112 mph.
-					'standard'      => 54.0, // ~120 mph.
-					'coastal'       => 63.0, // ~141 mph.
-					'hurricane'     => 76.0, // ~170 mph.
-					'default'       => 54.0,
+					'inland'    => 50.0, // ~112 mph.
+					'standard'  => 54.0, // ~120 mph.
+					'coastal'   => 63.0, // ~141 mph.
+					'hurricane' => 76.0, // ~170 mph.
+					'default'   => 54.0,
 				),
 			),
 		);
@@ -537,10 +537,10 @@ class WP_MCP_AI_Architectural_Engine {
 			'JM' => array(
 				'standard' => 'JNBC 2018 / ASCE 7 (Caribbean seismic)',
 				'zones'    => array(
-					'low'     => 0.20,
+					'low'      => 0.20,
 					'moderate' => 0.40,
-					'high'    => 0.60,
-					'default' => 0.40,
+					'high'     => 0.60,
+					'default'  => 0.40,
 				),
 			),
 			'US' => array(
@@ -734,9 +734,9 @@ class WP_MCP_AI_Architectural_Engine {
 			);
 		}
 
-		$entry      = $tables[ $country_code ];
-		$rates      = isset( $entry['rates'] ) && is_array( $entry['rates'] ) ? $entry['rates'] : array();
-		$base_rate  = isset( $rates[ $quality_level ] ) ? (float) $rates[ $quality_level ] : 0.0;
+		$entry     = $tables[ $country_code ];
+		$rates     = isset( $entry['rates'] ) && is_array( $entry['rates'] ) ? $entry['rates'] : array();
+		$base_rate = isset( $rates[ $quality_level ] ) ? (float) $rates[ $quality_level ] : 0.0;
 		if ( $base_rate <= 0 ) {
 			$base_rate = isset( $rates['standard'] ) ? (float) $rates['standard'] : 0.0;
 		}

@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_Court_Deadline_Tracker implements WP_MCP_AI_Tool_Interfa
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -117,6 +124,9 @@ class WP_MCP_AI_Tool_LF_Court_Deadline_Tracker implements WP_MCP_AI_Tool_Interfa
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -191,9 +201,9 @@ class WP_MCP_AI_Tool_LF_Court_Deadline_Tracker implements WP_MCP_AI_Tool_Interfa
 						count( $deadlines )
 					) . self::DISCLAIMER,
 					'data'       => array(
-						'matter_id'  => $matter_id,
-						'deadlines'  => $deadlines,
-						'total'      => count( $deadlines ),
+						'matter_id' => $matter_id,
+						'deadlines' => $deadlines,
+						'total'     => count( $deadlines ),
 					),
 					'disclaimer' => self::DISCLAIMER,
 				);
@@ -205,7 +215,7 @@ class WP_MCP_AI_Tool_LF_Court_Deadline_Tracker implements WP_MCP_AI_Tool_Interfa
 				} elseif ( isset( $arguments['deadline_description'] ) ) {
 					$deadline_id = sanitize_text_field( $arguments['deadline_description'] );
 				}
-				$found       = false;
+				$found = false;
 
 				foreach ( $deadlines as &$dl ) {
 					if ( $dl['id'] === $deadline_id || $dl['description'] === $deadline_id ) {

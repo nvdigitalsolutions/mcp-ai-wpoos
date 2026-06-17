@@ -133,6 +133,13 @@ class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_I
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -155,15 +162,15 @@ class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_I
 		$parish    = isset( $arguments['parish'] ) ? sanitize_text_field( $arguments['parish'] ) : '';
 		$building  = isset( $arguments['building'] ) ? (array) $arguments['building'] : array();
 
-		$height        = isset( $building['building_height_m'] ) ? floatval( $building['building_height_m'] ) : 0.0;
-		$occupancy     = isset( $building['occupancy_category'] ) ? sanitize_text_field( $building['occupancy_category'] ) : 'standard';
-		$opening_prot  = ! empty( $building['opening_protection'] );
-		$continuous    = ! empty( $building['continuous_load_path'] );
-		$attachment    = isset( $building['roof_attachment'] ) ? sanitize_text_field( $building['roof_attachment'] ) : '';
-		$roof_pitch    = isset( $building['roof_pitch_deg'] ) ? floatval( $building['roof_pitch_deg'] ) : 0.0;
+		$height       = isset( $building['building_height_m'] ) ? floatval( $building['building_height_m'] ) : 0.0;
+		$occupancy    = isset( $building['occupancy_category'] ) ? sanitize_text_field( $building['occupancy_category'] ) : 'standard';
+		$opening_prot = ! empty( $building['opening_protection'] );
+		$continuous   = ! empty( $building['continuous_load_path'] );
+		$attachment   = isset( $building['roof_attachment'] ) ? sanitize_text_field( $building['roof_attachment'] ) : '';
+		$roof_pitch   = isset( $building['roof_pitch_deg'] ) ? floatval( $building['roof_pitch_deg'] ) : 0.0;
 
-		$wind = WP_MCP_AI_Architectural_Engine::get_wind_design_pressure( 'JM', $wind_zone );
-		$rules = WP_MCP_AI_Architectural_Codes::merge_rules( array( 'jm_jnbc_2018', 'jm_asce_7_via_jnbc' ) );
+		$wind       = WP_MCP_AI_Architectural_Engine::get_wind_design_pressure( 'JM', $wind_zone );
+		$rules      = WP_MCP_AI_Architectural_Codes::merge_rules( array( 'jm_jnbc_2018', 'jm_asce_7_via_jnbc' ) );
 		$structural = isset( $rules['structural'] ) ? $rules['structural'] : array();
 
 		$checks = array();
@@ -244,20 +251,23 @@ class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_I
 
 		$overall = 'pass';
 		foreach ( $checks as $c ) {
-			if ( 'fail' === $c['status'] ) { $overall = 'fail'; break; }
-			if ( 'warning' === $c['status'] && 'fail' !== $overall ) { $overall = 'conditional'; }
+			if ( 'fail' === $c['status'] ) {
+				$overall = 'fail';
+				break; }
+			if ( 'warning' === $c['status'] && 'fail' !== $overall ) {
+				$overall = 'conditional'; }
 		}
 
 		return array(
-			'success'        => true,
-			'country_code'   => 'JM',
-			'parish'         => $parish,
-			'wind_zone'      => $wind_zone,
-			'wind'           => $wind,
+			'success'            => true,
+			'country_code'       => 'JM',
+			'parish'             => $parish,
+			'wind_zone'          => $wind_zone,
+			'wind'               => $wind,
 			'occupancy_category' => $occupancy,
-			'checks'         => $checks,
-			'overall_status' => $overall,
-			'disclaimer'     => __( 'Analytical / advisory output only. Engage a chartered structural engineer; parish councils and the BSJ may impose additional requirements.', 'mcp-ai-wpoos-pro' ),
+			'checks'             => $checks,
+			'overall_status'     => $overall,
+			'disclaimer'         => __( 'Analytical / advisory output only. Engage a chartered structural engineer; parish councils and the BSJ may impose additional requirements.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

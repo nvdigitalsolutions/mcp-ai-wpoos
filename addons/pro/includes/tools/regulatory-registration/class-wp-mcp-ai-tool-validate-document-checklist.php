@@ -91,8 +91,23 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 	/**
 	 * {@inheritdoc}
 	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 * @param array $context   Execution context.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Must have either product_id or registration_id.
@@ -135,7 +150,7 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 		$existing_docs = get_posts(
 			array(
 				'post_type'      => 'mcp_ai_reg_document',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'validate_document_checklist', 0, 1000 ) : 1000,
 				'meta_key'       => $meta_key,
 				'meta_value'     => $entity_id,
 				'fields'         => 'ids',

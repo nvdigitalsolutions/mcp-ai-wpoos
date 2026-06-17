@@ -12,7 +12,7 @@
  * @package WP_MCP_AI
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
- * @license   GPL-3.0-or-later
+ * @license   Proprietary
  */
 
 /**
@@ -51,8 +51,8 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_Embedded_Client requires the Pro addon.' );
 		}
 
-		$this->client  = new WP_MCP_AI_Embedded_Client();
-		$base          = wp_tempnam( 'wp-mcp-ai-test' );
+		$this->client = new WP_MCP_AI_Embedded_Client();
+		$base         = wp_tempnam( 'wp-mcp-ai-test' );
 		@unlink( $base ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
 		$this->tmp_dir = $base . '-dir';
 		wp_mkdir_p( $this->tmp_dir );
@@ -253,9 +253,9 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 		// file is present as a regular entry; the symlinks are not.
 		$archive_path = $this->create_mock_archive(
 			array(
-				'bundle/llama-cli'         => 'mock-binary-content',
-				'bundle/libmtmd.so.0.9.8'  => 'mock-mtmd-lib-content',
-				'bundle/libggml.so.0.9.8'  => 'mock-ggml-lib-content',
+				'bundle/llama-cli'        => 'mock-binary-content',
+				'bundle/libmtmd.so.0.9.8' => 'mock-mtmd-lib-content',
+				'bundle/libggml.so.0.9.8' => 'mock-ggml-lib-content',
 			)
 		);
 
@@ -419,7 +419,7 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_shared_libs_status() lists .so files when they exist next to the binary.
+	 * Lists .so files when they exist next to the binary.
 	 *
 	 * This test plants a fake executable and two shared library files in a temp
 	 * directory and verifies that get_shared_libs_status() discovers them.
@@ -443,7 +443,7 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_shared_libs_status() returns found=false when binary dir has no .so files.
+	 * Returns found=false when binary dir has no .so files.
 	 */
 	public function test_get_shared_libs_status_returns_false_when_no_so_files() {
 		$bin_path     = $this->create_mock_binary( $this->tmp_dir . '/llama-cli' );
@@ -481,8 +481,7 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * create_soname_symlinks() creates the SONAME file as a copy when a pre-
-	 * existing copy already covers it (simulates the copy-fallback path by
+	 * Creates the SONAME file as a copy when a pre-existing copy already covers it (simulates the copy-fallback path by
 	 * directly pre-populating the directory with only versioned libs, then
 	 * verifying the SONAME name appears after calling the method).
 	 *
@@ -536,7 +535,7 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_shared_libs_status() auto-repairs missing SONAME files for existing
+	 * Auto-repairs missing SONAME files for existing
 	 * installations where the initial extraction ran before this fix existed.
 	 *
 	 * Regression test: users who installed llama.cpp before the symlink/copy
@@ -745,9 +744,9 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * test_connection() succeeds when llama-cli writes --version only to stderr.
+	 * Succeeds when llama-cli writes --version only to stderr.
 	 *
-	 * llama.cpp builds b8479+ write their version string to stderr instead of
+	 * Llama.cpp builds b8479+ write their version string to stderr instead of
 	 * stdout.  Before this fix, run_binary() returned '' (empty stdout) which
 	 * caused test_connection() to return the false error
 	 * "llama-cli binary returned no output".
@@ -782,7 +781,7 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	}
 
 	/**
-	 * test_connection() still fails (WP_Error) when the binary produces no output
+	 * Still fails (WP_Error) when the binary produces no output
 	 * on either stdout or stderr.
 	 *
 	 * This ensures the "no output" guard in test_connection() is preserved: a
@@ -849,9 +848,9 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	 * @return string Absolute path to the created archive.
 	 */
 	private function create_mock_archive( array $entries ) {
-		$tmp_base  = wp_tempnam( 'wp-mcp-ai-test-archive' );
-		$tar_path  = $tmp_base . '.tar';
-		$tgz_path  = $tmp_base . '.tar.gz';
+		$tmp_base   = wp_tempnam( 'wp-mcp-ai-test-archive' );
+		$tar_path   = $tmp_base . '.tar';
+		$tgz_path   = $tmp_base . '.tar.gz';
 		$final_path = $tmp_base . '-archive.tar.gz';
 
 		// Write files to a staging sub-directory so PharData can add them.

@@ -22,7 +22,7 @@ Always:
 Subsystem-specific:
 
 - [`readme.txt`](../../readme.txt) — current "External Services" block at the bottom of the file.
-- [`docs/deployment-troubleshooting.md`](../../docs/deployment-troubleshooting.md) — shipping checklist.
+- [`docs/getting-started/installation-setup/deployment-troubleshooting.md`](../../docs/getting-started/installation-setup/deployment-troubleshooting.md) — shipping checklist.
 
 ## Scope
 

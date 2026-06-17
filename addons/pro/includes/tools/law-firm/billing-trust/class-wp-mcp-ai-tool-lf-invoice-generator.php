@@ -22,6 +22,11 @@ class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, W
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -30,30 +35,98 @@ class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, W
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_invoice_generator'; }
-	public function get_name() { return __( 'Invoice Generator', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Generates invoices from time entries for a matter with optional LEDES format and expense inclusion.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_invoice_generator'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Invoice Generator', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Generates invoices from time entries for a matter with optional LEDES format and expense inclusion.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'matter_id'        => array( 'type' => 'integer', 'description' => __( 'Matter ID.', 'mcp-ai-wpoos-pro' ) ),
-				'date_from'        => array( 'type' => 'string', 'description' => __( 'Start date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ) ),
-				'date_to'          => array( 'type' => 'string', 'description' => __( 'End date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ) ),
-				'format'           => array( 'type' => 'string', 'description' => __( 'Invoice format.', 'mcp-ai-wpoos-pro' ), 'enum' => array( 'standard', 'ledes' ) ),
-				'include_expenses' => array( 'type' => 'boolean', 'description' => __( 'Include expenses.', 'mcp-ai-wpoos-pro' ) ),
+				'matter_id'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Matter ID.', 'mcp-ai-wpoos-pro' ),
+				),
+				'date_from'        => array(
+					'type'        => 'string',
+					'description' => __( 'Start date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+				),
+				'date_to'          => array(
+					'type'        => 'string',
+					'description' => __( 'End date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+				),
+				'format'           => array(
+					'type'        => 'string',
+					'description' => __( 'Invoice format.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'standard', 'ledes' ),
+				),
+				'include_expenses' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Include expenses.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array( 'matter_id' ),
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only' ); }
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
@@ -81,24 +154,44 @@ class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$meta_query = array(
-			array( 'key' => '_lf_matter_id', 'value' => $matter_id, 'compare' => '=' ),
-			array( 'key' => '_lf_billing_type', 'value' => 'billable', 'compare' => '=' ),
+			array(
+				'key'     => '_lf_matter_id',
+				'value'   => $matter_id,
+				'compare' => '=',
+			),
+			array(
+				'key'     => '_lf_billing_type',
+				'value'   => 'billable',
+				'compare' => '=',
+			),
 		);
 		if ( $date_from ) {
-			$meta_query[] = array( 'key' => '_lf_date', 'value' => $date_from, 'compare' => '>=', 'type' => 'DATE' );
+			$meta_query[] = array(
+				'key'     => '_lf_date',
+				'value'   => $date_from,
+				'compare' => '>=',
+				'type'    => 'DATE',
+			);
 		}
-		$meta_query[] = array( 'key' => '_lf_date', 'value' => $date_to, 'compare' => '<=', 'type' => 'DATE' );
+		$meta_query[] = array(
+			'key'     => '_lf_date',
+			'value'   => $date_to,
+			'compare' => '<=',
+			'type'    => 'DATE',
+		);
 
-		$entries = get_posts( array(
-			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => 500,
-			'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-		) );
+		$entries = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lf_time_entry',
+				'posts_per_page' => 500,
+				'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			)
+		);
 
-		$line_items   = array();
-		$total_hours  = 0;
-		$total_fees   = 0;
-		$invoice_num  = 'INV-' . strtoupper( substr( md5( $matter_id . current_time( 'U' ) ), 0, 8 ) );
+		$line_items  = array();
+		$total_hours = 0;
+		$total_fees  = 0;
+		$invoice_num = 'INV-' . strtoupper( substr( md5( $matter_id . current_time( 'U' ) ), 0, 8 ) );
 
 		foreach ( $entries as $entry ) {
 			$hours  = (float) get_post_meta( $entry->ID, '_lf_hours', true );
@@ -118,15 +211,17 @@ class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, W
 			);
 
 			if ( 'ledes' === $format ) {
-				$item['ledes_line'] = WP_MCP_AI_Law_Firm_Calculator::format_ledes_line( array(
-					'invoice_date'   => $date_to,
-					'invoice_number' => $invoice_num,
-					'matter_id'      => $matter_id,
-					'hours'          => $hours,
-					'rate'           => $rate,
-					'amount'         => $amount,
-					'description'    => $entry->post_content,
-				) );
+				$item['ledes_line'] = WP_MCP_AI_Law_Firm_Calculator::format_ledes_line(
+					array(
+						'invoice_date'   => $date_to,
+						'invoice_number' => $invoice_num,
+						'matter_id'      => $matter_id,
+						'hours'          => $hours,
+						'rate'           => $rate,
+						'amount'         => $amount,
+						'description'    => $entry->post_content,
+					)
+				);
 			}
 
 			$line_items[] = $item;
@@ -138,7 +233,7 @@ class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, W
 			$expenses = get_post_meta( $matter_id, '_lf_expenses', true );
 			if ( is_array( $expenses ) ) {
 				foreach ( $expenses as $exp ) {
-					$amt = (float) ( $exp['amount'] ?? 0 );
+					$amt             = (float) ( $exp['amount'] ?? 0 );
 					$total_expenses += $amt;
 					$expense_items[] = $exp;
 				}

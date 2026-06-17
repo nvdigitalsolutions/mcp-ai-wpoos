@@ -24,7 +24,8 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  */
 class WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
-	/** @var float Annual discount rate for NPV calculations. */
+	/**
+	 * Performs the operation.
 	const DISCOUNT_RATE = 0.10;
 
 	/**
@@ -128,7 +129,20 @@ class WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer implements WP_MCP_AI_Tool_In
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -165,9 +179,9 @@ class WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer implements WP_MCP_AI_Tool_In
 		$sale_price_estimate = ( $broker_opinion_value > 0 ) ? $broker_opinion_value : $appraised_value;
 
 		// Holding costs.
-		$total_carrying         = $carrying_costs_monthly * $marketing_timeline_months;
-		$property_taxes_during  = $property_taxes_annual / 12 * $marketing_timeline_months;
-		$total_holding_costs    = $total_carrying + $property_taxes_during + $legal_costs;
+		$total_carrying        = $carrying_costs_monthly * $marketing_timeline_months;
+		$property_taxes_during = $property_taxes_annual / 12 * $marketing_timeline_months;
+		$total_holding_costs   = $total_carrying + $property_taxes_during + $legal_costs;
 
 		// Proceeds.
 		$gross_sale_proceeds = $sale_price_estimate;
@@ -184,8 +198,8 @@ class WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer implements WP_MCP_AI_Tool_In
 		$npv_disposition       = $net_sale_proceeds / pow( 1 + $monthly_discount_rate, $marketing_timeline_months );
 
 		// Breakeven analysis.
-		$selling_divisor    = 1 - $selling_costs_pct / 100;
-		$breakeven_price    = ( $selling_divisor > 0 )
+		$selling_divisor        = 1 - $selling_costs_pct / 100;
+		$breakeven_price        = ( $selling_divisor > 0 )
 			? ( $loan_balance + $total_holding_costs + $legal_costs ) / $selling_divisor
 			: 0;
 		$breakeven_vs_appraisal = ( $appraised_value > 0 ) ? $breakeven_price / $appraised_value : 0;
@@ -195,7 +209,7 @@ class WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer implements WP_MCP_AI_Tool_In
 		$cumulative_costs = 0.0;
 		for ( $m = 1; $m <= $marketing_timeline_months; $m++ ) {
 			$cumulative_costs += $carrying_costs_monthly + ( $property_taxes_annual / 12 );
-			$show_month = ( 1 === $m )
+			$show_month        = ( 1 === $m )
 				|| ( 0 === $m % 3 )
 				|| ( $m === $marketing_timeline_months );
 			if ( $show_month ) {
@@ -208,16 +222,16 @@ class WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer implements WP_MCP_AI_Tool_In
 		}
 
 		$data = array(
-			'asset_type'          => $asset_type,
-			'sale_estimate'       => array(
-				'source'             => ( $broker_opinion_value > 0 )
+			'asset_type'             => $asset_type,
+			'sale_estimate'          => array(
+				'source'              => ( $broker_opinion_value > 0 )
 					? __( 'Broker Opinion of Value', 'mcp-ai-wpoos-pro' )
 					: __( 'Appraised Value', 'mcp-ai-wpoos-pro' ),
 				'sale_price_estimate' => $calc::format_currency( $sale_price_estimate ),
-				'appraised_value'    => $calc::format_currency( $appraised_value ),
-				'broker_opinion'     => $calc::format_currency( $broker_opinion_value ),
+				'appraised_value'     => $calc::format_currency( $appraised_value ),
+				'broker_opinion'      => $calc::format_currency( $broker_opinion_value ),
 			),
-			'holding_costs'       => array(
+			'holding_costs'          => array(
 				'carrying_costs_monthly' => $calc::format_currency( $carrying_costs_monthly ),
 				'total_carrying'         => $calc::format_currency( $total_carrying ),
 				'property_taxes_during'  => $calc::format_currency( $property_taxes_during ),
@@ -225,28 +239,28 @@ class WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer implements WP_MCP_AI_Tool_In
 				'total_holding_costs'    => $calc::format_currency( $total_holding_costs ),
 				'marketing_months'       => $marketing_timeline_months,
 			),
-			'proceeds'            => array(
+			'proceeds'               => array(
 				'gross_sale_proceeds' => $calc::format_currency( $gross_sale_proceeds ),
 				'selling_costs'       => $calc::format_currency( $selling_costs ),
 				'net_sale_proceeds'   => $calc::format_currency( $net_sale_proceeds ),
 			),
-			'recovery_analysis'   => array(
-				'loan_balance'   => $calc::format_currency( $loan_balance ),
-				'total_loss'     => $calc::format_currency( $total_loss ),
-				'recovery_rate'  => $calc::format_percentage( $recovery_rate ),
-				'severity_rate'  => $calc::format_percentage( $severity_rate ),
+			'recovery_analysis'      => array(
+				'loan_balance'  => $calc::format_currency( $loan_balance ),
+				'total_loss'    => $calc::format_currency( $total_loss ),
+				'recovery_rate' => $calc::format_percentage( $recovery_rate ),
+				'severity_rate' => $calc::format_percentage( $severity_rate ),
 			),
-			'npv_analysis'        => array(
-				'discount_rate'  => $calc::format_percentage( self::DISCOUNT_RATE ),
+			'npv_analysis'           => array(
+				'discount_rate'   => $calc::format_percentage( self::DISCOUNT_RATE ),
 				'timeline_months' => $marketing_timeline_months,
 				'npv_disposition' => $calc::format_currency( $npv_disposition ),
 			),
-			'breakeven_analysis'  => array(
-				'breakeven_price'       => $calc::format_currency( $breakeven_price ),
+			'breakeven_analysis'     => array(
+				'breakeven_price'        => $calc::format_currency( $breakeven_price ),
 				'breakeven_vs_appraisal' => round( $breakeven_vs_appraisal, 2 ) . 'x',
 			),
 			'carrying_cost_timeline' => $timeline,
-			'disclaimer'          => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
+			'disclaimer'             => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return array(

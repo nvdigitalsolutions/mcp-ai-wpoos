@@ -97,9 +97,9 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate name.
 		if ( empty( $arguments['name'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The name parameter is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'The name parameter is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -136,9 +136,9 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 		$result = $client->create_vector_store( $name, $options );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'error'   => $result->get_error_message(),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$result->get_error_message()
 			);
 		}
 

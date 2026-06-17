@@ -130,13 +130,13 @@ trait WP_MCP_AI_Tool_Product_Card {
 
 		// Product image (if available and enabled).
 		if ( $options['show_images'] && ! empty( $product['image_url'] ) ) {
-			$alt = ! empty( $product['name'] ) ? $product['name'] : __( 'Product image', 'mcp-ai-wpoos' );
+			$alt     = ! empty( $product['name'] ) ? $product['name'] : __( 'Product image', 'mcp-ai-wpoos' );
 			$lines[] = sprintf( '![%s](%s)', $this->escape_markdown( $alt ), esc_url( $product['image_url'] ) );
 			$lines[] = '';
 		}
 
 		// Product name as heading.
-		$name = ! empty( $product['name'] ) ? $product['name'] : __( 'Untitled Product', 'mcp-ai-wpoos' );
+		$name    = ! empty( $product['name'] ) ? $product['name'] : __( 'Untitled Product', 'mcp-ai-wpoos' );
 		$lines[] = sprintf( '**🛍️ %s**', $this->escape_markdown( $name ) );
 
 		// Price line.

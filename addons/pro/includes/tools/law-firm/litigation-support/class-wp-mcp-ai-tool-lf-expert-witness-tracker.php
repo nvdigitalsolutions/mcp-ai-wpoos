@@ -24,6 +24,13 @@ class WP_MCP_AI_Tool_LF_Expert_Witness_Tracker implements WP_MCP_AI_Tool_Interfa
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -120,6 +127,9 @@ class WP_MCP_AI_Tool_LF_Expert_Witness_Tracker implements WP_MCP_AI_Tool_Interfa
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -213,8 +223,8 @@ class WP_MCP_AI_Tool_LF_Expert_Witness_Tracker implements WP_MCP_AI_Tool_Interfa
 				$expert_name
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'expert_id'    => $expert_id,
-				'entry'        => $entry,
+				'expert_id'     => $expert_id,
+				'entry'         => $entry,
 				'total_experts' => count( $experts ),
 			),
 			'disclaimer' => self::DISCLAIMER,
@@ -245,9 +255,9 @@ class WP_MCP_AI_Tool_LF_Expert_Witness_Tracker implements WP_MCP_AI_Tool_Interfa
 		$specialty_counts = array();
 		$total_rate       = 0;
 		foreach ( $experts as $expert ) {
-			$s = $expert['specialty'] ?? 'unspecified';
+			$s                      = $expert['specialty'] ?? 'unspecified';
 			$specialty_counts[ $s ] = ( $specialty_counts[ $s ] ?? 0 ) + 1;
-			$total_rate += $expert['rate'] ?? 0;
+			$total_rate            += $expert['rate'] ?? 0;
 		}
 		$avg_rate = count( $experts ) > 0 ? round( $total_rate / count( $experts ), 2 ) : 0;
 
@@ -310,8 +320,8 @@ class WP_MCP_AI_Tool_LF_Expert_Witness_Tracker implements WP_MCP_AI_Tool_Interfa
 					$expert['rate'] = round( floatval( $arguments['rate'] ), 2 );
 				}
 				$expert['date_modified'] = current_time( 'Y-m-d H:i:s' );
-				$found        = true;
-				$updated_item = $expert;
+				$found                   = true;
+				$updated_item            = $expert;
 				break;
 			}
 		}

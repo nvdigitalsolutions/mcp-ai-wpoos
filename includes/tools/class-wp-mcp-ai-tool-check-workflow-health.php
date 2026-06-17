@@ -66,6 +66,13 @@ class WP_MCP_AI_Tool_Check_Workflow_Health implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -75,9 +82,9 @@ class WP_MCP_AI_Tool_Check_Workflow_Health implements WP_MCP_AI_Tool_Interface, 
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if orchestrator is available.
 		if ( ! class_exists( 'WP_MCP_AI_Agent_Team_Orchestrator' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent orchestration system not available.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent orchestration system not available.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -89,9 +96,9 @@ class WP_MCP_AI_Tool_Check_Workflow_Health implements WP_MCP_AI_Tool_Interface, 
 			$health      = $orchestrator->check_workflow_health( $workflow_id );
 
 			if ( 'error' === $health['status'] ) {
-				return array(
-					'success' => false,
-					'message' => $health['message'],
+				return new WP_Error(
+					'wp_mcp_ai_error',
+					$health['message']
 				);
 			}
 
@@ -118,9 +125,9 @@ class WP_MCP_AI_Tool_Check_Workflow_Health implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		return array(
-			'success' => false,
-			'message' => __( 'Enhanced workflow coordinator not available.', 'mcp-ai-wpoos' ),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			__( 'Enhanced workflow coordinator not available.', 'mcp-ai-wpoos' )
 		);
 	}
 

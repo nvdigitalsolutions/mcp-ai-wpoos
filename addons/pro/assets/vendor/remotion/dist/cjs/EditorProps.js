@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EditorPropsProvider = exports.timeValueRef = exports.editorPropsProviderRef = exports.EditorPropsContext = void 0;
+exports.EditorPropsProvider = exports.timeValueRef = exports.EditorPropsContext = void 0;
 const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = __importStar(require("react"));
 exports.EditorPropsContext = (0, react_1.createContext)({
@@ -41,11 +41,7 @@ exports.EditorPropsContext = (0, react_1.createContext)({
     updateProps: () => {
         throw new Error('Not implemented');
     },
-    resetUnsaved: () => {
-        throw new Error('Not implemented');
-    },
 });
-exports.editorPropsProviderRef = react_1.default.createRef();
 exports.timeValueRef = react_1.default.createRef();
 const EditorPropsProvider = ({ children }) => {
     const [props, setProps] = react_1.default.useState({});
@@ -60,25 +56,9 @@ const EditorPropsProvider = ({ children }) => {
             };
         });
     }, []);
-    const resetUnsaved = (0, react_1.useCallback)((compositionId) => {
-        setProps((prev) => {
-            if (prev[compositionId]) {
-                const newProps = { ...prev };
-                delete newProps[compositionId];
-                return newProps;
-            }
-            return prev;
-        });
-    }, []);
-    (0, react_1.useImperativeHandle)(exports.editorPropsProviderRef, () => {
-        return {
-            getProps: () => props,
-            setProps,
-        };
-    }, [props]);
     const ctx = (0, react_1.useMemo)(() => {
-        return { props, updateProps, resetUnsaved };
-    }, [props, resetUnsaved, updateProps]);
+        return { props, updateProps };
+    }, [props, updateProps]);
     return ((0, jsx_runtime_1.jsx)(exports.EditorPropsContext.Provider, { value: ctx, children: children }));
 };
 exports.EditorPropsProvider = EditorPropsProvider;

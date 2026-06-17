@@ -86,6 +86,8 @@ class WP_MCP_AI_Chat_Client_Behavior_Subtab_Slug_Test extends WP_UnitTestCase {
 			'chat_welcome_message',
 			'chat_placeholder_text',
 			'chat_send_button_text',
+			'show_usage_costs',
+			'show_capability_flags',
 		);
 
 		$actual_fields = $subtab_groups['behavior-chat-client']['fields'];

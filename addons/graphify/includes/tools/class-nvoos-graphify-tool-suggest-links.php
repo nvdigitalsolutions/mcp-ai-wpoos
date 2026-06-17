@@ -19,6 +19,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Graphify_Tool_Suggest_Links implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	/** {@inheritdoc} */
 	public function get_slug() {
 		return 'graphify_suggest_links';
@@ -39,7 +48,7 @@ class NV_oOS_Graphify_Tool_Suggest_Links implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'limit' => array(
+				'limit'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum link suggestions to return (default: 10, max: 50).', 'nvoos-graphify' ),
 					'minimum'     => 1,
@@ -61,7 +70,13 @@ class NV_oOS_Graphify_Tool_Suggest_Links implements WP_MCP_AI_Tool_Interface, WP
 		return array( 'read-only' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$limit   = isset( $arguments['limit'] ) ? max( 1, min( 50, absint( $arguments['limit'] ) ) ) : 10;
 		$post_id = isset( $arguments['post_id'] ) ? absint( $arguments['post_id'] ) : 0;
@@ -70,10 +85,10 @@ class NV_oOS_Graphify_Tool_Suggest_Links implements WP_MCP_AI_Tool_Interface, WP
 			$node = NV_oOS_Graphify_DB::get_node_by_post_id( $post_id );
 			if ( ! $node || ! $node->community_id ) {
 				return array(
-					'success'      => true,
-					'suggestions'  => array(),
+					'success'          => true,
+					'suggestions'      => array(),
 					'suggestion_count' => 0,
-					'message'      => __( 'No community data available for this post. Run graphify_build_graph first.', 'nvoos-graphify' ),
+					'message'          => __( 'No community data available for this post. Run graphify_build_graph first.', 'nvoos-graphify' ),
 				);
 			}
 		}

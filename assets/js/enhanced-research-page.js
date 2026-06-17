@@ -29,6 +29,10 @@
 	 * Initialize enhanced research page functionality.
 	 */
 	function initEnhancedResearchPage() {
+		// Per-entity sessionStorage key so different research pages don't bleed into each other.
+		const entityType = (window.wpMcpAiResearchPage && window.wpMcpAiResearchPage.entityType) || '';
+		const storageKey = 'wp_mcp_ai_selected_workflow' + (entityType ? '_' + entityType : '');
+
 		// Handle workflow tab switching (for quiz research page)
 		$('.workflow-option').on('click', function() {
 			const workflow = $(this).data('workflow');
@@ -41,14 +45,19 @@
 			$('.workflow-content').removeClass('active').hide();
 			$('#workflow-' + workflow).addClass('active').show();
 			
-			// Store selected workflow in sessionStorage
-			sessionStorage.setItem('wp_mcp_ai_selected_workflow', workflow);
+			// Store selected workflow in sessionStorage (per-entity).
+			sessionStorage.setItem(storageKey, workflow);
 		});
 
-		// Restore previously selected workflow
-		const savedWorkflow = sessionStorage.getItem('wp_mcp_ai_selected_workflow');
+		// Restore previously selected workflow, with `initialWorkflow` overriding sessionStorage
+		// so legacy ?mode= bookmarks land on the right card.
+		const initialWorkflow = (window.wpMcpAiResearchPage && window.wpMcpAiResearchPage.initialWorkflow) || '';
+		const savedWorkflow = initialWorkflow || sessionStorage.getItem(storageKey);
 		if (savedWorkflow) {
-			$('.workflow-option[data-workflow="' + savedWorkflow + '"]').trigger('click');
+			const $target = $('.workflow-option[data-workflow="' + savedWorkflow + '"]');
+			if ($target.length) {
+				$target.trigger('click');
+			}
 		}
 
 		// Handle mode tab switching (for task/project/etc research pages)

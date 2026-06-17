@@ -29,6 +29,13 @@ class WP_MCP_AI_Tool_SiteKit_AdSense implements WP_MCP_AI_Tool_Interface, WP_MCP
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check whether the tool can be registered.
 	 *
 	 * @since 1.2.0

@@ -42,7 +42,8 @@ Design professional tools have higher token consumption due to their resource-in
 
 | Tool | Multiplier | Rationale |
 |------|-----------|-----------|
-| `generate_veo_video` | 5.0x | Video generation is extremely token-intensive |
+| `generate_omni_video` | 5.0x | Omni Flash video generation — 10s with native audio |
+| `generate_veo_video` | 5.0x | Veo video generation (legacy) |
 | `generate_music` | 3.5x | Audio generation requires significant processing |
 | `generate_openai_image` | 3.0x | Image generation with DALL-E |
 | `generate_gemini_image` | 3.0x | Image generation with Gemini |

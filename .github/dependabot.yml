@@ -16,6 +16,70 @@ updates:
       prefix: "npm"
       include: "scope"
 
+  - package-ecosystem: "npm"
+    directory: "/addons/pro"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "pro"
+    reviewers:
+      - "nvdigitalsolutions"
+    commit-message:
+      prefix: "npm(pro)"
+      include: "scope"
+
+  - package-ecosystem: "npm"
+    directory: "/addons/saas-controller"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "saas-controller"
+    reviewers:
+      - "nvdigitalsolutions"
+    commit-message:
+      prefix: "npm(saas-controller)"
+      include: "scope"
+
+  - package-ecosystem: "npm"
+    directory: "/addons/docs-hub"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "docs-hub"
+    reviewers:
+      - "nvdigitalsolutions"
+    commit-message:
+      prefix: "npm(docs-hub)"
+      include: "scope"
+
+  - package-ecosystem: "npm"
+    directory: "/addons/cloud-worker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "cloud-worker"
+    reviewers:
+      - "nvdigitalsolutions"
+    commit-message:
+      prefix: "npm(cloud-worker)"
+      include: "scope"
+
   # Enable version updates for Composer
   - package-ecosystem: "composer"
     directory: "/"
@@ -30,6 +94,70 @@ updates:
       - "nvdigitalsolutions"
     commit-message:
       prefix: "composer"
+      include: "scope"
+
+  - package-ecosystem: "composer"
+    directory: "/addons/pro"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "php"
+      - "pro"
+    reviewers:
+      - "nvdigitalsolutions"
+    commit-message:
+      prefix: "composer(pro)"
+      include: "scope"
+
+  - package-ecosystem: "composer"
+    directory: "/addons/fantasy-football"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "php"
+      - "fantasy-football"
+    reviewers:
+      - "nvdigitalsolutions"
+    commit-message:
+      prefix: "composer(fantasy-football)"
+      include: "scope"
+
+  - package-ecosystem: "composer"
+    directory: "/addons/docs-hub"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "php"
+      - "docs-hub"
+    reviewers:
+      - "nvdigitalsolutions"
+    commit-message:
+      prefix: "composer(docs-hub)"
+      include: "scope"
+
+  - package-ecosystem: "composer"
+    directory: "/addons/algorave"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "php"
+      - "algorave"
+    reviewers:
+      - "nvdigitalsolutions"
+    commit-message:
+      prefix: "composer(algorave)"
       include: "scope"
 
   # Enable version updates for GitHub Actions

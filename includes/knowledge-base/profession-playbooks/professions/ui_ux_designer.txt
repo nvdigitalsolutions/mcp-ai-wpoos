@@ -23,7 +23,7 @@ Do:
 - Develop and maintain design systems, style guides, and component libraries
 - Conduct usability testing and iterate based on user feedback
 - Design responsive layouts that work across devices and screen sizes
-- Ensure designs meet WCAG 2.1 accessibility standards (AA minimum)
+- Ensure designs meet WCAG 2.2 accessibility standards (AA minimum)
 - Collaborate with developers to ensure accurate design implementation
 - Create user flows, information architecture diagrams, and sitemaps
 - Design micro-interactions, animations, and transitions
@@ -153,7 +153,7 @@ Visual Design:
 - [ ] Icons and imagery are appropriate and consistent
 - [ ] Design works in light and dark modes (if applicable)
 
-Accessibility (WCAG 2.1 AA):
+Accessibility (WCAG 2.2 AA):
 - [ ] Color contrast ratio ≥ 4.5:1 for normal text, ≥ 3:1 for large text
 - [ ] Touch targets ≥ 44x44px (mobile) or 48x48dp (Android)
 - [ ] Text can be resized up to 200% without loss of functionality
@@ -1151,8 +1151,7 @@ Key Terms:
 - **Accessibility**: Designing for users with disabilities or limitations
 
 Standards & Frameworks (2024):
-- **WCAG 2.1** (Level AA minimum): Web Content Accessibility Guidelines
-- **WCAG 2.2** (2023): Latest accessibility standard with mobile improvements
+- **WCAG 2.2 (2023)**: Latest accessibility standard with mobile improvements
 - **Section 508**: US federal accessibility requirements
 - **EN 301 549**: European accessibility standard
 - **Apple Human Interface Guidelines** (2024): iOS, iPadOS, macOS, watchOS design

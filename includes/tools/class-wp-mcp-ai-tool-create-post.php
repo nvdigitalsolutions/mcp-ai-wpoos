@@ -171,6 +171,13 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -190,7 +197,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		// Validate and sanitize inputs.
 		$title   = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$content = isset( $arguments['content'] ) ? $arguments['content'] : '';
+		$content = isset( $arguments['content'] ) ? wp_kses_post( $arguments['content'] ) : '';
 
 		if ( '' === $title ) {
 			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Post title is required.', 'mcp-ai-wpoos' ) );
@@ -322,10 +329,10 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'summary'   => $summary_text, // Backward compatibility.
 			'ID'        => $created_post->ID,
 			'title'     => get_the_title( $created_post ),
-			'status'    => get_post_status( $created_post ),
-			'post_type' => $created_post->post_type,
+			'status'    => esc_html( get_post_status( $created_post ) ),
+			'post_type' => esc_html( $created_post->post_type ),
 			'author_id' => $created_post->post_author,
-			'permalink' => get_permalink( $created_post ),
+			'permalink' => esc_url( get_permalink( $created_post ) ),
 		);
 
 		$edit_link = get_edit_post_link( $created_post->ID, '' );

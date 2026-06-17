@@ -106,6 +106,13 @@ class WP_MCP_AI_Tool_Update_Registration_Status implements WP_MCP_AI_Tool_Interf
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool

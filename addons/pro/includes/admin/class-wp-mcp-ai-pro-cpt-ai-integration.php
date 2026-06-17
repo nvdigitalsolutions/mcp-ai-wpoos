@@ -417,7 +417,7 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 		$is_supported = false;
 
 		// Check post types.
-		if ( $screen->base === 'post' && in_array( $screen->post_type, $this->get_supported_post_types(), true ) ) {
+		if ( 'post' === $screen->base && in_array( $screen->post_type, $this->get_supported_post_types(), true ) ) {
 			$is_supported = true;
 		}
 

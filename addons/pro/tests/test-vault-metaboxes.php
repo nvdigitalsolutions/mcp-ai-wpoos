@@ -80,8 +80,10 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 		);
 
 		// Simulate POST data.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['mcp_vault_item_meta_nonce'] = wp_create_nonce( 'mcp_vault_item_meta' );
-		$_POST['vault_item_type']           = 'note';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['vault_item_type'] = 'note';
 
 		// Trigger save.
 		$vault_cpt = WP_MCP_AI_Vault_Item_CPT::get_instance();
@@ -105,8 +107,10 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 		);
 
 		// Simulate POST data.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['mcp_vault_item_meta_nonce'] = wp_create_nonce( 'mcp_vault_item_meta' );
-		$_POST['vault_folder_id']           = 42;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['vault_folder_id'] = 42;
 
 		// Trigger save.
 		$vault_cpt = WP_MCP_AI_Vault_Item_CPT::get_instance();
@@ -130,8 +134,10 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 		);
 
 		// Simulate POST data.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['mcp_vault_item_meta_nonce'] = wp_create_nonce( 'mcp_vault_item_meta' );
-		$_POST['vault_favorite']            = '1';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['vault_favorite'] = '1';
 
 		// Trigger save.
 		$vault_cpt = WP_MCP_AI_Vault_Item_CPT::get_instance();
@@ -155,8 +161,10 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 		);
 
 		// Simulate POST data.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['mcp_vault_item_meta_nonce'] = wp_create_nonce( 'mcp_vault_item_meta' );
-		$_POST['vault_username']            = 'testuser@example.com';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['vault_username'] = 'testuser@example.com';
 
 		// Trigger save.
 		$vault_cpt = WP_MCP_AI_Vault_Item_CPT::get_instance();
@@ -183,8 +191,10 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 		);
 
 		// Simulate POST data.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['mcp_vault_item_meta_nonce'] = wp_create_nonce( 'mcp_vault_item_meta' );
-		$_POST['vault_password']            = 'SecureP@ssw0rd!';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['vault_password'] = 'SecureP@ssw0rd!';
 
 		// Trigger save.
 		$vault_cpt = WP_MCP_AI_Vault_Item_CPT::get_instance();
@@ -214,8 +224,10 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 		);
 
 		// Simulate POST data.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['mcp_vault_item_meta_nonce'] = wp_create_nonce( 'mcp_vault_item_meta' );
-		$_POST['vault_uri']                 = 'https://example.com';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['vault_uri'] = 'https://example.com';
 
 		// Trigger save.
 		$vault_cpt = WP_MCP_AI_Vault_Item_CPT::get_instance();
@@ -241,8 +253,10 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 		);
 
 		// Simulate POST data.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['mcp_vault_item_meta_nonce'] = wp_create_nonce( 'mcp_vault_item_meta' );
-		$_POST['vault_notes']               = 'This is a secure note with sensitive information.';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['vault_notes'] = 'This is a secure note with sensitive information.';
 
 		// Trigger save.
 		$vault_cpt = WP_MCP_AI_Vault_Item_CPT::get_instance();
@@ -269,6 +283,7 @@ class Test_Vault_Item_Metaboxes extends WP_UnitTestCase {
 		);
 
 		// Simulate POST data without nonce.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['vault_item_type'] = 'note';
 
 		// Trigger save.

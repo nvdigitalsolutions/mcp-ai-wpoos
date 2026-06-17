@@ -66,7 +66,7 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	 * @return string
 	 */
 	public function get_documentation_url() {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#general-tab';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/admin-guides/SETTINGS_DASHBOARD_GUIDE.md#general-tab';
 	}
 
 	/**
@@ -185,6 +185,17 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	<p>
 		<label for="wp-mcp-ai-system-prompt"><strong><?php esc_html_e( 'System Prompt', 'mcp-ai-wpoos' ); ?></strong></label>
 		<textarea id="wp-mcp-ai-system-prompt" name="wp_mcp_ai_system_prompt" class="widefat" rows="5"><?php echo esc_textarea( $system_prompt ); ?></textarea>
+	</p>
+	<p>
+		<label>
+			<input type="checkbox" name="wp_mcp_ai_prompt_caching" value="1"
+				<?php checked( (bool) get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_PROMPT_CACHING, true ) ); ?>>
+			<strong><?php esc_html_e( 'Enable Prompt Caching', 'mcp-ai-wpoos' ); ?></strong>
+		</label>
+		<br>
+		<span class="description">
+			<?php esc_html_e( 'Reduces latency and API costs by caching the system prompt and tool definitions on supported providers (Anthropic, OpenAI, DeepSeek, Gemini). Static content is reused across conversation turns.', 'mcp-ai-wpoos' ); ?>
+		</span>
 	</p>
 		<?php
 		$this->render_documentation_link();

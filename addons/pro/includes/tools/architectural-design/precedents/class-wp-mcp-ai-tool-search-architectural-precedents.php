@@ -26,6 +26,13 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 class WP_MCP_AI_Tool_Search_Architectural_Precedents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
+
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -34,22 +41,51 @@ class WP_MCP_AI_Tool_Search_Architectural_Precedents implements WP_MCP_AI_Tool_I
 		return ! empty( $settings['enable_architectural_design_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'search_architectural_precedents';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Search Architectural Precedents', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Semantic search over the architectural precedent library using OpenAI embeddings + cosine similarity. Optional filters for country, building type and floor area. Falls back to keyword scoring when embeddings are unavailable.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -78,10 +114,29 @@ class WP_MCP_AI_Tool_Search_Architectural_Precedents implements WP_MCP_AI_Tool_I
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'requires-capability', 'read-only', 'cacheable', 'external-api' );
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
@@ -105,16 +160,34 @@ class WP_MCP_AI_Tool_Search_Architectural_Precedents implements WP_MCP_AI_Tool_I
 
 		$meta_query = array();
 		if ( '' !== $country ) {
-			$meta_query[] = array( 'key' => '_arch_prec_country_code', 'value' => $country, 'compare' => '=' );
+			$meta_query[] = array(
+				'key'     => '_arch_prec_country_code',
+				'value'   => $country,
+				'compare' => '=',
+			);
 		}
 		if ( '' !== $btype ) {
-			$meta_query[] = array( 'key' => '_arch_prec_building_type', 'value' => $btype, 'compare' => '=' );
+			$meta_query[] = array(
+				'key'     => '_arch_prec_building_type',
+				'value'   => $btype,
+				'compare' => '=',
+			);
 		}
 		if ( null !== $min_a ) {
-			$meta_query[] = array( 'key' => '_arch_prec_area_m2', 'value' => (float) $min_a, 'compare' => '>=', 'type' => 'NUMERIC' );
+			$meta_query[] = array(
+				'key'     => '_arch_prec_area_m2',
+				'value'   => (float) $min_a,
+				'compare' => '>=',
+				'type'    => 'NUMERIC',
+			);
 		}
 		if ( null !== $max_a ) {
-			$meta_query[] = array( 'key' => '_arch_prec_area_m2', 'value' => (float) $max_a, 'compare' => '<=', 'type' => 'NUMERIC' );
+			$meta_query[] = array(
+				'key'     => '_arch_prec_area_m2',
+				'value'   => (float) $max_a,
+				'compare' => '<=',
+				'type'    => 'NUMERIC',
+			);
 		}
 
 		$args = array(
@@ -170,8 +243,8 @@ class WP_MCP_AI_Tool_Search_Architectural_Precedents implements WP_MCP_AI_Tool_I
 
 		$results = array();
 		foreach ( array_slice( $scored, 0, $limit ) as $row ) {
-			$post     = $row['post'];
-			$features = get_post_meta( $post->ID, '_arch_prec_key_features', true );
+			$post      = $row['post'];
+			$features  = get_post_meta( $post->ID, '_arch_prec_key_features', true );
 			$results[] = array(
 				'id'                    => $post->ID,
 				'title'                 => $post->post_title,

@@ -134,6 +134,7 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 	public function test_integration_with_mock_tool() {
 		// Create a mock tool class that tracks context.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			public $received_context = null;
 
 			/**
@@ -239,6 +240,7 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 	public function test_backward_compatibility_with_old_tools() {
 		// Create a mock "old" tool that doesn't know about in_async_executor.
 		$old_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *

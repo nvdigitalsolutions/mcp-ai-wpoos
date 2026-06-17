@@ -90,7 +90,7 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'name'                 => array(
+							'name'                  => array(
 								'type'        => 'string',
 								'description' => __( 'Channel identifier, e.g. "voice", "chat", "email".', 'mcp-ai-wpoos' ),
 							),
@@ -99,18 +99,18 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 								'description' => __( 'Total contacts per hour arriving on this channel (before bot containment).', 'mcp-ai-wpoos' ),
 								'minimum'     => 0.001,
 							),
-							'avg_handle_time'      => array(
+							'avg_handle_time'       => array(
 								'type'        => 'number',
 								'description' => __( 'Average handle time in seconds for this channel.', 'mcp-ai-wpoos' ),
 								'minimum'     => 1,
 							),
-							'concurrency_factor'   => array(
+							'concurrency_factor'    => array(
 								'type'        => 'number',
 								'description' => __( 'Simultaneous contacts one agent handles (1 = voice, 3 = chat default, 8 = email default). Overrides built-in channel defaults.', 'mcp-ai-wpoos' ),
 								'minimum'     => 1,
 								'maximum'     => 20,
 							),
-							'bot_containment_rate' => array(
+							'bot_containment_rate'  => array(
 								'type'        => 'number',
 								'description' => __( 'Fraction of contacts fully resolved by bots (0–1). E.g. 0.4 = 40% handled by AI without escalation. Default 0.', 'mcp-ai-wpoos' ),
 								'minimum'     => 0,
@@ -170,6 +170,13 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -207,9 +214,9 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 		$target_sl_frac = min( 0.999, max( 0.001, $target_sl_pct / 100.0 ) );
 		$fetch_live     = ! empty( $arguments['fetch_live_stats'] );
 
-		$channel_results   = array();
-		$total_agents      = 0;
-		$warnings          = array();
+		$channel_results = array();
+		$total_agents    = 0;
+		$warnings        = array();
 
 		foreach ( $arguments['channels'] as $idx => $channel ) {
 			if ( ! is_array( $channel ) ) {
@@ -240,9 +247,9 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 			$aht         = (float) $channel['avg_handle_time'];
 
 			// Bot containment: only escalated volume reaches human agents.
-			$containment     = isset( $channel['bot_containment_rate'] ) ? (float) $channel['bot_containment_rate'] : 0.0;
-			$containment     = min( 0.99, max( 0.0, $containment ) );
-			$net_arrival     = $raw_arrival * ( 1.0 - $containment );
+			$containment = isset( $channel['bot_containment_rate'] ) ? (float) $channel['bot_containment_rate'] : 0.0;
+			$containment = min( 0.99, max( 0.0, $containment ) );
+			$net_arrival = $raw_arrival * ( 1.0 - $containment );
 
 			// Concurrency factor.
 			$ch_type     = strtolower( $ch_name );
@@ -252,7 +259,7 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 			// Effective arrival per agent (concurrency-adjusted).
 			$effective_arrival = $net_arrival / $concurrency;
 
-			$traffic   = WP_MCP_AI_Erlang_C::to_erlangs( $effective_arrival, $aht );
+			$traffic    = WP_MCP_AI_Erlang_C::to_erlangs( $effective_arrival, $aht );
 			$min_agents = WP_MCP_AI_Erlang_C::min_agents_for_sl( $traffic, $aht, $target_sl_frac, (float) $target_time );
 
 			$prob_wait = WP_MCP_AI_Erlang_C::probability_wait( $traffic, $min_agents );
@@ -261,18 +268,18 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 			$util      = WP_MCP_AI_Erlang_C::utilisation( $traffic, $min_agents );
 
 			$channel_results[ $ch_name ] = array(
-				'channel'                  => $ch_name,
-				'raw_arrival_per_hour'     => round( $raw_arrival, 2 ),
-				'bot_containment_rate'     => round( $containment, 3 ),
-				'net_arrival_per_hour'     => round( $net_arrival, 2 ),
-				'avg_handle_time_sec'      => $aht,
-				'concurrency_factor'       => $concurrency,
-				'traffic_intensity'        => round( $traffic, 4 ),
-				'agents_required'          => $min_agents,
-				'probability_wait_pct'     => round( $prob_wait * 100, 2 ),
-				'avg_wait_time_sec'        => round( $avg_wait, 2 ),
-				'service_level_pct'        => round( $svc_level * 100, 2 ),
-				'utilisation_pct'          => round( $util * 100, 2 ),
+				'channel'              => $ch_name,
+				'raw_arrival_per_hour' => round( $raw_arrival, 2 ),
+				'bot_containment_rate' => round( $containment, 3 ),
+				'net_arrival_per_hour' => round( $net_arrival, 2 ),
+				'avg_handle_time_sec'  => $aht,
+				'concurrency_factor'   => $concurrency,
+				'traffic_intensity'    => round( $traffic, 4 ),
+				'agents_required'      => $min_agents,
+				'probability_wait_pct' => round( $prob_wait * 100, 2 ),
+				'avg_wait_time_sec'    => round( $avg_wait, 2 ),
+				'service_level_pct'    => round( $svc_level * 100, 2 ),
+				'utilisation_pct'      => round( $util * 100, 2 ),
 			);
 
 			$total_agents += $min_agents;

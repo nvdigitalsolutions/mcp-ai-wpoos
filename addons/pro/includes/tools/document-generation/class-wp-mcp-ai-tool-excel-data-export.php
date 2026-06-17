@@ -104,7 +104,20 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
@@ -193,9 +206,9 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 					$sheet->setCellValue( $col . $row, $header );
 					// Bold headers.
 					$sheet->getStyle( $col . $row )->getFont()->setBold( true );
-					$col++;
+					++$col;
 				}
-				$row++;
+				++$row;
 			}
 
 			// Write data rows.
@@ -204,9 +217,9 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 					$col = 'A';
 					foreach ( $data_row as $cell_value ) {
 						$sheet->setCellValue( $col . $row, $cell_value );
-						$col++;
+						++$col;
 					}
-					$row++;
+					++$row;
 				}
 			}
 
@@ -220,7 +233,7 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 			if ( is_wp_error( $temp_file ) ) {
 				return $temp_file;
 			}
-			$writer    = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx( $spreadsheet );
+			$writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx( $spreadsheet );
 			$writer->save( $temp_file );
 
 			// Upload to WordPress media library.
@@ -282,7 +295,7 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 			return $temp_file;
 		}
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-		$handle    = fopen( $temp_file, 'w' );
+		$handle = fopen( $temp_file, 'w' );
 
 		if ( ! $handle ) {
 			return new WP_Error( 'file_creation_failed', __( 'Failed to create temporary file.', 'mcp-ai-wpoos-pro' ) );

@@ -112,6 +112,13 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @since 1.2.0
@@ -477,15 +484,15 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 
 		// Site type and query.
 		if ( ! empty( $data['site_type'] ) && 'general' !== $data['site_type'] ) {
-			$report .= "**Site Type:** " . esc_html( ucfirst( $data['site_type'] ) ) . "\n";
+			$report .= '**Site Type:** ' . esc_html( ucfirst( $data['site_type'] ) ) . "\n";
 		}
 		if ( ! empty( $data['query'] ) ) {
-			$report .= "**Research Query:** " . esc_html( $data['query'] ) . "\n\n";
+			$report .= '**Research Query:** ' . esc_html( $data['query'] ) . "\n\n";
 		}
 
 		// Focus areas.
 		if ( ! empty( $data['focus_areas'] ) && is_array( $data['focus_areas'] ) ) {
-			$report .= "**Focus Areas:** " . esc_html( implode( ', ', array_map( 'ucfirst', $data['focus_areas'] ) ) ) . "\n\n";
+			$report .= '**Focus Areas:** ' . esc_html( implode( ', ', array_map( 'ucfirst', $data['focus_areas'] ) ) ) . "\n\n";
 		}
 
 		// Summary.
@@ -507,15 +514,42 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 
 		// Category display order and titles.
 		$category_info = array(
-			'performance'     => array( 'title' => 'Performance Optimization', 'icon' => '⚡' ),
-			'accessibility'   => array( 'title' => 'Accessibility Standards', 'icon' => '♿' ),
-			'seo'             => array( 'title' => 'SEO Best Practices', 'icon' => '🔍' ),
-			'security'        => array( 'title' => 'Security Recommendations', 'icon' => '🔒' ),
-			'design'          => array( 'title' => 'Design & Layout', 'icon' => '🎨' ),
-			'user-experience' => array( 'title' => 'User Experience (UX)', 'icon' => '👤' ),
-			'mobile'          => array( 'title' => 'Mobile Optimization', 'icon' => '📱' ),
-			'conversion'      => array( 'title' => 'Conversion Optimization', 'icon' => '📈' ),
-			'general'         => array( 'title' => 'General Recommendations', 'icon' => '📋' ),
+			'performance'     => array(
+				'title' => 'Performance Optimization',
+				'icon'  => '⚡',
+			),
+			'accessibility'   => array(
+				'title' => 'Accessibility Standards',
+				'icon'  => '♿',
+			),
+			'seo'             => array(
+				'title' => 'SEO Best Practices',
+				'icon'  => '🔍',
+			),
+			'security'        => array(
+				'title' => 'Security Recommendations',
+				'icon'  => '🔒',
+			),
+			'design'          => array(
+				'title' => 'Design & Layout',
+				'icon'  => '🎨',
+			),
+			'user-experience' => array(
+				'title' => 'User Experience (UX)',
+				'icon'  => '👤',
+			),
+			'mobile'          => array(
+				'title' => 'Mobile Optimization',
+				'icon'  => '📱',
+			),
+			'conversion'      => array(
+				'title' => 'Conversion Optimization',
+				'icon'  => '📈',
+			),
+			'general'         => array(
+				'title' => 'General Recommendations',
+				'icon'  => '📋',
+			),
 		);
 
 		// Output practices by category.
@@ -543,7 +577,7 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 					}
 				}
 
-				$report .= $priority_icon . "**" . esc_html( $practice['title'] ) . "**\n";
+				$report .= $priority_icon . '**' . esc_html( $practice['title'] ) . "**\n";
 
 				// Description.
 				if ( ! empty( $practice['description'] ) ) {
@@ -552,9 +586,9 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 
 				// Source.
 				if ( ! empty( $practice['source'] ) ) {
-					$report .= "*Source: " . esc_html( $practice['source'] ) . "*";
+					$report .= '*Source: ' . esc_html( $practice['source'] ) . '*';
 					if ( ! empty( $practice['url'] ) ) {
-						$report .= " - [View Source](" . esc_url( $practice['url'] ) . ")";
+						$report .= ' - [View Source](' . esc_url( $practice['url'] ) . ')';
 					}
 					$report .= "\n";
 				}
@@ -574,7 +608,7 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 		if ( ! empty( $data['best_practices'] ) ) {
 			foreach ( $data['best_practices'] as $practice ) {
 				if ( ! empty( $practice['priority'] ) && 'high' === $practice['priority'] ) {
-					$high_priority_count++;
+					++$high_priority_count;
 				}
 			}
 		}
@@ -582,20 +616,20 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 		if ( $high_priority_count > 0 ) {
 			$report .= "### 🎯 Implementation Recommendations\n\n";
 			$report .= "**Start with High Priority Items:** Focus on the {$high_priority_count} high-priority practice";
-			$report .= ( $high_priority_count > 1 ? 's' : '' ) . " first. ";
+			$report .= ( $high_priority_count > 1 ? 's' : '' ) . ' first. ';
 			$report .= "These will have the most immediate impact on your site's success.\n\n";
 
 			if ( ! empty( $data['focus_areas'] ) ) {
-				$report .= "**Focus Area Alignment:** This research emphasized ";
+				$report .= '**Focus Area Alignment:** This research emphasized ';
 				$report .= esc_html( implode( ', ', $data['focus_areas'] ) );
 				$report .= " based on your specified focus areas.\n\n";
 			}
 		}
 
 		// Technical implementation tips.
-		$has_performance = isset( $practices_by_category['performance'] );
+		$has_performance   = isset( $practices_by_category['performance'] );
 		$has_accessibility = isset( $practices_by_category['accessibility'] );
-		$has_seo = isset( $practices_by_category['seo'] );
+		$has_seo           = isset( $practices_by_category['seo'] );
 
 		if ( $has_performance || $has_accessibility || $has_seo ) {
 			$report .= "### 💡 Quick Implementation Tips\n\n";
@@ -615,7 +649,7 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 
 		// Research metadata.
 		$report .= "---\n\n";
-		$report .= "*Research completed with " . absint( $data['results_count'] ) . " best practice";
+		$report .= '*Research completed with ' . absint( $data['results_count'] ) . ' best practice';
 		$report .= ( $data['results_count'] > 1 ? 's' : '' ) . " identified.*\n";
 
 		return $report;

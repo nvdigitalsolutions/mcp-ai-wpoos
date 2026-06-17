@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_Redline_Comparator implements WP_MCP_AI_Tool_Interface, 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -99,6 +106,9 @@ class WP_MCP_AI_Tool_LF_Redline_Comparator implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -127,8 +137,8 @@ class WP_MCP_AI_Tool_LF_Redline_Comparator implements WP_MCP_AI_Tool_Interface, 
 		$words_a = preg_split( '/\s+/', wp_strip_all_tags( $doc_a->post_content ) );
 		$words_b = preg_split( '/\s+/', wp_strip_all_tags( $doc_b->post_content ) );
 
-		$additions_count = 0;
-		$deletions_count = 0;
+		$additions_count  = 0;
+		$deletions_count  = 0;
 		$material_changes = array();
 
 		$set_a = array_flip( $words_a );
@@ -153,17 +163,17 @@ class WP_MCP_AI_Tool_LF_Redline_Comparator implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
-		$total_words   = max( count( $words_a ), 1 );
-		$change_pct    = round( ( ( $additions_count + $deletions_count ) / $total_words ) * 100, 1 );
+		$total_words = max( count( $words_a ), 1 );
+		$change_pct  = round( ( ( $additions_count + $deletions_count ) / $total_words ) * 100, 1 );
 
 		$data = array(
-			'document_id_a'   => $doc_id_a,
-			'document_id_b'   => $doc_id_b,
-			'comparison_mode' => $comparison_mode,
-			'additions_count' => $additions_count,
-			'deletions_count' => $deletions_count,
+			'document_id_a'     => $doc_id_a,
+			'document_id_b'     => $doc_id_b,
+			'comparison_mode'   => $comparison_mode,
+			'additions_count'   => $additions_count,
+			'deletions_count'   => $deletions_count,
 			'change_percentage' => $change_pct,
-			'material_changes' => $material_changes,
+			'material_changes'  => $material_changes,
 		);
 
 		if ( 'full' === $comparison_mode ) {

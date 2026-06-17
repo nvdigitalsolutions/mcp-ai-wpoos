@@ -70,27 +70,27 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'deal_name'                => array(
+				'deal_name'                 => array(
 					'type'        => 'string',
 					'description' => __( 'Name of the CMBS deal.', 'mcp-ai-wpoos-pro' ),
 				),
-				'reporting_date'           => array(
+				'reporting_date'            => array(
 					'type'        => 'string',
 					'description' => __( 'Reporting date in YYYY-MM-DD format.', 'mcp-ai-wpoos-pro' ),
 				),
-				'pool_balance'             => array(
+				'pool_balance'              => array(
 					'type'        => 'number',
 					'description' => __( 'Current pool balance.', 'mcp-ai-wpoos-pro' ),
 				),
-				'original_balance'         => array(
+				'original_balance'          => array(
 					'type'        => 'number',
 					'description' => __( 'Original pool balance at issuance.', 'mcp-ai-wpoos-pro' ),
 				),
-				'num_loans'                => array(
+				'num_loans'                 => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of loans in pool.', 'mcp-ai-wpoos-pro' ),
 				),
-				'delinquency_summary'      => array(
+				'delinquency_summary'       => array(
 					'type'        => 'array',
 					'description' => __( 'Array of delinquency status objects.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -112,7 +112,7 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 						'required'   => array( 'status', 'count', 'balance' ),
 					),
 				),
-				'special_servicing_count'  => array(
+				'special_servicing_count'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of loans in special servicing.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -120,23 +120,23 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 					'type'        => 'number',
 					'description' => __( 'Total balance of specially serviced loans.', 'mcp-ai-wpoos-pro' ),
 				),
-				'losses_to_date'           => array(
+				'losses_to_date'            => array(
 					'type'        => 'number',
 					'description' => __( 'Cumulative realized losses to date.', 'mcp-ai-wpoos-pro' ),
 				),
-				'credit_support_pct'       => array(
+				'credit_support_pct'        => array(
 					'type'        => 'number',
 					'description' => __( 'Current credit support/enhancement as decimal.', 'mcp-ai-wpoos-pro' ),
 				),
-				'wa_dscr'                  => array(
+				'wa_dscr'                   => array(
 					'type'        => 'number',
 					'description' => __( 'Weighted average DSCR.', 'mcp-ai-wpoos-pro' ),
 				),
-				'wa_ltv'                   => array(
+				'wa_ltv'                    => array(
 					'type'        => 'number',
 					'description' => __( 'Weighted average LTV as decimal.', 'mcp-ai-wpoos-pro' ),
 				),
-				'top_10_loans'             => array(
+				'top_10_loans'              => array(
 					'type'        => 'array',
 					'description' => __( 'Top 10 loans by balance.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -183,7 +183,20 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -195,19 +208,19 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$deal_name         = sanitize_text_field( $arguments['deal_name'] ?? '' );
-		$reporting_date    = sanitize_text_field( $arguments['reporting_date'] ?? '' );
-		$pool_balance      = (float) ( $arguments['pool_balance'] ?? 0 );
-		$original_balance  = (float) ( $arguments['original_balance'] ?? 0 );
-		$num_loans         = (int) ( $arguments['num_loans'] ?? 0 );
-		$delinq_summary    = $arguments['delinquency_summary'] ?? array();
-		$ss_count          = (int) ( $arguments['special_servicing_count'] ?? 0 );
-		$ss_balance        = (float) ( $arguments['special_servicing_balance'] ?? 0 );
-		$losses            = (float) ( $arguments['losses_to_date'] ?? 0 );
-		$credit_support    = (float) ( $arguments['credit_support_pct'] ?? 0 );
-		$wa_dscr           = (float) ( $arguments['wa_dscr'] ?? 0 );
-		$wa_ltv            = (float) ( $arguments['wa_ltv'] ?? 0 );
-		$top_10            = $arguments['top_10_loans'] ?? array();
+		$deal_name        = sanitize_text_field( $arguments['deal_name'] ?? '' );
+		$reporting_date   = sanitize_text_field( $arguments['reporting_date'] ?? '' );
+		$pool_balance     = (float) ( $arguments['pool_balance'] ?? 0 );
+		$original_balance = (float) ( $arguments['original_balance'] ?? 0 );
+		$num_loans        = (int) ( $arguments['num_loans'] ?? 0 );
+		$delinq_summary   = $arguments['delinquency_summary'] ?? array();
+		$ss_count         = (int) ( $arguments['special_servicing_count'] ?? 0 );
+		$ss_balance       = (float) ( $arguments['special_servicing_balance'] ?? 0 );
+		$losses           = (float) ( $arguments['losses_to_date'] ?? 0 );
+		$credit_support   = (float) ( $arguments['credit_support_pct'] ?? 0 );
+		$wa_dscr          = (float) ( $arguments['wa_dscr'] ?? 0 );
+		$wa_ltv           = (float) ( $arguments['wa_ltv'] ?? 0 );
+		$top_10           = $arguments['top_10_loans'] ?? array();
 
 		if ( empty( $deal_name ) ) {
 			return new WP_Error( 'invalid_input', __( 'Deal name is required.', 'mcp-ai-wpoos-pro' ) );
@@ -220,9 +233,9 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
 		// Pool factor.
-		$pool_factor   = $pool_balance / $original_balance;
-		$paydown       = $original_balance - $pool_balance - $losses;
-		$paydown_pct   = ( $original_balance > 0 ) ? $paydown / $original_balance : 0;
+		$pool_factor = $pool_balance / $original_balance;
+		$paydown     = $original_balance - $pool_balance - $losses;
+		$paydown_pct = ( $original_balance > 0 ) ? $paydown / $original_balance : 0;
 
 		// Section 1: Deal Summary.
 		$deal_summary = array(
@@ -238,9 +251,9 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 
 		// Section 2: Credit Metrics.
 		$credit_metrics = array(
-			'wa_dscr'          => round( $wa_dscr, 2 ),
-			'wa_ltv'           => $calc::format_percentage( $wa_ltv ),
-			'credit_support'   => $calc::format_percentage( $credit_support ),
+			'wa_dscr'        => round( $wa_dscr, 2 ),
+			'wa_ltv'         => $calc::format_percentage( $wa_ltv ),
+			'credit_support' => $calc::format_percentage( $credit_support ),
 		);
 
 		// DSCR health assessment.
@@ -279,17 +292,17 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 		}
 
 		$delinquency_section = array(
-			'total_delinquent'      => $calc::format_currency( $total_delinquent ),
-			'delinquency_rate'      => $calc::format_percentage( ( $pool_balance > 0 ) ? $total_delinquent / $pool_balance : 0 ),
-			'breakdown'             => $delinquency_rows,
+			'total_delinquent' => $calc::format_currency( $total_delinquent ),
+			'delinquency_rate' => $calc::format_percentage( ( $pool_balance > 0 ) ? $total_delinquent / $pool_balance : 0 ),
+			'breakdown'        => $delinquency_rows,
 		);
 
 		// Section 4: Special Servicing.
-		$ss_pct = ( $pool_balance > 0 ) ? $ss_balance / $pool_balance : 0;
+		$ss_pct            = ( $pool_balance > 0 ) ? $ss_balance / $pool_balance : 0;
 		$special_servicing = array(
-			'count'                   => $ss_count,
-			'balance'                 => $calc::format_currency( $ss_balance ),
-			'pct_pool'                => $calc::format_percentage( $ss_pct ),
+			'count'    => $ss_count,
+			'balance'  => $calc::format_currency( $ss_balance ),
+			'pct_pool' => $calc::format_percentage( $ss_pct ),
 		);
 
 		if ( $ss_pct > 0.10 ) {
@@ -303,11 +316,11 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 		}
 
 		// Section 5: Loss Analysis.
-		$loss_pct    = ( $original_balance > 0 ) ? $losses / $original_balance : 0;
+		$loss_pct     = ( $original_balance > 0 ) ? $losses / $original_balance : 0;
 		$loss_section = array(
-			'cumulative_losses'     => $calc::format_currency( $losses ),
-			'loss_pct_of_original'  => $calc::format_percentage( $loss_pct ),
-			'remaining_credit_support' => $calc::format_percentage( $credit_support ),
+			'cumulative_losses'           => $calc::format_currency( $losses ),
+			'loss_pct_of_original'        => $calc::format_percentage( $loss_pct ),
+			'remaining_credit_support'    => $calc::format_percentage( $credit_support ),
 			'credit_support_after_losses' => $calc::format_percentage( max( 0, $credit_support - $loss_pct ) ),
 		);
 
@@ -339,12 +352,12 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 		}
 
 		$top_10_section = array(
-			'total_balance'   => $calc::format_currency( $top_10_balance ),
-			'pct_pool'        => $calc::format_percentage( ( $pool_balance > 0 ) ? $top_10_balance / $pool_balance : 0 ),
-			'concentration'   => ( ( $pool_balance > 0 ) ? $top_10_balance / $pool_balance : 0 ) > 0.50
+			'total_balance' => $calc::format_currency( $top_10_balance ),
+			'pct_pool'      => $calc::format_percentage( ( $pool_balance > 0 ) ? $top_10_balance / $pool_balance : 0 ),
+			'concentration' => ( ( $pool_balance > 0 ) ? $top_10_balance / $pool_balance : 0 ) > 0.50
 				? __( 'Concentrated - top 10 exceed 50% of pool', 'mcp-ai-wpoos-pro' )
 				: __( 'Diversified - top 10 below 50% of pool', 'mcp-ai-wpoos-pro' ),
-			'loans'           => $top_10_rows,
+			'loans'         => $top_10_rows,
 		);
 
 		// Overall deal health.
@@ -366,14 +379,14 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 		}
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: 1: deal name, 2: reporting date */
 				__( 'CREFC-style investor report generated for %1$s as of %2$s.', 'mcp-ai-wpoos-pro' ),
 				$deal_name,
 				$reporting_date
 			),
-			'data'       => array(
+			'data'    => array(
 				'report_type'       => 'CREFC Investor Report',
 				'deal_summary'      => $deal_summary,
 				'credit_metrics'    => $credit_metrics,

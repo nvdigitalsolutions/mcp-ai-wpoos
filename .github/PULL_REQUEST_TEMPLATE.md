@@ -18,9 +18,9 @@ Closes #
 ## GSD × BMAD Phase Reference
 <!-- For feature work, indicate which phases were completed -->
 - [ ] Phase 0 (Context Init) — `.context/active/[feature].md` initialized
-- [ ] Phase 1 (Discovery) — Project Brief: `docs/proposals/[FEATURE]-PROJECT-BRIEF.md`
-- [ ] Phase 2 (Planning) — PRD: `docs/proposals/[FEATURE]-PRD.md`
-- [ ] Phase 3 (Architecture) — Arch Spec: `docs/proposals/[FEATURE]-ARCHITECTURE.md`
+- [ ] Phase 1 (Discovery) — Project Brief: `docs/project/proposals/[FEATURE]-PROJECT-BRIEF.md`
+- [ ] Phase 2 (Planning) — PRD: `docs/project/proposals/[FEATURE]-PRD.md`
+- [ ] Phase 3 (Architecture) — Arch Spec: `docs/project/proposals/[FEATURE]-ARCHITECTURE.md`
 - [ ] Phase 4 (Story Breakdown) — Stories in task plan (see artifact below)
 - [ ] Phase 5 (Implementation) — Atomic commits per story
 - [ ] Not applicable (patch / bug fix)

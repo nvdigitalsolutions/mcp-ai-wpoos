@@ -1,6 +1,13 @@
 {
   "name": "WordPress Plugin Dev",
-  "image": "mcr.microsoft.com/devcontainers/php:8.2-apache",
-  "forwardPorts": [80],
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
+  },
+  "forwardPorts": [8000],
   "postCreateCommand": "bash .devcontainer/post-create.sh"
 }

@@ -215,7 +215,7 @@ class WP_MCP_AI_Validator_Service {
 			$alt  = ! $alt;
 		}
 
-		return ( $sum % 10 === 0 );
+		return ( 0 === $sum % 10 );
 	}
 
 	/**

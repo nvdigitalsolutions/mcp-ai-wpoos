@@ -97,6 +97,121 @@ class WP_MCP_AI_Pro_CLI_Connection_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 	}
 
 	/**
+	 * Create a new remote site connection.
+	 *
+	 * ## OPTIONS
+	 *
+	 * --name=<name>
+	 * : Human-readable label for the connection.
+	 *
+	 * --url=<url>
+	 * : Remote site URL.
+	 *
+	 * --type=<type>
+	 * : Connection type.
+	 *
+	 * [--auth-type=<type>]
+	 * : Authentication method.
+	 *
+	 * [--api-key=<key>]
+	 * : API key credential.
+	 *
+	 * [--username=<user>]
+	 * : Username credential.
+	 *
+	 * [--password=<pass>]
+	 * : Password credential.
+	 *
+	 * [--token=<token>]
+	 * : Token credential.
+	 *
+	 * [--porcelain]
+	 * : Output the new connection ID only.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Create a basic connection.
+	 *     $ wp mcp-ai connection create --name="Staging" --url="https://staging.example.com" --type="wordpress"
+	 *
+	 *     # Create with API key auth.
+	 *     $ wp mcp-ai connection create --name="API Site" --url="https://api.example.com" --type="rest" --auth-type="api_key" --api-key="sk-abc123"
+	 *
+	 *     # Capture the new connection ID.
+	 *     $ CID=$(wp mcp-ai connection create --name="Prod" --url="https://prod.example.com" --type="wordpress" --porcelain)
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 * @when after_wp_load
+	 */
+	public function create( $args, $assoc_args ) {
+		$this->assert_pro_loaded();
+
+		$name      = sanitize_text_field( \WP_CLI\Utils\get_flag_value( $assoc_args, 'name', '' ) );
+		$url       = esc_url_raw( \WP_CLI\Utils\get_flag_value( $assoc_args, 'url', '' ) );
+		$type      = sanitize_key( \WP_CLI\Utils\get_flag_value( $assoc_args, 'type', '' ) );
+		$auth_type = sanitize_key( \WP_CLI\Utils\get_flag_value( $assoc_args, 'auth-type', '' ) );
+		$porcelain = \WP_CLI\Utils\get_flag_value( $assoc_args, 'porcelain', false );
+
+		if ( '' === $name ) {
+			WP_CLI::error( __( 'Please provide a --name for the connection.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( '' === $url ) {
+			WP_CLI::error( __( 'Please provide a --url for the connection.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( '' === $type ) {
+			WP_CLI::error( __( 'Please provide a --type for the connection.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			WP_CLI::error( __( 'Remote Site Manager class is not available.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$connection_data = array(
+			'name' => $name,
+			'url'  => $url,
+			'type' => $type,
+		);
+
+		if ( '' !== $auth_type ) {
+			$connection_data['auth_type'] = $auth_type;
+		}
+
+		$api_key  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'api-key', '' );
+		$username = \WP_CLI\Utils\get_flag_value( $assoc_args, 'username', '' );
+		$password = \WP_CLI\Utils\get_flag_value( $assoc_args, 'password', '' );
+		$token    = \WP_CLI\Utils\get_flag_value( $assoc_args, 'token', '' );
+
+		if ( '' !== $api_key ) {
+			$connection_data['api_key'] = $api_key;
+		}
+		if ( '' !== $username ) {
+			$connection_data['username'] = sanitize_text_field( $username );
+		}
+		if ( '' !== $password ) {
+			$connection_data['password'] = $password;
+		}
+		if ( '' !== $token ) {
+			$connection_data['token'] = $token;
+		}
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		if ( is_wp_error( $result ) ) {
+			WP_CLI::error( $result->get_error_message() );
+		}
+
+		if ( $porcelain ) {
+			WP_CLI::line( $result );
+			return;
+		}
+
+		/* translators: 1: connection name, 2: connection ID */
+		WP_CLI::success( sprintf( __( 'Created connection "%1$s" (ID: %2$s).', 'mcp-ai-wpoos-pro' ), $name, $result ) );
+	}
+
+	/**
 	 * Get details for a single remote connection (credentials redacted).
 	 *
 	 * ## OPTIONS

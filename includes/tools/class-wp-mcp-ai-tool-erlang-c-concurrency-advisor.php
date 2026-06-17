@@ -129,6 +129,13 @@ class WP_MCP_AI_Tool_Erlang_C_Concurrency_Advisor implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -169,7 +176,7 @@ class WP_MCP_AI_Tool_Erlang_C_Concurrency_Advisor implements WP_MCP_AI_Tool_Inte
 
 		// Resolve average session duration.
 		if ( isset( $arguments['avg_session_duration'] ) && is_numeric( $arguments['avg_session_duration'] ) ) {
-			$avg_duration   = (float) $arguments['avg_session_duration'];
+			$avg_duration    = (float) $arguments['avg_session_duration'];
 			$duration_source = 'provided';
 		} else {
 			list( $avg_duration, $duration_source ) = $this->read_avg_session_duration();
@@ -189,10 +196,10 @@ class WP_MCP_AI_Tool_Erlang_C_Concurrency_Advisor implements WP_MCP_AI_Tool_Inte
 		// Also compute a comfortable +20 % headroom recommendation.
 		$recommended_slots = (int) ceil( $min_slots * 1.2 );
 
-		$prob_wait  = WP_MCP_AI_Erlang_C::probability_wait( $traffic_intensity, $recommended_slots );
-		$avg_wait   = WP_MCP_AI_Erlang_C::avg_wait_time( $traffic_intensity, $recommended_slots, $avg_duration );
-		$svc_level  = WP_MCP_AI_Erlang_C::service_level( $traffic_intensity, $recommended_slots, $avg_duration, (float) $target_time );
-		$util       = WP_MCP_AI_Erlang_C::utilisation( $traffic_intensity, $recommended_slots );
+		$prob_wait = WP_MCP_AI_Erlang_C::probability_wait( $traffic_intensity, $recommended_slots );
+		$avg_wait  = WP_MCP_AI_Erlang_C::avg_wait_time( $traffic_intensity, $recommended_slots, $avg_duration );
+		$svc_level = WP_MCP_AI_Erlang_C::service_level( $traffic_intensity, $recommended_slots, $avg_duration, (float) $target_time );
+		$util      = WP_MCP_AI_Erlang_C::utilisation( $traffic_intensity, $recommended_slots );
 
 		// Current setting if available.
 		$current_slots = (int) get_option( 'wp_mcp_ai_max_concurrent_sessions', 0 );
@@ -206,29 +213,29 @@ class WP_MCP_AI_Tool_Erlang_C_Concurrency_Advisor implements WP_MCP_AI_Tool_Inte
 		);
 
 		$result = array(
-			'message'                    => $message,
-			'observation'                => array(
+			'message'                  => $message,
+			'observation'              => array(
 				'arrival_rate_per_hour' => round( $arrival_rate, 2 ),
 				'avg_session_duration'  => round( $avg_duration, 1 ),
 				'data_source'           => $data_source,
 				'duration_source'       => $duration_source,
 				'window_hours'          => $window_hours,
 			),
-			'erlang_c'                   => array(
+			'erlang_c'                 => array(
 				'traffic_intensity'  => round( $traffic_intensity, 4 ),
 				'min_slots_required' => $min_slots,
 				'recommended_slots'  => $recommended_slots,
 			),
-			'with_recommended_slots'     => array(
+			'with_recommended_slots'   => array(
 				'probability_wait_pct' => round( $prob_wait * 100, 2 ),
 				'avg_wait_time_sec'    => round( $avg_wait, 2 ),
 				'service_level_pct'    => round( $svc_level * 100, 2 ),
 				'utilisation_pct'      => round( $util * 100, 2 ),
 			),
-			'current_setting'            => $current_slots > 0 ? $current_slots : null,
-			'setting_adequate'           => $current_slots > 0 ? ( $current_slots >= $min_slots ) : null,
-			'target_service_level_pct'   => $target_sl_pct,
-			'target_answer_time_sec'     => $target_time,
+			'current_setting'          => $current_slots > 0 ? $current_slots : null,
+			'setting_adequate'         => $current_slots > 0 ? ( $current_slots >= $min_slots ) : null,
+			'target_service_level_pct' => $target_sl_pct,
+			'target_answer_time_sec'   => $target_time,
 		);
 
 		/**

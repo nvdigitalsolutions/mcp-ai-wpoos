@@ -27,6 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
 
 /**
  * Gemini Video Generation Service class
@@ -44,9 +45,17 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  * - Service handles async operation polling
  * - Returns video data for WordPress integration
  *
+ * Adopts {@see WP_MCP_AI_Inline_Async_Tick_Trait} (Slice 6 of the inline-async-tick
+ * campaign) so that the first Gemini operation-status poll fires inline on the
+ * shutdown of the request that queued the video job, rather than waiting for the
+ * next WP-Cron loopback. On hosts with DISABLE_WP_CRON the cron loopback never
+ * fires; the cooperative tick lock prevents the inline kick and a concurrent cron
+ * event from both executing poll_video_async() for the same job simultaneously.
+ *
  * @since 1.0.0
  */
 class WP_MCP_AI_Gemini_Video_Generation_Service {
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
 
 	/**
 	 * Veo 3.1 model identifier (primary)
@@ -124,6 +133,37 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @var string
 	 */
 	const ASYNC_OP_PREFIX = 'wp_mcp_ai_veo_async_';
+
+	/**
+	 * Prefix for the per-job cooperative tick lock.
+	 *
+	 * Combined with md5($job_id) to form the full key passed to
+	 * {@see inline_async_acquire_tick_lock()} / {@see inline_async_release_tick_lock()}.
+	 *
+	 * @since 1.2.0
+	 * @var string
+	 */
+	const TICK_LOCK_PREFIX = 'wp_mcp_ai_veo_poll_lock_';
+
+	/**
+	 * Object-cache group used by the tick-lock entries.
+	 *
+	 * @since 1.2.0
+	 * @var string
+	 */
+	const TICK_LOCK_CACHE_GROUP = 'wp_mcp_ai_veo_poll';
+
+	/**
+	 * Tick-lock TTL in seconds.
+	 *
+	 * Should exceed the longest realistic single poll round-trip. One Gemini
+	 * operation-status GET typically completes in < 5 s; 30 s gives generous
+	 * headroom while releasing the lock quickly if a request hangs.
+	 *
+	 * @since 1.2.0
+	 * @var int
+	 */
+	const TICK_LOCK_TTL = 30;
 
 	/**
 	 * Estimated number of polls for typical video completion (used for progress calculation)
@@ -1221,6 +1261,28 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// This is critical for SSE connections where the client may remain on the same page.
 		spawn_cron();
 
+		// Inline-async-tick: fire the first poll on the shutdown of the current
+		// request so that jobs on hosts with DISABLE_WP_CRON (or a firewalled
+		// wp-cron.php) are advanced without waiting for the next loopback.
+		// The tick lock inside poll_video_async() prevents the shutdown kick and
+		// the WP-Cron event from both executing concurrently for the same job_id.
+		if ( self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			add_action(
+				'shutdown',
+				function () use ( $job_id ) {
+					self::inline_async_detach_worker_from_client();
+					self::inline_async_run_kick(
+						__CLASS__,
+						$job_id,
+						function () use ( $job_id ) {
+							self::poll_video_async_static( $job_id );
+						}
+					);
+				},
+				22
+			);
+		}
+
 		WP_MCP_AI_Logger::log_event(
 			'veo_async_queued',
 			'Veo video generation queued for async polling',
@@ -1258,11 +1320,34 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Poll for video completion (cron callback).
+	 * Poll for video completion (cron callback + inline-async-tick entry point).
 	 *
+	 * Acquires the cooperative tick lock for this job_id to prevent both a
+	 * WP-Cron event and the inline shutdown kick from executing concurrently,
+	 * then delegates to {@see do_poll_video_async()}.
+	 *
+	 * @since 1.2.0 Wrapped with tick lock (Slice 6 of the inline-async-tick campaign).
 	 * @param string $job_id Async job identifier.
 	 */
 	public function poll_video_async( $job_id ) {
+		$lock_key = self::TICK_LOCK_PREFIX . md5( $job_id );
+		if ( ! self::inline_async_acquire_tick_lock( $lock_key, self::TICK_LOCK_CACHE_GROUP, self::TICK_LOCK_TTL ) ) {
+			return;
+		}
+		try {
+			$this->do_poll_video_async( $job_id );
+		} finally {
+			self::inline_async_release_tick_lock( $lock_key, self::TICK_LOCK_CACHE_GROUP );
+		}
+	}
+
+	/**
+	 * Inner poll body — extracted from poll_video_async() so that unit tests can
+	 * drive the polling logic without needing to acquire or release the tick lock.
+	 *
+	 * @param string $job_id Async job identifier.
+	 */
+	protected function do_poll_video_async( $job_id ) {
 		// Retrieve operation metadata.
 		// Check both veo-specific prefix and async executor prefix.
 		// Jobs may be stored under either prefix depending on whether they reuse parent job ID.
@@ -2183,7 +2268,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$arguments = isset( $parent_metadata['arguments'] ) ? $parent_metadata['arguments'] : array();
 		$context   = isset( $parent_metadata['context'] ) ? $parent_metadata['context'] : array();
 
-		do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+		do_action(
+			'wp_mcp_ai_after_tool_execution',
+			$tool_slug,
+			$arguments,
+			$context,
+			$result,
+			WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, null, $tool_slug, $context )
+		);
 	}
 
 	/**
@@ -2465,7 +2557,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$context['assistant_id'] = absint( $metadata['assistant_id'] );
 		}
 
-		do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+		do_action(
+			'wp_mcp_ai_after_tool_execution',
+			$tool_slug,
+			$arguments,
+			$context,
+			$result,
+			WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, null, $tool_slug, $context )
+		);
 
 		// Complete parent async job if present.
 		if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {

@@ -156,7 +156,7 @@ class Test_Pro_Document_OCR extends WP_UnitTestCase {
 	 * Test default options are applied.
 	 */
 	public function test_default_options_applied() {
-		$schema = $this->tool->get_parameters_schema();
+		$schema  = $this->tool->get_parameters_schema();
 		$options = $schema['properties']['options']['properties'];
 
 		// Check defaults.
@@ -171,8 +171,8 @@ class Test_Pro_Document_OCR extends WP_UnitTestCase {
 	 * Test max limits are enforced.
 	 */
 	public function test_max_limits() {
-		$schema = $this->tool->get_parameters_schema();
-		$source = $schema['properties']['source']['properties'];
+		$schema  = $this->tool->get_parameters_schema();
+		$source  = $schema['properties']['source']['properties'];
 		$options = $schema['properties']['options']['properties'];
 
 		// Check batch limits.
@@ -189,7 +189,7 @@ class Test_Pro_Document_OCR extends WP_UnitTestCase {
 	 * Test provider enum values.
 	 */
 	public function test_provider_enum() {
-		$schema = $this->tool->get_parameters_schema();
+		$schema   = $this->tool->get_parameters_schema();
 		$provider = $schema['properties']['options']['properties']['provider'];
 
 		$this->assertArrayHasKey( 'enum', $provider );

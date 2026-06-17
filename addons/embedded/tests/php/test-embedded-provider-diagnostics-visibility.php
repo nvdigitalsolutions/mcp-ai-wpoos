@@ -8,7 +8,7 @@
  * @package WP_MCP_AI
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
- * @license   GPL-3.0-or-later
+ * @license   Proprietary
  */
 
 /**
@@ -97,6 +97,7 @@ class WP_MCP_AI_Embedded_Provider_Diagnostics_Visibility_Test extends WP_UnitTes
 		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			try {
 				$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			} catch ( WPAjaxDieContinueException $e ) {
 				// Expected exception.
 			}
@@ -112,6 +113,7 @@ class WP_MCP_AI_Embedded_Provider_Diagnostics_Visibility_Test extends WP_UnitTes
 			// If Pro is active, the test should proceed (may fail due to other reasons).
 			try {
 				$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			} catch ( WPAjaxDieContinueException $e ) {
 				// Expected exception.
 			}

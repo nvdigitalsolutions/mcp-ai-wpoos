@@ -428,7 +428,7 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Gemini requires base64 content, not URLs.
 		if ( ! empty( $image_url ) && empty( $image_content ) ) {
 			// Fetch image and convert to base64.
-			$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
+			$response = wp_safe_remote_get( $image_url, array( 'timeout' => 30 ) );
 			if ( is_wp_error( $response ) ) {
 				return $response;
 			}

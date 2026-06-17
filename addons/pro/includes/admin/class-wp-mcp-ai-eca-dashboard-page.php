@@ -140,14 +140,14 @@ class WP_MCP_AI_ECA_Dashboard_Page {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp_mcp_ai_eca_dashboard' ),
 				'strings' => array(
-					'loading'    => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
-					'noData'     => __( 'No ECA data available yet. Create your first activity to get started.', 'mcp-ai-wpoos-pro' ),
-					'error'      => __( 'Failed to load data. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'noEcas'     => __( 'No ECAs found.', 'mcp-ai-wpoos-pro' ),
-					'active'     => __( 'Active', 'mcp-ai-wpoos-pro' ),
-					'inactive'   => __( 'Inactive', 'mcp-ai-wpoos-pro' ),
-					'full'       => __( 'Full', 'mcp-ai-wpoos-pro' ),
-					'cancelled'  => __( 'Cancelled', 'mcp-ai-wpoos-pro' ),
+					'loading'   => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
+					'noData'    => __( 'No ECA data available yet. Create your first activity to get started.', 'mcp-ai-wpoos-pro' ),
+					'error'     => __( 'Failed to load data. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'noEcas'    => __( 'No ECAs found.', 'mcp-ai-wpoos-pro' ),
+					'active'    => __( 'Active', 'mcp-ai-wpoos-pro' ),
+					'inactive'  => __( 'Inactive', 'mcp-ai-wpoos-pro' ),
+					'full'      => __( 'Full', 'mcp-ai-wpoos-pro' ),
+					'cancelled' => __( 'Cancelled', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -300,9 +300,9 @@ class WP_MCP_AI_ECA_Dashboard_Page {
 			}
 		}
 
-		$participation_rate = ( $total_students > 0 ) ? round( ( $students_with_eca / $total_students ) * 100 ) : 0;
-		$attendance_rate    = ( $attendance_total > 0 ) ? round( ( $attendance_present / $attendance_total ) * 100 ) : 0;
-		$capacity_rate      = ( $total_capacity > 0 ) ? round( ( $total_enrollments / $total_capacity ) * 100 ) : 0;
+		$participation_rate   = ( $total_students > 0 ) ? round( ( $students_with_eca / $total_students ) * 100 ) : 0;
+		$attendance_rate      = ( $attendance_total > 0 ) ? round( ( $attendance_present / $attendance_total ) * 100 ) : 0;
+		$capacity_rate        = ( $total_capacity > 0 ) ? round( ( $total_enrollments / $total_capacity ) * 100 ) : 0;
 		$avg_ecas_per_student = ( $total_students > 0 ) ? round( $total_enrollments / $total_students, 1 ) : 0;
 
 		// Sort ECA list by enrollment count descending.
@@ -316,21 +316,21 @@ class WP_MCP_AI_ECA_Dashboard_Page {
 		wp_send_json_success(
 			array(
 				'kpis'       => array(
-					'total_ecas'            => $total_ecas,
-					'total_students'        => $total_students,
-					'total_enrollments'     => $total_enrollments,
-					'total_capacity'        => $total_capacity,
-					'students_with_eca'     => $students_with_eca,
-					'participation_rate'    => $participation_rate,
-					'attendance_rate'       => $attendance_rate,
-					'capacity_rate'         => $capacity_rate,
-					'total_waitlisted'      => $total_waitlisted,
-					'avg_ecas_per_student'  => $avg_ecas_per_student,
-					'active_count'          => $active_count,
-					'inactive_count'        => $inactive_count,
-					'full_count'            => $full_count,
-					'cancelled_count'       => $cancelled_count,
-					'attendance_sessions'   => $attendance_sessions,
+					'total_ecas'           => $total_ecas,
+					'total_students'       => $total_students,
+					'total_enrollments'    => $total_enrollments,
+					'total_capacity'       => $total_capacity,
+					'students_with_eca'    => $students_with_eca,
+					'participation_rate'   => $participation_rate,
+					'attendance_rate'      => $attendance_rate,
+					'capacity_rate'        => $capacity_rate,
+					'total_waitlisted'     => $total_waitlisted,
+					'avg_ecas_per_student' => $avg_ecas_per_student,
+					'active_count'         => $active_count,
+					'inactive_count'       => $inactive_count,
+					'full_count'           => $full_count,
+					'cancelled_count'      => $cancelled_count,
+					'attendance_sessions'  => $attendance_sessions,
 				),
 				'categories' => $categories,
 				'types'      => $types,
@@ -569,15 +569,14 @@ class WP_MCP_AI_ECA_Dashboard_Page {
 	 * @return string
 	 */
 	private static function get_dashboard_js() {
-		return <<<'JS'
-(function($){
-'use strict';
+		return '(function($){
+\'use strict\';
 
 /* ── Chart colour palette ──────────────────────────────────── */
 var ECA_PALETTE = [
-	'#1565c0','#2e7d32','#c62828','#6a1b9a','#e65100',
-	'#00838f','#558b2f','#ad1457','#4527a0','#bf360c',
-	'#00695c','#283593','#880e4f','#37474f','#f57f17'
+	\'#1565c0\',\'#2e7d32\',\'#c62828\',\'#6a1b9a\',\'#e65100\',
+	\'#00838f\',\'#558b2f\',\'#ad1457\',\'#4527a0\',\'#bf360c\',
+	\'#00695c\',\'#283593\',\'#880e4f\',\'#37474f\',\'#f57f17\'
 ];
 
 /* ── Chart registry (destroy before rebuilding) ────────────── */
@@ -593,7 +592,7 @@ function buildDoughnut(canvasId,labels,data,colors){
 	var el = document.getElementById(canvasId);
 	if(!el) return;
 	chartInsts[canvasId] = new Chart(el,{
-		type:'doughnut',
+		type:\'doughnut\',
 		data:{
 			labels:labels,
 			datasets:[{data:data,backgroundColor:colors||ECA_PALETTE.slice(0,data.length),borderWidth:1}]
@@ -601,7 +600,7 @@ function buildDoughnut(canvasId,labels,data,colors){
 		options:{
 			responsive:true,
 			maintainAspectRatio:false,
-			plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}
+			plugins:{legend:{position:\'right\',labels:{boxWidth:12,font:{size:11}}}}
 		}
 	});
 }
@@ -612,13 +611,13 @@ function buildHBar(canvasId,labels,data,color){
 	var el = document.getElementById(canvasId);
 	if(!el) return;
 	chartInsts[canvasId] = new Chart(el,{
-		type:'bar',
+		type:\'bar\',
 		data:{
 			labels:labels,
-			datasets:[{data:data,backgroundColor:color||'#1565c0',borderRadius:3}]
+			datasets:[{data:data,backgroundColor:color||\'#1565c0\',borderRadius:3}]
 		},
 		options:{
-			indexAxis:'y',
+			indexAxis:\'y\',
 			responsive:true,
 			maintainAspectRatio:false,
 			plugins:{legend:{display:false}},
@@ -629,15 +628,15 @@ function buildHBar(canvasId,labels,data,color){
 
 /* ── Status badge helper ───────────────────────────────────── */
 function statusBadge(status){
-	var cls = 'eca-dash-status-' + (status||'active');
-	var label = status ? status.charAt(0).toUpperCase()+status.slice(1) : 'Active';
-	return '<span class="eca-dash-status-badge '+cls+'">'+label+'</span>';
+	var cls = \'eca-dash-status-\' + (status||\'active\');
+	var label = status ? status.charAt(0).toUpperCase()+status.slice(1) : \'Active\';
+	return \'<span class="eca-dash-status-badge \'+cls+\'">\'+label+\'</span>\';
 }
 
 /* ── Utilisation bar helper ────────────────────────────────── */
 function utilBar(pct){
-	var cls = pct >= 90 ? 'util-red' : pct >= 70 ? 'util-amber' : 'util-green';
-	return '<span class="eca-dash-util-bar"><span class="eca-dash-util-fill '+cls+'" style="width:'+Math.min(pct,100)+'%"></span></span>'+pct+'%';
+	var cls = pct >= 90 ? \'util-red\' : pct >= 70 ? \'util-amber\' : \'util-green\';
+	return \'<span class="eca-dash-util-bar"><span class="eca-dash-util-fill \'+cls+\'" style="width:\'+Math.min(pct,100)+\'%"></span></span>\'+pct+\'%\';
 }
 
 /* ── Render dashboard ──────────────────────────────────────── */
@@ -645,115 +644,115 @@ function renderDashboard(data){
 	var k = data.kpis;
 
 	/* KPI cards */
-	$('#eca-kpi-total-ecas').text(k.total_ecas);
+	$(\'#eca-kpi-total-ecas\').text(k.total_ecas);
 	var statusParts = [];
-	if(k.active_count)    statusParts.push(k.active_count+' active');
-	if(k.full_count)      statusParts.push(k.full_count+' full');
-	if(k.inactive_count)  statusParts.push(k.inactive_count+' inactive');
-	if(k.cancelled_count) statusParts.push(k.cancelled_count+' cancelled');
-	$('#eca-kpi-status-breakdown').text(statusParts.join(', '));
+	if(k.active_count)    statusParts.push(k.active_count+\' active\');
+	if(k.full_count)      statusParts.push(k.full_count+\' full\');
+	if(k.inactive_count)  statusParts.push(k.inactive_count+\' inactive\');
+	if(k.cancelled_count) statusParts.push(k.cancelled_count+\' cancelled\');
+	$(\'#eca-kpi-status-breakdown\').text(statusParts.join(\', \'));
 
-	$('#eca-kpi-total-students').text(k.total_students);
-	var pCls = k.participation_rate >= 70 ? 'status-good' : k.participation_rate >= 40 ? 'status-ok' : 'status-low';
-	$('#eca-kpi-participation-rate').text(k.participation_rate+'% participation').removeClass().addClass('eca-dash-kpi-sub '+pCls);
+	$(\'#eca-kpi-total-students\').text(k.total_students);
+	var pCls = k.participation_rate >= 70 ? \'status-good\' : k.participation_rate >= 40 ? \'status-ok\' : \'status-low\';
+	$(\'#eca-kpi-participation-rate\').text(k.participation_rate+\'% participation\').removeClass().addClass(\'eca-dash-kpi-sub \'+pCls);
 
-	$('#eca-kpi-total-enrollments').text(k.total_enrollments);
-	$('#eca-kpi-avg-per-student').text(k.avg_ecas_per_student+' avg per student');
+	$(\'#eca-kpi-total-enrollments\').text(k.total_enrollments);
+	$(\'#eca-kpi-avg-per-student\').text(k.avg_ecas_per_student+\' avg per student\');
 
-	$('#eca-kpi-attendance-rate').text(k.attendance_rate > 0 ? k.attendance_rate+'%' : '—');
-	$('#eca-kpi-sessions-count').text(k.attendance_sessions+' sessions recorded');
+	$(\'#eca-kpi-attendance-rate\').text(k.attendance_rate > 0 ? k.attendance_rate+\'%\' : \'—\');
+	$(\'#eca-kpi-sessions-count\').text(k.attendance_sessions+\' sessions recorded\');
 
-	$('#eca-kpi-capacity-rate').text(k.capacity_rate > 0 ? k.capacity_rate+'%' : '—');
-	var cCls = k.capacity_rate >= 90 ? 'status-low' : k.capacity_rate >= 60 ? 'status-ok' : 'status-good';
-	var capLabel = k.total_capacity > 0 ? k.total_enrollments+' / '+k.total_capacity+' spots used' : k.total_enrollments+' enrolled (no capacity limits set)';
-	$('#eca-kpi-capacity-detail').text(capLabel).removeClass().addClass('eca-dash-kpi-sub '+cCls);
+	$(\'#eca-kpi-capacity-rate\').text(k.capacity_rate > 0 ? k.capacity_rate+\'%\' : \'—\');
+	var cCls = k.capacity_rate >= 90 ? \'status-low\' : k.capacity_rate >= 60 ? \'status-ok\' : \'status-good\';
+	var capLabel = k.total_capacity > 0 ? k.total_enrollments+\' / \'+k.total_capacity+\' spots used\' : k.total_enrollments+\' enrolled (no capacity limits set)\';
+	$(\'#eca-kpi-capacity-detail\').text(capLabel).removeClass().addClass(\'eca-dash-kpi-sub \'+cCls);
 
-	$('#eca-kpi-waitlisted').text(k.total_waitlisted);
-	$('#eca-kpi-waitlist-detail').text(k.total_waitlisted > 0 ? 'Across all activities' : 'No waitlists');
+	$(\'#eca-kpi-waitlisted\').text(k.total_waitlisted);
+	$(\'#eca-kpi-waitlist-detail\').text(k.total_waitlisted > 0 ? \'Across all activities\' : \'No waitlists\');
 
 	/* Charts */
 	/* Categories doughnut */
 	var catLabels = Object.keys(data.categories);
 	var catData   = Object.values(data.categories);
 	if(catLabels.length){
-		buildDoughnut('eca-chart-categories',catLabels,catData);
+		buildDoughnut(\'eca-chart-categories\',catLabels,catData);
 	}
 
 	/* Types doughnut */
 	var typeLabels = Object.keys(data.types);
 	var typeData   = Object.values(data.types);
 	if(typeLabels.length){
-		buildDoughnut('eca-chart-types',typeLabels,typeData);
+		buildDoughnut(\'eca-chart-types\',typeLabels,typeData);
 	}
 
 	/* Status doughnut */
 	var sLabels = [];
 	var sData   = [];
 	var sColors = [];
-	if(k.active_count)    { sLabels.push('Active');    sData.push(k.active_count);    sColors.push('#2e7d32'); }
-	if(k.full_count)      { sLabels.push('Full');      sData.push(k.full_count);      sColors.push('#1565c0'); }
-	if(k.inactive_count)  { sLabels.push('Inactive');  sData.push(k.inactive_count);  sColors.push('#e65100'); }
-	if(k.cancelled_count) { sLabels.push('Cancelled'); sData.push(k.cancelled_count); sColors.push('#c62828'); }
+	if(k.active_count)    { sLabels.push(\'Active\');    sData.push(k.active_count);    sColors.push(\'#2e7d32\'); }
+	if(k.full_count)      { sLabels.push(\'Full\');      sData.push(k.full_count);      sColors.push(\'#1565c0\'); }
+	if(k.inactive_count)  { sLabels.push(\'Inactive\');  sData.push(k.inactive_count);  sColors.push(\'#e65100\'); }
+	if(k.cancelled_count) { sLabels.push(\'Cancelled\'); sData.push(k.cancelled_count); sColors.push(\'#c62828\'); }
 	if(sLabels.length){
-		buildDoughnut('eca-chart-status',sLabels,sData,sColors);
+		buildDoughnut(\'eca-chart-status\',sLabels,sData,sColors);
 	}
 
 	/* Top 10 enrollment horizontal bar */
 	var top10 = data.ecas.slice(0,10);
 	if(top10.length){
-		var eLabels = top10.map(function(e){ return e.title.length>25 ? e.title.substring(0,22)+'…' : e.title; });
+		var eLabels = top10.map(function(e){ return e.title.length>25 ? e.title.substring(0,22)+\'…\' : e.title; });
 		var eData   = top10.map(function(e){ return e.enrolled; });
-		buildHBar('eca-chart-enrollment',eLabels,eData,'#1565c0');
+		buildHBar(\'eca-chart-enrollment\',eLabels,eData,\'#1565c0\');
 	}
 
 	/* Activities table */
-	var tbody = $('#eca-dash-tbody').empty();
+	var tbody = $(\'#eca-dash-tbody\').empty();
 	if(!data.ecas.length){
-		tbody.html('<tr><td colspan="9" class="eca-dash-placeholder">'+wpMcpAiEcaDashboard.strings.noEcas+'</td></tr>');
+		tbody.html(\'<tr><td colspan="9" class="eca-dash-placeholder">\'+wpMcpAiEcaDashboard.strings.noEcas+\'</td></tr>\');
 		return;
 	}
 
 	$.each(data.ecas,function(_,e){
-		var editUrl = wpMcpAiEcaDashboard.ajaxUrl.replace('admin-ajax.php','post.php?post='+e.id+'&action=edit');
+		var editUrl = wpMcpAiEcaDashboard.ajaxUrl.replace(\'admin-ajax.php\',\'post.php?post=\'+e.id+\'&action=edit\');
 		tbody.append(
-			'<tr>'+
-			'<td><span class="eca-dash-cell-label">Activity</span><a href="'+editUrl+'"><strong>'+e.title+'</strong></a></td>'+
-			'<td><span class="eca-dash-cell-label">Status</span>'+statusBadge(e.status)+'</td>'+
-			'<td><span class="eca-dash-cell-label">Type</span>'+e.type+'</td>'+
-			'<td><span class="eca-dash-cell-label">Day</span>'+e.day+'</td>'+
-			'<td><span class="eca-dash-cell-label">Enrolled</span>'+e.enrolled+'</td>'+
-			'<td><span class="eca-dash-cell-label">Capacity</span>'+e.capacity+'</td>'+
-			'<td><span class="eca-dash-cell-label">Utilisation</span>'+(e.capacity !== '∞' ? utilBar(e.utilisation) : '—')+'</td>'+
-			'<td><span class="eca-dash-cell-label">Waitlist</span>'+(e.waitlisted > 0 ? '<strong style="color:#c62828">'+e.waitlisted+'</strong>' : '0')+'</td>'+
-			'<td><span class="eca-dash-cell-label">Sessions</span>'+e.sessions+'</td>'+
-			'</tr>'
+			\'<tr>\'+
+			\'<td><span class="eca-dash-cell-label">Activity</span><a href="\'+editUrl+\'"><strong>\'+e.title+\'</strong></a></td>\'+
+			\'<td><span class="eca-dash-cell-label">Status</span>\'+statusBadge(e.status)+\'</td>\'+
+			\'<td><span class="eca-dash-cell-label">Type</span>\'+e.type+\'</td>\'+
+			\'<td><span class="eca-dash-cell-label">Day</span>\'+e.day+\'</td>\'+
+			\'<td><span class="eca-dash-cell-label">Enrolled</span>\'+e.enrolled+\'</td>\'+
+			\'<td><span class="eca-dash-cell-label">Capacity</span>\'+e.capacity+\'</td>\'+
+			\'<td><span class="eca-dash-cell-label">Utilisation</span>\'+(e.capacity !== \'∞\' ? utilBar(e.utilisation) : \'—\')+\'</td>\'+
+			\'<td><span class="eca-dash-cell-label">Waitlist</span>\'+(e.waitlisted > 0 ? \'<strong style="color:#c62828">\'+e.waitlisted+\'</strong>\' : \'0\')+\'</td>\'+
+			\'<td><span class="eca-dash-cell-label">Sessions</span>\'+e.sessions+\'</td>\'+
+			\'</tr>\'
 		);
 	});
 }
 
 /* ── Main load flow ──────────────────────────────────────────── */
 function loadDashboard(){
-	$('#eca-dash-loading').show();
+	$(\'#eca-dash-loading\').show();
 
 	$.ajax({
 		url:  wpMcpAiEcaDashboard.ajaxUrl,
-		type: 'POST',
+		type: \'POST\',
 		data: {
-			action: 'wp_mcp_ai_eca_dashboard_data',
+			action: \'wp_mcp_ai_eca_dashboard_data\',
 			nonce:  wpMcpAiEcaDashboard.nonce
 		},
 		success: function(res){
 			if(res.success && res.data){
 				renderDashboard(res.data);
 			} else {
-				$('#eca-dash-tbody').html('<tr><td colspan="9" class="eca-dash-placeholder">'+wpMcpAiEcaDashboard.strings.noData+'</td></tr>');
+				$(\'#eca-dash-tbody\').html(\'<tr><td colspan="9" class="eca-dash-placeholder">\'+wpMcpAiEcaDashboard.strings.noData+\'</td></tr>\');
 			}
 		},
 		error: function(){
-			$('#eca-dash-tbody').html('<tr><td colspan="9" class="eca-dash-placeholder">'+wpMcpAiEcaDashboard.strings.error+'</td></tr>');
+			$(\'#eca-dash-tbody\').html(\'<tr><td colspan="9" class="eca-dash-placeholder">\'+wpMcpAiEcaDashboard.strings.error+\'</td></tr>\');
 		},
 		complete: function(){
-			$('#eca-dash-loading').hide();
+			$(\'#eca-dash-loading\').hide();
 		}
 	});
 }
@@ -763,8 +762,7 @@ $(document).ready(function(){
 	loadDashboard();
 });
 
-})(jQuery);
-JS;
+})(jQuery);';
 	}
 }
 

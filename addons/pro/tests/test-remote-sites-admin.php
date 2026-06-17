@@ -1,3 +1,4 @@
+// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 <?php
 /**
  * Tests for Remote Sites Admin UI
@@ -147,7 +148,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		// Instead, we'll just verify the connection is deleted.
 		try {
 			$admin->handle_actions();
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Redirect will throw an exception in test environment.
 		}
 
@@ -184,7 +185,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		// Handle the action - this will attempt to redirect.
 		try {
 			$admin->handle_actions();
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Exit will throw WPDieException in test environment.
 		}
 
@@ -448,9 +449,10 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$_POST['url']                           = 'https://flowhub.example.com';
 		$_POST['connection_type']               = 'flowhub';
 		$_POST['auth_type']                     = 'none';
-		$_POST['flowhub_api_key']               = 'flowhub_test_key_123';
-		$_POST['flowhub_client_id']             = 'flowhub_client_abc';
-		$_POST['enabled']                       = '1';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$_POST['flowhub_api_key']   = 'flowhub_test_key_123';
+		$_POST['flowhub_client_id'] = 'flowhub_client_abc';
+		$_POST['enabled']           = '1';
 
 		// Also set QuickBooks fields (which would have overridden if names weren't unique).
 		$_POST['quickbooks_client_id']     = '';
@@ -464,13 +466,18 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 
 		// Extract the connection data logic (same as in handle_actions).
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated,WordPress.Security.NonceVerification.Missing
 		$connection_type = sanitize_key( wp_unslash( $_POST['connection_type'] ) );
 		$api_key         = '';
 		$client_id       = '';
 
 		switch ( $connection_type ) {
 			case 'flowhub':
-				$api_key   = isset( $_POST['flowhub_api_key'] ) ? wp_unslash( $_POST['flowhub_api_key'] ) : '';
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+				$api_key = isset( $_POST['flowhub_api_key'] ) ? wp_unslash( $_POST['flowhub_api_key'] ) : '';
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 				$client_id = isset( $_POST['flowhub_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_client_id'] ) ) : '';
 				break;
 		}
@@ -486,6 +493,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		unset( $_POST['url'] );
 		unset( $_POST['connection_type'] );
 		unset( $_POST['auth_type'] );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		unset( $_POST['flowhub_api_key'] );
 		unset( $_POST['flowhub_client_id'] );
 		unset( $_POST['quickbooks_client_id'] );
@@ -696,7 +704,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		try {
 			$method->invoke( $admin, $connection_id );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// wp_safe_redirect exits, so we catch it.
 		}
 
@@ -758,7 +766,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		try {
 			$method->invoke( $admin, $connection_id );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// wp_safe_redirect exits, so we catch it.
 		}
 
@@ -838,7 +846,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		try {
 			$method->invoke( $admin );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// wp_safe_redirect exits, so we catch it.
 		}
 
@@ -889,7 +897,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		try {
 			$method->invoke( $admin );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// wp_safe_redirect exits, so we catch it.
 		}
 
@@ -944,7 +952,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		try {
 			$method->invoke( $admin );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// wp_safe_redirect exits, so we catch it.
 		}
 
@@ -993,7 +1001,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		try {
 			$method->invoke( $admin, $connection_id );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// wp_safe_redirect exits, so we catch it.
 		}
 
@@ -1083,7 +1091,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		try {
 			$method->invoke( $admin );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// wp_safe_redirect exits, so we catch it.
 		}
 
@@ -1133,7 +1141,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		try {
 			$method->invoke( $admin );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// wp_safe_redirect exits, so we catch it.
 		}
 
@@ -1218,7 +1226,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	/**
 	 * Test that ajax_test_whatsapp_live does not include quality_rating in the primary request.
 	 *
-	 * quality_rating requires whatsapp_business_management permission and causes a 403
+	 * Quality_rating requires whatsapp_business_management permission and causes a 403
 	 * with App Access Tokens. The primary request must only ask for
 	 * display_phone_number and verified_name; quality_rating is fetched separately
 	 * and a 403 on that request must not fail the overall test.
@@ -1286,7 +1294,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_test_whatsapp_live();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected: wp_send_json_success calls wp_die.
 		}
 		$output = ob_get_clean();
@@ -1378,7 +1386,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_test_whatsapp_live();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected: wp_send_json_success calls wp_die.
 		}
 		$output = ob_get_clean();
@@ -1449,18 +1457,18 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
 
-		$_POST['action']              = 'wp_mcp_ai_test_whatsapp_live';
-		$_POST['nonce']               = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
-		$_POST['access_token']        = 'test_token_400_code_100';
-		$_POST['phone_number_id']     = '333444555666777';
-		$_POST['graph_api_version']   = 'v22.0';
+		$_POST['action']            = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']             = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']      = 'test_token_400_code_100';
+		$_POST['phone_number_id']   = '333444555666777';
+		$_POST['graph_api_version'] = 'v22.0';
 
 		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 
 		ob_start();
 		try {
 			$admin->ajax_test_whatsapp_live();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected: wp_send_json_success calls wp_die.
 		}
 		$output = ob_get_clean();
@@ -1500,7 +1508,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'enabled'         => true,
 			'cache_ttl'       => 300,
 		);
-		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertIsString( $connection_id, 'Connection should be saved successfully' );
 
 		$mock_callback = function ( $preempt, $parsed_args, $url ) {
@@ -1538,7 +1546,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_test_whatsapp_live();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected: wp_send_json_success calls wp_die.
 		}
 		$output = ob_get_clean();
@@ -1566,7 +1574,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_test_whatsapp_live();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected: wp_send_json_error calls wp_die.
 		}
 		$output = ob_get_clean();
@@ -1614,8 +1622,16 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			}
 			return array(
 				'headers'  => array( 'content-type' => 'application/json' ),
-				'body'     => wp_json_encode( array( 'access_token' => 'app_access_token_abc123', 'token_type' => 'bearer' ) ),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'body'     => wp_json_encode(
+					array(
+						'access_token' => 'app_access_token_abc123',
+						'token_type'   => 'bearer',
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 				'cookies'  => array(),
 				'filename' => null,
 			);
@@ -1633,7 +1649,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_generate_messenger_token();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected: wp_send_json_success calls wp_die.
 		}
 		$output = ob_get_clean();
@@ -1661,7 +1677,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_generate_messenger_token();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$output = ob_get_clean();
@@ -1683,8 +1699,19 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			}
 			return array(
 				'headers'  => array( 'content-type' => 'application/json' ),
-				'body'     => wp_json_encode( array( 'error' => array( 'message' => 'Invalid App ID', 'type' => 'OAuthException', 'code' => 101 ) ) ),
-				'response' => array( 'code' => 400, 'message' => 'Bad Request' ),
+				'body'     => wp_json_encode(
+					array(
+						'error' => array(
+							'message' => 'Invalid App ID',
+							'type'    => 'OAuthException',
+							'code'    => 101,
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 400,
+					'message' => 'Bad Request',
+				),
 				'cookies'  => array(),
 				'filename' => null,
 			);
@@ -1702,7 +1729,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_generate_messenger_token();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$output = ob_get_clean();
@@ -1733,7 +1760,10 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 						'fan_count' => 1500,
 					)
 				),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 				'cookies'  => array(),
 				'filename' => null,
 			);
@@ -1752,7 +1782,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_test_messenger_live();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$output = ob_get_clean();
@@ -1778,8 +1808,16 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			}
 			return array(
 				'headers'  => array( 'content-type' => 'application/json' ),
-				'body'     => wp_json_encode( array( 'id' => '123|hash', 'name' => 'My App' ) ),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'body'     => wp_json_encode(
+					array(
+						'id'   => '123|hash',
+						'name' => 'My App',
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 				'cookies'  => array(),
 				'filename' => null,
 			);
@@ -1798,7 +1836,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_test_messenger_live();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$output = ob_get_clean();
@@ -1827,7 +1865,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_test_messenger_live();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$output = ob_get_clean();
@@ -1843,14 +1881,22 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 * Test that test Messenger live sanitizes and validates the api_version parameter.
 	 */
 	public function test_ajax_test_messenger_live_sanitizes_api_version() {
-		$captured_url = '';
+		$captured_url  = '';
 		$mock_callback = function ( $preempt, $parsed_args, $url ) use ( &$captured_url ) {
 			if ( false !== strpos( $url, 'graph.facebook.com' ) ) {
 				$captured_url = $url;
 				return array(
 					'headers'  => array( 'content-type' => 'application/json' ),
-					'body'     => wp_json_encode( array( 'id' => '1', 'name' => 'Page' ) ),
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'body'     => wp_json_encode(
+						array(
+							'id'   => '1',
+							'name' => 'Page',
+						)
+					),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'cookies'  => array(),
 					'filename' => null,
 				);
@@ -1871,7 +1917,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$admin->ajax_test_messenger_live();
-		} catch ( \WPDieException $e ) {
+		} catch ( \WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		ob_get_clean();

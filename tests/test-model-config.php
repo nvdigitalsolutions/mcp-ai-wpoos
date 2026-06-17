@@ -491,7 +491,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$providers = WP_MCP_AI_Model_Config::get_available_providers();
 
 		$this->assertArrayHasKey( 'ollama', $providers );
-		$this->assertEquals( 'Ollama (Local)', $providers['ollama'] );
+		$this->assertEquals( 'Ollama', $providers['ollama'] );
 
 		// Clean up.
 		delete_option( 'wp_mcp_ai_settings' );
@@ -544,4 +544,36 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertEquals( 500000, $codex_spark_config['tpm'], 'Codex Spark should have higher TPM for ultra-fast performance' );
 		$this->assertEquals( 0.0015, $codex_spark_config['cost_per_1k'] );
 	}
+
+	/**
+	 * Test that get_available_providers() includes DeepSeek when enabled.
+	 */
+	public function test_get_available_providers_includes_deepseek() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_deepseek' => true,
+				'deepseek_api_key' => 'sk-test-deepseek',
+			)
+		);
+
+		$providers = WP_MCP_AI_Model_Config::get_available_providers();
+
+		$this->assertArrayHasKey( 'deepseek', $providers, 'DeepSeek should be listed when enabled with API key' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that get_models_by_provider() returns DeepSeek models from catalog.
+	 */
+	public function test_get_models_by_provider_deepseek() {
+		$models = WP_MCP_AI_Model_Config::get_models_by_provider( 'deepseek' );
+
+		$this->assertIsArray( $models );
+		$this->assertNotEmpty( $models, 'DeepSeek models should be present in catalog' );
+		$this->assertArrayHasKey( 'deepseek-chat', $models );
+		$this->assertArrayHasKey( 'deepseek-reasoner', $models );
+	}
+
 }

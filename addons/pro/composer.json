@@ -11,7 +11,8 @@
         "dompdf/dompdf": "^3.0",
         "tecnickcom/tcpdf": "^6.7",
         "smalot/pdfparser": "^2.10",
-        "thiagoalessio/tesseract_ocr": "^2.13"
+        "thiagoalessio/tesseract_ocr": "^2.13",
+                "symfony/yaml": "^6.4"
     },
     "suggest": {
         "mpdf/mpdf": "Alternative PDF library with better HTML/CSS support (requires mb_string extension)",

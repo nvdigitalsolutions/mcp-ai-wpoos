@@ -136,11 +136,14 @@ class WP_MCP_AI_PARA_Lifecycle {
 		 *
 		 * @param array $summary Sweep summary.
 		 */
-		do_action( 'wp_mcp_ai_para_sweep_complete', array(
-			'dormant_areas'      => $dormant_areas,
-			'dormant_resources'  => $dormant_resources,
-			'archive_candidates' => $archive_candidates,
-		) );
+		do_action(
+			'wp_mcp_ai_para_sweep_complete',
+			array(
+				'dormant_areas'      => $dormant_areas,
+				'dormant_resources'  => $dormant_resources,
+				'archive_candidates' => $archive_candidates,
+			)
+		);
 	}
 
 	/**
@@ -150,7 +153,7 @@ class WP_MCP_AI_PARA_Lifecycle {
 	 * @return array<int,array<string,mixed>>
 	 */
 	public static function find_dormant_areas( $days ) {
-		$days     = max( 1, (int) $days );
+		$days      = max( 1, (int) $days );
 		$threshold = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
 
 		$areas = get_posts(
@@ -169,9 +172,9 @@ class WP_MCP_AI_PARA_Lifecycle {
 			$most_recent   = $last_reviewed ? max( $last_modified, $last_reviewed ) : $last_modified;
 			if ( $most_recent && $most_recent < $threshold ) {
 				$dormant[] = array(
-					'id'             => (int) $area_id,
-					'title'          => get_the_title( $area_id ),
-					'last_activity'  => $most_recent,
+					'id'            => (int) $area_id,
+					'title'         => get_the_title( $area_id ),
+					'last_activity' => $most_recent,
 				);
 			}
 		}
@@ -185,7 +188,7 @@ class WP_MCP_AI_PARA_Lifecycle {
 	 * @return array<int,array<string,mixed>>
 	 */
 	public static function find_dormant_resources( $days ) {
-		$days = max( 1, (int) $days );
+		$days      = max( 1, (int) $days );
 		$threshold = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
 
 		$resource_term = get_term_by( 'slug', 'resources', WP_MCP_AI_PARA_Taxonomy::TAXONOMY );
@@ -219,9 +222,9 @@ class WP_MCP_AI_PARA_Lifecycle {
 		$out = array();
 		foreach ( $query->posts as $pid ) {
 			$out[] = array(
-				'id'             => (int) $pid,
-				'title'          => get_the_title( $pid ),
-				'last_modified'  => get_post_field( 'post_modified_gmt', $pid ),
+				'id'            => (int) $pid,
+				'title'         => get_the_title( $pid ),
+				'last_modified' => get_post_field( 'post_modified_gmt', $pid ),
 			);
 		}
 		return $out;

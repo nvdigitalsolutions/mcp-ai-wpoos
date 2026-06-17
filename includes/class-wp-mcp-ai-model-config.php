@@ -459,6 +459,36 @@ class WP_MCP_AI_Model_Config {
 			$providers['nvidia'] = __( 'NVIDIA NIM', 'mcp-ai-wpoos' );
 		}
 
+		// Check enable_deepseek setting (defaults to false if not set).
+		$enable_deepseek = isset( $settings['enable_deepseek'] ) ? $settings['enable_deepseek'] : false;
+		if ( $enable_deepseek && ! empty( $settings['deepseek_api_key'] ) ) {
+			$providers['deepseek'] = __( 'DeepSeek', 'mcp-ai-wpoos' );
+		}
+
+		// Check enable_kimi setting (defaults to false if not set).
+		$enable_kimi = isset( $settings['enable_kimi'] ) ? $settings['enable_kimi'] : false;
+		if ( $enable_kimi && ! empty( $settings['kimi_api_key'] ) ) {
+			$providers['kimi'] = __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' );
+		}
+
+		// Check enable_baseten setting (defaults to false if not set).
+		$enable_baseten = isset( $settings['enable_baseten'] ) ? $settings['enable_baseten'] : false;
+		if ( $enable_baseten && ! empty( $settings['baseten_api_key'] ) ) {
+			$providers['baseten'] = __( 'Baseten', 'mcp-ai-wpoos' );
+		}
+
+		// Check enable_openrouter setting (defaults to false if not set).
+		$enable_openrouter = isset( $settings['enable_openrouter'] ) ? $settings['enable_openrouter'] : false;
+		if ( $enable_openrouter && ! empty( $settings['openrouter_api_key'] ) ) {
+			$providers['openrouter'] = __( 'OpenRouter', 'mcp-ai-wpoos' );
+		}
+
+		// Check enable_digitalocean setting (defaults to false if not set).
+		$enable_digitalocean = isset( $settings['enable_digitalocean'] ) ? $settings['enable_digitalocean'] : false;
+		if ( $enable_digitalocean && ! empty( $settings['digitalocean_api_key'] ) ) {
+			$providers['digitalocean'] = __( 'DigitalOcean', 'mcp-ai-wpoos' );
+		}
+
 		// Check enable_huggingface setting (defaults to false if not set).
 		$enable_huggingface = isset( $settings['enable_huggingface'] ) ? $settings['enable_huggingface'] : false;
 		if ( $enable_huggingface && ! empty( $settings['huggingface_api_key'] ) ) {

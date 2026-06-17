@@ -68,7 +68,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 		 * @return string
 		 */
 		public function get_documentation_url() {
-			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/media/DISPLAY_METADATA_PERSISTENCE.md';
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/user-guides/media/DISPLAY_METADATA_PERSISTENCE.md';
 		}
 
 		/**

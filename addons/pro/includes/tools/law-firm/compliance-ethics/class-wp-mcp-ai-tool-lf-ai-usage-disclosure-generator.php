@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator implements WP_MCP_AI_Tool_
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -111,6 +118,9 @@ class WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator implements WP_MCP_AI_Tool_
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -160,7 +170,7 @@ class WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator implements WP_MCP_AI_Tool_
 		$firm_name = isset( $settings['law_firm_name'] ) ? $settings['law_firm_name'] : get_bloginfo( 'name' );
 
 		// Get the generating attorney's name.
-		$attorney = get_userdata( $uid );
+		$attorney      = get_userdata( $uid );
 		$attorney_name = $attorney ? $attorney->display_name : __( 'Attorney', 'mcp-ai-wpoos-pro' );
 
 		$tools_list = implode( ', ', $ai_tools_used );

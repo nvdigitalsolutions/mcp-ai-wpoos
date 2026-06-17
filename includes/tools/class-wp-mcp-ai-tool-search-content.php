@@ -12,11 +12,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-search.php';
+
 /**
- * Searches published content using WP_Query with optional filters.
+ * Searches published content using WP_Query with optional filters
+ * and TF-IDF relevance ranking.
+ *
+ * @since 2.4.0 Added configurable orderby/order and TF-IDF relevance.
  */
 class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Relevance_Search;
+
+	/**
+	 * Allowed orderby values for content search.
+	 *
+	 * @since 2.4.0
+	 * @var string[]
+	 */
+	const ORDERBY_OPTIONS = array( 'relevance', 'date', 'title' );
 
 	/**
 	 * {@inheritdoc}
@@ -36,7 +50,7 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Search published posts by keyword, post type, taxonomy terms, and metadata.', 'mcp-ai-wpoos' );
+		return __( 'Search published posts by keyword, post type, taxonomy terms, and metadata. Supports configurable sort order (date, title) and TF-IDF relevance ranking via orderby=relevance.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -141,10 +155,42 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Logical relation between multiple meta filters.', 'mcp-ai-wpoos' ),
 					'default'     => 'AND',
 				),
+				'orderby'           => array(
+					'type'        => 'string',
+					'enum'        => self::ORDERBY_OPTIONS,
+					'description' => __( 'Sort results by this field. Use "relevance" for TF-IDF scored results (requires search_term).', 'mcp-ai-wpoos' ),
+					'default'     => 'date',
+				),
+				'order'             => array(
+					'type'        => 'string',
+					'enum'        => array( 'ASC', 'DESC' ),
+					'description' => __( 'Sort direction: ASC (ascending) or DESC (descending).', 'mcp-ai-wpoos' ),
+					'default'     => 'DESC',
+				),
+				'search_type'       => array(
+					'type'        => 'string',
+					'enum'        => array( 'keyword', 'semantic', 'hybrid' ),
+					'description' => __( 'Search mode. "keyword" uses MySQL full-text (default). "semantic" uses embedding vector similarity. "hybrid" combines both via reciprocal rank fusion for best results.', 'mcp-ai-wpoos' ),
+					'default'     => 'keyword',
+				),
+				'min_similarity'    => array(
+					'type'        => 'number',
+					'description' => __( 'Minimum cosine similarity threshold for semantic results (0-1). Lower values return more results but may be less relevant.', 'mcp-ai-wpoos' ),
+					'minimum'     => 0,
+					'maximum'     => 1,
+					'default'     => 0.5,
+				),
 			),
 			'required'             => array( 'search_term' ),
 			'additionalProperties' => false,
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -166,11 +212,40 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		$search_term = isset( $arguments['search_term'] ) ? sanitize_text_field( $arguments['search_term'] ) : '';
-		$post_type   = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'any';
-		$settings    = get_option( 'wp_mcp_ai_settings', array() );
-		$max_limit   = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
-		$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
-		$limit       = $limit > 0 ? min( $limit, $max_limit ) : 10;
+		$search_type = isset( $arguments['search_type'] ) ? sanitize_key( $arguments['search_type'] ) : 'keyword';
+		if ( ! in_array( $search_type, array( 'keyword', 'semantic', 'hybrid' ), true ) ) {
+		 $search_type = 'keyword';
+		}
+
+	$min_similarity = isset( $arguments['min_similarity'] ) ? (float) $arguments['min_similarity'] : 0.5;
+	$min_similarity = max( 0.0, min( 1.0, $min_similarity ) );
+
+	$post_type   = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'any';
+	$settings    = get_option( 'wp_mcp_ai_settings', array() );
+	$max_limit   = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
+	$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
+	$limit       = $limit > 0 ? min( $limit, $max_limit ) : 10;
+
+	// Branch: semantic or hybrid search when embeddings are available.
+	$can_embed = class_exists( 'WP_MCP_AI_Vector_Context_Service' )
+		&& class_exists( 'WP_MCP_AI_Content_Embedding_Store' )
+		&& '' !== $search_term;
+
+	if ( ( 'semantic' === $search_type || 'hybrid' === $search_type ) && $can_embed ) {
+		$order = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
+		return $this->execute_semantic_search( $search_term, $post_type, $limit, $min_similarity, $order, $search_type );
+	}
+
+	// Fall through to keyword search (original behaviour).
+
+		$orderby      = $this->sanitise_orderby(
+			isset( $arguments['orderby'] ) ? $arguments['orderby'] : 'date',
+			'date',
+			self::ORDERBY_OPTIONS
+		);
+		$order        = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
+		$algorithm    = isset( $arguments['search_algorithm'] ) && 'bm25' === $arguments['search_algorithm'] ? 'bm25' : 'tfidf';
+		$is_relevance = ( 'relevance' === $orderby && '' !== $search_term );
 
 		$taxonomy_filters = $this->prepare_taxonomy_filters( $arguments );
 		$meta_filters     = $this->prepare_meta_filters( $arguments );
@@ -182,15 +257,26 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$query_args = array(
 			'post_type'              => $post_type,
 			'post_status'            => 'publish',
-			'posts_per_page'         => $limit,
-			'orderby'                => 'date',
-			'order'                  => 'DESC',
+			'posts_per_page'         => $is_relevance ? 500 : $limit,
 			'ignore_sticky_posts'    => true,
 			'suppress_filters'       => false,
-			'no_found_rows'          => true,  // Performance: Skip counting total rows.
-			'update_post_term_cache' => false, // Performance: Skip term cache if not using taxonomy data.
-			'update_post_meta_cache' => true,  // Keep meta cache as we need post meta.
+			'no_found_rows'          => ! $is_relevance,  // Performance: skip when not paginating.
+			'update_post_term_cache' => false,
+			'update_post_meta_cache' => true,
 		);
+
+		// Dynamic orderby — date/title handled here; relevance applied post-query.
+		if ( ! $is_relevance ) {
+			if ( 'title' === $orderby ) {
+				$query_args['orderby'] = 'title';
+			} else {
+				$query_args['orderby'] = 'date';
+			}
+			$query_args['order'] = $order;
+		} else {
+			$query_args['orderby'] = 'date';
+			$query_args['order']   = 'DESC';
+		}
 
 		if ( '' !== $search_term ) {
 			$query_args['s'] = $search_term;
@@ -218,6 +304,17 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'date'      => get_the_date( DATE_W3C, $post_id ),
 				'post_type' => get_post_type( $post_id ),
 			);
+		}
+
+		// Apply TF-IDF relevance ranking when orderby=relevance with a search term.
+		if ( $is_relevance ) {
+			$field_weights = array(
+				'title'   => 3.0,
+				'content' => 2.0,
+				'excerpt' => 1.0,
+			);
+			$results = $this->rank_by_relevance( $results, $search_term, $field_weights, $algorithm );
+			$results = array_slice( $results, 0, $limit );
 		}
 
 		// Use trait method to ensure proper message field for chat client.
@@ -317,10 +414,7 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		if ( empty( $tax_query ) ) {
-			// Use trait method to handle empty results properly.
-			return $this->format_empty_result_response(
-				__( 'No taxonomy filters matched.', 'mcp-ai-wpoos' )
-			);
+			return array();
 		}
 
 		if ( count( $tax_query ) > 1 || 'AND' !== $relation ) {
@@ -451,5 +545,159 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'requires-capability',  // Requires 'read' capability.
 			'cacheable',            // Results can be cached.
 		);
+	}
+
+	/**
+	 * Execute semantic or hybrid vector search against content embeddings.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $search_term    Search query.
+	 * @param string $post_type      Post type filter ('any' for all).
+	 * @param int    $limit          Max results.
+	 * @param float  $min_similarity Minimum cosine similarity (0-1).
+	 * @param string $order          Sort direction.
+	 * @param string $mode           'semantic' or 'hybrid'.
+	 * @return array|WP_Error Results or error.
+	 */
+	protected function execute_semantic_search( $search_term, $post_type, $limit, $min_similarity, $order, $mode ) {
+		try {
+			$svc = WP_MCP_AI_Vector_Context_Service::get_instance();
+		} catch ( \Throwable $e ) {
+			return new WP_Error(
+				'wp_mcp_ai_vector_unavailable',
+				__( 'Vector search is not available.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$query_vec = $svc->embed_context( $search_term );
+		if ( is_wp_error( $query_vec ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_embedding_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to generate query embedding: %s', 'mcp-ai-wpoos' ),
+					$query_vec->get_error_message()
+				)
+			);
+		}
+
+		$provider    = $svc->get_embedding_provider();
+		$provider_id = is_wp_error( $provider ) ? 'openai' : $provider->get_id();
+		$model       = is_wp_error( $provider ) ? 'text-embedding-3-small' : $provider->get_model();
+
+		if ( 'any' === $post_type ) {
+			$post_types = get_post_types( array( 'public' => true ) );
+		} else {
+			$post_types = array( $post_type );
+		}
+
+		$candidates = array();
+		foreach ( $post_types as $pt ) {
+			$rows = WP_MCP_AI_Content_Embedding_Store::get_all_for_type( $pt, $provider_id, $model );
+			foreach ( $rows as $row ) {
+				$candidates[ $row['post_id'] ] = $row['vector'];
+			}
+		}
+
+		if ( empty( $candidates ) ) {
+			return $this->format_collection_response(
+				array(),
+				sprintf(
+					/* translators: %s: search term */
+					__( 'No indexed content found for "%s".', 'mcp-ai-wpoos' ),
+					$search_term
+				)
+			);
+		}
+
+		// Two-stage: HNSW pre-filter when beneficial (>500 candidates).
+		$hnsw_available = function_exists( 'wp_mcp_ai_hnsw_ensure_loaded' ) && wp_mcp_ai_hnsw_ensure_loaded();
+		$use_hnsw       = $hnsw_available && count( $candidates ) > 500;
+
+		$vector_scores = array();
+		if ( $use_hnsw ) {
+			$hnsw = WP_MCP_AI_HNSW_Index::get_instance();
+			$hnsw->clear();
+			$hnsw->set_params( 16, 200, max( 50, $limit * 4 ) );
+			$hnsw->insert_batch( $candidates );
+			$top = $hnsw->search( $query_vec, $limit * 4 );
+			foreach ( $top as $post_id => $score ) {
+				$sim = $svc->cosine_similarity( $query_vec, $candidates[ $post_id ] );
+				if ( $sim >= $min_similarity ) {
+					$vector_scores[ $post_id ] = $sim;
+				}
+			}
+		} else {
+			foreach ( $candidates as $post_id => $stored_vec ) {
+				$sim = $svc->cosine_similarity( $query_vec, $stored_vec );
+				if ( $sim >= $min_similarity ) {
+					$vector_scores[ $post_id ] = $sim;
+				}
+			}
+		}
+
+		arsort( $vector_scores, SORT_NUMERIC );
+
+		if ( 'hybrid' === $mode ) {
+			$kw_results  = $this->get_keyword_post_ids( $search_term, $post_type, max( $limit * 3, 50 ) );
+			$vector_scores = $this->rrf_fuse_simple( $vector_scores, $kw_results, $limit );
+		}
+
+		$top_ids = array_slice( array_keys( $vector_scores ), 0, $limit, true );
+
+		$results = array();
+		foreach ( $top_ids as $pid ) {
+			$pid = absint( $pid );
+			$results[] = array(
+				'ID'         => $pid,
+				'title'      => get_the_title( $pid ),
+				'permalink'  => get_permalink( $pid ),
+				'excerpt'    => wp_trim_words( wp_strip_all_tags( get_post_field( 'post_content', $pid ) ), 30 ),
+				'date'       => get_the_date( DATE_W3C, $pid ),
+				'post_type'  => get_post_type( $pid ),
+				'similarity' => isset( $vector_scores[ $pid ] ) ? round( (float) $vector_scores[ $pid ], 4 ) : 0,
+			);
+		}
+
+		return $this->format_collection_response(
+			$results,
+			sprintf(
+				/* translators: 1: count, 2: search term, 3: mode */
+				__( 'Found %1\$d result(s) for "%2\$s" using %3\$s search', 'mcp-ai-wpoos' ),
+				count( $results ),
+				$search_term,
+				'hybrid' === $mode ? __( 'hybrid', 'mcp-ai-wpoos' ) : __( 'semantic', 'mcp-ai-wpoos' )
+			)
+		);
+	}
+
+	private function get_keyword_post_ids( $search_term, $post_type, $limit ) {
+		$q = new WP_Query(array(
+			'post_type' => $post_type, 'post_status' => 'publish',
+			'posts_per_page' => $limit, 's' => $search_term,
+			'orderby' => 'relevance', 'order' => 'DESC',
+			'fields' => 'ids', 'no_found_rows' => true, 'ignore_sticky_posts' => true,
+		));
+		return $q->posts;
+	}
+
+	private function rrf_fuse_simple( array $vector_scores, array $keyword_ids, $limit ) {
+		$k     = 60;
+		$fused = array();
+		foreach ( $vector_scores as $pid => $sim ) {
+			$fused[ $pid ] = (float) $sim;
+		}
+		$rank = 0;
+		foreach ( $keyword_ids as $pid ) {
+			$pid = absint( $pid );
+			if ( ! isset( $fused[ $pid ] ) ) {
+				$fused[ $pid ] = 0.0;
+			}
+			$fused[ $pid ] += 1.0 / ( $k + $rank + 1 );
+			++$rank;
+		}
+		arsort( $fused, SORT_NUMERIC );
+		return $fused;
 	}
 }

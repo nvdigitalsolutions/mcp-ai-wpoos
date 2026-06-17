@@ -142,6 +142,7 @@ class WP_MCP_AI_Async_Executor_Initialization_Test extends WP_UnitTestCase {
 	 */
 	private function create_mock_tool() {
 		return new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *

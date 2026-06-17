@@ -109,10 +109,10 @@ class WP_MCP_AI_OCR_Service {
 		// Get defaults from settings - check image production settings first, then fall back to document generation.
 		$image_settings = get_option( 'wp_mcp_ai_image_production_settings', array() );
 		$doc_settings   = get_option( 'wp_mcp_ai_document_generation_settings', array() );
-		
+
 		// Merge settings with image production taking priority.
 		$ocr_settings = array_merge( $doc_settings, array_filter( $image_settings ) );
-		
+
 		$defaults = array(
 			'provider'   => 'auto', // auto, openai, gemini, ollama, tesseract.
 			'preprocess' => isset( $ocr_settings['ocr_preprocessing'] ) ? (bool) $ocr_settings['ocr_preprocessing'] : true,
@@ -120,7 +120,7 @@ class WP_MCP_AI_OCR_Service {
 			'enhance'    => true,   // Enhance image quality.
 			'timeout'    => isset( $ocr_settings['ocr_timeout'] ) ? absint( $ocr_settings['ocr_timeout'] ) : self::DEFAULT_TIMEOUT,
 		);
-		$options      = wp_parse_args( $options, $defaults );
+		$options  = wp_parse_args( $options, $defaults );
 
 		// Preprocess image if enabled.
 		if ( $options['preprocess'] ) {
@@ -152,12 +152,12 @@ class WP_MCP_AI_OCR_Service {
 			WP_MCP_AI_Logger::log_event(
 				'ocr_fallback_triggered',
 				sprintf( 'Primary OCR provider (%s) failed, trying fallbacks', $provider ),
-				array( 
+				array(
 					'primary_provider' => $provider,
 					'error'            => $primary_error,
 				)
 			);
-			
+
 			$fallback_providers = $this->get_fallback_providers( $provider );
 			foreach ( $fallback_providers as $fallback ) {
 				WP_MCP_AI_Logger::log_event(
@@ -165,7 +165,7 @@ class WP_MCP_AI_OCR_Service {
 					sprintf( 'Trying fallback provider: %s', $fallback ),
 					array( 'provider' => $fallback )
 				);
-				
+
 				$result = $this->extract_with_provider( $image_path, $fallback, $options );
 				if ( ! is_wp_error( $result ) ) {
 					WP_MCP_AI_Logger::log_event(
@@ -217,25 +217,25 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		// Extract text from each image.
-		$all_text = array();
+		$all_text     = array();
 		$failed_pages = array();
 		foreach ( $images as $page_num => $image_path ) {
 			$text = $this->extract_text_from_image( $image_path, $options );
-			
+
 			// Clean up temp image.
 			@unlink( $image_path );
 
 			if ( is_wp_error( $text ) ) {
-				$error_message = $text->get_error_message();
+				$error_message  = $text->get_error_message();
 				$failed_pages[] = array(
 					'page'  => $page_num + 1,
 					'error' => $error_message,
 				);
-				
+
 				WP_MCP_AI_Logger::log_event(
 					'ocr_page_failed',
 					sprintf( 'OCR failed for page %d: %s', $page_num + 1, $error_message ),
-					array( 
+					array(
 						'page'  => $page_num + 1,
 						'error' => $error_message,
 					)
@@ -251,15 +251,15 @@ class WP_MCP_AI_OCR_Service {
 			if ( ! empty( $failed_pages ) ) {
 				$error_details = ' Failed pages: ' . wp_json_encode( $failed_pages );
 			}
-			return new WP_Error( 
-				'ocr_failed', 
+			return new WP_Error(
+				'ocr_failed',
 				__( 'Failed to extract text from any pages.', 'mcp-ai-wpoos-pro' ) . $error_details
 			);
 		}
 
 		// Add summary if some pages failed.
 		if ( ! empty( $failed_pages ) ) {
-			$summary = sprintf(
+			$summary    = sprintf(
 				"\n\n--- OCR Summary ---\nSuccessfully processed: %d page(s)\nFailed: %d page(s)",
 				count( $all_text ),
 				count( $failed_pages )
@@ -279,7 +279,7 @@ class WP_MCP_AI_OCR_Service {
 	public function is_scanned_pdf( $pdf_path ) {
 		// Try to extract text using standard method.
 		$text = $this->extract_standard_text( $pdf_path );
-		
+
 		if ( is_wp_error( $text ) ) {
 			// If extraction failed, assume it's scanned.
 			return true;
@@ -287,7 +287,7 @@ class WP_MCP_AI_OCR_Service {
 
 		// Remove whitespace and count characters.
 		$clean_text = trim( preg_replace( '/\s+/', '', $text ) );
-		
+
 		// If less than threshold characters, consider it scanned.
 		return strlen( $clean_text ) < self::MIN_TEXT_THRESHOLD;
 	}
@@ -304,7 +304,7 @@ class WP_MCP_AI_OCR_Service {
 	protected function preprocess_image( $image_path, $options = array() ) {
 		// Check if Sharp is available via Node.js.
 		$sharp_available = $this->is_sharp_available();
-		
+
 		if ( $sharp_available ) {
 			return $this->preprocess_with_sharp( $image_path, $options );
 		}
@@ -327,22 +327,22 @@ class WP_MCP_AI_OCR_Service {
 	 */
 	protected function preprocess_with_sharp( $image_path, $options = array() ) {
 		$service_path = WP_MCP_AI_PRO_PATH . 'node-services/image-preprocess-service.js';
-		
+
 		if ( ! file_exists( $service_path ) ) {
 			return new WP_Error( 'service_not_found', __( 'Image preprocessing service not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$temp_output = tempnam( sys_get_temp_dir(), 'ocr_preprocessed_' ) . '.png';
-		
+
 		$args = wp_json_encode(
 			array(
-				'input'      => $image_path,
-				'output'     => $temp_output,
-				'maxWidth'   => self::MAX_IMAGE_DIMENSION,
-				'maxHeight'  => self::MAX_IMAGE_DIMENSION,
-				'grayscale'  => true,
-				'normalize'  => true,
-				'sharpen'    => true,
+				'input'     => $image_path,
+				'output'    => $temp_output,
+				'maxWidth'  => self::MAX_IMAGE_DIMENSION,
+				'maxHeight' => self::MAX_IMAGE_DIMENSION,
+				'grayscale' => true,
+				'normalize' => true,
+				'sharpen'   => true,
 			)
 		);
 
@@ -360,7 +360,10 @@ class WP_MCP_AI_OCR_Service {
 				'preprocessing_failed',
 				'ocr_sharp_failed',
 				'Sharp preprocessing command failed',
-				array( 'output' => implode( "\n", $output ), 'code' => $return_code )
+				array(
+					'output' => implode( "\n", $output ),
+					'code'   => $return_code,
+				)
 			);
 		}
 
@@ -377,7 +380,7 @@ class WP_MCP_AI_OCR_Service {
 	protected function preprocess_with_imagick( $image_path, $options = array() ) {
 		try {
 			$image = new Imagick( $image_path );
-			
+
 			// Resize if too large.
 			$width  = $image->getImageWidth();
 			$height = $image->getImageHeight();
@@ -387,14 +390,14 @@ class WP_MCP_AI_OCR_Service {
 
 			// Convert to grayscale.
 			$image->setImageType( Imagick::IMGTYPE_GRAYSCALE );
-			
+
 			// Enhance contrast.
 			$image->normalizeImage();
 			$image->enhanceImage();
-			
+
 			// Sharpen slightly.
 			$image->sharpenImage( 0, 1 );
-			
+
 			// Reduce noise.
 			$image->despeckleImage();
 
@@ -451,14 +454,14 @@ class WP_MCP_AI_OCR_Service {
 	 */
 	protected function convert_pdf_with_imagick( $pdf_path, $dpi = 300, $max_pages = 0 ) {
 		$images = array();
-		$pdf = null;
+		$pdf    = null;
 
 		try {
 			$pdf = new Imagick();
 			$pdf->setResolution( $dpi, $dpi );
 			$pdf->readImage( $pdf_path );
 
-			$num_pages = $pdf->getNumberImages();
+			$num_pages        = $pdf->getNumberImages();
 			$pages_to_process = ( $max_pages > 0 && $max_pages < $num_pages ) ? $max_pages : $num_pages;
 
 			for ( $i = 0; $i < $pages_to_process; $i++ ) {
@@ -525,7 +528,10 @@ class WP_MCP_AI_OCR_Service {
 				'pdftoppm_failed',
 				'ocr_pdftoppm_failed',
 				'pdftoppm conversion failed',
-				array( 'output' => implode( "\n", $output ), 'code' => $return_code )
+				array(
+					'output' => implode( "\n", $output ),
+					'code'   => $return_code,
+				)
 			);
 		}
 
@@ -619,7 +625,7 @@ class WP_MCP_AI_OCR_Service {
 			self::$openai_client = new WP_MCP_AI_OpenAI_Client();
 		}
 		$client = self::$openai_client;
-		
+
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -692,7 +698,7 @@ class WP_MCP_AI_OCR_Service {
 			self::$gemini_client = new WP_MCP_AI_Gemini_Client();
 		}
 		$client = self::$gemini_client;
-		
+
 		$request = array(
 			'contents' => array(
 				array(
@@ -756,7 +762,7 @@ class WP_MCP_AI_OCR_Service {
 		$model = 'llava';
 
 		$endpoint = trailingslashit( $settings['ollama_endpoint'] ) . 'api/generate';
-		
+
 		$body = wp_json_encode(
 			array(
 				'model'  => $model,
@@ -780,7 +786,7 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-		
+
 		if ( isset( $body['response'] ) && ! empty( trim( $body['response'] ) ) ) {
 			return trim( $body['response'] );
 		}
@@ -809,10 +815,10 @@ class WP_MCP_AI_OCR_Service {
 			try {
 				$ocr = new \thiagoalessio\TesseractOCR\TesseractOCR( $image_path );
 				$ocr->lang( $language );
-				
+
 				// Set optimal PSM for document OCR.
 				$ocr->psm( 3 ); // Fully automatic page segmentation.
-				
+
 				$text = $ocr->run();
 				return trim( $text );
 			} catch ( \Exception $e ) {
@@ -850,7 +856,7 @@ class WP_MCP_AI_OCR_Service {
 		exec( $cmd, $output, $return_code );
 
 		$text_file = $output_file . '.txt';
-		
+
 		if ( 0 === $return_code && file_exists( $text_file ) ) {
 			$text = file_get_contents( $text_file );
 			@unlink( $text_file );
@@ -865,7 +871,10 @@ class WP_MCP_AI_OCR_Service {
 			'tesseract_failed',
 			'ocr_tesseract_failed',
 			'Tesseract OCR failed',
-			array( 'output' => implode( "\n", $output ), 'code' => $return_code )
+			array(
+				'output' => implode( "\n", $output ),
+				'code'   => $return_code,
+			)
 		);
 	}
 
@@ -953,7 +962,7 @@ class WP_MCP_AI_OCR_Service {
 		// Check if a specific fallback is configured - check image production settings first.
 		$image_settings = get_option( 'wp_mcp_ai_image_production_settings', array() );
 		$doc_settings   = get_option( 'wp_mcp_ai_document_generation_settings', array() );
-		
+
 		// Image production settings take priority.
 		$fallback = null;
 		if ( ! empty( $image_settings['ocr_fallback_provider'] ) ) {
@@ -961,20 +970,20 @@ class WP_MCP_AI_OCR_Service {
 		} elseif ( ! empty( $doc_settings['ocr_fallback_provider'] ) ) {
 			$fallback = $doc_settings['ocr_fallback_provider'];
 		}
-		
+
 		if ( ! empty( $fallback ) ) {
 			// No fallback configured - return empty array.
 			if ( 'none' === $fallback ) {
 				return array();
 			}
-			
+
 			if ( 'auto' === $fallback ) {
 				// Auto mode - try all providers except primary.
 				$all_providers = array( 'openai', 'gemini', 'ollama', 'tesseract' );
 				$fallbacks     = array_diff( $all_providers, array( $primary ) );
 				return array_values( $fallbacks );
 			}
-			
+
 			// Specific fallback configured - use it if different from primary.
 			if ( $fallback !== $primary ) {
 				return array( $fallback );
@@ -986,7 +995,7 @@ class WP_MCP_AI_OCR_Service {
 		// Default behavior - try all available providers except primary.
 		$all_providers = array( 'openai', 'gemini', 'ollama', 'tesseract' );
 		$fallbacks     = array_diff( $all_providers, array( $primary ) );
-		
+
 		return array_values( $fallbacks );
 	}
 
@@ -1054,6 +1063,7 @@ class WP_MCP_AI_OCR_Service {
 			$canvas_dir = nvoos_canvas_get_dir();
 			// Verify the path is within the WordPress plugins directory before use.
 			if ( '' !== $canvas_dir && false !== realpath( $canvas_dir ) &&
+				defined( 'WP_PLUGIN_DIR' ) &&
 				0 === strpos( realpath( $canvas_dir ), realpath( WP_PLUGIN_DIR ) ) ) {
 				$canvas_env = 'NVOOS_CANVAS_PATH=' . escapeshellarg( $canvas_dir ) . ' ';
 			}
@@ -1066,8 +1076,8 @@ class WP_MCP_AI_OCR_Service {
 			escapeshellarg( $args )
 		);
 
-		$result = $this->execute_node_service_with_timeout( $cmd, 120 ); // 2 minute timeout for OCR
-		$output = $result['output'];
+		$result      = $this->execute_node_service_with_timeout( $cmd, 120 ); // 2 minute timeout for OCR
+		$output      = $result['output'];
 		$return_code = $result['return_code'];
 
 		// Check for timeout.
@@ -1082,13 +1092,13 @@ class WP_MCP_AI_OCR_Service {
 		// Check for execution errors.
 		if ( 0 !== $return_code ) {
 			$output_text = implode( "\n", $output );
-			
+
 			// Try to parse as JSON error.
-			$json_output = json_decode( $output_text, true );
-			$error_message = isset( $json_output['error'] ) 
-				? $json_output['error'] 
+			$json_output   = json_decode( $output_text, true );
+			$error_message = isset( $json_output['error'] )
+				? $json_output['error']
 				: $output_text;
-			
+
 			return new WP_Error(
 				'node_ocr_failed',
 				sprintf(
@@ -1105,7 +1115,7 @@ class WP_MCP_AI_OCR_Service {
 
 		// Parse JSON response.
 		$output_text = implode( "\n", $output );
-		$result = json_decode( $output_text, true );
+		$result      = json_decode( $output_text, true );
 
 		if ( null === $result ) {
 			return new WP_Error(
@@ -1176,7 +1186,7 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		// Check MIME type.
-		$mime_type = $this->get_mime_type( $image_path );
+		$mime_type     = $this->get_mime_type( $image_path );
 		$allowed_types = array( 'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/tiff' );
 		if ( ! in_array( $mime_type, $allowed_types, true ) ) {
 			return new WP_Error(
@@ -1271,7 +1281,7 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		$state = self::$circuit_breaker[ $provider ];
-		
+
 		// If circuit is closed, provider is available.
 		if ( 'closed' === $state['status'] ) {
 			return false;
@@ -1350,7 +1360,7 @@ class WP_MCP_AI_OCR_Service {
 	 * @return mixed Operation result.
 	 */
 	protected function execute_with_retry( $operation, $max_retries = self::MAX_RETRIES ) {
-		$attempt = 0;
+		$attempt    = 0;
 		$last_error = null;
 
 		while ( $attempt < $max_retries ) {
@@ -1376,7 +1386,7 @@ class WP_MCP_AI_OCR_Service {
 				return $result;
 			}
 
-			$attempt++;
+			++$attempt;
 
 			// Exponential backoff: 1s, 2s, 4s, etc.
 			// Only sleep if we have retries remaining.
@@ -1386,10 +1396,10 @@ class WP_MCP_AI_OCR_Service {
 					'ocr_retry_attempt',
 					sprintf( 'Retrying OCR operation (attempt %d/%d) after %ds', $attempt + 1, $max_retries, $wait_time ),
 					array(
-						'attempt'    => $attempt + 1,
+						'attempt'     => $attempt + 1,
 						'max_retries' => $max_retries,
-						'wait_time'  => $wait_time,
-						'error'      => $result->get_error_message(),
+						'wait_time'   => $wait_time,
+						'error'       => $result->get_error_message(),
 					)
 				);
 				sleep( $wait_time );
@@ -1411,9 +1421,9 @@ class WP_MCP_AI_OCR_Service {
 	 */
 	protected function execute_node_service_with_timeout( $command, $timeout = 60 ) {
 		$descriptors = array(
-			0 => array( 'pipe', 'r' ), // stdin
-			1 => array( 'pipe', 'w' ), // stdout
-			2 => array( 'pipe', 'w' ), // stderr
+			0 => array( 'pipe', 'r' ), // stdin.
+			1 => array( 'pipe', 'w' ), // stdout.
+			2 => array( 'pipe', 'w' ), // stderr.
 		);
 
 		$process = proc_open( $command, $descriptors, $pipes );
@@ -1427,10 +1437,10 @@ class WP_MCP_AI_OCR_Service {
 			);
 		}
 
-		// Close stdin.
+		// Close stdin channel.
 		fclose( $pipes[0] );
 
-		// Set non-blocking mode for reading.
+		// Set non-blocking mode for reading data.
 		stream_set_blocking( $pipes[1], false );
 		stream_set_blocking( $pipes[2], false );
 
@@ -1439,13 +1449,13 @@ class WP_MCP_AI_OCR_Service {
 		$start_time   = time();
 		$timed_out    = false;
 
-		// Read output with timeout.
+		// Read output with timeout period.
 		while ( true ) {
 			$elapsed = time() - $start_time;
 			if ( $elapsed >= $timeout ) {
 				$timed_out = true;
 				// Kill the process.
-				proc_terminate( $process, 9 ); // SIGKILL
+				proc_terminate( $process, 9 ); // SIGKILL.
 				WP_MCP_AI_Logger::log_event(
 					'node_service_timeout',
 					sprintf( 'Node.js service timed out after %d seconds', $timeout ),
@@ -1458,7 +1468,7 @@ class WP_MCP_AI_OCR_Service {
 			$status = proc_get_status( $process );
 			if ( ! $status['running'] ) {
 				// Process finished, read any remaining output.
-				$output .= stream_get_contents( $pipes[1] );
+				$output       .= stream_get_contents( $pipes[1] );
 				$error_output .= stream_get_contents( $pipes[2] );
 				break;
 			}

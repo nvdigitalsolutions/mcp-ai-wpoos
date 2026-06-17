@@ -1,0 +1,38 @@
+{
+  "name": "nvoos-comic-reader",
+  "version": "0.2.0",
+  "description": "NV oOS Comic Reader — React-based comic book reader for CBR, CBZ, CB7, CBT formats with library management and AI-powered analysis",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.cjs --prod",
+    "build:dev": "node esbuild.config.cjs",
+    "watch": "node esbuild.config.cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint:a11y": "eslint --max-warnings 0 src/",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "libarchive.js": "^1.3.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@axe-core/react": "4.10.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.15.17",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/parser": "8.32.0",
+    "@wordpress/i18n": "5.12.0",
+    "esbuild": "^0.27.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "jsdom": "^29.1.1",
+    "typescript": "5.8.3",
+    "vitest": "^4.1.5"
+  }
+}

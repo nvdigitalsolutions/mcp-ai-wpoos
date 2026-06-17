@@ -12,6 +12,7 @@
  * Mock tool implementation for testing.
  */
 class WP_MCP_AI_Mock_Tool implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	protected $slug;
 	protected $name;
 
@@ -98,12 +99,21 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 		$property->setAccessible( true );
 		$this->original_instance = $property->getValue();
 		$property->setValue( null, null );
+
+		// Ensure the fresh instance starts with a clean tool slate.
+		$fresh_registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$fresh_registry->clear_tools();
 	}
 
 	/**
 	 * Tear down test environment.
 	 */
 	public function tearDown(): void {
+		// Clear tools from the original instance to prevent leakage to other test files.
+		if ( $this->original_instance instanceof WP_MCP_AI_Tool_Registry ) {
+			$this->original_instance->clear_tools();
+		}
+
 		// Restore original instance.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Registry' );
 		$property   = $reflection->getProperty( 'instance' );

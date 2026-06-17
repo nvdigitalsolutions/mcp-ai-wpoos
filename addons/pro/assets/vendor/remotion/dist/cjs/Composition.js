@@ -5,6 +5,8 @@ const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = require("react");
 const react_dom_1 = require("react-dom");
 const CanUseRemotionHooks_js_1 = require("./CanUseRemotionHooks.js");
+const composition_render_error_context_js_1 = require("./composition-render-error-context.js");
+const CompositionErrorBoundary_js_1 = require("./CompositionErrorBoundary.js");
 const CompositionManagerContext_js_1 = require("./CompositionManagerContext.js");
 const Folder_js_1 = require("./Folder.js");
 const input_props_serialization_js_1 = require("./input-props-serialization.js");
@@ -28,7 +30,7 @@ const Fallback = () => {
     return null;
 };
 const InnerComposition = ({ width, height, fps, durationInFrames, id, defaultProps, schema, ...compProps }) => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const compManager = (0, react_1.useContext)(CompositionManagerContext_js_1.CompositionSetters);
     const { registerComposition, unregisterComposition } = compManager;
     const video = (0, use_video_js_1.useVideo)();
@@ -52,6 +54,7 @@ const InnerComposition = ({ width, height, fps, durationInFrames, id, defaultPro
         throw new Error('<Composition> mounted inside another composition. See https://remotion.dev/docs/wrong-composition-mount for help.');
     }
     const { folderName, parentName } = (0, react_1.useContext)(Folder_js_1.FolderContext);
+    const stack = (_b = compProps.stack) !== null && _b !== void 0 ? _b : null;
     (0, react_1.useEffect)(() => {
         var _a;
         // Ensure it's a URL safe id
@@ -73,6 +76,7 @@ const InnerComposition = ({ width, height, fps, durationInFrames, id, defaultPro
             parentFolderName: parentName,
             schema: schema !== null && schema !== void 0 ? schema : null,
             calculateMetadata: (_a = compProps.calculateMetadata) !== null && _a !== void 0 ? _a : null,
+            stack,
         });
         return () => {
             unregisterComposition(id);
@@ -90,17 +94,18 @@ const InnerComposition = ({ width, height, fps, durationInFrames, id, defaultPro
         parentName,
         schema,
         compProps.calculateMetadata,
+        stack,
         registerComposition,
         unregisterComposition,
     ]);
-    (0, react_1.useEffect)(() => {
-        window.dispatchEvent(new CustomEvent(ResolveCompositionConfig_js_1.PROPS_UPDATED_EXTERNALLY, {
-            detail: {
-                resetUnsaved: id,
-            },
-        }));
-    }, [defaultProps, id]);
     const resolved = (0, ResolveCompositionConfig_js_1.useResolvedVideoConfig)(id);
+    const { setError, clearError } = (0, react_1.useContext)(composition_render_error_context_js_1.CompositionRenderErrorContext);
+    const onError = (0, react_1.useCallback)((error) => {
+        setError(error);
+    }, [setError]);
+    const onClear = (0, react_1.useCallback)(() => {
+        clearError();
+    }, [clearError]);
     if (environment.isStudio &&
         video &&
         video.component === lazy &&
@@ -111,7 +116,7 @@ const InnerComposition = ({ width, height, fps, durationInFrames, id, defaultPro
                 resolved.type !== 'success-and-refreshing')) {
             return null;
         }
-        return (0, react_dom_1.createPortal)((0, jsx_runtime_1.jsx)(CanUseRemotionHooks_js_1.CanUseRemotionHooksProvider, { children: (0, jsx_runtime_1.jsx)(react_1.Suspense, { fallback: (0, jsx_runtime_1.jsx)(loading_indicator_js_1.Loading, {}), children: (0, jsx_runtime_1.jsx)(Comp, { ...((_b = resolved.result.props) !== null && _b !== void 0 ? _b : {}) }) }) }), (0, portal_node_js_1.portalNode)());
+        return (0, react_dom_1.createPortal)((0, jsx_runtime_1.jsx)(CanUseRemotionHooks_js_1.CanUseRemotionHooksProvider, { children: (0, jsx_runtime_1.jsx)(CompositionErrorBoundary_js_1.CompositionErrorBoundary, { onError: onError, onClear: onClear, children: (0, jsx_runtime_1.jsx)(react_1.Suspense, { fallback: (0, jsx_runtime_1.jsx)(loading_indicator_js_1.Loading, {}), children: (0, jsx_runtime_1.jsx)(Comp, { ...((_c = resolved.result.props) !== null && _c !== void 0 ? _c : {}) }) }) }) }), (0, portal_node_js_1.portalNode)());
     }
     if (environment.isRendering &&
         video &&
@@ -123,7 +128,7 @@ const InnerComposition = ({ width, height, fps, durationInFrames, id, defaultPro
                 resolved.type !== 'success-and-refreshing')) {
             return null;
         }
-        return (0, react_dom_1.createPortal)((0, jsx_runtime_1.jsx)(CanUseRemotionHooks_js_1.CanUseRemotionHooksProvider, { children: (0, jsx_runtime_1.jsx)(react_1.Suspense, { fallback: (0, jsx_runtime_1.jsx)(Fallback, {}), children: (0, jsx_runtime_1.jsx)(Comp, { ...((_c = resolved.result.props) !== null && _c !== void 0 ? _c : {}) }) }) }), (0, portal_node_js_1.portalNode)());
+        return (0, react_dom_1.createPortal)((0, jsx_runtime_1.jsx)(CanUseRemotionHooks_js_1.CanUseRemotionHooksProvider, { children: (0, jsx_runtime_1.jsx)(react_1.Suspense, { fallback: (0, jsx_runtime_1.jsx)(Fallback, {}), children: (0, jsx_runtime_1.jsx)(Comp, { ...((_d = resolved.result.props) !== null && _d !== void 0 ? _d : {}) }) }) }), (0, portal_node_js_1.portalNode)());
     }
     return null;
 };

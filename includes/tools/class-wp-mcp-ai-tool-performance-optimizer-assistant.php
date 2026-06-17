@@ -149,10 +149,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 				break;
 
 			default:
-				$result = array(
-					'success' => false,
-					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
-				);
+				$result = new WP_Error( 'wp_mcp_ai_error', __( 'Invalid action specified', 'mcp-ai-wpoos' ) );
 		}
 
 		// After execution hook.
@@ -522,7 +519,10 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 
 		$plugins = array();
 		foreach ( $active_plugins as $plugin ) {
-			$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
+			if ( ! defined( 'WP_PLUGIN_DIR' ) ) {
+				continue;
+			}
+					$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
 			$plugins[]   = array(
 				'name'    => $plugin_data['Name'],
 				'version' => $plugin_data['Version'],
@@ -755,7 +755,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 				return array( 'success' => true );
 
 			default:
-				return array( 'success' => false );
+				return new WP_Error( 'wp_mcp_ai_error', __( 'Invalid optimization task', 'mcp-ai-wpoos' ) );
 		}
 	}
 

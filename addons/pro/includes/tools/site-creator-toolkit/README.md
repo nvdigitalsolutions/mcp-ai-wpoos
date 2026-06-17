@@ -97,11 +97,12 @@ Based on 2025 best practices research:
 
 ## Tool Categories
 
-### Research & Discovery Tools (4 tools)
+### Research & Discovery Tools (5 tools)
 1. **research_site_best_practices** - Web search for site building best practices
 2. **analyze_competitor_sites** - Analyze and learn from existing sites
 3. **generate_site_plan** - Create comprehensive site development plans
 4. **suggest_template_patterns** - Recommend templates based on requirements
+5. **extract_site_design_from_mockups** - Ingest mockup images / HTML / live URLs and emit a single install-ready PHP "site design snippet" (tokens + interactions + JFB form skin). See `addons/pro/docs/toolkits/site-creator/extract-site-design-from-mockups.md`.
 
 ### Page Building Tools (5 tools)
 5. **generate_landing_page** - AI-powered landing page creation

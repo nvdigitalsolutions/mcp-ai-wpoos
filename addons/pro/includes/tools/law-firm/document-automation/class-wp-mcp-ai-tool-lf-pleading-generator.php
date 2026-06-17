@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -112,6 +119,9 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -175,10 +185,10 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 		$caption = array(
 			'section' => 'caption',
 			'content' => array(
-				'court'      => $court ?: __( '[COURT NAME]', 'mcp-ai-wpoos-pro' ),
-				'plaintiff'  => $parties[0] ?? __( '[PLAINTIFF]', 'mcp-ai-wpoos-pro' ),
-				'defendant'  => $parties[1] ?? __( '[DEFENDANT]', 'mcp-ai-wpoos-pro' ),
-				'case_no'    => __( '[CASE NUMBER]', 'mcp-ai-wpoos-pro' ),
+				'court'     => $court ? $court : __( '[COURT NAME]', 'mcp-ai-wpoos-pro' ),
+				'plaintiff' => $parties[0] ?? __( '[PLAINTIFF]', 'mcp-ai-wpoos-pro' ),
+				'defendant' => $parties[1] ?? __( '[DEFENDANT]', 'mcp-ai-wpoos-pro' ),
+				'case_no'   => __( '[CASE NUMBER]', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 
@@ -188,58 +198,148 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 		);
 
 		$structures = array(
-			'complaint'                      => array(
+			'complaint'                   => array(
 				$caption,
-				array( 'section' => 'introduction', 'content' => __( 'Nature of the action and relief sought.', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'jurisdiction_and_venue', 'content' => __( 'Basis for subject matter and personal jurisdiction.', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'parties', 'content' => $parties ?: array( __( '[List all parties]', 'mcp-ai-wpoos-pro' ) ) ),
-				array( 'section' => 'factual_allegations', 'content' => __( '[Numbered paragraphs of factual allegations]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'causes_of_action', 'content' => $grounds ?: __( '[Enumerate each cause of action]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'prayer_for_relief', 'content' => __( 'WHEREFORE, Plaintiff respectfully requests judgment against Defendant.', 'mcp-ai-wpoos-pro' ) ),
+				array(
+					'section' => 'introduction',
+					'content' => __( 'Nature of the action and relief sought.', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'jurisdiction_and_venue',
+					'content' => __( 'Basis for subject matter and personal jurisdiction.', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'parties',
+					'content' => $parties ? $parties : array( __( '[List all parties]', 'mcp-ai-wpoos-pro' ) ),
+				),
+				array(
+					'section' => 'factual_allegations',
+					'content' => __( '[Numbered paragraphs of factual allegations]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'causes_of_action',
+					'content' => $grounds ? $grounds : __( '[Enumerate each cause of action]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'prayer_for_relief',
+					'content' => __( 'WHEREFORE, Plaintiff respectfully requests judgment against Defendant.', 'mcp-ai-wpoos-pro' ),
+				),
 				$certificate,
 			),
-			'answer'                         => array(
+			'answer'                      => array(
 				$caption,
-				array( 'section' => 'introduction', 'content' => __( 'Defendant responds to the Complaint as follows.', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'admissions_and_denials', 'content' => __( '[Respond to each numbered paragraph]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'affirmative_defenses', 'content' => $grounds ?: __( '[List affirmative defenses]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'prayer_for_relief', 'content' => __( 'WHEREFORE, Defendant requests dismissal with prejudice.', 'mcp-ai-wpoos-pro' ) ),
+				array(
+					'section' => 'introduction',
+					'content' => __( 'Defendant responds to the Complaint as follows.', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'admissions_and_denials',
+					'content' => __( '[Respond to each numbered paragraph]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'affirmative_defenses',
+					'content' => $grounds ? $grounds : __( '[List affirmative defenses]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'prayer_for_relief',
+					'content' => __( 'WHEREFORE, Defendant requests dismissal with prejudice.', 'mcp-ai-wpoos-pro' ),
+				),
 				$certificate,
 			),
-			'motion_to_dismiss'              => array(
+			'motion_to_dismiss'           => array(
 				$caption,
-				array( 'section' => 'introduction', 'content' => __( 'Defendant moves to dismiss for failure to state a claim (FRCP 12(b)(6)).', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'statement_of_facts', 'content' => __( '[Relevant procedural and factual background]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'legal_standard', 'content' => __( 'A motion to dismiss under Rule 12(b)(6) tests the sufficiency of the complaint.', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'argument', 'content' => $grounds ?: __( '[Legal arguments for dismissal]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'conclusion', 'content' => __( 'For the foregoing reasons, the Court should grant this Motion to Dismiss.', 'mcp-ai-wpoos-pro' ) ),
+				array(
+					'section' => 'introduction',
+					'content' => __( 'Defendant moves to dismiss for failure to state a claim (FRCP 12(b)(6)).', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'statement_of_facts',
+					'content' => __( '[Relevant procedural and factual background]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'legal_standard',
+					'content' => __( 'A motion to dismiss under Rule 12(b)(6) tests the sufficiency of the complaint.', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'argument',
+					'content' => $grounds ? $grounds : __( '[Legal arguments for dismissal]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'conclusion',
+					'content' => __( 'For the foregoing reasons, the Court should grant this Motion to Dismiss.', 'mcp-ai-wpoos-pro' ),
+				),
 				$certificate,
 			),
-			'motion_for_summary_judgment'    => array(
+			'motion_for_summary_judgment' => array(
 				$caption,
-				array( 'section' => 'introduction', 'content' => __( 'Movant respectfully moves for summary judgment pursuant to FRCP 56.', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'statement_of_undisputed_facts', 'content' => __( '[Numbered undisputed material facts with citations]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'legal_standard', 'content' => __( 'Summary judgment is appropriate where there is no genuine dispute of material fact.', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'argument', 'content' => $grounds ?: __( '[Arguments why no genuine dispute exists]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'conclusion', 'content' => __( 'The Court should grant summary judgment in favor of Movant.', 'mcp-ai-wpoos-pro' ) ),
+				array(
+					'section' => 'introduction',
+					'content' => __( 'Movant respectfully moves for summary judgment pursuant to FRCP 56.', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'statement_of_undisputed_facts',
+					'content' => __( '[Numbered undisputed material facts with citations]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'legal_standard',
+					'content' => __( 'Summary judgment is appropriate where there is no genuine dispute of material fact.', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'argument',
+					'content' => $grounds ? $grounds : __( '[Arguments why no genuine dispute exists]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'conclusion',
+					'content' => __( 'The Court should grant summary judgment in favor of Movant.', 'mcp-ai-wpoos-pro' ),
+				),
 				$certificate,
 			),
-			'motion_to_compel'               => array(
+			'motion_to_compel'            => array(
 				$caption,
-				array( 'section' => 'introduction', 'content' => __( 'Movant moves to compel discovery responses pursuant to FRCP 37.', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'discovery_at_issue', 'content' => __( '[Describe discovery requests and deficient responses]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'meet_and_confer', 'content' => __( '[Describe good faith efforts to resolve the dispute]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'argument', 'content' => $grounds ?: __( '[Arguments why responses are deficient]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'conclusion', 'content' => __( 'The Court should compel complete responses and award reasonable expenses.', 'mcp-ai-wpoos-pro' ) ),
+				array(
+					'section' => 'introduction',
+					'content' => __( 'Movant moves to compel discovery responses pursuant to FRCP 37.', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'discovery_at_issue',
+					'content' => __( '[Describe discovery requests and deficient responses]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'meet_and_confer',
+					'content' => __( '[Describe good faith efforts to resolve the dispute]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'argument',
+					'content' => $grounds ? $grounds : __( '[Arguments why responses are deficient]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'conclusion',
+					'content' => __( 'The Court should compel complete responses and award reasonable expenses.', 'mcp-ai-wpoos-pro' ),
+				),
 				$certificate,
 			),
-			'motion_in_limine'               => array(
+			'motion_in_limine'            => array(
 				$caption,
-				array( 'section' => 'introduction', 'content' => __( 'Movant moves to exclude certain evidence at trial pursuant to FRE 402/403.', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'evidence_at_issue', 'content' => __( '[Describe evidence sought to be excluded]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'legal_standard', 'content' => __( 'Evidence that is irrelevant or whose probative value is substantially outweighed by prejudice should be excluded.', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'argument', 'content' => $grounds ?: __( '[Arguments for exclusion]', 'mcp-ai-wpoos-pro' ) ),
-				array( 'section' => 'conclusion', 'content' => __( 'The Court should exclude the identified evidence.', 'mcp-ai-wpoos-pro' ) ),
+				array(
+					'section' => 'introduction',
+					'content' => __( 'Movant moves to exclude certain evidence at trial pursuant to FRE 402/403.', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'evidence_at_issue',
+					'content' => __( '[Describe evidence sought to be excluded]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'legal_standard',
+					'content' => __( 'Evidence that is irrelevant or whose probative value is substantially outweighed by prejudice should be excluded.', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'argument',
+					'content' => $grounds ? $grounds : __( '[Arguments for exclusion]', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'section' => 'conclusion',
+					'content' => __( 'The Court should exclude the identified evidence.', 'mcp-ai-wpoos-pro' ),
+				),
 				$certificate,
 			),
 		);

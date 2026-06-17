@@ -13,12 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+	return;
+}
+
+require_once __DIR__ . '/class-wp-mcp-ai-cli-base-command.php';
+
 /**
  * Manage the Dead Letter Queue for failed jobs and webhooks.
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_CLI_DLQ {
+class WP_MCP_AI_CLI_DLQ extends WP_MCP_AI_CLI_Base_Command {
 	/**
 	 * List items in the dead letter queue.
 	 *
@@ -55,18 +61,19 @@ class WP_MCP_AI_CLI_DLQ {
 	 *     # Export to JSON
 	 *     $ wp mcp-ai dlq list --format=json
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function list_items( $args, $assoc_args ) {
 		if ( ! class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
-			WP_CLI::error( 'Dead Letter Queue class not found.' );
+			$this->error( __( 'Dead Letter Queue class not found.', 'mcp-ai-wpoos' ) );
 		}
 
 		$filters = array();
 
 		if ( isset( $assoc_args['type'] ) ) {
-			$filters['type'] = $assoc_args['type'];
+			$filters['type'] = sanitize_key( $assoc_args['type'] );
 		}
 
 		if ( isset( $assoc_args['dismissed'] ) ) {
@@ -76,11 +83,11 @@ class WP_MCP_AI_CLI_DLQ {
 		$items = WP_MCP_AI_Dead_Letter_Queue::get_all( $filters );
 
 		if ( empty( $items ) ) {
-			WP_CLI::success( 'No items in dead letter queue.' );
+			$this->info( __( 'No items in dead letter queue.', 'mcp-ai-wpoos' ) );
 			return;
 		}
 
-		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
+		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 
 		// Prepare items for display.
 		$display_items = array();
@@ -122,6 +129,7 @@ class WP_MCP_AI_CLI_DLQ {
 	 *     # Export stats as JSON
 	 *     $ wp mcp-ai dlq stats --format=json
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -188,34 +196,37 @@ class WP_MCP_AI_CLI_DLQ {
 	 *     # Retry a specific item
 	 *     $ wp mcp-ai dlq retry abc123def456
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function retry( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for CLI flags.
 		if ( ! class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
-			WP_CLI::error( 'Dead Letter Queue class not found.' );
+			$this->error( __( 'Dead Letter Queue class not found.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $args[0] ) ) {
-			WP_CLI::error( 'Item ID is required.' );
+			$this->error( __( 'Item ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
-		$item_id = $args[0];
+		$item_id = sanitize_key( $args[0] );
 		$item    = WP_MCP_AI_Dead_Letter_Queue::get( $item_id );
 
 		if ( ! $item ) {
-			WP_CLI::error( "Item '{$item_id}' not found in dead letter queue." );
+			/* translators: %s: item ID */
+			$this->error( sprintf( __( "Item '%s' not found in dead letter queue.", 'mcp-ai-wpoos' ), $item_id ) );
 		}
 
-		WP_CLI::log( "Retrying item: {$item['type']} - {$item['identifier']}" );
+		/* translators: 1: item type, 2: item identifier */
+		$this->info( sprintf( __( 'Retrying item: %1$s - %2$s', 'mcp-ai-wpoos' ), $item['type'], $item['identifier'] ) );
 
 		$result = WP_MCP_AI_Dead_Letter_Queue::retry( $item_id );
 
 		if ( is_wp_error( $result ) ) {
-			WP_CLI::error( $result->get_error_message() );
+			$this->error( $result->get_error_message() );
 		}
 
-		WP_CLI::success( 'Item successfully retried and removed from queue.' );
+		$this->success( __( 'Item successfully retried and removed from queue.', 'mcp-ai-wpoos' ) );
 	}
 
 	/**
@@ -231,32 +242,34 @@ class WP_MCP_AI_CLI_DLQ {
 	 *     # Dismiss a specific item
 	 *     $ wp mcp-ai dlq dismiss abc123def456
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function dismiss( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for CLI flags.
 		if ( ! class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
-			WP_CLI::error( 'Dead Letter Queue class not found.' );
+			$this->error( __( 'Dead Letter Queue class not found.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $args[0] ) ) {
-			WP_CLI::error( 'Item ID is required.' );
+			$this->error( __( 'Item ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
-		$item_id = $args[0];
+		$item_id = sanitize_key( $args[0] );
 		$item    = WP_MCP_AI_Dead_Letter_Queue::get( $item_id );
 
 		if ( ! $item ) {
-			WP_CLI::error( "Item '{$item_id}' not found in dead letter queue." );
+			/* translators: %s: item ID */
+			$this->error( sprintf( __( "Item '%s' not found in dead letter queue.", 'mcp-ai-wpoos' ), $item_id ) );
 		}
 
 		$result = WP_MCP_AI_Dead_Letter_Queue::dismiss( $item_id );
 
 		if ( ! $result ) {
-			WP_CLI::error( 'Failed to dismiss item.' );
+			$this->error( __( 'Failed to dismiss item.', 'mcp-ai-wpoos' ) );
 		}
 
-		WP_CLI::success( 'Item dismissed.' );
+		$this->success( __( 'Item dismissed.', 'mcp-ai-wpoos' ) );
 	}
 
 	/**
@@ -278,37 +291,41 @@ class WP_MCP_AI_CLI_DLQ {
 	 *     # Remove without confirmation
 	 *     $ wp mcp-ai dlq delete abc123def456 --yes
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function delete( $args, $assoc_args ) {
 		if ( ! class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
-			WP_CLI::error( 'Dead Letter Queue class not found.' );
+			$this->error( __( 'Dead Letter Queue class not found.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $args[0] ) ) {
-			WP_CLI::error( 'Item ID is required.' );
+			$this->error( __( 'Item ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
-		$item_id = $args[0];
+		$item_id = sanitize_key( $args[0] );
 		$item    = WP_MCP_AI_Dead_Letter_Queue::get( $item_id );
 
 		if ( ! $item ) {
-			WP_CLI::error( "Item '{$item_id}' not found in dead letter queue." );
+			/* translators: %s: item ID */
+			$this->error( sprintf( __( "Item '%s' not found in dead letter queue.", 'mcp-ai-wpoos' ), $item_id ) );
 		}
 
 		// Confirm deletion unless --yes flag is provided.
-		if ( ! isset( $assoc_args['yes'] ) ) {
-			WP_CLI::confirm( "Are you sure you want to delete item '{$item_id}'?", $assoc_args );
+		$yes = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
+		if ( ! $yes ) {
+			/* translators: %s: item ID */
+			WP_CLI::confirm( sprintf( __( "Are you sure you want to delete item '%s'?", 'mcp-ai-wpoos' ), $item_id ), $assoc_args );
 		}
 
 		$result = WP_MCP_AI_Dead_Letter_Queue::remove( $item_id );
 
 		if ( ! $result ) {
-			WP_CLI::error( 'Failed to remove item.' );
+			$this->error( __( 'Failed to remove item.', 'mcp-ai-wpoos' ) );
 		}
 
-		WP_CLI::success( 'Item removed from dead letter queue.' );
+		$this->success( __( 'Item removed from dead letter queue.', 'mcp-ai-wpoos' ) );
 	}
 
 	/**
@@ -322,6 +339,9 @@ class WP_MCP_AI_CLI_DLQ {
 	 * default: 30
 	 * ---
 	 *
+	 * [--dry-run]
+	 * : Preview items that would be purged without removing them.
+	 *
 	 * [--yes]
 	 * : Skip confirmation prompt.
 	 *
@@ -333,35 +353,54 @@ class WP_MCP_AI_CLI_DLQ {
 	 *     # Purge items older than 7 days
 	 *     $ wp mcp-ai dlq purge --days=7
 	 *
+	 *     # Preview what would be purged
+	 *     $ wp mcp-ai dlq purge --dry-run
+	 *
 	 *     # Purge without confirmation
 	 *     $ wp mcp-ai dlq purge --yes
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function purge( $args, $assoc_args ) {
 		if ( ! class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
-			WP_CLI::error( 'Dead Letter Queue class not found.' );
+			$this->error( __( 'Dead Letter Queue class not found.', 'mcp-ai-wpoos' ) );
 		}
 
-		$days = isset( $assoc_args['days'] ) ? absint( $assoc_args['days'] ) : 30;
+		$days    = absint( \WP_CLI\Utils\get_flag_value( $assoc_args, 'days', 30 ) );
+		$yes     = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
+		$dry_run = $this->is_dry_run( $assoc_args );
+
+		if ( $dry_run ) {
+			$this->dry_run_notice();
+			/* translators: %d: number of days */
+			$this->info( sprintf( __( 'Would purge items older than %d days.', 'mcp-ai-wpoos' ), $days ) );
+			return;
+		}
 
 		// Confirm purge unless --yes flag is provided.
-		if ( ! isset( $assoc_args['yes'] ) ) {
-			WP_CLI::confirm( "Are you sure you want to purge items older than {$days} days?", $assoc_args );
+		if ( ! $yes ) {
+			/* translators: %d: number of days */
+			WP_CLI::confirm( sprintf( __( 'Are you sure you want to purge items older than %d days?', 'mcp-ai-wpoos' ), $days ), $assoc_args );
 		}
 
-		WP_CLI::log( "Purging items older than {$days} days..." );
+		/* translators: %d: number of days */
+		$this->info( sprintf( __( 'Purging items older than %d days...', 'mcp-ai-wpoos' ), $days ) );
 
 		$purged = WP_MCP_AI_Dead_Letter_Queue::purge_old( $days );
 
-		WP_CLI::success( "Purged {$purged} items from dead letter queue." );
+		/* translators: %d: number of purged items */
+		$this->success( sprintf( __( 'Purged %d items from dead letter queue.', 'mcp-ai-wpoos' ), $purged ) );
 	}
 
 	/**
 	 * Clear all items from the dead letter queue.
 	 *
 	 * ## OPTIONS
+	 *
+	 * [--dry-run]
+	 * : Preview how many items would be cleared without removing them.
 	 *
 	 * [--yes]
 	 * : Skip confirmation prompt.
@@ -371,26 +410,41 @@ class WP_MCP_AI_CLI_DLQ {
 	 *     # Clear all items
 	 *     $ wp mcp-ai dlq clear --yes
 	 *
+	 *     # Preview what would be cleared
+	 *     $ wp mcp-ai dlq clear --dry-run
+	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function clear( $args, $assoc_args ) {
 		if ( ! class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
-			WP_CLI::error( 'Dead Letter Queue class not found.' );
+			$this->error( __( 'Dead Letter Queue class not found.', 'mcp-ai-wpoos' ) );
 		}
 
-		// Confirm clear unless --yes flag is provided.
-		if ( ! isset( $assoc_args['yes'] ) ) {
-			WP_CLI::confirm( 'Are you sure you want to clear ALL items from the dead letter queue?', $assoc_args );
-		}
+		$yes     = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
+		$dry_run = $this->is_dry_run( $assoc_args );
 
 		$items = WP_MCP_AI_Dead_Letter_Queue::get_all();
 		$count = count( $items );
+
+		if ( $dry_run ) {
+			$this->dry_run_notice();
+			/* translators: %d: number of items */
+			$this->info( sprintf( __( 'Would clear %d items from dead letter queue.', 'mcp-ai-wpoos' ), $count ) );
+			return;
+		}
+
+		// Confirm clear unless --yes flag is provided.
+		if ( ! $yes ) {
+			WP_CLI::confirm( __( 'Are you sure you want to clear ALL items from the dead letter queue?', 'mcp-ai-wpoos' ), $assoc_args );
+		}
 
 		foreach ( $items as $item ) {
 			WP_MCP_AI_Dead_Letter_Queue::remove( $item['id'] );
 		}
 
-		WP_CLI::success( "Cleared {$count} items from dead letter queue." );
+		/* translators: %d: number of cleared items */
+		$this->success( sprintf( __( 'Cleared %d items from dead letter queue.', 'mcp-ai-wpoos' ), $count ) );
 	}
 }

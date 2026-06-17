@@ -7,4 +7,4 @@ exports.VERSION = void 0;
  * @see [Documentation](https://remotion.dev/docs/version)
  * @returns {string} The current version of the remotion package
  */
-exports.VERSION = '4.0.436';
+exports.VERSION = '4.0.459';

@@ -244,6 +244,7 @@ class NV_oOS_Graphify_DB {
 	 *
 	 * @since 0.5.0
 	 *
+	// phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Nested parameter documentation uses { syntax.
 	 * @param array $node {
 	 *     @type string $node_id      Unique identifier (sha256 of label+type or post_id prefix).
 	 *     @type string $label        Human-readable name.
@@ -426,6 +427,7 @@ class NV_oOS_Graphify_DB {
 	 *
 	 * @since 0.5.0
 	 *
+	// phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Nested parameter documentation uses { syntax.
 	 * @param array $args {
 	 *     @type string $type         Node type filter.
 	 *     @type string $community_id Community filter.
@@ -552,6 +554,7 @@ class NV_oOS_Graphify_DB {
 	 *
 	 * @since 0.5.0
 	 *
+	// phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Nested parameter documentation uses { syntax.
 	 * @param array $edge {
 	 *     @type string $source_node_id Source node identifier.
 	 *     @type string $target_node_id Target node identifier.
@@ -892,6 +895,7 @@ class NV_oOS_Graphify_DB {
 	 *
 	 * @since 0.6.0
 	 *
+	// phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Nested parameter documentation uses { syntax.
 	 * @param array $data {
 	 *     @type string $slug    Source slug (required).
 	 *     @type string $driver  Driver type slug (required).
@@ -986,6 +990,7 @@ class NV_oOS_Graphify_DB {
 	 *
 	 * @since 0.6.0
 	 *
+	// phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Nested parameter documentation uses { syntax.
 	 * @param array $args {
 	 *     @type int $enabled Filter by enabled status (1 or 0). Omit for all.
 	 * }
@@ -1068,6 +1073,7 @@ class NV_oOS_Graphify_DB {
 	 *
 	 * @since 0.6.0
 	 *
+	// phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Nested parameter documentation uses { syntax.
 	 * @param array $data {
 	 *     @type string $node_id Node identifier.
 	 *     @type string $model   Model identifier.

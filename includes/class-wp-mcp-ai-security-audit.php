@@ -82,7 +82,7 @@ class WP_MCP_AI_Security_Audit {
 	 * Constructor
 	 */
 	private function __construct() {
-		$this->register_post_type();
+		add_action( 'init', array( $this, 'register_post_type' ) );
 		$this->schedule_audits();
 		add_action( 'wp_mcp_ai_quarterly_audit', array( $this, 'trigger_quarterly_audit' ) );
 		add_action( 'admin_init', array( $this, 'register_meta_boxes' ) );
@@ -278,7 +278,10 @@ class WP_MCP_AI_Security_Audit {
 				<?php endforeach; ?>
 			</div>
 		</div>
-		<script type="text/javascript">
+		<?php
+		$confirm_text = wp_json_encode( __( 'Are you sure you want to remove this finding?', 'mcp-ai-wpoos' ) );
+		ob_start();
+		?>
 		jQuery(document).ready(function($) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Integer count value is safe to output in JavaScript.
 			let findingIndex = <?php echo absint( count( $findings ) ); ?>;
@@ -291,31 +294,24 @@ class WP_MCP_AI_Security_Audit {
 			});
 
 			$(document).on('click', '.wp-mcp-ai-remove-finding', function() {
-				if (confirm('<?php esc_html_e( 'Are you sure you want to remove this finding?', 'mcp-ai-wpoos' ); ?>')) {
+				if (confirm(<?php echo wp_json_encode( __( 'Are you sure you want to remove this finding?', 'mcp-ai-wpoos' ) ); ?>)) {
 					$(this).closest('.wp-mcp-ai-finding-row').remove();
 				}
 			});
 		});
-		</script>
-		<style>
-		.wp-mcp-ai-finding-row {
-			border: 1px solid #ccd0d4;
-			padding: 15px;
-			margin-bottom: 15px;
-			background: #f9f9f9;
-		}
-		.wp-mcp-ai-finding-row h4 {
-			margin-top: 0;
-		}
-		.wp-mcp-ai-finding-field {
-			margin-bottom: 10px;
-		}
-		.wp-mcp-ai-finding-field label {
-			display: inline-block;
-			width: 150px;
-			font-weight: 600;
-		}
-		</style>
+		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+		?>
+		<?php
+		wp_add_inline_style(
+			'wp-mcp-ai-security-audit',
+			'.wp-mcp-ai-finding-row{border:1px solid #ccd0d4;padding:15px;margin-bottom:15px;background:#f9f9f9;}'
+			. '.wp-mcp-ai-finding-row h4{margin-top:0;}'
+			. '.wp-mcp-ai-finding-field{margin-bottom:10px;}'
+			. '.wp-mcp-ai-finding-field label{display:inline-block;width:150px;font-weight:600;}'
+		);
+		?>
 		<?php
 	}
 

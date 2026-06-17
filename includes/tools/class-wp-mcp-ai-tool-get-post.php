@@ -68,6 +68,13 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -112,19 +119,19 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 
 		$result = array(
 			'ID'             => $post->ID,
-			'post_type'      => $post->post_type,
+			'post_type'      => esc_html( $post->post_type ),
 			'title'          => get_the_title( $post ),
-			'content'        => $post->post_content,
-			'excerpt'        => $post->post_excerpt,
-			'status'         => $post->post_status,
+			'content'        => wp_kses_post( $post->post_content ),
+			'excerpt'        => wp_kses_post( $post->post_excerpt ),
+			'status'         => esc_html( $post->post_status ),
 			'author_id'      => (int) $post->post_author,
 			'date'           => get_the_date( DATE_W3C, $post ),
 			'modified'       => get_the_modified_date( DATE_W3C, $post ),
-			'slug'           => $post->post_name,
+			'slug'           => esc_html( $post->post_name ),
 			'parent_id'      => (int) $post->post_parent,
 			'menu_order'     => (int) $post->menu_order,
-			'comment_status' => $post->comment_status,
-			'permalink'      => get_permalink( $post ),
+			'comment_status' => esc_html( $post->comment_status ),
+			'permalink'      => esc_url( get_permalink( $post ) ),
 		);
 
 		$edit_link = get_edit_post_link( $post_id, '' );

@@ -144,6 +144,7 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 		// Save the conversation via transcript recorder.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', self::$assistant_id );
 		$request->set_param( 'session_key', self::$session_key );
 		$request->set_param( 'messages', $messages );
@@ -155,6 +156,7 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 		// Retrieve the conversation.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', self::$user_id );
 		$request->set_param( 'session_key', self::$session_key );
 
@@ -232,6 +234,7 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 		// Save conversation for assistant 1.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', self::$assistant_id );
 		$request->set_param( 'session_key', $session_key_1 );
 		$request->set_param( 'messages', $messages_1 );
@@ -239,6 +242,7 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 		// Save conversation for assistant 2.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', self::$assistant_id_2 );
 		$request->set_param( 'session_key', $session_key_2 );
 		$request->set_param( 'messages', $messages_2 );
@@ -246,6 +250,7 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 		// Test 2a: Filter by assistant_id (should only return assistant 1 conversations).
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', self::$user_id );
 		$request->set_param( 'assistant_id', self::$assistant_id );
 
@@ -261,6 +266,7 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 		// Test 2b: No filter (should return both).
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', self::$user_id );
 
 		$response = $this->rest_api->handle_chat_transcripts( $request );
@@ -270,6 +276,7 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 		// Test 2c: Pagination with per_page.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', self::$user_id );
 		$request->set_param( 'per_page', 1 );
 
@@ -329,6 +336,7 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 		// Save the conversation.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', self::$assistant_id );
 		$request->set_param( 'session_key', $session_key );
 		$request->set_param( 'messages', $messages );
@@ -338,6 +346,7 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 		// Load the conversation back.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', self::$user_id );
 		$request->set_param( 'session_key', $session_key );
 
@@ -417,6 +426,7 @@ class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 
 		// Retrieve a session and verify metadata fields.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', self::$user_id );
 		$request->set_param( 'session_key', self::$session_key );
 

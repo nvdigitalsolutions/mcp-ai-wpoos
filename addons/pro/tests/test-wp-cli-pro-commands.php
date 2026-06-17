@@ -56,7 +56,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// Pro CLI file existence checks
+	// Pro CLI file existence checks.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -94,7 +94,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// Toolkit command logic
+	// Toolkit command logic.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -106,8 +106,8 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Simulate what the toolkit enable command does.
-		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_crm_toolkit']   = '1';
+		$settings                       = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_crm_toolkit'] = '1';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$stored = get_option( 'wp_mcp_ai_settings', array() );
@@ -167,7 +167,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_all_connections returns an array (possibly empty).
+	 * Get_all_connections returns an array (possibly empty).
 	 */
 	public function test_connection_get_all_returns_array() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -179,7 +179,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_connection returns null for a non-existent ID.
+	 * Get_connection returns null for a non-existent ID.
 	 */
 	public function test_connection_get_returns_null_for_missing_id() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -221,11 +221,11 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// Project command logic
+	// Project command logic.
 	// -----------------------------------------------------------------------
 
 	/**
-	 * mcp_ai_project CPT is registered.
+	 * Mcp_ai_project CPT is registered.
 	 */
 	public function test_project_cpt_is_registered() {
 		$this->assertTrue(
@@ -239,7 +239,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	 */
 	public function test_project_crud() {
 		// Enable project management.
-		$settings                           = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_project_management'] = '1';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -275,7 +275,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	 * Project list query returns inserted project.
 	 */
 	public function test_project_list_query() {
-		$id = wp_insert_post(
+		$id                    = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_project',
 				'post_title'  => 'Query Test Project',
@@ -296,11 +296,11 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// Task command logic
+	// Task command logic.
 	// -----------------------------------------------------------------------
 
 	/**
-	 * mcp_ai_task CPT is registered.
+	 * Mcp_ai_task CPT is registered.
 	 */
 	public function test_task_cpt_is_registered() {
 		$this->assertTrue(
@@ -314,12 +314,12 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	 */
 	public function test_task_create_with_meta() {
 		// Enable project management.
-		$settings                           = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_project_management'] = '1';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Create a parent project.
-		$project_id = wp_insert_post(
+		$project_id            = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_project',
 				'post_title'  => 'Parent Project',
@@ -329,7 +329,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 		$this->created_posts[] = $project_id;
 
 		// Create a task.
-		$task_id = wp_insert_post(
+		$task_id               = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_task',
 				'post_title'  => 'Write unit tests',
@@ -351,7 +351,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	 * Completing a task via update_post_meta works as expected.
 	 */
 	public function test_task_complete_updates_status() {
-		$task_id = wp_insert_post(
+		$task_id               = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_task',
 				'post_title'  => 'A pending task',
@@ -372,7 +372,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	 * Task list can be filtered by _task_project_id meta.
 	 */
 	public function test_task_list_filter_by_project() {
-		$project_a = wp_insert_post(
+		$project_a             = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_project',
 				'post_title'  => 'Project A',
@@ -381,7 +381,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 		);
 		$this->created_posts[] = $project_a;
 
-		$task_a = wp_insert_post(
+		$task_a                = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_task',
 				'post_title'  => 'Task A',
@@ -391,7 +391,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 		$this->created_posts[] = $task_a;
 		update_post_meta( $task_a, '_task_project_id', $project_a );
 
-		$task_b = wp_insert_post(
+		$task_b                = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_task',
 				'post_title'  => 'Task B (different project)',
@@ -421,7 +421,7 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// Pro status command logic
+	// Pro status command logic.
 	// -----------------------------------------------------------------------
 
 	/**

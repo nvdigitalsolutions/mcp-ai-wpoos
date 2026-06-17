@@ -22,6 +22,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Graphify_Tool_Retrieve_Context implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	/** {@inheritdoc} */
 	public function get_slug() {
 		return 'graphify_retrieve_context';
@@ -42,26 +51,26 @@ class NV_oOS_Graphify_Tool_Retrieve_Context implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'question'     => array(
+				'question'      => array(
 					'type'        => 'string',
 					'description' => __( 'The question or topic to retrieve context for.', 'nvoos-graphify' ),
 					'maxLength'   => 1000,
 				),
-				'hops'         => array(
+				'hops'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of graph hops from seed nodes for traversal (1-3).', 'nvoos-graphify' ),
 					'minimum'     => 1,
 					'maximum'     => 3,
 					'default'     => 2,
 				),
-				'k'            => array(
+				'k'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of nodes to return (1-20).', 'nvoos-graphify' ),
 					'minimum'     => 1,
 					'maximum'     => 20,
 					'default'     => 10,
 				),
-				'use_vectors'  => array(
+				'use_vectors'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Use vector similarity search in addition to text search (requires embeddings to be indexed).', 'nvoos-graphify' ),
 					'default'     => false,
@@ -82,7 +91,13 @@ class NV_oOS_Graphify_Tool_Retrieve_Context implements WP_MCP_AI_Tool_Interface,
 		return array( 'read-only', 'cacheable', 'external-api' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$question      = sanitize_text_field( $arguments['question'] ?? '' );
 		$hops          = max( 1, min( 3, absint( $arguments['hops'] ?? 2 ) ) );
@@ -91,7 +106,10 @@ class NV_oOS_Graphify_Tool_Retrieve_Context implements WP_MCP_AI_Tool_Interface,
 		$include_edges = isset( $arguments['include_edges'] ) ? (bool) $arguments['include_edges'] : true;
 
 		if ( empty( $question ) ) {
-			return array( 'success' => false, 'error' => __( 'Question is required.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'Question is required.', 'nvoos-graphify' ),
+			);
 		}
 
 		// Cache check.
@@ -135,21 +153,23 @@ class NV_oOS_Graphify_Tool_Retrieve_Context implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Step 3: BFS traversal up to $hops.
-		$all_nodes  = $node_ids;
-		$frontier   = array_keys( $node_ids );
-		for ( $hop = 0; $hop < $hops && ! empty( $frontier ) && count( $all_nodes ) < $k; $hop++ ) {
+		$all_nodes = $node_ids;
+		$frontier  = array_keys( $node_ids );
+		$all_count = count( $all_nodes );
+		for ( $hop = 0; $hop < $hops && ! empty( $frontier ) && $all_count < $k; $hop++ ) {
 			$next_frontier = array();
 			foreach ( $frontier as $nid ) {
-				if ( count( $all_nodes ) >= $k ) {
+				if ( $all_count >= $k ) {
 					break;
 				}
 				$neighbor_ids = NV_oOS_Graphify_DB::get_neighbor_ids( $nid );
 				foreach ( $neighbor_ids as $neighbor_id ) {
-					if ( ! isset( $all_nodes[ $neighbor_id ] ) && count( $all_nodes ) < $k ) {
+					if ( ! isset( $all_nodes[ $neighbor_id ] ) && $all_count < $k ) {
 						$n = NV_oOS_Graphify_DB::get_node( $neighbor_id );
 						if ( $n ) {
 							$all_nodes[ $neighbor_id ] = $n;
 							$next_frontier[]           = $neighbor_id;
+							$all_count                 = count( $all_nodes );
 						}
 					}
 				}
@@ -242,9 +262,9 @@ class NV_oOS_Graphify_Tool_Retrieve_Context implements WP_MCP_AI_Tool_Interface,
 			}
 
 			foreach ( $edges as $edge ) {
-				$src = is_object( $edge ) ? $edge->source_node_id : ( $edge['source_node_id'] ?? '' );
-				$tgt = is_object( $edge ) ? $edge->target_node_id : ( $edge['target_node_id'] ?? '' );
-				$rel = is_object( $edge ) ? $edge->relation : ( $edge['relation'] ?? '' );
+				$src       = is_object( $edge ) ? $edge->source_node_id : ( $edge['source_node_id'] ?? '' );
+				$tgt       = is_object( $edge ) ? $edge->target_node_id : ( $edge['target_node_id'] ?? '' );
+				$rel       = is_object( $edge ) ? $edge->relation : ( $edge['relation'] ?? '' );
 				$src_label = isset( $node_labels[ $src ] ) ? $node_labels[ $src ] : $src;
 				$tgt_label = isset( $node_labels[ $tgt ] ) ? $node_labels[ $tgt ] : $tgt;
 				$lines[]   = sprintf( '- %s → **%s** → %s', $src_label, $rel, $tgt_label );

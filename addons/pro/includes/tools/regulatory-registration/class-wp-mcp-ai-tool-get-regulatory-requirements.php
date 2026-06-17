@@ -113,8 +113,23 @@ class WP_MCP_AI_Tool_Get_Regulatory_Requirements implements WP_MCP_AI_Tool_Inter
 	/**
 	 * {@inheritdoc}
 	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 * @param array $context   Execution context.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.

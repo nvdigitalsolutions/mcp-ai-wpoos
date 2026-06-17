@@ -604,9 +604,9 @@ class WP_MCP_AI_REST_Validator {
 			$provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
 		}
 
-		$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
+		$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ) );
 		if ( ! is_array( $allowed_providers ) ) {
-			$allowed_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$allowed_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' );
 		}
 
 		if ( ! in_array( $provider, $allowed_providers, true ) ) {
@@ -775,6 +775,60 @@ class WP_MCP_AI_REST_Validator {
 		// providers like LM Studio which explicitly disable streaming to prevent chunked responses.
 		if ( isset( $options['stream'] ) ) {
 			unset( $options['stream'] );
+		}
+
+		// --- Prompt Caching options ---
+		// When the assistant has prompt caching enabled, inject cache_system_prompt
+		// flag so provider clients (Anthropic) can add cache_control breakpoints.
+		if ( ! empty( $assistant_config['prompt_caching'] ) ) {
+			$options['cache_system_prompt'] = true;
+		}
+
+		// Generate a stable prompt_cache_key from assistant_id + system_prompt hash.
+		// This routes requests with the same prefix to the same server for higher
+		// cache hit rates on OpenAI, DeepSeek, and OpenRouter.
+		if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $options['system_prompt'] ) ) {
+			$assistant_id = isset( $assistant_config['ID'] ) ? (int) $assistant_config['ID'] : 0;
+			// Use the first 256 chars of system prompt as the stable prefix identifier.
+			$prompt_prefix = substr( $options['system_prompt'], 0, 256 );
+			$options['prompt_cache_key'] = 'wp_mcp_ai_' . $assistant_id . '_' . md5( $prompt_prefix );
+		}
+
+		// Allow prompt cache retention to be overridden per-request or per-assistant.
+		if ( ! empty( $options['prompt_cache_retention'] ) ) {
+			$retention = sanitize_key( $options['prompt_cache_retention'] );
+			if ( in_array( $retention, array( 'in_memory', '24h' ), true ) ) {
+				$options['prompt_cache_retention'] = $retention;
+			} else {
+				unset( $options['prompt_cache_retention'] );
+			}
+		} elseif ( ! empty( $assistant_config['prompt_cache_retention'] ) ) {
+			$retention = sanitize_key( $assistant_config['prompt_cache_retention'] );
+			if ( in_array( $retention, array( 'in_memory', '24h' ), true ) ) {
+				$options['prompt_cache_retention'] = $retention;
+			}
+		}
+
+		// Apply prompt cache optimization: ensure messages are ordered for cache hits.
+		// This is done in sanitize_options so all code paths benefit.
+		if ( ! empty( $options['cache_system_prompt'] ) && class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
+			// Store original order context for logging.
+			if ( ! empty( $options['system_prompt'] ) ) {
+				$split = WP_MCP_AI_Prompt_Optimizer::split_system_prompt( $options['system_prompt'] );
+				if ( ! empty( $split['dynamic_context'] ) ) {
+					// Log that we detected dynamic context for cache optimization.
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'prompt_cache_split',
+							'System prompt split for cache optimization',
+							array(
+								'static_core_length'  => strlen( $split['static_core'] ),
+								'dynamic_context_length' => strlen( $split['dynamic_context'] ),
+							)
+						);
+					}
+				}
+			}
 		}
 
 		return $options;

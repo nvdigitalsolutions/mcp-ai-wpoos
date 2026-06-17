@@ -104,6 +104,55 @@
 				"jsdoc/check-line-alignment": "off",
 				"jsdoc/empty-tags": "off"
 			}
+		},
+		{
+			"files": [
+				"assets/js/src/**/*.ts",
+				"assets/js/src/**/*.tsx"
+			],
+			"parser": "@typescript-eslint/parser",
+			"parserOptions": {
+				"project": "./tsconfig.json",
+				"ecmaVersion": 2020,
+				"sourceType": "module"
+			},
+			"extends": [
+				"plugin:@typescript-eslint/recommended"
+			],
+			"rules": {
+				"no-console": "off",
+				"camelcase": "off",
+				"@typescript-eslint/no-explicit-any": "warn",
+				"@typescript-eslint/explicit-function-return-type": "off",
+				"@typescript-eslint/no-unused-vars": [
+					"error",
+					{
+						"argsIgnorePattern": "^_",
+						"varsIgnorePattern": "^_"
+					}
+				],
+				"@typescript-eslint/naming-convention": [
+					"error",
+					{
+						"selector": "variable",
+						"format": ["camelCase", "UPPER_CASE"],
+						"leadingUnderscore": "allow"
+					},
+					{
+						"selector": "function",
+						"format": ["camelCase", "PascalCase"]
+					},
+					{
+						"selector": "typeLike",
+						"format": ["PascalCase"]
+					},
+					{
+						"selector": "default",
+						"format": ["camelCase"],
+						"leadingUnderscore": "allow"
+					}
+				]
+			}
 		}
 	]
 }

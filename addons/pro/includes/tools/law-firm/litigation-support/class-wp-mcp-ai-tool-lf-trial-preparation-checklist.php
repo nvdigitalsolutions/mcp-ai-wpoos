@@ -24,6 +24,13 @@ class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_In
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -112,6 +119,9 @@ class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_In
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -292,26 +302,26 @@ class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_In
 			),
 		);
 
-		$specific = $area_items[ $practice_area ] ?? array();
+		$specific  = $area_items[ $practice_area ] ?? array();
 		$all_items = array_merge( $core_items, $specific );
 
 		// Build checklist with IDs and completion tracking.
 		$checklist = array(
-			'matter_id'      => $matter_id,
-			'practice_area'  => $practice_area,
-			'trial_date'     => $trial_date,
-			'generated_at'   => current_time( 'Y-m-d H:i:s' ),
-			'generated_by'   => get_current_user_id(),
-			'items'          => array(),
+			'matter_id'     => $matter_id,
+			'practice_area' => $practice_area,
+			'trial_date'    => $trial_date,
+			'generated_at'  => current_time( 'Y-m-d H:i:s' ),
+			'generated_by'  => get_current_user_id(),
+			'items'         => array(),
 		);
 
 		foreach ( $all_items as $idx => $item ) {
 			$checklist['items'][] = array(
-				'item_id'   => 'chk_' . ( $idx + 1 ) . '_' . substr( wp_generate_uuid4(), 0, 8 ),
-				'category'  => $item['category'],
-				'task'      => $item['task'],
-				'deadline'  => $item['deadline'],
-				'completed' => false,
+				'item_id'      => 'chk_' . ( $idx + 1 ) . '_' . substr( wp_generate_uuid4(), 0, 8 ),
+				'category'     => $item['category'],
+				'task'         => $item['task'],
+				'deadline'     => $item['deadline'],
+				'completed'    => false,
 				'completed_at' => null,
 			);
 		}
@@ -344,21 +354,24 @@ class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_In
 			return new WP_Error( 'not_found', __( 'No trial checklist found for this matter. Use the generate action first.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$items     = $checklist['items'] ?? array();
-		$total     = count( $items );
-		$completed = 0;
+		$items       = $checklist['items'] ?? array();
+		$total       = count( $items );
+		$completed   = 0;
 		$by_category = array();
 		foreach ( $items as $item ) {
 			if ( ! empty( $item['completed'] ) ) {
-				$completed++;
+				++$completed;
 			}
 			$cat = $item['category'] ?? __( 'Uncategorized', 'mcp-ai-wpoos-pro' );
 			if ( ! isset( $by_category[ $cat ] ) ) {
-				$by_category[ $cat ] = array( 'total' => 0, 'completed' => 0 );
+				$by_category[ $cat ] = array(
+					'total'     => 0,
+					'completed' => 0,
+				);
 			}
-			$by_category[ $cat ]['total']++;
+			++$by_category[ $cat ]['total'];
 			if ( ! empty( $item['completed'] ) ) {
-				$by_category[ $cat ]['completed']++;
+				++$by_category[ $cat ]['completed'];
 			}
 		}
 
@@ -414,8 +427,8 @@ class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_In
 			if ( ( $item['item_id'] ?? '' ) === $item_id ) {
 				$item['completed']    = $completed;
 				$item['completed_at'] = $completed ? current_time( 'Y-m-d H:i:s' ) : null;
-				$found        = true;
-				$updated_item = $item;
+				$found                = true;
+				$updated_item         = $item;
 				break;
 			}
 		}
@@ -428,11 +441,11 @@ class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_In
 		update_post_meta( $matter_id, $meta_key, $checklist );
 
 		// Recalculate progress.
-		$total     = count( $checklist['items'] );
-		$done      = 0;
+		$total = count( $checklist['items'] );
+		$done  = 0;
 		foreach ( $checklist['items'] as $i ) {
 			if ( ! empty( $i['completed'] ) ) {
-				$done++;
+				++$done;
 			}
 		}
 		$progress = $total > 0 ? round( ( $done / $total ) * 100, 1 ) : 0;

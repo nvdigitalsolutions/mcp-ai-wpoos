@@ -87,6 +87,13 @@ class WP_MCP_AI_Tool_Export_CCDA_Document implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -105,18 +112,18 @@ class WP_MCP_AI_Tool_Export_CCDA_Document implements WP_MCP_AI_Tool_Interface, W
 			return new WP_Error( 'wp_mcp_ai_member_not_found', __( 'Member not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$first    = (string) get_post_meta( $member_id, '_member_first_name', true );
-		$last     = (string) get_post_meta( $member_id, '_member_last_name', true );
-		$dob      = (string) get_post_meta( $member_id, '_member_date_of_birth', true );
-		$gender   = (string) get_post_meta( $member_id, '_member_gender', true );
-		$mrn      = (string) get_post_meta( $member_id, '_member_mrn', true );
+		$first  = (string) get_post_meta( $member_id, '_member_first_name', true );
+		$last   = (string) get_post_meta( $member_id, '_member_last_name', true );
+		$dob    = (string) get_post_meta( $member_id, '_member_date_of_birth', true );
+		$gender = (string) get_post_meta( $member_id, '_member_gender', true );
+		$mrn    = (string) get_post_meta( $member_id, '_member_mrn', true );
 
 		$allergies = $this->fetch_titles( 'mcp_ai_allergy', '_allergy_member_id', $member_id );
 		$meds      = $this->fetch_titles( 'mcp_ai_prescription', '_prescription_member_id', $member_id );
 		$problems  = $this->fetch_titles( 'mcp_ai_med_record', '_medical_record_member_id', $member_id );
 		$immun     = $this->fetch_titles( 'mcp_ai_vaccination_record', '_record_member_id', $member_id );
 
-		$now = gmdate( 'YmdHis' );
+		$now  = gmdate( 'YmdHis' );
 		$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 		$xml .= '<ClinicalDocument xmlns="urn:hl7-org:v3">' . "\n";
 		$xml .= '  <realmCode code="US"/>' . "\n";
@@ -139,7 +146,7 @@ class WP_MCP_AI_Tool_Export_CCDA_Document implements WP_MCP_AI_Tool_Interface, W
 		$xml .= '    <patient>' . "\n";
 		$xml .= '      <name><given>' . esc_html( $first ) . '</given><family>' . esc_html( $last ) . '</family></name>' . "\n";
 		if ( '' !== $gender ) {
-			$g = strtoupper( substr( $gender, 0, 1 ) );
+			$g    = strtoupper( substr( $gender, 0, 1 ) );
 			$xml .= '      <administrativeGenderCode code="' . esc_attr( $g ) . '" codeSystem="2.16.840.1.113883.5.1"/>' . "\n";
 		}
 		if ( '' !== $dob ) {
@@ -207,11 +214,14 @@ class WP_MCP_AI_Tool_Export_CCDA_Document implements WP_MCP_AI_Tool_Interface, W
 				'post_status'    => 'publish',
 				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				'meta_query'     => array(
-					array( 'key' => $meta_key, 'value' => $member_id ),
+					array(
+						'key'   => $meta_key,
+						'value' => $member_id,
+					),
 				),
 			)
 		);
-		$out = array();
+		$out   = array();
 		foreach ( $query->posts as $p ) {
 			$out[] = (string) $p->post_title;
 		}

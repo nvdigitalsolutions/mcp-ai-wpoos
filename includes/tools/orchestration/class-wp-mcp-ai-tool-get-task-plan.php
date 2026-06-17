@@ -21,6 +21,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Get_Task_Plan {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool slug
 	 *
 	 * @return string
@@ -68,10 +75,7 @@ class WP_MCP_AI_Tool_Get_Task_Plan {
 	public function execute( array $arguments = array(), array $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface.
 		// Validate arguments.
 		if ( empty( $arguments['plan_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: plan_id',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Missing required argument: plan_id' );
 		}
 
 		$plan_id = intval( $arguments['plan_id'] );
@@ -80,10 +84,7 @@ class WP_MCP_AI_Tool_Get_Task_Plan {
 		$plan = $this->get_plan( $plan_id );
 
 		if ( ! $plan ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Task plan #%d not found', $plan_id ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', sprintf( 'Task plan #%d not found', $plan_id ) );
 		}
 
 		// Parse tasks from markdown.

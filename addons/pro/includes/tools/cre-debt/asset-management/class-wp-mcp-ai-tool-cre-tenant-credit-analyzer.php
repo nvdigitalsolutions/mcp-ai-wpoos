@@ -123,7 +123,20 @@ class WP_MCP_AI_Tool_CRE_Tenant_Credit_Analyzer implements WP_MCP_AI_Tool_Interf
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -154,14 +167,14 @@ class WP_MCP_AI_Tool_CRE_Tenant_Credit_Analyzer implements WP_MCP_AI_Tool_Interf
 
 		$investment_grade_ratings = array( 'AAA', 'AA', 'A', 'BBB' );
 
-		$tenant_details          = array();
-		$weighted_score_sum      = 0.0;
-		$pct_sum                 = 0.0;
-		$investment_grade_count  = 0;
-		$ig_rent_pct             = 0.0;
-		$concentration_risks     = array();
-		$at_risk_tenants         = array();
-		$industry_breakdown      = array();
+		$tenant_details         = array();
+		$weighted_score_sum     = 0.0;
+		$pct_sum                = 0.0;
+		$investment_grade_count = 0;
+		$ig_rent_pct            = 0.0;
+		$concentration_risks    = array();
+		$at_risk_tenants        = array();
+		$industry_breakdown     = array();
 
 		foreach ( $raw_tenants as $raw ) {
 			$name              = sanitize_text_field( $raw['name'] ?? '' );
@@ -253,9 +266,9 @@ class WP_MCP_AI_Tool_CRE_Tenant_Credit_Analyzer implements WP_MCP_AI_Tool_Interf
 			return new WP_Error( 'invalid_input', __( 'No valid tenant entries provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$total_tenants           = count( $tenant_details );
-		$sub_investment_grade    = $total_tenants - $investment_grade_count;
-		$portfolio_credit_score  = ( $pct_sum > 0 ) ? $weighted_score_sum / $pct_sum : 0;
+		$total_tenants          = count( $tenant_details );
+		$sub_investment_grade   = $total_tenants - $investment_grade_count;
+		$portfolio_credit_score = ( $pct_sum > 0 ) ? $weighted_score_sum / $pct_sum : 0;
 
 		// Format industry breakdown.
 		$industry_summary = array();
@@ -270,17 +283,17 @@ class WP_MCP_AI_Tool_CRE_Tenant_Credit_Analyzer implements WP_MCP_AI_Tool_Interf
 			'success'    => true,
 			'message'    => __( 'Tenant credit analysis complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'       => array(
-				'portfolio_summary'       => array(
-					'total_tenants'              => $total_tenants,
-					'investment_grade_count'     => $investment_grade_count,
-					'sub_investment_grade_count' => $sub_investment_grade,
+				'portfolio_summary' => array(
+					'total_tenants'                => $total_tenants,
+					'investment_grade_count'       => $investment_grade_count,
+					'sub_investment_grade_count'   => $sub_investment_grade,
 					'investment_grade_pct_of_rent' => $calc::format_percentage( $ig_rent_pct / 100 ),
-					'portfolio_credit_score'     => round( $portfolio_credit_score, 1 ),
-					'concentration_risks'        => $concentration_risks,
-					'at_risk_tenants'            => $at_risk_tenants,
-					'industry_breakdown'         => $industry_summary,
+					'portfolio_credit_score'       => round( $portfolio_credit_score, 1 ),
+					'concentration_risks'          => $concentration_risks,
+					'at_risk_tenants'              => $at_risk_tenants,
+					'industry_breakdown'           => $industry_summary,
 				),
-				'tenant_details'          => $tenant_details,
+				'tenant_details'    => $tenant_details,
 			),
 			'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);

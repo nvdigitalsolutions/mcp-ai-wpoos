@@ -1,0 +1,16 @@
+{
+  "apiVersion": 3,
+  "name": "nvoos/toolkit-shell",
+  "title": "NV oOS Toolkit",
+  "category": "widgets",
+  "icon": "admin-tools",
+  "description": "Embeds a manifest-driven NV oOS toolkit SPA (CRM, calendar, financial-planner, etc.).",
+  "textdomain": "nvoos-toolkit-shell",
+  "attributes": {
+    "toolkit": { "type": "string", "default": "" },
+    "theme":   { "type": "string", "default": "auto" },
+    "view":    { "type": "string", "default": "" },
+    "height":  { "type": "string", "default": "" }
+  },
+  "supports": { "html": false }
+}

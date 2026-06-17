@@ -72,7 +72,7 @@ class WP_MCP_AI_WebChat_CPT {
 		// Only show on WebChat-related pages.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
 		$post_type       = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		$is_webchat_page = ( $post_type === self::POST_TYPE );
+		$is_webchat_page = ( self::POST_TYPE === $post_type );
 		if ( ! $is_webchat_page ) {
 			return;
 		}

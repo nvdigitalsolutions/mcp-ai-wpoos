@@ -42,12 +42,11 @@ class WP_MCP_AI_Test_Chat_Performance_Optimizations extends WP_UnitTestCase {
 			)
 		);
 
-		// Initialize REST API.
-		$registry   = new WP_MCP_AI_Tool_Registry();
-		$openai     = new WP_MCP_AI_OpenAI_Client();
-		$gemini     = new WP_MCP_AI_Gemini_Client();
-		$router     = new WP_MCP_AI_Language_Model_Router( $openai, $gemini );
-		$this->rest = new WP_MCP_AI_REST( $registry, $router );
+		// Initialize REST API with test doubles (Tool_Registry has protected
+		// constructor; OpenAI/Gemini clients have external dependencies).
+		$registry   = $this->createMock( WP_MCP_AI_Tool_Registry::class );
+		$client     = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
+		$this->rest = new WP_MCP_AI_REST( $registry, $client );
 
 		// Set up admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
@@ -89,11 +88,9 @@ class WP_MCP_AI_Test_Chat_Performance_Optimizations extends WP_UnitTestCase {
 		}
 
 		// Create new REST instance with cache disabled.
-		$registry = new WP_MCP_AI_Tool_Registry();
-		$openai   = new WP_MCP_AI_OpenAI_Client();
-		$gemini   = new WP_MCP_AI_Gemini_Client();
-		$router   = new WP_MCP_AI_Language_Model_Router( $openai, $gemini );
-		$rest     = new WP_MCP_AI_REST( $registry, $router );
+		$registry = $this->createMock( WP_MCP_AI_Tool_Registry::class );
+		$client   = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
+		$rest     = new WP_MCP_AI_REST( $registry, $client );
 
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'validate_assistant_access' );

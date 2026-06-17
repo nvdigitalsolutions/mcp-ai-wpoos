@@ -23,7 +23,7 @@ class Test_WP_MCP_AI_OCR_Service extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Load OCR service.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-ocr-service.php';
 		$this->ocr_service = new WP_MCP_AI_OCR_Service();
@@ -48,7 +48,7 @@ class Test_WP_MCP_AI_OCR_Service extends WP_UnitTestCase {
 	 */
 	public function test_is_scanned_pdf_with_nonexistent_file() {
 		$result = $this->ocr_service->is_scanned_pdf( '/path/to/nonexistent.pdf' );
-		
+
 		// Should return true (assume scanned if can't read).
 		$this->assertTrue( $result );
 	}
@@ -58,7 +58,7 @@ class Test_WP_MCP_AI_OCR_Service extends WP_UnitTestCase {
 	 */
 	public function test_extract_text_from_image_with_nonexistent_file() {
 		$result = $this->ocr_service->extract_text_from_image( '/path/to/nonexistent.jpg' );
-		
+
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertEquals( 'file_not_found', $result->get_error_code() );
 	}
@@ -68,7 +68,7 @@ class Test_WP_MCP_AI_OCR_Service extends WP_UnitTestCase {
 	 */
 	public function test_extract_text_from_pdf_with_nonexistent_file() {
 		$result = $this->ocr_service->extract_text_from_pdf( '/path/to/nonexistent.pdf' );
-		
+
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertEquals( 'file_not_found', $result->get_error_code() );
 	}
@@ -82,7 +82,7 @@ class Test_WP_MCP_AI_OCR_Service extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$provider = $method->invoke( $this->ocr_service );
-		
+
 		// Should return a valid provider name.
 		$this->assertContains(
 			$provider,
@@ -99,7 +99,7 @@ class Test_WP_MCP_AI_OCR_Service extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$fallbacks = $method->invoke( $this->ocr_service, 'openai' );
-		
+
 		// Should return array without primary provider.
 		$this->assertIsArray( $fallbacks );
 		$this->assertNotContains( 'openai', $fallbacks );
@@ -115,7 +115,7 @@ class Test_WP_MCP_AI_OCR_Service extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$available = $method->invoke( $this->ocr_service );
-		
+
 		// Should return boolean.
 		$this->assertIsBool( $available );
 	}
@@ -129,7 +129,7 @@ class Test_WP_MCP_AI_OCR_Service extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->ocr_service, '/path/to/invalid.pdf', array() );
-		
+
 		// Should return WP_Error for invalid file.
 		$this->assertInstanceOf( 'WP_Error', $result );
 	}

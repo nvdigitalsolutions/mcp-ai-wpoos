@@ -23,6 +23,11 @@ class WP_MCP_AI_Tool_LF_Legal_Research_Assistant implements WP_MCP_AI_Tool_Inter
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -31,36 +36,68 @@ class WP_MCP_AI_Tool_LF_Legal_Research_Assistant implements WP_MCP_AI_Tool_Inter
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_legal_research_assistant'; }
-	public function get_name() { return __( 'Legal Research Assistant', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Assists with legal research by generating research outlines, suggesting primary and secondary sources, and providing search strategies for legal issues.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_legal_research_assistant'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Legal Research Assistant', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Assists with legal research by generating research outlines, suggesting primary and secondary sources, and providing search strategies for legal issues.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'research_query'             => array(
+				'research_query'            => array(
 					'type'        => 'string',
 					'description' => __( 'The legal research question or issue to investigate.', 'mcp-ai-wpoos-pro' ),
 				),
-				'jurisdiction'               => array(
+				'jurisdiction'              => array(
 					'type'        => 'string',
 					'description' => __( 'Jurisdiction for the research (e.g., "federal", "california", "new_york").', 'mcp-ai-wpoos-pro' ),
 				),
-				'practice_area'              => array(
+				'practice_area'             => array(
 					'type'        => 'string',
 					'description' => __( 'Practice area (e.g., "contract_law", "tort", "criminal", "family").', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_range'                 => array(
+				'date_range'                => array(
 					'type'        => 'string',
 					'enum'        => array( 'last_year', 'last_5_years', 'all' ),
 					'description' => __( 'Date range for sources to consider.', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_secondary_sources'  => array(
+				'include_secondary_sources' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include secondary sources like treatises and law reviews (default true).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -69,8 +106,28 @@ class WP_MCP_AI_Tool_LF_Legal_Research_Assistant implements WP_MCP_AI_Tool_Inter
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only', 'external-api' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only', 'external-api' ); }
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {

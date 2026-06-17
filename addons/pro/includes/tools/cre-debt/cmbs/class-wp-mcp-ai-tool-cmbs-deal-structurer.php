@@ -143,7 +143,20 @@ class WP_MCP_AI_Tool_CMBS_Deal_Structurer implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -155,17 +168,17 @@ class WP_MCP_AI_Tool_CMBS_Deal_Structurer implements WP_MCP_AI_Tool_Interface, W
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$pool_balance        = (float) ( $arguments['pool_balance'] ?? 0 );
-		$num_tranches        = (int) ( $arguments['num_tranches'] ?? 4 );
-		$target_sub          = (float) ( $arguments['target_subordination_pct'] ?? 0.30 );
-		$aaa_spread          = (float) ( $arguments['aaa_spread_bps'] ?? 80 );
-		$aa_spread           = (float) ( $arguments['aa_spread_bps'] ?? 120 );
-		$a_spread            = (float) ( $arguments['a_spread_bps'] ?? 175 );
-		$bbb_spread          = (float) ( $arguments['bbb_spread_bps'] ?? 300 );
-		$bb_spread           = (float) ( $arguments['bb_spread_bps'] ?? 475 );
-		$b_spread            = (float) ( $arguments['b_spread_bps'] ?? 650 );
-		$equity_yield        = (float) ( $arguments['equity_yield_pct'] ?? 0.15 );
-		$wac                 = (float) ( $arguments['weighted_avg_coupon'] ?? 0 );
+		$pool_balance = (float) ( $arguments['pool_balance'] ?? 0 );
+		$num_tranches = (int) ( $arguments['num_tranches'] ?? 4 );
+		$target_sub   = (float) ( $arguments['target_subordination_pct'] ?? 0.30 );
+		$aaa_spread   = (float) ( $arguments['aaa_spread_bps'] ?? 80 );
+		$aa_spread    = (float) ( $arguments['aa_spread_bps'] ?? 120 );
+		$a_spread     = (float) ( $arguments['a_spread_bps'] ?? 175 );
+		$bbb_spread   = (float) ( $arguments['bbb_spread_bps'] ?? 300 );
+		$bb_spread    = (float) ( $arguments['bb_spread_bps'] ?? 475 );
+		$b_spread     = (float) ( $arguments['b_spread_bps'] ?? 650 );
+		$equity_yield = (float) ( $arguments['equity_yield_pct'] ?? 0.15 );
+		$wac          = (float) ( $arguments['weighted_avg_coupon'] ?? 0 );
 
 		if ( $pool_balance <= 0 || $wac <= 0 ) {
 			return new WP_Error( 'invalid_input', __( 'Pool balance and weighted average coupon must be positive.', 'mcp-ai-wpoos-pro' ) );
@@ -183,23 +196,41 @@ class WP_MCP_AI_Tool_CMBS_Deal_Structurer implements WP_MCP_AI_Tool_Interface, W
 
 		// Build rated tranche definitions in seniority order.
 		$tranche_defs = array(
-			array( 'rating' => 'AAA', 'spread_bps' => $aaa_spread ),
-			array( 'rating' => 'AA', 'spread_bps' => $aa_spread ),
-			array( 'rating' => 'A', 'spread_bps' => $a_spread ),
-			array( 'rating' => 'BBB', 'spread_bps' => $bbb_spread ),
-			array( 'rating' => 'BB', 'spread_bps' => $bb_spread ),
-			array( 'rating' => 'B', 'spread_bps' => $b_spread ),
+			array(
+				'rating'     => 'AAA',
+				'spread_bps' => $aaa_spread,
+			),
+			array(
+				'rating'     => 'AA',
+				'spread_bps' => $aa_spread,
+			),
+			array(
+				'rating'     => 'A',
+				'spread_bps' => $a_spread,
+			),
+			array(
+				'rating'     => 'BBB',
+				'spread_bps' => $bbb_spread,
+			),
+			array(
+				'rating'     => 'BB',
+				'spread_bps' => $bb_spread,
+			),
+			array(
+				'rating'     => 'B',
+				'spread_bps' => $b_spread,
+			),
 		);
 
 		// Limit to requested number of rated tranches.
 		$tranche_defs = array_slice( $tranche_defs, 0, min( $num_tranches, 6 ) );
 
 		// Derive subordination levels linearly between target_sub (AAA) and 0 (equity).
-		$tranche_count  = count( $tranche_defs );
-		$tranches       = array();
-		$prev_attach    = 0.0;
-		$total_spread   = 0.0;
-		$total_rated    = 0.0;
+		$tranche_count = count( $tranche_defs );
+		$tranches      = array();
+		$prev_attach   = 0.0;
+		$total_spread  = 0.0;
+		$total_rated   = 0.0;
 
 		for ( $i = $tranche_count - 1; $i >= 0; $i-- ) {
 			$def = $tranche_defs[ $i ];
@@ -220,15 +251,15 @@ class WP_MCP_AI_Tool_CMBS_Deal_Structurer implements WP_MCP_AI_Tool_Interface, W
 			$spread_decimal  = $def['spread_bps'] / 10000;
 
 			$tranches[ $i ] = array(
-				'rating'            => $def['rating'],
-				'attach_pct'        => round( $attach_pct, 4 ),
-				'detach_pct'        => round( $detach_pct, 4 ),
+				'rating'             => $def['rating'],
+				'attach_pct'         => round( $attach_pct, 4 ),
+				'detach_pct'         => round( $detach_pct, 4 ),
 				'credit_enhancement' => $calc::format_percentage( $attach_pct ),
-				'tranche_pct'       => $calc::format_percentage( $tranche_pct ),
-				'balance'           => $calc::format_currency( $tranche_balance ),
-				'balance_raw'       => round( $tranche_balance, 2 ),
-				'spread_bps'        => $def['spread_bps'],
-				'coupon'            => $calc::format_percentage( $spread_decimal ),
+				'tranche_pct'        => $calc::format_percentage( $tranche_pct ),
+				'balance'            => $calc::format_currency( $tranche_balance ),
+				'balance_raw'        => round( $tranche_balance, 2 ),
+				'spread_bps'         => $def['spread_bps'],
+				'coupon'             => $calc::format_percentage( $spread_decimal ),
 			);
 
 			$total_spread += $spread_decimal * $tranche_pct;
@@ -244,15 +275,15 @@ class WP_MCP_AI_Tool_CMBS_Deal_Structurer implements WP_MCP_AI_Tool_Interface, W
 		$equity_pct     = $equity_balance / $pool_balance;
 
 		$tranches[] = array(
-			'rating'            => 'Equity',
-			'attach_pct'        => 0.0,
-			'detach_pct'        => round( $tranches[ count( $tranches ) - 1 ]['attach_pct'], 4 ),
+			'rating'             => 'Equity',
+			'attach_pct'         => 0.0,
+			'detach_pct'         => round( $tranches[ count( $tranches ) - 1 ]['attach_pct'], 4 ),
 			'credit_enhancement' => 'N/A (First Loss)',
-			'tranche_pct'       => $calc::format_percentage( $equity_pct ),
-			'balance'           => $calc::format_currency( $equity_balance ),
-			'balance_raw'       => round( $equity_balance, 2 ),
-			'spread_bps'        => 'N/A',
-			'target_yield'      => $calc::format_percentage( $equity_yield ),
+			'tranche_pct'        => $calc::format_percentage( $equity_pct ),
+			'balance'            => $calc::format_currency( $equity_balance ),
+			'balance_raw'        => round( $equity_balance, 2 ),
+			'spread_bps'         => 'N/A',
+			'target_yield'       => $calc::format_percentage( $equity_yield ),
 		);
 
 		// Deal economics.
@@ -265,26 +296,26 @@ class WP_MCP_AI_Tool_CMBS_Deal_Structurer implements WP_MCP_AI_Tool_Interface, W
 			}
 		}
 
-		$excess_spread          = $pool_annual_income - $rated_annual_cost - ( $equity_balance * $equity_yield );
-		$excess_spread_pct      = ( $pool_balance > 0 ) ? $excess_spread / $pool_balance : 0;
+		$excess_spread     = $pool_annual_income - $rated_annual_cost - ( $equity_balance * $equity_yield );
+		$excess_spread_pct = ( $pool_balance > 0 ) ? $excess_spread / $pool_balance : 0;
 
 		$economics = array(
-			'pool_balance'           => $calc::format_currency( $pool_balance ),
-			'total_rated_balance'    => $calc::format_currency( $total_rated ),
-			'equity_balance'         => $calc::format_currency( $equity_balance ),
-			'weighted_avg_coupon'    => $calc::format_percentage( $wac ),
-			'weighted_avg_spread'    => round( $wa_spread * 10000, 1 ) . ' bps',
-			'pool_annual_income'     => $calc::format_currency( $pool_annual_income ),
-			'rated_annual_cost'      => $calc::format_currency( $rated_annual_cost ),
-			'annual_excess_spread'   => $calc::format_currency( $excess_spread ),
-			'excess_spread_pct'      => $calc::format_percentage( $excess_spread_pct ),
-			'advance_rate'           => $calc::format_percentage( $total_rated / $pool_balance ),
+			'pool_balance'         => $calc::format_currency( $pool_balance ),
+			'total_rated_balance'  => $calc::format_currency( $total_rated ),
+			'equity_balance'       => $calc::format_currency( $equity_balance ),
+			'weighted_avg_coupon'  => $calc::format_percentage( $wac ),
+			'weighted_avg_spread'  => round( $wa_spread * 10000, 1 ) . ' bps',
+			'pool_annual_income'   => $calc::format_currency( $pool_annual_income ),
+			'rated_annual_cost'    => $calc::format_currency( $rated_annual_cost ),
+			'annual_excess_spread' => $calc::format_currency( $excess_spread ),
+			'excess_spread_pct'    => $calc::format_percentage( $excess_spread_pct ),
+			'advance_rate'         => $calc::format_percentage( $total_rated / $pool_balance ),
 		);
 
 		return array(
-			'success'    => true,
-			'message'    => __( 'CMBS deal structure generated.', 'mcp-ai-wpoos-pro' ),
-			'data'       => array(
+			'success' => true,
+			'message' => __( 'CMBS deal structure generated.', 'mcp-ai-wpoos-pro' ),
+			'data'    => array(
 				'tranches'   => $tranches,
 				'economics'  => $economics,
 				'summary'    => sprintf(

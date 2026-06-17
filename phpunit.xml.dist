@@ -8,12 +8,17 @@
         <testsuite name="WP MCP AI Plugin Test Suite">
             <directory suffix=".php">tests</directory>
             <directory suffix=".php">addons/pro/tests</directory>
+            <directory suffix=".php">addons/canvas-toolkit/tests</directory>
+            <directory suffix=".php">addons/media-studio/tests</directory>
+            <directory suffix=".php">addons/saas-controller/tests</directory>
             <exclude>tests/manual-test-preset-preview.php</exclude>
             <exclude>tests/manual-verify-auto-aspect-ratio.php</exclude>
             <exclude>tests/manual</exclude>
             <exclude>tests/bootstrap.php</exclude>
+            <exclude>tests/fixtures</exclude>
             <exclude>tests/wp-tests-config.php</exclude>
             <exclude>tests/helpers</exclude>
+            <exclude>addons/saas-controller/tests/bootstrap.php</exclude>
         </testsuite>
     </testsuites>
     <groups>
@@ -21,4 +26,41 @@
             <group>external-http</group>
         </exclude>
     </groups>
+    <source>
+        <include>
+            <directory suffix=".php">includes</directory>
+            <directory suffix=".php">addons/pro/includes</directory>
+            <directory suffix=".php">addons/chat-spa/includes</directory>
+            <directory suffix=".php">addons/canvas-toolkit/includes</directory>
+            <directory suffix=".php">addons/document-editor/includes</directory>
+            <directory suffix=".php">addons/media-studio/includes</directory>
+            <directory suffix=".php">addons/toolkit-shell/includes</directory>
+            <directory suffix=".php">addons/docs-hub/includes</directory>
+            <directory suffix=".php">addons/saas-controller/includes</directory>
+            <directory suffix=".php">addons/embedded/includes</directory>
+            <directory suffix=".php">addons/algorave/includes</directory>
+            <directory suffix=".php">addons/fantasy-football/includes</directory>
+            <directory suffix=".php">addons/graphify/includes</directory>
+        </include>
+        <exclude>
+            <directory>vendor</directory>
+            <directory>node_modules</directory>
+            <directory>addons/pro/vendor</directory>
+            <directory>tests</directory>
+            <directory>addons/pro/tests</directory>
+            <directory>bin</directory>
+            <directory>examples</directory>
+            <directory>assets/examples</directory>
+        </exclude>
+    </source>
+    <coverage includeUncoveredFiles="true"
+              pathCoverage="false"
+              ignoreDeprecatedCodeUnits="true"
+              disableCodeCoverageIgnore="false">
+        <report>
+            <clover outputFile="coverage.xml"/>
+            <html outputDirectory="coverage/html"/>
+            <text outputFile="coverage/coverage.txt" showUncoveredFiles="false" showOnlySummary="true"/>
+        </report>
+    </coverage>
 </phpunit>

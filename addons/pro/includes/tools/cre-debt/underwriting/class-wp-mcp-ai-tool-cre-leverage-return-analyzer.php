@@ -125,7 +125,20 @@ class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -173,9 +186,9 @@ class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Inte
 		$net_sale         = $exit_value - $loan_balance_end;
 
 		// Year-by-year cash flows.
-		$unlev_cfs    = array( -$price ); // Year 0.
-		$lev_cfs      = array( -$equity ); // Year 0.
-		$yearly_detail = array();
+		$unlev_cfs        = array( -$price ); // Year 0.
+		$lev_cfs          = array( -$equity ); // Year 0.
+		$yearly_detail    = array();
 		$total_lev_dist   = 0.0;
 		$total_unlev_dist = 0.0;
 
@@ -189,7 +202,7 @@ class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Inte
 				if ( isset( $amort_schedule['schedule'][ $schedule_idx ] ) ) {
 					$year_ds += $amort_schedule['schedule'][ $schedule_idx ]['payment'];
 				}
-				$schedule_idx++;
+				++$schedule_idx;
 			}
 
 			$unlev_cf = $year_noi;
@@ -232,7 +245,8 @@ class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Inte
 		$lev_em   = $calc::calculate_equity_multiple( $total_lev_dist, $equity );
 
 		// Year-1 cash on cash.
-		$year1_ds  = 0.0;
+		$year1_ds = 0.0;
+		// phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found
 		for ( $m = 0; $m < 12 && $m < count( $amort_schedule['schedule'] ); $m++ ) {
 			$year1_ds += $amort_schedule['schedule'][ $m ]['payment'];
 		}
@@ -242,7 +256,7 @@ class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Inte
 			'success' => true,
 			'message' => __( 'Leverage return analysis complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
-				'deal_summary'    => array(
+				'deal_summary'      => array(
 					'purchase_price'  => $calc::format_currency( $price ),
 					'loan_amount'     => $calc::format_currency( $loan ),
 					'equity_invested' => $calc::format_currency( $equity ),
@@ -251,13 +265,13 @@ class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Inte
 					'hold_period'     => $hold . ' years',
 				),
 				'return_comparison' => array(
-					'leveraged'   => array(
-						'irr'             => ( $lev_irr !== null ) ? $calc::format_percentage( $lev_irr ) : 'N/A',
+					'leveraged'       => array(
+						'irr'             => ( null !== $lev_irr ) ? $calc::format_percentage( $lev_irr ) : 'N/A',
 						'equity_multiple' => round( $lev_em, 2 ) . 'x',
 						'year1_coc'       => $calc::format_percentage( $year1_coc ),
 					),
-					'unleveraged' => array(
-						'irr'             => ( $unlev_irr !== null ) ? $calc::format_percentage( $unlev_irr ) : 'N/A',
+					'unleveraged'     => array(
+						'irr'             => ( null !== $unlev_irr ) ? $calc::format_percentage( $unlev_irr ) : 'N/A',
 						'equity_multiple' => round( $unlev_em, 2 ) . 'x',
 						'year1_coc'       => $calc::format_percentage( $noi / $price ),
 					),
@@ -265,7 +279,7 @@ class WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer implements WP_MCP_AI_Tool_Inte
 						? round( ( $lev_irr - $unlev_irr ) * 10000 ) . ' bps'
 						: 'N/A',
 				),
-				'yearly_detail'   => $yearly_detail,
+				'yearly_detail'     => $yearly_detail,
 			),
 		);
 	}

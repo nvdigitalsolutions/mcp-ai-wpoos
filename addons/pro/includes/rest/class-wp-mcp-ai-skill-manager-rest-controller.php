@@ -217,7 +217,7 @@ class WP_MCP_AI_Skill_Manager_REST_Controller extends WP_REST_Controller {
 			$raw = file_get_contents( $skill_file );
 		}
 
-		$data = $this->prepare_skill_for_collection( $skill );
+		$data                 = $this->prepare_skill_for_collection( $skill );
 		$data['raw_content']  = false !== $raw ? $raw : '';
 		$data['instructions'] = $skill['instructions'];
 
@@ -488,7 +488,7 @@ class WP_MCP_AI_Skill_Manager_REST_Controller extends WP_REST_Controller {
 				'description'       => __( 'Skill name (slug).', 'mcp-ai-wpoos-pro' ),
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_key',
-				'validate_callback' => function( $value ) {
+				'validate_callback' => function ( $value ) {
 					return (bool) preg_match( '/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/', $value )
 						&& false === strpos( $value, '--' );
 				},

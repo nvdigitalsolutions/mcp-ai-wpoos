@@ -717,7 +717,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$this->assertIsArray( $connection );
 		$this->assertEquals( 'shipengine', $connection['connection_type'] );
 
-		// Call test_connection. We expect it to fail with a ShipEngine-specific error
+		// Call test_connection. We expect it to fail with a ShipEngine-specific error.
 		// (since the API key is fake), NOT a generic 404 from the WordPress REST test.
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
 
@@ -768,7 +768,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$this->assertIsArray( $connection );
 		$this->assertEquals( 'shipstation', $connection['connection_type'] );
 
-		// Call test_connection. We expect it to fail with a ShipStation-specific error
+		// Call test_connection. We expect it to fail with a ShipStation-specific error.
 		// (since credentials are fake), NOT a generic 404 from the WordPress REST test.
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
 

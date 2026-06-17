@@ -121,7 +121,7 @@ Use a deterministic, repeatable process:
    
    C. AUDIO CONTENT CREATION:
    - Generate AI voice-overs using OpenAI TTS (multiple voices, languages)
-   - Create background music with AI (Gemini Lyria) or licensed tracks
+   - Create background music with AI (Lyria (Google DeepMind)) or licensed tracks
    - Record podcast episodes or narration (quality microphone, quiet space)
    - Edit audio (noise reduction, EQ, compression, normalization)
    - Add intro/outro music, sound effects, transitions
@@ -313,7 +313,7 @@ Videos:
 Audio:
 1. Podcast Episode: [Full audio with intro/outro]
 2. AI Voice-Over: [TTS for video version]
-3. AI Music: [Background track description for Gemini Lyria]
+3. AI Music: [Background track description for Lyria (Google DeepMind)]
 4. Audiogram: [30-second highlight clip with waveform]
 
 Text:
@@ -344,7 +344,7 @@ STYLE SPECIFICATIONS:
 - Mood: [Professional / Energetic / Calm / Dramatic]
 
 TECHNICAL SPECS:
-- Model: [DALL-E 3 / Gemini Imagen 3]
+- Model: [DALL-E 3 / Imagen 3 (Google DeepMind)]
 - Size: [1024x1024 / 1792x1024 / 1024x1792]
 - Quality: [Standard / HD]
 
@@ -373,7 +373,7 @@ VISUAL STYLE:
 - Lighting: [Golden hour / Overcast / Studio / Dramatic]
 
 TECHNICAL SPECS:
-- Model: [Sora / Veo 3.1 / Veo 2.0]
+- Model: [Sora / Veo 2.0 / Sora]
 - Duration: [5 seconds / 8 seconds]
 - Aspect Ratio: [16:9 / 9:16 / 1:1]
 - Resolution: [720p / 1080p]
@@ -765,7 +765,7 @@ GENERAL CONTENT TERMS:
 - **Content Package**: Multi-format content set from single topic (1 video → 20 assets)
 
 AI & IMAGE TERMS:
-- **AI Image Generation**: Creating images from text prompts using models like DALL-E, Gemini Imagen, Midjourney
+- **AI Image Generation**: Creating images from text prompts using models like DALL-E, Imagen (Google DeepMind), Midjourney
 - **Prompt Engineering**: Crafting detailed text descriptions to get desired AI output
 - **Aspect Ratio**: Width-to-height ratio of images/videos (16:9, 9:16, 1:1, 4:5)
 - **B-roll**: Supplementary footage used to illustrate main content
@@ -788,7 +788,7 @@ VIDEO PRODUCTION TERMS:
 
 AUDIO PRODUCTION TERMS:
 - **TTS (Text-to-Speech)**: AI-generated voice from written text (OpenAI TTS, ElevenLabs)
-- **AI Music Generation**: Creating music from text descriptions (Gemini Lyria, Suno, Udio)
+- **AI Music Generation**: Creating music from text descriptions (Lyria (Google DeepMind), Suno, Udio)
 - **Voice Clone**: AI replication of specific voice (requires consent)
 - **Audiogram**: Visual waveform animation synced to audio (for social media)
 - **Normalization**: Adjusting audio to consistent volume level
@@ -829,10 +829,10 @@ Platform Requirements & Policies (2024):
 Common Tools & Platforms:
 
 AI CONTENT GENERATION:
-- **AI Image Generation**: DALL-E 3 (OpenAI), Gemini Imagen 3 (Google), Midjourney, Stable Diffusion
+- **AI Image Generation**: DALL-E 3 (OpenAI), Imagen 3 (Google DeepMind) (Google), Midjourney, Stable Diffusion
 - **AI Video Generation**: Sora (OpenAI), Veo (Google), Runway Gen-3, Pika Labs
 - **AI Text-to-Speech**: OpenAI TTS, ElevenLabs, Google Text-to-Speech, Amazon Polly
-- **AI Music Generation**: Gemini Lyria (Google), Suno, Udio, AIVA, Soundraw
+- **AI Music Generation**: Lyria (Google DeepMind) (Google), Suno, Udio, AIVA, Soundraw
 - **AI Writing Assistants**: ChatGPT, Claude, Gemini, Jasper, Copy.ai
 - **AI Video Editing**: Descript (AI editing), Opus Clip (auto-clips), Captions.ai
 

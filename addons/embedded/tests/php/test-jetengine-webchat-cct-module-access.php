@@ -8,8 +8,10 @@
  * @package WP_MCP_AI
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
- * @license   GPL-3.0-or-later
+ * @license   Proprietary
  */
+
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound,Universal.Files.SeparateFunctionsFromOO.Mixed -- Test file with mock classes and a function.
 
 // Mock classes needed for testing.
 if ( ! class_exists( 'Jet_Engine_Modules' ) ) {
@@ -17,8 +19,18 @@ if ( ! class_exists( 'Jet_Engine_Modules' ) ) {
 	 * Mock JetEngine Modules class.
 	 */
 	class Jet_Engine_Modules {
+		/**
+		 * Active modules.
+		 *
+		 * @var array
+		 */
 		private $active_modules = array();
-		private $modules        = array();
+		/**
+		 * Module instances.
+		 *
+		 * @var array
+		 */
+		private $modules = array();
 
 		/**
 		 * Constructor.
@@ -60,6 +72,11 @@ if ( ! class_exists( 'Jet_Engine' ) ) {
 	 * Mock JetEngine class.
 	 */
 	class Jet_Engine {
+		/**
+		 * Modules instance.
+		 *
+		 * @var Jet_Engine_Modules
+		 */
 		public $modules;
 
 		/**

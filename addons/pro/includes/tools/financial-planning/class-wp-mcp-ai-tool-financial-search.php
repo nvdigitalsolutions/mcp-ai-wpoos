@@ -34,6 +34,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Financial_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Cache TTL in seconds (10 minutes).
 	 *
 	 * @since 1.1.0
@@ -252,22 +259,22 @@ class WP_MCP_AI_Tool_Financial_Search implements WP_MCP_AI_Tool_Interface, WP_MC
 		$guidance = $this->get_source_guidance( $sources, $search_type );
 
 		$result = array(
-			'success'        => true,
-			'query'          => $query,
-			'search_type'    => $search_type,
-			'sources'        => $sources,
-			'ticker'         => $ticker,
-			'results'        => $all_results,
-			'result_count'   => count( $all_results ),
-			'source_errors'  => $source_errors,
-			'guidance'       => $guidance,
-			'from_cache'     => false,
-			'metadata'       => array(
+			'success'       => true,
+			'query'         => $query,
+			'search_type'   => $search_type,
+			'sources'       => $sources,
+			'ticker'        => $ticker,
+			'results'       => $all_results,
+			'result_count'  => count( $all_results ),
+			'source_errors' => $source_errors,
+			'guidance'      => $guidance,
+			'from_cache'    => false,
+			'metadata'      => array(
 				'search_quality'     => count( $source_errors ) === 0 ? 'high' : ( count( $source_errors ) < count( $sources ) ? 'partial' : 'degraded' ),
 				'sources_successful' => count( $sources ) - count( $source_errors ),
 				'sources_failed'     => count( $source_errors ),
 			),
-			'disclaimer'     => __( 'EDUCATIONAL ONLY. Search results are aggregated from third-party financial sources and may not be complete or current. Verify all information from primary sources. Not investment advice.', 'mcp-ai-wpoos-pro' ),
+			'disclaimer'    => __( 'EDUCATIONAL ONLY. Search results are aggregated from third-party financial sources and may not be complete or current. Verify all information from primary sources. Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		set_transient( $cache_key, $result, self::CACHE_TTL );
@@ -344,7 +351,7 @@ class WP_MCP_AI_Tool_Financial_Search implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$date_param = '';
 		if ( ! empty( $date_range ) ) {
-			$date_map = array(
+			$date_map   = array(
 				'today'   => '1',
 				'week'    => '7',
 				'month'   => '30',
@@ -456,7 +463,7 @@ class WP_MCP_AI_Tool_Financial_Search implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( 'sec_edgar' === $source ) {
 			$hits = isset( $data['hits']['hits'] ) ? $data['hits']['hits'] : array();
 			foreach ( $hits as $hit ) {
-				$src     = isset( $hit['_source'] ) ? $hit['_source'] : array();
+				$src       = isset( $hit['_source'] ) ? $hit['_source'] : array();
 				$results[] = array(
 					'title'     => isset( $src['display_names'] ) ? sanitize_text_field( implode( ', ', (array) $src['display_names'] ) ) : '',
 					'url'       => isset( $src['file_url'] ) ? esc_url_raw( $src['file_url'] ) : '',

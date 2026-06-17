@@ -66,4 +66,10 @@ Copyright (c) Automattic, Inc. — see `assets/canvas/package.json` for details.
 
 ## Plugin License
 
-GPLv3 or later — see the LICENSE file in the parent repository.
+Proprietary — © 2025-2026 NV Digital Solutions. All rights reserved. The bundled `canvas` npm package retains its MIT license. See [`CREDITS.md`](../../CREDITS.md) at the repository root for full attribution.
+
+## Credits
+
+This addon redistributes the [`canvas`](https://github.com/Automattic/node-canvas) Node.js module — © Automattic and contributors, MIT-licensed — pre-compiled for Linux x64 and ARM64. The native bindings link against the [Cairo](https://www.cairographics.org/) graphics library (LGPL-2.1) and standard system image libraries.
+
+For the full repo-wide attribution index, see [`CREDITS.md`](../../CREDITS.md) at the repository root.

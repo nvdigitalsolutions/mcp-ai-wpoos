@@ -79,38 +79,38 @@ class WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain implements WP_MCP_AI_Tool_I
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'country_code' => array(
+				'country_code'             => array(
 					'type'        => 'string',
 					'description' => __( 'ISO country code.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'LK', 'JM', 'US' ),
 					'default'     => 'LK',
 				),
-				'latitude'     => array(
+				'latitude'                 => array(
 					'type'        => 'number',
 					'description' => __( 'Site latitude (degrees, positive north). Used for noon altitude.', 'mcp-ai-wpoos-pro' ),
 				),
-				'space' => array(
+				'space'                    => array(
 					'type'        => 'object',
 					'description' => __( 'Space description.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'floor_area_sqm'  => array( 'type' => 'number' ),
-						'window_area_sqm' => array( 'type' => 'number' ),
+						'floor_area_sqm'        => array( 'type' => 'number' ),
+						'window_area_sqm'       => array( 'type' => 'number' ),
 						'visible_transmittance' => array( 'type' => 'number' ),
 						'shgc'                  => array( 'type' => 'number' ),
 					),
 				),
-				'orientation' => array(
+				'orientation'              => array(
 					'type'        => 'string',
 					'description' => __( 'Principal facade orientation.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW' ),
 				),
-				'overhang_depth_m' => array(
+				'overhang_depth_m'         => array(
 					'type'        => 'number',
 					'description' => __( 'Horizontal overhang depth above the window head (m).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'window_height_m'  => array(
+				'window_height_m'          => array(
 					'type'        => 'number',
 					'description' => __( 'Window head-to-sill height (m).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -140,6 +140,13 @@ class WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain implements WP_MCP_AI_Tool_I
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -162,10 +169,10 @@ class WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain implements WP_MCP_AI_Tool_I
 		$overhang     = isset( $arguments['overhang_depth_m'] ) ? max( 0.0, floatval( $arguments['overhang_depth_m'] ) ) : 0.0;
 		$wh           = isset( $arguments['window_height_m'] ) ? max( 0.1, floatval( $arguments['window_height_m'] ) ) : 1.5;
 
-		$floor   = isset( $space['floor_area_sqm'] ) ? floatval( $space['floor_area_sqm'] ) : 0.0;
-		$window  = isset( $space['window_area_sqm'] ) ? floatval( $space['window_area_sqm'] ) : 0.0;
-		$tvis    = isset( $space['visible_transmittance'] ) ? floatval( $space['visible_transmittance'] ) : 0.6;
-		$shgc    = isset( $space['shgc'] ) ? floatval( $space['shgc'] ) : 0.4;
+		$floor  = isset( $space['floor_area_sqm'] ) ? floatval( $space['floor_area_sqm'] ) : 0.0;
+		$window = isset( $space['window_area_sqm'] ) ? floatval( $space['window_area_sqm'] ) : 0.0;
+		$tvis   = isset( $space['visible_transmittance'] ) ? floatval( $space['visible_transmittance'] ) : 0.6;
+		$shgc   = isset( $space['shgc'] ) ? floatval( $space['shgc'] ) : 0.4;
 
 		if ( $floor <= 0 || $window <= 0 ) {
 			return new WP_Error( 'wp_mcp_ai_invalid_arguments', __( 'space.floor_area_sqm and space.window_area_sqm must be > 0.', 'mcp-ai-wpoos-pro' ) );
@@ -199,22 +206,22 @@ class WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain implements WP_MCP_AI_Tool_I
 		$noon_altitude_deg = 90.0 - abs( (float) $latitude );
 
 		return array(
-			'success'                  => true,
-			'country_code'             => $country_code,
-			'latitude'                 => $latitude,
-			'orientation'              => $orient,
-			'noon_altitude_deg'        => round( $noon_altitude_deg, 1 ),
-			'daylight_factor_pct'      => round( $df, 2 ),
-			'daylight_target_pct'      => $df_target,
-			'daylight_status'          => $df_pass ? 'pass' : 'fail',
-			'incident_irradiance_w_m2' => round( $incident, 1 ),
-			'overhang_shade_fraction'  => round( $shade_fraction, 2 ),
-			'estimated_solar_gain_w'   => round( $gain_w, 1 ),
+			'success'                   => true,
+			'country_code'              => $country_code,
+			'latitude'                  => $latitude,
+			'orientation'               => $orient,
+			'noon_altitude_deg'         => round( $noon_altitude_deg, 1 ),
+			'daylight_factor_pct'       => round( $df, 2 ),
+			'daylight_target_pct'       => $df_target,
+			'daylight_status'           => $df_pass ? 'pass' : 'fail',
+			'incident_irradiance_w_m2'  => round( $incident, 1 ),
+			'overhang_shade_fraction'   => round( $shade_fraction, 2 ),
+			'estimated_solar_gain_w'    => round( $gain_w, 1 ),
 			'solar_gain_per_floor_w_m2' => round( $gain_per_floor, 2 ),
-			'solar_gain_status'        => $gain_status,
-			'overall_status'           => ( $df_pass && 'pass' === $gain_status ) ? 'pass' : ( ( $df_pass || 'pass' === $gain_status ) ? 'conditional' : 'fail' ),
-			'recommendations'          => $this->recommendations( $country_code, $orient, $shade_fraction, $df, $gain_per_floor ),
-			'disclaimer'               => __( 'Analytical / advisory output. Run a daylight simulation (Radiance, ClimateStudio) for design certification.', 'mcp-ai-wpoos-pro' ),
+			'solar_gain_status'         => $gain_status,
+			'overall_status'            => ( $df_pass && 'pass' === $gain_status ) ? 'pass' : ( ( $df_pass || 'pass' === $gain_status ) ? 'conditional' : 'fail' ),
+			'recommendations'           => $this->recommendations( $country_code, $orient, $shade_fraction, $df, $gain_per_floor ),
+			'disclaimer'                => __( 'Analytical / advisory output. Run a daylight simulation (Radiance, ClimateStudio) for design certification.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -245,9 +252,27 @@ class WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain implements WP_MCP_AI_Tool_I
 	 */
 	protected function default_irradiance( $country, $orient ) {
 		$is_tropical = ( 'LK' === $country || 'JM' === $country );
-		$tables = $is_tropical
-			? array( 'N' => 250.0, 'NE' => 350.0, 'E' => 600.0, 'SE' => 500.0, 'S' => 350.0, 'SW' => 600.0, 'W' => 700.0, 'NW' => 500.0 )
-			: array( 'N' => 100.0, 'NE' => 250.0, 'E' => 450.0, 'SE' => 550.0, 'S' => 600.0, 'SW' => 550.0, 'W' => 450.0, 'NW' => 250.0 );
+		$tables      = $is_tropical
+			? array(
+				'N'  => 250.0,
+				'NE' => 350.0,
+				'E'  => 600.0,
+				'SE' => 500.0,
+				'S'  => 350.0,
+				'SW' => 600.0,
+				'W'  => 700.0,
+				'NW' => 500.0,
+			)
+			: array(
+				'N'  => 100.0,
+				'NE' => 250.0,
+				'E'  => 450.0,
+				'SE' => 550.0,
+				'S'  => 600.0,
+				'SW' => 550.0,
+				'W'  => 450.0,
+				'NW' => 250.0,
+			);
 		return isset( $tables[ $orient ] ) ? (float) $tables[ $orient ] : 400.0;
 	}
 
@@ -262,7 +287,7 @@ class WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain implements WP_MCP_AI_Tool_I
 	 * @return array<int,string>
 	 */
 	protected function recommendations( $country, $orient, $shade_fraction, $df, $gain_per_floor ) {
-		$out = array();
+		$out         = array();
 		$is_tropical = ( 'LK' === $country || 'JM' === $country );
 		if ( $is_tropical ) {
 			if ( in_array( $orient, array( 'W', 'SW' ), true ) && $shade_fraction < 0.5 ) {

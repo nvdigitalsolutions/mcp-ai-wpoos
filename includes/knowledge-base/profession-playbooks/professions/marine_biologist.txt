@@ -1,7 +1,7 @@
 Profession Playbook — Marine Biologist
 Slug: marine_biologist
-Category: technical
-Includes: global.txt + categories/technical.txt + this file
+Category: other
+Includes: global.txt + categories/other.txt + this file
 
 
 Author: NV Digital Solutions

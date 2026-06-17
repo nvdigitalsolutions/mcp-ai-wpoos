@@ -178,6 +178,23 @@ flush();
 | POST | `/mcp-ai/v1/chat` | Send chat messages with streaming responses |
 | POST | `/mcp-ai/v1/tools` | Execute tools directly |
 | GET | `/mcp-ai/v1/sse` | Server-Sent Events streaming endpoint |
+| GET | `/mcp-ai/v1/cron-status` | Snapshot of the current user's async tool jobs |
+| GET | `/mcp-ai/v1/cron-status/stream` | SSE stream of `job:*` events for the Tasks Drawer |
+| POST | `/mcp-ai/v1/cron-status/{job_id}/cancel` | Cancel a running async tool job (owner only) |
+| POST | `/mcp-ai/v1/cron-status/{job_id}/retry` | Re-queue a failed/cancelled async tool job (owner only) |
+| `*` | `/mcp-ai/v1/chat-memory/*` | Chat-client Memory Bridge proxy (6 routes — preferences, wake-up, recall, store, audit, `/{context_id}`) |
+
+The cron-status routes are implemented by `WP_MCP_AI_REST_Tools_Controller` and
+delegate to `WP_MCP_AI_Tool_Async_Executor::cancel_job()` / `retry_job()` /
+`is_owned_by()`; the snapshot / stream routes fire OTel hooks
+`wp_mcp_ai_chat_jobs_snapshot`, `wp_mcp_ai_before_chat_jobs_stream`, and
+`wp_mcp_ai_after_chat_jobs_stream`; the cancel / retry routes fire actions
+`wp_mcp_ai_chat_jobs_cancel`, `wp_mcp_ai_chat_jobs_retry`,
+`wp_mcp_ai_job_cancelled`, and `wp_mcp_ai_job_retried`.
+
+The chat-memory bridge is implemented by
+`WP_MCP_AI_REST_Chat_Memory_Controller`; full reference:
+[`docs/features/memory/chat-client-integration.md`](../docs/features/memory/chat-client-integration.md).
 
 ---
 

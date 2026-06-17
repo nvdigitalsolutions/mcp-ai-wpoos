@@ -1,0 +1,88 @@
+name: Chat Parity Check
+
+on:
+  pull_request:
+    paths:
+      - 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php'
+      - 'includes/services/class-wp-mcp-ai-chat-service.php'
+      - 'includes/services/class-wp-mcp-ai-chat-continuation-*.php'
+      - 'includes/services/class-wp-mcp-ai-chat-session-frame-buffer.php'
+      - 'includes/services/class-wp-mcp-ai-token-budget-service.php'
+      - 'includes/services/class-wp-mcp-ai-context-compression-service.php'
+      - 'includes/class-wp-mcp-ai-rate-limit-manager.php'
+      - 'lib/core/src/Application/Chat/**'
+      - 'lib/core/src/Infrastructure/Provider/**'
+      - 'lib/core/src/Infrastructure/Token/**'
+      - 'includes/bootstrap/oos-bridge.php'
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php'
+      - 'includes/services/class-wp-mcp-ai-chat-service.php'
+      - 'includes/services/class-wp-mcp-ai-chat-continuation-*.php'
+      - 'includes/services/class-wp-mcp-ai-chat-session-frame-buffer.php'
+      - 'includes/services/class-wp-mcp-ai-token-budget-service.php'
+      - 'includes/services/class-wp-mcp-ai-context-compression-service.php'
+      - 'includes/class-wp-mcp-ai-rate-limit-manager.php'
+      - 'lib/core/src/Application/Chat/**'
+      - 'lib/core/src/Infrastructure/Provider/**'
+      - 'lib/core/src/Infrastructure/Token/**'
+      - 'includes/bootstrap/oos-bridge.php'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  parity-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Run chat parity check
+        id: parity
+        run: php bin/check-chat-parity.php
+        continue-on-error: true
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "Chat parity check completed."
+          echo "Review the output above for gap details."
+          echo "Non-blocking: this check is advisory only."
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && steps.parity.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const output = execSync('php bin/check-chat-parity.php 2>&1 || true', { encoding: 'utf8' });
+
+            const body = [
+              '## Chat Parity Check',
+              '',
+              'This PR touches legacy chat code. The parity check found gaps between the legacy implementation and `lib/core`.',
+              '',
+              '```',
+              output.substring(0, 6000),
+              '```',
+              '',
+              '> **Note:** Non-blocking advisory. If your changes need a `lib/core` counterpart, open a companion PR or file an issue with the `gap:chat` label.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

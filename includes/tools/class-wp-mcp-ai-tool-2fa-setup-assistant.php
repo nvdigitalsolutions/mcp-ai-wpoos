@@ -32,6 +32,13 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool slug
 	 *
 	 * @since 1.0.0
@@ -137,9 +144,9 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 				break;
 
 			default:
-				$result = array(
-					'success' => false,
-					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
+				$result = new WP_Error(
+					'wp_mcp_ai_error',
+					__( 'Invalid action specified', 'mcp-ai-wpoos' )
 				);
 		}
 
@@ -164,17 +171,17 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		// Verify user.
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'User not found', 'mcp-ai-wpoos' )
 			);
 		}
 
 		// Check permissions.
 		if ( get_current_user_id() !== $user_id && ! current_user_can( 'edit_users' ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Permission denied', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Permission denied', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -289,9 +296,9 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	 */
 	private function setup_sms( $user_id, $user, $phone_number ) {
 		if ( empty( $phone_number ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Phone number required for SMS 2FA', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Phone number required for SMS 2FA', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -319,9 +326,9 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	private function handle_status( $user_id ) {
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'User not found', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -349,18 +356,18 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	private function handle_enable( $user_id, $method ) {
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'User not found', 'mcp-ai-wpoos' )
 			);
 		}
 
 		// Check if method is configured.
 		$configured_method = get_user_meta( $user_id, 'wp_mcp_ai_2fa_method', true );
 		if ( empty( $configured_method ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( '2FA not configured. Please run setup first.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( '2FA not configured. Please run setup first.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -384,9 +391,9 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	private function handle_disable( $user_id ) {
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'User not found', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -409,9 +416,9 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	private function handle_generate_backup( $user_id ) {
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'User not found', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -435,16 +442,16 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	 */
 	private function handle_bulk_enforce( $role, $force_reset ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Permission denied', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Permission denied', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $role ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Role required for bulk enforcement', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Role required for bulk enforcement', 'mcp-ai-wpoos' )
 			);
 		}
 

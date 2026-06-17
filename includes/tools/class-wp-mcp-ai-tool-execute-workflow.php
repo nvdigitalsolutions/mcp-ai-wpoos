@@ -112,6 +112,13 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -121,24 +128,24 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['description'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Workflow description is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Workflow description is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $arguments['task_type'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Task type is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Task type is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		// Check if enhanced coordinator is available.
 		if ( ! class_exists( 'WP_MCP_AI_Enhanced_Workflow_Coordinator' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Enhanced workflow coordinator not available.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Enhanced workflow coordinator not available.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -181,11 +188,7 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 			$workflow = $coordinator->create_workflow( $config );
 
 			if ( is_wp_error( $workflow ) ) {
-				return array(
-					'success' => false,
-					'message' => $workflow->get_error_message(),
-					'code'    => $workflow->get_error_code(),
-				);
+				return $workflow;
 			}
 
 			// Return early if async execution requested.
@@ -208,11 +211,7 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 			$result = $coordinator->execute_workflow( $workflow['workflow_id'] );
 
 			if ( is_wp_error( $result ) ) {
-				return array(
-					'success' => false,
-					'message' => $result->get_error_message(),
-					'code'    => $result->get_error_code(),
-				);
+				return $result;
 			}
 
 			return array(
@@ -252,14 +251,13 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 				)
 			);
 
-			return array(
-				'success' => false,
-				'message' => sprintf(
-					/* translators: %s: exception message */
+			return new WP_Error(
+				'workflow_exception',
+				sprintf(
+						/* translators: %s: exception message */
 					__( 'Workflow execution failed: %s', 'mcp-ai-wpoos' ),
 					$e->getMessage()
-				),
-				'code'    => 'workflow_exception',
+				)
 			);
 		}
 	}

@@ -7,7 +7,6 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
  */
-
 class Test_JetEngine_MCP_Resources extends WP_UnitTestCase {
 
 	/**
@@ -33,7 +32,8 @@ class Test_JetEngine_MCP_Resources extends WP_UnitTestCase {
 		$prop->setValue( null, null );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -42,7 +42,8 @@ class Test_JetEngine_MCP_Resources extends WP_UnitTestCase {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_JetEngine_MCP_Resources' ) );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -54,7 +55,8 @@ class Test_JetEngine_MCP_Resources extends WP_UnitTestCase {
 		$this->assertSame( $instance1, $instance2 );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -66,7 +68,8 @@ class Test_JetEngine_MCP_Resources extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -78,7 +81,8 @@ class Test_JetEngine_MCP_Resources extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -90,7 +94,8 @@ class Test_JetEngine_MCP_Resources extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -102,7 +107,8 @@ class Test_JetEngine_MCP_Resources extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -114,7 +120,8 @@ class Test_JetEngine_MCP_Resources extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -126,7 +133,8 @@ class Test_JetEngine_MCP_Resources extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp

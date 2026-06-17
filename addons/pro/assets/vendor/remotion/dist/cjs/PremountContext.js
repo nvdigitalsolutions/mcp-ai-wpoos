@@ -10,5 +10,4 @@ const react_1 = require("react");
  */
 exports.PremountContext = (0, react_1.createContext)({
     premountFramesRemaining: 0,
-    playing: false,
 });

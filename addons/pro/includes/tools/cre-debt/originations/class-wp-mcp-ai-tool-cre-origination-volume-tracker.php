@@ -73,7 +73,10 @@ class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_In
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'amount'        => array( 'type' => 'number', 'description' => __( 'Deal loan amount.', 'mcp-ai-wpoos-pro' ) ),
+							'amount'        => array(
+								'type'        => 'number',
+								'description' => __( 'Deal loan amount.', 'mcp-ai-wpoos-pro' ),
+							),
 							'stage'         => array(
 								'type'        => 'string',
 								'description' => __( 'Current pipeline stage.', 'mcp-ai-wpoos-pro' ),
@@ -84,9 +87,18 @@ class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_In
 								'description' => __( 'Property type.', 'mcp-ai-wpoos-pro' ),
 								'enum'        => array( 'office', 'retail', 'industrial', 'multifamily', 'hotel', 'other' ),
 							),
-							'originator'    => array( 'type' => 'string', 'description' => __( 'Originator name.', 'mcp-ai-wpoos-pro' ) ),
-							'date_entered'  => array( 'type' => 'string', 'description' => __( 'Date entered pipeline (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ) ),
-							'date_closed'   => array( 'type' => 'string', 'description' => __( 'Date closed, if applicable (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ) ),
+							'originator'    => array(
+								'type'        => 'string',
+								'description' => __( 'Originator name.', 'mcp-ai-wpoos-pro' ),
+							),
+							'date_entered'  => array(
+								'type'        => 'string',
+								'description' => __( 'Date entered pipeline (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+							),
+							'date_closed'   => array(
+								'type'        => 'string',
+								'description' => __( 'Date closed, if applicable (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+							),
 						),
 					),
 				),
@@ -103,7 +115,20 @@ class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_In
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -119,14 +144,14 @@ class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_In
 			return new WP_Error( 'invalid_input', __( 'At least one deal is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$total_volume      = 0.0;
-		$closed_volume     = 0.0;
-		$total_count       = 0;
-		$closed_count      = 0;
-		$stage_breakdown   = array();
-		$type_breakdown    = array();
-		$originator_stats  = array();
-		$close_durations   = array();
+		$total_volume     = 0.0;
+		$closed_volume    = 0.0;
+		$total_count      = 0;
+		$closed_count     = 0;
+		$stage_breakdown  = array();
+		$type_breakdown   = array();
+		$originator_stats = array();
+		$close_durations  = array();
 
 		// Pipeline stage ordering for funnel analysis.
 		$stage_order = array(
@@ -151,44 +176,50 @@ class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_In
 			$closed_dt  = sanitize_text_field( $deal['date_closed'] ?? '' );
 
 			$total_volume += $amount;
-			$total_count++;
+			++$total_count;
 
 			// Stage breakdown.
 			if ( ! isset( $stage_breakdown[ $stage ] ) ) {
-				$stage_breakdown[ $stage ] = array( 'count' => 0, 'volume' => 0.0 );
+				$stage_breakdown[ $stage ] = array(
+					'count'  => 0,
+					'volume' => 0.0,
+				);
 			}
-			$stage_breakdown[ $stage ]['count']++;
+			++$stage_breakdown[ $stage ]['count'];
 			$stage_breakdown[ $stage ]['volume'] += $amount;
 
 			// Type breakdown.
 			if ( ! isset( $type_breakdown[ $prop_type ] ) ) {
-				$type_breakdown[ $prop_type ] = array( 'count' => 0, 'volume' => 0.0 );
+				$type_breakdown[ $prop_type ] = array(
+					'count'  => 0,
+					'volume' => 0.0,
+				);
 			}
-			$type_breakdown[ $prop_type ]['count']++;
+			++$type_breakdown[ $prop_type ]['count'];
 			$type_breakdown[ $prop_type ]['volume'] += $amount;
 
 			// Originator stats.
 			if ( ! isset( $originator_stats[ $originator ] ) ) {
 				$originator_stats[ $originator ] = array(
-					'total_deals'  => 0,
-					'total_volume' => 0.0,
-					'closed_deals' => 0,
+					'total_deals'   => 0,
+					'total_volume'  => 0.0,
+					'closed_deals'  => 0,
 					'closed_volume' => 0.0,
 				);
 			}
-			$originator_stats[ $originator ]['total_deals']++;
+			++$originator_stats[ $originator ]['total_deals'];
 			$originator_stats[ $originator ]['total_volume'] += $amount;
 
 			// Track screened+ for conversion.
 			if ( isset( $stage_order[ $stage ] ) && $stage_order[ $stage ] >= 2 ) {
-				$screened_count++;
+				++$screened_count;
 			}
 
 			// Closed deals.
 			if ( 'closed' === $stage ) {
 				$closed_volume += $amount;
-				$closed_count++;
-				$originator_stats[ $originator ]['closed_deals']++;
+				++$closed_count;
+				++$originator_stats[ $originator ]['closed_deals'];
 				$originator_stats[ $originator ]['closed_volume'] += $amount;
 
 				// Time to close.
@@ -220,7 +251,7 @@ class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_In
 		// Rank originators by closed volume.
 		$originator_rankings = array();
 		foreach ( $originator_stats as $name => $stats ) {
-			$conversion = ( $stats['total_deals'] > 0 ) ? $stats['closed_deals'] / $stats['total_deals'] : 0.0;
+			$conversion            = ( $stats['total_deals'] > 0 ) ? $stats['closed_deals'] / $stats['total_deals'] : 0.0;
 			$originator_rankings[] = array(
 				'originator'      => $name,
 				'total_deals'     => $stats['total_deals'],
@@ -231,21 +262,24 @@ class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_In
 			);
 		}
 
-		usort( $originator_rankings, function ( $a, $b ) {
-			return (float) str_replace( array( '$', ',' ), '', $b['closed_volume'] )
+		usort(
+			$originator_rankings,
+			function ( $a, $b ) {
+				return (float) str_replace( array( '$', ',' ), '', $b['closed_volume'] )
 				<=> (float) str_replace( array( '$', ',' ), '', $a['closed_volume'] );
-		} );
+			}
+		);
 
 		return array(
 			'success' => true,
 			'message' => __( 'Origination volume analysis complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
 				'summary'             => array(
-					'total_deals'      => $total_count,
-					'total_volume'     => '$' . number_format( $total_volume, 0 ),
-					'closed_deals'     => $closed_count,
-					'closed_volume'    => '$' . number_format( $closed_volume, 0 ),
-					'avg_deal_size'    => '$' . number_format( $avg_deal_size, 0 ),
+					'total_deals'       => $total_count,
+					'total_volume'      => '$' . number_format( $total_volume, 0 ),
+					'closed_deals'      => $closed_count,
+					'closed_volume'     => '$' . number_format( $closed_volume, 0 ),
+					'avg_deal_size'     => '$' . number_format( $avg_deal_size, 0 ),
 					'avg_time_to_close' => round( $avg_time_to_close, 1 ) . ' days',
 				),
 				'conversion_rates'    => array(

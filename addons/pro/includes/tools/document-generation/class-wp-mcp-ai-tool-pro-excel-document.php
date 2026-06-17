@@ -182,6 +182,13 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool definition for LLM payload.
 	 *
 	 * @return array Tool definition including name, description, parameters, and required capability.
@@ -203,18 +210,17 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
-if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
-return array(
-'error' => __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ),
-);
-}
-if ( ! current_user_can( 'manage_options' ) ) {
-return array(
-'error' => __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ),
-);
-}
-
+		// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+		if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+			return array(
+				'error' => __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return array(
+				'error' => __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
@@ -361,7 +367,7 @@ return array(
 			'text'          => sprintf(
 				/* translators: %s: spreadsheet title */
 				__( 'Generated Excel spreadsheet: %s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -441,7 +447,7 @@ return array(
 			'text'          => sprintf(
 				/* translators: %s: spreadsheet title */
 				__( 'Generated Excel table: %s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -513,7 +519,7 @@ return array(
 			'text'          => sprintf(
 				/* translators: 1: spreadsheet title, 2: number of sheets */
 				__( 'Generated Excel workbook with %2$d sheets: %1$s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' ),
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' ),
 				count( $sheets )
 			),
 		);
@@ -557,7 +563,7 @@ return array(
 		if ( is_wp_error( $temp_file ) ) {
 			return $temp_file;
 		}
-		$xlsx_file  = $temp_file . '.xlsx';
+		$xlsx_file = $temp_file . '.xlsx';
 
 		// Rename temp file to have .xlsx extension.
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
@@ -598,7 +604,7 @@ return array(
 		// Execute command.
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_file ) );
-		$return_code  = $proc_result['exit_code'];
+		$return_code = $proc_result['exit_code'];
 
 		// Clean up temp files.
 		@unlink( $json_file );
@@ -715,6 +721,7 @@ return array(
 	 * @return string Node.js script content.
 	 */
 	protected function create_excel_generation_script() {
+		// phpcs:ignore Squiz.PHP.Heredoc
 		return <<<'JAVASCRIPT'
 const fs = require('fs');
 const ExcelJS = require('exceljs');
@@ -1058,9 +1065,10 @@ JAVASCRIPT;
 	 */
 	protected function try_parse_json_response( $content ) {
 		// Try to find JSON in the response (may be wrapped in markdown code blocks).
-		$json_pattern = '/```(?:json)?\s*(\{.*?\})\s*```/s';
+		$json_pattern = '/```( ? ( :json)?\s*(\{.*?\})\s*```/s';
 		if ( preg_match( $json_pattern, $content, $matches ) ) {
 			$json_str = $matches[1];
+		// phpcs:ignore Universal.ControlStructures.DisallowLonelyIf
 		} else {
 			// Try to find JSON object directly.
 			if ( preg_match( '/\{.*\}/s', $content, $matches ) ) {

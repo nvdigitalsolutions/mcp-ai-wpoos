@@ -350,7 +350,8 @@ class WP_MCP_AI_Vault_Encryption_Service {
 	========================================================================
 	 * TOTP (Time-based One-Time Password) Functions - RFC 6238
 	 * Compatible with Google Authenticator, Authy, Microsoft Authenticator
-	 * ======================================================================== */
+	 * ========================================================================
+	 */
 
 	/**
 	 * Generate a new TOTP secret (Base32 encoded).
@@ -544,7 +545,8 @@ class WP_MCP_AI_Vault_Encryption_Service {
 		$output   = '';
 		$bits     = '';
 
-		for ( $i = 0; $i < strlen( $data ); $i++ ) {
+		$data_len = strlen( $data );
+		for ( $i = 0; $i < $data_len; $i++ ) {
 			$bits .= str_pad( decbin( ord( $data[ $i ] ) ), 8, '0', STR_PAD_LEFT );
 		}
 
@@ -572,7 +574,8 @@ class WP_MCP_AI_Vault_Encryption_Service {
 		$data     = strtoupper( $data );
 		$bits     = '';
 
-		for ( $i = 0; $i < strlen( $data ); $i++ ) {
+		$data_len = strlen( $data );
+		for ( $i = 0; $i < $data_len; $i++ ) {
 			$pos = strpos( $alphabet, $data[ $i ] );
 			if ( false === $pos ) {
 				return false; // Invalid character.

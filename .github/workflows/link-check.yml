@@ -1,0 +1,129 @@
+name: Link Check
+
+on:
+  pull_request:
+    paths:
+      - 'readme.txt'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'SUBMISSION.md'
+      - '.github/workflows/link-check.yml'
+  push:
+    branches:
+      - alpha-working
+      - main
+    paths:
+      - 'readme.txt'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'SUBMISSION.md'
+  schedule:
+    # Run weekly on Mondays at 09:00 UTC to catch newly-dead links.
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  link-check:
+    name: Check URLs in documentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract URLs from readme.txt
+        id: extract
+        run: |
+          set -euo pipefail
+          # Extract all http(s) URLs from readme.txt for checking.
+          grep -oE 'https?://[^)>" ]+' readme.txt | sort -u > /tmp/readme-urls.txt
+          echo "Found $(wc -l < /tmp/readme-urls.txt) URLs in readme.txt"
+          cat /tmp/readme-urls.txt
+
+      - name: Check URLs with curl
+        run: |
+          set -euo pipefail
+          HARD_FAILED=0
+          WARNED=0
+          SKIPPED=0
+          CHECKED=0
+
+          # Domains / patterns to skip entirely.
+          # These are: local dev addresses, placeholder/template URLs (containing
+          # "{" or "yoursite"), example domains, and domains known to block all
+          # automated HEAD requests (gnu.org uses aggressive bot-detection).
+          SKIP_PATTERNS=(
+            "localhost"
+            "127.0.0.1"
+            "example.com"
+            "yoursite.com"
+            "your-site.com"
+            "yourdomain.com"
+            "{"
+            "www.gnu.org"
+          )
+
+          while IFS= read -r url; do
+            # Skip matching patterns.
+            skip=false
+            for pattern in "${SKIP_PATTERNS[@]}"; do
+              if [[ "$url" == *"$pattern"* ]]; then
+                skip=true
+                break
+              fi
+            done
+            if $skip; then
+              echo "SKIPPED: $url"
+              (( SKIPPED++ )) || true
+              continue
+            fi
+
+            # Issue a HEAD request (15 s timeout, follow up to 5 redirects).
+            HTTP_STATUS=$(curl --silent --head --max-time 15 --max-redirs 5 \
+              --output /dev/null --write-out "%{http_code}" \
+              --user-agent "Mozilla/5.0 (compatible; NV-oOS-LinkChecker/1.0; +https://github.com/nvdigitalsolutions/mcp-ai-wpoos)" \
+              "$url" 2>/dev/null || echo "000")
+
+            # Classification:
+            #
+            #   OK      -- 2xx, 3xx (redirects), 403/429 (bot-protection / rate-limit)
+            #   WARN    -- other 4xx: the server responded, but the request needs auth,
+            #              a body, or a specific HTTP method.  This is expected for bare
+            #              API endpoint URLs in readme.txt (e.g. api.openai.com returns
+            #              421, api.anthropic.com/v1/messages returns 405).  These are
+            #              live, working endpoints -- not dead links.  Emit a warning
+            #              annotation but do NOT fail the build.
+            #   FAIL    -- 000 (curl could not connect) or 5xx (server error).
+            #              These are truly unreachable / broken URLs.
+
+            if [[ "$HTTP_STATUS" =~ ^[23] ]] || \
+               [[ "$HTTP_STATUS" == "403" ]] || \
+               [[ "$HTTP_STATUS" == "429" ]]; then
+              echo "OK ($HTTP_STATUS): $url"
+
+            elif [[ "$HTTP_STATUS" == "000" ]] || [[ "$HTTP_STATUS" =~ ^5 ]]; then
+              echo "::error::Unreachable ($HTTP_STATUS): $url"
+              (( HARD_FAILED++ )) || true
+
+            else
+              # 4xx that needs auth / body / different method -- warn, do not fail.
+              echo "::warning::Auth/method required ($HTTP_STATUS) -- live API endpoint, not a dead link: $url"
+              (( WARNED++ )) || true
+            fi
+
+            (( CHECKED++ )) || true
+
+          done < /tmp/readme-urls.txt
+
+          echo ""
+          echo "Link check: ${CHECKED} checked, ${SKIPPED} skipped, ${WARNED} auth-required (warnings), ${HARD_FAILED} unreachable (errors)."
+
+          if [ "${HARD_FAILED}" -gt 0 ]; then
+            echo "::error::${HARD_FAILED} URL(s) are completely unreachable (curl error or 5xx). Review the annotations above and update readme.txt."
+            exit 1
+          fi
+
+          if [ "${WARNED}" -gt 0 ]; then
+            echo "${WARNED} URL(s) returned 4xx -- these are live API endpoints that require authentication or a request body. No action needed unless a URL has changed."
+          fi

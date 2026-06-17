@@ -108,10 +108,7 @@ class WP_MCP_AI_Tool_List_Vector_Stores implements WP_MCP_AI_Tool_Interface, WP_
 		$result = $client->list_vector_stores( $options );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'error'   => $result->get_error_message(),
-			);
+			return $result;
 		}
 
 		$vector_stores = isset( $result['data'] ) ? $result['data'] : array();

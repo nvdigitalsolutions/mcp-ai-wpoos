@@ -491,6 +491,19 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 		$html = $response['data']['html'];
 		$this->assertStringContainsString( 'wp-mcp-ai-chat', $html, 'HTML should contain chat container' );
 		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $html, 'HTML should contain chat data attribute' );
+
+		// Ensure interactive chat controls are preserved after sanitization.
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__submit', $html, 'HTML should preserve submit button markup' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__voice-chat', $html, 'HTML should preserve voice chat button markup' );
+		$this->assertStringContainsString( 'type="button"', $html, 'HTML should preserve button types for interactive chat controls.' );
+		$this->assertStringContainsString( 'type="submit"', $html, 'HTML should preserve submit button type for chat form submission.' );
+		$this->assertStringContainsString( 'hidden', $html, 'HTML should preserve hidden-state attributes required by chat UI toggles.' );
+		$this->assertStringContainsString( '<svg', $html, 'HTML should preserve SVG button icons used by chat controls' );
+		// The <form> element must survive sanitisation so that chat.js can find
+		// .wp-mcp-ai-chat__form and attach the submit handler.  Without this, all
+		// chat-ui buttons are silently inert after the AJAX injection.
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__form', $html, 'HTML should preserve form element so chat.js can attach submit handler.' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__input', $html, 'HTML should preserve textarea element so chat.js can find the input.' );
 	}
 
 	/**

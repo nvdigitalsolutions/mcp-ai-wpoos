@@ -131,38 +131,40 @@ class WP_MCP_AI_Metric_Event_Store {
 			KEY privacy_recorded (privacy, recorded_at)
 		) $charset_collate;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( ! function_exists( 'dbDelta' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $sql );
 
 		update_option( self::SCHEMA_OPTION, self::SCHEMA_VERSION, false );
 		return $this->table_exists();
-	}
+		}
 
-	/**
-	 * Drop the table. Used by uninstall and test teardown only.
-	 *
-	 * @return void
-	 */
-	public function drop() {
-		global $wpdb;
-		$table_name = $this->table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
-		delete_option( self::SCHEMA_OPTION );
-	}
+		/**
+		 * Drop the table. Used by uninstall and test teardown only.
+		 *
+		 * @return void
+		 */
+		public function drop() {
+			global $wpdb;
+			$table_name = esc_sql( $this->table_name() );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on custom plugin table; table name from class constant, not user input. WP_Query does not support custom table DDL.
+			$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
+			delete_option( self::SCHEMA_OPTION );
+		}
 
-	/**
-	 * Whether the backing table exists in the database.
-	 *
-	 * @return bool
-	 */
-	public function table_exists() {
-		global $wpdb;
-		$table_name = $this->table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
-		return $found === $table_name;
-	}
+		/**
+		 * Whether the backing table exists in the database.
+		 *
+		 * @return bool
+		 */
+		public function table_exists() {
+			global $wpdb;
+			$table_name = $this->table_name();
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on custom plugin table; table name from class constant, not user input. WP_Query does not support SHOW TABLES.
+			$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+			return $found === $table_name;
+		}
 
 	/**
 	 * Insert a batch of metric events.
@@ -221,7 +223,7 @@ class WP_MCP_AI_Metric_Event_Store {
 				. ' (metric_id, metric_value, metric_type, metric_unit, privacy, recorded_at, context) VALUES '
 				. implode( ', ', $placeholders );
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- Batch insert on custom plugin table; dynamic SQL construction is necessary for variable batch sizes. WP_Query does not support custom table inserts.
 			$result = $wpdb->query( $wpdb->prepare( $sql, $values ) );
 			if ( false !== $result ) {
 				$written += (int) $result;
@@ -317,12 +319,12 @@ class WP_MCP_AI_Metric_Event_Store {
 			  AND recorded_at >= %s
 			  AND recorded_at <= %s
 			ORDER BY recorded_at DESC
-			LIMIT %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			LIMIT %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a hardcoded plugin constant; neighbouring ignores in the same method already carry this justification.
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query on custom plugin table; WP_Query does not support custom table queries.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				$sql, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$sql, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic SQL with parameterised values; table name from class constant.
 				$metric_id,
 				gmdate( 'Y-m-d H:i:s', $since ),
 				gmdate( 'Y-m-d H:i:s', $until ),
@@ -362,8 +364,8 @@ class WP_MCP_AI_Metric_Event_Store {
 		}
 
 		$table_name = $this->table_name();
-		$sql        = "SELECT privacy, COUNT(*) AS total FROM $table_name GROUP BY privacy"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
+		$sql        = "SELECT privacy, COUNT(*) AS total FROM $table_name GROUP BY privacy"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a hardcoded plugin constant; neighbouring ignores in the same method already carry this justification.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- Direct aggregation query on custom plugin table; table name from class constant. WP_Query does not support custom table GROUP BY.
 		$rows = $wpdb->get_results( $sql, ARRAY_A );
 
 		$out = array();
@@ -404,10 +406,10 @@ class WP_MCP_AI_Metric_Event_Store {
 		$cutoff     = gmdate( 'Y-m-d H:i:s', (int) $older_than_ts );
 		$table_name = $this->table_name();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct DELETE on custom plugin table; table name from class constant. WP_Query does not support custom table deletes.
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from class constant, not user input.
 				"DELETE FROM $table_name WHERE privacy = %s AND recorded_at < %s",
 				$privacy,
 				$cutoff
@@ -427,8 +429,8 @@ class WP_MCP_AI_Metric_Event_Store {
 		if ( ! $this->table_exists() ) {
 			return 0;
 		}
-		$table_name = $this->table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$table_name = esc_sql( $this->table_name() );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct COUNT on custom plugin table; table name from class constant. WP_Query does not support custom table queries.
 		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
 	}
 }

@@ -9,6 +9,7 @@
  * @package WP_MCP_AI_Pro
  * @subpackage CRM_Toolkit
  * @since 2.1.0
+ * @since 2.4.0 — Added TF-IDF relevance search, configurable orderby/order parameters.
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
@@ -17,6 +18,8 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-search.php';
 
 /**
  * CRM Email Search – Accounting & Service Tracking Tool.
@@ -30,13 +33,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Compliance-ready audit metadata (data_retention_flag, audit_trail)
  * - Integration hints for QuickBooks Online, Xero, FreshBooks
  * - Results cached (WP_MCP_AI_Cache_Helper) and auto-refreshed via WP Cron
+ * - TF-IDF free-text relevance search with configurable sort order
  *
  * Industry references: AccountingSuite CRM Classification, Freshsales/Zoho Accounting
  * Integration, Monday.com CRM-with-Invoicing, Microsoft Dynamics 365 Finance.
  *
  * @since 2.1.0
+ * @since 2.4.0 — Added TF-IDF relevance search, configurable orderby/order parameters.
  */
 class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_CRM_Relevance_Search;
 
 	/**
 	 * WP Cron hook for scheduled cache refresh.
@@ -98,6 +105,15 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	const FISCAL_QUARTERS = array( 'Q1', 'Q2', 'Q3', 'Q4', 'all' );
 
 	/**
+	 * Allowed orderby values for result sorting.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @var string[]
+	 */
+	const ORDERBY_OPTIONS = array( 'relevance', 'invoice_amount', 'days_overdue', 'date', 'name', 'company' );
+
+	/**
 	 * Constructor – registers WP Cron callback.
 	 */
 	public function __construct() {
@@ -123,22 +139,30 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 		return __( 'The CRM Email Search (Accounting) tool requires the CRM Toolkit to be enabled in plugin settings.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_slug() {
 		return 'crm_email_search_accounting';
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_name() {
 		return __( 'CRM Email Search: Accounting & Service Tracking', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_description() {
-		return __( 'Search CRM contacts for accounting and service-tracking emails. Supports industry-standard transaction types (invoice, payment, quote, reminder, dispute), billing-status filtering, invoice-amount ranges, service categories, and compliance audit metadata. Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule.', 'mcp-ai-wpoos-pro' );
+		return __( 'Search CRM contacts for accounting and service-tracking emails with TF-IDF free-text relevance scoring. Supports industry-standard transaction types (invoice, payment, quote, reminder, dispute), billing-status filtering, invoice-amount ranges, service categories, compliance audit metadata, and configurable sort order (relevance, invoice_amount, days_overdue, date, name, company). Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -245,23 +269,45 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 					'type'        => 'string',
 					'description' => __( 'Filter by ISO 4217 currency code (e.g. "USD", "EUR", "GBP"). Multi-currency standard in Xero, QuickBooks Online, and FreshBooks for international clients.', 'mcp-ai-wpoos-pro' ),
 				),
+				'search'              => array(
+					'type'        => 'string',
+					'description' => __( 'Free-text search query. When combined with orderby=relevance, results are ranked by TF-IDF relevance scoring across contact name, company, and email fields. Use plain keywords (e.g. "Acme overdue invoice").', 'mcp-ai-wpoos-pro' ),
+				),
+				'orderby'             => array(
+					'type'        => 'string',
+					'enum'        => self::ORDERBY_OPTIONS,
+					'description' => __( 'Sort results by this field. relevance requires the search parameter and applies TF-IDF scoring. invoice_amount sorts by the stored invoice amount. days_overdue sorts by computed overdue days. date sorts by contact added date. name sorts by contact name. company sorts by company name.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'date',
+				),
+				'order'               => array(
+					'type'        => 'string',
+					'enum'        => array( 'ASC', 'DESC' ),
+					'description' => __( 'Sort direction: ASC (ascending) or DESC (descending).', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'DESC',
+				),
 			),
 			'required'             => array( 'action' ),
 			'additionalProperties' => false,
 		);
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function requires_base_pro() {
 		return true;
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -331,7 +377,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	// -------------------------------------------------------------------------
-	// Action handlers
+	// Action handlers.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -473,7 +519,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	// -------------------------------------------------------------------------
-	// Cron callback
+	// Cron callback.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -508,7 +554,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	// -------------------------------------------------------------------------
-	// Core query
+	// Core query.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -525,15 +571,46 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 		$per_page           = min( max( absint( $filters['per_page'] ), 1 ), 100 );
 		$page               = max( absint( $filters['page'] ), 1 );
 		$include_audit_meta = ! empty( $filters['include_audit_meta'] );
+		$orderby            = $filters['orderby'];
+		$order              = $filters['order'];
+		$search             = ! empty( $filters['search'] ) ? $filters['search'] : '';
+
+		// Relevance search: query all candidates, rank, then paginate.
+		$is_relevance = ( 'relevance' === $orderby && ! empty( $search ) );
 
 		$query_args = array(
-			'post_type'      => 'mcp_crm_contacts',
-			'post_status'    => 'publish',
-			'posts_per_page' => $per_page,
-			'paged'          => $page,
-			'orderby'        => 'date',
-			'order'          => 'DESC',
+			'post_type'   => 'mcp_crm_contacts',
+			'post_status' => 'publish',
+			'order'       => $order,
 		);
+
+		if ( $is_relevance ) {
+			$query_args['posts_per_page'] = 500; // High limit for relevance ranking.
+			$query_args['paged']          = 1;
+			$query_args['orderby']        = 'date'; // Fallback pre-ranking order.
+		} else {
+			$query_args['posts_per_page'] = $per_page;
+			$query_args['paged']          = $page;
+
+			switch ( $orderby ) {
+				case 'invoice_amount':
+					$query_args['meta_key'] = 'invoice_amount'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for accounting sort.
+					$query_args['orderby']  = 'meta_value_num';
+					break;
+				case 'name':
+					$query_args['orderby'] = 'title';
+					break;
+				case 'company':
+					$query_args['meta_key'] = 'company'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for accounting sort.
+					$query_args['orderby']  = 'meta_value';
+					break;
+				case 'days_overdue':
+				case 'date':
+				default:
+					$query_args['orderby'] = 'date';
+					break;
+			}
+		}
 
 		$meta_query = array( 'relation' => 'AND' );
 
@@ -650,7 +727,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			 * @param string $default_currency Default ISO 4217 currency code.
 			 */
 			$default_currency = apply_filters( 'wp_mcp_ai_crm_default_currency', 'USD' );
-			$currency         = $raw_currency ?: strtoupper( sanitize_text_field( $default_currency ) );
+			$currency         = $raw_currency  ? $raw_currency : strtoupper( sanitize_text_field( $default_currency ) );
 
 			// Currency code filter (ISO 4217 – Xero/QuickBooks multi-currency standard).
 			if ( ! empty( $filters['currency_code'] ) && strtoupper( $filters['currency_code'] ) !== $currency ) {
@@ -692,13 +769,38 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			$records[] = $record;
 		}
 
+		// Apply TF-IDF relevance ranking when search + relevance ordering.
+		if ( $is_relevance ) {
+			$records = $this->rank_by_relevance( $records, $search );
+
+			// Paginate the ranked results.
+			$total_found = count( $records );
+			$offset      = ( $page - 1 ) * $per_page;
+			$records     = array_slice( $records, $offset, $per_page );
+			$total_pages = max( 1, (int) ceil( $total_found / $per_page ) );
+		} else {
+			// Post-loop sort for computed fields.
+			if ( 'days_overdue' === $orderby ) {
+				usort(
+					$records,
+					function ( $a, $b ) use ( $order ) {
+						$a_val = isset( $a['days_overdue'] ) ? (int) $a['days_overdue'] : PHP_INT_MAX;
+						$b_val = isset( $b['days_overdue'] ) ? (int) $b['days_overdue'] : PHP_INT_MAX;
+						return 'DESC' === $order ? $b_val - $a_val : $a_val - $b_val;
+					}
+				);
+			}
+			$total_found = $query->found_posts;
+			$total_pages = max( 1, $query->max_num_pages );
+		}
+
 		$response = array(
 			'success'  => true,
 			'records'  => $records,
-			'total'    => $query->found_posts,
+			'total'    => $total_found,
 			'per_page' => $per_page,
 			'page'     => $page,
-			'pages'    => max( 1, $query->max_num_pages ),
+			'pages'    => $total_pages,
 			'filters'  => $filters,
 			'summary'  => $this->build_summary( $records ),
 		);
@@ -707,7 +809,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	// -------------------------------------------------------------------------
-	// Accounting helpers
+	// Accounting helpers.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -860,7 +962,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	// -------------------------------------------------------------------------
-	// Helpers
+	// Helpers.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -890,6 +992,17 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			$fiscal_quarter = 'all';
 		}
 
+		$search  = isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '';
+		$orderby = $this->sanitise_orderby(
+			isset( $arguments['orderby'] ) ? $arguments['orderby'] : 'date',
+			'date',
+			self::ORDERBY_OPTIONS
+		);
+		$order   = isset( $arguments['order'] ) ? strtoupper( sanitize_text_field( $arguments['order'] ) ) : 'DESC';
+		if ( ! in_array( $order, array( 'ASC', 'DESC' ), true ) ) {
+			$order = 'DESC';
+		}
+
 		$filters = array(
 			'transaction_type'   => $transaction_type,
 			'billing_status'     => $billing_status,
@@ -903,6 +1016,9 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			'include_audit_meta' => isset( $arguments['include_audit_meta'] ) ? (bool) $arguments['include_audit_meta'] : false,
 			'per_page'           => isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20,
 			'page'               => isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1,
+			'search'             => $search,
+			'orderby'            => $orderby,
+			'order'              => $order,
 		);
 
 		if ( isset( $arguments['invoice_amount_min'] ) ) {

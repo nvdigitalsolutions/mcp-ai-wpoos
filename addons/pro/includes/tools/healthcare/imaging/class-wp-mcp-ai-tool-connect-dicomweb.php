@@ -71,25 +71,25 @@ class WP_MCP_AI_Tool_Connect_DICOMweb implements WP_MCP_AI_Tool_Interface, WP_MC
 			'type'       => 'object',
 			'properties' => array(
 				'action'       => array(
-					'type'        => 'string',
-					'enum'        => array( 'configure', 'test', 'get', 'disconnect' ),
-					'default'     => 'test',
+					'type'    => 'string',
+					'enum'    => array( 'configure', 'test', 'get', 'disconnect' ),
+					'default' => 'test',
 				),
 				'base_url'     => array(
 					'type'        => 'string',
 					'description' => __( 'Root DICOMweb URL (e.g. https://pacs.example.org/dicom-web).', 'mcp-ai-wpoos-pro' ),
 				),
 				'auth_type'    => array(
-					'type'        => 'string',
-					'enum'        => array( 'none', 'basic', 'bearer' ),
+					'type' => 'string',
+					'enum' => array( 'none', 'basic', 'bearer' ),
 				),
 				'username'     => array( 'type' => 'string' ),
 				'password'     => array( 'type' => 'string' ),
 				'bearer_token' => array( 'type' => 'string' ),
 				'timeout'      => array(
-					'type'        => 'integer',
-					'minimum'     => 5,
-					'maximum'     => 600,
+					'type'    => 'integer',
+					'minimum' => 5,
+					'maximum' => 600,
 				),
 			),
 		);
@@ -100,6 +100,13 @@ class WP_MCP_AI_Tool_Connect_DICOMweb implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing', 'external-api' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -191,7 +198,7 @@ class WP_MCP_AI_Tool_Connect_DICOMweb implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array
 	 */
 	private function redacted_config() {
-		$conn = WP_MCP_AI_DICOMweb_Client::get_connection();
+		$conn                 = WP_MCP_AI_DICOMweb_Client::get_connection();
 		$conn['password']     = '' !== (string) $conn['password'] ? '[redacted]' : '';
 		$conn['bearer_token'] = '' !== (string) $conn['bearer_token'] ? '[redacted]' : '';
 		return $conn;

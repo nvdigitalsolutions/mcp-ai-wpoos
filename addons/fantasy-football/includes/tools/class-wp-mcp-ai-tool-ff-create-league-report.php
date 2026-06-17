@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Creates comprehensive league reports with standings, statistics, and analysis.
  */
 class WP_MCP_AI_Tool_FF_Create_League_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**

@@ -1,0 +1,38 @@
+<?php
+/** @package Nvoos\Core @since 1.0.0 @license MIT */
+declare(strict_types=1);
+namespace Nvoos\Core\Tool;
+
+class ClientSummarizeTextTool extends AbstractClientSideTool {
+	public function getSlug(): string {
+		return 'client_summarize_text'; }
+	public function getName(): string {
+		return 'Summarize Text (Client)'; }
+	public function getDescription(): string {
+		return 'Summarizes text using Transformers.js in the browser. Runs entirely client-side.'; }
+	public function getParametersSchema(): array {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'text' => array(
+					'type'        => 'string',
+					'description' => 'Text to summarize',
+				),
+			),
+			'required'             => array( 'text' ),
+			'additionalProperties' => false,
+		); }
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
+		$missing = $this->validateText( $arguments );
+		if ( null !== $missing ) {
+			return $this->errors->validationFailed( "{$missing} is required.", array( $missing => array( "{$missing} is required." ) ) );
+		}
+		return $this->success(
+			'Text summarization will run in the browser using Transformers.js.',
+			array(
+				'client_side' => true,
+				'model'       => 'Xenova/distilbart-cnn-6-6',
+			)
+		);
+	}
+}

@@ -89,6 +89,10 @@ function wp_mcp_ai_load_default_slash_commands() {
 					'description' => __( 'Show detailed information for all commands', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
+				'--new'      => array(
+					'description' => __( 'List commands added since v2.0', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
 			),
 		)
 	);
@@ -386,6 +390,384 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
+	// Load memory commands (/remember, /forget, /scope) — Phase 4 of chat ⇄ memory integration.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-memory.php';
+
+	$memory_command = new WP_MCP_AI_Slash_Command_Memory();
+
+	$wp_mcp_ai_slash_command_handler->register(
+		'remember',
+		array(
+			'handler'     => array( $memory_command, 'remember' ),
+			'description' => __( 'Store the supplied text as a verbatim long-term memory for the current assistant.', 'mcp-ai-wpoos' ),
+			'usage'       => '/remember <text> [--tag=<tag>] [--importance=<low|medium|high|critical>] [--wing=<wing>] [--room=<room>] [--summary]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array( 'memorize' ),
+			'parameters'  => array(
+				'--tag'        => array(
+					'description' => __( 'Tag(s) to attach (comma-separated or repeated).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--importance' => array(
+					'description' => __( 'Importance level: low, medium, high, critical (default: medium).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--wing'       => array(
+					'description' => __( 'Wing scope (project / client / matter).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--room'       => array(
+					'description' => __( 'Room scope (topic cluster).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--summary'    => array(
+					'description' => __( 'Summarise instead of storing verbatim.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	$wp_mcp_ai_slash_command_handler->register(
+		'forget',
+		array(
+			'handler'     => array( $memory_command, 'forget' ),
+			'description' => __( 'Delete a stored memory by its context_id.', 'mcp-ai-wpoos' ),
+			'usage'       => '/forget <context_id>',
+			'capability'  => 'edit_posts',
+			'parameters'  => array(
+				'context_id' => array(
+					'description' => __( 'The context_id of the memory to delete.', 'mcp-ai-wpoos' ),
+					'required'    => true,
+				),
+			),
+		)
+	);
+
+	$wp_mcp_ai_slash_command_handler->register(
+		'scope',
+		array(
+			'handler'     => array( $memory_command, 'scope' ),
+			'description' => __( 'Set the active wing/room scope for subsequent memory operations in this conversation.', 'mcp-ai-wpoos' ),
+			'usage'       => '/scope [<wing> [<room>]]',
+			'capability'  => 'edit_posts',
+			'parameters'  => array(
+				'wing' => array(
+					'description' => __( 'Wing name (project / client / matter). Omit to clear scope.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'room' => array(
+					'description' => __( 'Optional room (topic cluster).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load markup-stats command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-markup-stats.php';
+	$markup_stats_command = new WP_MCP_AI_Slash_Command_Markup_Stats();
+	$wp_mcp_ai_slash_command_handler->register(
+		'markup-stats',
+		array(
+			'handler'     => array( $markup_stats_command, 'execute' ),
+			'description' => __( 'Show aggregate markup telemetry counters (completion/cancellation rates).', 'mcp-ai-wpoos' ),
+			'usage'       => '/markup-stats [--verbose|-v] [--json] [--reset]',
+			'capability'  => 'manage_options',
+			'aliases'     => array( 'mstats' ),
+			'parameters'  => array(
+				'--verbose' => array(
+					'description' => __( 'Show per-tool and per-mode breakdown.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--json'    => array(
+					'description' => __( 'Return raw JSON data.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--reset'   => array(
+					'description' => __( 'Reset all telemetry counters (manage_options required).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load jobs command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-jobs.php';
+	$jobs_command = new WP_MCP_AI_Slash_Command_Jobs();
+	$wp_mcp_ai_slash_command_handler->register(
+		'jobs',
+		array(
+			'handler'     => array( $jobs_command, 'execute' ),
+			'description' => __( 'List and manage async background jobs.', 'mcp-ai-wpoos' ),
+			'usage'       => '/jobs [--list] [--all] [--cancel=<job_id>] [--status=<status>] [--limit=<n>] [--json]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array(),
+			'parameters'  => array(
+				'--all'    => array(
+					'description' => __( 'List jobs for all users (requires manage_options).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--cancel' => array(
+					'description' => __( 'Cancel a specific job by ID.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--status' => array(
+					'description' => __( 'Filter by status: queued, running, completed, failed, paused.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--limit'  => array(
+					'description' => __( 'Maximum number of rows (default: 10).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--json'   => array(
+					'description' => __( 'Return raw JSON output.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load status command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-status.php';
+	$status_command = new WP_MCP_AI_Slash_Command_Status();
+	$wp_mcp_ai_slash_command_handler->register(
+		'status',
+		array(
+			'handler'     => array( $status_command, 'execute' ),
+			'description' => __( 'Show aggregated system health: async health, job counts, and tool registry status.', 'mcp-ai-wpoos' ),
+			'usage'       => '/status [--json]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array(),
+			'parameters'  => array(
+				'--json' => array(
+					'description' => __( 'Return raw JSON output.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load cost command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-cost.php';
+	$cost_command = new WP_MCP_AI_Slash_Command_Cost();
+	$wp_mcp_ai_slash_command_handler->register(
+		'cost',
+		array(
+			'handler'     => array( $cost_command, 'execute' ),
+			'description' => __( 'Show token usage and cost summary.', 'mcp-ai-wpoos' ),
+			'usage'       => '/cost [--days=<n>] [--user-id=<n>] [--json]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array(),
+			'parameters'  => array(
+				'--days'    => array(
+					'description' => __( 'Look-back window in days (default: 7, max: 365).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--user-id' => array(
+					'description' => __( 'Target user ID — requires manage_options.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--json'    => array(
+					'description' => __( 'Return raw JSON output.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load diagnose command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-diagnose.php';
+	$diagnose_command = new WP_MCP_AI_Slash_Command_Diagnose();
+	$wp_mcp_ai_slash_command_handler->register(
+		'diagnose',
+		array(
+			'handler'     => array( $diagnose_command, 'execute' ),
+			'description' => __( 'Generate a diagnostic bundle for support (version, PHP, errors, async health, tool count).', 'mcp-ai-wpoos' ),
+			'usage'       => '/diagnose [--json]',
+			'capability'  => 'manage_options',
+			'aliases'     => array( 'debug' ),
+			'parameters'  => array(
+				'--json' => array(
+					'description' => __( 'Return raw JSON output.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load tools command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-tools.php';
+	$tools_command = new WP_MCP_AI_Slash_Command_Tools();
+	$wp_mcp_ai_slash_command_handler->register(
+		'tools',
+		array(
+			'handler'     => array( $tools_command, 'execute' ),
+			'description' => __( 'Browse, filter, and inspect registered tools.', 'mcp-ai-wpoos' ),
+			'usage'       => '/tools [<search>] [--capability-flag=<flag>] [--list] [--page=<n>] [--show=<slug>] [--json]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array(),
+			'parameters'  => array(
+				'search'            => array(
+					'description' => __( 'Search term to filter by slug or description.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--capability-flag' => array(
+					'description' => __( 'Filter by capability flag (read-only, write, state-changing, etc.).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--page'            => array(
+					'description' => __( 'Page number for listing (20 per page).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--show'            => array(
+					'description' => __( 'Show full definition for a single tool slug.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--json'            => array(
+					'description' => __( 'Return raw JSON output.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load skills command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-skills.php';
+	$skills_command = new WP_MCP_AI_Slash_Command_Skills();
+	$wp_mcp_ai_slash_command_handler->register(
+		'skills',
+		array(
+			'handler'     => array( $skills_command, 'execute' ),
+			'description' => __( 'List, inspect, and install agent skill packs.', 'mcp-ai-wpoos' ),
+			'usage'       => '/skills [--list] [--install=<slug>] [--show=<slug>] [--json]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array(),
+			'parameters'  => array(
+				'--install' => array(
+					'description' => __( 'Install a skill pack (requires manage_options).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--show'    => array(
+					'description' => __( 'Show skill pack details.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--json'    => array(
+					'description' => __( 'Return raw JSON output.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load preset command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-preset.php';
+	$preset_command = new WP_MCP_AI_Slash_Command_Preset();
+	$wp_mcp_ai_slash_command_handler->register(
+		'preset',
+		array(
+			'handler'     => array( $preset_command, 'execute' ),
+			'description' => __( 'List, inspect, and apply orchestration presets.', 'mcp-ai-wpoos' ),
+			'usage'       => '/preset [--list] [--show=<id>] [--apply=<id>] [--active] [--json]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array(),
+			'parameters'  => array(
+				'--show'   => array(
+					'description' => __( 'Show full config for a preset ID.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--apply'  => array(
+					'description' => __( 'Apply a preset by ID (requires manage_options).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--active' => array(
+					'description' => __( 'Show the currently active preset.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--json'   => array(
+					'description' => __( 'Return raw JSON output.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load model command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-model.php';
+	$model_command = new WP_MCP_AI_Slash_Command_Model();
+	$wp_mcp_ai_slash_command_handler->register(
+		'model',
+		array(
+			'handler'     => array( $model_command, 'execute' ),
+			'description' => __( 'List available models, view or set the model for an assistant.', 'mcp-ai-wpoos' ),
+			'usage'       => '/model [--list] [--current] [--set=<slug>] [--assistant-id=<n>] [--discover] [--json]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array(),
+			'parameters'  => array(
+				'--set'          => array(
+					'description' => __( 'Set model on an assistant (requires manage_options).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--assistant-id' => array(
+					'description' => __( 'Target assistant post ID.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--discover'     => array(
+					'description' => __( 'Trigger model discovery refresh (requires manage_options).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--current'      => array(
+					'description' => __( 'Show model for the current/specified assistant.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--json'         => array(
+					'description' => __( 'Return raw JSON output.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load session commands (/clear, /reset, /resume).
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-session.php';
+	$session_command = new WP_MCP_AI_Slash_Command_Session();
+
+	$wp_mcp_ai_slash_command_handler->register(
+		'clear',
+		array(
+			'handler'     => array( $session_command, 'clear' ),
+			'description' => __( 'Clear the chat window (front-end signal only — no server state changed).', 'mcp-ai-wpoos' ),
+			'usage'       => '/clear',
+			'capability'  => 'read',
+			'aliases'     => array(),
+			'parameters'  => array(),
+		)
+	);
+
+	$wp_mcp_ai_slash_command_handler->register(
+		'reset',
+		array(
+			'handler'     => array( $session_command, 'reset' ),
+			'description' => __( 'Reset the current session context.', 'mcp-ai-wpoos' ),
+			'usage'       => '/reset',
+			'capability'  => 'read',
+			'aliases'     => array(),
+			'parameters'  => array(),
+		)
+	);
+
+	$wp_mcp_ai_slash_command_handler->register(
+		'resume',
+		array(
+			'handler'     => array( $session_command, 'resume' ),
+			'description' => __( 'Resume the most recent saved session transcript.', 'mcp-ai-wpoos' ),
+			'usage'       => '/resume',
+			'capability'  => 'read',
+			'aliases'     => array(),
+			'parameters'  => array(),
+		)
+	);
+
 	/**
 	 * Fires after default slash commands are loaded
 	 *
@@ -650,11 +1032,7 @@ function wp_mcp_ai_execute_workflow( $workflow_name, $params = array(), $context
 	$orchestrator = wp_mcp_ai_get_workflow_orchestrator();
 
 	if ( ! $orchestrator ) {
-		return array(
-			'success' => false,
-			'error'   => 'orchestrator_not_available',
-			'message' => __( 'Workflow orchestrator not available.', 'mcp-ai-wpoos' ),
-		);
+		return new WP_Error( 'wp_mcp_ai_error', __( 'Workflow orchestrator not available.', 'mcp-ai-wpoos' ) );
 	}
 
 	return $orchestrator->execute_workflow( $workflow_name, $params, $context );

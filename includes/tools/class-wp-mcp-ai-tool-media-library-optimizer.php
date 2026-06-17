@@ -79,6 +79,11 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 					'description' => __( 'Number of images to process (default: 50)', 'mcp-ai-wpoos' ),
 					'default'     => 50,
 				),
+				'max_items'         => array(
+					'type'        => 'integer',
+					'description' => __( 'Maximum total images to scan during analyze / detect_unused (default: 500). Filterable via wp_mcp_ai_tool_max_items.', 'mcp-ai-wpoos' ),
+					'default'     => 500,
+				),
 				'age_days'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Age in days for unused media detection (default: 180)', 'mcp-ai-wpoos' ),
@@ -109,6 +114,11 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		$limit             = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 50;
 		$age_days          = isset( $arguments['age_days'] ) ? absint( $arguments['age_days'] ) : 180;
 		$preserve_original = isset( $arguments['preserve_original'] ) ? (bool) $arguments['preserve_original'] : true;
+		$max_items         = WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items(
+			$this->get_slug(),
+			isset( $arguments['max_items'] ) ? absint( $arguments['max_items'] ) : 0,
+			500
+		);
 
 		// Validate quality.
 		$quality = max( 1, min( 100, $quality ) );
@@ -119,7 +129,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		// Route to action handler.
 		switch ( $action ) {
 			case 'analyze':
-				$result = $this->handle_analyze();
+				$result = $this->handle_analyze( $max_items );
 				break;
 
 			case 'compress':
@@ -131,7 +141,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 				break;
 
 			case 'detect_unused':
-				$result = $this->handle_detect_unused( $age_days );
+				$result = $this->handle_detect_unused( $age_days, $max_items );
 				break;
 
 			case 'configure_lazy_loading':
@@ -139,9 +149,9 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 				break;
 
 			default:
-				$result = array(
-					'success' => false,
-					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
+				$result = new WP_Error(
+					'wp_mcp_ai_error',
+					__( 'Invalid action specified', 'mcp-ai-wpoos' )
 				);
 		}
 
@@ -155,21 +165,12 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 	 * Handle analyze action
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param int $max_items Maximum images to scan (clamped via wp_mcp_ai_tool_max_items).
 	 * @return array Analysis result.
 	 */
-	private function handle_analyze() {
-		// Get all images.
-		$images = get_posts(
-			array(
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'image',
-				'posts_per_page' => -1,
-				'post_status'    => 'inherit',
-				'fields'         => 'ids',
-			)
-		);
-
-		$total_images  = count( $images );
+	private function handle_analyze( $max_items = 500 ) {
+		$total_images  = 0;
 		$total_size    = 0;
 		$format_counts = array(
 			'jpeg'  => 0,
@@ -182,45 +183,56 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 
 		$optimization_opportunities = array();
 
-		foreach ( $images as $image_id ) {
-			$file_path = get_attached_file( $image_id );
-			if ( ! file_exists( $file_path ) ) {
-				continue;
-			}
+		// Use the Phase 1 batch iterator to keep memory bounded for libraries
+		// with tens of thousands of attachments.
+		$iterator = new WP_MCP_AI_Batch_Iterator(
+			'media_library_optimizer_analyze',
+			array( 'max_items' => $max_items )
+		);
 
-			$file_size   = filesize( $file_path );
-			$total_size += $file_size;
+		$query_args = array(
+			'post_type'      => 'attachment',
+			'post_mime_type' => 'image',
+			'post_status'    => 'inherit',
+			'fields'         => 'ids',
+		);
 
-			// Determine format.
-			$mime_type = get_post_mime_type( $image_id );
-			$format    = $this->mime_to_format( $mime_type );
-			if ( isset( $format_counts[ $format ] ) ) {
-				++$format_counts[ $format ];
-			} else {
-				++$format_counts['other'];
-			}
+		foreach ( $iterator->paged_iterate( $query_args ) as $batch ) {
+			foreach ( $batch as $image_id ) {
+				$file_path = get_attached_file( $image_id );
+				if ( ! $file_path || ! file_exists( $file_path ) ) {
+					continue;
+				}
 
-			// Check for optimization opportunities.
-			if ( $file_size > 500000 ) { // >500KB.
-				$optimization_opportunities[] = array(
-					'id'          => $image_id,
-					'file'        => basename( $file_path ),
-					'size'        => $file_size,
-					'size_human'  => size_format( $file_size ),
-					'format'      => $format,
-					'reason'      => __( 'Large file size', 'mcp-ai-wpoos' ),
-					'recommended' => 'png' === $format ? 'avif' : 'webp',
-				);
-			}
+				++$total_images;
+				$file_size   = filesize( $file_path );
+				$total_size += $file_size;
 
-			// Check if AVIF/WebP conversion beneficial.
-			if ( in_array( $format, array( 'jpeg', 'png' ), true ) && $file_size > 100000 ) {
-				// Already added above, but could add specific recommendation.
-				continue;
+				$mime_type = get_post_mime_type( $image_id );
+				$format    = $this->mime_to_format( $mime_type );
+				if ( isset( $format_counts[ $format ] ) ) {
+					++$format_counts[ $format ];
+				} else {
+					++$format_counts['other'];
+				}
+
+				if ( $file_size > 500000 ) { // >500KB.
+					$optimization_opportunities[] = array(
+						'id'          => $image_id,
+						'file'        => basename( $file_path ),
+						'size'        => $file_size,
+						'size_human'  => size_format( $file_size ),
+						'format'      => $format,
+						'reason'      => __( 'Large file size', 'mcp-ai-wpoos' ),
+						'recommended' => 'png' === $format ? 'avif' : 'webp',
+					);
+				}
 			}
 		}
 
-		return array(
+		$iterator->complete();
+
+		$result = array(
 			'success'                     => true,
 			'summary'                     => array(
 				'total_images'       => $total_images,
@@ -228,13 +240,35 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 				'total_size_human'   => size_format( $total_size ),
 				'average_size'       => $total_images > 0 ? round( $total_size / $total_images ) : 0,
 				'average_size_human' => size_format( $total_images > 0 ? round( $total_size / $total_images ) : 0 ),
+				'scanned_cap'        => $max_items,
 			),
 			'format_distribution'         => $format_counts,
-			'optimization_opportunities'  => array_slice( $optimization_opportunities, 0, 20 ), // Top 20.
 			'total_opportunities'         => count( $optimization_opportunities ),
 			'estimated_savings_potential' => $this->estimate_savings( $total_size, $format_counts ),
 			'recommendations'             => $this->generate_optimization_recommendations( $format_counts, $total_images ),
 		);
+
+		// Stream large opportunity lists to an artifact instead of inlining
+		// hundreds of rows in the LLM context.
+		if ( WP_MCP_AI_Tool_Artifact_Helper::should_stream_to_artifact( count( $optimization_opportunities ), $this->get_slug() ) ) {
+			$result['optimization_opportunities_artifact'] = WP_MCP_AI_Tool_Artifact_Helper::stream_to_artifact(
+				$optimization_opportunities,
+				$this->get_slug(),
+				array(
+					'count'   => count( $optimization_opportunities ),
+					'summary' => sprintf(
+						/* translators: %d: opportunity count */
+						__( '%d optimization opportunities streamed to artifact.', 'mcp-ai-wpoos' ),
+						count( $optimization_opportunities )
+					),
+				)
+			);
+			$result['optimization_opportunities'] = array_slice( $optimization_opportunities, 0, 20 );
+		} else {
+			$result['optimization_opportunities'] = array_slice( $optimization_opportunities, 0, 20 );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -409,77 +443,103 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 	 * Handle detect unused action
 	 *
 	 * @since 1.0.0
-	 * @param int $age_days Age threshold.
+	 *
+	 * @param int $age_days  Age threshold.
+	 * @param int $max_items Maximum attachments to scan.
 	 * @return array Unused detection result.
 	 */
-	private function handle_detect_unused( $age_days ) {
+	private function handle_detect_unused( $age_days, $max_items = 500 ) {
 		global $wpdb;
 
-		// Get all attachments older than age threshold.
 		$cutoff_date = gmdate( 'Y-m-d H:i:s', strtotime( "-{$age_days} days" ) );
 
-		$attachments = get_posts(
-			array(
-				'post_type'      => 'attachment',
-				'post_status'    => 'inherit',
-				'posts_per_page' => -1,
-				'fields'         => 'ids',
-				'date_query'     => array(
-					array(
-						'before' => $cutoff_date,
-					),
-				),
-			)
+		$iterator = new WP_MCP_AI_Batch_Iterator(
+			'media_library_optimizer_detect_unused',
+			array( 'max_items' => $max_items )
 		);
 
-		$unused     = array();
-		$total_size = 0;
+		$query_args = array(
+			'post_type'   => 'attachment',
+			'post_status' => 'inherit',
+			'fields'      => 'ids',
+			'date_query'  => array(
+				array(
+					'before' => $cutoff_date,
+				),
+			),
+		);
 
-		foreach ( $attachments as $attachment_id ) {
-			// Check if attached to any post.
-			$parent_id = wp_get_post_parent_id( $attachment_id );
+		$unused        = array();
+		$total_size    = 0;
+		$total_checked = 0;
 
-			// Check if used in content.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
-			$used_count = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_content LIKE %s AND post_status = 'publish'",
-					'%' . $wpdb->esc_like( wp_get_attachment_url( $attachment_id ) ) . '%'
-				)
-			);
+		foreach ( $iterator->paged_iterate( $query_args ) as $batch ) {
+			foreach ( $batch as $attachment_id ) {
+				++$total_checked;
+				$parent_id = wp_get_post_parent_id( $attachment_id );
 
-			if ( 0 === $parent_id && 0 === (int) $used_count ) {
-				$file_path = get_attached_file( $attachment_id );
-				$file_size = file_exists( $file_path ) ? filesize( $file_path ) : 0;
-
-				$unused[] = array(
-					'id'            => $attachment_id,
-					'title'         => get_the_title( $attachment_id ),
-					'url'           => wp_get_attachment_url( $attachment_id ),
-					'file'          => basename( $file_path ),
-					'size'          => size_format( $file_size ),
-					'uploaded_date' => get_the_date( 'Y-m-d', $attachment_id ),
-					'age_days'      => floor( ( time() - get_post_time( 'U', false, $attachment_id ) ) / DAY_IN_SECONDS ),
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation; WP_Query does not support LIKE on post_content of this shape.
+				$used_count = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_content LIKE %s AND post_status = 'publish'",
+						'%' . $wpdb->esc_like( wp_get_attachment_url( $attachment_id ) ) . '%'
+					)
 				);
 
-				$total_size += $file_size;
+				if ( 0 === $parent_id && 0 === (int) $used_count ) {
+					$file_path = get_attached_file( $attachment_id );
+					$file_size = $file_path && file_exists( $file_path ) ? filesize( $file_path ) : 0;
+
+					$unused[] = array(
+						'id'            => $attachment_id,
+						'title'         => get_the_title( $attachment_id ),
+						'url'           => wp_get_attachment_url( $attachment_id ),
+						'file'          => $file_path ? basename( $file_path ) : '',
+						'size'          => size_format( $file_size ),
+						'uploaded_date' => get_the_date( 'Y-m-d', $attachment_id ),
+						'age_days'      => floor( ( time() - get_post_time( 'U', false, $attachment_id ) ) / DAY_IN_SECONDS ),
+					);
+
+					$total_size += $file_size;
+				}
 			}
 		}
 
-		return array(
+		$iterator->complete();
+
+		$result = array(
 			'success'            => true,
 			'age_threshold_days' => $age_days,
-			'total_checked'      => count( $attachments ),
+			'total_checked'      => $total_checked,
 			'unused_count'       => count( $unused ),
 			'unused_total_size'  => size_format( $total_size ),
 			'potential_savings'  => size_format( $total_size ),
-			'unused_media'       => array_slice( $unused, 0, 100 ), // First 100.
 			'recommendations'    => array(
 				__( 'Review unused media before deletion', 'mcp-ai-wpoos' ),
 				__( 'Consider backup before bulk deletion', 'mcp-ai-wpoos' ),
 				__( 'Some media may be used in widgets or theme templates', 'mcp-ai-wpoos' ),
 			),
 		);
+
+		if ( WP_MCP_AI_Tool_Artifact_Helper::should_stream_to_artifact( count( $unused ), $this->get_slug() ) ) {
+			$result['unused_media_artifact'] = WP_MCP_AI_Tool_Artifact_Helper::stream_to_artifact(
+				$unused,
+				$this->get_slug(),
+				array(
+					'count'   => count( $unused ),
+					'summary' => sprintf(
+						/* translators: %d: unused media row count */
+						__( '%d unused media items streamed to artifact.', 'mcp-ai-wpoos' ),
+						count( $unused )
+					),
+				)
+			);
+			$result['unused_media'] = array_slice( $unused, 0, 20 );
+		} else {
+			$result['unused_media'] = array_slice( $unused, 0, 100 );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -519,14 +579,14 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		$image_editor = wp_get_image_editor( $file_path );
 
 		if ( is_wp_error( $image_editor ) ) {
-			return array( 'success' => false );
+			return $image_editor;
 		}
 
 		$image_editor->set_quality( $quality );
 		$saved = $image_editor->save( $file_path );
 
 		if ( is_wp_error( $saved ) ) {
-			return array( 'success' => false );
+			return $saved;
 		}
 
 		return array( 'success' => true );
@@ -546,7 +606,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		$image_editor = wp_get_image_editor( $file_path );
 
 		if ( is_wp_error( $image_editor ) ) {
-			return array( 'success' => false );
+			return $image_editor;
 		}
 
 		$image_editor->set_quality( $quality );
@@ -566,7 +626,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		$saved = $image_editor->save( $new_file, $mime_type );
 
 		if ( is_wp_error( $saved ) ) {
-			return array( 'success' => false );
+			return $saved;
 		}
 
 		// Delete original if not preserving.

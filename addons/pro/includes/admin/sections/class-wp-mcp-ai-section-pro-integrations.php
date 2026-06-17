@@ -64,7 +64,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 		 * @return string
 		 */
 		public function get_documentation_url() {
-			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/integrations/oauth-settings-architecture.md';
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/developer/architecture/integrations/oauth-settings-architecture.md';
 		}
 
 		/**
@@ -73,7 +73,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 		 * @return int
 		 */
 		public function get_priority() {
-			return 25; // After base integrations (20)
+			return 25; // After base integrations (20).
 		}
 
 		/**
@@ -223,25 +223,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 		 */
 		protected function get_subtab_groups() {
 			return array(
-				'mailjet'       => array(
+				'mailjet'   => array(
 					'id'     => 'mailjet',
 					'label'  => __( 'Mailjet', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email',
 					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_webhook_secret' ),
 				),
-				'brevo'         => array(
+				'brevo'     => array(
 					'id'     => 'brevo',
 					'label'  => __( 'Brevo', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email-alt',
 					'fields' => array( 'brevo_api_key', 'brevo_from_email', 'brevo_from_name', 'brevo_webhook_secret' ),
 				),
-				'mailgun'       => array(
+				'mailgun'   => array(
 					'id'     => 'mailgun',
 					'label'  => __( 'Mailgun', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email-alt2',
 					'fields' => array( 'mailgun_api_key', 'mailgun_domain', 'mailgun_region', 'mailgun_from_email', 'mailgun_from_name' ),
 				),
-				'analytics'     => array(
+				'analytics' => array(
 					'id'     => 'analytics',
 					'label'  => __( 'Google Analytics', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-chart-line',

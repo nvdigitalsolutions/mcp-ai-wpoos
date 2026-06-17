@@ -1,66 +1,66 @@
 <?php
 /**
-* Telegram Mini App REST Controller
-*
-* Provides a dedicated Mini App URL (Telegram Web App) for BotFather configuration.
-* This endpoint returns a standalone HTML page that integrates with Telegram's
-* Web App JavaScript SDK, enabling the bot's "Open App" / menu button feature.
-*
-* Industry-standard Telegram Mini App features implemented:
-*   - Full Telegram theme variable integration (all theme params)
-*   - Tab navigation: Chat, History, About
-*   - User header with avatar/initials from initDataUnsafe
-*   - Telegram Back Button and Main Button integration
-*   - HapticFeedback on all user interactions
-*   - Conversation history from localStorage
-*   - About page with share, bot info, quick actions
-*   - Viewport/keyboard change handling (stable height)
-*   - Native Telegram popup API instead of browser dialogs
-*   - Share bot via switchInlineQuery
-*   - Color scheme (dark/light) change handler
-*   - Server-side initData HMAC-SHA256 validation endpoint
-*
-* BotFather configuration steps:
-*   1. Copy the Mini App URL shown in the Telegram Configuration admin section.
-*   2. In Telegram, open @BotFather and send /newapp (or /setmenubutton).
-*   3. Select your bot and paste the Mini App URL when prompted.
-*   4. Users can then tap the "Open App" button to launch the AI chat interface.
-*
-* @see https://core.telegram.org/bots/webapps
-* @see https://core.telegram.org/bots/api#setmenubutton
-*
-* @package WP_MCP_AI_Pro
-* @since 1.0.0
+ * Telegram Mini App REST Controller
+ *
+ * Provides a dedicated Mini App URL (Telegram Web App) for BotFather configuration.
+ * This endpoint returns a standalone HTML page that integrates with Telegram's
+ * Web App JavaScript SDK, enabling the bot's "Open App" / menu button feature.
+ *
+ * Industry-standard Telegram Mini App features implemented:
+ *   - Full Telegram theme variable integration (all theme params)
+ *   - Tab navigation: Chat, History, About
+ *   - User header with avatar/initials from initDataUnsafe
+ *   - Telegram Back Button and Main Button integration
+ *   - HapticFeedback on all user interactions
+ *   - Conversation history from localStorage
+ *   - About page with share, bot info, quick actions
+ *   - Viewport/keyboard change handling (stable height)
+ *   - Native Telegram popup API instead of browser dialogs
+ *   - Share bot via switchInlineQuery
+ *   - Color scheme (dark/light) change handler
+ *   - Server-side initData HMAC-SHA256 validation endpoint
+ *
+ * BotFather configuration steps:
+ *   1. Copy the Mini App URL shown in the Telegram Configuration admin section.
+ *   2. In Telegram, open @BotFather and send /newapp (or /setmenubutton).
+ *   3. Select your bot and paste the Mini App URL when prompted.
+ *   4. Users can then tap the "Open App" button to launch the AI chat interface.
+ *
+ * @see https://core.telegram.org/bots/webapps
+ * @see https://core.telegram.org/bots/api#setmenubutton
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 1.0.0
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
-*/
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
-* Telegram Mini App REST controller.
-*
-* Registers:
-*   GET  /mcp-ai/v1/telegram-mini-app          – Full Mini App HTML shell.
-*   POST /mcp-ai/v1/telegram-mini-app/validate – Server-side initData verification.
-*/
+ * Telegram Mini App REST controller.
+ *
+ * Registers:
+ *   GET  /mcp-ai/v1/telegram-mini-app          – Full Mini App HTML shell.
+ *   POST /mcp-ai/v1/telegram-mini-app/validate – Server-side initData verification.
+ */
 class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 	/**
-	* REST API namespace.
-	*
-	* @var string
-	*/
+	 * REST API namespace.
+	 *
+	 * @var string
+	 */
 	protected $namespace = 'mcp-ai/v1';
 
 	/**
-	* REST API endpoint base.
-	*
-	* @var string
-	*/
+	 * REST API endpoint base.
+	 *
+	 * @var string
+	 */
 	protected $rest_base = 'telegram-mini-app';
 
 	/**
@@ -80,8 +80,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	const META_TELEGRAM_USERNAME = '_wp_mcp_ai_telegram_username';
 
 	/**
-	* Constructor – registers REST routes.
-	*/
+	 * Constructor – registers REST routes.
+	 */
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		// Authenticate via TMA session token early so that WordPress's nonce
@@ -100,10 +100,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	* Register REST routes.
-	*
-	* @since 1.0.0
-	*/
+	 * Register REST routes.
+	 *
+	 * @since 1.0.0
+	 */
 	public function register_routes() {
 		// Main Mini App page (GET).
 		register_rest_route(
@@ -193,34 +193,34 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'callback'            => array( $this, 'handle_update_content' ),
 				'permission_callback' => array( $this, 'check_permission' ),
 				'args'                => array(
-					'id'           => array(
+					'id'        => array(
 						'required' => false,
 						'type'     => 'integer',
 						'default'  => 0,
 					),
-					'post_type'    => array(
+					'post_type' => array(
 						'required'          => false,
 						'type'              => 'string',
 						'default'           => 'post',
 						'sanitize_callback' => 'sanitize_key',
 					),
-					'title'        => array(
+					'title'     => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'content'      => array(
+					'content'   => array(
 						'required' => false,
 						'type'     => 'string',
 						'default'  => '',
 					),
-					'status'       => array(
+					'status'    => array(
 						'required'          => false,
 						'type'              => 'string',
 						'default'           => 'draft',
 						'sanitize_callback' => 'sanitize_key',
 					),
-					'date'         => array(
+					'date'      => array(
 						'required'          => false,
 						'type'              => 'string',
 						'default'           => '',
@@ -276,14 +276,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'check_permission' ),
 				'args'                => array(
 					'messages'     => array(
-						'required'          => true,
-						'type'              => 'array',
-						'description'       => __( 'Array of conversation messages.', 'mcp-ai-wpoos-pro' ),
+						'required'    => true,
+						'type'        => 'array',
+						'description' => __( 'Array of conversation messages.', 'mcp-ai-wpoos-pro' ),
 					),
 					'assistant_id' => array(
-						'required'          => false,
-						'type'              => array( 'integer', 'string' ),
-						'description'       => __( 'Optional assistant ID to use for this chat request.', 'mcp-ai-wpoos-pro' ),
+						'required'    => false,
+						'type'        => array( 'integer', 'string' ),
+						'description' => __( 'Optional assistant ID to use for this chat request.', 'mcp-ai-wpoos-pro' ),
 					),
 				),
 			)
@@ -391,7 +391,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_list_templates' ),
-				'permission_callback' => function() {
+				'permission_callback' => function () {
 					return current_user_can( 'manage_options' );
 				},
 			)
@@ -404,7 +404,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_save_template' ),
-				'permission_callback' => function() {
+				'permission_callback' => function () {
 					return current_user_can( 'manage_options' );
 				},
 				'args'                => array(
@@ -426,7 +426,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'handle_get_template_customizations' ),
-					'permission_callback' => function() {
+					'permission_callback' => function () {
 						return current_user_can( 'manage_options' );
 					},
 					'args'                => array(
@@ -440,7 +440,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'handle_save_template_customizations' ),
-					'permission_callback' => function() {
+					'permission_callback' => function () {
 						return current_user_can( 'manage_options' );
 					},
 					'args'                => array(
@@ -454,7 +454,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'handle_reset_template_customizations' ),
-					'permission_callback' => function() {
+					'permission_callback' => function () {
 						return current_user_can( 'manage_options' );
 					},
 					'args'                => array(
@@ -594,34 +594,34 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'args'                => array_merge(
 					$conn_arg,
 					array(
-						'id'           => array(
+						'id'        => array(
 							'required' => false,
 							'type'     => 'integer',
 							'default'  => 0,
 						),
-						'post_type'    => array(
+						'post_type' => array(
 							'required'          => false,
 							'type'              => 'string',
 							'default'           => 'post',
 							'sanitize_callback' => 'sanitize_key',
 						),
-						'title'        => array(
+						'title'     => array(
 							'required'          => true,
 							'type'              => 'string',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'content'      => array(
+						'content'   => array(
 							'required' => false,
 							'type'     => 'string',
 							'default'  => '',
 						),
-						'status'       => array(
+						'status'    => array(
 							'required'          => false,
 							'type'              => 'string',
 							'default'           => 'draft',
 							'sanitize_callback' => 'sanitize_key',
 						),
-						'date'         => array(
+						'date'      => array(
 							'required'          => false,
 							'type'              => 'string',
 							'default'           => '',
@@ -682,14 +682,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 					$conn_arg,
 					array(
 						'messages'     => array(
-							'required'          => true,
-							'type'              => 'array',
-							'description'       => __( 'Array of conversation messages.', 'mcp-ai-wpoos-pro' ),
+							'required'    => true,
+							'type'        => 'array',
+							'description' => __( 'Array of conversation messages.', 'mcp-ai-wpoos-pro' ),
 						),
 						'assistant_id' => array(
-							'required'          => false,
-							'type'              => array( 'integer', 'string' ),
-							'description'       => __( 'Optional assistant ID to use for this chat request.', 'mcp-ai-wpoos-pro' ),
+							'required'    => false,
+							'type'        => array( 'integer', 'string' ),
+							'description' => __( 'Optional assistant ID to use for this chat request.', 'mcp-ai-wpoos-pro' ),
 						),
 					)
 				),
@@ -808,22 +808,22 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	// =========================================================================
 
 	/**
-	* Authenticate the current user via the TMA session token.
-	*
-	* Hooked into `determine_current_user` (priority 20) so that WordPress
-	* resolves the correct user *before* the REST cookie/nonce check runs via
-	* `rest_cookie_check_errors`.  Without this, the user-specific nonce
-	* returned by /validate is rejected with a 403 when Telegram's built-in
-	* WebView does not persist the auth cookie that was set during the
-	* /validate call.  By identifying the user here, the nonce—which was
-	* created for that user—passes verification and the subsequent
-	* `check_permission` call returns true via `current_user_can('read')`.
-	*
-	* @since 1.0.0
-	*
-	* @param int|false $user_id Currently resolved user ID, or false.
-	* @return int|false Authenticated user ID, or the original value.
-	*/
+	 * Authenticate the current user via the TMA session token.
+	 *
+	 * Hooked into `determine_current_user` (priority 20) so that WordPress
+	 * resolves the correct user *before* the REST cookie/nonce check runs via
+	 * `rest_cookie_check_errors`.  Without this, the user-specific nonce
+	 * returned by /validate is rejected with a 403 when Telegram's built-in
+	 * WebView does not persist the auth cookie that was set during the
+	 * /validate call.  By identifying the user here, the nonce—which was
+	 * created for that user—passes verification and the subsequent
+	 * `check_permission` call returns true via `current_user_can('read')`.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int|false $user_id Currently resolved user ID, or false.
+	 * @return int|false Authenticated user ID, or the original value.
+	 */
 	public function authenticate_via_tma_token( $user_id ) {
 		// Do not override an already-authenticated user.
 		if ( $user_id ) {
@@ -837,7 +837,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			return $user_id;
 		}
 
-		$sanitized  = sanitize_text_field( $raw_token );
+		$sanitized = sanitize_text_field( $raw_token );
 
 		// The token is always a 40-character lowercase hex string produced by
 		// bin2hex(random_bytes(20)).  Reject anything that doesn't match.
@@ -856,22 +856,22 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	* Clear a cookie-nonce authentication error when a valid TMA token is present.
-	*
-	* WordPress's `rest_cookie_check_errors` (priority 100) returns a WP_Error
-	* with code `rest_cookie_invalid_nonce` when the auth cookie is present but
-	* the X-WP-Nonce header does not pass `wp_verify_nonce()`.  This can happen
-	* in Telegram's WebView when the browser persists the auth cookie set by
-	* the /validate endpoint but the nonce was generated before the cookie's
-	* session token was written to `$_COOKIE`.  Rather than blocking the
-	* request, we validate the TMA session token and, if it resolves a valid
-	* user, clear the error so the request proceeds.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_Error|mixed $result Current authentication result.
-	* @return true|WP_Error|mixed Cleared result on success, or passthrough.
-	*/
+	 * Clear a cookie-nonce authentication error when a valid TMA token is present.
+	 *
+	 * WordPress's `rest_cookie_check_errors` (priority 100) returns a WP_Error
+	 * with code `rest_cookie_invalid_nonce` when the auth cookie is present but
+	 * the X-WP-Nonce header does not pass `wp_verify_nonce()`.  This can happen
+	 * in Telegram's WebView when the browser persists the auth cookie set by
+	 * the /validate endpoint but the nonce was generated before the cookie's
+	 * session token was written to `$_COOKIE`.  Rather than blocking the
+	 * request, we validate the TMA session token and, if it resolves a valid
+	 * user, clear the error so the request proceeds.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_Error|mixed $result Current authentication result.
+	 * @return true|WP_Error|mixed Cleared result on success, or passthrough.
+	 */
 	public function allow_tma_token_auth( $result ) {
 		if ( ! is_wp_error( $result ) ) {
 			return $result;
@@ -906,21 +906,21 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	* Check that the current user can read content.
-	*
-	* Used as the permission_callback for the /content, /tools, and /media
-	* sub-endpoints. These are read-only GET endpoints so the 'read'
-	* capability is sufficient.  When the request originates from inside
-	* Telegram's WebView the auth cookie set by wp_set_auth_cookie() during
-	* the /validate call may not persist across fetch() requests.  In that
-	* case we fall back to a short-lived TMA session token returned by the
-	* /validate endpoint and sent via the X-WP-MCP-AI-TMA-Token header.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Current REST request.
-	* @return bool True when the current user has the 'read' capability.
-	*/
+	 * Check that the current user can read content.
+	 *
+	 * Used as the permission_callback for the /content, /tools, and /media
+	 * sub-endpoints. These are read-only GET endpoints so the 'read'
+	 * capability is sufficient.  When the request originates from inside
+	 * Telegram's WebView the auth cookie set by wp_set_auth_cookie() during
+	 * the /validate call may not persist across fetch() requests.  In that
+	 * case we fall back to a short-lived TMA session token returned by the
+	 * /validate endpoint and sent via the X-WP-MCP-AI-TMA-Token header.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Current REST request.
+	 * @return bool True when the current user has the 'read' capability.
+	 */
 	public function check_permission( $request ) {
 		// Standard cookie + nonce auth.
 		if ( current_user_can( 'read' ) ) {
@@ -951,18 +951,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	// =========================================================================
 
 	/**
-	* Handle the Telegram Mini App request.
-	*
-	* Returns a standalone HTML page with the Telegram Web App JavaScript SDK
-	* and the AI chat interface wrapped in an industry-standard Mini App shell.
-	* Telegram opens this page inside its built-in browser when the user taps
-	* the bot's "Open App" / menu button.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Request object.
-	* @return void Outputs the HTML page directly and exits.
-	*/
+	 * Handle the Telegram Mini App request.
+	 *
+	 * Returns a standalone HTML page with the Telegram Web App JavaScript SDK
+	 * and the AI chat interface wrapped in an industry-standard Mini App shell.
+	 * Telegram opens this page inside its built-in browser when the user taps
+	 * the bot's "Open App" / menu button.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return void Outputs the HTML page directly and exits.
+	 */
 	public function handle_mini_app( $request ) {
 		// Resolve the active Telegram connection once; used both for assistant
 		// lookup and for extracting the bot username shown in the Settings tab.
@@ -1006,11 +1006,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				 *
 				 * @param string $title Default page title.
 				 */
-				$page_title       = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
-				$tools_url        = rest_url( $this->namespace . '/' . $scoped_base . '/tools' );
-				$analytics_url    = rest_url( $this->namespace . '/' . $scoped_base . '/analytics' );
-				$chart_js_url     = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
-				$markdown_js_url  = esc_url( WP_MCP_AI_PRO_URL . 'assets/js/tma-markdown.min.js' );
+				$page_title      = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
+				$tools_url       = rest_url( $this->namespace . '/' . $scoped_base . '/tools' );
+				$analytics_url   = rest_url( $this->namespace . '/' . $scoped_base . '/analytics' );
+				$chart_js_url    = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
+				$markdown_js_url = esc_url( WP_MCP_AI_PRO_URL . 'assets/js/tma-markdown.min.js' );
 
 				// Resolve the assistant configured for this Mini App connection so that
 				// templates can pass it as assistant_id to the chat endpoint.
@@ -1025,29 +1025,29 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 				// Build the context array that non-default templates expect.
 				$ctx = array(
-					'request'              => $request,
-					'connection'           => $connection,
-					'namespace'            => $this->namespace,
-					'rest_base'            => $scoped_base,
-					'assistant'            => $request->get_param( 'assistant' ),
-					'assistant_id'         => $assistant_id,
-					'chat_url'             => $chat_url,
-					'validate_url'         => $validate_url,
-					'site_name'            => $page_title,
-					'nonce'                => wp_create_nonce( 'wp_rest' ),
-					'tools_url'            => $tools_url,
-					'analytics_url'        => $analytics_url,
-					'chart_js_url'         => $chart_js_url,
-					'markdown_js_url'      => $markdown_js_url,
-					'connection_id'        => $connection_id ? sanitize_key( $connection_id ) : '',
-					'member_id'            => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
+					'request'               => $request,
+					'connection'            => $connection,
+					'namespace'             => $this->namespace,
+					'rest_base'             => $scoped_base,
+					'assistant'             => $request->get_param( 'assistant' ),
+					'assistant_id'          => $assistant_id,
+					'chat_url'              => $chat_url,
+					'validate_url'          => $validate_url,
+					'site_name'             => $page_title,
+					'nonce'                 => wp_create_nonce( 'wp_rest' ),
+					'tools_url'             => $tools_url,
+					'analytics_url'         => $analytics_url,
+					'chart_js_url'          => $chart_js_url,
+					'markdown_js_url'       => $markdown_js_url,
+					'connection_id'         => $connection_id ? sanitize_key( $connection_id ) : '',
+					'member_id'             => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
 						? wp_mcp_ai_get_member_id_by_user_id( get_current_user_id() )
 						: 0,
 					// WooCommerce data-source fields (used by the woo_shop template).
-					'woo_source'           => ( $connection && ! empty( $connection['mini_app_woo_source'] ) )
+					'woo_source'            => ( $connection && ! empty( $connection['mini_app_woo_source'] ) )
 						? sanitize_key( $connection['mini_app_woo_source'] )
 						: 'local',
-					'woo_connection_id'    => ( $connection && ! empty( $connection['mini_app_woo_connection_id'] ) )
+					'woo_connection_id'     => ( $connection && ! empty( $connection['mini_app_woo_connection_id'] ) )
 						? sanitize_key( $connection['mini_app_woo_connection_id'] )
 						: '',
 					// Shopify data-source field (used by the shopify_shop and jewelry_shop templates).
@@ -1080,7 +1080,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				echo '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">';
 				echo '<meta name="robots" content="noindex, nofollow">';
 				echo '<title>' . esc_html( $page_title ) . '</title>';
-				echo '<script src="https://telegram.org/js/telegram-web-app.js"></script>';
+				echo '<script src="https://telegram.org/js/telegram-web-app.js"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Telegram SDK must be loaded directly from Telegram's CDN.
 
 				// Inject any admin-saved custom CSS overrides for this template.
 				$custom_css = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_custom_css( $active_template_slug );
@@ -1154,7 +1154,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
 		header( 'Pragma: no-cache' );
 
-		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Standalone HTML page; individual values escaped inline.
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Standalone HTML page; individual values escaped inline; Telegram SDK and Chart.js loaded directly from CDN.
 		echo '<!DOCTYPE html>
 <html lang="' . esc_attr( get_bloginfo( 'language' ) ) . '">
 <head>
@@ -3316,15 +3316,15 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	// =========================================================================
 
 	/**
-	* Return a paginated list of posts for the requested post type together
-	* with the full list of CPTs (base + any active pro-toolkit CPTs) that the
-	* current user can edit.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Request object.
-	* @return WP_REST_Response|WP_Error
-	*/
+	 * Return a paginated list of posts for the requested post type together
+	 * with the full list of CPTs (base + any active pro-toolkit CPTs) that the
+	 * current user can edit.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function handle_content( $request ) {
 		$post_type = $request->get_param( 'post_type' );
 		$page      = absint( $request->get_param( 'page' ) );
@@ -3342,8 +3342,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		$post_type_obj = get_post_type_object( $post_type );
 
 		// Load the user's enabled_post_types preference to filter the CPT bar.
-		$user_id     = get_current_user_id();
-		$preferences = $user_id ? get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true ) : array();
+		$user_id            = get_current_user_id();
+		$preferences        = $user_id ? get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true ) : array();
 		$enabled_post_types = ( is_array( $preferences ) && isset( $preferences['enabled_post_types'] ) && is_array( $preferences['enabled_post_types'] ) )
 			? $preferences['enabled_post_types']
 			: null; // null = show all (default).
@@ -3393,9 +3393,9 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		// Build the list of all accessible CPTs, enriched with active-toolkit info.
-		$all_types      = get_post_types( array( 'show_ui' => true ), 'objects' );
+		$all_types       = get_post_types( array( 'show_ui' => true ), 'objects' );
 		$active_toolkits = $this->get_active_toolkits();
-		$cpt_list       = array();
+		$cpt_list        = array();
 
 		foreach ( $all_types as $type ) {
 			if ( ! current_user_can( $type->cap->edit_posts ) ) {
@@ -3417,7 +3417,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				}
 			}
 
-			$counts    = wp_count_posts( $type->name );
+			$counts     = wp_count_posts( $type->name );
 			$cpt_list[] = array(
 				'name'    => $type->name,
 				'label'   => $type->label,
@@ -3510,7 +3510,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			}
 
 			$post_data['post_author'] = get_current_user_id();
-			$new_post_id = wp_insert_post( $post_data, true );
+			$new_post_id              = wp_insert_post( $post_data, true );
 
 			if ( is_wp_error( $new_post_id ) ) {
 				return $new_post_id;
@@ -3561,14 +3561,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	* Return all available tools (from the tool registry, grouped by active toolkit)
-	* and all registered slash commands accessible to the current user.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Request object.
-	* @return WP_REST_Response
-	*/
+	 * Return all available tools (from the tool registry, grouped by active toolkit)
+	 * and all registered slash commands accessible to the current user.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
 	public function handle_tools( $request ) {
 		$result = array(
 			'toolkits'       => array(),
@@ -3827,13 +3827,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	* Return a paginated list of media library items.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Request object.
-	* @return WP_REST_Response
-	*/
+	 * Return a paginated list of media library items.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
 	public function handle_media( $request ) {
 		// Return an empty list when the user lacks upload_files instead of a
 		// hard 403 that the Mini App client would misinterpret as an auth failure.
@@ -3906,14 +3906,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	// =========================================================================
 
 	/**
-	* Return the current user's Mini App settings, account link status,
-	* preferences, and contextual information for the Settings tab.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Request object.
-	* @return WP_REST_Response
-	*/
+	 * Return the current user's Mini App settings, account link status,
+	 * preferences, and contextual information for the Settings tab.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
 	public function handle_get_settings( $request ) {
 		$user_id = get_current_user_id();
 		$user    = get_userdata( $user_id );
@@ -3979,31 +3979,31 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 		return rest_ensure_response(
 			array(
-				'wp_linked'       => $wp_linked,
-				'wp_username'     => $user ? $user->user_login : '',
-				'wp_display_name' => $user ? $user->display_name : '',
-				'wp_email'        => $user ? $user->user_email : '',
-				'preferences'     => $preferences,
-				'assistant_name'  => $assistant_name,
-				'group_settings'  => $group_settings,
+				'wp_linked'            => $wp_linked,
+				'wp_username'          => $user ? $user->user_login : '',
+				'wp_display_name'      => $user ? $user->display_name : '',
+				'wp_email'             => $user ? $user->user_email : '',
+				'preferences'          => $preferences,
+				'assistant_name'       => $assistant_name,
+				'group_settings'       => $group_settings,
 				'available_post_types' => $available_cpts,
 			)
 		);
 	}
 
 	/**
-	* Handle settings write operations: save preferences, link/unlink accounts.
-	*
-	* The `action` parameter determines which operation to perform:
-	*   - `save_preferences` – Persist user preferences (language, notifications, etc.).
-	*   - `link_account`     – Link the current Telegram identity to an existing WP user.
-	*   - `unlink_account`   – Remove the Telegram↔WP link for the current user.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Request object. Expects JSON body with 'action' plus action-specific fields.
-	* @return WP_REST_Response|WP_Error
-	*/
+	 * Handle settings write operations: save preferences, link/unlink accounts.
+	 *
+	 * The `action` parameter determines which operation to perform:
+	 *   - `save_preferences` – Persist user preferences (language, notifications, etc.).
+	 *   - `link_account`     – Link the current Telegram identity to an existing WP user.
+	 *   - `unlink_account`   – Remove the Telegram↔WP link for the current user.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object. Expects JSON body with 'action' plus action-specific fields.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function handle_save_settings( $request ) {
 		$action  = $request->get_param( 'action' );
 		$user_id = get_current_user_id();
@@ -4036,14 +4036,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	* Save user preferences.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Request with 'preferences' JSON object.
-	* @param int             $user_id Current WordPress user ID.
-	* @return WP_REST_Response
-	*/
+	 * Save user preferences.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request with 'preferences' JSON object.
+	 * @param int             $user_id Current WordPress user ID.
+	 * @return WP_REST_Response
+	 */
 	protected function handle_save_preferences( $request, $user_id ) {
 		$incoming = $request->get_param( 'preferences' );
 		if ( ! is_array( $incoming ) ) {
@@ -4089,19 +4089,19 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	* Link the current Telegram-provisioned WP user to an existing WordPress
-	* account by verifying the target account's credentials.
-	*
-	* After verification the Telegram meta keys are moved from the
-	* auto-created user to the target account and the auto-created user is
-	* cleaned up to avoid orphaned records.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Request with 'username' and 'password'.
-	* @param int             $user_id Current WordPress user ID (auto-created Telegram user).
-	* @return WP_REST_Response|WP_Error
-	*/
+	 * Link the current Telegram-provisioned WP user to an existing WordPress
+	 * account by verifying the target account's credentials.
+	 *
+	 * After verification the Telegram meta keys are moved from the
+	 * auto-created user to the target account and the auto-created user is
+	 * cleaned up to avoid orphaned records.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request with 'username' and 'password'.
+	 * @param int             $user_id Current WordPress user ID (auto-created Telegram user).
+	 * @return WP_REST_Response|WP_Error
+	 */
 	protected function handle_link_account( $request, $user_id ) {
 		$username = sanitize_user( (string) $request->get_param( 'username' ) );
 		$password = (string) $request->get_param( 'password' );
@@ -4185,13 +4185,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	* Remove the Telegram↔WordPress account link.
-	*
-	* @since 1.0.0
-	*
-	* @param int $user_id Current WordPress user ID.
-	* @return WP_REST_Response
-	*/
+	 * Remove the Telegram↔WordPress account link.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $user_id Current WordPress user ID.
+	 * @return WP_REST_Response
+	 */
 	protected function handle_unlink_account( $user_id ) {
 		delete_user_meta( $user_id, self::META_TELEGRAM_ID );
 		delete_user_meta( $user_id, self::META_TELEGRAM_USERNAME );
@@ -4214,17 +4214,17 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	// =========================================================================
 
 	/**
-	* Return aggregated analytics data for the Home tab dashboard.
-	*
-	* Queries the token tracking database for daily usage, cost breakdown
-	* by provider, and tool usage over the requested period. Falls back to
-	* user-meta totals when the database tracker is unavailable.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Request object.
-	* @return WP_REST_Response
-	*/
+	 * Return aggregated analytics data for the Home tab dashboard.
+	 *
+	 * Queries the token tracking database for daily usage, cost breakdown
+	 * by provider, and tool usage over the requested period. Falls back to
+	 * user-meta totals when the database tracker is unavailable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
 	public function handle_analytics( $request ) {
 		$user_id = get_current_user_id();
 		$days    = absint( $request->get_param( 'days' ) );
@@ -4259,9 +4259,9 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 							$ts         = strtotime( $date_label . ' UTC' );
 							$date_label = $ts ? gmdate( 'D', $ts ) : $date_label;
 						}
-						$tokens = isset( $row['total_tokens'] ) ? (int) $row['total_tokens'] : 0;
-						$cost   = isset( $row['total_cost'] ) ? (float) $row['total_cost'] : 0;
-						$daily[] = array(
+						$tokens                   = isset( $row['total_tokens'] ) ? (int) $row['total_tokens'] : 0;
+						$cost                     = isset( $row['total_cost'] ) ? (float) $row['total_cost'] : 0;
+						$daily[]                  = array(
 							'date'         => isset( $row['date'] ) ? $row['date'] : '',
 							'label'        => $date_label,
 							'total_tokens' => $tokens,
@@ -4302,7 +4302,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 			// Count total requests from user usage if available.
 			if ( method_exists( $db, 'get_user_usage' ) ) {
-				$user_rows = $db->get_user_usage( $user_id, $start_date, $end_date );
+				$user_rows                 = $db->get_user_usage( $user_id, $start_date, $end_date );
 				$summary['total_requests'] = is_array( $user_rows ) ? count( $user_rows ) : 0;
 			}
 		}
@@ -4358,25 +4358,25 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	// =========================================================================
 
 	/**
-	* Validate Telegram Mini App initData using HMAC-SHA256.
-	*
-	* The Mini App initData verification algorithm (per Telegram docs) differs
-	* from the Login Widget:
-	*   1. Parse the initData query string; remove the `hash` field.
-	*   2. Sort remaining key=value pairs alphabetically.
-	*   3. data_check_string = implode("\n", sorted_pairs)
-	*   4. secret_key = HMAC-SHA256("WebAppData", bot_token)  [raw binary]
-	*   5. expected_hash = HMAC-SHA256(data_check_string, secret_key)  [hex]
-	*   6. Compare expected_hash with the received hash (constant-time).
-	*   7. Validate auth_date freshness (max INIT_DATA_MAX_AGE seconds).
-	*
-	* @see https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request Request object. Expects JSON body with 'init_data'.
-	* @return WP_REST_Response|WP_Error
-	*/
+	 * Validate Telegram Mini App initData using HMAC-SHA256.
+	 *
+	 * The Mini App initData verification algorithm (per Telegram docs) differs
+	 * from the Login Widget:
+	 *   1. Parse the initData query string; remove the `hash` field.
+	 *   2. Sort remaining key=value pairs alphabetically.
+	 *   3. data_check_string = implode("\n", sorted_pairs)
+	 *   4. secret_key = HMAC-SHA256("WebAppData", bot_token)  [raw binary]
+	 *   5. expected_hash = HMAC-SHA256(data_check_string, secret_key)  [hex]
+	 *   6. Compare expected_hash with the received hash (constant-time).
+	 *   7. Validate auth_date freshness (max INIT_DATA_MAX_AGE seconds).
+	 *
+	 * @see https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object. Expects JSON body with 'init_data'.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function handle_validate_init_data( $request ) {
 		// Rate-limit this public endpoint to mitigate replay and enumeration attacks.
 		// The /validate endpoint accepts any initData token, so without a rate limit
@@ -4489,7 +4489,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			// Generate a short-lived session token so that subsequent
 			// Content / Tools / Media requests can authenticate even
 			// when the auth cookie does not persist in Telegram's WebView.
-			$raw_token = bin2hex( random_bytes( 20 ) );
+			$raw_token  = bin2hex( random_bytes( 20 ) );
 			$token_hash = hash( 'sha256', $raw_token );
 			set_transient( 'wp_mcp_ai_tma_' . $token_hash, $wp_user_id, HOUR_IN_SECONDS );
 			$tma_token = $raw_token;
@@ -4505,12 +4505,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			do_action( 'wp_mcp_ai_telegram_mini_app_wp_user_logged_in', $wp_user_id, $auth_data );
 		} else {
 			// Log the failure so site operators can diagnose auth issues.
+			$error_code    = $wp_user_id->get_error_code();
+			$error_message = $wp_user_id->get_error_message();
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_warning(
 					'Telegram Mini App: could not find or create WordPress user.',
 					array(
-						'code'        => $wp_user_id->get_error_code(),
-						'message'     => $wp_user_id->get_error_message(),
+						'code'        => $error_code,
+						'message'     => $error_message,
 						'telegram_id' => isset( $auth_data['id'] ) ? $auth_data['id'] : '',
 					)
 				);
@@ -4529,19 +4531,19 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	* Sanitize the initData parameter for the /validate endpoint.
-	*
-	* Unlike sanitize_text_field(), this callback preserves percent-encoded
-	* characters (e.g. %7B, %22, %3A) that are part of the URL-encoded query
-	* string. Stripping them would corrupt the payload and cause HMAC-SHA256
-	* verification to fail because the data-check string would no longer match
-	* what Telegram originally signed.
-	*
-	* @since 1.0.0
-	*
-	* @param string $value Raw initData string from window.Telegram.WebApp.initData.
-	* @return string Sanitized initData with URL encoding intact.
-	*/
+	 * Sanitize the initData parameter for the /validate endpoint.
+	 *
+	 * Unlike sanitize_text_field(), this callback preserves percent-encoded
+	 * characters (e.g. %7B, %22, %3A) that are part of the URL-encoded query
+	 * string. Stripping them would corrupt the payload and cause HMAC-SHA256
+	 * verification to fail because the data-check string would no longer match
+	 * what Telegram originally signed.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $value Raw initData string from window.Telegram.WebApp.initData.
+	 * @return string Sanitized initData with URL encoding intact.
+	 */
 	public function sanitize_init_data( $value ) {
 		$value = (string) $value;
 		$value = wp_check_invalid_utf8( $value );
@@ -4554,14 +4556,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	* Verify Telegram Mini App initData using HMAC-SHA256.
-	*
-	* @since 1.0.0
-	*
-	* @param string $raw_init_data Raw initData string from window.Telegram.WebApp.initData.
-	* @param string $bot_token     Plaintext Telegram bot token.
-	* @return array|WP_Error Parsed data on success, WP_Error on failure.
-	*/
+	 * Verify Telegram Mini App initData using HMAC-SHA256.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $raw_init_data Raw initData string from window.Telegram.WebApp.initData.
+	 * @param string $bot_token     Plaintext Telegram bot token.
+	 * @return array|WP_Error Parsed data on success, WP_Error on failure.
+	 */
 	public function verify_init_data( $raw_init_data, $bot_token ) {
 		// Parse URL-encoded initData into key => value pairs.
 		$params = array();
@@ -4608,7 +4610,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		// Decode user JSON if present.
-		$parsed        = $params;
+		$parsed         = $params;
 		$parsed['hash'] = $received_hash;
 		if ( ! empty( $params['user'] ) ) {
 			$decoded = json_decode( $params['user'], true );
@@ -4625,15 +4627,15 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	// =========================================================================
 
 	/**
-	* Return the inline CSS for the Mini App shell.
-	*
-	* Uses CSS custom properties mapped to Telegram theme params so every colour
-	* automatically matches the user's Telegram app theme (light/dark/custom).
-	*
-	* @since 1.0.0
-	*
-	* @return string CSS string.
-	*/
+	 * Return the inline CSS for the Mini App shell.
+	 *
+	 * Uses CSS custom properties mapped to Telegram theme params so every colour
+	 * automatically matches the user's Telegram app theme (light/dark/custom).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string CSS string.
+	 */
 	protected function get_mini_app_css() {
 		return '
 :root{
@@ -4951,23 +4953,23 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	// =========================================================================
 
 	/**
-	* Build a list of every active pro toolkit along with its human-readable
-	* label, the WordPress post-type names it registers, and the tool slugs it
-	* contributes – so the /content and /tools endpoints can group and annotate
-	* their responses.
-	*
-	* Each entry in the returned array has the shape:
-	*   [
-	*     'key'        => 'enable_ecommerce_toolkit',   // wp_mcp_ai_settings key
-	*     'label'      => 'E-commerce Toolkit',
-	*     'post_types' => [ 'mcp_ai_product', … ],
-	*     'tool_slugs' => [ 'woo_products', 'woo_orders', … ],
-	*   ]
-	*
-	* @since 1.0.0
-	*
-	* @return array Active toolkits. Empty array when the Pro addon is absent.
-	*/
+	 * Build a list of every active pro toolkit along with its human-readable
+	 * label, the WordPress post-type names it registers, and the tool slugs it
+	 * contributes – so the /content and /tools endpoints can group and annotate
+	 * their responses.
+	 *
+	 * Each entry in the returned array has the shape:
+	 *   [
+	 *     'key'        => 'enable_ecommerce_toolkit',   // wp_mcp_ai_settings key
+	 *     'label'      => 'E-commerce Toolkit',
+	 *     'post_types' => [ 'mcp_ai_product', … ],
+	 *     'tool_slugs' => [ 'woo_products', 'woo_orders', … ],
+	 *   ]
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array Active toolkits. Empty array when the Pro addon is absent.
+	 */
 	public function get_active_toolkits() {
 		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return array();
@@ -4988,7 +4990,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 		 */
 		$toolkit_registry = array(
 			// ── Always-on (Password Vault is loaded unconditionally by Pro) ───
-			'_always_vault'    => array(
+			'_always_vault'                          => array(
 				'label'      => __( 'Password Vault', 'mcp-ai-wpoos-pro' ),
 				'setting'    => '',
 				'always'     => true,
@@ -4997,7 +4999,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			),
 
 			// ── Always-on (Vehicle Estimation is loaded unconditionally by Pro) ──
-			'_always_vehicle_estimation' => array(
+			'_always_vehicle_estimation'             => array(
 				'label'      => __( 'Vehicle Estimation', 'mcp-ai-wpoos-pro' ),
 				'setting'    => '',
 				'always'     => true,
@@ -5006,112 +5008,120 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			),
 
 			// ── Media Toolkit (file always loaded, activated via setting) ──────
-			'_always_media'    => array(
+			'_always_media'                          => array(
 				'label'      => __( 'Media Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_media_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_media_collection', 'mcp_ai_media_template' ),
 				'tool_slugs' => array(
-					'analyze_image', 'generate_image_alt_text', 'generate_image_caption',
-					'extract_image_text', 'convert_image_format', 'remove_background',
-					'rotate_image', 'resize_image', 'vectorize_image',
-					'generate_gemini_image', 'edit_gemini_image', 'generate_openai_image',
+					'analyze_image',
+					'generate_image_alt_text',
+					'generate_image_caption',
+					'extract_image_text',
+					'convert_image_format',
+					'remove_background',
+					'rotate_image',
+					'resize_image',
+					'vectorize_image',
+					'generate_gemini_image',
+					'edit_gemini_image',
+					'generate_openai_image',
 				),
 			),
 
 			// ── Setting-gated toolkits ─────────────────────────────────────────
-			'enable_ecommerce_toolkit'              => array(
+			'enable_ecommerce_toolkit'               => array(
 				'label'      => __( 'E-commerce Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_ecommerce_toolkit',
 				'always'     => false,
 				'post_types' => array(),
 				'tool_slugs' => array( 'woo_products', 'woo_orders', 'product_actualization', 'lookup_product_price', 'create_woo_product', 'create_woo_variable_product' ),
 			),
-			'enable_social_media_toolkit'           => array(
+			'enable_social_media_toolkit'            => array(
 				'label'      => __( 'Social Media Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_social_media_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_social_post' ),
 				'tool_slugs' => array( 'schedule_social_post', 'get_social_analytics', 'publish_social_post' ),
 			),
-			'enable_analytics_toolkit'              => array(
+			'enable_analytics_toolkit'               => array(
 				'label'      => __( 'Analytics Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_analytics_toolkit',
 				'always'     => false,
 				'post_types' => array(),
 				'tool_slugs' => array( 'get_site_analytics', 'get_traffic_report', 'get_conversion_report' ),
 			),
-			'enable_multilingual_toolkit'           => array(
+			'enable_multilingual_toolkit'            => array(
 				'label'      => __( 'Multilingual Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_multilingual_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_translation_memory', 'mcp_ai_glossary' ),
 				'tool_slugs' => array( 'translate_content', 'get_translation_memory', 'manage_glossary' ),
 			),
-			'enable_video_production_toolkit'       => array(
+			'enable_video_production_toolkit'        => array(
 				'label'      => __( 'Video Production Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_video_production_toolkit',
 				'always'     => false,
 				'post_types' => array(),
 				'tool_slugs' => array( 'generate_veo_video', 'generate_openai_video', 'analyze_video', 'check_video_status' ),
 			),
-			'enable_financial_planner_toolkit'      => array(
+			'enable_financial_planner_toolkit'       => array(
 				'label'      => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_financial_planner_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_financial_account', 'mcp_ai_budget' ),
 				'tool_slugs' => array( 'get_financial_account', 'create_budget', 'get_financial_report' ),
 			),
-			'enable_dj_management_toolkit'         => array(
+			'enable_dj_management_toolkit'           => array(
 				'label'      => __( 'DJ Management Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_dj_management_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_dj_equipment', 'mcp_ai_dj_package' ),
 				'tool_slugs' => array(),
 			),
-			'enable_image_production_toolkit'       => array(
+			'enable_image_production_toolkit'        => array(
 				'label'      => __( 'Image Production Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_image_production_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_image_template' ),
 				'tool_slugs' => array( 'generate_image_from_template', 'batch_generate_images' ),
 			),
-			'enable_ai_tool_builder_toolkit'        => array(
+			'enable_ai_tool_builder_toolkit'         => array(
 				'label'      => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_ai_tool_builder_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_custom_tool' ),
 				'tool_slugs' => array( 'create_custom_tool', 'test_custom_tool', 'deploy_custom_tool' ),
 			),
-			'enable_architect_agent_toolkit'        => array(
+			'enable_architect_agent_toolkit'         => array(
 				'label'      => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_architect_agent_toolkit',
 				'always'     => false,
 				'post_types' => array(),
 				'tool_slugs' => array( 'read_file', 'write_file', 'run_command', 'scaffold_component' ),
 			),
-			'enable_architectural_design_toolkit'   => array(
+			'enable_architectural_design_toolkit'    => array(
 				'label'      => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_architectural_design_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_architectural_project', 'mcp_ai_architectural_drawing', 'mcp_ai_architectural_specification' ),
 				'tool_slugs' => array(),
 			),
-			'enable_site_creator_toolkit'           => array(
+			'enable_site_creator_toolkit'            => array(
 				'label'      => __( 'Site Creator Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_site_creator_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_site_template' ),
 				'tool_slugs' => array( 'scaffold_theme_structure', 'create_site_from_template' ),
 			),
-			'enable_document_generation_toolkit'    => array(
+			'enable_document_generation_toolkit'     => array(
 				'label'      => __( 'Document Generation Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_document_generation_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_document_template' ),
 				'tool_slugs' => array( 'generate_document', 'import_products_from_excel', 'export_data_to_excel' ),
 			),
-			'enable_crm_toolkit'                    => array(
+			'enable_crm_toolkit'                     => array(
 				'label'      => __( 'CRM Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_crm_toolkit',
 				'always'     => false,
@@ -5125,59 +5135,61 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 				'post_types' => array( 'mcp_ai_regulatory_registration' ),
 				'tool_slugs' => array(),
 			),
-			'enable_chat_channels_toolkit'          => array(
+			'enable_chat_channels_toolkit'           => array(
 				'label'      => __( 'Chat Channels Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_chat_channels_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_channel_message', 'mcp_ai_channel_contact' ),
 				'tool_slugs' => array(
-					'send_telegram_message', 'get_telegram_updates', 'manage_telegram_webhook',
+					'send_telegram_message',
+					'get_telegram_updates',
+					'manage_telegram_webhook',
 					'add_telegram_message_reaction',
 				),
 			),
-			'enable_health_wellness_management'     => array(
+			'enable_health_wellness_management'      => array(
 				'label'      => __( 'Health & Wellness Management', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_health_wellness_management',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_health_record', 'mcp_ai_wellness_plan' ),
 				'tool_slugs' => array(),
 			),
-			'enable_places_management'              => array(
+			'enable_places_management'               => array(
 				'label'      => __( 'Places Management', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_places_management',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_place' ),
 				'tool_slugs' => array(),
 			),
-			'enable_eca_management'                 => array(
+			'enable_eca_management'                  => array(
 				'label'      => __( 'ECA Management', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_eca_management',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_eca' ),
 				'tool_slugs' => array(),
 			),
-			'enable_quiz_system'                    => array(
+			'enable_quiz_system'                     => array(
 				'label'      => __( 'Quiz System', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_quiz_system',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_quiz', 'mcp_ai_question' ),
 				'tool_slugs' => array(),
 			),
-			'enable_project_management'             => array(
+			'enable_project_management'              => array(
 				'label'      => __( 'Project Management', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_project_management',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_project', 'mcp_ai_task' ),
 				'tool_slugs' => array( 'create_project', 'get_project', 'update_project', 'delete_project' ),
 			),
-			'enable_calendar_booking_toolkit'       => array(
+			'enable_calendar_booking_toolkit'        => array(
 				'label'      => __( 'Calendar & Booking Toolkit', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_calendar_booking_toolkit',
 				'always'     => false,
 				'post_types' => array( 'mcp_ai_event', 'mcp_ai_booking' ),
 				'tool_slugs' => array(),
 			),
-			'enable_webchat_integration'            => array(
+			'enable_webchat_integration'             => array(
 				'label'      => __( 'WebChat Integration', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_webchat_integration',
 				'always'     => false,
@@ -5234,20 +5246,20 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	}
 
 	/**
-	* Resolve the assistant identifier to use for the Mini App chat UI.
-	*
-	* Resolution order:
-	*   1. The explicit `?assistant=` query parameter on the request.
-	*   2. The first entry in `assigned_assistant_ids` on the active Telegram connection.
-	*   3. The `default_assistant_id` from the global chat-channels automation rules.
-	*   4. The `default_assistant` from the Chat Channels Toolkit settings page.
-	*
-	* @since 1.0.0
-	*
-	* @param WP_REST_Request $request    Incoming REST request.
-	* @param array|null      $connection Active Telegram connection array, or null.
-	* @return string Assistant slug or numeric ID string, or empty string if none resolved.
-	*/
+	 * Resolve the assistant identifier to use for the Mini App chat UI.
+	 *
+	 * Resolution order:
+	 *   1. The explicit `?assistant=` query parameter on the request.
+	 *   2. The first entry in `assigned_assistant_ids` on the active Telegram connection.
+	 *   3. The `default_assistant_id` from the global chat-channels automation rules.
+	 *   4. The `default_assistant` from the Chat Channels Toolkit settings page.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request    Incoming REST request.
+	 * @param array|null      $connection Active Telegram connection array, or null.
+	 * @return string Assistant slug or numeric ID string, or empty string if none resolved.
+	 */
 	protected function resolve_mini_app_assistant( $request, $connection ) {
 		// 1. Honour an explicit query-parameter override.
 		$assistant = $request->get_param( 'assistant' );
@@ -5288,12 +5300,12 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	}
 
 	/**
-	* Find the first active (enabled) Telegram connection.
-	*
-	* @since 1.0.0
-	*
-	* @return array|null Connection array or null if none found.
-	*/
+	 * Find the first active (enabled) Telegram connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array|null Connection array or null if none found.
+	 */
 	/**
 	 * REST handler: GET /telegram-mini-app/templates
 	 *
@@ -5489,6 +5501,12 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 		}
 	}
 
+	/**
+	 * Get the active Telegram connection.
+	 *
+	 * @param string|null $connection_id Optional connection ID.
+	 * @return array|null Connection array or null.
+	 */
 	protected function get_active_telegram_connection( $connection_id = null ) {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
@@ -5544,15 +5562,16 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	}
 
 	/**
-	* Return the public Mini App URL for this site.
-	*
-	* This is the URL that should be provided to BotFather when configuring
-	* a Telegram bot's Web App (Mini App) menu button.
-	*
-	* @since 1.0.0
-	*
-	* @return string Fully-qualified HTTPS URL to the Mini App endpoint.
-	*/
+	 * Return the public Mini App URL for this site.
+	 *
+	 * This is the URL that should be provided to BotFather when configuring
+	 * a Telegram bot's Web App (Mini App) menu button.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Optional connection ID.
+	 * @return string Fully-qualified HTTPS URL to the Mini App endpoint.
+	 */
 	public static function get_mini_app_url( $connection_id = '' ) {
 		$base = 'mcp-ai/v1/telegram-mini-app';
 		if ( '' !== $connection_id ) {
@@ -5599,17 +5618,18 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	}
 
 	/**
-	* Find an existing WordPress user by Telegram ID, or create one.
-	*
-	* Shares the same meta key (_wp_mcp_ai_telegram_id) as the Login Widget
-	* controller so that a user linked via either auth method is recognised
-	* by both. Mirrors the pattern used by the Auth0/GitHub integration.
-	*
-	* @since 1.0.0
-	*
-	* @param array $auth_data Telegram user data (id, first_name, last_name, username, photo_url).
-	* @return int|WP_Error WordPress user ID, or WP_Error on failure.
-	*/
+	 * Find an existing WordPress user by Telegram ID, or create one.
+	 *
+	 * Shares the same meta key (_wp_mcp_ai_telegram_id) as the Login Widget
+	 * controller so that a user linked via either auth method is recognised
+	 * by both. Mirrors the pattern used by the Auth0/GitHub integration.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $auth_data  Telegram user data (id, first_name, last_name, username, photo_url).
+	 * @param array $connection Connection configuration.
+	 * @return int|WP_Error WordPress user ID, or WP_Error on failure.
+	 */
 	protected function find_or_create_wp_user( array $auth_data, array $connection = array() ) {
 		$telegram_id = ! empty( $auth_data['id'] ) ? (string) absint( $auth_data['id'] ) : '';
 		if ( '' === $telegram_id ) {
@@ -5669,7 +5689,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 
 		// 3. Build display name from Telegram first/last name.
 		$first_name   = ! empty( $auth_data['first_name'] ) ? sanitize_text_field( $auth_data['first_name'] ) : '';
-		$last_name    = ! empty( $auth_data['last_name'] )  ? sanitize_text_field( $auth_data['last_name'] )  : '';
+		$last_name    = ! empty( $auth_data['last_name'] ) ? sanitize_text_field( $auth_data['last_name'] ) : '';
 		$display_name = trim( $first_name . ' ' . $last_name );
 		if ( '' === $display_name ) {
 			$display_name = $login;
@@ -5726,13 +5746,13 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	}
 
 	/**
-	* Persist Telegram identity metadata on the WordPress user record.
-	*
-	* @since 1.0.0
-	*
-	* @param int   $user_id   WordPress user ID.
-	* @param array $auth_data Telegram user data.
-	*/
+	 * Persist Telegram identity metadata on the WordPress user record.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int   $user_id   WordPress user ID.
+	 * @param array $auth_data Telegram user data.
+	 */
 	protected function sync_telegram_user_meta( $user_id, array $auth_data ) {
 		if ( ! empty( $auth_data['id'] ) ) {
 			update_user_meta( $user_id, self::META_TELEGRAM_ID, (string) absint( $auth_data['id'] ) );
@@ -5746,7 +5766,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 
 		// Keep display name in sync when it has changed.
 		$first_name   = ! empty( $auth_data['first_name'] ) ? sanitize_text_field( $auth_data['first_name'] ) : '';
-		$last_name    = ! empty( $auth_data['last_name'] )  ? sanitize_text_field( $auth_data['last_name'] )  : '';
+		$last_name    = ! empty( $auth_data['last_name'] ) ? sanitize_text_field( $auth_data['last_name'] ) : '';
 		$display_name = trim( $first_name . ' ' . $last_name );
 		if ( '' !== $display_name ) {
 			$user = get_userdata( $user_id );

@@ -83,41 +83,58 @@ class WP_MCP_AI_Tool_Generate_Bill_Of_Quantities implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'country_code' => array(
+				'country_code'         => array(
 					'type'        => 'string',
 					'description' => __( 'ISO 3166-1 alpha-2 country code. Used to auto-pick the BoQ format and currency.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'LK', 'JM', 'US' ),
 				),
-				'format'       => array(
+				'format'               => array(
 					'type'        => 'string',
 					'description' => __( 'BoQ format (overrides country auto-pick).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pomi', 'smm7', 'csi_masterformat_2020' ),
 				),
-				'currency'     => array(
+				'currency'             => array(
 					'type'        => 'string',
 					'description' => __( 'ISO 4217 currency code. Defaults to country default (LKR / JMD / USD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'project_name' => array(
+				'project_name'         => array(
 					'type'        => 'string',
 					'description' => __( 'Project name to print on the cover.', 'mcp-ai-wpoos-pro' ),
 				),
-				'line_items'   => array(
+				'line_items'           => array(
 					'type'        => 'array',
 					'description' => __( 'BoQ line items.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'                 => 'object',
 						'properties'           => array(
-							'section'     => array( 'type' => 'string', 'description' => __( 'Section key (e.g. "D" for POMI/SMM7 or "03" for CSI).', 'mcp-ai-wpoos-pro' ) ),
-							'description' => array( 'type' => 'string', 'description' => __( 'Item description.', 'mcp-ai-wpoos-pro' ) ),
-							'quantity'    => array( 'type' => 'number', 'minimum' => 0, 'description' => __( 'Quantity.', 'mcp-ai-wpoos-pro' ) ),
-							'unit'        => array( 'type' => 'string', 'description' => __( 'Unit of measure (m³, m², m, no., kg, lump, etc.).', 'mcp-ai-wpoos-pro' ) ),
-							'rate'        => array( 'type' => 'number', 'minimum' => 0, 'description' => __( 'Rate per unit in the chosen currency.', 'mcp-ai-wpoos-pro' ) ),
+							'section'     => array(
+								'type'        => 'string',
+								'description' => __( 'Section key (e.g. "D" for POMI/SMM7 or "03" for CSI).', 'mcp-ai-wpoos-pro' ),
+							),
+							'description' => array(
+								'type'        => 'string',
+								'description' => __( 'Item description.', 'mcp-ai-wpoos-pro' ),
+							),
+							'quantity'    => array(
+								'type'        => 'number',
+								'minimum'     => 0,
+								'description' => __( 'Quantity.', 'mcp-ai-wpoos-pro' ),
+							),
+							'unit'        => array(
+								'type'        => 'string',
+								'description' => __( 'Unit of measure (m³, m², m, no., kg, lump, etc.).', 'mcp-ai-wpoos-pro' ),
+							),
+							'rate'        => array(
+								'type'        => 'number',
+								'minimum'     => 0,
+								'description' => __( 'Rate per unit in the chosen currency.', 'mcp-ai-wpoos-pro' ),
+							),
 						),
 						'required'             => array( 'section', 'description', 'quantity', 'unit', 'rate' ),
 						'additionalProperties' => true,
 					),
 				),
-				'contingency_pct' => array(
+				'contingency_pct'      => array(
 					'type'        => 'number',
 					'description' => __( 'Contingency percentage applied to the subtotal.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -147,6 +164,13 @@ class WP_MCP_AI_Tool_Generate_Bill_Of_Quantities implements WP_MCP_AI_Tool_Inter
 			'read-only',
 			'cacheable',
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -200,7 +224,7 @@ class WP_MCP_AI_Tool_Generate_Bill_Of_Quantities implements WP_MCP_AI_Tool_Inter
 			? strtoupper( sanitize_text_field( $arguments['currency'] ) )
 			: $this->default_currency_for_country( $country );
 
-		$project_name = isset( $arguments['project_name'] ) ? sanitize_text_field( $arguments['project_name'] ) : '';
+		$project_name    = isset( $arguments['project_name'] ) ? sanitize_text_field( $arguments['project_name'] ) : '';
 		$contingency_pct = isset( $arguments['contingency_pct'] ) ? max( 0.0, min( 50.0, (float) $arguments['contingency_pct'] ) ) : 10.0;
 		$op_pct          = isset( $arguments['overheads_profit_pct'] ) ? max( 0.0, min( 35.0, (float) $arguments['overheads_profit_pct'] ) ) : 15.0;
 
@@ -240,7 +264,10 @@ class WP_MCP_AI_Tool_Generate_Bill_Of_Quantities implements WP_MCP_AI_Tool_Inter
 			);
 
 			if ( ! isset( $sections[ $section_key ] ) ) {
-				$unknown_sections[] = array( 'index' => (int) $idx, 'section' => $section_key );
+				$unknown_sections[] = array(
+					'index'   => (int) $idx,
+					'section' => $section_key,
+				);
 				continue;
 			}
 			$sections[ $section_key ]['items'][]   = $item;
@@ -258,24 +285,24 @@ class WP_MCP_AI_Tool_Generate_Bill_Of_Quantities implements WP_MCP_AI_Tool_Inter
 		$grand_total = round( $subtotal + $contingency + $op_amount, 2 );
 
 		$result = array(
-			'success'             => true,
-			'country_code'        => $country,
-			'format'              => $format,
-			'format_label'        => $format_def['label'],
-			'standard_source'     => isset( $format_def['standard_source'] ) ? $format_def['standard_source'] : '',
-			'unit_system'         => isset( $format_def['unit_system'] ) ? $format_def['unit_system'] : '',
-			'currency'            => $currency,
-			'project_name'        => $project_name,
-			'sections'            => array_values( $sections ),
-			'subtotal'            => round( $subtotal, 2 ),
-			'contingency_pct'     => $contingency_pct,
-			'contingency_amount'  => $contingency,
+			'success'                 => true,
+			'country_code'            => $country,
+			'format'                  => $format,
+			'format_label'            => $format_def['label'],
+			'standard_source'         => isset( $format_def['standard_source'] ) ? $format_def['standard_source'] : '',
+			'unit_system'             => isset( $format_def['unit_system'] ) ? $format_def['unit_system'] : '',
+			'currency'                => $currency,
+			'project_name'            => $project_name,
+			'sections'                => array_values( $sections ),
+			'subtotal'                => round( $subtotal, 2 ),
+			'contingency_pct'         => $contingency_pct,
+			'contingency_amount'      => $contingency,
 			'overheads_profit_pct'    => $op_pct,
 			'overheads_profit_amount' => $op_amount,
-			'grand_total'         => $grand_total,
-			'unknown_sections'    => $unknown_sections,
-			'method'              => __( 'BoQ skeleton with classification per requested format. Items are summed by section.', 'mcp-ai-wpoos-pro' ),
-			'disclaimer'          => __( 'Indicative BoQ only. Engage a chartered Quantity Surveyor before tender.', 'mcp-ai-wpoos-pro' ),
+			'grand_total'             => $grand_total,
+			'unknown_sections'        => $unknown_sections,
+			'method'                  => __( 'BoQ skeleton with classification per requested format. Items are summed by section.', 'mcp-ai-wpoos-pro' ),
+			'disclaimer'              => __( 'Indicative BoQ only. Engage a chartered Quantity Surveyor before tender.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		/**

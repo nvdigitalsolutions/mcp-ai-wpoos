@@ -56,6 +56,13 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -219,10 +226,6 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return bool
 	 */
 	protected function ensure_site_health_dependencies() {
-		if ( class_exists( 'WP_Site_Health', false ) ) {
-			return true;
-		}
-
 		if ( ! defined( 'ABSPATH' ) ) {
 			return false;
 		}
@@ -233,15 +236,16 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 			}
 		};
 
-		// Load WordPress admin includes in the order WordPress core loads them.
-		// This ensures all function dependencies are available for Site Health tests.
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/admin.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/file.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/template.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/plugin.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/theme.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/misc.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/update.php' );
+		// Always load update.php and register polyfills before any early-return check.
+		// When WP_Site_Health is already loaded (e.g. in an admin page or by another
+		// plugin), the functions it calls — such as wp_is_auto_update_forced_for_item()
+		// — may still be absent in REST API / non-admin request contexts because
+		// wp-admin/includes/update.php has not been required. Skipping this block
+		// caused a "Call to undefined function wp_is_auto_update_forced_for_item()"
+		// fatal when get_test_plugin_theme_auto_updates() was invoked.
+		if ( ! function_exists( 'wp_is_auto_update_forced_for_item' ) ) {
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/update.php' );
+		}
 
 		// Provide polyfills for WordPress admin functions that may not be available
 		// in certain contexts, especially when Site Health is accessed via REST API.
@@ -420,6 +424,21 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 				return $update_themes;
 			}
 		}
+
+		// If WP_Site_Health is already loaded all we needed were the polyfills above.
+		if ( class_exists( 'WP_Site_Health', false ) ) {
+			return true;
+		}
+
+		// Load WordPress admin includes in the order WordPress core loads them.
+		// This ensures all function dependencies are available for Site Health tests.
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/admin.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/file.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/template.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/plugin.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/theme.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/misc.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/update.php' );
 
 		// Now load the Site Health classes after polyfills are in place.
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health.php' );

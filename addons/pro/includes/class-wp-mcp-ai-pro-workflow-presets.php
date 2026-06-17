@@ -63,7 +63,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				self::get_data_presets(),
 				self::get_communication_presets(),
 				self::get_maintenance_presets(),
-				self::get_onboarding_presets()
+				self::get_onboarding_presets(),
+				self::get_crm_support_presets()
 			);
 
 			return $presets;
@@ -122,6 +123,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				'communication' => __( 'Messaging & Notifications', 'mcp-ai-wpoos-pro' ),
 				'maintenance'   => __( 'Site Maintenance', 'mcp-ai-wpoos-pro' ),
 				'onboarding'    => __( 'User & Content Onboarding', 'mcp-ai-wpoos-pro' ),
+				'crm_support'   => __( 'CRM — Support & Ticket Management', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -173,7 +175,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 		 */
 		private static function get_content_presets() {
 			return array(
-				'content_pipeline'        => array(
+				'content_pipeline'         => array(
 					'name'        => __( 'Blog Post Pipeline', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Research a topic, generate an outline, write a draft, optimise for SEO, and publish.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'content',
@@ -183,7 +185,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'input',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Topic Input', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Enter the blog topic to research.', 'mcp-ai-wpoos-pro' ),
@@ -192,7 +197,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Research Topic', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'web_search',
@@ -203,7 +211,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Outline', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_summarize_text',
@@ -214,7 +225,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Write Draft', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_post',
@@ -228,7 +242,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Optimise SEO', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'seo_meta_optimizer',
@@ -239,7 +256,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Publish Post', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'save_post',
@@ -253,7 +273,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_7',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 900 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 900,
+							),
 							'data'     => array(
 								'label'       => __( 'Pipeline Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Blog post published successfully.', 'mcp-ai-wpoos-pro' ),
@@ -299,7 +322,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						),
 					),
 				),
-				'content_refresh'         => array(
+				'content_refresh'          => array(
 					'name'        => __( 'Content Refresh', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Find old posts, analyse performance, update content, and regenerate images.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'content',
@@ -309,7 +332,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Find Old Posts', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'content_freshness_checker',
@@ -320,7 +346,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Analyse Performance', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'sitekit_get_analytics',
@@ -331,7 +360,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'condition',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Needs Update?', 'mcp-ai-wpoos-pro' ),
 								'expression'  => 'node_2.pageviews < 100',
@@ -341,7 +373,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 450 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Update Content', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'save_post',
@@ -352,7 +387,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 600 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Regenerate Images', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'generate_openai_image',
@@ -363,7 +401,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Refresh Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Content refresh workflow finished.', 'mcp-ai-wpoos-pro' ),
@@ -419,7 +460,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'input',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Select Post', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Choose the post to repurpose for social media.', 'mcp-ai-wpoos-pro' ),
@@ -428,7 +472,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Get Post Content', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'get_post',
@@ -439,7 +486,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Social Snippets', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_summarize_text',
@@ -450,7 +500,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Social Image', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'generate_openai_image',
@@ -461,7 +514,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Schedule Posts', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_post',
@@ -475,7 +531,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Repurpose Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Social media content scheduled.', 'mcp-ai-wpoos-pro' ),
@@ -515,7 +574,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						),
 					),
 				),
-				'newsletter_workflow'     => array(
+				'newsletter_workflow'      => array(
 					'name'        => __( 'Newsletter Builder', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Collect top posts, generate a summary, format the email, and send the newsletter.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'content',
@@ -525,7 +584,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Collect Top Posts', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'get_recent_posts',
@@ -539,7 +601,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Summary', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_summarize_text',
@@ -550,7 +615,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Format Email', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_summarize_text',
@@ -561,7 +629,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Send Newsletter', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -572,7 +643,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Newsletter Sent', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Newsletter has been sent to all subscribers.', 'mcp-ai-wpoos-pro' ),
@@ -621,7 +695,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 		 */
 		private static function get_seo_presets() {
 			return array(
-				'seo_audit'                  => array(
+				'seo_audit'                 => array(
 					'name'        => __( 'SEO Audit', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Crawl pages, check meta tags, analyse keywords, and generate an audit report.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'seo',
@@ -631,7 +705,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Crawl Pages', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'run_crawl4ai_job',
@@ -642,7 +719,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Check Meta Tags', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'get_rankmath_seo',
@@ -653,7 +733,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Analyse Keywords', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'sitekit_get_search_console',
@@ -664,7 +747,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Report', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_chart',
@@ -675,7 +761,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Audit Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'SEO audit report generated.', 'mcp-ai-wpoos-pro' ),
@@ -709,7 +798,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						),
 					),
 				),
-				'broken_link_repair'         => array(
+				'broken_link_repair'        => array(
 					'name'        => __( 'Link Repair', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Scan for broken links, suggest replacements, and update posts automatically.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'seo',
@@ -719,7 +808,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Scan Links', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'run_crawl4ai_job',
@@ -730,7 +822,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'condition',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Broken Links Found?', 'mcp-ai-wpoos-pro' ),
 								'expression'  => 'node_1.broken_count > 0',
@@ -740,7 +835,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 300 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Suggest Replacements', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'suggest_internal_links',
@@ -751,18 +849,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 450 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Update Posts', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'save_post',
-								'arguments'   => array( 'post_id' => '{{node_3.post_id}}', 'content' => '{{node_3.updated_content}}' ),
+								'arguments'   => array(
+									'post_id' => '{{node_3.post_id}}',
+									'content' => '{{node_3.updated_content}}',
+								),
 								'description' => __( 'Replace broken links with suggested alternatives.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
 						array(
 							'id'       => 'node_5',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Repair Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Broken links have been repaired.', 'mcp-ai-wpoos-pro' ),
@@ -812,7 +919,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'input',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Seed Keywords', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Enter seed keywords to begin research.', 'mcp-ai-wpoos-pro' ),
@@ -821,7 +931,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Research Keywords', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'web_search',
@@ -832,7 +945,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Analyse Competition', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'sitekit_get_search_console',
@@ -843,7 +959,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Prioritise Keywords', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'content_recommendation_engine',
@@ -854,7 +973,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Create Content Briefs', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_post',
@@ -868,7 +990,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Pipeline Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Keyword research pipeline finished. Content briefs ready.', 'mcp-ai-wpoos-pro' ),
@@ -923,7 +1048,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 		 */
 		private static function get_ecommerce_presets() {
 			return array(
-				'product_launch'           => array(
+				'product_launch'          => array(
 					'name'        => __( 'Product Launch', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Create a product, generate description, set pricing, publish, and announce.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'ecommerce',
@@ -933,7 +1058,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'input',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Product Details', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Enter basic product information.', 'mcp-ai-wpoos-pro' ),
@@ -942,7 +1070,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Create Product', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_woo_product',
@@ -953,7 +1084,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Description', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_summarize_text',
@@ -964,7 +1098,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Product Image', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'generate_openai_image',
@@ -975,7 +1112,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Publish Product', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'save_post',
@@ -986,7 +1126,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Announce Launch', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -997,7 +1140,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_7',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 900 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 900,
+							),
 							'data'     => array(
 								'label'       => __( 'Launch Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Product launched and announced successfully.', 'mcp-ai-wpoos-pro' ),
@@ -1053,7 +1199,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Get Pending Orders', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'get_woo_recent_orders',
@@ -1064,7 +1213,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Check Inventory', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'get_woo_products',
@@ -1075,7 +1227,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'condition',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Stock Issues?', 'mcp-ai-wpoos-pro' ),
 								'expression'  => 'node_2.out_of_stock_count > 0',
@@ -1085,7 +1240,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 450 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Flag Issues', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_post',
@@ -1099,7 +1257,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 600 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Notify Team', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -1110,7 +1271,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Check Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Order fulfillment check completed.', 'mcp-ai-wpoos-pro' ),
@@ -1156,7 +1320,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						),
 					),
 				),
-				'review_response'          => array(
+				'review_response'         => array(
 					'name'        => __( 'Review Response', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Get new product reviews, analyse sentiment, and draft responses.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'ecommerce',
@@ -1166,13 +1330,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Get New Reviews', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'search_content',
 								'arguments'   => array(
 									'post_type' => 'product',
-									'meta_key'  => 'rating',
+									'meta_key'  => 'rating', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Staging environment preset.
 								),
 								'description' => __( 'Fetch recent product reviews.', 'mcp-ai-wpoos-pro' ),
 							),
@@ -1180,7 +1347,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Analyse Sentiment', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_analyze_sentiment',
@@ -1191,7 +1361,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'condition',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Negative Review?', 'mcp-ai-wpoos-pro' ),
 								'expression'  => 'node_2.sentiment === "negative"',
@@ -1201,7 +1374,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 450 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Draft Apology Response', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_summarize_text',
@@ -1212,7 +1388,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 400, 'y' => 450 ),
+							'position' => array(
+								'x' => 400,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Draft Thank-You Response', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_summarize_text',
@@ -1223,7 +1402,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Responses Ready', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Review responses drafted and ready for approval.', 'mcp-ai-wpoos-pro' ),
@@ -1294,7 +1476,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Identify Cold Leads', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'search_content',
@@ -1308,7 +1493,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Segment Leads', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'auto_categorize_content',
@@ -1319,7 +1507,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Personalised Message', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_summarize_text',
@@ -1330,7 +1521,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Send Messages', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -1341,7 +1535,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Nurture Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Lead nurture sequence dispatched.', 'mcp-ai-wpoos-pro' ),
@@ -1385,7 +1582,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Collect Metrics', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'sitekit_get_analytics',
@@ -1396,7 +1596,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Analyse ROI', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'visualize_workflow_metrics',
@@ -1407,7 +1610,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Report', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_chart',
@@ -1418,7 +1624,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Broadcast Summary', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -1429,7 +1638,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Review Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Campaign performance review completed.', 'mcp-ai-wpoos-pro' ),
@@ -1473,7 +1685,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'input',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Competitor URLs', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Enter competitor website URLs to monitor.', 'mcp-ai-wpoos-pro' ),
@@ -1482,7 +1697,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Monitor Competitors', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'run_crawl4ai_job',
@@ -1493,18 +1711,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Compare Metrics', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'sitekit_get_pagespeed',
-								'arguments'   => array( 'url' => '{{input.urls}}', 'strategy' => 'both' ),
+								'arguments'   => array(
+									'url'      => '{{input.urls}}',
+									'strategy' => 'both',
+								),
 								'description' => __( 'Compare performance metrics against competitors.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Summarise Findings', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_summarize_text',
@@ -1515,7 +1742,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Alert Team', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -1526,7 +1756,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Analysis Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Competitor analysis finished and team notified.', 'mcp-ai-wpoos-pro' ),
@@ -1591,7 +1824,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Audit Records', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'search_content',
@@ -1602,7 +1838,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Find Duplicates', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'semantic_content_search',
@@ -1613,7 +1852,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'condition',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Duplicates Found?', 'mcp-ai-wpoos-pro' ),
 								'expression'  => 'node_2.duplicate_count > 0',
@@ -1623,18 +1865,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 450 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Merge Records', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'save_post',
-								'arguments'   => array( 'post_id' => '{{node_2.canonical_id}}', 'merge_from' => '{{node_2.duplicate_ids}}' ),
+								'arguments'   => array(
+									'post_id'    => '{{node_2.canonical_id}}',
+									'merge_from' => '{{node_2.duplicate_ids}}',
+								),
 								'description' => __( 'Merge duplicate records into canonical entries.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Validate Data', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'validate_reasoning_chain',
@@ -1645,7 +1896,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Report', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_chart',
@@ -1656,7 +1910,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_7',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 900 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 900,
+							),
 							'data'     => array(
 								'label'       => __( 'Cleanup Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Data cleanup pipeline finished.', 'mcp-ai-wpoos-pro' ),
@@ -1718,7 +1975,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Pull Metrics', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'sitekit_get_analytics',
@@ -1729,7 +1989,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Calculate Trends', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'openai_usage_analytics',
@@ -1740,7 +2003,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Charts', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_chart',
@@ -1751,7 +2017,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Email Report', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -1762,7 +2031,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Digest Sent', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Analytics digest emailed to stakeholders.', 'mcp-ai-wpoos-pro' ),
@@ -1821,7 +2093,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Check Support Queue', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'search_content',
@@ -1835,7 +2110,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Identify Urgent Tickets', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_analyze_sentiment',
@@ -1846,7 +2124,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'condition',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Urgent Tickets Found?', 'mcp-ai-wpoos-pro' ),
 								'expression'  => 'node_2.urgency_level === "high"',
@@ -1856,7 +2137,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 450 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Assign Agents', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'delegate_to_agent',
@@ -1867,7 +2151,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 600 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Notify Team', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -1878,7 +2165,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Escalation Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Support escalation workflow finished.', 'mcp-ai-wpoos-pro' ),
@@ -1934,7 +2224,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Collect Status Updates', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'search_content',
@@ -1948,7 +2241,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Summarise Progress', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_summarize_text',
@@ -1959,7 +2255,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Broadcast to Channels', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -1970,7 +2269,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Standup Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Daily standup summary has been shared.', 'mcp-ai-wpoos-pro' ),
@@ -2023,7 +2325,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Check Performance', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'sitekit_get_pagespeed',
@@ -2034,7 +2339,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Scan Security', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'run_crawl4ai_job',
@@ -2045,7 +2353,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Audit Plugins', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'search_content',
@@ -2056,7 +2367,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'condition',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Issues Found?', 'mcp-ai-wpoos-pro' ),
 								'expression'  => 'node_3.issues_count > 0',
@@ -2066,7 +2380,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 600 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Report', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_chart',
@@ -2077,7 +2394,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 750 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Notify Admin', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -2088,7 +2408,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_7',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 900 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 900,
+							),
 							'data'     => array(
 								'label'       => __( 'Health Check Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Site health check finished.', 'mcp-ai-wpoos-pro' ),
@@ -2150,7 +2473,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'Trigger Backup', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'execute_workflow',
@@ -2161,7 +2487,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Verify Integrity', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'validate_workflow',
@@ -2172,7 +2501,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'condition',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Backup Valid?', 'mcp-ai-wpoos-pro' ),
 								'expression'  => 'node_2.is_valid === true',
@@ -2182,7 +2514,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 100, 'y' => 450 ),
+							'position' => array(
+								'x' => 100,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Log Success', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_post',
@@ -2196,7 +2531,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 400, 'y' => 450 ),
+							'position' => array(
+								'x' => 400,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Log Failure', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_post',
@@ -2211,7 +2549,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Notify Admin', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -2222,7 +2563,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_7',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Backup Workflow Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Backup verification process finished.', 'mcp-ai-wpoos-pro' ),
@@ -2299,7 +2643,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_1',
 							'type'     => 'input',
-							'position' => array( 'x' => 250, 'y' => 0 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
 							'data'     => array(
 								'label'       => __( 'New User Detected', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Triggered when a new user registers.', 'mcp-ai-wpoos-pro' ),
@@ -2308,7 +2655,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_2',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 150 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
 							'data'     => array(
 								'label'       => __( 'Create Welcome Content', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_post',
@@ -2322,7 +2672,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_3',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 300 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
 							'data'     => array(
 								'label'       => __( 'Assign Resources', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'delegate_to_agent',
@@ -2333,7 +2686,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_4',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 450 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
 							'data'     => array(
 								'label'       => __( 'Generate Welcome Image', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'generate_openai_image',
@@ -2344,7 +2700,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
-							'position' => array( 'x' => 250, 'y' => 600 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
 							'data'     => array(
 								'label'       => __( 'Send Welcome Message', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'probe_chat',
@@ -2355,7 +2714,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						array(
 							'id'       => 'node_6',
 							'type'     => 'output',
-							'position' => array( 'x' => 250, 'y' => 750 ),
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
 							'data'     => array(
 								'label'       => __( 'Onboarding Complete', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'User onboarding workflow finished.', 'mcp-ai-wpoos-pro' ),
@@ -2393,6 +2755,352 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'target'       => 'node_6',
 							'sourceHandle' => 'output',
 						),
+					),
+				),
+			);
+		}
+
+		/**
+		 * Get CRM Support Ticket workflow presets.
+		 *
+		 * @since  2.6.0
+		 * @return array<string, array> Preset definitions.
+		 */
+		private static function get_crm_support_presets() {
+			return array(
+				'support_ticket_triage'       => array(
+					'name'        => __( 'Support Ticket Triage', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Auto-triage pipeline: classify incoming support tickets, suggest priority and category, assign to the right team member.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'crm_support',
+					'icon'        => 'dashicons-sos',
+					'tags'        => array( 'crm', 'support', 'triage', 'classification' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'New Ticket Created', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Triggered when a new support ticket is created.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Classify Ticket', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'AI classifies the ticket category and suggests priority.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'classify_support_ticket',
+								'tool_args'   => array( 'apply_results' => true ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Update Status', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Move ticket to Triaged status.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'update_support_ticket',
+								'tool_args'   => array( 'status' => 'triaged' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Ticket Triaged', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Ticket is classified and ready for agent.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'source' => 'node_1',
+							'target' => 'node_2',
+						),
+						array(
+							'source' => 'node_2',
+							'target' => 'node_3',
+						),
+						array(
+							'source' => 'node_3',
+							'target' => 'node_4',
+						),
+					),
+				),
+				'support_ticket_resolution'   => array(
+					'name'        => __( 'Support Ticket Resolution', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Resolution workflow: review ticket, add resolution notes, mark as resolved, and trigger CSAT survey.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'crm_support',
+					'icon'        => 'dashicons-yes-alt',
+					'tags'        => array( 'crm', 'support', 'resolution', 'csat' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Ticket in Progress', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Ticket is being worked on by an agent.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Add Resolution Note', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Add internal resolution note to the ticket.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'update_support_ticket',
+								'tool_args'   => array( 'note' => 'Resolution note' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Resolve Ticket', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Mark the ticket as resolved.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'resolve_support_ticket',
+								'tool_args'   => array( 'resolution_type' => 'solved' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Ticket Resolved + CSAT Queued', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Resolution complete, CSAT survey triggered.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'source' => 'node_1',
+							'target' => 'node_2',
+						),
+						array(
+							'source' => 'node_2',
+							'target' => 'node_3',
+						),
+						array(
+							'source' => 'node_3',
+							'target' => 'node_4',
+						),
+					),
+				),
+				'support_escalation_handling' => array(
+					'name'        => __( 'Support Escalation Handling', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Escalation workflow: detect SLA breaches, escalate priority, notify managers, and update ticket status.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'crm_support',
+					'icon'        => 'dashicons-warning',
+					'tags'        => array( 'crm', 'support', 'escalation', 'sla' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'SLA Breach Detected', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'A ticket SLA has been breached or is at risk.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Escalate Priority', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Bump the ticket priority level.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'escalate_support_ticket',
+								'tool_args'   => array(),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Get SLA Report', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Generate updated SLA compliance report.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'get_ticket_sla_report',
+								'tool_args'   => array(),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Escalation Complete', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Ticket escalated and managers notified.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'source' => 'node_1',
+							'target' => 'node_2',
+						),
+						array(
+							'source' => 'node_2',
+							'target' => 'node_3',
+						),
+						array(
+							'source' => 'node_3',
+							'target' => 'node_4',
+						),
+					),
+				),
+
+				// -- Customer Management workflow presets (v2.6.0) --
+				'lead_to_customer_conversion' => array(
+					'name'        => __( 'Lead-to-Customer Conversion', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'End-to-end lead conversion pipeline: qualify lead, convert to customer record, create linked deal.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'crm_support',
+					'icon'        => 'dashicons-update',
+					'tags'        => array( 'crm', 'customers', 'conversion', 'pipeline' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array( 'x' => 250, 'y' => 0 ),
+							'data'     => array(
+								'label'       => __( 'Lead Ready for Conversion', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Lead has reached SQL/Opportunity stage.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array( 'x' => 250, 'y' => 150 ),
+							'data'     => array(
+								'label'       => __( 'Qualify Lead (BANT)', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Run BANT qualification to validate lead readiness.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'qualify_lead_bant',
+								'tool_args'   => array(),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array( 'x' => 250, 'y' => 300 ),
+							'data'     => array(
+								'label'       => __( 'Convert to Customer', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Create customer record with linked deal.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'convert_lead_to_customer',
+								'tool_args'   => array( 'create_deal' => true ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array( 'x' => 250, 'y' => 450 ),
+							'data'     => array(
+								'label'       => __( 'Customer Created + Deal Open', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Customer record created with linked deal in pipeline.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array( 'source' => 'node_1', 'target' => 'node_2' ),
+						array( 'source' => 'node_2', 'target' => 'node_3' ),
+						array( 'source' => 'node_3', 'target' => 'node_4' ),
+					),
+				),
+				'customer_onboarding_sequence' => array(
+					'name'        => __( 'Customer Onboarding', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Post-conversion onboarding workflow: create welcome activity and schedule follow-up.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'crm_support',
+					'icon'        => 'dashicons-welcome-learn-more',
+					'tags'        => array( 'crm', 'customers', 'onboarding', 'automation' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array( 'x' => 250, 'y' => 0 ),
+							'data'     => array(
+								'label'       => __( 'Customer Created', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'A new customer record has been created.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array( 'x' => 250, 'y' => 150 ),
+							'data'     => array(
+								'label'       => __( 'Get Customer Details', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Retrieve full customer record.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'get_customer',
+								'tool_args'   => array(),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array( 'x' => 250, 'y' => 300 ),
+							'data'     => array(
+								'label'       => __( 'Create Welcome Activity', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Schedule a welcome call or onboarding meeting.', 'mcp-ai-wpoos-pro' ),
+								'tool_slug'   => 'create_crm_activity',
+								'tool_args'   => array( 'activity_type' => 'call', 'subject' => 'Customer Welcome Call' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array( 'x' => 250, 'y' => 450 ),
+							'data'     => array(
+								'label'       => __( 'Onboarding Initiated', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Welcome activity created, onboarding sequence started.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array( 'source' => 'node_1', 'target' => 'node_2' ),
+						array( 'source' => 'node_2', 'target' => 'node_3' ),
+						array( 'source' => 'node_3', 'target' => 'node_4' ),
 					),
 				),
 			);

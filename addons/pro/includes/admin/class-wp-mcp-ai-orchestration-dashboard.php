@@ -503,7 +503,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		// Count active sessions (from transients for now).
 		$active_sessions = 0;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$transients      = $wpdb->get_results(
+		$transients = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value FROM {$wpdb->options}
 				WHERE option_name LIKE %s",
@@ -582,7 +582,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	private function get_active_sessions() {
 		global $wpdb;
 
-		$sessions   = array();
+		$sessions = array();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$transients = $wpdb->get_results(
 			$wpdb->prepare(

@@ -1,22 +1,37 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Img = void 0;
+exports.truncateSrcForLabel = truncateSrcForLabel;
 const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = require("react");
+const enable_sequence_stack_traces_js_1 = require("./enable-sequence-stack-traces.js");
 const get_cross_origin_value_js_1 = require("./get-cross-origin-value.js");
 const prefetch_js_1 = require("./prefetch.js");
+const sequence_field_schema_js_1 = require("./sequence-field-schema.js");
 const SequenceContext_js_1 = require("./SequenceContext.js");
 const use_buffer_state_js_1 = require("./use-buffer-state.js");
 const use_delay_render_js_1 = require("./use-delay-render.js");
+const use_media_in_timeline_js_1 = require("./use-media-in-timeline.js");
 const use_remotion_environment_js_1 = require("./use-remotion-environment.js");
+const wrap_in_schema_js_1 = require("./wrap-in-schema.js");
 function exponentialBackoff(errorCount) {
     return 1000 * 2 ** (errorCount - 1);
 }
-const ImgRefForwarding = ({ onError, maxRetries = 2, src, pauseWhenLoading, delayRenderRetries, delayRenderTimeoutInMilliseconds, onImageFrame, crossOrigin, ...props }, ref) => {
+// Data URLs like the ones from canvas.toDataURL() can be many megabytes, which makes the delayRender() label
+// unreadable and bloats log output
+function truncateSrcForLabel(src) {
+    if (src.startsWith('data:') && src.length > 100) {
+        return src.slice(0, 60) + '...[' + src.length + ' chars total]';
+    }
+    return src;
+}
+const ImgInner = ({ onError, maxRetries = 2, src, pauseWhenLoading, delayRenderRetries, delayRenderTimeoutInMilliseconds, onImageFrame, crossOrigin, showInTimeline, name, stack, ref, _experimentalControls: controls, ...props }) => {
+    var _a, _b;
     const imageRef = (0, react_1.useRef)(null);
     const errors = (0, react_1.useRef)({});
     const { delayPlayback } = (0, use_buffer_state_js_1.useBufferState)();
     const sequenceContext = (0, react_1.useContext)(SequenceContext_js_1.SequenceContext);
+    const [timelineId] = (0, react_1.useState)(() => String(Math.random()));
     if (!src) {
         throw new Error('No "src" prop was passed to <Img>.');
     }
@@ -27,6 +42,17 @@ const ImgRefForwarding = ({ onError, maxRetries = 2, src, pauseWhenLoading, dela
     (0, react_1.useImperativeHandle)(ref, () => {
         return imageRef.current;
     }, []);
+    (0, use_media_in_timeline_js_1.useImageInTimeline)({
+        src,
+        displayName: name !== null && name !== void 0 ? name : null,
+        id: timelineId,
+        stack: stack !== null && stack !== void 0 ? stack : null,
+        showInTimeline: showInTimeline !== null && showInTimeline !== void 0 ? showInTimeline : true,
+        premountDisplay: (_a = sequenceContext === null || sequenceContext === void 0 ? void 0 : sequenceContext.premountDisplay) !== null && _a !== void 0 ? _a : null,
+        postmountDisplay: (_b = sequenceContext === null || sequenceContext === void 0 ? void 0 : sequenceContext.postmountDisplay) !== null && _b !== void 0 ? _b : null,
+        loopDisplay: undefined,
+        controls: controls !== null && controls !== void 0 ? controls : null,
+    });
     const actualSrc = (0, prefetch_js_1.usePreload)(src);
     const retryIn = (0, react_1.useCallback)((timeout) => {
         if (!imageRef.current) {
@@ -64,12 +90,13 @@ const ImgRefForwarding = ({ onError, maxRetries = 2, src, pauseWhenLoading, dela
         if (((_g = errors.current[(_f = imageRef.current) === null || _f === void 0 ? void 0 : _f.src]) !== null && _g !== void 0 ? _g : 0) <= maxRetries) {
             const backoff = exponentialBackoff((_j = errors.current[(_h = imageRef.current) === null || _h === void 0 ? void 0 : _h.src]) !== null && _j !== void 0 ? _j : 0);
             // eslint-disable-next-line no-console
-            console.warn(`Could not load image with source ${(_k = imageRef.current) === null || _k === void 0 ? void 0 : _k.src}, retrying again in ${backoff}ms`);
+            console.warn(`Could not load image with source ${truncateSrcForLabel((_k = imageRef.current) === null || _k === void 0 ? void 0 : _k.src)}, retrying again in ${backoff}ms`);
             retryIn(backoff);
             return;
         }
         try {
-            cancelRender('Error loading image with src: ' + ((_l = imageRef.current) === null || _l === void 0 ? void 0 : _l.src));
+            cancelRender('Error loading image with src: ' +
+                truncateSrcForLabel((_l = imageRef.current) === null || _l === void 0 ? void 0 : _l.src));
         }
         catch (_m) {
             // cancelRender() intentionally throws after storing the error in scope.
@@ -92,7 +119,7 @@ const ImgRefForwarding = ({ onError, maxRetries = 2, src, pauseWhenLoading, dela
             if (!current) {
                 return;
             }
-            const newHandle = delayRender('Loading <Img> with src=' + actualSrc, {
+            const newHandle = delayRender('Loading <Img> with src=' + truncateSrcForLabel(actualSrc), {
                 retries: delayRenderRetries !== null && delayRenderRetries !== void 0 ? delayRenderRetries : undefined,
                 timeoutInMilliseconds: delayRenderTimeoutInMilliseconds !== null && delayRenderTimeoutInMilliseconds !== void 0 ? delayRenderTimeoutInMilliseconds : undefined,
             });
@@ -110,7 +137,7 @@ const ImgRefForwarding = ({ onError, maxRetries = 2, src, pauseWhenLoading, dela
                 if (((_b = errors.current[(_a = imageRef.current) === null || _a === void 0 ? void 0 : _a.src]) !== null && _b !== void 0 ? _b : 0) > 0) {
                     delete errors.current[(_c = imageRef.current) === null || _c === void 0 ? void 0 : _c.src];
                     // eslint-disable-next-line no-console
-                    console.info(`Retry successful - ${(_d = imageRef.current) === null || _d === void 0 ? void 0 : _d.src} is now loaded`);
+                    console.info(`Retry successful - ${truncateSrcForLabel((_d = imageRef.current) === null || _d === void 0 ? void 0 : _d.src)} is now loaded`);
                 }
                 if (current) {
                     onImageFrame === null || onImageFrame === void 0 ? void 0 : onImageFrame(current);
@@ -174,4 +201,5 @@ const ImgRefForwarding = ({ onError, maxRetries = 2, src, pauseWhenLoading, dela
  * @description Works just like a regular HTML img tag. When you use the <Img> tag, Remotion will ensure that the image is loaded before rendering the frame.
  * @see [Documentation](https://remotion.dev/docs/img)
  */
-exports.Img = (0, react_1.forwardRef)(ImgRefForwarding);
+exports.Img = (0, wrap_in_schema_js_1.wrapInSchema)(ImgInner, sequence_field_schema_js_1.sequenceStyleSchema);
+(0, enable_sequence_stack_traces_js_1.addSequenceStackTraces)(exports.Img);

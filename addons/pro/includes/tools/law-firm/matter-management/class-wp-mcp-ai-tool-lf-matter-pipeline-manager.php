@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager implements WP_MCP_AI_Tool_Interf
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -127,6 +134,9 @@ class WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -246,11 +256,11 @@ class WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager implements WP_MCP_AI_Tool_Interf
 			'success'    => true,
 			'message'    => __( 'Matter status updated. ', 'mcp-ai-wpoos-pro' ) . self::DISCLAIMER,
 			'data'       => array(
-				'matter_id'   => $matter_id,
-				'title'       => $matter->post_title,
-				'old_status'  => $old_status,
-				'new_status'  => $status,
-				'updated_at'  => current_time( 'Y-m-d H:i:s' ),
+				'matter_id'  => $matter_id,
+				'title'      => $matter->post_title,
+				'old_status' => $old_status,
+				'new_status' => $status,
+				'updated_at' => current_time( 'Y-m-d H:i:s' ),
 			),
 			'disclaimer' => self::DISCLAIMER,
 		);

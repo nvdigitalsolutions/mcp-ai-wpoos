@@ -68,7 +68,9 @@ class WP_MCP_AI_Slash_Command_Audit {
 			KEY correlation_id (correlation_id)
 		) $charset_collate;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( ! function_exists( 'dbDelta' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $sql );
 
 		// Check if table was created successfully.

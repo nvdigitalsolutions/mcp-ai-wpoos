@@ -398,7 +398,7 @@
 						}
 						
 						// Initialize event handlers for the dynamically inserted chat interface
-						ProfessionalSelector.initializeChatInterface();
+						ProfessionalSelector.initializeChatInterface($chatWrapper);
 					} else {
 						// Fallback: Use the shortcode directly
 						const shortcode = '[mcp_ai_chat ' + shortcodeAtts + ']';
@@ -444,14 +444,28 @@
 		 * This calls the chat.js initialization function to attach event handlers
 		 * to the dynamically inserted chat HTML.
 		 */
-		initializeChatInterface: function() {
-			// Check if the chat init API is available
-			if (typeof window.wpMcpAiChatInit !== 'undefined' && window.wpMcpAiChatInit.init) {
-				// Call the chat initialization function
-				window.wpMcpAiChatInit.init();
-			} else if (window.console && console.warn) {
-				console.warn('[Professional Selector] Chat initialization API not available. Chat may not function correctly.');
-			}
+		initializeChatInterface: function($chatWrapper) {
+			const chatScope = $chatWrapper && $chatWrapper.length ? $chatWrapper[0] : null;
+
+			window.setTimeout(function() {
+				// Check if the chat init API is available
+				if (typeof window.wpMcpAiChatInit !== 'undefined' && window.wpMcpAiChatInit.init) {
+					// Limit initialization to the injected modal markup to avoid
+					// relying on synthetic DOMContentLoaded events.
+					window.wpMcpAiChatInit.init(chatScope || undefined);
+
+					if (chatScope) {
+						window.setTimeout(function() {
+							const textarea = chatScope.querySelector('.wp-mcp-ai-chat__input');
+							if (textarea && typeof textarea.focus === 'function') {
+								textarea.focus();
+							}
+						}, 100);
+					}
+				} else if (window.console && console.warn) {
+					console.warn('[Professional Selector] Chat initialization API not available. Chat may not function correctly.');
+				}
+			}, 0);
 		}
 	};
 

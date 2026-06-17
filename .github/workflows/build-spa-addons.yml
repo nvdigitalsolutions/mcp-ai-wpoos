@@ -1,0 +1,385 @@
+# NV oOS SPA Addons — Build & Package
+#
+# Produces standalone distribution ZIPs for all SPA addons.
+# Each addon is a React 18 SPA that bundles via esbuild (IIFE bundle).
+# The ZIP ships pre-built assets — no server-side Node.js required to use it.
+#
+# Outputs (one per addon):
+#   nvoos-chat-spa-v{version}.zip
+#   nvoos-canvas-toolkit-v{version}.zip
+#   nvoos-document-editor-v{version}.zip
+#   nvoos-media-studio-v{version}.zip
+#   nvoos-toolkit-shell-v{version}.zip
+#   nvoos-docs-hub-v{version}.zip
+#   nvoos-librechat-v{version}.zip
+#
+# Triggered by:
+#   - Manual workflow_dispatch (all addons) or with a specific addon input
+#   - Push to a tag matching "<addon-slug>-v*.*.*"
+#   - Push to addons/<addon>/** on main/alpha-working
+#   - PR with changes in addons/<addon>/**
+#
+# Bundle size guardrails (see spa-bundle-size.yml):
+#   chat-spa         ≤ 350 KB  gzip
+#   canvas-toolkit   ≤ 1600 KB gzip
+#   document-editor  ≤ 500 KB  gzip
+#   media-studio     ≤ 900 KB  gzip
+#   toolkit-shell    ≤ 200 KB  gzip
+#   docs-hub         ≤ 250 KB  gzip
+#   librechat        ≤ 350 KB  gzip
+
+name: Build SPA Addons
+
+on:
+  push:
+    tags:
+      - 'chat-spa-v*.*.*'
+      - 'canvas-toolkit-v*.*.*'
+      - 'document-editor-v*.*.*'
+      - 'media-studio-v*.*.*'
+      - 'toolkit-shell-v*.*.*'
+      - 'docs-hub-v*.*.*'
+      - 'librechat-v*.*.*'
+    branches:
+      - main
+      - alpha-working
+    paths:
+      - 'addons/chat-spa/**'
+      - 'addons/canvas-toolkit/**'
+      - 'addons/document-editor/**'
+      - 'addons/media-studio/**'
+      - 'addons/toolkit-shell/**'
+      - 'addons/docs-hub/**'
+      - 'addons/librechat/**'
+  pull_request:
+    paths:
+      - 'addons/chat-spa/**'
+      - 'addons/canvas-toolkit/**'
+      - 'addons/document-editor/**'
+      - 'addons/media-studio/**'
+      - 'addons/toolkit-shell/**'
+      - 'addons/docs-hub/**'
+      - 'addons/librechat/**'
+  workflow_dispatch:
+    inputs:
+      addon:
+        description: 'Build a single addon (leave blank for all)'
+        required: false
+        type: choice
+        options:
+          - ''
+          - chat-spa
+          - canvas-toolkit
+          - document-editor
+          - media-studio
+          - toolkit-shell
+          - docs-hub
+          - librechat
+      create_release:
+        description: 'Create GitHub Releases for built addons'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  # ===========================================================================
+  # Determine which addons to build based on the triggering event
+  # ===========================================================================
+  matrix-prep:
+    name: Prepare Build Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      addons: ${{ steps.set-matrix.outputs.addons }}
+    steps:
+      - name: Determine addon matrix
+        id: set-matrix
+        run: |
+          # If a specific addon was requested via workflow_dispatch
+          if [ -n "${{ inputs.addon }}" ]; then
+            echo 'addons=[{"slug":"${{ inputs.addon }}"}]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # If triggered by a tag, extract the addon slug
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            # Extract slug before "-v": "chat-spa-v0.6.0" → "chat-spa"
+            SLUG="${TAG%-v*}"
+            echo "addons=[{\"slug\":\"${SLUG}\"}]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Otherwise build all addons — use heredoc for multi-line JSON output.
+          {
+            echo 'addons<<ADDONS_EOF'
+            echo '[
+              {"slug":"chat-spa"},
+              {"slug":"canvas-toolkit"},
+              {"slug":"document-editor"},
+              {"slug":"media-studio"},
+              {"slug":"toolkit-shell"},
+              {"slug":"docs-hub"},
+              {"slug":"librechat"}
+            ]'
+            echo 'ADDONS_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+  # ===========================================================================
+  # Build each addon (parallel via matrix)
+  # ===========================================================================
+  build:
+    name: Build ${{ matrix.addon.slug }}
+    needs: matrix-prep
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false  # Don't cancel other addons if one fails
+      matrix:
+        addon: ${{ fromJSON(needs.matrix-prep.outputs.addons) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          ADDON="${{ matrix.addon.slug }}"
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            VERSION="${TAG#${ADDON}-v}"
+          else
+            # Read version from plugin header
+            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact=nvoos-${ADDON}-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: addons/${{ matrix.addon.slug }}
+        run: npm ci --no-audit --no-fund
+
+      - name: Build assets (esbuild)
+        working-directory: addons/${{ matrix.addon.slug }}
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          ADDON="${{ matrix.addon.slug }}"
+          JS_BUNDLE="addons/${ADDON}/assets/dist/${ADDON}.js"
+          CSS_BUNDLE="addons/${ADDON}/assets/dist/${ADDON}.css"
+          if [ ! -f "$JS_BUNDLE" ]; then
+            echo "::error::JS bundle not found at $JS_BUNDLE"
+            exit 1
+          fi
+          JS_SIZE=$(du -h "$JS_BUNDLE" | cut -f1)
+          echo "✅ JS bundle present — $JS_SIZE"
+          if [ -f "$CSS_BUNDLE" ]; then
+            CSS_SIZE=$(du -h "$CSS_BUNDLE" | cut -f1)
+            echo "✅ CSS bundle present — $CSS_SIZE"
+          fi
+
+      - name: Assemble addon directory for ZIP
+        run: |
+          ADDON="${{ matrix.addon.slug }}"
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          mkdir -p "dist/${ARTIFACT}/nvoos-${ADDON}"
+
+          # Copy plugin source (exclude dev files)
+          rsync -a \
+            --exclude='node_modules/' \
+            --exclude='src/' \
+            --exclude='tests/' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='tsconfig.json' \
+            --exclude='esbuild.config.cjs' \
+            --exclude='esbuild.config.js' \
+            --exclude='eslint.config.js' \
+            --exclude='vitest.config.ts' \
+            --exclude='.gitignore' \
+            --exclude='.DS_Store' \
+            "addons/${ADDON}/" "dist/${ARTIFACT}/nvoos-${ADDON}/"
+
+          echo "📁 Plugin directory contents:"
+          find "dist/${ARTIFACT}/nvoos-${ADDON}" -type f | sort
+
+      - name: Create ZIP
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          cd "dist/${ARTIFACT}"
+          zip -r "../../${ARTIFACT}.zip" "nvoos-${{ matrix.addon.slug }}/"
+          cd ../..
+          SIZE=$(du -sh "${ARTIFACT}.zip" | cut -f1)
+          echo "📦 ${ARTIFACT}.zip — ${SIZE}"
+
+      - name: Generate SHA-256 checksum
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          sha256sum "${ARTIFACT}.zip" > "${ARTIFACT}.zip.sha256"
+          cat "${ARTIFACT}.zip.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.artifact }}
+          path: |
+            ${{ steps.version.outputs.artifact }}.zip
+            ${{ steps.version.outputs.artifact }}.sha256
+          if-no-files-found: error
+
+  # ===========================================================================
+  # Publish ZIPs to repository build/ directory
+  # Only on push to main/alpha-working or tag pushes — not on PRs.
+  # ===========================================================================
+  publish:
+    name: Publish ZIPs to Repository
+    needs: [matrix-prep, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/alpha-working' || startsWith(github.ref, 'refs/tags/'))
+
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Copy SPA ZIPs to build directory
+        run: |
+          mkdir -p build
+
+          # Copy every nvoos-*.zip from artifacts/ to build/
+          ADDED=0
+          for ZIP in artifacts/nvoos-*.zip; do
+            if [ -f "$ZIP" ]; then
+              ZIPNAME=$(basename "$ZIP")
+              cp "$ZIP" "build/"
+              SIZE=$(du -h "build/${ZIPNAME}" | cut -f1)
+              echo "✅ build/${ZIPNAME} — ${SIZE}"
+              ADDED=$((ADDED + 1))
+            fi
+          done
+
+          if [ "$ADDED" -eq 0 ]; then
+            echo "::error::No SPA addon ZIPs found in artifacts/"
+            exit 1
+          fi
+          echo "📦 $ADDED SPA addon ZIP(s) copied to build/"
+
+      - name: Commit and push SPA addon ZIPs
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Use git add -f because *.zip is in .gitignore
+          ADDED=0
+          for ZIP in build/nvoos-*.zip; do
+            if [ -f "$ZIP" ]; then
+              git add -f "$ZIP" 2>/dev/null || true
+              ADDED=$((ADDED + 1))
+            fi
+          done
+
+          if git diff --staged --quiet; then
+            echo "✅ SPA addon ZIPs already up-to-date in build/ — nothing to commit"
+          else
+            echo "📝 Committing SPA addon ZIPs to build/..."
+            git diff --staged --stat
+
+            git commit -m "build: add SPA addon ZIPs [skip ci]
+
+          Auto-generated by GitHub Actions (build-spa-addons workflow)"
+
+            git config core.autocrlf false
+            git pull --rebase --autostash origin "${{ github.ref_name }}" || {
+              echo "⚠️ Rebase conflict detected. Resolving with ours strategy..."
+              for ZIP in build/nvoos-*.zip; do
+                [ -f "$ZIP" ] && git checkout --ours "$ZIP" && git add -f "$ZIP" || true
+              done
+              git rebase --continue || {
+                echo "❌ Failed to resolve rebase conflicts"
+                git rebase --abort
+                exit 1
+              }
+            }
+            git push origin "${{ github.ref_name }}"
+            echo "🎉 SPA addon ZIPs published to build/"
+          fi
+
+  # ===========================================================================
+  # Create GitHub Releases (one per addon, when triggered by tag or dispatch)
+  # ===========================================================================
+  release:
+    name: Create GitHub Releases
+    needs: [matrix-prep, build, publish]
+    runs-on: ubuntu-latest
+    if: |
+      inputs.create_release == true || startsWith(github.ref, 'refs/tags/')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        addon: ${{ fromJSON(needs.matrix-prep.outputs.addons) }}
+
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          ADDON="${{ matrix.addon.slug }}"
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            VERSION="${TAG#${ADDON}-v}"
+          else
+            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nvoos-${{ matrix.addon.slug }}-v${{ steps.version.outputs.version }}
+          path: artifacts/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.addon.slug }}-v${{ steps.version.outputs.version }}
+          name: "NV oOS ${{ matrix.addon.slug }} Addon v${{ steps.version.outputs.version }}"
+          body: |
+            ## NV oOS ${{ matrix.addon.slug }} Addon v${{ steps.version.outputs.version }}
+
+            Pre-built SPA addon for the NV oOS platform. Ships with compiled assets — no build step required on your server.
+
+            ### Requirements
+
+            - NV oOS Base Plugin active
+            - WordPress 6.0+
+            - PHP 7.4+
+
+            ### Checksum
+
+            See the `.sha256` file attached to this release.
+          files: |
+            artifacts/*.zip
+            artifacts/*.sha256
+          draft: false
+          prerelease: false

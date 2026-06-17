@@ -553,8 +553,8 @@ class WP_MCP_AI_Apple_Messages_Webhook_Controller extends WP_REST_Controller {
 			'content' => $reply,
 		);
 
-		$settings              = get_option( 'wp_mcp_ai_settings', array() );
-		$max_history_messages  = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 20;
+		$settings             = get_option( 'wp_mcp_ai_settings', array() );
+		$max_history_messages = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 20;
 
 		if ( count( $history ) > $max_history_messages * 2 ) {
 			$history = array_slice( $history, -( $max_history_messages * 2 ) );

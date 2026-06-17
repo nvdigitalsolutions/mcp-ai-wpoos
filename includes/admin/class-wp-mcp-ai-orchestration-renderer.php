@@ -621,67 +621,20 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				</div>
 
 				<?php
-				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for token budget explanation section layout and styling on this admin page only
-				?>
-				<style>
-					.wp-mcp-ai-token-budget-explanation {
-						background: #f8f9fa;
-						border: 1px solid #ddd;
-						border-left: 4px solid #2271b1;
-						padding: 20px;
-						margin: 20px 0;
-						border-radius: 4px;
-					}
-					.wp-mcp-ai-token-budget-explanation h4 {
-						margin-top: 0;
-						display: flex;
-						align-items: center;
-						gap: 8px;
-						color: #2271b1;
-					}
-					.wp-mcp-ai-token-budget-explanation h4 .dashicons {
-						color: #f0b849;
-					}
-					.wp-mcp-ai-budget-breakdown {
-						margin-top: 15px;
-					}
-					.wp-mcp-ai-budget-components {
-						list-style: none;
-						padding: 0;
-						margin: 15px 0;
-					}
-					.wp-mcp-ai-budget-components li {
-						padding: 10px 15px;
-						margin: 8px 0;
-						background: #fff;
-						border-left: 3px solid #2271b1;
-						border-radius: 3px;
-						display: flex;
-						align-items: flex-start;
-						gap: 8px;
-					}
-					.wp-mcp-ai-budget-components li .dashicons {
-						flex-shrink: 0;
-						margin-top: 2px;
-						color: #2271b1;
-					}
-					.wp-mcp-ai-stats-card--context-window {
-						position: relative;
-					}
-					.wp-mcp-ai-stats-card__subtitle {
-						font-size: 12px;
-						color: #666;
-						margin-top: 4px;
-						font-weight: normal;
-					}
-					.wp-mcp-ai-tooltip-trigger {
-						cursor: help;
-						font-size: 16px;
-						color: #2271b1;
-						vertical-align: middle;
-					}
-				</style>
-				<?php
+					wp_add_inline_style(
+						'wp-mcp-ai-orchestration-renderer',
+						'.wp-mcp-ai-token-budget-explanation{background:#f8f9fa;border:1px solid #ddd;border-left:4px solid #2271b1;padding:20px;margin:20px 0;border-radius:4px;}'
+						. '.wp-mcp-ai-token-budget-explanation h4{margin-top:0;display:flex;align-items:center;gap:8px;color:#2271b1;}'
+						. '.wp-mcp-ai-token-budget-explanation h4 .dashicons{color:#f0b849;}'
+						. '.wp-mcp-ai-budget-breakdown{margin-top:15px;}'
+						. '.wp-mcp-ai-budget-components{list-style:none;padding:0;margin:15px 0;}'
+						. '.wp-mcp-ai-budget-components li{padding:10px 15px;margin:8px 0;background:#fff;border-left:3px solid #2271b1;border-radius:3px;display:flex;align-items:flex-start;gap:8px;}'
+						. '.wp-mcp-ai-budget-components li .dashicons{flex-shrink:0;margin-top:2px;color:#2271b1;}'
+						. '.wp-mcp-ai-stats-card--context-window{position:relative;}'
+						. '.wp-mcp-ai-stats-card__subtitle{font-size:12px;color:#666;margin-top:4px;font-weight:normal;}'
+						. '.wp-mcp-ai-tooltip-trigger{cursor:help;font-size:16px;color:#2271b1;vertical-align:middle;}'
+					);
+
 				return ob_get_clean();
 
 			} catch ( Exception $e ) {

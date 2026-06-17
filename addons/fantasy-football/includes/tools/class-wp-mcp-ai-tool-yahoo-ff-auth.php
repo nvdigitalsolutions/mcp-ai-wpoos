@@ -33,6 +33,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Manages OAuth tokens and authorization for accessing user's fantasy leagues.
  */
 class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -168,7 +170,7 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$research_page_url = admin_url( 'edit.php?post_type=ff_team&page=research-fantasy-football' );
 
 		// Create a user-friendly message with clickable links using markdown format.
-		$message = __( 'To connect your Yahoo Fantasy Football account, click the button below:', 'mcp-ai-wpoos' ) . "\n\n";
+		$message  = __( 'To connect your Yahoo Fantasy Football account, click the button below:', 'mcp-ai-wpoos' ) . "\n\n";
 		$message .= '[**🔗 Connect to Yahoo Fantasy Football**](' . esc_url( $auth_url ) . ')' . "\n\n";
 		$message .= __( 'After authorization, you can use the Fantasy Football Research page:', 'mcp-ai-wpoos' ) . "\n\n";
 		$message .= '[**📊 Open Fantasy Football Research**](' . esc_url( $research_page_url ) . ')';
@@ -203,8 +205,8 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Check credentials from centralized settings.
-		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
-		$client_id_set    = ! empty( $settings['yahoo_client_id'] );
+		$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+		$client_id_set     = ! empty( $settings['yahoo_client_id'] );
 		$client_secret_set = ! empty( $settings['yahoo_client_secret'] );
 
 		// Fallback to legacy options for backward compatibility.
@@ -221,7 +223,7 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Create user-friendly status message.
 		$message = '';
 		if ( $is_authenticated && ! $is_expired ) {
-			$message = __( 'Your Yahoo Fantasy Football account is connected and ready to use!', 'mcp-ai-wpoos' ) . "\n\n";
+			$message  = __( 'Your Yahoo Fantasy Football account is connected and ready to use!', 'mcp-ai-wpoos' ) . "\n\n";
 			$message .= '[**📊 Open Fantasy Football Research**](' . esc_url( $research_page_url ) . ')';
 		} elseif ( $is_authenticated && $is_expired ) {
 			$message = __( 'Your Yahoo Fantasy Football authentication token has expired. Please reconnect.', 'mcp-ai-wpoos' );

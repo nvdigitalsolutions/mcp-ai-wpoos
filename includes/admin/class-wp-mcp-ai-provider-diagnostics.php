@@ -548,7 +548,357 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
-				<!-- Embedded LLM (Pro) -->
+				<!-- DeepSeek -->
+				<div class="card">
+					<h2><?php esc_html_e( '9. DeepSeek', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_deepseek'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['deepseek_api_key'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['deepseek_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<code><?php echo esc_html( isset( $settings['deepseek_model'] ) && '' !== $settings['deepseek_model'] ? $settings['deepseek_model'] : 'deepseek-v4-flash' ); ?></code>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Base URL', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['deepseek_base_url'] ) ) : ?>
+										<code><?php echo esc_html( $settings['deepseek_base_url'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">&#x26a0; <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
+										<code>https://api.deepseek.com</code>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="deepseek-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="deepseek"
+						<?php echo esc_attr( empty( $settings['enable_deepseek'] ) || empty( $settings['deepseek_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test DeepSeek Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_deepseek'] ) || empty( $settings['deepseek_api_key'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your DeepSeek settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=deepseek' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'DeepSeek provides fast, cost-effective AI models with OpenAI-compatible API. deepseek-v4-flash (1M ctx) supports tool calling and thinking modes; deepseek-v4-pro offers enhanced reasoning for complex agentic workflows.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
+				<!-- OpenRouter -->
+				<div class="card">
+					<h2><?php esc_html_e( '10. OpenRouter', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_openrouter'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['openrouter_api_key'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['openrouter_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<code><?php echo esc_html( isset( $settings['openrouter_model'] ) && '' !== $settings['openrouter_model'] ? $settings['openrouter_model'] : 'openrouter/auto' ); ?></code>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Base URL', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['openrouter_base_url'] ) ) : ?>
+										<code><?php echo esc_html( $settings['openrouter_base_url'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">&#x26a0; <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
+										<code>https://openrouter.ai/api/v1</code>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="openrouter-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="openrouter"
+						<?php echo esc_attr( empty( $settings['enable_openrouter'] ) || empty( $settings['openrouter_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test OpenRouter Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_openrouter'] ) || empty( $settings['openrouter_api_key'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your OpenRouter settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=openrouter' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'OpenRouter is a unified gateway in front of OpenAI, Anthropic, Google, Meta, Mistral and many other providers — all reachable through a single OpenAI-compatible API key.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
+				<!-- DigitalOcean Serverless Inference -->
+				<div class="card">
+					<h2><?php esc_html_e( '11. DigitalOcean Serverless Inference', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_digitalocean'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Model Access Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['digitalocean_api_key'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['digitalocean_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<code><?php echo esc_html( isset( $settings['digitalocean_model'] ) && '' !== $settings['digitalocean_model'] ? $settings['digitalocean_model'] : 'llama3.3-70b-instruct' ); ?></code>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Base URL', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['digitalocean_base_url'] ) ) : ?>
+										<code><?php echo esc_html( $settings['digitalocean_base_url'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">&#x26a0; <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
+										<code>https://inference.do-ai.run/v1</code>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="digitalocean-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="digitalocean"
+						<?php echo esc_attr( empty( $settings['enable_digitalocean'] ) || empty( $settings['digitalocean_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test DigitalOcean Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_digitalocean'] ) || empty( $settings['digitalocean_api_key'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your DigitalOcean settings in the Providers tab. You need to enable the provider and create a model access key in Gradient Platform → Serverless Inference.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=digitalocean' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'DigitalOcean Serverless Inference exposes Llama, DeepSeek-R1 distill, gpt-oss and other open-weights models through an OpenAI-compatible REST API. Embeddings are supported natively.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
+				<!-- Kimi (Moonshot AI) -->
+				<div class="card">
+					<h2><?php esc_html_e( '12. Kimi (Moonshot AI)', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_kimi'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['kimi_api_key'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['kimi_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<code><?php echo esc_html( isset( $settings['kimi_model'] ) && '' !== $settings['kimi_model'] ? $settings['kimi_model'] : 'kimi-k2.6' ); ?></code>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'API Base URL', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['kimi_base_url'] ) ) : ?>
+										<code><?php echo esc_html( $settings['kimi_base_url'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">&#x26a0; <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
+										<code>https://api.moonshot.cn/v1</code>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="kimi-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="kimi"
+						<?php echo esc_attr( empty( $settings['enable_kimi'] ) || empty( $settings['kimi_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test Kimi Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_kimi'] ) || empty( $settings['kimi_api_key'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your Kimi settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=kimi' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Kimi (Moonshot AI) provides OpenAI-compatible models. kimi-k2.x models are the latest agentic generation with 256K context and tool calling. moonshot-v1-* models are stable general-purpose models. kimi-k2-thinking is a chain-of-thought model without tool calling.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+					</div>
+
+					<!-- Baseten -->
+					<div class="card">
+						<h2><?php esc_html_e( '13. Baseten', 'mcp-ai-wpoos' ); ?></h2>
+						<table class="widefat striped">
+							<tbody>
+								<tr>
+									<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+									<td>
+										<?php if ( ! empty( $settings['enable_baseten'] ) ) : ?>
+											<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<?php else : ?>
+											<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+										<?php endif; ?>
+									</td>
+								</tr>
+								<tr>
+									<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
+									<td>
+										<?php if ( ! empty( $settings['baseten_api_key'] ) ) : ?>
+											<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+											<code><?php echo esc_html( substr( $settings['baseten_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php else : ?>
+											<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+										<?php endif; ?>
+									</td>
+								</tr>
+								<tr>
+									<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+									<td>
+										<code><?php echo esc_html( isset( $settings['baseten_model'] ) && '' !== $settings['baseten_model'] ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3' ); ?></code>
+									</td>
+								</tr>
+								<tr>
+									<th><?php esc_html_e( 'API Base URL', 'mcp-ai-wpoos' ); ?></th>
+									<td>
+										<?php if ( ! empty( $settings['baseten_base_url'] ) ) : ?>
+											<code><?php echo esc_html( $settings['baseten_base_url'] ); ?></code>
+										<?php else : ?>
+											<span style="color: orange;">&#x26a0; <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
+											<code>https://inference.baseten.co/v1</code>
+										<?php endif; ?>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+
+						<div id="baseten-test-result" style="margin: 15px 0;"></div>
+
+						<button
+							type="button"
+							class="button button-primary test-provider"
+							data-provider="baseten"
+							<?php echo esc_attr( empty( $settings['enable_baseten'] ) || empty( $settings['baseten_api_key'] ) ? 'disabled' : '' ); ?>>
+							<?php esc_html_e( 'Test Baseten Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+
+						<?php if ( empty( $settings['enable_baseten'] ) || empty( $settings['baseten_api_key'] ) ) : ?>
+							<p class="description" style="margin-top: 10px;">
+								<?php esc_html_e( 'Configure your Baseten settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=baseten' ) ); ?>">
+									<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+								</a>
+							</p>
+						<?php else : ?>
+							<p class="description" style="margin-top: 10px;">
+								<?php esc_html_e( 'Baseten Model APIs offer managed access to open-source LLMs (DeepSeek, GLM, Kimi) through an OpenAI-compatible endpoint with optimized serving. All supported models implement tool calling, and most support structured outputs.', 'mcp-ai-wpoos' ); ?>
+							</p>
+						<?php endif; ?>
+					</div>
+
+					<!-- Embedded LLM (Pro) -->
 				<?php
 				// Only show Embedded LLM section if Pro version is active.
 				if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) :
@@ -621,14 +971,14 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php
 					$embedded_client   = class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null;
 					$server_binary     = $embedded_client ? $embedded_client->get_binary_status() : array(
-						'found' => false,
-						'path' => '',
+						'found'    => false,
+						'path'     => '',
 						'platform' => '',
-						'message' => '',
+						'message'  => '',
 					);
 					$shared_libs       = $embedded_client ? $embedded_client->get_shared_libs_status() : array(
-						'found' => false,
-						'libs' => array(),
+						'found'   => false,
+						'libs'    => array(),
 						'bin_dir' => '',
 					);
 					$downloaded_models = $embedded_client ? $embedded_client->get_downloaded_models() : array();
@@ -746,7 +1096,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Google Maps Platform -->
 				<div class="card">
-					<h2><?php esc_html_e( '9. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '10. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -793,7 +1143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Provider Summary -->
 				<div class="card">
-					<h2><?php esc_html_e( '10. Provider Summary', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '11. Provider Summary', 'mcp-ai-wpoos' ); ?></h2>
 					<?php
 					$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 					$configured       = array();
@@ -821,6 +1171,21 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					}
 					if ( ! empty( $settings['enable_nvidia'] ) && ! empty( $settings['nvidia_api_key'] ) ) {
 						$configured[] = 'NVIDIA NIM';
+					}
+					if ( ! empty( $settings['enable_deepseek'] ) && ! empty( $settings['deepseek_api_key'] ) ) {
+						$configured[] = 'DeepSeek';
+					}
+					if ( ! empty( $settings['enable_openrouter'] ) && ! empty( $settings['openrouter_api_key'] ) ) {
+						$configured[] = 'OpenRouter';
+					}
+					if ( ! empty( $settings['enable_digitalocean'] ) && ! empty( $settings['digitalocean_api_key'] ) ) {
+						$configured[] = 'DigitalOcean Serverless Inference';
+					}
+					if ( ! empty( $settings['enable_kimi'] ) && ! empty( $settings['kimi_api_key'] ) ) {
+						$configured[] = 'Kimi (Moonshot AI)';
+					}
+					if ( ! empty( $settings['enable_baseten'] ) && ! empty( $settings['baseten_api_key'] ) ) {
+						$configured[] = 'Baseten';
 					}
 					if ( ! empty( $settings['google_maps_api_key'] ) ) {
 						$configured[] = 'Google Maps';
@@ -872,7 +1237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Troubleshooting -->
 				<div class="card">
-					<h2><?php esc_html_e( '11. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '12. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
 
 					<h3><?php esc_html_e( 'Common Issues:', 'mcp-ai-wpoos' ); ?></h3>
 					<ul>
@@ -975,13 +1340,23 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			</div>
 
 			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for provider diagnostics real-time testing functionality on this admin page only
+			// Pre-compute all dynamic PHP values for the provider test script.
+			$diag_ajax_url         = admin_url( 'admin-ajax.php' );
+			$diag_nonce            = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
+			$diag_testing_text     = __( 'Testing...', 'mcp-ai-wpoos' );
+			$diag_testing_conn     = __( 'Testing connection...', 'mcp-ai-wpoos' );
+			$diag_success_text     = __( 'Success!', 'mcp-ai-wpoos' );
+			$diag_error_text       = __( 'Error!', 'mcp-ai-wpoos' );
+			$diag_unknown_error    = __( 'Unknown error occurred', 'mcp-ai-wpoos' );
+			$diag_test_text        = __( 'Test', 'mcp-ai-wpoos' );
+			$diag_connection_text  = __( 'Connection', 'mcp-ai-wpoos' );
+
+			ob_start();
 			?>
-			<script type="text/javascript">
 			/* global ajaxurl */
 			jQuery(document).ready(function($) {
 				// Ensure ajaxurl is defined (should be by WordPress, but adding as fallback).
-				var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+				var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : <?php echo wp_json_encode( $diag_ajax_url ); ?>;
 
 				// Test provider connection.
 				$('.test-provider').on('click', function() {
@@ -989,15 +1364,15 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					var provider = button.data('provider');
 					var resultDiv = $('#' + provider + '-test-result');
 
-					button.prop('disabled', true).text('<?php esc_attr_e( 'Testing...', 'mcp-ai-wpoos' ); ?>');
-					resultDiv.html('<p><?php esc_html_e( 'Testing connection...', 'mcp-ai-wpoos' ); ?></p>');
+					button.prop('disabled', true).text(<?php echo wp_json_encode( $diag_testing_text ); ?>);
+					resultDiv.html('<p>' + <?php echo wp_json_encode( $diag_testing_conn ); ?> + '</p>');
 
 					$.ajax({
 						url: ajaxUrl,
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_test_provider',
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' ) ); ?>',
+							nonce: <?php echo wp_json_encode( $diag_nonce ); ?>,
 							provider: provider
 						},
 						success: function(response) {
@@ -1015,14 +1390,14 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 								resultDiv.html(
 									'<div class="notice notice-success inline"><p><strong>' +
-									'<?php esc_html_e( 'Success!', 'mcp-ai-wpoos' ); ?>' +
+									<?php echo wp_json_encode( $diag_success_text ); ?> +
 									'</strong> ' + message + '</p>' + details + '</div>'
 								);
 							} else {
-								var errorMessage = (response.data && response.data.message) ? response.data.message : '<?php esc_js( __( 'Unknown error occurred', 'mcp-ai-wpoos' ) ); ?>';
+								var errorMessage = (response.data && response.data.message) ? response.data.message : <?php echo wp_json_encode( $diag_unknown_error ); ?>;
 								resultDiv.html(
 									'<div class="notice notice-error inline"><p><strong>' +
-									'<?php esc_html_e( 'Error!', 'mcp-ai-wpoos' ); ?>' +
+									<?php echo wp_json_encode( $diag_error_text ); ?> +
 									'</strong> ' + errorMessage + '</p></div>'
 								);
 							}
@@ -1030,19 +1405,20 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						error: function(xhr, status, error) {
 							resultDiv.html(
 								'<div class="notice notice-error inline"><p><strong>' +
-								'<?php esc_html_e( 'Error!', 'mcp-ai-wpoos' ); ?>' +
+								<?php echo wp_json_encode( $diag_error_text ); ?> +
 								'</strong> ' + error + '</p></div>'
 							);
 						},
 						complete: function() {
 							var providerName = provider.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
-							button.prop('disabled', false).text('<?php esc_attr_e( 'Test', 'mcp-ai-wpoos' ); ?> ' + providerName + ' <?php esc_attr_e( 'Connection', 'mcp-ai-wpoos' ); ?>');
+							button.prop('disabled', false).text(<?php echo wp_json_encode( $diag_test_text ); ?> + ' ' + providerName + ' ' + <?php echo wp_json_encode( $diag_connection_text ); ?>);
 						}
 					});
 				});
 			});
-			</script>
 			<?php
+			$diag_js = ob_get_clean();
+			wp_print_inline_script_tag( $diag_js );
 		}
 
 		/**
@@ -1096,6 +1472,26 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'nvidia':
 					self::test_nvidia( $settings );
+					break;
+
+				case 'deepseek':
+					self::test_deepseek( $settings );
+					break;
+
+				case 'openrouter':
+					self::test_openrouter( $settings );
+					break;
+
+				case 'digitalocean':
+					self::test_digitalocean( $settings );
+					break;
+
+				case 'kimi':
+					self::test_kimi( $settings );
+					break;
+
+				case 'baseten':
+					self::test_baseten( $settings );
 					break;
 
 				case 'embedded':
@@ -1678,6 +2074,547 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			}
 		}
 
+
+		/**
+		 * Test DeepSeek connection.
+		 *
+		 * Sends a minimal chat completion request to verify the API key and
+		 * network connectivity to api.deepseek.com.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_deepseek( $settings ) {
+			if ( empty( $settings['enable_deepseek'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'DeepSeek provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['deepseek_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'DeepSeek API key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'DeepSeek client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$client = new WP_MCP_AI_DeepSeek_Client();
+				$model  = isset( $settings['deepseek_model'] ) && '' !== $settings['deepseek_model'] ? $settings['deepseek_model'] : 'deepseek-chat';
+
+				$base_url = isset( $settings['deepseek_base_url'] ) && '' !== trim( $settings['deepseek_base_url'] )
+					? untrailingslashit( esc_url_raw( $settings['deepseek_base_url'] ) )
+					: 'https://api.deepseek.com';
+
+				$response = wp_remote_post(
+					$base_url . '/chat/completions',
+					array(
+						'headers' => array(
+							'Content-Type'  => 'application/json',
+							'Authorization' => 'Bearer ' . $settings['deepseek_api_key'],
+							'User-Agent'    => 'WP-MCP-AI-DeepSeek-Client/1.0',
+						),
+						'body'    => wp_json_encode(
+							array(
+								'model'      => $model,
+								'max_tokens' => 5,
+								'messages'   => array(
+									array(
+										'role'    => 'user',
+										'content' => 'Hi',
+									),
+								),
+							)
+						),
+						'timeout' => 30,
+					)
+				);
+
+				if ( is_wp_error( $response ) ) {
+					wp_send_json_error(
+						array(
+							'message' => sprintf(
+								/* translators: %s: error message */
+								__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+								$response->get_error_message()
+							),
+						)
+					);
+					return;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+
+				if ( 200 !== $response_code ) {
+					$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
+					$error_message = isset( $error_body['error']['message'] ) ? $error_body['error']['message'] : sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'API returned error code: %d', 'mcp-ai-wpoos' ),
+						$response_code
+					);
+					wp_send_json_error( array( 'message' => $error_message ) );
+					return;
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'DeepSeek connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Model', 'mcp-ai-wpoos' ) => $model,
+							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test OpenRouter connection.
+		 *
+		 * Sends a minimal chat completion request to verify the API key and
+		 * network connectivity to openrouter.ai. Includes the recommended
+		 * `HTTP-Referer` and `X-Title` headers per OpenRouter best practices.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_openrouter( $settings ) {
+			if ( empty( $settings['enable_openrouter'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'OpenRouter provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['openrouter_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'OpenRouter API key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'OpenRouter client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$client = new WP_MCP_AI_OpenRouter_Client();
+				$model  = isset( $settings['openrouter_model'] ) && '' !== $settings['openrouter_model']
+					? $settings['openrouter_model']
+					: WP_MCP_AI_OpenRouter_Client::DEFAULT_MODEL;
+
+				$base_url = isset( $settings['openrouter_base_url'] ) && '' !== trim( $settings['openrouter_base_url'] )
+					? untrailingslashit( esc_url_raw( $settings['openrouter_base_url'] ) )
+					: WP_MCP_AI_OpenRouter_Client::DEFAULT_BASE_URL;
+
+				$site_url = ! empty( $settings['openrouter_site_url'] )
+					? esc_url_raw( $settings['openrouter_site_url'] )
+					: home_url( '/' );
+
+				$app_title = ! empty( $settings['openrouter_app_title'] )
+					? sanitize_text_field( $settings['openrouter_app_title'] )
+					: get_bloginfo( 'name' );
+
+				$response = wp_remote_post(
+					$base_url . '/chat/completions',
+					array(
+						'headers' => array(
+							'Content-Type'  => 'application/json',
+							'Authorization' => 'Bearer ' . $settings['openrouter_api_key'],
+							'User-Agent'    => 'WP-MCP-AI-OpenRouter-Client/1.0',
+							'HTTP-Referer'  => $site_url,
+							'X-Title'       => $app_title,
+						),
+						'body'    => wp_json_encode(
+							array(
+								'model'      => $model,
+								'max_tokens' => 5,
+								'messages'   => array(
+									array(
+										'role'    => 'user',
+										'content' => 'Hi',
+									),
+								),
+							)
+						),
+						'timeout' => 30,
+					)
+				);
+
+				if ( is_wp_error( $response ) ) {
+					wp_send_json_error(
+						array(
+							'message' => sprintf(
+								/* translators: %s: error message */
+								__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+								$response->get_error_message()
+							),
+						)
+					);
+					return;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+
+				if ( 200 !== $response_code ) {
+					$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
+					$error_message = isset( $error_body['error']['message'] ) ? $error_body['error']['message'] : sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'API returned error code: %d', 'mcp-ai-wpoos' ),
+						$response_code
+					);
+					wp_send_json_error( array( 'message' => $error_message ) );
+					return;
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'OpenRouter connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Model', 'mcp-ai-wpoos' ) => $model,
+							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
+							__( 'Referer', 'mcp-ai-wpoos' ) => $site_url,
+							__( 'App Title', 'mcp-ai-wpoos' ) => $app_title,
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test DigitalOcean Serverless Inference connection.
+		 *
+		 * Sends a GET to /v1/models to verify the model access key and
+		 * network connectivity to inference.do-ai.run. This avoids spending
+		 * inference credits during the diagnostic probe.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_digitalocean( $settings ) {
+			if ( empty( $settings['enable_digitalocean'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'DigitalOcean provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['digitalocean_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'DigitalOcean model access key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'DigitalOcean client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$base_url = isset( $settings['digitalocean_base_url'] ) && '' !== trim( $settings['digitalocean_base_url'] )
+					? untrailingslashit( esc_url_raw( $settings['digitalocean_base_url'] ) )
+					: WP_MCP_AI_DigitalOcean_Client::DEFAULT_BASE_URL;
+
+				$model = isset( $settings['digitalocean_model'] ) && '' !== $settings['digitalocean_model']
+					? $settings['digitalocean_model']
+					: WP_MCP_AI_DigitalOcean_Client::DEFAULT_MODEL;
+
+				$start = microtime( true );
+
+				$response = wp_remote_get(
+					$base_url . '/models',
+					array(
+						'headers'   => array(
+							'Authorization' => 'Bearer ' . $settings['digitalocean_api_key'],
+							'User-Agent'    => WP_MCP_AI_DigitalOcean_Client::USER_AGENT,
+						),
+						'timeout'   => 30,
+						'sslverify' => true,
+					)
+				);
+
+				$latency_ms = (int) round( ( microtime( true ) - $start ) * 1000 );
+
+				if ( is_wp_error( $response ) ) {
+					wp_send_json_error(
+						array(
+							'message' => sprintf(
+								/* translators: %s: error message */
+								__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+								$response->get_error_message()
+							),
+						)
+					);
+					return;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+
+				if ( 200 !== $response_code ) {
+					$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
+					$error_message = isset( $error_body['error']['message'] ) ? $error_body['error']['message'] : sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'API returned error code: %d', 'mcp-ai-wpoos' ),
+						$response_code
+					);
+					wp_send_json_error( array( 'message' => $error_message ) );
+					return;
+				}
+
+				$body      = json_decode( wp_remote_retrieve_body( $response ), true );
+				$model_cnt = isset( $body['data'] ) && is_array( $body['data'] ) ? count( $body['data'] ) : 0;
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'DigitalOcean connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Default Model', 'mcp-ai-wpoos' )  => $model,
+							__( 'API Endpoint', 'mcp-ai-wpoos' )    => $base_url,
+							__( 'Models Available', 'mcp-ai-wpoos' ) => (string) $model_cnt,
+							__( 'Latency', 'mcp-ai-wpoos' )         => $latency_ms . ' ms',
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test Kimi (Moonshot AI) connection.
+		 *
+		 * Sends a minimal chat completion request to verify the API key and connectivity.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_kimi( $settings ) {
+			if ( empty( $settings['enable_kimi'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Kimi provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['kimi_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Kimi API key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Kimi client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$model = isset( $settings['kimi_model'] ) && '' !== $settings['kimi_model'] ? $settings['kimi_model'] : 'kimi-k2.6';
+
+				$base_url = isset( $settings['kimi_base_url'] ) && '' !== trim( $settings['kimi_base_url'] )
+					? untrailingslashit( esc_url_raw( $settings['kimi_base_url'] ) )
+					: 'https://api.moonshot.cn/v1';
+
+				$start = microtime( true );
+
+				$response = wp_remote_post(
+					$base_url . '/chat/completions',
+					array(
+						'headers' => array(
+							'Content-Type'  => 'application/json',
+							'Authorization' => 'Bearer ' . $settings['kimi_api_key'],
+							'User-Agent'    => 'WP-MCP-AI-Kimi-Client/1.0',
+						),
+						'body'    => wp_json_encode(
+							array(
+								'model'      => $model,
+								'max_tokens' => 5,
+								'messages'   => array(
+									array(
+										'role'    => 'user',
+										'content' => 'Hi',
+									),
+								),
+							)
+						),
+						'timeout' => 30,
+					)
+				);
+
+				$latency_ms = (int) round( ( microtime( true ) - $start ) * 1000 );
+
+				if ( is_wp_error( $response ) ) {
+					wp_send_json_error(
+						array(
+							'message' => sprintf(
+								/* translators: %s: error message */
+								__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+								$response->get_error_message()
+							),
+						)
+					);
+					return;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+
+				if ( 200 !== $response_code ) {
+					$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
+					$error_message = isset( $error_body['error']['message'] ) ? $error_body['error']['message'] : sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'API returned error code: %d', 'mcp-ai-wpoos' ),
+						$response_code
+					);
+					wp_send_json_error( array( 'message' => $error_message ) );
+					return;
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Kimi connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Model', 'mcp-ai-wpoos' ) => $model,
+							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
+							__( 'Latency', 'mcp-ai-wpoos' ) => $latency_ms . ' ms',
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test Baseten connection.
+		 *
+		 * Sends a minimal chat completion to verify API key and endpoint reachability.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_baseten( $settings ) {
+			if ( empty( $settings['enable_baseten'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Baseten provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['baseten_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Baseten API key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Baseten client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$model = isset( $settings['baseten_model'] ) && '' !== $settings['baseten_model'] ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';
+
+				$base_url = isset( $settings['baseten_base_url'] ) && '' !== trim( $settings['baseten_base_url'] )
+					? untrailingslashit( esc_url_raw( $settings['baseten_base_url'] ) )
+					: 'https://inference.baseten.co/v1';
+
+				$start = microtime( true );
+
+				$response = wp_remote_post(
+					$base_url . '/chat/completions',
+					array(
+						'headers' => array(
+							'Content-Type'  => 'application/json',
+							'Authorization' => 'Bearer ' . $settings['baseten_api_key'],
+							'User-Agent'    => 'WP-MCP-AI-Baseten-Client/1.0',
+						),
+						'body'    => wp_json_encode(
+							array(
+								'model'      => $model,
+								'max_tokens' => 5,
+								'messages'   => array(
+									array(
+										'role'    => 'user',
+										'content' => 'Hi',
+									),
+								),
+							)
+						),
+						'timeout' => 30,
+					)
+				);
+
+				$latency_ms = (int) round( ( microtime( true ) - $start ) * 1000 );
+
+				if ( is_wp_error( $response ) ) {
+					wp_send_json_error(
+						array(
+							'message' => sprintf(
+								/* translators: %s: error message */
+								__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+								$response->get_error_message()
+							),
+						)
+					);
+					return;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+
+				if ( 200 !== $response_code ) {
+					$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
+					$error_message = isset( $error_body['error']['message'] ) ? $error_body['error']['message'] : sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'API returned error code: %d', 'mcp-ai-wpoos' ),
+						$response_code
+					);
+					wp_send_json_error( array( 'message' => $error_message ) );
+					return;
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Baseten connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Model', 'mcp-ai-wpoos' ) => $model,
+							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
+							__( 'Latency', 'mcp-ai-wpoos' ) => $latency_ms . ' ms',
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
 		/**
 		 * Test Embedded LLM connection.
 		 *
@@ -1704,22 +2641,22 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				// Get available WebLLM models (client-side).
 				// All available models are listed. Models marked with * support function calling.
 				$available_models = array(
-					'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC'      => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
-					'Hermes-3-Llama-3.1-8B-q4f16_1-MLC'        => __( 'Hermes 3 Llama 3.1 8B (~4.9GB)*', 'mcp-ai-wpoos' ),
+					'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC' => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
+					'Hermes-3-Llama-3.1-8B-q4f16_1-MLC'   => __( 'Hermes 3 Llama 3.1 8B (~4.9GB)*', 'mcp-ai-wpoos' ),
 					'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC' => __( 'DeepSeek R1 Distill Llama 8B (~5GB)', 'mcp-ai-wpoos' ),
-					'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC'  => __( 'DeepSeek R1 Distill Qwen 7B (~5.1GB)', 'mcp-ai-wpoos' ),
-					'Qwen3-8B-q4f16_1-MLC'                     => __( 'Qwen3 8B (~5GB)*', 'mcp-ai-wpoos' ),
-					'Qwen2.5-7B-Instruct-q4f16_1-MLC'          => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
-					'Qwen3-4B-q4f16_1-MLC'                     => __( 'Qwen3 4B (~2.5GB)*', 'mcp-ai-wpoos' ),
-					'Phi-3.5-mini-instruct-q4f16_1-MLC'        => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
-					'gemma-2-2b-it-q4f16_1-MLC'                => __( 'Gemma 2 2B Instruct (~1.9GB)', 'mcp-ai-wpoos' ),
-					'Llama-3.2-3B-Instruct-q4f16_1-MLC'        => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
-					'SmolLM2-1.7B-Instruct-q4f16_1-MLC'        => __( 'SmolLM2 1.7B Instruct (~1.8GB)', 'mcp-ai-wpoos' ),
-					'Qwen3-1.7B-q4f16_1-MLC'                   => __( 'Qwen3 1.7B (~1.1GB)*', 'mcp-ai-wpoos' ),
-					'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
-					'Llama-3.2-1B-Instruct-q4f16_1-MLC'        => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
-					'Qwen3-0.6B-q4f16_1-MLC'                   => __( 'Qwen3 0.6B (~400MB)', 'mcp-ai-wpoos' ),
-					'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
+					'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC' => __( 'DeepSeek R1 Distill Qwen 7B (~5.1GB)', 'mcp-ai-wpoos' ),
+					'Qwen3-8B-q4f16_1-MLC'                => __( 'Qwen3 8B (~5GB)*', 'mcp-ai-wpoos' ),
+					'Qwen2.5-7B-Instruct-q4f16_1-MLC'     => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
+					'Qwen3-4B-q4f16_1-MLC'                => __( 'Qwen3 4B (~2.5GB)*', 'mcp-ai-wpoos' ),
+					'Phi-3.5-mini-instruct-q4f16_1-MLC'   => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
+					'gemma-2-2b-it-q4f16_1-MLC'           => __( 'Gemma 2 2B Instruct (~1.9GB)', 'mcp-ai-wpoos' ),
+					'Llama-3.2-3B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
+					'SmolLM2-1.7B-Instruct-q4f16_1-MLC'   => __( 'SmolLM2 1.7B Instruct (~1.8GB)', 'mcp-ai-wpoos' ),
+					'Qwen3-1.7B-q4f16_1-MLC'              => __( 'Qwen3 1.7B (~1.1GB)*', 'mcp-ai-wpoos' ),
+					'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
+					'Llama-3.2-1B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
+					'Qwen3-0.6B-q4f16_1-MLC'              => __( 'Qwen3 0.6B (~400MB)', 'mcp-ai-wpoos' ),
+					'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
 				);
 
 				$model_count    = count( $available_models );

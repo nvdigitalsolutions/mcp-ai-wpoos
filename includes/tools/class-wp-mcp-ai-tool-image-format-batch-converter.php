@@ -153,9 +153,9 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 				break;
 
 			default:
-				$result = array(
-					'success' => false,
-					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
+				$result = new WP_Error(
+					'wp_mcp_ai_error',
+					__( 'Invalid action specified', 'mcp-ai-wpoos' )
 				);
 		}
 
@@ -190,9 +190,14 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 			'fields'         => 'ids',
 		);
 
+		// Cap user-supplied image_ids list at the per-tool max_items ceiling.
+		$max_items = WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( $this->get_slug(), 0, 500 );
 		if ( ! empty( $image_ids ) ) {
+			if ( count( $image_ids ) > $max_items ) {
+				$image_ids = array_slice( $image_ids, 0, $max_items );
+			}
 			$query_args['post__in']       = $image_ids;
-			$query_args['posts_per_page'] = -1;
+			$query_args['posts_per_page'] = count( $image_ids );
 		}
 
 		$images = get_posts( $query_args );
@@ -288,9 +293,9 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 */
 	private function handle_generate_srcset( $image_ids, $generate_sizes ) {
 		if ( empty( $image_ids ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No image IDs provided', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'No image IDs provided', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -331,9 +336,9 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 */
 	private function handle_create_picture_element( $image_ids, $target_formats, $art_direction ) {
 		if ( empty( $image_ids ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No image IDs provided', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'No image IDs provided', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -416,7 +421,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 		$image_editor = wp_get_image_editor( $file_path );
 
 		if ( is_wp_error( $image_editor ) ) {
-			return array( 'success' => false );
+			return $image_editor;
 		}
 
 		$image_editor->set_quality( $quality );
@@ -431,7 +436,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 		$saved = $image_editor->save( $new_file, $mime_type );
 
 		if ( is_wp_error( $saved ) ) {
-			return array( 'success' => false );
+			return $saved;
 		}
 
 		return array(

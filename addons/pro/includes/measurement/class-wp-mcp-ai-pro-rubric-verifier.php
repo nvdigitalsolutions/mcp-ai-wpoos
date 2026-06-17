@@ -79,7 +79,7 @@ class WP_MCP_AI_Pro_Rubric_Verifier extends WP_MCP_AI_Verifier_Base {
 	 * @throws InvalidArgumentException When criteria are empty or malformed.
 	 */
 	public function __construct( $slug = 'pro_rubric', array $criteria = array(), $label = '', $pass_threshold = 0.7 ) {
-		$this->slug  = sanitize_key( $slug );
+		$this->slug = sanitize_key( $slug );
 		if ( '' === $this->slug ) {
 			$this->slug = 'pro_rubric';
 		}
@@ -94,9 +94,9 @@ class WP_MCP_AI_Pro_Rubric_Verifier extends WP_MCP_AI_Verifier_Base {
 		// cannot be circumvented by the agent it judges. Concrete
 		// chains can override by passing a richer profile later.
 		$this->independence_profile = array(
-			'disallowed_providers' => array(),
-			'disallowed_models'    => array(),
-			'requires_different_model' => false,
+			'disallowed_providers'        => array(),
+			'disallowed_models'           => array(),
+			'requires_different_model'    => false,
 			'requires_different_provider' => false,
 		);
 
@@ -162,13 +162,13 @@ class WP_MCP_AI_Pro_Rubric_Verifier extends WP_MCP_AI_Verifier_Base {
 				$outcome = $this->evaluate_criterion( $criterion, $subject, $context );
 
 				if ( is_wp_error( $outcome ) ) {
-					$any_error                          = true;
+					$any_error                           = true;
 					$per_criterion[ $criterion['slug'] ] = array(
 						'score'  => 0.0,
 						'error'  => $outcome->get_error_code(),
 						'weight' => $weight,
 					);
-					$reasons[] = sprintf(
+					$reasons[]                           = sprintf(
 						/* translators: 1: criterion slug, 2: error code. */
 						__( 'Criterion %1$s failed to evaluate (%2$s).', 'mcp-ai-wpoos' ),
 						$criterion['slug'],

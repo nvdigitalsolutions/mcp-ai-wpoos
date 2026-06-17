@@ -1828,18 +1828,18 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 				'currency'       => $currency,
 				'taxRate'        => $tax_rate,
 				'i18n'           => array(
-					'your_estimate'     => __( 'Your Estimate', 'mcp-ai-wpoos-pro' ),
-					'vehicle_detected'  => __( 'Vehicle detected:', 'mcp-ai-wpoos-pro' ),
-					'subtotal'          => __( 'Subtotal', 'mcp-ai-wpoos-pro' ),
-					'tax'               => __( 'Tax', 'mcp-ai-wpoos-pro' ),
-					'total'             => __( 'Total', 'mcp-ai-wpoos-pro' ),
-					'estimate_note'     => __( 'This is an estimate only. Final price may vary based on vehicle condition.', 'mcp-ai-wpoos-pro' ),
-					'upload_failed'     => __( 'Image upload failed. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'max_images_reached'=> __( 'Maximum 10 images allowed.', 'mcp-ai-wpoos-pro' ),
-					'remove_image'      => __( 'Remove image', 'mcp-ai-wpoos-pro' ),
-					'request_failed'    => __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'parse_error'       => __( 'Could not parse the response. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'network_error'     => __( 'Network error. Please check your connection.', 'mcp-ai-wpoos-pro' ),
+					'your_estimate'      => __( 'Your Estimate', 'mcp-ai-wpoos-pro' ),
+					'vehicle_detected'   => __( 'Vehicle detected:', 'mcp-ai-wpoos-pro' ),
+					'subtotal'           => __( 'Subtotal', 'mcp-ai-wpoos-pro' ),
+					'tax'                => __( 'Tax', 'mcp-ai-wpoos-pro' ),
+					'total'              => __( 'Total', 'mcp-ai-wpoos-pro' ),
+					'estimate_note'      => __( 'This is an estimate only. Final price may vary based on vehicle condition.', 'mcp-ai-wpoos-pro' ),
+					'upload_failed'      => __( 'Image upload failed. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'max_images_reached' => __( 'Maximum 10 images allowed.', 'mcp-ai-wpoos-pro' ),
+					'remove_image'       => __( 'Remove image', 'mcp-ai-wpoos-pro' ),
+					'request_failed'     => __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'parse_error'        => __( 'Could not parse the response. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'network_error'      => __( 'Network error. Please check your connection.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -1888,13 +1888,34 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 
 		// Add-on data for rendering.
 		$add_ons = array(
-			array( 'code' => 'soil_mud_sap_oil',         'label' => __( 'Soil / Mud / Sap', 'mcp-ai-wpoos-pro' ) ),
-			array( 'code' => 'pet_hair_removal',          'label' => __( 'Pet Hair Removal', 'mcp-ai-wpoos-pro' ) ),
-			array( 'code' => 'additional_interior_clean', 'label' => __( 'Extra Interior Clean', 'mcp-ai-wpoos-pro' ) ),
-			array( 'code' => 'premium_hand_wash_upgrade', 'label' => __( 'Premium Hand Wash', 'mcp-ai-wpoos-pro' ) ),
-			array( 'code' => 'rims_tire_dressing',        'label' => __( 'Rims &amp; Tire Dressing', 'mcp-ai-wpoos-pro' ) ),
-			array( 'code' => 'trunk_bed_shampoo',         'label' => __( 'Trunk / Bed Shampoo', 'mcp-ai-wpoos-pro' ) ),
-			array( 'code' => 'carpet_seat_deodorizer',    'label' => __( 'Carpet &amp; Seat Deodorizer', 'mcp-ai-wpoos-pro' ) ),
+			array(
+				'code'  => 'soil_mud_sap_oil',
+				'label' => __( 'Soil / Mud / Sap', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'code'  => 'pet_hair_removal',
+				'label' => __( 'Pet Hair Removal', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'code'  => 'additional_interior_clean',
+				'label' => __( 'Extra Interior Clean', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'code'  => 'premium_hand_wash_upgrade',
+				'label' => __( 'Premium Hand Wash', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'code'  => 'rims_tire_dressing',
+				'label' => __( 'Rims &amp; Tire Dressing', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'code'  => 'trunk_bed_shampoo',
+				'label' => __( 'Trunk / Bed Shampoo', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'code'  => 'carpet_seat_deodorizer',
+				'label' => __( 'Carpet &amp; Seat Deodorizer', 'mcp-ai-wpoos-pro' ),
+			),
 		);
 
 		ob_start();

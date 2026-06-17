@@ -238,7 +238,7 @@ class WP_MCP_AI_Chat_Bubble_Frontend {
 		wp_enqueue_script( 'wp-mcp-ai-chat-bubble' );
 		wp_enqueue_style( 'wp-mcp-ai-chat-bubble-style' );
 
-		$bubble_id = 'wp-mcp-ai-bubble-global-' . wp_unique_id();
+		$bubble_id = sanitize_key( 'wp-mcp-ai-bubble-global-' . wp_unique_id() );
 
 		$bubble_position  = isset( $settings['chat_bubble_position'] ) ? sanitize_key( $settings['chat_bubble_position'] ) : 'bottom-right';
 		$bubble_size      = isset( $settings['chat_bubble_size'] ) ? sanitize_key( $settings['chat_bubble_size'] ) : 'medium';
@@ -297,7 +297,7 @@ class WP_MCP_AI_Chat_Bubble_Frontend {
 		 * Render the bubble HTML - mirrors render_bubble_html() from the
 		 * Elementor widget exactly.
 		 */
-		$this->render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html, $inline_configs );
+		$this->render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html, $bubble_id, $inline_configs );
 	}
 
 	/**
@@ -313,9 +313,10 @@ class WP_MCP_AI_Chat_Bubble_Frontend {
 	 * @param string $tooltip        Optional bubble tooltip text.
 	 * @param array  $settings       Plugin settings array.
 	 * @param string $shortcode_html Pre-rendered shortcode output.
+	 * @param string $bubble_id      Unique bubble identifier.
 	 * @param array  $inline_configs Chat instance configs to output inline.
 	 */
-	private function render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html, $inline_configs = array() ) {
+	private function render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html, $bubble_id, $inline_configs = array() ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $data_attrs built with esc_attr() in build_data_attributes().
 		echo '<div class="' . esc_attr( $classes ) . '" ' . $data_attrs . ' style="' . esc_attr( $css_vars ) . '">';
 
@@ -388,31 +389,43 @@ class WP_MCP_AI_Chat_Bubble_Frontend {
 		 * Gutenberg block.
 		 */
 		if ( ! empty( $inline_configs ) ) {
-			echo '<script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline config must live adjacent to the bubble markup for reliable delivery; the main chat script is already enqueued.
-			echo 'window.wpMcpAiChatInstances=window.wpMcpAiChatInstances||{};';
 			// JSON_HEX_TAG prevents </script> breakout; JSON_HEX_AMP prevents HTML entity injection.
 			$json_flags = JSON_HEX_TAG | JSON_HEX_AMP;
+			$js         = 'window.wpMcpAiChatInstances=window.wpMcpAiChatInstances||{};';
 			foreach ( $inline_configs as $id => $cfg ) {
-				echo 'window.wpMcpAiChatInstances[' . wp_json_encode( $id, $json_flags ) . ']=' . wp_json_encode( $cfg, $json_flags ) . ';';
+				$js .= 'window.wpMcpAiChatInstances[' . wp_json_encode( $id, $json_flags ) . ']=' . wp_json_encode( $cfg, $json_flags ) . ';';
 			}
-			echo '</script>';
+			// Plugin requires WP 6.0+; wp_print_inline_script_tag() (added in WP 5.7) is always available.
+			wp_print_inline_script_tag( $js );
 		}
 
 		echo '</div>'; // .wp-mcp-ai-chat-bubble
 
 		/*
-		 * Re-trigger bubble init AND chat init for the just-injected markup.
-		 * chat-bubble.js exposes window.wpMcpAiChatBubble.init().
-		 * chat.js exposes window.wpMcpAiChatInit.init().
+		 * Re-trigger init for this bubble instance only, so existing chat-client
+		 * widgets elsewhere on the page are not re-initialized.
+		 *
+		 * chat-bubble.js exposes window.wpMcpAiChatBubble.init(scope).
+		 * chat.js exposes window.wpMcpAiChatInit.init(scope).
 		 * wp_get_inline_script_tag() (WP 5.7+) adds the CSP nonce automatically.
 		 */
-		$reinit_js = 'if(window.wpMcpAiChatInit&&window.wpMcpAiChatInit.init){window.wpMcpAiChatInit.init();}'
-			. 'if(window.wpMcpAiChatBubble&&window.wpMcpAiChatBubble.init){window.wpMcpAiChatBubble.init();}';
+		$reinit_js = '(function(){'
+			. 'var bubbleId=' . wp_json_encode( $bubble_id ) . ';'
+			. 'if(!bubbleId){return;}'
+			. 'var roots=document.querySelectorAll(".wp-mcp-ai-chat-bubble[data-bubble-id]");'
+			. 'var root=null;'
+			. 'for(var i=0;i<roots.length;i++){'
+			. 'if(roots[i].getAttribute("data-bubble-id")===bubbleId){root=roots[i];break;}'
+			. '}'
+			. 'if(!root){return;}'
+			. 'if(window.wpMcpAiChatBubble&&typeof window.wpMcpAiChatBubble.init==="function"){window.wpMcpAiChatBubble.init(root);}'
+			. 'if(window.wpMcpAiChatInit&&typeof window.wpMcpAiChatInit.init==="function"){'
+			. 'var panel=root.querySelector(".wp-mcp-ai-chat-bubble__panel");'
+			. 'if(panel){window.wpMcpAiChatInit.init(panel);}'
+			. '}'
+			. '})();';
 
-		if ( function_exists( 'wp_get_inline_script_tag' ) ) {
-			echo wp_get_inline_script_tag( $reinit_js ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_get_inline_script_tag() escapes and adds CSP nonce.
-		} else {
-			echo '<script>' . $reinit_js . '</script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript,WordPress.Security.EscapeOutput.OutputNotEscaped -- Fallback for WP < 5.7; content is a static string.
-		}
+		// Plugin requires WP 6.0+; wp_get_inline_script_tag() (added in WP 5.7) is always available.
+		echo wp_get_inline_script_tag( $reinit_js ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_get_inline_script_tag() escapes and adds CSP nonce.
 	}
 }

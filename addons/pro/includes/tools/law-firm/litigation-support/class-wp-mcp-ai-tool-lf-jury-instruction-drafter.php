@@ -24,6 +24,13 @@ class WP_MCP_AI_Tool_LF_Jury_Instruction_Drafter implements WP_MCP_AI_Tool_Inter
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -107,6 +114,9 @@ class WP_MCP_AI_Tool_LF_Jury_Instruction_Drafter implements WP_MCP_AI_Tool_Inter
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -131,36 +141,36 @@ class WP_MCP_AI_Tool_LF_Jury_Instruction_Drafter implements WP_MCP_AI_Tool_Inter
 
 		// Standard claim elements by type.
 		$claim_elements = array(
-			'negligence'          => array(
+			'negligence'         => array(
 				'duty'      => __( 'The defendant owed a duty of care to the plaintiff.', 'mcp-ai-wpoos-pro' ),
 				'breach'    => __( 'The defendant breached that duty of care.', 'mcp-ai-wpoos-pro' ),
 				'causation' => __( 'The breach was the proximate cause of the plaintiff\'s injuries.', 'mcp-ai-wpoos-pro' ),
 				'damages'   => __( 'The plaintiff suffered actual damages as a result.', 'mcp-ai-wpoos-pro' ),
 			),
-			'breach_of_contract'  => array(
-				'existence'    => __( 'A valid and enforceable contract existed between the parties.', 'mcp-ai-wpoos-pro' ),
-				'performance'  => __( 'The plaintiff performed its obligations under the contract or was excused from performance.', 'mcp-ai-wpoos-pro' ),
-				'breach'       => __( 'The defendant failed to perform its obligations under the contract.', 'mcp-ai-wpoos-pro' ),
-				'damages'      => __( 'The plaintiff suffered damages as a result of the breach.', 'mcp-ai-wpoos-pro' ),
+			'breach_of_contract' => array(
+				'existence'   => __( 'A valid and enforceable contract existed between the parties.', 'mcp-ai-wpoos-pro' ),
+				'performance' => __( 'The plaintiff performed its obligations under the contract or was excused from performance.', 'mcp-ai-wpoos-pro' ),
+				'breach'      => __( 'The defendant failed to perform its obligations under the contract.', 'mcp-ai-wpoos-pro' ),
+				'damages'     => __( 'The plaintiff suffered damages as a result of the breach.', 'mcp-ai-wpoos-pro' ),
 			),
-			'fraud'               => array(
+			'fraud'              => array(
 				'representation' => __( 'The defendant made a false representation of a material fact.', 'mcp-ai-wpoos-pro' ),
 				'knowledge'      => __( 'The defendant knew the representation was false or made it recklessly.', 'mcp-ai-wpoos-pro' ),
 				'intent'         => __( 'The defendant intended to induce the plaintiff to act in reliance on the representation.', 'mcp-ai-wpoos-pro' ),
 				'reliance'       => __( 'The plaintiff justifiably relied on the representation.', 'mcp-ai-wpoos-pro' ),
 				'damages'        => __( 'The plaintiff suffered damages as a result of the reliance.', 'mcp-ai-wpoos-pro' ),
 			),
-			'product_liability'   => array(
-				'defect'      => __( 'The product was defective when it left the defendant\'s control.', 'mcp-ai-wpoos-pro' ),
-				'use'         => __( 'The product was used in a reasonably foreseeable manner.', 'mcp-ai-wpoos-pro' ),
-				'causation'   => __( 'The defect was a proximate cause of the plaintiff\'s injuries.', 'mcp-ai-wpoos-pro' ),
-				'damages'     => __( 'The plaintiff suffered damages as a result.', 'mcp-ai-wpoos-pro' ),
+			'product_liability'  => array(
+				'defect'    => __( 'The product was defective when it left the defendant\'s control.', 'mcp-ai-wpoos-pro' ),
+				'use'       => __( 'The product was used in a reasonably foreseeable manner.', 'mcp-ai-wpoos-pro' ),
+				'causation' => __( 'The defect was a proximate cause of the plaintiff\'s injuries.', 'mcp-ai-wpoos-pro' ),
+				'damages'   => __( 'The plaintiff suffered damages as a result.', 'mcp-ai-wpoos-pro' ),
 			),
-			'defamation'          => array(
-				'publication'  => __( 'The defendant published a statement to a third party.', 'mcp-ai-wpoos-pro' ),
-				'falsity'      => __( 'The statement was false.', 'mcp-ai-wpoos-pro' ),
-				'fault'        => __( 'The defendant acted with the required degree of fault.', 'mcp-ai-wpoos-pro' ),
-				'damages'      => __( 'The plaintiff suffered damages as a result.', 'mcp-ai-wpoos-pro' ),
+			'defamation'         => array(
+				'publication' => __( 'The defendant published a statement to a third party.', 'mcp-ai-wpoos-pro' ),
+				'falsity'     => __( 'The statement was false.', 'mcp-ai-wpoos-pro' ),
+				'fault'       => __( 'The defendant acted with the required degree of fault.', 'mcp-ai-wpoos-pro' ),
+				'damages'     => __( 'The plaintiff suffered damages as a result.', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 

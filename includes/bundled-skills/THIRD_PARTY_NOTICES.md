@@ -70,13 +70,55 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## Skills sourced from `nextlevelbuilder/ui-ux-pro-max-skill`
+
+**Upstream repository:** https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
+**Pinned version:** v2.5.0
+**License:** MIT (see below)
+**Original author:** NextLevelBuilder
+
+The `ui-ux-pro-max` skill is a self-contained adaptation of the upstream skill's
+design intelligence content (67 UI styles, 99 UX guidelines, pre-delivery checklists,
+and design system workflow). The Python scripts and CSV data files are not bundled;
+the Markdown body is a curated, standalone distillation of the upstream skill content.
+
+### Upstream MIT license text
+
+```
+MIT License
+
+Copyright (c) 2024 NextLevelBuilder
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## Skills sourced from `anthropics/skills`
 
-The remaining bundled skills (e.g. `pdf`, `docx`, `xlsx`, `pptx`,
-`canvas-design`, `algorithmic-art`, `frontend-design`, `mcp-builder`,
-`skill-creator`, `code-reviewer`, `web-artifacts-builder`, `webapp-testing`,
-`brand-guidelines`, `theme-factory`, `slack-gif-creator`, `excalidraw-diagram`,
-`internal-comms`, `doc-coauthoring`, `browser-use`, `remotion`, `valyu`,
-`planetscale`, `shannon`, `karpathy-coding-principles`) originate from the
-Anthropic Skills repository at https://github.com/anthropics/skills and
-follow that repository's license terms.
+The remaining bundled skills (e.g. `canvas-design`, `algorithmic-art`,
+`frontend-design`, `mcp-builder`, `skill-creator`, `code-reviewer`,
+`web-artifacts-builder`, `webapp-testing`, `brand-guidelines`,
+`theme-factory`, `slack-gif-creator`, `excalidraw-diagram`, `internal-comms`,
+`doc-coauthoring`, `browser-use`, `remotion`, `valyu`, `planetscale`,
+`shannon`, `karpathy-coding-principles`) originate from the Anthropic Skills
+repository at https://github.com/anthropics/skills and are redistributed
+under Apache-2.0 (see LICENSE.txt in this directory).
+
+Four skills from the same upstream repository (`pdf`, `docx`, `xlsx`,
+`pptx`) were removed from this distribution because they are licensed
+"Proprietary" and are not compatible with the GPLv3 license of this plugin.

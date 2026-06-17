@@ -295,7 +295,7 @@ class WP_MCP_AI_Asset_Inventory {
 			'security'     => array( WP_MCP_AI_PATH . 'SECURITY.md', 'public' ),
 			'changelog'    => array( WP_MCP_AI_PATH . 'CHANGELOG.md', 'public' ),
 			'contributing' => array( WP_MCP_AI_PATH . 'CONTRIBUTING.md', 'public' ),
-			'isms'         => array( WP_MCP_AI_PATH . 'docs/compliance/iso27001', 'confidential' ),
+			'isms'         => array( WP_MCP_AI_PATH . 'docs/operations/compliance/iso27001', 'confidential' ),
 		);
 
 		foreach ( $doc_locations as $key => $info ) {

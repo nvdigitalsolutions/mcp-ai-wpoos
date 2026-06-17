@@ -23,6 +23,11 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -31,14 +36,46 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_matter_analytics_generator'; }
-	public function get_name() { return __( 'Matter Analytics Generator', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Generates detailed analytics for a specific matter including time analysis, budget status, deadline compliance, and communication frequency.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_matter_analytics_generator'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Matter Analytics Generator', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Generates detailed analytics for a specific matter including time analysis, budget status, deadline compliance, and communication frequency.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -60,8 +97,28 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only', 'cacheable' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only', 'cacheable' ); }
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
@@ -97,11 +154,18 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 
 		// Time analysis.
 		if ( in_array( 'time_spent', $metrics, true ) ) {
-			$entries = get_posts( array(
-				'post_type'      => 'mcp_ai_lf_time_entry',
-				'posts_per_page' => -1,
-				'meta_query'     => array( array( 'key' => '_lf_matter_id', 'value' => $matter_id ) ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-			) );
+			$entries = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_lf_time_entry',
+					'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_matter_analytics_generator', 0, 1000 ) : 1000,
+					'meta_query'     => array(
+						array(
+							'key'   => '_lf_matter_id',
+							'value' => $matter_id,
+						),
+					), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				)
+			);
 
 			$billable_hours     = 0;
 			$non_billable_hours = 0;
@@ -124,7 +188,7 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 				$total_amount += $amount;
 
 				if ( ! isset( $by_attorney[ $author_id ] ) ) {
-					$user = get_userdata( $author_id );
+					$user                      = get_userdata( $author_id );
 					$by_attorney[ $author_id ] = array(
 						'name'  => $user ? $user->display_name : __( 'Unknown', 'mcp-ai-wpoos-pro' ),
 						'hours' => 0,
@@ -151,22 +215,29 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 
 		// Budget analysis.
 		if ( in_array( 'budget_status', $metrics, true ) ) {
-			$budget       = (float) get_post_meta( $matter_id, '_lf_budget', true );
-			$spent        = isset( $result_data['time_analysis']['total_amount'] ) ? $result_data['time_analysis']['total_amount'] : 0;
+			$budget = (float) get_post_meta( $matter_id, '_lf_budget', true );
+			$spent  = isset( $result_data['time_analysis']['total_amount'] ) ? $result_data['time_analysis']['total_amount'] : 0;
 
 			if ( 0 === $spent && ! in_array( 'time_spent', $metrics, true ) ) {
 				// Recalculate if time_spent was not already computed.
-				$budget_entries = get_posts( array(
-					'post_type'      => 'mcp_ai_lf_time_entry',
-					'posts_per_page' => -1,
-					'meta_query'     => array( array( 'key' => '_lf_matter_id', 'value' => $matter_id ) ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-				) );
+				$budget_entries = get_posts(
+					array(
+						'post_type'      => 'mcp_ai_lf_time_entry',
+						'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_matter_analytics_generator', 0, 1000 ) : 1000,
+						'meta_query'     => array(
+							array(
+								'key'   => '_lf_matter_id',
+								'value' => $matter_id,
+							),
+						), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					)
+				);
 				foreach ( $budget_entries as $be ) {
 					$spent += (float) get_post_meta( $be->ID, '_lf_amount', true );
 				}
 			}
 
-			$expenses = get_post_meta( $matter_id, '_lf_expenses', true );
+			$expenses      = get_post_meta( $matter_id, '_lf_expenses', true );
 			$expense_total = 0;
 			if ( is_array( $expenses ) ) {
 				foreach ( $expenses as $exp ) {
@@ -197,23 +268,23 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 
 		// Deadline compliance.
 		if ( in_array( 'deadline_compliance', $metrics, true ) ) {
-			$deadlines       = get_post_meta( $matter_id, '_lf_deadlines', true );
-			$total_deadlines = 0;
-			$met_deadlines   = 0;
+			$deadlines        = get_post_meta( $matter_id, '_lf_deadlines', true );
+			$total_deadlines  = 0;
+			$met_deadlines    = 0;
 			$missed_deadlines = 0;
-			$upcoming        = array();
-			$now             = current_time( 'Y-m-d' );
+			$upcoming         = array();
+			$now              = current_time( 'Y-m-d' );
 
 			if ( is_array( $deadlines ) ) {
 				foreach ( $deadlines as $deadline ) {
-					$total_deadlines++;
+					++$total_deadlines;
 					$dl_date   = isset( $deadline['date'] ) ? sanitize_text_field( $deadline['date'] ) : '';
 					$dl_status = isset( $deadline['status'] ) ? sanitize_text_field( $deadline['status'] ) : 'pending';
 
 					if ( 'completed' === $dl_status ) {
-						$met_deadlines++;
+						++$met_deadlines;
 					} elseif ( ! empty( $dl_date ) && $dl_date < $now && 'completed' !== $dl_status ) {
-						$missed_deadlines++;
+						++$missed_deadlines;
 					}
 
 					if ( ! empty( $dl_date ) && $dl_date >= $now && 'completed' !== $dl_status ) {
@@ -229,11 +300,11 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 			$compliance_rate = $total_deadlines > 0 ? round( ( $met_deadlines / $total_deadlines ) * 100, 1 ) : 100;
 
 			$result_data['deadline_compliance'] = array(
-				'total_deadlines'  => $total_deadlines,
-				'met'              => $met_deadlines,
-				'missed'           => $missed_deadlines,
-				'compliance_rate'  => $compliance_rate,
-				'upcoming'         => $upcoming,
+				'total_deadlines' => $total_deadlines,
+				'met'             => $met_deadlines,
+				'missed'          => $missed_deadlines,
+				'compliance_rate' => $compliance_rate,
+				'upcoming'        => $upcoming,
 			);
 		}
 
@@ -251,7 +322,7 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 					if ( ! isset( $by_type[ $comm_type ] ) ) {
 						$by_type[ $comm_type ] = 0;
 					}
-					$by_type[ $comm_type ]++;
+					++$by_type[ $comm_type ];
 
 					$comm_date = isset( $comm['date'] ) ? sanitize_text_field( $comm['date'] ) : '';
 					if ( ! empty( $comm_date ) && ( empty( $last_contact ) || $comm_date > $last_contact ) ) {
@@ -270,11 +341,11 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 			$weeks_active   = max( 1, (int) ( ( time() - strtotime( $matter_created ) ) / WEEK_IN_SECONDS ) );
 
 			$result_data['communication_frequency'] = array(
-				'total_communications'  => $total_comms,
-				'by_type'               => $by_type,
-				'last_contact_date'     => $last_contact,
-				'days_since_contact'    => $days_since_contact,
-				'avg_per_week'          => round( $total_comms / $weeks_active, 1 ),
+				'total_communications' => $total_comms,
+				'by_type'              => $by_type,
+				'last_contact_date'    => $last_contact,
+				'days_since_contact'   => $days_since_contact,
+				'avg_per_week'         => round( $total_comms / $weeks_active, 1 ),
 			);
 		}
 

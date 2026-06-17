@@ -29,8 +29,10 @@ The roster covers the full NV oOS surface: every major subsystem has a single-ow
 | [`phpunit-test-author.agent.md`](./phpunit-test-author.agent.md) | PHPUnit tests under `tests/` and `addons/pro/tests/`. | Refuses to edit production code even to make a test pass. |
 | [`agent-skill-curator.agent.md`](./agent-skill-curator.agent.md) | Bundled `SKILL.md` files under `includes/bundled-skills/` and `addons/pro/includes/bundled-skills/`. | Mandatory `THIRD_PARTY_NOTICES.md` updates for curated upstream skills. |
 | [`addon-maintainer.agent.md`](./addon-maintainer.agent.md) | One of `addons/{algorave,canvas,cornerstone3d,embedded,fantasy-football,graphify}` per session. | Per-addon scope wall — refuses to cross into other addons or the base plugin. |
+| [`toolkit-spa-maintainer.agent.md`](./toolkit-spa-maintainer.agent.md) | One toolkit-SPA addon per session (`toolkit-shell` / `canvas-toolkit` / `document-editor` / `ohif-viewer` / `media-studio` / `video-studio`). | Same per-addon scope wall as `addon-maintainer`, but specialised for React-SPA addons that follow the [Toolkit SPA Blueprint](../../docs/addons/toolkit-spa-blueprint.md) — version-bump rule, license gate, manifest discipline. |
 | [`release-engineer.agent.md`](./release-engineer.agent.md) | Versions, `CHANGELOG.md`, `readme.txt` "Stable tag", `bin/build-addon-zips.sh`. | Refuses `git push`, `git tag`, `gh release create`, and SVN — hands artifacts to a maintainer. |
 | [`docs-maintainer.agent.md`](./docs-maintainer.agent.md) | `docs/`, `README.md`, `readme.txt` (descriptive blocks), `CHANGELOG.md` narrative. | Refuses any change under `includes/`, `addons/`, or `assets/`. |
+| [`acp.agent.md`](./acp.agent.md) | ACP (Agent Client Protocol) integration — JSON-RPC 2.0 server under `includes/acp/`, session management, `tool_call` mapping, federation discovery. | Bridges to the Tool Registry via two-gate sanitisation without duplicating LLM driver logic; maintains upstream spec compliance. |
 
 The roster is deliberately split so each agent owns exactly one subsystem and refuses everything else — chain them via `handoffs:` (per the GitHub Copilot custom-agent spec, Oct 2025) for multi-step workflows.
 
@@ -65,3 +67,4 @@ Before opening a PR that adds or edits a `*.agent.md` file, verify:
 - [`CLAUDE.md`](../../CLAUDE.md) — Claude Code per-turn context (PHP compat, naming, security, tool patterns, architecture).
 - [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md) — Copilot repo-level context, including the Multi-Agent Awareness block.
 - [`.context/templates/agent-file-template.md`](../../.context/templates/agent-file-template.md) — empty canonical template.
+- [`.zed/settings.json`](../../.zed/settings.json) + [`.zed/README.md`](../../.zed/README.md) — Zed editor mirror of this roster as native agent profiles. If you change a `tools:` line below, update the matching profile in `.zed/settings.json` in the same PR.

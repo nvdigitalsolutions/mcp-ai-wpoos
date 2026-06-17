@@ -139,9 +139,17 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 
 	/**
 	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
+	 * @return array|WP_Error Execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
@@ -174,7 +182,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		if ( isset( $arguments['output_path'] ) && ! empty( $arguments['output_path'] ) ) {
 			$output_dir = sanitize_text_field( $arguments['output_path'] );
 
-			// Security: Restrict output directory to the WordPress content directory to
+			// Security: Restrict output directory to the WordPress content directory to.
 			// prevent writing PHP files to arbitrary server paths.
 			$resolved_dir = realpath( $output_dir );
 			if ( false === $resolved_dir ) {
@@ -188,6 +196,12 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 				}
 			}
 
+			if ( ! defined( 'WP_CONTENT_DIR' ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
 			if ( 0 !== strpos( wp_normalize_path( $resolved_dir ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
 				return array(
 					'success' => false,

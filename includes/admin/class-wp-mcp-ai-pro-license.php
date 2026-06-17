@@ -155,7 +155,7 @@ class WP_MCP_AI_Pro_License {
 
 		$result = $this->activate_license( $license_key );
 
-		if ( $result['success'] ) {
+		if ( ! is_wp_error( $result ) && ! empty( $result['success'] ) ) {
 			update_option( 'wp_mcp_ai_pro_license_key', $license_key );
 			update_option( 'wp_mcp_ai_pro_license_status', 'valid' );
 			update_option( 'wp_mcp_ai_pro_plan', $result['plan'] ?? 'compliance' );
@@ -171,7 +171,7 @@ class WP_MCP_AI_Pro_License {
 			add_settings_error(
 				'wp_mcp_ai_license',
 				'activation_failed',
-				$result['message'] ?? __( 'License activation failed.', 'mcp-ai-wpoos' ),
+				is_wp_error( $result ) ? $result->get_error_message() : ( $result['message'] ?? __( 'License activation failed.', 'mcp-ai-wpoos' ) ),
 				'error'
 			);
 		}
@@ -199,20 +199,14 @@ class WP_MCP_AI_Pro_License {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return array(
-				'success' => false,
-				'message' => $response->get_error_message(),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', $response->get_error_message() );
 		}
 
 		$body = wp_remote_retrieve_body( $response );
 		$data = json_decode( $body, true );
 
 		if ( ! $data || ! isset( $data['success'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Invalid response from license server.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Invalid response from license server.', 'mcp-ai-wpoos' ) );
 		}
 
 		return $data;

@@ -105,7 +105,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 							'type'        => 'string',
 							'description' => __( 'Only contexts stored under this wing (project/person scope). Applied before semantic ranking.', 'mcp-ai-wpoos' ),
 						),
-						'room'           => array(
+						'room'          => array(
 							'type'        => 'string',
 							'description' => __( 'Only contexts stored under this room (topic cluster within a wing). Applied before semantic ranking.', 'mcp-ai-wpoos' ),
 						),
@@ -135,6 +135,13 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -144,10 +151,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['agent_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent ID is required.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Agent ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Sanitize inputs.
@@ -199,21 +203,14 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		$context_record  = $context_manager->retrieve_context_compressed( $agent_id, $context_id, true );
 
 		if ( ! $context_record ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context not found or has expired.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Context not found or has expired.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check expiration.
 		if ( ! $include_expired && isset( $context_record['expires_at'] ) ) {
 			$expires_timestamp = strtotime( $context_record['expires_at'] );
 			if ( $expires_timestamp && time() > $expires_timestamp ) {
-				return array(
-					'success' => false,
-					'message' => __( 'Context has expired.', 'mcp-ai-wpoos' ),
-					'expired' => true,
-				);
+				return new WP_Error( 'wp_mcp_ai_error', __( 'Context has expired.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
@@ -248,6 +245,19 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		$context_index = get_transient( $index_key );
 
 		if ( ! is_array( $context_index ) || empty( $context_index ) ) {
+			// Transient index missing (Redis flush, fresh process, object-
+			// cache eviction). Fall back to the durable CCT mirror so the
+			// chat-memory drawer doesn't black-hole memories that survived
+			// in the durable store. Reader silently no-ops when JetEngine /
+			// the CCT table is unavailable, so the original empty response
+			// remains the worst case.
+			if ( class_exists( 'WP_MCP_AI_Agent_Memory_CCT_Reader' ) ) {
+				$cct_records = WP_MCP_AI_Agent_Memory_CCT_Reader::get_transient_shaped_records_for_agent( $agent_id, $limit );
+				if ( ! empty( $cct_records ) ) {
+					return $this->build_search_result_from_records( $cct_records, $query, $filters, $limit, $include_expired );
+				}
+			}
+
 			return array(
 				'success'  => true,
 				'message'  => __( 'No contexts found for this agent.', 'mcp-ai-wpoos' ),
@@ -257,9 +267,10 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Retrieve and filter contexts.
-		$results = array();
+		$records = array();
 		foreach ( $context_index as $ctx_id => $index_entry ) {
-			// Check expiration.
+			// Check expiration via the index entry before bothering to load
+			// the heavier per-context transient.
 			if ( ! $include_expired && isset( $index_entry['expires_at'] ) ) {
 				$expires_timestamp = strtotime( $index_entry['expires_at'] );
 				if ( $expires_timestamp && time() > $expires_timestamp ) {
@@ -267,35 +278,58 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 				}
 			}
 
-			// Get full context record.
 			$transient_key  = 'mcp_ai_ctx_' . md5( $agent_id . '_' . $ctx_id );
 			$context_record = get_transient( $transient_key );
-
 			if ( ! $context_record ) {
 				continue;
 			}
 
-			// Apply filters.
+			$records[] = $context_record;
+		}
+
+		return $this->build_search_result_from_records( $records, $query, $filters, $limit, $include_expired );
+	}
+
+	/**
+	 * Build a search result envelope from a list of pre-fetched records.
+	 *
+	 * Used by both the transient-index path (after expanding each context
+	 * id) and the CCT fallback. Centralising the filter/relevance/sort/
+	 * format pipeline guarantees both paths return identically-shaped
+	 * responses.
+	 *
+	 * @param array  $records         Records in the transient shape (with
+	 *                                a `data` sub-array).
+	 * @param string $query           Search query.
+	 * @param array  $filters         Filters to apply.
+	 * @param int    $limit           Maximum results.
+	 * @param bool   $include_expired Whether to include expired contexts.
+	 * @return array
+	 */
+	private function build_search_result_from_records( array $records, $query, $filters, $limit, $include_expired ) {
+		$results = array();
+		foreach ( $records as $context_record ) {
+			if ( ! is_array( $context_record ) ) {
+				continue;
+			}
+			if ( ! $include_expired && ! empty( $context_record['expires_at'] ) ) {
+				$expires_timestamp = strtotime( (string) $context_record['expires_at'] );
+				if ( $expires_timestamp && time() > $expires_timestamp ) {
+					continue;
+				}
+			}
 			if ( ! $this->matches_filters( $context_record, $filters ) ) {
 				continue;
 			}
-
-			// Calculate relevance score.
-			$relevance_score = $this->calculate_relevance( $context_record, $query );
-
 			$results[] = array(
 				'record'    => $context_record,
-				'relevance' => $relevance_score,
+				'relevance' => $this->calculate_relevance( $context_record, $query ),
 			);
 		}
 
-		// Sort by relevance and importance.
 		usort( $results, array( $this, 'sort_results' ) );
-
-		// Limit results.
 		$results = array_slice( $results, 0, $limit );
 
-		// Format results.
 		$formatted_results = array();
 		foreach ( $results as $result ) {
 			$formatted_results[] = $this->format_context_result( $result['record'], $result['relevance'] );

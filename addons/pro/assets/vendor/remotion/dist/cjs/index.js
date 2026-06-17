@@ -14,10 +14,12 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Config = exports.Experimental = exports.watchStaticFile = exports.Video = exports.OffthreadVideo = exports.Html5Video = exports.useRemotionEnvironment = exports.useDelayRender = exports.useCurrentScale = exports.useCurrentFrame = exports.useBufferState = exports.staticFile = exports.Series = exports.Sequence = exports.registerRoot = exports.prefetch = exports.random = exports.interpolate = exports.Loop = exports.interpolateColors = exports.Img = exports.getStaticFiles = exports.getRemotionEnvironment = exports.delayRender = exports.continueRender = exports.getInputProps = exports.Composition = exports.cancelRender = exports.Html5Audio = exports.Audio = exports.Artifact = void 0;
+exports.Config = exports.Experimental = exports.watchStaticFile = exports.MediaPlaybackError = exports.Video = exports.OffthreadVideo = exports.Html5Video = exports.useRemotionEnvironment = exports.useDelayRender = exports.useCurrentScale = exports.useCurrentFrame = exports.useBufferState = exports.staticFile = exports.Series = exports.Sequence = exports.registerRoot = exports.prefetch = exports.random = exports.interpolate = exports.Loop = exports.interpolateColors = exports.Img = exports.getStaticFiles = exports.getRemotionEnvironment = exports.delayRender = exports.continueRender = exports.getInputProps = exports.Composition = exports.cancelRender = exports.Html5Audio = exports.Audio = exports.Artifact = exports.isHtmlInCanvasSupported = exports.HtmlInCanvas = void 0;
 require("./_check-rsc.js");
 require("./asset-types.js");
 const Clipper_js_1 = require("./Clipper.js");
+const Composition_js_1 = require("./Composition.js");
+const Solid_js_1 = require("./effects/Solid.js");
 const enable_sequence_stack_traces_js_1 = require("./enable-sequence-stack-traces.js");
 const is_player_js_1 = require("./is-player.js");
 const multiple_versions_warning_js_1 = require("./multiple-versions-warning.js");
@@ -26,6 +28,9 @@ const Sequence_js_1 = require("./Sequence.js");
 (0, multiple_versions_warning_js_1.checkMultipleRemotionVersions)();
 __exportStar(require("./AbsoluteFill.js"), exports);
 __exportStar(require("./animated-image/index.js"), exports);
+var HtmlInCanvas_js_1 = require("./HtmlInCanvas.js");
+Object.defineProperty(exports, "HtmlInCanvas", { enumerable: true, get: function () { return HtmlInCanvas_js_1.HtmlInCanvas; } });
+Object.defineProperty(exports, "isHtmlInCanvasSupported", { enumerable: true, get: function () { return HtmlInCanvas_js_1.isHtmlInCanvasSupported; } });
 var Artifact_js_1 = require("./Artifact.js");
 Object.defineProperty(exports, "Artifact", { enumerable: true, get: function () { return Artifact_js_1.Artifact; } });
 var index_js_1 = require("./audio/index.js");
@@ -33,8 +38,8 @@ Object.defineProperty(exports, "Audio", { enumerable: true, get: function () { r
 Object.defineProperty(exports, "Html5Audio", { enumerable: true, get: function () { return index_js_1.Html5Audio; } });
 var cancel_render_js_1 = require("./cancel-render.js");
 Object.defineProperty(exports, "cancelRender", { enumerable: true, get: function () { return cancel_render_js_1.cancelRender; } });
-var Composition_js_1 = require("./Composition.js");
-Object.defineProperty(exports, "Composition", { enumerable: true, get: function () { return Composition_js_1.Composition; } });
+var Composition_js_2 = require("./Composition.js");
+Object.defineProperty(exports, "Composition", { enumerable: true, get: function () { return Composition_js_2.Composition; } });
 var input_props_js_1 = require("./config/input-props.js");
 Object.defineProperty(exports, "getInputProps", { enumerable: true, get: function () { return input_props_js_1.getInputProps; } });
 var delay_render_js_1 = require("./delay-render.js");
@@ -87,6 +92,8 @@ var index_js_4 = require("./video/index.js");
 Object.defineProperty(exports, "Html5Video", { enumerable: true, get: function () { return index_js_4.Html5Video; } });
 Object.defineProperty(exports, "OffthreadVideo", { enumerable: true, get: function () { return index_js_4.OffthreadVideo; } });
 Object.defineProperty(exports, "Video", { enumerable: true, get: function () { return index_js_4.Video; } });
+var MediaPlaybackError_js_1 = require("./video/MediaPlaybackError.js");
+Object.defineProperty(exports, "MediaPlaybackError", { enumerable: true, get: function () { return MediaPlaybackError_js_1.MediaPlaybackError; } });
 var watch_static_file_js_1 = require("./watch-static-file.js");
 Object.defineProperty(exports, "watchStaticFile", { enumerable: true, get: function () { return watch_static_file_js_1.watchStaticFile; } });
 exports.Experimental = {
@@ -100,6 +107,7 @@ exports.Experimental = {
      * @see [Documentation](https://www.remotion.dev/docs/null)
      */
     Null: Null_js_1.Null,
+    Solid: Solid_js_1.Solid,
     useIsPlayer: is_player_js_1.useIsPlayer,
 };
 const proxyObj = {};
@@ -130,3 +138,4 @@ exports.Config = new Proxy(proxyObj, {
 });
 Sequence_js_1.Sequence.displayName = 'Sequence';
 (0, enable_sequence_stack_traces_js_1.addSequenceStackTraces)(Sequence_js_1.Sequence);
+(0, enable_sequence_stack_traces_js_1.addSequenceStackTraces)(Composition_js_1.Composition);

@@ -115,6 +115,13 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Retrieve the configured defaults for video generation.
 	 *
 	 * @return array
@@ -245,6 +252,20 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			'wp_mcp_ai_sora_video_generate',
 			array( $job_id )
 		);
+
+		// Register in Cron Manager so the job is visible and monitorable.
+		// user_id may be 0 for unattributed/system-initiated jobs; record_job
+		// accepts 0 (shows the job without user attribution in the UI).
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+			WP_MCP_AI_Cron_Manager::record_job(
+				'wp_mcp_ai_sora_video_generate',
+				array( $job_id ),
+				'single',
+				time(),
+				$user_id
+			);
+		}
 
 		WP_MCP_AI_Logger::log_event(
 			'sora_video_queued',
@@ -542,7 +563,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Download the completed video.
-		$video_response = wp_remote_get(
+		$video_response = wp_safe_remote_get(
 			$video_url,
 			array(
 				'headers' => array(
@@ -750,6 +771,9 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		// Generate attachment metadata.
 		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+		if ( ! function_exists( 'wp_read_video_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/media.php';
 		}
 		$attach_data = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
 		wp_update_attachment_metadata( $attachment_id, $attach_data );

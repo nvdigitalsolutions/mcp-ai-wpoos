@@ -31,6 +31,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.1.0
@@ -181,19 +188,19 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 			$texts = array_slice( $texts, 0, 20 );
 		}
 
-		$results       = array();
-		$total_score   = 0;
-		$total_conf    = 0;
+		$results     = array();
+		$total_score = 0;
+		$total_conf  = 0;
 
 		foreach ( $texts as $index => $text ) {
-			$text       = sanitize_text_field( $text );
-			$analysis   = $this->analyze_text( $text );
-			$results[]  = $analysis;
+			$text         = sanitize_text_field( $text );
+			$analysis     = $this->analyze_text( $text );
+			$results[]    = $analysis;
 			$total_score += $analysis['score'];
 			$total_conf  += $analysis['confidence'];
 		}
 
-		$count = count( $results );
+		$count    = count( $results );
 		$response = array(
 			'success'    => true,
 			'mode'       => 'keyword',
@@ -259,9 +266,9 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 		// Check for multi-word and single-word positive keywords.
 		foreach ( $positive_keywords as $keyword => $weight ) {
 			if ( false !== strpos( $text_lower, $keyword ) ) {
-				$modifier          = $this->detect_modifier( $text_lower, $keyword, $modifiers );
-				$adjusted_weight   = $weight * $modifier;
-				$positive_score   += $adjusted_weight;
+				$modifier           = $this->detect_modifier( $text_lower, $keyword, $modifiers );
+				$adjusted_weight    = $weight * $modifier;
+				$positive_score    += $adjusted_weight;
 				$positive_matches[] = array(
 					'keyword'  => $keyword,
 					'weight'   => round( $adjusted_weight, 3 ),
@@ -273,9 +280,9 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 		// Check for multi-word and single-word negative keywords.
 		foreach ( $negative_keywords as $keyword => $weight ) {
 			if ( false !== strpos( $text_lower, $keyword ) ) {
-				$modifier          = $this->detect_modifier( $text_lower, $keyword, $modifiers );
-				$adjusted_weight   = $weight * $modifier;
-				$negative_score   += $adjusted_weight;
+				$modifier           = $this->detect_modifier( $text_lower, $keyword, $modifiers );
+				$adjusted_weight    = $weight * $modifier;
+				$negative_score    += $adjusted_weight;
 				$negative_matches[] = array(
 					'keyword'  => $keyword,
 					'weight'   => round( $adjusted_weight, 3 ),
@@ -303,14 +310,14 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 		}
 
 		return array(
-			'text'              => wp_trim_words( $text, 30, '...' ),
-			'score'             => round( $score, 4 ),
-			'label'             => $this->score_to_label( $score ),
-			'confidence'        => round( $confidence, 4 ),
-			'positive_matches'  => $positive_matches,
-			'negative_matches'  => $negative_matches,
-			'keyword_count'     => $match_count,
-			'word_count'        => $word_count,
+			'text'             => wp_trim_words( $text, 30, '...' ),
+			'score'            => round( $score, 4 ),
+			'label'            => $this->score_to_label( $score ),
+			'confidence'       => round( $confidence, 4 ),
+			'positive_matches' => $positive_matches,
+			'negative_matches' => $negative_matches,
+			'keyword_count'    => $match_count,
+			'word_count'       => $word_count,
 		);
 	}
 
@@ -345,7 +352,7 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 	private function detect_modifier( $text, $keyword, $modifiers ) {
 		foreach ( $modifiers as $mod_word => $multiplier ) {
 			// Check if modifier appears within 3 words before the keyword.
-			$pattern = '/' . preg_quote( $mod_word, '/' ) . '\s+(?:\w+\s+){0,2}' . preg_quote( $keyword, '/' ) . '/';
+			$pattern = '/' . preg_quote( $mod_word, '/' ) . '\s+( ? ( :\w+\s+){0,2}' . preg_quote( $keyword, '/' ) . '/';
 			if ( preg_match( $pattern, $text ) ) {
 				return $multiplier;
 			}
@@ -362,41 +369,41 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 	 */
 	private function get_positive_keywords() {
 		return array(
-			'revenue growth'  => 0.9,
-			'earnings beat'   => 0.9,
-			'all-time high'   => 0.8,
-			'strong demand'   => 0.8,
-			'bull'            => 0.7,
-			'bullish'         => 0.8,
-			'surge'           => 0.8,
-			'surged'          => 0.8,
-			'profit'          => 0.6,
-			'profitable'      => 0.6,
-			'growth'          => 0.6,
-			'rally'           => 0.7,
-			'rallied'         => 0.7,
-			'upgrade'         => 0.7,
-			'upgraded'        => 0.7,
-			'beat'            => 0.6,
-			'outperform'      => 0.7,
-			'strong'          => 0.5,
-			'recovery'        => 0.6,
-			'recovering'      => 0.6,
-			'gains'           => 0.6,
-			'gained'          => 0.6,
-			'breakout'        => 0.7,
-			'dividend'        => 0.5,
-			'buy'             => 0.5,
-			'optimism'        => 0.6,
-			'optimistic'      => 0.6,
-			'momentum'        => 0.5,
-			'expansion'       => 0.5,
-			'exceeded'        => 0.6,
-			'record'          => 0.5,
-			'positive'        => 0.4,
-			'upside'          => 0.5,
-			'innovation'      => 0.4,
-			'opportunity'     => 0.4,
+			'revenue growth' => 0.9,
+			'earnings beat'  => 0.9,
+			'all-time high'  => 0.8,
+			'strong demand'  => 0.8,
+			'bull'           => 0.7,
+			'bullish'        => 0.8,
+			'surge'          => 0.8,
+			'surged'         => 0.8,
+			'profit'         => 0.6,
+			'profitable'     => 0.6,
+			'growth'         => 0.6,
+			'rally'          => 0.7,
+			'rallied'        => 0.7,
+			'upgrade'        => 0.7,
+			'upgraded'       => 0.7,
+			'beat'           => 0.6,
+			'outperform'     => 0.7,
+			'strong'         => 0.5,
+			'recovery'       => 0.6,
+			'recovering'     => 0.6,
+			'gains'          => 0.6,
+			'gained'         => 0.6,
+			'breakout'       => 0.7,
+			'dividend'       => 0.5,
+			'buy'            => 0.5,
+			'optimism'       => 0.6,
+			'optimistic'     => 0.6,
+			'momentum'       => 0.5,
+			'expansion'      => 0.5,
+			'exceeded'       => 0.6,
+			'record'         => 0.5,
+			'positive'       => 0.4,
+			'upside'         => 0.5,
+			'innovation'     => 0.4,
+			'opportunity'    => 0.4,
 		);
 	}
 
@@ -409,45 +416,45 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 	 */
 	private function get_negative_keywords() {
 		return array(
-			'debt crisis'     => 0.9,
-			'earnings miss'   => 0.9,
-			'bear'            => 0.7,
-			'bearish'         => 0.8,
-			'crash'           => 0.9,
-			'crashed'         => 0.9,
-			'loss'            => 0.6,
-			'losses'          => 0.6,
-			'decline'         => 0.6,
-			'declined'        => 0.6,
-			'downgrade'       => 0.7,
-			'downgraded'      => 0.7,
-			'miss'            => 0.6,
-			'missed'          => 0.6,
-			'underperform'    => 0.7,
-			'weak'            => 0.5,
-			'weakness'        => 0.5,
-			'recession'       => 0.8,
-			'selloff'         => 0.7,
-			'sell-off'        => 0.7,
-			'default'         => 0.8,
-			'bankruptcy'      => 0.9,
-			'layoffs'         => 0.6,
-			'layoff'          => 0.6,
-			'warning'         => 0.5,
-			'risk'            => 0.3,
-			'volatile'        => 0.4,
-			'volatility'      => 0.4,
-			'sell'            => 0.5,
-			'pessimism'       => 0.6,
-			'pessimistic'     => 0.6,
-			'contraction'     => 0.5,
-			'plunge'          => 0.8,
-			'plunged'         => 0.8,
-			'negative'        => 0.4,
-			'downside'        => 0.5,
-			'correction'      => 0.5,
-			'inflation'       => 0.3,
-			'uncertainty'     => 0.4,
+			'debt crisis'   => 0.9,
+			'earnings miss' => 0.9,
+			'bear'          => 0.7,
+			'bearish'       => 0.8,
+			'crash'         => 0.9,
+			'crashed'       => 0.9,
+			'loss'          => 0.6,
+			'losses'        => 0.6,
+			'decline'       => 0.6,
+			'declined'      => 0.6,
+			'downgrade'     => 0.7,
+			'downgraded'    => 0.7,
+			'miss'          => 0.6,
+			'missed'        => 0.6,
+			'underperform'  => 0.7,
+			'weak'          => 0.5,
+			'weakness'      => 0.5,
+			'recession'     => 0.8,
+			'selloff'       => 0.7,
+			'sell-off'      => 0.7,
+			'default'       => 0.8,
+			'bankruptcy'    => 0.9,
+			'layoffs'       => 0.6,
+			'layoff'        => 0.6,
+			'warning'       => 0.5,
+			'risk'          => 0.3,
+			'volatile'      => 0.4,
+			'volatility'    => 0.4,
+			'sell'          => 0.5,
+			'pessimism'     => 0.6,
+			'pessimistic'   => 0.6,
+			'contraction'   => 0.5,
+			'plunge'        => 0.8,
+			'plunged'       => 0.8,
+			'negative'      => 0.4,
+			'downside'      => 0.5,
+			'correction'    => 0.5,
+			'inflation'     => 0.3,
+			'uncertainty'   => 0.4,
 		);
 	}
 
@@ -460,19 +467,19 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 	 */
 	private function get_intensity_modifiers() {
 		return array(
-			'very'           => 1.3,
-			'extremely'      => 1.5,
-			'slightly'       => 0.6,
-			'sharply'        => 1.4,
-			'dramatically'   => 1.5,
-			'significantly'  => 1.3,
-			'massively'      => 1.5,
-			'moderately'     => 0.8,
-			'somewhat'       => 0.7,
-			'highly'         => 1.3,
-			'deeply'         => 1.3,
-			'barely'         => 0.5,
-			'unexpectedly'   => 1.2,
+			'very'          => 1.3,
+			'extremely'     => 1.5,
+			'slightly'      => 0.6,
+			'sharply'       => 1.4,
+			'dramatically'  => 1.5,
+			'significantly' => 1.3,
+			'massively'     => 1.5,
+			'moderately'    => 0.8,
+			'somewhat'      => 0.7,
+			'highly'        => 1.3,
+			'deeply'        => 1.3,
+			'barely'        => 0.5,
+			'unexpectedly'  => 1.2,
 		);
 	}
 

@@ -8,20 +8,58 @@
  * @license   GPL-3.0-or-later
  */
 
+// Detect CI / MySQL environment via the WP_DB_HOST env var exported by phpunit.yml.
+// When WP_DB_HOST is set (e.g. "127.0.0.1" in GitHub Actions), use real MySQL and
+// pick up credentials from the WP_DB_* env vars.  Otherwise fall back to SQLite for
+// local / Codex environments where the SQLite drop-in is available.
+$_wp_db_host  = getenv( 'WP_DB_HOST' );
+$_studio_mode = false;
+
+// ── WordPress Studio: auto-detect DB credentials from wp-config ──
+if ( ! $_wp_db_host ) {
+	$wordpress_path = getenv( 'WP_CORE_DIR' );
+	if ( ! $wordpress_path ) {
+		$studio_slug = getenv( 'WP_STUDIO_SITE_SLUG' );
+		if ( $studio_slug ) {
+			if ( 'WIN' === strtoupper( substr( PHP_OS, 0, 3 ) ) ) {
+				$studio_base = getenv( 'LOCALAPPDATA' ) . '/WordPress Studio/sites';
+			} else {
+				$studio_base = getenv( 'HOME' ) . '/Library/Application Support/WordPress Studio/sites';
+			}
+			$wordpress_path = $studio_base . '/' . $studio_slug . '/app/public';
+		}
+	}
+
+	// Try to read Studio's wp-config.php for MySQL credentials.
+	$studio_config = ( $wordpress_path ? $wordpress_path . '/wp-config.php' : '' );
+	if ( $studio_config && file_exists( $studio_config ) && ! getenv( 'WP_DB_HOST' ) ) {
+		$config_contents = file_get_contents( $studio_config );
+		if ( $config_contents && preg_match( "/define\s*\(\s*'DB_HOST'\s*,\s*'([^']+)'\s*\)/", $config_contents, $m ) ) {
+			$_wp_db_host = $m[1];
+			$_studio_mode = true;
+		}
+	}
+}
+
 if ( ! defined( 'DB_NAME' ) ) {
-	define( 'DB_NAME', 'wordpress_test' );
+	$studio_test_db = $_studio_mode ? 'wordpress_test' : null;
+	define( 'DB_NAME', getenv( 'WP_DB_NAME' ) ?: $studio_test_db ?: 'wordpress_test' );
 }
 
 if ( ! defined( 'DB_USER' ) ) {
-	define( 'DB_USER', 'wordpress' );
+	$studio_db_user = $_studio_mode ? 'root' : null;
+	define( 'DB_USER', getenv( 'WP_DB_USER' ) ?: $studio_db_user ?: 'wordpress' );
 }
 
 if ( ! defined( 'DB_PASSWORD' ) ) {
-	define( 'DB_PASSWORD', 'wordpress' );
+	$studio_db_pass = $_studio_mode ? 'root' : null;
+	define( 'DB_PASSWORD', getenv( 'WP_DB_PASSWORD' ) ?: $studio_db_pass ?: 'wordpress' );
 }
 
 if ( ! defined( 'DB_HOST' ) ) {
-	define( 'DB_HOST', 'localhost' );
+	// Use 127.0.0.1 (TCP) when a host env var is provided; avoids Unix-socket
+	// "No such file or directory" errors in GitHub Actions MySQL service containers.
+	define( 'DB_HOST', $_wp_db_host ?: 'localhost' );
 }
 
 if ( ! defined( 'DB_CHARSET' ) ) {
@@ -32,17 +70,31 @@ if ( ! defined( 'DB_COLLATE' ) ) {
 	define( 'DB_COLLATE', '' );
 }
 
-// Use SQLite for testing
-if ( ! defined( 'DB_TYPE' ) ) {
-	define( 'DB_TYPE', 'sqlite' );
-}
+// Use SQLite only in local / Codex / Studio environments (no WP_DB_HOST env var).
+// In CI the MySQL service container is used instead.
+// Studio sites use their own MySQL; tests create a separate test database.
+if ( ! $_wp_db_host ) {
+	if ( ! defined( 'DB_TYPE' ) ) {
+		define( 'DB_TYPE', 'sqlite' );
+	}
 
-if ( ! defined( 'DB_DIR' ) ) {
-	define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
-}
+	if ( ! defined( 'DB_DIR' ) ) {
+		// Use Studio-temp or Codex path depending on environment.
+		$studio_slug = getenv( 'WP_STUDIO_SITE_SLUG' );
+		if ( $studio_slug ) {
+			define( 'DB_DIR', sys_get_temp_dir() . '/wp-mcp-ai-tests-database/' . $studio_slug );
+		} else {
+			define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
+		}
+	}
 
-if ( ! defined( 'DB_FILE' ) ) {
-	define( 'DB_FILE', 'wptests.sqlite' );
+	if ( ! defined( 'DB_FILE' ) ) {
+		define( 'DB_FILE', 'wptests.sqlite' );
+	}
+
+	if ( $_studio_mode ) {
+		fwrite( STDOUT, "  (Using SQLite for test isolation — production site uses MySQL)\n" );
+	}
 }
 
 if ( ! isset( $table_prefix ) ) {

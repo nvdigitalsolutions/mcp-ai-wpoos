@@ -1,0 +1,45 @@
+name: Cloud Worker Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'addons/cloud-worker/**'
+      - '.github/workflows/cloud-worker-tests.yml'
+  pull_request:
+    paths:
+      - 'addons/cloud-worker/**'
+      - '.github/workflows/cloud-worker-tests.yml'
+
+jobs:
+  test:
+    name: typecheck + vitest
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        working-directory: addons/cloud-worker
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # wrangler@4 + miniflare@4 require Node >= 22.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: addons/cloud-worker/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run Vitest (Workers pool)
+        run: npm test

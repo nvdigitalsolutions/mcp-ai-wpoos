@@ -73,7 +73,7 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 			'username'   => $email,
 		);
 
-		if ( $auth_method === 'api_key' ) {
+		if ( 'api_key' === $auth_method ) {
 			// API key authentication (client_credentials flow).
 			$body['grant_type']    = 'client_credentials';
 			$body['client_id']     = $email; // Client ID from Bitwarden.
@@ -103,7 +103,7 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body_data   = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( $status_code !== 200 ) {
+		if ( 200 !== $status_code ) {
 			$error_message = isset( $body_data['error_description'] ) ? $body_data['error_description'] : 'Authentication failed';
 			return new WP_Error( 'auth_failed', $error_message, array( 'status' => $status_code ) );
 		}
@@ -229,7 +229,7 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body        = wp_remote_retrieve_body( $response );
 
-		if ( $status_code !== 200 ) {
+		if ( 200 !== $status_code ) {
 			return new WP_Error( 'sync_failed', 'Failed to fetch sync data from server', array( 'status' => $status_code ) );
 		}
 
@@ -323,7 +323,7 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body        = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( $status_code !== 200 && $status_code !== 201 ) {
+		if ( 200 !== $status_code && 201 !== $status_code ) {
 			return new WP_Error( 'folder_create_failed', 'Failed to create folder on server', array( 'status' => $status_code ) );
 		}
 
@@ -372,7 +372,7 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body        = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( $status_code !== 200 && $status_code !== 201 ) {
+		if ( 200 !== $status_code && 201 !== $status_code ) {
 			$error_message = isset( $body['message'] ) ? $body['message'] : 'Failed to create item on server';
 			return new WP_Error( 'item_create_failed', $error_message, array( 'status' => $status_code ) );
 		}
@@ -403,7 +403,7 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 
-		if ( $status_code === 200 ) {
+		if ( 200 === $status_code ) {
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
 			return array(
 				'success' => true,

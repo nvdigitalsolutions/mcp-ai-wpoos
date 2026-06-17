@@ -22,6 +22,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Delegate_To_A2A_Agent implements WP_MCP_AI_Tool_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Maximum poll attempts for task completion.
 	 *
 	 * @var int
@@ -119,36 +126,36 @@ class WP_MCP_AI_Tool_Delegate_To_A2A_Agent implements WP_MCP_AI_Tool_Interface {
 		$wait_for_result  = isset( $arguments['wait_for_result'] ) ? (bool) $arguments['wait_for_result'] : true;
 
 		if ( empty( $agent_url ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Agent URL is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent URL is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $task_description ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Task description is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Task description is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		// Step 1: Discover the remote agent.
 		$agent_card = WP_MCP_AI_A2A_Client::discover_agent( $agent_url );
 		if ( is_wp_error( $agent_card ) ) {
-			return array(
-				'success' => false,
-				'error'   => $agent_card->get_error_message(),
-				'step'    => 'discovery',
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$agent_card->get_error_message(),
+				array( 'step' => 'discovery' )
 			);
 		}
 
 		// Determine the A2A endpoint URL from the agent card.
 		$a2a_endpoint = isset( $agent_card['url'] ) ? $agent_card['url'] : '';
 		if ( empty( $a2a_endpoint ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Agent Card does not specify an A2A endpoint URL.', 'mcp-ai-wpoos' ),
-				'step'    => 'discovery',
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent Card does not specify an A2A endpoint URL.', 'mcp-ai-wpoos' ),
+				array( 'step' => 'discovery' )
 			);
 		}
 
@@ -178,10 +185,10 @@ class WP_MCP_AI_Tool_Delegate_To_A2A_Agent implements WP_MCP_AI_Tool_Interface {
 		);
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'error'   => $result->get_error_message(),
-				'step'    => 'send_message',
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$result->get_error_message(),
+				array( 'step' => 'send_message' )
 			);
 		}
 
@@ -213,10 +220,10 @@ class WP_MCP_AI_Tool_Delegate_To_A2A_Agent implements WP_MCP_AI_Tool_Interface {
 				);
 
 				if ( is_wp_error( $task ) ) {
-					return array(
-						'success' => false,
-						'error'   => $task->get_error_message(),
-						'step'    => 'poll',
+					return new WP_Error(
+						'wp_mcp_ai_error',
+						$task->get_error_message(),
+						array( 'step' => 'poll' )
 					);
 				}
 
@@ -228,13 +235,15 @@ class WP_MCP_AI_Tool_Delegate_To_A2A_Agent implements WP_MCP_AI_Tool_Interface {
 			}
 
 			// Timeout.
-			return array(
-				'success' => false,
-				'error'   => __( 'Task did not complete within the polling window.', 'mcp-ai-wpoos' ),
-				'task_id' => $task_id,
-				'state'   => isset( $task['status']['state'] ) ? $task['status']['state'] : 'unknown',
-				'agent'   => $agent_card['name'],
-				'step'    => 'poll_timeout',
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Task did not complete within the polling window.', 'mcp-ai-wpoos' ),
+				array(
+					'task_id' => $task_id,
+					'state'   => isset( $task['status']['state'] ) ? $task['status']['state'] : 'unknown',
+					'agent'   => $agent_card['name'],
+					'step'    => 'poll_timeout',
+				)
 			);
 		}
 

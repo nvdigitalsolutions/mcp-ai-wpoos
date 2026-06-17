@@ -29,11 +29,13 @@ class WP_MCP_AI_Execution_History_CCT {
 	 * Hook into JetEngine to provision the execution history content type.
 	 */
 	public static function bootstrap() {
-		// Run after JetEngine initialises the Custom Content Types module.
-		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 5 );
+		// JetEngine's CCT module hydrates its table cache on `init` at priorities
+		// 1-10; registering inside that window races with it and stomps
+		// JetEngine's CCT state. Priority 11 is the documented safe window.
+		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 11 );
 
 		// Ensure data stores module is enabled when JetEngine is active.
-		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 5 );
+		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
 	}
 
 	/**

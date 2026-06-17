@@ -98,6 +98,29 @@
     const SAVE_ICON = '<svg class="wp-mcp-ai-save-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M15.5 3H4.5A1.5 1.5 0 003 4.5v11A1.5 1.5 0 004.5 17h11a1.5 1.5 0 001.5-1.5v-11A1.5 1.5 0 0015.5 3zm-7 1h3v4h-3V4zm7.5 11.5a.5.5 0 01-.5.5h-11a.5.5 0 01-.5-.5v-11a.5.5 0 01.5-.5h2v4.5a.5.5 0 00.5.5h4a.5.5 0 00.5-.5V4h4a.5.5 0 01.5.5v11z"/><path d="M6 11h8v1H6zm0 2h8v1H6z"/></svg>';
     const SAVE_SUCCESS_ICON = '<svg class="wp-mcp-ai-save-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
 
+    // Feedback button constants
+    const FEEDBACK_CONTAINER_CLASS = 'wp-mcp-ai-chat__feedback';
+    const FEEDBACK_BTN_CLASS = 'wp-mcp-ai-chat__feedback-btn';
+    const FEEDBACK_ACTIVE_CLASS = 'wp-mcp-ai-chat__feedback-btn--active';
+    const FEEDBACK_THUMBS_UP = '\uD83D\uDC4D';
+    const FEEDBACK_THUMBS_DOWN = '\uD83D\uDC4E';
+
+    // Code block copy constants
+    const CODE_BLOCK_WRAPPER_CLASS = 'wp-mcp-ai-chat__code-block-wrapper';
+    const CODE_COPY_CLASS = 'wp-mcp-ai-chat__code-copy';
+    const CODE_COPY_SUCCESS_CLASS = 'wp-mcp-ai-chat__code-copy--success';
+
+    // Profile card constants
+    const PROFILE_TOGGLE_CLASS = 'wp-mcp-ai-chat__profile-toggle';
+
+    // Dark mode constants
+    const DARK_MODE_CLASS = 'wp-mcp-ai-chat--dark-mode';
+    const DARK_MODE_STORAGE_KEY = 'wp_mcp_ai_dark_mode';
+
+    // Suggested prompts constants
+    const PROMPTS_CONTAINER_CLASS = 'wp-mcp-ai-chat__prompts';
+    const PROMPT_CHIP_CLASS = 'wp-mcp-ai-chat__prompt-chip';
+
     // Transcription constants
     const TRANSCRIBE_TOOL_NAME = transcriptionService && transcriptionService.TRANSCRIBE_TOOL_NAME || 'transcribe_openai_audio';
     const TRANSCRIBE_RECORDING_CLASS = transcriptionService && transcriptionService.TRANSCRIBE_RECORDING_CLASS || audioService && audioService.TRANSCRIBE_RECORDING_CLASS || 'wp-mcp-ai-chat__transcribe--recording';
@@ -119,8 +142,10 @@
     const ASYNC_TOOL_TIMEOUT_MIN_MS = 60000; // 1 minute minimum
     
     // Performance optimization settings - can be disabled for debugging
-    // Set window.wpMcpAiChatDebugMode = true to disable optimizations
-    const DEBUG_MODE = window.wpMcpAiChatDebugMode === true;
+    // Set window.wpMcpAiChatDebugMode = true to disable optimizations.
+    // WordPress wp_localize_script casts PHP booleans to strings (true → '1'),
+    // so we use loose equality to support both true and '1'.
+    const DEBUG_MODE = window.wpMcpAiChatDebugMode === true || ( typeof globalConfig !== 'undefined' && globalConfig.chatDebugMode == true );
     const OPTIMIZATIONS_ENABLED = !DEBUG_MODE;
 
     /**
@@ -192,7 +217,7 @@
              * @param {Object} context - Request context
              */
             logRequestStart: function(context) {
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log(LOG_PREFIX + ' Starting streaming request:', {
                         endpoint: context.endpoint,
                         assistantId: context.assistantId,
@@ -208,7 +233,7 @@
              * @param {Response} response - Fetch Response object
              */
             logResponseReceived: function(response) {
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log(LOG_PREFIX + ' Streaming response received:', {
                         status: response.status,
                         statusText: response.statusText,
@@ -256,7 +281,7 @@
                     
                     // Extract response text if available (async, non-blocking)
                     // This runs asynchronously and doesn't block the error flow
-                    if (error && typeof error.text === 'function') {
+                    if (DEBUG_MODE && error && typeof error.text === 'function') {
                         error.text().then(function(responseText) {
                             console.error(LOG_PREFIX + ' Server response text:', responseText);
                         }).catch(function(extractError) {
@@ -271,7 +296,7 @@
              * Log SSE stream processing start.
              */
             logStreamStart: function() {
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log(LOG_PREFIX + ' Starting SSE stream processing');
                 }
             },
@@ -281,7 +306,7 @@
              * @param {Object} result - Stream completion result
              */
             logStreamComplete: function(result) {
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log(LOG_PREFIX + ' SSE stream completed:', {
                         totalContentLength: result.contentLength,
                         contentSample: result.contentSample
@@ -295,7 +320,7 @@
              * @param {Object} context - Parsing context
              */
             logParseError: function(parseError, context) {
-                if (window.console && console.warn) {
+                if (DEBUG_MODE && window.console && console.warn) {
                     console.warn(LOG_PREFIX + ' Failed to parse SSE event data:', {
                         eventType: context.eventType || '(none)',
                         eventData: context.eventData,
@@ -680,7 +705,6 @@
             credentials: 'same-origin',
             body: JSON.stringify(data)
         };
-        
         if (options.signal) {
             fetchOptions.signal = options.signal;
         }
@@ -989,19 +1013,18 @@
                 };
                 
                 // Log save attempt
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log('[NV oOS] Saving conversation to localStorage:', {
                         assistant_id: assistantId,
-                        session_key: state.config.sessionKey || '',
                         message_count: (state.conversation || []).length,
-                        storage_key: storageKey
+                        storage_key: storageKey,
                     });
                 }
                 
                 window.localStorage.setItem(storageKey, JSON.stringify(data));
                 
                 // Log successful save
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log('[NV oOS] Conversation saved successfully to localStorage');
                 }
                 
@@ -1028,14 +1051,14 @@
                             };
                             
                             // Log retry attempt
-                            if (window.console && console.log) {
+                            if (DEBUG_MODE && window.console && console.log) {
                                 console.log('[NV oOS] Retrying localStorage save after cleanup (cleaned ' + cleaned + ' entries)');
                             }
                             
                             window.localStorage.setItem(storageKey, JSON.stringify(data));
                             
                             // Log successful retry
-                            if (window.console && console.log) {
+                            if (DEBUG_MODE && window.console && console.log) {
                                 console.log('[NV oOS] Conversation saved successfully to localStorage after cleanup');
                             }
                             
@@ -1173,7 +1196,7 @@
             const storageKey = getStorageKey(state.config.assistantId);
             
             // Log load attempt
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] Loading conversation from localStorage:', {
                     assistant_id: state.config.assistantId,
                     storage_key: storageKey
@@ -1184,7 +1207,7 @@
 
             if (!stored) {
                 // Log when no data found
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log('[NV oOS] No conversation found in localStorage');
                 }
                 return null;
@@ -1202,7 +1225,7 @@
             // Check if data is expired
             const age = Date.now() - (data.timestamp || 0);
             if (age > STORAGE_EXPIRY_MS) {
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log('[NV oOS] Conversation expired in localStorage (age: ' + Math.floor(age / 1000 / 60) + ' minutes)');
                 }
                 window.localStorage.removeItem(storageKey);
@@ -1218,11 +1241,10 @@
             }
 
             // Log successful load
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] Conversation loaded successfully from localStorage:', {
-                    session_key: data.sessionKey || '',
                     message_count: Array.isArray(data.conversation) ? data.conversation.length : 0,
-                    age_minutes: Math.floor(age / 1000 / 60)
+                    age_minutes: Math.floor(age / 1000 / 60),
                 });
             }
 
@@ -1264,7 +1286,7 @@
             const storageKey = getStorageKey(state.config.assistantId);
             
             // Log delete attempt
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] Clearing conversation from localStorage:', {
                     assistant_id: state.config.assistantId,
                     session_key: state.config.sessionKey || '',
@@ -1275,7 +1297,7 @@
             window.localStorage.removeItem(storageKey);
             
             // Log successful delete
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] Conversation cleared successfully from localStorage');
             }
         } catch (error) {
@@ -1832,9 +1854,8 @@
          */
         function attemptSave(attempt) {
             // Log save attempt
-            if (!silent && window.console && console.log) {
+            if (!silent && DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] Saving conversation to CCT:', {
-                    session_key: payload.session_key,
                     assistant_id: payload.assistant_id,
                     message_count: payload.messages.length,
                     attempt: attempt + 1
@@ -1892,7 +1913,7 @@
                             }
 
                             // Log successful save
-                            if (!silent && window.console && console.log) {
+                            if (!silent && DEBUG_MODE && window.console && console.log) {
                                 console.log('[NV oOS] Conversation saved successfully to CCT');
                             }
 
@@ -1911,7 +1932,7 @@
                     const shouldRetry = (isTimeout || isNetworkError || isServerError) && attempt < maxRetries;
                     
                     if (shouldRetry) {
-                        if (!silent && window.console && console.warn) {
+                        if (!silent && DEBUG_MODE && window.console && console.warn) {
                             console.warn('Retrying CCT save (attempt ' + (attempt + 1) + ' of ' + maxRetries + ') after ' + retryDelay + 'ms...');
                         }
                         
@@ -1983,12 +2004,16 @@
             })
             .then(function(data) {
                 if (data && data.success) {
-                    console.log('[NV oOS] Embedded usage tracked successfully');
+                    if (DEBUG_MODE && window.console && console.log) {
+                        console.log('[NV oOS] Embedded usage tracked successfully');
+                    }
                 }
             })
             .catch(function(error) {
                 // Log but don't fail - usage tracking is optional
-                console.warn('[NV oOS] Failed to track embedded usage:', error);
+                if (DEBUG_MODE && window.console && console.warn) {
+                    console.warn('[NV oOS] Failed to track embedded usage:', error);
+                }
             });
     }
 
@@ -4021,14 +4046,13 @@
                 state.textarea.value = result.text.trim();
                 setStatus(state.container, getString('voiceChatSending', 'Sending your message…'));
 
-                // Trigger form submission
-                const form = state.container.querySelector('.wp-mcp-ai-chat__form');
-                if (form) {
-                    const submitEvent = new Event('submit', {
-                        bubbles: true,
-                        cancelable: true,
-                    });
-                    form.dispatchEvent(submitEvent);
+                // Trigger form submission via the submit button so the correct event path
+                // fires whether the chat form is a standalone <form> or is nested inside an
+                // outer page <form> (in which case the button type has been changed to
+                // 'button' and a click listener handles submission instead).
+                const submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
+                if (submitButton) {
+                    submitButton.click();
                 }
             })
             .catch(function (error) {
@@ -4249,6 +4273,82 @@
 
             container.appendChild(button);
         });
+    }
+
+    function renderSuggestedPrompts(state) {
+        const promptsContainer = state.container.querySelector('.' + PROMPTS_CONTAINER_CLASS);
+        const prompts = state.config.suggestedPrompts;
+
+        if (!promptsContainer || !prompts || !prompts.length) {
+            return;
+        }
+
+        promptsContainer.innerHTML = '';
+
+        prompts.forEach(function (prompt) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = PROMPT_CHIP_CLASS;
+            chip.textContent = prompt;
+
+            chip.addEventListener('click', function () {
+                state.textarea.value = prompt;
+                state.textarea.focus();
+                // Optionally auto-submit
+                // state.textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            promptsContainer.appendChild(chip);
+        });
+
+        promptsContainer.hidden = false;
+    }
+
+    function initDarkMode(state, darkToggle) {
+        // Load saved preference
+        try {
+            const saved = localStorage.getItem(DARK_MODE_STORAGE_KEY);
+            if (saved === 'true' || (saved === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                state.darkMode = true;
+                state.container.classList.add(DARK_MODE_CLASS);
+            }
+        } catch (e) { /* localStorage unavailable */ }
+
+        if (!darkToggle) return;
+
+        // Show the toggle button
+        darkToggle.hidden = false;
+
+        // Update icon based on current mode
+        updateDarkToggleIcon(darkToggle, state.darkMode);
+
+        darkToggle.addEventListener('click', function (event) {
+            if (event && typeof event.preventDefault === 'function') {
+                event.preventDefault();
+            }
+            state.darkMode = !state.darkMode;
+
+            if (state.darkMode) {
+                state.container.classList.add(DARK_MODE_CLASS);
+            } else {
+                state.container.classList.remove(DARK_MODE_CLASS);
+            }
+
+            updateDarkToggleIcon(darkToggle, state.darkMode);
+
+            try {
+                localStorage.setItem(DARK_MODE_STORAGE_KEY, state.darkMode ? 'true' : 'false');
+            } catch (e) { /* localStorage unavailable */ }
+        });
+    }
+
+    function updateDarkToggleIcon(toggle, isDark) {
+        toggle.innerHTML = isDark
+            ? '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44.06-.9.1-1.36.1z"/></svg>'
+            : '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 7a5 5 0 100 10 5 5 0 000-10z"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+
+        toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        toggle.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
     }
 
     /**
@@ -5306,6 +5406,40 @@
 
         const fragment = document.createDocumentFragment();
 
+        // Add search input if not already present
+        const historyContainer2 = state.historyContainer;
+        const existingSearch = historyContainer2.querySelector('.wp-mcp-ai-chat__history-search');
+        if (!existingSearch) {
+            const searchInput = document.createElement('input');
+            searchInput.type = 'search';
+            searchInput.className = 'wp-mcp-ai-chat__history-search';
+            searchInput.placeholder = getString('searchHistory', 'Search conversations...');
+            searchInput.setAttribute('aria-label', 'Search conversation history');
+
+            searchInput.addEventListener('input', function () {
+                const query = this.value.toLowerCase().trim();
+                const items = state.historyList.querySelectorAll('.wp-mcp-ai-chat__history-item');
+                items.forEach(function (item) {
+                    const titleEl = item.querySelector('.wp-mcp-ai-chat__history-session-title');
+                    const previewEl = item.querySelector('.wp-mcp-ai-chat__history-session-preview');
+                    const title = titleEl ? titleEl.textContent : '';
+                    const preview = previewEl ? previewEl.textContent : '';
+
+                    if (!query || title.toLowerCase().indexOf(query) !== -1 || preview.toLowerCase().indexOf(query) !== -1) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+
+            // Insert before the history list
+            const historyList = state.historyList;
+            if (historyList && historyList.parentNode) {
+                historyList.parentNode.insertBefore(searchInput, historyList);
+            }
+        }
+
         state.historySessions.forEach(function (session, index) {
             const item = document.createElement('li');
             item.className = 'wp-mcp-ai-chat__history-item';
@@ -5334,6 +5468,56 @@
                 const title = document.createElement('span');
                 title.className = 'wp-mcp-ai-chat__history-session-title';
                 title.textContent = sessionTitle;
+
+                // Double-click to edit title
+                title.addEventListener('dblclick', function (e) {
+                    e.stopPropagation();
+                    const currentTitle = this.textContent;
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'wp-mcp-ai-chat__history-edit-input';
+                    input.value = currentTitle;
+                    input.setAttribute('aria-label', 'Edit conversation title');
+
+                    const parent = this.parentNode;
+                    parent.replaceChild(input, this);
+                    input.focus();
+                    input.select();
+
+                    const sessionKeyLocal = session && session.session_key ? session.session_key : '';
+
+                    function saveTitle() {
+                        const newTitle = input.value.trim() || currentTitle;
+                        const newTitleEl = document.createElement('span');
+                        newTitleEl.className = 'wp-mcp-ai-chat__history-session-title';
+                        newTitleEl.textContent = newTitle;
+                        if (input.parentNode) {
+                            input.parentNode.replaceChild(newTitleEl, input);
+                        }
+
+                        // Persist to server if transcripts endpoint available
+                        if (state.config.transcriptsEndpoint && sessionKeyLocal) {
+                            const updateUrl = state.config.transcriptsEndpoint + '?session_key=' + encodeURIComponent(sessionKeyLocal);
+                            postJson(updateUrl, {
+                                assistant_id: state.config.assistantId,
+                                session_key: sessionKeyLocal,
+                                title: newTitle
+                            });
+                        }
+                    }
+
+                    input.addEventListener('blur', saveTitle);
+                    input.addEventListener('keydown', function (ev) {
+                        if (ev.key === 'Enter') {
+                            ev.preventDefault();
+                            saveTitle();
+                        } else if (ev.key === 'Escape') {
+                            input.value = currentTitle;
+                            saveTitle();
+                        }
+                    });
+                });
+
                 content.appendChild(title);
             }
 
@@ -9153,8 +9337,8 @@
                 }
 
                 const title = item.title || 'Untitled';
-                const downloadUrl = item.download_url || item.url || '';
-                const permalink = item.permalink || '';
+                const downloadUrl = sanitizeToolResultUrl( item.download_url || item.url || '' );
+                const permalink = sanitizeToolResultUrl( item.permalink || '' );
                 const mimeType = item.mime_type || '';
                 const filesize = item.filesize_human || '';
                 const uploadedAt = item.uploaded_at || '';
@@ -9316,6 +9500,13 @@
             } else if (typeof nestedImage.downloadUrl === 'string' && nestedImage.downloadUrl.trim()) {
                 url = nestedImage.downloadUrl.trim();
             }
+        }
+
+        // Sanitize the extracted URL: only http: and https: are permitted from external
+        // tool results. This blocks javascript:, data:, blob:, and any other unexpected
+        // schemes that a compromised or malicious tool response might supply.
+        if (url) {
+            url = sanitizeToolResultUrl(url);
         }
 
         // Check for inline content with base64 data (e.g., from generate_gemini_image)
@@ -9887,6 +10078,266 @@
     }
 
     /**
+     * Create and attach an inline job-progress card inside a pending-entry bubble.
+     *
+     * The card shows the tool name, an optional progress bar, ETA, step list,
+     * Cancel button (when the job is cancellable), and a Retry button that appears
+     * on failure. All updates arrive through window.wpMcpAiJobBus subscriptions.
+     *
+     * Feature-flagged: only active when state.config.inlineJobCard !== false.
+     *
+     * @param {Element} entry    The system-bubble element created by appendMessage.
+     * @param {string}  jobId    The async job identifier.
+     * @param {string}  toolName Human-readable tool name.
+     * @param {Object}  state    Chat state (for restUrl, restNonce, config).
+     * @return {{ unsubscribe: Function, markFailed: Function, markCompleted: Function }|null}
+     */
+    function createJobProgressCard(entry, jobId, toolName, state) {
+        if (!entry || !jobId || !state || !state.config) {
+            return null;
+        }
+        if (state.config.inlineJobCard === false) {
+            return null;
+        }
+
+        const restUrl = (state.config.restUrl || '').replace(/\/$/, '');
+        const nonce = (state.config && state.config.restNonce) ? state.config.restNonce : '';
+
+        // Build card DOM.
+        const card = document.createElement('div');
+        card.className = 'wp-mcp-ai-job-card';
+        card.setAttribute('data-job-id', jobId);
+
+        const header = document.createElement('div');
+        header.className = 'wp-mcp-ai-job-card__header';
+
+        const titleEl = document.createElement('span');
+        titleEl.className = 'wp-mcp-ai-job-card__title';
+        titleEl.textContent = toolName || jobId;
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'wp-mcp-ai-job-card__cancel';
+        cancelBtn.type = 'button';
+        cancelBtn.setAttribute('aria-label', 'Cancel job');
+        cancelBtn.textContent = 'Cancel';
+
+        header.appendChild(titleEl);
+        header.appendChild(cancelBtn);
+
+        const progressRow = document.createElement('div');
+        progressRow.className = 'wp-mcp-ai-job-card__progress-row';
+        progressRow.hidden = true;
+
+        const progressBar = document.createElement('div');
+        progressBar.className = 'wp-mcp-ai-job-card__progress-bar';
+        progressBar.setAttribute('role', 'progressbar');
+        progressBar.setAttribute('aria-valuenow', '0');
+        progressBar.setAttribute('aria-valuemin', '0');
+        progressBar.setAttribute('aria-valuemax', '100');
+
+        const progressFill = document.createElement('div');
+        progressFill.className = 'wp-mcp-ai-job-card__progress-fill';
+        progressBar.appendChild(progressFill);
+
+        const progressPct = document.createElement('span');
+        progressPct.className = 'wp-mcp-ai-job-card__progress-pct';
+        progressPct.textContent = '0%';
+
+        const etaEl = document.createElement('span');
+        etaEl.className = 'wp-mcp-ai-job-card__eta';
+        etaEl.hidden = true;
+
+        progressRow.appendChild(progressBar);
+        progressRow.appendChild(progressPct);
+        progressRow.appendChild(etaEl);
+
+        const messageEl = document.createElement('div');
+        messageEl.className = 'wp-mcp-ai-job-card__message';
+        messageEl.textContent = 'Processing…';
+
+        const stepsEl = document.createElement('ul');
+        stepsEl.className = 'wp-mcp-ai-job-card__steps';
+        stepsEl.hidden = true;
+        const stepItems = [];
+        let stepsShowMore = false;
+        const MAX_VISIBLE_STEPS = 5;
+
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'wp-mcp-ai-job-card__retry';
+        retryBtn.type = 'button';
+        retryBtn.hidden = true;
+        retryBtn.textContent = 'Retry';
+
+        card.appendChild(header);
+        card.appendChild(progressRow);
+        card.appendChild(messageEl);
+        card.appendChild(stepsEl);
+        card.appendChild(retryBtn);
+
+        // Replace bubble text content with the card.
+        entry.textContent = '';
+        entry.appendChild(card);
+
+        function setProgress(pct) {
+            if (typeof pct !== 'number') {
+                return;
+            }
+            progressRow.hidden = false;
+            const p = Math.max(0, Math.min(100, Math.round(pct)));
+            progressFill.style.width = p + '%';
+            progressPct.textContent = p + '%';
+            progressBar.setAttribute('aria-valuenow', String(p));
+        }
+
+        function setEta(eta) {
+            if (!eta) {
+                etaEl.hidden = true;
+                return;
+            }
+            etaEl.hidden = false;
+            etaEl.textContent = '~' + eta;
+        }
+
+        function addStep(step) {
+            const li = document.createElement('li');
+            li.setAttribute('data-step-status', step.status || 'pending');
+            li.textContent = step.label || step.message || '';
+            stepItems.push(li);
+
+            const needsMoreButton = stepItems.length > MAX_VISIBLE_STEPS && !stepsShowMore;
+
+            if (needsMoreButton) {
+                li.hidden = true;
+            }
+
+            stepsEl.appendChild(li);
+            stepsEl.hidden = false;
+
+            if (needsMoreButton) {
+                let showMoreBtn = stepsEl.querySelector('.wp-mcp-ai-job-card__steps-more');
+                if (!showMoreBtn) {
+                    showMoreBtn = document.createElement('li');
+                    showMoreBtn.className = 'wp-mcp-ai-job-card__steps-more';
+                    showMoreBtn.style.cursor = 'pointer';
+                    showMoreBtn.style.color = 'inherit';
+                    showMoreBtn.addEventListener('click', function () {
+                        stepsShowMore = true;
+                        const hidden = stepsEl.querySelectorAll('li[hidden]');
+                        for (let i = 0; i < hidden.length; i++) {
+                            hidden[i].hidden = false;
+                        }
+                        showMoreBtn.hidden = true;
+                    });
+                    stepsEl.appendChild(showMoreBtn);
+                }
+                showMoreBtn.textContent = '+ ' + (stepItems.length - MAX_VISIBLE_STEPS) + ' more';
+            }
+        }
+
+        function postJobAction(action) {
+            return fetch(restUrl + '/cron-status/' + encodeURIComponent(jobId) + '/' + action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': nonce
+                },
+                credentials: 'same-origin'
+            }).then(function (resp) {
+                return resp.json();
+            });
+        }
+
+        cancelBtn.addEventListener('click', function () {
+            cancelBtn.disabled = true;
+            cancelBtn.textContent = 'Cancelling…';
+            postJobAction('cancel').then(function (data) {
+                if (data && data.success) {
+                    messageEl.textContent = 'Job cancelled.';
+                    cancelBtn.hidden = true;
+                } else {
+                    cancelBtn.disabled = false;
+                    cancelBtn.textContent = 'Cancel';
+                }
+            }).catch(function () {
+                cancelBtn.disabled = false;
+                cancelBtn.textContent = 'Cancel';
+            });
+        });
+
+        retryBtn.addEventListener('click', function () {
+            retryBtn.disabled = true;
+            retryBtn.textContent = 'Retrying…';
+            postJobAction('retry').then(function (data) {
+                if (data && data.success) {
+                    retryBtn.hidden = true;
+                    cancelBtn.hidden = false;
+                    cancelBtn.disabled = false;
+                    cancelBtn.textContent = 'Cancel';
+                    messageEl.textContent = 'Re-queued…';
+                    progressRow.hidden = true;
+                } else {
+                    retryBtn.disabled = false;
+                    retryBtn.textContent = 'Retry';
+                }
+            }).catch(function () {
+                retryBtn.disabled = false;
+                retryBtn.textContent = 'Retry';
+            });
+        });
+
+        // Subscribe to job bus events.
+        let unsubscribeToken = null;
+        if (window.wpMcpAiJobBus && typeof window.wpMcpAiJobBus.subscribe === 'function') {
+            unsubscribeToken = window.wpMcpAiJobBus.subscribe(jobId, function (eventType, payload) {
+                if (!payload) {
+                    return;
+                }
+                if (eventType === 'job:step' || eventType === 'step') {
+                    addStep(payload);
+                } else if (eventType === 'job:progress' || eventType === 'cron_job_status') {
+                    if (typeof payload.progress === 'number') {
+                        setProgress(payload.progress);
+                    }
+                    if (payload.eta) {
+                        setEta(payload.eta);
+                    }
+                    if (payload.message || payload.progress_message) {
+                        messageEl.textContent = payload.message || payload.progress_message;
+                    }
+                } else if (eventType === 'job:cancelled') {
+                    messageEl.textContent = 'Job cancelled.';
+                    cancelBtn.hidden = true;
+                }
+            });
+        }
+
+        function unsubscribe() {
+            if (unsubscribeToken && window.wpMcpAiJobBus && typeof window.wpMcpAiJobBus.unsubscribe === 'function') {
+                window.wpMcpAiJobBus.unsubscribe(unsubscribeToken);
+            }
+        }
+
+        function markFailed(errorMessage, retryable) {
+            messageEl.textContent = errorMessage || 'Job failed.';
+            cancelBtn.hidden = true;
+            if (retryable !== false) {
+                retryBtn.hidden = false;
+                retryBtn.disabled = false;
+                retryBtn.textContent = 'Retry';
+            }
+            unsubscribe();
+        }
+
+        function markCompleted() {
+            cancelBtn.hidden = true;
+            retryBtn.hidden = true;
+            unsubscribe();
+        }
+
+        return { unsubscribe: unsubscribe, markFailed: markFailed, markCompleted: markCompleted };
+    }
+
+    /**
      * Client-side async polling for Crawl4AI tasks.
      * NOTE: Currently unused - system uses server-side WP-Cron polling instead (WP_MCP_AI_Crawler class).
      * This implementation is kept for potential future use with client-side polling.
@@ -10026,6 +10477,9 @@
         const startTime = Date.now();
         const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'), false, { state: state });
 
+        // Attach inline job progress card when feature is enabled.
+        const jobCard = createJobProgressCard(pendingEntry, jobId, toolName, state);
+
         return new Promise(function (resolve, reject) {
             let sseConnection = null;
             let timeoutTimer = null;
@@ -10049,6 +10503,9 @@
                 }
                 resolved = true;
                 cleanup();
+                if (jobCard) {
+                    jobCard.markCompleted();
+                }
 
                 // Remove the pending message
                 if (pendingEntry && pendingEntry.parentNode) {
@@ -10071,7 +10528,11 @@
                 }
                 resolved = true;
                 cleanup();
-                updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolName || 'Tool', errorMessage));
+                if (jobCard) {
+                    jobCard.markFailed(errorMessage, true);
+                } else {
+                    updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolName || 'Tool', errorMessage));
+                }
                 reject(new Error(errorMessage));
             }
 
@@ -10135,6 +10596,16 @@
                 eventHandlers: {
                     // Existing cron_job_status handler
                     cron_job_status: function (payload) {
+                        // Republish per-job SSE frames onto the global job event
+                        // bus so the cron-status drawer, toast surfaces, and any
+                        // other component subscribed to job updates stay in sync
+                        // with the real-time stream owned by this chat bubble.
+                        // Phase 0 wire-up fix from
+                        // docs/features/chat/cron-status-tasks-drawer-plan.md.
+                        if (window.wpMcpAiJobBus && payload && payload.job_id) {
+                            window.wpMcpAiJobBus.handleJobUpdate(payload.job_id, payload);
+                        }
+
                         const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
 
                         if (status === 'completed') {
@@ -10306,6 +10777,9 @@
             pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'), false, { state: state });
         }
 
+        // Attach inline job progress card when feature is enabled.
+        const jobCard = createJobProgressCard(pendingEntry, jobId, toolName, state);
+
         state.pendingAsyncTools[jobId] = {
             entry: pendingEntry,
             pollDelay: pollDelay,
@@ -10390,13 +10864,20 @@
                                 getString('toolError', 'The tool request failed.')
                             );
                             const toolDisplayName = record.toolName || 'Tool';
-                            updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolDisplayName, errorMessage));
+                            if (jobCard) {
+                                jobCard.markFailed(formatString('%s failed: %s', toolDisplayName, errorMessage), true);
+                            } else {
+                                updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolDisplayName, errorMessage));
+                            }
                             reject(new Error(errorMessage));
                             return;
                         }
 
                         if (status === 'completed') {
                             cleanup();
+                            if (jobCard) {
+                                jobCard.markCompleted();
+                            }
                             // Remove the pending message
                             if (pendingEntry && pendingEntry.parentNode) {
                                 pendingEntry.parentNode.removeChild(pendingEntry);
@@ -11357,6 +11838,10 @@
             const historyRefresh = container.querySelector('.wp-mcp-ai-chat__history-refresh');
             const historyLoadMore = container.querySelector('.wp-mcp-ai-chat__history-load-more');
             const cptActionsContainer = container.querySelector('.wp-mcp-ai-chat__cpt-actions');
+            const profileToggle = container.querySelector('.' + PROFILE_TOGGLE_CLASS);
+            const profileBio = container.querySelector('.wp-mcp-ai-chat__profile-bio');
+            const promptsContainer = container.querySelector('.' + PROMPTS_CONTAINER_CLASS);
+            const darkToggle = container.querySelector('.wp-mcp-ai-chat__dark-toggle');
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
@@ -11483,12 +11968,40 @@
                 cptActionsContainer: cptActionsContainer,
                 lastToolResults: Object.create(null), // Store last results from each tool for CPT actions
                 embeddedClient: null, // Instance of embedded LLM client (created when needed for embedded provider)
+                profileExpanded: false,
+                feedbackSent: Object.create(null),
+                abortController: null,
+                darkMode: false,
             };
 
             initialiseExistingSpeechButtons(state);
             renderToolShortcuts(state);
             renderCptActionButtons(state);
             initAgentPanel(container);
+
+            // Initialize profile toggle
+            if (profileToggle && profileBio) {
+                profileToggle.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+                    state.profileExpanded = !state.profileExpanded;
+                    profileToggle.setAttribute('aria-expanded', state.profileExpanded ? 'true' : 'false');
+                    profileBio.hidden = !state.profileExpanded;
+                    const toggleText = profileToggle.querySelector('.wp-mcp-ai-chat__profile-toggle-text');
+                    if (toggleText) {
+                        toggleText.textContent = state.profileExpanded ? getString('hideAssistantInfo', 'Hide about') : getString('showAssistantInfo', 'About this assistant');
+                    }
+                });
+            }
+
+            // Initialize suggested prompts
+            if (promptsContainer && instanceConfig.suggestedPrompts && instanceConfig.suggestedPrompts.length) {
+                renderSuggestedPrompts(state);
+            }
+
+            // Initialize dark mode toggle
+            initDarkMode(state, darkToggle);
 
             // Initialize tool shortcuts collapsed state
             if (state.toolShortcutsContainer) {
@@ -11654,24 +12167,70 @@
                 }, 30000);
             }
 
+            // Code block copy delegation
+            container.addEventListener('click', function (event) {
+                const copyBtn = event.target.closest('.' + CODE_COPY_CLASS);
+                if (!copyBtn) return;
+                
+                const wrapper = copyBtn.closest('.' + CODE_BLOCK_WRAPPER_CLASS);
+                if (!wrapper) return;
+                
+                const code = wrapper.querySelector('code');
+                if (!code) return;
+                
+                const text = code.textContent || '';
+                
+                if (clipboardService && clipboardService.copyTextToClipboard) {
+                    clipboardService.copyTextToClipboard(text);
+                } else {
+                    fallbackCopyText(text);
+                }
+                
+                copyBtn.textContent = getString('copied', 'Copied!');
+                copyBtn.classList.add(CODE_COPY_SUCCESS_CLASS);
+                
+                setTimeout(function () {
+                    copyBtn.textContent = getString('copy', 'Copy');
+                    copyBtn.classList.remove(CODE_COPY_SUCCESS_CLASS);
+                }, 2000);
+            });
+
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
             
             // Handle form submission (for proper <form> elements)
-            // Use toUpperCase() for reliable tag name comparison across browsers
-            if (form.tagName && form.tagName.toUpperCase() === 'FORM') {
+            // Use toUpperCase() for reliable tag name comparison across browsers.
+            //
+            // Edge case — nested forms: when the chat bubble is rendered inside an outer page
+            // <form>, browsers silently ignore the inner <form> tag (HTML spec forbids nesting).
+            // In that scenario the submit button is associated with the outer form, so clicking
+            // it would submit the outer form instead of triggering a 'submit' event on the chat
+            // form.  Detect this by checking whether the form element has an ancestor <form>,
+            // then fall back to the same click-listener path used for div-based chat surfaces.
+            const isNestedInOuterForm = (
+                form.tagName &&
+                form.tagName.toUpperCase() === 'FORM' &&
+                form.parentElement &&
+                !!form.parentElement.closest( 'form' )
+            );
+            if ( form.tagName && form.tagName.toUpperCase() === 'FORM' && !isNestedInOuterForm ) {
                 form.addEventListener('submit', function (event) {
                     handleSubmit(event, state);
                 });
             } else {
-                // Handle submit button click for div-based forms (e.g., in modals inside other forms)
+                // Handle submit button click for div-based forms (e.g., in modals inside other
+                // forms) OR when the chat form is nested inside an outer page <form>.
                 const submitButton = container.querySelector('.wp-mcp-ai-chat__submit');
                 if (submitButton) {
+                    if (isNestedInOuterForm) {
+                        // Prevent the button from triggering the outer form's submission.
+                        submitButton.setAttribute('type', 'button');
+                    }
                     submitButton.addEventListener('click', function (event) {
                         handleSubmit(event, state);
                     });
                 }
                 
-                // Also handle Enter key in textarea for div-based forms
+                // Also handle Enter key in textarea for div-based / nested-form surfaces.
                 textarea.addEventListener('keydown', function (event) {
                     if (event.key === 'Enter' && !event.shiftKey) {
                         event.preventDefault();
@@ -11774,6 +12333,11 @@
             // Load and restore conversation from localStorage
             restoreConversationFromStorage(state);
 
+            // Phase 2 — session-boot recall: prepend the wake-up system block to the
+            // first turn when the chat-memory bridge is available and enabled. The
+            // call is non-blocking and silently no-ops when the surface is disabled.
+            requestWakeUpContext(state);
+
             // Pre-load vector store metadata if the assistant has one configured.
             // This ensures the vector store status and file counts are immediately
             // available for the agentic workflow without waiting for the first tool call.
@@ -11781,9 +12345,73 @@
                 preloadVectorStore(state);
             }
 
+            // Async chat continuation: open the per-session SSE channel so
+            // server-pushed assistant messages (from cron-resumed tool calls)
+            // are delivered in real-time to this chat widget.
+            if (state.config.asyncChatContinuation && state.config.sessionStreamEndpoint) {
+                const sessionId = resolveChatSessionId(state.config);
+                initChatSessionStream(container, state.config, state, sessionId);
+            }
+
             // Mark container as initialized to prevent double-initialization
             container.setAttribute('data-wp-mcp-ai-initialized', 'true');
         });
+    }
+
+    /**
+     * Phase 2 — session-boot recall.
+     *
+     * Calls the chat-memory bridge's wake-up endpoint to fetch a top-N
+     * memory block, then stashes it on `state.wakeUpSystemBlock` so the
+     * first outgoing chat turn can prepend it to the system prompt. Silent
+     * no-op when the bridge is unavailable, disabled, or returns nothing.
+     *
+     * @param {Object} state Chat widget state.
+     */
+    function requestWakeUpContext(state) {
+        try {
+            const memoryService = window.wpMcpAiChatMemory;
+            if (!memoryService || !memoryService.isAvailable || !memoryService.isAvailable()) {
+                return;
+            }
+
+            const cfg = state && state.config ? state.config : {};
+            const agentId = cfg.embeddedAssistantId || cfg.assistantId;
+            if (!agentId) {
+                return;
+            }
+
+            // Already loaded once for this widget session.
+            if (state.wakeUpSystemBlock) {
+                return;
+            }
+
+            memoryService
+                .wakeUp({
+                    agentId: agentId,
+                    wing: cfg.memoryWing || '',
+                    room: cfg.memoryRoom || ''
+                })
+                .then(function(response) {
+                    if (!response || typeof response !== 'object') {
+                        return;
+                    }
+                    const block = response.system_block
+                        || (response.data && response.data.system_block)
+                        || '';
+                    if (typeof block === 'string' && block.length > 0) {
+                        state.wakeUpSystemBlock = block;
+                    }
+                })
+                .catch(function(error) {
+                    // Soft-fail: log but never disrupt the chat.
+                    if (window.console && window.console.debug) {
+                        window.console.debug('[NV oOS] wake-up context skipped:', error && error.message);
+                    }
+                });
+        } catch (error) {
+            // Defensive: any unexpected throw must not block chat init.
+        }
     }
 
     function restoreConversationFromStorage(state) {
@@ -12249,6 +12877,13 @@
             });
         }
 
+        // Create abort controller for stop generation
+        if (state.abortController) {
+            try { state.abortController.abort(); } catch (e) {}
+        }
+        state.abortController = new AbortController();
+        updateSubmitButtonForSend(state);
+
         const previousConversationLength = state.conversation.length;
         
         // Extract display metadata from rendered message
@@ -12276,6 +12911,7 @@
             });
         } else {
             // In debug mode, send immediately without bundling
+            updateSubmitButtonForStop(state);
             sendChat(state, {
                 previousConversationLength: previousConversationLength,
                 pendingAttachments: pending,
@@ -12348,6 +12984,7 @@
         // one message than lose all of them.
         const firstSubmission = bundledSubmissions[0];
 
+        updateSubmitButtonForStop(state);
         sendChat(state, firstSubmission);
     }
 
@@ -12495,7 +13132,7 @@
                 // PHP has already merged any professional-role content into systemPrompt.
                 // Use it directly to avoid duplicating professional content.
                 completeSystemPrompt = state.config.systemPrompt;
-                if (state.config.professionalPrompt) {
+                if (DEBUG_MODE && state.config.professionalPrompt) {
                     console.log('[NV oOS] Using pre-combined system prompt (includes professional role):', {
                         professionalPromptLength: state.config.professionalPrompt.length,
                         totalLength: completeSystemPrompt.length
@@ -12504,9 +13141,11 @@
             } else if (state.config.professionalPrompt) {
                 // Fallback for stale cached configs from before this change: combine here in JS.
                 completeSystemPrompt = state.config.professionalPrompt;
-                console.log('[NV oOS] Using professionalPrompt as system prompt (stale cache fallback):', {
-                    professionalPromptLength: state.config.professionalPrompt.length
-                });
+                if (DEBUG_MODE) {
+                    console.log('[NV oOS] Using professionalPrompt as system prompt (stale cache fallback):', {
+                        professionalPromptLength: state.config.professionalPrompt.length
+                    });
+                }
             }
             
             // Prepare assistant configuration for embedded client
@@ -12990,12 +13629,14 @@
         }
 
         if (rawSystemPrompt && effectiveSystemPrompt) {
-            console.log('[NV oOS] System prompt assembled from state.config (per-request, mirrors server-side):', {
-                systemPromptLength: effectiveSystemPrompt.length,
-                hasProfessionalPrompt: !!state.config.professionalPrompt,
-                hasAssistantPrompt: !!state.config.systemPrompt,
-                assistantId: state.config.assistantId
-            });
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] System prompt assembled from state.config (per-request, mirrors server-side):', {
+                    systemPromptLength: effectiveSystemPrompt.length,
+                    hasProfessionalPrompt: !!state.config.professionalPrompt,
+                    hasAssistantPrompt: !!state.config.systemPrompt,
+                    assistantId: state.config.assistantId
+                });
+            }
         }
         if (effectiveSystemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
             let systemPromptContent = effectiveSystemPrompt;
@@ -13009,10 +13650,12 @@
                 knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
                 systemPromptContent += knowledgeContext;
 
-                console.log('[NV oOS] Enhanced system prompt with base knowledge:', {
-                    memoryFileCount: state.config.memoryFiles.length,
-                    vectorStoreId: state.config.vectorStoreId || 'none'
-                });
+                if (DEBUG_MODE) {
+                    console.log('[NV oOS] Enhanced system prompt with base knowledge:', {
+                        memoryFileCount: state.config.memoryFiles.length,
+                        vectorStoreId: state.config.vectorStoreId || 'none'
+                    });
+                }
             }
 
             // Inject current date/time context so the model knows the current date.
@@ -13035,7 +13678,9 @@
                 const modelConfig = window.WP_MCP_AI_EmbeddedLLM.availableModels[state.config.model];
                 if (modelConfig && modelConfig.isThinkingModel) {
                     systemPromptContent += '\n/no_think';
-                    console.log('[NV oOS] Added /no_think directive for thinking model with tools:', state.config.model);
+                    if (DEBUG_MODE) {
+                        console.log('[NV oOS] Added /no_think directive for thinking model with tools:', state.config.model);
+                    }
                 }
             }
 
@@ -13044,27 +13689,31 @@
                 content: systemPromptContent
             });
 
-            console.log('[NV oOS] ===== PREPARING SYSTEM PROMPT FOR EMBEDDED CLIENT =====');
-            console.log('[NV oOS] Prepended system prompt to embedded request:', {
-                systemPromptLength: systemPromptContent.length,
-                systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
-                hasProfessionalPrompt: !!state.config.professionalPrompt,
-                hasAssistantPrompt: !!state.config.systemPrompt,
-                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
-                hasDateTimeContext: true,
-                assistantId: state.config.assistantId
-            });
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] ===== PREPARING SYSTEM PROMPT FOR EMBEDDED CLIENT =====');
+                console.log('[NV oOS] Prepended system prompt to embedded request:', {
+                    systemPromptLength: systemPromptContent.length,
+                    systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
+                    hasProfessionalPrompt: !!state.config.professionalPrompt,
+                    hasAssistantPrompt: !!state.config.systemPrompt,
+                    hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
+                    hasDateTimeContext: true,
+                    assistantId: state.config.assistantId
+                });
+            }
         }
 
-        console.log('[NV oOS] ===== FORMATTED MESSAGES FOR EMBEDDED CLIENT =====');
-        console.log('[NV oOS] Formatted messages for embedded client:', {
-            messageCount: formattedMessages.length,
-            hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
-            systemPromptLength: formattedMessages[0] && formattedMessages[0].role === 'system' ? formattedMessages[0].content.length : 0,
-            messageRoles: formattedMessages.map(function(msg) { return msg.role; }),
-            lastMessageRole: formattedMessages[formattedMessages.length - 1].role,
-            lastMessagePreview: formattedMessages[formattedMessages.length - 1].content && formattedMessages[formattedMessages.length - 1].content.length > 100 ? formattedMessages[formattedMessages.length - 1].content.substring(0, 100) + '...' : formattedMessages[formattedMessages.length - 1].content
-        });
+        if (DEBUG_MODE) {
+            console.log('[NV oOS] ===== FORMATTED MESSAGES FOR EMBEDDED CLIENT =====');
+            console.log('[NV oOS] Formatted messages for embedded client:', {
+                messageCount: formattedMessages.length,
+                hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
+                systemPromptLength: formattedMessages[0] && formattedMessages[0].role === 'system' ? formattedMessages[0].content.length : 0,
+                messageRoles: formattedMessages.map(function(msg) { return msg.role; }),
+                lastMessageRole: formattedMessages[formattedMessages.length - 1].role,
+                lastMessagePreview: formattedMessages[formattedMessages.length - 1].content && formattedMessages[formattedMessages.length - 1].content.length > 100 ? formattedMessages[formattedMessages.length - 1].content.substring(0, 100) + '...' : formattedMessages[formattedMessages.length - 1].content
+            });
+        }
 
         // Use streaming for better UX
         const assistantMessageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
@@ -13089,7 +13738,9 @@
         bubble.textContent = ''; // Empty initially, will be filled as chunks arrive
         bubble.setAttribute('data-message-id', assistantMessageId);
         state.messagesEl.appendChild(bubble);
-        console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
+        if (DEBUG_MODE) {
+            console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
+        }
         
         // Scroll to show the new message
         scrollBatcher.scrollToBottom(state.messagesEl);
@@ -13103,13 +13754,15 @@
             ? parseFloat(state.config.temperature) 
             : 0.7;
 
-        console.log('[NV oOS] Calling generateStreamingCompletion with options:', {
-            temperature: temperature,
-            maxTokens: maxTokens,
-            hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
-            hasTools: !!(state.config.tools && state.config.tools.length > 0),
-            toolCount: state.config.tools ? state.config.tools.length : 0
-        });
+        if (DEBUG_MODE) {
+            console.log('[NV oOS] Calling generateStreamingCompletion with options:', {
+                temperature: temperature,
+                maxTokens: maxTokens,
+                hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
+                hasTools: !!(state.config.tools && state.config.tools.length > 0),
+                toolCount: state.config.tools ? state.config.tools.length : 0
+            });
+        }
 
         // Build request options (Phase 2: Tool Support)
         const requestOptions = {
@@ -13348,7 +14001,7 @@
             .filter(function(msg) { return msg !== null; });
 
         // Debug logging to trace attachment segments
-        if (window.console && console.log) {
+        if (DEBUG_MODE && window.console && console.log) {
             console.log('[NV oOS] Sending messages to API:', JSON.stringify(cleanMessages, null, 2));
         }
 
@@ -13389,6 +14042,7 @@
         function finalize() {
             state.busy = false;
             disableForm(state, false);
+            updateSubmitButtonForSend(state);
         }
 
         // Check if provider is embedded - run LLM client-side in browser.
@@ -13425,7 +14079,7 @@
             getMessagesEndpoint(state),
             payload,
             buildJsonHeaders(state),
-            { state: state }
+            { state: state, signal: state.abortController ? state.abortController.signal : undefined }
         )
             .then(function (response) {
                 return response
@@ -13523,8 +14177,7 @@
             // Ensure content is a string
             const safeContent = content != null ? String(content) : '';
             
-            // ALWAYS log streaming updates for debugging (even when DEBUG_MODE is off)
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] updateStreamingMessage called:', {
                     contentLength: safeContent.length,
                     contentSample: safeContent.substring(0, 50) + (safeContent.length > 50 ? '...' : ''),
@@ -13576,7 +14229,7 @@
             headers,
             // streaming: true bypasses the Ky HTTP client in favour of native fetch.
             // Ky's timeout and afterResponse body-clone break SSE stream reading.
-            { state: state, streaming: true }
+            { state: state, streaming: true, signal: state.abortController ? state.abortController.signal : undefined }
         )
             .then(function (response) {
                 // Diagnostic logging (Separation of Concerns)
@@ -13686,7 +14339,7 @@
                         }
                         
                         // Log extraction for debugging
-                        if (finalContent && window.console && console.log) {
+                        if (DEBUG_MODE && finalContent && window.console && console.log) {
                             console.log('[NV oOS] Extracted final content from finalData (no streaming chunks):', {
                                 contentLength: finalContent.length,
                                 contentSample: finalContent.substring(0, 100)
@@ -14224,6 +14877,21 @@
                             handleStatusEvent(state, data);
                         } else if (eventType === 'tool_execution') {
                             handleToolExecutionEvent(state, data);
+                        } else if (eventType === 'memory_event') {
+                            // G8 Phase 2 — mid-stream "🧠 Memory" toast.
+                            // The server emits this frame as soon as a memory
+                            // tool runs; the drawer's end-of-stream decorator
+                            // suppresses its own toast for the same turn.
+                            if (window.wpMcpAiChatMemoryDrawer
+                                && typeof window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent === 'function') {
+                                try {
+                                    window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent(data);
+                                } catch (e) {
+                                    if (window.console && console.warn) {
+                                        console.warn('[NV oOS] memory_event SSE handler failed:', e);
+                                    }
+                                }
+                            }
                         } else if (eventType === 'error') {
                             handleErrorEvent(state, data);
                         } else if (eventType === 'message' || !eventType) {
@@ -15310,6 +15978,14 @@
         let hasDisplayContent = hasDisplayText || hasDisplayAttachments;
         const hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
 
+        // Surface tool_calls on the display payload so appendMessage can render
+        // the "🧠 Memory" badge (chat-memory-drawer auto-wire). Restore path
+        // already does this at the assistantPayload-build site; this covers the
+        // live agentic-loop path.
+        if (hasToolCalls) {
+            assistantDisplay.tool_calls = message.tool_calls;
+        }
+
         if (!hasDisplayContent) {
             let fallbackText = '';
 
@@ -15943,7 +16619,7 @@
             video.className = 'wp-mcp-ai-chat__video-player';
             
             const source = document.createElement('source');
-            source.src = attachment.url;
+            source.src = sanitizeAttachmentUrl(attachment.url);
             
             // Determine MIME type based on URL
             const mimeType = getVideoMimeType(attachment.url);
@@ -15961,7 +16637,7 @@
             
             // Add download link below video
             const downloadLink = document.createElement('a');
-            downloadLink.href = attachment.url;
+            downloadLink.href = sanitizeAttachmentUrl(attachment.url);
             downloadLink.download = attachment.downloadName || 'video.mp4';
             downloadLink.className = 'wp-mcp-ai-chat__video-download';
             downloadLink.textContent = getString('downloadVideo', 'Download video');
@@ -16549,6 +17225,40 @@
         } else {
             updateAttachButtonState(state);
         }
+    }
+
+    function updateSubmitButtonForSend(state) {
+        const submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
+        if (!submitButton) return;
+        
+        submitButton.textContent = getString('send', 'Send');
+        submitButton.classList.remove('wp-mcp-ai-chat__submit--stop');
+        
+        submitButton.onclick = null; // Remove any stop handler
+    }
+
+    function updateSubmitButtonForStop(state) {
+        const submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
+        if (!submitButton) return;
+        
+        submitButton.textContent = '\u25A0 ' + getString('stop', 'Stop');
+        submitButton.classList.add('wp-mcp-ai-chat__submit--stop');
+        
+        // Override click to abort
+        submitButton.onclick = function (event) {
+            if (event && typeof event.preventDefault === 'function') {
+                event.preventDefault();
+            }
+            if (state.abortController) {
+                try { state.abortController.abort(); } catch (e) {}
+                state.abortController = null;
+            }
+            state.busy = false;
+            updateSubmitButtonForSend(state);
+            if (state.statusEl) {
+                setStatus(state.container, getString('generationStopped', 'Generation stopped.'), { type: 'info', showTime: true });
+            }
+        };
     }
 
     /**
@@ -17181,7 +17891,7 @@
                     fileBody.className = 'wp-mcp-ai-chat__file-body';
 
                     const link = document.createElement('a');
-                    link.href = attachment.url;
+                    link.href = sanitizeAttachmentUrl(attachment.url);
                     link.target = '_blank';
                     link.rel = 'noopener noreferrer';
                     link.className = 'wp-mcp-ai-chat__file-name';
@@ -17241,6 +17951,23 @@
             const capabilityFlags = options && options.capabilityFlags ? options.capabilityFlags : null;
             attachCapabilityFlagBadges(entry, capabilityFlags);
 
+            // Auto-attach the "🧠 Memory" badge when this message's tool calls
+            // touched the agent-memory subsystem. The decorator is shipped by
+            // chat-memory-drawer.js (Phase 3) and is itself idempotent + a no-op
+            // when no relevant tool was called or when the drawer is disabled.
+            if (payload && Array.isArray(payload.tool_calls) && payload.tool_calls.length
+                && window.wpMcpAiChatMemoryDrawer
+                && typeof window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge === 'function') {
+                try {
+                    window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge(entry, payload.tool_calls);
+                } catch (e) {
+                    // Never let badge decoration break message rendering.
+                    if (window.console && console.warn) {
+                        console.warn('[NV oOS] memory badge decoration failed:', e);
+                    }
+                }
+            }
+
             // Auto-play speech if voice chat mode is active
             if (speechState && speechState.voiceChatModeActive) {
                 // Find the speech button and trigger it after a short delay
@@ -17282,7 +18009,142 @@
         listEl.appendChild(entry);
         scrollBatcher.scrollToBottom(listEl);
 
+        // Attach feedback buttons to assistant bubbles
+        if (chatState) {
+            attachFeedbackButtons(entry, chatState, chatState.conversation.length - 1);
+            // Attach regenerate button
+            attachRegenerateButton(entry, chatState, chatState.conversation.length - 1);
+        }
+
         return entry;
+    }
+
+    function attachFeedbackButtons(bubble, state, messageIndex) {
+        if (!bubble || bubble.classList.contains('wp-mcp-ai-chat__bubble--user')) return;
+        
+        const existing = bubble.querySelector('.' + FEEDBACK_CONTAINER_CLASS);
+        if (existing) existing.remove();
+        
+        const container = document.createElement('div');
+        container.className = FEEDBACK_CONTAINER_CLASS;
+        container.setAttribute('role', 'group');
+        container.setAttribute('aria-label', 'Message feedback');
+        
+        const key = 'msg_' + messageIndex;
+        const currentFeedback = state.feedbackSent[key];
+        
+        function sendFeedback(value) {
+            if (state.feedbackSent[key] === value) return;
+            
+            state.feedbackSent[key] = value;
+            
+            // Update active states
+            const btns = container.querySelectorAll('.' + FEEDBACK_BTN_CLASS);
+            btns.forEach(function (btn) {
+                if (btn.getAttribute('data-value') === value) {
+                    btn.classList.add(FEEDBACK_ACTIVE_CLASS);
+                } else {
+                    btn.classList.remove(FEEDBACK_ACTIVE_CLASS);
+                }
+            });
+            
+            // POST feedback to server if endpoint available
+            if (state.config.chatFeedbackEndpoint) {
+                const msg = state.conversation[messageIndex];
+                const payload = {
+                    assistant_id: state.config.assistantId,
+                    session_key: state.config.sessionKey,
+                    message_index: messageIndex,
+                    rating: value,
+                    message_content: msg ? (msg.content || '') : ''
+                };
+                
+                httpClientService ? httpClientService.postJson(state.config.chatFeedbackEndpoint, payload, {}) : postJson(state.config.chatFeedbackEndpoint, payload, {});
+            }
+        }
+        
+        const thumbsUp = document.createElement('button');
+        thumbsUp.type = 'button';
+        thumbsUp.className = FEEDBACK_BTN_CLASS;
+        if (currentFeedback === 'up') thumbsUp.classList.add(FEEDBACK_ACTIVE_CLASS);
+        thumbsUp.setAttribute('data-value', 'up');
+        thumbsUp.setAttribute('aria-label', 'Thumbs up');
+        thumbsUp.textContent = FEEDBACK_THUMBS_UP;
+        thumbsUp.addEventListener('click', function () { sendFeedback('up'); });
+        
+        const thumbsDown = document.createElement('button');
+        thumbsDown.type = 'button';
+        thumbsDown.className = FEEDBACK_BTN_CLASS;
+        if (currentFeedback === 'down') thumbsDown.classList.add(FEEDBACK_ACTIVE_CLASS);
+        thumbsDown.setAttribute('data-value', 'down');
+        thumbsDown.setAttribute('aria-label', 'Thumbs down');
+        thumbsDown.textContent = FEEDBACK_THUMBS_DOWN;
+        thumbsDown.addEventListener('click', function () { sendFeedback('down'); });
+        
+        container.appendChild(thumbsUp);
+        container.appendChild(thumbsDown);
+        
+        bubble.appendChild(container);
+    }
+
+    function attachRegenerateButton(bubble, state, messageIndex) {
+        if (!bubble || !bubble.classList.contains('wp-mcp-ai-chat__bubble--assistant')) return;
+        
+        // Only attach to the last assistant message
+        let lastAssistantIndex = -1;
+        for (let i = state.conversation.length - 1; i >= 0; i--) {
+            if (state.conversation[i].role === 'assistant') {
+                lastAssistantIndex = i;
+                break;
+            }
+        }
+        if (messageIndex !== lastAssistantIndex) return;
+        
+        const existing = bubble.querySelector('.wp-mcp-ai-chat__regenerate-btn');
+        if (existing) return;
+        
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'wp-mcp-ai-chat__feedback-btn wp-mcp-ai-chat__regenerate-btn';
+        btn.setAttribute('aria-label', 'Regenerate response');
+        btn.textContent = '♻';
+        btn.addEventListener('click', function () {
+            regenerateLastResponse(state, messageIndex);
+        });
+        
+        const feedbackContainer = bubble.querySelector('.' + FEEDBACK_CONTAINER_CLASS);
+        if (feedbackContainer) {
+            feedbackContainer.appendChild(btn);
+        }
+    }
+
+    function regenerateLastResponse(state, assistantMessageIndex) {
+        if (state.busy) return;
+        
+        // Remove assistant message and any subsequent tool results
+        state.conversation.splice(assistantMessageIndex);
+        
+        // Remove DOM elements
+        const messagesEl = state.messagesEl;
+        const bubbles = messagesEl.querySelectorAll('.wp-mcp-ai-chat__message--assistant, .wp-mcp-ai-chat__message--tool');
+        for (let i = bubbles.length - 1; i >= 0; i--) {
+            if (bubbles[i].getAttribute('data-message-index') >= assistantMessageIndex) {
+                bubbles[i].remove();
+            }
+        }
+        
+        // Re-send the last user message
+        let lastUserMsg = null;
+        for (let j = state.conversation.length - 1; j >= 0; j--) {
+            if (state.conversation[j].role === 'user') {
+                lastUserMsg = state.conversation[j];
+                break;
+            }
+        }
+        
+        if (lastUserMsg) {
+            sendChat(state);
+        }
     }
 
     function shouldDisplayJsonResponse(role, text, allowMarkdown) {
@@ -17700,7 +18562,7 @@
         codeBlocks.forEach(function (item) {
             const language = item.language.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
             const className = language ? ' class="language-' + language + '"' : '';
-            const codeHtml = '<pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + escapeHtml(item.code) + '</code></pre>';
+            const codeHtml = '<div class="' + CODE_BLOCK_WRAPPER_CLASS + '"><pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + escapeHtml(item.code) + '</code></pre><button type="button" class="' + CODE_COPY_CLASS + '" aria-label="Copy code">' + getString('copy', 'Copy') + '</button></div>';
             html = replaceAll(html, item.placeholder, codeHtml);
         });
 
@@ -17780,6 +18642,76 @@
         }
 
         return trimmed.replace(/"/g, '%22');
+    }
+
+    /**
+     * Sanitize a URL extracted from an external tool result.
+     * Only http: and https: scheme URLs are accepted; all other schemes
+     * (javascript:, data:, blob:, etc.) are rejected and replaced with an
+     * empty string.  This is intentionally stricter than sanitizeUrl() because
+     * tool result URLs always arrive from external (potentially untrusted) data
+     * and should never carry non-HTTP schemes.
+     *
+     * @param {string} url - URL to sanitize
+     * @return {string} Sanitized URL or '' if invalid or disallowed scheme
+     */
+    function sanitizeToolResultUrl(url) {
+        if (!url || typeof url !== 'string') {
+            return '';
+        }
+        const trimmed = url.trim();
+        if (!trimmed) {
+            return '';
+        }
+        try {
+            const parsed = new URL(trimmed);
+            const protocol = parsed.protocol.toLowerCase();
+            if (protocol === 'http:' || protocol === 'https:') {
+                return trimmed;
+            }
+        } catch (e) {
+            // Invalid URL format
+        }
+        return '';
+    }
+
+    /**
+     * Sanitize a URL for use as an attachment href or src at render time.
+     * Allows http: and https: (remote files from WordPress) and blob: (object
+     * URLs created internally by createObjectUrlFromBase64() and registered via
+     * registerObjectUrl()).  Rejects all other schemes with '#'.
+     *
+     * Blob URLs cannot be synthesised from a JSON tool response because they are
+     * origin-scoped; any blob: URL that reaches appendMessage() was generated by
+     * our own code, so allowing it here is safe.
+     *
+     * @param {string} url - URL to sanitize
+     * @return {string} Sanitized URL or '#' if invalid or disallowed scheme
+     */
+    function sanitizeAttachmentUrl(url) {
+        if (!url || typeof url !== 'string') {
+            return '#';
+        }
+        const trimmed = url.trim();
+        if (!trimmed) {
+            return '#';
+        }
+        try {
+            const parsed = new URL(trimmed);
+            const protocol = parsed.protocol.toLowerCase();
+            if (protocol === 'http:' || protocol === 'https:') {
+                return trimmed;
+            }
+            // Allow internally-generated blob: URLs.  Blob URLs are origin-scoped
+            // and cannot be forged through JSON tool responses; they only appear in
+            // attachment objects after createObjectUrlFromBase64() has run.
+            if (protocol === 'blob:') {
+                return trimmed;
+            }
+        } catch (e) {
+            // Invalid URL format
+        }
+        return '#';
     }
 
     /**
@@ -18449,9 +19381,15 @@
             const healthEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-health');
 
             if (activeEl) {
-                activeEl.textContent = counts.active || 0;
+                // Backend (`WP_MCP_AI_Cron_Status_Service::get_status_counts`) returns
+                // the in-flight tally as `counts.running` (covers both `running` and
+                // `polling` job statuses). Read that key — `counts.active` is never
+                // populated by the REST response and previously kept the badge stuck
+                // at zero even while jobs were actively executing.
+                const runningCount = counts.running || 0;
+                activeEl.textContent = runningCount;
                 activeEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-active';
-                if (counts.active > 0) {
+                if (runningCount > 0) {
                     activeEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-active--running';
                 }
             }
@@ -18510,6 +19448,555 @@
         });
 
         observer.observe(container, { attributes: true });
+
+        // PR-D: when the chatTasksDrawer feature flag is on, activate the Tasks drawer
+        // and toast/tab-badge subsystems for this container.
+        if (config.chatTasksDrawer) {
+            initTasksDrawer(container, config, cronStatusEndpoint, nonce);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // PR-D: Tasks drawer (Phase 3b) + toast/tab-badge (Phase 3c)
+    // Feature-gated: only active when config.chatTasksDrawer === true.
+    // The old 4-counter strip remains the fallback when the flag is off.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Module-level tab-title badge state.
+     * All chat instances on the same page share a single running-job counter
+     * so the `(N)` prefix only appears once in the tab title.
+     */
+    let _tabTitleRunning = 0;
+    let _tabTitleOriginal = '';
+
+    /**
+     * Increment or decrement the global running-job counter and update
+     * document.title to `(N) <original title>` while N > 0.
+     *
+     * @param {number} delta  +1 or -1.
+     */
+    function updateTabTitleBadge(delta) {
+        if (!_tabTitleOriginal) {
+            _tabTitleOriginal = document.title || '';
+        }
+        _tabTitleRunning = Math.max(0, _tabTitleRunning + delta);
+        if (_tabTitleRunning > 0) {
+            document.title = '(' + _tabTitleRunning + ') ' + _tabTitleOriginal;
+        } else {
+            document.title = _tabTitleOriginal;
+        }
+    }
+
+    /**
+     * Append a floating toast to the chat instance's toast container.
+     * The toast auto-dismisses after TOAST_DURATION_MS.
+     *
+     * @param {HTMLElement} container Chat root element.
+     * @param {string}      type      'completed' | 'failed'.
+     * @param {Object}      job       Normalized job record.
+     */
+    const TOAST_DURATION_MS = 6000;
+
+    function showJobToast(container, type, job) {
+        if (!container || !job) {
+            return;
+        }
+        const toastContainer = container.querySelector('.wp-mcp-ai-chat__job-toast-container');
+        if (!toastContainer) {
+            return;
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'wp-mcp-ai-job-toast wp-mcp-ai-job-toast--' + type;
+        toast.setAttribute('role', 'status');
+
+        const icon = type === 'completed' ? '✓' : '✕';
+        const label = type === 'completed' ? 'Completed' : 'Failed';
+        const jobTitle = job.tool_name || job.kind || job.job_id || 'Job';
+
+        const iconEl = document.createElement('span');
+        iconEl.className = 'wp-mcp-ai-job-toast__icon';
+        iconEl.setAttribute('aria-hidden', 'true');
+        iconEl.textContent = icon;
+
+        const msgEl = document.createElement('span');
+        msgEl.className = 'wp-mcp-ai-job-toast__msg';
+        msgEl.textContent = label + ': ' + jobTitle;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'wp-mcp-ai-job-toast__close';
+        closeBtn.setAttribute('aria-label', 'Dismiss notification');
+        closeBtn.textContent = '✕';
+
+        toast.appendChild(iconEl);
+        toast.appendChild(msgEl);
+        toast.appendChild(closeBtn);
+        toastContainer.appendChild(toast);
+
+        // Trigger enter animation on next frame.
+        setTimeout(function () { toast.classList.add('wp-mcp-ai-job-toast--visible'); }, 16);
+
+        function dismiss() {
+            toast.classList.remove('wp-mcp-ai-job-toast--visible');
+            setTimeout(function () {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }
+
+        closeBtn.addEventListener('click', dismiss);
+        setTimeout(dismiss, TOAST_DURATION_MS);
+    }
+
+    /**
+     * Initialize the Tasks drawer for a single chat container instance.
+     * Called from initializeCronStatus() when config.chatTasksDrawer is true.
+     *
+     * @param {HTMLElement} container          Chat root element.
+     * @param {Object}      config             Instance config.
+     * @param {string}      cronStatusEndpoint Base cron-status REST URL.
+     * @param {string}      nonce              WP REST nonce.
+     */
+    function initTasksDrawer(container, config, cronStatusEndpoint, nonce) {
+        if (!container || !window.wpMcpAiJobBus) {
+            return;
+        }
+
+        // ---- DOM references ----
+        const oldStrip   = container.querySelector('.wp-mcp-ai-chat__cron-status');
+        const drawerBtn  = container.querySelector('.wp-mcp-ai-chat__tasks-btn');
+        const drawer     = container.querySelector('.wp-mcp-ai-chat__tasks-drawer');
+        const closeBtn   = drawer && drawer.querySelector('.wp-mcp-ai-chat__tasks-drawer__close');
+        const filterBtns = drawer && Array.prototype.slice.call(drawer.querySelectorAll('.wp-mcp-ai-chat__tasks-drawer__filter'));
+        const listEl     = drawer && drawer.querySelector('.wp-mcp-ai-chat__tasks-drawer__list');
+        const emptyEl    = drawer && drawer.querySelector('.wp-mcp-ai-chat__tasks-drawer__empty');
+        const batchBar   = drawer && drawer.querySelector('.wp-mcp-ai-chat__tasks-drawer__batch');
+        const selectAll  = batchBar && batchBar.querySelector('.wp-mcp-ai-chat__tasks-drawer__select-all');
+        const batchCancel = batchBar && batchBar.querySelector('.wp-mcp-ai-chat__tasks-drawer__batch-cancel');
+        const batchRetry  = batchBar && batchBar.querySelector('.wp-mcp-ai-chat__tasks-drawer__batch-retry');
+        const batchDismiss = batchBar && batchBar.querySelector('.wp-mcp-ai-chat__tasks-drawer__batch-dismiss');
+        const healthDot  = drawer && drawer.querySelector('.wp-mcp-ai-chat__tasks-drawer__health');
+        const badgeEl    = drawerBtn && drawerBtn.querySelector('.wp-mcp-ai-chat__tasks-btn__badge');
+
+        if (!drawerBtn || !drawer || !listEl) {
+            return;
+        }
+
+        // Hide the old 4-counter strip; show our button instead.
+        if (oldStrip) { oldStrip.setAttribute('hidden', ''); }
+        drawerBtn.removeAttribute('hidden');
+
+        // ---- Local state ----
+        const STORAGE_KEY = 'wp_mcp_ai_tasks_' + (config.assistantId || 'default');
+        const MAX_STORED_JOBS = 200;
+        let activeFilter = 'all';
+        let jobs = {}; // keyed by job_id
+
+        // Load persisted jobs from localStorage (job IDs only; fresh data from bus).
+        (function loadFromStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed === 'object') {
+                        jobs = parsed;
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }());
+
+        function saveToStorage() {
+            try {
+                // Keep at most MAX_STORED_JOBS entries (drop oldest completed/failed first).
+                const ids = Object.keys(jobs);
+                if (ids.length > MAX_STORED_JOBS) {
+                    const terminal = ids.filter(function (id) {
+                        const s = jobs[id].status;
+                        return s === 'completed' || s === 'failed' || s === 'cancelled';
+                    });
+                    // Sort by updated_at ascending so the oldest terminal jobs are removed first.
+                    terminal.sort(function (a, b) {
+                        return (jobs[a].updated_at || 0) - (jobs[b].updated_at || 0);
+                    });
+                    terminal.slice(0, ids.length - MAX_STORED_JOBS).forEach(function (id) {
+                        delete jobs[id];
+                    });
+                }
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+            } catch (e) { /* ignore quota errors */ }
+        }
+
+        // ---- Drawer open / close ----
+        function openDrawer() {
+            drawer.removeAttribute('hidden');
+            drawerBtn.setAttribute('aria-expanded', 'true');
+            renderList();
+        }
+
+        function closeDrawer() {
+            drawer.setAttribute('hidden', '');
+            drawerBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        drawerBtn.addEventListener('click', function () {
+            if (drawer.hasAttribute('hidden')) {
+                openDrawer();
+            } else {
+                closeDrawer();
+            }
+        });
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeDrawer);
+        }
+
+        // Close on Escape.
+        document.addEventListener('keydown', function (e) {
+            if ((e.key === 'Escape' || e.keyCode === 27) && !drawer.hasAttribute('hidden')) {
+                closeDrawer();
+            }
+        });
+
+        // ---- Filter tabs ----
+        filterBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                activeFilter = btn.getAttribute('data-filter') || 'all';
+                filterBtns.forEach(function (b) {
+                    b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+                    if (b === btn) {
+                        b.classList.add('wp-mcp-ai-chat__tasks-drawer__filter--active');
+                    } else {
+                        b.classList.remove('wp-mcp-ai-chat__tasks-drawer__filter--active');
+                    }
+                });
+                renderList();
+            });
+        });
+
+        // ---- Job action helper ----
+        function postJobAction(jobId, action) {
+            return fetch(cronStatusEndpoint + '/' + encodeURIComponent(jobId) + '/' + action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': nonce
+                },
+                credentials: 'same-origin'
+            }).then(function (resp) { return resp.json(); });
+        }
+
+        // ---- Counts & badge ----
+        function countByStatus(status) {
+            return Object.keys(jobs).filter(function (id) {
+                return jobs[id].status === status;
+            }).length;
+        }
+
+        function countRunning() {
+            return Object.keys(jobs).filter(function (id) {
+                const s = jobs[id].status;
+                return s === 'running' || s === 'polling';
+            }).length;
+        }
+
+        function updateBadge() {
+            const running = countRunning();
+            const queued  = countByStatus('queued');
+            const total   = running + queued;
+            if (badgeEl) {
+                badgeEl.textContent = total;
+                badgeEl.hidden = total === 0;
+            }
+            // Show / hide the button itself.
+            if (Object.keys(jobs).length > 0) {
+                drawerBtn.removeAttribute('hidden');
+            }
+        }
+
+        // ---- Render a single job row ----
+        function formatElapsed(job) {
+            const start = job.started_at || job.updated_at;
+            if (!start) { return ''; }
+            const seconds = Math.floor(Date.now() / 1000 - start);
+            if (seconds < 60) { return seconds + 's'; }
+            return Math.floor(seconds / 60) + 'm ' + (seconds % 60) + 's';
+        }
+
+        function buildJobRow(job) {
+            const li = document.createElement('li');
+            li.className = 'wp-mcp-ai-chat__tasks-drawer__row';
+            li.setAttribute('data-job-id', job.job_id);
+            li.setAttribute('data-status', job.status || 'unknown');
+
+            // Checkbox (for batch actions).
+            const chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.className = 'wp-mcp-ai-chat__tasks-drawer__row-check';
+            chk.setAttribute('aria-label', 'Select job ' + job.job_id);
+            chk.addEventListener('change', onSelectionChange);
+
+            // Status icon.
+            const iconMap = { queued: '⏳', running: '⚡', polling: '⟳', completed: '✓', failed: '✕', cancelled: '—' };
+            const iconEl = document.createElement('span');
+            iconEl.className = 'wp-mcp-ai-chat__tasks-drawer__row-icon';
+            iconEl.setAttribute('aria-hidden', 'true');
+            iconEl.textContent = iconMap[job.status] || '●';
+
+            // Title.
+            const titleEl = document.createElement('span');
+            titleEl.className = 'wp-mcp-ai-chat__tasks-drawer__row-title';
+            titleEl.textContent = job.tool_name || job.kind || job.job_id;
+
+            // Elapsed / ETA.
+            const metaEl = document.createElement('span');
+            metaEl.className = 'wp-mcp-ai-chat__tasks-drawer__row-meta';
+            const elapsed = formatElapsed(job);
+            let eta = '';
+            if (job.eta) {
+                const etaSecs = Math.max(0, Math.floor(job.eta - Date.now() / 1000));
+                eta = etaSecs > 0 ? '~' + etaSecs + 's left' : '';
+            }
+            metaEl.textContent = [elapsed, eta].filter(Boolean).join(' · ') || '—';
+
+            // Progress bar (only when progress value exists).
+            let progressEl = null;
+            if (job.progress != null) {
+                progressEl = document.createElement('div');
+                progressEl.className = 'wp-mcp-ai-chat__tasks-drawer__row-progress';
+                const bar = document.createElement('div');
+                bar.className = 'wp-mcp-ai-chat__tasks-drawer__row-progress-fill';
+                bar.style.width = Math.min(100, Math.max(0, job.progress)) + '%';
+                progressEl.appendChild(bar);
+            }
+
+            // Cancel / Retry buttons.
+            const actionsEl = document.createElement('span');
+            actionsEl.className = 'wp-mcp-ai-chat__tasks-drawer__row-actions';
+
+            if (job.cancellable) {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'wp-mcp-ai-chat__tasks-drawer__row-cancel';
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.addEventListener('click', function () {
+                    cancelBtn.disabled = true;
+                    cancelBtn.textContent = 'Cancelling…';
+                    postJobAction(job.job_id, 'cancel').then(function (data) {
+                        if (!data || !data.success) {
+                            cancelBtn.disabled = false;
+                            cancelBtn.textContent = 'Cancel';
+                        }
+                    }).catch(function () {
+                        cancelBtn.disabled = false;
+                        cancelBtn.textContent = 'Cancel';
+                    });
+                });
+                actionsEl.appendChild(cancelBtn);
+            }
+
+            if (job.retryable) {
+                const retryBtn = document.createElement('button');
+                retryBtn.type = 'button';
+                retryBtn.className = 'wp-mcp-ai-chat__tasks-drawer__row-retry';
+                retryBtn.textContent = 'Retry';
+                retryBtn.addEventListener('click', function () {
+                    retryBtn.disabled = true;
+                    retryBtn.textContent = 'Retrying…';
+                    postJobAction(job.job_id, 'retry').then(function (data) {
+                        if (!data || !data.success) {
+                            retryBtn.disabled = false;
+                            retryBtn.textContent = 'Retry';
+                        }
+                    }).catch(function () {
+                        retryBtn.disabled = false;
+                        retryBtn.textContent = 'Retry';
+                    });
+                });
+                actionsEl.appendChild(retryBtn);
+            }
+
+            li.appendChild(chk);
+            li.appendChild(iconEl);
+            li.appendChild(titleEl);
+            li.appendChild(metaEl);
+            if (progressEl) { li.appendChild(progressEl); }
+            li.appendChild(actionsEl);
+
+            return li;
+        }
+
+        // ---- Render / refresh the list ----
+        function renderList() {
+            const ids = Object.keys(jobs);
+            const filtered = ids.filter(function (id) {
+                if (activeFilter === 'all') { return true; }
+                if (activeFilter === 'running') {
+                    return jobs[id].status === 'running' || jobs[id].status === 'polling';
+                }
+                return jobs[id].status === activeFilter;
+            });
+
+            // Sort: active first, then by updated_at desc.
+            filtered.sort(function (a, b) {
+                const order = { running: 0, polling: 0, queued: 1, failed: 2, cancelled: 3, completed: 4 };
+                const oa = order[jobs[a].status] !== undefined ? order[jobs[a].status] : 5;
+                const ob = order[jobs[b].status] !== undefined ? order[jobs[b].status] : 5;
+                if (oa !== ob) { return oa - ob; }
+                return ((jobs[b].updated_at || 0) - (jobs[a].updated_at || 0));
+            });
+
+            listEl.innerHTML = '';
+            filtered.forEach(function (id) {
+                listEl.appendChild(buildJobRow(jobs[id]));
+            });
+
+            if (emptyEl) {
+                emptyEl.hidden = filtered.length > 0;
+            }
+
+            // Show batch bar only when there are selectable rows.
+            if (batchBar) {
+                batchBar.hidden = filtered.length === 0;
+            }
+        }
+
+        // ---- Selection / batch actions ----
+        function getCheckedJobIds() {
+            if (!listEl) { return []; }
+            return Array.prototype.slice.call(
+                listEl.querySelectorAll('.wp-mcp-ai-chat__tasks-drawer__row-check:checked')
+            ).map(function (chk) {
+                const row = chk.closest('[data-job-id]');
+                return row ? row.getAttribute('data-job-id') : null;
+            }).filter(Boolean);
+        }
+
+        function onSelectionChange() {
+            const checked = getCheckedJobIds();
+            if (!batchBar) { return; }
+            const hasCancellable = checked.some(function (id) { return jobs[id] && jobs[id].cancellable; });
+            const hasRetryable   = checked.some(function (id) { return jobs[id] && jobs[id].retryable; });
+            const hasTerminal    = checked.some(function (id) {
+                const s = jobs[id] && jobs[id].status;
+                return s === 'completed' || s === 'failed' || s === 'cancelled';
+            });
+            if (batchCancel)  { batchCancel.hidden  = !hasCancellable || checked.length === 0; }
+            if (batchRetry)   { batchRetry.hidden   = !hasRetryable   || checked.length === 0; }
+            if (batchDismiss) { batchDismiss.hidden = !hasTerminal    || checked.length === 0; }
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                Array.prototype.forEach.call(
+                    listEl.querySelectorAll('.wp-mcp-ai-chat__tasks-drawer__row-check'),
+                    function (chk) { chk.checked = selectAll.checked; }
+                );
+                onSelectionChange();
+            });
+        }
+
+        if (batchCancel) {
+            batchCancel.addEventListener('click', function () {
+                getCheckedJobIds().filter(function (id) {
+                    return jobs[id] && jobs[id].cancellable;
+                }).forEach(function (id) {
+                    postJobAction(id, 'cancel').catch(function () {});
+                });
+            });
+        }
+
+        if (batchRetry) {
+            batchRetry.addEventListener('click', function () {
+                getCheckedJobIds().filter(function (id) {
+                    return jobs[id] && jobs[id].retryable;
+                }).forEach(function (id) {
+                    postJobAction(id, 'retry').catch(function () {});
+                });
+            });
+        }
+
+        if (batchDismiss) {
+            batchDismiss.addEventListener('click', function () {
+                getCheckedJobIds().filter(function (id) {
+                    const s = jobs[id] && jobs[id].status;
+                    return s === 'completed' || s === 'failed' || s === 'cancelled';
+                }).forEach(function (id) {
+                    delete jobs[id];
+                });
+                saveToStorage();
+                renderList();
+                updateBadge();
+            });
+        }
+
+        // ---- Job bus subscriptions ----
+
+        function onJobUpdate(evt) {
+            if (!evt || !evt.jobId) { return; }
+            const id = evt.jobId;
+            const payload = evt.data || evt;
+
+            const prevStatus = jobs[id] ? jobs[id].status : null;
+
+            // Merge the update into local state.
+            jobs[id] = Object.assign({}, jobs[id] || {}, payload, { job_id: id });
+
+            const newStatus  = jobs[id].status;
+
+            // Update tab-title badge.
+            if (prevStatus !== newStatus) {
+                const wasRun = prevStatus === 'running' || prevStatus === 'polling';
+                const nowRun = newStatus  === 'running' || newStatus  === 'polling';
+                if (!wasRun && nowRun)  { updateTabTitleBadge(+1); }
+                if (wasRun  && !nowRun) { updateTabTitleBadge(-1); }
+            }
+
+            // Show toasts on terminal transitions.
+            if (prevStatus !== newStatus) {
+                if (newStatus === 'completed') {
+                    showJobToast(container, 'completed', jobs[id]);
+                } else if (newStatus === 'failed') {
+                    showJobToast(container, 'failed', jobs[id]);
+                }
+            }
+
+            saveToStorage();
+            updateBadge();
+
+            // Refresh list if drawer is open.
+            if (!drawer.hasAttribute('hidden')) {
+                renderList();
+            }
+        }
+
+        function onHealthUpdate(evt) {
+            if (!healthDot || !evt || !evt.status) { return; }
+            healthDot.setAttribute('data-status', evt.status);
+            healthDot.title = evt.label || 'Health: ' + evt.status;
+        }
+
+        // Subscribe to all job event types through the bus.
+        ['job:queued', 'job:started', 'job:step', 'job:progress', 'job:completed', 'job:failed', 'job:cancelled', 'job:retried'].forEach(function (eventType) {
+            window.wpMcpAiJobBus.on(eventType, onJobUpdate);
+        });
+
+        if (typeof window.wpMcpAiJobBus.on === 'function') {
+            window.wpMcpAiJobBus.on('system:health', onHealthUpdate);
+        }
+
+        // Seed badge and list from any cached jobs already in the bus.
+        if (typeof window.wpMcpAiJobBus.getAll === 'function') {
+            const cached = window.wpMcpAiJobBus.getAll();
+            if (cached && typeof cached === 'object') {
+                Object.keys(cached).forEach(function (id) {
+                    jobs[id] = Object.assign({}, jobs[id] || {}, cached[id], { job_id: id });
+                });
+            }
+        }
+        updateBadge();
     }
 
     /**
@@ -18736,6 +20223,15 @@
         // Call original init with optional scope
         init( scope );
 
+        // Initialize any chat-bubble widgets in the same pass as chat widgets.
+        // chat-bubble.js defines window.wpMcpAiChatBubble synchronously when
+        // it executes (before DOMContentLoaded), so it is always available here.
+        // This mirrors how the chat widget is discovered via [data-wp-mcp-ai-chat],
+        // making bubble initialization part of the same single reliable init pass.
+        if ( window.wpMcpAiChatBubble && typeof window.wpMcpAiChatBubble.init === 'function' ) {
+            window.wpMcpAiChatBubble.init( scope );
+        }
+
         // Initialize global job event bus listeners (once)
         initializeGlobalJobListeners();
 
@@ -18753,6 +20249,244 @@
                 });
             });
         }, 500);
+    }
+
+    // -------------------------------------------------------------------------
+    // Slice 3 (client side): Chat Session SSE Stream
+    //
+    // Opens a long-lived EventSource on
+    //   GET /mcp-ai/v1/chat-sessions/{session_id}/stream
+    // so that async tool continuations (resumed LLM messages) are delivered
+    // in real-time — even after the original /chat-client request has returned.
+    //
+    // The session_id is derived from config.sessionKey (set by PHP) or minted
+    // once per assistantId and persisted in localStorage.
+    //
+    // Supported SSE events:
+    //   chat:resumed     — assistant continuation message
+    //   chat:tool_result — non-LLM status notification (failed/cancelled)
+    //   chat:error       — LLM-path error
+    //   ping             — heartbeat (no-op in client)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Derive or mint a stable chat session ID for an assistant instance.
+     *
+     * Priority:
+     *   1. config.sessionKey  (PHP-issued, shared with transcript recorder)
+     *   2. localStorage key   wp_mcp_ai_chat_session_id_{assistantId}
+     *   3. Minted UUID-like   (stored immediately in localStorage)
+     *
+     * @param {Object} config  Instance config.
+     * @returns {string}       Non-empty session ID.
+     */
+    function resolveChatSessionId(config) {
+        if (config && config.sessionKey && typeof config.sessionKey === 'string' && config.sessionKey.trim()) {
+            return config.sessionKey.trim();
+        }
+        const assistantId = (config && config.assistantId) ? config.assistantId : 'default';
+        const lsKey = 'wp_mcp_ai_chat_session_id_' + assistantId;
+        try {
+            const stored = localStorage.getItem(lsKey);
+            if (stored && /^[a-zA-Z0-9_-]{1,64}$/.test(stored)) {
+                return stored;
+            }
+        } catch (_) { /* localStorage unavailable */ }
+
+        // Mint a compact random ID.
+        const minted = 'cs' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        try {
+            localStorage.setItem(lsKey, minted);
+        } catch (_) { /* ignore */ }
+        return minted;
+    }
+
+    /**
+     * Handle a `chat:resumed` SSE frame: append the assistant's continuation
+     * message to the transcript, show a toast, and avoid duplicates.
+     *
+     * @param {Object}      state     Chat state.
+     * @param {Object}      frameData Frame payload from the SSE event.
+     */
+    function handleChatResumedFrame(state, frameData) {
+        if (!state || !frameData) {
+            return;
+        }
+        const message = (frameData.message && typeof frameData.message === 'string') ? frameData.message : '';
+        if (!message) {
+            return;
+        }
+        const toolCallId = frameData.tool_call_id || '';
+
+        // Deduplicate: skip if we already have a message for this tool_call_id.
+        if (toolCallId) {
+            const alreadyPresent = state.conversation && state.conversation.some(function(msg) {
+                return msg && msg._continuationToolCallId === toolCallId;
+            });
+            if (alreadyPresent) {
+                return;
+            }
+        }
+
+        // Append assistant message to the transcript (mirrors displayAsyncToolResult flow).
+        const assistantMsg = {
+            role: 'assistant',
+            content: message,
+            _isContinuation: true,
+            _continuationToolCallId: toolCallId || null,
+            _jobId: frameData.job_id || null,
+        };
+
+        if (!state.conversation) {
+            state.conversation = [];
+        }
+        state.conversation.push(assistantMsg);
+
+        // Render the new message.
+        if (state.messagesEl && typeof addMessage === 'function') {
+            addMessage(state, message, 'assistant', { isContinuation: true });
+        }
+
+        // Surface a toast so the user knows the result arrived.
+        if (typeof showJobToast === 'function') {
+            showJobToast(state.container, 'completed', {
+                job_id: frameData.job_id || '',
+                message: message,
+            });
+        }
+    }
+
+    /**
+     * Handle a `chat:tool_result` or `chat:error` SSE frame.
+     *
+     * @param {Object} state     Chat state.
+     * @param {string} eventName `chat:tool_result` or `chat:error`.
+     * @param {Object} frameData Frame payload.
+     */
+    function handleChatStatusFrame(state, eventName, frameData) {
+        if (!state || !frameData) {
+            return;
+        }
+        const type = ('chat:error' === eventName) ? 'failed' : frameData.terminal_status || 'failed';
+        const message = frameData.message || frameData.error || '';
+
+        if (typeof showJobToast === 'function') {
+            showJobToast(state.container, ('failed' === type || 'cancelled' === type) ? 'failed' : 'completed', {
+                job_id: frameData.job_id || '',
+                message: message,
+            });
+        }
+    }
+
+    /**
+     * Open (or re-open) the chat-session SSE stream for a specific container.
+     *
+     * The EventSource reconnects automatically via the Last-Event-ID header
+     * (built into the browser EventSource spec — no manual reconnect needed).
+     *
+     * @param {HTMLElement} container         Chat root element.
+     * @param {Object}      config            Instance config (must have sessionStreamEndpoint).
+     * @param {Object}      state             Chat state (may be null if init is deferred).
+     * @param {string}      sessionId         Resolved chat session ID.
+     */
+    function initChatSessionStream(container, config, state, sessionId) {
+        if (!config || !config.sessionStreamEndpoint) {
+            return;
+        }
+        if (!sessionId || !/^[a-zA-Z0-9_-]{1,64}$/.test(sessionId)) {
+            return;
+        }
+        if (!window.EventSource) {
+            return; // SSE not supported in this browser.
+        }
+
+        const endpoint = config.sessionStreamEndpoint.replace('{session_id}', encodeURIComponent(sessionId));
+        const nonce    = config.restNonce || '';
+
+        // Append nonce and last_event_id query params (EventSource cannot send headers).
+        function buildUrl(lastId) {
+            let url = endpoint;
+            const sep = (url.indexOf('?') >= 0) ? '&' : '?';
+            url += sep + '_wpnonce=' + encodeURIComponent(nonce);
+            if (lastId > 0) {
+                url += '&last_event_id=' + lastId;
+            }
+            return url;
+        }
+
+        let lastEventId = 0;
+        let es = null;
+
+        function open() {
+            if (es) {
+                try { es.close(); } catch (_) {}
+            }
+            es = new EventSource(buildUrl(lastEventId));
+
+            es.addEventListener('chat:resumed', function(ev) {
+                try {
+                    if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
+                    const data = JSON.parse(ev.data);
+                    if (state) {
+                        handleChatResumedFrame(state, data);
+                    }
+                } catch (_) {}
+            });
+
+            es.addEventListener('chat:tool_result', function(ev) {
+                try {
+                    if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
+                    const data = JSON.parse(ev.data);
+                    if (state) {
+                        handleChatStatusFrame(state, 'chat:tool_result', data);
+                    }
+                } catch (_) {}
+            });
+
+            es.addEventListener('chat:error', function(ev) {
+                try {
+                    if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
+                    const data = JSON.parse(ev.data);
+                    if (state) {
+                        handleChatStatusFrame(state, 'chat:error', data);
+                    }
+                } catch (_) {}
+            });
+
+            es.addEventListener('ping', function(ev) {
+                if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
+            });
+
+            // When the server closes the stream (max ticks / [DONE]), the
+            // EventSource would normally try to reconnect automatically.
+            // We close it manually on clean [DONE] to avoid unnecessary reconnects.
+            es.addEventListener('message', function(ev) {
+                if (ev.data === '[DONE]') {
+                    try { es.close(); } catch (_) {}
+                }
+            });
+        }
+
+        open();
+
+        // Re-open on tab visibility restore so the stream survives tab switches.
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible' && es && es.readyState === 2 /* CLOSED */) {
+                open();
+            }
+        });
+
+        // Clean up when container is hidden/removed.
+        const streamObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
+                    if (container.hasAttribute('hidden') && es) {
+                        try { es.close(); } catch (_) {}
+                    }
+                }
+            });
+        });
+        streamObserver.observe(container, { attributes: true });
     }
 
     // Expose public API for dynamic initialization (e.g., when chat is inserted via AJAX)

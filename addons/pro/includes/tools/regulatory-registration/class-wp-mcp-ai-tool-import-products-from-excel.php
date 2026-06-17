@@ -52,120 +52,120 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'file_path'             => array(
+				'file_path'               => array(
 					'type'        => 'string',
 					'description' => __( 'Path to Excel file (.xlsx format, required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'field_mapping'         => array(
+				'field_mapping'           => array(
 					'type'        => 'object',
 					'description' => __( 'Map Excel columns to product fields. Use column letters (A, B, C) or names. Supports all regulatory tracking fields.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'supplier_reference'                   => array(
+						'supplier_reference'              => array(
 							'type'        => 'string',
 							'description' => 'Column for supplier reference code',
 						),
-						'item_name'                            => array(
+						'item_name'                       => array(
 							'type'        => 'string',
 							'description' => 'Column for product/item name',
 						),
-						'item_group'                           => array(
+						'item_group'                      => array(
 							'type'        => 'string',
 							'description' => 'Column for item group/range',
 						),
-						'brand'                                => array(
+						'brand'                           => array(
 							'type'        => 'string',
 							'description' => 'Column for brand name',
 						),
-						'product_status'                       => array(
+						'product_status'                  => array(
 							'type'        => 'string',
 							'description' => 'Column for product status',
 						),
-						'loa'                                  => array(
+						'loa'                             => array(
 							'type'        => 'string',
 							'description' => 'Column for LOA (Letter of Authorization)',
 						),
-						'manufacturer_declaration'             => array(
+						'manufacturer_declaration'        => array(
 							'type'        => 'string',
 							'description' => 'Column for Manufacturer Declaration',
 						),
-						'art_works'                            => array(
+						'art_works'                       => array(
 							'type'        => 'string',
 							'description' => 'Column for Art Works',
 						),
-						'date_of_apply_sample_import_license'  => array(
+						'date_of_apply_sample_import_license' => array(
 							'type'        => 'string',
 							'description' => 'Column for Sample Import License application date',
 						),
-						'payments'                             => array(
+						'payments'                        => array(
 							'type'        => 'string',
 							'description' => 'Column for payment status',
 						),
-						'sample_import_license'                => array(
+						'sample_import_license'           => array(
 							'type'        => 'string',
 							'description' => 'Column for Sample Import License status',
 						),
-						'sample_import_license_received_date'  => array(
+						'sample_import_license_received_date' => array(
 							'type'        => 'string',
 							'description' => 'Column for license received date',
 						),
-						'license_exp_date'                     => array(
+						'license_exp_date'                => array(
 							'type'        => 'string',
 							'description' => 'Column for license expiry date',
 						),
-						'sample'                               => array(
+						'sample'                          => array(
 							'type'        => 'string',
 							'description' => 'Column for sample status',
 						),
-						'formula_certificate'                  => array(
+						'formula_certificate'             => array(
 							'type'        => 'string',
 							'description' => 'Column for Formula Certificate',
 						),
-						'certificate_of_analysis'              => array(
+						'certificate_of_analysis'         => array(
 							'type'        => 'string',
 							'description' => 'Column for Certificate of Analysis',
 						),
-						'free_sale_certificate'                => array(
+						'free_sale_certificate'           => array(
 							'type'        => 'string',
 							'description' => 'Column for Free Sale Certificate',
 						),
-						'registration_payment_status'          => array(
+						'registration_payment_status'     => array(
 							'type'        => 'string',
 							'description' => 'Column for registration payment status',
 						),
-						'payment_date'                         => array(
+						'payment_date'                    => array(
 							'type'        => 'string',
 							'description' => 'Column for payment date',
 						),
-						'file_handover_date'                   => array(
+						'file_handover_date'              => array(
 							'type'        => 'string',
 							'description' => 'Column for file handover date',
 						),
-						'cos_no'                               => array(
+						'cos_no'                          => array(
 							'type'        => 'string',
 							'description' => 'Column for COS registration number',
 						),
-						'evaluation_payment'                   => array(
+						'evaluation_payment'              => array(
 							'type'        => 'string',
 							'description' => 'Column for evaluation payment status',
 						),
-						'registration_certificate_status'      => array(
+						'registration_certificate_status' => array(
 							'type'        => 'string',
 							'description' => 'Column for registration certificate status',
 						),
 					),
 				),
-				'skip_duplicates'       => array(
+				'skip_duplicates'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'Skip products with duplicate supplier references (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'start_row'             => array(
+				'start_row'               => array(
 					'type'        => 'integer',
 					'description' => __( 'Starting row number (optional, default: 2 for header row)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'default'     => 2,
 				),
-				'end_row'               => array(
+				'end_row'                 => array(
 					'type'        => 'integer',
 					'description' => __( 'Ending row number to process (optional, processes all rows if not specified)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -175,7 +175,7 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 					'description' => __( 'Automatically exclude section marker rows like "These items are not in the final list" (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'sheet_index'           => array(
+				'sheet_index'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Worksheet index to import from (optional, default: 0 for first sheet)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -197,6 +197,13 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 			'file-upload',          // Handles file uploads.
 			'destructive',          // Can create many records.
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -237,7 +244,7 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 
 			$relative_path = str_replace( $normalized_base_url, '', $normalized_url );
 
-			// Security: Decode URL-encoding before checking for traversal sequences so
+			// Security: Decode URL-encoding before checking for traversal sequences so.
 			// that encoded variants like %2e%2e cannot bypass the check.
 			$decoded_relative = urldecode( $relative_path );
 			if ( false !== strpos( $decoded_relative, '..' ) ) {
@@ -429,9 +436,9 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 	/**
 	 * Normalize field mapping to use column letters.
 	 *
-	 * @param array                                        $field_mapping User-provided field mapping.
+	 * @param array                                         $field_mapping User-provided field mapping.
 	 * @param \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $worksheet     The worksheet.
-	 * @param int                                          $header_row    Header row number (0-indexed).
+	 * @param int                                           $header_row    Header row number (0-indexed).
 	 * @return array Normalized mapping with column letters.
 	 */
 	private function normalize_field_mapping( $field_mapping, $worksheet, $header_row ) {

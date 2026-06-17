@@ -158,6 +158,13 @@ class WP_MCP_AI_Tool_Erlang_C_Queue_Health implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -197,13 +204,13 @@ class WP_MCP_AI_Tool_Erlang_C_Queue_Health implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
-		$arrival_rate  = $metrics['arrival_rate_per_hour'];
-		$aht           = $metrics['avg_handle_time'];
+		$arrival_rate   = $metrics['arrival_rate_per_hour'];
+		$aht            = $metrics['avg_handle_time'];
 		$current_agents = $metrics['current_agents'];
-		$queue_depth   = isset( $metrics['queue_depth'] ) ? (int) $metrics['queue_depth'] : 0;
+		$queue_depth    = isset( $metrics['queue_depth'] ) ? (int) $metrics['queue_depth'] : 0;
 
 		// Erlang C calculations.
-		$traffic   = WP_MCP_AI_Erlang_C::to_erlangs( $arrival_rate, $aht );
+		$traffic    = WP_MCP_AI_Erlang_C::to_erlangs( $arrival_rate, $aht );
 		$min_agents = WP_MCP_AI_Erlang_C::min_agents_for_sl( $traffic, $aht, $target_sl_frac, (float) $target_time );
 
 		$prob_wait = WP_MCP_AI_Erlang_C::probability_wait( $traffic, $current_agents );
@@ -227,16 +234,16 @@ class WP_MCP_AI_Tool_Erlang_C_Queue_Health implements WP_MCP_AI_Tool_Interface, 
 			do_action(
 				'wp_mcp_ai_queue_alert',
 				array(
-					'channel'          => $channel,
-					'arrival_rate'     => $arrival_rate,
-					'current_agents'   => $current_agents,
-					'min_agents'       => $min_agents,
-					'agent_deficit'    => $agent_deficit,
-					'svc_level'        => $svc_level,
-					'target_sl'        => $target_sl_frac,
-					'queue_depth'      => $queue_depth,
-					'is_stable'        => $is_stable,
-					'timestamp'        => time(),
+					'channel'        => $channel,
+					'arrival_rate'   => $arrival_rate,
+					'current_agents' => $current_agents,
+					'min_agents'     => $min_agents,
+					'agent_deficit'  => $agent_deficit,
+					'svc_level'      => $svc_level,
+					'target_sl'      => $target_sl_frac,
+					'queue_depth'    => $queue_depth,
+					'is_stable'      => $is_stable,
+					'timestamp'      => time(),
 				),
 				$target_sl_frac,
 				$context
@@ -245,20 +252,20 @@ class WP_MCP_AI_Tool_Erlang_C_Queue_Health implements WP_MCP_AI_Tool_Interface, 
 
 		// Build snapshot.
 		$snapshot = array(
-			'timestamp'          => time(),
-			'channel'            => $channel,
-			'arrival_rate'       => round( $arrival_rate, 2 ),
-			'avg_handle_time'    => $aht,
-			'current_agents'     => $current_agents,
-			'queue_depth'        => $queue_depth,
-			'traffic_intensity'  => round( $traffic, 4 ),
-			'min_agents_needed'  => $min_agents,
-			'probability_wait'   => round( $prob_wait, 4 ),
-			'avg_wait_sec'       => $is_stable ? round( $avg_wait, 2 ) : null,
-			'service_level_pct'  => round( $svc_level * 100, 2 ),
-			'utilisation_pct'    => round( $util * 100, 2 ),
-			'sla_at_risk'        => $sla_at_risk,
-			'is_stable'          => $is_stable,
+			'timestamp'         => time(),
+			'channel'           => $channel,
+			'arrival_rate'      => round( $arrival_rate, 2 ),
+			'avg_handle_time'   => $aht,
+			'current_agents'    => $current_agents,
+			'queue_depth'       => $queue_depth,
+			'traffic_intensity' => round( $traffic, 4 ),
+			'min_agents_needed' => $min_agents,
+			'probability_wait'  => round( $prob_wait, 4 ),
+			'avg_wait_sec'      => $is_stable ? round( $avg_wait, 2 ) : null,
+			'service_level_pct' => round( $svc_level * 100, 2 ),
+			'utilisation_pct'   => round( $util * 100, 2 ),
+			'sla_at_risk'       => $sla_at_risk,
+			'is_stable'         => $is_stable,
 		);
 
 		if ( $store_snapshot ) {

@@ -404,105 +404,111 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		<?php
 	}
 
-	/**
-	 * Render the JavaScript for the MCP Apps metabox.
-	 *
-	 * @since 1.8.0
-	 * @return void
-	 */
+		/**
+		 * Render the JavaScript for the MCP Apps metabox.
+		 *
+		 * @since 1.8.0
+		 * @return void
+		 */
 	protected function render_script() {
+		$app_index          = (int) count( $this->get_current_apps_count() );
+		$max_apps_message   = esc_js( __( 'Maximum number of MCP Apps reached.', 'mcp-ai-wpoos' ) );
+		$confirm_message    = esc_js( __( 'Remove this MCP App connection?', 'mcp-ai-wpoos' ) );
+		$mcp_app_label      = esc_js( __( 'MCP App', 'mcp-ai-wpoos' ) );
+
+		ob_start();
 		?>
-		<script type="text/javascript">
-		( function() {
-			var appIndex = <?php echo (int) count( $this->get_current_apps_count() ); ?>;
-			var maxApps = 10;
+			( function() {
+				var appIndex = <?php echo (int) $app_index; ?>;
+				var maxApps = 10;
 
-			document.addEventListener( 'DOMContentLoaded', function() {
-				var addBtn = document.getElementById( 'wp-mcp-ai-add-mcp-app' );
-				var listEl = document.getElementById( 'wp-mcp-ai-mcp-apps-list' );
-				var emptyEl = document.getElementById( 'wp-mcp-ai-mcp-apps-empty' );
+				document.addEventListener( 'DOMContentLoaded', function() {
+					var addBtn = document.getElementById( 'wp-mcp-ai-add-mcp-app' );
+					var listEl = document.getElementById( 'wp-mcp-ai-mcp-apps-list' );
+					var emptyEl = document.getElementById( 'wp-mcp-ai-mcp-apps-empty' );
 
-				if ( ! addBtn || ! listEl ) {
-					return;
-				}
-
-				addBtn.addEventListener( 'click', function() {
-					var rows = listEl.querySelectorAll( '.wp-mcp-ai-mcp-app-row' );
-					if ( rows.length >= maxApps ) {
-						window.alert( '<?php echo esc_js( __( 'Maximum number of MCP Apps reached.', 'mcp-ai-wpoos' ) ); ?>' );
+					if ( ! addBtn || ! listEl ) {
 						return;
 					}
 
-					var tmpl = document.getElementById( 'tmpl-wp-mcp-ai-mcp-app-row' );
-					if ( ! tmpl ) {
-						return;
-					}
+					addBtn.addEventListener( 'click', function() {
+						var rows = listEl.querySelectorAll( '.wp-mcp-ai-mcp-app-row' );
+						if ( rows.length >= maxApps ) {
+							window.alert( <?php echo wp_json_encode( $max_apps_message ); ?> );
+							return;
+						}
 
-					var html = tmpl.innerHTML.replace( /\{\{data\.index\}\}/g, appIndex );
-					appIndex++;
+						var tmpl = document.getElementById( 'tmpl-wp-mcp-ai-mcp-app-row' );
+						if ( ! tmpl ) {
+							return;
+						}
 
-					if ( emptyEl ) {
-						emptyEl.style.display = 'none';
-					}
+						var html = tmpl.innerHTML.replace( /\{\{data\.index\}\}/g, appIndex );
+						appIndex++;
 
-					var wrapper = document.createElement( 'div' );
-					wrapper.innerHTML = html;
-					listEl.appendChild( wrapper.firstElementChild );
-				} );
+						if ( emptyEl ) {
+							emptyEl.style.display = 'none';
+						}
 
-				listEl.addEventListener( 'click', function( event ) {
-					if ( event.target.classList.contains( 'wp-mcp-ai-remove-mcp-app' ) ) {
-						if ( window.confirm( '<?php echo esc_js( __( 'Remove this MCP App connection?', 'mcp-ai-wpoos' ) ); ?>' ) ) {
+						var wrapper = document.createElement( 'div' );
+						wrapper.innerHTML = html;
+						listEl.appendChild( wrapper.firstElementChild );
+					} );
+
+					listEl.addEventListener( 'click', function( event ) {
+						if ( event.target.classList.contains( 'wp-mcp-ai-remove-mcp-app' ) ) {
+							if ( window.confirm( <?php echo wp_json_encode( $confirm_message ); ?> ) ) {
+								var row = event.target.closest( '.wp-mcp-ai-mcp-app-row' );
+								if ( row ) {
+									row.remove();
+								}
+
+								var remaining = listEl.querySelectorAll( '.wp-mcp-ai-mcp-app-row' );
+								if ( remaining.length === 0 && emptyEl ) {
+									emptyEl.style.display = '';
+								}
+							}
+						}
+					} );
+
+					listEl.addEventListener( 'change', function( event ) {
+						if ( event.target.classList.contains( 'wp-mcp-ai-mcp-app-auth-type' ) ) {
 							var row = event.target.closest( '.wp-mcp-ai-mcp-app-row' );
-							if ( row ) {
-								row.remove();
+							if ( ! row ) {
+								return;
 							}
 
-							var remaining = listEl.querySelectorAll( '.wp-mcp-ai-mcp-app-row' );
-							if ( remaining.length === 0 && emptyEl ) {
-								emptyEl.style.display = '';
+							var tokenRow = row.querySelector( '.wp-mcp-ai-mcp-app-token-row' );
+							var headerRow = row.querySelector( '.wp-mcp-ai-mcp-app-header-row' );
+							var value = event.target.value;
+
+							if ( tokenRow ) {
+								tokenRow.style.display = ( value === 'none' ) ? 'none' : '';
+							}
+							if ( headerRow ) {
+								headerRow.style.display = ( value === 'header' ) ? '' : 'none';
 							}
 						}
-					}
-				} );
+					} );
 
-				listEl.addEventListener( 'change', function( event ) {
-					if ( event.target.classList.contains( 'wp-mcp-ai-mcp-app-auth-type' ) ) {
-						var row = event.target.closest( '.wp-mcp-ai-mcp-app-row' );
-						if ( ! row ) {
-							return;
-						}
+					listEl.addEventListener( 'input', function( event ) {
+						if ( event.target.classList.contains( 'wp-mcp-ai-mcp-app-label' ) ) {
+							var row = event.target.closest( '.wp-mcp-ai-mcp-app-row' );
+							if ( ! row ) {
+								return;
+							}
 
-						var tokenRow = row.querySelector( '.wp-mcp-ai-mcp-app-token-row' );
-						var headerRow = row.querySelector( '.wp-mcp-ai-mcp-app-header-row' );
-						var value = event.target.value;
-
-						if ( tokenRow ) {
-							tokenRow.style.display = ( value === 'none' ) ? 'none' : '';
+							var titleEl = row.querySelector( '.wp-mcp-ai-mcp-app-title' );
+							if ( titleEl ) {
+								titleEl.textContent = event.target.value || <?php echo wp_json_encode( $mcp_app_label ); ?>;
+							}
 						}
-						if ( headerRow ) {
-							headerRow.style.display = ( value === 'header' ) ? '' : 'none';
-						}
-					}
-				} );
-
-				listEl.addEventListener( 'input', function( event ) {
-					if ( event.target.classList.contains( 'wp-mcp-ai-mcp-app-label' ) ) {
-						var row = event.target.closest( '.wp-mcp-ai-mcp-app-row' );
-						if ( ! row ) {
-							return;
-						}
-
-						var titleEl = row.querySelector( '.wp-mcp-ai-mcp-app-title' );
-						if ( titleEl ) {
-							titleEl.textContent = event.target.value || '<?php echo esc_js( __( 'MCP App', 'mcp-ai-wpoos' ) ); ?>';
-						}
-					}
-				} );
+					} );
 			} );
 		} )();
-		</script>
 		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
 	}
 
 	/**

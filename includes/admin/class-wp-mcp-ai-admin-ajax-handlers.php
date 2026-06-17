@@ -57,12 +57,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_fetch_ollama_models'    => 'handle_fetch_ollama_models',
 				'wp_ajax_wp_mcp_ai_test_lm_studio_connection' => 'handle_test_lm_studio_connection',
 				'wp_ajax_wp_mcp_ai_fetch_lm_studio_models' => 'handle_fetch_lm_studio_models',
-				'wp_ajax_wp_mcp_ai_fetch_cloudways_data'   => 'handle_fetch_cloudways_data',
-				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection',
+				'wp_ajax_wp_mcp_ai_fetch_cloudways_data'   => 'handle_fetch_cloudways_data_v2',
+				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection_v2',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
 				'wp_ajax_wp_mcp_ai_test_tavily_connection' => 'handle_test_tavily_connection',
 				'wp_ajax_wp_mcp_ai_test_anthropic_connection' => 'handle_test_anthropic_connection',
+				'wp_ajax_wp_mcp_ai_test_kimi_connection'   => 'handle_test_kimi_connection',
+				'wp_ajax_wp_mcp_ai_fetch_kimi_models'      => 'handle_fetch_kimi_models',
 				'wp_ajax_wp_mcp_ai_test_exa_connection'    => 'handle_test_exa_connection',
 				'wp_ajax_wp_mcp_ai_test_perplexity_connection' => 'handle_test_perplexity_connection',
 				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
@@ -99,8 +101,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
 				'wp_ajax_wp_mcp_ai_delete_old_playbooks'   => 'handle_delete_old_playbooks',
 				'wp_ajax_wp_mcp_ai_get_models_for_provider' => 'handle_get_models_for_provider',
-				'wp_ajax_wp_mcp_ai_clear_test_files'        => 'handle_clear_test_files',
-				'wp_ajax_wp_mcp_ai_clear_dev_files'         => 'handle_clear_dev_files',
+				'wp_ajax_wp_mcp_ai_clear_test_files'       => 'handle_clear_test_files',
+				'wp_ajax_wp_mcp_ai_clear_dev_files'        => 'handle_clear_dev_files',
 			);
 
 			$action          = current_action();
@@ -370,9 +372,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		}
 
 		/**
-		 * Handle AJAX request to fetch Cloudways data.
+		 * Handle AJAX request to fetch Cloudways data (API v2).
+		 *
+		 * @since 1.0.0
+		 * @updated 1.1.15 — Migrated to Cloudways API v2.
 		 */
-		public function handle_fetch_cloudways_data() {
+		public function handle_fetch_cloudways_data_v2() {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
@@ -388,25 +393,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Get timeout from settings.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 			$timeout      = max( 5, $timeout );
 
-			// Step 1: Get OAuth token.
-			$oauth_url      = 'https://api.cloudways.com/api/v1/oauth/access_token';
+			// Step 1: Get OAuth token via API v2.
+			$oauth_url      = 'https://api.cloudways.com/api/v2/oauth/access_token';
 			$oauth_response = wp_remote_post(
 				$oauth_url,
 				array(
-					'body'    => wp_json_encode(
-						array(
-							'email'   => $email,
-							'api_key' => $api_key,
-						)
-					),
-					'headers' => array(
-						'Content-Type' => 'application/json',
+					'body'    => array(
+						'email'   => $email,
+						'api_key' => $api_key,
 					),
 					'timeout' => $timeout,
 				)
@@ -428,8 +427,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			$access_token = $oauth_data['access_token'];
 
-			// Step 2: Fetch servers.
-			$servers_url      = 'https://api.cloudways.com/api/v1/server';
+			// Step 2: Fetch servers via API v2.
+			$servers_url      = 'https://api.cloudways.com/api/v2/server';
 			$servers_response = wp_remote_get(
 				$servers_url,
 				array(
@@ -456,7 +455,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			$servers = array();
 			foreach ( $servers_data['servers'] as $server ) {
-				// Validate that expected fields exist.
 				if ( ! isset( $server['id'] ) || ! isset( $server['label'] ) ) {
 					continue;
 				}
@@ -468,11 +466,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				);
 			}
 
-			// Step 3: Fetch applications from the first server.
+			// Step 3: Fetch applications from the first server via API v2.
 			$apps = array();
 			if ( ! empty( $servers ) ) {
 				$first_server_id = $servers[0]['id'];
-				$apps_url        = add_query_arg( 'server_id', $first_server_id, 'https://api.cloudways.com/api/v1/apps' );
+				$apps_url        = add_query_arg( 'server_id', $first_server_id, 'https://api.cloudways.com/api/v2/app' );
 				$apps_response   = wp_remote_get(
 					$apps_url,
 					array(
@@ -490,7 +488,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 					if ( 200 === $apps_code && ! empty( $apps_data['apps'] ) ) {
 						foreach ( $apps_data['apps'] as $app ) {
-							// Validate that expected fields exist.
 							if ( ! isset( $app['id'] ) || ! isset( $app['label'] ) ) {
 								continue;
 							}
@@ -607,9 +604,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		}
 
 		/**
-		 * Handle AJAX request to test Cloudways connection.
+		 * Handle AJAX request to test Cloudways connection (API v2).
+		 *
+		 * @since 1.0.0
+		 * @updated 1.1.15 — Migrated to Cloudways API v2.
 		 */
-		public function handle_test_cloudways_connection() {
+		public function handle_test_cloudways_connection_v2() {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
@@ -625,25 +625,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Get timeout from settings.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 			$timeout      = max( 5, $timeout );
 
-			// Step 1: Exchange email + API key for OAuth access token.
-			$oauth_url      = 'https://api.cloudways.com/api/v1/oauth/access_token';
+			// Step 1: Exchange email + API key for OAuth access token via API v2.
+			$oauth_url      = 'https://api.cloudways.com/api/v2/oauth/access_token';
 			$oauth_response = wp_remote_post(
 				$oauth_url,
 				array(
-					'body'    => wp_json_encode(
-						array(
-							'email'   => $email,
-							'api_key' => $api_key,
-						)
-					),
-					'headers' => array(
-						'Content-Type' => 'application/json',
+					'body'    => array(
+						'email'   => $email,
+						'api_key' => $api_key,
 					),
 					'timeout' => $timeout,
 				)
@@ -682,8 +676,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			$access_token = $oauth_data['access_token'];
 
-			// Step 2: Verify the token by fetching account servers.
-			$servers_url      = 'https://api.cloudways.com/api/v1/server';
+			// Step 2: Verify the token by fetching account servers via API v2.
+			$servers_url      = 'https://api.cloudways.com/api/v2/server';
 			$servers_response = wp_remote_get(
 				$servers_url,
 				array(
@@ -717,7 +711,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Prepare account information.
 			$server_count = 0;
 			if ( ! empty( $servers_data['servers'] ) && is_array( $servers_data['servers'] ) ) {
 				$server_count = count( $servers_data['servers'] );
@@ -1010,6 +1003,109 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			wp_send_json_success( array( 'message' => __( 'Successfully connected to Anthropic API!', 'mcp-ai-wpoos' ) ) );
+		}
+
+		/**
+		 * Handle AJAX request to test Kimi API connection.
+		 */
+		public function handle_test_kimi_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+			if ( empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide a Kimi API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Pass the API key directly to the client instead of temporarily
+			// writing it to wp_options, which creates a TOCTOU race condition
+			// where concurrent requests or a crash could permanently leak the
+			// key into the database and any persistent object cache.
+			$client = new WP_MCP_AI_Kimi_Client();
+			$client->set_api_key( $api_key );
+			$result = $client->test_connection();
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$result->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message'     => $result['message'],
+					'model_count' => $result['model_count'],
+					'models'      => $result['models'],
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to fetch Kimi models.
+		 */
+		public function handle_fetch_kimi_models() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+			if ( empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide a Kimi API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Pass the API key directly to the client instead of temporarily
+			// writing it to wp_options, which creates a TOCTOU race condition.
+			$client = new WP_MCP_AI_Kimi_Client();
+			$client->set_api_key( $api_key );
+			$models = $client->list_models();
+
+			if ( is_wp_error( $models ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Failed to fetch models: %s', 'mcp-ai-wpoos' ),
+							$models->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			// Format models for dropdown.
+			$formatted_models = array();
+			foreach ( $models as $model ) {
+				$model_id   = isset( $model['id'] ) ? $model['id'] : '';
+				$model_name = isset( $model['name'] ) ? $model['name'] : $model_id;
+
+				if ( ! empty( $model_id ) ) {
+					$formatted_models[ $model_id ] = $model_name;
+				}
+			}
+
+			wp_send_json_success(
+				array(
+					'models' => $formatted_models,
+				)
+			);
 		}
 
 		/**
@@ -3056,7 +3152,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Load the seed tool.
 			if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Seed_Template_Library' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php';
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php';
 			}
 
 			// Execute the seeding tool.
@@ -3483,6 +3579,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 * Handle delete old playbooks AJAX request.
 		 *
 		 * Permanently deletes orphaned playbook attachments from the media library.
+		 * Uses the safe delete_orphaned_system_playbooks() method which verifies:
+		 * - Attachment has _wp_mcp_ai_playbook_hash meta (system-created marker)
+		 * - Attachment lacks _wp_mcp_ai_playbook_profession_id meta (orphaned)
+		 * - File is in the wp-mcp-ai/profession-playbooks directory
+		 *
+		 * Processes in batches of 200 (max 1,000 per request) to avoid timeouts.
 		 *
 		 * @since 1.7.0
 		 */
@@ -3498,25 +3600,76 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			global $wpdb;
+			// Load playbook seeder.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+			}
 
-			// Find all playbook attachments that are NOT associated with any profession.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
-			$orphaned_attachments = $wpdb->get_col(
-				"SELECT p.ID
-				FROM {$wpdb->posts} p
-				WHERE p.post_type = 'attachment'
-				AND p.post_mime_type = 'text/plain'
-				AND p.post_title LIKE '%playbook%'
-				AND NOT EXISTS (
-					SELECT 1
-					FROM {$wpdb->postmeta} pm
-					WHERE pm.post_id = p.ID
-					AND pm.meta_key = '_wp_mcp_ai_playbook_profession_id'
-				)"
-			);
+			// ---------- Primary path: safe deletion via seeder (hash-marker + file-path checks) ----------
+			$batch_limit       = 200;
+			$max_batches       = 5; // Safety valve: 5 × 200 = 1,000 max per request.
+			$total_deleted     = 0;
+			$batches_processed = 0;
 
-			if ( empty( $orphaned_attachments ) ) {
+			do {
+				$result = WP_MCP_AI_Profession_Playbook_Seeder::delete_orphaned_system_playbooks( $batch_limit );
+
+				$total_deleted     += $result['deleted_count'];
+				++$batches_processed;
+
+				if ( $result['deleted_count'] < $batch_limit ) {
+					break;
+				}
+			} while ( $batches_processed < $max_batches );
+
+			// ---------- Fallback: legacy attachments lacking the hash meta marker ----------
+			// Older plugin versions may have created playbook attachments without
+			// _wp_mcp_ai_playbook_hash.  If the primary path found nothing, try a
+			// broader (but still guarded) sweep limited to a reasonable batch.
+			if ( $total_deleted === 0 ) {
+				global $wpdb;
+
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
+				$legacy_ids = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT p.ID
+						FROM {$wpdb->posts} p
+						WHERE p.post_type = 'attachment'
+						AND p.post_mime_type = 'text/plain'
+						AND p.post_title LIKE %s
+						AND p.post_status = 'inherit'
+						AND NOT EXISTS (
+							SELECT 1 FROM {$wpdb->postmeta} pm
+							WHERE pm.post_id = p.ID
+							AND pm.meta_key = '_wp_mcp_ai_playbook_profession_id'
+						)
+						AND NOT EXISTS (
+							SELECT 1 FROM {$wpdb->postmeta} pm2
+							WHERE pm2.post_id = p.ID
+							AND pm2.meta_key = '_wp_mcp_ai_playbook_hash'
+						)
+						LIMIT %d",
+						'%' . $wpdb->esc_like( 'playbook' ) . '%',
+						$batch_limit
+					)
+				);
+
+				if ( ! empty( $legacy_ids ) ) {
+					foreach ( $legacy_ids as $legacy_id ) {
+						$legacy_id  = absint( $legacy_id );
+						$file_path  = get_attached_file( $legacy_id );
+
+						// Guard: only delete if the physical file lives in our directory.
+						if ( $file_path && false !== strpos( $file_path, 'wp-mcp-ai/profession-playbooks' ) ) {
+							if ( wp_delete_attachment( $legacy_id, true ) ) {
+								++$total_deleted;
+							}
+						}
+					}
+				}
+			}
+
+			if ( $total_deleted === 0 ) {
 				wp_send_json_success(
 					array(
 						'message' => __( 'No orphaned playbook attachments found to delete.', 'mcp-ai-wpoos' ),
@@ -3525,26 +3678,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			$deleted_count = 0;
-
-			// Delete each orphaned attachment permanently.
-			foreach ( $orphaned_attachments as $attachment_id ) {
-				// Use wp_delete_attachment with force_delete = true to permanently delete.
-				if ( wp_delete_attachment( $attachment_id, true ) ) {
-					++$deleted_count;
-				}
-			}
-
 			$message = sprintf(
 				/* translators: %d: number of deleted playbook attachments */
 				_n(
 					'Successfully deleted %d orphaned playbook attachment from media library.',
 					'Successfully deleted %d orphaned playbook attachments from media library.',
-					$deleted_count,
+					$total_deleted,
 					'mcp-ai-wpoos'
 				),
-				$deleted_count
+				$total_deleted
 			);
+
+			// If the safety valve stopped us, suggest another run.
+			if ( $batches_processed >= $max_batches ) {
+				$message .= ' ' . __( 'More may remain — click Delete again to continue cleanup.', 'mcp-ai-wpoos' );
+			}
 
 			wp_send_json_success(
 				array(
@@ -3807,7 +3955,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Validate provider.
-			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'nvidia', 'embedded' ) );
+			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ) );
 			if ( ! in_array( $provider, $allowed_providers, true ) ) {
 				wp_send_json_error(
 					array(
@@ -3903,8 +4051,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'message' => sprintf(
 						/* translators: %d: number of paths removed */
 						_n(
-							'Successfully removed %d test path: %s',
-							'Successfully removed %d test paths: %s',
+							'Successfully removed %1$d test path: %2$s',
+							'Successfully removed %1$d test paths: %2$s',
 							count( $removed ),
 							'mcp-ai-wpoos'
 						),
@@ -4022,8 +4170,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'message' => sprintf(
 						/* translators: %d: number of paths removed */
 						_n(
-							'Successfully removed %d dev/build path: %s',
-							'Successfully removed %d dev/build paths: %s',
+							'Successfully removed %1$d dev/build path: %2$s',
+							'Successfully removed %1$d dev/build paths: %2$s',
 							count( $removed ),
 							'mcp-ai-wpoos'
 						),

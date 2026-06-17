@@ -600,8 +600,8 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	protected function get_workflow_templates() {
 		// Cache the templates class instance to avoid repeated instantiation.
 		// Check for both the class and the constants it depends on.
-		if ( null === $this->templates_instance && 
-			class_exists( 'WP_MCP_AI_Pattern_Workflow_Templates' ) && 
+		if ( null === $this->templates_instance &&
+			class_exists( 'WP_MCP_AI_Pattern_Workflow_Templates' ) &&
 			class_exists( 'WP_MCP_AI_Pattern_Constants' ) ) {
 			try {
 				$this->templates_instance = new WP_MCP_AI_Pattern_Workflow_Templates();
@@ -644,13 +644,13 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		$workflow_json = isset( $_POST['workflow'] ) ? wp_unslash( $_POST['workflow'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload decoded with json_decode() and validated downstream.
-		
+
 		if ( empty( $workflow_json ) ) {
 			wp_send_json_error( array( 'message' => __( 'Workflow data required.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		$workflow = json_decode( $workflow_json, true );
-		
+
 		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid workflow data.', 'mcp-ai-wpoos' ) ) );
 		}
@@ -663,7 +663,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		// Sanitize workflow data.
 		$workflow['name']        = sanitize_text_field( $workflow['name'] );
 		$workflow['description'] = isset( $workflow['description'] ) ? sanitize_textarea_field( $workflow['description'] ) : '';
-		
+
 		// Generate workflow ID from name.
 		$workflow_id = sanitize_key( $workflow['name'] );
 
@@ -685,10 +685,12 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows );
 
 		if ( $result ) {
-			wp_send_json_success( array(
-				'message'  => __( 'Workflow saved successfully.', 'mcp-ai-wpoos' ),
-				'workflow' => $workflows[ $workflow_id ],
-			) );
+			wp_send_json_success(
+				array(
+					'message'  => __( 'Workflow saved successfully.', 'mcp-ai-wpoos' ),
+					'workflow' => $workflows[ $workflow_id ],
+				)
+			);
 		} else {
 			wp_send_json_error( array( 'message' => __( 'Failed to save workflow.', 'mcp-ai-wpoos' ) ) );
 		}
@@ -718,9 +720,11 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			wp_send_json_error( array( 'message' => __( 'Workflow not found.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		wp_send_json_success( array(
-			'workflow' => $workflows[ $workflow_id ],
-		) );
+		wp_send_json_success(
+			array(
+				'workflow' => $workflows[ $workflow_id ],
+			)
+		);
 	}
 
 	/**
@@ -772,9 +776,11 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 		$templates = $this->get_workflow_templates();
 
-		wp_send_json_success( array(
-			'templates' => $templates,
-		) );
+		wp_send_json_success(
+			array(
+				'templates' => $templates,
+			)
+		);
 	}
 
 	/**
@@ -791,9 +797,11 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 		$workflows = $this->get_all_workflows();
 
-		wp_send_json_success( array(
-			'workflows' => array_values( $workflows ),
-		) );
+		wp_send_json_success(
+			array(
+				'workflows' => array_values( $workflows ),
+			)
+		);
 	}
 
 	/**
@@ -820,9 +828,11 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			wp_send_json_error( array( 'message' => __( 'Workflow not found.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		wp_send_json_success( array(
-			'workflow' => $workflows[ $workflow_id ],
-		) );
+		wp_send_json_success(
+			array(
+				'workflow' => $workflows[ $workflow_id ],
+			)
+		);
 	}
 
 	/**
@@ -878,10 +888,12 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		// update_option returns false both on failure and when the value is unchanged.
 		// Since we always add a new key, verify success by checking the stored data.
 		if ( $result || isset( get_option( 'wp_mcp_ai_pro_workflows', array() )[ $copy_id ] ) ) {
-			wp_send_json_success( array(
-				'message'  => __( 'Workflow duplicated successfully.', 'mcp-ai-wpoos' ),
-				'workflow' => $workflows[ $copy_id ],
-			) );
+			wp_send_json_success(
+				array(
+					'message'  => __( 'Workflow duplicated successfully.', 'mcp-ai-wpoos' ),
+					'workflow' => $workflows[ $copy_id ],
+				)
+			);
 		} else {
 			wp_send_json_error( array( 'message' => __( 'Failed to duplicate workflow.', 'mcp-ai-wpoos' ) ) );
 		}
@@ -938,10 +950,12 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		// update_option returns false both on failure and when the value is unchanged.
 		// Verify success by checking the stored data contains the new key.
 		if ( $result || isset( get_option( 'wp_mcp_ai_pro_workflows', array() )[ $new_id ] ) ) {
-			wp_send_json_success( array(
-				'message'  => __( 'Workflow renamed successfully.', 'mcp-ai-wpoos' ),
-				'workflow' => $workflows[ $new_id ],
-			) );
+			wp_send_json_success(
+				array(
+					'message'  => __( 'Workflow renamed successfully.', 'mcp-ai-wpoos' ),
+					'workflow' => $workflows[ $new_id ],
+				)
+			);
 		} else {
 			wp_send_json_error( array( 'message' => __( 'Failed to rename workflow.', 'mcp-ai-wpoos' ) ) );
 		}
@@ -992,6 +1006,27 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 				return;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above via check_ajax_referer().
+		$workflow_id = isset( $_POST['workflow_id'] ) ? sanitize_key( wp_unslash( $_POST['workflow_id'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above via check_ajax_referer().
+		$node_id = isset( $_POST['node_id'] ) ? sanitize_text_field( wp_unslash( $_POST['node_id'] ) ) : '';
+
+		/**
+		 * Fires after a Pro workflow node has been executed.
+		 *
+		 * Listeners (e.g. WP_MCP_AI_Pro_Workflow_Bridge) use this to mirror
+		 * Pro execution into the base Workflow Run CPT for observability.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @param string         $node_type   Node type: action|tool|agent.
+		 * @param string         $node_id     Workflow-scoped node identifier.
+		 * @param string         $workflow_id Pro workflow ID (sanitize_key form).
+		 * @param array|WP_Error $result      Execution result or error.
+		 * @param array          $context     Execution context from previous nodes.
+		 */
+		do_action( 'wp_mcp_ai_pro_workflow_node_executed', $node_type, $node_id, $workflow_id, $result, $context );
+
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		} else {
@@ -1011,7 +1046,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
 		$command = isset( $_POST['command'] ) ? sanitize_text_field( wp_unslash( $_POST['command'] ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in caller; JSON payload decoded with json_decode().
-		$params  = isset( $_POST['params'] ) ? wp_unslash( $_POST['params'] ) : '{}';
+		$params = isset( $_POST['params'] ) ? wp_unslash( $_POST['params'] ) : '{}';
 
 		if ( empty( $command ) ) {
 			return new WP_Error( 'missing_command', __( 'Action node missing command.', 'mcp-ai-wpoos' ) );
@@ -1076,6 +1111,27 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		// Apply context variable substitution.
 		$arguments = $this->apply_context_to_params( $arguments, $context );
 
+		/**
+		 * Pre-execute filter to allow short-circuiting tool execution.
+		 *
+		 * Used by the Pro Workflow Bridge to enforce HITL approvals and the
+		 * prompt-injection guardrail before the tool registry is invoked.
+		 * Returning a non-null value (array or WP_Error) skips registry
+		 * execution entirely.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @param array|WP_Error|null $short_circuit Pre-execute result, or null to proceed normally.
+		 * @param string              $tool_name     Tool name.
+		 * @param array               $arguments     Tool arguments after context substitution.
+		 * @param array               $context       Execution context.
+		 */
+		$short_circuit = apply_filters( 'wp_mcp_ai_pro_workflow_pre_execute_tool', null, $tool_name, $arguments, $context );
+
+		if ( null !== $short_circuit ) {
+			return $short_circuit;
+		}
+
 		// Try to execute via the tool registry.
 		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$registry = WP_MCP_AI_Tool_Registry::get_instance();
@@ -1128,7 +1184,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
 		$agent_id = isset( $_POST['agent_id'] ) ? sanitize_text_field( wp_unslash( $_POST['agent_id'] ) ) : 'default';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
-		$prompt   = isset( $_POST['prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['prompt'] ) ) : '';
+		$prompt = isset( $_POST['prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['prompt'] ) ) : '';
 
 		if ( empty( $prompt ) ) {
 			return new WP_Error( 'missing_prompt', __( 'Agent node missing prompt.', 'mcp-ai-wpoos' ) );
@@ -1178,11 +1234,14 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			return $params;
 		}
 
-		array_walk_recursive( $params, function( &$value ) use ( $context ) {
-			if ( is_string( $value ) ) {
-				$value = $this->apply_context_to_string( $value, $context );
+		array_walk_recursive(
+			$params,
+			function ( &$value ) use ( $context ) {
+				if ( is_string( $value ) ) {
+					$value = $this->apply_context_to_string( $value, $context );
+				}
 			}
-		} );
+		);
 
 		return $params;
 	}
@@ -1204,7 +1263,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		// Replace {{nodeId.field}} and {{key}} patterns.
 		$text = preg_replace_callback(
 			'/\{\{([^}]+)\}\}/',
-			function( $matches ) use ( $context ) {
+			function ( $matches ) use ( $context ) {
 				$path  = explode( '.', trim( $matches[1] ) );
 				$value = $context;
 				foreach ( $path as $key ) {
@@ -1248,14 +1307,14 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 		// Sanitize execution record fields.
 		$sanitized = array(
-			'id'             => sanitize_text_field( $execution['id'] ?? '' ),
-			'workflow_id'    => sanitize_key( $execution['workflowId'] ?? '' ),
-			'timestamp'      => absint( $execution['timestamp'] ?? time() ),
-			'duration'       => absint( $execution['duration'] ?? 0 ),
-			'status'         => sanitize_text_field( $execution['status'] ?? 'unknown' ),
-			'node_count'     => absint( $execution['nodeCount'] ?? 0 ),
+			'id'              => sanitize_text_field( $execution['id'] ?? '' ),
+			'workflow_id'     => sanitize_key( $execution['workflowId'] ?? '' ),
+			'timestamp'       => absint( $execution['timestamp'] ?? time() ),
+			'duration'        => absint( $execution['duration'] ?? 0 ),
+			'status'          => sanitize_text_field( $execution['status'] ?? 'unknown' ),
+			'node_count'      => absint( $execution['nodeCount'] ?? 0 ),
 			'completed_nodes' => absint( $execution['completedNodes'] ?? 0 ),
-			'failed_nodes'   => absint( $execution['failedNodes'] ?? 0 ),
+			'failed_nodes'    => absint( $execution['failedNodes'] ?? 0 ),
 		);
 
 		if ( empty( $sanitized['workflow_id'] ) ) {
@@ -1263,8 +1322,8 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		// Load existing execution logs.
-		$log_key  = 'wp_mcp_ai_workflow_executions_' . $sanitized['workflow_id'];
-		$log      = get_option( $log_key, array() );
+		$log_key = 'wp_mcp_ai_workflow_executions_' . $sanitized['workflow_id'];
+		$log     = get_option( $log_key, array() );
 
 		if ( ! is_array( $log ) ) {
 			$log = array();
@@ -1279,6 +1338,19 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		update_option( $log_key, $log );
+
+		/**
+		 * Fires after a Pro workflow execution record has been persisted.
+		 *
+		 * Listeners (e.g. WP_MCP_AI_Pro_Workflow_Bridge) use this to finalize
+		 * the corresponding base Workflow Run CPT record (set status,
+		 * record terminal cost/token totals).
+		 *
+		 * @since 1.6.0
+		 *
+		 * @param array $sanitized Sanitized execution record (id, workflow_id, status, etc.).
+		 */
+		do_action( 'wp_mcp_ai_pro_workflow_execution_saved', $sanitized );
 
 		wp_send_json_success( array( 'message' => __( 'Execution saved.', 'mcp-ai-wpoos' ) ) );
 	}

@@ -67,7 +67,7 @@ class WP_MCP_AI_Company_CPT {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type        = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type       = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_company_page = ( self::POST_TYPE === $post_type );
 		if ( ! $is_company_page ) {
 			return;
@@ -222,7 +222,7 @@ class WP_MCP_AI_Company_CPT {
 				'capability_type'    => 'post',
 				'has_archive'        => false,
 				'hierarchical'       => false,
-				'menu_position'      => 56,
+				'menu_position'      => 54,
 				'supports'           => array( 'title', 'editor', 'author', 'thumbnail' ),
 				'show_in_rest'       => true,
 			)
@@ -244,11 +244,11 @@ class WP_MCP_AI_Company_CPT {
 
 		// Add custom columns.
 		$new_columns = array(
-			'industry'       => __( 'Industry', 'mcp-ai-wpoos-pro' ),
-			'company_size'   => __( 'Size', 'mcp-ai-wpoos-pro' ),
-			'location'       => __( 'Location', 'mcp-ai-wpoos-pro' ),
-			'target_status'  => __( 'Target Status', 'mcp-ai-wpoos-pro' ),
-			'contact_count'  => __( 'Contacts', 'mcp-ai-wpoos-pro' ),
+			'industry'      => __( 'Industry', 'mcp-ai-wpoos-pro' ),
+			'company_size'  => __( 'Size', 'mcp-ai-wpoos-pro' ),
+			'location'      => __( 'Location', 'mcp-ai-wpoos-pro' ),
+			'target_status' => __( 'Target Status', 'mcp-ai-wpoos-pro' ),
+			'contact_count' => __( 'Contacts', 'mcp-ai-wpoos-pro' ),
 		);
 
 		// Insert after title.
@@ -313,13 +313,13 @@ class WP_MCP_AI_Company_CPT {
 				$status = get_post_meta( $post_id, '_company_target_status', true );
 				if ( $status ) {
 					$status_labels = array(
-						'prospect'      => __( 'Prospect', 'mcp-ai-wpoos-pro' ),
-						'target'        => __( 'Target', 'mcp-ai-wpoos-pro' ),
-						'in_discussion' => __( 'In Discussion', 'mcp-ai-wpoos-pro' ),
-						'client'        => __( 'Client', 'mcp-ai-wpoos-pro' ),
+						'prospect'       => __( 'Prospect', 'mcp-ai-wpoos-pro' ),
+						'target'         => __( 'Target', 'mcp-ai-wpoos-pro' ),
+						'in_discussion'  => __( 'In Discussion', 'mcp-ai-wpoos-pro' ),
+						'client'         => __( 'Client', 'mcp-ai-wpoos-pro' ),
 						'not_interested' => __( 'Not Interested', 'mcp-ai-wpoos-pro' ),
 					);
-					$label = isset( $status_labels[ $status ] ) ? $status_labels[ $status ] : $status;
+					$label         = isset( $status_labels[ $status ] ) ? $status_labels[ $status ] : $status;
 
 					// Add status indicator styling.
 					$status_colors = array(
@@ -329,7 +329,7 @@ class WP_MCP_AI_Company_CPT {
 						'client'         => '#00a32a',
 						'not_interested' => '#d63638',
 					);
-					$color = isset( $status_colors[ $status ] ) ? $status_colors[ $status ] : '#999';
+					$color         = isset( $status_colors[ $status ] ) ? $status_colors[ $status ] : '#999';
 
 					echo '<span style="display: inline-block; padding: 2px 8px; border-radius: 3px; background-color: ' . esc_attr( $color . '20' ) . '; color: ' . esc_attr( $color ) . '; font-size: 12px; font-weight: 500;">' . esc_html( $label ) . '</span>';
 				} else {

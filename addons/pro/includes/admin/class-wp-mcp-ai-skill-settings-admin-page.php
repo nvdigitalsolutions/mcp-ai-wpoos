@@ -626,7 +626,7 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 					<tbody>
 						<?php
 						// Always render at least one empty row so admins can add a new entry.
-						$rows = $sources;
+						$rows   = $sources;
 						$rows[] = array(
 							'id'             => '',
 							'label'          => '',
@@ -639,7 +639,7 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 						);
 						foreach ( $rows as $idx => $src ) :
 							$last = ! empty( $src['last_refreshed'] ) ? human_time_diff( (int) $src['last_refreshed'], time() ) . ' ' . esc_html__( 'ago', 'mcp-ai-wpoos-pro' ) : esc_html__( 'never', 'mcp-ai-wpoos-pro' );
-						?>
+							?>
 						<tr>
 							<td>
 								<input type="text" name="catalogues[<?php echo (int) $idx; ?>][id]" value="<?php echo esc_attr( $src['id'] ); ?>" class="regular-text" pattern="[a-z0-9][a-z0-9_-]*" placeholder="my-catalogue">
@@ -700,7 +700,7 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified in render_page() before calling this method.
-		$raw = isset( $_POST['catalogues'] ) && is_array( $_POST['catalogues'] ) ? wp_unslash( $_POST['catalogues'] ) : array();
+		$raw = isset( $_POST['catalogues'] ) && is_array( $_POST['catalogues'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['catalogues'] ) ) : array();
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		$cleaned = array();

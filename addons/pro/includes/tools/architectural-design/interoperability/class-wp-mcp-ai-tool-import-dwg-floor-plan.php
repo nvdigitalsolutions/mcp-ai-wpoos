@@ -27,6 +27,13 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 class WP_MCP_AI_Tool_Import_Dwg_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
+
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -35,22 +42,51 @@ class WP_MCP_AI_Tool_Import_Dwg_Floor_Plan implements WP_MCP_AI_Tool_Interface, 
 		return ! empty( $settings['enable_architectural_design_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'import_dwg_floor_plan';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Import DWG Floor Plan', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Validate and normalise a JSON floor-plan payload produced by an external DWG converter (e.g. ODA Teigha, LibreDWG) into the toolkit canonical structure. Reports referential errors and synonym remappings (rooms→spaces, doors+windows→openings).', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -69,10 +105,29 @@ class WP_MCP_AI_Tool_Import_Dwg_Floor_Plan implements WP_MCP_AI_Tool_Interface, 
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'requires-capability', 'read-only', 'cacheable' );
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {

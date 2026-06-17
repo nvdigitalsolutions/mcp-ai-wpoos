@@ -35,7 +35,7 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 
 		$pro_path = defined( 'WP_MCP_AI_PRO_PATH' )
 			? WP_MCP_AI_PRO_PATH
-			: dirname( dirname( __FILE__ ) ) . '/';
+			: dirname( __DIR__ ) . '/';
 
 		$base = $pro_path . 'includes/tools/architectural-design/';
 		if ( ! file_exists( $base ) ) {
@@ -74,10 +74,9 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		return array( 'user_id' => $this->editor_id );
 	}
 
-	/* ---------------------------------------------------------------------
+	/**
 	 * EDGE certification scoring.
-	 * ------------------------------------------------------------------ */
-
+	 */
 	public function test_edge_lk_residential_certified() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Score_Edge_Certification' ) ) {
 			$this->markTestSkipped( 'EDGE tool unavailable.' );
@@ -98,6 +97,8 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertSame( 'LK', $result['country_code'] );
 	}
 
+	/** Test edge jm fails when water below threshold.
+	 */
 	public function test_edge_jm_fails_when_water_below_threshold() {
 		$tool   = new WP_MCP_AI_Tool_Score_Edge_Certification();
 		$result = $tool->execute(
@@ -113,6 +114,8 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertSame( '', $result['awarded_tier'] );
 	}
 
+	/** Test edge advanced when energy savings above 40.
+	 */
 	public function test_edge_advanced_when_energy_savings_above_40() {
 		$tool   = new WP_MCP_AI_Tool_Score_Edge_Certification();
 		$result = $tool->execute(
@@ -129,8 +132,10 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertSame( 'edge_advanced', $result['awarded_tier'] );
 	}
 
+	/** Test edge uses absolute eui against baseline.
+	 */
 	public function test_edge_uses_absolute_eui_against_baseline() {
-		$tool   = new WP_MCP_AI_Tool_Score_Edge_Certification();
+		$tool = new WP_MCP_AI_Tool_Score_Edge_Certification();
 		// LK residential baseline EUI = 60. Proposed 30 -> 50 % savings.
 		$result = $tool->execute(
 			array(
@@ -148,19 +153,20 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertSame( 'edge_advanced', $result['awarded_tier'] );
 	}
 
+	/** Test edge requires country code.
+	 */
 	public function test_edge_requires_country_code() {
 		$tool   = new WP_MCP_AI_Tool_Score_Edge_Certification();
 		$result = $tool->execute( array(), $this->ctx() );
 		$this->assertWPError( $result );
 	}
 
-	/* ---------------------------------------------------------------------
+	/**
 	 * LEED v4 BD+C scoring.
-	 * ------------------------------------------------------------------ */
-
+	 */
 	public function test_leed_silver_with_50_points_and_all_prereqs() {
-		$tool    = new WP_MCP_AI_Tool_Score_Leed_V4_Certification();
-		$result  = $tool->execute(
+		$tool   = new WP_MCP_AI_Tool_Score_Leed_V4_Certification();
+		$result = $tool->execute(
 			array(
 				'awarded_credits'   => array(
 					'EA_c2' => 18,
@@ -173,9 +179,18 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 					'IN_c1' => 5,
 				),
 				'met_prerequisites' => array(
-					'SS_p1' => true, 'WE_p1' => true, 'WE_p2' => true, 'WE_p3' => true,
-					'EA_p1' => true, 'EA_p2' => true, 'EA_p3' => true, 'EA_p4' => true,
-					'MR_p1' => true, 'MR_p2' => true, 'EQ_p1' => true, 'EQ_p2' => true,
+					'SS_p1' => true,
+					'WE_p1' => true,
+					'WE_p2' => true,
+					'WE_p3' => true,
+					'EA_p1' => true,
+					'EA_p2' => true,
+					'EA_p3' => true,
+					'EA_p4' => true,
+					'MR_p1' => true,
+					'MR_p2' => true,
+					'EQ_p1' => true,
+					'EQ_p2' => true,
 				),
 			),
 			$this->ctx()
@@ -186,6 +201,8 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertEmpty( $result['missing_prerequisites'] );
 	}
 
+	/** Test leed does not certify when prereq missing.
+	 */
 	public function test_leed_does_not_certify_when_prereq_missing() {
 		$tool   = new WP_MCP_AI_Tool_Score_Leed_V4_Certification();
 		$result = $tool->execute(
@@ -197,15 +214,26 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertNotEmpty( $result['missing_prerequisites'] );
 	}
 
+	/** Test leed clamps points above credit max.
+	 */
 	public function test_leed_clamps_points_above_credit_max() {
 		$tool   = new WP_MCP_AI_Tool_Score_Leed_V4_Certification();
 		$result = $tool->execute(
 			array(
 				'awarded_credits'   => array( 'EA_c2' => 99 ),
 				'met_prerequisites' => array(
-					'SS_p1' => true, 'WE_p1' => true, 'WE_p2' => true, 'WE_p3' => true,
-					'EA_p1' => true, 'EA_p2' => true, 'EA_p3' => true, 'EA_p4' => true,
-					'MR_p1' => true, 'MR_p2' => true, 'EQ_p1' => true, 'EQ_p2' => true,
+					'SS_p1' => true,
+					'WE_p1' => true,
+					'WE_p2' => true,
+					'WE_p3' => true,
+					'EA_p1' => true,
+					'EA_p2' => true,
+					'EA_p3' => true,
+					'EA_p4' => true,
+					'MR_p1' => true,
+					'MR_p2' => true,
+					'EQ_p1' => true,
+					'EQ_p2' => true,
 				),
 			),
 			$this->ctx()
@@ -214,6 +242,8 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertCount( 1, $result['over_max_credits'] );
 	}
 
+	/** Test leed detects invalid credit id.
+	 */
 	public function test_leed_detects_invalid_credit_id() {
 		$tool   = new WP_MCP_AI_Tool_Score_Leed_V4_Certification();
 		$result = $tool->execute(
@@ -223,16 +253,17 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertContains( 'XX_c1', $result['invalid_credit_ids'] );
 	}
 
+	/** Test leed requires awarded credits.
+	 */
 	public function test_leed_requires_awarded_credits() {
 		$tool   = new WP_MCP_AI_Tool_Score_Leed_V4_Certification();
 		$result = $tool->execute( array(), $this->ctx() );
 		$this->assertWPError( $result );
 	}
 
-	/* ---------------------------------------------------------------------
+	/**
 	 * Bill of Quantities.
-	 * ------------------------------------------------------------------ */
-
+	 */
 	public function test_boq_lk_picks_pomi_with_lkr() {
 		$tool   = new WP_MCP_AI_Tool_Generate_Bill_Of_Quantities();
 		$result = $tool->execute(
@@ -240,8 +271,20 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 				'country_code' => 'LK',
 				'project_name' => 'Colombo House',
 				'line_items'   => array(
-					array( 'section' => 'D', 'description' => 'Reinforced concrete grade 25', 'quantity' => 12, 'unit' => 'm3', 'rate' => 65000 ),
-					array( 'section' => 'E', 'description' => '225mm cement-block walls', 'quantity' => 220, 'unit' => 'm2', 'rate' => 6500 ),
+					array(
+						'section'     => 'D',
+						'description' => 'Reinforced concrete grade 25',
+						'quantity'    => 12,
+						'unit'        => 'm3',
+						'rate'        => 65000,
+					),
+					array(
+						'section'     => 'E',
+						'description' => '225mm cement-block walls',
+						'quantity'    => 220,
+						'unit'        => 'm2',
+						'rate'        => 6500,
+					),
 				),
 			),
 			$this->ctx()
@@ -255,13 +298,21 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 2762500.0, $result['grand_total'], 0.5 );
 	}
 
+	/** Test boq jm picks smm7.
+	 */
 	public function test_boq_jm_picks_smm7() {
 		$tool   = new WP_MCP_AI_Tool_Generate_Bill_Of_Quantities();
 		$result = $tool->execute(
 			array(
 				'country_code' => 'JM',
 				'line_items'   => array(
-					array( 'section' => 'F', 'description' => 'Concrete block masonry', 'quantity' => 100, 'unit' => 'm2', 'rate' => 3000 ),
+					array(
+						'section'     => 'F',
+						'description' => 'Concrete block masonry',
+						'quantity'    => 100,
+						'unit'        => 'm2',
+						'rate'        => 3000,
+					),
 				),
 			),
 			$this->ctx()
@@ -270,13 +321,21 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertSame( 'JMD', $result['currency'] );
 	}
 
+	/** Test boq us picks csi 2020.
+	 */
 	public function test_boq_us_picks_csi_2020() {
 		$tool   = new WP_MCP_AI_Tool_Generate_Bill_Of_Quantities();
 		$result = $tool->execute(
 			array(
 				'country_code' => 'US',
 				'line_items'   => array(
-					array( 'section' => '03', 'description' => 'Cast-in-place concrete', 'quantity' => 50, 'unit' => 'cy', 'rate' => 220 ),
+					array(
+						'section'     => '03',
+						'description' => 'Cast-in-place concrete',
+						'quantity'    => 50,
+						'unit'        => 'cy',
+						'rate'        => 220,
+					),
 				),
 			),
 			$this->ctx()
@@ -285,13 +344,21 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertSame( 'USD', $result['currency'] );
 	}
 
+	/** Test boq unknown section is reported.
+	 */
 	public function test_boq_unknown_section_is_reported() {
 		$tool   = new WP_MCP_AI_Tool_Generate_Bill_Of_Quantities();
 		$result = $tool->execute(
 			array(
 				'country_code' => 'LK',
 				'line_items'   => array(
-					array( 'section' => 'ZZ', 'description' => 'Bogus', 'quantity' => 1, 'unit' => 'no', 'rate' => 100 ),
+					array(
+						'section'     => 'ZZ',
+						'description' => 'Bogus',
+						'quantity'    => 1,
+						'unit'        => 'no',
+						'rate'        => 100,
+					),
 				),
 			),
 			$this->ctx()
@@ -299,23 +366,30 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertNotEmpty( $result['unknown_sections'] );
 	}
 
+	/** Test boq explicit format overrides country.
+	 */
 	public function test_boq_explicit_format_overrides_country() {
 		$tool   = new WP_MCP_AI_Tool_Generate_Bill_Of_Quantities();
 		$result = $tool->execute(
-			array( 'country_code' => 'LK', 'format' => 'csi_masterformat_2020' ),
+			array(
+				'country_code' => 'LK',
+				'format'       => 'csi_masterformat_2020',
+			),
 			$this->ctx()
 		);
 		$this->assertSame( 'csi_masterformat_2020', $result['format'] );
 	}
 
-	/* ---------------------------------------------------------------------
+	/**
 	 * Value-engineering options.
-	 * ------------------------------------------------------------------ */
-
+	 */
 	public function test_ve_options_filtered_by_country() {
 		$tool   = new WP_MCP_AI_Tool_Propose_Value_Engineering_Options();
 		$result = $tool->execute(
-			array( 'country_code' => 'US', 'baseline_cost' => 1000000 ),
+			array(
+				'country_code'  => 'US',
+				'baseline_cost' => 1000000,
+			),
 			$this->ctx()
 		);
 		$this->assertNotWPError( $result );
@@ -325,10 +399,16 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test ve options ranked by savings amount.
+	 */
 	public function test_ve_options_ranked_by_savings_amount() {
 		$tool   = new WP_MCP_AI_Tool_Propose_Value_Engineering_Options();
 		$result = $tool->execute(
-			array( 'country_code' => 'LK', 'baseline_cost' => 5000000, 'top_n' => 5 ),
+			array(
+				'country_code'  => 'LK',
+				'baseline_cost' => 5000000,
+				'top_n'         => 5,
+			),
 			$this->ctx()
 		);
 		$this->assertNotWPError( $result );
@@ -342,10 +422,15 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test ve category filter applies.
+	 */
 	public function test_ve_category_filter_applies() {
 		$tool   = new WP_MCP_AI_Tool_Propose_Value_Engineering_Options();
 		$result = $tool->execute(
-			array( 'country_code' => 'LK', 'categories' => array( 'mep' ) ),
+			array(
+				'country_code' => 'LK',
+				'categories'   => array( 'mep' ),
+			),
 			$this->ctx()
 		);
 		foreach ( $result['options'] as $opt ) {
@@ -353,6 +438,8 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test ve aggregate capped at 60 pct.
+	 */
 	public function test_ve_aggregate_capped_at_60_pct() {
 		$tool   = new WP_MCP_AI_Tool_Propose_Value_Engineering_Options();
 		$result = $tool->execute(
@@ -362,10 +449,9 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertLessThanOrEqual( 60.0, $result['aggregate_savings_pct']['max'] );
 	}
 
-	/* ---------------------------------------------------------------------
+	/**
 	 * Refactored calculate_sustainability_metrics now uses EDGE engine.
-	 * ------------------------------------------------------------------ */
-
+	 */
 	public function test_calculate_sustainability_metrics_returns_edge_block_for_lk() {
 		$tool   = new WP_MCP_AI_Tool_Calculate_Sustainability_Metrics();
 		$result = $tool->execute(
@@ -388,6 +474,8 @@ class Test_Architectural_Tools_Phase_C extends WP_UnitTestCase {
 		$this->assertNotEmpty( $result['metrics']['recommendations'] );
 	}
 
+	/** Test calculate sustainability metrics us recommendations differ.
+	 */
 	public function test_calculate_sustainability_metrics_us_recommendations_differ() {
 		$tool   = new WP_MCP_AI_Tool_Calculate_Sustainability_Metrics();
 		$result = $tool->execute(

@@ -42,6 +42,24 @@ All packages are **ES modules** with full TypeScript definitions. See each packa
 | [`nvoos-model-loader`](./nvoos-model-loader/) | Progressive 4-stage AI model loading UI | Zero |
 | [`nvoos-transformers-client`](./nvoos-transformers-client/) | HuggingFace Transformers.js task wrapper (summarize, sentiment, NER, translate, QA, embed) | @huggingface/transformers (optional peer) |
 
+### Tier 5 — Chat Service Utilities
+
+| Package | Description | Dependencies |
+|---------|-------------|--------------|
+| [`nvoos-client-tools`](./nvoos-client-tools/) | Browser-native AI tool registry (summarize, sentiment, translate, embed, image, audio) | @huggingface/transformers (optional peer) |
+| [`nvoos-chat-memory`](./nvoos-chat-memory/) | Promise-based REST client for an AI chat memory bridge (wake-up, recall, store, audit, preferences) | Zero |
+
+### Tier 6 — TypeScript-Native SDK (New)
+
+| Package | Description | Dependencies |
+|---------|-------------|--------------|
+| [`nvoos-types`](./nvoos-types/) | Canonical TypeScript type definitions (AI providers, chat, tools, SSE, attachments, history, memory, agents) | Zero (pure types) |
+| [`nvoos-api`](./nvoos-api/) | Typed REST API client — endpoint builders, payload constructors, auth headers, typed fetch helpers | Zero |
+| [`nvoos-sse-client`](./nvoos-sse-client/) | TypeScript-native SSE connection manager with lifecycle tracking, per-connection status, and auto-cleanup | @microsoft/fetch-event-source (peer) |
+| [`nvoos-attachments`](./nvoos-attachments/) | File attachment helpers: type detection, validation, normalisation, segment builders | Zero |
+| [`nvoos-cron-status`](./nvoos-cron-status/) | SSE-first cron/job status monitor with REST polling fallback | nvoos-events (optional peer) |
+| [`nvoos-transcription`](./nvoos-transcription/) | MediaRecorder-based audio recording + tool-call transcription pipeline | Zero |
+
 ---
 
 ## Package Details
@@ -201,19 +219,72 @@ npm install @nvdigitalsolutions/nvoos-model-loader
 
 ---
 
-### @nvdigitalsolutions/nvoos-transformers-client
+---
 
-- `TransformersTasksClient` — browser-native AI tasks via `@huggingface/transformers` v3
-- Tasks: `summarize`, `sentiment`, `extractEntities`, `translate`, `questionAnswering`, `embed`
-- Auto-detects WebGPU with WASM fallback; configurable `device`, `dtype`, and per-task models
-- Pipeline cache per `(task, model)` — repeat calls cost only inference
-- Loads Transformers.js from CDN by default, or supply your own bundled importer
-- Zero hard dependencies (`@huggingface/transformers` is an optional peer)
+### @nvdigitalsolutions/nvoos-client-tools
+
+- Browser-native AI **tool registry** powered by Transformers.js
+- Seven OpenAI-style tools: `client_summarize`, `client_sentiment`, `client_translate`, `client_embed`, `client_describe_image`, `client_detect_objects`, `client_transcribe_audio`
+- Pipeline factory is injectable — bundle, load from CDN, or mock in tests
+- Pairs with `nvoos-transformers-client`
 
 ```bash
-npm install @nvdigitalsolutions/nvoos-transformers-client
-# Optional: bundle Transformers.js instead of using the CDN
+npm install @nvdigitalsolutions/nvoos-client-tools
+# Optional: bundle Transformers.js instead of using a CDN
 npm install @huggingface/transformers
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-chat-memory
+
+- Promise-based REST client for an AI chat memory bridge
+- Eight verbs: `wakeUp`, `recall`, `store`, `storeBeacon`, `update`, `remove`, `audit`, plus `getPreferences` / `setPreferences`
+- Inject `endpoints`, `headers`, `fetch`, and `credentials` via `configure()` — no WP globals
+- `keepalive: true` beacon variant survives `pagehide` / unload
+
+```bash
+npm install @nvdigitalsolutions/nvoos-chat-memory
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-attachments
+
+- 17 helpers for file uploads in chat: type detection, MIME-aware iconography, URL safety, normalisation, OpenAI-style segment builders
+- Pure functions over plain data — no DOM, no fetch, no globals
+- Zero external dependencies
+
+```bash
+npm install @nvdigitalsolutions/nvoos-attachments
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-cron-status
+
+- SSE-first cron/job status monitor with REST polling fallback
+- Exponential back-off (30 s → 5 min cap, 60-attempt limit)
+- Auth-flexible — accepts nonce *or* guest token, sends both as header + querystring
+- Plug-and-play with `nvoos-events` (`SSEService` and `JobEventBus` satisfy its adapter contracts)
+
+```bash
+npm install @nvdigitalsolutions/nvoos-cron-status
+# Optional: pair with the SSE service & job bus from nvoos-events
+npm install @nvdigitalsolutions/nvoos-events
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-transcription
+
+- 13 methods covering the full voice-input lifecycle: record → upload → transcribe → insert
+- `MediaRecorder` capture with auto-stop on 25 MB cap; falls back to a file-picker on browsers without `getUserMedia`
+- Tool-call pipeline (default tool name: `transcribe_openai_audio`) is endpoint-driven — drop in any backend
+- Zero external dependencies
+
+```bash
+npm install @nvdigitalsolutions/nvoos-transcription
 ```
 
 ---
@@ -224,7 +295,7 @@ Each package has an `adapt-for-npm.js` build script that transforms the WordPres
 plugin source into a clean ES module:
 
 ```bash
-for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher nvoos-llm-worker nvoos-model-loader nvoos-transformers-client; do
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher nvoos-llm-worker nvoos-model-loader nvoos-transformers-client nvoos-client-tools nvoos-chat-memory nvoos-attachments nvoos-cron-status nvoos-transcription; do
   (cd $pkg && node adapt-for-npm.js)
 done
 ```
@@ -238,9 +309,10 @@ The following files were identified as potential future extraction candidates
 
 | File | Candidate Package | Portability |
 |------|------------------|-------------|
-| `chat-attachments-service.js` (586 LOC) | `nvoos-file-validator` | Medium — rendering is WP-coupled |
-| `cron-status-service.js` (485 LOC) | `nvoos-job-status` | High |
-| `accessibility-enhancements.js` (503 LOC) | `nvoos-a11y` | Low — jQuery dep |
+| `chat-memory-drawer.js` (~1300 LOC) | `nvoos-chat-memory-ui` | Medium — depends on `nvoos-chat-memory`; may need a UI-vs-state split |
+| `chat-ui-utilities-service.js` (~800 LOC) | Fold into `nvoos-dom-batcher@next` | Skip new package — substantial overlap with existing `nvoos-dom-batcher` |
+| `ajax-error-service.js` (~440 LOC) | `nvoos-error-toaster` | Low — jQuery dependency, needs full rewrite |
+| `accessibility-enhancements.js` (~500 LOC) | `nvoos-a11y` | Low — jQuery dependency |
 
 ---
 
@@ -277,12 +349,15 @@ Each package includes a custom `adapt-for-npm.js` script that:
 
 ## 📊 Package Comparison
 
-| Feature | storage | markdown | events | http-client | clipboard | offline-sync | slash-commands | audio | dom-batcher | llm-worker | model-loader | transformers-client |
-|---------|---------|----------|--------|-------------|-----------|--------------|----------------|-------|-------------|------------|--------------|---------------------|
-| **WP Dependencies** | None | None | None | None | None | None | None | None | None | None | None | None |
-| **External Deps** | 0 | 2 (peer) | 1 (peer) | 1 (peer) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 (optional peer) |
-| **TypeScript** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Tree-Shakeable** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Tier | Packages | External deps |
+|------|----------|---------------|
+| Tier 1 | storage, markdown, events | 0 / 2 peer / 1 peer |
+| Tier 2 | http-client, clipboard, offline-sync | 1 peer / 0 / 0 |
+| Tier 3 | slash-commands, audio, dom-batcher | 0 / 0 / 0 |
+| Tier 4 | llm-worker, model-loader, transformers-client | 0 / 0 / 1 optional peer |
+| Tier 5 | client-tools, chat-memory, attachments, cron-status, transcription | 1 optional peer / 0 / 0 / 1 optional peer / 0 |
+
+All 17 packages: **WP dependencies = none, TypeScript = ✅, Tree-shakeable = ✅**.
 
 ## 🔗 Links
 
@@ -294,7 +369,7 @@ Each package includes a custom `adapt-for-npm.js` script that:
 
 ---
 
-**Status**: ✅ **All 12 packages ready for publication** (9 original + 3 Tier 4 browser AI runtime)
+**Status**: ✅ **All 17 packages ready for publication** (9 original + 3 Tier 4 browser AI runtime + 5 Tier 5 chat services)
 
-**Last Updated**: 2026-04-28  
+**Last Updated**: 2026-05-03  
 **Maintained By**: NV Digital Solutions

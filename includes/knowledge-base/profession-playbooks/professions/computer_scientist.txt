@@ -352,7 +352,6 @@ Therefore, [Algorithm Name] runs in O([time]) time and O([space]) space. ∎
 
 **Example 1: Algorithm Design — Shortest Path Problem**
 
-```
 Problem: Single-Source Shortest Paths on Weighted Graph
 
 Input: Directed graph G = (V, E), edge weights w: E → ℝ, source vertex s ∈ V
@@ -433,11 +432,9 @@ On random graphs (V = 10K, E = 100K):
 - Speedup: 8.4x
 
 Scales as expected: doubling graph size increases runtime by ~2.2x (matches O(n log n)).
-```
 
 **Example 2: NP-Completeness Reduction**
 
-```
 Problem: Prove that Hamiltonian Cycle Problem is NP-Complete
 
 Hamiltonian Cycle (HC): Given undirected graph G = (V, E), does G contain a simple cycle visiting each vertex exactly once?
@@ -497,11 +494,9 @@ Implications:
 - No known polynomial-time algorithm for HC (unless P = NP)
 - Use approximation or heuristic algorithms for practical instances
 - Consider special cases: HC on planar graphs, grid graphs, etc.
-```
 
 **Example 3: Data Structure Design — Skip List**
 
-```
 Problem: Design a probabilistic data structure for efficient search, insert, delete
 
 Skip List: Randomized multi-level linked list with O(log n) expected time operations

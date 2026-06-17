@@ -94,6 +94,13 @@ class WP_MCP_AI_Tool_Generate_Cover_Letter implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -181,7 +188,7 @@ class WP_MCP_AI_Tool_Generate_Cover_Letter implements WP_MCP_AI_Tool_Interface, 
 		// Save cover letter.
 		$upload_dir = wp_upload_dir();
 		$letter_dir = $upload_dir['basedir'] . '/cover-letters';
-		$filename   = sprintf( 'cover-letter-%d-%s.%s', $registration_id, gmdate( 'YmdHis' ), $format === 'html' ? 'html' : 'txt' );
+		$filename   = sprintf( 'cover-letter-%d-%s.%s', $registration_id, gmdate( 'YmdHis' ), 'html' === $format ? 'html' : 'txt' );
 		$file_path  = $letter_dir . '/' . $filename;
 		$file_url   = $upload_dir['baseurl'] . '/cover-letters/' . $filename;
 

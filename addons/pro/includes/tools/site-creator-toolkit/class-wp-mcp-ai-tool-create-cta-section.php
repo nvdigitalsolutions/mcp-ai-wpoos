@@ -94,6 +94,13 @@ class WP_MCP_AI_Tool_Create_CTA_Section implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @since 1.2.0

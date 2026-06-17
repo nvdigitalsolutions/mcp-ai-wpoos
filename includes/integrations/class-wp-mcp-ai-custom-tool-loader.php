@@ -346,6 +346,9 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
  * Custom tool implementation.
  */
 class <?php echo esc_html( $class_name ); ?> implements WP_MCP_AI_Tool_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * {@inheritdoc}
 	 */

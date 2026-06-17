@@ -1,0 +1,44 @@
+{
+  "name": "nvoos-media-studio",
+  "version": "0.1.0",
+  "description": "NV oOS Media Studio — React SPA addon",
+  "private": true,
+  "scripts": {
+    "build": "node esbuild.config.cjs --prod",
+    "build:dev": "node esbuild.config.cjs",
+    "watch": "node esbuild.config.cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint:a11y": "eslint --max-warnings 0 src/",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "konva": "10.3.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "react-image-crop": "11.0.10",
+    "react-konva": "19.2.3",
+    "react-player": "3.4.0",
+    "wavesurfer.js": "7.12.6"
+  },
+  "devDependencies": {
+    "@axe-core/react": "^4.10.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.15.17",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@typescript-eslint/parser": "^8.32.0",
+    "@vitest/coverage-v8": "^4.1.5",
+    "@wordpress/i18n": "^5.12.0",
+    "esbuild": "^0.27.0",
+    "eslint": "^9.27.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "jsdom": "^29.1.1",
+    "typescript": "5.8.3",
+    "vitest": "^4.1.5"
+  },
+  "type": "module"
+}

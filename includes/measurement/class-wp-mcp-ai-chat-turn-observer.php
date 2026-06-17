@@ -25,7 +25,7 @@
  *   model, assistant_id, user_id, and guest-flag. Prompts, completions,
  *   messages and tool arguments are never included — the Internal
  *   privacy tier explicitly forbids them (see
- *   `docs/measurement/privacy-matrix.md`).
+ *   `docs/reference/measurement/privacy-matrix.md`).
  *
  * Opt-out:
  *   Return `false` from the `wp_mcp_ai_chat_turn_observer_enabled`

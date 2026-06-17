@@ -104,6 +104,13 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -140,6 +147,11 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 	/**
 	 * Save a connection.
+	 *
+	 * @security Client credentials (client_id / client_secret) are stored in
+	 *           WordPress options in plaintext. For production deployments,
+	 *           set up encryption-at-rest via WP_MCP_AI_Vault_Encryption_Service
+	 *           by hooking {@see wp_mcp_ai_healthcare_ehr_credentials}.
 	 *
 	 * @param string $vendor          Vendor.
 	 * @param array  $arguments       Args.
@@ -180,7 +192,10 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'configure',
 				'ehr_connection',
 				0,
-				array( 'user_id' => $current_user_id, 'vendor' => $vendor )
+				array(
+					'user_id' => $current_user_id,
+					'vendor'  => $vendor,
+				)
 			);
 		}
 		return array(
@@ -208,7 +223,10 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'disconnect',
 				'ehr_connection',
 				0,
-				array( 'user_id' => $current_user_id, 'vendor' => $vendor )
+				array(
+					'user_id' => $current_user_id,
+					'vendor'  => $vendor,
+				)
 			);
 		}
 		return array(
@@ -232,16 +250,30 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( '' === $conn['token_url'] ) {
 			return new WP_Error( 'wp_mcp_ai_ehr_missing_token_url', __( 'A token_url is required to test the connection.', 'mcp-ai-wpoos-pro' ) );
 		}
+
+		// Reject private/reserved IPs and localhost (SSRF guard).
+		$host = strtolower( wp_parse_url( $conn['token_url'], PHP_URL_HOST ) );
+		if ( ! $host || 'localhost' === $host ) {
+			return new WP_Error( 'wp_mcp_ai_ehr_invalid_token_url', __( 'The token URL resolves to an invalid or non-routable host.', 'mcp-ai-wpoos-pro' ) );
+		}
+		if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			if ( ! filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				return new WP_Error( 'wp_mcp_ai_ehr_invalid_token_url', __( 'The token URL resolves to an invalid or non-routable host.', 'mcp-ai-wpoos-pro' ) );
+			}
+		}
+
 		$response = wp_remote_post(
 			$conn['token_url'],
 			array(
-				'timeout' => 30,
-				'headers' => array(
+				'timeout'             => 30,
+				'reject_unsafe_urls'  => true,
+				'redirection'         => 0,
+				'headers'             => array(
 					'Accept'        => 'application/json',
 					'Content-Type'  => 'application/x-www-form-urlencoded',
 					'Authorization' => 'Basic ' . base64_encode( $conn['client_id'] . ':' . $conn['client_secret'] ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 				),
-				'body'    => array(
+				'body'                => array(
 					'grant_type' => 'client_credentials',
 					'scope'      => $conn['scope'],
 				),
@@ -306,7 +338,10 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	private function get_redacted( $vendor ) {
 		$conn = $this->get_connection( $vendor );
 		if ( ! $conn ) {
-			return array( 'vendor' => $vendor, 'configured' => false );
+			return array(
+				'vendor'     => $vendor,
+				'configured' => false,
+			);
 		}
 		$conn['client_secret'] = '' !== (string) $conn['client_secret'] ? '[redacted]' : '';
 		$conn['configured']    = true;

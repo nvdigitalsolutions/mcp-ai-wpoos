@@ -36,6 +36,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Default box definitions for USPS shipping.
 	 *
 	 * Dimensions in inches, weight in ounces, max_weight in pounds.
@@ -405,17 +412,17 @@ class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP
 		$packages = $this->pack_items( $items, $boxes );
 
 		return array(
-			'success'             => true,
-			'message'             => sprintf(
+			'success'         => true,
+			'message'         => sprintf(
 				/* translators: 1: number of items, 2: number of packages */
 				__( 'Successfully packed %1$d items into %2$d package(s).', 'mcp-ai-wpoos-pro' ),
 				count( $items ),
 				count( $packages )
 			),
-			'total_items'         => count( $items ),
-			'total_packages'      => count( $packages ),
-			'total_weight_oz'     => array_sum( array_column( $packages, 'weight_oz' ) ),
-			'packages'            => $packages,
+			'total_items'     => count( $items ),
+			'total_packages'  => count( $packages ),
+			'total_weight_oz' => array_sum( array_column( $packages, 'weight_oz' ) ),
+			'packages'        => $packages,
 		);
 	}
 
@@ -456,20 +463,20 @@ class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP
 		$packages = $this->pack_items( $items, $boxes );
 
 		return array(
-			'success'             => true,
-			'message'             => sprintf(
+			'success'         => true,
+			'message'         => sprintf(
 				/* translators: 1: order number, 2: number of items, 3: number of packages */
 				__( 'Order #%1$s: packed %2$d items into %3$d package(s).', 'mcp-ai-wpoos-pro' ),
 				$order->get_order_number(),
 				count( $items ),
 				count( $packages )
 			),
-			'order_id'            => $order->get_id(),
-			'order_number'        => $order->get_order_number(),
-			'total_items'         => count( $items ),
-			'total_packages'      => count( $packages ),
-			'total_weight_oz'     => array_sum( array_column( $packages, 'weight_oz' ) ),
-			'packages'            => $packages,
+			'order_id'        => $order->get_id(),
+			'order_number'    => $order->get_order_number(),
+			'total_items'     => count( $items ),
+			'total_packages'  => count( $packages ),
+			'total_weight_oz' => array_sum( array_column( $packages, 'weight_oz' ) ),
+			'packages'        => $packages,
 		);
 	}
 
@@ -514,14 +521,14 @@ class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success'   => true,
+			'message'   => sprintf(
 				/* translators: %d: number of boxes */
 				__( '%d box definition(s) available.', 'mcp-ai-wpoos-pro' ),
 				count( $enriched )
 			),
-			'box_count'  => count( $enriched ),
-			'boxes'      => $enriched,
+			'box_count' => count( $enriched ),
+			'boxes'     => $enriched,
 		);
 	}
 
@@ -735,7 +742,7 @@ class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP
 			// Try to fit into an existing open package.
 			foreach ( $open_packages as &$open_pkg ) {
 				if ( $this->item_fits_in_package( $item, $open_pkg ) ) {
-					$open_pkg['items'][]   = $item;
+					$open_pkg['items'][]    = $item;
 					$open_pkg['weight_oz'] += (float) $item['weight_oz'];
 					$placed                 = true;
 					break;
@@ -761,7 +768,7 @@ class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP
 		$package_number = 0;
 		foreach ( $open_packages as $pkg ) {
 			++$package_number;
-			$box        = $pkg['box'];
+			$box          = $pkg['box'];
 			$total_weight = $pkg['weight_oz'] + (float) $box['empty_weight'];
 
 			$dimensions = array(
@@ -774,20 +781,20 @@ class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP
 			$cubic_tier   = 'cubic' === $box['box_type'] ? $this->get_cubic_tier( $dimensions ) : '';
 
 			$packages[] = array(
-				'package_number'  => $package_number,
-				'box_reference'   => $box['reference'],
-				'box_type'        => $box['box_type'],
-				'package_code'    => $box['package_code'],
-				'package_name'    => $box['package_name'],
-				'dimensions'      => $dimensions,
-				'weight_oz'       => round( $total_weight, 2 ),
-				'item_weight_oz'  => round( $pkg['weight_oz'], 2 ),
-				'box_weight_oz'   => (float) $box['empty_weight'],
-				'item_count'      => count( $pkg['items'] ),
-				'packing_list'    => $packing_list,
-				'cubic_eligible'  => $this->is_cubic_eligible( $dimensions, $total_weight ),
-				'cubic_tier'      => $cubic_tier,
-				'items'           => $pkg['items'],
+				'package_number' => $package_number,
+				'box_reference'  => $box['reference'],
+				'box_type'       => $box['box_type'],
+				'package_code'   => $box['package_code'],
+				'package_name'   => $box['package_name'],
+				'dimensions'     => $dimensions,
+				'weight_oz'      => round( $total_weight, 2 ),
+				'item_weight_oz' => round( $pkg['weight_oz'], 2 ),
+				'box_weight_oz'  => (float) $box['empty_weight'],
+				'item_count'     => count( $pkg['items'] ),
+				'packing_list'   => $packing_list,
+				'cubic_eligible' => $this->is_cubic_eligible( $dimensions, $total_weight ),
+				'cubic_tier'     => $cubic_tier,
+				'items'          => $pkg['items'],
 			);
 		}
 

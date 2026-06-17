@@ -7,7 +7,6 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
  */
-
 class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 
 	/**
@@ -35,8 +34,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 
 		// Load tool classes.
 		$tools_dir = defined( 'WP_MCP_AI_PRO_PATH' )
-			? WP_MCP_AI_PRO_PATH . 'includes/src/Tools/'
-			: dirname( __DIR__ ) . '/includes/src/Tools/';
+			? WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/'
+			: dirname( __DIR__ ) . '/includes/tools/jetengine/';
 
 		$files = array(
 			'class-wp-mcp-ai-pro-tool-jetengine-mcp-bridge.php',
@@ -56,7 +55,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		}
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -65,7 +65,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Pro_Tool_JetEngine_MCP_Bridge' ) );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -75,7 +76,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'jetengine_mcp', $tool->get_slug() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -93,7 +95,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertContains( 'get_site_context', $enum );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -107,7 +110,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'insufficient_permissions', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -120,7 +124,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -134,7 +139,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertContains( 'requires-plugin', $flags );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -149,7 +155,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'elevated', $def['risk_level'] );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -159,7 +166,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'jetengine_create_post_type', $tool->get_slug() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -180,7 +188,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'invalid_slug', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -194,7 +203,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'missing_params', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -215,7 +225,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'post_type_exists', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -225,7 +236,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'jetengine_create_taxonomy', $tool->get_slug() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -246,7 +258,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'invalid_slug', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -267,7 +280,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'taxonomy_exists', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -277,7 +291,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'jetengine_create_meta_field', $tool->get_slug() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -291,7 +306,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'missing_params', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -301,7 +317,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'jetengine_manage_relations', $tool->get_slug() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -314,7 +331,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -322,13 +340,20 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 	public function test_manage_relations_create_requires_params() {
 		wp_set_current_user( $this->admin_id );
 		$tool   = new WP_MCP_AI_Pro_Tool_JetEngine_Manage_Relations();
-		$result = $tool->execute( array( 'action' => 'create', 'name' => 'test' ), array() );
+		$result = $tool->execute(
+			array(
+				'action' => 'create',
+				'name'   => 'test',
+			),
+			array()
+		);
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'missing_params', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -338,7 +363,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'jetengine_site_context', $tool->get_slug() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -351,7 +377,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertNotContains( 'write', $flags );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -361,7 +388,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'jetengine_prompts', $tool->get_slug() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -374,7 +402,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -388,7 +417,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 		$this->assertEquals( 'missing_name', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp

@@ -579,10 +579,45 @@ class WP_MCP_AI_Privacy {
 	 * @param int $page Page number.
 	 * @return array Chat transcripts
 	 */
-	private function get_jet_engine_chat_transcripts( $user_id, $page = 1 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future JetEngine integration.
-		// Placeholder for JetEngine CCT integration.
-		// Implementation depends on CCT structure.
-		return array();
+	private function get_jet_engine_chat_transcripts( $user_id, $page = 1 ) {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			return array();
+		}
+
+			$handler = WP_MCP_AI_JetEngine_CCT::get_item_handler();
+		if ( ! $handler ) {
+			return array();
+		}
+
+			$limit  = 50;
+			$offset = ( $page - 1 ) * $limit;
+
+			// The JetEngine CCT structure uses WP_MCP_AI_JetEngine_CCT::SLUG.
+						// It has standard fields like _ID, and custom fields defined in WP_MCP_AI_JetEngine_CCT.
+			$items = $handler->query(
+				array(
+					'user_id' => $user_id,
+				),
+				$limit,
+				$offset
+			);
+
+		if ( empty( $items ) || ! is_array( $items ) ) {
+			return array();
+		}
+
+			$transcripts = array();
+		foreach ( $items as $item ) {
+			// Provide fallbacks in case properties are missing.
+			$transcripts[] = array(
+				'id'             => isset( $item['_ID'] ) ? $item['_ID'] : '',
+				'assistant_name' => isset( $item['assistant_id'] ) ? get_the_title( $item['assistant_id'] ) : __( 'Unknown Assistant', 'mcp-ai-wpoos' ),
+				'date'           => isset( $item['cct_created'] ) ? get_date_from_gmt( $item['cct_created'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) : '',
+				'messages'       => isset( $item['messages'] ) ? wp_trim_words( wp_strip_all_tags( $item['messages'] ), 50 ) : '',
+			);
+		}
+
+			return $transcripts;
 	}
 
 	/**
@@ -604,10 +639,38 @@ class WP_MCP_AI_Privacy {
 	 * @param int $user_id User ID.
 	 * @return int Number of items deleted
 	 */
-	private function delete_jet_engine_chat_transcripts( $user_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future JetEngine integration.
-		// Placeholder for JetEngine CCT integration.
-		// Implementation depends on CCT structure.
-		return 0;
+	private function delete_jet_engine_chat_transcripts( $user_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			return 0;
+		}
+
+			$handler = WP_MCP_AI_JetEngine_CCT::get_item_handler();
+		if ( ! $handler ) {
+			return 0;
+		}
+
+			$items = $handler->query(
+				array(
+					'user_id' => $user_id,
+				),
+				-1 // Get all items.
+			);
+
+		if ( empty( $items ) || ! is_array( $items ) ) {
+			return 0;
+		}
+
+			$deleted_count = 0;
+		foreach ( $items as $item ) {
+			if ( isset( $item['_ID'] ) ) {
+				$deleted = $handler->delete_item( $item['_ID'] );
+				if ( $deleted ) {
+					++$deleted_count;
+				}
+			}
+		}
+
+			return $deleted_count;
 	}
 
 	/**

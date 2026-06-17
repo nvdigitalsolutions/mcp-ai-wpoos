@@ -177,34 +177,34 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 				'nonce'           => wp_create_nonce( self::NONCE_ACTION ),
 				'refreshInterval' => 10000,
 				'strings'         => array(
-					'loading'           => __( 'Loading...', 'mcp-ai-wpoos-pro' ),
-					'error'             => __( 'Error loading data', 'mcp-ai-wpoos-pro' ),
-					'approve'           => __( 'Approve', 'mcp-ai-wpoos-pro' ),
-					'reject'            => __( 'Reject', 'mcp-ai-wpoos-pro' ),
-					'approved'          => __( 'Approved', 'mcp-ai-wpoos-pro' ),
-					'rejected'          => __( 'Rejected', 'mcp-ai-wpoos-pro' ),
-					'noAgents'          => __( 'No agents configured yet.', 'mcp-ai-wpoos-pro' ),
-					'noActivity'        => __( 'No recent activity.', 'mcp-ai-wpoos-pro' ),
-					'noTasks'           => __( 'No active tasks.', 'mcp-ai-wpoos-pro' ),
-					'noPending'         => __( 'No pending approvals.', 'mcp-ai-wpoos-pro' ),
-					'confirmApprove'    => __( 'Are you sure you want to approve this action?', 'mcp-ai-wpoos-pro' ),
-					'confirmReject'     => __( 'Are you sure you want to reject this action?', 'mcp-ai-wpoos-pro' ),
-					'operationSuccess'  => __( 'Operation completed successfully.', 'mcp-ai-wpoos-pro' ),
-					'operationFailed'   => __( 'Operation failed. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'online'            => __( 'Online', 'mcp-ai-wpoos-pro' ),
-					'offline'           => __( 'Offline', 'mcp-ai-wpoos-pro' ),
-					'idle'              => __( 'Idle', 'mcp-ai-wpoos-pro' ),
-					'lastActive'        => __( 'Last active', 'mcp-ai-wpoos-pro' ),
-					'timeAgo'           => __( '%s ago', 'mcp-ai-wpoos-pro' ),
-					'justNow'           => __( 'Just now', 'mcp-ai-wpoos-pro' ),
-					'seconds'           => __( '%ds', 'mcp-ai-wpoos-pro' ),
-					'minutes'           => __( '%dm', 'mcp-ai-wpoos-pro' ),
-					'hours'             => __( '%dh', 'mcp-ai-wpoos-pro' ),
-					'days'              => __( '%dd', 'mcp-ai-wpoos-pro' ),
-					'tokensUsed'        => __( 'Tokens Used', 'mcp-ai-wpoos-pro' ),
-					'apiCalls'          => __( 'API Calls', 'mcp-ai-wpoos-pro' ),
-					'avgResponseTime'   => __( 'Avg Response', 'mcp-ai-wpoos-pro' ),
-					'successRate'       => __( 'Success Rate', 'mcp-ai-wpoos-pro' ),
+					'loading'          => __( 'Loading...', 'mcp-ai-wpoos-pro' ),
+					'error'            => __( 'Error loading data', 'mcp-ai-wpoos-pro' ),
+					'approve'          => __( 'Approve', 'mcp-ai-wpoos-pro' ),
+					'reject'           => __( 'Reject', 'mcp-ai-wpoos-pro' ),
+					'approved'         => __( 'Approved', 'mcp-ai-wpoos-pro' ),
+					'rejected'         => __( 'Rejected', 'mcp-ai-wpoos-pro' ),
+					'noAgents'         => __( 'No agents configured yet.', 'mcp-ai-wpoos-pro' ),
+					'noActivity'       => __( 'No recent activity.', 'mcp-ai-wpoos-pro' ),
+					'noTasks'          => __( 'No active tasks.', 'mcp-ai-wpoos-pro' ),
+					'noPending'        => __( 'No pending approvals.', 'mcp-ai-wpoos-pro' ),
+					'confirmApprove'   => __( 'Are you sure you want to approve this action?', 'mcp-ai-wpoos-pro' ),
+					'confirmReject'    => __( 'Are you sure you want to reject this action?', 'mcp-ai-wpoos-pro' ),
+					'operationSuccess' => __( 'Operation completed successfully.', 'mcp-ai-wpoos-pro' ),
+					'operationFailed'  => __( 'Operation failed. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'online'           => __( 'Online', 'mcp-ai-wpoos-pro' ),
+					'offline'          => __( 'Offline', 'mcp-ai-wpoos-pro' ),
+					'idle'             => __( 'Idle', 'mcp-ai-wpoos-pro' ),
+					'lastActive'       => __( 'Last active', 'mcp-ai-wpoos-pro' ),
+					'timeAgo'          => __( '%s ago', 'mcp-ai-wpoos-pro' ),
+					'justNow'          => __( 'Just now', 'mcp-ai-wpoos-pro' ),
+					'seconds'          => __( '%ds', 'mcp-ai-wpoos-pro' ),
+					'minutes'          => __( '%dm', 'mcp-ai-wpoos-pro' ),
+					'hours'            => __( '%dh', 'mcp-ai-wpoos-pro' ),
+					'days'             => __( '%dd', 'mcp-ai-wpoos-pro' ),
+					'tokensUsed'       => __( 'Tokens Used', 'mcp-ai-wpoos-pro' ),
+					'apiCalls'         => __( 'API Calls', 'mcp-ai-wpoos-pro' ),
+					'avgResponseTime'  => __( 'Avg Response', 'mcp-ai-wpoos-pro' ),
+					'successRate'      => __( 'Success Rate', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -766,16 +766,16 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @param array $session The session data.
 	 */
 	private function render_session_row( $session ) {
-		$progress     = 0;
-		$iterations   = isset( $session['iterations'] ) ? (int) $session['iterations'] : 0;
-		$max          = isset( $session['max_iterations'] ) ? (int) $session['max_iterations'] : 25;
-		$progress     = $max > 0 ? min( 100, round( ( $iterations / $max ) * 100 ) ) : 0;
-		$tokens       = isset( $session['tokens_used'] ) ? (int) $session['tokens_used'] : 0;
-		$start_time   = isset( $session['start_time'] ) ? (int) $session['start_time'] : time();
-		$elapsed      = time() - $start_time;
-		$status       = isset( $session['status'] ) ? $session['status'] : 'unknown';
-		$health       = isset( $session['health'] ) ? $session['health'] : 'unknown';
-		$session_id   = isset( $session['session_id'] ) ? $session['session_id'] : '';
+		$progress   = 0;
+		$iterations = isset( $session['iterations'] ) ? (int) $session['iterations'] : 0;
+		$max        = isset( $session['max_iterations'] ) ? (int) $session['max_iterations'] : 25;
+		$progress   = $max > 0 ? min( 100, round( ( $iterations / $max ) * 100 ) ) : 0;
+		$tokens     = isset( $session['tokens_used'] ) ? (int) $session['tokens_used'] : 0;
+		$start_time = isset( $session['start_time'] ) ? (int) $session['start_time'] : time();
+		$elapsed    = time() - $start_time;
+		$status     = isset( $session['status'] ) ? $session['status'] : 'unknown';
+		$health     = isset( $session['health'] ) ? $session['health'] : 'unknown';
+		$session_id = isset( $session['session_id'] ) ? $session['session_id'] : '';
 		?>
 		<tr>
 			<td><code><?php echo esc_html( substr( $session_id, 0, 12 ) ); ?></code></td>
@@ -879,12 +879,18 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 */
 	private function render_approvals_tab() {
 		$approvals = $this->get_all_approvals();
-		$pending   = array_filter( $approvals, function ( $a ) {
-			return 'pending' === $a['status'];
-		} );
-		$resolved  = array_filter( $approvals, function ( $a ) {
-			return 'pending' !== $a['status'];
-		} );
+		$pending   = array_filter(
+			$approvals,
+			function ( $a ) {
+				return 'pending' === $a['status'];
+			}
+		);
+		$resolved  = array_filter(
+			$approvals,
+			function ( $a ) {
+				return 'pending' !== $a['status'];
+			}
+		);
 		?>
 		<div class="acc-approvals-tab">
 			<!-- Pending Approvals -->
@@ -1118,8 +1124,8 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @since 2.1.0
 	 */
 	private function render_uptime_tab() {
-		$health  = $this->get_system_health();
-		$uptime  = $this->get_uptime_history();
+		$health = $this->get_system_health();
+		$uptime = $this->get_uptime_history();
 		?>
 		<div class="acc-uptime-tab">
 			<!-- System Health Overview -->
@@ -1237,7 +1243,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @since 2.1.0
 	 */
 	private function render_strategy_tab() {
-		$insights       = $this->generate_strategy_insights();
+		$insights        = $this->generate_strategy_insights();
 		$recommendations = $this->generate_recommendations();
 		?>
 		<div class="acc-strategy-tab">
@@ -1401,25 +1407,55 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		// Calculate summary stats.
 		$summary = array(
-			'total'              => count( $events ),
-			'tool_calls'         => count( array_filter( $events, function ( $e ) {
-				return 'tool_execution' === $e['type'];
-			} ) ),
-			'chat_responses'     => count( array_filter( $events, function ( $e ) {
-				return 'chat_response' === $e['type'];
-			} ) ),
-			'chat_interactions'  => count( array_filter( $events, function ( $e ) {
-				return 'chat_interaction' === $e['type'];
-			} ) ),
-			'api_requests'       => count( array_filter( $events, function ( $e ) {
-				return 'api_request' === $e['type'] || 'api_response' === $e['type'];
-			} ) ),
-			'schedule_runs'      => count( array_filter( $events, function ( $e ) {
-				return 'schedule_run' === $e['type'];
-			} ) ),
-			'errors'             => count( array_filter( $events, function ( $e ) {
-				return 'error' === $e['type'] || 'tool_error' === $e['type'];
-			} ) ),
+			'total'             => count( $events ),
+			'tool_calls'        => count(
+				array_filter(
+					$events,
+					function ( $e ) {
+						return 'tool_execution' === $e['type'];
+					}
+				)
+			),
+			'chat_responses'    => count(
+				array_filter(
+					$events,
+					function ( $e ) {
+						return 'chat_response' === $e['type'];
+					}
+				)
+			),
+			'chat_interactions' => count(
+				array_filter(
+					$events,
+					function ( $e ) {
+						return 'chat_interaction' === $e['type'];
+					}
+				)
+			),
+			'api_requests'      => count(
+				array_filter(
+					$events,
+					function ( $e ) {
+						return 'api_request' === $e['type'] || 'api_response' === $e['type'];
+					}
+				)
+			),
+			'schedule_runs'     => count(
+				array_filter(
+					$events,
+					function ( $e ) {
+						return 'schedule_run' === $e['type'];
+					}
+				)
+			),
+			'errors'            => count(
+				array_filter(
+					$events,
+					function ( $e ) {
+						return 'error' === $e['type'] || 'tool_error' === $e['type'];
+					}
+				)
+			),
 		);
 
 		wp_send_json_success(
@@ -1455,7 +1491,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		foreach ( $approvals as &$approval ) {
 			if ( $approval['id'] === $approval_id && 'pending' === $approval['status'] ) {
-				$current_user        = wp_get_current_user();
+				$current_user           = wp_get_current_user();
 				$approval['status']     = $decision;
 				$approval['decided_by'] = $current_user->display_name;
 				$approval['decided_at'] = time();
@@ -1608,7 +1644,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 			foreach ( $rows as $row ) {
 				$data = maybe_unserialize( $row->option_value );
 				if ( is_array( $data ) ) {
-					$session_id = str_replace( '_transient_mcp_ai_session_', '', $row->option_name );
+					$session_id         = str_replace( '_transient_mcp_ai_session_', '', $row->option_name );
 					$data['session_id'] = $session_id;
 					$sessions[]         = $data;
 				}
@@ -1718,9 +1754,14 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 */
 	private function get_pending_approval_count() {
 		$approvals = get_option( self::APPROVALS_OPTION, array() );
-		return count( array_filter( $approvals, function ( $a ) {
-			return 'pending' === $a['status'];
-		} ) );
+		return count(
+			array_filter(
+				$approvals,
+				function ( $a ) {
+					return 'pending' === $a['status'];
+				}
+			)
+		);
 	}
 
 	/**
@@ -1794,9 +1835,12 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		$events = $this->merge_logger_activity_entries( $events );
 
 		// Sort by timestamp descending.
-		usort( $events, function ( $a, $b ) {
-			return ( $b['timestamp'] ?? 0 ) - ( $a['timestamp'] ?? 0 );
-		} );
+		usort(
+			$events,
+			function ( $a, $b ) {
+				return ( $b['timestamp'] ?? 0 ) - ( $a['timestamp'] ?? 0 );
+			}
+		);
 
 		return array_slice( $events, 0, $limit );
 	}
@@ -1820,38 +1864,53 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		// Timeframe filter.
 		$cutoff = $this->get_timeframe_cutoff( $timeframe );
-		$events = array_filter( $events, function ( $e ) use ( $cutoff ) {
-			return isset( $e['timestamp'] ) && $e['timestamp'] >= $cutoff;
-		} );
+		$events = array_filter(
+			$events,
+			function ( $e ) use ( $cutoff ) {
+				return isset( $e['timestamp'] ) && $e['timestamp'] >= $cutoff;
+			}
+		);
 
 		// Type filter.
 		if ( $type ) {
-			$events = array_filter( $events, function ( $e ) use ( $type ) {
-				return isset( $e['type'] ) && $e['type'] === $type;
-			} );
+			$events = array_filter(
+				$events,
+				function ( $e ) use ( $type ) {
+					return isset( $e['type'] ) && $e['type'] === $type;
+				}
+			);
 		}
 
 		// Agent filter.
 		if ( $agent_id ) {
-			$events = array_filter( $events, function ( $e ) use ( $agent_id ) {
-				return isset( $e['agent_id'] ) && (int) $e['agent_id'] === $agent_id;
-			} );
+			$events = array_filter(
+				$events,
+				function ( $e ) use ( $agent_id ) {
+					return isset( $e['agent_id'] ) && (int) $e['agent_id'] === $agent_id;
+				}
+			);
 		}
 
 		// Search filter.
 		if ( $search ) {
 			$search_lower = strtolower( $search );
-			$events       = array_filter( $events, function ( $e ) use ( $search_lower ) {
-				$message = isset( $e['message'] ) ? strtolower( $e['message'] ) : '';
-				$agent   = isset( $e['agent_name'] ) ? strtolower( $e['agent_name'] ) : '';
-				return false !== strpos( $message, $search_lower ) || false !== strpos( $agent, $search_lower );
-			} );
+			$events       = array_filter(
+				$events,
+				function ( $e ) use ( $search_lower ) {
+					$message = isset( $e['message'] ) ? strtolower( $e['message'] ) : '';
+					$agent   = isset( $e['agent_name'] ) ? strtolower( $e['agent_name'] ) : '';
+					return false !== strpos( $message, $search_lower ) || false !== strpos( $agent, $search_lower );
+				}
+			);
 		}
 
 		// Sort descending.
-		usort( $events, function ( $a, $b ) {
-			return ( $b['timestamp'] ?? 0 ) - ( $a['timestamp'] ?? 0 );
-		} );
+		usort(
+			$events,
+			function ( $a, $b ) {
+				return ( $b['timestamp'] ?? 0 ) - ( $a['timestamp'] ?? 0 );
+			}
+		);
 
 		return array_values( $events );
 	}
@@ -1906,7 +1965,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		}
 
 		// API request/response type suffixes used for normalisation.
-		$api_request_types = array(
+		$api_request_types  = array(
 			'openai_request',
 			'anthropic_request',
 			'gemini_request',
@@ -2031,7 +2090,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @return string Provider name (e.g. 'openai', 'gemini', 'anthropic', 'lm_studio').
 	 */
 	private function extract_provider_from_type( $type ) {
-		$providers = array( 'openai_external_action', 'openai', 'anthropic', 'gemini', 'lm_studio' );
+		$providers = array( 'openai_external_action', 'openai', 'anthropic', 'gemini', 'deepseek', 'openrouter', 'huggingface', 'nvidia', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 		foreach ( $providers as $provider ) {
 			if ( 0 === strpos( $type, $provider . '_' ) ) {
 				// Normalise 'openai_external_action' to 'openai'.
@@ -2133,10 +2192,10 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 			$succ   = isset( $day_data['successes'] ) ? (int) $day_data['successes'] : 0;
 			$reqs   = isset( $day_data['total_requests'] ) ? (int) $day_data['total_requests'] : 0;
 
-			$total_tokens   += $tokens;
-			$total_calls    += $calls;
+			$total_tokens    += $tokens;
+			$total_calls     += $calls;
 			$total_successes += $succ;
-			$total_requests += $reqs;
+			$total_requests  += $reqs;
 
 			if ( $resp > 0 ) {
 				$total_response += $resp;
@@ -2227,13 +2286,18 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		// Efficiency: based on uptime.
 		$uptime_pct = $this->get_system_uptime_pct();
-		$efficiency  = min( 100, round( $uptime_pct ) );
+		$efficiency = min( 100, round( $uptime_pct ) );
 
 		// Coverage: based on agents with tools configured.
-		$agents_with_tools = count( array_filter( $assistants, function ( $a ) {
-			return ! empty( $a['tools'] ) && count( $a['tools'] ) > 0;
-		} ) );
-		$coverage = $agent_count > 0 ? min( 100, round( ( $agents_with_tools / $agent_count ) * 100 ) ) : 0;
+		$agents_with_tools = count(
+			array_filter(
+				$assistants,
+				function ( $a ) {
+					return ! empty( $a['tools'] ) && count( $a['tools'] ) > 0;
+				}
+			)
+		);
+		$coverage          = $agent_count > 0 ? min( 100, round( ( $agents_with_tools / $agent_count ) * 100 ) ) : 0;
 
 		$overall = round( ( $utilization + $reliability + $efficiency + $coverage ) / 4 );
 
@@ -2259,9 +2323,12 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		$health          = $this->get_system_health();
 
 		// Check for agents without tools.
-		$agents_no_tools = array_filter( $assistants, function ( $a ) {
-			return empty( $a['tools'] ) || 0 === count( array_filter( $a['tools'] ) );
-		} );
+		$agents_no_tools = array_filter(
+			$assistants,
+			function ( $a ) {
+				return empty( $a['tools'] ) || 0 === count( array_filter( $a['tools'] ) );
+			}
+		);
 		if ( ! empty( $agents_no_tools ) ) {
 			$recommendations[] = array(
 				'title'       => __( 'Configure Agent Tools', 'mcp-ai-wpoos-pro' ),

@@ -184,7 +184,7 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @param WP_REST_Request $request The request (unused; kept for signature compatibility).
 	 * @return true|WP_Error True when A2A is enabled, WP_Error 403 otherwise.
 	 */
-	public function permissions_check_agent_card( $request ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+	public function permissions_check_agent_card( $request ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- Variable is intentionally unused in the current implementation but reserved for future A2A protocol extensions.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		if ( empty( $settings['enable_a2a_server'] ) ) {

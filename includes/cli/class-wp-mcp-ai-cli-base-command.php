@@ -159,6 +159,11 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 				// Clear object cache periodically to prevent memory issues.
 				if ( 0 === ( $this->success_count + $this->error_count ) % $options['batch_size'] ) {
 					$this->clear_local_cache();
+
+					// Throttle if memory is approaching the configured limit.
+					if ( class_exists( 'WP_MCP_AI_Memory_Manager' ) ) {
+						WP_MCP_AI_Memory_Manager::throttle_or_abort();
+					}
 				}
 			}
 		}
@@ -350,6 +355,12 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 	 * @return void
 	 */
 	protected function clear_local_cache() {
+		if ( class_exists( 'WP_MCP_AI_Memory_Manager' ) ) {
+			WP_MCP_AI_Memory_Manager::stop_the_insanity();
+			return;
+		}
+
+		// Fallback: keep historical behaviour if the helper is unavailable.
 		global $wpdb, $wp_object_cache;
 
 		if ( $wpdb ) {

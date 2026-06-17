@@ -1,4 +1,0 @@
-body { background: #FFFFFF url("https://somesite.com/images/someimage.gif") repeat top center; }
-body {
-    background-url: url("https://somesite.com/images/someimage.gif");
-}

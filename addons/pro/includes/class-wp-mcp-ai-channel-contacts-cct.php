@@ -35,10 +35,10 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	/**
 	 * CRM status options.
 	 */
-	const STATUS_NEW       = 'new';
-	const STATUS_ACTIVE    = 'active';
-	const STATUS_RESOLVED  = 'resolved';
-	const STATUS_BLOCKED   = 'blocked';
+	const STATUS_NEW      = 'new';
+	const STATUS_ACTIVE   = 'active';
+	const STATUS_RESOLVED = 'resolved';
+	const STATUS_BLOCKED  = 'blocked';
 
 	/**
 	 * Hook into JetEngine to provision the content type.
@@ -166,7 +166,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				$existing_id = $wpdb->get_var(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1",
+						"SELECT _ID FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1",
 						$channel,
 						$channel_contact_id,
 						$connection_id
@@ -184,7 +184,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				$legacy_id = $wpdb->get_var(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = '' LIMIT 1",
+						"SELECT _ID FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s AND connection_id = '' LIMIT 1",
 						$channel,
 						$channel_contact_id
 					)
@@ -195,7 +195,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 					$wpdb->update(
 						$table,
 						array(
-							'connection_id'    => $connection_id,
+							'connection_id'     => $connection_id,
 							'conversation_type' => $conversation_type,
 						),
 						array( '_ID' => (int) $legacy_id ),
@@ -210,7 +210,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				$existing_id = $wpdb->get_var(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+						"SELECT _ID FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
 						$channel,
 						$channel_contact_id
 					)
@@ -303,7 +303,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 		$table = self::get_table_name();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT tags FROM {$table} WHERE _ID = %d LIMIT 1", absint( $contact_id ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT tags FROM `{$table}` WHERE _ID = %d LIMIT 1", absint( $contact_id ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( ! $row ) {
 			return;
 		}
@@ -388,7 +388,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			$result = $wpdb->get_var(
 				$wpdb->prepare(
 					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					"SELECT human_takeover FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1",
+					"SELECT human_takeover FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1",
 					$channel,
 					$contact_id,
 					$connection_id
@@ -402,7 +402,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				$result = $wpdb->get_var(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-						"SELECT human_takeover FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+						"SELECT human_takeover FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
 						$channel,
 						$contact_id
 					)
@@ -413,7 +413,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			$result = $wpdb->get_var(
 				$wpdb->prepare(
 					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					"SELECT human_takeover FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+					"SELECT human_takeover FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
 					$channel,
 					$contact_id
 				)
@@ -565,13 +565,34 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			'rest_post_access'    => 'edit_posts',
 			'rest_delete_access'  => 'edit_posts',
 			'admin_columns'       => array(
-				'_ID'                => array( 'enabled' => true, 'prefix' => '#', 'is_sortable' => true, 'is_num' => true ),
-				'channel'            => array( 'enabled' => true, 'is_sortable' => true ),
+				'_ID'                => array(
+					'enabled'     => true,
+					'prefix'      => '#',
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'channel'            => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
 				'channel_contact_id' => array( 'enabled' => true ),
-				'display_name'       => array( 'enabled' => true, 'is_sortable' => true ),
-				'crm_status'         => array( 'enabled' => true, 'is_sortable' => true ),
-				'last_message_at'    => array( 'enabled' => true, 'is_sortable' => true, 'is_num' => true ),
-				'cct_created'        => array( 'enabled' => true, 'is_sortable' => true ),
+				'display_name'       => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
+				'crm_status'         => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
+				'last_message_at'    => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'cct_created'        => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
 			),
 		);
 	}
@@ -594,15 +615,42 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				'width'       => '100%',
 				'default_val' => 'whatsapp',
 				'options'     => array(
-					array( 'key' => 'whatsapp', 'value' => 'WhatsApp' ),
-					array( 'key' => 'telegram', 'value' => 'Telegram' ),
-					array( 'key' => 'slack', 'value' => 'Slack' ),
-					array( 'key' => 'discord', 'value' => 'Discord' ),
-					array( 'key' => 'teams', 'value' => 'Microsoft Teams' ),
-					array( 'key' => 'messenger', 'value' => 'Facebook Messenger' ),
-					array( 'key' => 'google_chat', 'value' => 'Google Chat' ),
-					array( 'key' => 'twitter', 'value' => 'Twitter/X' ),
-					array( 'key' => 'webchat', 'value' => 'WebChat' ),
+					array(
+						'key'   => 'whatsapp',
+						'value' => 'WhatsApp',
+					),
+					array(
+						'key'   => 'telegram',
+						'value' => 'Telegram',
+					),
+					array(
+						'key'   => 'slack',
+						'value' => 'Slack',
+					),
+					array(
+						'key'   => 'discord',
+						'value' => 'Discord',
+					),
+					array(
+						'key'   => 'teams',
+						'value' => 'Microsoft Teams',
+					),
+					array(
+						'key'   => 'messenger',
+						'value' => 'Facebook Messenger',
+					),
+					array(
+						'key'   => 'google_chat',
+						'value' => 'Google Chat',
+					),
+					array(
+						'key'   => 'twitter',
+						'value' => 'Twitter/X',
+					),
+					array(
+						'key'   => 'webchat',
+						'value' => 'WebChat',
+					),
 				),
 				'description' => __( 'Chat platform this contact belongs to', 'mcp-ai-wpoos-pro' ),
 			),
@@ -665,10 +713,22 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				'width'       => '100%',
 				'default_val' => 'new',
 				'options'     => array(
-					array( 'key' => 'new', 'value' => __( 'New', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'active', 'value' => __( 'Active', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'resolved', 'value' => __( 'Resolved', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'blocked', 'value' => __( 'Blocked', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'new',
+						'value' => __( 'New', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'active',
+						'value' => __( 'Active', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'resolved',
+						'value' => __( 'Resolved', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'blocked',
+						'value' => __( 'Blocked', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 				'description' => __( 'Current CRM lifecycle status', 'mcp-ai-wpoos-pro' ),
 			),
@@ -742,9 +802,18 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				'width'       => '100%',
 				'default_val' => 'dm',
 				'options'     => array(
-					array( 'key' => 'dm',      'value' => __( 'Direct Message', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'channel', 'value' => __( 'Channel', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'group',   'value' => __( 'Group', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'dm',
+						'value' => __( 'Direct Message', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'channel',
+						'value' => __( 'Channel', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'group',
+						'value' => __( 'Group', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 				'description' => __( 'Whether this is a direct message, a channel (Slack/Teams/Discord), or a group chat', 'mcp-ai-wpoos-pro' ),
 			),

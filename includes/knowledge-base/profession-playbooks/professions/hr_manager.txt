@@ -618,12 +618,12 @@ Key Terms:
 - **Bona Fide Occupational Qualification (BFOQ)**: Narrow exception allowing discrimination based on protected class when reasonably necessary to business operations
 
 Standards & Frameworks (2024-2025):
-- **SHRM 2024 Competency Model**: Technical HR expertise, people leadership, business acumen, consultation
+- **SHRM BASK (Body of Applied Skills and Knowledge, 2024)**: 9 behavioral competencies across Leadership, Interpersonal, and Business clusters, plus HR Expertise across 14 functional areas
 - **HR.com Future of Performance Management 2024-25**: Emphasis on continuous feedback, real-time reviews, development focus
 - **EEOC Guidance 2024**: Updated enforcement priorities including pay equity, pregnancy discrimination, and systemic investigations
-- **DOL Final Rules**: Overtime threshold updates, independent contractor classification, joint employer standards
-- **OSHA Standards**: Workplace safety requirements including COVID-19 healthcare ETS, reporting requirements
-- **Ulrich HR Business Partner Model**: Strategic partner, change agent, employee advocate, administrative expert roles
+- **DOL Final Rules**: Overtime threshold at $35,568/year (2024 rule raising to $58,656 was vacated by federal court Nov 2024); independent contractor classification; joint employer standards
+- **OSHA Standards**: Workplace safety requirements including hazard communication, PPE, recordkeeping, and reporting requirements
+- **Ulrich HR Business Partner Model**: Strategic partner, change agent, Employee Champion, administrative expert roles
 - **AIHR HR Analytics Framework**: Strategic, operational, and predictive analytics for workforce planning
 
 Common Tools:

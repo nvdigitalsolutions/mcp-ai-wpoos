@@ -84,6 +84,13 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -105,10 +112,6 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
-		if ( ! $this->user_can_view_records( $user_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetFormBuilder submissions.', 'mcp-ai-wpoos' ) );
-		}
-
 		$form_id = $this->sanitize_form_id( isset( $arguments['form_id'] ) ? $arguments['form_id'] : '' );
 		if ( '' === $form_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_form_id', __( 'A JetFormBuilder form identifier must be provided.', 'mcp-ai-wpoos' ) );
@@ -121,18 +124,63 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 			$transport = 'auto';
 		}
 
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( (string) $arguments['connection_id'] ) : '';
+
+		// Prefer direct database queries for local requests to avoid the
+		// JetFormBuilder REST endpoint's manage_options capability requirement.
+		// The local path uses the tool's advertised capability (edit_posts).
+		// The local path is used when transport is 'auto' or 'rest' and no
+		// remote connection is targeted. Explicit 'http' transport or a
+		// connection_id forces the REST/handler dispatch path.
+		if ( 'http' !== $transport && ! $connection_id ) {
+			// Direct DB access only needs the tool's advertised capability.
+			$required_cap = $this->get_required_capability();
+			if ( $required_cap && ! user_can( $user_id, $required_cap ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'You do not have permission to view JetFormBuilder submissions.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$local = $this->query_submissions_local( $form_id, $limit, $status );
+			if ( null !== $local ) {
+				return $local;
+			}
+
+			// Tables do not exist yet — fall through to REST dispatch.
+			if ( 'rest' === $transport ) {
+				return new WP_Error(
+					'wp_mcp_ai_jetformbuilder_no_tables',
+					__( 'The JetFormBuilder records database tables were not found.', 'mcp-ai-wpoos' )
+				);
+			}
+		}
+
+		// REST dispatch path requires stronger JFB-specific capabilities.
+		if ( ! $this->user_can_view_records( $user_id ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetFormBuilder submissions.', 'mcp-ai-wpoos' ) );
+		}
+
 		$params = array(
-			'per_page' => $limit,
+			'limit'   => $limit,
+			'filters' => array(),
 		);
 
+		if ( $form_id ) {
+			$params['filters']['form'] = $form_id;
+		}
+
 		if ( $status ) {
-			$params['status'] = $status;
+			$params['filters']['status'] = $status;
+		}
+
+		if ( empty( $params['filters'] ) ) {
+			unset( $params['filters'] );
 		}
 
 		$result = WP_MCP_AI_JetFormBuilder_Tool_Handlers::dispatch(
 			'fetch_submissions',
 			array(
-				'id'        => $form_id,
 				'params'    => $params,
 				'transport' => $transport,
 			),
@@ -231,13 +279,13 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 	 * Sanitize the maximum number of submissions to return.
 	 *
 	 * @param mixed $value   Raw value from the assistant.
-	 * @param int   $default Default value when input is missing.
+	 * @param int   $fallback Default value when input is missing.
 	 * @return int
 	 */
-	protected function sanitize_limit( $value, $default ) {
+	protected function sanitize_limit( $value, $fallback ) {
 		$limit = absint( $value );
 		if ( $limit < 1 ) {
-			$limit = $default;
+			$limit = $fallback;
 		}
 
 		return (int) min( 50, $limit );
@@ -260,6 +308,203 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 	}
 
 	/**
+	 * Query JetFormBuilder submissions directly from the custom database tables.
+	 *
+	 * Bypasses the JFB REST endpoint which requires manage_options, allowing
+	 * users with edit_posts or equivalent to retrieve submissions.
+	 *
+	 * @param string $form_id Form identifier.
+	 * @param int    $limit   Maximum records to return.
+	 * @param string $status  Optional status filter.
+	 * @return array|null Normalised result array, or null when tables are missing.
+	 */
+	protected function query_submissions_local( $form_id, $limit, $status ) {
+		global $wpdb;
+
+		$records_table = $wpdb->prefix . 'jet_fb_records';
+		$fields_table  = $wpdb->prefix . 'jet_fb_records_fields';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$records_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $records_table ) );
+		$fields_exists  = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $fields_table ) );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		if ( ! $records_exists || ! $fields_exists ) {
+			return null;
+		}
+
+		$where_clauses = array( $wpdb->prepare( 'r.form_id = %d', absint( $form_id ) ) );
+
+		if ( $status ) {
+			$where_clauses[] = $wpdb->prepare( 'r.status = %s', $status );
+		}
+
+		$where = implode( ' AND ', $where_clauses );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT r.id, r.form_id, r.status, r.user_id, r.created_at, r.updated_at
+					 FROM {$records_table} r
+					 WHERE {$where}
+					 ORDER BY r.created_at DESC
+					 LIMIT %d",
+				$limit
+			),
+			ARRAY_A
+		);
+
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$records_table} r WHERE {$where}"
+			)
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		if ( empty( $rows ) ) {
+			// Check whether the form actually exists by looking for ANY
+			// record for this form_id (any status). If there has never
+			// been a record, the form may not exist in this source.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$form_exists = (bool) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT 1 FROM {$records_table} WHERE form_id = %d LIMIT 1",
+					absint( $form_id )
+				)
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+			return array(
+				'transport'   => 'local',
+				'status'      => 200,
+				'form_id'     => $form_id,
+				'submissions' => array(),
+				'total'       => 0,
+				'form_found'  => $form_exists,
+			);
+		}
+
+		// Batch-load field values for all retrieved records.
+		$record_ids = array();
+		foreach ( $rows as $row ) {
+			$record_ids[] = absint( $row['id'] );
+		}
+
+		$fields_by_record = $this->load_fields_local( $record_ids );
+
+		$records = array();
+		foreach ( $rows as $row ) {
+			$rid = absint( $row['id'] );
+
+			$created = '';
+			if ( ! empty( $row['created_at'] ) ) {
+				$created = $this->format_datetime( $row['created_at'] );
+			}
+
+			$records[] = array(
+				'id'         => $rid,
+				'status'     => isset( $row['status'] ) ? sanitize_key( $row['status'] ) : '',
+				'created_at' => $created,
+				'fields'     => isset( $fields_by_record[ $rid ] ) ? $fields_by_record[ $rid ] : array(),
+			);
+		}
+
+		return array(
+			'transport'   => 'local',
+			'status'      => 200,
+			'form_id'     => $form_id,
+			'submissions' => $records,
+			'total'       => $total,
+			'form_found'  => true,
+		);
+	}
+
+	/**
+	 * Batch-load field values for a set of JetFormBuilder record IDs.
+	 *
+	 * @param int[] $record_ids List of record identifiers.
+	 * @return array<int, array<int, array{name: string, label: string, value: string}>>
+	 */
+	protected function load_fields_local( array $record_ids ) {
+		global $wpdb;
+
+		if ( empty( $record_ids ) ) {
+			return array();
+		}
+
+		$fields_table = $wpdb->prefix . 'jet_fb_records_fields';
+		$placeholders = implode( ',', array_fill( 0, count( $record_ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT record_id, field_name, field_value
+					 FROM {$fields_table}
+					 WHERE record_id IN ({$placeholders})
+					 ORDER BY id ASC",
+				...$record_ids
+			),
+			ARRAY_A
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		$fields_by_record = array();
+		$field_count      = array();
+
+		foreach ( $rows as $row ) {
+			$rid = absint( $row['record_id'] );
+			if ( ! isset( $field_count[ $rid ] ) ) {
+				$field_count[ $rid ] = 0;
+			}
+
+			// Limit to 8 fields per record to keep responses compact.
+			if ( $field_count[ $rid ] >= 8 ) {
+				continue;
+			}
+
+			++$field_count[ $rid ];
+
+			$name  = sanitize_key( $row['field_name'] );
+			$label = $this->normalise_field_label( '', $name );
+			$value = $this->normalise_field_value( $row['field_value'] );
+
+			if ( ! isset( $fields_by_record[ $rid ] ) ) {
+				$fields_by_record[ $rid ] = array();
+			}
+
+			$fields_by_record[ $rid ][] = array(
+				'name'  => $name,
+				'label' => $label,
+				'value' => $value,
+			);
+		}
+
+		return $fields_by_record;
+	}
+
+	/**
+	 * Format a database datetime value to W3C format.
+	 *
+	 * @param string $datetime Raw datetime string.
+	 * @return string
+	 */
+	protected function format_datetime( $datetime ) {
+		$datetime = is_string( $datetime ) ? trim( $datetime ) : '';
+		if ( '' === $datetime ) {
+			return '';
+		}
+
+		// If already in ISO 8601 / W3C format, return as-is.
+		if ( false !== strpos( $datetime, 'T' ) ) {
+			return $datetime;
+		}
+
+		$formatted = mysql2date( DATE_W3C, $datetime, false );
+
+		return $formatted ? $formatted : $datetime;
+	}
+
+	/**
 	 * Prepare submissions returned by JetFormBuilder.
 	 *
 	 * @param mixed $payload Raw handler payload.
@@ -274,7 +519,17 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 				continue;
 			}
 
+			// JetFormBuilder may return different key names for the record ID.
 			$id = isset( $entry['id'] ) ? absint( $entry['id'] ) : 0;
+			if ( ! $id && isset( $entry['ID'] ) ) {
+				$id = absint( $entry['ID'] );
+			}
+			if ( ! $id && isset( $entry['record_id'] ) ) {
+				$id = absint( $entry['record_id'] );
+			}
+			if ( ! $id && isset( $entry['submission_id'] ) ) {
+				$id = absint( $entry['submission_id'] );
+			}
 			if ( ! $id ) {
 				continue;
 			}
@@ -339,6 +594,18 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 			if ( isset( $payload['data'] ) && is_array( $payload['data'] ) ) {
 				return $this->coerce_list_from_payload( $payload['data'] );
 			}
+
+			if ( isset( $payload['records'] ) && is_array( $payload['records'] ) ) {
+				return $this->coerce_list_from_payload( $payload['records'] );
+			}
+
+			if ( isset( $payload['submissions'] ) && is_array( $payload['submissions'] ) ) {
+				return $this->coerce_list_from_payload( $payload['submissions'] );
+			}
+
+			if ( isset( $payload['items'] ) && is_array( $payload['items'] ) ) {
+				return $this->coerce_list_from_payload( $payload['items'] );
+			}
 		}
 
 		return array();
@@ -347,11 +614,11 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 	/**
 	 * Determine whether an array uses sequential keys.
 	 *
-	 * @param array $array Array to inspect.
+	 * @param array $items Array to inspect.
 	 * @return bool
 	 */
-	protected function is_sequential_array( array $array ) {
-		return array_keys( $array ) === range( 0, count( $array ) - 1 );
+	protected function is_sequential_array( array $items ) {
+		return array_keys( $items ) === range( 0, count( $items ) - 1 );
 	}
 
 	/**

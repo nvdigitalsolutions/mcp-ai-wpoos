@@ -18,44 +18,68 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_PARA_Create_Area implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'para_create_area';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'PARA: Create Area', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Create a new PARA Area — an ongoing responsibility with a standard to maintain, an owner, and a review cadence (weekly, biweekly, monthly, quarterly, annually). Use Areas for things like Health, Finance, or Team Management — distinct from Projects which have a deadline.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'           => array(
+				'title'          => array(
 					'type'        => 'string',
 					'description' => __( 'Area title.', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'description'     => array(
+				'description'    => array(
 					'type'        => 'string',
 					'description' => __( 'Optional area description.', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
-				'standard'        => array(
+				'standard'       => array(
 					'type'        => 'string',
 					'description' => __( 'The standard to maintain in this area.', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
 				),
-				'owner_id'        => array(
+				'owner_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress user ID of the area owner.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'review_cadence'  => array(
+				'review_cadence' => array(
 					'type'        => 'string',
 					'description' => __( 'How often this area is reviewed.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'weekly', 'biweekly', 'monthly', 'quarterly', 'annually' ),
@@ -67,14 +91,38 @@ class WP_MCP_AI_Tool_PARA_Create_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing' );
 	}
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		return class_exists( 'WP_MCP_AI_PARA_Taxonomy' ) && WP_MCP_AI_PARA_Taxonomy::is_enabled();
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {

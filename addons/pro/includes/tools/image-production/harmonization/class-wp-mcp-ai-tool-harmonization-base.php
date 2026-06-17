@@ -38,6 +38,13 @@ abstract class WP_MCP_AI_Tool_Harmonization_Base implements
 	use WP_MCP_AI_Tool_Harmonization;
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Compositor instance.
 	 *
 	 * @var WP_MCP_AI_Harmonization_Compositor|null
@@ -89,6 +96,11 @@ abstract class WP_MCP_AI_Tool_Harmonization_Base implements
 	 *
 	 * @return array
 	 */
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return $this->harmonization_capability_flags();
 	}

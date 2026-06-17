@@ -34,6 +34,27 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 	private $data_store;
 
 	/**
+	 * Determine whether the CRM toolkit is enabled.
+	 *
+	 * @since 2.3.0
+	 * @return bool
+	 */
+	public static function is_available() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * Message explaining why the tool is unavailable.
+	 *
+	 * @since 2.3.0
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'The Manage CRM Contact tool requires the CRM Toolkit to be enabled in plugin settings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -143,6 +164,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if data store is available.

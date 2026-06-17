@@ -70,37 +70,37 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'base_noi'            => array(
+				'base_noi'               => array(
 					'type'        => 'number',
 					'description' => __( 'Base-case annual NOI.', 'mcp-ai-wpoos-pro' ),
 				),
-				'loan_amount'         => array(
+				'loan_amount'            => array(
 					'type'        => 'number',
 					'description' => __( 'Loan amount.', 'mcp-ai-wpoos-pro' ),
 				),
-				'interest_rate'       => array(
+				'interest_rate'          => array(
 					'type'        => 'number',
 					'description' => __( 'Current annual interest rate as decimal.', 'mcp-ai-wpoos-pro' ),
 				),
-				'amort_months'        => array(
+				'amort_months'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Amortization period in months.', 'mcp-ai-wpoos-pro' ),
 				),
-				'property_value'      => array(
+				'property_value'         => array(
 					'type'        => 'number',
 					'description' => __( 'Current appraised property value.', 'mcp-ai-wpoos-pro' ),
 				),
-				'vacancy_shock_pct'   => array(
+				'vacancy_shock_pct'      => array(
 					'type'        => 'number',
 					'description' => __( 'Vacancy shock: additional vacancy as decimal (e.g. 0.10 for 10% extra vacancy on PGI).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0.10,
 				),
-				'rate_increase_bps'   => array(
+				'rate_increase_bps'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Interest rate increase in basis points (e.g. 200 for +2%).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 200,
 				),
-				'opex_inflation_pct'  => array(
+				'opex_inflation_pct'     => array(
 					'type'        => 'number',
 					'description' => __( 'Operating expense inflation as decimal (e.g. 0.10 for 10% higher opex).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0.10,
@@ -123,7 +123,20 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -134,15 +147,15 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$base_noi    = (float) ( $arguments['base_noi'] ?? 0 );
-		$loan        = (float) ( $arguments['loan_amount'] ?? 0 );
-		$rate        = (float) ( $arguments['interest_rate'] ?? 0 );
-		$amort       = (int) ( $arguments['amort_months'] ?? 360 );
-		$value       = (float) ( $arguments['property_value'] ?? 0 );
-		$vac_shock   = (float) ( $arguments['vacancy_shock_pct'] ?? 0.10 );
-		$rate_bps    = (int) ( $arguments['rate_increase_bps'] ?? 200 );
-		$opex_infl   = (float) ( $arguments['opex_inflation_pct'] ?? 0.10 );
-		$cap_bps     = (int) ( $arguments['cap_rate_expansion_bps'] ?? 100 );
+		$base_noi  = (float) ( $arguments['base_noi'] ?? 0 );
+		$loan      = (float) ( $arguments['loan_amount'] ?? 0 );
+		$rate      = (float) ( $arguments['interest_rate'] ?? 0 );
+		$amort     = (int) ( $arguments['amort_months'] ?? 360 );
+		$value     = (float) ( $arguments['property_value'] ?? 0 );
+		$vac_shock = (float) ( $arguments['vacancy_shock_pct'] ?? 0.10 );
+		$rate_bps  = (int) ( $arguments['rate_increase_bps'] ?? 200 );
+		$opex_infl = (float) ( $arguments['opex_inflation_pct'] ?? 0.10 );
+		$cap_bps   = (int) ( $arguments['cap_rate_expansion_bps'] ?? 100 );
 
 		if ( $base_noi <= 0 || $loan <= 0 || $value <= 0 ) {
 			return new WP_Error( 'invalid_input', __( 'NOI, loan amount, and property value must be positive.', 'mcp-ai-wpoos-pro' ) );
@@ -159,12 +172,12 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 			$dy          = $calc::calculate_debt_yield( $noi, $loan );
 
 			return array(
-				'noi'         => $calc::format_currency( $noi ),
+				'noi'          => $calc::format_currency( $noi ),
 				'debt_service' => $calc::format_currency( $annual_ds ),
-				'dscr'        => round( $dscr, 2 ) . 'x',
-				'ltv'         => $calc::format_percentage( $ltv ),
-				'debt_yield'  => $calc::format_percentage( $dy ),
-				'value'       => $calc::format_currency( $prop_value ),
+				'dscr'         => round( $dscr, 2 ) . 'x',
+				'ltv'          => $calc::format_percentage( $ltv ),
+				'debt_yield'   => $calc::format_percentage( $dy ),
+				'value'        => $calc::format_currency( $prop_value ),
 			);
 		};
 
@@ -174,9 +187,9 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 
 		// Scenario 1: Vacancy shock — NOI drops by vac_shock * (NOI + opex proxy).
 		// Simplified: reduce NOI proportionally.
-		$vac_noi     = $base_noi * ( 1 - $vac_shock );
-		$vac_value   = ( $base_cap_rate > 0 ) ? $vac_noi / $base_cap_rate : 0;
-		$vac_metrics = $compute_metrics( $vac_noi, $rate, $vac_value );
+		$vac_noi                 = $base_noi * ( 1 - $vac_shock );
+		$vac_value               = ( $base_cap_rate > 0 ) ? $vac_noi / $base_cap_rate : 0;
+		$vac_metrics             = $compute_metrics( $vac_noi, $rate, $vac_value );
 		$vac_metrics['scenario'] = sprintf(
 			/* translators: %s: vacancy shock percentage */
 			__( 'Vacancy shock (+%s additional vacancy)', 'mcp-ai-wpoos-pro' ),
@@ -184,8 +197,8 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 		);
 
 		// Scenario 2: Rate increase.
-		$new_rate     = $rate + ( $rate_bps / 10000 );
-		$rate_metrics = $compute_metrics( $base_noi, $new_rate, $value );
+		$new_rate                 = $rate + ( $rate_bps / 10000 );
+		$rate_metrics             = $compute_metrics( $base_noi, $new_rate, $value );
 		$rate_metrics['scenario'] = sprintf(
 			/* translators: %s: rate increase in BPS */
 			__( 'Interest rate increase (+%d bps to %s)', 'mcp-ai-wpoos-pro' ),
@@ -195,10 +208,10 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 
 		// Scenario 3: OpEx inflation — reduces NOI by opex_infl * (PGI-NOI portion).
 		// Simplified: reduce NOI by opex inflation proportion of operating costs.
-		$opex_estimate = $value * $base_cap_rate > 0 ? $base_noi * $opex_infl : $base_noi * $opex_infl;
-		$opex_noi      = $base_noi - $opex_estimate;
-		$opex_value    = ( $base_cap_rate > 0 ) ? $opex_noi / $base_cap_rate : 0;
-		$opex_metrics  = $compute_metrics( $opex_noi, $rate, $opex_value );
+		$opex_estimate            = $value * $base_cap_rate > 0 ? $base_noi * $opex_infl : $base_noi * $opex_infl;
+		$opex_noi                 = $base_noi - $opex_estimate;
+		$opex_value               = ( $base_cap_rate > 0 ) ? $opex_noi / $base_cap_rate : 0;
+		$opex_metrics             = $compute_metrics( $opex_noi, $rate, $opex_value );
 		$opex_metrics['scenario'] = sprintf(
 			/* translators: %s: opex inflation percentage */
 			__( 'Operating expense inflation (+%s increase)', 'mcp-ai-wpoos-pro' ),
@@ -206,9 +219,9 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 		);
 
 		// Scenario 4: Cap rate expansion — value drops.
-		$stressed_cap = $base_cap_rate + ( $cap_bps / 10000 );
-		$cap_value    = ( $stressed_cap > 0 ) ? $base_noi / $stressed_cap : 0;
-		$cap_metrics  = $compute_metrics( $base_noi, $rate, $cap_value );
+		$stressed_cap            = $base_cap_rate + ( $cap_bps / 10000 );
+		$cap_value               = ( $stressed_cap > 0 ) ? $base_noi / $stressed_cap : 0;
+		$cap_metrics             = $compute_metrics( $base_noi, $rate, $cap_value );
 		$cap_metrics['scenario'] = sprintf(
 			/* translators: %1$d: BPS expansion, %2$s: new cap rate */
 			__( 'Cap rate expansion (+%1$d bps to %2$s)', 'mcp-ai-wpoos-pro' ),
@@ -220,8 +233,8 @@ class WP_MCP_AI_Tool_CRE_Stress_Test_Modeler implements WP_MCP_AI_Tool_Interface
 			'success' => true,
 			'message' => __( 'Stress test analysis complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
-				'base_case'  => array_merge( array( 'scenario' => __( 'Base Case', 'mcp-ai-wpoos-pro' ) ), $base_metrics ),
-				'scenarios'  => array(
+				'base_case' => array_merge( array( 'scenario' => __( 'Base Case', 'mcp-ai-wpoos-pro' ) ), $base_metrics ),
+				'scenarios' => array(
 					$vac_metrics,
 					$rate_metrics,
 					$opex_metrics,

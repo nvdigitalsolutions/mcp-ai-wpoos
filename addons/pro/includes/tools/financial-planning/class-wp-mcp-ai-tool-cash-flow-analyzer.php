@@ -20,6 +20,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Cash_Flow_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @since 1.1.0
@@ -127,7 +134,12 @@ class WP_MCP_AI_Tool_Cash_Flow_Analyzer implements WP_MCP_AI_Tool_Interface, WP_
 	 *
 	 * @return array Capability flags.
 	 */
-	public function get_capability_flags() {
+		/**
+	 * Get capability flags for this tool.
+	 *
+	 * @return array
+	 */
+public function get_capability_flags() {
 		return array( 'pro', 'computation' );
 	}
 

@@ -29,6 +29,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
+
 /**
  * Async Tool Executor Service class
  *
@@ -37,6 +39,45 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Async_Executor {
+
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
+
+	/**
+	 * Cooperative tick-lock prefix for the per-job lock.
+	 *
+	 * Prevents an inline shutdown worker and a (possibly delayed)
+	 * WP-Cron loopback from invoking `execute_async_tool()` for the
+	 * same job concurrently.
+	 *
+	 * @var string
+	 */
+	const TICK_LOCK_PREFIX = 'wp_mcp_ai_async_exec_lock_';
+
+	/**
+	 * Object-cache group used by the cooperative tick lock.
+	 *
+	 * @var string
+	 */
+	const TICK_LOCK_CACHE_GROUP = 'wp_mcp_ai_async_executor';
+
+	/**
+	 * Tick-lock TTL in seconds. Must comfortably exceed
+	 * {@see DEFAULT_TOOL_TIMEOUT} so a healthy long-running tool does
+	 * not hit lock expiry mid-execution.
+	 *
+	 * @var int
+	 */
+	const TICK_LOCK_TTL = 300;
+
+	/**
+	 * Minimum age (in seconds) that a `pending` async job must reach
+	 * before the REST poll endpoint is allowed to dispatch a
+	 * self-healing inline kick. Avoids racing the initial enqueue
+	 * request and its own shutdown handler.
+	 *
+	 * @var int
+	 */
+	const STALE_PENDING_THRESHOLD_SECONDS = 5;
 
 	/**
 	 * Prefix for result storage option names
@@ -235,6 +276,25 @@ class WP_MCP_AI_Tool_Async_Executor {
 			);
 		}
 
+		// Inline-async fallback: register a `shutdown` action that re-checks the
+		// job state once the current HTTP response is flushed and runs the tick
+		// in this same PHP process if the cron loopback hasn't already drained
+		// it. Without this, async tools sit at `status: pending` indefinitely on
+		// hosts where `DISABLE_WP_CRON = true` or where `wp-cron.php` cannot be
+		// reached via loopback HTTP. The cooperative tick lock inside
+		// `execute_async_tool()` prevents double-execution if cron does fire
+		// later. Mirrors the pattern from PR #4916 for the Mine Memories job.
+		if ( self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			$executor = $this;
+			add_action(
+				'shutdown',
+				static function () use ( $executor, $job_id ) {
+					$executor->kick_inline( $job_id );
+				},
+				20
+			);
+		}
+
 		// Log queuing event with detailed context for debugging.
 		$this->log_event(
 			'async_tool_queued',
@@ -266,6 +326,10 @@ class WP_MCP_AI_Tool_Async_Executor {
 	/**
 	 * Execute an async tool (cron callback)
 	 *
+	 * Wraps {@see execute_async_tool_locked()} with a cooperative
+	 * tick lock so an inline shutdown worker and a delayed cron
+	 * loopback cannot double-process the same job.
+	 *
 	 * @param string $job_id Job identifier.
 	 */
 	public function execute_async_tool( $job_id ) {
@@ -275,11 +339,298 @@ class WP_MCP_AI_Tool_Async_Executor {
 			return;
 		}
 
+		$lock_key = self::TICK_LOCK_PREFIX . $job_id;
+		if ( ! self::inline_async_acquire_tick_lock( $lock_key, self::TICK_LOCK_CACHE_GROUP, self::TICK_LOCK_TTL ) ) {
+			// Another worker (a delayed cron loopback or a parallel
+			// shutdown handler) is already inside execute_async_tool()
+			// for this job. Bail — that worker will save fresh metadata
+			// when it exits.
+			return;
+		}
+
+		try {
+			$this->execute_async_tool_locked( $job_id );
+		} finally {
+			self::inline_async_release_tick_lock( $lock_key, self::TICK_LOCK_CACHE_GROUP );
+		}
+	}
+
+	/**
+	 * Run the inline-async fallback for a queued job.
+	 *
+	 * Used by the `shutdown` action registered in {@see queue_tool()}
+	 * and by the self-healing branch of the REST cron-status endpoint
+	 * via {@see kick_inline_if_stale()}. Flushes the active HTTP
+	 * response (FastCGI), detaches the worker from the client, and
+	 * delegates to {@see execute_async_tool()} which owns the
+	 * cooperative lock.
+	 *
+	 * Safe to call from any request context; the cooperative lock
+	 * prevents duplicate execution when WP-Cron eventually fires its
+	 * own tick.
+	 *
+	 * @param string $job_id Job identifier.
+	 * @return void
+	 */
+	public function kick_inline( $job_id ) {
+		$job_id = sanitize_key( $job_id );
+		if ( empty( $job_id ) ) {
+			return;
+		}
+
+		// Honour the global escape hatch.
+		if ( ! self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			return;
+		}
+
+		// Detach from the HTTP client so the kick can survive client
+		// disconnects and the response can flush early.
+		self::inline_async_detach_worker_from_client();
+
+		$metadata = $this->get_metadata( $job_id );
+		if ( ! is_array( $metadata ) ) {
+			return;
+		}
+		// Only kick when the cron tick has not already advanced the job.
+		// Once status is anything other than `pending`, the cooperative
+		// lock in execute_async_tool() would block us anyway —
+		// short-circuit to avoid lock churn.
+		if ( ! isset( $metadata['status'] ) || 'pending' !== $metadata['status'] ) {
+			return;
+		}
+
+		$this->log_event(
+			'async_tool_inline_kick',
+			'Async tool job kicked inline (cron loopback fallback)',
+			array(
+				'job_id'    => $job_id,
+				'tool_slug' => isset( $metadata['tool_slug'] ) ? $metadata['tool_slug'] : 'unknown',
+				'source'    => 'inline_shutdown',
+			)
+		);
+
+		$executor = $this;
+		self::inline_async_run_kick(
+			__CLASS__,
+			$job_id,
+			static function () use ( $executor, $job_id ) {
+				$executor->execute_async_tool( $job_id );
+			}
+		);
+	}
+
+	/**
+	 * Self-healing inline kick used by the REST cron-status endpoint.
+	 *
+	 * If the job has been stuck in `pending` past
+	 * {@see STALE_PENDING_THRESHOLD_SECONDS}, schedules a `shutdown`
+	 * action that runs the tick after the response is flushed. The
+	 * REST response payload itself is unchanged — callers see the
+	 * same job details they would have without this kick. Returns
+	 * true when a kick was scheduled, false otherwise (so callers can
+	 * log/metric the self-healing decision if desired).
+	 *
+	 * @param string $job_id Job identifier (already sanitised).
+	 * @return bool
+	 */
+	public function kick_inline_if_stale( $job_id ) {
+		$job_id = sanitize_key( $job_id );
+		if ( empty( $job_id ) ) {
+			return false;
+		}
+
+		if ( ! self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			return false;
+		}
+
+		$metadata = $this->get_metadata( $job_id );
+		if ( ! is_array( $metadata ) || ! isset( $metadata['status'] ) || 'pending' !== $metadata['status'] ) {
+			return false;
+		}
+
+		$queued_at = isset( $metadata['queued_at'] ) ? (int) $metadata['queued_at'] : 0;
+		if ( $queued_at <= 0 || ( time() - $queued_at ) <= self::STALE_PENDING_THRESHOLD_SECONDS ) {
+			return false;
+		}
+
+		$executor = $this;
+		add_action(
+			'shutdown',
+			static function () use ( $executor, $job_id ) {
+				$executor->kick_inline( $job_id );
+			},
+			20
+		);
+
+		return true;
+	}
+
+	/**
+	 * Cancel a pending or running async job.
+	 *
+	 * Sets the job status to 'cancelled' and fires the wp_mcp_ai_job_cancelled
+	 * action. The cooperative tick lock ensures any in-flight
+	 * execute_async_tool_locked() call completes cleanly; subsequent ticks see
+	 * 'cancelled' in the status gate and bail early.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id ID of the user requesting the cancellation (0 = skip ownership check).
+	 * @return bool|WP_Error True on success, WP_Error if the job cannot be cancelled.
+	 */
+	public function cancel_job( $job_id, $user_id = 0 ) {
+		$metadata = $this->get_metadata( $job_id );
+		if ( ! is_array( $metadata ) ) {
+			return new WP_Error( 'wp_mcp_ai_job_not_found', __( 'Job not found.', 'mcp-ai-wpoos' ) );
+		}
+
+		$terminal = array( 'completed', 'failed', 'cancelled' );
+		if ( in_array( $metadata['status'], $terminal, true ) ) {
+			return new WP_Error( 'wp_mcp_ai_job_terminal', __( 'Job is already in a terminal state.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Ownership check — admins bypass per-user restriction.
+		if ( $user_id > 0 && isset( $metadata['context']['user_id'] ) && (int) $metadata['context']['user_id'] !== $user_id ) {
+			if ( ! user_can( $user_id, 'manage_options' ) ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to cancel this job.', 'mcp-ai-wpoos' ) );
+			}
+		}
+
+		$metadata['status']       = 'cancelled';
+		$metadata['completed_at'] = time();
+		$this->save_metadata( $job_id, $metadata );
+
+		if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
+			WP_MCP_AI_Job_Notifier::update_status( $job_id, 'cancelled' );
+		}
+
+		/**
+		 * Fires after an async job is cancelled.
+		 *
+		 * @param string $job_id  Job identifier.
+		 * @param int    $user_id User who initiated the cancellation.
+		 */
+		do_action( 'wp_mcp_ai_job_cancelled', $job_id, $user_id );
+
+		return true;
+	}
+
+	/**
+	 * Retry a failed or cancelled async job by re-queuing it.
+	 *
+	 * Clears the existing result/error fields, resets status to 'pending',
+	 * and schedules a fresh cron event. Fires the wp_mcp_ai_job_retried action.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id ID of the user requesting the retry (0 = skip ownership check).
+	 * @return string|WP_Error The job ID string on success, WP_Error on failure.
+	 */
+	public function retry_job( $job_id, $user_id = 0 ) {
+		$metadata = $this->get_metadata( $job_id );
+		if ( ! is_array( $metadata ) ) {
+			return new WP_Error( 'wp_mcp_ai_job_not_found', __( 'Job not found.', 'mcp-ai-wpoos' ) );
+		}
+
+		$retryable = array( 'failed', 'cancelled' );
+		if ( ! in_array( $metadata['status'], $retryable, true ) ) {
+			return new WP_Error( 'wp_mcp_ai_job_not_retryable', __( 'Only failed or cancelled jobs can be retried.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Ownership check — admins bypass per-user restriction.
+		if ( $user_id > 0 && isset( $metadata['context']['user_id'] ) && (int) $metadata['context']['user_id'] !== $user_id ) {
+			if ( ! user_can( $user_id, 'manage_options' ) ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to retry this job.', 'mcp-ai-wpoos' ) );
+			}
+		}
+
+		// Reset state for a fresh execution run.
+		$metadata['status']       = 'pending';
+		$metadata['queued_at']    = time();
+		$metadata['started_at']   = null;
+		$metadata['completed_at'] = null;
+		$metadata['result']       = null;
+		$metadata['error']        = null;
+		$this->save_metadata( $job_id, $metadata );
+
+		// Schedule cron event in the immediate past so spawn_cron() picks it up.
+		$timestamp = time() - 1;
+		wp_schedule_single_event( $timestamp, self::CRON_HOOK, array( $job_id ) );
+
+		if ( function_exists( 'spawn_cron' ) ) {
+			spawn_cron();
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
+			WP_MCP_AI_Job_Notifier::update_status( $job_id, 'pending' );
+		}
+
+		/**
+		 * Fires after an async job is retried.
+		 *
+		 * @param string $job_id  Job identifier.
+		 * @param int    $user_id User who initiated the retry.
+		 */
+		do_action( 'wp_mcp_ai_job_retried', $job_id, $user_id );
+
+		// Inline-kick fallback for environments where WP-Cron loopback is disabled.
+		if ( self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			$executor = $this;
+			add_action(
+				'shutdown',
+				static function () use ( $executor, $job_id ) {
+					$executor->kick_inline( $job_id );
+				},
+				20
+			);
+		}
+
+		return $job_id;
+	}
+
+	/**
+	 * Check whether a job is owned by the given user.
+	 *
+	 * Returns true if the job exists and was created by $user_id,
+	 * or if $user_id holds the manage_options capability.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id WordPress user ID.
+	 * @return bool
+	 */
+	public function is_owned_by( $job_id, $user_id ) {
+		$metadata = $this->get_metadata( $job_id );
+		if ( ! is_array( $metadata ) ) {
+			return false;
+		}
+		if ( user_can( $user_id, 'manage_options' ) ) {
+			return true;
+		}
+		$owner = isset( $metadata['context']['user_id'] ) ? (int) $metadata['context']['user_id'] : 0;
+		return $owner === $user_id;
+	}
+
+	/**
+	 * Internal body of the cron callback. Runs inside the cooperative
+	 * tick lock acquired by {@see execute_async_tool()}.
+	 *
+	 * @param string $job_id Sanitised job identifier.
+	 * @return void
+	 */
+	protected function execute_async_tool_locked( $job_id ) {
 		// Retrieve job metadata.
 		$metadata = $this->get_metadata( $job_id );
 
 		if ( ! $metadata || ! isset( $metadata['tool_slug'] ) ) {
 			$this->log_error( 'Async tool job metadata not found', array( 'job_id' => $job_id ) );
+			return;
+		}
+
+		// Re-check the status gate after taking the cooperative lock: a
+		// parallel inline-shutdown worker may have already advanced this
+		// job past `pending` in the brief window between the lock release
+		// and our acquisition. Re-running a completed/failed/delegated
+		// job would corrupt its state and double-fire completion hooks.
+		// Note: 'cancelled' is also a terminal state and is caught here.
+		if ( isset( $metadata['status'] ) && 'pending' !== $metadata['status'] ) {
 			return;
 		}
 
@@ -544,7 +895,16 @@ class WP_MCP_AI_Tool_Async_Executor {
 			// with media-only responses (like veo video generation).
 			// NOTE: This must fire AFTER the result is stored but BEFORE job cleanup,
 			// so token usage can be recorded for the completed async job.
-			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+			$wp_mcp_ai_descriptor                = WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, null, $tool_slug, $context );
+			$wp_mcp_ai_descriptor['duration_ms'] = round( (float) $duration * 1000.0, 3 );
+			do_action(
+				'wp_mcp_ai_after_tool_execution',
+				$tool_slug,
+				$arguments,
+				$context,
+				$result,
+				$wp_mcp_ai_descriptor
+			);
 
 		} catch ( Exception $e ) {
 			$this->handle_execution_error( $job_id, $metadata, $e->getMessage() );

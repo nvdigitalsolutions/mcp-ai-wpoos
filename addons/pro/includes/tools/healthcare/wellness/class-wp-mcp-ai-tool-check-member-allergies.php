@@ -64,12 +64,12 @@ class WP_MCP_AI_Tool_Check_Member_Allergies implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'member_id'  => array(
+				'member_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Member post ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'allergens'  => array(
+				'allergens' => array(
 					'type'        => 'array',
 					'description' => __( 'Allergen names or substrings to test (case-insensitive).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
@@ -85,6 +85,13 @@ class WP_MCP_AI_Tool_Check_Member_Allergies implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'read-only', 'pii-data', 'cacheable' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -136,7 +143,7 @@ class WP_MCP_AI_Tool_Check_Member_Allergies implements WP_MCP_AI_Tool_Interface,
 			array(
 				'post_type'      => 'mcp_ai_allergy',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'check_member_allergies', 0, 1000 ) : 1000,
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
 						'key'   => '_allergy_member_id',

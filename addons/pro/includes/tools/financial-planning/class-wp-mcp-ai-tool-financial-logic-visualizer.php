@@ -31,6 +31,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Financial_Logic_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.1.0
@@ -338,7 +345,7 @@ class WP_MCP_AI_Tool_Financial_Logic_Visualizer implements WP_MCP_AI_Tool_Interf
 
 		// Add node definitions with type-based shapes.
 		foreach ( $nodes as $node ) {
-			$shape = $this->get_node_shape( $node['type'], $chain_type );
+			$shape   = $this->get_node_shape( $node['type'], $chain_type );
 			$lines[] = '    ' . $node['id'] . $shape['open'] . $node['label'] . $shape['close'];
 		}
 
@@ -391,24 +398,39 @@ class WP_MCP_AI_Tool_Financial_Logic_Visualizer implements WP_MCP_AI_Tool_Interf
 		switch ( $type ) {
 			case 'event':
 				// Rounded rectangle for events.
-				return array( 'open' => '(', 'close' => ')' );
+				return array(
+					'open'  => '(',
+					'close' => ')',
+				);
 
 			case 'decision':
 				// Diamond for decisions.
-				return array( 'open' => '{', 'close' => '}' );
+				return array(
+					'open'  => '{',
+					'close' => '}',
+				);
 
 			case 'outcome':
 				// Double brackets for outcomes.
-				return array( 'open' => '[[', 'close' => ']]' );
+				return array(
+					'open'  => '[[',
+					'close' => ']]',
+				);
 
 			case 'risk':
 				// Hexagon for risks.
-				return array( 'open' => '{{', 'close' => '}}' );
+				return array(
+					'open'  => '{{',
+					'close' => '}}',
+				);
 
 			case 'factor':
 			default:
 				// Standard rectangle for factors.
-				return array( 'open' => '[', 'close' => ']' );
+				return array(
+					'open'  => '[',
+					'close' => ']',
+				);
 		}
 	}
 

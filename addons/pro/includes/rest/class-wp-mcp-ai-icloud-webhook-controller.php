@@ -1,6 +1,6 @@
 <?php
 /**
- * iCloud Drive Webhook Controller
+ * ICloud Drive Webhook Controller
  *
  * Handles incoming webhook notifications from an iCloud gateway service for
  * iCloud Drive file events. Since Apple does not provide a direct third-party
@@ -37,7 +37,7 @@ if ( file_exists( $_cc_contacts_file ) && ! class_exists( 'WP_MCP_AI_Channel_Con
 unset( $_cc_messages_file, $_cc_contacts_file );
 
 /**
- * iCloud Drive webhook REST controller.
+ * ICloud Drive webhook REST controller.
  */
 class WP_MCP_AI_iCloud_Webhook_Controller extends WP_REST_Controller {
 
@@ -225,7 +225,7 @@ class WP_MCP_AI_iCloud_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// Extract a unique event ID for deduplication.
-		$event_id = isset( $payload['file_id'] ) ? sanitize_text_field( $payload['file_id'] ) : '';
+		$event_id  = isset( $payload['file_id'] ) ? sanitize_text_field( $payload['file_id'] ) : '';
 		$timestamp = isset( $payload['timestamp'] ) ? sanitize_text_field( $payload['timestamp'] ) : '';
 		$dedup_key = $event_id && $timestamp ? $event_id . '_' . $timestamp : $event_id;
 
@@ -313,8 +313,8 @@ class WP_MCP_AI_iCloud_Webhook_Controller extends WP_REST_Controller {
 					'channel'    => 'icloud',
 					'contact_id' => $user_id,
 					'meta'       => array(
-						'last_event'  => $event_type,
-						'last_file'   => $file_name,
+						'last_event' => $event_type,
+						'last_file'  => $file_name,
 					),
 				)
 			);

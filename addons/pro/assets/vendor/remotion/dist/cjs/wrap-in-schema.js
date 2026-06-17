@@ -33,8 +33,10 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.wrapInSchema = void 0;
+exports.wrapInSchema = exports.mergeValues = exports.selectActiveKeys = exports.readValuesFromProps = exports.getNestedValue = void 0;
 const react_1 = __importStar(require("react"));
+const flatten_schema_js_1 = require("./flatten-schema.js");
+const SequenceManager_js_1 = require("./SequenceManager.js");
 const use_remotion_environment_js_1 = require("./use-remotion-environment.js");
 const use_schema_js_1 = require("./use-schema.js");
 const getNestedValue = (obj, key) => {
@@ -49,10 +51,23 @@ const getNestedValue = (obj, key) => {
     }
     return current;
 };
-const mergeValues = (props, values, schemaKeys) => {
+exports.getNestedValue = getNestedValue;
+const readValuesFromProps = (props, keys) => {
+    const out = {};
+    for (const key of keys) {
+        out[key] = (0, exports.getNestedValue)(props, key);
+    }
+    return out;
+};
+exports.readValuesFromProps = readValuesFromProps;
+const selectActiveKeys = (schema, values) => {
+    return Object.keys((0, flatten_schema_js_1.flattenActiveSchema)(schema, (key) => values[key]));
+};
+exports.selectActiveKeys = selectActiveKeys;
+const mergeValues = ({ props, valuesDotNotation, schemaKeys, }) => {
     const merged = { ...props };
     for (const key of schemaKeys) {
-        const value = values[key];
+        const value = valuesDotNotation[key];
         const parts = key.split('.');
         if (parts.length === 1) {
             merged[key] = value;
@@ -75,36 +90,78 @@ const mergeValues = (props, values, schemaKeys) => {
     }
     return merged;
 };
+exports.mergeValues = mergeValues;
 const wrapInSchema = (Component, schema) => {
-    const schemaKeys = Object.keys(schema);
+    var _a;
+    if (typeof process === 'undefined' ||
+        !((_a = process.env) === null || _a === void 0 ? void 0 : _a.EXPERIMENTAL_VISUAL_MODE_ENABLED)) {
+        return Component;
+    }
+    // Schema is static for a component, so we move this outside
+    const flatSchema = (0, flatten_schema_js_1.getFlatSchemaWithAllKeys)(schema);
+    const flatKeys = Object.keys(flatSchema);
     const Wrapped = (0, react_1.forwardRef)((props, ref) => {
         const env = (0, use_remotion_environment_js_1.useRemotionEnvironment)();
+        const { visualModeEnabled, dragOverrides, codeValues } = (0, react_1.useContext)(SequenceManager_js_1.VisualModeOverridesContext);
         if (!env.isStudio ||
             env.isReadOnlyStudio ||
             env.isRendering ||
-            !process.env.EXPERIMENTAL_VISUAL_MODE_ENABLED) {
+            !visualModeEnabled) {
             return react_1.default.createElement(Component, {
                 ...props,
-                controls: null,
+                _experimentalControls: null,
+                ref,
+            });
+        }
+        // If the parent has passed `_experimentalControls`, we should not override it.
+        // @ts-expect-error
+        if (props._experimentalControls) {
+            return react_1.default.createElement(Component, {
+                ...props,
                 ref,
             });
         }
         // eslint-disable-next-line react-hooks/rules-of-hooks
-        const schemaInput = (0, react_1.useMemo)(() => {
-            const input = {};
-            for (const key of schemaKeys) {
-                input[key] = getNestedValue(props, key);
-            }
-            return input;
-        }, 
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        schemaKeys.map((key) => getNestedValue(props, key)));
+        const [overrideId] = (0, react_1.useState)(() => String(Math.random()));
+        // Read the runtime values for every flat key from the JSX props,
+        // memoized on the leaf values so the object reference is stable
+        // when nothing changed — otherwise downstream `useMemo`s churn and
+        // effects (e.g. Sequence registration) re-fire every render.
+        const runtimeValues = flatKeys.map((k) => (0, exports.getNestedValue)(props, k));
         // eslint-disable-next-line react-hooks/rules-of-hooks
-        const { controls, values } = (0, use_schema_js_1.useSchema)(schema, schemaInput);
-        const mergedProps = mergeValues(props, values, schemaKeys);
+        const currentRuntimeValueDotNotation = (0, react_1.useMemo)(() => (0, exports.readValuesFromProps)(props, flatKeys), 
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        runtimeValues);
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const controls = (0, react_1.useMemo)(() => {
+            return {
+                schema,
+                currentRuntimeValueDotNotation,
+                overrideId,
+            };
+        }, [currentRuntimeValueDotNotation, overrideId]);
+        // 3. Apply drag/code overrides on top of the runtime values.
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const valuesDotNotation = (0, react_1.useMemo)(() => {
+            var _a;
+            return (0, use_schema_js_1.computeEffectiveSchemaValuesDotNotation)({
+                schema,
+                currentValue: currentRuntimeValueDotNotation,
+                overrideValues: (_a = dragOverrides[overrideId]) !== null && _a !== void 0 ? _a : {},
+                propStatus: codeValues[overrideId],
+            });
+        }, [currentRuntimeValueDotNotation, dragOverrides, overrideId, codeValues]);
+        // 4. Eliminate values forbidden by the resolved discriminated union.
+        const activeKeys = (0, exports.selectActiveKeys)(schema, valuesDotNotation);
+        // 5. Apply the active values back onto the props.
+        const mergedProps = (0, exports.mergeValues)({
+            props: props,
+            valuesDotNotation,
+            schemaKeys: activeKeys,
+        });
         return react_1.default.createElement(Component, {
             ...mergedProps,
-            controls,
+            _experimentalControls: controls,
             ref,
         });
     });

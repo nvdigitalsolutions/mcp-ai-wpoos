@@ -26,6 +26,13 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
+
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -34,22 +41,51 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 		return ! empty( $settings['enable_architectural_design_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'manage_architectural_precedents';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Manage Architectural Precedents', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'List / get / create / update / delete architectural precedents (built case studies). On create / update the tool regenerates the cached OpenAI embedding so search_architectural_precedents can perform cosine-similarity semantic search.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -74,17 +110,39 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 					'type'  => 'array',
 					'items' => array( 'type' => 'string' ),
 				),
-				'limit'                 => array( 'type' => 'integer', 'description' => 'Max results for list action (default 50, max 200).' ),
+				'limit'                 => array(
+					'type'        => 'integer',
+					'description' => 'Max results for list action (default 50, max 200).',
+				),
 			),
 			'required'             => array( 'action' ),
 			'additionalProperties' => false,
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'requires-capability', 'write', 'state-changing' );
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
@@ -115,7 +173,11 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 				foreach ( $query->posts as $p ) {
 					$items[] = $this->serialize_post( $p );
 				}
-				return array( 'success' => true, 'count' => count( $items ), 'precedents' => $items );
+				return array(
+					'success'    => true,
+					'count'      => count( $items ),
+					'precedents' => $items,
+				);
 
 			case 'get':
 				$post_id = isset( $arguments['precedent_id'] ) ? absint( $arguments['precedent_id'] ) : 0;
@@ -123,7 +185,10 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 				if ( is_wp_error( $post ) ) {
 					return $post;
 				}
-				return array( 'success' => true, 'precedent' => $this->serialize_post( $post ) );
+				return array(
+					'success'   => true,
+					'precedent' => $this->serialize_post( $post ),
+				);
 
 			case 'create':
 				if ( empty( $arguments['title'] ) ) {
@@ -145,7 +210,10 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 				}
 				$this->apply_meta( $post_id, $arguments );
 				WP_MCP_AI_Architectural_Precedents_Engine::regenerate_embedding_for_post( $post_id );
-				return array( 'success' => true, 'precedent' => $this->serialize_post( get_post( $post_id ) ) );
+				return array(
+					'success'   => true,
+					'precedent' => $this->serialize_post( get_post( $post_id ) ),
+				);
 
 			case 'update':
 				$post_id = isset( $arguments['precedent_id'] ) ? absint( $arguments['precedent_id'] ) : 0;
@@ -174,7 +242,10 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 				}
 				$this->apply_meta( $post_id, $arguments );
 				WP_MCP_AI_Architectural_Precedents_Engine::regenerate_embedding_for_post( $post_id );
-				return array( 'success' => true, 'precedent' => $this->serialize_post( get_post( $post_id ) ) );
+				return array(
+					'success'   => true,
+					'precedent' => $this->serialize_post( get_post( $post_id ) ),
+				);
 
 			case 'delete':
 				$post_id = isset( $arguments['precedent_id'] ) ? absint( $arguments['precedent_id'] ) : 0;
@@ -189,7 +260,10 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 				if ( ! $deleted ) {
 					return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete precedent.', 'mcp-ai-wpoos-pro' ) );
 				}
-				return array( 'success' => true, 'deleted_id' => $post_id );
+				return array(
+					'success'    => true,
+					'deleted_id' => $post_id,
+				);
 		}
 
 		return new WP_Error( 'wp_mcp_ai_invalid_arguments', __( 'Unknown action.', 'mcp-ai-wpoos-pro' ) );

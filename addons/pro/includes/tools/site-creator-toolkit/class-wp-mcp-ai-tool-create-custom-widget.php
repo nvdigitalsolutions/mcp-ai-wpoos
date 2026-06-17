@@ -88,6 +88,13 @@ class WP_MCP_AI_Tool_Create_Custom_Widget implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @since 1.2.0

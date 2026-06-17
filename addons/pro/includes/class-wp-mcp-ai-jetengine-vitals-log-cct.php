@@ -197,7 +197,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		$table = self::get_table_name();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date = %s ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
 
 		return $row ? $row : null;
 	}
@@ -239,7 +239,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			// accumulate into their own no-time row and never overwrite timed
 			// vital-sign rows from the same day.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s AND (measurement_time = '' OR measurement_time IS NULL) ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date = %s AND (measurement_time = '' OR measurement_time IS NULL) ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
 			return $row ? $row : null;
 		}
 
@@ -250,7 +250,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s AND measurement_time != '' AND measurement_time IS NOT NULL ORDER BY _ID ASC", $member_id, $date ) );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date = %s AND measurement_time != '' AND measurement_time IS NOT NULL ORDER BY _ID ASC", $member_id, $date ) );
 
 		$window = self::SAME_SESSION_WINDOW_MINUTES;
 		foreach ( $rows as $row ) {
@@ -338,6 +338,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			// same lab printout scanned or pasted more than once).  Return the
 			// existing row silently — no DB write, no logged_at update.
 			if ( self::is_near_duplicate( $existing, $data ) ) {
+				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- JetEngine _ID column.
 				return (int) $existing->_ID;
 			}
 
@@ -360,9 +361,11 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			// Always refresh the last-write audit timestamp.
 			$update['logged_at'] = current_time( 'mysql' );
 
-			self::update_fields( (int) $existing->_ID, $update );
+			// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- JetEngine _ID column.
+			$existing_id = (int) $existing->_ID;
+			self::update_fields( $existing_id, $update );
 
-			return (int) $existing->_ID;
+			return $existing_id;
 		}
 
 		return self::insert( $member_id, $data );
@@ -713,19 +716,19 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			$after_date = sanitize_text_field( $after_date );
 			if ( $limit > 0 ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $after_date, $limit ) );
+				return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $after_date, $limit ) );
 			}
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC", $member_id, $after_date ) );
+			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC", $member_id, $after_date ) );
 		}
 
 		if ( $limit > 0 ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $limit ) );
+			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $limit ) );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC", $member_id ) );
+		return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC", $member_id ) );
 	}
 
 	/**
@@ -755,7 +758,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		$table = self::get_table_name();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE _ID = %d LIMIT 1", $item_id ) );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE _ID = %d LIMIT 1", $item_id ) );
 
 		return $row ? $row : null;
 	}
@@ -829,7 +832,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	}
 
 	/**
-	 * v2 migration: ensure the hemoglobin column is DECIMAL(10,4).
+	 * V2 migration: ensure the hemoglobin column is DECIMAL(10,4).
 	 *
 	 * Sites that ran the v1 migration before hemoglobin was added will have
 	 * hemoglobin created by JetEngine as bigint.  This one-time migration
@@ -858,7 +861,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	}
 
 	/**
-	 * v3 migration: add CBC and provenance/QA columns introduced in this version.
+	 * V3 migration: add CBC and provenance/QA columns introduced in this version.
 	 *
 	 * For each new column the method:
 	 *  - Checks whether the column already exists (fresh JetEngine installs
@@ -976,7 +979,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	}
 
 	/**
-	 * v4 migration: add extended BMP/CMP electrolyte and liver function test columns.
+	 * V4 migration: add extended BMP/CMP electrolyte and liver function test columns.
 	 *
 	 * Adds the following new DECIMAL(10,4) columns:
 	 *  - chloride, co2, calcium, magnesium (BMP/CMP electrolytes)
@@ -1035,7 +1038,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	}
 
 	/**
-	 * v5 migration: ensure the hemoglobin column exists and uses DECIMAL(10,4).
+	 * V5 migration: ensure the hemoglobin column exists and uses DECIMAL(10,4).
 	 *
 	 * The v2 migration only issued an ALTER TABLE MODIFY, which silently fails
 	 * when the hemoglobin column was never created (sites where the CCT was
@@ -1174,13 +1177,39 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			'rest_post_access'    => 'read',
 			'rest_delete_access'  => 'edit_posts',
 			'admin_columns'       => array(
-				'_ID'              => array( 'enabled' => true, 'prefix' => '#', 'is_sortable' => true, 'is_num' => true ),
-				'member_id'        => array( 'enabled' => true, 'is_sortable' => true, 'is_num' => true ),
-				'measurement_date' => array( 'enabled' => true, 'is_sortable' => true ),
-				'logged_at'        => array( 'enabled' => true, 'is_sortable' => true ),
-				'bp_systolic'      => array( 'enabled' => true, 'is_sortable' => true, 'is_num' => true ),
-				'heart_rate'       => array( 'enabled' => true, 'is_sortable' => true, 'is_num' => true ),
-				'source'           => array( 'enabled' => true, 'is_sortable' => true ),
+				'_ID'              => array(
+					'enabled'     => true,
+					'prefix'      => '#',
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'member_id'        => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'measurement_date' => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
+				'logged_at'        => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
+				'bp_systolic'      => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'heart_rate'       => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'source'           => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
 			),
 		);
 	}
@@ -1245,10 +1274,22 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 				'width'       => '33%',
 				'default_val' => 'manual',
 				'options'     => array(
-					array( 'key' => 'manual', 'value' => __( 'Manual Entry', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'tma',    'value' => __( 'Telegram Mini App', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'api',    'value' => __( 'External API', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'import', 'value' => __( 'Data Import', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'manual',
+						'value' => __( 'Manual Entry', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'tma',
+						'value' => __( 'Telegram Mini App', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'api',
+						'value' => __( 'External API', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'import',
+						'value' => __( 'Data Import', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 				'description' => __( 'How this measurement was captured', 'mcp-ai-wpoos-pro' ),
 			),
@@ -1827,11 +1868,26 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 				'width'       => '33%',
 				'default_val' => 'unreviewed',
 				'options'     => array(
-					array( 'key' => 'unreviewed',         'value' => __( 'Unreviewed', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'auto_imported',      'value' => __( 'Auto-imported', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'reviewed',           'value' => __( 'Reviewed', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'corrected',          'value' => __( 'Corrected', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'needs_manual_review', 'value' => __( 'Needs Manual Review', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'unreviewed',
+						'value' => __( 'Unreviewed', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'auto_imported',
+						'value' => __( 'Auto-imported', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'reviewed',
+						'value' => __( 'Reviewed', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'corrected',
+						'value' => __( 'Corrected', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'needs_manual_review',
+						'value' => __( 'Needs Manual Review', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 				'description' => __( 'QA review status for this record', 'mcp-ai-wpoos-pro' ),
 			),

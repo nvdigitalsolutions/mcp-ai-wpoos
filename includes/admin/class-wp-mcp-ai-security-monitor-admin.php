@@ -80,11 +80,11 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 		 * Handle clear emergency shutdown request.
 		 */
 		public static function handle_clear_shutdown() {
-			check_admin_referer( 'wp_mcp_ai_clear_shutdown', 'wp_mcp_ai_clear_shutdown_nonce' );
-
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_die( esc_html__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ) );
 			}
+
+			check_admin_referer( 'wp_mcp_ai_clear_shutdown', 'wp_mcp_ai_clear_shutdown_nonce' );
 
 			$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
 			$monitor->clear_emergency_shutdown();

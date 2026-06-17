@@ -650,7 +650,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 				$recent_violations = $this->count_recent_violations( HOUR_IN_SECONDS );
 				if ( $recent_violations > 0 ) {
 					?>
-					<div class="notice notice-warning">
+					<div class="notice notice-warning is-dismissible">
 						<p>
 							<strong><?php esc_html_e( 'Open Operator System: Security Violations Detected', 'mcp-ai-wpoos' ); ?></strong>
 						</p>

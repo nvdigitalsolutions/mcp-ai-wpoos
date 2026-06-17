@@ -15,9 +15,9 @@ foreach ( array(
 	'class-wp-mcp-ai-tool-import-hl7v2-message.php',
 	'class-wp-mcp-ai-tool-connect-to-ehr.php',
 ) as $file ) {
-	$path = $interop_dir . '/' . $file;
-	if ( file_exists( $path ) ) {
-		require_once $path;
+	$file_path = $interop_dir . '/' . $file;
+	if ( file_exists( $file_path ) ) {
+		require_once $file_path;
 	}
 }
 
@@ -33,13 +33,21 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 		parent::setUp();
 		foreach ( array( 'mcp_ai_member', 'mcp_ai_med_record', 'mcp_ai_allergy', 'mcp_ai_prescription', 'mcp_ai_vaccination_record' ) as $cpt ) {
 			if ( ! post_type_exists( $cpt ) ) {
-				register_post_type( $cpt, array( 'public' => false, 'label' => $cpt ) );
+				register_post_type(
+					$cpt,
+					array(
+						'public' => false,
+						'label'  => $cpt,
+					)
+				);
 			}
 		}
 		$user = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user );
 	}
 
+	/** Tear down test.
+	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Tool_Connect_To_EHR::OPTION_KEY );
 		parent::tearDown();
@@ -57,7 +65,12 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 					'resource' => array(
 						'resourceType' => 'Patient',
 						'identifier'   => array( array( 'value' => 'MRN-1001' ) ),
-						'name'         => array( array( 'family' => 'Doe', 'given' => array( 'Jane' ) ) ),
+						'name'         => array(
+							array(
+								'family' => 'Doe',
+								'given'  => array( 'Jane' ),
+							),
+						),
 						'birthDate'    => '1990-05-12',
 						'gender'       => 'female',
 					),
@@ -70,7 +83,7 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 				),
 				array(
 					'resource' => array(
-						'resourceType' => 'MedicationStatement',
+						'resourceType'              => 'MedicationStatement',
 						'medicationCodeableConcept' => array( 'text' => 'Lisinopril 10mg' ),
 					),
 				),
@@ -127,7 +140,12 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 			),
 		);
 		$tool   = new WP_MCP_AI_Tool_Import_FHIR_Bundle();
-		$result = $tool->execute( array( 'bundle' => $bundle, 'dry_run' => true ) );
+		$result = $tool->execute(
+			array(
+				'bundle'  => $bundle,
+				'dry_run' => true,
+			)
+		);
 		$this->assertTrue( $result['dry_run'] );
 		$existing = get_posts(
 			array(
@@ -159,7 +177,11 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 		update_post_meta( $member_id, '_member_mrn', 'MRN-2002' );
 
 		$allergy_id = wp_insert_post(
-			array( 'post_type' => 'mcp_ai_allergy', 'post_title' => 'Penicillin', 'post_status' => 'publish' )
+			array(
+				'post_type'   => 'mcp_ai_allergy',
+				'post_title'  => 'Penicillin',
+				'post_status' => 'publish',
+			)
 		);
 		update_post_meta( $allergy_id, '_allergy_member_id', $member_id );
 
@@ -173,7 +195,7 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 		$this->assertSame( 1, $result['sections']['allergies'] );
 
 		// XML must parse.
-		$dom = new DOMDocument();
+		$dom    = new DOMDocument();
 		$loaded = $dom->loadXML( $result['xml'] );
 		$this->assertTrue( (bool) $loaded );
 	}
@@ -183,7 +205,11 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 	 */
 	public function test_export_ccda_document_filter_runs() {
 		$member_id = wp_insert_post(
-			array( 'post_type' => 'mcp_ai_member', 'post_title' => 'Filter Patient', 'post_status' => 'publish' )
+			array(
+				'post_type'   => 'mcp_ai_member',
+				'post_title'  => 'Filter Patient',
+				'post_status' => 'publish',
+			)
 		);
 		update_post_meta( $member_id, '_member_first_name', 'Filter' );
 		update_post_meta( $member_id, '_member_last_name', 'Patient' );
@@ -204,8 +230,8 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 	 * HL7 v2 ADT^A04 creates a member.
 	 */
 	public function test_import_hl7v2_adt_creates_member() {
-		$msg  = "MSH|^~\\&|HIS|HOSP|EHR|VENDOR|202605011200||ADT^A04|MSG0001|P|2.5\r";
-		$msg .= "PID|1||MRN-3003^^^HOSP||Jones^Robert^A||19770714|M\r";
+		$msg    = "MSH|^~\\&|HIS|HOSP|EHR|VENDOR|202605011200||ADT^A04|MSG0001|P|2.5\r";
+		$msg   .= "PID|1||MRN-3003^^^HOSP||Jones^Robert^A||19770714|M\r";
 		$tool   = new WP_MCP_AI_Tool_Import_HL7v2_Message();
 		$result = $tool->execute( array( 'message' => $msg ) );
 		$this->assertIsArray( $result );
@@ -219,10 +245,10 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 	 * HL7 v2 ORU^R01 records OBX observations.
 	 */
 	public function test_import_hl7v2_oru_records_observations() {
-		$msg  = "MSH|^~\\&|LAB|HOSP|EHR|VENDOR|202605011200||ORU^R01|MSG0002|P|2.5\r";
-		$msg .= "PID|1||MRN-3004||Doe^Mary\r";
-		$msg .= "OBX|1|NM|718-7^Hemoglobin^LN||13.5|g/dL|||||F\r";
-		$msg .= "OBX|2|NM|4544-3^Hematocrit^LN||40.2|%|||||F\r";
+		$msg    = "MSH|^~\\&|LAB|HOSP|EHR|VENDOR|202605011200||ORU^R01|MSG0002|P|2.5\r";
+		$msg   .= "PID|1||MRN-3004||Doe^Mary\r";
+		$msg   .= "OBX|1|NM|718-7^Hemoglobin^LN||13.5|g/dL|||||F\r";
+		$msg   .= "OBX|2|NM|4544-3^Hematocrit^LN||40.2|%|||||F\r";
 		$tool   = new WP_MCP_AI_Tool_Import_HL7v2_Message();
 		$result = $tool->execute( array( 'message' => $msg ) );
 		$this->assertSame( 'ORU_R01', $result['message_type'] );
@@ -269,7 +295,12 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 		$this->assertSame( '[redacted]', $result['connection']['client_secret'] );
 		$this->assertSame( 'client-id-x', $result['connection']['client_id'] );
 
-		$get = $tool->execute( array( 'action' => 'get', 'vendor' => 'epic' ) );
+		$get = $tool->execute(
+			array(
+				'action' => 'get',
+				'vendor' => 'epic',
+			)
+		);
 		$this->assertTrue( $get['connection']['configured'] );
 	}
 
@@ -287,7 +318,12 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 				'client_secret' => 'sec',
 			)
 		);
-		$err = $tool->execute( array( 'action' => 'test', 'vendor' => 'cerner' ) );
+		$err = $tool->execute(
+			array(
+				'action' => 'test',
+				'vendor' => 'cerner',
+			)
+		);
 		$this->assertWPError( $err );
 		$this->assertSame( 'wp_mcp_ai_ehr_missing_token_url', $err->get_error_code() );
 	}
@@ -306,8 +342,18 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 				'client_secret' => 'y',
 			)
 		);
-		$tool->execute( array( 'action' => 'disconnect', 'vendor' => 'generic' ) );
-		$get = $tool->execute( array( 'action' => 'get', 'vendor' => 'generic' ) );
+		$tool->execute(
+			array(
+				'action' => 'disconnect',
+				'vendor' => 'generic',
+			)
+		);
+		$get = $tool->execute(
+			array(
+				'action' => 'get',
+				'vendor' => 'generic',
+			)
+		);
 		$this->assertFalse( $get['connection']['configured'] );
 	}
 
@@ -318,7 +364,12 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
 		wp_set_current_user( $editor );
 		$tool = new WP_MCP_AI_Tool_Connect_To_EHR();
-		$err  = $tool->execute( array( 'action' => 'get', 'vendor' => 'epic' ) );
+		$err  = $tool->execute(
+			array(
+				'action' => 'get',
+				'vendor' => 'epic',
+			)
+		);
 		$this->assertWPError( $err );
 		$this->assertSame( 'wp_mcp_ai_forbidden', $err->get_error_code() );
 	}
@@ -327,12 +378,12 @@ class Test_Healthcare_Interop extends WP_UnitTestCase {
 	 * All four assistant blueprints exist and are valid JSON with the expected slugs.
 	 */
 	public function test_phase_e_assistant_blueprints_are_valid() {
-		$dir = dirname( __DIR__, 2 ) . '/includes/tools/healthcare/examples';
+		$dir      = dirname( __DIR__, 2 ) . '/includes/tools/healthcare/examples';
 		$expected = array(
-			'general-clinic.json'           => 'healthcare-general-clinic',
-			'veterinary-practice.json'      => 'healthcare-veterinary-practice',
-			'personal-health-tracker.json'  => 'healthcare-personal-health-tracker',
-			'radiology-review.json'         => 'healthcare-radiology-review',
+			'general-clinic.json'          => 'healthcare-general-clinic',
+			'veterinary-practice.json'     => 'healthcare-veterinary-practice',
+			'personal-health-tracker.json' => 'healthcare-personal-health-tracker',
+			'radiology-review.json'        => 'healthcare-radiology-review',
 		);
 		foreach ( $expected as $file => $blueprint_id ) {
 			$path = $dir . '/' . $file;

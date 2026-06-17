@@ -1,0 +1,300 @@
+# NV oOS Comic Reader Addon — Build & Package
+#
+# Produces a standalone distribution ZIP of the NV oOS Comic Reader addon.
+# The addon is a React 18 SPA that bundles libarchive.js for client-side
+# archive extraction (CBR, CBZ, CB7, CBT). The ZIP ships pre-built assets
+# (esbuild IIFE bundle) — no server-side Node.js required to use it.
+#
+# Outputs:
+#   nvoos-comic-reader-v{version}.zip    (~500 KB, pure JS+PHP+CSS addon)
+#
+# Triggered by:
+#   - Manual workflow_dispatch with version input
+#   - Push to a tag matching "comic-reader-v*.*.*"
+#   - Push to addons/comic-reader/** on main/alpha-working
+
+name: Build Comic Reader Addon
+
+on:
+  push:
+    tags:
+      - 'comic-reader-v*.*.*'
+    branches:
+      - main
+      - alpha-working
+    paths:
+      - 'addons/comic-reader/**'
+  pull_request:
+    paths:
+      - 'addons/comic-reader/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Comic Reader addon version (e.g. 0.1.0)'
+        required: true
+        type: string
+      create_release:
+        description: 'Create a GitHub Release with the artifact'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Comic Reader Addon
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            # Extract version from tag (comic-reader-v0.1.0 → 0.1.0)
+            VERSION="${GITHUB_REF_NAME#comic-reader-v}"
+          elif [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            # Read version from plugin header (for branch/PR pushes)
+            VERSION=$(grep -E "^\s*\*\s*Version:" addons/comic-reader/nvoos-comic-reader.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact=nvoos-comic-reader-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install comic-reader dependencies
+        working-directory: addons/comic-reader
+        run: npm ci --no-audit --no-fund
+
+      - name: Build comic-reader assets (esbuild)
+        working-directory: addons/comic-reader
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          JS_BUNDLE="addons/comic-reader/assets/dist/comic-reader.js"
+          CSS_BUNDLE="addons/comic-reader/assets/dist/comic-reader.css"
+          if [ ! -f "$JS_BUNDLE" ]; then
+            echo "❌ JS bundle not found at $JS_BUNDLE"
+            exit 1
+          fi
+          JS_SIZE=$(du -h "$JS_BUNDLE" | cut -f1)
+          echo "✅ JS bundle present — $JS_SIZE"
+          if [ -f "$CSS_BUNDLE" ]; then
+            CSS_SIZE=$(du -h "$CSS_BUNDLE" | cut -f1)
+            echo "✅ CSS bundle present — $CSS_SIZE"
+          fi
+
+      - name: Assemble addon directory for ZIP
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          mkdir -p "dist/${ARTIFACT}/nvoos-comic-reader"
+
+          # Copy plugin source (exclude build scripts, sources, and node_modules)
+          rsync -a \
+            --exclude='node_modules/' \
+            --exclude='src/' \
+            --exclude='tests/' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='tsconfig.json' \
+            --exclude='esbuild.config.cjs' \
+            --exclude='vitest.config.ts' \
+            --exclude='.gitignore' \
+            --exclude='.DS_Store' \
+            addons/comic-reader/ "dist/${ARTIFACT}/nvoos-comic-reader/"
+
+          echo "📁 Plugin directory contents:"
+          find "dist/${ARTIFACT}/nvoos-comic-reader" -type f | sort
+
+      - name: Create ZIP
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          cd "dist/${ARTIFACT}"
+          zip -r "../../${ARTIFACT}.zip" nvoos-comic-reader/
+          cd ../..
+          SIZE=$(du -sh "${ARTIFACT}.zip" | cut -f1)
+          echo "📦 ${ARTIFACT}.zip — ${SIZE}"
+
+      - name: Generate SHA-256 checksum
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          sha256sum "${ARTIFACT}.zip" > "${ARTIFACT}.zip.sha256"
+          cat "${ARTIFACT}.zip.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.artifact }}
+          path: |
+            ${{ steps.version.outputs.artifact }}.zip
+            ${{ steps.version.outputs.artifact }}.zip.sha256
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Publish ZIP to repository build/ directory
+  # Only on push to main/alpha-working branches or tag pushes — not on PRs.
+  # ---------------------------------------------------------------------------
+  publish:
+    name: Publish ZIP to Repository
+    needs: build
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/alpha-working' || startsWith(github.ref, 'refs/tags/'))
+
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#comic-reader-v}"
+          elif [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION=$(grep -E "^\s*\*\s*Version:" addons/comic-reader/nvoos-comic-reader.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nvoos-comic-reader-v${{ steps.version.outputs.version }}
+          path: artifacts/
+
+      - name: Copy comic-reader ZIP to build directory
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP_SRC="artifacts/nvoos-comic-reader-v${VERSION}.zip"
+
+          mkdir -p build
+
+          if [ -f "$ZIP_SRC" ]; then
+            cp "$ZIP_SRC" "build/"
+            SIZE=$(du -h "build/nvoos-comic-reader-v${VERSION}.zip" | cut -f1)
+            echo "✅ build/nvoos-comic-reader-v${VERSION}.zip — ${SIZE}"
+          else
+            echo "⚠️  $ZIP_SRC not found — skipping"
+            exit 1
+          fi
+
+      - name: Commit and push comic-reader ZIP
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP="build/nvoos-comic-reader-v${VERSION}.zip"
+
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          [ -f "$ZIP" ] && git add -f "$ZIP" 2>/dev/null || true
+
+          if git diff --staged --quiet; then
+            echo "✅ Comic Reader ZIP already up-to-date in build/ — nothing to commit"
+          else
+            echo "📝 Committing comic-reader ZIP to build/..."
+            git diff --staged --stat
+
+            git commit -m "build: add comic-reader addon ZIP v${VERSION} [skip ci]
+
+          - nvoos-comic-reader-v${VERSION}.zip
+
+          Auto-generated by GitHub Actions"
+
+            git config core.autocrlf false
+            git pull --rebase --autostash origin ${{ github.ref_name }} || {
+              echo "⚠️ Rebase conflict detected. Resolving with ours strategy..."
+              ZIP="build/nvoos-comic-reader-v${VERSION}.zip"
+              [ -f "$ZIP" ] && git checkout --ours "$ZIP" && git add -f "$ZIP" || true
+              git rebase --continue || {
+                echo "❌ Failed to resolve rebase conflicts"
+                git rebase --abort
+                exit 1
+              }
+            }
+            git push origin ${{ github.ref_name }}
+            echo "🎉 Comic Reader ZIP published to build/"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Create a GitHub Release (optional, triggered by tag or workflow_dispatch)
+  # ---------------------------------------------------------------------------
+  release:
+    name: Create GitHub Release
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    if: |
+      inputs.create_release == true || startsWith(github.ref, 'refs/tags/comic-reader-v')
+
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#comic-reader-v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nvoos-comic-reader-v${{ steps.version.outputs.version }}
+          path: artifacts/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: comic-reader-v${{ steps.version.outputs.version }}
+          name: "NV oOS Comic Reader Addon v${{ steps.version.outputs.version }}"
+          body: |
+            ## NV oOS Comic Reader Addon v${{ steps.version.outputs.version }}
+
+            A modern, React-based comic book reader for the NV oOS platform. Supports CBR, CBZ, CB7, and CBT formats with client-side archive extraction powered by libarchive.js.
+
+            ### Features
+
+            - **Multi-format support**: CBR, CBZ, CB7, CBT
+            - **Dual reading modes**: Single and double-page viewing
+            - **LTR/RTL support**: Configurable reading direction
+            - **Zoom controls**: 25%–400% with fit-to-width/fit-to-height presets
+            - **Keyboard navigation**: Arrow keys, A/D, +/-
+            - **Touch support**: Swipe and pinch-to-zoom
+            - **Fullscreen mode**: Immersive reading experience
+            - **Progress persistence**: Automatically remembers your place
+            - **Drag-and-drop upload**: Upload comics directly in the library view
+            - **Shortcode**: `[nvoos_comic_reader]`
+            - **Gutenberg block**: Native block editor integration
+
+            ### Requirements
+
+            - NV oOS Base Plugin active
+            - WordPress 6.0+
+            - PHP 7.4+
+
+            ### Checksum
+
+            See the `.sha256` file attached to this release.
+          files: |
+            artifacts/*.zip
+            artifacts/*.sha256
+          draft: false
+          prerelease: false

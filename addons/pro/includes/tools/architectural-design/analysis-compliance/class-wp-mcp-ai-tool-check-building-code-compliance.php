@@ -148,6 +148,13 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -288,8 +295,8 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 
 		// Egress checks.
 		if ( in_array( 'egress', $check_categories, true ) && ! empty( $merged_rules['egress'] ) ) {
-			$rules = $merged_rules['egress'];
-			$min_exits = isset( $rules['min_exits'] ) ? (int) $rules['min_exits'] : 0;
+			$rules      = $merged_rules['egress'];
+			$min_exits  = isset( $rules['min_exits'] ) ? (int) $rules['min_exits'] : 0;
 			$plan_exits = isset( $floor_plan['exits'] ) ? (int) $floor_plan['exits'] : -1;
 			if ( $min_exits > 0 ) {
 				if ( $plan_exits < 0 ) {
@@ -301,7 +308,7 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 				}
 			}
 
-			$min_corridor = isset( $rules['min_corridor_width_m'] ) ? (float) $rules['min_corridor_width_m'] : 0.0;
+			$min_corridor  = isset( $rules['min_corridor_width_m'] ) ? (float) $rules['min_corridor_width_m'] : 0.0;
 			$plan_corridor = isset( $floor_plan['corridor_width_m'] ) ? (float) $floor_plan['corridor_width_m'] : 0.0;
 			if ( $min_corridor > 0 ) {
 				if ( $plan_corridor <= 0 ) {
@@ -313,7 +320,7 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 				}
 			}
 
-			$min_stair = isset( $rules['min_stair_width_m'] ) ? (float) $rules['min_stair_width_m'] : 0.0;
+			$min_stair  = isset( $rules['min_stair_width_m'] ) ? (float) $rules['min_stair_width_m'] : 0.0;
 			$plan_stair = isset( $floor_plan['stair_width_m'] ) ? (float) $floor_plan['stair_width_m'] : 0.0;
 			if ( $min_stair > 0 ) {
 				if ( $plan_stair <= 0 ) {
@@ -325,7 +332,7 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 				}
 			}
 
-			$max_travel = isset( $rules['max_travel_distance_m'] ) ? (float) $rules['max_travel_distance_m'] : 0.0;
+			$max_travel  = isset( $rules['max_travel_distance_m'] ) ? (float) $rules['max_travel_distance_m'] : 0.0;
 			$plan_travel = isset( $floor_plan['travel_distance_m'] ) ? (float) $floor_plan['travel_distance_m'] : 0.0;
 			if ( $max_travel > 0 ) {
 				if ( $plan_travel <= 0 ) {
@@ -371,7 +378,7 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 			$sprinkler_at = isset( $rules['sprinkler_above_m'] ) ? (float) $rules['sprinkler_above_m'] : 0.0;
 			if ( $sprinkler_at > 0 && $plan_height > 0 ) {
 				if ( $plan_height >= $sprinkler_at ) {
-					$has = ! empty( $floor_plan['sprinklered'] );
+					$has      = ! empty( $floor_plan['sprinklered'] );
 					$checks[] = $this->mk_check( 'fire_safety', sprintf( __( 'Sprinklers required for buildings ≥ %.1f m.', 'mcp-ai-wpoos-pro' ), $sprinkler_at ), $has ? 'pass' : 'fail', $has ? __( 'Plan declares sprinkler system.', 'mcp-ai-wpoos-pro' ) : __( 'Plan does not declare a sprinkler system.', 'mcp-ai-wpoos-pro' ) );
 				} else {
 					$checks[] = $this->mk_check( 'fire_safety', sprintf( __( 'Sprinklers required for buildings ≥ %.1f m.', 'mcp-ai-wpoos-pro' ), $sprinkler_at ), 'pass', __( 'Below sprinkler-trigger height.', 'mcp-ai-wpoos-pro' ) );
@@ -385,9 +392,9 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 
 		// Zoning checks (FAR, coverage, setbacks).
 		if ( in_array( 'zoning', $check_categories, true ) && ! empty( $merged_rules['zoning'] ) ) {
-			$rules    = $merged_rules['zoning'];
-			$lot_area = isset( $floor_plan['lot_area_m2'] ) ? (float) $floor_plan['lot_area_m2'] : 0.0;
-			$built_up = isset( $floor_plan['built_up_area_m2'] ) ? (float) $floor_plan['built_up_area_m2'] : 0.0;
+			$rules     = $merged_rules['zoning'];
+			$lot_area  = isset( $floor_plan['lot_area_m2'] ) ? (float) $floor_plan['lot_area_m2'] : 0.0;
+			$built_up  = isset( $floor_plan['built_up_area_m2'] ) ? (float) $floor_plan['built_up_area_m2'] : 0.0;
 			$footprint = isset( $floor_plan['footprint_area_m2'] ) ? (float) $floor_plan['footprint_area_m2'] : 0.0;
 
 			if ( $lot_area > 0 && $built_up > 0 && class_exists( 'WP_MCP_AI_Architectural_Engine' ) ) {
@@ -421,7 +428,7 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 
 			// Setbacks.
 			if ( ! empty( $floor_plan['setbacks_m'] ) && is_array( $floor_plan['setbacks_m'] ) && class_exists( 'WP_MCP_AI_Architectural_Engine' ) ) {
-				$req = array(
+				$req    = array(
 					'front' => isset( $rules['min_setback_front_m'] ) ? (float) $rules['min_setback_front_m'] : 0.0,
 					'rear'  => isset( $rules['min_setback_rear_m'] ) ? (float) $rules['min_setback_rear_m'] : 0.0,
 					'left'  => isset( $rules['min_setback_side_m'] ) ? (float) $rules['min_setback_side_m'] : 0.0,
@@ -453,7 +460,7 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 				$checks[] = $this->mk_check( 'structural', sprintf( __( 'Seismic design per %s.', 'mcp-ai-wpoos-pro' ), $rules['seismic_standard'] ), 'warning', __( 'Engage structural engineer for seismic-load verification.', 'mcp-ai-wpoos-pro' ) );
 			}
 			if ( ! empty( $rules['opening_protection_required'] ) ) {
-				$has = ! empty( $floor_plan['opening_protection'] );
+				$has      = ! empty( $floor_plan['opening_protection'] );
 				$checks[] = $this->mk_check( 'structural', __( 'Hurricane-resistant opening protection required.', 'mcp-ai-wpoos-pro' ), $has ? 'pass' : 'fail', $has ? __( 'Plan declares impact-rated openings or shutters.', 'mcp-ai-wpoos-pro' ) : __( 'Provide impact-rated glazing or hurricane shutters on all openings.', 'mcp-ai-wpoos-pro' ) );
 			}
 		}
@@ -504,7 +511,7 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 	 *
 	 * @param string $category    Category.
 	 * @param string $requirement Human description.
-	 * @param string $status      pass|warning|fail.
+	 * @param string $status      Pass|warning|fail.
 	 * @param string $details     Free-text details.
 	 * @return array
 	 */

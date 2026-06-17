@@ -167,7 +167,7 @@ class NV_oOS_Graphify_Semantic_Extractor {
 			$content_hash = hash( 'sha256', $post->post_content . $post->post_title );
 			$cached       = self::get_cached( $post->ID, $content_hash );
 
-			if ( $cached !== false ) {
+			if ( false !== $cached ) {
 				// Merge cached results.
 				$nodes = array_merge( $nodes, $cached['nodes'] );
 				$edges = array_merge( $edges, $cached['edges'] );

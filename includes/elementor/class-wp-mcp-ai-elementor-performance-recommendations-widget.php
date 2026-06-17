@@ -296,9 +296,12 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 	 * Enqueue action button script.
 	 */
 	protected function enqueue_action_script() {
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
+		static $printed = false;
+
+		$apply_message = __( 'Auto-apply feature coming soon. Please implement fixes manually for now.', 'mcp-ai-wpoos' );
+
+		ob_start();
 		?>
-		<script>
 		(function($) {
 			$(document).ready(function() {
 				$('.wp-mcp-ai-recommendations__btn').on('click', function(e) {
@@ -310,120 +313,49 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 					if ('dismiss' === action) {
 						item.fadeOut();
 					} else if ('apply' === action) {
-						alert('<?php echo esc_js( __( 'Auto-apply feature coming soon. Please implement fixes manually for now.', 'mcp-ai-wpoos' ) ); ?>');
+						alert(<?php echo wp_json_encode( $apply_message ); ?>);
 					}
 				});
 			});
 		})(jQuery);
-		</script>
-		<style>
-		.wp-mcp-ai-recommendations {
-			padding: 20px;
-			background: #fff;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-		}
-		.wp-mcp-ai-recommendations__title {
-			margin-top: 0;
-			margin-bottom: 20px;
-		}
-		.wp-mcp-ai-recommendations__empty {
-			text-align: center;
-			padding: 40px 20px;
-			color: #46b450;
-		}
-		.wp-mcp-ai-recommendations__empty .dashicons {
-			font-size: 48px;
-			width: 48px;
-			height: 48px;
-		}
-		.wp-mcp-ai-recommendations__list {
-			display: flex;
-			flex-direction: column;
-			gap: 15px;
-		}
-		.wp-mcp-ai-recommendations__item {
-			display: flex;
-			gap: 15px;
-			padding: 15px;
-			border-left: 4px solid #ddd;
-			background: #f9f9f9;
-			border-radius: 4px;
-		}
-		.severity-critical {
-			border-left-color: #dc3232;
-		}
-		.severity-high {
-			border-left-color: #f56e28;
-		}
-		.severity-medium {
-			border-left-color: #ffb900;
-		}
-		.severity-low {
-			border-left-color: #2271b1;
-		}
-		.wp-mcp-ai-recommendations__severity-badge {
-			padding: 4px 8px;
-			border-radius: 3px;
-			font-size: 11px;
-			font-weight: 600;
-			text-transform: uppercase;
-			color: #fff;
-		}
-		.severity-critical .wp-mcp-ai-recommendations__severity-badge {
-			background: #dc3232;
-		}
-		.severity-high .wp-mcp-ai-recommendations__severity-badge {
-			background: #f56e28;
-		}
-		.severity-medium .wp-mcp-ai-recommendations__severity-badge {
-			background: #ffb900;
-		}
-		.severity-low .wp-mcp-ai-recommendations__severity-badge {
-			background: #2271b1;
-		}
-		.wp-mcp-ai-recommendations__content {
-			flex: 1;
-		}
-		.wp-mcp-ai-recommendations__issue {
-			margin: 0 0 8px 0;
-			font-size: 16px;
-		}
-		.wp-mcp-ai-recommendations__action {
-			margin: 0 0 10px 0;
-			color: #666;
-		}
-		.wp-mcp-ai-recommendations__meta {
-			font-size: 12px;
-			color: #999;
-		}
-		.wp-mcp-ai-recommendations__buttons {
-			display: flex;
-			gap: 10px;
-			margin-top: 10px;
-		}
-		.wp-mcp-ai-recommendations__btn {
-			padding: 6px 12px;
-			border: none;
-			border-radius: 3px;
-			cursor: pointer;
-			font-size: 13px;
-		}
-		.wp-mcp-ai-recommendations__btn--primary {
-			background: #2271b1;
-			color: #fff;
-		}
-		.wp-mcp-ai-recommendations__btn--primary:hover {
-			background: #135e96;
-		}
-		.wp-mcp-ai-recommendations__btn--secondary {
-			background: #f0f0f1;
-			color: #2c3338;
-		}
-		.wp-mcp-ai-recommendations__btn--secondary:hover {
-			background: #dcdcde;
-		}
-		</style>
 		<?php
+		$js = ob_get_clean();
+
+		wp_print_inline_script_tag( $js );
+
+		if ( ! $printed ) {
+			$printed = true;
+
+			wp_register_style( 'wp-mcp-ai-el-perf-recs', false );
+			wp_enqueue_style( 'wp-mcp-ai-el-perf-recs' );
+			wp_add_inline_style(
+				'wp-mcp-ai-el-perf-recs',
+				'.wp-mcp-ai-recommendations{padding:20px;background:#fff;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-recommendations__title{margin-top:0;margin-bottom:20px}'
+				. '.wp-mcp-ai-recommendations__empty{text-align:center;padding:40px 20px;color:#46b450}'
+				. '.wp-mcp-ai-recommendations__empty .dashicons{font-size:48px;width:48px;height:48px}'
+				. '.wp-mcp-ai-recommendations__list{display:flex;flex-direction:column;gap:15px}'
+				. '.wp-mcp-ai-recommendations__item{display:flex;gap:15px;padding:15px;border-left:4px solid #ddd;background:#f9f9f9;border-radius:4px}'
+				. '.severity-critical{border-left-color:#dc3232}'
+				. '.severity-high{border-left-color:#f56e28}'
+				. '.severity-medium{border-left-color:#ffb900}'
+				. '.severity-low{border-left-color:#2271b1}'
+				. '.wp-mcp-ai-recommendations__severity-badge{padding:4px 8px;border-radius:3px;font-size:11px;font-weight:600;text-transform:uppercase;color:#fff}'
+				. '.severity-critical .wp-mcp-ai-recommendations__severity-badge{background:#dc3232}'
+				. '.severity-high .wp-mcp-ai-recommendations__severity-badge{background:#f56e28}'
+				. '.severity-medium .wp-mcp-ai-recommendations__severity-badge{background:#ffb900}'
+				. '.severity-low .wp-mcp-ai-recommendations__severity-badge{background:#2271b1}'
+				. '.wp-mcp-ai-recommendations__content{flex:1}'
+				. '.wp-mcp-ai-recommendations__issue{margin:0 0 8px 0;font-size:16px}'
+				. '.wp-mcp-ai-recommendations__action{margin:0 0 10px 0;color:#666}'
+				. '.wp-mcp-ai-recommendations__meta{font-size:12px;color:#999}'
+				. '.wp-mcp-ai-recommendations__buttons{display:flex;gap:10px;margin-top:10px}'
+				. '.wp-mcp-ai-recommendations__btn{padding:6px 12px;border:none;border-radius:3px;cursor:pointer;font-size:13px}'
+				. '.wp-mcp-ai-recommendations__btn--primary{background:#2271b1;color:#fff}'
+				. '.wp-mcp-ai-recommendations__btn--primary:hover{background:#135e96}'
+				. '.wp-mcp-ai-recommendations__btn--secondary{background:#f0f0f1;color:#2c3338}'
+				. '.wp-mcp-ai-recommendations__btn--secondary:hover{background:#dcdcde}'
+			);
+		}
 	}
 }

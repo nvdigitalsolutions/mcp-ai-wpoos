@@ -92,6 +92,13 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -122,9 +129,9 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 
 		$handlers = $this->get_handlers();
 
-		$imported = array();
-		$skipped  = array();
-		$errors   = array();
+		$imported  = array();
+		$skipped   = array();
+		$errors    = array();
 		$member_id = 0;
 
 		foreach ( $entries as $entry ) {
@@ -139,7 +146,10 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 			}
 			$result = call_user_func( $handlers[ $type ], $resource, $member_id, $dry_run );
 			if ( is_wp_error( $result ) ) {
-				$errors[] = array( 'resource' => $type, 'error' => $result->get_error_message() );
+				$errors[] = array(
+					'resource' => $type,
+					'error'    => $result->get_error_message(),
+				);
 				continue;
 			}
 			if ( 'Patient' === $type && isset( $result['post_id'] ) ) {
@@ -154,10 +164,10 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 				'fhir_bundle',
 				$member_id,
 				array(
-					'user_id'       => $current_user_id,
-					'tool'          => $this->get_slug(),
+					'user_id'        => $current_user_id,
+					'tool'           => $this->get_slug(),
 					'imported_count' => count( $imported ),
-					'skipped_types' => array_values( array_unique( $skipped ) ),
+					'skipped_types'  => array_values( array_unique( $skipped ) ),
 				)
 			);
 		}
@@ -225,7 +235,11 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 		$gender = isset( $resource['gender'] ) ? sanitize_text_field( $resource['gender'] ) : '';
 
 		if ( $dry_run ) {
-			return array( 'identifier' => $identifier, 'first_name' => $first, 'last_name' => $last );
+			return array(
+				'identifier' => $identifier,
+				'first_name' => $first,
+				'last_name'  => $last,
+			);
 		}
 
 		// Try to match by MRN.
@@ -239,8 +253,14 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					'meta_query'     => array(
 						'relation' => 'OR',
-						array( 'key' => '_member_mrn', 'value' => $identifier ),
-						array( 'key' => '_fhir_patient_identifier', 'value' => $identifier ),
+						array(
+							'key'   => '_member_mrn',
+							'value' => $identifier,
+						),
+						array(
+							'key'   => '_fhir_patient_identifier',
+							'value' => $identifier,
+						),
 					),
 				)
 			);
@@ -293,7 +313,10 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 			update_post_meta( $post_id, '_member_gender', $gender );
 		}
 
-		return array( 'post_id' => (int) $post_id, 'identifier' => $identifier );
+		return array(
+			'post_id'    => (int) $post_id,
+			'identifier' => $identifier,
+		);
 	}
 
 	/**
@@ -335,7 +358,10 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! empty( $resource['reaction'][0]['manifestation'][0]['text'] ) ) {
 			update_post_meta( $post_id, '_allergy_reaction', sanitize_text_field( $resource['reaction'][0]['manifestation'][0]['text'] ) );
 		}
-		return array( 'post_id' => (int) $post_id, 'substance' => $substance );
+		return array(
+			'post_id'   => (int) $post_id,
+			'substance' => $substance,
+		);
 	}
 
 	/**
@@ -374,7 +400,10 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 		if ( $member_id ) {
 			update_post_meta( $post_id, '_medical_record_member_id', $member_id );
 		}
-		return array( 'post_id' => (int) $post_id, 'condition' => $label );
+		return array(
+			'post_id'   => (int) $post_id,
+			'condition' => $label,
+		);
 	}
 
 	/**
@@ -418,7 +447,10 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 		if ( $member_id ) {
 			update_post_meta( $post_id, '_prescription_member_id', $member_id );
 		}
-		return array( 'post_id' => (int) $post_id, 'medication' => $name );
+		return array(
+			'post_id'    => (int) $post_id,
+			'medication' => $name,
+		);
 	}
 
 	/**
@@ -457,6 +489,9 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 		if ( $member_id ) {
 			update_post_meta( $post_id, '_record_member_id', $member_id );
 		}
-		return array( 'post_id' => (int) $post_id, 'vaccine' => $vaccine );
+		return array(
+			'post_id' => (int) $post_id,
+			'vaccine' => $vaccine,
+		);
 	}
 }

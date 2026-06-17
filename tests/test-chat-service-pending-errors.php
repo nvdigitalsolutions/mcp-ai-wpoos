@@ -48,6 +48,7 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 	public function test_pending_error_converted_to_informational_result() {
 		// Create a mock tool that returns a pending error (like web search with HTTP 202).
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *
@@ -179,6 +180,7 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 	public function test_regular_error_still_sent_as_error() {
 		// Create a mock tool that returns a regular error.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *

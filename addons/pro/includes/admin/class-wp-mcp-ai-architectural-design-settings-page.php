@@ -331,63 +331,63 @@ class WP_MCP_AI_Architectural_Design_Settings_Page extends WP_MCP_AI_Toolkit_Set
 	protected function get_tools_list() {
 		return array(
 			// Floor Planning & Space Design (Phase A — 4 tools).
-			'generate_floor_plan'              => __( 'Generate Floor Plan', 'mcp-ai-wpoos-pro' ),
-			'optimize_space_layout'            => __( 'Optimize Space Layout', 'mcp-ai-wpoos-pro' ),
-			'create_floor_plan_variations'     => __( 'Create Floor Plan Variations', 'mcp-ai-wpoos-pro' ),
-			'convert_sketch_to_floor_plan'     => __( 'Convert Sketch to Floor Plan', 'mcp-ai-wpoos-pro' ),
+			'generate_floor_plan'               => __( 'Generate Floor Plan', 'mcp-ai-wpoos-pro' ),
+			'optimize_space_layout'             => __( 'Optimize Space Layout', 'mcp-ai-wpoos-pro' ),
+			'create_floor_plan_variations'      => __( 'Create Floor Plan Variations', 'mcp-ai-wpoos-pro' ),
+			'convert_sketch_to_floor_plan'      => __( 'Convert Sketch to Floor Plan', 'mcp-ai-wpoos-pro' ),
 
 			// 3D Modeling & Visualization (Phase A — 3 tools).
-			'generate_3d_model'                => __( 'Generate 3D Model', 'mcp-ai-wpoos-pro' ),
-			'render_architectural_view'        => __( 'Render Architectural View', 'mcp-ai-wpoos-pro' ),
-			'create_walkthrough_animation'     => __( 'Create Walkthrough Animation', 'mcp-ai-wpoos-pro' ),
+			'generate_3d_model'                 => __( 'Generate 3D Model', 'mcp-ai-wpoos-pro' ),
+			'render_architectural_view'         => __( 'Render Architectural View', 'mcp-ai-wpoos-pro' ),
+			'create_walkthrough_animation'      => __( 'Create Walkthrough Animation', 'mcp-ai-wpoos-pro' ),
 
 			// Documentation & Blueprints (Phase A — 3 tools).
-			'generate_construction_drawings'   => __( 'Generate Construction Drawings', 'mcp-ai-wpoos-pro' ),
-			'generate_detail_drawings'         => __( 'Generate Detail Drawings', 'mcp-ai-wpoos-pro' ),
-			'export_architectural_documents'   => __( 'Export Architectural Documents', 'mcp-ai-wpoos-pro' ),
+			'generate_construction_drawings'    => __( 'Generate Construction Drawings', 'mcp-ai-wpoos-pro' ),
+			'generate_detail_drawings'          => __( 'Generate Detail Drawings', 'mcp-ai-wpoos-pro' ),
+			'export_architectural_documents'    => __( 'Export Architectural Documents', 'mcp-ai-wpoos-pro' ),
 
 			// Analysis & Compliance (Phase A — 3 tools + Phase B — 2 tools = 5 tools).
-			'check_building_code_compliance'   => __( 'Check Building Code Compliance', 'mcp-ai-wpoos-pro' ),
-			'analyze_structural_feasibility'   => __( 'Analyze Structural Feasibility', 'mcp-ai-wpoos-pro' ),
-			'calculate_sustainability_metrics' => __( 'Calculate Sustainability Metrics', 'mcp-ai-wpoos-pro' ),
-			'analyze_natural_ventilation'      => __( 'Analyze Natural Ventilation', 'mcp-ai-wpoos-pro' ),
-			'analyze_daylight_and_solar_gain'  => __( 'Analyze Daylight & Solar Gain', 'mcp-ai-wpoos-pro' ),
+			'check_building_code_compliance'    => __( 'Check Building Code Compliance', 'mcp-ai-wpoos-pro' ),
+			'analyze_structural_feasibility'    => __( 'Analyze Structural Feasibility', 'mcp-ai-wpoos-pro' ),
+			'calculate_sustainability_metrics'  => __( 'Calculate Sustainability Metrics', 'mcp-ai-wpoos-pro' ),
+			'analyze_natural_ventilation'       => __( 'Analyze Natural Ventilation', 'mcp-ai-wpoos-pro' ),
+			'analyze_daylight_and_solar_gain'   => __( 'Analyze Daylight & Solar Gain', 'mcp-ai-wpoos-pro' ),
 
 			// Estimation & Scheduling (Phase A — 3 tools + Phase C — 2 tools = 5 tools).
-			'generate_material_schedule'       => __( 'Generate Material Schedule', 'mcp-ai-wpoos-pro' ),
-			'estimate_construction_cost'       => __( 'Estimate Construction Cost', 'mcp-ai-wpoos-pro' ),
-			'generate_construction_timeline'   => __( 'Generate Construction Timeline', 'mcp-ai-wpoos-pro' ),
-			'generate_bill_of_quantities'      => __( 'Generate Bill of Quantities (POMI / SMM7 / NRM2 / CSI MasterFormat)', 'mcp-ai-wpoos-pro' ),
+			'generate_material_schedule'        => __( 'Generate Material Schedule', 'mcp-ai-wpoos-pro' ),
+			'estimate_construction_cost'        => __( 'Estimate Construction Cost', 'mcp-ai-wpoos-pro' ),
+			'generate_construction_timeline'    => __( 'Generate Construction Timeline', 'mcp-ai-wpoos-pro' ),
+			'generate_bill_of_quantities'       => __( 'Generate Bill of Quantities (POMI / SMM7 / NRM2 / CSI MasterFormat)', 'mcp-ai-wpoos-pro' ),
 			'propose_value_engineering_options' => __( 'Propose Value-Engineering Options', 'mcp-ai-wpoos-pro' ),
 
 			// Regional Compliance (Phase B — 7 tools).
-			'calculate_wind_loads'             => __( 'Calculate Wind Loads (BS 6399-2 / IS 875-3 / ASCE 7-22)', 'mcp-ai-wpoos-pro' ),
-			'calculate_seismic_loads'          => __( 'Calculate Seismic Loads (IS 1893 / ASCE 7-22)', 'mcp-ai-wpoos-pro' ),
-			'validate_setbacks_and_far'        => __( 'Validate Setbacks & FAR', 'mcp-ai-wpoos-pro' ),
-			'check_uda_planning_compliance'    => __( 'Check UDA Planning Compliance (Sri Lanka)', 'mcp-ai-wpoos-pro' ),
-			'check_jnbc_hurricane_compliance'  => __( 'Check JNBC Hurricane Compliance (Jamaica)', 'mcp-ai-wpoos-pro' ),
-			'check_us_ibc_irc_compliance'      => __( 'Check US IBC / IRC Compliance', 'mcp-ai-wpoos-pro' ),
-			'generate_compliance_dossier'      => __( 'Generate Compliance Dossier', 'mcp-ai-wpoos-pro' ),
+			'calculate_wind_loads'              => __( 'Calculate Wind Loads (BS 6399-2 / IS 875-3 / ASCE 7-22)', 'mcp-ai-wpoos-pro' ),
+			'calculate_seismic_loads'           => __( 'Calculate Seismic Loads (IS 1893 / ASCE 7-22)', 'mcp-ai-wpoos-pro' ),
+			'validate_setbacks_and_far'         => __( 'Validate Setbacks & FAR', 'mcp-ai-wpoos-pro' ),
+			'check_uda_planning_compliance'     => __( 'Check UDA Planning Compliance (Sri Lanka)', 'mcp-ai-wpoos-pro' ),
+			'check_jnbc_hurricane_compliance'   => __( 'Check JNBC Hurricane Compliance (Jamaica)', 'mcp-ai-wpoos-pro' ),
+			'check_us_ibc_irc_compliance'       => __( 'Check US IBC / IRC Compliance', 'mcp-ai-wpoos-pro' ),
+			'generate_compliance_dossier'       => __( 'Generate Compliance Dossier', 'mcp-ai-wpoos-pro' ),
 
 			// Sustainability (Phase B — 1 tool + Phase C — 2 tools = 3 tools).
-			'simulate_thermal_comfort'         => __( 'Simulate Thermal Comfort', 'mcp-ai-wpoos-pro' ),
-			'score_edge_certification'         => __( 'Score IFC EDGE Certification', 'mcp-ai-wpoos-pro' ),
-			'score_leed_v4_certification'      => __( 'Score LEED v4 BD+C Certification', 'mcp-ai-wpoos-pro' ),
+			'simulate_thermal_comfort'          => __( 'Simulate Thermal Comfort', 'mcp-ai-wpoos-pro' ),
+			'score_edge_certification'          => __( 'Score IFC EDGE Certification', 'mcp-ai-wpoos-pro' ),
+			'score_leed_v4_certification'       => __( 'Score LEED v4 BD+C Certification', 'mcp-ai-wpoos-pro' ),
 
 			// Interoperability — IFC / gbXML / DWG (Phase D — 4 tools).
-			'import_dwg_floor_plan'            => __( 'Import DWG Floor Plan', 'mcp-ai-wpoos-pro' ),
-			'import_ifc_model'                 => __( 'Import IFC Model', 'mcp-ai-wpoos-pro' ),
-			'export_to_ifc'                    => __( 'Export to IFC 4.3 (STEP)', 'mcp-ai-wpoos-pro' ),
-			'export_to_gbxml'                  => __( 'Export to gbXML 6.01', 'mcp-ai-wpoos-pro' ),
+			'import_dwg_floor_plan'             => __( 'Import DWG Floor Plan', 'mcp-ai-wpoos-pro' ),
+			'import_ifc_model'                  => __( 'Import IFC Model', 'mcp-ai-wpoos-pro' ),
+			'export_to_ifc'                     => __( 'Export to IFC 4.3 (STEP)', 'mcp-ai-wpoos-pro' ),
+			'export_to_gbxml'                   => __( 'Export to gbXML 6.01', 'mcp-ai-wpoos-pro' ),
 
 			// Project Delivery — BEP / RFI / Submittal (Phase D — 3 tools).
-			'generate_bim_execution_plan'      => __( 'Generate BIM Execution Plan (AIA E202 / E203 / ISO 19650-2)', 'mcp-ai-wpoos-pro' ),
-			'manage_rfi_log'                   => __( 'Manage RFI Log', 'mcp-ai-wpoos-pro' ),
-			'manage_submittal_log'             => __( 'Manage Submittal Log', 'mcp-ai-wpoos-pro' ),
+			'generate_bim_execution_plan'       => __( 'Generate BIM Execution Plan (AIA E202 / E203 / ISO 19650-2)', 'mcp-ai-wpoos-pro' ),
+			'manage_rfi_log'                    => __( 'Manage RFI Log', 'mcp-ai-wpoos-pro' ),
+			'manage_submittal_log'              => __( 'Manage Submittal Log', 'mcp-ai-wpoos-pro' ),
 
 			// Precedent Library — Semantic Search (Phase E — 2 tools).
-			'manage_architectural_precedents'  => __( 'Manage Architectural Precedents', 'mcp-ai-wpoos-pro' ),
-			'search_architectural_precedents'  => __( 'Search Architectural Precedents (Embedding-Based)', 'mcp-ai-wpoos-pro' ),
+			'manage_architectural_precedents'   => __( 'Manage Architectural Precedents', 'mcp-ai-wpoos-pro' ),
+			'search_architectural_precedents'   => __( 'Search Architectural Precedents (Embedding-Based)', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

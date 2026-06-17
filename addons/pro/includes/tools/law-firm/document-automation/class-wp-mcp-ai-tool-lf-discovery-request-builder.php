@@ -24,6 +24,13 @@ class WP_MCP_AI_Tool_LF_Discovery_Request_Builder implements WP_MCP_AI_Tool_Inte
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -109,6 +116,9 @@ class WP_MCP_AI_Tool_LF_Discovery_Request_Builder implements WP_MCP_AI_Tool_Inte
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -202,10 +212,10 @@ class WP_MCP_AI_Tool_LF_Discovery_Request_Builder implements WP_MCP_AI_Tool_Inte
 		);
 
 		$specific = array(
-			'interrogatories'           => array( __( 'Each interrogatory shall be answered separately and fully in writing under oath per FRCP 33.', 'mcp-ai-wpoos-pro' ) ),
-			'requests_for_production'   => array( __( 'Produce documents as kept in the usual course of business or organize and label them per FRCP 34.', 'mcp-ai-wpoos-pro' ) ),
-			'requests_for_admission'    => array( __( 'Each matter is deemed admitted unless a written answer or objection is served within 30 days per FRCP 36.', 'mcp-ai-wpoos-pro' ) ),
-			'deposition_notice'         => array( __( 'The deponent shall appear at the date, time, and place specified and bring any documents identified herein per FRCP 30.', 'mcp-ai-wpoos-pro' ) ),
+			'interrogatories'         => array( __( 'Each interrogatory shall be answered separately and fully in writing under oath per FRCP 33.', 'mcp-ai-wpoos-pro' ) ),
+			'requests_for_production' => array( __( 'Produce documents as kept in the usual course of business or organize and label them per FRCP 34.', 'mcp-ai-wpoos-pro' ) ),
+			'requests_for_admission'  => array( __( 'Each matter is deemed admitted unless a written answer or objection is served within 30 days per FRCP 36.', 'mcp-ai-wpoos-pro' ) ),
+			'deposition_notice'       => array( __( 'The deponent shall appear at the date, time, and place specified and bring any documents identified herein per FRCP 30.', 'mcp-ai-wpoos-pro' ) ),
 		);
 
 		return array_merge( $common, $specific[ $type ] ?? array() );
@@ -221,28 +231,28 @@ class WP_MCP_AI_Tool_LF_Discovery_Request_Builder implements WP_MCP_AI_Tool_Inte
 	 */
 	private function generate_requests( string $type, array $topic_areas, int $count ): array {
 		$templates = array(
-			'interrogatories'           => array(
+			'interrogatories'         => array(
 				__( 'Identify all persons with knowledge of %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'Describe in detail all facts supporting your contentions regarding %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'Identify all documents that relate to %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'State the dates and substance of all communications regarding %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'Describe any policies or procedures related to %s.', 'mcp-ai-wpoos-pro' ),
 			),
-			'requests_for_production'   => array(
+			'requests_for_production' => array(
 				__( 'All documents and communications relating to %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'All contracts, agreements, or memoranda concerning %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'All electronically stored information, including emails, relating to %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'All records, reports, or analyses regarding %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'All correspondence between any parties relating to %s.', 'mcp-ai-wpoos-pro' ),
 			),
-			'requests_for_admission'    => array(
+			'requests_for_admission'  => array(
 				__( 'Admit that you had knowledge of %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'Admit that the documents relating to %s are authentic.', 'mcp-ai-wpoos-pro' ),
 				__( 'Admit that you were responsible for %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'Admit that the facts set forth regarding %s are true and correct.', 'mcp-ai-wpoos-pro' ),
 				__( 'Admit that no additional agreements exist concerning %s.', 'mcp-ai-wpoos-pro' ),
 			),
-			'deposition_notice'         => array(
+			'deposition_notice'       => array(
 				__( 'Testimony regarding your knowledge of %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'Testimony regarding all communications concerning %s.', 'mcp-ai-wpoos-pro' ),
 				__( 'Testimony regarding your role in %s.', 'mcp-ai-wpoos-pro' ),
@@ -255,8 +265,8 @@ class WP_MCP_AI_Tool_LF_Discovery_Request_Builder implements WP_MCP_AI_Tool_Inte
 		$results = array();
 
 		for ( $i = 0; $i < $count; $i++ ) {
-			$template = $tmpl[ $i % count( $tmpl ) ];
-			$topic    = ! empty( $topic_areas ) ? $topic_areas[ $i % count( $topic_areas ) ] : __( 'the subject matter of this action', 'mcp-ai-wpoos-pro' );
+			$template  = $tmpl[ $i % count( $tmpl ) ];
+			$topic     = ! empty( $topic_areas ) ? $topic_areas[ $i % count( $topic_areas ) ] : __( 'the subject matter of this action', 'mcp-ai-wpoos-pro' );
 			$results[] = array(
 				'number' => $i + 1,
 				'text'   => sprintf( $template, $topic ),

@@ -76,6 +76,13 @@ class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -156,7 +163,7 @@ class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP
 				array(
 					'post_type'      => 'mcp_ai_registration',
 					'post_status'    => 'publish',
-					'posts_per_page' => -1,
+					'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'get_reg_product', 0, 1000 ) : 1000,
 					'meta_query'     => array(
 						array(
 							'key'   => 'product_id',

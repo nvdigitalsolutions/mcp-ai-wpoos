@@ -78,25 +78,51 @@ class WP_MCP_AI_Tool_Simulate_Thermal_Comfort implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'country_code' => array(
+				'country_code'               => array(
 					'type'        => 'string',
 					'description' => __( 'ISO country code.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'LK', 'JM', 'US' ),
 					'default'     => 'LK',
 				),
-				'model' => array(
+				'model'                      => array(
 					'type'        => 'string',
 					'description' => __( 'Comfort model: pmv, adaptive, or auto.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pmv', 'adaptive', 'auto' ),
 					'default'     => 'auto',
 				),
-				'air_temperature_c'      => array( 'type' => 'number', 'description' => __( 'Indoor air temperature (°C).', 'mcp-ai-wpoos-pro' ) ),
-				'mean_radiant_temperature_c' => array( 'type' => 'number', 'description' => __( 'Mean radiant temperature (°C). Defaults to air temperature.', 'mcp-ai-wpoos-pro' ) ),
-				'relative_humidity_pct'  => array( 'type' => 'number', 'description' => __( 'Relative humidity (%).', 'mcp-ai-wpoos-pro' ), 'minimum' => 0, 'maximum' => 100 ),
-				'air_speed_ms'           => array( 'type' => 'number', 'description' => __( 'Indoor air speed (m/s).', 'mcp-ai-wpoos-pro' ), 'minimum' => 0 ),
-				'metabolic_rate_met'     => array( 'type' => 'number', 'description' => __( 'Activity level (met). 1.0 seated, 1.2 office.', 'mcp-ai-wpoos-pro' ), 'default' => 1.1 ),
-				'clothing_insulation_clo' => array( 'type' => 'number', 'description' => __( 'Clothing insulation (clo). 0.5 light, 1.0 typical winter.', 'mcp-ai-wpoos-pro' ), 'default' => 0.5 ),
-				'outdoor_running_mean_c' => array( 'type' => 'number', 'description' => __( 'Prevailing mean outdoor temperature (°C) — required for the adaptive model.', 'mcp-ai-wpoos-pro' ) ),
+				'air_temperature_c'          => array(
+					'type'        => 'number',
+					'description' => __( 'Indoor air temperature (°C).', 'mcp-ai-wpoos-pro' ),
+				),
+				'mean_radiant_temperature_c' => array(
+					'type'        => 'number',
+					'description' => __( 'Mean radiant temperature (°C). Defaults to air temperature.', 'mcp-ai-wpoos-pro' ),
+				),
+				'relative_humidity_pct'      => array(
+					'type'        => 'number',
+					'description' => __( 'Relative humidity (%).', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0,
+					'maximum'     => 100,
+				),
+				'air_speed_ms'               => array(
+					'type'        => 'number',
+					'description' => __( 'Indoor air speed (m/s).', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0,
+				),
+				'metabolic_rate_met'         => array(
+					'type'        => 'number',
+					'description' => __( 'Activity level (met). 1.0 seated, 1.2 office.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 1.1,
+				),
+				'clothing_insulation_clo'    => array(
+					'type'        => 'number',
+					'description' => __( 'Clothing insulation (clo). 0.5 light, 1.0 typical winter.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 0.5,
+				),
+				'outdoor_running_mean_c'     => array(
+					'type'        => 'number',
+					'description' => __( 'Prevailing mean outdoor temperature (°C) — required for the adaptive model.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'air_temperature_c', 'relative_humidity_pct' ),
 			'additionalProperties' => false,
@@ -113,6 +139,13 @@ class WP_MCP_AI_Tool_Simulate_Thermal_Comfort implements WP_MCP_AI_Tool_Interfac
 			'read-only',
 			'cacheable',
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -150,13 +183,13 @@ class WP_MCP_AI_Tool_Simulate_Thermal_Comfort implements WP_MCP_AI_Tool_Interfac
 			'country_code' => $country_code,
 			'model'        => $model,
 			'inputs'       => array(
-				'air_temperature_c'        => $ta,
+				'air_temperature_c'          => $ta,
 				'mean_radiant_temperature_c' => $tr,
-				'relative_humidity_pct'    => $rh,
-				'air_speed_ms'             => $va,
-				'metabolic_rate_met'       => $met,
-				'clothing_insulation_clo'  => $clo,
-				'outdoor_running_mean_c'   => $t_run_mean,
+				'relative_humidity_pct'      => $rh,
+				'air_speed_ms'               => $va,
+				'metabolic_rate_met'         => $met,
+				'clothing_insulation_clo'    => $clo,
+				'outdoor_running_mean_c'     => $t_run_mean,
 			),
 		);
 
@@ -165,27 +198,27 @@ class WP_MCP_AI_Tool_Simulate_Thermal_Comfort implements WP_MCP_AI_Tool_Interfac
 				return new WP_Error( 'wp_mcp_ai_invalid_arguments', __( 'outdoor_running_mean_c is required for the adaptive model.', 'mcp-ai-wpoos-pro' ) );
 			}
 			// ASHRAE 55 adaptive: T_comf = 0.31 * T_rm + 17.8 (valid 10-33.5 °C range).
-			$t_comf      = 0.31 * $t_run_mean + 17.8;
-			$diff        = $ta - $t_comf;
-			$within_80   = ( abs( $diff ) <= 3.5 );
-			$within_90   = ( abs( $diff ) <= 2.5 );
-			$result['adaptive'] = array(
-				'comfort_temperature_c'  => round( $t_comf, 2 ),
-				'operative_minus_comf_c' => round( $diff, 2 ),
+			$t_comf                    = 0.31 * $t_run_mean + 17.8;
+			$diff                      = $ta - $t_comf;
+			$within_80                 = ( abs( $diff ) <= 3.5 );
+			$within_90                 = ( abs( $diff ) <= 2.5 );
+			$result['adaptive']        = array(
+				'comfort_temperature_c'      => round( $t_comf, 2 ),
+				'operative_minus_comf_c'     => round( $diff, 2 ),
 				'within_80pct_acceptability' => $within_80,
 				'within_90pct_acceptability' => $within_90,
-				'overall_status'         => $within_80 ? ( $within_90 ? 'pass' : 'conditional' ) : 'fail',
+				'overall_status'             => $within_80 ? ( $within_90 ? 'pass' : 'conditional' ) : 'fail',
 			);
 			$result['recommendations'] = $this->adaptive_recommendations( $country_code, $diff );
 			$result['overall_status']  = $result['adaptive']['overall_status'];
 		} else {
 			// PMV (Fanger ISO 7730 simplified).
-			$pmv = $this->pmv( $ta, $tr, $rh, $va, $met, $clo );
-			$ppd = $this->ppd_from_pmv( $pmv );
-			$cat = $this->ashrae_category( $pmv );
-			$result['pmv'] = array(
-				'pmv'      => round( $pmv, 2 ),
-				'ppd_pct'  => round( $ppd, 1 ),
+			$pmv                       = $this->pmv( $ta, $tr, $rh, $va, $met, $clo );
+			$ppd                       = $this->ppd_from_pmv( $pmv );
+			$cat                       = $this->ashrae_category( $pmv );
+			$result['pmv']             = array(
+				'pmv'                => round( $pmv, 2 ),
+				'ppd_pct'            => round( $ppd, 1 ),
 				'ashrae_55_category' => $cat,
 				'overall_status'     => ( abs( $pmv ) <= 0.5 ) ? 'pass' : ( ( abs( $pmv ) <= 1.0 ) ? 'conditional' : 'fail' ),
 			);
@@ -214,7 +247,7 @@ class WP_MCP_AI_Tool_Simulate_Thermal_Comfort implements WP_MCP_AI_Tool_Interfac
 		$mw  = $m - $w;
 		$icl = $clo * 0.155;            // m²·K/W clothing.
 		// Saturated vapour pressure (Pa) via Antoine-style approximation, then partial pressure.
-		$pa  = ( $rh / 100.0 ) * 6.105 * exp( ( 17.27 * $ta ) / ( 237.7 + $ta ) ) * 100.0;
+		$pa = ( $rh / 100.0 ) * 6.105 * exp( ( 17.27 * $ta ) / ( 237.7 + $ta ) ) * 100.0;
 
 		$fcl = ( $icl <= 0.078 ) ? ( 1.0 + 1.29 * $icl ) : ( 1.05 + 0.645 * $icl );
 		$hcf = 12.1 * sqrt( max( 0.001, $va ) );
@@ -223,8 +256,8 @@ class WP_MCP_AI_Tool_Simulate_Thermal_Comfort implements WP_MCP_AI_Tool_Interfac
 		$tcla = 35.7 - 0.028 * $mw;
 		$tcl  = $tcla;
 		for ( $i = 0; $i < 150; $i++ ) {
-			$hcn = 2.38 * pow( max( 0.0001, abs( $tcl - $ta ) ), 0.25 );
-			$hc  = max( $hcf, $hcn );
+			$hcn     = 2.38 * pow( max( 0.0001, abs( $tcl - $ta ) ), 0.25 );
+			$hc      = max( $hcf, $hcn );
 			$tcl_new = $tcla - $icl * $fcl * (
 				3.96e-8 * ( pow( $tcl + 273.0, 4 ) - pow( $tr + 273.0, 4 ) )
 				+ $hc * ( $tcl - $ta )

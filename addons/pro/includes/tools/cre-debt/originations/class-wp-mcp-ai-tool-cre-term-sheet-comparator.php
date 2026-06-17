@@ -69,37 +69,61 @@ class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'loan_amount'     => array(
+				'loan_amount'    => array(
 					'type'        => 'number',
 					'description' => __( 'Loan amount.', 'mcp-ai-wpoos-pro' ),
 				),
-				'noi'             => array(
+				'noi'            => array(
 					'type'        => 'number',
 					'description' => __( 'Annual Net Operating Income.', 'mcp-ai-wpoos-pro' ),
 				),
-				'property_value'  => array(
+				'property_value' => array(
 					'type'        => 'number',
 					'description' => __( 'Property value.', 'mcp-ai-wpoos-pro' ),
 				),
-				'term_sheets'     => array(
+				'term_sheets'    => array(
 					'type'        => 'array',
 					'description' => __( 'Array of lender term sheets.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'lender'             => array( 'type' => 'string', 'description' => __( 'Lender name.', 'mcp-ai-wpoos-pro' ) ),
-							'rate'               => array( 'type' => 'number', 'description' => __( 'Interest rate as decimal.', 'mcp-ai-wpoos-pro' ) ),
-							'spread_bps'         => array( 'type' => 'number', 'description' => __( 'Spread in basis points.', 'mcp-ai-wpoos-pro' ) ),
-							'io_months'          => array( 'type' => 'integer', 'description' => __( 'IO period months.', 'mcp-ai-wpoos-pro' ) ),
-							'amort_months'       => array( 'type' => 'integer', 'description' => __( 'Amortization months.', 'mcp-ai-wpoos-pro' ) ),
-							'term_months'        => array( 'type' => 'integer', 'description' => __( 'Loan term months.', 'mcp-ai-wpoos-pro' ) ),
-							'origination_fee_pct' => array( 'type' => 'number', 'description' => __( 'Origination fee %.', 'mcp-ai-wpoos-pro' ) ),
-							'exit_fee_pct'       => array( 'type' => 'number', 'description' => __( 'Exit fee %.', 'mcp-ai-wpoos-pro' ) ),
-							'prepayment_type'    => array(
+							'lender'              => array(
+								'type'        => 'string',
+								'description' => __( 'Lender name.', 'mcp-ai-wpoos-pro' ),
+							),
+							'rate'                => array(
+								'type'        => 'number',
+								'description' => __( 'Interest rate as decimal.', 'mcp-ai-wpoos-pro' ),
+							),
+							'spread_bps'          => array(
+								'type'        => 'number',
+								'description' => __( 'Spread in basis points.', 'mcp-ai-wpoos-pro' ),
+							),
+							'io_months'           => array(
+								'type'        => 'integer',
+								'description' => __( 'IO period months.', 'mcp-ai-wpoos-pro' ),
+							),
+							'amort_months'        => array(
+								'type'        => 'integer',
+								'description' => __( 'Amortization months.', 'mcp-ai-wpoos-pro' ),
+							),
+							'term_months'         => array(
+								'type'        => 'integer',
+								'description' => __( 'Loan term months.', 'mcp-ai-wpoos-pro' ),
+							),
+							'origination_fee_pct' => array(
+								'type'        => 'number',
+								'description' => __( 'Origination fee %.', 'mcp-ai-wpoos-pro' ),
+							),
+							'exit_fee_pct'        => array(
+								'type'        => 'number',
+								'description' => __( 'Exit fee %.', 'mcp-ai-wpoos-pro' ),
+							),
+							'prepayment_type'     => array(
 								'type' => 'string',
 								'enum' => array( 'none', 'lockout', 'defeasance', 'yield_maintenance', 'step_down' ),
 							),
-							'recourse'           => array(
+							'recourse'            => array(
 								'type' => 'string',
 								'enum' => array( 'full', 'partial', 'non_recourse' ),
 							),
@@ -119,7 +143,20 @@ class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -148,16 +185,16 @@ class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interfa
 		$comparisons = array();
 
 		foreach ( $sheets_raw as $sheet ) {
-			$lender      = sanitize_text_field( $sheet['lender'] ?? 'Unknown' );
-			$rate        = (float) ( $sheet['rate'] ?? 0 );
-			$spread      = (float) ( $sheet['spread_bps'] ?? 0 );
-			$io          = (int) ( $sheet['io_months'] ?? 0 );
-			$amort       = (int) ( $sheet['amort_months'] ?? 360 );
-			$term        = (int) ( $sheet['term_months'] ?? 120 );
-			$orig_fee    = (float) ( $sheet['origination_fee_pct'] ?? 0 );
-			$exit_fee    = (float) ( $sheet['exit_fee_pct'] ?? 0 );
-			$prepay      = sanitize_text_field( $sheet['prepayment_type'] ?? 'none' );
-			$recourse    = sanitize_text_field( $sheet['recourse'] ?? 'non_recourse' );
+			$lender   = sanitize_text_field( $sheet['lender'] ?? 'Unknown' );
+			$rate     = (float) ( $sheet['rate'] ?? 0 );
+			$spread   = (float) ( $sheet['spread_bps'] ?? 0 );
+			$io       = (int) ( $sheet['io_months'] ?? 0 );
+			$amort    = (int) ( $sheet['amort_months'] ?? 360 );
+			$term     = (int) ( $sheet['term_months'] ?? 120 );
+			$orig_fee = (float) ( $sheet['origination_fee_pct'] ?? 0 );
+			$exit_fee = (float) ( $sheet['exit_fee_pct'] ?? 0 );
+			$prepay   = sanitize_text_field( $sheet['prepayment_type'] ?? 'none' );
+			$recourse = sanitize_text_field( $sheet['recourse'] ?? 'non_recourse' );
 
 			if ( $rate <= 0 || $amort <= 0 || $term <= 0 ) {
 				continue;
@@ -173,8 +210,8 @@ class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interfa
 			$total_interest = $schedule['total_interest'];
 
 			// Fees.
-			$orig_cost = $loan_amount * ( $orig_fee / 100 );
-			$exit_cost = $loan_amount * ( $exit_fee / 100 );
+			$orig_cost  = $loan_amount * ( $orig_fee / 100 );
+			$exit_cost  = $loan_amount * ( $exit_fee / 100 );
 			$total_fees = $orig_cost + $exit_cost;
 
 			// All-in cost = total interest + fees.
@@ -211,25 +248,28 @@ class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Rank by all-in cost (lower is better).
-		usort( $comparisons, function ( $a, $b ) {
-			return $a['_sort_cost'] <=> $b['_sort_cost'];
-		} );
+		usort(
+			$comparisons,
+			function ( $a, $b ) {
+				return $a['_sort_cost'] <=> $b['_sort_cost'];
+			}
+		);
 
 		// Assign ranks and clean up sort keys.
 		$ranked = array();
 		foreach ( $comparisons as $rank => $comp ) {
 			unset( $comp['_sort_cost'], $comp['_sort_flex'] );
-			$comp['cost_rank']        = $rank + 1;
-			$comp['recommendation']   = ( 0 === $rank ) ? __( 'BEST VALUE', 'mcp-ai-wpoos-pro' ) : '';
-			$ranked[] = $comp;
+			$comp['cost_rank']      = $rank + 1;
+			$comp['recommendation'] = ( 0 === $rank ) ? __( 'BEST VALUE', 'mcp-ai-wpoos-pro' ) : '';
+			$ranked[]               = $comp;
 		}
 
 		// Find best flexibility.
-		$best_flex = 0;
+		$best_flex        = 0;
 		$best_flex_lender = '';
 		foreach ( $ranked as $r ) {
 			if ( $r['flexibility'] > $best_flex ) {
-				$best_flex = $r['flexibility'];
+				$best_flex        = $r['flexibility'];
 				$best_flex_lender = $r['lender'];
 			}
 		}
@@ -238,10 +278,10 @@ class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interfa
 			'success' => true,
 			'message' => __( 'Term sheet comparison complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
-				'comparison_count'      => count( $ranked ),
-				'best_value_lender'     => $ranked[0]['lender'],
-				'most_flexible_lender'  => $best_flex_lender,
-				'term_sheets'           => $ranked,
+				'comparison_count'     => count( $ranked ),
+				'best_value_lender'    => $ranked[0]['lender'],
+				'most_flexible_lender' => $best_flex_lender,
+				'term_sheets'          => $ranked,
 			),
 		);
 	}
@@ -276,7 +316,7 @@ class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interfa
 			'defeasance'        => 10,
 			'lockout'           => 0,
 		);
-		$score += $prepay_scores[ $prepayment_type ] ?? 15;
+		$score        += $prepay_scores[ $prepayment_type ] ?? 15;
 
 		// Recourse (up to 30 pts) — non-recourse most favorable to borrower.
 		$recourse_scores = array(
@@ -284,7 +324,7 @@ class WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator implements WP_MCP_AI_Tool_Interfa
 			'partial'      => 20,
 			'full'         => 5,
 		);
-		$score += $recourse_scores[ $recourse ] ?? 10;
+		$score          += $recourse_scores[ $recourse ] ?? 10;
 
 		return min( 100, $score );
 	}

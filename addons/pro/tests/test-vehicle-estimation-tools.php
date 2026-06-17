@@ -5,7 +5,6 @@
  * @package WP_MCP_AI
  * @since   2.2.0
  */
-
 class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 
 	/**
@@ -26,11 +25,11 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 
 		// Ensure tool classes are loaded.
 		$vin_path      = defined( 'WP_MCP_AI_PRO_PATH' )
-			? WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vin-decode.php'
-			: dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-vin-decode.php';
+			? WP_MCP_AI_PRO_PATH . 'includes/tools/automotive/class-wp-mcp-ai-tool-vin-decode.php'
+			: dirname( __DIR__ ) . '/includes/tools/automotive/class-wp-mcp-ai-tool-vin-decode.php';
 		$estimate_path = defined( 'WP_MCP_AI_PRO_PATH' )
-			? WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-repair-estimate.php'
-			: dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-vehicle-repair-estimate.php';
+			? WP_MCP_AI_PRO_PATH . 'includes/tools/automotive/class-wp-mcp-ai-tool-vehicle-repair-estimate.php'
+			: dirname( __DIR__ ) . '/includes/tools/automotive/class-wp-mcp-ai-tool-vehicle-repair-estimate.php';
 
 		if ( file_exists( $vin_path ) ) {
 			require_once $vin_path;
@@ -40,8 +39,8 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 		}
 
 		$cleaning_path = defined( 'WP_MCP_AI_PRO_PATH' )
-			? WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php'
-			: dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php';
+					? WP_MCP_AI_PRO_PATH . 'includes/tools/automotive/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php'
+					: dirname( __DIR__ ) . '/includes/tools/automotive/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php';
 		if ( file_exists( $cleaning_path ) ) {
 			require_once $cleaning_path;
 		}
@@ -146,7 +145,7 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 	 * Test VIN Decode rejects VIN with invalid characters (I, O, Q).
 	 */
 	public function test_vin_decode_rejects_invalid_characters() {
-		$tool   = new WP_MCP_AI_Tool_VIN_Decode();
+		$tool = new WP_MCP_AI_Tool_VIN_Decode();
 		// VIN with 'I' (invalid per standard).
 		$result = $tool->execute(
 			array( 'vin' => '1HGBH41JXIN109186' ),
@@ -161,7 +160,7 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 	 * Test VIN check-digit validation with a known-good VIN.
 	 */
 	public function test_vin_check_digit_valid() {
-		$tool   = new WP_MCP_AI_Tool_VIN_Decode();
+		$tool = new WP_MCP_AI_Tool_VIN_Decode();
 		// 11111111111111111 has check digit '1' at position 9.
 		$result = $tool->validate_check_digit( '11111111111111111' );
 
@@ -173,7 +172,7 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 	 * Test VIN check-digit validation with an invalid check digit.
 	 */
 	public function test_vin_check_digit_invalid() {
-		$tool   = new WP_MCP_AI_Tool_VIN_Decode();
+		$tool = new WP_MCP_AI_Tool_VIN_Decode();
 		// Modify check digit position to force mismatch.
 		$result = $tool->validate_check_digit( '11111111011111111' );
 
@@ -376,7 +375,7 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 	 * Test estimate rejects non-image attachments.
 	 */
 	public function test_estimate_rejects_invalid_attachments() {
-		$tool   = new WP_MCP_AI_Tool_Vehicle_Repair_Estimate();
+		$tool = new WP_MCP_AI_Tool_Vehicle_Repair_Estimate();
 		// Non-existent attachment IDs.
 		$result = $tool->execute(
 			array( 'image_attachment_ids' => array( 999999 ) ),
@@ -713,7 +712,10 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 				'package'       => 'premium_exterior_express',
 				'size_override' => 'car',
 				'add_ons'       => array(
-					array( 'code' => 'pet_hair_removal', 'severity' => 'moderate' ),
+					array(
+						'code'     => 'pet_hair_removal',
+						'severity' => 'moderate',
+					),
 				),
 			),
 			array( 'user_id' => $this->admin_id )
@@ -877,7 +879,10 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 
 		foreach ( $packages as $pkg => $expected ) {
 			$result = $tool->execute(
-				array( 'package' => $pkg, 'size_override' => 'car' ),
+				array(
+					'package'       => $pkg,
+					'size_override' => 'car',
+				),
 				$context
 			);
 			$this->assertSame(
@@ -898,7 +903,10 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 				'package'       => 'premium_exterior_express',
 				'size_override' => 'car',
 				'add_ons'       => array(
-					array( 'code' => 'soil_mud_sap_oil', 'severity' => 'severe' ),
+					array(
+						'code'     => 'soil_mud_sap_oil',
+						'severity' => 'severe',
+					),
 				),
 			),
 			array( 'user_id' => $this->admin_id )
@@ -920,7 +928,10 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 				'tax_rate'      => 0.13,
 				'currency'      => 'CAD',
 				'add_ons'       => array(
-					array( 'code' => 'pet_hair_removal', 'severity' => 'light' ),
+					array(
+						'code'     => 'pet_hair_removal',
+						'severity' => 'light',
+					),
 					array( 'code' => 'trunk_bed_shampoo' ),
 					array( 'code' => 'carpet_seat_deodorizer' ),
 				),

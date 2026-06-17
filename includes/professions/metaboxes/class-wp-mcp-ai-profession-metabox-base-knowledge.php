@@ -270,52 +270,25 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 			</p>
 		</div>
 
-		<style type="text/css">
-			.wp-mcp-ai-memory-files {
-				list-style: none;
-				margin: 10px 0;
-				padding: 0;
-				border: 1px solid #ddd;
-				background: #f9f9f9;
-				max-height: 200px;
-				overflow-y: auto;
-			}
+		<?php
+		wp_add_inline_style(
+			'wp-mcp-ai-metabox-profession-base-knowledge',
+			'.wp-mcp-ai-memory-files{list-style:none;margin:10px 0;padding:0;border:1px solid #ddd;background:#f9f9f9;max-height:200px;overflow-y:auto}'
+			. '.wp-mcp-ai-memory-files li{padding:8px 12px;border-bottom:1px solid #ddd;display:flex;align-items:center;justify-content:space-between}'
+			. '.wp-mcp-ai-memory-files li:last-child{border-bottom:none}'
+			. '.wp-mcp-ai-memory-file-title{flex:1;font-weight:500}'
+			. '.wp-mcp-ai-memory-file-size{color:#646970;font-size:0.9em;margin-left:0.5em}'
+			. '.wp-mcp-ai-remove-memory{color:#b32d2e;text-decoration:none;cursor:pointer}'
+			. '.wp-mcp-ai-remove-memory:hover{color:#dc3232}'
+		);
 
-			.wp-mcp-ai-memory-files li {
-				padding: 8px 12px;
-				border-bottom: 1px solid #ddd;
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-			}
+		$select_files_title = esc_js( __( 'Select Knowledge Files', 'mcp-ai-wpoos' ) );
+		$add_to_kb_text     = esc_js( __( 'Add to Knowledge Base', 'mcp-ai-wpoos' ) );
+		$untitled_label     = esc_js( __( 'Untitled', 'mcp-ai-wpoos' ) );
+		$remove_label       = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
 
-			.wp-mcp-ai-memory-files li:last-child {
-				border-bottom: none;
-			}
-
-			.wp-mcp-ai-memory-file-title {
-				flex: 1;
-				font-weight: 500;
-			}
-
-			.wp-mcp-ai-memory-file-size {
-				color: #646970;
-				font-size: 0.9em;
-				margin-left: 0.5em;
-			}
-
-			.wp-mcp-ai-remove-memory {
-				color: #b32d2e;
-				text-decoration: none;
-				cursor: pointer;
-			}
-
-			.wp-mcp-ai-remove-memory:hover {
-				color: #dc3232;
-			}
-		</style>
-
-		<script type="text/javascript">
+		ob_start();
+		?>
 		jQuery(document).ready(function($) {
 			// Media uploader for memory files.
 			var memoryFrame;
@@ -328,9 +301,9 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 				}
 
 				memoryFrame = wp.media({
-					title: '<?php echo esc_js( __( 'Select Knowledge Files', 'mcp-ai-wpoos' ) ); ?>',
+					title: <?php echo wp_json_encode( $select_files_title ); ?>,
 					button: {
-						text: '<?php echo esc_js( __( 'Add to Knowledge Base', 'mcp-ai-wpoos' ) ); ?>'
+						text: <?php echo wp_json_encode( $add_to_kb_text ); ?>
 					},
 					multiple: true
 				});
@@ -348,7 +321,7 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 						}
 
 						var sizeLabel = attachment.filesizeHumanReadable || '';
-						var title = attachment.title || '<?php echo esc_js( __( 'Untitled', 'mcp-ai-wpoos' ) ); ?>';
+						var title = attachment.title || <?php echo wp_json_encode( $untitled_label ); ?>;
 
 						var listItem = $('<li>').attr('data-id', attachment.id);
 						listItem.append(
@@ -364,7 +337,7 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 						listItem.append(
 							$('<button>').attr('type', 'button')
 								.addClass('button-link wp-mcp-ai-remove-memory')
-								.text('<?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?>')
+								.text(<?php echo wp_json_encode( $remove_label ); ?>)
 						);
 
 						listItem.append(
@@ -388,8 +361,10 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 				$(this).closest('li').remove();
 			});
 		});
-		</script>
 		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+
 		$this->render_documentation_link();
 	}
 

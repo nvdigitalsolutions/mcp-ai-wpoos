@@ -44,7 +44,7 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 
 		$pro_path = defined( 'WP_MCP_AI_PRO_PATH' )
 			? WP_MCP_AI_PRO_PATH
-			: dirname( dirname( __FILE__ ) ) . '/';
+			: dirname( __DIR__ ) . '/';
 
 		$base = $pro_path . 'includes/tools/architectural-design/';
 		if ( ! file_exists( $base ) ) {
@@ -123,36 +123,92 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 	 */
 	protected function sample_plan() {
 		return array(
-			'project' => array( 'name' => 'Villa Test', 'country_code' => 'LK' ),
+			'project' => array(
+				'name'         => 'Villa Test',
+				'country_code' => 'LK',
+			),
 			'units'   => 'metric',
 			'levels'  => array(
-				array( 'id' => 'L1', 'name' => 'Ground', 'elevation_m' => 0 ),
-				array( 'id' => 'L2', 'name' => 'First', 'elevation_m' => 3 ),
+				array(
+					'id'          => 'L1',
+					'name'        => 'Ground',
+					'elevation_m' => 0,
+				),
+				array(
+					'id'          => 'L2',
+					'name'        => 'First',
+					'elevation_m' => 3,
+				),
 			),
 			'rooms'   => array(
-				array( 'id' => 'R1', 'name' => 'Living', 'level_id' => 'L1', 'use' => 'living', 'area_m2' => 22, 'occupants' => 5 ),
-				array( 'id' => 'R2', 'name' => 'Kitchen', 'level_id' => 'L1', 'use' => 'kitchen', 'area_m2' => 12, 'occupants' => 2 ),
-				array( 'id' => 'R3', 'name' => 'Bedroom', 'level_id' => 'L2', 'use' => 'bedroom', 'area_m2' => 16, 'occupants' => 2 ),
+				array(
+					'id'        => 'R1',
+					'name'      => 'Living',
+					'level_id'  => 'L1',
+					'use'       => 'living',
+					'area_m2'   => 22,
+					'occupants' => 5,
+				),
+				array(
+					'id'        => 'R2',
+					'name'      => 'Kitchen',
+					'level_id'  => 'L1',
+					'use'       => 'kitchen',
+					'area_m2'   => 12,
+					'occupants' => 2,
+				),
+				array(
+					'id'        => 'R3',
+					'name'      => 'Bedroom',
+					'level_id'  => 'L2',
+					'use'       => 'bedroom',
+					'area_m2'   => 16,
+					'occupants' => 2,
+				),
 			),
 			'walls'   => array(
-				array( 'id' => 'W1', 'level_id' => 'L1', 'length_m' => 5.0, 'height_m' => 3.0, 'thickness_mm' => 200, 'is_exterior' => true ),
+				array(
+					'id'           => 'W1',
+					'level_id'     => 'L1',
+					'length_m'     => 5.0,
+					'height_m'     => 3.0,
+					'thickness_mm' => 200,
+					'is_exterior'  => true,
+				),
 			),
-			'doors'   => array( array( 'id' => 'D1', 'wall_id' => 'W1', 'width_m' => 0.9, 'height_m' => 2.1 ) ),
-			'windows' => array( array( 'id' => 'WN1', 'wall_id' => 'W1', 'width_m' => 1.2, 'height_m' => 1.5, 'sill_m' => 0.9 ) ),
+			'doors'   => array(
+				array(
+					'id'       => 'D1',
+					'wall_id'  => 'W1',
+					'width_m'  => 0.9,
+					'height_m' => 2.1,
+				),
+			),
+			'windows' => array(
+				array(
+					'id'       => 'WN1',
+					'wall_id'  => 'W1',
+					'width_m'  => 1.2,
+					'height_m' => 1.5,
+					'sill_m'   => 0.9,
+				),
+			),
 		);
 	}
 
-	/* ---------------------------------------------------------------------
-	 * import_dwg_floor_plan
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Import_dwg_floor_plan.
+	 */
 	public function test_import_dwg_normalises_synonyms() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Import_Dwg_Floor_Plan' ) ) {
 			$this->markTestSkipped( 'Import DWG tool unavailable.' );
 		}
 		$tool = new WP_MCP_AI_Tool_Import_Dwg_Floor_Plan();
 		$res  = $tool->execute(
-			array( 'payload' => $this->sample_plan(), 'source_label' => 'site-revC.dwg' ),
+			array(
+				'payload'      => $this->sample_plan(),
+				'source_label' => 'site-revC.dwg',
+			),
 			$this->ctx()
 		);
 		$this->assertNotWPError( $res );
@@ -164,6 +220,8 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertContains( 'normalised "rooms" -> "spaces"', $res['warnings'] );
 	}
 
+	/** Test import dwg requires payload.
+	 */
 	public function test_import_dwg_requires_payload() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Import_Dwg_Floor_Plan' ) ) {
 			$this->markTestSkipped( 'Import DWG tool unavailable.' );
@@ -174,10 +232,9 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_invalid_arguments', $res->get_error_code() );
 	}
 
-	/* ---------------------------------------------------------------------
-	 * import_ifc_model
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Import_ifc_model.
+	 */
 	public function test_import_ifc_returns_summary_counts() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Import_Ifc_Model' ) ) {
 			$this->markTestSkipped( 'Import IFC tool unavailable.' );
@@ -191,16 +248,21 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 50.0, $res['summary']['total_area_m2'], 0.01 );
 	}
 
-	/* ---------------------------------------------------------------------
-	 * export_to_ifc — round trip
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Export_to_ifc — round trip.
+	 */
 	public function test_export_to_ifc_round_trip() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Export_To_Ifc' ) ) {
 			$this->markTestSkipped( 'Export IFC tool unavailable.' );
 		}
 		$tool = new WP_MCP_AI_Tool_Export_To_Ifc();
-		$res  = $tool->execute( array( 'floor_plan' => $this->sample_plan(), 'author' => 'Tester' ), $this->ctx() );
+		$res  = $tool->execute(
+			array(
+				'floor_plan' => $this->sample_plan(),
+				'author'     => 'Tester',
+			),
+			$this->ctx()
+		);
 		$this->assertNotWPError( $res );
 		$this->assertSame( 'IFC4X3', $res['format'] );
 		$this->assertStringStartsWith( 'ISO-10303-21;', $res['ifc_text'] );
@@ -211,10 +273,9 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertSame( 2, $res['entity_counts']['openings'] );
 	}
 
-	/* ---------------------------------------------------------------------
-	 * export_to_gbxml — XML well-formedness
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Export_to_gbxml — XML well-formedness.
+	 */
 	public function test_export_to_gbxml_is_well_formed() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Export_To_Gbxml' ) ) {
 			$this->markTestSkipped( 'Export gbXML tool unavailable.' );
@@ -231,10 +292,9 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertStringContainsString( '<Name>Villa Test</Name>', $res['xml'] );
 	}
 
-	/* ---------------------------------------------------------------------
-	 * generate_bim_execution_plan
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Generate_bim_execution_plan.
+	 */
 	public function test_bep_returns_full_section_catalog() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Generate_Bim_Execution_Plan' ) ) {
 			$this->markTestSkipped( 'BEP tool unavailable.' );
@@ -259,6 +319,8 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'BIM 360', $res['sections']['collaboration']['guidance'] );
 	}
 
+	/** Test bep requires project name.
+	 */
 	public function test_bep_requires_project_name() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Generate_Bim_Execution_Plan' ) ) {
 			$this->markTestSkipped( 'BEP tool unavailable.' );
@@ -268,10 +330,9 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertWPError( $res );
 	}
 
-	/* ---------------------------------------------------------------------
-	 * manage_rfi_log workflow
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Manage_rfi_log workflow.
+	 */
 	public function test_rfi_log_create_list_update_workflow() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Manage_Rfi_Log' ) ) {
 			$this->markTestSkipped( 'RFI log tool unavailable.' );
@@ -295,7 +356,13 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertSame( 'open', $create['rfi']['status'] );
 
 		// List.
-		$list = $tool->execute( array( 'action' => 'list', 'project_id' => $this->project_id ), $this->ctx() );
+		$list = $tool->execute(
+			array(
+				'action'     => 'list',
+				'project_id' => $this->project_id,
+			),
+			$this->ctx()
+		);
 		$this->assertSame( 1, $list['count'] );
 
 		// Update — answer + close.
@@ -314,6 +381,8 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertStringContainsString( '12mm', $upd['rfi']['answer'] );
 	}
 
+	/** Test rfi log invalid status falls back to open.
+	 */
 	public function test_rfi_log_invalid_status_falls_back_to_open() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Manage_Rfi_Log' ) ) {
 			$this->markTestSkipped( 'RFI log tool unavailable.' );
@@ -333,6 +402,8 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertSame( 'open', $create['rfi']['status'] );
 	}
 
+	/** Test rfi log rejects non project post.
+	 */
 	public function test_rfi_log_rejects_non_project_post() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Manage_Rfi_Log' ) ) {
 			$this->markTestSkipped( 'RFI log tool unavailable.' );
@@ -345,16 +416,21 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 				'post_author' => $this->editor_id,
 			)
 		);
-		$tool = new WP_MCP_AI_Tool_Manage_Rfi_Log();
-		$res  = $tool->execute( array( 'action' => 'list', 'project_id' => $post_id ), $this->ctx() );
+		$tool    = new WP_MCP_AI_Tool_Manage_Rfi_Log();
+		$res     = $tool->execute(
+			array(
+				'action'     => 'list',
+				'project_id' => $post_id,
+			),
+			$this->ctx()
+		);
 		$this->assertWPError( $res );
 		$this->assertSame( 'wp_mcp_ai_invalid_project', $res->get_error_code() );
 	}
 
-	/* ---------------------------------------------------------------------
-	 * manage_submittal_log workflow
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Manage_submittal_log workflow.
+	 */
 	public function test_submittal_log_approval_workflow_with_revision() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Manage_Submittal_Log' ) ) {
 			$this->markTestSkipped( 'Submittal log tool unavailable.' );
@@ -380,12 +456,12 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		// Revise & resubmit.
 		$revise = $tool->execute(
 			array(
-				'action'         => 'update',
-				'project_id'     => $this->project_id,
-				'submittal_id'   => 'SUB-0001',
-				'status'         => 'revise_and_resubmit',
+				'action'          => 'update',
+				'project_id'      => $this->project_id,
+				'submittal_id'    => 'SUB-0001',
+				'status'          => 'revise_and_resubmit',
 				'review_comments' => 'Fix latch hardware schedule.',
-				'revision'       => 1,
+				'revision'        => 1,
 			),
 			$this->ctx()
 		);
@@ -405,28 +481,49 @@ class Test_Architectural_Tools_Phase_D extends WP_UnitTestCase {
 		$this->assertSame( 'approved_as_noted', $approve['submittal']['status'] );
 	}
 
-	/* ---------------------------------------------------------------------
+	/**
 	 * Cross-tool: RFI and submittal logs are isolated.
-	 * ------------------------------------------------------------------ */
-
+	 */
 	public function test_rfi_and_submittal_logs_are_isolated_meta_keys() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Manage_Rfi_Log' ) || ! class_exists( 'WP_MCP_AI_Tool_Manage_Submittal_Log' ) ) {
 			$this->markTestSkipped( 'Phase D log tools unavailable.' );
 		}
-		$rfi  = new WP_MCP_AI_Tool_Manage_Rfi_Log();
-		$sub  = new WP_MCP_AI_Tool_Manage_Submittal_Log();
+		$rfi = new WP_MCP_AI_Tool_Manage_Rfi_Log();
+		$sub = new WP_MCP_AI_Tool_Manage_Submittal_Log();
 
 		$rfi->execute(
-			array( 'action' => 'create', 'project_id' => $this->project_id, 'subject' => 'X', 'question' => 'Y' ),
+			array(
+				'action'     => 'create',
+				'project_id' => $this->project_id,
+				'subject'    => 'X',
+				'question'   => 'Y',
+			),
 			$this->ctx()
 		);
 		$sub->execute(
-			array( 'action' => 'create', 'project_id' => $this->project_id, 'spec_section' => '08 11 13', 'title' => 'Z' ),
+			array(
+				'action'       => 'create',
+				'project_id'   => $this->project_id,
+				'spec_section' => '08 11 13',
+				'title'        => 'Z',
+			),
 			$this->ctx()
 		);
 
-		$rfi_list = $rfi->execute( array( 'action' => 'list', 'project_id' => $this->project_id ), $this->ctx() );
-		$sub_list = $sub->execute( array( 'action' => 'list', 'project_id' => $this->project_id ), $this->ctx() );
+		$rfi_list = $rfi->execute(
+			array(
+				'action'     => 'list',
+				'project_id' => $this->project_id,
+			),
+			$this->ctx()
+		);
+		$sub_list = $sub->execute(
+			array(
+				'action'     => 'list',
+				'project_id' => $this->project_id,
+			),
+			$this->ctx()
+		);
 		$this->assertSame( 1, $rfi_list['count'] );
 		$this->assertSame( 1, $sub_list['count'] );
 		$this->assertSame( 'RFI-0001', $rfi_list['rfis'][0]['id'] );

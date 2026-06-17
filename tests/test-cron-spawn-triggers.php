@@ -176,7 +176,7 @@ class Test_Cron_Spawn_Triggers extends WP_UnitTestCase {
 	 */
 	public function test_schedule_notify_sms_tool_triggers_spawn_cron() {
 		// Tool is now in pro addon.
-		$pro_file_path = WP_MCP_AI_PATH . '../addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-schedule-notify-sms.php';
+		$pro_file_path = WP_MCP_AI_PATH . '../addons/pro/includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-schedule-notify-sms.php';
 
 		if ( ! file_exists( $pro_file_path ) ) {
 			$this->markTestSkipped( 'Schedule Notify SMS tool is now a pro addon tool and pro addon is not available.' );
@@ -189,6 +189,53 @@ class Test_Cron_Spawn_Triggers extends WP_UnitTestCase {
 			'spawn_cron()',
 			$file_content,
 			'Schedule notify SMS tool should call spawn_cron()'
+		);
+	}
+
+	/**
+	 * Test that transcript mining job triggers spawn_cron() on enqueue.
+	 */
+	public function test_transcript_mining_job_triggers_spawn_cron() {
+		$file_content = file_get_contents(
+			WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-transcript-mining-job.php'
+		);
+
+		$this->assertStringContainsString(
+			'spawn_cron()',
+			$file_content,
+			'Transcript mining job should call spawn_cron()'
+		);
+
+		// Verify spawn_cron() is called at least twice: once in enqueue() and
+		// once in handle_tick() for the re-schedule path.
+		$count = substr_count( $file_content, 'spawn_cron()' );
+		$this->assertGreaterThanOrEqual(
+			2,
+			$count,
+			'spawn_cron() should be called in both enqueue() and handle_tick() re-schedule'
+		);
+	}
+
+	/**
+	 * Test that transcript mining job schedules in the immediate past so spawn_cron() fires it.
+	 */
+	public function test_transcript_mining_job_schedules_in_past() {
+		$file_content = file_get_contents(
+			WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-transcript-mining-job.php'
+		);
+
+		// Must use time() - 1, not time() + 1, so wp_get_ready_cron_jobs() returns
+		// the event and spawn_cron() can dispatch it immediately.
+		$this->assertStringContainsString(
+			'time() - 1',
+			$file_content,
+			'Transcript mining job must schedule in the immediate past for spawn_cron() to pick it up'
+		);
+
+		$this->assertStringNotContainsString(
+			'time() + 1',
+			$file_content,
+			'Transcript mining job must not schedule in the future (spawn_cron() would skip it)'
 		);
 	}
 

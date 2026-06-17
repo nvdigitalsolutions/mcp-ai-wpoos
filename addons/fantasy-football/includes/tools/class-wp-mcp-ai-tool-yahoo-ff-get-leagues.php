@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Retrieves user's fantasy football leagues from Yahoo Fantasy Sports API.
  */
 class WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**

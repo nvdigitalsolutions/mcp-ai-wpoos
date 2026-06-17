@@ -90,11 +90,11 @@ class WP_MCP_AI_CRE_Debt_Research_Page {
 		}
 
 		// Get the configured assistant.
-		$cre_settings  = get_option( 'wp_mcp_ai_cre_debt_settings', array() );
-		$assistant_id  = isset( $cre_settings['assistant_id'] ) ? absint( $cre_settings['assistant_id'] ) : 0;
+		$cre_settings = get_option( 'wp_mcp_ai_cre_debt_settings', array() );
+		$assistant_id = isset( $cre_settings['assistant_id'] ) ? absint( $cre_settings['assistant_id'] ) : 0;
 
 		if ( ! $assistant_id ) {
-			$assistants = get_posts(
+			$assistants   = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_assistant',
 					'post_status'    => 'publish',

@@ -7,8 +7,15 @@ LM Studio is a local AI model hosting platform that provides an OpenAI-compatibl
 ## Features
 
 - **OpenAI-Compatible API**: LM Studio implements the OpenAI API format, making integration seamless
+- **Real SSE Streaming**: Tokens stream to the chat UI as they are generated — no waiting for the full response
 - **Local Execution**: Run models on your own hardware for privacy and cost control
-- **No API Keys Required**: No external API keys or cloud services needed
+- **Optional API Key Auth**: Protect your LM Studio server with bearer-token authentication (LM Studio 0.3.6+)
+- **Native API Opt-in**: Enable `/api/v0` for richer metadata, performance telemetry, and capability flags
+- **Embeddings Support**: Use a locally-loaded embedding model for vector-store features
+- **Capability Gating**: Tool-calling is skipped for models that don't advertise `tool_use` support
+- **Reasoning Model Support**: `<think>…</think>` blocks and `reasoning_content` fields are automatically extracted and forwarded to the chat UI's thinking panel
+- **TTL / Auto-unload**: Pass a `ttl` (seconds) to have LM Studio automatically unload the model after idle time
+- **Structured Outputs**: Pass `json_schema` response formats for strict schema enforcement
 - **Network Flexibility**: Support for localhost, LAN, and VPN configurations
 - **Automatic Fallback**: Part of the provider priority system with automatic failover
 
@@ -34,7 +41,9 @@ Navigate to **Settings → NV oOS → Providers → LM Studio**:
 3. **LM Studio Model**: Enter the model identifier shown in LM Studio
    - Example: `llama-3-8b-instruct`
    - Some setups accept: `local-model`
-4. **Network Interface** (Optional): Leave empty for most setups
+4. **LM Studio API Key (Optional)**: Leave empty unless your server has key-auth enabled (LM Studio 0.3.6+)
+5. **Use Native API (/api/v0)**: Enable for richer model metadata and per-request performance stats (disabled by default for backwards compatibility)
+6. **Network Interface** (Optional): Leave empty for most setups
 
 ### 3. Test Connection
 
@@ -382,6 +391,19 @@ if (is_wp_error($result)) {
 
 ## Changelog
 
+### Version 1.5 (May 2026)
+- ✅ Real SSE streaming — tokens forwarded to the chat UI as they arrive
+- ✅ Optional bearer-token authentication (`lm_studio_api_key`)
+- ✅ Native `/api/v0` opt-in (`lm_studio_use_native_api`) with richer model metadata
+- ✅ `create_embedding()` method for local embedding models
+- ✅ Capability guard — tools payload skipped for non-tool-capable models
+- ✅ `reasoning_content` passthrough + `<think>…</think>` stripping for reasoning models (DeepSeek-R1, Qwen-QwQ)
+- ✅ Malformed tool-call `arguments` auto-repair
+- ✅ TTL (`ttl`) and structured outputs (`response_format: json_schema`) pass-through
+- ✅ `test_connection()` falls back to `/api/v0/models` on 404 and reports `x-lm-studio-version`
+- ✅ New filters: `wp_mcp_ai_lm_studio_stream_request_args`, `wp_mcp_ai_lm_studio_native_endpoint`
+- ✅ New action: `wp_mcp_ai_lm_studio_provider_stats` (tokens/sec, TTFT, generation time)
+
 ### Version 1.x
 - ✅ Initial LM Studio support
 - ✅ OpenAI-compatible API integration
@@ -392,18 +414,76 @@ if (is_wp_error($result)) {
 - ✅ Text completions
 - ✅ Fixed endpoint URL bug (double `/v1/`)
 
-## Future Enhancements
+## Advanced Configuration
 
-- [ ] Automatic model detection
-- [ ] Hardware utilization monitoring
-- [ ] Model switching based on context
-- [ ] Streaming support
-- [ ] Function calling support
-- [ ] Vision model support
+### SSE Streaming
+
+Streaming is enabled by default when the chat UI requests it. To tune connection timeouts or headers for streaming requests, use the filter:
+
+```php
+add_filter( 'wp_mcp_ai_lm_studio_stream_request_args', function ( $args, $options, $payload ) {
+    $args['timeout'] = 300; // 5 minutes for very long responses.
+    return $args;
+}, 10, 3 );
+```
+
+### Optional Bearer-Token Authentication
+
+LM Studio 0.3.6 and later support API key authentication. Configure the key in **Settings → NV oOS → Providers → LM Studio → API Key**. When set, every request includes an `Authorization: Bearer <key>` header. The key is stored as a WordPress option and never logged.
+
+### Native `/api/v0` Endpoint
+
+Enable **Use Native API (/api/v0)** to unlock:
+
+- `arch`, `quantization`, `state` (loaded/not-loaded), `max_context_length`, `loaded_context_length`, and `capabilities` fields in the model list.
+- Per-request performance stats (`tokens_per_second`, `time_to_first_token_ms`, `generation_time_ms`) emitted via the `wp_mcp_ai_lm_studio_provider_stats` action.
+- Capability-based tool gating (only tool-capable models receive a `tools` array in the payload).
+
+To override the global setting on a per-request basis:
+
+```php
+add_filter( 'wp_mcp_ai_lm_studio_native_endpoint', '__return_false' ); // Force /v1 for this request.
+```
+
+### Embeddings
+
+Load an embedding model in LM Studio (e.g. `nomic-embed-text`) and call:
+
+```php
+$client = new WP_MCP_AI_LM_Studio_Client();
+$result = $client->create_embedding( 'My document text', array( 'model' => 'nomic-embed-text' ) );
+// $result['data'][0]['embedding'] contains the float vector.
+```
+
+### TTL / Auto-unload
+
+Pass `ttl` (seconds) to have LM Studio unload the model after the specified idle period:
+
+```php
+$client->create_chat_completion( $messages, array( 'ttl' => 300 ) );
+```
+
+### Structured Outputs (JSON Schema)
+
+Pass `response_format` with a `json_schema` descriptor for strict schema enforcement:
+
+```php
+$client->create_chat_completion( $messages, array(
+    'response_format' => array(
+        'type'        => 'json_schema',
+        'json_schema' => array(
+            'name'   => 'my_schema',
+            'strict' => true,
+            'schema' => array( 'type' => 'object', 'properties' => array( 'answer' => array( 'type' => 'string' ) ) ),
+        ),
+    ),
+) );
+```
+
+Note: LM Studio supports `json_schema`, `json_object`, and `text` format types. The `json_schema` type provides stricter enforcement than the OpenAI equivalent when using a compatible local model.
 
 ## References
 
 - [LM Studio Official Website](https://lmstudio.ai/)
 - [OpenAI API Documentation](https://platform.openai.com/docs/api-reference)
 - [NV oOS Documentation](/docs/)
-- *(Provider configuration documentation pending)*

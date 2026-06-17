@@ -25,6 +25,8 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * Tool for retrieving all teams in an ESPN Fantasy Football league.
  */
 class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Teams implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -102,7 +104,7 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Teams implements WP_MCP_AI_Tool_Interface,
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+		$user_id   = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {

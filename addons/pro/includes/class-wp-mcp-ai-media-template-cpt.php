@@ -94,8 +94,8 @@ class WP_MCP_AI_Media_Template_CPT {
 		// Check if we're on a media template post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
 		$post_type        = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		$is_template_page = ( $post_type === self::POST_TYPE );
-		if ( ! $is_template_page && $screen->post_type !== self::POST_TYPE ) {
+		$is_template_page = ( self::POST_TYPE === $post_type );
+		if ( ! $is_template_page && self::POST_TYPE !== $screen->post_type ) {
 			return;
 		}
 
@@ -682,7 +682,7 @@ class WP_MCP_AI_Media_Template_CPT {
 
 		// Use the apply_media_template tool.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Apply_Media_Template' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-media-template.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-apply-media-template.php';
 		}
 
 		$tool   = new WP_MCP_AI_Tool_Apply_Media_Template();

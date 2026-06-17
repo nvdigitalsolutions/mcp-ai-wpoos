@@ -20,7 +20,7 @@ const use_video_config_js_1 = require("./use-video-config.js");
 const get_current_time_js_1 = require("./video/get-current-time.js");
 const warn_about_non_seekable_media_js_1 = require("./warn-about-non-seekable-media.js");
 const useMediaPlayback = ({ mediaRef, src, mediaType, playbackRate: localPlaybackRate, onlyWarnForMediaSeekingError, acceptableTimeshift, pauseWhenBuffering, isPremounting, isPostmounting, onAutoPlayError, }) => {
-    const { playbackRate: globalPlaybackRate } = (0, timeline_position_state_js_1.useTimelineContext)();
+    const { playbackRate: globalPlaybackRate } = (0, timeline_position_state_js_1.usePlaybackRate)();
     const frame = (0, use_current_frame_js_1.useCurrentFrame)();
     const absoluteFrame = (0, timeline_position_state_js_1.useTimelinePosition)();
     const [playing] = (0, timeline_position_state_js_1.usePlayingState)();

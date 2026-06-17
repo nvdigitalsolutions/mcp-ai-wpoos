@@ -103,26 +103,26 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate image_id.
 		if ( empty( $arguments['image_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The image_id parameter is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'The image_id parameter is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		$image_id = absint( $arguments['image_id'] );
 		if ( ! wp_attachment_is_image( $image_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The specified image_id is not a valid image attachment.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'The specified image_id is not a valid image attachment.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		// Get image file path.
 		$image_path = get_attached_file( $image_id );
 		if ( ! $image_path || ! file_exists( $image_path ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The image file could not be found.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'The image file could not be found.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -150,9 +150,9 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		$result = $client->create_image_variation( $image_path, $options );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'error'   => $result->get_error_message(),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$result->get_error_message()
 			);
 		}
 
@@ -188,9 +188,9 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( empty( $saved_images ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Failed to save variation images.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Failed to save variation images.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -242,7 +242,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- base64_decode used to decode binary image/file data received from the API, not for code obfuscation.
 			$image_content = base64_decode( $image_data['b64_json'] );
 		} elseif ( isset( $image_data['url'] ) ) {
-			$response = wp_remote_get( $image_data['url'], array( 'timeout' => 30 ) );
+			$response = wp_safe_remote_get( $image_data['url'], array( 'timeout' => 30 ) );
 			if ( ! is_wp_error( $response ) ) {
 				$image_content = wp_remote_retrieve_body( $response );
 			}

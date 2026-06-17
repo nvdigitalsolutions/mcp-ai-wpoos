@@ -75,7 +75,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 		 * @return string
 		 */
 		public function get_documentation_url() {
-			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/developer/architecture/CUSTOM-AI-SETTINGS-FILTERS.md';
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/developer/architecture/CUSTOM-AI-SETTINGS-FILTERS.md';
 		}
 
 		/**

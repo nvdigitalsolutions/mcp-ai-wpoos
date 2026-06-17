@@ -364,19 +364,16 @@ class WP_MCP_AI_AI_Peer_CPT {
 		}
 
 		?>
-		<style>
-			.health-status {
-				padding: 8px 12px;
-				border-radius: 4px;
-				font-weight: 600;
-				text-align: center;
-				margin-bottom: 12px;
-			}
-			.health-status.healthy { background: #d4edda; color: #155724; }
-			.health-status.degraded { background: #fff3cd; color: #856404; }
-			.health-status.down { background: #f8d7da; color: #721c24; }
-			.health-status.unknown { background: #e2e3e5; color: #383d41; }
-		</style>
+		<?php
+		wp_add_inline_style(
+			'wp-mcp-ai-ai-peer-cpt',
+			'.health-status{padding:8px 12px;border-radius:4px;font-weight:600;text-align:center;margin-bottom:12px;}'
+			. '.health-status.healthy{background:#d4edda;color:#155724;}'
+			. '.health-status.degraded{background:#fff3cd;color:#856404;}'
+			. '.health-status.down{background:#f8d7da;color:#721c24;}'
+			. '.health-status.unknown{background:#e2e3e5;color:#383d41;}'
+		);
+		?>
 		<div class="health-status <?php echo esc_attr( $status_class ); ?>">
 			<?php echo esc_html( $status_label ); ?>
 		</div>
@@ -411,34 +408,39 @@ class WP_MCP_AI_AI_Peer_CPT {
 			</button>
 		</p>
 
-		<script>
+		<?php
+		ob_start();
+		?>
 		jQuery(document).ready(function($) {
 			$('#wp-mcp-ai-verify-peer').on('click', function(e) {
 				e.preventDefault();
 				var button = $(this);
-				button.prop('disabled', true).text('<?php esc_html_e( 'Verifying...', 'mcp-ai-wpoos' ); ?>');
+				button.prop('disabled', true).text(<?php echo wp_json_encode( __( 'Verifying...', 'mcp-ai-wpoos' ) ); ?>);
 
 				$.ajax({
-					url: '<?php echo esc_url( rest_url( 'ai-dir/v1/reverify/' . $post->ID ) ); ?>',
+					url: <?php echo wp_json_encode( rest_url( 'ai-dir/v1/reverify/' . $post->ID ) ); ?>,
 					method: 'POST',
 					beforeSend: function(xhr) {
-						xhr.setRequestHeader('X-WP-Nonce', '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>');
+						xhr.setRequestHeader('X-WP-Nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>);
 					},
 					success: function(response) {
-						alert('<?php esc_html_e( 'Peer verification completed. Refresh the page to see results.', 'mcp-ai-wpoos' ); ?>');
+						alert(<?php echo wp_json_encode( __( 'Peer verification completed. Refresh the page to see results.', 'mcp-ai-wpoos' ) ); ?>);
 						location.reload();
 					},
 					error: function(xhr) {
 						var message = xhr.responseJSON && xhr.responseJSON.message
 							? xhr.responseJSON.message
-							: '<?php esc_html_e( 'Verification failed. Check the error log.', 'mcp-ai-wpoos' ); ?>';
+							: <?php echo wp_json_encode( __( 'Verification failed. Check the error log.', 'mcp-ai-wpoos' ) ); ?>;
 						alert(message);
-						button.prop('disabled', false).text('<?php esc_html_e( 'Verify Now', 'mcp-ai-wpoos' ); ?>');
+						button.prop('disabled', false).text(<?php echo wp_json_encode( __( 'Verify Now', 'mcp-ai-wpoos' ) ); ?>);
 					}
 				});
 			});
 		});
-		</script>
+		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+		?>
 		<?php
 	}
 

@@ -98,12 +98,12 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 		$query_args = array(
 			'post_type'      => 'dj_equipment',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'equipment_inventory_report', 0, 500 ) : 500,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
 		);
 
-		if ( $status !== 'all' ) {
+		if ( 'all' !== $status ) {
 			$query_args['meta_query'] = array(
 				array(
 					'key'     => '_status',
@@ -113,7 +113,7 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 			);
 		}
 
-		if ( $type !== 'all' ) {
+		if ( 'all' !== $type ) {
 			if ( ! isset( $query_args['meta_query'] ) ) {
 				$query_args['meta_query'] = array();
 			}
@@ -160,11 +160,11 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 				$equipment_items[] = $item;
 
 				// Count by status.
-				$item_status                   = $item['status'] ?: 'available';
+				$item_status                   = $item['status'] ? $item['status'] : 'available';
 				$status_counts[ $item_status ] = isset( $status_counts[ $item_status ] ) ? $status_counts[ $item_status ] + 1 : 1;
 
 				// Count by type.
-				$item_type                 = $item['type'] ?: 'other';
+				$item_type                 = $item['type'] ? $item['type'] : 'other';
 				$type_counts[ $item_type ] = isset( $type_counts[ $item_type ] ) ? $type_counts[ $item_type ] + 1 : 1;
 			}
 			wp_reset_postdata();
@@ -232,12 +232,12 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 		$row = 2;
 		foreach ( $equipment_items as $item ) {
 			$col = 'A';
-			$sheet->setCellValue( $col++ . $row, $item['name'] ?? '' );
-			$sheet->setCellValue( $col++ . $row, $item['type'] ?? '' );
-			$sheet->setCellValue( $col++ . $row, $item['status'] ?? '' );
-			$sheet->setCellValue( $col++ . $row, $item['serial_number'] ?? '' );
+			$sheet->setCellValue( ( $col++ ) . $row, $item['name'] ?? '' );
+			$sheet->setCellValue( ( $col++ ) . $row, $item['type'] ?? '' );
+			$sheet->setCellValue( ( $col++ ) . $row, $item['status'] ?? '' );
+			$sheet->setCellValue( ( $col++ ) . $row, $item['serial_number'] ?? '' );
 			if ( $include_values ) {
-				$sheet->setCellValue( $col++ . $row, $item['purchase_price'] ?? '' );
+				$sheet->setCellValue( ( $col++ ) . $row, $item['purchase_price'] ?? '' );
 			}
 			$sheet->setCellValue( $col . $row, $item['last_maintenance'] ?? '' );
 			++$row;

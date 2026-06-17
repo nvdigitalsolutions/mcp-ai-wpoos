@@ -65,7 +65,7 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 	 * @return string
 	 */
 	public function get_documentation_url() {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/proposals/DEEPSEEK-V4-IMPLEMENTATION-STATUS.md';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/project/proposals/DEEPSEEK-V4-IMPLEMENTATION-STATUS.md';
 	}
 
 	/**
@@ -109,28 +109,16 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 				?>
 			</p>
 
-			<style>
-				.wp-mcp-ai-orchestration-field {
-					margin-bottom: 25px;
-				}
-				.wp-mcp-ai-orchestration-field label {
-					display: block;
-					font-weight: 600;
-					margin-bottom: 8px;
-				}
-				.wp-mcp-ai-orchestration-field textarea {
-					width: 100%;
-					font-family: 'Courier New', Courier, monospace;
-					font-size: 13px;
-				}
-				.wp-mcp-ai-orchestration-field .description {
-					margin-top: 5px;
-					font-style: italic;
-				}
-				.wp-mcp-ai-role-option {
-					margin-bottom: 10px;
-				}
-			</style>
+			<?php
+			wp_add_inline_style(
+				'wp-mcp-ai-metabox-agent-orchestration',
+				'.wp-mcp-ai-orchestration-field{margin-bottom:25px}'
+				. '.wp-mcp-ai-orchestration-field label{display:block;font-weight:600;margin-bottom:8px}'
+				. '.wp-mcp-ai-orchestration-field textarea{width:100%;font-family:\'Courier New\',Courier,monospace;font-size:13px}'
+				. '.wp-mcp-ai-orchestration-field .description{margin-top:5px;font-style:italic}'
+				. '.wp-mcp-ai-role-option{margin-bottom:10px}'
+			);
+			?>
 
 			<!-- Agent Role -->
 			<div class="wp-mcp-ai-orchestration-field">

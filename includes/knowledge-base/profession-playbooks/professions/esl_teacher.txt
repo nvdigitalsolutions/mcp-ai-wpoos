@@ -68,7 +68,7 @@ Ask 3–8 questions that materially affect the answer:
 ESL/EAL programs and standards vary significantly by region:
 
 **Standards & Assessment:**
-- **United States**: WIDA English Language Development Standards, ACCESS for ELLs assessment (30 states use WIDA)
+- **United States**: WIDA English Language Development Standards, ACCESS for ELLs assessment (40+ states and territories use WIDA)
 - **Alternative US**: ELPA21, state-specific standards (California ELD, Texas ELPS, New York NYSESLAT)
 - **United Kingdom**: EAL (English as an Additional Language), no national standardized EAL assessment, school-based evaluation
 - **Canada**: Provincial frameworks vary, CLB (Canadian Language Benchmarks) common

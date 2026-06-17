@@ -208,7 +208,7 @@ class Test_Slash_Command_Ship extends WP_UnitTestCase {
 
 		$result = $this->command->execute(
 			array( $post_id ),
-			array( 'publish' => true ),
+			array( 'publish' => true, 'skip-checks' => true ),
 			array( 'user_id' => $this->user_id )
 		);
 

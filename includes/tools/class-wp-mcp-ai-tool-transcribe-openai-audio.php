@@ -111,6 +111,13 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -155,7 +162,13 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		}
 
 		if ( $user_id > 0 && get_current_user_id() !== $user_id ) {
-			wp_set_current_user( $user_id );
+			if ( ! WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_user',
+					__( 'The authenticated user could not be resolved on this site.', 'mcp-ai-wpoos' ),
+					array( 'status' => rest_authorization_required_code() )
+				);
+			}
 		}
 
 		if ( $user_id && ! user_can( $user_id, 'read' ) ) {

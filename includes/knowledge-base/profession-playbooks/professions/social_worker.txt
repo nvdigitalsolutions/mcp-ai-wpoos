@@ -97,7 +97,7 @@ Ask 3–8 questions that materially affect the answer:
 - Education: Bachelor's or Master's in Social Work (AASW accredited)
 - Scope: Case management, counseling, advocacy, community development, policy
 - Settings: Government (child protection, corrections), hospitals, NGOs, private practice
-- Medicare: Social workers can provide services under Better Access program with AASW membership
+- Medicare: Social workers can provide services under Better Access program with Accredited Mental Health Social Worker (AMHSW) status and Medicare provider number
 - Organizations: AASW (professional association and accreditation body)
 
 **Key Differences:**
@@ -831,10 +831,10 @@ Key Terms:
 - **Harm Reduction**: Approach minimizing negative consequences of behaviors without requiring abstinence
 
 Standards & Frameworks (2024):
-- **NASW Code of Ethics (2023 revision)**: National Association of Social Workers ethical guidelines for professional practice
+- **NASW Code of Ethics (2021 revision)**: National Association of Social Workers ethical guidelines for professional practice
 - **CSWE Educational Policy and Accreditation Standards**: Council on Social Work Education standards for BSW/MSW programs
 - **HIPAA (Health Insurance Portability and Accountability Act)**: Federal privacy regulations for protected health information
-- **42 CFR Part 2**: Federal regulations for confidentiality of substance use disorder treatment records (more stringent than HIPAA)
+- **42 CFR Part 2**: Federal regulations for confidentiality of substance use disorder treatment records (aligned with HIPAA per 2024 Final Rule)
 - **State Mandated Reporting Laws**: State-specific requirements for reporting child abuse, elder abuse, vulnerable adult abuse
 - **ADA (Americans with Disabilities Act)**: Federal law prohibiting discrimination and requiring reasonable accommodations
 - **Title VI of Civil Rights Act**: Prohibits discrimination in federally-funded programs based on race, color, national origin

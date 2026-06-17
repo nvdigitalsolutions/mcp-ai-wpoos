@@ -1,0 +1,64 @@
+{
+	"name": "nvoos-saas-controller",
+	"version": "0.1.0",
+	"private": true,
+	"description": "NV oOS SaaS Controller — operator-side toolkit to deploy and manage the NV oOS Cloud control plane (Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter).",
+	"license": "UNLICENSED",
+	"author": "NV Digital Solutions",
+	"engines": {
+		"node": ">=18.17.0"
+	},
+	"scripts": {
+		"build": "npm run build:worker && npm run build:admin",
+		"build:worker": "npm run build:worker:bundle && npm run build:worker:stamp",
+		"build:worker:bundle": "esbuild worker/src/index.ts --bundle --format=esm --target=es2022 --outfile=worker/dist/index.js",
+		"build:worker:stamp": "node scripts/stamp-drift-manifest.mjs",
+		"check:drift-manifest": "node scripts/stamp-drift-manifest.mjs --check",
+		"build:admin": "wp-scripts build --webpack-src-dir=assets/src --output-path=assets/build",
+		"start": "wp-scripts start --webpack-src-dir=assets/src --output-path=assets/build",
+		"lint:js": "wp-scripts lint-js assets/src worker/src",
+		"test": "wp-scripts test-unit-js",
+		"typecheck": "tsc --noEmit",
+		"worker:dryrun": "wrangler deploy --dry-run --outdir=worker/dist"
+	},
+	"dependencies": {
+		"@tanstack/react-query": "^5.62.0",
+		"clsx": "^2.1.1",
+		"date-fns": "^4.1.0",
+		"diff": "^9.0.0",
+		"zod": "^3.24.1"
+	},
+	"overrides": {
+		"qs": ">=6.15.2",
+		"minimatch@^3": "3.1.5",
+		"minimatch@^9": "9.0.9",
+		"serialize-javascript": ">=7.0.5",
+		"uuid": "^9.0.0",
+		"webpack-dev-server": ">=5.2.4",
+				"shell-quote": ">=1.8.4"
+			},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20260511.1",
+		"@types/diff": "^8.0.0",
+		"@types/wordpress__components": "^23.8.0",
+		"@wordpress/eslint-plugin": "^21.0.0",
+		"@wordpress/jest-preset-default": "^12.0.0",
+		"@wordpress/prettier-config": "^4.0.0",
+		"@wordpress/scripts": "^32.1.0",
+		"esbuild": "^0.28.0",
+		"miniflare": "^4.20260504.0",
+		"npm-run-all": "^4.1.5",
+		"typescript": "^5.7.2",
+		"wrangler": "^4.59.1"
+	},
+	"keywords": [
+		"wordpress",
+		"nv-oos",
+		"saas",
+		"cloudflare",
+		"workers",
+		"d1",
+		"stripe",
+		"openrouter"
+	]
+}

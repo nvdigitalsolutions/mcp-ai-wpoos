@@ -156,6 +156,13 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -231,15 +238,15 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 	 */
 	protected function calculate_metrics( $floor_plan, $total_area, $climate_zone, $building_orientation, $window_wall_ratio, $insulation_values, $hvac_system, $renewable_energy, $certification_target, $country_code, $building_use, $context ) {
 		// Energy estimate — heuristic that responds to HVAC + WWR + insulation.
-		$base_eui      = 130.0; // kWh / m² / year baseline (mid-quality, mixed climate).
+		$base_eui        = 130.0; // kWh / m² / year baseline (mid-quality, mixed climate).
 		$hvac_multiplier = array(
 			'standard'        => 1.00,
 			'high_efficiency' => 0.78,
 			'geothermal'      => 0.55,
 			'heat_pump'       => 0.65,
 		);
-		$mult = isset( $hvac_multiplier[ $hvac_system ] ) ? $hvac_multiplier[ $hvac_system ] : 1.0;
-		$wwr  = max( 0.0, min( 1.0, (float) $window_wall_ratio ) );
+		$mult            = isset( $hvac_multiplier[ $hvac_system ] ) ? $hvac_multiplier[ $hvac_system ] : 1.0;
+		$wwr             = max( 0.0, min( 1.0, (float) $window_wall_ratio ) );
 		// Above 0.40 WWR adds load; below 0.30 saves load.
 		$mult *= 1.0 + ( ( $wwr - 0.35 ) * 0.6 );
 		// Insulation R-values (assumed in IP units): higher R reduces load.
@@ -252,8 +259,8 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 			$mult *= max( 0.75, 1.0 - ( $wall_r / 120.0 ) );
 		}
 		// Renewables.
-		$pv_kw      = isset( $renewable_energy['solar_pv_kw'] ) ? (float) $renewable_energy['solar_pv_kw'] : 0.0;
-		$pv_offset  = $pv_kw > 0 && $total_area > 0 ? min( 0.5, ( $pv_kw * 1500.0 ) / max( 1.0, $total_area * $base_eui * $mult ) ) : 0.0;
+		$pv_kw        = isset( $renewable_energy['solar_pv_kw'] ) ? (float) $renewable_energy['solar_pv_kw'] : 0.0;
+		$pv_offset    = $pv_kw > 0 && $total_area > 0 ? min( 0.5, ( $pv_kw * 1500.0 ) / max( 1.0, $total_area * $base_eui * $mult ) ) : 0.0;
 		$proposed_eui = max( 25.0, $base_eui * $mult * ( 1.0 - $pv_offset ) );
 
 		// Embodied carbon — rough, reduced by climate-aware passive design and renewables.
@@ -276,10 +283,10 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 
 		$result = array(
 			'energy_performance'   => array(
-				'estimated_eui_kwh_m2_year' => round( $proposed_eui, 2 ),
+				'estimated_eui_kwh_m2_year'  => round( $proposed_eui, 2 ),
 				'estimated_eui_kbtu_sf_year' => round( $proposed_eui * 0.317, 2 ),
-				'pv_offset_pct'             => round( $pv_offset * 100.0, 2 ),
-				'baseline_comparison'       => $proposed_eui < $base_eui
+				'pv_offset_pct'              => round( $pv_offset * 100.0, 2 ),
+				'baseline_comparison'        => $proposed_eui < $base_eui
 					? sprintf( '-%d%% vs. mid-quality baseline', max( 0, (int) round( ( ( $base_eui - $proposed_eui ) / $base_eui ) * 100.0 ) ) )
 					: 'On par with mid-quality baseline',
 			),
@@ -308,8 +315,8 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 		// LEED summary — only when explicitly targeted, since it requires a credit map.
 		if ( 'leed' === $certification_target && class_exists( 'WP_MCP_AI_Architectural_Sustainability' ) ) {
 			$result['leed'] = array(
-				'message'     => __( 'LEED scoring requires an awarded-credit map. Use score_leed_v4_certification with awarded_credits + met_prerequisites.', 'mcp-ai-wpoos-pro' ),
-				'thresholds'  => WP_MCP_AI_Architectural_Sustainability::get_leed_thresholds(),
+				'message'    => __( 'LEED scoring requires an awarded-credit map. Use score_leed_v4_certification with awarded_credits + met_prerequisites.', 'mcp-ai-wpoos-pro' ),
+				'thresholds' => WP_MCP_AI_Architectural_Sustainability::get_leed_thresholds(),
 			);
 		}
 

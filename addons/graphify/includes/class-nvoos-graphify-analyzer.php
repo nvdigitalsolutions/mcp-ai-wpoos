@@ -172,8 +172,8 @@ class NV_oOS_Graphify_Analyzer {
 	 * @return array<string, string[]>
 	 */
 	private static function louvain( array $nodes, array $edges ) {
-		// Build adjacency map: node_id => [neighbor_id => weight, ...]
-		$adj   = array();
+		// Build adjacency map: node_id => [neighbor_id => weight, ...].
+		$adj          = array();
 		$total_weight = 0.0;
 		foreach ( $nodes as $n ) {
 			$adj[ $n['node_id'] ] = array();
@@ -212,7 +212,7 @@ class NV_oOS_Graphify_Analyzer {
 		$iter     = 0;
 		while ( $improved && $iter < $max_iter ) {
 			$improved = false;
-			$iter++;
+			++$iter;
 			$node_ids = array_keys( $adj );
 			shuffle( $node_ids );
 
@@ -230,7 +230,7 @@ class NV_oOS_Graphify_Analyzer {
 					if ( ! isset( $community[ $nbr ] ) ) {
 						continue;
 					}
-					$c = $community[ $nbr ];
+					$c                  = $community[ $nbr ];
 					$comm_weights[ $c ] = isset( $comm_weights[ $c ] ) ? $comm_weights[ $c ] + $w : $w;
 				}
 
@@ -251,7 +251,7 @@ class NV_oOS_Graphify_Analyzer {
 		// Group by community label.
 		$result = array();
 		foreach ( $community as $nid => $cid ) {
-			$comm_key = 'c_' . substr( md5( $cid ), 0, 8 );
+			$comm_key              = 'c_' . substr( md5( $cid ), 0, 8 );
 			$result[ $comm_key ][] = $nid;
 		}
 		return $result;
@@ -573,10 +573,10 @@ class NV_oOS_Graphify_Analyzer {
 	 * @return array { nodes => [...], edges => [...] }
 	 */
 	public static function traverse( $seed_node_id, $depth = 2, $mode = 'bfs', $max_nodes = 50 ) {
-		$seed       = sanitize_text_field( $seed_node_id );
-		$visited    = array();
-		$node_ids   = array();
-		$edge_rows  = array();
+		$seed      = sanitize_text_field( $seed_node_id );
+		$visited   = array();
+		$node_ids  = array();
+		$edge_rows = array();
 
 		if ( 'dfs' === $mode ) {
 			self::dfs( $seed, absint( $depth ), $visited, $node_ids, $edge_rows, absint( $max_nodes ) );
@@ -613,11 +613,17 @@ class NV_oOS_Graphify_Analyzer {
 	 * @return void
 	 */
 	private static function bfs( $seed, $depth, &$visited, &$node_ids, &$edges, $max_nodes ) {
-		$queue     = array( array( 'id' => $seed, 'depth' => 0 ) );
+		$queue            = array(
+			array(
+				'id'    => $seed,
+				'depth' => 0,
+			),
+		);
 		$visited[ $seed ] = true;
-		$node_ids[] = $seed;
+		$node_ids[]       = $seed;
 
-		while ( ! empty( $queue ) && count( $node_ids ) < $max_nodes ) {
+		$node_count = count( $node_ids );
+		while ( ! empty( $queue ) && $node_count < $max_nodes ) {
 			$item    = array_shift( $queue );
 			$current = $item['id'];
 			$d       = $item['depth'];
@@ -628,14 +634,18 @@ class NV_oOS_Graphify_Analyzer {
 
 			$edge_rows = NV_oOS_Graphify_DB::get_edges_for_node( $current );
 			foreach ( $edge_rows as $edge ) {
-				$edge_key = $edge->source_node_id . '|' . $edge->target_node_id . '|' . $edge->relation;
+				$edge_key           = $edge->source_node_id . '|' . $edge->target_node_id . '|' . $edge->relation;
 				$edges[ $edge_key ] = $edge;
 
 				$neighbor = ( $edge->source_node_id === $current ) ? $edge->target_node_id : $edge->source_node_id;
-				if ( ! isset( $visited[ $neighbor ] ) && count( $node_ids ) < $max_nodes ) {
+				if ( ! isset( $visited[ $neighbor ] ) && $node_count < $max_nodes ) {
 					$visited[ $neighbor ] = true;
 					$node_ids[]           = $neighbor;
-					$queue[]              = array( 'id' => $neighbor, 'depth' => $d + 1 );
+					$node_count           = count( $node_ids );
+					$queue[]              = array(
+						'id'    => $neighbor,
+						'depth' => $d + 1,
+					);
 				}
 			}
 		}
@@ -668,7 +678,7 @@ class NV_oOS_Graphify_Analyzer {
 
 		$edge_rows = NV_oOS_Graphify_DB::get_edges_for_node( $node_id );
 		foreach ( $edge_rows as $edge ) {
-			$edge_key          = $edge->source_node_id . '|' . $edge->target_node_id . '|' . $edge->relation;
+			$edge_key           = $edge->source_node_id . '|' . $edge->target_node_id . '|' . $edge->relation;
 			$edges[ $edge_key ] = $edge;
 			$neighbor           = ( $edge->source_node_id === $node_id ) ? $edge->target_node_id : $edge->source_node_id;
 			self::dfs( $neighbor, $depth - 1, $visited, $node_ids, $edges, $max_nodes );

@@ -160,9 +160,72 @@ if ( $this->is_toolkit_enabled( 'enable_crm_toolkit' ) ) {
 
 ---
 
+## Optional Data-Contract Metadata (Unix Theory P3)
+
+Tools may implement `WP_MCP_AI_Tool_Data_Contract_Interface`
+(`includes/interfaces/interface-wp-mcp-ai-tool.php`) to declare what shape
+of payload they produce and which input shapes they accept:
+
+```php
+class WP_MCP_AI_Tool_Example
+    extends WP_MCP_AI_Tool_Base
+    implements WP_MCP_AI_Tool_Data_Contract_Interface {
+
+    public function get_data_contract() {
+        return array(
+            'produces' => 'post_id',
+            'consumes' => array( 'post_id', 'post_ref' ),
+        );
+    }
+}
+```
+
+`WP_MCP_AI_Tool_Registry::get_tool_data_contract( $slug )` normalises the
+values via `sanitize_key()` and dedupes them. The tool-service surface
+appends the line `[Data contract: produces=X, consumes=A|B]` to the
+tool's description **only** in the OpenAI function-calling payload (OpenAI
+rejects unknown top-level schema keys, so we cannot use a side-channel
+field). Filter `wp_mcp_ai_tool_data_contract_description_suffix` lets a
+tool customise the suffix per-request.
+
+The contract is purely advisory metadata for the model and for downstream
+hint planners; it does **not** validate inputs at runtime.
+
+---
+
+## Deprecated Aliases (Unix Theory P5 — back-compat for decompositions)
+
+When a multi-action mega-tool is decomposed into single-purpose tools,
+register the old slug as a deprecated alias so existing transcripts and
+saved playbooks keep working:
+
+```php
+$registry->register_deprecated_alias(
+    'old_mega_tool_slug',          // legacy slug — kept callable
+    'new_specific_tool_slug',      // canonical replacement
+    array(
+        'since'   => '1.3.0',      // version when alias landed
+        'removal' => '1.4.0',      // version it will disappear
+    )
+);
+```
+
+Aliases are stored in a separate `$deprecated_aliases` map that is
+**invisible to `build_tools_payload()`** — the LLM only sees the new
+slug. `get_tool()` and `is_tool_registered()` thread through
+`resolve_deprecated_alias()` so existing call sites just work. The action
+`wp_mcp_ai_tool_deprecated_alias_invoked( $old, $new, $entry )` fires
+**once per request per slug** (state reset in tests via
+`reset_deprecated_alias_invocations()`), making it easy for observability
+exporters to count residual usage and decide when removal is safe.
+
+Master plan: [`docs/project/proposals/audits/P5-action-split-part-2-plan-2026-05.md`](../docs/project/proposals/audits/P5-action-split-part-2-plan-2026-05.md).
+
+---
+
 ## Tool Return Format
 
-Tools should return a structured array:
+Tools return **exactly one of two shapes** — the canonical envelope (see [`CLAUDE.md`](../CLAUDE.md#tool-return-format--canonical-envelope) and [`.context/conventions.md`](conventions.md#tool-return-envelope-canonical)):
 
 ```php
 // Success:
@@ -172,9 +235,13 @@ return array(
     'data'    => $results,
 );
 
-// Error (use WP_Error):
+// Error (use WP_Error — never `success => false`):
 return new WP_Error( 'not_found', __( 'Resource not found.', 'mcp-ai-wpoos' ) );
 ```
+
+For success responses, compose `format_success_response( $message, $data )` from [`trait-wp-mcp-ai-tool-envelope.php`](../includes/tools/trait-wp-mcp-ai-tool-envelope.php) — `use WP_MCP_AI_Tool_Envelope;` in the tool class. Tools that also need the broader chat-response helpers (collections, empty-result messages, etc.) should `use WP_MCP_AI_Tool_Chat_Response;` instead — it composes the envelope trait so `format_success_response()` is identical from either trait.
+
+Returning `array( 'success' => false, ... )` for errors is forbidden in new code; observability subscribers (`wp_mcp_ai_after_tool_execution`, OTel, audit log, token tracking) rely on `is_wp_error( $result )` to classify outcomes. The `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (Phase P1) warns on this pattern.
 
 ---
 

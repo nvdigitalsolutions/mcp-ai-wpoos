@@ -19,6 +19,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Graphify_Tool_Get_Community implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	/** {@inheritdoc} */
 	public function get_slug() {
 		return 'graphify_get_community';
@@ -69,7 +78,13 @@ class NV_oOS_Graphify_Tool_Get_Community implements WP_MCP_AI_Tool_Interface, WP
 		return array( 'read-only', 'cacheable' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$community_id = '';
 		$limit        = isset( $arguments['limit'] ) ? max( 1, min( 200, absint( $arguments['limit'] ) ) ) : 50;
@@ -89,7 +104,10 @@ class NV_oOS_Graphify_Tool_Get_Community implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		if ( ! $community_id ) {
-			return array( 'success' => false, 'error' => __( 'Community not found. Provide a valid community_id, node_id, or label.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'Community not found. Provide a valid community_id, node_id, or label.', 'nvoos-graphify' ),
+			);
 		}
 
 		$nodes = NV_oOS_Graphify_DB::list_nodes(

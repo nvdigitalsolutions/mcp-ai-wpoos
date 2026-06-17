@@ -173,7 +173,7 @@ abstract class WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Interfa
 			),
 		);
 
-		// Toolkits whose plan explicitly allows summarisation (Doc Gen, Multilingual)
+		// Toolkits whose plan explicitly allows summarisation (Doc Gen, Multilingual).
 		// expose `summary` + `verbatim` parameters.
 		if ( ! empty( $defaults['allow_summarisation'] ) ) {
 			$properties['summary']  = array(
@@ -199,6 +199,17 @@ abstract class WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Interfa
 	 *
 	 * Subclasses normally do not override this — the heavy lifting happens in
 	 * {@see WP_MCP_AI_Memory_Capture_Service::store()}.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! class_exists( 'WP_MCP_AI_Memory_Capture_Service' ) ) {
@@ -238,7 +249,7 @@ abstract class WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Interfa
 		$defaults = $this->get_capture_defaults();
 		$wing     = rtrim( $this->get_wing_prefix(), '/' ) . '/' . $wing_key;
 
-		// Resolve agent_id from the execution context — the chat layer passes
+		// Resolve agent_id from the execution context — the chat layer passes.
 		// the active assistant ID; tests can pass it explicitly.
 		$agent_id = isset( $context['assistant_id'] ) ? $context['assistant_id'] : '';
 		if ( '' === $agent_id && isset( $context['agent_id'] ) ) {
@@ -251,7 +262,7 @@ abstract class WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Interfa
 			$agent_id = 'capture:' . $this->get_slug();
 		}
 
-		// Build the envelope — defaults are toolkit-specific, caller can
+		// Build the envelope — defaults are toolkit-specific, caller can.
 		// override importance / tier / tags / etc. via tool arguments.
 		$envelope = array(
 			'agent_id'      => $agent_id,
@@ -278,9 +289,9 @@ abstract class WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Interfa
 			'valid_until'   => isset( $arguments['valid_until'] ) ? (string) $arguments['valid_until'] : '',
 		);
 
-		// Verbatim discipline: only toolkits that explicitly opt in via
+		// Verbatim discipline: only toolkits that explicitly opt in via.
 		// `allow_summarisation` may flip `verbatim` to false. Even there we
-		// keep the original at tier=archival per mem0/MemPalace, by storing
+		// keep the original at tier=archival per mem0/MemPalace, by storing.
 		// the verbatim record FIRST, then the summary as a separate record.
 		if ( empty( $defaults['allow_summarisation'] ) ) {
 			$envelope['verbatim'] = true;
@@ -291,33 +302,33 @@ abstract class WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Interfa
 			$service = WP_MCP_AI_Memory_Capture_Service::get_instance();
 
 			// Step 1 — write the original verbatim content at tier=archival.
-			$verbatim_envelope               = $envelope;
-			$verbatim_envelope['verbatim']   = true;
-			$verbatim_envelope['tier']       = WP_MCP_AI_Memory_Capture_Service::TIER_ARCHIVAL;
-			$verbatim_envelope['source']     = $envelope['source'] . '#verbatim';
-			$verbatim_result                 = $service->store( $verbatim_envelope );
+			$verbatim_envelope             = $envelope;
+			$verbatim_envelope['verbatim'] = true;
+			$verbatim_envelope['tier']     = WP_MCP_AI_Memory_Capture_Service::TIER_ARCHIVAL;
+			$verbatim_envelope['source']   = $envelope['source'] . '#verbatim';
+			$verbatim_result               = $service->store( $verbatim_envelope );
 
 			// Step 2 — write the summary at the requested tier (default recall).
-			$summary_envelope                = $envelope;
-			$summary_envelope['content']     = (string) $arguments['summary'];
-			$summary_envelope['verbatim']    = false;
-			$summary_envelope['tier']        = isset( $arguments['tier'] ) ? sanitize_key( (string) $arguments['tier'] ) : WP_MCP_AI_Memory_Capture_Service::TIER_RECALL;
-			$summary_envelope['source']      = $envelope['source'] . '#summary';
+			$summary_envelope                 = $envelope;
+			$summary_envelope['content']      = (string) $arguments['summary'];
+			$summary_envelope['verbatim']     = false;
+			$summary_envelope['tier']         = isset( $arguments['tier'] ) ? sanitize_key( (string) $arguments['tier'] ) : WP_MCP_AI_Memory_Capture_Service::TIER_RECALL;
+			$summary_envelope['source']       = $envelope['source'] . '#summary';
 			$summary_envelope['subject_refs'] = array_merge(
 				$summary_envelope['subject_refs'],
 				isset( $verbatim_result['context_id'] ) && '' !== $verbatim_result['context_id']
 					? array( 'verbatim:' . $verbatim_result['context_id'] )
 					: array()
 			);
-			$summary_result = $service->store( $summary_envelope );
+			$summary_result                   = $service->store( $summary_envelope );
 
 			return array(
-				'success'              => ! empty( $verbatim_result['success'] ) && ! empty( $summary_result['success'] ),
-				'wing'                 => $wing,
-				'room'                 => $room,
-				'verbatim_context_id'  => isset( $verbatim_result['context_id'] ) ? $verbatim_result['context_id'] : '',
-				'summary_context_id'   => isset( $summary_result['context_id'] ) ? $summary_result['context_id'] : '',
-				'message'              => __( 'Memory captured (verbatim archived, summary at recall tier).', 'mcp-ai-wpoos-pro' ),
+				'success'             => ! empty( $verbatim_result['success'] ) && ! empty( $summary_result['success'] ),
+				'wing'                => $wing,
+				'room'                => $room,
+				'verbatim_context_id' => isset( $verbatim_result['context_id'] ) ? $verbatim_result['context_id'] : '',
+				'summary_context_id'  => isset( $summary_result['context_id'] ) ? $summary_result['context_id'] : '',
+				'message'             => __( 'Memory captured (verbatim archived, summary at recall tier).', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

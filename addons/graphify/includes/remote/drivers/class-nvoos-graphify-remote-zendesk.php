@@ -50,7 +50,7 @@ class NV_oOS_Graphify_Remote_Zendesk extends NV_oOS_Graphify_Remote_Source_Base 
 
 	/** {@inheritdoc} */
 	public function get_capabilities() {
-		return array( 'fetch_nodes', 'fetch_edges', 'webhooks' );
+		return array( 'fetch_nodes', 'fetch_edges', 'webhooks', 'push_tickets' );
 	}
 
 	/** {@inheritdoc} */
@@ -508,6 +508,184 @@ class NV_oOS_Graphify_Remote_Zendesk extends NV_oOS_Graphify_Remote_Source_Base 
 		}
 		$config = $this->get_config();
 		return isset( $config['max_items'] ) ? max( 1, (int) $config['max_items'] ) : 200;
+	}
+
+	/**
+	 * Push a new ticket to Zendesk.
+	 *
+	 * Creates a ticket in Zendesk Support via the REST API.
+	 *
+	 * @since 2.6.0
+	 * @param array $ticket_data Ticket fields:
+	 *   - subject  (string) Required.
+	 *   - body     (string) Ticket description.
+	 *   - priority (string) 'urgent','high','normal','low'. Default 'normal'.
+	 *   - type     (string) 'problem','incident','question','task'. Default 'incident'.
+	 *   - tags     (array)  Array of tag strings.
+	 *   - email    (string) Requester email.
+	 *   - name     (string) Requester name.
+	 * @return array|WP_Error Response with 'ticket_id' or error.
+	 */
+	public function push_ticket_create( array $ticket_data ) {
+		$base = $this->resolve_base_url();
+		$auth = $this->resolve_auth_headers();
+		if ( '' === $base || is_wp_error( $auth ) ) {
+			return new WP_Error(
+				'zendesk_config',
+				__( 'Zendesk connection not configured.', 'nvoos-graphify' )
+			);
+		}
+
+		$subject = isset( $ticket_data['subject'] ) ? sanitize_text_field( $ticket_data['subject'] ) : __( 'New Ticket', 'nvoos-graphify' );
+
+		$payload = array(
+			'ticket' => array(
+				'subject'  => $subject,
+				'comment'  => array(
+					'body' => isset( $ticket_data['body'] ) ? sanitize_textarea_field( $ticket_data['body'] ) : '',
+				),
+				'priority' => isset( $ticket_data['priority'] ) ? sanitize_text_field( $ticket_data['priority'] ) : 'normal',
+				'type'     => isset( $ticket_data['type'] ) ? sanitize_text_field( $ticket_data['type'] ) : 'incident',
+			),
+		);
+
+		// Requester email.
+		if ( ! empty( $ticket_data['email'] ) ) {
+			$payload['ticket']['requester'] = array(
+				'name'  => isset( $ticket_data['name'] ) ? sanitize_text_field( $ticket_data['name'] ) : '',
+				'email' => sanitize_email( $ticket_data['email'] ),
+			);
+		}
+
+		// Tags.
+		if ( ! empty( $ticket_data['tags'] ) && is_array( $ticket_data['tags'] ) ) {
+			$payload['ticket']['tags'] = array_map( 'sanitize_text_field', $ticket_data['tags'] );
+		}
+
+		/**
+		 * Filter the Zendesk ticket payload before creation.
+		 *
+		 * @since 2.6.0
+		 * @param array $payload     Full API payload.
+		 * @param array $ticket_data Original ticket data.
+		 */
+		$payload = apply_filters( 'nvoos_graphify_zendesk_create_payload', $payload, $ticket_data );
+
+		$result = $this->get_http()->post(
+			$base . '/api/v2/tickets.json',
+			$payload,
+			array( 'headers' => $auth )
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
+			return new WP_Error(
+				'zendesk_api_error',
+				sprintf(
+					/* translators: 1: HTTP status, 2: response body */
+					__( 'Zendesk returned HTTP %1$d: %2$s', 'nvoos-graphify' ),
+					(int) $result['status'],
+					(string) $result['body']
+				)
+			);
+		}
+
+		$body = json_decode( (string) $result['body'], true );
+		$zd_ticket_id = isset( $body['ticket']['id'] ) ? (int) $body['ticket']['id'] : 0;
+
+		return array(
+			'success'         => true,
+			'zendesk_ticket_id' => $zd_ticket_id,
+			'ticket_data'     => $body['ticket'] ?? array(),
+		);
+	}
+
+	/**
+	 * Push a ticket update to Zendesk.
+	 *
+	 * Updates ticket status, priority, adds a comment, or changes assignee.
+	 *
+	 * @since 2.6.0
+	 * @param int   $zd_ticket_id Zendesk ticket ID.
+	 * @param array $updates      Fields to update:
+	 *   - status   (string) 'new','open','pending','solved','closed'.
+	 *   - priority (string) 'urgent','high','normal','low'.
+	 *   - comment  (string) Public comment to add.
+	 *   - assignee_id (int) Zendesk user ID.
+	 * @return array|WP_Error
+	 */
+	public function push_ticket_update( $zd_ticket_id, array $updates ) {
+		$base = $this->resolve_base_url();
+		$auth = $this->resolve_auth_headers();
+		if ( '' === $base || is_wp_error( $auth ) ) {
+			return new WP_Error(
+				'zendesk_config',
+				__( 'Zendesk connection not configured.', 'nvoos-graphify' )
+			);
+		}
+
+		$zd_ticket_id = absint( $zd_ticket_id );
+		if ( ! $zd_ticket_id ) {
+			return new WP_Error(
+				'invalid_id',
+				__( 'A valid Zendesk ticket ID is required.', 'nvoos-graphify' )
+			);
+		}
+
+		$payload = array( 'ticket' => array() );
+
+		if ( isset( $updates['status'] ) ) {
+			$payload['ticket']['status'] = sanitize_text_field( $updates['status'] );
+		}
+		if ( isset( $updates['priority'] ) ) {
+			$payload['ticket']['priority'] = sanitize_text_field( $updates['priority'] );
+		}
+		if ( isset( $updates['assignee_id'] ) ) {
+			$payload['ticket']['assignee_id'] = absint( $updates['assignee_id'] );
+		}
+		if ( isset( $updates['comment'] ) && ! empty( $updates['comment'] ) ) {
+			$payload['ticket']['comment'] = array(
+				'body'   => sanitize_textarea_field( $updates['comment'] ),
+				'public' => true,
+			);
+		}
+
+		if ( empty( $payload['ticket'] ) ) {
+			return new WP_Error(
+				'no_updates',
+				__( 'No valid update fields provided.', 'nvoos-graphify' )
+			);
+		}
+
+		$result = $this->get_http()->put(
+			$base . '/api/v2/tickets/' . $zd_ticket_id . '.json',
+			$payload,
+			array( 'headers' => $auth )
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
+			return new WP_Error(
+				'zendesk_api_error',
+				sprintf(
+					/* translators: 1: HTTP status, 2: response body */
+					__( 'Zendesk returned HTTP %1$d: %2$s', 'nvoos-graphify' ),
+					(int) $result['status'],
+					(string) $result['body']
+				)
+			);
+		}
+
+		return array(
+			'success'         => true,
+			'zendesk_ticket_id' => $zd_ticket_id,
+		);
 	}
 
 	/**

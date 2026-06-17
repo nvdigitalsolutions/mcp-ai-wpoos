@@ -146,7 +146,15 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 			'cacheable',
 			'consumes-tokens',
 			'model-dependent',
+			'requires-capability',
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -159,6 +167,21 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Start performance tracking.
 		$start_time = microtime( true );
+
+		// Check user permissions.
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to suggest internal links.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Sanitize post_id at entry (Gate 1).
+		if ( isset( $arguments['post_id'] ) ) {
+			$arguments['post_id'] = absint( $arguments['post_id'] );
+		}
 
 		// Fire before execute hook.
 		$this->do_before_execute( $arguments, $context );

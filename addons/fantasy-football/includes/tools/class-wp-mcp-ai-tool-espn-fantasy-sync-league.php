@@ -25,6 +25,8 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * Tool for syncing ESPN Fantasy Football league data to WordPress ff_team CPT.
  */
 class WP_MCP_AI_Tool_ESPN_Fantasy_Sync_League implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -55,19 +57,19 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Sync_League implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'league_id'    => array(
+				'league_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'ESPN Fantasy Football league ID.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
-				'season'       => array(
+				'season'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Season year. Defaults to current year.', 'mcp-ai-wpoos' ),
 					'minimum'     => 2000,
 					'maximum'     => 2100,
 					'default'     => gmdate( 'Y' ),
 				),
-				'sync_rosters' => array(
+				'sync_rosters'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to sync full roster data. Default: true.', 'mcp-ai-wpoos' ),
 					'default'     => true,
@@ -77,11 +79,11 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Sync_League implements WP_MCP_AI_Tool_Interfac
 					'description' => __( 'Whether to update existing team posts. Default: true.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
-				'espn_s2'      => array(
+				'espn_s2'         => array(
 					'type'        => 'string',
 					'description' => __( 'Optional ESPN S2 cookie for private leagues.', 'mcp-ai-wpoos' ),
 				),
-				'swid'         => array(
+				'swid'            => array(
 					'type'        => 'string',
 					'description' => __( 'Optional SWID cookie for private leagues.', 'mcp-ai-wpoos' ),
 				),
@@ -204,7 +206,7 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Sync_League implements WP_MCP_AI_Tool_Interfac
 			$existing_post_id = $this->find_existing_team( $league_id, $team_id, $season );
 
 			if ( $existing_post_id && ! $update_existing ) {
-				$skipped_count++;
+				++$skipped_count;
 				continue;
 			}
 
@@ -228,9 +230,9 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Sync_League implements WP_MCP_AI_Tool_Interfac
 					$result->get_error_message()
 				);
 			} elseif ( $existing_post_id ) {
-				$updated_count++;
+				++$updated_count;
 			} else {
-				$created_count++;
+				++$created_count;
 			}
 		}
 
@@ -269,15 +271,15 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Sync_League implements WP_MCP_AI_Tool_Interfac
 		$summary = sprintf( __( 'Synced league "%s".', 'mcp-ai-wpoos' ), $league_name );
 
 		$result = array(
-			'message'        => $summary . ' ' . $message,
-			'summary'        => $summary,
-			'league_name'    => $league_name,
-			'league_id'      => $league_id,
-			'season'         => $season,
-			'teams_created'  => $created_count,
-			'teams_updated'  => $updated_count,
-			'teams_skipped'  => $skipped_count,
-			'total_teams'    => count( $teams ),
+			'message'       => $summary . ' ' . $message,
+			'summary'       => $summary,
+			'league_name'   => $league_name,
+			'league_id'     => $league_id,
+			'season'        => $season,
+			'teams_created' => $created_count,
+			'teams_updated' => $updated_count,
+			'teams_skipped' => $skipped_count,
+			'total_teams'   => count( $teams ),
 		);
 
 		if ( ! empty( $errors ) ) {
@@ -356,9 +358,9 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Sync_League implements WP_MCP_AI_Tool_Interfac
 		$record = isset( $team['record']['overall'] ) ? $team['record']['overall'] : array();
 
 		$post_data = array(
-			'post_type'   => 'ff_team',
-			'post_title'  => $team_name,
-			'post_status' => 'publish',
+			'post_type'    => 'ff_team',
+			'post_title'   => $team_name,
+			'post_status'  => 'publish',
 			'post_content' => sprintf(
 				/* translators: 1: team name, 2: league name */
 				__( '%1$s from %2$s league (ESPN Fantasy Football)', 'mcp-ai-wpoos' ),

@@ -69,37 +69,37 @@ class WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator implements WP_MCP_AI_Tool_Int
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'property_value'            => array(
+				'property_value'           => array(
 					'type'        => 'number',
 					'description' => __( 'Property appraised value.', 'mcp-ai-wpoos-pro' ),
 				),
-				'noi'                       => array(
+				'noi'                      => array(
 					'type'        => 'number',
 					'description' => __( 'Annual Net Operating Income.', 'mcp-ai-wpoos-pro' ),
 				),
-				'requested_loan_amount'     => array(
+				'requested_loan_amount'    => array(
 					'type'        => 'number',
 					'description' => __( 'Requested loan amount.', 'mcp-ai-wpoos-pro' ),
 				),
-				'property_type'             => array(
+				'property_type'            => array(
 					'type'        => 'string',
 					'description' => __( 'Property type.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'office', 'retail', 'industrial', 'multifamily', 'hotel', 'other' ),
 				),
-				'market_tier'               => array(
+				'market_tier'              => array(
 					'type'        => 'string',
 					'description' => __( 'Market tier classification.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'primary', 'secondary', 'tertiary' ),
 				),
-				'sponsor_experience_years'  => array(
+				'sponsor_experience_years' => array(
 					'type'        => 'integer',
 					'description' => __( 'Sponsor years of CRE experience.', 'mcp-ai-wpoos-pro' ),
 				),
-				'interest_rate'             => array(
+				'interest_rate'            => array(
 					'type'        => 'number',
 					'description' => __( 'Annual interest rate as decimal (e.g. 0.065).', 'mcp-ai-wpoos-pro' ),
 				),
-				'amort_months'              => array(
+				'amort_months'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Amortization period in months.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 360,
@@ -117,7 +117,20 @@ class WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -205,18 +218,18 @@ class WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator implements WP_MCP_AI_Tool_Int
 			'message' => __( 'Deal screening complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
 				'metrics'        => array(
-					'ltv'         => $calc::format_percentage( $ltv ),
-					'dscr'        => round( $dscr, 2 ) . 'x',
-					'debt_yield'  => $calc::format_percentage( $debt_yield ),
-					'annual_ds'   => $calc::format_currency( $annual_ds ),
+					'ltv'        => $calc::format_percentage( $ltv ),
+					'dscr'       => round( $dscr, 2 ) . 'x',
+					'debt_yield' => $calc::format_percentage( $debt_yield ),
+					'annual_ds'  => $calc::format_currency( $annual_ds ),
 				),
 				'scoring'        => array(
-					'ltv_score'      => $ltv_score . '/25',
-					'dscr_score'     => $dscr_score . '/25',
-					'dy_score'       => $dy_score . '/20',
-					'sponsor_score'  => $sponsor_score . '/15',
-					'market_score'   => $market_score . '/15',
-					'total_score'    => $total_score . '/100',
+					'ltv_score'     => $ltv_score . '/25',
+					'dscr_score'    => $dscr_score . '/25',
+					'dy_score'      => $dy_score . '/20',
+					'sponsor_score' => $sponsor_score . '/15',
+					'market_score'  => $market_score . '/15',
+					'total_score'   => $total_score . '/100',
 				),
 				'recommendation' => $recommendation,
 				'comment'        => $comment,

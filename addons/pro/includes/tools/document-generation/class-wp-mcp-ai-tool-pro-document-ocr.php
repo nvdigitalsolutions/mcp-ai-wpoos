@@ -87,7 +87,7 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'source'              => array(
+				'source'         => array(
 					'type'        => 'object',
 					'description' => __( 'Source document(s) to extract text from. Provide ONE of: attachment_ids (array of IDs), attachment_id (single ID), urls (array of URLs), url (single URL), or file_ids (array of OpenAI file IDs).', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 						),
 					),
 				),
-				'options'             => array(
+				'options'        => array(
 					'type'        => 'object',
 					'description' => __( 'OCR processing options.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -164,7 +164,7 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 						),
 					),
 				),
-				'export_options'      => array(
+				'export_options' => array(
 					'type'        => 'object',
 					'description' => __( 'Export and saving options for extracted text.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -204,8 +204,27 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
+
 	/**
-	 * {@inheritdoc}
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+
+	/**
+
+	 * Execute the tool.
+
+	 * @param array $arguments Tool arguments.
+
+	 *  * @param array $context   Execution context.
+	 *
+	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$start_time = microtime( true );
@@ -216,9 +235,12 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 			return array(
 				'success' => false,
 				'error'   => 'permission_denied',
-				'report'  => __( '❌ **Permission Denied**
+				'report'  => __(
+					'❌ **Permission Denied**
 
-You do not have permission to perform OCR operations. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+You do not have permission to perform OCR operations. The workflow will continue with other tasks.',
+					'mcp-ai-wpoos-pro'
+				),
 			);
 		}
 
@@ -228,7 +250,8 @@ You do not have permission to perform OCR operations. The workflow will continue
 			return array(
 				'success' => false,
 				'error'   => 'missing_source',
-				'report'  => __( '❌ **Missing Source**
+				'report'  => __(
+					'❌ **Missing Source**
 
 Source document(s) required. Provide one of:
 - `attachment_id` (single ID)
@@ -237,7 +260,9 @@ Source document(s) required. Provide one of:
 - `urls` (array of URLs)
 - `file_ids` (array of OpenAI file IDs)
 
-✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+✅ The workflow will continue with other tasks.',
+					'mcp-ai-wpoos-pro'
+				),
 			);
 		}
 
@@ -267,13 +292,16 @@ Source document(s) required. Provide one of:
 				'error_code' => $documents->get_error_code(),
 				'report'     => sprintf(
 					/* translators: %s: error message */
-					__( '❌ **Failed to Resolve Documents**
+					__(
+						'❌ **Failed to Resolve Documents**
 
 %s
 
 Please check your source parameters and try again.
 
-✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+✅ The workflow will continue with other tasks.',
+						'mcp-ai-wpoos-pro'
+					),
 					$documents->get_error_message()
 				),
 			);
@@ -283,19 +311,22 @@ Please check your source parameters and try again.
 			return array(
 				'success' => false,
 				'error'   => 'no_documents',
-				'report'  => __( '❌ **No Valid Documents**
+				'report'  => __(
+					'❌ **No Valid Documents**
 
 No valid documents found to process. Please check your source parameters:
 - Verify attachment IDs exist
 - Ensure URLs are accessible
 - Check file IDs are valid
 
-✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+✅ The workflow will continue with other tasks.',
+					'mcp-ai-wpoos-pro'
+				),
 			);
 		}
 
 		// Process all documents.
-		$results = array();
+		$results     = array();
 		$ocr_service = new WP_MCP_AI_OCR_Service();
 
 		foreach ( $documents as $doc ) {
@@ -643,8 +674,8 @@ No valid documents found to process. Please check your source parameters:
 		foreach ( $results as $i => $result ) {
 			$doc_num   = $i + 1;
 			$markdown .= "## Document {$doc_num}\n\n";
-			$markdown .= "> Source: " . $result['source'] . "\n";
-			$markdown .= "> Type: " . $result['type'] . "\n\n";
+			$markdown .= '> Source: ' . $result['source'] . "\n";
+			$markdown .= '> Type: ' . $result['type'] . "\n\n";
 			$markdown .= $result['text'] . "\n\n";
 			$markdown .= "---\n\n";
 		}
@@ -691,10 +722,22 @@ No valid documents found to process. Please check your source parameters:
 	private function save_as_attachment( $response, $export_options, $options ) {
 		// Determine file extension and mime type.
 		$format_map = array(
-			'text'     => array( 'ext' => 'txt', 'mime' => 'text/plain' ),
-			'json'     => array( 'ext' => 'json', 'mime' => 'application/json' ),
-			'markdown' => array( 'ext' => 'md', 'mime' => 'text/markdown' ),
-			'html'     => array( 'ext' => 'html', 'mime' => 'text/html' ),
+			'text'     => array(
+				'ext'  => 'txt',
+				'mime' => 'text/plain',
+			),
+			'json'     => array(
+				'ext'  => 'json',
+				'mime' => 'application/json',
+			),
+			'markdown' => array(
+				'ext'  => 'md',
+				'mime' => 'text/markdown',
+			),
+			'html'     => array(
+				'ext'  => 'html',
+				'mime' => 'text/html',
+			),
 		);
 
 		$format    = $options['output_format'];
@@ -765,14 +808,15 @@ No valid documents found to process. Please check your source parameters:
 				$error_list     = array_slice( $error_messages, 0, 3 ); // Show first 3 errors.
 				$error_summary  = '- ' . implode( "\n- ", $error_list ); // Add leading dash.
 			}
-			
+
 			return array(
 				'success' => false,
 				'error'   => 'all_failed',
 				'details' => $response['errors'],
 				'report'  => sprintf(
 					/* translators: 1: failed count, 2: error summary */
-					__( '❌ **All OCR Operations Failed**
+					__(
+						'❌ **All OCR Operations Failed**
 
 Failed to process all %1$d document(s).
 
@@ -781,7 +825,9 @@ Failed to process all %1$d document(s).
 
 This may be due to provider issues, invalid documents, or connectivity problems.
 
-✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+✅ The workflow will continue with other tasks.',
+						'mcp-ai-wpoos-pro'
+					),
 					$response['failed'],
 					$error_summary
 				),

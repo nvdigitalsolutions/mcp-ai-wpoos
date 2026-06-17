@@ -282,6 +282,8 @@ composer install</pre>
 				</table>
 			</div>
 
+			<?php do_action( 'wp_mcp_ai_performance_section_after_components', $report ); ?>
+
 			<!-- Performance Alerts -->
 			<?php if ( ! empty( $report['alerts'] ) ) : ?>
 				<div class="wp-mcp-ai-performance-alerts">
@@ -1395,7 +1397,7 @@ composer install</pre>
 			'message' => sprintf(
 				/* translators: %s: execution time */
 				__( 'Max execution time: %ss', 'mcp-ai-wpoos-pro' ),
-				$max_execution === '0' ? 'unlimited' : $max_execution
+				'0' === $max_execution ? 'unlimited' : $max_execution
 			),
 		);
 	}

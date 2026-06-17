@@ -318,7 +318,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 					return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'The provided image URL is not valid.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 				}
 
-				$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
+				$response = wp_safe_remote_get( $image_url, array( 'timeout' => 30 ) );
 
 				if ( is_wp_error( $response ) ) {
 					return new WP_Error( 'wp_mcp_ai_download_error', __( 'Failed to download the source image.', 'mcp-ai-wpoos' ), array( 'error' => $response->get_error_message() ) );
@@ -989,6 +989,13 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		);
 	}
 
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
 
 	/**
 	 * {@inheritdoc}

@@ -215,6 +215,30 @@ if ( ! function_exists( 'wp_mcp_ai_init_async_executor' ) ) {
 	}
 }
 
+// Initialize transcript mining job during plugin bootstrap so its cron tick
+// handler is always registered — including during WP-Cron requests where the
+// REST controller (the only other loader) is never instantiated.
+if ( ! has_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_transcript_mining_job' ) ) {
+	add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_transcript_mining_job', 6 );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_init_transcript_mining_job' ) ) {
+	/**
+	 * Load the transcript mining job service and register its cron tick handler.
+	 *
+	 * Called during wp_mcp_ai_bootstrapped so the handler is available on every
+	 * plugin load — normal page loads, REST API requests, and WP-Cron runs alike.
+	 * Without this, WP-Cron fires the wp_mcp_ai_transcript_mining_tick action but
+	 * finds no listener because the REST controller (the only other code path that
+	 * requires the class file) is not instantiated during cron execution.
+	 */
+	function wp_mcp_ai_init_transcript_mining_job() {
+		if ( ! class_exists( 'WP_MCP_AI_Transcript_Mining_Job' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-transcript-mining-job.php';
+		}
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 	/**
 	 * Cron job handler: purge stale files from the plugin-owned temp directory.
@@ -239,7 +263,7 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 		$cutoff  = time() - HOUR_IN_SECONDS;
 		$deleted = 0;
 
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: glob() may emit warnings on restricted hosts; failure is handled below with is_array() check.
 		$files = @glob( trailingslashit( $temp_dir ) . '*' );
 		if ( ! is_array( $files ) ) {
 			return;
@@ -255,12 +279,12 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 				continue;
 			}
 
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: filemtime() may emit warnings for files deleted between glob() and stat; failure is handled with false !== $mtime check.
 			$mtime = @filemtime( $file );
 			if ( false !== $mtime && $mtime < $cutoff ) {
-				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: unlink() may emit warnings on permission errors; best-effort cleanup, failure is non-critical.
 				if ( @unlink( $file ) ) {
-					$deleted++;
+					++$deleted;
 				}
 			}
 		}
@@ -275,7 +299,7 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 				),
 				array(
 					'temp_dir' => $temp_dir,
-					'deleted' => $deleted,
+					'deleted'  => $deleted,
 				)
 			);
 		}

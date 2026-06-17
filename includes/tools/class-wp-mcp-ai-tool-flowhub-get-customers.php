@@ -90,6 +90,33 @@ class WP_MCP_AI_Tool_Flowhub_Get_Customers implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Check whether the tool can be registered.
+	 *
+	 * @since 1.1.22
+	 * @return bool
+	 */
+	public static function is_available() {
+		return class_exists( 'WP_MCP_AI_Flowhub_Client' );
+	}
+
+	/**
+	 * Provide a message explaining why the tool is unavailable.
+	 *
+	 * @since 1.1.22
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'Flowhub client is not available. The Flowhub integration requires API credentials to be configured.', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

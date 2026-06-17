@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Schedule Anything SPA — Global Styles */
+
+/* Smooth transitions for sidebar */
+.sidebar-enter {
+  width: 4rem;
+}
+.sidebar-enter-active {
+  width: 16rem;
+  transition: width 300ms ease-in-out;
+}
+
+/* Custom scrollbar for dark sidebar */
+aside::-webkit-scrollbar {
+  width: 6px;
+}
+aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+aside::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
+
+/* React Flow overrides for the schedule builder */
+.react-flow__node {
+  font-size: 12px;
+}
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+}
+
+/* Focus visible outlines for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}

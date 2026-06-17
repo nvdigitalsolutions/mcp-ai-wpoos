@@ -59,7 +59,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Hugging Face, Ollama, LM Studio, Cloudflare Workers AI).', 'mcp-ai-wpoos' );
+			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, NVIDIA NIM, Hugging Face, Cloudflare, DeepSeek, OpenRouter, DigitalOcean, Kimi, Baseten, Ollama, LM Studio).', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -68,7 +68,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_documentation_url() {
-			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#providers-tab';
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/admin-guides/SETTINGS_DASHBOARD_GUIDE.md#providers-tab';
 		}
 
 		/**
@@ -112,10 +112,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
-					'claude-opus-4-7'    => 'Claude Opus 4.7 (Flagship)',
-					'claude-opus-4-6'    => 'Claude Opus 4.6',
-					'claude-sonnet-4-6'  => 'Claude Sonnet 4.6 (Recommended)',
-					'claude-haiku-4-5'   => 'Claude Haiku 4.5 (Fastest)',
+					'claude-opus-4-7'   => 'Claude Opus 4.7 (Flagship)',
+					'claude-opus-4-6'   => 'Claude Opus 4.6',
+					'claude-sonnet-4-6' => 'Claude Sonnet 4.6 (Recommended)',
+					'claude-haiku-4-5'  => 'Claude Haiku 4.5 (Fastest)',
 				);
 			}
 
@@ -128,12 +128,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $gemini_models ) ) {
 				$gemini_models = array(
-					'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
-					'gemini-3.1-flash'      => 'Gemini 3.1 Flash (Recommended)',
-					'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite (Budget)',
-					'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
-					'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
-				);
+						'gemini-3.5-flash'      => 'Gemini 3.5 Flash (Recommended)',
+						'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
+						'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite (Budget)',
+						'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
+						'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
+					);
 			}
 
 			// Get Cloudflare models from Model Config.
@@ -166,8 +166,98 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get DeepSeek models from Model Config.
+			$deepseek_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$deepseek_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'deepseek' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $deepseek_models ) ) {
+				$deepseek_models = array(
+					'deepseek-v4-flash' => 'DeepSeek-V4 Flash (Recommended, 1M ctx, tools)',
+					'deepseek-v4-pro'   => 'DeepSeek-V4 Pro (Reasoning, coding, agents)',
+					'deepseek-chat'     => 'DeepSeek-V3 [Deprecated]',
+					'deepseek-reasoner' => 'DeepSeek-R1 [Deprecated]',
+					'deepseek-coder'    => 'DeepSeek Coder [Deprecated]',
+				);
+			}
+
+			// Get OpenRouter models from Model Config.
+			$openrouter_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$openrouter_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'openrouter' );
+			}
+
+			// Fallback to a curated short list. The full catalogue is
+			// discovered live from /api/v1/models when the API key is set.
+			if ( empty( $openrouter_models ) ) {
+				$openrouter_models = array(
+					'openrouter/auto'                   => 'OpenRouter Auto (router picks)',
+					'openai/gpt-4o-mini'                => 'OpenAI GPT-4o Mini',
+					'openai/gpt-4o'                     => 'OpenAI GPT-4o',
+					'anthropic/claude-3.5-sonnet'       => 'Anthropic Claude 3.5 Sonnet',
+					'anthropic/claude-3-haiku'          => 'Anthropic Claude 3 Haiku',
+					'google/gemini-pro-1.5'             => 'Google Gemini 1.5 Pro',
+					'meta-llama/llama-3.3-70b-instruct' => 'Meta Llama 3.3 70B Instruct',
+					'mistralai/mistral-large'           => 'Mistral Large',
+				);
+			}
+
+			// Get DigitalOcean models from Model Config.
+			$digitalocean_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$digitalocean_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'digitalocean' );
+			}
+
+			// Fallback to a curated short list. The full catalogue is
+			// discovered live from /v1/models when the API key is set.
+			if ( empty( $digitalocean_models ) ) {
+				$digitalocean_models = array(
+					'llama3.3-70b-instruct'         => 'Meta Llama 3.3 70B Instruct',
+					'llama3.1-8b-instruct'          => 'Meta Llama 3.1 8B Instruct',
+					'deepseek-r1-distill-llama-70b' => 'DeepSeek-R1 Distill Llama 70B',
+					'openai-gpt-oss-120b'           => 'OpenAI gpt-oss 120B (open weights)',
+				);
+			}
+
+			// Get Kimi (Moonshot AI) models from Model Config.
+			$kimi_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$kimi_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'kimi' );
+			}
+
+			// Fallback to curated list when catalog is not available.
+			if ( empty( $kimi_models ) ) {
+				$kimi_models = array(
+					'kimi-k2.6'        => 'Kimi K2.6 (Latest, 256K, Recommended)',
+					'kimi-k2.5'        => 'Kimi K2.5 (256K, tool calling)',
+					'kimi-k2'          => 'Kimi K2 (256K, tool calling)',
+					'kimi-k2-thinking' => 'Kimi K2 Thinking (256K, no tools)',
+					'moonshot-v1-128k' => 'Moonshot V1 128K (128K, tool calling)',
+					'moonshot-v1-32k'  => 'Moonshot V1 32K',
+					'moonshot-v1-8k'   => 'Moonshot V1 8K',
+				);
+			}
+
+			// Get Baseten models from Model Config.
+			$baseten_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$baseten_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'baseten' );
+			}
+
+			// Fallback to a curated list of Baseten Model API offerings.
+			if ( empty( $baseten_models ) ) {
+				$baseten_models = array(
+					'deepseek-ai/DeepSeek-V3' => 'DeepSeek-V3 (Recommended)',
+					'deepseek-ai/DeepSeek-R1' => 'DeepSeek-R1 (Reasoning)',
+					'zai-org/GLM-4'           => 'GLM-4',
+					'moonshotai/Kimi-K2'      => 'Kimi K2',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'baseten', 'digitalocean', 'kimi', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -642,28 +732,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'9:16' => '9:16 (Vertical)',
 						'16:9' => '16:9 (Widescreen)',
 					),
-					'default'     => '4:3',
+				'default'     => '4:3',
 				),
 				'gemini_video_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for video generation via Gemini Veo. veo-2.0-generate-001 is stable with fewer restrictions (supports 5-8 seconds, 720p max). veo-3.1-generate-preview is the latest with synchronized audio and 1080p support, but requires exactly 8 seconds for 1080p and has stricter quota limits.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for video generation via Gemini. gemini-omni-flash is the latest any-to-any multimodal model (May 2026) replacing Veo — supports text/images/audio/video → video, 10s duration, native audio, multi-turn conversational editing. Veo 3.1/2.0 remain available as fallback.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'veo-2.0-generate-001'     => 'Veo 2.0 Generate (Stable, Fewer Restrictions)',
-						'veo-3.1-generate-preview' => 'Veo 3.1 Generate Preview (Latest, Audio, 1080p)',
+						'gemini-omni-flash'        => 'Gemini Omni Flash (Recommended — 10s, Audio, Editing)',
+						'veo-3.1-generate-preview' => 'Veo 3.1 Generate Preview (Legacy — Audio, 1080p)',
+						'veo-2.0-generate-001'     => 'Veo 2.0 Generate (Legacy — Stable, 720p)',
 					),
-					'default'     => 'veo-2.0-generate-001',
+					'default'     => 'gemini-omni-flash',
 				),
 				'gemini_video_resolution'            => array(
-					'type'        => 'select',
-					'label'       => __( 'Gemini Video Resolution', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default resolution for Gemini-generated videos. 720p is supported by all Veo models and works for all aspect ratios. 1080p is only available with Veo 3.1 for 16:9 aspect ratio and requires exactly 8 seconds duration. Note: Veo 2.0 always outputs 720p regardless of this setting.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'720p'  => '720p (All models, all durations)',
-						'1080p' => '1080p (Veo 3.1 only, 16:9, 8s required)',
+						'type'        => 'select',
+						'label'       => __( 'Gemini Video Resolution', 'mcp-ai-wpoos' ),
+						'description' => __( 'Default resolution for Gemini-generated videos. 720p is supported by all models and works for all aspect ratios. 1080p requires Omni Flash or Veo 3.1, 16:9 aspect ratio, and exactly 8 seconds duration. Note: Veo 2.0 always outputs 720p regardless of this setting.', 'mcp-ai-wpoos' ),
+						'options'     => array(
+							'720p'  => '720p (All models, all durations)',
+							'1080p' => '1080p (Omni/Veo 3.1, 16:9, 8s required)',
+						),
+						'default'     => '720p',
 					),
-					'default'     => '720p',
-				),
 				'gemini_video_aspect_ratio'          => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Aspect Ratio', 'mcp-ai-wpoos' ),
@@ -675,18 +766,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '16:9',
 				),
 				'gemini_video_duration'              => array(
-					'type'        => 'select',
-					'label'       => __( 'Gemini Video Duration', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default duration for Gemini-generated videos in seconds. Veo 3.1 supports 4-8 seconds (with potential for extended clips via API), Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'4' => '4 seconds (Veo 3.1 only)',
-						'5' => '5 seconds',
-						'6' => '6 seconds',
-						'7' => '7 seconds',
-						'8' => '8 seconds (Required for 1080p)',
+						'type'        => 'select',
+						'label'       => __( 'Gemini Video Duration', 'mcp-ai-wpoos' ),
+						'description' => __( 'Default duration for Gemini-generated videos in seconds. Gemini Omni Flash supports up to 10 seconds (native audio included). Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
+						'options'     => array(
+							'4'  => '4 seconds (Veo 3.1/Omni)',
+							'5'  => '5 seconds',
+							'6'  => '6 seconds',
+							'7'  => '7 seconds',
+							'8'  => '8 seconds (Required for 1080p)',
+							'10' => '10 seconds (Omni Flash only)',
+						),
+						'default'     => '5',
 					),
-					'default'     => '5',
-				),
 
 				// Gemini Caching Settings.
 				'enable_gemini_api_caching'          => array(
@@ -852,6 +944,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your LM Studio is on a different machine (e.g., 192.168.2.222), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
+				'lm_studio_api_key'                  => array(
+					'type'        => 'password',
+					'label'       => __( 'LM Studio API Key (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional bearer token for LM Studio authentication (LM Studio 0.3.6+). Leave empty if your server does not require authentication.', 'mcp-ai-wpoos' ),
+					'placeholder' => '',
+				),
+				'lm_studio_use_native_api'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Use LM Studio Native API (/api/v0)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Use the /api/v0 endpoint surface for richer model metadata and telemetry stats', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, model listing uses /api/v0/models which returns architecture, quantization, loaded context size, and per-model capability flags. Chat completions use /api/v0/chat/completions which returns performance stats (tokens/sec, TTFT). Default: off (uses /v1 for full backwards compatibility).', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 
 				// Hugging Face Settings.
 				'enable_huggingface'                 => array(
@@ -982,13 +1087,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Default Cloudflare Image Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Flux-2 Dev offers the best balanced quality. Flux-1 Schnell is fastest. SDXL models are legacy options.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'@cf/black-forest-labs/flux-2-dev'             => 'Flux-2 Dev (Recommended)',
-						'@cf/black-forest-labs/flux-1-schnell'         => 'Flux-1 Schnell (Fast)',
+						'@cf/black-forest-labs/flux-2-dev' => 'Flux-2 Dev (Recommended)',
+						'@cf/black-forest-labs/flux-1-schnell' => 'Flux-1 Schnell (Fast)',
 						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Legacy)',
-						'@cf/bytedance/stable-diffusion-xl-lightning'  => 'Stable Diffusion XL Lightning (Legacy Fast)',
-						'@cf/leonardo/lucid-origin'                    => 'Leonardo Lucid Origin',
-						'@cf/leonardo/phoenix-1.0'                     => 'Leonardo Phoenix 1.0',
-						'@cf/lykon/dreamshaper-8-lcm'                  => 'Dreamshaper 8 LCM',
+						'@cf/bytedance/stable-diffusion-xl-lightning' => 'Stable Diffusion XL Lightning (Legacy Fast)',
+						'@cf/leonardo/lucid-origin'        => 'Leonardo Lucid Origin',
+						'@cf/leonardo/phoenix-1.0'         => 'Leonardo Phoenix 1.0',
+						'@cf/lykon/dreamshaper-8-lcm'      => 'Dreamshaper 8 LCM',
 					),
 					'default'     => '@cf/black-forest-labs/flux-2-dev',
 				),
@@ -1093,6 +1198,189 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => 'meta/llama-3.1-8b-instruct',
 				),
 
+				// DeepSeek Provider Settings.
+				'enable_deepseek'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable DeepSeek Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable DeepSeek as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When disabled, DeepSeek will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'deepseek_api_key'                   => array(
+					'type'         => 'password',
+					'label'        => __( 'DeepSeek API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: DeepSeek Platform API keys URL */
+						__( 'Your DeepSeek API key. Get one from <a href="%s" target="_blank">DeepSeek Platform</a>. The same key works for all DeepSeek models.', 'mcp-ai-wpoos' ),
+						'https://platform.deepseek.com/api_keys'
+					),
+					'placeholder'  => 'sk-...',
+					'autocomplete' => 'new-password',
+				),
+				'deepseek_model'                     => array(
+					'type'        => 'select',
+					'label'       => __( 'Default DeepSeek Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default DeepSeek model to use. deepseek-v4-flash (1M context, 384K output) is the recommended general-purpose model supporting both non-thinking and thinking modes. deepseek-v4-pro offers enhanced reasoning for complex agentic workflows. Legacy models (chat, reasoner, coder) are deprecated.', 'mcp-ai-wpoos' ),
+					'options'     => $deepseek_models,
+					'default'     => 'deepseek-v4-flash',
+				),
+				'deepseek_base_url'                  => array(
+					'type'        => 'url',
+					'label'       => __( 'DeepSeek API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for DeepSeek API requests. Leave empty to use the default (https://api.deepseek.com). Useful for regional proxies (e.g., Volcano Engine) or DeepSeek-compatible services. Note: DeepSeek offers discounted off-peak pricing during UTC 16:30–00:30.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.deepseek.com',
+				),
+
+				// OpenRouter Provider Settings.
+				'enable_openrouter'                  => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable OpenRouter Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable OpenRouter as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'OpenRouter is a unified gateway in front of OpenAI, Anthropic, Google, Meta, Mistral and many other providers — all reachable through a single API key with OpenAI-compatible requests.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'openrouter_api_key'                 => array(
+					'type'         => 'password',
+					'label'        => __( 'OpenRouter API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: OpenRouter API keys URL */
+						__( 'Your OpenRouter API key. Get one from <a href="%s" target="_blank">OpenRouter Keys</a>. The same key works for every model in the OpenRouter catalogue.', 'mcp-ai-wpoos' ),
+						'https://openrouter.ai/keys'
+					),
+					'placeholder'  => 'sk-or-v1-...',
+					'autocomplete' => 'new-password',
+				),
+				'openrouter_model'                   => array(
+					'type'        => 'select',
+					'label'       => __( 'Default OpenRouter Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for OpenRouter requests. Use the namespaced form, e.g. "openai/gpt-4o-mini" or "anthropic/claude-3.5-sonnet". Pick "openrouter/auto" to let OpenRouter choose a recommended model on each request.', 'mcp-ai-wpoos' ),
+					'options'     => $openrouter_models,
+					'default'     => 'openrouter/auto',
+				),
+				'openrouter_base_url'                => array(
+					'type'        => 'url',
+					'label'       => __( 'OpenRouter API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for OpenRouter API requests. Leave empty to use the default (https://openrouter.ai/api/v1). Useful when proxying OpenRouter through your own gateway.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://openrouter.ai/api/v1',
+				),
+				'openrouter_site_url'                => array(
+					'type'        => 'url',
+					'label'       => __( 'Site URL (HTTP-Referer)', 'mcp-ai-wpoos' ),
+					'description' => __( 'OpenRouter sends this value in the HTTP-Referer header to identify your application on its leaderboard and dashboard. Leave empty to use this site\'s home URL.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://example.com',
+				),
+				'openrouter_app_title'               => array(
+					'type'        => 'text',
+					'label'       => __( 'Application Title (X-Title)', 'mcp-ai-wpoos' ),
+					'description' => __( 'OpenRouter sends this value in the X-Title header to label requests in its dashboard. Leave empty to use this site\'s title.', 'mcp-ai-wpoos' ),
+					'placeholder' => __( 'My WordPress Site', 'mcp-ai-wpoos' ),
+				),
+
+				// DigitalOcean Serverless Inference Settings.
+				'enable_digitalocean'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable DigitalOcean Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable DigitalOcean Serverless Inference as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'DigitalOcean Serverless Inference exposes Llama, DeepSeek-R1 distill, OpenAI gpt-oss, and other open-weights models through an OpenAI-compatible REST API at https://inference.do-ai.run/v1.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'digitalocean_api_key'               => array(
+					'type'         => 'password',
+					'label'        => __( 'DigitalOcean Model Access Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: DigitalOcean Gradient Platform URL */
+						__( 'Your DigitalOcean Serverless Inference model access key. Create one from <a href="%s" target="_blank">Gradient Platform → Serverless Inference → Model access keys</a>. Keys can be scoped to specific models, inference routers, or batch jobs.', 'mcp-ai-wpoos' ),
+						'https://cloud.digitalocean.com/gen-ai/serverless-inference'
+					),
+					'placeholder'  => 'do-…',
+					'autocomplete' => 'new-password',
+				),
+				'digitalocean_model'                 => array(
+					'type'        => 'select',
+					'label'       => __( 'Default DigitalOcean Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for DigitalOcean Serverless Inference requests (e.g. "llama3.3-70b-instruct" or "deepseek-r1-distill-llama-70b"). Available models change as DigitalOcean adds new ones — the list refreshes from the /v1/models endpoint when an API key is configured.', 'mcp-ai-wpoos' ),
+					'options'     => $digitalocean_models,
+					'default'     => 'llama3.3-70b-instruct',
+				),
+				'digitalocean_base_url'              => array(
+					'type'        => 'url',
+					'label'       => __( 'DigitalOcean API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for DigitalOcean Serverless Inference requests. Leave empty to use the default (https://inference.do-ai.run/v1). Useful when proxying through your own gateway or VPC endpoint.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://inference.do-ai.run/v1',
+				),
+				'digitalocean_embedding_model'       => array(
+					'type'        => 'text',
+					'label'       => __( 'DigitalOcean Embedding Model (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Embedding model id used when DigitalOcean is selected as the embedding provider. Defaults to "gte-large-en-v1.5".', 'mcp-ai-wpoos' ),
+					'placeholder' => 'gte-large-en-v1.5',
+				),
+
+				// Kimi (Moonshot AI) Provider Settings.
+				'enable_kimi'                        => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Kimi Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Kimi (Moonshot AI) as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Kimi is Moonshot AI\'s OpenAI-compatible large language model family. moonshot-v1-* models support tool calling and long context. kimi-k1.5-* models are reasoning-focused and do not support tools. kimi-k2-* models offer advanced agentic capabilities with tool calling.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'kimi_api_key'                       => array(
+					'type'         => 'password',
+					'label'        => __( 'Kimi API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Moonshot AI Platform URL */
+						__( 'Your Moonshot AI (Kimi) API key. Get one from <a href="%s" target="_blank">Moonshot AI Platform</a>. The same key works for all Kimi / Moonshot models.', 'mcp-ai-wpoos' ),
+						'https://platform.moonshot.cn/console/api-keys'
+					),
+					'placeholder'  => 'sk-...',
+					'autocomplete' => 'new-password',
+				),
+				'kimi_model'                         => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Kimi Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default Kimi model to use. kimi-k2.6 is the latest agentic model with 256K context and tool calling (recommended). moonshot-v1-128k is the stable general-purpose option. kimi-k2-thinking is a chain-of-thought reasoning model without tool support.', 'mcp-ai-wpoos' ),
+					'options'     => $kimi_models,
+					'default'     => 'kimi-k2.6',
+				),
+				'kimi_base_url'                      => array(
+					'type'        => 'url',
+					'label'       => __( 'Kimi API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for Kimi API requests. Leave empty to use the default (https://api.moonshot.cn/v1). Useful for regional proxies or Kimi-compatible endpoints.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.moonshot.cn/v1',
+				),
+
+				// Baseten Provider Settings.
+				'enable_baseten'                     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Baseten Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Baseten as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Baseten Model APIs offer managed access to open-source LLMs (DeepSeek, GLM, Kimi) through an OpenAI-compatible endpoint with optimized serving. Tool calling and structured outputs supported.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'baseten_api_key'                    => array(
+					'type'         => 'password',
+					'label'        => __( 'Baseten API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Baseten API keys URL */
+						__( 'Your Baseten API key. Create one from <a href="%s" target="_blank">Baseten API Keys</a>. The same key works for all models in the Model APIs catalog.', 'mcp-ai-wpoos' ),
+						'https://app.baseten.co/settings/api-keys'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'baseten_model'                      => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Baseten Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Baseten requests. DeepSeek-V3 is the recommended general-purpose option. DeepSeek-R1 offers chain-of-thought reasoning. GLM-4 and Kimi K2 are also available.', 'mcp-ai-wpoos' ),
+					'options'     => $baseten_models,
+					'default'     => 'deepseek-ai/DeepSeek-V3',
+				),
+				'baseten_base_url'                   => array(
+					'type'        => 'url',
+					'label'       => __( 'Baseten API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for Baseten API requests. Leave empty to use the default (https://inference.baseten.co/v1). Useful when proxying through your own gateway.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://inference.baseten.co/v1',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -1149,7 +1437,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'lm_studio',
 					'label'  => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-desktop',
-					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
+					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_api_key', 'lm_studio_use_native_api', 'lm_studio_network_interface' ),
 				),
 				'huggingface'          => array(
 					'id'     => 'huggingface',
@@ -1174,6 +1462,36 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'NVIDIA', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-superhero',
 					'fields' => array( 'enable_nvidia', 'nvidia_api_key', 'nvidia_endpoint_url', 'nvidia_model' ),
+				),
+				'deepseek'             => array(
+					'id'     => 'deepseek',
+					'label'  => __( 'DeepSeek', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-superhero',
+					'fields' => array( 'enable_deepseek', 'deepseek_api_key', 'deepseek_model', 'deepseek_base_url' ),
+				),
+				'openrouter'           => array(
+					'id'     => 'openrouter',
+					'label'  => __( 'OpenRouter', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-randomize',
+					'fields' => array( 'enable_openrouter', 'openrouter_api_key', 'openrouter_model', 'openrouter_base_url', 'openrouter_site_url', 'openrouter_app_title' ),
+				),
+				'digitalocean'         => array(
+					'id'     => 'digitalocean',
+					'label'  => __( 'DigitalOcean', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'enable_digitalocean', 'digitalocean_api_key', 'digitalocean_model', 'digitalocean_base_url', 'digitalocean_embedding_model' ),
+				),
+				'kimi'                 => array(
+					'id'     => 'kimi',
+					'label'  => __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'enable_kimi', 'kimi_api_key', 'kimi_model', 'kimi_base_url' ),
+				),
+				'baseten'              => array(
+					'id'     => 'baseten',
+					'label'  => __( 'Baseten', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'enable_baseten', 'baseten_api_key', 'baseten_model', 'baseten_base_url' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
@@ -1382,15 +1700,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			}
 
 			$provider_labels = array(
-				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
-				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
-				'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
-				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
-				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
-				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
-				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
-				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
-				'embedded'    => __( 'Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ),
+				'openai'       => __( 'OpenAI', 'mcp-ai-wpoos' ),
+				'anthropic'    => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+				'gemini'       => __( 'Gemini', 'mcp-ai-wpoos' ),
+				'huggingface'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'nvidia'       => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
+				'deepseek'     => __( 'DeepSeek', 'mcp-ai-wpoos' ),
+				'openrouter'   => __( 'OpenRouter (Multi-provider gateway)', 'mcp-ai-wpoos' ),
+				'digitalocean' => __( 'DigitalOcean (Serverless Inference)', 'mcp-ai-wpoos' ),
+				'ollama'       => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
+				'lm_studio'    => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
+				'cloudflare'   => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
+				'embedded'     => __( 'Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ),
 			);
 			?>
 			<tr>
@@ -1415,50 +1736,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						<p class="description"><?php echo wp_kses_post( $description ); ?></p>
 					<?php
 					endif;
-					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
-				?>
-					<style>
-						#wp-mcp-ai-provider-sortable {
-							list-style: none;
-							margin: 0;
-							padding: 0;
-						}
-						.wp-mcp-ai-provider-item {
-							background: #fff;
-							border: 1px solid #ddd;
-							padding: 10px 15px;
-							margin: 5px 0;
-							cursor: move;
-							display: flex;
-							align-items: center;
-							gap: 10px;
-							border-radius: 3px;
-							transition: box-shadow 0.2s ease;
-							max-width: 400px;
-						}
-						.wp-mcp-ai-provider-item:hover {
-							box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-						}
-						.wp-mcp-ai-provider-item .dashicons {
-							color: #999;
-							flex-shrink: 0;
-						}
-						.wp-mcp-ai-provider-item.ui-sortable-helper {
-							background: #f0f0f0;
-							border-color: #0073aa;
-							box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-						}
-						.wp-mcp-ai-provider-item.ui-sortable-placeholder {
-							background: #f9f9f9;
-							border: 2px dashed #ddd;
-							visibility: visible !important;
-							height: 42px;
-						}
-						.wp-mcp-ai-provider-item .provider-label {
-							flex: 1;
-							font-weight: 500;
-						}
-					</style>
+					wp_add_inline_style(
+						'wp-mcp-ai-section-providers',
+						'#wp-mcp-ai-provider-sortable{list-style:none;margin:0;padding:0;}'
+						. '.wp-mcp-ai-provider-item{background:#fff;border:1px solid #ddd;padding:10px 15px;margin:5px 0;cursor:move;display:flex;align-items:center;gap:10px;border-radius:3px;transition:box-shadow 0.2s ease;max-width:400px;}'
+						. '.wp-mcp-ai-provider-item:hover{box-shadow:0 2px 4px rgba(0,0,0,0.1);}'
+						. '.wp-mcp-ai-provider-item .dashicons{color:#999;flex-shrink:0;}'
+						. '.wp-mcp-ai-provider-item.ui-sortable-helper{background:#f0f0f0;border-color:#0073aa;box-shadow:0 4px 8px rgba(0,0,0,0.2);}'
+						. '.wp-mcp-ai-provider-item.ui-sortable-placeholder{background:#f9f9f9;border:2px dashed #ddd;visibility:visible !important;height:42px;}'
+						. '.wp-mcp-ai-provider-item .provider-label{flex:1;font-weight:500;}'
+					);
+			?>
 				</td>
 			</tr>
 			<?php
@@ -1514,7 +1802,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {

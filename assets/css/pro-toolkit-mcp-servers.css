@@ -1,0 +1,160 @@
+/**
+ * Pro Toolkit MCP Servers Admin Page — page-scoped styles.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since   1.6.0
+ */
+
+/* ------------------------------------------------------------------ */
+/* Status pills                                                         */
+/* ------------------------------------------------------------------ */
+.wp-mcp-ai-status-pill {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	vertical-align: middle;
+}
+.wp-mcp-ai-status-pill.enabled  { background: #46b450; }
+.wp-mcp-ai-status-pill.disabled { background: #ccc; }
+
+/* ------------------------------------------------------------------ */
+/* Tier badges                                                          */
+/* ------------------------------------------------------------------ */
+.wp-mcp-ai-tier-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .5px;
+}
+.wp-mcp-ai-tier-badge.tier-1 { background: #e8f0fe; color: #2271b1; }
+.wp-mcp-ai-tier-badge.tier-2 { background: #f0f0f1; color: #50575e; }
+
+/* ------------------------------------------------------------------ */
+/* Servers table                                                        */
+/* ------------------------------------------------------------------ */
+.wp-mcp-ai-servers-table .check-column { width: 2.2em; }
+.wp-mcp-ai-row-actions { white-space: nowrap; }
+.wp-mcp-ai-row-actions .button { margin-right: 4px; }
+.wp-mcp-ai-toggle-form { display: inline; }
+
+/* ------------------------------------------------------------------ */
+/* Tab content                                                          */
+/* ------------------------------------------------------------------ */
+.wp-mcp-ai-pro-mcp-tab-content {
+	background: #fff;
+	padding: 20px;
+	border: 1px solid #c3c4c7;
+	border-top: 0;
+	margin-top: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Detail layout                                                        */
+/* ------------------------------------------------------------------ */
+.wp-mcp-ai-detail-sidebar {
+	border-right: 1px solid #ddd;
+	padding-right: 16px;
+}
+.wp-mcp-ai-server-list-nav li {
+	margin-bottom: 4px;
+}
+.wp-mcp-ai-detail-nav-link {
+	display: block;
+	padding: 6px 8px;
+	border-radius: 3px;
+	text-decoration: none;
+	color: #2271b1;
+	font-size: 13px;
+}
+.wp-mcp-ai-detail-nav-link:hover {
+	background: #f0f6fc;
+}
+.wp-mcp-ai-detail-nav-link.active {
+	background: #2271b1;
+	color: #fff;
+	font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ */
+/* Accordion                                                            */
+/* ------------------------------------------------------------------ */
+.wp-mcp-ai-accordion {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	margin-bottom: 8px;
+}
+.wp-mcp-ai-accordion-header {
+	padding: 10px 14px;
+	cursor: pointer;
+	font-weight: 600;
+	background: #f6f7f7;
+	user-select: none;
+	border-radius: 3px;
+	list-style: none;
+}
+.wp-mcp-ai-accordion-header::-webkit-details-marker { display: none; }
+.wp-mcp-ai-accordion[open] .wp-mcp-ai-accordion-header {
+	border-bottom: 1px solid #ddd;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+.wp-mcp-ai-accordion-body {
+	padding: 14px;
+}
+.wp-mcp-ai-tool-list {
+	column-count: 3;
+	column-gap: 16px;
+	margin: 0;
+	padding-left: 16px;
+}
+.wp-mcp-ai-tool-list li {
+	break-inside: avoid;
+	margin-bottom: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Token one-time reveal modal                                          */
+/* ------------------------------------------------------------------ */
+.wp-mcp-ai-token-modal {
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,.5);
+	z-index: 100010;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.wp-mcp-ai-token-modal-inner {
+	background: #fff;
+	border-radius: 6px;
+	padding: 28px 32px;
+	max-width: 560px;
+	width: 90%;
+	box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+
+/* ------------------------------------------------------------------ */
+/* Audit table                                                          */
+/* ------------------------------------------------------------------ */
+.wp-mcp-ai-audit-table { font-size: 12px; }
+.wp-mcp-ai-audit-table td,
+.wp-mcp-ai-audit-table th { padding: 6px 10px; }
+
+/* ------------------------------------------------------------------ */
+/* Discovery preview                                                    */
+/* ------------------------------------------------------------------ */
+#wp-mcp-ai-discovery-preview {
+	background: #1e1e1e;
+	color: #d4d4d4;
+	font-family: monospace;
+	font-size: 12px;
+	padding: 16px;
+	border-radius: 4px;
+	max-height: 500px;
+	overflow: auto;
+	white-space: pre;
+}

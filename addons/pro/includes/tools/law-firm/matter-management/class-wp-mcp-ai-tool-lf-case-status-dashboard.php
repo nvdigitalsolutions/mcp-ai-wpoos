@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_Case_Status_Dashboard implements WP_MCP_AI_Tool_Interfac
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -103,6 +110,9 @@ class WP_MCP_AI_Tool_LF_Case_Status_Dashboard implements WP_MCP_AI_Tool_Interfac
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -126,7 +136,7 @@ class WP_MCP_AI_Tool_LF_Case_Status_Dashboard implements WP_MCP_AI_Tool_Interfac
 		$query_args = array(
 			'post_type'      => 'mcp_ai_lf_matter',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_case_status_dashboard', 0, 1000 ) : 1000,
 		);
 
 		$meta_query = array();
@@ -152,8 +162,8 @@ class WP_MCP_AI_Tool_LF_Case_Status_Dashboard implements WP_MCP_AI_Tool_Interfac
 		$query = new WP_Query( $query_args );
 
 		// Aggregate by status.
-		$by_status = array();
-		$by_area   = array();
+		$by_status              = array();
+		$by_area                = array();
 		$all_upcoming_deadlines = array();
 
 		// Determine deadline cutoff based on date range.
@@ -185,12 +195,12 @@ class WP_MCP_AI_Tool_LF_Case_Status_Dashboard implements WP_MCP_AI_Tool_Interfac
 			if ( ! isset( $by_status[ $status ] ) ) {
 				$by_status[ $status ] = 0;
 			}
-			$by_status[ $status ]++;
+			++$by_status[ $status ];
 
 			if ( ! isset( $by_area[ $area ] ) ) {
 				$by_area[ $area ] = 0;
 			}
-			$by_area[ $area ]++;
+			++$by_area[ $area ];
 
 			// Collect upcoming deadlines.
 			$deadlines = get_post_meta( $post->ID, '_lf_deadlines', true );
@@ -231,13 +241,13 @@ class WP_MCP_AI_Tool_LF_Case_Status_Dashboard implements WP_MCP_AI_Tool_Interfac
 				count( $all_upcoming_deadlines )
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'total_matters'       => $query->found_posts,
-				'by_status'           => $by_status,
-				'by_practice_area'    => $by_area,
-				'upcoming_deadlines'  => $all_upcoming_deadlines,
-				'deadline_count'      => count( $all_upcoming_deadlines ),
-				'date_range'          => $date_range,
-				'filters_applied'     => array(
+				'total_matters'      => $query->found_posts,
+				'by_status'          => $by_status,
+				'by_practice_area'   => $by_area,
+				'upcoming_deadlines' => $all_upcoming_deadlines,
+				'deadline_count'     => count( $all_upcoming_deadlines ),
+				'date_range'         => $date_range,
+				'filters_applied'    => array(
 					'practice_area' => $practice_area ? $practice_area : 'all',
 					'attorney_id'   => $attorney_id ? $attorney_id : 'all',
 					'status'        => $status_filter ? $status_filter : 'all',

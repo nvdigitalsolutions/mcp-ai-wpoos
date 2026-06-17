@@ -616,4 +616,41 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 			$this->assertEquals( $expected_avg, $actual_avg, 'Cost calculator average should match model config' );
 		}
 	}
+
+	/**
+	 * Test cost calculation for DeepSeek deepseek-chat model.
+	 */
+	public function test_calculate_cost_deepseek_chat() {
+		// deepseek-chat: $0.27/1M input, $1.10/1M output.
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'deepseek', 'deepseek-chat', 1000000, 1000000 );
+
+		// Expected: (1M / 1M) * 0.27 + (1M / 1M) * 1.10 = $1.37.
+		$this->assertEquals( 1.37, $cost, 'DeepSeek deepseek-chat cost calculation incorrect' );
+	}
+
+	/**
+	 * Test cost calculation for DeepSeek deepseek-reasoner model.
+	 */
+	public function test_calculate_cost_deepseek_reasoner() {
+		// deepseek-reasoner: $0.55/1M input, $2.19/1M output.
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'deepseek', 'deepseek-reasoner', 2000000, 500000 );
+
+		// Expected: (2M / 1M) * 0.55 + (500K / 1M) * 2.19 = 1.10 + 1.095 = $2.195.
+		$expected = ( 2000000 / 1000000 ) * 0.55 + ( 500000 / 1000000 ) * 2.19;
+		$this->assertEquals( $expected, $cost, 'DeepSeek deepseek-reasoner cost calculation incorrect', 0.0001 );
+	}
+
+	/**
+	 * Test get_model_pricing for DeepSeek models.
+	 */
+	public function test_get_model_pricing_deepseek() {
+		$pricing = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'deepseek', 'deepseek-chat' );
+
+		$this->assertIsArray( $pricing );
+		$this->assertArrayHasKey( 'input', $pricing );
+		$this->assertArrayHasKey( 'output', $pricing );
+		$this->assertEquals( 0.27, $pricing['input'] );
+		$this->assertEquals( 1.10, $pricing['output'] );
+	}
+
 }

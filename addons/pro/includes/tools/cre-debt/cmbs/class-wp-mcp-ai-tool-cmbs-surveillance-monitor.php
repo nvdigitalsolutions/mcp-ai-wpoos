@@ -122,7 +122,20 @@ class WP_MCP_AI_Tool_CMBS_Surveillance_Monitor implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -142,20 +155,38 @@ class WP_MCP_AI_Tool_CMBS_Surveillance_Monitor implements WP_MCP_AI_Tool_Interfa
 
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
-		$total_balance     = 0.0;
-		$status_buckets    = array(
-			'current'     => array( 'count' => 0, 'balance' => 0.0 ),
-			'30day'       => array( 'count' => 0, 'balance' => 0.0 ),
-			'60day'       => array( 'count' => 0, 'balance' => 0.0 ),
-			'90plus'      => array( 'count' => 0, 'balance' => 0.0 ),
-			'foreclosure' => array( 'count' => 0, 'balance' => 0.0 ),
-			'reo'         => array( 'count' => 0, 'balance' => 0.0 ),
+		$total_balance    = 0.0;
+		$status_buckets   = array(
+			'current'     => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'30day'       => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'60day'       => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'90plus'      => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'foreclosure' => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
+			'reo'         => array(
+				'count'   => 0,
+				'balance' => 0.0,
+			),
 		);
-		$watchlist_loans   = array();
-		$maturity_by_year  = array();
-		$deteriorating     = array();
-		$maturing_12       = array();
-		$maturing_24       = array();
+		$watchlist_loans  = array();
+		$maturity_by_year = array();
+		$deteriorating    = array();
+		$maturing_12      = array();
+		$maturing_24      = array();
 
 		$now       = time();
 		$months_12 = $now + ( 365.25 * 86400 );
@@ -185,12 +216,12 @@ class WP_MCP_AI_Tool_CMBS_Surveillance_Monitor implements WP_MCP_AI_Tool_Interfa
 			// Watchlist.
 			if ( $watchlist ) {
 				$watchlist_loans[] = array(
-					'loan_name'    => $loan_name,
-					'balance'      => $calc::format_currency( $balance ),
-					'balance_raw'  => $balance,
-					'dscr'         => round( $dscr, 2 ),
-					'occupancy'    => $calc::format_percentage( $occupancy ),
-					'status'       => $status,
+					'loan_name'   => $loan_name,
+					'balance'     => $calc::format_currency( $balance ),
+					'balance_raw' => $balance,
+					'dscr'        => round( $dscr, 2 ),
+					'occupancy'   => $calc::format_percentage( $occupancy ),
+					'status'      => $status,
 				);
 			}
 
@@ -200,7 +231,10 @@ class WP_MCP_AI_Tool_CMBS_Surveillance_Monitor implements WP_MCP_AI_Tool_Interfa
 				if ( false !== $mat_ts ) {
 					$mat_year = (int) gmdate( 'Y', $mat_ts );
 					if ( ! isset( $maturity_by_year[ $mat_year ] ) ) {
-						$maturity_by_year[ $mat_year ] = array( 'count' => 0, 'balance' => 0.0 );
+						$maturity_by_year[ $mat_year ] = array(
+							'count'   => 0,
+							'balance' => 0.0,
+						);
 					}
 					$maturity_by_year[ $mat_year ]['count']   += 1;
 					$maturity_by_year[ $mat_year ]['balance'] += $balance;
@@ -254,7 +288,7 @@ class WP_MCP_AI_Tool_CMBS_Surveillance_Monitor implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Format delinquency summary.
-		$delinquency = array();
+		$delinquency      = array();
 		$total_delinquent = 0.0;
 		foreach ( $status_buckets as $status => $data ) {
 			$delinquency[ $status ] = array(
@@ -280,39 +314,45 @@ class WP_MCP_AI_Tool_CMBS_Surveillance_Monitor implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Sort watchlist by balance descending.
-		usort( $watchlist_loans, function ( $a, $b ) {
-			return $b['balance_raw'] <=> $a['balance_raw'];
-		} );
+		usort(
+			$watchlist_loans,
+			function ( $a, $b ) {
+				return $b['balance_raw'] <=> $a['balance_raw'];
+			}
+		);
 
 		// Remove raw balance from output.
-		$watchlist_output = array_map( function ( $wl ) {
-			unset( $wl['balance_raw'] );
-			return $wl;
-		}, $watchlist_loans );
+		$watchlist_output = array_map(
+			function ( $wl ) {
+				unset( $wl['balance_raw'] );
+				return $wl;
+			},
+			$watchlist_loans
+		);
 
 		$watchlist_balance = array_sum( array_column( $watchlist_loans, 'balance_raw' ) );
 
 		$summary = array(
-			'total_balance'        => $calc::format_currency( $total_balance ),
-			'total_delinquent'     => $calc::format_currency( $total_delinquent ),
-			'delinquency_rate'     => $calc::format_percentage( $total_delinquent / $total_balance ),
-			'watchlist_count'      => count( $watchlist_output ),
-			'watchlist_balance'    => $calc::format_currency( $watchlist_balance ),
-			'watchlist_pct'        => $calc::format_percentage( $watchlist_balance / $total_balance ),
-			'deteriorating_count'  => count( $deteriorating ),
-			'maturing_12mo_count'  => count( $maturing_12 ),
-			'maturing_24mo_count'  => count( $maturing_24 ),
+			'total_balance'       => $calc::format_currency( $total_balance ),
+			'total_delinquent'    => $calc::format_currency( $total_delinquent ),
+			'delinquency_rate'    => $calc::format_percentage( $total_delinquent / $total_balance ),
+			'watchlist_count'     => count( $watchlist_output ),
+			'watchlist_balance'   => $calc::format_currency( $watchlist_balance ),
+			'watchlist_pct'       => $calc::format_percentage( $watchlist_balance / $total_balance ),
+			'deteriorating_count' => count( $deteriorating ),
+			'maturing_12mo_count' => count( $maturing_12 ),
+			'maturing_24mo_count' => count( $maturing_24 ),
 		);
 
 		return array(
-			'success'    => true,
-			'message'    => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: 1: delinquency rate, 2: watchlist count */
 				__( 'Surveillance report: %1$s delinquency rate, %2$d loans on watchlist.', 'mcp-ai-wpoos-pro' ),
 				$summary['delinquency_rate'],
 				$summary['watchlist_count']
 			),
-			'data'       => array(
+			'data'    => array(
 				'summary'            => $summary,
 				'delinquency'        => $delinquency,
 				'watchlist'          => $watchlist_output,

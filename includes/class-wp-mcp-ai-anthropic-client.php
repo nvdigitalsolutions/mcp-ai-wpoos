@@ -188,6 +188,15 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				return $messages;
 			}
 
+			// Filter out orphaned assistant tool-call groups before building the Anthropic
+			// payload. An orphaned group is an assistant message with tool_calls that was
+			// never answered by a matching role:tool result message (e.g. the agentic loop
+			// hit max_iterations, or the client restored an incomplete conversation from
+			// localStorage). Without this Anthropic rejects with:
+			//   "400 — tool_use block missing corresponding tool_result in next message."
+			// The OpenAI client performs the same normalisation in filter_tool_messages_for_payload().
+			$messages = $this->filter_tool_messages_for_payload( $messages );
+
 			$payload = $this->build_payload( $messages, $options );
 
 			if ( is_wp_error( $payload ) ) {
@@ -195,6 +204,14 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			}
 
 			$payload['model'] = $model;
+
+			// Pre-flight context-window validation (shared with all providers).
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'anthropic', $options, $messages );
+				if ( is_wp_error( $preflight ) ) {
+					return $preflight;
+				}
+			}
 
 			$headers = $this->build_request_headers( $api_key );
 
@@ -1020,6 +1037,161 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		}
 
 		/**
+		 * Remove orphaned assistant tool-call groups from the message history.
+		 *
+		 * An orphaned group is an assistant message whose tool_calls were never answered
+		 * by the corresponding role:tool response messages. This can happen when:
+		 *   - the agentic loop hit max_iterations before all tools ran;
+		 *   - the client restored an incomplete conversation from localStorage / CCT;
+		 *   - a prior request failed after appending the assistant message but before
+		 *     appending the tool results.
+		 *
+		 * Anthropic requires every tool_use block in an assistant message to be
+		 * immediately followed by a user message containing the matching tool_result
+		 * blocks. Sending an orphaned group triggers:
+		 *   "400 — tool_use block missing corresponding tool_result in next message."
+		 *
+		 * Logic mirrors WP_MCP_AI_OpenAI_Client::filter_tool_messages_for_payload().
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param array $messages Input messages in OpenAI-compatible format.
+		 * @return array Filtered messages with orphaned groups removed.
+		 */
+		protected function filter_tool_messages_for_payload( array $messages ) {
+			if ( empty( $messages ) ) {
+				return $messages;
+			}
+
+			$filtered                = array();
+			$pending_calls           = array();
+			$awaiting_tool_responses = false;
+
+			// Index in $filtered where the current incomplete tool-call group starts.
+			// When a user/system/assistant message arrives while $pending_calls is
+			// still non-empty, we know the assistant message at this index was never
+			// properly answered and must be removed to keep the conversation valid.
+			$incomplete_group_start = null;
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+				if ( '' === $role ) {
+					continue;
+				}
+
+				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					// If the previous assistant message had tool_calls that were never
+					// fully answered, drop the entire incomplete group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						WP_MCP_AI_Logger::log_event(
+							'anthropic_dropped_incomplete_tool_group',
+							'Dropped assistant message with unresolved tool_calls before user/system message.',
+							array(
+								'pending_call_ids' => array_keys( $pending_calls ),
+							)
+						);
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+					$filtered[]              = $message;
+					continue;
+				}
+
+				if ( 'assistant' === $role ) {
+					// If the PREVIOUS assistant had unresolved tool_calls, drop that group
+					// before starting a new one.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						WP_MCP_AI_Logger::log_event(
+							'anthropic_dropped_incomplete_tool_group',
+							'Dropped assistant message with unresolved tool_calls before next assistant message.',
+							array(
+								'pending_call_ids' => array_keys( $pending_calls ),
+							)
+						);
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						foreach ( $message['tool_calls'] as $tool_call ) {
+							if ( ! is_array( $tool_call ) ) {
+								continue;
+							}
+
+							$call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
+							if ( '' === $call_id ) {
+								continue;
+							}
+
+							$pending_calls[ $call_id ] = true;
+						}
+					}
+
+					if ( ! empty( $pending_calls ) ) {
+						$awaiting_tool_responses = true;
+						// Remember the position in $filtered where this group begins so we
+						// can truncate back to it if the group turns out to be incomplete.
+						$incomplete_group_start = count( $filtered );
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				if ( 'tool' === $role ) {
+					$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
+
+					if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'anthropic_dropped_orphan_tool_message',
+							'Dropping tool message without matching tool call before Anthropic request.',
+							array(
+								'tool_call_id' => $tool_call_id,
+								'reason'       => '' === $tool_call_id
+									? 'missing_tool_call_id'
+									: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+							)
+						);
+
+						continue;
+					}
+
+					unset( $pending_calls[ $tool_call_id ] );
+
+					if ( empty( $pending_calls ) ) {
+						$awaiting_tool_responses = false;
+						// All tool_calls for this assistant message are now answered;
+						// the group is complete — no longer need to guard its start.
+						$incomplete_group_start = null;
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				// Any other role (e.g. 'function') — reset tracking state.
+				$pending_calls           = array();
+				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
+				$filtered[]              = $message;
+			}
+
+			return array_values( $filtered );
+		}
+
+		/**
 		 * Translate OpenAI-style tools to Anthropic format.
 		 *
 		 * @since 1.0.0
@@ -1645,6 +1817,14 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 				if ( isset( $usage['prompt_tokens'] ) && isset( $usage['completion_tokens'] ) ) {
 					$usage['total_tokens'] = $usage['prompt_tokens'] + $usage['completion_tokens'];
+				}
+
+				// Extract Anthropic cache tokens.
+				if ( isset( $response['usage']['cache_read_input_tokens'] ) ) {
+					$usage['cached_tokens'] = (int) $response['usage']['cache_read_input_tokens'];
+				} elseif ( isset( $response['usage']['cache_creation_input_tokens'] ) ) {
+					// Cache write: tokens written to cache (not a hit, but track for cost visibility).
+					$usage['cache_write_tokens'] = (int) $response['usage']['cache_creation_input_tokens'];
 				}
 
 				if ( ! empty( $usage ) ) {

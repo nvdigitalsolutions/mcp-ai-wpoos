@@ -69,15 +69,15 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'cash_on_hand'             => array(
+				'cash_on_hand'                 => array(
 					'type'        => 'number',
 					'description' => __( 'Current cash on hand.', 'mcp-ai-wpoos-pro' ),
 				),
-				'unfunded_commitments'     => array(
+				'unfunded_commitments'         => array(
 					'type'        => 'number',
 					'description' => __( 'Total unfunded LP commitments available to call.', 'mcp-ai-wpoos-pro' ),
 				),
-				'expected_payoffs'         => array(
+				'expected_payoffs'             => array(
 					'type'        => 'array',
 					'description' => __( 'Array of expected loan payoff objects (sources of cash).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 						'required'   => array( 'name', 'amount', 'expected_date' ),
 					),
 				),
-				'expected_fundings'        => array(
+				'expected_fundings'            => array(
 					'type'        => 'array',
 					'description' => __( 'Array of expected funding objects (uses of cash).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -121,7 +121,7 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 						'required'   => array( 'name', 'amount', 'expected_date' ),
 					),
 				),
-				'warehouse_availability'   => array(
+				'warehouse_availability'       => array(
 					'type'        => 'number',
 					'description' => __( 'Available capacity on warehouse lines.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
@@ -143,7 +143,20 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -164,8 +177,8 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
 		// Build month keys for next 12 months.
-		$today       = new \DateTime( 'now', new \DateTimeZone( 'UTC' ) );
-		$month_keys  = array();
+		$today      = new \DateTime( 'now', new \DateTimeZone( 'UTC' ) );
+		$month_keys = array();
 		for ( $i = 0; $i < 12; $i++ ) {
 			$dt = clone $today;
 			$dt->modify( "+{$i} months" );
@@ -190,8 +203,11 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 			$name   = sanitize_text_field( $p['name'] ?? '' );
 			$ym     = substr( $date, 0, 7 );
 			if ( isset( $monthly[ $ym ] ) ) {
-				$monthly[ $ym ]['sources'] += $amount;
-				$monthly[ $ym ]['source_details'][] = array( 'name' => $name, 'amount' => $amount );
+				$monthly[ $ym ]['sources']         += $amount;
+				$monthly[ $ym ]['source_details'][] = array(
+					'name'   => $name,
+					'amount' => $amount,
+				);
 			}
 		}
 
@@ -202,8 +218,11 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 			$name   = sanitize_text_field( $f['name'] ?? '' );
 			$ym     = substr( $date, 0, 7 );
 			if ( isset( $monthly[ $ym ] ) ) {
-				$monthly[ $ym ]['uses'] += $amount;
-				$monthly[ $ym ]['use_details'][] = array( 'name' => $name, 'amount' => $amount );
+				$monthly[ $ym ]['uses']         += $amount;
+				$monthly[ $ym ]['use_details'][] = array(
+					'name'   => $name,
+					'amount' => $amount,
+				);
 			}
 		}
 
@@ -217,10 +236,10 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 		$min_cash_month = $month_keys[0] ?? '';
 
 		foreach ( $month_keys as $mk ) {
-			$sources = $monthly[ $mk ]['sources'];
-			$uses    = $monthly[ $mk ]['uses'];
-			$net     = $sources - $uses;
-			$cumulative += $net;
+			$sources        = $monthly[ $mk ]['sources'];
+			$uses           = $monthly[ $mk ]['uses'];
+			$net            = $sources - $uses;
+			$cumulative    += $net;
 			$total_sources += $sources;
 			$total_uses    += $uses;
 
@@ -251,7 +270,7 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 		// Reinvestment period status.
 		$reinvest_active = true;
 		if ( ! empty( $reinvest_end ) ) {
-			$end_dt = new \DateTime( $reinvest_end, new \DateTimeZone( 'UTC' ) );
+			$end_dt          = new \DateTime( $reinvest_end, new \DateTimeZone( 'UTC' ) );
 			$reinvest_active = ( $today <= $end_dt );
 		}
 
@@ -259,21 +278,21 @@ class WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer implements WP_MCP_AI_Tool_Inter
 			'success'    => true,
 			'message'    => __( 'Liquidity projection complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'       => array(
-				'starting_cash'       => $calc::format_currency( $cash ),
-				'unfunded_commitments' => $calc::format_currency( $unfunded ),
-				'warehouse_available' => $calc::format_currency( $warehouse_avail ),
-				'total_liquidity'     => $calc::format_currency( $total_liquidity ),
+				'starting_cash'          => $calc::format_currency( $cash ),
+				'unfunded_commitments'   => $calc::format_currency( $unfunded ),
+				'warehouse_available'    => $calc::format_currency( $warehouse_avail ),
+				'total_liquidity'        => $calc::format_currency( $total_liquidity ),
 				'total_expected_sources' => $calc::format_currency( $total_sources ),
-				'total_expected_uses' => $calc::format_currency( $total_uses ),
-				'net_12_month'        => $calc::format_currency( $total_sources - $total_uses ),
-				'ending_cash'         => $calc::format_currency( $cumulative ),
-				'min_cash_position'   => $calc::format_currency( $min_cash ),
-				'min_cash_month'      => $min_cash_month,
-				'deficit_months'      => $deficit_months,
-				'has_deficit'         => ! empty( $deficit_months ),
-				'reinvestment_active' => $reinvest_active,
-				'reinvestment_end'    => $reinvest_end ?: __( 'N/A', 'mcp-ai-wpoos-pro' ),
-				'monthly_projection'  => $projection,
+				'total_expected_uses'    => $calc::format_currency( $total_uses ),
+				'net_12_month'           => $calc::format_currency( $total_sources - $total_uses ),
+				'ending_cash'            => $calc::format_currency( $cumulative ),
+				'min_cash_position'      => $calc::format_currency( $min_cash ),
+				'min_cash_month'         => $min_cash_month,
+				'deficit_months'         => $deficit_months,
+				'has_deficit'            => ! empty( $deficit_months ),
+				'reinvestment_active'    => $reinvest_active,
+				'reinvestment_end'       => $reinvest_end ? $reinvest_end : __( 'N/A', 'mcp-ai-wpoos-pro' ),
+				'monthly_projection'     => $projection,
 			),
 			'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);

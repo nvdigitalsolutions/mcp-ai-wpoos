@@ -134,11 +134,11 @@ class WP_MCP_AI_Site_Health {
 		if ( ! empty( $openai_key ) ) {
 			++$providers_configured;
 			$openai_test = $this->test_openai_connection( $openai_key );
-			if ( $openai_test['success'] ) {
+			if ( ! is_wp_error( $openai_test ) && $openai_test['success'] ) {
 				++$providers_working;
 			} else {
 				/* translators: %s: OpenAI error message */
-				$issues[] = sprintf( __( 'OpenAI: %s', 'mcp-ai-wpoos' ), $openai_test['message'] );
+				$issues[] = sprintf( __( 'OpenAI: %s', 'mcp-ai-wpoos' ), is_wp_error( $openai_test ) ? $openai_test->get_error_message() : $openai_test['message'] );
 			}
 		}
 
@@ -146,11 +146,11 @@ class WP_MCP_AI_Site_Health {
 		if ( ! empty( $gemini_key ) ) {
 			++$providers_configured;
 			$gemini_test = $this->test_gemini_connection( $gemini_key );
-			if ( $gemini_test['success'] ) {
+			if ( ! is_wp_error( $gemini_test ) && $gemini_test['success'] ) {
 				++$providers_working;
 			} else {
 				/* translators: %s: Gemini error message */
-				$issues[] = sprintf( __( 'Gemini: %s', 'mcp-ai-wpoos' ), $gemini_test['message'] );
+				$issues[] = sprintf( __( 'Gemini: %s', 'mcp-ai-wpoos' ), is_wp_error( $gemini_test ) ? $gemini_test->get_error_message() : $gemini_test['message'] );
 			}
 		}
 
@@ -158,11 +158,11 @@ class WP_MCP_AI_Site_Health {
 		if ( ! empty( $ollama_url ) ) {
 			++$providers_configured;
 			$ollama_test = $this->test_ollama_connection( $ollama_url );
-			if ( $ollama_test['success'] ) {
+			if ( ! is_wp_error( $ollama_test ) && $ollama_test['success'] ) {
 				++$providers_working;
 			} else {
 				/* translators: %s: Ollama error message */
-				$issues[] = sprintf( __( 'Ollama: %s', 'mcp-ai-wpoos' ), $ollama_test['message'] );
+				$issues[] = sprintf( __( 'Ollama: %s', 'mcp-ai-wpoos' ), is_wp_error( $ollama_test ) ? $ollama_test->get_error_message() : $ollama_test['message'] );
 			}
 		}
 
@@ -587,10 +587,7 @@ class WP_MCP_AI_Site_Health {
 		// Simple connectivity test - check if API key format is valid.
 		// Full API test would require making actual API call.
 		if ( empty( $api_key ) || strlen( $api_key ) < 20 ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Invalid API key format', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Invalid API key format', 'mcp-ai-wpoos' ) );
 		}
 
 		return array(
@@ -608,10 +605,7 @@ class WP_MCP_AI_Site_Health {
 	private function test_gemini_connection( $api_key ) {
 		// Simple connectivity test - check if API key format is valid.
 		if ( empty( $api_key ) || strlen( $api_key ) < 20 ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Invalid API key format', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Invalid API key format', 'mcp-ai-wpoos' ) );
 		}
 
 		return array(
@@ -629,10 +623,7 @@ class WP_MCP_AI_Site_Health {
 	private function test_ollama_connection( $url ) {
 		// Simple connectivity test - check if URL format is valid.
 		if ( empty( $url ) || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Invalid URL format', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Invalid URL format', 'mcp-ai-wpoos' ) );
 		}
 
 		return array(

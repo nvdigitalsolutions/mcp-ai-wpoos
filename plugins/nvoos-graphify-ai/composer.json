@@ -1,0 +1,73 @@
+{
+    "name": "nvoos/graphify-ai",
+    "description": "AI chat assistant addon for NV oOS Graphify — chat, providers, AI tools, embeddings, and agent memory.",
+    "type": "wordpress-plugin",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "NV Digital Solutions",
+            "email": "developer@nvdigitalsolutions.com",
+            "homepage": "https://nvdigitalsolutions.com",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://github.com/nvdigitalsolutions/nvoos-graphify-ai",
+    "require": {
+        "php": "^8.1",
+        "nvoos/core": "dev-main",
+        "nvoos/wordpress-adapter": "@dev",
+        "nyholm/psr7": "^1.8",
+        "psr/http-client": "^1.0",
+        "psr/http-message": "^1.0 || ^2.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../lib/core",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../../lib/wordpress-adapter",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "require-dev": {
+        "composer/installers": "^2.0",
+        "phpunit/phpunit": "^9.0",
+        "wp-phpunit/wp-phpunit": "*",
+        "yoast/phpunit-polyfills": "^3.0",
+        "squizlabs/php_codesniffer": "^3.10",
+        "wp-coding-standards/wpcs": "^3.1"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "phpcs",
+        "format": "phpcbf"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "platform": {
+            "php": "8.1.0"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "NvoosGraphifyAi\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NvoosGraphifyAi\\Tests\\": "tests/"
+        }
+    }
+}

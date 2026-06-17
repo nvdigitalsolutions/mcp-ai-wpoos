@@ -70,6 +70,7 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-usage
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-performance-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-timeout-detection-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-profession-playbook-loader.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-transcript-mining-job.php';
 
 // Load security manager.
 require_once plugin_dir_path( __FILE__ ) . 'class-wp-mcp-ai-security-manager.php';
@@ -428,6 +429,19 @@ function wp_mcp_ai_get_vector_context_service() {
  */
 function wp_mcp_ai_get_context_compression_service() {
 	return WP_MCP_AI_Context_Compression_Service::get_instance();
+}
+
+/**
+ * Get semantic compressor service instance
+ *
+ * Helper function to get the semantic compressor for
+ * lossless prompt compression using caveman-style rules.
+ *
+ * @since 1.7.0
+ * @return WP_MCP_AI_Semantic_Compressor Semantic compressor instance.
+ */
+function wp_mcp_ai_get_semantic_compressor() {
+	return WP_MCP_AI_Semantic_Compressor::get_instance();
 }
 
 /**

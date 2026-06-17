@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_Contract_Reviewer implements WP_MCP_AI_Tool_Interface, W
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -99,6 +106,9 @@ class WP_MCP_AI_Tool_LF_Contract_Reviewer implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -132,9 +142,9 @@ class WP_MCP_AI_Tool_LF_Contract_Reviewer implements WP_MCP_AI_Tool_Interface, W
 			$review_focus = 'all';
 		}
 
-		$risk_flags              = array();
+		$risk_flags               = array();
 		$missing_standard_clauses = array();
-		$ambiguous_items         = array();
+		$ambiguous_items          = array();
 
 		if ( 'all' === $review_focus || 'risk_assessment' === $review_focus ) {
 			$risk_flags = $this->assess_risks( $content );
@@ -174,15 +184,15 @@ class WP_MCP_AI_Tool_LF_Contract_Reviewer implements WP_MCP_AI_Tool_Interface, W
 				$overall_risk
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'document_id'             => $document_id,
-				'review_focus'            => $review_focus,
-				'risk_flags'              => $risk_flags,
+				'document_id'              => $document_id,
+				'review_focus'             => $review_focus,
+				'risk_flags'               => $risk_flags,
 				'missing_standard_clauses' => $missing_standard_clauses,
-				'ambiguous_items'         => $ambiguous_items,
-				'overall_risk_level'      => $overall_risk,
-				'recommendations'         => $recommendations,
-				'human_review_required'   => true,
-				'aba_opinion_512_notice'  => __( 'Per ABA Formal Opinion 512, AI-assisted document review must be supervised by a licensed attorney.', 'mcp-ai-wpoos-pro' ),
+				'ambiguous_items'          => $ambiguous_items,
+				'overall_risk_level'       => $overall_risk,
+				'recommendations'          => $recommendations,
+				'human_review_required'    => true,
+				'aba_opinion_512_notice'   => __( 'Per ABA Formal Opinion 512, AI-assisted document review must be supervised by a licensed attorney.', 'mcp-ai-wpoos-pro' ),
 			),
 			'disclaimer' => self::DISCLAIMER,
 		);
@@ -198,14 +208,14 @@ class WP_MCP_AI_Tool_LF_Contract_Reviewer implements WP_MCP_AI_Tool_Interface, W
 		$flags    = array();
 		$lower    = strtolower( $content );
 		$patterns = array(
-			'unlimited_liability'    => 'unlimited liability',
-			'automatic_renewal'      => 'automatic renewal',
-			'unilateral_termination' => 'sole discretion to terminate',
-			'broad_indemnification'  => 'indemnify and hold harmless from any and all',
-			'waiver_of_jury_trial'   => 'waive jury trial',
-			'non_compete_broad'      => 'shall not compete',
-			'liquidated_damages'     => 'liquidated damages',
-			'force_majeure_missing'  => false,
+			'unlimited_liability'     => 'unlimited liability',
+			'automatic_renewal'       => 'automatic renewal',
+			'unilateral_termination'  => 'sole discretion to terminate',
+			'broad_indemnification'   => 'indemnify and hold harmless from any and all',
+			'waiver_of_jury_trial'    => 'waive jury trial',
+			'non_compete_broad'       => 'shall not compete',
+			'liquidated_damages'      => 'liquidated damages',
+			'force_majeure_missing'   => false,
 			'assignment_unrestricted' => 'freely assignable',
 		);
 
@@ -282,12 +292,12 @@ class WP_MCP_AI_Tool_LF_Contract_Reviewer implements WP_MCP_AI_Tool_Interface, W
 	private function check_ambiguous_language( string $content ): array {
 		$ambiguous = array();
 		$patterns  = array(
-			'reasonable efforts'   => __( 'Consider defining what constitutes "reasonable efforts".', 'mcp-ai-wpoos-pro' ),
-			'best efforts'         => __( '"Best efforts" is often litigated; consider a more specific standard.', 'mcp-ai-wpoos-pro' ),
-			'material adverse'     => __( 'Define "material adverse" with specific thresholds.', 'mcp-ai-wpoos-pro' ),
+			'reasonable efforts'      => __( 'Consider defining what constitutes "reasonable efforts".', 'mcp-ai-wpoos-pro' ),
+			'best efforts'            => __( '"Best efforts" is often litigated; consider a more specific standard.', 'mcp-ai-wpoos-pro' ),
+			'material adverse'        => __( 'Define "material adverse" with specific thresholds.', 'mcp-ai-wpoos-pro' ),
 			'commercially reasonable' => __( 'Specify what "commercially reasonable" means in this context.', 'mcp-ai-wpoos-pro' ),
-			'promptly'             => __( 'Replace "promptly" with specific time frames.', 'mcp-ai-wpoos-pro' ),
-			'from time to time'    => __( 'Vague timing; consider specifying frequency.', 'mcp-ai-wpoos-pro' ),
+			'promptly'                => __( 'Replace "promptly" with specific time frames.', 'mcp-ai-wpoos-pro' ),
+			'from time to time'       => __( 'Vague timing; consider specifying frequency.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		$lower = strtolower( $content );

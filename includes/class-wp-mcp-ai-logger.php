@@ -341,6 +341,15 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				);
 			}
 
+			// Path bounding: verify the log file resides in a standard location.
+			$bounded = self::is_path_bounded( $path );
+			if ( ! $bounded ) {
+				return new WP_Error(
+					'wp_mcp_ai_log_unbounded',
+					__( 'The PHP error log path is outside allowed directories.', 'mcp-ai-wpoos' )
+				);
+			}
+
 			if ( ! is_writable( $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 				return new WP_Error(
 					'wp_mcp_ai_log_unwritable',
@@ -363,6 +372,63 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			delete_option( self::RECENT_ACTIVITY_OPTION );
 
 			return true;
+		}
+
+		/**
+		 * Verify that a log file path falls within allowed directories.
+		 *
+		 * Prevents truncation of files outside standard WordPress and system
+		 * log locations.
+		 *
+		 * @since 1.1.20
+		 *
+		 * @param string $path Absolute path to validate.
+		 * @return bool True when the path is within an allowed directory.
+		 */
+		private static function is_path_bounded( $path ) {
+			if ( '' === $path ) {
+				return false;
+			}
+
+			if ( ! function_exists( 'wp_normalize_path' ) ) {
+				return true; // Defensive: cannot validate without WP; allow.
+			}
+
+			$normalized = wp_normalize_path( $path );
+
+			// Build the allowed-directory list.
+			$allowed = array();
+
+			// WordPress content directory.
+			if ( defined( 'WP_CONTENT_DIR' ) ) {
+				$allowed[] = wp_normalize_path( WP_CONTENT_DIR );
+			}
+
+			// System temp directory.
+			$sys_temp = sys_get_temp_dir();
+			if ( is_string( $sys_temp ) && '' !== $sys_temp ) {
+				$allowed[] = wp_normalize_path( $sys_temp );
+			}
+
+			// WordPress root.
+			if ( defined( 'ABSPATH' ) ) {
+				$allowed[] = wp_normalize_path( ABSPATH );
+			}
+
+			// Standard Linux/Unix log directories (common PHP error log locations).
+			$allowed[] = '/var/log';
+			$allowed[] = '/var/log/php';
+
+			foreach ( $allowed as $dir ) {
+				if ( '' === $dir ) {
+					continue;
+				}
+				if ( 0 === strpos( $normalized, trailingslashit( $dir ) ) || $normalized === $dir ) {
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		/**
@@ -860,6 +926,12 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 					'openai_external_action_request',
 					'openai_external_action_response',
 					'schedule_run',
+					'cloudflare_invalid_tool_call',
+					'cloudflare_tool_calls_detected',
+					'cloudflare_tool_calls_filtered',
+					'cloudflare_tool_call_normalized',
+					'cloudflare_xml_tool_calls_parsed',
+					'cloudflare_json_tool_calls_parsed',
 				)
 			);
 

@@ -109,6 +109,13 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -117,10 +124,10 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['action'] ) || empty( $arguments['agent_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Action and agent ID are required.', 'mcp-ai-wpoos' ),
-			);
+				return new WP_Error(
+					'wp_mcp_ai_error',
+					__( 'Action and agent ID are required.', 'mcp-ai-wpoos' )
+				);
 		}
 
 		$action   = sanitize_key( $arguments['action'] );
@@ -144,9 +151,9 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 				return $this->get_audit_stats( $agent_id );
 
 			default:
-				return array(
-					'success' => false,
-					'message' => __( 'Invalid action.', 'mcp-ai-wpoos' ),
+				return new WP_Error(
+					'wp_mcp_ai_error',
+					__( 'Invalid action.', 'mcp-ai-wpoos' )
 				);
 		}
 	}
@@ -161,9 +168,9 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function get_version_history( $agent_id, $arguments, $options ) {
 		if ( empty( $arguments['context_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context ID is required for get_history action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context ID is required for get_history action.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -210,9 +217,9 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function compare_versions( $agent_id, $arguments ) {
 		if ( empty( $arguments['context_id'] ) || empty( $arguments['versions'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context ID and versions are required for compare_versions action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context ID and versions are required for compare_versions action.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -227,9 +234,9 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 		$history     = get_transient( $history_key );
 
 		if ( ! is_array( $history ) || ! isset( $history[ $from_version ] ) || ! isset( $history[ $to_version ] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'One or both versions not found.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'One or both versions not found.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -260,9 +267,9 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function rollback_version( $agent_id, $arguments ) {
 		if ( empty( $arguments['context_id'] ) || ! isset( $arguments['version'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context ID and version are required for rollback action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context ID and version are required for rollback action.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -274,9 +281,9 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 		$history     = get_transient( $history_key );
 
 		if ( ! is_array( $history ) || ! isset( $history[ $version ] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Version not found.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Version not found.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -287,9 +294,9 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 		$current_context = $context_manager->retrieve_context( $agent_id, $context_id, false );
 
 		if ( ! $current_context ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Current context not found or has expired.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Current context not found or has expired.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -338,9 +345,9 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
-		return array(
-			'success' => false,
-			'message' => __( 'Context has expired and cannot be rolled back.', 'mcp-ai-wpoos' ),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			__( 'Context has expired and cannot be rolled back.', 'mcp-ai-wpoos' )
 		);
 	}
 

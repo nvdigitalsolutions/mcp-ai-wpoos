@@ -207,8 +207,8 @@ class WP_MCP_AI_DICOM_Metadata {
 
 			// Extract tags we care about.
 			if ( isset( self::TAGS_OF_INTEREST[ $tag_key ] ) ) {
-				$field_name               = self::TAGS_OF_INTEREST[ $tag_key ];
-				$metadata[ $field_name ]  = self::sanitize_tag_value( $value, $vr );
+				$field_name              = self::TAGS_OF_INTEREST[ $tag_key ];
+				$metadata[ $field_name ] = self::sanitize_tag_value( $value, $vr );
 			}
 		}
 

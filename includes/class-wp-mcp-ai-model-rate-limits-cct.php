@@ -501,8 +501,40 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 							'value' => 'Anthropic',
 						),
 						array(
-							'key'   => 'google',
-							'value' => 'Google',
+							'key'   => 'gemini',
+							'value' => 'Google Gemini',
+						),
+						array(
+							'key'   => 'deepseek',
+							'value' => 'DeepSeek',
+						),
+						array(
+							'key'   => 'openrouter',
+							'value' => 'OpenRouter',
+						),
+						array(
+							'key'   => 'baseten',
+							'value' => 'Baseten',
+						),
+						array(
+							'key'   => 'kimi',
+							'value' => 'Kimi (Moonshot AI)',
+						),
+						array(
+							'key'   => 'digitalocean',
+							'value' => 'DigitalOcean',
+						),
+						array(
+							'key'   => 'cloudflare',
+							'value' => 'Cloudflare',
+						),
+						array(
+							'key'   => 'nvidia',
+							'value' => 'NVIDIA NIM',
+						),
+						array(
+							'key'   => 'huggingface',
+							'value' => 'Hugging Face',
 						),
 						array(
 							'key'   => 'azure',
@@ -517,8 +549,16 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 							'value' => 'LM Studio',
 						),
 						array(
-							'key'   => 'huggingface',
-							'value' => 'Hugging Face',
+							'key'   => 'embedded',
+							'value' => 'Embedded LLM',
+						),
+						array(
+							'key'   => 'webllm',
+							'value' => 'WebLLM',
+						),
+						array(
+							'key'   => 'google',
+							'value' => 'Google',
 						),
 						array(
 							'key'   => 'other',
@@ -835,7 +875,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 
 		// Allow site admins to drop a custom catalog into wp-content/uploads/mcp-ai/.
 		if ( function_exists( 'wp_get_upload_dir' ) ) {
-			$uploads  = wp_get_upload_dir();
+			$uploads = wp_get_upload_dir();
 			if ( is_array( $uploads ) && empty( $uploads['error'] ) && ! empty( $uploads['basedir'] ) ) {
 				$override = trailingslashit( $uploads['basedir'] ) . 'mcp-ai/model-catalog.json';
 				if ( $override !== $path && file_exists( $override ) && is_readable( $override ) ) {

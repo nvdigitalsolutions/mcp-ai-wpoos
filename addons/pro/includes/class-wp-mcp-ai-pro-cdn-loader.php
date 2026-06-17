@@ -30,56 +30,56 @@ class WP_MCP_AI_Pro_CDN_Loader {
 	 * @var array
 	 */
 	private static $libraries = array(
-		'chart.js'  => array(
-			'cdn_url'       => 'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js',
-			'fallback_url'  => 'assets/vendor/chart.js/chart.umd.min.js',
-			'version'       => '4.4.7',
-			'handle'        => 'chartjs-pro',
-			'dependencies'  => array(),
-			'in_footer'     => true,
-			'sri'           => 'sha384-', // Optional: Add SRI hash for security
+		'chart.js' => array(
+			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js',
+			'fallback_url' => 'assets/vendor/chart.js/chart.umd.min.js',
+			'version'      => '4.4.7',
+			'handle'       => 'chartjs-pro',
+			'dependencies' => array(),
+			'in_footer'    => true,
+			'sri'          => 'sha384-', // Optional: Add SRI hash for security.
 		),
-		'katex'     => array(
-			'cdn_url'       => 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js',
-			'cdn_css'       => 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css',
-			'fallback_url'  => 'assets/vendor/katex/dist/katex.min.js',
-			'fallback_css'  => 'assets/vendor/katex/dist/katex.min.css',
-			'version'       => '0.16.11',
-			'handle'        => 'katex',
-			'dependencies'  => array(),
-			'in_footer'     => true,
+		'katex'    => array(
+			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js',
+			'cdn_css'      => 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css',
+			'fallback_url' => 'assets/vendor/katex/dist/katex.min.js',
+			'fallback_css' => 'assets/vendor/katex/dist/katex.min.css',
+			'version'      => '0.16.11',
+			'handle'       => 'katex',
+			'dependencies' => array(),
+			'in_footer'    => true,
 		),
-		'd3'        => array(
-			'cdn_url'       => 'https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js',
-			'fallback_url'  => 'assets/vendor/d3/dist/d3.min.js',
-			'version'       => '7.8.5',
-			'handle'        => 'd3',
-			'dependencies'  => array(),
-			'in_footer'     => true,
+		'd3'       => array(
+			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js',
+			'fallback_url' => 'assets/vendor/d3/dist/d3.min.js',
+			'version'      => '7.8.5',
+			'handle'       => 'd3',
+			'dependencies' => array(),
+			'in_footer'    => true,
 		),
-		'axios'     => array(
-			'cdn_url'       => 'https://cdn.jsdelivr.net/npm/axios@1.6.5/dist/axios.min.js',
-			'fallback_url'  => 'assets/vendor/axios/dist/axios.min.js',
-			'version'       => '1.6.5',
-			'handle'        => 'axios',
-			'dependencies'  => array(),
-			'in_footer'     => true,
+		'axios'    => array(
+			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/axios@1.6.5/dist/axios.min.js',
+			'fallback_url' => 'assets/vendor/axios/dist/axios.min.js',
+			'version'      => '1.6.5',
+			'handle'       => 'axios',
+			'dependencies' => array(),
+			'in_footer'    => true,
 		),
-		'mathjs'    => array(
-			'cdn_url'       => 'https://cdn.jsdelivr.net/npm/mathjs@15.2.0/lib/browser/math.js',
-			'fallback_url'  => 'assets/vendor/mathjs/lib/browser/math.js',
-			'version'       => '15.2.0',
-			'handle'        => 'mathjs',
-			'dependencies'  => array(),
-			'in_footer'     => true,
+		'mathjs'   => array(
+			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/mathjs@15.2.0/lib/browser/math.js',
+			'fallback_url' => 'assets/vendor/mathjs/lib/browser/math.js',
+			'version'      => '15.2.0',
+			'handle'       => 'mathjs',
+			'dependencies' => array(),
+			'in_footer'    => true,
 		),
-		'prettier'  => array(
-			'cdn_url'       => 'https://cdn.jsdelivr.net/npm/prettier@3.4.2/standalone.js',
-			'fallback_url'  => 'assets/vendor/prettier/standalone.js',
-			'version'       => '3.4.2',
-			'handle'        => 'prettier',
-			'dependencies'  => array(),
-			'in_footer'     => true,
+		'prettier' => array(
+			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/prettier@3.4.2/standalone.js',
+			'fallback_url' => 'assets/vendor/prettier/standalone.js',
+			'version'      => '3.4.2',
+			'handle'       => 'prettier',
+			'dependencies' => array(),
+			'in_footer'    => true,
 		),
 	);
 
@@ -196,7 +196,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 	private static function get_fallback_url( $fallback_path ) {
 		// Check if file exists in vendor directory.
 		$full_path = WP_MCP_AI_PRO_PATH . $fallback_path;
-		
+
 		if ( ! file_exists( $full_path ) ) {
 			// Log warning in debug mode.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -219,7 +219,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 		}
 
 		$config = self::$libraries[ $library ];
-		
+
 		// Enqueue script.
 		wp_enqueue_script( $config['handle'] );
 
@@ -323,11 +323,11 @@ class WP_MCP_AI_Pro_CDN_Loader {
 			return array(
 				'available' => true,
 				'source'    => $using_cdn ? 'cdn' : 'local-fallback',
-				'message'   => $using_cdn 
-					? sprintf( 
+				'message'   => $using_cdn
+					? sprintf(
 						/* translators: %s: package name */
-						__( '%s (CDN-loaded)', 'mcp-ai-wpoos-pro' ), 
-						$package_name 
+						__( '%s (CDN-loaded)', 'mcp-ai-wpoos-pro' ),
+						$package_name
 					)
 					: sprintf(
 						/* translators: %s: package name */

@@ -121,10 +121,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 					</div>
 				</div>
 
-				<?php
-				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for tools filter bar button functionality on this admin page only
-				?>
-				<script>
+			<?php
+				$page_slug_js = wp_json_encode( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG );
+				$tab_js       = ! empty( $args['tab'] ) ? wp_json_encode( $args['tab'] ) : '';
+				$view_js      = ! empty( $args['view'] ) ? wp_json_encode( $args['view'] ) : '';
+				$subtab_js    = ! empty( $args['subtab'] ) ? wp_json_encode( $args['subtab'] ) : '';
+				ob_start();
+			?>
 				(function($) {
 					$('#wp-mcp-ai-filter-tools').on('click', function() {
 						const $button = $(this);
@@ -137,18 +140,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 						const url = new URL(window.location.href);
 
 						// Update URL parameters.
-						url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
+						url.searchParams.set('page', <?php echo wp_json_encode( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>);
 
 						<?php if ( ! empty( $args['tab'] ) ) : ?>
-						url.searchParams.set('tab', '<?php echo esc_js( $args['tab'] ); ?>');
+						url.searchParams.set('tab', <?php echo wp_json_encode( $args['tab'] ); ?>);
 						<?php endif; ?>
 
 						<?php if ( ! empty( $args['view'] ) ) : ?>
-						url.searchParams.set('view', '<?php echo esc_js( $args['view'] ); ?>');
+						url.searchParams.set('view', <?php echo wp_json_encode( $args['view'] ); ?>);
 						<?php endif; ?>
 
 						<?php if ( ! empty( $args['subtab'] ) ) : ?>
-						url.searchParams.set('subtab', '<?php echo esc_js( $args['subtab'] ); ?>');
+						url.searchParams.set('subtab', <?php echo wp_json_encode( $args['subtab'] ); ?>);
 						<?php endif; ?>
 
 						if (search) {
@@ -175,7 +178,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 						}
 					});
 				})(jQuery);
-				</script>
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+				?>
 			</div>
 			<?php
 			return ob_get_clean();

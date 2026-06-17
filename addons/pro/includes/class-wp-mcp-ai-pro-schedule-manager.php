@@ -46,6 +46,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		const HISTORY_OPTION = 'wp_mcp_ai_pro_schedule_history';
 
 		/**
+		 * Option key for storing per-run structured result envelopes.
+		 *
+		 * Kept separate from {@see self::HISTORY_OPTION} so that the cheap
+		 * status/duration ring buffer can remain compact while consumer-facing
+		 * payloads (used by the Scheduled Result widget/block) can be larger
+		 * and retain a different retention window.
+		 *
+		 * @since 1.0.0
+		 */
+		const RESULTS_OPTION = 'wp_mcp_ai_pro_schedule_results';
+
+		/**
 		 * Central dispatcher cron hook.
 		 */
 		const DISPATCH_HOOK = 'wp_mcp_ai_pro_schedule_exec';
@@ -54,6 +66,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * Maximum history entries stored per schedule.
 		 */
 		const MAX_HISTORY_PER_SCHEDULE = 50;
+
+		/**
+		 * Default per-schedule retention for result envelopes.
+		 *
+		 * @since 1.0.0
+		 */
+		const DEFAULT_RESULT_RETENTION = 10;
 
 		/**
 		 * Supported schedule types.
@@ -215,7 +234,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						? max( 0, absint( $assistant_config['max_agentic_iterations'] ) )
 						: 0,
 				);
-				$hook = 'wp_mcp_ai_pro_assistant_run';
+				$hook                     = 'wp_mcp_ai_pro_assistant_run';
 			} elseif ( self::TYPE_CHANNEL_BROADCAST === $schedule_type ) {
 				// Validate channel broadcast config.
 				$broadcast_config = isset( $data['broadcast_config'] ) && is_array( $data['broadcast_config'] )
@@ -249,7 +268,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					'channels'    => $sanitized_chans,
 					'credentials' => $broadcast_config['credentials'],
 				);
-				$hook = 'wp_mcp_ai_pro_channel_broadcast';
+				$hook                     = 'wp_mcp_ai_pro_channel_broadcast';
 			} elseif ( self::TYPE_WORKFLOW_BUILDER === $schedule_type ) {
 				// Validate workflow builder reference.
 				$workflow_builder_id = isset( $data['workflow_builder_id'] ) ? sanitize_key( $data['workflow_builder_id'] ) : '';
@@ -287,16 +306,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				return new WP_Error( 'past_timestamp', __( 'Schedule timestamp must be in the future.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			$args         = isset( $data['args'] ) && is_array( $data['args'] ) ? $data['args'] : array();
-			$enabled      = isset( $data['enabled'] ) ? (bool) $data['enabled'] : true;
-			$priority     = isset( $data['priority'] ) ? max( 1, min( 10, (int) $data['priority'] ) ) : 5;
-			$max_retries  = isset( $data['max_retries'] ) ? max( 0, min( 5, (int) $data['max_retries'] ) ) : 0;
-			$retry_delay  = isset( $data['retry_delay'] ) ? max( 60, (int) $data['retry_delay'] ) : 300;
-			$name         = isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : $hook;
-			$description  = isset( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
+			$args        = isset( $data['args'] ) && is_array( $data['args'] ) ? $data['args'] : array();
+			$enabled     = isset( $data['enabled'] ) ? (bool) $data['enabled'] : true;
+			$priority    = isset( $data['priority'] ) ? max( 1, min( 10, (int) $data['priority'] ) ) : 5;
+			$max_retries = isset( $data['max_retries'] ) ? max( 0, min( 5, (int) $data['max_retries'] ) ) : 0;
+			$retry_delay = isset( $data['retry_delay'] ) ? max( 60, (int) $data['retry_delay'] ) : 300;
+			$name        = isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : $hook;
+			$description = isset( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
 
-			$notify          = isset( $data['notify_on_failure'] ) ? (bool) $data['notify_on_failure'] : false;
-			$notify_email    = isset( $data['notify_email'] ) ? sanitize_email( $data['notify_email'] ) : get_option( 'admin_email' );
+			$notify       = isset( $data['notify_on_failure'] ) ? (bool) $data['notify_on_failure'] : false;
+			$notify_email = isset( $data['notify_email'] ) ? sanitize_email( $data['notify_email'] ) : get_option( 'admin_email' );
 
 			// Symfony Validator: enforce RFC-compliant email when a custom address is supplied.
 			if ( $notify && isset( $data['notify_email'] ) && '' !== $data['notify_email']
@@ -305,9 +324,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$validator  = \Symfony\Component\Validator\Validation::createValidator();
 				$violations = $validator->validate(
 					$notify_email,
-					array( new \Symfony\Component\Validator\Constraints\Email(
-						array( 'message' => 'The notify_email "{{ value }}" is not a valid email address.' )
-					) )
+					array(
+						new \Symfony\Component\Validator\Constraints\Email(
+							array( 'message' => 'The notify_email "{{ value }}" is not a valid email address.' )
+						),
+					)
 				);
 				if ( count( $violations ) > 0 ) {
 					return new WP_Error(
@@ -317,14 +338,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				}
 			}
 			// notify_channels: array of channel slugs (telegram, slack, etc.) to send failure alerts via unified_channel_broadcast.
-			$notify_channels             = isset( $data['notify_channels'] ) && is_array( $data['notify_channels'] )
+			$notify_channels = isset( $data['notify_channels'] ) && is_array( $data['notify_channels'] )
 				? array_map( 'sanitize_key', $data['notify_channels'] )
 				: array();
 			// notify_channel_credentials: credentials object keyed by channel slug, passed to unified_channel_broadcast.
-			$notify_channel_credentials  = isset( $data['notify_channel_credentials'] ) && is_array( $data['notify_channel_credentials'] )
+			$notify_channel_credentials = isset( $data['notify_channel_credentials'] ) && is_array( $data['notify_channel_credentials'] )
 				? $data['notify_channel_credentials']
 				: array();
-			$tags            = isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array();
+			$tags                       = isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array();
 
 			// timeout: maximum execution time in seconds (0 = no limit). Industry-standard safeguard against hung tasks.
 			$timeout = isset( $data['timeout'] ) ? max( 0, (int) $data['timeout'] ) : 0;
@@ -337,49 +358,62 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			if ( $callback_url && ! filter_var( $callback_url, FILTER_VALIDATE_URL ) ) {
 				return new WP_Error( 'invalid_callback_url', __( 'The callback URL is not a valid HTTP(S) URL.', 'mcp-ai-wpoos-pro' ) );
 			}
+			$callback_secret = isset( $data['callback_secret'] ) ? sanitize_text_field( $data['callback_secret'] ) : '';
+
+			// Display / widget binding fields — power the Scheduled Result block/widget.
+			$display_fields = self::sanitize_display_fields( isset( $data['display'] ) && is_array( $data['display'] ) ? $data['display'] : array() );
 
 			// Use a unique ID that incorporates schedule type for workflow/assistant to avoid collisions.
 			$id_key      = self::TYPE_TASK === $schedule_type
-				? array( 'hook' => $hook, 'args' => $args )
-				: array( 'type' => $schedule_type, 'name' => $name, 'ts' => $timestamp );
+				? array(
+					'hook' => $hook,
+					'args' => $args,
+				)
+				: array(
+					'type' => $schedule_type,
+					'name' => $name,
+					'ts'   => $timestamp,
+				);
 			$schedule_id = md5( wp_json_encode( $id_key ) );
 
 			$existing = self::get_schedule( $schedule_id );
 
 			$record = array(
-				'id'                => $schedule_id,
-				'name'              => $name,
-				'description'       => $description,
-				'schedule_type'     => $schedule_type,
-				'hook'              => $hook,
-				'args'              => $args,
-				'workflow_steps'    => isset( $data['workflow_steps'] ) ? $data['workflow_steps'] : array(),
-				'assistant_config'  => isset( $data['assistant_config'] ) ? $data['assistant_config'] : array(),
-				'broadcast_config'      => isset( $data['broadcast_config'] ) ? $data['broadcast_config'] : array(),
-				'workflow_builder_id'   => isset( $data['workflow_builder_id'] ) ? $data['workflow_builder_id'] : '',
-				'schedule'          => $schedule,
-				'timestamp'         => $timestamp,
-				'enabled'           => $enabled,
-				'priority'          => $priority,
-				'tags'              => $tags,
-				'timeout'           => $timeout,
-				'callback_url'      => $callback_url,
-				'notify_on_failure'  => $notify,
-				'notify_email'       => $notify_email,
-				'notify_channels'             => $notify_channels,
-				'notify_channel_credentials'  => $notify_channel_credentials,
-				'max_retries'       => $max_retries,
-				'retry_delay'       => $retry_delay,
-				'retry_count'       => 0,
-				'last_run_status'   => $existing ? $existing['last_run_status'] : 'never',
-				'last_run_time'     => $existing ? $existing['last_run_time'] : 0,
-				'last_run_duration' => $existing ? $existing['last_run_duration'] : 0,
-				'last_error'        => $existing ? $existing['last_error'] : '',
-				'run_count'         => $existing ? $existing['run_count'] : 0,
-				'created_at'        => $existing ? $existing['created_at'] : time(),
-				'created_by'        => $existing ? $existing['created_by'] : (int) $user_id,
-				'updated_at'        => time(),
-				'updated_by'        => (int) $user_id,
+				'id'                         => $schedule_id,
+				'name'                       => $name,
+				'description'                => $description,
+				'schedule_type'              => $schedule_type,
+				'hook'                       => $hook,
+				'args'                       => $args,
+				'workflow_steps'             => isset( $data['workflow_steps'] ) ? $data['workflow_steps'] : array(),
+				'assistant_config'           => isset( $data['assistant_config'] ) ? $data['assistant_config'] : array(),
+				'broadcast_config'           => isset( $data['broadcast_config'] ) ? $data['broadcast_config'] : array(),
+				'workflow_builder_id'        => isset( $data['workflow_builder_id'] ) ? $data['workflow_builder_id'] : '',
+				'display'                    => $display_fields,
+				'schedule'                   => $schedule,
+				'timestamp'                  => $timestamp,
+				'enabled'                    => $enabled,
+				'priority'                   => $priority,
+				'tags'                       => $tags,
+				'timeout'                    => $timeout,
+				'callback_url'               => $callback_url,
+				'callback_secret'            => $callback_secret,
+				'notify_on_failure'          => $notify,
+				'notify_email'               => $notify_email,
+				'notify_channels'            => $notify_channels,
+				'notify_channel_credentials' => $notify_channel_credentials,
+				'max_retries'                => $max_retries,
+				'retry_delay'                => $retry_delay,
+				'retry_count'                => 0,
+				'last_run_status'            => $existing ? $existing['last_run_status'] : 'never',
+				'last_run_time'              => $existing ? $existing['last_run_time'] : 0,
+				'last_run_duration'          => $existing ? $existing['last_run_duration'] : 0,
+				'last_error'                 => $existing ? $existing['last_error'] : '',
+				'run_count'                  => $existing ? $existing['run_count'] : 0,
+				'created_at'                 => $existing ? $existing['created_at'] : time(),
+				'created_by'                 => $existing ? $existing['created_by'] : (int) $user_id,
+				'updated_at'                 => time(),
+				'updated_by'                 => (int) $user_id,
 			);
 
 			// Unschedule any existing WP cron event for this schedule.
@@ -484,6 +518,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					return new WP_Error( 'invalid_callback_url', __( 'The callback URL is not a valid HTTP(S) URL.', 'mcp-ai-wpoos-pro' ) );
 				}
 				$updated['callback_url'] = $url;
+			}
+			if ( isset( $data['callback_secret'] ) ) {
+				$updated['callback_secret'] = sanitize_text_field( $data['callback_secret'] );
+			}
+			if ( isset( $data['display'] ) && is_array( $data['display'] ) ) {
+				$existing_display   = isset( $existing['display'] ) && is_array( $existing['display'] ) ? $existing['display'] : array();
+				$updated['display'] = self::sanitize_display_fields( array_merge( $existing_display, $data['display'] ) );
 			}
 			if ( isset( $data['schedule'] ) ) {
 				$new_schedule = sanitize_key( $data['schedule'] );
@@ -748,19 +789,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			// Pure-PHP RFC 5545 fallback.
 			$crlf = "\r\n";
-			$ics   = 'BEGIN:VCALENDAR' . $crlf;
-			$ics  .= 'VERSION:2.0' . $crlf;
-			$ics  .= 'PRODID:-//NV Digital Solutions//NV oOS Schedule Manager//EN' . $crlf;
-			$ics  .= 'CALSCALE:GREGORIAN' . $crlf;
-			$ics  .= 'X-WR-CALNAME:' . str_replace( array( "\r", "\n" ), ' ', get_bloginfo( 'name' ) ) . ' Schedules' . $crlf;
+			$ics  = 'BEGIN:VCALENDAR' . $crlf;
+			$ics .= 'VERSION:2.0' . $crlf;
+			$ics .= 'PRODID:-//NV Digital Solutions//NV oOS Schedule Manager//EN' . $crlf;
+			$ics .= 'CALSCALE:GREGORIAN' . $crlf;
+			$ics .= 'X-WR-CALNAME:' . str_replace( array( "\r", "\n" ), ' ', get_bloginfo( 'name' ) ) . ' Schedules' . $crlf;
 
 			foreach ( $events as $event ) {
-				$dt_start  = gmdate( 'Ymd\THis\Z', $event['start'] );
-				$dt_end    = gmdate( 'Ymd\THis\Z', $event['end'] );
-				$dt_stamp  = gmdate( 'Ymd\THis\Z' );
-				$summary   = str_replace( array( "\r", "\n", ',' ), array( ' ', ' ', '\,' ), $event['title'] );
-				$desc_raw  = trim( $event['description'] . ' [' . strtoupper( $event['type'] ) . ']' );
-				$desc      = str_replace( array( "\r", "\n", ',' ), array( ' ', '\n', '\,' ), $desc_raw );
+				$dt_start = gmdate( 'Ymd\THis\Z', $event['start'] );
+				$dt_end   = gmdate( 'Ymd\THis\Z', $event['end'] );
+				$dt_stamp = gmdate( 'Ymd\THis\Z' );
+				$summary  = str_replace( array( "\r", "\n", ',' ), array( ' ', ' ', '\,' ), $event['title'] );
+				$desc_raw = trim( $event['description'] . ' [' . strtoupper( $event['type'] ) . ']' );
+				$desc     = str_replace( array( "\r", "\n", ',' ), array( ' ', '\n', '\,' ), $desc_raw );
 
 				$ics .= 'BEGIN:VEVENT' . $crlf;
 				$ics .= 'UID:' . $event['uid'] . $crlf;
@@ -816,7 +857,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			if ( class_exists( 'WP_MCP_AI_Contact_Importer_Service' ) ) {
 				$svc    = new WP_MCP_AI_Contact_Importer_Service();
-				$result = $svc->generate_csv( $rows, array( 'header' => true, 'delimiter' => ',' ) );
+				$result = $svc->generate_csv(
+					$rows,
+					array(
+						'header'    => true,
+						'delimiter' => ',',
+					)
+				);
 				if ( ! is_wp_error( $result ) && is_string( $result ) ) {
 					return $result;
 				}
@@ -990,7 +1037,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				}
 			} catch ( Throwable $e ) {
 				$success   = false;
-				$error_msg = $e->getMessage();
+				$error_msg = sprintf(
+					'%s in %s:%d',
+					$e->getMessage(),
+					str_replace( ABSPATH, '', $e->getFile() ),
+					$e->getLine()
+				);
 
 				self::debug_log( sprintf( '[dispatch] Exception in %s schedule %s: %s', $schedule_type, $schedule_id, $error_msg ) );
 
@@ -1001,6 +1053,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 							'schedule_id'   => $schedule_id,
 							'schedule_type' => $schedule_type,
 							'error'         => $error_msg,
+							'trace'         => $e->getTraceAsString(),
 						)
 					);
 				}
@@ -1022,6 +1075,38 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			// Record run result.
 			self::record_run( $schedule_id, $success, $duration, $error_msg, $action_log );
+
+			/**
+			 * Fires after every Pro schedule run completes, regardless of success.
+			 *
+			 * Mirrors the action surfaced by the Pro workflow / assistant pipelines so
+			 * observability layers (OTel, dashboards, notifications) can subscribe to
+			 * a single canonical "run completed" event.
+			 *
+			 * @since 1.x
+			 *
+			 * @param string $schedule_id Schedule identifier.
+			 * @param array  $result      {
+			 *     Result summary.
+			 *
+			 *     @type bool   $success    Whether the run finished without error.
+			 *     @type float  $duration   Execution time in seconds.
+			 *     @type string $error      Last error message ('' on success).
+			 *     @type array  $action_log Type-specific structured log of what ran.
+			 *     @type array  $schedule   The schedule record at dispatch time.
+			 * }
+			 */
+			do_action(
+				'wp_mcp_ai_pro_schedule_run_completed',
+				$schedule_id,
+				array(
+					'success'    => (bool) $success,
+					'duration'   => (float) $duration,
+					'error'      => (string) $error_msg,
+					'action_log' => $action_log,
+					'schedule'   => $schedule,
+				)
+			);
 
 			self::debug_log(
 				sprintf(
@@ -1068,7 +1153,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			} else {
 				// Success: reset retry counter.
 				$schedules                                    = self::load_schedules();
-				$schedules[ $schedule_id ]['retry_count']    = 0;
+				$schedules[ $schedule_id ]['retry_count']     = 0;
 				$schedules[ $schedule_id ]['last_run_status'] = 'success';
 				self::save_schedules( $schedules );
 			}
@@ -1108,10 +1193,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$previous_results = array();
 
 			$context = array(
-				'schedule_id'      => $schedule_id,
-				'schedule_name'    => $schedule['name'],
-				'source'           => 'pro_schedule_manager',
-				'user_id'          => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
+				'schedule_id'   => $schedule_id,
+				'schedule_name' => $schedule['name'],
+				'source'        => 'pro_schedule_manager',
+				'user_id'       => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
 			);
 
 			foreach ( $steps as $step_index => $step ) {
@@ -1127,9 +1212,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					);
 				}
 
-				$step_context                      = $context;
-				$step_context['workflow_step']     = $step_index;
-				$step_context['previous_results']  = $previous_results;
+				$step_context                     = $context;
+				$step_context['workflow_step']    = $step_index;
+				$step_context['previous_results'] = $previous_results;
 
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
@@ -1331,79 +1416,79 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					);
 				} else {
 
-				$data = $response->get_data();
+					$data = $response->get_data();
 
-				// Extract the assistant reply from the response.
-				// Uses the industry-standard two-pass extraction (finish_reason
-				// preference + agentic_tool_messages fallback) matching every
-				// channel webhook controller (Telegram, Slack, Discord, etc.).
-				$reply = self::extract_content_from_chat_response( $data );
+					// Extract the assistant reply from the response.
+					// Uses the industry-standard two-pass extraction (finish_reason
+					// preference + agentic_tool_messages fallback) matching every
+					// channel webhook controller (Telegram, Slack, Discord, etc.).
+					$reply = self::extract_content_from_chat_response( $data );
 
-				// Capture agentic workflow metadata from the response.
-				// When the assistant uses tools (agent workflow), the chat endpoint
-				// includes tool_results and agentic_tool_messages in the response
-				// data so consumers can inspect what the agent did.
-				$llm_data         = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : $data;
-				$tool_results     = isset( $llm_data['tool_results'] ) && is_array( $llm_data['tool_results'] )
+					// Capture agentic workflow metadata from the response.
+					// When the assistant uses tools (agent workflow), the chat endpoint
+					// includes tool_results and agentic_tool_messages in the response
+					// data so consumers can inspect what the agent did.
+					$llm_data         = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : $data;
+					$tool_results     = isset( $llm_data['tool_results'] ) && is_array( $llm_data['tool_results'] )
 					? $llm_data['tool_results']
 					: array();
-				$agentic_messages = isset( $llm_data['agentic_tool_messages'] ) && is_array( $llm_data['agentic_tool_messages'] )
+					$agentic_messages = isset( $llm_data['agentic_tool_messages'] ) && is_array( $llm_data['agentic_tool_messages'] )
 					? $llm_data['agentic_tool_messages']
 					: array();
 
-				$tool_results_count     = count( $tool_results );
-				$agentic_messages_count = count( $agentic_messages );
+					$tool_results_count     = count( $tool_results );
+					$agentic_messages_count = count( $agentic_messages );
 
-				self::debug_log(
-					sprintf(
-						'[assistant_run] Extracted reply (%d chars), tool_results=%d, agentic_messages=%d: %s',
-						strlen( (string) $reply ),
-						$tool_results_count,
-						$agentic_messages_count,
-						wp_trim_words( (string) $reply, 20, '…' )
-					)
-				);
-
-				$result_log['response'] = wp_trim_words( (string) $reply, 120, '…' );
-				$result_log['status']   = 'completed';
-
-				// Record agentic workflow details in the action log.
-				$result_log['tool_results_count']     = $tool_results_count;
-				$result_log['agentic_messages_count'] = $agentic_messages_count;
-				$result_log['is_agentic']             = $tool_results_count > 0 || $agentic_messages_count > 0;
-
-				// Store a trimmed summary of tool calls for the action log.
-				if ( $tool_results_count > 0 ) {
-					$tool_summary = array();
-					foreach ( $tool_results as $tr ) {
-						if ( ! is_array( $tr ) ) {
-							continue;
-						}
-						$tool_summary[] = array(
-							'tool_call_id' => isset( $tr['tool_call_id'] ) ? (string) $tr['tool_call_id'] : '',
-							'name'         => isset( $tr['name'] ) ? (string) $tr['name'] : '',
-						);
-					}
-					$result_log['tool_calls'] = $tool_summary;
-				}
-
-				// Log the agentic workflow to the Logger service.
-				if ( $result_log['is_agentic'] && class_exists( 'WP_MCP_AI_Logger' ) ) {
-					WP_MCP_AI_Logger::log_event(
-						'info',
+					self::debug_log(
 						sprintf(
-							'Scheduled assistant run completed as agentic workflow: %d tool result(s), %d intermediate message(s)',
+							'[assistant_run] Extracted reply (%d chars), tool_results=%d, agentic_messages=%d: %s',
+							strlen( (string) $reply ),
 							$tool_results_count,
-							$agentic_messages_count
-						),
-						array(
-							'schedule_id'   => $schedule_id,
-							'assistant_id'  => $assistant_id,
-							'tool_results'  => $tool_results_count,
-							'agentic_msgs'  => $agentic_messages_count,
+							$agentic_messages_count,
+							wp_trim_words( (string) $reply, 20, '…' )
 						)
 					);
-				}
+
+					$result_log['response'] = wp_trim_words( (string) $reply, 120, '…' );
+					$result_log['status']   = 'completed';
+
+					// Record agentic workflow details in the action log.
+					$result_log['tool_results_count']     = $tool_results_count;
+					$result_log['agentic_messages_count'] = $agentic_messages_count;
+					$result_log['is_agentic']             = $tool_results_count > 0 || $agentic_messages_count > 0;
+
+					// Store a trimmed summary of tool calls for the action log.
+					if ( $tool_results_count > 0 ) {
+						$tool_summary = array();
+						foreach ( $tool_results as $tr ) {
+							if ( ! is_array( $tr ) ) {
+								continue;
+							}
+							$tool_summary[] = array(
+								'tool_call_id' => isset( $tr['tool_call_id'] ) ? (string) $tr['tool_call_id'] : '',
+								'name'         => isset( $tr['name'] ) ? (string) $tr['name'] : '',
+							);
+						}
+						$result_log['tool_calls'] = $tool_summary;
+					}
+
+					// Log the agentic workflow to the Logger service.
+					if ( $result_log['is_agentic'] && class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'info',
+							sprintf(
+								'Scheduled assistant run completed as agentic workflow: %d tool result(s), %d intermediate message(s)',
+								$tool_results_count,
+								$agentic_messages_count
+							),
+							array(
+								'schedule_id'  => $schedule_id,
+								'assistant_id' => $assistant_id,
+								'tool_results' => $tool_results_count,
+								'agentic_msgs' => $agentic_messages_count,
+							)
+						);
+					}
 				}
 			} else {
 				self::debug_log( '[assistant_run] rest_do_request() not available — falling back to action hook' );
@@ -1750,17 +1835,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			self::debug_log( sprintf( '[workflow_builder] Workflow "%s" has %d nodes, %d edges', $workflow_builder_id, count( $nodes ), count( $edges ) ) );
 
 			// Build adjacency list from edges: source -> list of target node IDs.
-			$adjacency     = array();
+			$adjacency      = array();
 			$incoming_count = array();
-			$nodes_by_id   = array();
+			$nodes_by_id    = array();
 
 			foreach ( $nodes as $node ) {
 				$nid = isset( $node['id'] ) ? (string) $node['id'] : '';
 				if ( '' === $nid ) {
 					continue;
 				}
-				$nodes_by_id[ $nid ]   = $node;
-				$adjacency[ $nid ]     = array();
+				$nodes_by_id[ $nid ]    = $node;
+				$adjacency[ $nid ]      = array();
 				$incoming_count[ $nid ] = 0;
 			}
 
@@ -1783,7 +1868,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			$execution_order = array();
 			while ( ! empty( $queue ) ) {
-				$current = array_shift( $queue );
+				$current           = array_shift( $queue );
 				$execution_order[] = $current;
 
 				foreach ( $adjacency[ $current ] as $neighbor ) {
@@ -1800,12 +1885,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			}
 
 			// Execute nodes in topological order, collecting results.
-			$context = array(
-				'schedule_id'          => $schedule_id,
-				'schedule_name'        => $schedule['name'],
-				'workflow_builder_id'  => $workflow_builder_id,
-				'source'               => 'pro_schedule_manager',
-				'user_id'              => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
+			$context      = array(
+				'schedule_id'         => $schedule_id,
+				'schedule_name'       => $schedule['name'],
+				'workflow_builder_id' => $workflow_builder_id,
+				'source'              => 'pro_schedule_manager',
+				'user_id'             => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
 			);
 			$node_results = array();
 			$registry     = class_exists( 'WP_MCP_AI_Tool_Registry' ) ? WP_MCP_AI_Tool_Registry::get_instance() : null;
@@ -1998,11 +2083,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'site_url'      => home_url(),
 			);
 
+			$body    = wp_json_encode( $payload );
+			$headers = array( 'Content-Type' => 'application/json' );
+
+			$secret = isset( $schedule['callback_secret'] ) ? (string) $schedule['callback_secret'] : '';
+			if ( '' !== $secret ) {
+				$ts                               = (string) time();
+				$headers['X-WP-MCP-AI-Timestamp'] = $ts;
+				$headers['X-WP-MCP-AI-Signature'] = 'sha256=' . hash_hmac( 'sha256', $ts . '.' . $body, $secret );
+			}
+
 			$response = wp_remote_post(
 				$callback_url,
 				array(
-					'body'      => wp_json_encode( $payload ),
-					'headers'   => array( 'Content-Type' => 'application/json' ),
+					'body'      => $body,
+					'headers'   => $headers,
 					'timeout'   => 15,
 					'blocking'  => false,
 					'sslverify' => true,
@@ -2127,6 +2222,63 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$schedules[ $schedule_id ]['run_count']         = ( (int) $schedules[ $schedule_id ]['run_count'] ) + 1;
 				self::save_schedules( $schedules );
 			}
+
+			// Build and persist a structured result envelope when capture is enabled.
+			$schedule = isset( $schedules[ $schedule_id ] ) ? $schedules[ $schedule_id ] : self::get_schedule( $schedule_id );
+			if ( is_array( $schedule ) ) {
+				$capture = isset( $schedule['display']['result_capture'] ) ? $schedule['display']['result_capture'] : 'summary';
+				if ( 'disabled' !== $capture ) {
+					$log_for_envelope     = 'summary' === $capture
+						? self::trim_action_log_for_summary( $action_log )
+						: $action_log;
+					$envelope             = self::build_result_envelope( $schedule, is_array( $log_for_envelope ) ? $log_for_envelope : array(), (bool) $success, (string) $error_msg );
+					$envelope['duration'] = (float) $duration;
+					self::store_result_envelope( $schedule_id, $envelope, $schedule );
+				}
+			}
+		}
+
+		/**
+		 * Trim an action log down to the "summary" capture level.
+		 *
+		 * Keeps high-signal fields (status, hook, response excerpt) while dropping
+		 * verbose nested structures so the stored envelope stays small for the
+		 * `summary` capture mode.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $action_log Raw action log.
+		 * @return array Trimmed action log.
+		 */
+		protected static function trim_action_log_for_summary( array $action_log ) {
+			$trimmed = array();
+			if ( isset( $action_log['type'] ) ) {
+				$trimmed['type'] = $action_log['type'];
+			}
+			if ( isset( $action_log['hook'] ) ) {
+				$trimmed['hook'] = $action_log['hook'];
+			}
+			if ( isset( $action_log['assistant']['response'] ) ) {
+				$trimmed['assistant'] = array(
+					'response'     => wp_trim_words( (string) $action_log['assistant']['response'], 80, '…' ),
+					'assistant_id' => isset( $action_log['assistant']['assistant_id'] ) ? (int) $action_log['assistant']['assistant_id'] : 0,
+					'is_agentic'   => ! empty( $action_log['assistant']['is_agentic'] ),
+				);
+			}
+			if ( isset( $action_log['steps'] ) && is_array( $action_log['steps'] ) ) {
+				$trimmed['steps'] = array();
+				foreach ( $action_log['steps'] as $idx => $step ) {
+					$trimmed['steps'][ $idx ] = array(
+						'tool_slug' => isset( $step['tool_slug'] ) ? $step['tool_slug'] : '',
+						'label'     => isset( $step['label'] ) ? $step['label'] : '',
+						'duration'  => isset( $step['duration'] ) ? $step['duration'] : 0,
+					);
+				}
+			}
+			if ( isset( $action_log['broadcast'] ) && is_array( $action_log['broadcast'] ) ) {
+				$trimmed['broadcast'] = $action_log['broadcast'];
+			}
+			return $trimmed;
 		}
 
 		/**
@@ -2142,7 +2294,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$retry_delay = (int) $schedule['retry_delay'];
 
 			// Update status to failure.
-			$schedules                                   = self::load_schedules();
+			$schedules                                    = self::load_schedules();
 			$schedules[ $schedule_id ]['last_run_status'] = 'failure';
 
 			if ( $max_retries > 0 && $retry_count < $max_retries ) {
@@ -2394,13 +2546,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			}
 
 			$item_data = array(
-				'cct_slug'     => WP_MCP_AI_Execution_History_CCT::SLUG,
-				'session_id'   => $schedule_id,
-				'tool_name'    => 'pro_schedule_manager',
-				'success'      => $success ? '1' : '0',
+				'cct_slug'      => WP_MCP_AI_Execution_History_CCT::SLUG,
+				'session_id'    => $schedule_id,
+				'tool_name'     => 'pro_schedule_manager',
+				'success'       => $success ? '1' : '0',
 				'error_message' => (string) $error_msg,
-				'duration_ms'  => (int) round( $duration * 1000 ),
-				'executed_at'  => current_time( 'mysql' ),
+				'duration_ms'   => (int) round( $duration * 1000 ),
+				'executed_at'   => current_time( 'mysql' ),
 			);
 
 			$engine->cct->manager->insert_item( $item_data );
@@ -2414,7 +2566,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * @return string MD5 hash identifier.
 		 */
 		protected static function generate_id( $hook, array $args ) {
-			return md5( wp_json_encode( array( 'hook' => $hook, 'args' => $args ) ) );
+			return md5(
+				wp_json_encode(
+					array(
+						'hook' => $hook,
+						'args' => $args,
+					)
+				)
+			);
 		}
 
 		/**
@@ -2515,12 +2674,568 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		}
 
 		/**
+		 * Project the next N run timestamps for a schedule.
+		 *
+		 * Combines the next WP-cron event (which only knows about the upcoming
+		 * single trigger) with the schedule's registered interval to extrapolate
+		 * subsequent runs. For one-shot ("single") schedules, returns at most one
+		 * timestamp.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param int    $count       Maximum number of run times to return (default 10).
+		 * @return int[] Sorted ascending list of timestamps.
+		 */
+		public static function get_next_run_times( $schedule_id, $count = 10 ) {
+			$count = max( 1, (int) $count );
+			$next  = self::get_next_run_time( $schedule_id );
+			if ( ! $next ) {
+				return array();
+			}
+
+			$schedule = self::get_schedule( $schedule_id );
+			$cadence  = ( $schedule && isset( $schedule['schedule'] ) ) ? (string) $schedule['schedule'] : 'single';
+
+			if ( 'single' === $cadence ) {
+				return array( (int) $next );
+			}
+
+			$schedules = wp_get_schedules();
+			$interval  = isset( $schedules[ $cadence ]['interval'] ) ? (int) $schedules[ $cadence ]['interval'] : 0;
+
+			if ( $interval <= 0 ) {
+				return array( (int) $next );
+			}
+
+			$times = array();
+			for ( $i = 0; $i < $count; $i++ ) {
+				$times[] = (int) $next + ( $i * $interval );
+			}
+			return $times;
+		}
+
+		/**
 		 * Unschedule all pro managed cron events (for plugin deactivation).
 		 */
 		public static function deactivate() {
 			$schedules = self::load_schedules();
 			foreach ( array_keys( $schedules ) as $schedule_id ) {
 				self::unschedule_wp_cron( $schedule_id );
+			}
+		}
+
+		// -------------------------------------------------------------------------
+		// Result envelope (Scheduled Result widget/block)
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Sanitize a `display` settings sub-array attached to a schedule record.
+		 *
+		 * Display settings power the Scheduled Result block/Elementor widget and
+		 * control how the latest run's structured output is surfaced. They are
+		 * intentionally separate from the dispatch payload — they describe the
+		 * widget's *binding*, not the run itself.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $display Raw display settings.
+		 * @return array Sanitized display settings with all expected keys.
+		 */
+		public static function sanitize_display_fields( array $display ) {
+			$allowed_capture = array( 'disabled', 'summary', 'full' );
+			$capture         = isset( $display['result_capture'] ) ? sanitize_key( $display['result_capture'] ) : 'summary';
+			if ( ! in_array( $capture, $allowed_capture, true ) ) {
+				$capture = 'summary';
+			}
+
+			$public_render = ! empty( $display['public_render'] );
+
+			$public_fields = array();
+			if ( isset( $display['public_fields'] ) && is_array( $display['public_fields'] ) ) {
+				foreach ( $display['public_fields'] as $field ) {
+					if ( ! is_string( $field ) ) {
+						continue;
+					}
+					// Allow dotted JSON paths like "data.items" and "summary".
+					$field = preg_replace( '/[^a-zA-Z0-9_.\[\]\-]/', '', $field );
+					if ( '' !== $field ) {
+						$public_fields[] = $field;
+					}
+				}
+			}
+
+			$retention = isset( $display['result_retention'] ) ? (int) $display['result_retention'] : self::DEFAULT_RESULT_RETENTION;
+			$retention = max( 1, min( 100, $retention ) );
+
+			$widget_defaults = array(
+				'render_mode'      => 'summary-card',
+				'title'            => '',
+				'refresh_interval' => 0,
+			);
+			if ( isset( $display['widget_defaults'] ) && is_array( $display['widget_defaults'] ) ) {
+				$raw = $display['widget_defaults'];
+				if ( isset( $raw['render_mode'] ) && in_array(
+					$raw['render_mode'],
+					array( 'summary-card', 'list', 'table', 'metric', 'timeline', 'raw' ),
+					true
+				) ) {
+					$widget_defaults['render_mode'] = $raw['render_mode'];
+				}
+				if ( isset( $raw['title'] ) ) {
+					$widget_defaults['title'] = sanitize_text_field( (string) $raw['title'] );
+				}
+				if ( isset( $raw['refresh_interval'] ) ) {
+					$widget_defaults['refresh_interval'] = max( 0, min( 3600, (int) $raw['refresh_interval'] ) );
+				}
+			}
+
+			return array(
+				'result_capture'   => $capture,
+				'public_render'    => (bool) $public_render,
+				'public_fields'    => $public_fields,
+				'result_retention' => $retention,
+				'widget_defaults'  => $widget_defaults,
+			);
+		}
+
+		/**
+		 * Build a structured result envelope from a dispatcher's raw action log.
+		 *
+		 * The envelope shape — summary / data / render — is the contract consumed
+		 * by the Scheduled Result widget and block, the REST controller, and the
+		 * `get_schedule_latest_result` / `render_schedule_result` tools.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $schedule      Schedule record (post-sanitize).
+		 * @param array  $action_log    Action log produced by the dispatcher.
+		 * @param bool   $success       Whether the run succeeded.
+		 * @param string $error_msg     Error message if the run failed.
+		 * @return array Envelope: { summary, data, render, generated_at, status }.
+		 */
+		public static function build_result_envelope( array $schedule, array $action_log, $success, $error_msg ) {
+			$schedule_type = isset( $schedule['schedule_type'] ) ? (string) $schedule['schedule_type'] : self::TYPE_TASK;
+			$widget_mode   = isset( $schedule['display']['widget_defaults']['render_mode'] )
+				? (string) $schedule['display']['widget_defaults']['render_mode']
+				: 'summary-card';
+
+			$summary = '';
+			$data    = array();
+			$render  = 'text';
+
+			if ( ! $success ) {
+				$summary = $error_msg ? (string) $error_msg : __( 'Schedule run failed.', 'mcp-ai-wpoos-pro' );
+				$render  = 'text';
+			} else {
+				switch ( $schedule_type ) {
+					case self::TYPE_ASSISTANT_RUN:
+						$response = isset( $action_log['assistant']['response'] ) ? (string) $action_log['assistant']['response'] : '';
+						$summary  = $response ? wp_trim_words( wp_strip_all_tags( $response ), 25, '…' ) : __( 'Assistant run completed.', 'mcp-ai-wpoos-pro' );
+						$data     = array(
+							'response'     => $response,
+							'assistant_id' => isset( $action_log['assistant']['assistant_id'] ) ? (int) $action_log['assistant']['assistant_id'] : 0,
+							'is_agentic'   => ! empty( $action_log['assistant']['is_agentic'] ),
+						);
+						$render   = 'markdown';
+						break;
+
+					case self::TYPE_WORKFLOW:
+						$steps   = isset( $action_log['steps'] ) && is_array( $action_log['steps'] ) ? $action_log['steps'] : array();
+						$summary = sprintf(
+							/* translators: %d: step count */
+							_n( '%d workflow step completed.', '%d workflow steps completed.', count( $steps ), 'mcp-ai-wpoos-pro' ),
+							count( $steps )
+						);
+						$data   = array(
+							'steps' => $steps,
+						);
+						$render = 'list';
+						break;
+
+					case self::TYPE_CHANNEL_BROADCAST:
+						$broadcast = isset( $action_log['broadcast'] ) && is_array( $action_log['broadcast'] ) ? $action_log['broadcast'] : array();
+						$channels  = isset( $broadcast['channels'] ) && is_array( $broadcast['channels'] ) ? $broadcast['channels'] : array();
+						$summary   = sprintf(
+							/* translators: %d: channel count */
+							_n( 'Broadcast delivered to %d channel.', 'Broadcast delivered to %d channels.', count( $channels ), 'mcp-ai-wpoos-pro' ),
+							count( $channels )
+						);
+						$data   = $broadcast;
+						$render = 'list';
+						break;
+
+					case self::TYPE_WORKFLOW_BUILDER:
+						$summary = __( 'Workflow builder run completed.', 'mcp-ai-wpoos-pro' );
+						$data    = array( 'workflow_builder_id' => isset( $action_log['workflow_builder_id'] ) ? (string) $action_log['workflow_builder_id'] : '' );
+						$render  = 'text';
+						break;
+
+					case self::TYPE_TASK:
+					default:
+						$summary = isset( $action_log['hook'] )
+							/* translators: %s: WordPress action hook */
+							? sprintf( __( 'Hook fired: %s', 'mcp-ai-wpoos-pro' ), (string) $action_log['hook'] )
+							: __( 'Task completed.', 'mcp-ai-wpoos-pro' );
+						$data   = $action_log;
+						$render = 'text';
+						break;
+				}
+			}
+
+			// If the widget defaults indicate a specific mode, honour it as the canonical render hint.
+			if ( $widget_mode ) {
+				$mode_to_render = array(
+					'summary-card' => $render,
+					'list'         => 'list',
+					'table'        => 'table',
+					'metric'       => 'metric',
+					'timeline'     => 'timeline',
+					'raw'          => 'text',
+				);
+				if ( isset( $mode_to_render[ $widget_mode ] ) ) {
+					$render = $mode_to_render[ $widget_mode ];
+				}
+			}
+
+			$envelope = array(
+				'summary'      => (string) $summary,
+				'data'         => is_array( $data ) ? $data : array(),
+				'render'       => $render,
+				'status'       => $success ? 'success' : 'failure',
+				'error'        => $success ? '' : (string) $error_msg,
+				'generated_at' => time(),
+			);
+
+			/**
+			 * Filter the structured result envelope before it is stored.
+			 *
+			 * Integrators can shape the envelope per schedule type — for instance,
+			 * an assistant_run that returns JSON can populate `data.items` so the
+			 * Scheduled Result widget renders a list.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array  $envelope      The envelope about to be stored.
+			 * @param array  $schedule      Schedule record.
+			 * @param array  $action_log    Dispatcher's structured action log.
+			 * @param bool   $success       Whether the run succeeded.
+			 */
+			return (array) apply_filters( 'wp_mcp_ai_pro_schedule_result_envelope', $envelope, $schedule, $action_log, $success );
+		}
+
+		/**
+		 * Persist a result envelope for a schedule.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param array  $envelope    Sanitized envelope.
+		 * @param array  $schedule    Schedule record (for retention).
+		 */
+		protected static function store_result_envelope( $schedule_id, array $envelope, array $schedule ) {
+			$results = self::load_results();
+
+			if ( ! isset( $results[ $schedule_id ] ) || ! is_array( $results[ $schedule_id ] ) ) {
+				$results[ $schedule_id ] = array();
+			}
+
+			$results[ $schedule_id ][] = $envelope;
+
+			$retention = isset( $schedule['display']['result_retention'] )
+				? (int) $schedule['display']['result_retention']
+				: self::DEFAULT_RESULT_RETENTION;
+			/** This filter is documented above. */
+			$retention = (int) apply_filters( 'wp_mcp_ai_pro_schedule_result_retention', $retention, $schedule_id, $schedule );
+			$retention = max( 1, min( 100, $retention ) );
+
+			if ( count( $results[ $schedule_id ] ) > $retention ) {
+				$results[ $schedule_id ] = array_slice( $results[ $schedule_id ], - $retention );
+			}
+
+			self::save_results( $results );
+
+			/**
+			 * Fires after a result envelope is stored.
+			 *
+			 * Observability / cache-bumping subscribers should listen here.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $schedule_id Schedule ID.
+			 * @param array  $envelope    The envelope that was stored.
+			 * @param array  $schedule    Schedule record at the time of recording.
+			 */
+			do_action( 'wp_mcp_ai_pro_schedule_result_recorded', $schedule_id, $envelope, $schedule );
+		}
+
+		/**
+		 * Return the latest result envelope for a schedule.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @return array|null Envelope or null if none recorded yet.
+		 */
+		public static function get_latest_result( $schedule_id ) {
+			$results = self::load_results();
+			$id      = (string) $schedule_id;
+			if ( ! isset( $results[ $id ] ) || ! is_array( $results[ $id ] ) || empty( $results[ $id ] ) ) {
+				return null;
+			}
+			$envelope = end( $results[ $id ] );
+			return is_array( $envelope ) ? $envelope : null;
+		}
+
+		/**
+		 * Return the last N result envelopes for a schedule (newest first).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param int    $limit       Maximum number of envelopes to return.
+		 * @return array Envelopes, newest first.
+		 */
+		public static function get_results( $schedule_id, $limit = 10 ) {
+			$results = self::load_results();
+			$id      = (string) $schedule_id;
+			if ( ! isset( $results[ $id ] ) || ! is_array( $results[ $id ] ) ) {
+				return array();
+			}
+			$slice = array_reverse( $results[ $id ] );
+			$limit = max( 1, min( 100, (int) $limit ) );
+			return array_slice( $slice, 0, $limit );
+		}
+
+		/**
+		 * Clear the result store for a schedule.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 */
+		public static function clear_results( $schedule_id ) {
+			$results = self::load_results();
+			unset( $results[ (string) $schedule_id ] );
+			self::save_results( $results );
+		}
+
+		/**
+		 * Trigger a synchronous "preview" run that only updates the result store,
+		 * never the history ring buffer. Used by the block editor's preview button.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @return array|WP_Error Envelope on success, WP_Error otherwise.
+		 */
+		public static function trigger_preview( $schedule_id ) {
+			$schedule = self::get_schedule( $schedule_id );
+			if ( ! $schedule ) {
+				return new WP_Error(
+					'not_found',
+					/* translators: %s: schedule ID */
+					sprintf( __( 'Schedule "%s" not found.', 'mcp-ai-wpoos-pro' ), $schedule_id )
+				);
+			}
+
+			$schedule_type = isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : self::TYPE_TASK;
+			$start         = microtime( true );
+			$action_log    = array(
+				'type'    => $schedule_type,
+				'preview' => true,
+			);
+			$success       = true;
+			$error_msg     = '';
+
+			try {
+				switch ( $schedule_type ) {
+					case self::TYPE_WORKFLOW:
+						$result = self::dispatch_workflow( $schedule, $schedule_id );
+						if ( is_wp_error( $result ) ) {
+							$success   = false;
+							$error_msg = $result->get_error_message();
+						} else {
+							$action_log['steps'] = is_array( $result ) ? $result : array();
+						}
+						break;
+					case self::TYPE_ASSISTANT_RUN:
+						$result = self::dispatch_assistant_run( $schedule, $schedule_id );
+						if ( is_wp_error( $result ) ) {
+							$success   = false;
+							$error_msg = $result->get_error_message();
+						} else {
+							$action_log['assistant'] = is_array( $result ) ? $result : array();
+						}
+						break;
+					default:
+						$success   = false;
+						$error_msg = __( 'Preview is only supported for workflow and assistant_run schedules.', 'mcp-ai-wpoos-pro' );
+						break;
+				}
+			} catch ( Throwable $e ) {
+				$success   = false;
+				$error_msg = $e->getMessage();
+			}
+
+			$duration               = round( microtime( true ) - $start, 3 );
+			$action_log['duration'] = $duration;
+
+			$envelope             = self::build_result_envelope( $schedule, $action_log, $success, $error_msg );
+			$envelope['preview']  = true;
+			$envelope['duration'] = $duration;
+
+			self::store_result_envelope( $schedule_id, $envelope, $schedule );
+
+			return $envelope;
+		}
+
+		/**
+		 * Public-facing redaction: trim a stored envelope to allow-listed fields.
+		 *
+		 * Used by the REST controller and the renderer when surfacing results to
+		 * unauthenticated visitors. Fields not on the allow-list are removed.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $envelope      The full stored envelope.
+		 * @param array $schedule      Schedule record.
+		 * @return array Redacted envelope.
+		 */
+		public static function redact_envelope_for_public( array $envelope, array $schedule ) {
+			$public_render = ! empty( $schedule['display']['public_render'] );
+			if ( ! $public_render ) {
+				return array(
+					'summary'      => '',
+					'data'         => array(),
+					'render'       => 'text',
+					'status'       => 'forbidden',
+					'error'        => '',
+					'generated_at' => isset( $envelope['generated_at'] ) ? (int) $envelope['generated_at'] : 0,
+				);
+			}
+
+			$allowed = isset( $schedule['display']['public_fields'] ) && is_array( $schedule['display']['public_fields'] )
+				? $schedule['display']['public_fields']
+				: array();
+
+			// summary + render hint + generated_at are always public when public_render is on.
+			$redacted = array(
+				'summary'      => isset( $envelope['summary'] ) ? (string) $envelope['summary'] : '',
+				'data'         => array(),
+				'render'       => isset( $envelope['render'] ) ? (string) $envelope['render'] : 'text',
+				'status'       => isset( $envelope['status'] ) ? (string) $envelope['status'] : 'success',
+				'error'        => '',
+				'generated_at' => isset( $envelope['generated_at'] ) ? (int) $envelope['generated_at'] : 0,
+			);
+
+			// Apply allow-list to the data tree. Each allowed entry is a dotted path; we copy that path through.
+			foreach ( $allowed as $path ) {
+				if ( 'summary' === $path ) {
+					continue; // Already included.
+				}
+				$value = self::extract_path( $envelope, $path );
+				if ( null !== $value ) {
+					self::assign_path( $redacted, $path, $value );
+				}
+			}
+
+			/**
+			 * Last-chance filter to redact the public envelope.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array $redacted Redacted envelope.
+			 * @param array $envelope Full envelope.
+			 * @param array $schedule Schedule record.
+			 */
+			return (array) apply_filters( 'wp_mcp_ai_pro_schedule_public_result', $redacted, $envelope, $schedule );
+		}
+
+		/**
+		 * Walk a dotted path into a nested array. Returns null when any segment is missing.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $source Source array.
+		 * @param string $path   Dotted path (e.g. "data.items").
+		 * @return mixed Value at the path, or null if not present.
+		 */
+		protected static function extract_path( array $source, $path ) {
+			$segments = explode( '.', (string) $path );
+			$current  = $source;
+			foreach ( $segments as $segment ) {
+				if ( '' === $segment ) {
+					return null;
+				}
+				if ( ! is_array( $current ) || ! array_key_exists( $segment, $current ) ) {
+					return null;
+				}
+				$current = $current[ $segment ];
+			}
+			return $current;
+		}
+
+		/**
+		 * Assign a value into a dotted path within a nested array (creating sub-arrays as needed).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $target Reference to the array to mutate.
+		 * @param string $path   Dotted path.
+		 * @param mixed  $value  Value to assign.
+		 */
+		protected static function assign_path( array &$target, $path, $value ) {
+			$segments = explode( '.', (string) $path );
+			$ref      = &$target;
+			foreach ( $segments as $segment ) {
+				if ( '' === $segment ) {
+					return;
+				}
+				if ( ! isset( $ref[ $segment ] ) || ! is_array( $ref[ $segment ] ) ) {
+					$ref[ $segment ] = array();
+				}
+				$ref = &$ref[ $segment ];
+			}
+			$ref = $value;
+		}
+
+		/**
+		 * Load the result-store from options (with cache).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return array Results keyed by schedule ID.
+		 */
+		protected static function load_results() {
+			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+				$cached = WP_MCP_AI_Cache_Helper::get( 'pro_schedule_results' );
+				if ( false !== $cached && is_array( $cached ) ) {
+					return $cached;
+				}
+			}
+			$data    = get_option( self::RESULTS_OPTION, array() );
+			$results = is_array( $data ) ? $data : array();
+			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+				WP_MCP_AI_Cache_Helper::set( 'pro_schedule_results', $results, 30 );
+			}
+			return $results;
+		}
+
+		/**
+		 * Persist the result-store and invalidate the cache.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $results Results array to store.
+		 */
+		protected static function save_results( array $results ) {
+			$existing = get_option( self::RESULTS_OPTION, null );
+			if ( null === $existing ) {
+				add_option( self::RESULTS_OPTION, $results, '', 'no' );
+			} else {
+				update_option( self::RESULTS_OPTION, $results );
+			}
+			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+				WP_MCP_AI_Cache_Helper::delete( 'pro_schedule_results' );
 			}
 		}
 	}

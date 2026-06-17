@@ -1,5 +1,5 @@
 {
-  "count": 260,
+  "count": 264,
   "professions": [
     {
       "slug": "accountant",
@@ -65,6 +65,11 @@
       "slug": "applied_statistician",
       "title": "Applied Statistician",
       "category": "technical"
+    },
+    {
+      "slug": "asycuda_specialist",
+      "title": "ASYCUDA Specialist",
+      "category": "advisory"
     },
     {
       "slug": "aquaculture_specialist",
@@ -242,6 +247,11 @@
       "category": "other"
     },
     {
+      "slug": "compliance_documentation_manager",
+      "title": "Compliance Documentation Manager",
+      "category": "legal"
+    },
+    {
       "slug": "compliance_officer",
       "title": "Compliance Officer",
       "category": "legal"
@@ -280,6 +290,11 @@
       "slug": "corporate_trainer",
       "title": "Corporate Trainer",
       "category": "other"
+    },
+    {
+      "slug": "cosmetics_regulatory_specialist",
+      "title": "Cosmetics Regulatory Specialist",
+      "category": "legal"
     },
     {
       "slug": "correctional_officer",
@@ -880,6 +895,11 @@
       "slug": "network_administrator",
       "title": "Network Administrator",
       "category": "technical"
+    },
+    {
+      "slug": "nmra_registration_officer",
+      "title": "NMRA Registration Officer",
+      "category": "healthcare"
     },
     {
       "slug": "nurse_practitioner",

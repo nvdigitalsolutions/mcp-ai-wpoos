@@ -287,4 +287,67 @@ class Test_Unified_Team_Chat_Fix extends WP_UnitTestCase {
 		$this->assertEquals( 'user', $captured_messages[1]['role'] );
 		$this->assertEquals( 'Hello', $captured_messages[1]['content'] );
 	}
+
+	/**
+	 * Test unified team requests return the standard chat-client payload shape.
+	 */
+	public function test_unified_team_request_returns_chat_client_payload_shape() {
+		$profession_one = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Architect',
+				'post_status' => 'publish',
+			)
+		);
+		$profession_two = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Engineer',
+				'post_status' => 'publish',
+			)
+		);
+
+		update_post_meta( $profession_one, '_wp_mcp_ai_profession_provider', 'openai' );
+		update_post_meta( $profession_one, '_wp_mcp_ai_profession_model', 'gpt-4' );
+		update_post_meta( $profession_two, '_wp_mcp_ai_profession_provider', 'openai' );
+		update_post_meta( $profession_two, '_wp_mcp_ai_profession_model', 'gpt-4' );
+
+		$team_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_team',
+				'post_title'  => 'Delivery Team',
+				'post_status' => 'publish',
+			)
+		);
+
+		update_post_meta( $team_id, '_wp_mcp_ai_team_members', array( $profession_one, $profession_two ) );
+		update_post_meta( $team_id, '_wp_mcp_ai_team_result_aggregation', 'consensus' );
+		update_post_meta( $team_id, '_wp_mcp_ai_team_orchestration_mode', 'sequential' );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-client' );
+		$request->set_param( 'assistant_id', 'unified_team_' . $team_id );
+		$request->set_param(
+			'messages',
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Plan the launch.',
+				),
+			)
+		);
+
+		$response = $this->rest_controller->handle_chat_request( $request );
+
+		$this->assertNotWPError( $response );
+
+		$data = $response->get_data();
+
+		$this->assertSame( 'unified_team_' . $team_id, $data['assistant_id'] );
+		$this->assertArrayHasKey( 'data', $data );
+		$this->assertArrayHasKey( 'choices', $data['data'] );
+		$this->assertArrayHasKey( 'message', $data['data']['choices'][0] );
+		$this->assertSame( 'assistant', $data['data']['choices'][0]['message']['role'] );
+		$this->assertStringContainsString( 'Team Response', $data['data']['choices'][0]['message']['content'] );
+		$this->assertSame( $team_id, $data['data']['choices'][0]['message']['metadata']['team_id'] );
+	}
 }

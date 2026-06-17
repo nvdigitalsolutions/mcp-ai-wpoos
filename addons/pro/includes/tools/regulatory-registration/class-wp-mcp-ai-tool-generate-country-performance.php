@@ -82,6 +82,13 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -116,7 +123,7 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 		$query_args = array(
 			'post_type'      => 'mcp_ai_registration',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'generate_country_performance', 0, 1000 ) : 1000,
 		);
 
 		// Add country filter.

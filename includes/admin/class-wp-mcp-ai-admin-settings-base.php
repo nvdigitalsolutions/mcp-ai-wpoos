@@ -25,6 +25,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 	 */
 	class WP_MCP_AI_Admin_Settings_Base {
 		const DEFAULT_MEMORY_MAX_FILE_BYTES  = 5242880; // 5 MB.
+		const MASKED_SECRET_PLACEHOLDER      = '**************';
 		const OPTION_NAME                    = 'wp_mcp_ai_settings';
 		const SETTINGS_GROUP                 = 'wp_mcp_ai_settings_group';
 		const PAGE_SLUG                      = 'wp-mcp-ai-settings';
@@ -80,8 +81,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 				// Sanitize based on key patterns and types.
 				// Note: Using strpos() for PHP 7.4 compatibility (str_contains() requires PHP 8.0+).
-				if ( false !== strpos( $key, '_api_key' ) || false !== strpos( $key, '_api_token' ) || false !== strpos( $key, '_secret' ) ) {
-					$sanitized[ $key ] = sanitize_text_field( $value );
+				if ( self::is_sensitive_setting_key( $key ) ) {
+					$current_value     = isset( $current[ $key ] ) ? $current[ $key ] : '';
+					$sanitized[ $key ] = self::sanitize_sensitive_setting_value( $value, $current_value );
 				} elseif ( false !== strpos( $key, '_email' ) ) {
 					$sanitized[ $key ] = sanitize_email( $value );
 				} elseif ( false !== strpos( $key, '_url' ) || false !== strpos( $key, '_endpoint' ) ) {
@@ -191,7 +193,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get available providers dynamically from Model Config.
-			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -245,6 +247,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 			$settings = wp_parse_args( $saved, $defaults );
 
+			foreach ( $settings as $key => $val ) {
+				if ( self::is_sensitive_setting_key( $key ) ) {
+					$settings[ $key ] = self::maybe_decrypt_sensitive_setting_value( $val );
+				}
+			}
+
 			// Ensure chat_colors is properly merged.
 			if ( ! isset( $settings['chat_colors'] ) || ! is_array( $settings['chat_colors'] ) ) {
 				$settings['chat_colors'] = self::get_default_chat_colors();
@@ -265,13 +273,141 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		}
 
 		/**
+		 * Determine whether a setting key stores sensitive credentials.
+		 *
+		 * @param string $key Setting key.
+		 * @return bool
+		 */
+		public static function is_sensitive_setting_key( $key ) {
+			return in_array( $key, self::get_sensitive_fields(), true )
+				|| false !== strpos( $key, '_api_key' )
+				|| false !== strpos( $key, '_api_token' )
+				|| false !== strpos( $key, '_secret' )
+				|| false !== strpos( $key, '_refresh_token' );
+		}
+
+		/**
+		 * Sanitize and encrypt a sensitive setting value.
+		 *
+		 * @param mixed  $value         Submitted value.
+		 * @param string $current_value Existing stored value.
+		 * @return string
+		 */
+		public static function sanitize_sensitive_setting_value( $value, $current_value = '' ) {
+			$sanitized_value = sanitize_text_field( $value );
+
+			if ( self::MASKED_SECRET_PLACEHOLDER === $sanitized_value ) {
+				return is_string( $current_value ) ? $current_value : '';
+			}
+
+			if ( '' === $sanitized_value || ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
+				return $sanitized_value;
+			}
+
+			$encrypted_value = WP_MCP_AI_Encryption::encrypt( $sanitized_value );
+
+			if ( false !== $encrypted_value && '' !== $encrypted_value ) {
+				return $encrypted_value;
+			}
+
+			return $sanitized_value;
+		}
+
+		/**
+		 * Decrypt a sensitive setting value when possible.
+		 *
+		 * @param mixed $value Stored value.
+		 * @return mixed
+		 */
+		public static function maybe_decrypt_sensitive_setting_value( $value ) {
+			if ( empty( $value ) || ! is_string( $value ) || ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
+				return $value;
+			}
+
+			$decrypted_value = WP_MCP_AI_Encryption::decrypt( $value );
+
+			if ( false !== $decrypted_value ) {
+				return $decrypted_value;
+			}
+
+			return $value;
+		}
+
+		/**
+		 * Return the masked placeholder for a saved sensitive value.
+		 *
+		 * Handles both plaintext and encrypted (v2: base64) stored values.
+		 * When the value is non-empty (or is an encrypted payload), the placeholder
+		 * is returned so the raw secret never appears in UI output.
+		 *
+		 * @param mixed $value Stored value (may be encrypted or plaintext).
+		 * @return string
+		 */
+		public static function mask_sensitive_setting_value( $value ) {
+			// Treat the value as non-empty when it is a non-empty string.
+			// Use strlen() rather than empty() so that "0" is treated as a
+			// real secret value rather than being silently dropped.
+			if ( ! is_string( $value ) || 0 === strlen( $value ) ) {
+				return '';
+			}
+
+			return self::MASKED_SECRET_PLACEHOLDER;
+		}
+
+		/**
+		 * Get the list of sensitive fields that should be encrypted.
+		 *
+		 * @return array
+		 */
+		public static function get_sensitive_fields() {
+			return array(
+				'openai_api_key',
+				'gemini_api_key',
+				'google_maps_api_key',
+				'lm_studio_api_key',
+				'brave_search_api_key',
+				'tavily_api_key',
+				'exa_api_key',
+				'perplexity_api_key',
+				'mubert_api_key',
+				'ita_tariff_api_key',
+				'crawl4ai_api_key',
+				'cloudflare_api_token',
+				'nvidia_api_key',
+				'cloudways_api_key',
+				'cloudways_access_token',
+				'mailjet_api_key',
+				'mailjet_api_secret',
+				'brevo_api_key',
+				'brevo_webhook_secret',
+				'mailgun_api_key',
+				'quickbooks_api_key',
+				'gmail_client_secret',
+				'gmail_refresh_token',
+				'auth0_management_client_secret',
+				'mesh_inbound_api_key',
+				'digitalocean_api_key',
+				'isams_api_key',
+				'isams_api_secret',
+				'webchat_api_key',
+				'socs_api_key',
+				'yahoo_client_secret',
+				'google_drive_client_secret',
+				'google_drive_refresh_token',
+				'kimi_api_key',
+				'anthropic_api_key',
+				'huggingface_api_key',
+			);
+		}
+
+		/**
 		 * Returns the option defaults.
 		 *
 		 * @return array
 		 */
 		public static function get_default_settings() {
 			// Get dynamic provider list from Model Config.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -280,244 +416,264 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			}
 
 			return array(
-				'openai_api_key'                       => '',
-				'openai_api_key_type'                  => 'standard',
-				'openai_project_id'                    => '',
-				'openai_base_url'                      => '',
-				'gemini_api_key'                       => '',
-				'gemini_api_key_type'                  => 'standard',
-				'gemini_base_url'                      => '',
-				'anthropic_api_key_type'               => 'standard',
-				'anthropic_base_url'                   => '',
-				'ollama_endpoint_url'                  => '',
-				'ollama_model'                         => '',
+				// ── General tab defaults ──
+				'openai_api_key'                        => '',
+				'openai_api_key_type'                   => 'standard',
+				'openai_project_id'                     => '',
+				'openai_base_url'                       => '',
+				'gemini_api_key'                        => '',
+				'gemini_api_key_type'                   => 'standard',
+				'gemini_base_url'                       => '',
+				'anthropic_api_key_type'                => 'standard',
+				'anthropic_base_url'                    => '',
+				'ollama_endpoint_url'                   => '',
+				'ollama_model'                          => '',
 				'ollama_use_openai_compatible_endpoint' => false,
-				'lm_studio_endpoint_url'               => '',
-				'lm_studio_model'                      => '',
-				'default_assistant'                    => 0,
-				'enable_logging'                       => false,
-				'markup_enabled'                       => true,
-				'default_model'                        => 'gpt-4.1',
-				'default_gemini_model'                 => 'gemini-2.5-flash',
-				'default_provider'                     => 'openai',
-				'provider_priority_list'               => $provider_list,
-				'web_search_provider'                  => 'duckduckgo',
-				'brave_search_api_key'                 => '',
-				'tavily_api_key'                       => '',
-				'exa_api_key'                          => '',
-				'perplexity_api_key'                   => '',
-				'gemini_thinking_budget_tokens'        => 0,
-				'google_maps_api_key'                  => '',
-				'ita_tariff_api_key'                   => '',
-				'request_timeout'                      => 200,
-				'memory_max_file_bytes'                => self::DEFAULT_MEMORY_MAX_FILE_BYTES,
-				'auth0_domain'                         => '',
-				'auth0_audience'                       => '',
-				'auth0_required_scope'                 => '',
-				'enable_auth0_github_bridge'           => false,
-				'auth0_management_client_id'           => '',
-				'auth0_management_client_secret'       => '',
-				'enable_wordpress_gravatar_bridge'     => false,
-				'wordpress_gravatar_userinfo_endpoint' => '',
-				'enable_simple_jwt_login'              => false,
-				'delete_on_uninstall'                  => false,
-				'crawl4ai_base_url'                    => '',
-				'crawl4ai_api_key'                     => '',
-				'cloudflare_api_token'                 => '',
-				'cloudflare_account_id'                => '',
-				'cloudflare_model'                     => '@cf/meta/llama-4-scout-17b-16e-instruct',
-				'cloudflare_image_model'               => '@cf/black-forest-labs/flux-2-dev',
-				'cloudflare_image_width'               => 1024,
-				'cloudflare_image_height'              => 1024,
-				'cloudflare_image_num_steps'           => 20,
-				'cloudflare_image_guidance'            => 7.5,
-				'cloudflare_zone_id'                   => '',
-				'enable_varnish_purge'                 => false,
-				'cloudways_email'                      => '',
-				'cloudways_api_key'                    => '',
-				'cloudways_server_id'                  => '',
-				'cloudways_app_id'                     => '',
+				'lm_studio_endpoint_url'                => '',
+				'lm_studio_model'                       => '',
+				'lm_studio_api_key'                     => '',
+				'lm_studio_use_native_api'              => false,
+				'default_assistant'                     => 0,
+				'enable_logging'                        => false,
+				'markup_enabled'                        => true,
+				'default_model'                         => 'gpt-4.1',
+				'default_gemini_model'                  => 'gemini-2.5-flash',
+				'default_provider'                      => 'openai',
+				'provider_priority_list'                => $provider_list,
+				'web_search_provider'                   => 'duckduckgo',
+				'brave_search_api_key'                  => '',
+				'tavily_api_key'                        => '',
+				'exa_api_key'                           => '',
+				'perplexity_api_key'                    => '',
+				'gemini_thinking_budget_tokens'         => 0,
+				'google_maps_api_key'                   => '',
+				'ita_tariff_api_key'                    => '',
+				'request_timeout'                       => 200,
+				'memory_max_file_bytes'                 => self::DEFAULT_MEMORY_MAX_FILE_BYTES,
+				'auth0_domain'                          => '',
+				'auth0_audience'                        => '',
+				'auth0_required_scope'                  => '',
+				'enable_auth0_github_bridge'            => false,
+				'auth0_management_client_id'            => '',
+				'auth0_management_client_secret'        => '',
+				'enable_wordpress_gravatar_bridge'      => false,
+				'wordpress_gravatar_userinfo_endpoint'  => '',
+				'enable_simple_jwt_login'               => false,
+				'delete_on_uninstall'                   => false,
+				'crawl4ai_base_url'                     => '',
+				'crawl4ai_api_key'                      => '',
+				'cloudflare_api_token'                  => '',
+				'cloudflare_account_id'                 => '',
+				'cloudflare_model'                      => '@cf/meta/llama-4-scout-17b-16e-instruct',
+				'cloudflare_image_model'                => '@cf/black-forest-labs/flux-2-dev',
+				'cloudflare_image_width'                => 1024,
+				'cloudflare_image_height'               => 1024,
+				'cloudflare_image_num_steps'            => 20,
+				'cloudflare_image_guidance'             => 7.5,
+				'cloudflare_zone_id'                    => '',
+				'enable_varnish_purge'                  => false,
+				'cloudways_email'                       => '',
+				'cloudways_api_key'                     => '',
+				'cloudways_server_id'                   => '',
+				'cloudways_app_id'                      => '',
 				// Hugging Face Provider settings.
-				'enable_huggingface'                   => false,
-				'huggingface_api_key'                  => '',
-				'huggingface_endpoint_url'             => 'https://router.huggingface.co/v1',
-				'huggingface_model'                    => '',
+				'enable_huggingface'                    => false,
+				'huggingface_api_key'                   => '',
+				'huggingface_endpoint_url'              => 'https://router.huggingface.co/v1',
+				'huggingface_model'                     => '',
 				// Hugging Face Datasets settings.
-				'enable_huggingface_datasets'          => true,
-				'huggingface_datasets_api_token'       => '',
-				'huggingface_datasets_cache_ttl'       => 3600,
-				'huggingface_datasets_default_limit'   => 10,
+				'enable_huggingface_datasets'           => true,
+				'huggingface_datasets_api_token'        => '',
+				'huggingface_datasets_cache_ttl'        => 3600,
+				'huggingface_datasets_default_limit'    => 10,
 				// NVIDIA NIM Provider settings.
-				'enable_nvidia'                        => false,
-				'nvidia_api_key'                       => '',
-				'nvidia_endpoint_url'                  => 'https://integrate.api.nvidia.com/v1',
-				'nvidia_model'                         => 'meta/llama-3.1-8b-instruct',
+				'enable_nvidia'                         => false,
+				'nvidia_api_key'                        => '',
+				'nvidia_endpoint_url'                   => 'https://integrate.api.nvidia.com/v1',
+				'nvidia_model'                          => 'meta/llama-3.1-8b-instruct',
 				// RabbitMQ settings (Cloudways integration).
-				'rabbitmq_enabled'                     => false,
-				'rabbitmq_host'                        => 'localhost',
-				'rabbitmq_port'                        => 5672,
-				'rabbitmq_username'                    => 'guest',
-				'rabbitmq_password'                    => '',
-				'rabbitmq_vhost'                       => '/',
-				'rabbitmq_queue_prefix'                => 'wp_mcp_ai',
-				'rabbitmq_priority_queues'             => true,
-				'rabbitmq_parallel_execution'          => false,
-				'rabbitmq_worker_timeout'              => 300,
-				'rabbitmq_max_retries'                 => 3,
-				'rabbitmq_retry_delay'                 => 1000,
-				'rabbitmq_dead_letter_enabled'         => true,
-				'rabbitmq_dead_letter_ttl'             => 86400,
-				'mailjet_api_key'                      => '',
-				'mailjet_api_secret'                   => '',
-				'mailjet_from_email'                   => '',
-				'mailjet_from_name'                    => '',
-				'mailjet_webhook_secret'               => '',
-				'brevo_api_key'                        => '',
-				'brevo_from_email'                     => '',
-				'brevo_from_name'                      => '',
-				'brevo_webhook_secret'                 => '',
-				'mailgun_api_key'                      => '',
-				'mailgun_domain'                       => '',
-				'mailgun_region'                       => 'us',
-				'mailgun_from_email'                   => '',
-				'mailgun_from_name'                    => '',
-				'removebg_api_key'                     => '',
-				'quickbooks_company_id'                => '',
-				'quickbooks_api_key'                   => '',
-				'quickbooks_client_id'                 => '',
-				'quickbooks_client_secret'             => '',
-				'google_analytics_property_id'         => '',
-				'google_analytics_credentials'         => '',
-				'google_analytics_credentials_json'    => '',
-				'meta_access_token'                    => '',
-				'meta_app_id'                          => '',
-				'meta_app_secret'                      => '',
-				'meta_business_account_id'             => '',
-				'tiktok_access_token'                  => '',
-				'tiktok_client_key'                    => '',
-				'tiktok_client_secret'                 => '',
-				'gmail_client_id'                      => '',
-				'gmail_client_secret'                  => '',
-				'gmail_refresh_token'                  => '',
-				'gmail_user_email'                     => '',
-				'github_client_id'                     => '',
-				'github_client_secret'                 => '',
-				'github_access_token'                  => '',
-				'github_username'                      => '',
-				'group_email_capability'               => 'publish_posts',
-				'group_email_max_recipients'           => 100,
-				'openai_image_model'                   => 'gpt-image-2',
-				'openai_image_size'                    => '1024x1024',
-				'openai_image_quality'                 => 'medium',
-				'openai_image_response_format'         => 'b64_json',
-				'openai_speech_model'                  => 'gpt-4o-mini-tts',
-				'openai_speech_voice'                  => 'alloy',
-				'openai_speech_format'                 => 'mp3',
-				'openai_transcribe_model'              => 'gpt-4o-mini-transcribe',
-				'openai_transcribe_response_format'    => 'verbose_json',
-				'openai_transcribe_language'           => '',
-				'openai_transcribe_temperature'        => '',
-				'openai_embedding_model'               => 'text-embedding-3-small',
-				'gemini_image_model'                   => 'gemini-2.5-flash-image',
-				'gemini_image_aspect_ratio'            => '1:1',
-				'gemini_image_mime_type'               => 'image/png',
-				'max_history_messages'                 => 8,
-				'chat_colors'                          => self::get_default_chat_colors(),
-				'allowed_image_mimes'                  => array(),
-				'allowed_file_mimes'                   => array(),
+				'rabbitmq_enabled'                      => false,
+				'rabbitmq_host'                         => 'localhost',
+				'rabbitmq_port'                         => 5672,
+				'rabbitmq_username'                     => 'guest',
+				'rabbitmq_password'                     => '',
+				'rabbitmq_vhost'                        => '/',
+				'rabbitmq_queue_prefix'                 => 'wp_mcp_ai',
+				'rabbitmq_priority_queues'              => true,
+				'rabbitmq_parallel_execution'           => false,
+				'rabbitmq_worker_timeout'               => 300,
+				'rabbitmq_max_retries'                  => 3,
+				'rabbitmq_retry_delay'                  => 1000,
+				'rabbitmq_dead_letter_enabled'          => true,
+				'rabbitmq_dead_letter_ttl'              => 86400,
+				'mailjet_api_key'                       => '',
+				'mailjet_api_secret'                    => '',
+				'mailjet_from_email'                    => '',
+				'mailjet_from_name'                     => '',
+				'mailjet_webhook_secret'                => '',
+				'brevo_api_key'                         => '',
+				'brevo_from_email'                      => '',
+				'brevo_from_name'                       => '',
+				'brevo_webhook_secret'                  => '',
+				'mailgun_api_key'                       => '',
+				'mailgun_domain'                        => '',
+				'mailgun_region'                        => 'us',
+				'mailgun_from_email'                    => '',
+				'mailgun_from_name'                     => '',
+				'removebg_api_key'                      => '',
+				'quickbooks_company_id'                 => '',
+				'quickbooks_api_key'                    => '',
+				'quickbooks_client_id'                  => '',
+				'quickbooks_client_secret'              => '',
+				'google_analytics_property_id'          => '',
+				'google_analytics_credentials'          => '',
+				'google_analytics_credentials_json'     => '',
+				'meta_access_token'                     => '',
+				'meta_app_id'                           => '',
+				'meta_app_secret'                       => '',
+				'meta_business_account_id'              => '',
+				'tiktok_access_token'                   => '',
+				'tiktok_client_key'                     => '',
+				'tiktok_client_secret'                  => '',
+				'gmail_client_id'                       => '',
+				'gmail_client_secret'                   => '',
+				'gmail_refresh_token'                   => '',
+				'gmail_user_email'                      => '',
+				'github_client_id'                      => '',
+				'github_client_secret'                  => '',
+				'github_access_token'                   => '',
+				'github_username'                       => '',
+				'group_email_capability'                => 'publish_posts',
+				'group_email_max_recipients'            => 100,
+				'openai_image_model'                    => 'gpt-image-2',
+				'openai_image_size'                     => '1024x1024',
+				'openai_image_quality'                  => 'medium',
+				'openai_image_response_format'          => 'b64_json',
+				'openai_speech_model'                   => 'gpt-4o-mini-tts',
+				'openai_speech_voice'                   => 'alloy',
+				'openai_speech_format'                  => 'mp3',
+				'openai_transcribe_model'               => 'gpt-4o-mini-transcribe',
+				'openai_transcribe_response_format'     => 'verbose_json',
+				'openai_transcribe_language'            => '',
+				'openai_transcribe_temperature'         => '',
+				'openai_embedding_model'                => 'text-embedding-3-small',
+				'gemini_image_model'                    => 'gemini-2.5-flash-image',
+				'gemini_image_aspect_ratio'             => '1:1',
+				'gemini_image_mime_type'                => 'image/png',
+				'max_history_messages'                  => 8,
+				'chat_colors'                           => self::get_default_chat_colors(),
+				'allowed_image_mimes'                   => array(),
+				'allowed_file_mimes'                    => array(),
 				// Chat Client Section settings.
-				'chat_theme'                           => 'light',
-				'chat_primary_color'                   => '',
-				'chat_user_bubble_color'               => '',
-				'chat_assistant_bubble_color'          => '',
-				'chat_border_radius'                   => 12,
-				'chat_font_size'                       => 14,
-				'chat_show_timestamps'                 => true,
-				'chat_show_avatars'                    => true,
-				'chat_compact_mode'                    => false,
-				'chat_max_history_display'             => 50,
-				'chat_message_delay'                   => 300,
-				'chat_enable_typing_indicator'         => true,
-				'chat_auto_scroll'                     => true,
-				'chat_enable_markdown'                 => true,
-				'chat_enable_code_highlighting'        => true,
-				'chat_persist_history'                 => true,
-				'chat_welcome_message'                 => '',
-				'chat_placeholder_text'                => '',
-				'chat_send_button_text'                => '',
-				'show_usage_costs'                     => false,
-				'show_capability_flags'                => false,
-				'chat_enable_copy_button'              => true,
-				'chat_enable_save_button'              => true,
-				'chat_enable_delete_button'            => true,
-				'chat_enable_speech_button'            => true,
-				'chat_enable_transcribe_button'        => true,
-				'chat_enable_file_upload'              => true,
-				'chat_enable_tool_shortcuts'           => true,
-				'chat_enable_search'                   => true,
-				'chat_enable_export'                   => true,
-				'chat_enable_regenerate'               => true,
-				'chat_allowed_file_types'              => '',
-				'chat_max_file_size_mb'                => 10,
-				'chat_preset_applied'                  => '',
-				'chat_llm_sanitize_level'              => 'moderate',
-				'chat_llm_max_response_length'         => 0,
-				'chat_llm_show_3_results_buttons'      => false,
-				'chat_llm_result_button_1_label'       => '',
-				'chat_llm_result_button_1_prompt'      => '',
-				'chat_llm_result_button_2_label'       => '',
-				'chat_llm_result_button_2_prompt'      => '',
-				'chat_llm_result_button_3_label'       => '',
-				'chat_llm_result_button_3_prompt'      => '',
-				'rest_enable_assistant_list'           => true,
-				'rest_enable_assistant_create'         => false,
-				'rest_enable_assistant_delete'         => false,
-				'sse_enable_post_method'               => false,
-				'enable_high_token_model_switch'       => true,
-				'high_token_fallback_model'            => 'gemini-2.5-flash',
-				'openai_fallback_model'                => '',
-				'anthropic_fallback_model'             => '',
-				'gemini_fallback_model'                => '',
-				'enable_mesh'                          => false,
-				'mesh_inbound_api_key'                 => '',
-				'mesh_peer_sites'                      => array(),
-				'enable_federation'                    => false,
-				'enable_federation_directory'          => false,
-				'federation_regions'                   => 'global',
-				'federation_data_tags'                 => '',
-				'federation_qps'                       => 5,
-				'federation_burst'                     => 10,
-				'federation_jwks_keys'                 => array(),
-				'federation_price_hints'               => array(),
+				'chat_theme'                            => 'light',
+				'chat_primary_color'                    => '',
+				'chat_user_bubble_color'                => '',
+				'chat_assistant_bubble_color'           => '',
+				'chat_border_radius'                    => 12,
+				'chat_font_size'                        => 14,
+				'chat_show_timestamps'                  => true,
+				'chat_show_avatars'                     => true,
+				'chat_compact_mode'                     => false,
+				'chat_max_history_display'              => 50,
+				'chat_message_delay'                    => 300,
+				'chat_enable_typing_indicator'          => true,
+				'chat_auto_scroll'                      => true,
+				'chat_enable_markdown'                  => true,
+				'chat_enable_code_highlighting'         => true,
+				'chat_persist_history'                  => true,
+				'chat_welcome_message'                  => '',
+				'chat_placeholder_text'                 => '',
+				'chat_send_button_text'                 => '',
+				'show_usage_costs'                      => false,
+				'show_capability_flags'                 => false,
+				'chat_enable_copy_button'               => true,
+				'chat_enable_save_button'               => true,
+				'chat_enable_delete_button'             => true,
+				'chat_enable_speech_button'             => true,
+				'chat_enable_transcribe_button'         => true,
+				'chat_enable_file_upload'               => true,
+				'chat_enable_tool_shortcuts'            => true,
+				'chat_enable_search'                    => true,
+				'chat_enable_export'                    => true,
+				'chat_enable_regenerate'                => true,
+				'chat_allowed_file_types'               => '',
+				'chat_max_file_size_mb'                 => 10,
+				'chat_preset_applied'                   => '',
+				'chat_llm_sanitize_level'               => 'moderate',
+				'chat_llm_max_response_length'          => 0,
+				'chat_llm_show_3_results_buttons'       => false,
+				'chat_llm_result_button_1_label'        => '',
+				'chat_llm_result_button_1_prompt'       => '',
+				'chat_llm_result_button_2_label'        => '',
+				'chat_llm_result_button_2_prompt'       => '',
+				'chat_llm_result_button_3_label'        => '',
+				'chat_llm_result_button_3_prompt'       => '',
+				'rest_enable_assistant_list'            => true,
+				'rest_enable_assistant_create'          => false,
+				'rest_enable_assistant_delete'          => false,
+				'sse_enable_post_method'                => false,
+				'enable_high_token_model_switch'        => true,
+				'high_token_fallback_model'             => 'gemini-2.5-flash',
+				'openai_fallback_model'                 => '',
+				'anthropic_fallback_model'              => '',
+				'gemini_fallback_model'                 => '',
+				'enable_mesh'                           => false,
+				'mesh_inbound_api_key'                  => '',
+				'mesh_peer_sites'                       => array(),
+				'enable_federation'                     => false,
+				'enable_federation_directory'           => false,
+				'federation_regions'                    => 'global',
+				'federation_data_tags'                  => '',
+				'federation_qps'                        => 5,
+				'federation_burst'                      => 10,
+				'federation_jwks_keys'                  => array(),
+				'federation_price_hints'                => array(),
 				// A2A Protocol settings.
-				'enable_a2a_server'                    => false,
-				'a2a_exposed_assistants'               => array(),
-				'a2a_enable_push_notifications'        => false,
-				'enable_a2a_client'                    => false,
-				'a2a_default_auth_type'                => 'none',
-				'a2a_default_auth_token'               => '',
+				'enable_a2a_server'                     => false,
+				'a2a_exposed_assistants'                => array(),
+				'a2a_enable_push_notifications'         => false,
+				'enable_a2a_client'                     => false,
+				'a2a_default_auth_type'                 => 'none',
+				'a2a_default_auth_token'                => '',
 				// Orchestration Layer settings - defaults match "Balanced" preset.
-				'orchestration_preset'                 => 'custom',
-				'enable_budget_management'             => true,
-				'enable_predictive_optimization'       => true,
-				'enable_capability_gating'             => true,
-				'enable_cron_orchestration'            => true,
-				'enable_auto_async_execution'          => true,
-				'cron_job_retention_period'            => '24',
-				'memory_warning_threshold'             => 70,
-				'memory_critical_threshold'            => 85,
-				'error_rate_warning_threshold'         => 5,
-				'error_rate_critical_threshold'        => 10,
-				'high_priority_budget'                 => 100,
-				'medium_priority_budget'               => 75,
-				'low_priority_budget'                  => 50,
-				'critical_health_reduction'            => 50,
-				'warning_health_reduction'             => 75,
-				'low_tier_max_tokens'                  => 2000,
-				'medium_tier_max_tokens'               => 8000,
-				'high_tier_max_tokens'                 => 32000,
-				'prediction_confidence_threshold'      => 40,
-				'prediction_safety_buffer'             => 15,
+				'orchestration_preset'                  => 'custom',
+				'enable_budget_management'              => true,
+				'enable_predictive_optimization'        => true,
+				'enable_capability_gating'              => true,
+				'enable_cron_orchestration'             => true,
+				'enable_auto_async_execution'           => true,
+				'cron_job_retention_period'             => '24',
+				'memory_warning_threshold'              => 70,
+				'memory_critical_threshold'             => 85,
+				'error_rate_warning_threshold'          => 5,
+				'error_rate_critical_threshold'         => 10,
+				'high_priority_budget'                  => 100,
+				'medium_priority_budget'                => 75,
+				'low_priority_budget'                   => 50,
+				'critical_health_reduction'             => 50,
+				'warning_health_reduction'              => 75,
+				'low_tier_max_tokens'                   => 2000,
+				'medium_tier_max_tokens'                => 8000,
+				'high_tier_max_tokens'                  => 32000,
+				'prediction_confidence_threshold'       => 40,
+				'prediction_safety_buffer'              => 15,
+				'use_ts_build'                          => false,
+
+				// ── Voice & Realtime Settings ──────────────────────────────
+				'voice_mode'                            => 'chained',
+				'voice_realtime_provider'               => 'openai',
+				'voice_auto_play'                       => false,
+				'voice_interruptions'                   => true,
+				'enable_voice_activity_detection'       => true,
+				'vad_silence_threshold'                 => 700,
+				'vad_min_speech_duration'               => 300,
+				'vad_audio_threshold'                   => -50,
+				'vad_prefix_padding_ms'                 => 300,
+				'openai_realtime_model'                 => 'gpt-realtime',
+				'openai_realtime_voice'                 => 'marin',
+				'gemini_live_model'                     => 'gemini-2.5-flash-live',
+				'gemini_live_voice'                     => 'Puck',
+				'chat_enable_voice_chat_button'         => true,
 			);
 		}
 

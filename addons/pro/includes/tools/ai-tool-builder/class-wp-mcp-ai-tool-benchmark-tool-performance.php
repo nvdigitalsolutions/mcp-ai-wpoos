@@ -119,9 +119,17 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
+	 * @return array|WP_Error Execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.

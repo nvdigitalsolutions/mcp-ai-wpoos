@@ -95,7 +95,11 @@ All endpoints under `wp-json/nvoos-algorave/v1/`:
 
 ## License
 
-GPLv3 or later — See [LICENSE](../../LICENSE)
+**AGPL-3.0-or-later.**
+
+This addon is licensed as a whole under the **GNU Affero General Public License v3.0 or later** because it bundles `@strudel/web` 1.2.5 (AGPL-3.0) under `assets/js/vendor/strudel/`. Distribution of the combined work requires AGPL-3.0 compliance, including the network-use source-availability clause (§13).
+
+The full GPL-3 grant is in the repository-root [LICENSE](../../LICENSE); AGPL-3 adds §13 on top — see <https://www.gnu.org/licenses/agpl-3.0.html>.
 
 ## Credits
 

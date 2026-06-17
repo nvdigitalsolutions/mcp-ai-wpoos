@@ -155,6 +155,13 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -164,17 +171,11 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['context_items'] ) || ! is_array( $arguments['context_items'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context items array is required.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Context items array is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $arguments['token_budget'] ) || ! is_numeric( $arguments['token_budget'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Token budget is required and must be a number.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Token budget is required and must be a number.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Sanitize inputs.

@@ -142,13 +142,32 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 
 		?>
 		<h3><?php esc_html_e( 'Package Availability', 'mcp-ai-wpoos-pro' ); ?></h3>
+		<p style="font-size: 12px; color: #555;">
+			<?php
+			printf(
+				/* translators: %s: link to the canonical CREDITS.md file. */
+				wp_kses(
+					__( 'Each package below links back to its upstream maintainer and license. The full repository-wide attribution index lives in <a href="%s" target="_blank" rel="noopener noreferrer">CREDITS.md</a>.', 'mcp-ai-wpoos-pro' ),
+					array(
+						'a' => array(
+							'href'   => true,
+							'target' => true,
+							'rel'    => true,
+						),
+					)
+				),
+				esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CREDITS.md' )
+			);
+			?>
+		</p>
 		<table class="wp-list-table widefat fixed striped">
 			<thead>
 				<tr>
-					<th style="width: 25%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos-pro' ); ?></th>
-					<th style="width: 15%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
-					<th style="width: 15%;"><?php esc_html_e( 'Source', 'mcp-ai-wpoos-pro' ); ?></th>
-					<th style="width: 35%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 22%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 12%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 10%;"><?php esc_html_e( 'Source', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 18%;"><?php esc_html_e( 'Upstream / License', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 28%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
 					<th style="width: 10%;"><?php esc_html_e( 'Test', 'mcp-ai-wpoos-pro' ); ?></th>
 				</tr>
 			</thead>
@@ -179,6 +198,27 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 							<?php else : ?>
 								<span style="color: #666; font-size: 11px;">
 									<?php echo $package['required'] ? esc_html__( 'Required', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Optional', 'mcp-ai-wpoos-pro' ); ?>
+								</span>
+							<?php endif; ?>
+						</td>
+						<td>
+							<?php if ( ! empty( $package['homepage'] ) ) : ?>
+								<a href="<?php echo esc_url( $package['homepage'] ); ?>" target="_blank" rel="noopener noreferrer" style="font-size: 11px;">
+									<?php echo esc_html( $package['homepage'] ); ?>
+								</a>
+								<br>
+							<?php endif; ?>
+							<?php if ( ! empty( $package['license'] ) ) : ?>
+								<span style="font-size: 11px; color: #555;">
+									<strong><?php esc_html_e( 'License:', 'mcp-ai-wpoos-pro' ); ?></strong>
+									<?php echo esc_html( $package['license'] ); ?>
+								</span>
+								<br>
+							<?php endif; ?>
+							<?php if ( ! empty( $package['copyright'] ) ) : ?>
+								<span style="font-size: 11px; color: #555;">
+									<strong>©</strong>
+									<?php echo esc_html( $package['copyright'] ); ?>
 								</span>
 							<?php endif; ?>
 						</td>
@@ -305,6 +345,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => true,
 				'testable'     => true,
 				'install_hint' => __( 'Requires Node.js 18.17.0+. Pre-packaged for Linux x64, other platforms need npm install.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/lovell/sharp',
+				'license'      => 'Apache-2.0',
+				'copyright'    => 'Lovell Fuller and contributors',
 			),
 			array(
 				'name'         => 'canvas',
@@ -313,6 +356,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => false,
 				'testable'     => true,
 				'install_hint' => WP_MCP_AI_Node_Package_Hints::get_canvas_install_hint(),
+				'homepage'     => 'https://github.com/Automattic/node-canvas',
+				'license'      => 'MIT',
+				'copyright'    => 'Automattic and contributors',
 			),
 
 			// Document Generation.
@@ -323,6 +369,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => true,
 				'testable'     => true,
 				'install_hint' => __( 'Core package for PDF generation tools.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/foliojs/pdfkit',
+				'license'      => 'MIT',
+				'copyright'    => 'Devon Govett and contributors',
 			),
 			array(
 				'name'         => 'docx',
@@ -331,6 +380,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => true,
 				'testable'     => true,
 				'install_hint' => __( 'Core package for Word document generation.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/dolanmiu/docx',
+				'license'      => 'MIT',
+				'copyright'    => 'Dolan Miu and contributors',
 			),
 			array(
 				'name'         => 'exceljs',
@@ -339,6 +391,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => true,
 				'testable'     => true,
 				'install_hint' => __( 'Core package for Excel generation tools.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/exceljs/exceljs',
+				'license'      => 'MIT',
+				'copyright'    => 'Guyon Roche and contributors',
 			),
 			array(
 				'name'         => 'pdf-lib',
@@ -347,6 +402,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => true,
 				'testable'     => true,
 				'install_hint' => __( 'Used for advanced PDF operations.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/Hopding/pdf-lib',
+				'license'      => 'MIT',
+				'copyright'    => 'Andrew Dillon (Hopding) and contributors',
 			),
 
 			// Data Visualization.
@@ -357,6 +415,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => false,
 				'testable'     => true,
 				'install_hint' => __( 'Enhances data visualization capabilities.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/chartjs/Chart.js',
+				'license'      => 'MIT',
+				'copyright'    => 'Chart.js Contributors',
 			),
 			array(
 				'name'         => 'd3',
@@ -365,6 +426,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => false,
 				'testable'     => true,
 				'install_hint' => __( 'For complex custom visualizations.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/d3/d3',
+				'license'      => 'ISC',
+				'copyright'    => 'Mike Bostock and contributors',
 			),
 
 			// Math & Science.
@@ -375,6 +439,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => false,
 				'testable'     => true,
 				'install_hint' => __( 'For mathematical content rendering.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/KaTeX/KaTeX',
+				'license'      => 'MIT',
+				'copyright'    => 'Khan Academy and contributors',
 			),
 			array(
 				'name'         => 'mathjs',
@@ -383,6 +450,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => false,
 				'testable'     => true,
 				'install_hint' => __( 'For mathematical computation tools.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/josdejong/mathjs',
+				'license'      => 'Apache-2.0',
+				'copyright'    => 'Jos de Jong and contributors',
 			),
 
 			// OCR & Computer Vision.
@@ -393,6 +463,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => false,
 				'testable'     => true,
 				'install_hint' => __( 'For OCR functionality in document tools.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/naptha/tesseract.js',
+				'license'      => 'Apache-2.0',
+				'copyright'    => 'naptha and contributors',
 			),
 
 			// Optional Advanced Packages.
@@ -403,6 +476,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => false,
 				'testable'     => true,
 				'install_hint' => __( 'Optional - enables advanced HTML rendering features.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/puppeteer/puppeteer',
+				'license'      => 'Apache-2.0',
+				'copyright'    => 'Google LLC and contributors',
 			),
 			array(
 				'name'         => 'ffmpeg-static',
@@ -411,6 +487,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'required'     => false,
 				'testable'     => true,
 				'install_hint' => __( 'Optional - for video processing tools.', 'mcp-ai-wpoos-pro' ),
+				'homepage'     => 'https://github.com/eugeneware/ffmpeg-static',
+				'license'      => 'GPL-3.0',
+				'copyright'    => 'Eugene Ware (ffmpeg-static wrapper); FFmpeg © Fabrice Bellard and the FFmpeg developers',
 			),
 		);
 	}
@@ -887,7 +966,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 
 		$plugin_file = 'nvoos-canvas/nvoos-canvas.php';
 		$active      = is_plugin_active( $plugin_file );
-		$installed   = file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
+		$installed   = defined( 'WP_PLUGIN_DIR' ) && file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
 		$zip_path    = $this->get_canvas_zip_path();
 		$zip_found   = ! empty( $zip_path ) && file_exists( $zip_path );
 

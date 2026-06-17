@@ -1,0 +1,55 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-sse-client",
+  "version": "0.1.0-alpha.1",
+  "description": "TypeScript-native SSE connection manager with lifecycle tracking, per-connection status, and automatic cleanup — companion to nvoos-events",
+  "main": "dist/nvoos-sse-client.js",
+  "module": "dist/nvoos-sse-client.js",
+  "types": "dist/nvoos-sse-client.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/nvoos-sse-client.d.ts",
+      "import": "./dist/nvoos-sse-client.js",
+      "default": "./dist/nvoos-sse-client.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-sse-client",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-sse-client"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "sse",
+    "server-sent-events",
+    "connection-manager",
+    "event-stream",
+    "reconnect",
+    "fetch-event-source",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@microsoft/fetch-event-source": "^2.0.0"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

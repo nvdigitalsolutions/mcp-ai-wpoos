@@ -24,7 +24,8 @@ require_once dirname( __DIR__ ) . '/class-wp-mcp-ai-cre-debt-calculator.php';
  */
 class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
-	/** @var string Option key for budget storage. */
+	/**
+	 * Performs the operation.
 	const OPTION_KEY = 'wp_mcp_ai_cre_property_budgets';
 
 	/**
@@ -130,7 +131,20 @@ class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -292,7 +306,7 @@ class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Inter
 			$b['actual_capex'],
 			$actual_noi
 		);
-		$budgets[ $budget_id ]['updated_at'] = current_time( 'mysql' );
+		$budgets[ $budget_id ]['updated_at']   = current_time( 'mysql' );
 
 		update_option( self::OPTION_KEY, $budgets );
 
@@ -343,20 +357,20 @@ class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Inter
 		foreach ( $budgets as $b ) {
 			if ( $b['property_name'] === $budget['property_name'] && (int) $b['budget_year'] === $prior_year ) {
 				$yoy_variances = array(
-					'prior_year'             => $prior_year,
-					'prior_revenue_budget'   => $calc::format_currency( $b['revenue_budget'] ),
-					'prior_opex_budget'      => $calc::format_currency( $b['opex_budget'] ),
-					'prior_budgeted_noi'     => $calc::format_currency( $b['budgeted_noi'] ),
-					'revenue_yoy_dollars'    => $calc::format_currency( $budget['revenue_budget'] - $b['revenue_budget'] ),
-					'revenue_yoy_pct'        => ( 0 !== (float) $b['revenue_budget'] )
+					'prior_year'           => $prior_year,
+					'prior_revenue_budget' => $calc::format_currency( $b['revenue_budget'] ),
+					'prior_opex_budget'    => $calc::format_currency( $b['opex_budget'] ),
+					'prior_budgeted_noi'   => $calc::format_currency( $b['budgeted_noi'] ),
+					'revenue_yoy_dollars'  => $calc::format_currency( $budget['revenue_budget'] - $b['revenue_budget'] ),
+					'revenue_yoy_pct'      => ( 0 !== (float) $b['revenue_budget'] )
 						? $calc::format_percentage( ( $budget['revenue_budget'] - $b['revenue_budget'] ) / $b['revenue_budget'] )
 						: __( 'N/A', 'mcp-ai-wpoos-pro' ),
-					'opex_yoy_dollars'       => $calc::format_currency( $budget['opex_budget'] - $b['opex_budget'] ),
-					'opex_yoy_pct'           => ( 0 !== (float) $b['opex_budget'] )
+					'opex_yoy_dollars'     => $calc::format_currency( $budget['opex_budget'] - $b['opex_budget'] ),
+					'opex_yoy_pct'         => ( 0 !== (float) $b['opex_budget'] )
 						? $calc::format_percentage( ( $budget['opex_budget'] - $b['opex_budget'] ) / $b['opex_budget'] )
 						: __( 'N/A', 'mcp-ai-wpoos-pro' ),
-					'noi_yoy_dollars'        => $calc::format_currency( $budget['budgeted_noi'] - $b['budgeted_noi'] ),
-					'noi_yoy_pct'            => ( 0 !== (float) $b['budgeted_noi'] )
+					'noi_yoy_dollars'      => $calc::format_currency( $budget['budgeted_noi'] - $b['budgeted_noi'] ),
+					'noi_yoy_pct'          => ( 0 !== (float) $b['budgeted_noi'] )
 						? $calc::format_percentage( ( $budget['budgeted_noi'] - $b['budgeted_noi'] ) / $b['budgeted_noi'] )
 						: __( 'N/A', 'mcp-ai-wpoos-pro' ),
 				);
@@ -364,16 +378,16 @@ class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Inter
 			}
 		}
 
-		$output                    = $budget;
-		$output['revenue_budget']  = $calc::format_currency( $budget['revenue_budget'] );
-		$output['opex_budget']     = $calc::format_currency( $budget['opex_budget'] );
-		$output['capex_budget']    = $calc::format_currency( $budget['capex_budget'] );
-		$output['actual_revenue']  = $calc::format_currency( $budget['actual_revenue'] );
-		$output['actual_opex']     = $calc::format_currency( $budget['actual_opex'] );
-		$output['actual_capex']    = $calc::format_currency( $budget['actual_capex'] );
-		$output['budgeted_noi']    = $calc::format_currency( $budget['budgeted_noi'] );
-		$output['actual_noi']      = $calc::format_currency( $budget['actual_noi'] );
-		$output['yoy_variances']   = $yoy_variances;
+		$output                   = $budget;
+		$output['revenue_budget'] = $calc::format_currency( $budget['revenue_budget'] );
+		$output['opex_budget']    = $calc::format_currency( $budget['opex_budget'] );
+		$output['capex_budget']   = $calc::format_currency( $budget['capex_budget'] );
+		$output['actual_revenue'] = $calc::format_currency( $budget['actual_revenue'] );
+		$output['actual_opex']    = $calc::format_currency( $budget['actual_opex'] );
+		$output['actual_capex']   = $calc::format_currency( $budget['actual_capex'] );
+		$output['budgeted_noi']   = $calc::format_currency( $budget['budgeted_noi'] );
+		$output['actual_noi']     = $calc::format_currency( $budget['actual_noi'] );
+		$output['yoy_variances']  = $yoy_variances;
 
 		return array(
 			'success'    => true,
@@ -396,9 +410,12 @@ class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Inter
 
 		if ( $filter_year > 0 ) {
 			$all_budgets = array_values(
-				array_filter( $all_budgets, function ( $b ) use ( $filter_year ) {
-					return (int) $b['budget_year'] === $filter_year;
-				} )
+				array_filter(
+					$all_budgets,
+					function ( $b ) use ( $filter_year ) {
+						return (int) $b['budget_year'] === $filter_year;
+					}
+				)
 			);
 		}
 
@@ -419,16 +436,16 @@ class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Inter
 			$total_act_opex += $b['actual_opex'];
 			$total_act_cap  += $b['actual_capex'];
 
-			$entry                    = $b;
-			$entry['revenue_budget']  = $calc::format_currency( $b['revenue_budget'] );
-			$entry['opex_budget']     = $calc::format_currency( $b['opex_budget'] );
-			$entry['capex_budget']    = $calc::format_currency( $b['capex_budget'] );
-			$entry['actual_revenue']  = $calc::format_currency( $b['actual_revenue'] );
-			$entry['actual_opex']     = $calc::format_currency( $b['actual_opex'] );
-			$entry['actual_capex']    = $calc::format_currency( $b['actual_capex'] );
-			$entry['budgeted_noi']    = $calc::format_currency( $b['budgeted_noi'] );
-			$entry['actual_noi']      = $calc::format_currency( $b['actual_noi'] );
-			$formatted[]              = $entry;
+			$entry                   = $b;
+			$entry['revenue_budget'] = $calc::format_currency( $b['revenue_budget'] );
+			$entry['opex_budget']    = $calc::format_currency( $b['opex_budget'] );
+			$entry['capex_budget']   = $calc::format_currency( $b['capex_budget'] );
+			$entry['actual_revenue'] = $calc::format_currency( $b['actual_revenue'] );
+			$entry['actual_opex']    = $calc::format_currency( $b['actual_opex'] );
+			$entry['actual_capex']   = $calc::format_currency( $b['actual_capex'] );
+			$entry['budgeted_noi']   = $calc::format_currency( $b['budgeted_noi'] );
+			$entry['actual_noi']     = $calc::format_currency( $b['actual_noi'] );
+			$formatted[]             = $entry;
 		}
 
 		$summary_budgeted_noi = $total_revenue - $total_opex;

@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **May 2026** · Version: **1.2**
+> Last reviewed: **May 31, 2026** · Version: **1.5**
 
 ### Related Files
 
@@ -27,12 +27,15 @@ These are the AI assistants that human maintainers invoke when working on the re
 |-------|----------|-------------|---------|-------|
 | **Claude Code** | Anthropic | [`CLAUDE.md`](CLAUDE.md) | Manual / Copilot Coding Agent | Full codebase — code generation, review, refactoring, docs |
 | **GitHub Copilot** | GitHub / OpenAI | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | IDE completions, Copilot Chat, PR reviews | Inline suggestions, chat Q&A, PR summaries |
-| **GitHub Custom Agents** | GitHub | [`.github/agents/*.agent.md`](.github/agents/) | Auto-discovered by GitHub Copilot Coding Agent and compatible runtimes | Role-specific agents — see each `*.agent.md` for scope |
+| **GitHub Custom Agents** | GitHub | [`.github/agents/*.agent.md`](.github/agents/) | Auto-discovered by GitHub Copilot Coding Agent and compatible runtimes | Role-specific agents (14 in this repo — reviewers, writers per subsystem, plus `addon-maintainer`, `toolkit-spa-maintainer` parameterised per addon, and `acp` for Agent Client Protocol). See each `*.agent.md` for scope. |
+| **Zed Agent Profiles** | Zed Industries | [`.zed/settings.json`](.zed/settings.json) + [`.zed/README.md`](.zed/README.md) | Selected from the Agent Panel profile picker | Native Zed mirror of the `examples/agents/` roster (14 profiles) — same scopes, mapped to Zed's tool registry |
 | **OpenAI Codex** | OpenAI | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox tasks | Sandbox-based code generation and testing |
 
 ### Internal BMAD Agents (GSD × BMAD Workflow)
 
 The NV oOS plugin itself includes an agentic multi-agent system for structured feature development. These agents run **inside** NV oOS assistants and follow the 10-phase GSD × BMAD methodology documented in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+> The GSD half of the methodology is now standardised upstream in [`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core) (`npx @opengsd/gsd-core@latest`) — NV oOS was an early adopter and proving ground. The `.bmad/` agent definitions and `.context/` files below are the NV oOS-specific instantiations.
 
 | Agent ID | BMAD Role | NV oOS Assistant | Phases | YAML Definition |
 |----------|-----------|-----------------|--------|-----------------|
@@ -52,7 +55,7 @@ Independent of the coding-time agents above, the plugin also exposes **Agent Ski
 | Aspect | Details |
 |--------|---------|
 | **Format** | A single `SKILL.md` per skill — Markdown body with a small YAML frontmatter (`name`, `description`, optional metadata). Stored on disk under `wp-content/uploads/mcp-ai-skills/{slug}/SKILL.md` after install. |
-| **Bundled with base** | `includes/bundled-skills/` — general-purpose Anthropic-authored skills + the new `wp-abilities-api` skill. |
+| **Bundled with base** | `includes/bundled-skills/` — 45 general-purpose Anthropic-authored skills (document handling, design, testing) + WordPress-developer skills (security, APIs, plugin patterns) + the new `ui-ux-pro-max` design system skill. |
 | **Bundled with Pro** | `addons/pro/includes/bundled-skills/` — 28+ WordPress-developer skills curated from [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) (WooCommerce, JetEngine, JetFormBuilder, WP Rocket, etc.) plus a `THIRD_PARTY_NOTICES.md`. |
 | **Remote catalogues (Pro)** | [`WP_MCP_AI_Skill_Catalogue_Service`](addons/pro/includes/services/class-wp-mcp-ai-skill-catalogue-service.php) and [`WP_MCP_AI_Skill_Catalogue_REST_Controller`](addons/pro/includes/rest/class-wp-mcp-ai-skill-catalogue-rest-controller.php) (`mcp-ai-pro/v1/catalogues/*`) install skills directly from registered public GitHub repos. SSRF-safe HTTPS-only fetcher. Pre-seeded with `Lonsdale201/wp-agent-skills` and `anthropics/skills`. |
 | **Progressive disclosure** | Each assistant has a "Use progressive disclosure" checkbox; when on, the system prompt sees only `# Available Skills` (name + description) and the model calls the base-plugin `load_skill({ name })` tool to retrieve the full SKILL.md only when needed. |
@@ -85,6 +88,20 @@ Every agent session loads these two files:
 | [`.context/chat-ui.md`](.context/chat-ui.md) | Working on frontend chat interface |
 | [`.context/testing.md`](.context/testing.md) | Writing or reviewing tests |
 | [`.context/pro-vs-base.md`](.context/pro-vs-base.md) | Making Base vs Pro placement decisions |
+| [`docs/features/llm-harness.md`](docs/features/llm-harness.md) | Working on LLM Harnessing (Layers A–H) |
+| [`docs/features/memory/chat-client-integration.md`](docs/features/memory/chat-client-integration.md) | Working on the Chat-client Memory Bridge or Memory Drawer |
+
+### Folder context (loaded per folder being edited)
+
+Every PHP-bearing subdirectory under `includes/` (Base) and `addons/pro/includes/` (Pro) ships a `README.md` that follows the [folder README convention](docs/developer/folder-readme-convention.md). When an agent edits a file inside `includes/<folder>/`, it should first read `includes/<folder>/README.md` for the folder's purpose, public surface, neighbors, and which `.context/*.md` files to also load.
+
+Folder READMEs are the **persistent, code-co-located, structural** layer of context. They:
+
+- Restate **nothing** from the cross-cutting canonical sources (naming, security, PHP-compat). They link instead — same layering rule as `.github/agents/*.agent.md`.
+- Are enforced by `composer run docs:check-folder-readmes` (part of `composer run ci:all`).
+- Use the canonical template at [`.context/templates/folder-readme-template.md`](.context/templates/folder-readme-template.md).
+
+Full convention: [`docs/developer/folder-readme-convention.md`](docs/developer/folder-readme-convention.md).
 
 ### Feature context (loaded per active feature)
 
@@ -108,7 +125,7 @@ This keeps the GSD 30% rule intact, prevents drift across `CLAUDE.md` / `AGENTS.
 **Template + examples:**
 
 - Canonical (empty) template: [`.context/templates/agent-file-template.md`](.context/templates/agent-file-template.md)
-- Filled-in copy-ready examples: [`examples/agents/`](examples/agents/) — a 12-agent roster covering every major NV oOS subsystem, split between read-only reviewers (REST, security, WP.org compliance, PHP compat) and writers (tools, slash commands, chat UI, PHPUnit tests, agent skills, addon maintenance, release engineering, docs). See [`examples/agents/README.md`](examples/agents/README.md) for the full table.
+- Filled-in copy-ready examples: [`examples/agents/`](examples/agents/) — a 14-agent roster covering every major NV oOS subsystem, split between read-only reviewers (REST, security, WP.org compliance, PHP compat) and writers (tools, slash commands, chat UI, PHPUnit tests, agent skills, addon maintenance, **toolkit-SPA addons** following the [Toolkit SPA Blueprint](docs/developer/addons/toolkit-spa-blueprint.md), **ACP protocol** implementation, release engineering, docs). See [`examples/agents/README.md`](examples/agents/README.md) for the full table.
 
 ---
 
@@ -225,7 +242,8 @@ If an AI agent produces code with a security vulnerability, report it through th
 | New BMAD agent or workflow change | `.bmad/agents/*.yaml`, `AGENTS.md`, `.bmad/teams/feature-development.yaml` |
 | New subsystem context | `.context/`, `AGENTS.md` (context-loading table) |
 | New external AI agent | `AGENTS.md` (agent inventory), `MAINTAINER_MAP.md` (AI coordination section) |
-| New or changed GitHub Custom Agent | `.github/agents/*.agent.md` (per layering rule in §2), `AGENTS.md` (agent inventory in §1) — must be in the same PR |
+| New `includes/` or `addons/pro/includes/` subdirectory | Add `README.md` per [folder README convention](docs/developer/folder-readme-convention.md); run `composer run docs:check-folder-readmes` |
+| New or changed GitHub Custom Agent | `.github/agents/*.agent.md` (per layering rule in §2), `AGENTS.md` (agent inventory in §1) — must be in the same PR. If a matching agent also exists in [`examples/agents/`](examples/agents/), update `.zed/settings.json` so the Zed profile's tool block stays in sync. |
 | New bundled skill or skill pack | Add `SKILL.md` under `includes/bundled-skills/` (base) or `addons/pro/includes/bundled-skills/` (Pro); update the corresponding `THIRD_PARTY_NOTICES.md` if curated from an upstream catalogue; document in `docs/features/agent-skills.md` |
 
 ### Review cadence
@@ -240,10 +258,10 @@ These files should be reviewed whenever:
 
 ## 7. References
 
-- [GSD × BMAD Methodology Proposal](docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md)
-- [Agent Memory Management Guide](docs/AGENT-MEMORY-COMPLETE-GUIDE.md)
-- [Developer Hooks Reference](docs/DEVELOPER_HOOKS_REFERENCE.md)
-- [Architecture Decision Record #1 — Module Boundaries](docs/ADR_001_module_boundaries.md)
+- [GSD × BMAD Methodology Proposal](docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md)
+- [Agent Memory Management Guide](docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md)
+- [Developer Hooks Reference](docs/reference/hooks/DEVELOPER_HOOKS_REFERENCE.md)
+- [Architecture Decision Record #1 — Module Boundaries](docs/project/architecture-decisions/ADR_001_module_boundaries.md)
 - [Context Engineering Files README](.context/README.md)
 - [BMAD Agent Definitions README](.bmad/README.md)
 - [GitHub CODEOWNERS Documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)

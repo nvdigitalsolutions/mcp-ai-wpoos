@@ -255,12 +255,18 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 				</tr>
 			</table>
 
-			<script type="text/javascript">
+			<?php
+			$peer_options    = wp_json_encode( array_column( $peer_sites, 'name' ) );
+			$select_peer     = esc_js( __( '-- Select Peer --', 'mcp-ai-wpoos' ) );
+			$remove_label    = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
+
+			ob_start();
+			?>
 			jQuery(document).ready(function($) {
-				var peerOptions = <?php echo wp_json_encode( array_column( $peer_sites, 'name' ) ); ?>;
+				var peerOptions = <?php echo $peer_options; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode already escaped. ?>;
 
 				$('#wp-mcp-ai-add-preferred-peer').on('click', function() {
-					var optionsHtml = '<option value=""><?php echo esc_js( __( '-- Select Peer --', 'mcp-ai-wpoos' ) ); ?></option>';
+					var optionsHtml = '<option value=""><?php echo esc_js( $select_peer ); ?></option>';
 					peerOptions.forEach(function(peerName) {
 						optionsHtml += '<option value="' + peerName + '">' + peerName + '</option>';
 					});
@@ -269,7 +275,7 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 						'<select name="wp_mcp_ai_mesh_routing[preferred_peers][]" class="regular-text">' +
 						optionsHtml +
 						'</select> ' +
-						'<button type="button" class="button wp-mcp-ai-remove-preferred-peer"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?></button>' +
+						'<button type="button" class="button wp-mcp-ai-remove-preferred-peer"><?php echo esc_js( $remove_label ); ?></button>' +
 						'</div>');
 					$('#wp-mcp-ai-preferred-peers-list').append(newRow);
 				});
@@ -278,7 +284,10 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 					$(this).closest('.wp-mcp-ai-preferred-peer-row').remove();
 				});
 			});
-			</script>
+			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
+			?>
 		</div>
 		<?php
 		$this->render_documentation_link();

@@ -49,9 +49,9 @@ class Test_Shopify_Connection_Resolver extends WP_UnitTestCase {
 		parent::setUp();
 
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-connection-resolver.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-shopify-connection.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-products.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shopify-connection-resolver.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-shopify-connection.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-products.php';
 
 		$this->tool          = new WP_MCP_AI_Tool_Remote_Shopify_Connection();
 		$this->products_tool = new WP_MCP_AI_Pro_Tool_Shopify_Products();
@@ -389,7 +389,7 @@ class Test_Shopify_Connection_Resolver extends WP_UnitTestCase {
 			'api_key'          => 'shpat_disabled_token_test',
 			'enabled'          => false,
 		);
-		$disabled_id     = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $disabled_data );
+		$disabled_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $disabled_data );
 
 		// Enable it for assistant.
 		update_post_meta(

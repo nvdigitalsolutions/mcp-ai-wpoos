@@ -106,19 +106,26 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
+	 * @return array|WP_Error Execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
-if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
-return $this->error_response( __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ) );
-}
-if ( ! current_user_can( 'manage_options' ) ) {
-return $this->error_response( __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ) );
-}
-
+		// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+		if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+			return $this->error_response( __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $this->error_response( __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		// Get code to check.
 		$code      = '';
@@ -148,6 +155,12 @@ return $this->error_response( __( 'You do not have permission to run shell comma
 			}
 
 			// Security: Restrict to the WordPress content directory (plugins, themes, etc.).
+			if ( ! defined( 'WP_CONTENT_DIR' ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
 			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
 				return array(
 					'success' => false,
@@ -405,7 +418,7 @@ return $this->error_response( __( 'You do not have permission to run shell comma
 		}
 
 		// Check method names are snake_case.
-		preg_match_all( '/(?:private|protected|public)\s+function\s+(\w+)/', $code, $matches );
+		preg_match_all( '/( ? ( :private|protected|public)\s+function\s+(\w+)/', $code, $matches );
 		if ( ! empty( $matches[1] ) ) {
 			foreach ( $matches[1] as $method_name ) {
 				if ( strtolower( $method_name ) !== $method_name ) {

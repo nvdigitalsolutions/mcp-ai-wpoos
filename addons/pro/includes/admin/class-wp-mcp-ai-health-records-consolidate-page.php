@@ -1650,10 +1650,22 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		$numeric_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
 			? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
 			: array(
-				'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
-				'weight', 'bmi', 'blood_glucose', 'oxygen_saturation',
-				'respiratory_rate', 'egfr', 'creatinine', 'bun',
-				'potassium', 'sodium', 'phosphorus', 'albumin',
+				'bp_systolic',
+				'bp_diastolic',
+				'heart_rate',
+				'temperature',
+				'weight',
+				'bmi',
+				'blood_glucose',
+				'oxygen_saturation',
+				'respiratory_rate',
+				'egfr',
+				'creatinine',
+				'bun',
+				'potassium',
+				'sodium',
+				'phosphorus',
+				'albumin',
 			);
 
 		foreach ( $numeric_fields as $field ) {
@@ -1677,10 +1689,22 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		$numeric_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
 			? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
 			: array(
-				'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
-				'weight', 'bmi', 'blood_glucose', 'oxygen_saturation',
-				'respiratory_rate', 'egfr', 'creatinine', 'bun',
-				'potassium', 'sodium', 'phosphorus', 'albumin',
+				'bp_systolic',
+				'bp_diastolic',
+				'heart_rate',
+				'temperature',
+				'weight',
+				'bmi',
+				'blood_glucose',
+				'oxygen_saturation',
+				'respiratory_rate',
+				'egfr',
+				'creatinine',
+				'bun',
+				'potassium',
+				'sodium',
+				'phosphorus',
+				'albumin',
 			);
 
 		$data = array();

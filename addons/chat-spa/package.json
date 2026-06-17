@@ -1,0 +1,42 @@
+{
+  "name": "nvoos-chat-spa",
+  "version": "0.6.0",
+  "description": "NV oOS Chat SPA — React chat surface using the Vercel AI SDK UI layer (@ai-sdk/react) on top of NV oOS REST chat endpoints",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.cjs --prod",
+    "build:dev": "node esbuild.config.cjs",
+    "watch": "node esbuild.config.cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint:a11y": "eslint --max-warnings 0 src/",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@ai-sdk/react": "1.2.12",
+    "dompurify": "^3.4.0",
+    "marked": "^9.1.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@axe-core/react": "4.10.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "22.15.17",
+    "@types/react": "19.1.4",
+    "@types/react-dom": "19.1.4",
+    "@typescript-eslint/parser": "8.32.0",
+    "@vitest/coverage-v8": "^4.1.5",
+    "@wordpress/i18n": "5.12.0",
+    "esbuild": "^0.27.0",
+    "eslint": "9.27.0",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "jsdom": "^29.1.1",
+    "typescript": "5.8.3",
+    "vitest": "^4.1.5"
+  }
+}

@@ -70,38 +70,38 @@ class WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'current_value'              => array(
+				'current_value'               => array(
 					'type'        => 'number',
 					'description' => __( 'Current estimated market value of the property.', 'mcp-ai-wpoos-pro' ),
 				),
-				'current_noi'                => array(
+				'current_noi'                 => array(
 					'type'        => 'number',
 					'description' => __( 'Current annual net operating income.', 'mcp-ai-wpoos-pro' ),
 				),
-				'projected_noi_growth_pct'   => array(
+				'projected_noi_growth_pct'    => array(
 					'type'        => 'number',
 					'description' => __( 'Annual NOI growth percentage (e.g. 2 for 2%). Default 2.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 2,
 				),
-				'hold_years_remaining'       => array(
+				'hold_years_remaining'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of remaining years in the hold period.', 'mcp-ai-wpoos-pro' ),
 				),
-				'exit_cap_rate'              => array(
+				'exit_cap_rate'               => array(
 					'type'        => 'number',
 					'description' => __( 'Exit capitalization rate as decimal (e.g. 0.06 for 6%).', 'mcp-ai-wpoos-pro' ),
 				),
-				'selling_costs_pct'          => array(
+				'selling_costs_pct'           => array(
 					'type'        => 'number',
 					'description' => __( 'Selling costs as percentage of sale price (e.g. 2 for 2%). Default 2.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 2,
 				),
-				'reinvestment_return_pct'    => array(
+				'reinvestment_return_pct'     => array(
 					'type'        => 'number',
 					'description' => __( 'Annual return on redeployed capital as percentage (e.g. 12 for 12%). Default 12.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 12,
 				),
-				'original_investment'        => array(
+				'original_investment'         => array(
 					'type'        => 'number',
 					'description' => __( 'Total original equity investment.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -122,7 +122,20 @@ class WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -165,8 +178,8 @@ class WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer implements WP_MCP_AI_Tool_Interface,
 		$hold_cash_flows   = array( -$current_value );
 
 		for ( $n = 1; $n <= $hold_years; $n++ ) {
-			$noi_year_n      = $current_noi * pow( 1 + $noi_growth, $n );
-			$projected_noi[] = array(
+			$noi_year_n         = $current_noi * pow( 1 + $noi_growth, $n );
+			$projected_noi[]    = array(
 				'year' => $n,
 				'noi'  => $calc::format_currency( $noi_year_n ),
 			);
@@ -183,17 +196,17 @@ class WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
-		$hold_irr                = $calc::calculate_irr( $hold_cash_flows );
-		$remaining_equity_mult   = ( $current_value > 0 ) ? ( $sum_remaining_noi + $net_exit_proceeds ) / $current_value : 0;
-		$total_equity_mult       = ( $original_invest > 0 ) ? ( $total_dist_to_date + $sum_remaining_noi + $net_exit_proceeds ) / $original_invest : 0;
+		$hold_irr              = $calc::calculate_irr( $hold_cash_flows );
+		$remaining_equity_mult = ( $current_value > 0 ) ? ( $sum_remaining_noi + $net_exit_proceeds ) / $current_value : 0;
+		$total_equity_mult     = ( $original_invest > 0 ) ? ( $total_dist_to_date + $sum_remaining_noi + $net_exit_proceeds ) / $original_invest : 0;
 
 		// --- SELL SCENARIO ---
 		$net_sell_proceeds       = $current_value * ( 1 - $selling_costs_pct / 100 );
 		$total_return_to_date    = $total_dist_to_date + $net_sell_proceeds;
 		$equity_multiple_at_sale = ( $original_invest > 0 ) ? $total_return_to_date / $original_invest : 0;
 
-		$reinvest_future_value   = $net_sell_proceeds * pow( 1 + $reinvest_return / 100, $hold_years );
-		$reinvest_total_return   = $reinvest_future_value - $net_sell_proceeds;
+		$reinvest_future_value = $net_sell_proceeds * pow( 1 + $reinvest_return / 100, $hold_years );
+		$reinvest_total_return = $reinvest_future_value - $net_sell_proceeds;
 
 		// --- COMPARISON ---
 		$marginal_hold_value     = ( $sum_remaining_noi + $net_exit_proceeds ) - $net_sell_proceeds;
@@ -204,27 +217,27 @@ class WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer implements WP_MCP_AI_Tool_Interface,
 			'success'    => true,
 			'message'    => __( 'Hold/Sell analysis complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'       => array(
-				'hold_scenario'  => array(
-					'projected_noi'            => $projected_noi,
-					'exit_value'               => $calc::format_currency( $exit_value ),
-					'net_exit_proceeds'        => $calc::format_currency( $net_exit_proceeds ),
-					'sum_remaining_noi'        => $calc::format_currency( $sum_remaining_noi ),
-					'hold_irr'                 => $calc::format_percentage( $hold_irr ),
+				'hold_scenario' => array(
+					'projected_noi'             => $projected_noi,
+					'exit_value'                => $calc::format_currency( $exit_value ),
+					'net_exit_proceeds'         => $calc::format_currency( $net_exit_proceeds ),
+					'sum_remaining_noi'         => $calc::format_currency( $sum_remaining_noi ),
+					'hold_irr'                  => $calc::format_percentage( $hold_irr ),
 					'remaining_equity_multiple' => round( $remaining_equity_mult, 2 ) . 'x',
-					'total_equity_multiple'    => round( $total_equity_mult, 2 ) . 'x',
+					'total_equity_multiple'     => round( $total_equity_mult, 2 ) . 'x',
 				),
-				'sell_scenario'  => array(
-					'net_sell_proceeds'        => $calc::format_currency( $net_sell_proceeds ),
-					'total_return_to_date'     => $calc::format_currency( $total_return_to_date ),
-					'equity_multiple_at_sale'  => round( $equity_multiple_at_sale, 2 ) . 'x',
-					'reinvestment_return_pct'  => $calc::format_percentage( $reinvest_return / 100 ),
+				'sell_scenario' => array(
+					'net_sell_proceeds'         => $calc::format_currency( $net_sell_proceeds ),
+					'total_return_to_date'      => $calc::format_currency( $total_return_to_date ),
+					'equity_multiple_at_sale'   => round( $equity_multiple_at_sale, 2 ) . 'x',
+					'reinvestment_return_pct'   => $calc::format_percentage( $reinvest_return / 100 ),
 					'reinvestment_future_value' => $calc::format_currency( $reinvest_future_value ),
 					'reinvestment_total_return' => $calc::format_currency( $reinvest_total_return ),
 				),
-				'comparison'     => array(
-					'marginal_hold_value'      => $calc::format_currency( $marginal_hold_value ),
-					'marginal_reinvest_value'  => $calc::format_currency( $marginal_reinvest_value ),
-					'recommendation'           => $recommendation,
+				'comparison'    => array(
+					'marginal_hold_value'     => $calc::format_currency( $marginal_hold_value ),
+					'marginal_reinvest_value' => $calc::format_currency( $marginal_reinvest_value ),
+					'recommendation'          => $recommendation,
 				),
 			),
 			'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),

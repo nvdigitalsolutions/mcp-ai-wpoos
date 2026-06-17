@@ -8,8 +8,8 @@
  * @license   GPL-3.0-or-later
  */
 
-require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php';
-require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-telegram-message.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-telegram-message.php';
 
 /**
  * Class WP_MCP_AI_Token_Sanitization_Test

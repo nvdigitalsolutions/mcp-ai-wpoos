@@ -121,7 +121,7 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 <strong><?php esc_html_e( 'Room Title:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Product Demo Meeting', 'mcp-ai-wpoos-pro' ); ?>
 
 <strong><?php esc_html_e( 'Room Description:', 'mcp-ai-wpoos-pro' ); ?></strong>
-<?php esc_html_e( 'Interactive product demonstration and Q&A session for potential customers.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Interactive product demonstration and Q&A session for potential customers.', 'mcp-ai-wpoos-pro' ); ?>
 
 <strong><?php esc_html_e( 'Room Settings:', 'mcp-ai-wpoos-pro' ); ?></strong>
 - <?php esc_html_e( 'Max Participants: 20', 'mcp-ai-wpoos-pro' ); ?>
@@ -139,19 +139,19 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 				<p><?php esc_html_e( 'Send AI-generated messages to WebChat rooms for moderation, automated responses, or announcements.', 'mcp-ai-wpoos-pro' ); ?></p>
 				<pre style="background: #f8f9fa; padding: 15px; border: 1px solid #ddd; overflow-x: auto; font-size: 13px;">
 {
-  "room_id": "abc123xyz",
-  "message": "Welcome! I'm an AI assistant here to help.",
-  "sender_name": "Support Bot"
+	"room_id": "abc123xyz",
+	"message": "Welcome! I'm an AI assistant here to help.",
+	"sender_name": "Support Bot"
 }</pre>
 
 				<h4><code>create_webchat_room</code></h4>
 				<p><?php esc_html_e( 'AI can dynamically create rooms based on user requests.', 'mcp-ai-wpoos-pro' ); ?></p>
 				<pre style="background: #f8f9fa; padding: 15px; border: 1px solid #ddd; overflow-x: auto; font-size: 13px;">
 {
-  "title": "Team Standup - Jan 15",
-  "description": "Daily team sync meeting",
-  "max_participants": 10,
-  "status": "active"
+	"title": "Team Standup - Jan 15",
+	"description": "Daily team sync meeting",
+	"max_participants": 10,
+	"status": "active"
 }</pre>
 
 				<h4><code>list_webchat_rooms</code></h4>
@@ -518,7 +518,7 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 		}
 
 		if ( isset( $input['default_max_participants'] ) ) {
-			$max_participants                         = absint( $input['default_max_participants'] );
+			$max_participants                      = absint( $input['default_max_participants'] );
 			$sanitized['default_max_participants'] = max( 2, min( 100, $max_participants ) );
 		}
 

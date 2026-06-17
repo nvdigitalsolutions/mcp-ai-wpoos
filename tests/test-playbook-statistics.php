@@ -46,6 +46,7 @@ class Test_Playbook_Statistics extends WP_UnitTestCase {
 		$this->assertIsArray( $stats );
 		$this->assertArrayHasKey( 'total_attachments', $stats );
 		$this->assertArrayHasKey( 'professions_with_playbooks', $stats );
+		$this->assertArrayHasKey( 'orphaned_playbooks', $stats );
 		$this->assertArrayHasKey( 'seeded', $stats );
 		$this->assertArrayHasKey( 'last_sync', $stats );
 	}

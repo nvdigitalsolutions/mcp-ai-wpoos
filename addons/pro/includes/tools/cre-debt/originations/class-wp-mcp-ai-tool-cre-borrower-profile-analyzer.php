@@ -67,27 +67,27 @@ class WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer implements WP_MCP_AI_Tool_Int
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'borrower_name'       => array(
+				'borrower_name'        => array(
 					'type'        => 'string',
 					'description' => __( 'Borrower or sponsor name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'net_worth'           => array(
+				'net_worth'            => array(
 					'type'        => 'number',
 					'description' => __( 'Total net worth.', 'mcp-ai-wpoos-pro' ),
 				),
-				'liquidity'           => array(
+				'liquidity'            => array(
 					'type'        => 'number',
 					'description' => __( 'Liquid assets (cash and equivalents).', 'mcp-ai-wpoos-pro' ),
 				),
-				'total_debt'          => array(
+				'total_debt'           => array(
 					'type'        => 'number',
 					'description' => __( 'Total outstanding debt obligations.', 'mcp-ai-wpoos-pro' ),
 				),
-				'annual_income'       => array(
+				'annual_income'        => array(
 					'type'        => 'number',
 					'description' => __( 'Annual gross income.', 'mcp-ai-wpoos-pro' ),
 				),
-				'years_experience'    => array(
+				'years_experience'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Years of CRE experience.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -95,12 +95,12 @@ class WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer implements WP_MCP_AI_Tool_Int
 					'type'        => 'integer',
 					'description' => __( 'Number of properties currently owned.', 'mcp-ai-wpoos-pro' ),
 				),
-				'prior_defaults'      => array(
+				'prior_defaults'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of prior loan defaults.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 				),
-				'credit_score'        => array(
+				'credit_score'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Credit score (300-850).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -117,7 +117,20 @@ class WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -150,10 +163,10 @@ class WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer implements WP_MCP_AI_Tool_Int
 		$net_worth_ratio    = ( $total_debt > 0 ) ? $net_worth / $total_debt : ( $net_worth > 0 ? 99.0 : 0.0 );
 
 		// Score each dimension (0-25 pts each, total 100).
-		$leverage_score    = $this->score_leverage( $global_leverage );
-		$liquidity_score   = $this->score_liquidity( $liquidity_coverage );
-		$credit_score_pts  = $this->score_credit( $credit_score, $prior_defaults );
-		$experience_score  = $this->score_experience( $years_exp, $num_properties );
+		$leverage_score   = $this->score_leverage( $global_leverage );
+		$liquidity_score  = $this->score_liquidity( $liquidity_coverage );
+		$credit_score_pts = $this->score_credit( $credit_score, $prior_defaults );
+		$experience_score = $this->score_experience( $years_exp, $num_properties );
 
 		$composite_score = $leverage_score + $liquidity_score + $credit_score_pts + $experience_score;
 
@@ -197,18 +210,18 @@ class WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer implements WP_MCP_AI_Tool_Int
 			'data'    => array(
 				'borrower_name'    => $borrower_name,
 				'financial_ratios' => array(
-					'global_leverage'    => round( $global_leverage, 4 ),
+					'global_leverage'     => round( $global_leverage, 4 ),
 					'global_leverage_pct' => round( $global_leverage * 100, 2 ) . '%',
-					'liquidity_coverage' => round( $liquidity_coverage, 4 ),
-					'debt_to_income'     => round( $debt_to_income, 2 ) . 'x',
-					'net_worth_ratio'    => round( $net_worth_ratio, 2 ) . 'x',
+					'liquidity_coverage'  => round( $liquidity_coverage, 4 ),
+					'debt_to_income'      => round( $debt_to_income, 2 ) . 'x',
+					'net_worth_ratio'     => round( $net_worth_ratio, 2 ) . 'x',
 				),
 				'scoring'          => array(
-					'leverage_score'    => $leverage_score . '/25',
-					'liquidity_score'   => $liquidity_score . '/25',
-					'credit_score'      => $credit_score_pts . '/25',
-					'experience_score'  => $experience_score . '/25',
-					'composite_score'   => $composite_score . '/100',
+					'leverage_score'   => $leverage_score . '/25',
+					'liquidity_score'  => $liquidity_score . '/25',
+					'credit_score'     => $credit_score_pts . '/25',
+					'experience_score' => $experience_score . '/25',
+					'composite_score'  => $composite_score . '/100',
 				),
 				'rating'           => strtoupper( $rating ),
 				'risk_flags'       => $flags,

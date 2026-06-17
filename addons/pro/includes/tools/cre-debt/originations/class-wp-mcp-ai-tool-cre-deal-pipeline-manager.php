@@ -22,7 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
-	/** @var string Option key for pipeline storage. */
+	/**
+	 * Performs the operation.
 	const OPTION_KEY = 'wp_mcp_ai_cre_deal_pipeline';
 
 	/**
@@ -71,25 +72,25 @@ class WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'        => array(
+				'action'         => array(
 					'type'        => 'string',
 					'description' => __( 'Pipeline action to perform.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'create', 'update', 'list', 'get', 'delete' ),
 				),
-				'deal_id'       => array(
+				'deal_id'        => array(
 					'type'        => 'string',
 					'description' => __( 'Unique deal identifier (required for update/get/delete).', 'mcp-ai-wpoos-pro' ),
 				),
-				'deal_name'     => array(
+				'deal_name'      => array(
 					'type'        => 'string',
 					'description' => __( 'Name or title for the deal.', 'mcp-ai-wpoos-pro' ),
 				),
-				'property_type' => array(
+				'property_type'  => array(
 					'type'        => 'string',
 					'description' => __( 'Property type.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'office', 'retail', 'industrial', 'multifamily', 'hotel', 'other' ),
 				),
-				'loan_amount'   => array(
+				'loan_amount'    => array(
 					'type'        => 'number',
 					'description' => __( 'Requested loan amount.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -97,20 +98,20 @@ class WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'number',
 					'description' => __( 'Estimated property value.', 'mcp-ai-wpoos-pro' ),
 				),
-				'stage'         => array(
+				'stage'          => array(
 					'type'        => 'string',
 					'description' => __( 'Current pipeline stage.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'sourced', 'screened', 'loi', 'ic_review', 'approved', 'closing', 'closed', 'dead' ),
 				),
-				'borrower_name' => array(
+				'borrower_name'  => array(
 					'type'        => 'string',
 					'description' => __( 'Borrower or sponsor name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'originator'    => array(
+				'originator'     => array(
 					'type'        => 'string',
 					'description' => __( 'Originator or loan officer name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'notes'         => array(
+				'notes'          => array(
 					'type'        => 'string',
 					'description' => __( 'Free-form notes about the deal.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -127,7 +128,20 @@ class WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -253,24 +267,30 @@ class WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager implements WP_MCP_AI_Tool_Interfa
 
 		if ( $filter_stage ) {
 			$deals = array_values(
-				array_filter( $deals, function ( $d ) use ( $filter_stage ) {
-					return $d['stage'] === $filter_stage;
-				} )
+				array_filter(
+					$deals,
+					function ( $d ) use ( $filter_stage ) {
+						return $d['stage'] === $filter_stage;
+					}
+				)
 			);
 		}
 		if ( $filter_type ) {
 			$deals = array_values(
-				array_filter( $deals, function ( $d ) use ( $filter_type ) {
-					return $d['property_type'] === $filter_type;
-				} )
+				array_filter(
+					$deals,
+					function ( $d ) use ( $filter_type ) {
+						return $d['property_type'] === $filter_type;
+					}
+				)
 			);
 		}
 
 		$total_volume = 0.0;
 		$stage_counts = array();
 		foreach ( $deals as $d ) {
-			$total_volume += $d['loan_amount'];
-			$s = $d['stage'];
+			$total_volume      += $d['loan_amount'];
+			$s                  = $d['stage'];
 			$stage_counts[ $s ] = ( $stage_counts[ $s ] ?? 0 ) + 1;
 		}
 
@@ -297,7 +317,7 @@ class WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager implements WP_MCP_AI_Tool_Interfa
 	 * @return array|WP_Error
 	 */
 	private function get_deal( array $arguments ): array|WP_Error {
-		$deal_id  = sanitize_text_field( $arguments['deal_id'] ?? '' );
+		$deal_id = sanitize_text_field( $arguments['deal_id'] ?? '' );
 		if ( empty( $deal_id ) ) {
 			return new WP_Error( 'missing_field', __( 'deal_id is required for get action.', 'mcp-ai-wpoos-pro' ) );
 		}
@@ -320,7 +340,7 @@ class WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager implements WP_MCP_AI_Tool_Interfa
 	 * @return array|WP_Error
 	 */
 	private function delete_deal( array $arguments ): array|WP_Error {
-		$deal_id  = sanitize_text_field( $arguments['deal_id'] ?? '' );
+		$deal_id = sanitize_text_field( $arguments['deal_id'] ?? '' );
 		if ( empty( $deal_id ) ) {
 			return new WP_Error( 'missing_field', __( 'deal_id is required for delete action.', 'mcp-ai-wpoos-pro' ) );
 		}

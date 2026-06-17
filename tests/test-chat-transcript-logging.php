@@ -53,6 +53,9 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// WP 6.9 may re-register breadcrumbs block during rest_api_init.
+		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
 		}
@@ -138,6 +141,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 
 		// Prepare request data.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -354,6 +358,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 
 		// Prepare request data.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -392,6 +397,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 
 		// Prepare request to get transcripts.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $this->admin_id );
 
 		// Call the handler.

@@ -121,6 +121,12 @@ jobs:
           composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction
           echo "✅ Production dependencies installed"
 
+      - name: Install Pro addon production dependencies
+        working-directory: addons/pro
+        run: |
+          composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --ignore-platform-req=ext-fileinfo --ignore-platform-req=ext-gd --ignore-platform-req=ext-zip
+          echo "✅ Pro addon production dependencies installed"
+
       - name: Update version numbers
         run: |
           VERSION="${{ steps.version.outputs.version }}"
@@ -141,125 +147,265 @@ jobs:
           grep "WP_MCP_AI_VERSION" mcp-ai-wpoos.php
           grep "Stable tag:" readme.txt
 
-      - name: Create plugin directory structure
+      - name: Create plugin directory structures (base-only + full)
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          
-          # Create build directory
+
+          # ----------------------------------------------------------------
+          # Two artifacts are produced from this job:
+          #
+          #   1. ${PLUGIN_SLUG}-${VERSION}.zip
+          #      The WordPress.org submission. EXCLUDES `addons/` (and every
+          #      other dev directory enumerated in `.distignore`). This is
+          #      what the SVN deploy step pushes to wordpress.org/plugins/.
+          #
+          #   2. ${PLUGIN_SLUG}-${VERSION}-full.zip
+          #      The GitHub Release artifact. INCLUDES bundled addons
+          #      (Pro, Embedded, Fantasy-Football, etc.) for users who want
+          #      the all-in-one download. Never uploaded to WordPress.org.
+          #
+          # The exclusion list below is the single source of truth for the
+          # base-only build and is kept in sync with `.distignore`. If you
+          # add a path to one, add it to the other.
+          # ----------------------------------------------------------------
+
           mkdir -p build/${PLUGIN_SLUG}
-          
-          # Copy plugin files (excluding dev files)
-          # This creates a combined Base + Pro version
-          rsync -av --progress . build/${PLUGIN_SLUG}/ \
-            --exclude '.git' \
-            --exclude '.git-branch-info' \
-            --exclude '.github' \
-            --exclude '.wordpress-org' \
-            --exclude '.codex' \
-            --exclude '.devcontainer' \
-            --exclude '.vscode' \
-            --exclude 'node_modules' \
-            --exclude 'tests' \
-            --exclude 'bin' \
-            --exclude 'coverage' \
-            --exclude 'build' \
-            --exclude 'svn-*' \
-            --exclude '.eslintrc.json' \
-            --exclude '.eslintignore' \
-            --exclude '.gitignore' \
-            --exclude '.editorconfig' \
-            --exclude '.nvmrc' \
-            --exclude 'CODEOWNERS' \
-            --exclude 'phpunit.xml.dist' \
-            --exclude 'composer.json' \
-            --exclude 'composer.lock' \
-            --exclude 'package.json' \
-            --exclude 'package-lock.json' \
-            --exclude 'patches.lock.json' \
-            --exclude 'babel.config.js' \
-            --exclude 'jest.config.js' \
-            --exclude 'esbuild.config.js' \
-            --exclude 'webpack.config.tma-woo-shop.js' \
-            --exclude 'docker-compose.yml' \
-            --exclude 'patches' \
-            --exclude 'docs' \
-            --exclude 'core' \
-            --exclude 'shared' \
-            --exclude 'ARCHITECTURE.md' \
-            --exclude 'RELEASE_CHECKLIST.md' \
-            --exclude 'CONTRIBUTING.md' \
-            --exclude 'SECURITY.md' \
-            --exclude 'BUILD.md' \
-            --exclude 'test-*.php' \
-            --exclude 'verify-*.sh' \
-            --exclude '*.zip' \
-            --exclude '*.tar.gz' \
-            --exclude '.distignore' \
-            --exclude 'assets/examples' \
+          mkdir -p build-full/${PLUGIN_SLUG}
+
+          # Common dev exclusions (apply to BOTH builds).
+          COMMON_EXCLUDES=(
+            --exclude '.git'
+            --exclude '.git-branch-info'
+            --exclude '.github'
+            --exclude '.wordpress-org'
+            --exclude '.codex'
+            --exclude '.devcontainer'
+            --exclude '.vscode'
+            --exclude '.zed'
+            --exclude '.bmad'
+            --exclude '.context'
+            --exclude 'node_modules'
+            --exclude 'tests'
+            --exclude 'bin'
+            --exclude 'coverage'
+            --exclude 'build'
+            --exclude 'build-full'
+            --exclude 'svn-*'
+            --exclude '.eslintrc.json'
+            --exclude '.eslintignore'
+            --exclude '.gitignore'
+            --exclude '.gitattributes'
+            --exclude '.editorconfig'
+            --exclude '.nvmrc'
+            --exclude '.npmrc'
+            --exclude '.codecov.yml'
+            --exclude 'CODEOWNERS'
+            --exclude 'MAINTAINER_MAP.md'
+            --exclude 'AGENTS.md'
+            --exclude 'CLAUDE.md'
+            --exclude 'WARRANTY.md'
+            --exclude 'CREDITS.md'
+            --exclude 'phpunit.xml.dist'
+            --exclude 'phpcs.xml.dist'
+            --exclude 'composer.json'
+            --exclude 'composer.lock'
+            --exclude 'package.json'
+            --exclude 'package-lock.json'
+            --exclude 'patches.lock.json'
+            --exclude 'babel.config.js'
+            --exclude 'jest.config.js'
+            --exclude 'esbuild.config.js'
+            --exclude 'esbuild.config.pro.js'
+            --exclude 'webpack.config.tma-woo-shop.js'
+            --exclude 'webpack.config.tma.js'
+            --exclude 'webpack.config.workflow.js'
+            --exclude 'cleancss.config.js'
+            --exclude 'cosmos.config.json'
+            --exclude 'cosmos.webpack.config.js'
+            --exclude 'tsconfig.json'
+            --exclude 'docker-compose.yml'
+            --exclude 'Dockerfile'
+            --exclude 'patches'
+            --exclude 'docs'
+            --exclude 'archive'
+            --exclude 'examples'
+            --exclude 'packages'
+            --exclude 'src'
+            --exclude 'ARCHITECTURE.md'
+            --exclude 'RELEASE_CHECKLIST.md'
+            --exclude 'CONTRIBUTING.md'
+            --exclude 'SECURITY.md'
+            --exclude 'BUILD.md'
+            --exclude 'SUBMISSION.md'
+            --exclude 'test-*.php'
+            --exclude 'verify-*.sh'
+            --exclude '*.zip'
+            --exclude '*.tar.gz'
+            --exclude '.distignore'
+            --exclude 'assets/examples'
             --exclude 'mcp-ai-wpoos-base.php'
-          
-          # Include essential documentation files
-          # README.md and CHANGELOG.md are optional but preferred
-          if [ -f "README.md" ]; then
-            cp README.md build/${PLUGIN_SLUG}/
-            echo "✅ README.md included"
-          else
-            echo "⚠️ README.md not found (optional)"
-          fi
-          
-          if [ -f "CHANGELOG.md" ]; then
-            cp CHANGELOG.md build/${PLUGIN_SLUG}/
-            echo "✅ CHANGELOG.md included"
-          else
-            echo "⚠️ CHANGELOG.md not found (optional)"
-          fi
-          
-          # LICENSE is required
-          if [ -f "LICENSE" ]; then
-            cp LICENSE build/${PLUGIN_SLUG}/
-            echo "✅ LICENSE included"
-          else
-            echo "❌ LICENSE file missing - this is required!"
+            --exclude 'mcp-diagnostic-debug.php'
+            --exclude 'test-storage-service.html'
+          )
+
+          # Base-only exclusions: keep `addons/`, `core/`, `shared/` OUT of the
+          # WordPress.org submission, plus the CDN-loading files enumerated
+          # in `.distignore` lines 152–164 (transformers, langchain, web-worker).
+          BASE_ONLY_EXCLUDES=(
+            --exclude '/addons'
+            --exclude '/core'
+            --exclude '/shared'
+            --exclude '/lib'
+            --exclude 'includes/class-wp-mcp-ai-langchain-enqueue.php'
+            --exclude 'includes/class-wp-mcp-ai-transformers-enqueue.php'
+            --exclude 'includes/class-wp-mcp-ai-webworker-enqueue.php'
+            --exclude 'assets/js/langchain-tool-adapter.min.js'
+            --exclude 'assets/js/langchain-tool-adapter.js'
+            --exclude 'assets/js/langchain-orchestration.min.js'
+            --exclude 'assets/js/langchain-orchestration.js'
+            --exclude 'assets/js/transformers-tasks-client.min.js'
+            --exclude 'assets/js/transformers-tasks-client.js'
+            --exclude 'assets/js/web-worker-manager.min.js'
+            --exclude 'assets/js/web-worker-manager.js'
+            --exclude 'assets/js/workers'
+            --exclude '*-backup.php'
+          )
+
+          # ---- 1. Base-only build (the WordPress.org submission) ----------
+          echo "📦 Building base-only artifact (WordPress.org submission)..."
+          rsync -a --progress . build/${PLUGIN_SLUG}/ \
+            "${COMMON_EXCLUDES[@]}" \
+            "${BASE_ONLY_EXCLUDES[@]}"
+
+          # ---- 2. Full build (the GitHub Release artifact) ----------------
+          echo "📦 Building full artifact (GitHub Release, includes addons)..."
+          rsync -a --progress . build-full/${PLUGIN_SLUG}/ \
+            "${COMMON_EXCLUDES[@]}"
+
+          # Include essential documentation files in BOTH builds.
+          for target in build/${PLUGIN_SLUG} build-full/${PLUGIN_SLUG}; do
+            if [ -f "README.md" ]; then
+              cp README.md "$target/"
+            fi
+            if [ -f "CHANGELOG.md" ]; then
+              cp CHANGELOG.md "$target/"
+            fi
+            # LICENSE is required.
+            if [ -f "LICENSE" ]; then
+              cp LICENSE "$target/"
+            else
+              echo "❌ LICENSE file missing - this is required!"
+              exit 1
+            fi
+          done
+
+          echo "✅ Plugin directory structures created (base + full)"
+
+      - name: Assert no addons/ in base-only build
+        run: |
+          set -euo pipefail
+          # Hard guard: the WordPress.org submission must not contain any
+          # path under `addons/`. If this assertion fires, the rsync exclude
+          # list above is out of sync with .distignore.
+          if find build/${PLUGIN_SLUG} -type d -name 'addons' -print -quit | grep -q .; then
+            echo "::error::Base-only build directory contains an addons/ directory — submission would leak addon code."
+            find build/${PLUGIN_SLUG} -type d -name 'addons'
             exit 1
           fi
-          
-          echo "✅ Plugin directory structure created"
+          echo "✅ Base-only build verified: no addons/ paths present"
+
+      - name: Assert single text domain in base-only build
+        run: |
+          set -euo pipefail
+          # R-T-06 guard: the base submission must declare only "mcp-ai-wpoos"
+          # as its Text Domain. Foreign domains (nvoos-*, nvdigital-*-pro, etc.)
+          # live exclusively in addons/ and must not appear in the WP.org build.
+          FOREIGN=$(grep -rI "Text Domain:" build/${PLUGIN_SLUG}/ \
+            | grep -v "Text Domain: mcp-ai-wpoos" || true)
+          if [ -n "${FOREIGN}" ]; then
+            echo "::error::Base-only build contains a foreign Text Domain declaration."
+            echo "${FOREIGN}"
+            exit 1
+          fi
+          echo "✅ Text Domain guard passed: only mcp-ai-wpoos found in base build"
 
       - name: Verify plugin structure
         run: |
-          echo "📁 Plugin structure:"
+          echo "📁 Base-only structure:"
           ls -la build/${PLUGIN_SLUG}/
-          
+
           echo ""
           echo "📁 Includes directory:"
           ls -la build/${PLUGIN_SLUG}/includes/ | head -20
-          
+
           echo ""
           echo "📁 Assets directory:"
           ls -la build/${PLUGIN_SLUG}/assets/
 
-      - name: Create ZIP archive
+          echo ""
+          echo "📁 Full build top-level:"
+          ls -la build-full/${PLUGIN_SLUG}/ | head -30
+
+      - name: Create ZIP archives
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          
-          cd build
-          zip -r ../${PLUGIN_SLUG}-${VERSION}.zip ${PLUGIN_SLUG}/ -x "*.DS_Store" -x "*__MACOSX*"
-          cd ..
-          
-          # Show ZIP info
-          echo "✅ Created: ${PLUGIN_SLUG}-${VERSION}.zip"
-          ls -lh ${PLUGIN_SLUG}-${VERSION}.zip
-          
-          # Verify ZIP contents
-          echo ""
-          echo "📦 ZIP contents (first 30 files):"
-          unzip -l ${PLUGIN_SLUG}-${VERSION}.zip | head -35
 
-      - name: Upload build artifact
+          # 1. Base-only ZIP (the WordPress.org submission).
+          (cd build && zip -r "../${PLUGIN_SLUG}-${VERSION}.zip" "${PLUGIN_SLUG}/" \
+            -x "*.DS_Store" -x "*__MACOSX*")
+          echo "✅ Created (base-only, WP.org): ${PLUGIN_SLUG}-${VERSION}.zip"
+          ls -lh "${PLUGIN_SLUG}-${VERSION}.zip"
+
+          # 2. Full ZIP (GitHub Release, includes addons).
+          (cd build-full && zip -r "../${PLUGIN_SLUG}-${VERSION}-full.zip" "${PLUGIN_SLUG}/" \
+            -x "*.DS_Store" -x "*__MACOSX*")
+          echo "✅ Created (full, GitHub Release): ${PLUGIN_SLUG}-${VERSION}-full.zip"
+          ls -lh "${PLUGIN_SLUG}-${VERSION}-full.zip"
+
+          # Final ZIP-content guard: assert no `addons/` in the WP.org ZIP.
+          if unzip -l "${PLUGIN_SLUG}-${VERSION}.zip" | awk '{print $NF}' | grep -E '(^|/)addons/' >/dev/null; then
+            echo "::error::WordPress.org ZIP contains addons/ paths — failing the build."
+            unzip -l "${PLUGIN_SLUG}-${VERSION}.zip" | grep '/addons/' || true
+            exit 1
+          fi
+          echo "✅ ZIP guard passed: no addons/ paths in WP.org submission ZIP"
+
+          echo ""
+          echo "📦 Base-only ZIP contents (first 30 entries):"
+          unzip -l "${PLUGIN_SLUG}-${VERSION}.zip" | head -35
+
+      - name: Build optional component ZIPs (knowledge-base, vectorizer)
+        run: |
+          echo "📦 Building optional component ZIPs for on-demand downloads..."
+          chmod +x bin/build-optional-components.sh
+          ./bin/build-optional-components.sh ${{ steps.version.outputs.version }}
+          echo ""
+          echo "📦 Optional component ZIPs:"
+          ls -lh build/optional-components/knowledge-base.zip build/optional-components/neplex-vectorizer.zip
+
+      - name: Upload base-only build artifact (WordPress.org)
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}
-          path: ${{ env.PLUGIN_SLUG }}-*.zip
+          path: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload full build artifact (GitHub Release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}-full
+          path: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}-full.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload optional components artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}-optional-components
+          path: |
+            build/optional-components/knowledge-base.zip
+            build/optional-components/neplex-vectorizer.zip
           if-no-files-found: error
           retention-days: 30
 
@@ -269,7 +415,7 @@ jobs:
   # Runs the official `wp plugin-check` command against the built ZIP — the
   # exact same artifact that `10up/action-wordpress-plugin-deploy` would push.
   # Any reported Errors block the release; Warnings are surfaced for triage.
-  # See docs/audit/2026-04/wp-org-submission-checklist.md row R-T-04.
+  # See docs/project/audits/2026-04/wp-org-submission-checklist.md row R-T-04.
   # =============================================================================
   plugin-check:
     name: WordPress.org Plugin Check
@@ -395,10 +541,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download build artifact
+      - name: Download base-only build artifact (WP.org submission)
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}
+
+      - name: Download full build artifact (includes addons)
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}-full
+
+      - name: Download optional components artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}-optional-components
 
       - name: Generate release notes
         id: release_notes
@@ -443,13 +599,20 @@ jobs:
             
             ### 📥 Installation
             
+            **Two artifacts are attached:**
+
+            - `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}.zip` — **Base plugin only** (matches what is published to WordPress.org).
+            - `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}-full.zip` — **Full build** including bundled addons (Pro, Embedded, Fantasy-Football, etc.). Not submitted to WordPress.org.
+            - `knowledge-base.zip` — **Optional:** 218+ profession playbooks and knowledge base documents. Downloaded on-demand by the plugin.
+            - `neplex-vectorizer.zip` — **Optional:** Vectorizer library placeholder (now bundled with the base plugin).
+
             **Option 1: Upload ZIP**
-            1. Download `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}.zip` below
+            1. Download `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}.zip` (base) or `…-full.zip` (everything) below
             2. Go to WordPress Admin → Plugins → Add New → Upload Plugin
             3. Upload the ZIP file and click "Install Now"
             4. Activate the plugin
             
-            **Option 2: WordPress.org** (when available)
+            **Option 2: WordPress.org** (when available — base plugin only)
             1. Go to WordPress Admin → Plugins → Add New
             2. Search for "WP Open Operator System"
             3. Click "Install Now" and "Activate"
@@ -468,6 +631,8 @@ jobs:
             
           files: |
             ${{ env.PLUGIN_SLUG }}-*.zip
+            knowledge-base.zip
+            neplex-vectorizer.zip
           fail_on_unmatched_files: true
           generate_release_notes: true
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -530,6 +695,11 @@ jobs:
         if: steps.check_creds.outputs.has_creds == 'true'
         run: composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction
 
+      - name: Install Pro addon production dependencies
+        if: steps.check_creds.outputs.has_creds == 'true'
+        working-directory: addons/pro
+        run: composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --ignore-platform-req=ext-fileinfo --ignore-platform-req=ext-gd --ignore-platform-req=ext-zip
+
       - name: Update version numbers
         if: steps.check_creds.outputs.has_creds == 'true'
         run: |
@@ -537,6 +707,19 @@ jobs:
           sed -i "s/Version: .*/Version: ${VERSION}/" mcp-ai-wpoos.php
           sed -i "s/define( 'WP_MCP_AI_VERSION', '.*' );/define( 'WP_MCP_AI_VERSION', '${VERSION}' );/" mcp-ai-wpoos.php
           sed -i "s/Stable tag: .*/Stable tag: ${VERSION}/" readme.txt
+
+      - name: Verify .distignore excludes addons (WP.org submission scope)
+        if: steps.check_creds.outputs.has_creds == 'true'
+        run: |
+          set -euo pipefail
+          # Defence in depth: the 10up deploy action filters the working
+          # tree using .distignore. Assert that .distignore excludes the
+          # `addons` directory before letting the SVN push proceed.
+          if ! grep -E '^\s*addons\s*$' .distignore >/dev/null; then
+            echo "::error::.distignore does not exclude 'addons/'. Refusing to deploy to WordPress.org."
+            exit 1
+          fi
+          echo "✅ .distignore correctly excludes addons/ from the WP.org submission"
 
       - name: Deploy to WordPress.org
         if: steps.check_creds.outputs.has_creds == 'true'

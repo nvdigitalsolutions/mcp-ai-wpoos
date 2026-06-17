@@ -232,6 +232,17 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 			array( $job_id, $command, $context )
 		);
 
+		// Register in Cron Manager so the job is visible and monitorable.
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			WP_MCP_AI_Cron_Manager::record_job(
+				'wp_mcp_ai_execute_async_slash_command',
+				array( $job_id ),
+				'single',
+				time(),
+				get_current_user_id()
+			);
+		}
+
 		return new WP_REST_Response(
 			array(
 				'success' => true,
@@ -307,7 +318,22 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 				// Validate token (implement token validation logic).
 				$user_id = $this->validate_bearer_token( $token );
 				if ( $user_id ) {
-					wp_set_current_user( $user_id );
+					// Switch the current-user context only after
+					// `validate_bearer_token()` returned a real WordPress
+					// user ID. `safe_set_current_user()` revalidates the
+					// user still exists (and on multisite, belongs to
+					// this blog) before mutating global state. The
+					// capability check at line 358 below
+					// (`current_user_can( 'read' )`) is the authoritative
+					// gate; this method returns `WP_Error` if it fails.
+					if ( ! WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id ) ) {
+						$this->log_error( 'invalid_token', 'Bearer token user could not be resolved' );
+						return new WP_Error(
+							'invalid_token',
+							__( 'Invalid bearer token', 'mcp-ai-wpoos' ),
+							array( 'status' => 401 )
+						);
+					}
 					$this->log_success(
 						'bearer_auth',
 						array( 'user_id' => $user_id )

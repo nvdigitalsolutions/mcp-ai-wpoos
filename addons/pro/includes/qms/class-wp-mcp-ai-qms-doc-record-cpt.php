@@ -144,12 +144,12 @@ class WP_MCP_AI_QMS_Doc_Record_CPT {
 		}
 
 		$single_ints = array(
-			'_qms_owner_id'              => 'integer',
-			'_qms_retention_years'       => 'integer',
+			'_qms_owner_id'               => 'integer',
+			'_qms_retention_years'        => 'integer',
 			'_qms_artifact_attachment_id' => 'integer',
-			'_qms_template_id'           => 'integer',
-			'_qms_supersedes'            => 'integer',
-			'_qms_superseded_by'         => 'integer',
+			'_qms_template_id'            => 'integer',
+			'_qms_supersedes'             => 'integer',
+			'_qms_superseded_by'          => 'integer',
 		);
 		foreach ( $single_ints as $key => $type ) {
 			register_post_meta(
@@ -179,27 +179,27 @@ class WP_MCP_AI_QMS_Doc_Record_CPT {
 			return null;
 		}
 		return array(
-			'id'                => (int) $post->ID,
-			'title'             => $post->post_title,
-			'content'           => $post->post_content,
-			'document_id'       => (string) get_post_meta( $post->ID, '_qms_document_id', true ),
-			'revision'          => (string) get_post_meta( $post->ID, '_qms_revision', true ),
-			'status'            => (string) get_post_meta( $post->ID, '_qms_status', true ),
-			'owner_id'          => (int) get_post_meta( $post->ID, '_qms_owner_id', true ),
-			'reviewer_ids'      => (array) ( get_post_meta( $post->ID, '_qms_reviewer_ids', true ) ?: array() ),
-			'approver_ids'      => (array) ( get_post_meta( $post->ID, '_qms_approver_ids', true ) ?: array() ),
-			'effective_date'    => (string) get_post_meta( $post->ID, '_qms_effective_date', true ),
-			'next_review_date'  => (string) get_post_meta( $post->ID, '_qms_next_review_date', true ),
-			'retention_years'   => (int) get_post_meta( $post->ID, '_qms_retention_years', true ),
-			'disposition'       => (string) get_post_meta( $post->ID, '_qms_disposition', true ),
-			'external_origin'   => (array) ( get_post_meta( $post->ID, '_qms_external_origin', true ) ?: array() ),
-			'change_reason'     => (string) get_post_meta( $post->ID, '_qms_change_reason', true ),
-			'change_summary'    => (string) get_post_meta( $post->ID, '_qms_change_summary', true ),
-			'signatures'        => (array) ( get_post_meta( $post->ID, '_qms_signatures', true ) ?: array() ),
-			'content_hash'      => (string) get_post_meta( $post->ID, '_qms_content_hash', true ),
-			'template_id'       => (int) get_post_meta( $post->ID, '_qms_template_id', true ),
-			'supersedes'        => (int) get_post_meta( $post->ID, '_qms_supersedes', true ),
-			'superseded_by'     => (int) get_post_meta( $post->ID, '_qms_superseded_by', true ),
+			'id'               => (int) $post->ID,
+			'title'            => $post->post_title,
+			'content'          => $post->post_content,
+			'document_id'      => (string) get_post_meta( $post->ID, '_qms_document_id', true ),
+			'revision'         => (string) get_post_meta( $post->ID, '_qms_revision', true ),
+			'status'           => (string) get_post_meta( $post->ID, '_qms_status', true ),
+			'owner_id'         => (int) get_post_meta( $post->ID, '_qms_owner_id', true ),
+			'reviewer_ids'     => (array) ( get_post_meta( $post->ID, '_qms_reviewer_ids', true ) ? get_post_meta( $post->ID, '_qms_reviewer_ids', true ) : array() ),
+			'approver_ids'     => (array) ( get_post_meta( $post->ID, '_qms_approver_ids', true ) ? get_post_meta( $post->ID, '_qms_approver_ids', true ) : array() ),
+			'effective_date'   => (string) get_post_meta( $post->ID, '_qms_effective_date', true ),
+			'next_review_date' => (string) get_post_meta( $post->ID, '_qms_next_review_date', true ),
+			'retention_years'  => (int) get_post_meta( $post->ID, '_qms_retention_years', true ),
+			'disposition'      => (string) get_post_meta( $post->ID, '_qms_disposition', true ),
+			'external_origin'  => (array) ( get_post_meta( $post->ID, '_qms_external_origin', true ) ? get_post_meta( $post->ID, '_qms_external_origin', true ) : array() ),
+			'change_reason'    => (string) get_post_meta( $post->ID, '_qms_change_reason', true ),
+			'change_summary'   => (string) get_post_meta( $post->ID, '_qms_change_summary', true ),
+			'signatures'       => (array) ( get_post_meta( $post->ID, '_qms_signatures', true ) ? get_post_meta( $post->ID, '_qms_signatures', true ) : array() ),
+			'content_hash'     => (string) get_post_meta( $post->ID, '_qms_content_hash', true ),
+			'template_id'      => (int) get_post_meta( $post->ID, '_qms_template_id', true ),
+			'supersedes'       => (int) get_post_meta( $post->ID, '_qms_supersedes', true ),
+			'superseded_by'    => (int) get_post_meta( $post->ID, '_qms_superseded_by', true ),
 		);
 	}
 
@@ -222,7 +222,7 @@ class WP_MCP_AI_QMS_Doc_Record_CPT {
 				'revision'    => get_post_meta( $post_id, '_qms_revision', true ),
 			)
 		);
-		$hash = hash( 'sha256', (string) $payload );
+		$hash    = hash( 'sha256', (string) $payload );
 		update_post_meta( $post_id, '_qms_content_hash', $hash );
 		return $hash;
 	}

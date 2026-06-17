@@ -258,7 +258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						'admin_notices',
 						function () use ( $key, $class_name, $e ) {
 							printf(
-								'<div class="notice notice-error"><p><strong>%s:</strong> %s (%s: %s)</p></div>',
+								'<div class="notice notice-error is-dismissible"><p><strong>%s:</strong> %s (%s: %s)</p></div>',
 								esc_html__( 'Pro Dashboard Error', 'mcp-ai-wpoos' ),
 								esc_html( sprintf( 'Failed to initialize %s', $key ) ),
 								esc_html( $class_name ),
@@ -610,7 +610,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<div class="notice notice-error">
 					<p>
 						<strong><?php esc_html_e( 'Error loading compliance data:', 'mcp-ai-wpoos' ); ?></strong>
-						<?php esc_html_e( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/operations/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
 				<?php
@@ -922,7 +922,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<div class="notice notice-error">
 					<p>
 						<strong><?php esc_html_e( 'Error loading compliance data:', 'mcp-ai-wpoos' ); ?></strong>
-						<?php esc_html_e( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/operations/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
 				<?php
@@ -1507,33 +1507,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</div>
 			</div>
 			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
+			// Register and enqueue a dummy handle for inline framework detail styles.
+			// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline style registered with no URL; version not applicable.
+			wp_register_style( 'wp-mcp-ai-pro-dashboard-frameworks', false );
+			wp_enqueue_style( 'wp-mcp-ai-pro-dashboard-frameworks' );
+
+			$frameworks_css = '.wp-mcp-ai-framework-detail-tabs{border-bottom:1px solid #ddd;padding-bottom:10px;}'
+				. '.wp-mcp-ai-framework-detail-tab{margin-right:5px;border-bottom:2px solid transparent;}'
+				. '.wp-mcp-ai-framework-detail-tab.active{border-bottom-color:#0073aa;font-weight:600;}'
+				. '.wp-mcp-ai-framework-detail-panel{display:none;padding:20px 0;}'
+				. '.wp-mcp-ai-framework-detail-panel.active{display:block;}';
+
+			wp_add_inline_style( 'wp-mcp-ai-pro-dashboard-frameworks', $frameworks_css );
+
+			ob_start();
 			?>
-			<style>
-				.wp-mcp-ai-framework-detail-tabs {
-					border-bottom: 1px solid #ddd;
-					padding-bottom: 10px;
-				}
-				.wp-mcp-ai-framework-detail-tab {
-					margin-right: 5px;
-					border-bottom: 2px solid transparent;
-				}
-				.wp-mcp-ai-framework-detail-tab.active {
-					border-bottom-color: #0073aa;
-					font-weight: 600;
-				}
-				.wp-mcp-ai-framework-detail-panel {
-					display: none;
-					padding: 20px 0;
-				}
-				.wp-mcp-ai-framework-detail-panel.active {
-					display: block;
-				}
-			</style>
-			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for dashboard chart initialization with dynamic data
-			?>
-			<script>
 			jQuery(document).ready(function($) {
 				// Framework detail tabs
 				$('.wp-mcp-ai-framework-detail-tab').on('click', function() {
@@ -1615,7 +1603,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					alert('Comparison report generation for: ' + selected.join(', '));
 				});
 			});
-			</script>
+			<?php
+			$frameworks_js = ob_get_clean();
+			wp_print_inline_script_tag( $frameworks_js );
+			?>
 			<?php
 		}
 
@@ -1874,7 +1865,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<span class="dashicons dashicons-warning"></span>
 					<?php esc_html_e( 'Manage Risks', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/README.md' ); ?>" class="button" target="_blank">
+				<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/README.md' ); ?>" class="button" target="_blank">
 					<span class="dashicons dashicons-book"></span>
 					<?php esc_html_e( 'View ISMS Documentation', 'mcp-ai-wpoos' ); ?>
 				</a>
@@ -2065,7 +2056,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		private function render_documentation_links() {
 			// Link to GitHub repository documentation (always up-to-date).
-			$github_base = 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/';
+			$github_base = 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/';
 			$docs        = array(
 				'ISMS-Policy.md'                => __( 'ISMS Policy', 'mcp-ai-wpoos' ),
 				'Statement-of-Applicability.md' => __( 'Statement of Applicability', 'mcp-ai-wpoos' ),
@@ -2300,134 +2291,34 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</p>
 				<?php
 			endif;
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
+			// Register and enqueue a dummy handle for inline chat statistics styles.
+			// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline style registered with no URL; version not applicable.
+			wp_register_style( 'wp-mcp-ai-chat-statistics', false );
+			wp_enqueue_style( 'wp-mcp-ai-chat-statistics' );
+
+			$chat_stats_css = '.wp-mcp-ai-chat-statistics-section{background:#fff;border:1px solid #dcdcde;border-radius:4px;padding:20px;margin:20px 0;}'
+				. '.wp-mcp-ai-chat-statistics-section h2{margin-top:0;font-size:1.3em;color:#1d2327;}'
+				. '.wp-mcp-ai-chat-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:15px;}'
+				. '.wp-mcp-ai-usage-stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;margin:15px 0;}'
+				. '.wp-mcp-ai-chat-stat-card,.wp-mcp-ai-usage-stat-card{display:flex;align-items:center;gap:15px;padding:15px;background:#f6f7f7;border-radius:4px;border:1px solid #e0e0e0;}'
+				. '.wp-mcp-ai-stat-icon{width:48px;height:48px;background:#2271b1;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;flex-shrink:0;}'
+				. '.wp-mcp-ai-stat-content{flex:1;}'
+				. '.wp-mcp-ai-stat-value{font-size:2em;font-weight:bold;color:#1d2327;line-height:1;}'
+				. '.wp-mcp-ai-stat-label{font-size:0.9em;color:#646970;margin-top:5px;}'
+				. '.wp-mcp-ai-analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:15px;margin-top:20px;}'
+				. '.wp-mcp-ai-analytics-card{background:#fff;border:1px solid #dcdcde;border-radius:4px;padding:15px;}'
+				. '.wp-mcp-ai-analytics-card h3{margin-top:0;margin-bottom:15px;font-size:1.1em;color:#1d2327;border-bottom:1px solid #dcdcde;padding-bottom:10px;}'
+				. '.wp-mcp-ai-analytics-table{width:100%;border-collapse:collapse;}'
+				. '.wp-mcp-ai-analytics-table th{text-align:left;padding:8px;background:#f6f7f7;font-weight:600;font-size:0.9em;color:#1d2327;border-bottom:2px solid #dcdcde;}'
+				. '.wp-mcp-ai-analytics-table td{padding:8px;border-bottom:1px solid #f0f0f1;font-size:0.9em;}'
+				. '.wp-mcp-ai-analytics-table tbody tr:last-child td{border-bottom:none;}'
+				. '.wp-mcp-ai-analytics-table tbody tr:hover{background:#f6f7f7;}'
+				. '.wp-mcp-ai-chat-empty-state{padding:20px;background:#f0f6fc;border:1px solid #d0e4f5;border-radius:4px;color:#3c434a;display:flex;align-items:center;gap:10px;}'
+				. '.wp-mcp-ai-chat-empty-state .dashicons{color:#2271b1;}'
+				. '@media screen and (max-width:782px){.wp-mcp-ai-chat-stats-grid,.wp-mcp-ai-usage-stats-row,.wp-mcp-ai-analytics-grid{grid-template-columns:1fr;}}';
+
+			wp_add_inline_style( 'wp-mcp-ai-chat-statistics', $chat_stats_css );
 			?>
-			<style>
-				.wp-mcp-ai-chat-statistics-section {
-					background: #fff;
-					border: 1px solid #dcdcde;
-					border-radius: 4px;
-					padding: 20px;
-					margin: 20px 0;
-				}
-				.wp-mcp-ai-chat-statistics-section h2 {
-					margin-top: 0;
-					font-size: 1.3em;
-					color: #1d2327;
-				}
-				.wp-mcp-ai-chat-stats-grid {
-					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-					gap: 15px;
-					margin-bottom: 15px;
-				}
-				.wp-mcp-ai-usage-stats-row {
-					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-					gap: 15px;
-					margin: 15px 0;
-				}
-				.wp-mcp-ai-chat-stat-card,
-				.wp-mcp-ai-usage-stat-card {
-					display: flex;
-					align-items: center;
-					gap: 15px;
-					padding: 15px;
-					background: #f6f7f7;
-					border-radius: 4px;
-					border: 1px solid #e0e0e0;
-				}
-				.wp-mcp-ai-stat-icon {
-					width: 48px;
-					height: 48px;
-					background: #2271b1;
-					border-radius: 50%;
-					display: flex;
-					align-items: center;
-					justify-content: center;
-					color: #fff;
-					font-size: 24px;
-					flex-shrink: 0;
-				}
-				.wp-mcp-ai-stat-content {
-					flex: 1;
-				}
-				.wp-mcp-ai-stat-value {
-					font-size: 2em;
-					font-weight: bold;
-					color: #1d2327;
-					line-height: 1;
-				}
-				.wp-mcp-ai-stat-label {
-					font-size: 0.9em;
-					color: #646970;
-					margin-top: 5px;
-				}
-				.wp-mcp-ai-analytics-grid {
-					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-					gap: 15px;
-					margin-top: 20px;
-				}
-				.wp-mcp-ai-analytics-card {
-					background: #fff;
-					border: 1px solid #dcdcde;
-					border-radius: 4px;
-					padding: 15px;
-				}
-				.wp-mcp-ai-analytics-card h3 {
-					margin-top: 0;
-					margin-bottom: 15px;
-					font-size: 1.1em;
-					color: #1d2327;
-					border-bottom: 1px solid #dcdcde;
-					padding-bottom: 10px;
-				}
-				.wp-mcp-ai-analytics-table {
-					width: 100%;
-					border-collapse: collapse;
-				}
-				.wp-mcp-ai-analytics-table th {
-					text-align: left;
-					padding: 8px;
-					background: #f6f7f7;
-					font-weight: 600;
-					font-size: 0.9em;
-					color: #1d2327;
-					border-bottom: 2px solid #dcdcde;
-				}
-				.wp-mcp-ai-analytics-table td {
-					padding: 8px;
-					border-bottom: 1px solid #f0f0f1;
-					font-size: 0.9em;
-				}
-				.wp-mcp-ai-analytics-table tbody tr:last-child td {
-					border-bottom: none;
-				}
-				.wp-mcp-ai-analytics-table tbody tr:hover {
-					background: #f6f7f7;
-				}
-				.wp-mcp-ai-chat-empty-state {
-					padding: 20px;
-					background: #f0f6fc;
-					border: 1px solid #d0e4f5;
-					border-radius: 4px;
-					color: #3c434a;
-					display: flex;
-					align-items: center;
-					gap: 10px;
-				}
-				.wp-mcp-ai-chat-empty-state .dashicons {
-					color: #2271b1;
-				}
-				@media screen and (max-width: 782px) {
-					.wp-mcp-ai-chat-stats-grid,
-					.wp-mcp-ai-usage-stats-row,
-					.wp-mcp-ai-analytics-grid {
-						grid-template-columns: 1fr;
-					}
-				}
-			</style>
 			<?php
 		}
 
@@ -2558,58 +2449,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</tbody>
 			</table>
 			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
+			// Register and enqueue a dummy handle for inline controls filter styles.
+			// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline style registered with no URL; version not applicable.
+			wp_register_style( 'wp-mcp-ai-controls-filter', false );
+			wp_enqueue_style( 'wp-mcp-ai-controls-filter' );
+
+			$controls_filter_css = '.wp-mcp-ai-controls-filter{margin-bottom:20px;display:flex;gap:10px;align-items:center;}'
+				. '.wp-mcp-ai-controls-filter label{font-weight:600;}'
+				. '.wp-mcp-ai-controls-filter select,.wp-mcp-ai-controls-filter input[type="text"]{padding:5px 10px;}'
+				. '.wp-mcp-ai-controls-filter input[type="text"]{flex:1;max-width:300px;}'
+				. '.wp-mcp-ai-controls-table .description{margin:5px 0 0 0;color:#646970;}'
+				. '.wp-mcp-ai-status-badge{display:inline-block;padding:4px 8px;border-radius:3px;font-size:12px;font-weight:600;}'
+				. '.wp-mcp-ai-status-implemented{background:#d4edda;color:#155724;}'
+				. '.wp-mcp-ai-status-partial{background:#fff3cd;color:#856404;}'
+				. '.wp-mcp-ai-status-planned{background:#d1ecf1;color:#0c5460;}'
+				. '.wp-mcp-ai-status-not_applicable{background:#e2e3e5;color:#383d41;}';
+
+			wp_add_inline_style( 'wp-mcp-ai-controls-filter', $controls_filter_css );
+
+			ob_start();
 			?>
-			<style>
-				.wp-mcp-ai-controls-filter {
-					margin-bottom: 20px;
-					display: flex;
-					gap: 10px;
-					align-items: center;
-				}
-				.wp-mcp-ai-controls-filter label {
-					font-weight: 600;
-				}
-				.wp-mcp-ai-controls-filter select,
-				.wp-mcp-ai-controls-filter input[type="text"] {
-					padding: 5px 10px;
-				}
-				.wp-mcp-ai-controls-filter input[type="text"] {
-					flex: 1;
-					max-width: 300px;
-				}
-				.wp-mcp-ai-controls-table .description {
-					margin: 5px 0 0 0;
-					color: #646970;
-				}
-				.wp-mcp-ai-status-badge {
-					display: inline-block;
-					padding: 4px 8px;
-					border-radius: 3px;
-					font-size: 12px;
-					font-weight: 600;
-				}
-				.wp-mcp-ai-status-implemented {
-					background: #d4edda;
-					color: #155724;
-				}
-				.wp-mcp-ai-status-partial {
-					background: #fff3cd;
-					color: #856404;
-				}
-				.wp-mcp-ai-status-planned {
-					background: #d1ecf1;
-					color: #0c5460;
-				}
-				.wp-mcp-ai-status-not_applicable {
-					background: #e2e3e5;
-					color: #383d41;
-				}
-			</style>
-			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for dashboard chart initialization with dynamic data
-			?>
-			<script>
 			jQuery(document).ready(function($) {
 				// Filter controls
 				$('#controls-status-filter').on('change', function() {
@@ -2631,8 +2490,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					});
 				});
 			});
-			</script>
 			<?php
+			$controls_filter_js = ob_get_clean();
+			wp_print_inline_script_tag( $controls_filter_js );
 		}
 
 		/**
@@ -2679,8 +2539,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						</td>
 						<td><span class="wp-mcp-ai-status-badge wp-mcp-ai-status-implemented"><?php esc_html_e( 'Complete', 'mcp-ai-wpoos' ); ?></span></td>
 						<td>
-							<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>"
-						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>" class="button button-small" target="_blank">
+							<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/Statement-of-Applicability.md' ); ?>"
+						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/Statement-of-Applicability.md' ); ?>" class="button button-small" target="_blank">
 								<?php esc_html_e( 'View Report', 'mcp-ai-wpoos' ); ?>
 							</a>
 						</td>
@@ -2924,44 +2784,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<span class="risk-badge risk-critical"><?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?></span>
 			</div>
 			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
+			// Register and enqueue a dummy handle for inline risk matrix styles.
+			// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline style registered with no URL; version not applicable.
+			wp_register_style( 'wp-mcp-ai-risk-matrix', false );
+			wp_enqueue_style( 'wp-mcp-ai-risk-matrix' );
+
+			$risk_matrix_css = '.wp-mcp-ai-risk-matrix-table{width:100%;border-collapse:collapse;margin:20px 0;}'
+				. '.wp-mcp-ai-risk-matrix-table th,.wp-mcp-ai-risk-matrix-table td{padding:15px;text-align:center;border:1px solid #ddd;}'
+				. '.wp-mcp-ai-risk-matrix-table thead th{background:#f0f0f1;font-weight:600;}'
+				. '.wp-mcp-ai-risk-matrix-table tbody th{background:#f9f9f9;font-weight:600;text-align:left;}'
+				. '.risk-low{background:#d4edda;}'
+				. '.risk-medium{background:#fff3cd;}'
+				. '.risk-high{background:#f8d7da;}'
+				. '.risk-critical{background:#dc3545;color:white;}'
+				. '.wp-mcp-ai-risk-legend{margin-top:20px;}'
+				. '.risk-badge{display:inline-block;padding:5px 10px;margin-right:10px;border-radius:3px;font-weight:600;}';
+
+			wp_add_inline_style( 'wp-mcp-ai-risk-matrix', $risk_matrix_css );
 			?>
-			<style>
-				.wp-mcp-ai-risk-matrix-table {
-					width: 100%;
-					border-collapse: collapse;
-					margin: 20px 0;
-				}
-				.wp-mcp-ai-risk-matrix-table th,
-				.wp-mcp-ai-risk-matrix-table td {
-					padding: 15px;
-					text-align: center;
-					border: 1px solid #ddd;
-				}
-				.wp-mcp-ai-risk-matrix-table thead th {
-					background: #f0f0f1;
-					font-weight: 600;
-				}
-				.wp-mcp-ai-risk-matrix-table tbody th {
-					background: #f9f9f9;
-					font-weight: 600;
-					text-align: left;
-				}
-				.risk-low { background: #d4edda; }
-				.risk-medium { background: #fff3cd; }
-				.risk-high { background: #f8d7da; }
-				.risk-critical { background: #dc3545; color: white; }
-				.wp-mcp-ai-risk-legend {
-					margin-top: 20px;
-				}
-				.risk-badge {
-					display: inline-block;
-					padding: 5px 10px;
-					margin-right: 10px;
-					border-radius: 3px;
-					font-weight: 600;
-				}
-			</style>
 			<?php
 		}
 
@@ -2993,7 +2833,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<div class="notice notice-warning inline">
 					<p>
 						<strong><?php esc_html_e( 'Unable to load risk register.', 'mcp-ai-wpoos' ); ?></strong>
-						<?php esc_html_e( 'Please check that the Risk-Register.md file is available at docs/compliance/iso27001/Risk-Register.md', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Please check that the Risk-Register.md file is available at docs/operations/compliance/iso27001/Risk-Register.md', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
 			<?php else : ?>
@@ -3060,13 +2900,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 							__( 'Showing %1$d risks. See the full %2$s for detailed risk analysis and treatment plans.', 'mcp-ai-wpoos' ),
 							array(
 								'a' => array(
-									'href' => array(),
+									'href'   => array(),
 									'target' => array(),
 								),
 							)
 						),
 						count( $risks ),
-						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Risk-Assessment.md' ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'
+						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/Risk-Assessment.md' ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'
 					);
 					?>
 				</p>
@@ -3345,11 +3185,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</tbody>
 			</table>
 			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for dashboard chart initialization with dynamic data
+			// Pre-compute dynamic PHP values for the framework controls script.
+			$fw_ctrl_framework = $framework;
+
+			ob_start();
 			?>
-			<script>
 			jQuery(document).ready(function($) {
-				var framework = '<?php echo esc_js( $framework ); ?>';
+				var framework = <?php echo wp_json_encode( $fw_ctrl_framework ); ?>;
 
 				// Filter by status
 				$('#' + framework + '-status-filter').on('change', function() {
@@ -3384,7 +3226,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					$('.wp-mcp-ai-framework-controls-table[data-framework="' + framework + '"] .wp-mcp-ai-framework-control-row').show();
 				});
 			});
-			</script>
+			<?php
+			$fw_ctrl_js = ob_get_clean();
+			wp_print_inline_script_tag( $fw_ctrl_js );
+			?>
 			<?php
 		}
 
@@ -3403,7 +3248,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Fallback to parsing markdown file (development/debugging).
-			$soa_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Statement-of-Applicability.md';
+			$soa_file = WP_MCP_AI_PATH . 'docs/operations/compliance/iso27001/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $soa_file ) ) {
 				return array();
@@ -3506,7 +3351,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Fallback to file parsing.
-			$soc2_file = WP_MCP_AI_PATH . 'docs/compliance/soc2/Statement-of-Applicability.md';
+			$soc2_file = WP_MCP_AI_PATH . 'docs/operations/compliance/soc2/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $soc2_file ) ) {
 				return 0;
@@ -3546,7 +3391,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Fallback to file parsing.
-			$hipaa_file = WP_MCP_AI_PATH . 'docs/compliance/hipaa/Statement-of-Applicability.md';
+			$hipaa_file = WP_MCP_AI_PATH . 'docs/operations/compliance/hipaa/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $hipaa_file ) ) {
 				return 0;
@@ -3588,7 +3433,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return array Array of criteria with id, name, category, status, status_key, applicable, implementation, and mapping.
 		 */
 		private function get_soc2_controls() {
-			$soc2_file = WP_MCP_AI_PATH . 'docs/compliance/soc2/Statement-of-Applicability.md';
+			$soc2_file = WP_MCP_AI_PATH . 'docs/operations/compliance/soc2/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $soc2_file ) ) {
 				return array();
@@ -3678,7 +3523,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return array Array of safeguards with id, name, category, status, status_key, applicable, implementation, and mapping.
 		 */
 		private function get_hipaa_controls() {
-			$hipaa_file = WP_MCP_AI_PATH . 'docs/compliance/hipaa/Statement-of-Applicability.md';
+			$hipaa_file = WP_MCP_AI_PATH . 'docs/operations/compliance/hipaa/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $hipaa_file ) ) {
 				return array();
@@ -3950,7 +3795,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return array Array of risks with id, name, description, category, likelihood, impact, risk_score, risk_level, treatment, and status.
 		 */
 		private function get_risk_register_entries() {
-			$risk_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Risk-Register.md';
+			$risk_file = WP_MCP_AI_PATH . 'docs/operations/compliance/iso27001/Risk-Register.md';
 
 			if ( ! file_exists( $risk_file ) ) {
 				return array();

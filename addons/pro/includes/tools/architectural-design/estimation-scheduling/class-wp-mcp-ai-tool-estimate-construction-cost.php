@@ -155,6 +155,13 @@ class WP_MCP_AI_Tool_Estimate_Construction_Cost implements WP_MCP_AI_Tool_Interf
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -261,8 +268,8 @@ class WP_MCP_AI_Tool_Estimate_Construction_Cost implements WP_MCP_AI_Tool_Interf
 
 		// Fallback if country has no rate table (legacy behaviour).
 		if ( empty( $rate_info['rate_per_sqm'] ) ) {
-			$base_per_sf      = $this->get_base_cost( $quality_level, $construction_type );
-			$rate_info        = array(
+			$base_per_sf = $this->get_base_cost( $quality_level, $construction_type );
+			$rate_info   = array(
 				'currency'      => 'USD',
 				'rate_per_sqm'  => $base_per_sf * 10.7639104,
 				'rate_per_sqft' => $base_per_sf,
@@ -320,18 +327,48 @@ class WP_MCP_AI_Tool_Estimate_Construction_Cost implements WP_MCP_AI_Tool_Interf
 
 		if ( $include_breakdown ) {
 			$breakdown_pcts = array(
-				array( 'category' => 'Site Work',          'percent' => 5 ),
-				array( 'category' => 'Foundation',         'percent' => 8 ),
-				array( 'category' => 'Framing',            'percent' => 20 ),
-				array( 'category' => 'Roofing',            'percent' => 6 ),
-				array( 'category' => 'Exterior Finishes',  'percent' => 12 ),
-				array( 'category' => 'Plumbing',           'percent' => 10 ),
-				array( 'category' => 'Electrical',         'percent' => 8 ),
-				array( 'category' => 'HVAC',               'percent' => 8 ),
-				array( 'category' => 'Interior Finishes',  'percent' => 18 ),
-				array( 'category' => 'Other',              'percent' => 5 ),
+				array(
+					'category' => 'Site Work',
+					'percent'  => 5,
+				),
+				array(
+					'category' => 'Foundation',
+					'percent'  => 8,
+				),
+				array(
+					'category' => 'Framing',
+					'percent'  => 20,
+				),
+				array(
+					'category' => 'Roofing',
+					'percent'  => 6,
+				),
+				array(
+					'category' => 'Exterior Finishes',
+					'percent'  => 12,
+				),
+				array(
+					'category' => 'Plumbing',
+					'percent'  => 10,
+				),
+				array(
+					'category' => 'Electrical',
+					'percent'  => 8,
+				),
+				array(
+					'category' => 'HVAC',
+					'percent'  => 8,
+				),
+				array(
+					'category' => 'Interior Finishes',
+					'percent'  => 18,
+				),
+				array(
+					'category' => 'Other',
+					'percent'  => 5,
+				),
 			);
-			$breakdown = array();
+			$breakdown      = array();
 			foreach ( $breakdown_pcts as $row ) {
 				$breakdown[] = array(
 					'category' => $row['category'],

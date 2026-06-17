@@ -11,6 +11,8 @@
 #   ./bin/build-plugin-zip.sh --pro              # Builds pro add-on only
 #   ./bin/build-plugin-zip.sh --combined         # Builds base + pro combined
 #   ./bin/build-plugin-zip.sh --core-only        # Builds core plugin only
+#   ./bin/build-plugin-zip.sh --wp-org           # Builds WordPress.org submission packages
+#   ./bin/build-plugin-zip.sh --all              # Builds all versions including WP.org
 #   ./bin/build-plugin-zip.sh --version 1.0.0    # Specify version number
 #
 # Output:
@@ -32,12 +34,46 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$ROOT_DIR"
 
+# ---------------------------------------------------------------------------
+# WSL auto-detection: when running natively on Windows (Git Bash / MSYS2)
+# without a working rsync, automatically re-execute inside WSL.
+# ---------------------------------------------------------------------------
+_wsl_rerun_if_needed() {
+	case "$(uname -s)" in
+		MINGW*|MSYS*) ;;
+		*) return 0 ;;
+	esac
+	if rsync --version >/dev/null 2>&1; then
+		return 0
+	fi
+	if ! command -v wsl >/dev/null 2>&1; then
+		return 0
+	fi
+	_wsl_root="$(echo "$ROOT_DIR" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+	_wsl_script="$(echo "$0" | sed 's|\\|/|g')"
+	case "$_wsl_script" in
+		/*) ;;
+		*) _wsl_script="$_wsl_root/$_wsl_script" ;;
+	esac
+	_wsl_script="$(echo "$_wsl_script" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+	# Build a safely-escaped argument string for the re-exec
+	_wsl_args=""
+	for _arg in "$@"; do
+		_wsl_args="$_wsl_args $(printf '%q' "$_arg")"
+	done
+	echo "ℹ️  Windows detected without working rsync → re-executing via WSL..."
+	echo ""
+	exec wsl bash -c "export PATH=/usr/bin:/bin:/usr/local/bin:\$PATH; cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
+}
+_wsl_rerun_if_needed "$@"
+
 # Default values
 BUILD_BASE=false
 BUILD_PRO=false
 BUILD_COMBINED=false
 BUILD_CORE_ONLY=false
 BUILD_TOOLKITS=false
+BUILD_WP_ORG=false
 SKIP_NPM_BUILD=false
 VERSION=""
 
@@ -64,6 +100,10 @@ while [[ $# -gt 0 ]]; do
             BUILD_TOOLKITS=true
             shift
             ;;
+        --wp-org)
+            BUILD_WP_ORG=true
+            shift
+            ;;
         --skip-npm-build)
             SKIP_NPM_BUILD=true
             shift
@@ -77,6 +117,7 @@ while [[ $# -gt 0 ]]; do
             BUILD_PRO=true
             BUILD_COMBINED=true
             BUILD_TOOLKITS=true
+            BUILD_WP_ORG=true
             shift
             ;;
         -h|--help)
@@ -88,7 +129,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --combined        Build base + pro combined package"
             echo "  --core-only       Build core plugin only (lightweight, 4 basic tools)"
             echo "  --toolkits        Build individual toolkit add-on ZIPs"
-            echo "  --all             Build all versions (base, pro, combined, toolkits)"
+            echo "  --wp-org          Build WordPress.org submission packages (text domain transform)"
+            echo "  --all             Build all versions (base, pro, combined, toolkits, wp-org)"
             echo "  --skip-npm-build  Skip npm install and build (use pre-built assets)"
             echo "  --version X.Y.Z   Specify version number"
             echo "  -h, --help        Show this help message"
@@ -112,11 +154,18 @@ while [[ $# -gt 0 ]]; do
 done
 
 # If no build type specified, build all versions (base, pro, combined, and core-only)
-if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ] && [ "$BUILD_TOOLKITS" = false ]; then
+if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ] && [ "$BUILD_TOOLKITS" = false ] && [ "$BUILD_WP_ORG" = false ]; then
     BUILD_BASE=true
     BUILD_PRO=true
     BUILD_COMBINED=true
     BUILD_CORE_ONLY=true
+    BUILD_WP_ORG=true
+fi
+
+# WordPress.org packages are generated from the base and combined ZIPs
+if [ "$BUILD_WP_ORG" = true ]; then
+    BUILD_BASE=true
+    BUILD_COMBINED=true
 fi
 
 # Get version if not specified
@@ -137,6 +186,7 @@ echo "Build targets:"
 [ "$BUILD_COMBINED" = true ] && echo "  ✓ Base + Pro combined (mcp-ai-wpoos)"
 [ "$BUILD_CORE_ONLY" = true ] && echo "  ✓ Core plugin (mcp-ai-wpoos-core) - lightweight"
 [ "$BUILD_TOOLKITS" = true ] && echo "  ✓ Individual toolkit add-ons (build/toolkit-addons/)"
+[ "$BUILD_WP_ORG" = true ] && echo "  ✓ WordPress.org submission packages (nvdigital-open-operator-system-oos-*)"
 echo ""
 
 # Check requirements
@@ -178,9 +228,31 @@ composer install --no-dev --prefer-dist --classmap-authoritative --no-interactio
 echo "✅ Production dependencies installed (with optimized classmap autoloader)"
 echo ""
 
-# Clean build directory
-rm -rf build
+# Clean build staging directories only — preserve previously-built ZIP files
+# (ZIPs in build/ are tracked in git; rm -rf build would delete them from the repo)
+rm -rf build/mcp-ai-wpoos \
+       build/mcp-ai-wpoos-base \
+       build/mcp-ai-wpoos-pro \
+       build/mcp-ai-wpoos-core \
+       build/nvdigital-open-operator-system-oos \
+       build/nvdigital-open-operator-system-oos-pro \
+       build/nvdigital-open-operator-system-oos-complete \
+       build/nvdigital-open-operator-system-oos-core \
+       build/wp-mcp-ai \
+       build/wp-mcp-ai-base \
+       build/wp-mcp-ai-pro \
+       build/workflow-builder \
+       build/.tmp-addon-zips
 mkdir -p build
+
+# Remove previously built main-plugin ZIPs that may carry a stale version stamp.
+# Only clean ZIPs for the variants being built in *this* invocation, so
+# incremental builds (e.g. --base then --pro) don't wipe each other.
+# (build-addon-zips.sh handles addon ZIP cleanup separately.)
+[ "$BUILD_BASE"     = true ] && rm -f build/mcp-ai-wpoos-base-*.zip build/nvdigital-open-operator-system-oos-*.zip
+[ "$BUILD_PRO"      = true ] && rm -f build/mcp-ai-wpoos-pro-*.zip build/nvdigital-open-operator-system-oos-pro-*.zip build/nvdigital-oos-pro-*.zip
+[ "$BUILD_COMBINED" = true ] && rm -f build/mcp-ai-wpoos-[0-9]*.zip build/nvdigital-open-operator-system-oos-complete-*.zip
+[ "$BUILD_CORE_ONLY" = true ] && rm -f build/mcp-ai-wpoos-core-*.zip build/nvdigital-open-operator-system-oos-core-*.zip
 
 # ============================================================================
 # Build Base Version (Standalone, fully functional without Pro)
@@ -202,10 +274,16 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.github' \
         --exclude '.wordpress-org' \
         --exclude '.codex' \
+        --exclude '.codex-wordpress' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
+        --exclude '.agents' \
         --exclude '.bmad' \
         --exclude '.context' \
+        --exclude '.zed' \
+        --exclude '.wp-env.json' \
+        --exclude '.wp-env.test.json' \
+        --exclude '.wp-env.override.json' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
@@ -218,7 +296,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.editorconfig' \
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
-        --exclude 'MAINTAINER_MAP.md' \
+        --exclude '/*.md' \
         --exclude 'phpunit.xml.dist' \
         --exclude 'composer.lock' \
         --exclude 'package-lock.json' \
@@ -227,26 +305,15 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'jest.config.js' \
         --exclude 'esbuild.config.js' \
         --exclude 'docker-compose.yml' \
+        --exclude '/docker' \
         --exclude 'patches' \
         --exclude 'docs' \
-        --exclude 'core' \
-        --exclude 'shared' \
+        --exclude '/core' \
+        --exclude '/shared' \
+        --exclude '/lib' \
         --exclude 'archive' \
         --exclude 'packages' \
         --exclude '/src' \
-        --exclude 'ARCHITECTURE.md' \
-        --exclude 'CHANGELOG.md' \
-        --exclude 'CLAUDE.md' \
-        --exclude 'AGENTS.md' \
-        --exclude 'RELEASE_CHECKLIST.md' \
-        --exclude 'CONTRIBUTING.md' \
-        --exclude 'SECURITY.md' \
-        --exclude 'BUILD.md' \
-        --exclude 'INCOMPLETE-FEATURES-REVIEW.md' \
-        --exclude 'INCOMPLETE-FEATURES-STATUS-SUMMARY.md' \
-        --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
-        --exclude 'VENDOR-EXEC-USAGE.md' \
-        --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
         --exclude 'package.json' \
         --exclude 'tsconfig.json' \
         --exclude '.npmrc' \
@@ -260,13 +327,14 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'webpack.config.tma.js' \
         --exclude 'webpack.config.workflow.js' \
         --exclude 'phpcs.xml.dist' \
+        --exclude 'phpcs' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
         --exclude 'verify-*.sh' \
         --exclude '*.zip' \
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
-        --exclude 'addons/pro' \
+        --exclude 'addons' \
         --exclude 'assets/examples' \
         --exclude 'assets/csv-templates' \
         --exclude 'examples' \
@@ -335,19 +403,19 @@ if [ "$BUILD_BASE" = true ]; then
     
     # Note: mcp-ai-wpoos-base.php is already included via rsync above.
     # It serves as the main plugin file for the base version (matches folder name).
-    
+
+    # Restore the addons/ directory with a placeholder so the folder exists for
+    # users who later install toolkit add-ons (which unzip into addons/<slug>/).
+    mkdir -p "build/${BASE_SLUG}/addons"
+    touch "build/${BASE_SLUG}/addons/.gitkeep"
+    echo "✓ Created addons/.gitkeep placeholder (addons/ excluded from base build)"
+
     # Keep both minified and unminified assets for flexibility
     # PHP code will automatically use minified versions in production (via get_asset_file() method)
     # and unminified versions when SCRIPT_DEBUG is enabled.
     # This provides better debugging experience while maintaining optimal production performance.
     echo "✓ Keeping both minified and unminified assets for SCRIPT_DEBUG support"
-    
-    # Remove README.md (readme.txt is the WordPress.org standard)
-    if [ -f "build/${BASE_SLUG}/README.md" ]; then
-        rm -f "build/${BASE_SLUG}/README.md"
-        echo "✓ Removed README.md (readme.txt is used for WordPress.org)"
-    fi
-    
+
     # Remove plugin header from mcp-ai-wpoos.php to prevent WordPress from detecting it as a separate plugin
     # Only mcp-ai-wpoos-base.php should have the plugin header in the base version
     if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos.php" ]; then
@@ -677,10 +745,16 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.github' \
         --exclude '.wordpress-org' \
         --exclude '.codex' \
+        --exclude '.codex-wordpress' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
+        --exclude '.agents' \
         --exclude '.bmad' \
         --exclude '.context' \
+        --exclude '.zed' \
+        --exclude '.wp-env.json' \
+        --exclude '.wp-env.test.json' \
+        --exclude '.wp-env.override.json' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
@@ -693,7 +767,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.editorconfig' \
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
-        --exclude 'MAINTAINER_MAP.md' \
+        --exclude '/*.md' \
         --exclude 'phpunit.xml.dist' \
         --exclude 'composer.lock' \
         --exclude 'package-lock.json' \
@@ -702,26 +776,14 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'jest.config.js' \
         --exclude 'esbuild.config.js' \
         --exclude 'docker-compose.yml' \
+        --exclude '/docker' \
         --exclude 'patches' \
         --exclude 'docs' \
-        --exclude 'core' \
-        --exclude 'shared' \
+        --exclude '/core' \
+        --exclude '/shared' \
         --exclude 'archive' \
         --exclude 'packages' \
         --exclude '/src' \
-        --exclude 'ARCHITECTURE.md' \
-        --exclude 'CHANGELOG.md' \
-        --exclude 'CLAUDE.md' \
-        --exclude 'AGENTS.md' \
-        --exclude 'RELEASE_CHECKLIST.md' \
-        --exclude 'CONTRIBUTING.md' \
-        --exclude 'SECURITY.md' \
-        --exclude 'BUILD.md' \
-        --exclude 'INCOMPLETE-FEATURES-REVIEW.md' \
-        --exclude 'INCOMPLETE-FEATURES-STATUS-SUMMARY.md' \
-        --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
-        --exclude 'VENDOR-EXEC-USAGE.md' \
-        --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
         --exclude 'package.json' \
         --exclude 'tsconfig.json' \
         --exclude '.npmrc' \
@@ -735,6 +797,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'webpack.config.tma.js' \
         --exclude 'webpack.config.workflow.js' \
         --exclude 'phpcs.xml.dist' \
+        --exclude 'phpcs' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
         --exclude 'verify-*.sh' \
@@ -822,7 +885,15 @@ if [ "$BUILD_COMBINED" = true ]; then
     # and unminified versions when SCRIPT_DEBUG is enabled.
     # This provides better debugging experience while maintaining optimal production performance.
     echo "✓ Keeping both minified and unminified assets for SCRIPT_DEBUG support"
-    
+
+    # Remove non-pro toolkit addons from the combined build.
+    # Toolkit addons (chat-spa, canvas-toolkit, document-editor, etc.) are distributed
+    # as individual ZIPs via --toolkits and should not be bundled inside the combined package.
+    if [ -d "build/${COMBINED_SLUG}/addons" ]; then
+        find "build/${COMBINED_SLUG}/addons" -mindepth 1 -maxdepth 1 -type d ! -name 'pro' -exec rm -rf {} +
+        echo "✓ Removed non-pro toolkit addons from combined build (distributed separately)"
+    fi
+
     # ------------------------------------------------------------------
     # Prune tecnickcom/tcpdf (~28.7 MB) from the combined zip.
     #
@@ -850,12 +921,6 @@ if [ "$BUILD_COMBINED" = true ]; then
     fi
     echo "✓ Excluded tecnickcom/tcpdf vendor (ships in oos-toolkit-tcpdf add-on)"
 
-    # Remove README.md (readme.txt is the WordPress.org standard)
-    if [ -f "build/${COMBINED_SLUG}/README.md" ]; then
-        rm -f "build/${COMBINED_SLUG}/README.md"
-        echo "✓ Removed README.md (readme.txt is used for WordPress.org)"
-    fi
-    
     # Create ZIP
     cd build
     zip -r -q "${COMBINED_SLUG}-${VERSION}.zip" "${COMBINED_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
@@ -872,6 +937,15 @@ fi
 if [ "$BUILD_TOOLKITS" = true ]; then
     echo "Step 3e: Building individual toolkit add-ons..."
     "$SCRIPT_DIR/build-toolkit-addons.sh" --version "$VERSION"
+    echo ""
+fi
+
+# ============================================================================
+# Build WordPress.org Submission Packages
+# ============================================================================
+if [ "$BUILD_WP_ORG" = true ]; then
+    echo "Step 3f: Building WordPress.org submission packages..."
+    "$SCRIPT_DIR/build-wordpress-org-from-base.sh" --version "$VERSION"
     echo ""
 fi
 
@@ -901,6 +975,7 @@ if [ "$BUILD_CORE_ONLY" = true ]; then
     echo "     - mcp-ai-wpoos-core-${CORE_VERSION}.zip (Lightweight core plugin)"
 fi
 [ "$BUILD_TOOLKITS" = true ] && echo "     - build/toolkit-addons/oos-toolkit-*-${VERSION}.zip (Individual toolkit add-ons)"
+[ "$BUILD_WP_ORG" = true ] && echo "     - nvdigital-open-operator-system-oos-${VERSION}.zip (WordPress.org submission)"
 echo "  3. Click 'Install Now' and then 'Activate'"
 echo ""
 

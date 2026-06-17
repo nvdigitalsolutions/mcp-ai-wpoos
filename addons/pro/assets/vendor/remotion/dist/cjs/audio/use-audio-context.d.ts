@@ -3,4 +3,7 @@ export declare const useSingletonAudioContext: ({ logLevel, latencyHint, audioEn
     logLevel: LogLevel;
     latencyHint: AudioContextLatencyCategory;
     audioEnabled: boolean;
-}) => AudioContext | null;
+}) => {
+    audioContext: AudioContext;
+    gainNode: GainNode;
+} | null;

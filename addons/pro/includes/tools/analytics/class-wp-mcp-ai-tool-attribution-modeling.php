@@ -405,7 +405,7 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Touchpoints.
 	 */
 	private function get_customer_touchpoints( $user_id, $conversion_date, $lookback_days ) {
-		// Simplified touchpoint data - in production this would query
+		// Simplified touchpoint data - in production this would query.
 		// tracking tables or integration with analytics platforms.
 		$touchpoints = array();
 
@@ -524,9 +524,9 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 				break;
 
 			case 'position_based':
-				if ( $count === 1 ) {
+				if ( 1 === $count ) {
 					$distribution[0] = 1.0;
-				} elseif ( $count === 2 ) {
+				} elseif ( 2 === $count ) {
 					$distribution[0] = 0.5;
 					$distribution[1] = 0.5;
 				} else {

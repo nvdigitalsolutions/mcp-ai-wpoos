@@ -265,12 +265,23 @@ Both work identically for local connections:
 
 ## Related Documentation
 
+- [LM Studio Integration Guide](../../features/ai-providers/lm-studio/lm-studio-integration.md) — full feature reference (streaming, embeddings, native API, capability gating, structured outputs)
 - [LM Studio Testing Guide](lm-studio-testing.md) - Detailed testing procedures
 - [Cloudflare Tunnel Setup](../installation-setup/cloudflare-tunnel-setup.md) - Securely expose local LM Studio to remote WordPress
 - [Network Interface Binding](../../features/federation/NETWORK_INTERFACE_BINDING.md) - Direct network access configuration
-- *(LM Studio Endpoints Analysis pending)* - Technical endpoint details
 - [REST API Documentation](../../reference/api/rest-api.md) - Complete REST API reference
 - [Tool Reference](../../reference/tools/tool-reference.md) - Available tools and capabilities
+
+## New in Version 1.5
+
+- **Streaming ON by default** — no config change needed; tokens appear as they arrive.
+- **Optional API key** — add a bearer token in **Settings → NV oOS → Providers → LM Studio → API Key** to protect your server (LM Studio 0.3.6+).
+- **Native API** — tick **Use Native API (/api/v0)** for model metadata (arch, quantization, loaded state, context sizes, capabilities) and per-request performance stats.
+- **Embeddings** — load a model like `nomic-embed-text` to use LM Studio for vector-store features.
+- **Capability gating** — when native API is enabled, models without `tool_use` capability automatically skip the tools payload, preventing LM Studio 400 errors.
+- **Reasoning models** — DeepSeek-R1, Qwen-QwQ, and similar models surface their `<think>` blocks in the chat UI thinking panel; the main response contains only clean text.
+- **TTL** — pass `ttl` (seconds) to have LM Studio auto-unload the model after idle time.
+- **JSON Schema** — pass a `response_format: json_schema` descriptor for strict structured output.
 
 ## Support
 

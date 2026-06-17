@@ -25,6 +25,8 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * Tool for retrieving ESPN Fantasy Football league information.
  */
 class WP_MCP_AI_Tool_ESPN_Fantasy_Get_League implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -208,17 +210,17 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_League implements WP_MCP_AI_Tool_Interface
 		$settings = isset( $league_data['settings'] ) ? $league_data['settings'] : array();
 
 		return array(
-			'league_id'         => isset( $league_data['id'] ) ? absint( $league_data['id'] ) : 0,
-			'name'              => isset( $settings['name'] ) ? sanitize_text_field( $settings['name'] ) : '',
-			'season'            => isset( $league_data['seasonId'] ) ? absint( $league_data['seasonId'] ) : 0,
-			'size'              => isset( $settings['size'] ) ? absint( $settings['size'] ) : 0,
-			'current_week'      => isset( $league_data['scoringPeriodId'] ) ? absint( $league_data['scoringPeriodId'] ) : 0,
-			'current_matchup'   => isset( $league_data['currentMatchupPeriod'] ) ? absint( $league_data['currentMatchupPeriod'] ) : 0,
+			'league_id'            => isset( $league_data['id'] ) ? absint( $league_data['id'] ) : 0,
+			'name'                 => isset( $settings['name'] ) ? sanitize_text_field( $settings['name'] ) : '',
+			'season'               => isset( $league_data['seasonId'] ) ? absint( $league_data['seasonId'] ) : 0,
+			'size'                 => isset( $settings['size'] ) ? absint( $settings['size'] ) : 0,
+			'current_week'         => isset( $league_data['scoringPeriodId'] ) ? absint( $league_data['scoringPeriodId'] ) : 0,
+			'current_matchup'      => isset( $league_data['currentMatchupPeriod'] ) ? absint( $league_data['currentMatchupPeriod'] ) : 0,
 			'final_scoring_period' => isset( $league_data['finalScoringPeriod'] ) ? absint( $league_data['finalScoringPeriod'] ) : 0,
-			'is_public'         => isset( $settings['isPublic'] ) ? (bool) $settings['isPublic'] : false,
-			'scoring_type'      => $this->get_scoring_type( $settings ),
-			'roster_settings'   => $this->get_roster_settings( $settings ),
-			'playoff_settings'  => $this->get_playoff_settings( $settings ),
+			'is_public'            => isset( $settings['isPublic'] ) ? (bool) $settings['isPublic'] : false,
+			'scoring_type'         => $this->get_scoring_type( $settings ),
+			'roster_settings'      => $this->get_roster_settings( $settings ),
+			'playoff_settings'     => $this->get_playoff_settings( $settings ),
 			'acquisition_settings' => $this->get_acquisition_settings( $settings ),
 		);
 	}

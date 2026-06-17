@@ -22,6 +22,11 @@ class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -30,33 +35,110 @@ class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_expense_reimbursement_tracker'; }
-	public function get_name() { return __( 'Expense Reimbursement Tracker', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Tracks case-related expenses including filing fees, expert witnesses, travel, and marks reimbursement status.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_expense_reimbursement_tracker'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Expense Reimbursement Tracker', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Tracks case-related expenses including filing fees, expert witnesses, travel, and marks reimbursement status.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'           => array( 'type' => 'string', 'description' => __( 'Expense action.', 'mcp-ai-wpoos-pro' ), 'enum' => array( 'add', 'list', 'mark_reimbursed' ) ),
-				'matter_id'        => array( 'type' => 'integer', 'description' => __( 'Matter ID.', 'mcp-ai-wpoos-pro' ) ),
-				'expense_type'     => array( 'type' => 'string', 'description' => __( 'Type of expense.', 'mcp-ai-wpoos-pro' ) ),
-				'amount'           => array( 'type' => 'number', 'description' => __( 'Expense amount.', 'mcp-ai-wpoos-pro' ) ),
-				'description'      => array( 'type' => 'string', 'description' => __( 'Expense description.', 'mcp-ai-wpoos-pro' ) ),
-				'date'             => array( 'type' => 'string', 'description' => __( 'Expense date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ) ),
-				'receipt_attached' => array( 'type' => 'boolean', 'description' => __( 'Whether a receipt is attached.', 'mcp-ai-wpoos-pro' ) ),
-				'expense_id'       => array( 'type' => 'string', 'description' => __( 'Expense ID (for mark_reimbursed).', 'mcp-ai-wpoos-pro' ) ),
+				'action'           => array(
+					'type'        => 'string',
+					'description' => __( 'Expense action.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'add', 'list', 'mark_reimbursed' ),
+				),
+				'matter_id'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Matter ID.', 'mcp-ai-wpoos-pro' ),
+				),
+				'expense_type'     => array(
+					'type'        => 'string',
+					'description' => __( 'Type of expense.', 'mcp-ai-wpoos-pro' ),
+				),
+				'amount'           => array(
+					'type'        => 'number',
+					'description' => __( 'Expense amount.', 'mcp-ai-wpoos-pro' ),
+				),
+				'description'      => array(
+					'type'        => 'string',
+					'description' => __( 'Expense description.', 'mcp-ai-wpoos-pro' ),
+				),
+				'date'             => array(
+					'type'        => 'string',
+					'description' => __( 'Expense date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+				),
+				'receipt_attached' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether a receipt is attached.', 'mcp-ai-wpoos-pro' ),
+				),
+				'expense_id'       => array(
+					'type'        => 'string',
+					'description' => __( 'Expense ID (for mark_reimbursed).', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array( 'action', 'matter_id' ),
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'write', 'state-changing' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'write', 'state-changing' ); }
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'manage_options' ) ) {
@@ -102,7 +184,10 @@ class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_
 				return array(
 					'success'    => true,
 					'message'    => sprintf( __( 'Expense of $%s recorded. ', 'mcp-ai-wpoos-pro' ), number_format( $amount, 2 ) ) . self::DISCLAIMER,
-					'data'       => array( 'expense_id' => $expense_id, 'expense' => $expense ),
+					'data'       => array(
+						'expense_id' => $expense_id,
+						'expense'    => $expense,
+					),
 					'disclaimer' => self::DISCLAIMER,
 				);
 
@@ -119,7 +204,11 @@ class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_
 				return array(
 					'success'    => true,
 					'message'    => sprintf( __( '%d expenses tracked. Pending: $%s. ', 'mcp-ai-wpoos-pro' ), count( $expenses ), number_format( $total_pending, 2 ) ) . self::DISCLAIMER,
-					'data'       => array( 'expenses' => $expenses, 'total_pending' => round( $total_pending, 2 ), 'total_reimbursed' => round( $total_reimbursed, 2 ) ),
+					'data'       => array(
+						'expenses'         => $expenses,
+						'total_pending'    => round( $total_pending, 2 ),
+						'total_reimbursed' => round( $total_reimbursed, 2 ),
+					),
 					'disclaimer' => self::DISCLAIMER,
 				);
 

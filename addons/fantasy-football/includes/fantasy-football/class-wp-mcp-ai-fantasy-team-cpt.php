@@ -37,11 +37,11 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 	const META_LAST_SYNC      = '_ff_last_sync';
 
 	// Provider-specific meta keys.
-	const META_PROVIDER         = '_ff_provider'; // 'yahoo' or 'espn'.
-	const META_ESPN_LEAGUE_ID   = '_ff_espn_league_id';
-	const META_ESPN_TEAM_ID     = '_ff_espn_team_id';
-	const META_YAHOO_LEAGUE_ID  = '_ff_yahoo_league_id';
-	const META_YAHOO_TEAM_ID    = '_ff_yahoo_team_id';
+	const META_PROVIDER        = '_ff_provider'; // 'yahoo' or 'espn'.
+	const META_ESPN_LEAGUE_ID  = '_ff_espn_league_id';
+	const META_ESPN_TEAM_ID    = '_ff_espn_team_id';
+	const META_YAHOO_LEAGUE_ID = '_ff_yahoo_league_id';
+	const META_YAHOO_TEAM_ID   = '_ff_yahoo_team_id';
 
 	/**
 	 * Initialize the class.
@@ -83,8 +83,8 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 
 		// Check if we're on a fantasy team post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type     = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		$is_ff_page    = ( $post_type === self::POST_TYPE );
+		$post_type  = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$is_ff_page = ( self::POST_TYPE === $post_type );
 		if ( ! $is_ff_page ) {
 			return;
 		}
@@ -269,8 +269,8 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 		$last_sync      = get_post_meta( $post->ID, self::META_LAST_SYNC, true );
 
 		// Provider-specific IDs.
-		$espn_league_id = get_post_meta( $post->ID, self::META_ESPN_LEAGUE_ID, true );
-		$espn_team_id   = get_post_meta( $post->ID, self::META_ESPN_TEAM_ID, true );
+		$espn_league_id  = get_post_meta( $post->ID, self::META_ESPN_LEAGUE_ID, true );
+		$espn_team_id    = get_post_meta( $post->ID, self::META_ESPN_TEAM_ID, true );
 		$yahoo_league_id = get_post_meta( $post->ID, self::META_YAHOO_LEAGUE_ID, true );
 		$yahoo_team_id   = get_post_meta( $post->ID, self::META_YAHOO_TEAM_ID, true );
 
@@ -279,19 +279,19 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 <div style="background: #f9f9f9; padding: 15px; margin-bottom: 20px; border-left: 4px solid #0073aa;">
 	<h3 style="margin-top: 0;"><?php esc_html_e( 'Team Overview', 'mcp-ai-wpoos-pro' ); ?></h3>
 	<p><strong><?php esc_html_e( 'Provider:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $provider_label ); ?></p>
-	<?php if ( $league_name ) : ?>
+		<?php if ( $league_name ) : ?>
 	<p><strong><?php esc_html_e( 'League:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $league_name ); ?></p>
 	<?php endif; ?>
-	<?php if ( $season ) : ?>
+		<?php if ( $season ) : ?>
 	<p><strong><?php esc_html_e( 'Season:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $season ); ?></p>
 	<?php endif; ?>
-	<?php if ( $last_sync ) : ?>
+		<?php if ( $last_sync ) : ?>
 	<p><strong><?php esc_html_e( 'Last Sync:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $last_sync ); ?></p>
 	<?php endif; ?>
 </div>
 
 <table class="form-table">
-	<?php if ( 'espn' === $provider ) : ?>
+		<?php if ( 'espn' === $provider ) : ?>
 	<tr>
 		<th><label><?php esc_html_e( 'ESPN League ID', 'mcp-ai-wpoos-pro' ); ?></label></th>
 		<td><code><?php echo esc_html( $espn_league_id ); ?></code></td>
@@ -332,7 +332,7 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 		<th><label><?php esc_html_e( 'Points Against', 'mcp-ai-wpoos-pro' ); ?></label></th>
 		<td><?php echo esc_html( number_format_i18n( floatval( $points_against ), 2 ) ); ?></td>
 	</tr>
-	<?php if ( $rank ) : ?>
+		<?php if ( $rank ) : ?>
 	<tr>
 		<th><label><?php esc_html_e( 'Rank', 'mcp-ai-wpoos-pro' ); ?></label></th>
 		<td><?php echo esc_html( $rank ); ?></td>
@@ -342,7 +342,7 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 
 <div style="margin-top: 20px;">
 	<h4><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h4>
-	<?php if ( 'espn' === $provider && $espn_league_id && $espn_team_id && $season ) : ?>
+		<?php if ( 'espn' === $provider && $espn_league_id && $espn_team_id && $season ) : ?>
 		<p>
 			<a href="https://fantasy.espn.com/football/team?leagueId=<?php echo esc_attr( $espn_league_id ); ?>&teamId=<?php echo esc_attr( $espn_team_id ); ?>&seasonId=<?php echo esc_attr( $season ); ?>" target="_blank" class="button">
 				<?php esc_html_e( 'View on ESPN', 'mcp-ai-wpoos-pro' ); ?>
@@ -446,7 +446,7 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 				break;
 
 			case 'points':
-				$points_for = get_post_meta( $post_id, self::META_POINTS_FOR, true );
+				$points_for     = get_post_meta( $post_id, self::META_POINTS_FOR, true );
 				$points_against = get_post_meta( $post_id, self::META_POINTS_AGAINST, true );
 
 				if ( $points_for || $points_against ) {

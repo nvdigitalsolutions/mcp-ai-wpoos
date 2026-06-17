@@ -94,7 +94,7 @@ class WP_MCP_AI_Law_Firm_Research_Page {
 		$assistant_id = isset( $lf_settings['assistant_id'] ) ? absint( $lf_settings['assistant_id'] ) : 0;
 
 		if ( ! $assistant_id ) {
-			$assistants = get_posts(
+			$assistants   = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_assistant',
 					'post_status'    => 'publish',

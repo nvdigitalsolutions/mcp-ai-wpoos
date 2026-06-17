@@ -32,6 +32,7 @@ class NV_oOS_Graphify_Builder {
 	 *
 	 * @since 0.5.0
 	 *
+	// phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Nested parameter documentation uses { syntax.
 	 * @param array $args {
 	 *     @type bool   $incremental    Only process content changed since last build.
 	 *     @type bool   $semantic       Whether to run semantic extraction.
@@ -57,12 +58,14 @@ class NV_oOS_Graphify_Builder {
 		// 1. Detect content.
 		$detected = NV_oOS_Graphify_Detector::detect( $incremental );
 
-		$post_count          = count( $detected['posts'] );
-		$ccts_detected       = isset( $detected['ccts'] ) ? count( (array) $detected['ccts'] ) : 0;
-		$terms_detected      = isset( $detected['terms'] ) ? count( (array) $detected['terms'] ) : 0;
-		$users_detected      = isset( $detected['users'] ) ? count( (array) $detected['users'] ) : 0;
-		$media_detected      = isset( $detected['media'] ) ? count( (array) $detected['media'] ) : 0;
-		$ccts_skipped_reason = NV_oOS_Graphify_Detector::get_last_ccts_skip_reason();
+		$post_count              = count( $detected['posts'] );
+		$ccts_detected           = isset( $detected['ccts'] ) ? count( (array) $detected['ccts'] ) : 0;
+		$terms_detected          = isset( $detected['terms'] ) ? count( (array) $detected['terms'] ) : 0;
+		$users_detected          = isset( $detected['users'] ) ? count( (array) $detected['users'] ) : 0;
+		$media_detected          = isset( $detected['media'] ) ? count( (array) $detected['media'] ) : 0;
+		$external_detected       = isset( $detected['external'] ) ? count( (array) $detected['external'] ) : 0;
+		$ccts_skipped_reason     = NV_oOS_Graphify_Detector::get_last_ccts_skip_reason();
+		$external_skipped_reason = NV_oOS_Graphify_Detector::get_last_external_skip_reason();
 
 		// 2. Structural extraction.
 		$structural = NV_oOS_Graphify_Structural_Extractor::extract( $detected );
@@ -86,6 +89,17 @@ class NV_oOS_Graphify_Builder {
 			if ( ! $async_semantic ) {
 				$semantic_nodes += NV_oOS_Graphify_DB::batch_upsert_nodes( $sem_cct_result['nodes'] );
 				$semantic_edges += NV_oOS_Graphify_DB::batch_upsert_edges( $sem_cct_result['edges'] );
+			}
+		}
+
+		// 3c. Semantic extraction for external $wpdb table rows.
+		if ( $semantic && ! empty( $detected['external'] )
+			&& method_exists( 'NV_oOS_Graphify_Semantic_Extractor', 'extract_external' )
+		) {
+			$sem_ext_result = NV_oOS_Graphify_Semantic_Extractor::extract_external( $detected['external'], $async_semantic );
+			if ( ! $async_semantic && is_array( $sem_ext_result ) ) {
+				$semantic_nodes += isset( $sem_ext_result['nodes'] ) ? NV_oOS_Graphify_DB::batch_upsert_nodes( $sem_ext_result['nodes'] ) : 0;
+				$semantic_edges += isset( $sem_ext_result['edges'] ) ? NV_oOS_Graphify_DB::batch_upsert_edges( $sem_ext_result['edges'] ) : 0;
 			}
 		}
 
@@ -118,22 +132,24 @@ class NV_oOS_Graphify_Builder {
 		delete_transient( 'nvoos_graphify_report' );
 
 		$summary = array(
-			'success'             => true,
-			'posts_processed'     => $post_count,
-			'posts_detected'      => $post_count,
-			'ccts_detected'       => $ccts_detected,
-			'terms_detected'      => $terms_detected,
-			'users_detected'      => $users_detected,
-			'media_detected'      => $media_detected,
-			'ccts_skipped_reason' => $ccts_skipped_reason,
-			'nodes_upserted'      => $node_count,
-			'edges_upserted'      => $edge_count,
-			'semantic_nodes'      => $semantic_nodes,
-			'semantic_edges'      => $semantic_edges,
-			'async_semantic'      => $async_semantic,
-			'remote_nodes'        => $remote_nodes,
-			'remote_edges'        => $remote_edges,
-			'build_completed'     => $completed,
+			'success'                 => true,
+			'posts_processed'         => $post_count,
+			'posts_detected'          => $post_count,
+			'ccts_detected'           => $ccts_detected,
+			'terms_detected'          => $terms_detected,
+			'users_detected'          => $users_detected,
+			'media_detected'          => $media_detected,
+			'external_detected'       => $external_detected,
+			'ccts_skipped_reason'     => $ccts_skipped_reason,
+			'external_skipped_reason' => $external_skipped_reason,
+			'nodes_upserted'          => $node_count,
+			'edges_upserted'          => $edge_count,
+			'semantic_nodes'          => $semantic_nodes,
+			'semantic_edges'          => $semantic_edges,
+			'async_semantic'          => $async_semantic,
+			'remote_nodes'            => $remote_nodes,
+			'remote_edges'            => $remote_edges,
+			'build_completed'         => $completed,
 		);
 
 		NV_oOS_Graphify_DB::set_meta( 'last_build_summary', $summary );

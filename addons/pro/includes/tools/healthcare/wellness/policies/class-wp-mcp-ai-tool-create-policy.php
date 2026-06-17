@@ -1,0 +1,476 @@
+<?php
+/**
+ * Tool for creating insurance policies.
+ *
+ * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-content-media.php';
+
+/**
+ * Creates a new insurance policy.
+ */
+class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Content_Media;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'create_policy';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Create Policy', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Creates a new insurance policy (health, dental, vision, pet, or life insurance) for a member or updates an existing one if policy_id is provided.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'policy_id'         => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional policy ID. If provided, updates the existing policy instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
+				'member_id'         => array(
+					'type'        => 'integer',
+					'description' => __( 'Member ID this policy belongs to (required)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 1,
+				),
+				'policy_number'     => array(
+					'type'        => 'string',
+					'description' => __( 'Policy number (required)', 'mcp-ai-wpoos-pro' ),
+					'minLength'   => 1,
+					'maxLength'   => 100,
+				),
+				'name'              => array(
+					'type'        => 'string',
+					'description' => __( 'Policy name or title (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 200,
+				),
+				'policy_type'       => array(
+					'type'        => 'string',
+					'description' => __( 'Type of insurance policy (required)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'health-insurance', 'dental-insurance', 'vision-insurance', 'pet-insurance', 'life-insurance' ),
+				),
+				'provider'          => array(
+					'type'        => 'string',
+					'description' => __( 'Insurance provider name (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 200,
+				),
+				'status'            => array(
+					'type'        => 'string',
+					'description' => __( 'Policy status (optional, defaults to active)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'active', 'expired', 'pending', 'cancelled' ),
+					'default'     => 'active',
+				),
+				'effective_date'    => array(
+					'type'        => 'string',
+					'description' => __( 'Policy effective date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
+					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
+				),
+				'expiration_date'   => array(
+					'type'        => 'string',
+					'description' => __( 'Policy expiration date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
+					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
+				),
+				'premium'           => array(
+					'type'        => 'string',
+					'description' => __( 'Premium amount (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
+				'group_number'      => array(
+					'type'        => 'string',
+					'description' => __( 'Group / employer ID (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 100,
+				),
+				'plan_type'         => array(
+					'type'        => 'string',
+					'description' => __( 'Insurance plan type (optional)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'hmo', 'ppo', 'epo', 'pos', 'hdhp', 'medicaid', 'medicare', 'tricare', 'other', '' ),
+				),
+				'copay_primary'     => array(
+					'type'        => 'string',
+					'description' => __( 'Primary care copay amount (optional, e.g. "$20")', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
+				'copay_specialist'  => array(
+					'type'        => 'string',
+					'description' => __( 'Specialist copay amount (optional, e.g. "$50")', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
+				'deductible'        => array(
+					'type'        => 'string',
+					'description' => __( 'Annual deductible (optional, e.g. "$1,500")', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
+				'out_of_pocket_max' => array(
+					'type'        => 'string',
+					'description' => __( 'Annual out-of-pocket maximum (optional, e.g. "$5,000")', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
+				'rx_bin'            => array(
+					'type'        => 'string',
+					'description' => __( 'Pharmacy BIN number (optional, 6 digits)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 20,
+				),
+				'rx_pcn'            => array(
+					'type'        => 'string',
+					'description' => __( 'Pharmacy PCN (processor control number) (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
+				'rx_group'          => array(
+					'type'        => 'string',
+					'description' => __( 'Pharmacy group / plan ID (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 100,
+				),
+				'coverage_details'  => array(
+					'type'        => 'string',
+					'description' => __( 'Coverage details and benefits (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 5000,
+				),
+			),
+			'required'             => array( 'member_id', 'policy_number', 'policy_type' ),
+			'additionalProperties' => false,
+		);
+
+		// Merge content media parameters.
+		$schema['properties'] = array_merge( $schema['properties'], $this->get_content_media_parameters() );
+
+		return $schema;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_policy',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'insurance_agent', 'healthcare_provider', 'patient' ),
+			'risk_level'            => 'standard',
+		);
+	}
+
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags() {
+		return array( 'pro', 'database-write' );
+	}
+
+	/**
+	 * Check if the tool is available.
+	 *
+	 * @return bool
+	 */
+	public static function is_available() {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			return false;
+		}
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_health_wellness_management'] );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or error.
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create policies.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Check if this is an update operation.
+		$policy_id       = isset( $arguments['policy_id'] ) ? absint( $arguments['policy_id'] ) : 0;
+		$is_update       = false;
+		$existing_policy = null;
+
+		if ( $policy_id ) {
+			// Verify policy exists and user has permission to update it.
+			$existing_policy = get_post( $policy_id );
+
+			if ( ! $existing_policy || 'mcp_ai_policy' !== $existing_policy->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_policy_not_found', __( 'Policy not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author       = absint( $existing_policy->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this policy.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
+		// Validate required fields.
+		$member_id     = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
+		$policy_number = isset( $arguments['policy_number'] ) ? sanitize_text_field( $arguments['policy_number'] ) : '';
+		$policy_type   = isset( $arguments['policy_type'] ) ? sanitize_key( $arguments['policy_type'] ) : '';
+
+		if ( ! $member_id ) {
+			return new WP_Error( 'wp_mcp_ai_missing_member', __( 'Member ID is required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( '' === $policy_number ) {
+			return new WP_Error( 'wp_mcp_ai_missing_policy_number', __( 'Policy number is required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( ! $policy_type ) {
+			return new WP_Error( 'wp_mcp_ai_missing_policy_type', __( 'Policy type is required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Verify member exists.
+		$member = get_post( $member_id );
+		if ( ! $member || 'mcp_ai_member' !== $member->post_type ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_member', __( 'Invalid member ID.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Sanitize optional fields.
+		$name             = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : $policy_number;
+		$provider         = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : '';
+		$status           = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'active';
+		$effective_date   = isset( $arguments['effective_date'] ) ? sanitize_text_field( $arguments['effective_date'] ) : '';
+		$expiration_date  = isset( $arguments['expiration_date'] ) ? sanitize_text_field( $arguments['expiration_date'] ) : '';
+		$premium          = isset( $arguments['premium'] ) ? sanitize_text_field( $arguments['premium'] ) : '';
+		$coverage_details = isset( $arguments['coverage_details'] ) ? wp_kses_post( $arguments['coverage_details'] ) : '';
+		$group_number     = isset( $arguments['group_number'] ) ? sanitize_text_field( $arguments['group_number'] ) : '';
+		$plan_type        = isset( $arguments['plan_type'] ) ? sanitize_key( $arguments['plan_type'] ) : '';
+		$copay_primary    = isset( $arguments['copay_primary'] ) ? sanitize_text_field( $arguments['copay_primary'] ) : '';
+		$copay_specialist = isset( $arguments['copay_specialist'] ) ? sanitize_text_field( $arguments['copay_specialist'] ) : '';
+		$deductible       = isset( $arguments['deductible'] ) ? sanitize_text_field( $arguments['deductible'] ) : '';
+		$oop_max          = isset( $arguments['out_of_pocket_max'] ) ? sanitize_text_field( $arguments['out_of_pocket_max'] ) : '';
+		$rx_bin           = isset( $arguments['rx_bin'] ) ? sanitize_text_field( $arguments['rx_bin'] ) : '';
+		$rx_pcn           = isset( $arguments['rx_pcn'] ) ? sanitize_text_field( $arguments['rx_pcn'] ) : '';
+		$rx_group         = isset( $arguments['rx_group'] ) ? sanitize_text_field( $arguments['rx_group'] ) : '';
+
+		// Validate dates.
+		if ( $effective_date && ! $this->validate_date( $effective_date ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_date', __( 'Invalid effective date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( $expiration_date && ! $this->validate_date( $expiration_date ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_date', __( 'Invalid expiration date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( $is_update ) {
+			// Update existing policy.
+			$post_data = array(
+				'ID'           => $policy_id,
+				'post_title'   => $name,
+				'post_content' => $this->embed_content_media( $coverage_details, $arguments ),
+			);
+
+			$result = wp_update_post( $post_data, true );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Set policy type taxonomy.
+			wp_set_object_terms( $policy_id, $policy_type, 'mcp_ai_policy_type' );
+
+			// Update policy metadata.
+			update_post_meta( $policy_id, '_policy_member_id', $member_id );
+			update_post_meta( $policy_id, '_policy_number', $policy_number );
+			update_post_meta( $policy_id, '_policy_group_number', $group_number );
+			update_post_meta( $policy_id, '_policy_plan_type', $plan_type );
+			update_post_meta( $policy_id, '_policy_copay_primary', $copay_primary );
+			update_post_meta( $policy_id, '_policy_copay_specialist', $copay_specialist );
+			update_post_meta( $policy_id, '_policy_deductible', $deductible );
+			update_post_meta( $policy_id, '_policy_out_of_pocket_max', $oop_max );
+			update_post_meta( $policy_id, '_policy_rx_bin', $rx_bin );
+			update_post_meta( $policy_id, '_policy_rx_pcn', $rx_pcn );
+			update_post_meta( $policy_id, '_policy_rx_group', $rx_group );
+
+			if ( $provider ) {
+				update_post_meta( $policy_id, '_policy_provider', $provider );
+			}
+
+			if ( $status ) {
+				update_post_meta( $policy_id, '_policy_status', $status );
+			}
+
+			if ( $effective_date ) {
+				update_post_meta( $policy_id, '_policy_effective_date', $effective_date );
+			}
+
+			if ( $expiration_date ) {
+				update_post_meta( $policy_id, '_policy_expiration_date', $expiration_date );
+			}
+
+			if ( $premium ) {
+				update_post_meta( $policy_id, '_policy_premium', $premium );
+			}
+
+			$policy = get_post( $policy_id );
+
+			return array(
+				'success'   => true,
+				'message'   => sprintf(
+					/* translators: %s: policy number */
+					__( 'Policy updated: %s', 'mcp-ai-wpoos-pro' ),
+					$policy_number
+				),
+				'policy_id' => $policy_id,
+				'policy'    => array(
+					'id'                => $policy_id,
+					'member_id'         => $member_id,
+					'policy_number'     => $policy_number,
+					'name'              => $name,
+					'type'              => $policy_type,
+					'provider'          => $provider,
+					'status'            => $status,
+					'effective_date'    => $effective_date,
+					'expiration_date'   => $expiration_date,
+					'premium'           => $premium,
+					'group_number'      => $group_number,
+					'plan_type'         => $plan_type,
+					'copay_primary'     => $copay_primary,
+					'copay_specialist'  => $copay_specialist,
+					'deductible'        => $deductible,
+					'out_of_pocket_max' => $oop_max,
+					'rx_bin'            => $rx_bin,
+					'rx_pcn'            => $rx_pcn,
+					'rx_group'          => $rx_group,
+					'coverage_details'  => $coverage_details,
+					'updated_at'        => $policy->post_modified,
+				),
+				'updated'   => true,
+			);
+		} else {
+			// Create policy post.
+			$post_data = array(
+				'post_type'    => 'mcp_ai_policy',
+				'post_title'   => $name,
+				'post_content' => $this->embed_content_media( $coverage_details, $arguments ),
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			);
+
+			$policy_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $policy_id ) ) {
+				return $policy_id;
+			}
+
+			// Set policy type taxonomy.
+			wp_set_object_terms( $policy_id, $policy_type, 'mcp_ai_policy_type' );
+
+			// Save policy metadata.
+			update_post_meta( $policy_id, '_policy_member_id', $member_id );
+			update_post_meta( $policy_id, '_policy_number', $policy_number );
+			update_post_meta( $policy_id, '_policy_group_number', $group_number );
+			update_post_meta( $policy_id, '_policy_plan_type', $plan_type );
+			update_post_meta( $policy_id, '_policy_copay_primary', $copay_primary );
+			update_post_meta( $policy_id, '_policy_copay_specialist', $copay_specialist );
+			update_post_meta( $policy_id, '_policy_deductible', $deductible );
+			update_post_meta( $policy_id, '_policy_out_of_pocket_max', $oop_max );
+			update_post_meta( $policy_id, '_policy_rx_bin', $rx_bin );
+			update_post_meta( $policy_id, '_policy_rx_pcn', $rx_pcn );
+			update_post_meta( $policy_id, '_policy_rx_group', $rx_group );
+
+			if ( $provider ) {
+				update_post_meta( $policy_id, '_policy_provider', $provider );
+			}
+
+			if ( $status ) {
+				update_post_meta( $policy_id, '_policy_status', $status );
+			}
+
+			if ( $effective_date ) {
+				update_post_meta( $policy_id, '_policy_effective_date', $effective_date );
+			}
+
+			if ( $expiration_date ) {
+				update_post_meta( $policy_id, '_policy_expiration_date', $expiration_date );
+			}
+
+			if ( $premium ) {
+				update_post_meta( $policy_id, '_policy_premium', $premium );
+			}
+
+			return array(
+				'success'   => true,
+				'message'   => __( 'Policy created successfully.', 'mcp-ai-wpoos-pro' ),
+				'policy_id' => $policy_id,
+				'policy'    => array(
+					'id'                => $policy_id,
+					'member_id'         => $member_id,
+					'policy_number'     => $policy_number,
+					'name'              => $name,
+					'type'              => $policy_type,
+					'provider'          => $provider,
+					'status'            => $status,
+					'effective_date'    => $effective_date,
+					'expiration_date'   => $expiration_date,
+					'premium'           => $premium,
+					'group_number'      => $group_number,
+					'plan_type'         => $plan_type,
+					'copay_primary'     => $copay_primary,
+					'copay_specialist'  => $copay_specialist,
+					'deductible'        => $deductible,
+					'out_of_pocket_max' => $oop_max,
+					'rx_bin'            => $rx_bin,
+					'rx_pcn'            => $rx_pcn,
+					'rx_group'          => $rx_group,
+					'coverage_details'  => $coverage_details,
+					'created_at'        => current_time( 'mysql' ),
+				),
+				'updated'   => false,
+			);
+		}
+	}
+
+	/**
+	 * Validate date format (YYYY-MM-DD).
+	 *
+	 * @param string $date Date string.
+	 * @return bool
+	 */
+	private function validate_date( $date ) {
+		$d = DateTime::createFromFormat( 'Y-m-d', $date );
+		return $d && $d->format( 'Y-m-d' ) === $date;
+	}
+}

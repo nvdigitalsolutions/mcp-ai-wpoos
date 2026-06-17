@@ -20,12 +20,40 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Site Kit Analytics Tool Class
  *
- * Example implementation of a Site Kit integration tool.
- * This demonstrates the pattern for accessing Site Kit data.
+ * Retrieves Google Analytics data including sessions, pageviews,
+ * bounce rate, average session duration, and users.
  *
  * @since 1.2.0
  */
-class WP_MCP_AI_Tool_SiteKit_Analytics {
+class WP_MCP_AI_Tool_SiteKit_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
+	 * Check whether the tool can be registered.
+	 *
+	 * @since 1.2.0
+	 * @return bool
+	 */
+	public static function is_available() {
+		return class_exists( 'Google\\Site_Kit\\Plugin' );
+	}
+
+	/**
+	 * Provide a message explaining why the tool is unavailable.
+	 *
+	 * @since 1.2.0
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'Google Site Kit plugin must be installed and configured to use Analytics tools.', 'mcp-ai-wpoos' );
+	}
 
 	/**
 	 * Get tool slug
@@ -38,39 +66,54 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 	}
 
 	/**
-	 * Get tool definition
+	 * Get tool name
 	 *
 	 * @since 1.2.0
-	 * @return array Tool definition
+	 * @return string Tool name
 	 */
-	public function get_definition() {
+	public function get_name() {
+		return __( 'Get Google Analytics', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get tool description
+	 *
+	 * @since 1.2.0
+	 * @return string Tool description
+	 */
+	public function get_description() {
+		return __( 'Retrieve Google Analytics data through Site Kit. Provides metrics like sessions, pageviews, bounce rate, and average session duration.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get parameters schema
+	 *
+	 * @since 1.2.0
+	 * @return array Parameters schema
+	 */
+	public function get_parameters_schema() {
 		return array(
-			'name'                => 'sitekit_get_analytics',
-			'description'         => 'Retrieve Google Analytics data through Site Kit. Provides metrics like sessions, pageviews, bounce rate, and average session duration.',
-			'required_capability' => 'manage_options',
-			'category'            => 'analytics',
-			'parameters'          => array(
-				'type'       => 'object',
-				'properties' => array(
-					'metric'     => array(
-						'type'        => 'string',
-						'description' => 'Metric to retrieve',
-						'enum'        => array( 'sessions', 'pageviews', 'bounce_rate', 'avg_session_duration', 'users' ),
-						'default'     => 'sessions',
-					),
-					'date_range' => array(
-						'type'        => 'string',
-						'description' => 'Date range for the query',
-						'enum'        => array( 'last_7_days', 'last_28_days', 'last_90_days' ),
-						'default'     => 'last_28_days',
-					),
-					'url'        => array(
-						'type'        => 'string',
-						'description' => 'Optional URL to filter analytics data',
-					),
+			'type'                 => 'object',
+			'properties'           => array(
+				'metric'     => array(
+					'type'        => 'string',
+					'description' => __( 'Metric to retrieve', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'sessions', 'pageviews', 'bounce_rate', 'avg_session_duration', 'users' ),
+					'default'     => 'sessions',
 				),
-				'required'   => array(),
+				'date_range' => array(
+					'type'        => 'string',
+					'description' => __( 'Date range for the query', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'last_7_days', 'last_28_days', 'last_90_days' ),
+					'default'     => 'last_28_days',
+				),
+				'url'        => array(
+					'type'        => 'string',
+					'description' => __( 'Optional URL to filter analytics data', 'mcp-ai-wpoos' ),
+					'format'      => 'uri',
+				),
 			),
+			'additionalProperties' => false,
 		);
 	}
 
@@ -80,32 +123,37 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 	 * @since 1.2.0
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array Tool result
+	 * @return array|WP_Error Tool result
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface.
-		// Get Site Kit integration instance.
-		$sitekit = WP_MCP_AI_SiteKit_Integration::get_instance();
-
 		// Check if Site Kit is available.
-		if ( ! $sitekit->is_sitekit_available() ) {
-			return array(
-				'error'    => true,
-				'message'  => __( 'Google Site Kit is not active or configured', 'mcp-ai-wpoos' ),
-				'help_url' => 'https://sitekit.withgoogle.com/documentation/',
-				'action'   => __( 'Please install and configure Google Site Kit plugin', 'mcp-ai-wpoos' ),
+		if ( ! self::is_available() ) {
+			return new WP_Error(
+				'sitekit_not_available',
+				__( 'Google Site Kit is not active or configured', 'mcp-ai-wpoos' )
 			);
 		}
 
 		// Check user permissions.
-		if ( ! $sitekit->user_has_sitekit_access() ) {
-			return array(
-				'error'   => true,
-				'message' => __( 'You do not have permission to access Google Analytics data', 'mcp-ai-wpoos' ),
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		if ( ! user_can( $user_id, 'manage_options' ) ) {
+			return new WP_Error(
+				'insufficient_permissions',
+				__( 'You do not have permission to access Google Analytics data', 'mcp-ai-wpoos' )
 			);
 		}
 
-		// Parse arguments.
+		// Get Site Kit integration instance.
+		if ( ! class_exists( 'WP_MCP_AI_SiteKit_Integration' ) ) {
+			return new WP_Error(
+				'integration_not_loaded',
+				__( 'Site Kit integration is not properly loaded', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$sitekit = WP_MCP_AI_SiteKit_Integration::get_instance();
+
+		// Parse arguments (Gate 1: sanitize at entry).
 		$metric     = isset( $arguments['metric'] ) ? sanitize_text_field( $arguments['metric'] ) : 'sessions';
 		$date_range = isset( $arguments['date_range'] ) ? sanitize_text_field( $arguments['date_range'] ) : 'last_28_days';
 		$url        = isset( $arguments['url'] ) ? esc_url_raw( $arguments['url'] ) : null;
@@ -124,13 +172,9 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 		// Make request to Site Kit.
 		$response = $sitekit->make_sitekit_request( $endpoint, $api_args );
 
-		// Handle errors.
+		// Handle errors — use WP_Error (canonical envelope).
 		if ( is_wp_error( $response ) ) {
-			return array(
-				'error'   => true,
-				'message' => $response->get_error_message(),
-				'code'    => $response->get_error_code(),
-			);
+			return $response;
 		}
 
 		// Format response for AI assistant.
@@ -177,25 +221,23 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 	 * Format analytics response for AI
 	 *
 	 * @since 1.2.0
-	 * @param array  $response   Site Kit API response.
-	 * @param string $metric     Requested metric.
-	 * @param string $date_range Date range.
-	 * @param string $url        Optional URL filter.
+	 * @param array       $response   Site Kit API response.
+	 * @param string      $metric     Requested metric.
+	 * @param string      $date_range Date range.
+	 * @param string|null $url        Optional URL filter.
 	 * @return array Formatted response
 	 */
 	private function format_analytics_response( $response, $metric, $date_range, $url = null ) {
-		// Extract data from response (structure depends on Site Kit's actual API).
-		// This is a simplified example - actual implementation would parse Site Kit's response format.
-
+		// Gate 2: escape values in the returned data array.
 		$formatted = array(
 			'success'    => true,
-			'metric'     => $metric,
-			'date_range' => $date_range,
+			'metric'     => esc_html( $metric ),
+			'date_range' => esc_html( $date_range ),
 			'data'       => $response,
 		);
 
 		if ( $url ) {
-			$formatted['filtered_by_url'] = $url;
+			$formatted['filtered_by_url'] = esc_url( $url );
 		}
 
 		// Add human-readable summary.
@@ -214,16 +256,40 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 	 * @return string Summary text
 	 */
 	private function generate_summary( $data, $metric, $date_range ) {
-		// This is a simplified example.
-		// Real implementation would parse the actual data structure from Site Kit.
-
 		$period = str_replace( '_', ' ', $date_range );
 
 		return sprintf(
-		/* translators: 1: metric name, 2: date range */
+			/* translators: 1: metric name, 2: date range */
 			__( 'Analytics data for %1$s over the %2$s', 'mcp-ai-wpoos' ),
-			$metric,
-			$period
+			esc_html( $metric ),
+			esc_html( $period )
+		);
+	}
+
+	/**
+	 * Get capability flags.
+	 *
+	 * @since 1.2.0
+	 * @return int Capability flags.
+	 */
+	public function get_capability_flags() {
+		return WP_MCP_AI_Tool_Capability_Flags_Interface::CAPABILITY_CAN_USE_IF_ADMIN;
+	}
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @since 1.2.0
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'ecommerce_business',
+			'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+			'profession_tags'       => array( 'analytics_specialist', 'marketing_manager' ),
+			'risk_level'            => 'info',
 		);
 	}
 }

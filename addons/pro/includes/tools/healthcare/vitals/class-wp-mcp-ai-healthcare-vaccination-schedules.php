@@ -129,9 +129,11 @@ class WP_MCP_AI_Healthcare_Vaccination_Schedules {
 		return $result;
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Built-in packs (abridged — milestones only).
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * CDC paediatric immunisation schedule (abridged, 0–18 years).
@@ -145,16 +147,76 @@ class WP_MCP_AI_Healthcare_Vaccination_Schedules {
 			'species'  => 'human',
 			'audience' => 'pediatric',
 			'doses'    => array(
-				array( 'vaccine' => 'HepB',       'cvx_code' => '08',  'dose' => 1, 'min_age_days' => 0,    'max_age_days' => 30 ),
-				array( 'vaccine' => 'HepB',       'cvx_code' => '08',  'dose' => 2, 'min_age_days' => 30,   'max_age_days' => 90 ),
-				array( 'vaccine' => 'DTaP',       'cvx_code' => '20',  'dose' => 1, 'min_age_days' => 60,   'max_age_days' => 120 ),
-				array( 'vaccine' => 'IPV',        'cvx_code' => '10',  'dose' => 1, 'min_age_days' => 60,   'max_age_days' => 120 ),
-				array( 'vaccine' => 'Hib',        'cvx_code' => '17',  'dose' => 1, 'min_age_days' => 60,   'max_age_days' => 120 ),
-				array( 'vaccine' => 'PCV13',      'cvx_code' => '133', 'dose' => 1, 'min_age_days' => 60,   'max_age_days' => 120 ),
-				array( 'vaccine' => 'MMR',        'cvx_code' => '03',  'dose' => 1, 'min_age_days' => 365,  'max_age_days' => 547 ),
-				array( 'vaccine' => 'Varicella',  'cvx_code' => '21',  'dose' => 1, 'min_age_days' => 365,  'max_age_days' => 547 ),
-				array( 'vaccine' => 'HPV',        'cvx_code' => '62',  'dose' => 1, 'min_age_days' => 4015, 'max_age_days' => 4747 ),
-				array( 'vaccine' => 'MenACWY',    'cvx_code' => '136', 'dose' => 1, 'min_age_days' => 4015, 'max_age_days' => 4747 ),
+				array(
+					'vaccine'      => 'HepB',
+					'cvx_code'     => '08',
+					'dose'         => 1,
+					'min_age_days' => 0,
+					'max_age_days' => 30,
+				),
+				array(
+					'vaccine'      => 'HepB',
+					'cvx_code'     => '08',
+					'dose'         => 2,
+					'min_age_days' => 30,
+					'max_age_days' => 90,
+				),
+				array(
+					'vaccine'      => 'DTaP',
+					'cvx_code'     => '20',
+					'dose'         => 1,
+					'min_age_days' => 60,
+					'max_age_days' => 120,
+				),
+				array(
+					'vaccine'      => 'IPV',
+					'cvx_code'     => '10',
+					'dose'         => 1,
+					'min_age_days' => 60,
+					'max_age_days' => 120,
+				),
+				array(
+					'vaccine'      => 'Hib',
+					'cvx_code'     => '17',
+					'dose'         => 1,
+					'min_age_days' => 60,
+					'max_age_days' => 120,
+				),
+				array(
+					'vaccine'      => 'PCV13',
+					'cvx_code'     => '133',
+					'dose'         => 1,
+					'min_age_days' => 60,
+					'max_age_days' => 120,
+				),
+				array(
+					'vaccine'      => 'MMR',
+					'cvx_code'     => '03',
+					'dose'         => 1,
+					'min_age_days' => 365,
+					'max_age_days' => 547,
+				),
+				array(
+					'vaccine'      => 'Varicella',
+					'cvx_code'     => '21',
+					'dose'         => 1,
+					'min_age_days' => 365,
+					'max_age_days' => 547,
+				),
+				array(
+					'vaccine'      => 'HPV',
+					'cvx_code'     => '62',
+					'dose'         => 1,
+					'min_age_days' => 4015,
+					'max_age_days' => 4747,
+				),
+				array(
+					'vaccine'      => 'MenACWY',
+					'cvx_code'     => '136',
+					'dose'         => 1,
+					'min_age_days' => 4015,
+					'max_age_days' => 4747,
+				),
 			),
 		);
 	}
@@ -171,10 +233,34 @@ class WP_MCP_AI_Healthcare_Vaccination_Schedules {
 			'species'  => 'human',
 			'audience' => 'adult',
 			'doses'    => array(
-				array( 'vaccine' => 'Influenza (annual)',     'cvx_code' => '141', 'dose' => 1, 'min_age_days' => 6570,  'max_age_days' => null ),
-				array( 'vaccine' => 'Tdap booster (every 10 yr)', 'cvx_code' => '115', 'dose' => 1, 'min_age_days' => 6570,  'max_age_days' => null ),
-				array( 'vaccine' => 'Zoster (Shingrix)',      'cvx_code' => '187', 'dose' => 1, 'min_age_days' => 18250, 'max_age_days' => null ),
-				array( 'vaccine' => 'Pneumococcal (PCV20)',   'cvx_code' => '215', 'dose' => 1, 'min_age_days' => 23725, 'max_age_days' => null ),
+				array(
+					'vaccine'      => 'Influenza (annual)',
+					'cvx_code'     => '141',
+					'dose'         => 1,
+					'min_age_days' => 6570,
+					'max_age_days' => null,
+				),
+				array(
+					'vaccine'      => 'Tdap booster (every 10 yr)',
+					'cvx_code'     => '115',
+					'dose'         => 1,
+					'min_age_days' => 6570,
+					'max_age_days' => null,
+				),
+				array(
+					'vaccine'      => 'Zoster (Shingrix)',
+					'cvx_code'     => '187',
+					'dose'         => 1,
+					'min_age_days' => 18250,
+					'max_age_days' => null,
+				),
+				array(
+					'vaccine'      => 'Pneumococcal (PCV20)',
+					'cvx_code'     => '215',
+					'dose'         => 1,
+					'min_age_days' => 23725,
+					'max_age_days' => null,
+				),
 			),
 		);
 	}
@@ -191,10 +277,34 @@ class WP_MCP_AI_Healthcare_Vaccination_Schedules {
 			'species'  => 'human',
 			'audience' => 'pediatric',
 			'doses'    => array(
-				array( 'vaccine' => 'BCG',                'cvx_code' => '19',  'dose' => 1, 'min_age_days' => 0,   'max_age_days' => 30 ),
-				array( 'vaccine' => 'OPV',                'cvx_code' => '02',  'dose' => 1, 'min_age_days' => 0,   'max_age_days' => 30 ),
-				array( 'vaccine' => 'DTP-HepB-Hib (Penta)', 'cvx_code' => '120', 'dose' => 1, 'min_age_days' => 42,  'max_age_days' => 120 ),
-				array( 'vaccine' => 'Measles',            'cvx_code' => '05',  'dose' => 1, 'min_age_days' => 270, 'max_age_days' => 365 ),
+				array(
+					'vaccine'      => 'BCG',
+					'cvx_code'     => '19',
+					'dose'         => 1,
+					'min_age_days' => 0,
+					'max_age_days' => 30,
+				),
+				array(
+					'vaccine'      => 'OPV',
+					'cvx_code'     => '02',
+					'dose'         => 1,
+					'min_age_days' => 0,
+					'max_age_days' => 30,
+				),
+				array(
+					'vaccine'      => 'DTP-HepB-Hib (Penta)',
+					'cvx_code'     => '120',
+					'dose'         => 1,
+					'min_age_days' => 42,
+					'max_age_days' => 120,
+				),
+				array(
+					'vaccine'      => 'Measles',
+					'cvx_code'     => '05',
+					'dose'         => 1,
+					'min_age_days' => 270,
+					'max_age_days' => 365,
+				),
 			),
 		);
 	}
@@ -211,11 +321,36 @@ class WP_MCP_AI_Healthcare_Vaccination_Schedules {
 			'species'  => 'feline',
 			'audience' => 'companion-animal',
 			'doses'    => array(
-				array( 'vaccine' => 'FVRCP (kitten series)', 'dose' => 1, 'min_age_days' => 42,  'max_age_days' => 84 ),
-				array( 'vaccine' => 'FVRCP (kitten series)', 'dose' => 2, 'min_age_days' => 84,  'max_age_days' => 112 ),
-				array( 'vaccine' => 'FVRCP (kitten series)', 'dose' => 3, 'min_age_days' => 112, 'max_age_days' => 140 ),
-				array( 'vaccine' => 'Rabies (1-yr)',         'dose' => 1, 'min_age_days' => 84,  'max_age_days' => 180 ),
-				array( 'vaccine' => 'FVRCP booster',         'dose' => 1, 'min_age_days' => 365, 'max_age_days' => 547 ),
+				array(
+					'vaccine'      => 'FVRCP (kitten series)',
+					'dose'         => 1,
+					'min_age_days' => 42,
+					'max_age_days' => 84,
+				),
+				array(
+					'vaccine'      => 'FVRCP (kitten series)',
+					'dose'         => 2,
+					'min_age_days' => 84,
+					'max_age_days' => 112,
+				),
+				array(
+					'vaccine'      => 'FVRCP (kitten series)',
+					'dose'         => 3,
+					'min_age_days' => 112,
+					'max_age_days' => 140,
+				),
+				array(
+					'vaccine'      => 'Rabies (1-yr)',
+					'dose'         => 1,
+					'min_age_days' => 84,
+					'max_age_days' => 180,
+				),
+				array(
+					'vaccine'      => 'FVRCP booster',
+					'dose'         => 1,
+					'min_age_days' => 365,
+					'max_age_days' => 547,
+				),
 			),
 		);
 	}
@@ -232,11 +367,36 @@ class WP_MCP_AI_Healthcare_Vaccination_Schedules {
 			'species'  => 'canine',
 			'audience' => 'companion-animal',
 			'doses'    => array(
-				array( 'vaccine' => 'DAPP (puppy series)', 'dose' => 1, 'min_age_days' => 42,  'max_age_days' => 70 ),
-				array( 'vaccine' => 'DAPP (puppy series)', 'dose' => 2, 'min_age_days' => 70,  'max_age_days' => 98 ),
-				array( 'vaccine' => 'DAPP (puppy series)', 'dose' => 3, 'min_age_days' => 98,  'max_age_days' => 126 ),
-				array( 'vaccine' => 'Rabies (1-yr)',       'dose' => 1, 'min_age_days' => 84,  'max_age_days' => 180 ),
-				array( 'vaccine' => 'DAPP booster',        'dose' => 1, 'min_age_days' => 365, 'max_age_days' => 547 ),
+				array(
+					'vaccine'      => 'DAPP (puppy series)',
+					'dose'         => 1,
+					'min_age_days' => 42,
+					'max_age_days' => 70,
+				),
+				array(
+					'vaccine'      => 'DAPP (puppy series)',
+					'dose'         => 2,
+					'min_age_days' => 70,
+					'max_age_days' => 98,
+				),
+				array(
+					'vaccine'      => 'DAPP (puppy series)',
+					'dose'         => 3,
+					'min_age_days' => 98,
+					'max_age_days' => 126,
+				),
+				array(
+					'vaccine'      => 'Rabies (1-yr)',
+					'dose'         => 1,
+					'min_age_days' => 84,
+					'max_age_days' => 180,
+				),
+				array(
+					'vaccine'      => 'DAPP booster',
+					'dose'         => 1,
+					'min_age_days' => 365,
+					'max_age_days' => 547,
+				),
 			),
 		);
 	}

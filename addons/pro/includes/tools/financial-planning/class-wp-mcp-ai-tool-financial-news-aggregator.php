@@ -32,6 +32,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Cache TTL in seconds (15 minutes).
 	 *
 	 * @since 1.1.0
@@ -215,7 +222,7 @@ class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interfa
 			return $cached;
 		}
 
-		$all_articles = array();
+		$all_articles  = array();
 		$source_errors = array();
 
 		foreach ( $sources as $source ) {
@@ -246,20 +253,20 @@ class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interfa
 		$market_pulse   = $this->generate_market_pulse( $all_articles );
 
 		$result = array(
-			'success'        => true,
-			'articles'       => $all_articles,
-			'article_count'  => count( $all_articles ),
+			'success'         => true,
+			'articles'        => $all_articles,
+			'article_count'   => count( $all_articles ),
 			'sources_queried' => $sources,
-			'source_errors'  => $source_errors,
-			'unified_trends' => $unified_trends,
-			'market_pulse'   => $market_pulse,
-			'filters'        => array(
+			'source_errors'   => $source_errors,
+			'unified_trends'  => $unified_trends,
+			'market_pulse'    => $market_pulse,
+			'filters'         => array(
 				'category'   => $category,
 				'keywords'   => $keywords,
 				'hours_back' => $hours_back,
 			),
-			'from_cache'     => false,
-			'disclaimer'     => __( 'EDUCATIONAL ONLY. News aggregation is for informational purposes only. Articles may be delayed or incomplete. Verify information from primary sources before making financial decisions. Not investment advice.', 'mcp-ai-wpoos-pro' ),
+			'from_cache'      => false,
+			'disclaimer'      => __( 'EDUCATIONAL ONLY. News aggregation is for informational purposes only. Articles may be delayed or incomplete. Verify information from primary sources before making financial decisions. Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		set_transient( $cache_key, $result, self::CACHE_TTL );
@@ -337,27 +344,27 @@ class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interfa
 	 */
 	private function get_source_urls() {
 		return array(
-			'yahoo_finance'  => array(
+			'yahoo_finance'   => array(
 				'url'            => 'https://finance.yahoo.com/news/rssindex',
 				'category_param' => '',
 				'label'          => __( 'Yahoo Finance', 'mcp-ai-wpoos-pro' ),
 			),
-			'marketwatch'    => array(
+			'marketwatch'     => array(
 				'url'            => 'https://feeds.marketwatch.com/marketwatch/topstories/',
 				'category_param' => '',
 				'label'          => __( 'MarketWatch', 'mcp-ai-wpoos-pro' ),
 			),
-			'reuters'        => array(
+			'reuters'         => array(
 				'url'            => 'https://www.reutersagency.com/feed/',
 				'category_param' => 'best-topics',
 				'label'          => __( 'Reuters', 'mcp-ai-wpoos-pro' ),
 			),
-			'sec_filings'    => array(
+			'sec_filings'     => array(
 				'url'            => 'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=&dateb=&owner=include&count=40&search_text=&start=0&output=atom',
 				'category_param' => 'type',
 				'label'          => __( 'SEC EDGAR Filings', 'mcp-ai-wpoos-pro' ),
 			),
-			'google_finance' => array(
+			'google_finance'  => array(
 				'url'            => 'https://news.google.com/rss/search?q=finance+stock+market&hl=en-US&gl=US&ceid=US:en',
 				'category_param' => 'q',
 				'label'          => __( 'Google Finance', 'mcp-ai-wpoos-pro' ),
@@ -367,17 +374,17 @@ class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interfa
 				'category_param' => '',
 				'label'          => __( 'Financial Times', 'mcp-ai-wpoos-pro' ),
 			),
-			'bloomberg'      => array(
+			'bloomberg'       => array(
 				'url'            => 'https://feeds.bloomberg.com/markets/news.rss',
 				'category_param' => '',
 				'label'          => __( 'Bloomberg', 'mcp-ai-wpoos-pro' ),
 			),
-			'cnbc'           => array(
+			'cnbc'            => array(
 				'url'            => 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114',
 				'category_param' => 'id',
 				'label'          => __( 'CNBC', 'mcp-ai-wpoos-pro' ),
 			),
-			'wsj'            => array(
+			'wsj'             => array(
 				'url'            => 'https://feeds.a.dj.com/rss/RSSMarketsMain.xml',
 				'category_param' => '',
 				'label'          => __( 'Wall Street Journal', 'mcp-ai-wpoos-pro' ),
@@ -407,13 +414,13 @@ class WP_MCP_AI_Tool_Financial_News_Aggregator implements WP_MCP_AI_Tool_Interfa
 			return $articles;
 		}
 
-		$source_urls = $this->get_source_urls();
+		$source_urls  = $this->get_source_urls();
 		$source_label = isset( $source_urls[ $source ]['label'] ) ? $source_urls[ $source ]['label'] : $source;
 
 		// Handle RSS 2.0 format.
 		if ( isset( $xml->channel->item ) ) {
 			foreach ( $xml->channel->item as $item ) {
-				$pub_date  = isset( $item->pubDate ) ? strtotime( (string) $item->pubDate ) : 0;
+				$pub_date = isset( $item->pubDate ) ? strtotime( (string) $item->pubDate ) : 0;
 
 				if ( $pub_date > 0 && $pub_date < $cutoff ) {
 					continue;

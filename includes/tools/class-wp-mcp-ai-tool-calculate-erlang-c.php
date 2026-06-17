@@ -126,6 +126,13 @@ class WP_MCP_AI_Tool_Calculate_Erlang_C implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -175,9 +182,9 @@ class WP_MCP_AI_Tool_Calculate_Erlang_C implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Optional parameters with defaults.
-		$target_sl_pct  = isset( $arguments['target_service_level_pct'] ) ? (float) $arguments['target_service_level_pct'] : 80.0;
-		$target_time    = isset( $arguments['target_answer_time'] ) ? (int) $arguments['target_answer_time'] : 20;
-		$concurrency    = isset( $arguments['concurrency_factor'] ) ? (float) $arguments['concurrency_factor'] : 1.0;
+		$target_sl_pct = isset( $arguments['target_service_level_pct'] ) ? (float) $arguments['target_service_level_pct'] : 80.0;
+		$target_time   = isset( $arguments['target_answer_time'] ) ? (int) $arguments['target_answer_time'] : 20;
+		$concurrency   = isset( $arguments['concurrency_factor'] ) ? (float) $arguments['concurrency_factor'] : 1.0;
 
 		// Apply concurrency: effective arrival rate per agent-equivalent.
 		$effective_arrival = $arrival_rate / $concurrency;

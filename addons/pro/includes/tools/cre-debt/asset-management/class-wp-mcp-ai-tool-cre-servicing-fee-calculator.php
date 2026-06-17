@@ -127,7 +127,20 @@ class WP_MCP_AI_Tool_CRE_Servicing_Fee_Calculator implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|\WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -163,17 +176,17 @@ class WP_MCP_AI_Tool_CRE_Servicing_Fee_Calculator implements WP_MCP_AI_Tool_Inte
 		$primary_monthly = $primary_annual / 12;
 
 		// Special servicing fee.
-		$special_annual            = 0.0;
-		$special_monthly           = 0.0;
+		$special_annual              = 0.0;
+		$special_monthly             = 0.0;
 		$total_special_fees_incurred = 0.0;
 		if ( $is_specially_serviced ) {
-			$special_annual            = $loan_balance * $special_servicing_fee_bps / 10000;
-			$special_monthly           = $special_annual / 12;
+			$special_annual              = $loan_balance * $special_servicing_fee_bps / 10000;
+			$special_monthly             = $special_annual / 12;
 			$total_special_fees_incurred = $special_monthly * $months_in_special;
 		}
 
 		// Standard annual fees.
-		$total_standard_annual = $master_annual + $primary_annual;
+		$total_standard_annual   = $master_annual + $primary_annual;
 		$total_annual_if_special = $total_standard_annual + $special_annual;
 
 		// Workout and liquidation fees.
@@ -204,8 +217,8 @@ class WP_MCP_AI_Tool_CRE_Servicing_Fee_Calculator implements WP_MCP_AI_Tool_Inte
 		}
 
 		$data = array(
-			'loan_balance'    => $calc::format_currency( $loan_balance ),
-			'fee_breakdown'   => array(
+			'loan_balance'          => $calc::format_currency( $loan_balance ),
+			'fee_breakdown'         => array(
 				'master_servicing'  => array(
 					'bps'     => $master_servicing_fee_bps,
 					'annual'  => $calc::format_currency( $master_annual ),
@@ -217,19 +230,19 @@ class WP_MCP_AI_Tool_CRE_Servicing_Fee_Calculator implements WP_MCP_AI_Tool_Inte
 					'monthly' => $calc::format_currency( $primary_monthly ),
 				),
 				'special_servicing' => array(
-					'bps'                      => $special_servicing_fee_bps,
-					'annual'                   => $calc::format_currency( $special_annual ),
-					'monthly'                  => $calc::format_currency( $special_monthly ),
-					'is_active'                => $is_specially_serviced,
-					'months_in_special'        => $months_in_special,
+					'bps'                         => $special_servicing_fee_bps,
+					'annual'                      => $calc::format_currency( $special_annual ),
+					'monthly'                     => $calc::format_currency( $special_monthly ),
+					'is_active'                   => $is_specially_serviced,
+					'months_in_special'           => $months_in_special,
 					'total_special_fees_incurred' => $calc::format_currency( $total_special_fees_incurred ),
 				),
 			),
-			'annual_totals'   => array(
-				'standard_fees'           => $calc::format_currency( $total_standard_annual ),
+			'annual_totals'         => array(
+				'standard_fees'               => $calc::format_currency( $total_standard_annual ),
 				'total_if_specially_serviced' => $calc::format_currency( $total_annual_if_special ),
 			),
-			'transaction_fees' => array(
+			'transaction_fees'      => array(
 				'workout_fee'     => $calc::format_currency( $workout_fee ),
 				'liquidation_fee' => $calc::format_currency( $liquidation_fee ),
 			),

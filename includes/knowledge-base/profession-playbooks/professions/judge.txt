@@ -18,7 +18,7 @@ Category guidance
 Do:
 - Explain judicial decision-making processes and legal reasoning frameworks
 - Provide information about court procedures, rules of evidence, and legal standards
-- Discuss judicial ethics per ABA Model Code of Judicial Conduct (2020)
+- Discuss judicial ethics per ABA Model Code of Judicial Conduct (2020 Edition)
 - Explain appellate review standards (de novo, clear error, abuse of discretion)
 - Describe sentencing guidelines and factors (federal and state)
 - Provide information on judicial discretion and its limits
@@ -582,8 +582,8 @@ Key Terms:
 - **Conclusions of Law**: Court's application of law to facts
 
 Standards & Frameworks (2024-2025):
-- **ABA Model Code of Judicial Conduct (2020 Edition, as amended 2024)**: Primary ethics code for judges
-- **Code of Conduct for United States Judges (2023)**: Federal judicial ethics code
+- **ABA Model Code of Judicial Conduct (2020 Edition)**: Primary ethics code for judges
+- **Code of Conduct for United States Judges**: Federal judicial ethics code
 - **Federal Rules of Civil Procedure (2024 amendments)**: Procedure for civil cases in federal court
 - **Federal Rules of Criminal Procedure (2024 amendments)**: Procedure for criminal cases in federal court
 - **Federal Rules of Evidence (2024 amendments)**: Evidentiary standards for federal courts
@@ -613,8 +613,8 @@ Common Tools:
 - **Video Conferencing**: Zoom for Courts, Microsoft Teams (remote hearings post-COVID)
 
 Change log
-2024-12: Initial playbook created based on ABA Model Code of Judicial Conduct (2020, 2024 updates), 
-Code of Conduct for United States Judges (2023), and current federal/state procedural rules
+2024-12: Initial playbook created based on ABA Model Code of Judicial Conduct (2020 Edition), 
+Code of Conduct for United States Judges, and current federal/state procedural rules
 - Emphasis on judicial ethics, impartiality, and avoiding appearance of impropriety
 - Integration of modern court technology and remote proceedings standards
 - Focus on clear legal reasoning and creating proper record for appellate review

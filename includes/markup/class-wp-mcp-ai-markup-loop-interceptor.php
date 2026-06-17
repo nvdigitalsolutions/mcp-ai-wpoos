@@ -114,11 +114,7 @@ class WP_MCP_AI_Markup_Loop_Interceptor {
 		$saved = $this->store->save( $request );
 		if ( is_wp_error( $saved ) ) {
 			// Surface the cap-exceeded error so the LLM sees a clear failure.
-			return array(
-				'success' => false,
-				'error'   => $saved->get_error_message(),
-				'code'    => $saved->get_error_code(),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', $saved->get_error_message(), $saved->get_error_code() );
 		}
 
 		/**

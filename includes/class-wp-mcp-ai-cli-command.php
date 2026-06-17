@@ -422,7 +422,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				foreach ( $supported as $slug => $plugin ) {
 					$plugin_file = isset( $plugin['plugin_file'] ) ? $plugin['plugin_file'] : '';
-					$plugin_path = $plugin_file ? WP_PLUGIN_DIR . '/' . $plugin_file : '';
+					$plugin_path = ( $plugin_file && defined( 'WP_PLUGIN_DIR' ) ) ? WP_PLUGIN_DIR . '/' . $plugin_file : '';
 					$installed   = $plugin_path && file_exists( $plugin_path );
 					$active      = $installed && ( is_plugin_active( $plugin_file ) || is_plugin_active_for_network( $plugin_file ) );
 					$version     = null;
@@ -537,9 +537,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				$this->ensure_plugin_file_loaded();
 
 				$plugin_file = $plugin['plugin_file'];
-				$plugin_path = WP_PLUGIN_DIR . '/' . $plugin_file;
+				$plugin_path = defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR . '/' . $plugin_file : '';
 
-				if ( ! file_exists( $plugin_path ) ) {
+				if ( ! $plugin_path || ! file_exists( $plugin_path ) ) {
 					/* translators: 1: plugin name, 2: plugin slug */
 					WP_CLI::error( sprintf( __( '%1$s is not installed. Install it with `wp plugin install %2$s`.', 'mcp-ai-wpoos' ), $plugin['name'], $plugin['slug'] ) );
 				}
@@ -721,6 +721,157 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				WP_MCP_AI_Job_Queue_Manager::clear_queue();
 
 				WP_CLI::success( 'Job queue cleared.' );
+			}
+
+				/**
+				 * Retry a failed job from the queue.
+				 *
+				 * ## OPTIONS
+				 *
+				 * <job-id>
+				 * : The ID of the job to retry.
+				 *
+				 * ## EXAMPLES
+				 *
+				 *     wp mcp-ai queue retry job_abc123
+				 *
+				 * @subcommand retry
+				 * @param array $args       Positional arguments.
+				 * @param array $assoc_args Associative arguments.
+				 */
+			public function retry( $args, $assoc_args ) {
+				if ( empty( $args ) || ! isset( $args[0] ) ) {
+					WP_CLI::error( __( 'Please provide a job ID.', 'mcp-ai-wpoos' ) );
+					return;
+				}
+
+				$job_id = sanitize_key( $args[0] );
+
+				if ( '' === $job_id ) {
+					WP_CLI::error( __( 'Invalid job ID.', 'mcp-ai-wpoos' ) );
+					return;
+				}
+
+				if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+					WP_CLI::error( __( 'Async executor class is not available.', 'mcp-ai-wpoos' ) );
+					return;
+				}
+
+				$executor = new WP_MCP_AI_Tool_Async_Executor();
+				$result   = $executor->retry_job( $job_id );
+
+				if ( is_wp_error( $result ) ) {
+					WP_CLI::error( $result->get_error_message() );
+					return;
+				}
+
+				WP_CLI::success(
+					sprintf(
+						/* translators: %s: job ID */
+						__( 'Job %s has been re-queued for retry.', 'mcp-ai-wpoos' ),
+						$job_id
+					)
+				);
+			}
+
+				/**
+				 * Show details for a single job in the queue.
+				 *
+				 * ## OPTIONS
+				 *
+				 * <job-id>
+				 * : The ID of the job to show.
+				 *
+				 * [--format=<format>]
+				 * : Output format.
+				 * ---
+				 * default: table
+				 * options:
+				 *   - table
+				 *   - json
+				 *   - yaml
+				 * ---
+				 *
+				 * ## EXAMPLES
+				 *
+				 *     wp mcp-ai queue show job_abc123
+				 *     wp mcp-ai queue show job_abc123 --format=json
+				 *
+				 * @subcommand show
+				 * @param array $args       Positional arguments.
+				 * @param array $assoc_args Associative arguments.
+				 */
+			public function show( $args, $assoc_args ) {
+				if ( empty( $args ) || ! isset( $args[0] ) ) {
+					WP_CLI::error( __( 'Please provide a job ID.', 'mcp-ai-wpoos' ) );
+					return;
+				}
+
+				$job_id = sanitize_key( $args[0] );
+
+				if ( '' === $job_id ) {
+					WP_CLI::error( __( 'Invalid job ID.', 'mcp-ai-wpoos' ) );
+					return;
+				}
+
+				$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
+
+				$queue = class_exists( 'WP_MCP_AI_Job_Queue_Manager' )
+					? get_option( WP_MCP_AI_Job_Queue_Manager::QUEUE_STATE_OPTION, array() )
+					: array();
+				if ( ! is_array( $queue ) ) {
+					$queue = array();
+				}
+
+				if ( ! isset( $queue[ $job_id ] ) ) {
+					WP_CLI::error(
+						sprintf(
+							/* translators: %s: job ID */
+							__( 'Job not found: %s', 'mcp-ai-wpoos' ),
+							$job_id
+						)
+					);
+					return;
+				}
+
+				$job = $queue[ $job_id ];
+
+				$items = array(
+					array(
+						'metric' => __( 'Job ID', 'mcp-ai-wpoos' ),
+						'value'  => $job_id,
+					),
+					array(
+						'metric' => __( 'Status', 'mcp-ai-wpoos' ),
+						'value'  => isset( $job['status'] ) ? $job['status'] : __( 'unknown', 'mcp-ai-wpoos' ),
+					),
+					array(
+						'metric' => __( 'Priority', 'mcp-ai-wpoos' ),
+						'value'  => isset( $job['priority'] ) ? absint( $job['priority'] ) : 5,
+					),
+					array(
+						'metric' => __( 'SLA Tier', 'mcp-ai-wpoos' ),
+						'value'  => isset( $job['sla_tier'] ) ? $job['sla_tier'] : '—',
+					),
+					array(
+						'metric' => __( 'Retry Count', 'mcp-ai-wpoos' ),
+						'value'  => isset( $job['retry_count'] ) ? absint( $job['retry_count'] ) : 0,
+					),
+					array(
+						'metric' => __( 'Timeout', 'mcp-ai-wpoos' ),
+						'value'  => isset( $job['timeout'] ) ? absint( $job['timeout'] ) . 's' : '300s',
+					),
+					array(
+						'metric' => __( 'Enqueued At', 'mcp-ai-wpoos' ),
+						'value'  => isset( $job['enqueued_at'] ) ? gmdate( 'Y-m-d H:i:s', absint( $job['enqueued_at'] ) ) : '—',
+					),
+					array(
+						'metric' => __( 'Last Error', 'mcp-ai-wpoos' ),
+						'value'  => isset( $job['last_error'] ) ? $job['last_error'] : '—',
+					),
+				);
+
+				\WP_CLI\Utils\format_items( $format, $items, array( 'metric', 'value' ) );
 			}
 		}
 	}
@@ -1285,6 +1436,299 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		}
 	}
 
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Health_Command' ) ) {
+		/**
+		 * Health check command for NV oOS.
+		 *
+		 * ## EXAMPLES
+		 *
+		 *     # Run a full health check.
+		 *     $ wp mcp-ai health
+		 *
+		 *     # Export health status as JSON.
+		 *     $ wp mcp-ai health --format=json
+		 *
+		 * @since 1.0.0
+		 */
+		class WP_MCP_AI_CLI_Health_Command extends WP_CLI_Command {
+
+			/**
+			 * Run diagnostic health checks.
+			 *
+			 * ## OPTIONS
+			 *
+			 * [--format=<format>]
+			 * : Output format.
+			 * ---
+			 * default: table
+			 * options:
+			 *   - table
+			 *   - json
+			 *   - yaml
+			 * ---
+			 *
+			 * ## EXAMPLES
+			 *
+			 *     $ wp mcp-ai health
+			 *     $ wp mcp-ai health --format=json
+			 *
+			 * @param array $args       Positional arguments.
+			 * @param array $assoc_args Associative arguments.
+			 * @when after_wp_load
+			 */
+			public function __invoke( $args, $assoc_args ) {
+				global $wp_version;
+
+				$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
+
+				// Plugin version info.
+				$nv_version = defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : __( 'unknown', 'mcp-ai-wpoos' );
+				$is_base    = defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION;
+				$edition    = $is_base ? __( 'Base', 'mcp-ai-wpoos' ) : __( 'Pro', 'mcp-ai-wpoos' );
+
+				// Tool registry health.
+				$registry         = WP_MCP_AI_Tool_Registry::get_instance();
+				$all_tools        = $registry->get_tools();
+				$registered_count = count( $all_tools );
+
+				// Count enabled tools (those not marked as disabled).
+				$enabled_count = 0;
+				foreach ( $all_tools as $tool ) {
+					if ( method_exists( $tool, 'is_enabled' ) && $tool->is_enabled() ) {
+						++$enabled_count;
+					} elseif ( ! method_exists( $tool, 'is_enabled' ) ) {
+						// Tools without is_enabled method are considered enabled by default.
+						++$enabled_count;
+					}
+				}
+
+				// DLQ pending count.
+				$dlq_pending = 0;
+				if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+					$dlq_stats   = WP_MCP_AI_Dead_Letter_Queue::get_stats();
+					$dlq_pending = isset( $dlq_stats['total'] ) ? absint( $dlq_stats['total'] ) : 0;
+				}
+
+				// Async queue stats.
+				$queue_stats = WP_MCP_AI_Job_Queue_Manager::get_queue_stats();
+
+				// Provider connectivity.
+				$settings        = get_option( 'wp_mcp_ai_settings', array() );
+				$openai_key      = isset( $settings['openai_api_key'] ) ? trim( $settings['openai_api_key'] ) : '';
+				$gemini_key      = isset( $settings['gemini_api_key'] ) ? trim( $settings['gemini_api_key'] ) : '';
+				$ollama_base_url = isset( $settings['ollama_base_url'] ) ? trim( $settings['ollama_base_url'] ) : '';
+
+				$openai_status = '' !== $openai_key ? __( 'configured', 'mcp-ai-wpoos' ) : __( 'not configured', 'mcp-ai-wpoos' );
+				$gemini_status = '' !== $gemini_key ? __( 'configured', 'mcp-ai-wpoos' ) : __( 'not configured', 'mcp-ai-wpoos' );
+				$ollama_status = '' !== $ollama_base_url ? __( 'configured', 'mcp-ai-wpoos' ) : __( 'not configured', 'mcp-ai-wpoos' );
+
+				// Settings integrity.
+				$settings_count  = is_array( $settings ) ? count( $settings ) : -1;
+				$settings_status = $settings_count >= 0 ? __( 'ok', 'mcp-ai-wpoos' ) : __( 'corrupt', 'mcp-ai-wpoos' );
+
+				$items = array(
+					array(
+						'metric' => __( 'WordPress Version', 'mcp-ai-wpoos' ),
+						'value'  => $wp_version,
+					),
+					array(
+						'metric' => __( 'PHP Version', 'mcp-ai-wpoos' ),
+						'value'  => PHP_VERSION,
+					),
+					array(
+						'metric' => __( 'NV oOS Version', 'mcp-ai-wpoos' ),
+						'value'  => sprintf( '%s (%s)', $nv_version, $edition ),
+					),
+					array(
+						'metric' => __( 'Tool Registry — Total Tools', 'mcp-ai-wpoos' ),
+						'value'  => $registered_count,
+					),
+					array(
+						'metric' => __( 'Tool Registry — Enabled Tools', 'mcp-ai-wpoos' ),
+						'value'  => $enabled_count,
+					),
+					array(
+						'metric' => __( 'DLQ Pending Items', 'mcp-ai-wpoos' ),
+						'value'  => $dlq_pending,
+					),
+					array(
+						'metric' => __( 'Async Queue — Total', 'mcp-ai-wpoos' ),
+						'value'  => isset( $queue_stats['total'] ) ? absint( $queue_stats['total'] ) : 0,
+					),
+					array(
+						'metric' => __( 'Async Queue — Active', 'mcp-ai-wpoos' ),
+						'value'  => isset( $queue_stats['active'] ) ? absint( $queue_stats['active'] ) : 0,
+					),
+					array(
+						'metric' => __( 'Async Queue — Pending', 'mcp-ai-wpoos' ),
+						'value'  => isset( $queue_stats['pending'] ) ? absint( $queue_stats['pending'] ) : 0,
+					),
+					array(
+						'metric' => __( 'Async Queue — Failed', 'mcp-ai-wpoos' ),
+						'value'  => isset( $queue_stats['failed'] ) ? absint( $queue_stats['failed'] ) : 0,
+					),
+					array(
+						'metric' => __( 'OpenAI API Key', 'mcp-ai-wpoos' ),
+						'value'  => $openai_status,
+					),
+					array(
+						'metric' => __( 'Gemini API Key', 'mcp-ai-wpoos' ),
+						'value'  => $gemini_status,
+					),
+					array(
+						'metric' => __( 'Ollama Base URL', 'mcp-ai-wpoos' ),
+						'value'  => $ollama_status,
+					),
+					array(
+						'metric' => __( 'Settings Integrity', 'mcp-ai-wpoos' ),
+						'value'  => sprintf(
+							/* translators: %s: status indicator (ok/corrupt) */
+							__( '%1$s (%2$d keys)', 'mcp-ai-wpoos' ),
+							$settings_status,
+							$settings_count
+						),
+					),
+				);
+
+				\WP_CLI\Utils\format_items( $format, $items, array( 'metric', 'value' ) );
+			}
+		}
+	}
+
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Cache_Command' ) ) {
+		/**
+		 * Cache management command for NV oOS.
+		 *
+		 * ## EXAMPLES
+		 *
+		 *     # Clear all NV oOS caches.
+		 *     $ wp mcp-ai cache clear
+		 *
+		 * @since 1.0.0
+		 */
+		class WP_MCP_AI_CLI_Cache_Command extends WP_CLI_Command {
+
+			/**
+			 * Clear all NV oOS caches.
+			 *
+			 * ## EXAMPLES
+			 *
+			 *     $ wp mcp-ai cache clear
+			 *
+			 * @subcommand clear
+			 */
+			public function clear() {
+				$cleared = array();
+
+				// Clear settings cache.
+				if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'reset_settings_cache' ) ) {
+					WP_MCP_AI_Admin_Settings::reset_settings_cache();
+					$cleared[] = __( 'Settings cache', 'mcp-ai-wpoos' );
+				}
+
+				// Clear tool registry cache.
+				if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) && method_exists( 'WP_MCP_AI_Tool_Registry', 'clear_tools' ) ) {
+					$registry = WP_MCP_AI_Tool_Registry::get_instance();
+					$registry->clear_tools();
+					$cleared[] = __( 'Tool registry cache', 'mcp-ai-wpoos' );
+				}
+
+				// Flush WordPress object cache.
+				wp_cache_flush();
+				$cleared[] = __( 'WordPress object cache', 'mcp-ai-wpoos' );
+
+				if ( empty( $cleared ) ) {
+					WP_CLI::log( __( 'No caches to clear.', 'mcp-ai-wpoos' ) );
+				} else {
+					WP_CLI::success(
+						sprintf(
+							/* translators: %s: comma-separated list of cleared caches */
+							__( 'Cleared: %s.', 'mcp-ai-wpoos' ),
+							implode( ', ', $cleared )
+						)
+					);
+				}
+			}
+		}
+	}
+
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Version_Command' ) ) {
+		/**
+		 * Version information command for NV oOS.
+		 *
+		 * ## EXAMPLES
+		 *
+		 *     # Show version information.
+		 *     $ wp mcp-ai version
+		 *
+		 *     # Export version info as JSON.
+		 *     $ wp mcp-ai version --format=json
+		 *
+		 * @since 1.0.0
+		 */
+		class WP_MCP_AI_CLI_Version_Command extends WP_CLI_Command {
+
+			/**
+			 * Show plugin and environment version information.
+			 *
+			 * ## OPTIONS
+			 *
+			 * [--format=<format>]
+			 * : Output format.
+			 * ---
+			 * default: table
+			 * options:
+			 *   - table
+			 *   - json
+			 *   - yaml
+			 * ---
+			 *
+			 * ## EXAMPLES
+			 *
+			 *     $ wp mcp-ai version
+			 *     $ wp mcp-ai version --format=json
+			 *
+			 * @param array $args       Positional arguments.
+			 * @param array $assoc_args Associative arguments.
+			 */
+			public function __invoke( $args, $assoc_args ) {
+				global $wp_version;
+
+				$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
+
+				$nv_version = defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : __( 'unknown', 'mcp-ai-wpoos' );
+
+				$pro_version = __( 'not active', 'mcp-ai-wpoos' );
+				if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+					$pro_version = WP_MCP_AI_PRO_VERSION;
+				} elseif ( defined( 'WP_MCP_AI_BASE_VERSION' ) && ! WP_MCP_AI_BASE_VERSION ) {
+					$pro_version = __( 'active (version unknown)', 'mcp-ai-wpoos' );
+				}
+
+				$items = array(
+					array(
+						'metric' => __( 'NV oOS Version', 'mcp-ai-wpoos' ),
+						'value'  => $nv_version,
+					),
+					array(
+						'metric' => __( 'Pro Version', 'mcp-ai-wpoos' ),
+						'value'  => $pro_version,
+					),
+					array(
+						'metric' => __( 'PHP Version', 'mcp-ai-wpoos' ),
+						'value'  => PHP_VERSION,
+					),
+					array(
+						'metric' => __( 'WordPress Version', 'mcp-ai-wpoos' ),
+						'value'  => $wp_version,
+					),
+				);
+
+				\WP_CLI\Utils\format_items( $format, $items, array( 'metric', 'value' ) );
+			}
+		}
+	}
+
 	// Load additional CLI command classes.
 	if ( ! class_exists( 'WP_MCP_AI_CLI_DLQ' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-dlq.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-dlq.php';
@@ -1333,6 +1777,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-measurement-command.php';
 	}
 
+	// Load Bulk-tool / massive-data CLI commands (Phase 5).
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Bulk_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-bulk-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-bulk-command.php';
+	}
+
 	WP_CLI::add_command( 'mcp-ai', 'WP_MCP_AI_CLI_Command' );
 	WP_CLI::add_command( 'mcp-ai plugins', 'WP_MCP_AI_CLI_Plugins_Command' );
 	WP_CLI::add_command( 'mcp-ai queue', 'WP_MCP_AI_CLI_Queue_Command' );
@@ -1353,4 +1802,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		WP_CLI::add_command( 'profession seed-orchestration', array( 'WP_MCP_AI_Profession_Orchestration_CLI', 'seed_orchestration' ) );
 		WP_CLI::add_command( 'profession orchestration-stats', array( 'WP_MCP_AI_Profession_Orchestration_CLI', 'orchestration_stats' ) );
 	}
+
+	// Register health, cache, and version commands.
+	WP_CLI::add_command( 'mcp-ai health', 'WP_MCP_AI_CLI_Health_Command' );
+	WP_CLI::add_command( 'mcp-ai cache clear', 'WP_MCP_AI_CLI_Cache_Command' );
+	WP_CLI::add_command( 'mcp-ai version', 'WP_MCP_AI_CLI_Version_Command' );
 }

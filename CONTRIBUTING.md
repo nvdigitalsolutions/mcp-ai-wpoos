@@ -102,6 +102,19 @@ Each tool must implement `WP_MCP_AI_Tool_Interface` (`includes/tools/class-wp-mc
 4. Submit a pull request that explains the motivation for the change and any testing details.
 5. Respond to review feedback – we appreciate collaborative iteration!
 
+## Adding or Updating a Dependency
+
+Whenever you add or upgrade a third-party library — Composer, npm, or a hand-vendored copy — every upstream owner must continue to be acknowledged. Run through this checklist before opening the PR:
+
+1. **Update the manifest:** `composer.json` (base or Pro), `package.json` (base, Pro, or addon), or replace the file under `**/assets/**/vendor/`. Re-run `composer install` / `npm install` / your bundling step.
+2. **Update [`CREDITS.md`](CREDITS.md)** at the repo root — add/refresh the row for the package with version, license, upstream URL, and copyright holder.
+3. **Update [`docs/THIRD_PARTY_ASSETS.md`](docs/THIRD_PARTY_ASSETS.md)** for any JavaScript dependency that ships in the bundle.
+4. **Update the addon's `README.md` `## Credits` section** if the dependency is bundled inside an addon (`addons/algorave/`, `addons/canvas/`, `addons/cornerstone3d/`, `addons/embedded/`, `addons/fantasy-football/`, `addons/graphify/`, `addons/pro/`).
+5. **Update the Pro Packages admin page** (`addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php`) `get_package_definitions()` if the dependency is a user-relevant Pro npm package — the page renders `homepage` / `license` / `copyright` fields directly from that array.
+6. **For bundled Agent Skills curated from an upstream catalogue:** update the matching `THIRD_PARTY_NOTICES.md` (under `includes/bundled-skills/` for base or `addons/pro/includes/bundled-skills/` for Pro) with the upstream commit, original author, and license. Do **not** duplicate this in `CREDITS.md` — link to it instead.
+7. **Run `bin/verify-credits.sh`** before pushing — it cross-checks Composer / npm manifests against `CREDITS.md` and surfaces any package missing an attribution entry.
+8. **Run a vulnerability check for new dependencies** — `composer audit` for PHP, `npm audit` for JavaScript — and address any high-severity findings before merging. Maintainers using GitHub's MCP toolchain may also use the `gh-advisory-database` MCP tool for the same check.
+
 ## Project Management
 
 ### GitHub Labels
@@ -138,7 +151,7 @@ Maintainers follow [RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for all release
 
 ## GSD × BMAD Development Methodology
 
-NV oOS uses a hybrid **GSD (Get Shit Done) + BMAD (Breakthrough Method for Agile AI-Driven Development)** methodology for AI-assisted feature development. This workflow is fully documented in [docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md](docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md).
+NV oOS uses a hybrid **GSD (Get Shit Done) + BMAD (Breakthrough Method for Agile AI-Driven Development)** methodology for AI-assisted feature development. This workflow is fully documented in [docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md](docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md).
 
 ### Workflow Summary (10 Phases)
 
@@ -171,7 +184,7 @@ Not every change requires the full workflow. Choose based on complexity:
 - **Agent definitions:** `.bmad/agents/` — YAML role definitions for each BMAD agent
 - **Team compositions:** `.bmad/teams/feature-development.yaml` — Multi-agent team configuration
 - **Context files:** `.context/` — GSD context engineering files (conventions, security, subsystem guides)
-- **Templates:** `docs/proposals/templates/` — Project Brief, PRD, Architecture Spec templates
+- **Templates:** `docs/project/proposals/templates/` — Project Brief, PRD, Architecture Spec templates
 
 ### Phase-Completion Checklists
 

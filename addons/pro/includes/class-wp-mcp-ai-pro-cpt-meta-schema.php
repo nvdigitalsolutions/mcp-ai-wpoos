@@ -82,7 +82,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// Project Management Toolkit
 			// ----------------------------------------------------------------
 
-			'mcp_ai_task'    => array(
+			'mcp_ai_task'         => array(
 				'_task_status'           => array(
 					'meta_key'    => '_task_status',
 					'label'       => __( 'Task Status', 'mcp-ai-wpoos-pro' ),
@@ -142,7 +142,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_project' => array(
+			'mcp_ai_project'      => array(
 				'_project_status'      => array(
 					'meta_key'    => '_project_status',
 					'label'       => __( 'Project Status', 'mcp-ai-wpoos-pro' ),
@@ -170,7 +170,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_task_plan'     => array(
+			'mcp_task_plan'       => array(
 				'_goal'        => array(
 					'meta_key'    => '_goal',
 					'label'       => __( 'Goal', 'mcp-ai-wpoos-pro' ),
@@ -197,7 +197,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_task_template' => array(
+			'mcp_task_template'   => array(
 				'_category'     => array(
 					'meta_key'    => '_category',
 					'label'       => __( 'Category', 'mcp-ai-wpoos-pro' ),
@@ -222,7 +222,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// Event Management Toolkit
 			// ----------------------------------------------------------------
 
-			'mcp_ai_event'   => array(
+			'mcp_ai_event'        => array(
 				'_event_start_date' => array(
 					'meta_key'    => '_event_start_date',
 					'label'       => __( 'Start Date', 'mcp-ai-wpoos-pro' ),
@@ -284,7 +284,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// Places Toolkit
 			// ----------------------------------------------------------------
 
-			'mcp_ai_place'   => array(
+			'mcp_ai_place'        => array(
 				'_place_type'               => array(
 					'meta_key'    => '_place_type',
 					'label'       => __( 'Place Type', 'mcp-ai-wpoos-pro' ),
@@ -369,51 +369,51 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// Health & Wellness Toolkit
 			// ----------------------------------------------------------------
 
-			'mcp_ai_member'      => array(
-				'_member_date_of_birth'     => array(
+			'mcp_ai_member'       => array(
+				'_member_date_of_birth'      => array(
 					'meta_key'    => '_member_date_of_birth',
 					'label'       => __( 'Date of Birth', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Date of birth in YYYY-MM-DD format.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_member_gender'            => array(
+				'_member_gender'             => array(
 					'meta_key'    => '_member_gender',
 					'label'       => __( 'Gender', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Self-reported gender.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_member_blood_type'        => array(
+				'_member_blood_type'         => array(
 					'meta_key'    => '_member_blood_type',
 					'label'       => __( 'Blood Type', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'ABO blood group (e.g. A+, O−).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-' ),
 				),
-				'_member_email'             => array(
+				'_member_email'              => array(
 					'meta_key'    => '_member_email',
 					'label'       => __( 'Email', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Contact email address for the member.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_member_phone'             => array(
+				'_member_phone'              => array(
 					'meta_key'    => '_member_phone',
 					'label'       => __( 'Phone', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Contact phone number for the member.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_member_address'           => array(
+				'_member_address'            => array(
 					'meta_key'    => '_member_address',
 					'label'       => __( 'Address', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Physical address of the member.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_member_emergency_contact' => array(
+				'_member_emergency_contact'  => array(
 					'meta_key'    => '_member_emergency_contact',
 					'label'       => __( 'Emergency Contact', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Emergency contact name and details.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_member_mrn'               => array(
+				'_member_mrn'                => array(
 					'meta_key'    => '_member_mrn',
 					'label'       => __( 'Medical Record Number (MRN)', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -425,13 +425,13 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'string',
 					'description' => __( 'Preferred pharmacy name and/or address.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_pet_species'              => array(
+				'_pet_species'               => array(
 					'meta_key'    => '_pet_species',
 					'label'       => __( 'Species (pet)', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Animal species when member type is "pet".', 'mcp-ai-wpoos-pro' ),
 				),
-				'_pet_breed'                => array(
+				'_pet_breed'                 => array(
 					'meta_key'    => '_pet_breed',
 					'label'       => __( 'Breed (pet)', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -439,32 +439,32 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_med_record'  => array(
-				'_medical_record_member_id'          => array(
+			'mcp_ai_med_record'   => array(
+				'_medical_record_member_id'           => array(
 					'meta_key'    => '_medical_record_member_id',
 					'label'       => __( 'Member ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'integer',
 					'description' => __( 'ID of the mcp_ai_member this record belongs to.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_medical_record_date'               => array(
+				'_medical_record_date'                => array(
 					'meta_key'    => '_medical_record_date',
 					'label'       => __( 'Record Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Date the medical record was created (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_medical_record_icd_code'           => array(
+				'_medical_record_icd_code'            => array(
 					'meta_key'    => '_medical_record_icd_code',
 					'label'       => __( 'ICD-10 Code', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'ICD-10-CM diagnosis code (e.g. J18.9).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_medical_record_lab_value'          => array(
+				'_medical_record_lab_value'           => array(
 					'meta_key'    => '_medical_record_lab_value',
 					'label'       => __( 'Lab Value', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Numeric or text result of a lab test.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_medical_record_lab_unit'           => array(
+				'_medical_record_lab_unit'            => array(
 					'meta_key'    => '_medical_record_lab_unit',
 					'label'       => __( 'Lab Unit', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -476,13 +476,13 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'string',
 					'description' => __( 'Normal range for the lab value (e.g. "70–100").', 'mcp-ai-wpoos-pro' ),
 				),
-				'_medical_record_lab_abnormal'       => array(
+				'_medical_record_lab_abnormal'        => array(
 					'meta_key'    => '_medical_record_lab_abnormal',
 					'label'       => __( 'Abnormal Flag', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'boolean',
 					'description' => __( 'Whether the lab result is outside the reference range.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_medical_record_provider'           => array(
+				'_medical_record_provider'            => array(
 					'meta_key'    => '_medical_record_provider',
 					'label'       => __( 'Provider', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -490,53 +490,53 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_allergy'     => array(
-				'_allergy_member_id'         => array(
+			'mcp_ai_allergy'      => array(
+				'_allergy_member_id'          => array(
 					'meta_key'    => '_allergy_member_id',
 					'label'       => __( 'Member ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'integer',
 					'description' => __( 'ID of the mcp_ai_member this allergy record belongs to.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_allergy_allergen'          => array(
+				'_allergy_allergen'           => array(
 					'meta_key'    => '_allergy_allergen',
 					'label'       => __( 'Allergen', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'The substance causing the allergic reaction.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_allergy_severity'          => array(
+				'_allergy_severity'           => array(
 					'meta_key'    => '_allergy_severity',
 					'label'       => __( 'Severity', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Clinical severity of the allergy.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'mild', 'moderate', 'severe', 'life-threatening' ),
 				),
-				'_allergy_type'              => array(
+				'_allergy_type'               => array(
 					'meta_key'    => '_allergy_type',
 					'label'       => __( 'Allergy Type', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'FHIR allergy category.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'food', 'medication', 'environment', 'biologic', 'other' ),
 				),
-				'_allergy_onset_type'        => array(
+				'_allergy_onset_type'         => array(
 					'meta_key'    => '_allergy_onset_type',
 					'label'       => __( 'Onset Type', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Speed of allergic reaction onset.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'immediate', 'delayed' ),
 				),
-				'_allergy_treatment'         => array(
+				'_allergy_treatment'          => array(
 					'meta_key'    => '_allergy_treatment',
 					'label'       => __( 'Treatment', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Treatment or management notes for the allergy.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_allergy_reactions'         => array(
+				'_allergy_reactions'          => array(
 					'meta_key'    => '_allergy_reactions',
 					'label'       => __( 'Reactions', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Comma-separated list of observed reaction symptoms.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_allergy_diagnosed_date'    => array(
+				'_allergy_diagnosed_date'     => array(
 					'meta_key'    => '_allergy_diagnosed_date',
 					'label'       => __( 'Diagnosed Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -551,50 +551,50 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			),
 
 			'mcp_ai_prescription' => array(
-				'_prescription_member_id'       => array(
+				'_prescription_member_id'         => array(
 					'meta_key'    => '_prescription_member_id',
 					'label'       => __( 'Member ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'integer',
 					'description' => __( 'ID of the mcp_ai_member this prescription belongs to.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_medication_name' => array(
+				'_prescription_medication_name'   => array(
 					'meta_key'    => '_prescription_medication_name',
 					'label'       => __( 'Medication Name', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Brand or generic name of the prescribed medication.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_dosage'          => array(
+				'_prescription_dosage'            => array(
 					'meta_key'    => '_prescription_dosage',
 					'label'       => __( 'Dosage', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Dosage strength (e.g. "10mg").', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_frequency'       => array(
+				'_prescription_frequency'         => array(
 					'meta_key'    => '_prescription_frequency',
 					'label'       => __( 'Frequency', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Administration frequency (e.g. "twice daily").', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_status'          => array(
+				'_prescription_status'            => array(
 					'meta_key'    => '_prescription_status',
 					'label'       => __( 'Status', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Current prescription status.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'active', 'completed', 'discontinued', 'on-hold' ),
 				),
-				'_prescription_doctor'          => array(
+				'_prescription_doctor'            => array(
 					'meta_key'    => '_prescription_doctor',
 					'label'       => __( 'Prescribing Doctor', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Name of the prescribing physician.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_start_date'      => array(
+				'_prescription_start_date'        => array(
 					'meta_key'    => '_prescription_start_date',
 					'label'       => __( 'Start Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Date prescription was started (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_end_date'        => array(
+				'_prescription_end_date'          => array(
 					'meta_key'    => '_prescription_end_date',
 					'label'       => __( 'End Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -606,37 +606,37 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'integer',
 					'description' => __( 'Number of refills remaining on the prescription.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_rx_number'       => array(
+				'_prescription_rx_number'         => array(
 					'meta_key'    => '_prescription_rx_number',
 					'label'       => __( 'Rx Number', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Pharmacy prescription number.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_ndc_code'        => array(
+				'_prescription_ndc_code'          => array(
 					'meta_key'    => '_prescription_ndc_code',
 					'label'       => __( 'NDC Code', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'National Drug Code (11-digit, format: XXXXX-XXXX-XX).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_route'           => array(
+				'_prescription_route'             => array(
 					'meta_key'    => '_prescription_route',
 					'label'       => __( 'Route', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Route of administration (e.g. oral, topical, injection).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_quantity'        => array(
+				'_prescription_quantity'          => array(
 					'meta_key'    => '_prescription_quantity',
 					'label'       => __( 'Quantity', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Quantity dispensed per fill.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_quantity_unit'   => array(
+				'_prescription_quantity_unit'     => array(
 					'meta_key'    => '_prescription_quantity_unit',
 					'label'       => __( 'Quantity Unit', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Unit of the dispensed quantity (e.g. tablets, mL).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_prescription_indication'      => array(
+				'_prescription_indication'        => array(
 					'meta_key'    => '_prescription_indication',
 					'label'       => __( 'Indication', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -644,51 +644,51 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_checkup'     => array(
-				'_checkup_member_id'       => array(
+			'mcp_ai_checkup'      => array(
+				'_checkup_member_id'        => array(
 					'meta_key'    => '_checkup_member_id',
 					'label'       => __( 'Member ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'integer',
 					'description' => __( 'ID of the mcp_ai_member this checkup belongs to.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_checkup_datetime'        => array(
+				'_checkup_datetime'         => array(
 					'meta_key'    => '_checkup_datetime',
 					'label'       => __( 'Appointment Date/Time', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'ISO 8601 datetime of the appointment (YYYY-MM-DD HH:MM).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_checkup_status'          => array(
+				'_checkup_status'           => array(
 					'meta_key'    => '_checkup_status',
 					'label'       => __( 'Status', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Appointment status.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'scheduled', 'completed', 'cancelled', 'no-show' ),
 				),
-				'_checkup_provider'        => array(
+				'_checkup_provider'         => array(
 					'meta_key'    => '_checkup_provider',
 					'label'       => __( 'Provider', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Name of the healthcare provider or practice.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_checkup_location'        => array(
+				'_checkup_location'         => array(
 					'meta_key'    => '_checkup_location',
 					'label'       => __( 'Location', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Clinic, hospital, or virtual appointment location.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_checkup_type'            => array(
+				'_checkup_type'             => array(
 					'meta_key'    => '_checkup_type',
 					'label'       => __( 'Appointment Type', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Kind of medical appointment (e.g. annual, specialist, follow-up).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_checkup_chief_complaint' => array(
+				'_checkup_chief_complaint'  => array(
 					'meta_key'    => '_checkup_chief_complaint',
 					'label'       => __( 'Chief Complaint', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Primary reason for the visit in the patient\'s own words.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_checkup_diagnosis'       => array(
+				'_checkup_diagnosis'        => array(
 					'meta_key'    => '_checkup_diagnosis',
 					'label'       => __( 'Diagnosis', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -700,13 +700,13 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'integer',
 					'description' => __( 'Length of the appointment in minutes.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_checkup_copay_amount'    => array(
+				'_checkup_copay_amount'     => array(
 					'meta_key'    => '_checkup_copay_amount',
 					'label'       => __( 'Copay Amount', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Patient copay amount paid at the visit.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_checkup_follow_up_date'  => array(
+				'_checkup_follow_up_date'   => array(
 					'meta_key'    => '_checkup_follow_up_date',
 					'label'       => __( 'Follow-Up Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -714,44 +714,44 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_policy'      => array(
-				'_policy_member_id'       => array(
+			'mcp_ai_policy'       => array(
+				'_policy_member_id'         => array(
 					'meta_key'    => '_policy_member_id',
 					'label'       => __( 'Member ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'integer',
 					'description' => __( 'ID of the mcp_ai_member this insurance policy belongs to.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_number'          => array(
+				'_policy_number'            => array(
 					'meta_key'    => '_policy_number',
 					'label'       => __( 'Policy Number', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Insurance policy or member ID number.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_group_number'    => array(
+				'_policy_group_number'      => array(
 					'meta_key'    => '_policy_group_number',
 					'label'       => __( 'Group Number', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Employer or plan group number.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_plan_type'       => array(
+				'_policy_plan_type'         => array(
 					'meta_key'    => '_policy_plan_type',
 					'label'       => __( 'Plan Type', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Insurance plan category (e.g. HMO, PPO, EPO, HDHP).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_copay_primary'   => array(
+				'_policy_copay_primary'     => array(
 					'meta_key'    => '_policy_copay_primary',
 					'label'       => __( 'Primary Care Copay', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Copay amount for primary care visits.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_copay_specialist' => array(
+				'_policy_copay_specialist'  => array(
 					'meta_key'    => '_policy_copay_specialist',
 					'label'       => __( 'Specialist Copay', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Copay amount for specialist visits.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_deductible'      => array(
+				'_policy_deductible'        => array(
 					'meta_key'    => '_policy_deductible',
 					'label'       => __( 'Deductible', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
@@ -763,44 +763,44 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'number',
 					'description' => __( 'Annual out-of-pocket maximum.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_rx_bin'          => array(
+				'_policy_rx_bin'            => array(
 					'meta_key'    => '_policy_rx_bin',
 					'label'       => __( 'Rx BIN', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Pharmacy Benefit Manager bank identification number.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_rx_pcn'          => array(
+				'_policy_rx_pcn'            => array(
 					'meta_key'    => '_policy_rx_pcn',
 					'label'       => __( 'Rx PCN', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Processor Control Number for pharmacy claims.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_rx_group'        => array(
+				'_policy_rx_group'          => array(
 					'meta_key'    => '_policy_rx_group',
 					'label'       => __( 'Rx Group', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Pharmacy benefit group number.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_provider'        => array(
+				'_policy_provider'          => array(
 					'meta_key'    => '_policy_provider',
 					'label'       => __( 'Insurance Provider', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Name of the insurance company.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_status'          => array(
+				'_policy_status'            => array(
 					'meta_key'    => '_policy_status',
 					'label'       => __( 'Status', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Current policy status.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'active', 'inactive', 'pending', 'cancelled' ),
 				),
-				'_policy_effective_date'  => array(
+				'_policy_effective_date'    => array(
 					'meta_key'    => '_policy_effective_date',
 					'label'       => __( 'Effective Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Policy effective/start date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_policy_expiration_date' => array(
+				'_policy_expiration_date'   => array(
 					'meta_key'    => '_policy_expiration_date',
 					'label'       => __( 'Expiration Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -812,38 +812,38 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// Education / iSAMS Toolkit
 			// ----------------------------------------------------------------
 
-			'mcp_ai_student' => array(
-				'_student_first_name'    => array(
+			'mcp_ai_student'      => array(
+				'_student_first_name'      => array(
 					'meta_key'    => '_student_first_name',
 					'label'       => __( 'First Name', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Student\'s given (first) name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_student_last_name'     => array(
+				'_student_last_name'       => array(
 					'meta_key'    => '_student_last_name',
 					'label'       => __( 'Last Name', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Student\'s family (last) name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_student_year_group'    => array(
+				'_student_year_group'      => array(
 					'meta_key'    => '_student_year_group',
 					'label'       => __( 'Year Group', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Academic year group or grade level (e.g. "Year 10", "Grade 5").', 'mcp-ai-wpoos-pro' ),
 				),
-				'_student_house'         => array(
+				'_student_house'           => array(
 					'meta_key'    => '_student_house',
 					'label'       => __( 'House', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'School house or homeroom group.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_student_email'         => array(
+				'_student_email'           => array(
 					'meta_key'    => '_student_email',
 					'label'       => __( 'Email', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Student\'s school or personal email address.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_student_isams_id'      => array(
+				'_student_isams_id'        => array(
 					'meta_key'    => '_student_isams_id',
 					'label'       => __( 'iSAMS ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -857,7 +857,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_eca'     => array(
+			'mcp_ai_eca'          => array(
 				'_eca_code'              => array(
 					'meta_key'    => '_eca_code',
 					'label'       => __( 'ECA Code', 'mcp-ai-wpoos-pro' ),
@@ -950,26 +950,26 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_quiz'    => array(
-				'_mcp_ai_quiz_description'  => array(
+			'mcp_ai_quiz'         => array(
+				'_mcp_ai_quiz_description'   => array(
 					'meta_key'    => '_mcp_ai_quiz_description',
 					'label'       => __( 'Description', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Detailed instructions or overview shown to students before the quiz.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_mcp_ai_quiz_time_limit'   => array(
+				'_mcp_ai_quiz_time_limit'    => array(
 					'meta_key'    => '_mcp_ai_quiz_time_limit',
 					'label'       => __( 'Time Limit (minutes)', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'integer',
 					'description' => __( 'Maximum time allowed to complete the quiz in minutes (0 = no limit).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_mcp_ai_quiz_questions'    => array(
+				'_mcp_ai_quiz_questions'     => array(
 					'meta_key'    => '_mcp_ai_quiz_questions',
 					'label'       => __( 'Questions', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'array',
 					'description' => __( 'Serialized array of question objects (text, type, options, correct_answer, points).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_mcp_ai_quiz_total_points' => array(
+				'_mcp_ai_quiz_total_points'  => array(
 					'meta_key'    => '_mcp_ai_quiz_total_points',
 					'label'       => __( 'Total Points', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'integer',
@@ -987,7 +987,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// Media & Content Toolkit
 			// ----------------------------------------------------------------
 
-			'mcp_ai_media_tpl'  => array(
+			'mcp_ai_media_tpl'    => array(
 				'_template_type'     => array(
 					'meta_key'    => '_template_type',
 					'label'       => __( 'Template Type', 'mcp-ai-wpoos-pro' ),
@@ -1008,7 +1008,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_media_coll' => array(
+			'mcp_ai_media_coll'   => array(
 				'_collection_type'  => array(
 					'meta_key'    => '_collection_type',
 					'label'       => __( 'Collection Type', 'mcp-ai-wpoos-pro' ),
@@ -1023,20 +1023,20 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_image_tpl'  => array(
-				'_image_prompt'  => array(
+			'mcp_ai_image_tpl'    => array(
+				'_image_prompt' => array(
 					'meta_key'    => '_image_prompt',
 					'label'       => __( 'Image Prompt', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'AI image generation prompt for this template.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_image_style'   => array(
+				'_image_style'  => array(
 					'meta_key'    => '_image_style',
 					'label'       => __( 'Style', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Visual style directive appended to image generation prompts.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_image_size'    => array(
+				'_image_size'   => array(
 					'meta_key'    => '_image_size',
 					'label'       => __( 'Size', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -1044,7 +1044,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_doc_tpl'    => array(
+			'mcp_ai_doc_tpl'      => array(
 				'_doc_template_variables' => array(
 					'meta_key'    => '_doc_template_variables',
 					'label'       => __( 'Template Variables', 'mcp-ai-wpoos-pro' ),
@@ -1063,38 +1063,38 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// CRM / Company Toolkit
 			// ----------------------------------------------------------------
 
-			'mcp_ai_company'     => array(
-				'_company_industry'   => array(
+			'mcp_ai_company'      => array(
+				'_company_industry'    => array(
 					'meta_key'    => '_company_industry',
 					'label'       => __( 'Industry', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Industry vertical the company operates in.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_company_size'       => array(
+				'_company_size'        => array(
 					'meta_key'    => '_company_size',
 					'label'       => __( 'Company Size', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Number of employees or size tier (e.g. 1-10, 11-50, 51-200).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_company_website'    => array(
+				'_company_website'     => array(
 					'meta_key'    => '_company_website',
 					'label'       => __( 'Website', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Company website URL.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_company_phone'      => array(
+				'_company_phone'       => array(
 					'meta_key'    => '_company_phone',
 					'label'       => __( 'Phone', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Primary contact phone number.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_company_address'    => array(
+				'_company_address'     => array(
 					'meta_key'    => '_company_address',
 					'label'       => __( 'Address', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Company headquarters or main office address.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_company_status'     => array(
+				'_company_status'      => array(
 					'meta_key'    => '_company_status',
 					'label'       => __( 'Lead Status', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -1113,7 +1113,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// Finance Toolkit
 			// ----------------------------------------------------------------
 
-			'mcp_ai_fin_account' => array(
+			'mcp_ai_fin_account'  => array(
 				'_fin_account_type'        => array(
 					'meta_key'    => '_fin_account_type',
 					'label'       => __( 'Account Type', 'mcp-ai-wpoos-pro' ),
@@ -1150,39 +1150,39 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// Architecture Toolkit
 			// ----------------------------------------------------------------
 
-			'mcp_ai_arch_proj' => array(
-				'_arch_proj_client'      => array(
+			'mcp_ai_arch_proj'    => array(
+				'_arch_proj_client'     => array(
 					'meta_key'    => '_arch_proj_client',
 					'label'       => __( 'Client', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Name of the client or project owner.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_arch_proj_status'      => array(
+				'_arch_proj_status'     => array(
 					'meta_key'    => '_arch_proj_status',
 					'label'       => __( 'Project Status', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Current phase of the architectural project.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'concept', 'schematic', 'design_development', 'construction_docs', 'construction', 'completed' ),
 				),
-				'_arch_proj_location'    => array(
+				'_arch_proj_location'   => array(
 					'meta_key'    => '_arch_proj_location',
 					'label'       => __( 'Location', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Site address or general location.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_arch_proj_budget'      => array(
+				'_arch_proj_budget'     => array(
 					'meta_key'    => '_arch_proj_budget',
 					'label'       => __( 'Budget', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Project construction budget.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_arch_proj_start_date'  => array(
+				'_arch_proj_start_date' => array(
 					'meta_key'    => '_arch_proj_start_date',
 					'label'       => __( 'Start Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Project kickoff date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_arch_proj_end_date'    => array(
+				'_arch_proj_end_date'   => array(
 					'meta_key'    => '_arch_proj_end_date',
 					'label'       => __( 'Completion Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -1190,7 +1190,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_arch_draw' => array(
+			'mcp_ai_arch_draw'    => array(
 				'_arch_draw_project_id' => array(
 					'meta_key'    => '_arch_draw_project_id',
 					'label'       => __( 'Project ID', 'mcp-ai-wpoos-pro' ),
@@ -1229,7 +1229,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_ai_arch_spec' => array(
+			'mcp_ai_arch_spec'    => array(
 				'_arch_spec_project_id' => array(
 					'meta_key'    => '_arch_spec_project_id',
 					'label'       => __( 'Project ID', 'mcp-ai-wpoos-pro' ),
@@ -1266,7 +1266,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// Chat Channels Toolkit (CPT fallback storage)
 			// ----------------------------------------------------------------
 
-			'mcp_chan_contact' => array(
+			'mcp_chan_contact'    => array(
 				'_chan_contact_user_id'   => array(
 					'meta_key'    => '_chan_contact_user_id',
 					'label'       => __( 'WP User ID', 'mcp-ai-wpoos-pro' ),
@@ -1293,7 +1293,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
-			'mcp_chan_message' => array(
+			'mcp_chan_message'    => array(
 				'_chan_msg_contact_id' => array(
 					'meta_key'    => '_chan_msg_contact_id',
 					'label'       => __( 'Contact ID', 'mcp-ai-wpoos-pro' ),
@@ -1307,14 +1307,14 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'description' => __( 'Whether the message was inbound or outbound.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'inbound', 'outbound' ),
 				),
-				'_chan_msg_status'    => array(
+				'_chan_msg_status'     => array(
 					'meta_key'    => '_chan_msg_status',
 					'label'       => __( 'Delivery Status', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Message delivery status.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'sent', 'delivered', 'read', 'failed' ),
 				),
-				'_chan_msg_media_ids' => array(
+				'_chan_msg_media_ids'  => array(
 					'meta_key'    => '_chan_msg_media_ids',
 					'label'       => __( 'Media Attachments', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'array',
@@ -1326,7 +1326,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// WebChat (P2P) Toolkit
 			// ----------------------------------------------------------------
 
-			'mcp_ai_webchat' => array(
+			'mcp_ai_webchat'      => array(
 				'_webchat_room_type'     => array(
 					'meta_key'    => '_webchat_room_type',
 					'label'       => __( 'Room Type', 'mcp-ai-wpoos-pro' ),

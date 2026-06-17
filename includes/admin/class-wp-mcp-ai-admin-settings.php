@@ -96,11 +96,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$this->oauth_manager = $oauth_manager ?? $container->get( 'admin.oauth_manager' );
 
 			// Legacy settings page registration disabled - now using WP_MCP_AI_Settings_Dashboard.
-			// add_action( 'admin_menu', array( $this, 'register_settings_page' ) );.
+			// Legacy admin_menu registration remains disabled here.
 
-			// add_action( 'admin_init', array( $this, 'register_settings' ) );.
+			// Legacy admin_init registration remains disabled here.
 
-			// add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );.
+			// Legacy admin_enqueue_scripts registration remains disabled here.
 
 			// Delegate OAuth handlers to the OAuth manager component.
 			// Note: OAuth callback is now handled via admin_init in the OAuth manager itself.
@@ -112,9 +112,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this->settings_base, 'filter_memory_max_file_bytes' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
 			// Legacy settings page notices disabled - now handled by WP_MCP_AI_Settings_Dashboard.
-			// add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );.
+			// Legacy Simple JWT Login admin notice registration remains disabled here.
 
-			// add_action( 'admin_notices', array( $this, 'maybe_render_opcache_warning' ) );.
+			// Legacy OPcache warning notice registration remains disabled here.
 
 			// Delegate AJAX handlers to the AJAX component.
 			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -162,6 +162,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_sync_all_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_delete_old_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_get_models_for_provider', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_kimi_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_kimi_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 
 			// Delegate allowed redirect hosts to the OAuth manager component.
 			if ( ! has_filter( 'allowed_redirect_hosts', array( $this->oauth_manager, 'allow_gmail_oauth_redirect_host' ) ) ) {
@@ -214,6 +216,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					),
 					'description'      => __( 'Provides access to Google Gemini models when routing assistant conversations.', 'mcp-ai-wpoos' ),
 					'usage'            => __( 'Add credentials once you plan to use Gemini as a provider or fallback.', 'mcp-ai-wpoos' ),
+				),
+				'kimi'             => array(
+					'label'            => __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'kimi_api_key' ),
+					'fields'           => array(
+						'kimi_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Provides access to Kimi K2.5/K2.6 models with 256K context windows and multimodal capabilities.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Add your Moonshot AI API key to use Kimi as a provider.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://platform.moonshot.cn/',
 				),
 				'ollama'           => array(
 					'label'            => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
@@ -1125,15 +1137,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback: Return all providers if Model_Config is not available.
 			// This ensures backward compatibility and prevents breaking the UI.
 			return array(
-				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
-				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
-				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
-				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
-				'ollama'      => __( 'Ollama', 'mcp-ai-wpoos' ),
-				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
-				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
-				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
-				'embedded'    => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
+				'openai'       => __( 'OpenAI', 'mcp-ai-wpoos' ),
+				'anthropic'    => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+				'gemini'       => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+				'nvidia'       => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
+				'deepseek'     => __( 'DeepSeek', 'mcp-ai-wpoos' ),
+				'openrouter'   => __( 'OpenRouter', 'mcp-ai-wpoos' ),
+				'digitalocean' => __( 'DigitalOcean', 'mcp-ai-wpoos' ),
+				'kimi'         => __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' ),
+				'ollama'       => __( 'Ollama', 'mcp-ai-wpoos' ),
+				'lm_studio'    => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
+				'cloudflare'   => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
+				'huggingface'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'baseten'      => __( 'Baseten', 'mcp-ai-wpoos' ),
+				'embedded'     => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -1429,7 +1446,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$settings = self::get_settings();
-			return ! empty( $settings['enable_agentic_loop_logging'] );
+			// When the granular key is absent (not yet configured), default to enabled.
+			return ! isset( $settings['enable_agentic_loop_logging'] ) || ! empty( $settings['enable_agentic_loop_logging'] );
 		}
 
 		/**
@@ -1443,7 +1461,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$settings = self::get_settings();
-			return ! empty( $settings['enable_api_logging'] );
+			// When the granular key is absent (not yet configured), default to enabled.
+			return ! isset( $settings['enable_api_logging'] ) || ! empty( $settings['enable_api_logging'] );
 		}
 
 		/**
@@ -1457,7 +1476,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$settings = self::get_settings();
-			return ! empty( $settings['enable_tool_execution_logging'] );
+			// When the granular key is absent (not yet configured), default to enabled.
+			return ! isset( $settings['enable_tool_execution_logging'] ) || ! empty( $settings['enable_tool_execution_logging'] );
 		}
 
 		/**
@@ -1471,7 +1491,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$settings = self::get_settings();
-			return ! empty( $settings['enable_chat_interaction_logging'] );
+			// When the granular key is absent (not yet configured), default to enabled.
+			return ! isset( $settings['enable_chat_interaction_logging'] ) || ! empty( $settings['enable_chat_interaction_logging'] );
 		}
 
 		/**
@@ -1659,6 +1680,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'lm_studio_model',
 				__( 'LM Studio Model', 'mcp-ai-wpoos' ),
 				array( $this, 'render_lm_studio_model_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_lm_studio_section'
+			);
+
+			add_settings_field(
+				'lm_studio_api_key',
+				__( 'LM Studio API Key (Optional)', 'mcp-ai-wpoos' ),
+				array( $this, 'render_lm_studio_api_key_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_lm_studio_section'
+			);
+
+			add_settings_field(
+				'lm_studio_use_native_api',
+				__( 'Use Native API (/api/v0)', 'mcp-ai-wpoos' ),
+				array( $this, 'render_lm_studio_use_native_api_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_lm_studio_section'
 			);
@@ -2395,6 +2432,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * @return array
 		 */
 		public function sanitize_settings( $settings ) {
+			$current = get_option( self::OPTION_NAME, array() );
+
 			$clean = self::get_default_settings();
 
 			if ( ! is_array( $settings ) ) {
@@ -2422,15 +2461,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['openai_api_key'] ) ) {
-				$clean['openai_api_key'] = trim( sanitize_text_field( $settings['openai_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'openai_api_key' );
 			}
 
 			if ( isset( $settings['gemini_api_key'] ) ) {
-				$clean['gemini_api_key'] = trim( sanitize_text_field( $settings['gemini_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'gemini_api_key' );
 			}
 
 			if ( isset( $settings['google_maps_api_key'] ) ) {
-				$clean['google_maps_api_key'] = trim( sanitize_text_field( $settings['google_maps_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'google_maps_api_key' );
 			}
 
 			if ( isset( $settings['ollama_endpoint_url'] ) ) {
@@ -2453,6 +2492,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$clean['lm_studio_model'] = trim( sanitize_text_field( $settings['lm_studio_model'] ) );
 			}
 
+			if ( isset( $settings['lm_studio_api_key'] ) ) {
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'lm_studio_api_key' );
+			}
+
+			$clean['lm_studio_use_native_api'] = ! empty( $settings['lm_studio_use_native_api'] );
+
 			if ( isset( $settings['default_assistant'] ) ) {
 				$clean['default_assistant'] = absint( $settings['default_assistant'] );
 			}
@@ -2469,10 +2514,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['default_provider'] ) ) {
 				$provider = sanitize_key( $settings['default_provider'] );
-				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
+				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ) );
 
 				if ( ! is_array( $allowed ) ) {
-					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' );
 				}
 
 				if ( in_array( $provider, $allowed, true ) ) {
@@ -2490,19 +2535,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['brave_search_api_key'] ) ) {
-				$clean['brave_search_api_key'] = trim( sanitize_text_field( $settings['brave_search_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'brave_search_api_key' );
 			}
 
 			if ( isset( $settings['tavily_api_key'] ) ) {
-				$clean['tavily_api_key'] = trim( sanitize_text_field( $settings['tavily_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'tavily_api_key' );
 			}
 
 			if ( isset( $settings['exa_api_key'] ) ) {
-				$clean['exa_api_key'] = trim( sanitize_text_field( $settings['exa_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'exa_api_key' );
 			}
 
 			if ( isset( $settings['perplexity_api_key'] ) ) {
-				$clean['perplexity_api_key'] = trim( sanitize_text_field( $settings['perplexity_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'perplexity_api_key' );
 			}
 
 			if ( isset( $settings['gemini_thinking_budget_tokens'] ) ) {
@@ -2511,11 +2556,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['mubert_api_key'] ) ) {
-				$clean['mubert_api_key'] = trim( sanitize_text_field( $settings['mubert_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'mubert_api_key' );
 			}
 
 			if ( isset( $settings['ita_tariff_api_key'] ) ) {
-				$clean['ita_tariff_api_key'] = trim( sanitize_text_field( $settings['ita_tariff_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'ita_tariff_api_key' );
 			}
 
 			if ( isset( $settings['request_timeout'] ) ) {
@@ -2563,7 +2608,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['auth0_management_client_secret'] ) ) {
-				$clean['auth0_management_client_secret'] = trim( sanitize_text_field( $settings['auth0_management_client_secret'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'auth0_management_client_secret' );
 			}
 
 			$clean['enable_wordpress_gravatar_bridge'] = ! empty( $settings['enable_wordpress_gravatar_bridge'] );
@@ -2583,7 +2628,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['crawl4ai_api_key'] ) ) {
-				$clean['crawl4ai_api_key'] = trim( sanitize_text_field( $settings['crawl4ai_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'crawl4ai_api_key' );
 			}
 
 			if ( isset( $settings['playwright_service_url'] ) ) {
@@ -2593,7 +2638,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['cloudflare_api_token'] ) ) {
-				$clean['cloudflare_api_token'] = trim( sanitize_text_field( $settings['cloudflare_api_token'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'cloudflare_api_token' );
 			}
 
 			if ( isset( $settings['cloudflare_zone_id'] ) ) {
@@ -2604,7 +2649,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$clean['enable_nvidia'] = ! empty( $settings['enable_nvidia'] );
 
 			if ( isset( $settings['nvidia_api_key'] ) ) {
-				$clean['nvidia_api_key'] = trim( sanitize_text_field( $settings['nvidia_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'nvidia_api_key' );
 			}
 
 			if ( isset( $settings['nvidia_endpoint_url'] ) ) {
@@ -2622,7 +2667,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['cloudways_api_key'] ) ) {
-				$clean['cloudways_api_key'] = trim( sanitize_text_field( $settings['cloudways_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'cloudways_api_key' );
 			}
 
 			if ( isset( $settings['cloudways_server_id'] ) ) {
@@ -2634,11 +2679,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['mailjet_api_key'] ) ) {
-				$clean['mailjet_api_key'] = trim( sanitize_text_field( $settings['mailjet_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'mailjet_api_key' );
 			}
 
 			if ( isset( $settings['mailjet_api_secret'] ) ) {
-				$clean['mailjet_api_secret'] = trim( sanitize_text_field( $settings['mailjet_api_secret'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'mailjet_api_secret' );
 			}
 
 			if ( isset( $settings['mailjet_from_email'] ) ) {
@@ -2650,7 +2695,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['brevo_api_key'] ) ) {
-				$clean['brevo_api_key'] = trim( sanitize_text_field( $settings['brevo_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'brevo_api_key' );
 			}
 
 			if ( isset( $settings['brevo_from_email'] ) ) {
@@ -2662,11 +2707,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['brevo_webhook_secret'] ) ) {
-				$clean['brevo_webhook_secret'] = trim( sanitize_text_field( $settings['brevo_webhook_secret'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'brevo_webhook_secret' );
 			}
 
 			if ( isset( $settings['mailgun_api_key'] ) ) {
-				$clean['mailgun_api_key'] = trim( sanitize_text_field( $settings['mailgun_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'mailgun_api_key' );
 			}
 
 			if ( isset( $settings['mailgun_domain'] ) ) {
@@ -2717,7 +2762,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['quickbooks_api_key'] ) ) {
-				$clean['quickbooks_api_key'] = trim( sanitize_text_field( $settings['quickbooks_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'quickbooks_api_key' );
 			}
 
 			if ( isset( $settings['gmail_client_id'] ) ) {
@@ -2725,11 +2770,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['gmail_client_secret'] ) ) {
-				$clean['gmail_client_secret'] = trim( sanitize_text_field( $settings['gmail_client_secret'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'gmail_client_secret' );
 			}
 
 			if ( isset( $settings['gmail_refresh_token'] ) ) {
-				$clean['gmail_refresh_token'] = trim( sanitize_text_field( $settings['gmail_refresh_token'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'gmail_refresh_token' );
 			}
 
 			if ( isset( $settings['gmail_user_email'] ) ) {
@@ -2848,7 +2893,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$clean['enable_mesh'] = ! empty( $settings['enable_mesh'] );
 
 			if ( isset( $settings['mesh_inbound_api_key'] ) ) {
-				$clean['mesh_inbound_api_key'] = trim( sanitize_text_field( $settings['mesh_inbound_api_key'] ) );
+				$this->sanitize_sensitive_setting( $clean, $settings, $current, 'mesh_inbound_api_key' );
 			}
 
 			// Generate inbound API key if mesh is being enabled and no key exists - security improvement.
@@ -2872,18 +2917,49 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Sanitize a sensitive setting and keep the stored encrypted value when masked.
+		 *
+		 * @param array  $clean    Sanitized output array.
+		 * @param array  $settings Submitted settings.
+		 * @param array  $current  Existing stored settings.
+		 * @param string $key      Sensitive setting key.
+		 * @return void
+		 */
+		private function sanitize_sensitive_setting( &$clean, $settings, $current, $key ) {
+			$current_value = isset( $current[ $key ] ) ? $current[ $key ] : '';
+
+			$clean[ $key ] = WP_MCP_AI_Admin_Settings_Base::sanitize_sensitive_setting_value(
+				$settings[ $key ],
+				$current_value
+			);
+		}
+
+		/**
+		 * Get the masked placeholder for a saved sensitive setting.
+		 *
+		 * @param array  $settings Settings array.
+		 * @param string $key      Sensitive setting key.
+		 * @return string
+		 */
+		private function get_masked_sensitive_setting_value( $settings, $key ) {
+			$value = isset( $settings[ $key ] ) ? $settings[ $key ] : '';
+
+			return WP_MCP_AI_Admin_Settings_Base::mask_sensitive_setting_value( $value );
+		}
+
+		/**
 		 * Sanitize a submitted color value.
 		 *
 		 * @param string $value   Submitted value.
 		 * @param string $format  Expected format (hex or rgba).
-		 * @param string $default Default color to fall back to.
+		 * @param string $fallback Default color to fall back to.
 		 * @return string
 		 */
-		private static function sanitize_color_value( $value, $format, $default ) {
+		private static function sanitize_color_value( $value, $format, $fallback ) {
 			$value = trim( (string) $value );
 
 			if ( '' === $value ) {
-				return $default;
+				return $fallback;
 			}
 
 			if ( 'rgba' === strtolower( $format ) ) {
@@ -2904,12 +2980,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					return sprintf( 'rgba(%d, %d, %d, %s)', $red, $green, $blue, $alpha_string );
 				}
 
-				return $default;
+				return $fallback;
 			}
 
 			$color = sanitize_hex_color( $value );
 
-			return $color ? $color : $default;
+			return $color ? $color : $fallback;
 		}
 
 		/**
@@ -3044,6 +3120,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_settings_page() {
 			if ( ! current_user_can( 'manage_options' ) ) {
+				// Test-suite affordance: when running under PHPUnit
+				// (`WP_PHPUNIT__TESTS_CONFIG` is set only by the tests
+				// bootstrap and is never defined in production), promote
+				// the current user to an administrator so the settings
+				// page can be rendered for snapshot/integration tests.
+				// This branch is unreachable in production.
 				if ( defined( 'WP_PHPUNIT__TESTS_CONFIG' ) ) {
 					$admins = get_users(
 						array(
@@ -3054,7 +3136,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					);
 
 					if ( ! empty( $admins ) ) {
-						wp_set_current_user( (int) $admins[0] );
+						wp_set_current_user( (int) $admins[0] ); // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- See above: test-only branch gated by WP_PHPUNIT__TESTS_CONFIG.
 					}
 				}
 
@@ -3402,7 +3484,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_auth0_management_client_secret_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_management_client_secret]" value="<?php echo esc_attr( $settings['auth0_management_client_secret'] ); ?>" class="regular-text" autocomplete="new-password" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_management_client_secret]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'auth0_management_client_secret' ) ); ?>" class="regular-text" autocomplete="new-password" />
 		<p class="description"><?php esc_html_e( 'Secret for the Auth0 Management API application. Required when the GitHub profile lacks email or username claims.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -3753,7 +3835,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_api_key]" value="<?php echo esc_attr( $settings['openai_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'openai_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Enter the OpenAI secret key with access to the Chat Completions API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -3764,7 +3846,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_gemini_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemini_api_key]" value="<?php echo esc_attr( $settings['gemini_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemini_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'gemini_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Enter the Gemini API key with access to the Generative Language API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -3784,7 +3866,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_google_maps_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_maps_api_key]" value="<?php echo esc_attr( $settings['google_maps_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_maps_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'google_maps_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Enter your Google Maps Platform API key with Geocoding API and Places API enabled.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -3881,6 +3963,32 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Render the LM Studio API key field.
+		 */
+		public function render_lm_studio_api_key_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'lm_studio_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Optional: enter a bearer token when your LM Studio server has API-key authentication enabled (LM Studio 0.3.6+). Leave empty for open access.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the "use native /api/v0 endpoint" checkbox.
+		 */
+		public function render_lm_studio_use_native_api_field() {
+			$settings = self::get_settings();
+			$checked  = ! empty( $settings['lm_studio_use_native_api'] );
+			?>
+		<label>
+			<input type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_use_native_api]" value="1" <?php checked( $checked ); ?> />
+			<?php esc_html_e( 'Use the /api/v0 endpoint surface for richer model metadata and per-request telemetry stats', 'mcp-ai-wpoos' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'When enabled, model listing returns architecture, quantization, context size, and capability flags. Chat completions return performance stats (tokens/sec, time-to-first-token). Off by default to preserve backwards compatibility.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
 		 * Render the Crawl4AI base URL field.
 		 */
 		public function render_crawl4ai_base_url_field() {
@@ -3959,7 +4067,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_quickbooks_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[quickbooks_api_key]" value="<?php echo esc_attr( $settings['quickbooks_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[quickbooks_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'quickbooks_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Provide a bearer token or API key that authorises access to the QuickBooks Online reports API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -4029,7 +4137,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_gmail_client_secret_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_client_secret]" value="<?php echo esc_attr( $settings['gmail_client_secret'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_client_secret]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'gmail_client_secret' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Enter the OAuth client secret associated with the client ID.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -4040,7 +4148,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_gmail_refresh_token_field() {
 			$settings = self::get_settings();
 			?>
-		<textarea name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_refresh_token]" rows="3" class="large-text" autocomplete="off"><?php echo esc_textarea( $settings['gmail_refresh_token'] ); ?></textarea>
+		<textarea name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_refresh_token]" rows="3" class="large-text" autocomplete="off"><?php echo esc_textarea( $this->get_masked_sensitive_setting_value( $settings, 'gmail_refresh_token' ) ); ?></textarea>
 		<p class="description"><?php esc_html_e( 'Provide a long-lived refresh token issued for the Gmail API with the https://www.googleapis.com/auth/gmail.readonly scope.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -4094,7 +4202,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_brave_search_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brave_search_api_key]" value="<?php echo esc_attr( $settings['brave_search_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brave_search_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'brave_search_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Required when Brave Search is selected as the provider.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -4177,7 +4285,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_ita_tariff_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[ita_tariff_api_key]" value="<?php echo esc_attr( $settings['ita_tariff_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[ita_tariff_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'ita_tariff_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Store the Trade.gov API key used to query import duty rates.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -4330,7 +4438,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_crawl4ai_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_api_key]" value="<?php echo esc_attr( $settings['crawl4ai_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'crawl4ai_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Optional bearer token that will be sent with Crawl4AI requests.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -4352,7 +4460,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_cloudflare_api_token_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_api_token]" value="<?php echo esc_attr( $settings['cloudflare_api_token'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_api_token]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'cloudflare_api_token' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description">
 			<?php esc_html_e( 'Cloudflare API token with permission to purge cache for the configured zone.', 'mcp-ai-wpoos' ); ?>
 			<button type="button" id="wp-mcp-ai-test-cloudflare-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?></button>
@@ -4396,7 +4504,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_cloudways_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_api_key]" value="<?php echo esc_attr( $settings['cloudways_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'cloudways_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'API key from your Cloudways account settings.', 'mcp-ai-wpoos' ); ?></p>
 		<div style="margin-top: 10px;">
 			<button type="button" id="wp-mcp-ai-fetch-cloudways-data" class="button button-secondary">
@@ -4457,7 +4565,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_mailjet_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_key]" value="<?php echo esc_attr( $settings['mailjet_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'mailjet_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Public Mailjet API key used to authenticate requests.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -4468,7 +4576,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_mailjet_api_secret_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_secret]" value="<?php echo esc_attr( $settings['mailjet_api_secret'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_secret]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'mailjet_api_secret' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Private Mailjet API secret paired with the API key.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -4501,7 +4609,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_brevo_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brevo_api_key]" value="<?php echo esc_attr( $settings['brevo_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brevo_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'brevo_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Brevo API key used to authenticate requests. Get it from your Brevo account under SMTP & API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -4534,7 +4642,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_mailgun_api_key_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailgun_api_key]" value="<?php echo esc_attr( $settings['mailgun_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailgun_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'mailgun_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Mailgun API key used to authenticate requests. Get it from your Mailgun account under API Security.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
@@ -4787,7 +4895,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$saved_list   = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
 				: array();
-			$default_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$default_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 
 			// Merge saved value with defaults to ensure all providers are included.
 			// Existing users may have old lists without 'huggingface'.
@@ -4827,50 +4935,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php esc_html_e( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable. The first provider is used as the default.', 'mcp-ai-wpoos' ); ?>
 		</p>
 			<?php
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for provider sortable list styling and layout on this admin page only
+			wp_add_inline_style(
+				'wp-mcp-ai-admin-settings',
+				'#wp-mcp-ai-provider-sortable{list-style:none;margin:0;padding:0;}'
+				. '.wp-mcp-ai-provider-item{background:#fff;border:1px solid #ddd;padding:10px 15px;margin:5px 0;cursor:move;display:flex;align-items:center;gap:10px;border-radius:3px;transition:box-shadow 0.2s ease;}'
+				. '.wp-mcp-ai-provider-item:hover{box-shadow:0 2px 4px rgba(0,0,0,0.1);}'
+				. '.wp-mcp-ai-provider-item .dashicons{color:#999;flex-shrink:0;}'
+				. '.wp-mcp-ai-provider-item.ui-sortable-helper{background:#f0f0f0;border-color:#0073aa;box-shadow:0 4px 8px rgba(0,0,0,0.2);}'
+				. '.wp-mcp-ai-provider-item.ui-sortable-placeholder{background:#f9f9f9;border:2px dashed #ddd;visibility:visible !important;height:42px;}'
+				. '.wp-mcp-ai-provider-item .provider-label{flex:1;font-weight:500;user-select:none;}'
+			);
 			?>
-		<style>
-			#wp-mcp-ai-provider-sortable {
-				list-style: none;
-				margin: 0;
-				padding: 0;
-			}
-			.wp-mcp-ai-provider-item {
-				background: #fff;
-				border: 1px solid #ddd;
-				padding: 10px 15px;
-				margin: 5px 0;
-				cursor: move;
-				display: flex;
-				align-items: center;
-				gap: 10px;
-				border-radius: 3px;
-				transition: box-shadow 0.2s ease;
-			}
-			.wp-mcp-ai-provider-item:hover {
-				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-			}
-			.wp-mcp-ai-provider-item .dashicons {
-				color: #999;
-				flex-shrink: 0;
-			}
-			.wp-mcp-ai-provider-item.ui-sortable-helper {
-				background: #f0f0f0;
-				border-color: #0073aa;
-				box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-			}
-			.wp-mcp-ai-provider-item.ui-sortable-placeholder {
-				background: #f9f9f9;
-				border: 2px dashed #ddd;
-				visibility: visible !important;
-				height: 42px;
-			}
-			.wp-mcp-ai-provider-item .provider-label {
-				flex: 1;
-				font-weight: 500;
-				user-select: none;
-			}
-		</style>
 			<?php
 		}
 
@@ -6010,6 +6085,119 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			return $max_bytes;
+		}
+
+		/**
+		 * Render the token usage section.
+		 */
+		public function render_token_usage_section() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return;
+			}
+			$usage_data = get_option( 'wp_mcp_ai_token_usage', array() );
+			$totals     = $this->calculate_usage_totals( $usage_data );
+			?>
+			<div class="wp-mcp-ai-token-usage-section">
+				<h2><?php esc_html_e( 'Token Usage Statistics', 'mcp-ai-wpoos' ); ?></h2>
+				<div class="wp-mcp-ai-token-usage-tabs">
+					<button class="tab-button active" data-tab="all"><?php esc_html_e( 'All Users', 'mcp-ai-wpoos' ); ?></button>
+					<button class="tab-button" data-tab="user"><?php esc_html_e( 'Your Usage', 'mcp-ai-wpoos' ); ?></button>
+				</div>
+				<div class="wp-mcp-ai-token-usage-content">
+					<div class="tab-content active" id="tab-all">
+						<p><?php esc_html_e( 'Total Requests:', 'mcp-ai-wpoos' ); ?> <strong><?php echo esc_html( $totals['requests'] ); ?></strong></p>
+						<p><?php esc_html_e( 'Total Prompt Tokens:', 'mcp-ai-wpoos' ); ?> <strong><?php echo esc_html( $totals['prompt_tokens'] ); ?></strong></p>
+						<p><?php esc_html_e( 'Total Completion Tokens:', 'mcp-ai-wpoos' ); ?> <strong><?php echo esc_html( $totals['completion_tokens'] ); ?></strong></p>
+						<p><?php esc_html_e( 'Total Tokens:', 'mcp-ai-wpoos' ); ?> <strong><?php echo esc_html( $totals['total_tokens'] ); ?></strong></p>
+						<p><?php esc_html_e( 'Cached Tokens:', 'mcp-ai-wpoos' ); ?> <strong><?php echo esc_html( $totals['cached_tokens'] ); ?></strong></p>
+					</div>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Calculate aggregate usage totals across all providers and models.
+		 *
+		 * @param array $usage Usage data keyed by provider then model.
+		 * @return array Aggregated totals.
+		 */
+		private function calculate_usage_totals( $usage ) {
+			$totals = array(
+				'requests'          => 0,
+				'prompt_tokens'     => 0,
+				'completion_tokens' => 0,
+				'total_tokens'      => 0,
+				'cached_tokens'     => 0,
+			);
+
+			if ( ! is_array( $usage ) ) {
+				return $totals;
+			}
+
+			foreach ( $usage as $provider => $models ) {
+				if ( ! is_array( $models ) ) {
+					continue;
+				}
+				foreach ( $models as $model => $data ) {
+					if ( ! is_array( $data ) ) {
+						continue;
+					}
+					$totals['requests']          += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
+					$totals['prompt_tokens']     += isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
+					$totals['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
+					$totals['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
+					$totals['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
+				}
+			}
+
+			return $totals;
+		}
+
+		/**
+		 * AJAX handler: Reset token usage for the current user.
+		 */
+		public function handle_reset_user_token_usage() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have permission to reset token usage.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
+			}
+
+			$nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ) : '';
+			if ( ! wp_verify_nonce( $nonce, 'wp-mcp-ai-settings' ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
+			}
+
+			$user_id = isset( $_REQUEST['user_id'] ) ? absint( $_REQUEST['user_id'] ) : get_current_user_id();
+			if ( $user_id > 0 && class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+				delete_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY );
+			}
+
+			wp_die( '1' );
+		}
+
+		/**
+		 * AJAX handler: Reset all token usage for all users.
+		 */
+		public function handle_reset_all_token_usage() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have permission to reset token usage.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
+			}
+
+			$nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ) : '';
+			if ( ! wp_verify_nonce( $nonce, 'wp-mcp-ai-settings' ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
+			}
+
+			global $wpdb;
+			if ( class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+				$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
+				// Delete from database.
+				$wpdb->delete( $wpdb->usermeta, array( 'meta_key' => $meta_key ) );
+				// Clear the WP object cache for the meta key.
+				wp_cache_delete( $meta_key, 'user_meta' );
+			}
+
+			wp_die( '1' );
 		}
 
 		// Google Drive OAuth field rendering methods removed - now handled in PRO addon's Remote Sites feature.

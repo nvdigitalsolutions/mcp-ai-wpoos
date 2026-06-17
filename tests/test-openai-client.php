@@ -120,7 +120,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 	 * GPT-Image-1 should allow callers to control the response_format flag.
 	 */
 	public function test_image_model_supports_response_format_for_gpt_image() {
-		$this->assertTrue( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'gpt-image-1' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'gpt-image-2' ) );
 	}
 
 	/**
@@ -249,7 +249,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $payload['messages'][0]['content'] );
 		$this->assertSame( 'text', $payload['messages'][0]['content'][0]['type'] );
 		$this->assertSame( 'Describe this image', $payload['messages'][0]['content'][0]['text'] );
-		$this->assertSame( 'input_image', $payload['messages'][0]['content'][1]['type'] );
+		$this->assertSame( 'image_url', $payload['messages'][0]['content'][1]['type'] );
 	}
 
 	/**

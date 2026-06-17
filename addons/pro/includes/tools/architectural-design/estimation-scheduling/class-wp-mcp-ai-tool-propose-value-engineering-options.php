@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Propose_Value_Engineering_Options implements WP_MCP_AI_Tool
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'country_code' => array(
+				'country_code'  => array(
 					'type'        => 'string',
 					'description' => __( 'ISO country code; only options applicable to this country are returned.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'LK', 'JM', 'US' ),
@@ -89,16 +89,16 @@ class WP_MCP_AI_Tool_Propose_Value_Engineering_Options implements WP_MCP_AI_Tool
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'currency' => array(
+				'currency'      => array(
 					'type'        => 'string',
 					'description' => __( 'ISO 4217 currency code for the savings figures.', 'mcp-ai-wpoos-pro' ),
 				),
-				'categories' => array(
+				'categories'    => array(
 					'type'        => 'array',
 					'description' => __( 'Restrict to these categories (e.g. structure, finishes, mep, envelope, foundation).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'top_n' => array(
+				'top_n'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Return at most this many ranked options.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -121,6 +121,13 @@ class WP_MCP_AI_Tool_Propose_Value_Engineering_Options implements WP_MCP_AI_Tool
 			'read-only',
 			'cacheable',
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -182,9 +189,9 @@ class WP_MCP_AI_Tool_Propose_Value_Engineering_Options implements WP_MCP_AI_Tool
 				continue;
 			}
 
-			$range_min = isset( $entry['savings_pct_range'][0] ) ? (float) $entry['savings_pct_range'][0] : 0.0;
-			$range_max = isset( $entry['savings_pct_range'][1] ) ? (float) $entry['savings_pct_range'][1] : 0.0;
-			$range_mid = ( $range_min + $range_max ) / 2.0;
+			$range_min          = isset( $entry['savings_pct_range'][0] ) ? (float) $entry['savings_pct_range'][0] : 0.0;
+			$range_max          = isset( $entry['savings_pct_range'][1] ) ? (float) $entry['savings_pct_range'][1] : 0.0;
+			$range_mid          = ( $range_min + $range_max ) / 2.0;
 			$savings_amount_min = $baseline_cost > 0 ? round( $baseline_cost * $range_min / 100.0, 2 ) : null;
 			$savings_amount_max = $baseline_cost > 0 ? round( $baseline_cost * $range_max / 100.0, 2 ) : null;
 			$savings_amount_mid = $baseline_cost > 0 ? round( $baseline_cost * $range_mid / 100.0, 2 ) : null;

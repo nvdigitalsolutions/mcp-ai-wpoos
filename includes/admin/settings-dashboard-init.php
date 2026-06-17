@@ -61,15 +61,16 @@ spl_autoload_register(
 			'WP_MCP_AI_Section_Advanced'            => 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php',
 			'WP_MCP_AI_Section_Media'               => 'includes/admin/sections/class-wp-mcp-ai-section-media.php',
 			'WP_MCP_AI_Section_Comments'            => 'includes/admin/sections/class-wp-mcp-ai-section-comments.php',
+						'WP_MCP_AI_Section_Form_Submissions'     => 'includes/admin/sections/class-wp-mcp-ai-section-form-submissions.php',
 		);
 
 		// Add Pro sections if Pro addon is loaded.
 		// Pro sections are only available when WP_MCP_AI_PRO_VERSION is defined.
 		if ( defined( 'WP_MCP_AI_PRO_VERSION' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			$section_files['WP_MCP_AI_Section_Performance']       = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
-			$section_files['WP_MCP_AI_Section_Pro_Providers']     = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php';
-			$section_files['WP_MCP_AI_Section_Pro_Integrations']  = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php';
-			$section_files['WP_MCP_AI_Section_Schedule_Manager']  = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php';
+			$section_files['WP_MCP_AI_Section_Performance']      = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+			$section_files['WP_MCP_AI_Section_Pro_Providers']    = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php';
+			$section_files['WP_MCP_AI_Section_Pro_Integrations'] = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php';
+			$section_files['WP_MCP_AI_Section_Schedule_Manager'] = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php';
 		}
 
 		// Check if this is a section class we should autoload.
@@ -136,6 +137,9 @@ function wp_mcp_ai_init_settings_dashboard() {
 		$container = wp_mcp_ai_container();
 
 		// Register all sections with the registry using container.
+		// Note: ACP settings are rendered inline within the Orchestration section's
+		// Settings view (see WP_MCP_AI_Section_Orchestration::render_settings_view()),
+		// so there is no standalone ACP section to register here.
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.overview' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.general' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.chat_client' ) );
@@ -144,6 +148,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.authentication' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.tools' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.orchestration' ) );
+
 		// External Tools (Gmail, Crawl4AI, Brave, Cloudflare, etc.) are now consolidated in integrations section.
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.integrations' ) );
 		// Plugin integrations (JetEngine, WooCommerce, Elementor) are now consolidated in a single section.
@@ -179,7 +184,9 @@ function wp_mcp_ai_init_settings_dashboard() {
 		$container->get( 'section.schedule_manager' );
 
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
-		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
+				// Register the Form Submissions dashboard section.
+				WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.form_submissions' ) );
+				// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );.
 
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );.
@@ -238,9 +245,9 @@ function wp_mcp_ai_init_settings_dashboard() {
 			'admin_notices',
 			function () use ( $e ) {
 				?>
-				<div class="notice notice-error">
-					<p>
-						<strong>NV oOS Settings Dashboard Error:</strong>
+				<div class="notice notice-error is-dismissible">
+									<p>
+										<strong>NV oOS Settings Dashboard Error:</strong>
 						<?php echo esc_html( $e->getMessage() ); ?>
 					</p>
 					<p>

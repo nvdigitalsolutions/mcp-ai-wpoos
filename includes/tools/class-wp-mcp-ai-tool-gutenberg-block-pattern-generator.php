@@ -160,9 +160,9 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 				break;
 
 			default:
-				$result = array(
-					'success' => false,
-					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
+				$result = new WP_Error(
+					'wp_mcp_ai_error',
+					__( 'Invalid action specified', 'mcp-ai-wpoos' )
 				);
 		}
 
@@ -280,9 +280,9 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 		$theme_json = $this->get_theme_json_data();
 
 		if ( empty( $theme_json ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No theme.json found in active theme', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'No theme.json found in active theme', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -309,9 +309,9 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 */
 	private function handle_validate_pattern( $content ) {
 		if ( empty( $content ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No content provided for validation', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'No content provided for validation', 'mcp-ai-wpoos' )
 			);
 		}
 

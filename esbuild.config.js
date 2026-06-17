@@ -51,20 +51,19 @@ const bundledOptions = {
 	logLevel: 'info',
 };
 
-// Modern build options for ES2020+ with code splitting (Phase 6)
-const modernOptions = {
+// TypeScript ESM build options (for src/ TypeScript services)
+const tsBuildOptions = {
 	bundle: true,
 	minify: true,
 	sourcemap: true,
 	target: ['es2020', 'chrome113', 'safari18'],
-	format: 'esm', // ES modules for better tree shaking
-	splitting: true, // Enable code splitting
+	format: 'esm',
+	splitting: false,
 	logLevel: 'info',
 	loader: {
 		'.wasm': 'file',
 		'.data': 'file',
 	},
-	chunkNames: 'chunks/[name]-[hash]',
 };
 
 // Build configurations for each file
@@ -195,24 +194,92 @@ const builds = [
 		outfile: 'assets/js/offline-chat-manager.min.js',
 		...commonOptions,
 	},
-	// Modern bundles with code splitting (Phase 6)
-	// Note: Commented out until source files are created
-	// {
-	// 	entryPoints: ['assets/js/src/chat-modern.ts'],
-	// 	outfile: 'assets/js/dist/chat-modern.min.js',
-	// 	...modernOptions,
-	// },
-	// {
-	// 	entryPoints: ['assets/js/src/webllm-modern.ts'],
-	// 	outfile: 'assets/js/dist/webllm.min.js',
-	// 	...modernOptions,
-	// 	external: ['@mlc-ai/web-llm'], // Load from CDN
-	// },
-	// {
-	// 	entryPoints: ['assets/js/src/transformers-client.ts'],
-	// 	outfile: 'assets/js/dist/transformers.min.js',
-	// 	...modernOptions,
-	// },
+	// Voice enhancement files (realtime, browser, integration)
+	{
+		entryPoints: ['assets/js/chat-voice-realtime-service.js'],
+		outfile: 'assets/js/chat-voice-realtime-service.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/chat-browser-voice-service.js'],
+		outfile: 'assets/js/chat-browser-voice-service.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/chat-voice-mode-integration.js'],
+		outfile: 'assets/js/chat-voice-mode-integration.min.js',
+		...commonOptions,
+	},
+	// ── TypeScript service builds (WP_MCP_AI_USE_TS_BUILD) ──────────
+	// Compiles from assets/js/src/ → assets/js/dist/
+	// Activated by: define('WP_MCP_AI_USE_TS_BUILD', true);
+	{
+		entryPoints: ['assets/js/src/shared/index.ts'],
+		outfile: 'assets/js/dist/shared.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/storage.ts'],
+		outfile: 'assets/js/dist/storage.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/clipboard.ts'],
+		outfile: 'assets/js/dist/clipboard.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/markdown.ts'],
+		outfile: 'assets/js/dist/markdown.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/http-client.ts'],
+		outfile: 'assets/js/dist/http-client.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/sse.ts'],
+		outfile: 'assets/js/dist/sse.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/ui-utilities.ts'],
+		outfile: 'assets/js/dist/ui-utilities.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/audio.ts'],
+		outfile: 'assets/js/dist/audio.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/transcription.ts'],
+		outfile: 'assets/js/dist/transcription.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/attachments.ts'],
+		outfile: 'assets/js/dist/attachments.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/memory-service.ts'],
+		outfile: 'assets/js/dist/memory-service.js',
+		...tsBuildOptions,
+	},
+	{
+		entryPoints: ['assets/js/src/services/storage-util.ts'],
+		outfile: 'assets/js/dist/storage-util.js',
+		...tsBuildOptions,
+	},
+	// Chat bundle (TS version)
+	{
+		entryPoints: ['assets/js/chat-bundle.js'],
+		outfile: 'assets/js/dist/chat-bundle.js',
+		...bundledOptions,
+	},
+	// ── End TypeScript builds ─────────────────────────────────────
 
 	// Admin page scripts (new)
 	{
@@ -518,7 +585,9 @@ async function buildAll() {
 		'assets/js/chat-audio-service.js',
 		'assets/js/chat-attachments-service.js',
 		'assets/js/chat-transcription-service.js',
+		'assets/js/chat-memory-service.js',
 		'assets/js/chat.js',
+		'assets/js/chat-memory-drawer.js',
 	];
 
 	for (const config of builds) {

@@ -304,25 +304,26 @@ if ( ! function_exists( 'wp_mcp_ai_run_process' ) ) {
 		$process = proc_open( $args, $descriptors, $pipes, $cwd );
 
 		if ( ! is_resource( $process ) ) {
-			return array(
-				'stdout'    => '',
-				'stderr'    => 'Failed to start process.',
-				'exit_code' => -1,
-				'success'   => false,
-				'timed_out' => false,
-			);
+				// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool execute() return; process-result utility function.
+				return array(
+					'stdout'    => '',
+					'stderr'    => 'Failed to start process.',
+					'exit_code' => -1,
+					'success'   => false,
+					'timed_out' => false,
+				);
 		}
 
-		// Close stdin immediately — we don't need it.
-		fclose( $pipes[0] );
+			// Close stdin immediately — we don't need it.
+			fclose( $pipes[0] );
 
-		stream_set_blocking( $pipes[1], false );
-		stream_set_blocking( $pipes[2], false );
+			stream_set_blocking( $pipes[1], false );
+			stream_set_blocking( $pipes[2], false );
 
-		$stdout     = '';
-		$stderr     = '';
-		$start      = microtime( true );
-		$timed_out  = false;
+			$stdout    = '';
+			$stderr    = '';
+			$start     = microtime( true );
+			$timed_out = false;
 
 		while ( true ) {
 			$status = proc_get_status( $process );
@@ -389,7 +390,7 @@ if ( ! function_exists( 'wp_mcp_ai_find_binary' ) ) {
 		}
 
 		$result = wp_mcp_ai_run_process( array( $binary, $probe_arg ), null, 5 );
-		return $result['success'];
+		return $result['ok'];
 	}
 }
 
@@ -418,16 +419,17 @@ if ( ! function_exists( 'wp_mcp_ai_run_shell' ) ) {
 		$process = proc_open( $command, $descriptors, $pipes, $cwd );
 
 		if ( ! is_resource( $process ) ) {
-			return array(
-				'stdout'    => '',
-				'stderr'    => 'Failed to start process.',
-				'exit_code' => -1,
-				'success'   => false,
-				'timed_out' => false,
-			);
+				// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool execute() return; process-result utility function.
+				return array(
+					'stdout'    => '',
+					'stderr'    => 'Failed to start process.',
+					'exit_code' => -1,
+					'success'   => false,
+					'timed_out' => false,
+				);
 		}
 
-		fclose( $pipes[0] );
+			fclose( $pipes[0] );
 		stream_set_blocking( $pipes[1], false );
 		stream_set_blocking( $pipes[2], false );
 
@@ -753,14 +755,14 @@ if ( ! function_exists( 'wp_mcp_ai_get_temp_dir' ) ) {
 				);
 			}
 			// Restrict directory permissions (0750 = owner rwx, group r-x, other ---).
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 			@chmod( $temp_dir, 0750 );
 		}
 
 		// Drop an .htaccess to deny direct HTTP access on Apache hosts.
 		$htaccess = $temp_dir . '/.htaccess';
 		if ( ! file_exists( $htaccess ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 			@file_put_contents( $htaccess, "Options -Indexes\nDeny from all\n" );
 		}
 
@@ -793,7 +795,7 @@ if ( ! function_exists( 'wp_mcp_ai_tempnam' ) ) {
 		$full_path = $dir . $unique;
 
 		// Create the file immediately so the path is reserved (mirrors tempnam behaviour).
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		if ( false === file_put_contents( $full_path, '' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_tempnam',

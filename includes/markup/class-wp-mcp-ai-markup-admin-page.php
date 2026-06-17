@@ -155,56 +155,61 @@ class WP_MCP_AI_Markup_Admin_Page {
 				<div id="wp-mcp-ai-markup-admin-host"
 					data-markup-host="<?php echo esc_attr( $request_id ); ?>"
 					class="wp-mcp-ai-markup-admin__host"></div>
-				<script>
-				(function () {
-					if ( ! window.wpMcpAiMarkupAdmin || ! window.wpMcpAiMarkupAdmin.fetchUrl ) {
-						return;
-					}
-					var cfg  = window.wpMcpAiMarkupAdmin;
-					var host = document.getElementById( 'wp-mcp-ai-markup-admin-host' );
-					var status = document.getElementById( 'wp-mcp-ai-markup-admin-status' );
-					var ready = function () {
-						return window.WPMcpAiMarkupClient && window.WPMcpAiMarkupWidget;
-					};
-					var init = function () {
-						if ( ! ready() ) {
-							window.setTimeout( init, 50 );
+				<?php
+				ob_start();
+				?>
+					(function () {
+						if ( ! window.wpMcpAiMarkupAdmin || ! window.wpMcpAiMarkupAdmin.fetchUrl ) {
 							return;
 						}
-						window.fetch( cfg.fetchUrl, {
-							credentials: 'same-origin',
-							headers: { 'X-WP-Nonce': cfg.nonce }
-						} ).then( function ( r ) {
-							if ( ! r.ok ) {
-								throw new Error( 'http_' + r.status );
+						var cfg  = window.wpMcpAiMarkupAdmin;
+						var host = document.getElementById( 'wp-mcp-ai-markup-admin-host' );
+						var status = document.getElementById( 'wp-mcp-ai-markup-admin-status' );
+						var ready = function () {
+							return window.WPMcpAiMarkupClient && window.WPMcpAiMarkupWidget;
+						};
+						var init = function () {
+							if ( ! ready() ) {
+								window.setTimeout( init, 50 );
+								return;
 							}
-							return r.json();
-						} ).then( function ( payload ) {
-							if ( ! payload || ! payload.request_id ) {
-								throw new Error( 'invalid_payload' );
-							}
-							// Inject submit_url / fallback_url if the GET response omits them.
-							payload.submit_url   = payload.submit_url   || cfg.submitUrl;
-							payload.fallback_url = payload.fallback_url || window.location.href;
-							payload.type = 'markup_elicitation';
-							if ( status && status.parentNode ) { status.parentNode.removeChild( status ); }
-							window.WPMcpAiMarkupClient.handleToolResult( payload, host );
-							document.addEventListener( 'wp-mcp-ai-markup:resolved', function () {
-								var msg = document.createElement( 'div' );
-								msg.className = 'notice notice-success';
-								msg.innerHTML = '<p>' + ( cfg.strings.submitted || 'Submitted.' ) + '</p>';
-								host.parentNode.insertBefore( msg, host );
+							window.fetch( cfg.fetchUrl, {
+								credentials: 'same-origin',
+								headers: { 'X-WP-Nonce': cfg.nonce }
+							} ).then( function ( r ) {
+								if ( ! r.ok ) {
+									throw new Error( 'http_' + r.status );
+								}
+								return r.json();
+							} ).then( function ( payload ) {
+								if ( ! payload || ! payload.request_id ) {
+									throw new Error( 'invalid_payload' );
+								}
+								// Inject submit_url / fallback_url if the GET response omits them.
+								payload.submit_url   = payload.submit_url   || cfg.submitUrl;
+								payload.fallback_url = payload.fallback_url || window.location.href;
+								payload.type = 'markup_elicitation';
+								if ( status && status.parentNode ) { status.parentNode.removeChild( status ); }
+								window.WPMcpAiMarkupClient.handleToolResult( payload, host );
+								document.addEventListener( 'wp-mcp-ai-markup:resolved', function () {
+									var msg = document.createElement( 'div' );
+									msg.className = 'notice notice-success';
+									msg.innerHTML = '<p>' + ( cfg.strings.submitted || 'Submitted.' ) + '</p>';
+									host.parentNode.insertBefore( msg, host );
+								} );
+							} ).catch( function () {
+								if ( status ) {
+									status.className = 'notice notice-error';
+									status.innerHTML = '<p>' + ( cfg.strings.notFound || 'Not found.' ) + '</p>';
+								}
 							} );
-						} ).catch( function () {
-							if ( status ) {
-								status.className = 'notice notice-error';
-								status.innerHTML = '<p>' + ( cfg.strings.notFound || 'Not found.' ) + '</p>';
-							}
-						} );
-					};
-					init();
-				}());
-				</script>
+						};
+						init();
+					}());
+					<?php
+					$js = ob_get_clean();
+					wp_print_inline_script_tag( $js );
+					?>
 			<?php endif; ?>
 		</div>
 		<?php

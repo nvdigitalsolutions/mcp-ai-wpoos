@@ -114,11 +114,7 @@ class WP_MCP_AI_Memory_Capture_Service {
 		$normalised = $this->normalise_envelope( $envelope );
 
 		if ( is_wp_error( $normalised ) ) {
-			return array(
-				'success' => false,
-				'message' => $normalised->get_error_message(),
-				'code'    => $normalised->get_error_code(),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', $normalised->get_error_message(), $normalised->get_error_code() );
 		}
 
 		// Apply redaction / pre-store transform filter exactly once. Verbatim

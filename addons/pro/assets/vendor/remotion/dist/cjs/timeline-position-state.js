@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.usePlayingState = exports.useTimelineSetFrame = exports.useAbsoluteTimelinePosition = exports.useTimelinePosition = exports.useTimelineContext = exports.getFrameForComposition = exports.getInitialFrameState = exports.persistCurrentFrame = void 0;
+exports.usePlayingState = exports.useTimelineSetFrame = exports.useAbsoluteTimelinePosition = exports.useTimelinePosition = exports.usePlaybackRate = exports.useTimelineContext = exports.getFrameForComposition = exports.getInitialFrameState = exports.persistCurrentFrame = void 0;
 const react_1 = require("react");
 const TimelineContext_js_1 = require("./TimelineContext.js");
 const use_remotion_environment_js_1 = require("./use-remotion-environment.js");
@@ -52,6 +52,14 @@ const useTimelineContext = () => {
     return state;
 };
 exports.useTimelineContext = useTimelineContext;
+const usePlaybackRate = () => {
+    const state = (0, react_1.useContext)(TimelineContext_js_1.PlaybackRateContext);
+    if (state === null) {
+        throw new Error('PlaybackRateContext is not available. This hook must be used inside a <Player> or the Remotion Studio.');
+    }
+    return state;
+};
+exports.usePlaybackRate = usePlaybackRate;
 const useTimelinePosition = () => {
     const state = (0, exports.useTimelineContext)();
     return useTimelinePositionFromContext(state);

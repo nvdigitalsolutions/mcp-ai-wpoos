@@ -22,7 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
-	/** @var string Option key for checklist storage. */
+	/**
+	 * Performs the operation.
 	const OPTION_KEY = 'wp_mcp_ai_cre_closing_checklists';
 
 	/**
@@ -71,16 +72,16 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'                => array(
+				'action'                 => array(
 					'type'        => 'string',
 					'description' => __( 'Checklist action.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'generate', 'update_item', 'get_status' ),
 				),
-				'deal_id'               => array(
+				'deal_id'                => array(
 					'type'        => 'string',
 					'description' => __( 'Deal identifier to associate checklist with.', 'mcp-ai-wpoos-pro' ),
 				),
-				'loan_type'             => array(
+				'loan_type'              => array(
 					'type'        => 'string',
 					'description' => __( 'Loan type for checklist generation.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'cmbs', 'balance_sheet', 'agency', 'debt_fund' ),
@@ -102,7 +103,20 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -149,11 +163,11 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 		$checklists = get_option( self::OPTION_KEY, array() );
 
 		$checklist = array(
-			'deal_id'      => $deal_id,
-			'loan_type'    => $loan_type,
-			'items'        => $items,
-			'created_at'   => current_time( 'mysql' ),
-			'updated_at'   => current_time( 'mysql' ),
+			'deal_id'    => $deal_id,
+			'loan_type'  => $loan_type,
+			'items'      => $items,
+			'created_at' => current_time( 'mysql' ),
+			'updated_at' => current_time( 'mysql' ),
 		);
 
 		$checklists[ $deal_id ] = $checklist;
@@ -205,7 +219,7 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 				if ( in_array( $new_status, $valid_statuses, true ) ) {
 					$item['status']     = $new_status;
 					$item['updated_at'] = current_time( 'mysql' );
-					$updated_count++;
+					++$updated_count;
 				}
 			}
 		}
@@ -252,18 +266,22 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 		foreach ( $checklist['items'] as $item ) {
 			$cat = $item['category'];
 			if ( ! isset( $by_category[ $cat ] ) ) {
-				$by_category[ $cat ] = array( 'items' => array(), 'complete' => 0, 'total' => 0 );
+				$by_category[ $cat ] = array(
+					'items'    => array(),
+					'complete' => 0,
+					'total'    => 0,
+				);
 			}
 			$by_category[ $cat ]['items'][] = $item;
-			$by_category[ $cat ]['total']++;
+			++$by_category[ $cat ]['total'];
 			if ( in_array( $item['status'], array( 'approved', 'waived' ), true ) ) {
-				$by_category[ $cat ]['complete']++;
+				++$by_category[ $cat ]['complete'];
 			}
 		}
 
 		$category_summary = array();
 		foreach ( $by_category as $cat => $data ) {
-			$pct = ( $data['total'] > 0 ) ? round( ( $data['complete'] / $data['total'] ) * 100 ) : 0;
+			$pct                      = ( $data['total'] > 0 ) ? round( ( $data['complete'] / $data['total'] ) * 100 ) : 0;
 			$category_summary[ $cat ] = $pct . '% (' . $data['complete'] . '/' . $data['total'] . ')';
 		}
 
@@ -300,8 +318,8 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 	 * @return array
 	 */
 	private function calculate_completion( array $items ): array {
-		$total    = count( $items );
-		$complete = 0;
+		$total         = count( $items );
+		$complete      = 0;
 		$status_counts = array(
 			'pending'     => 0,
 			'in_progress' => 0,
@@ -313,22 +331,22 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 		foreach ( $items as $item ) {
 			$s = $item['status'] ?? 'pending';
 			if ( isset( $status_counts[ $s ] ) ) {
-				$status_counts[ $s ]++;
+				++$status_counts[ $s ];
 			}
 			if ( in_array( $s, array( 'approved', 'waived' ), true ) ) {
-				$complete++;
+				++$complete;
 			}
 		}
 
 		$pct = ( $total > 0 ) ? round( ( $complete / $total ) * 100, 1 ) : 0;
 
 		return array(
-			'total_items'     => $total,
-			'complete'        => $complete,
-			'remaining'       => $total - $complete,
-			'completion_pct'  => $pct . '%',
+			'total_items'      => $total,
+			'complete'         => $complete,
+			'remaining'        => $total - $complete,
+			'completion_pct'   => $pct . '%',
 			'status_breakdown' => $status_counts,
-			'ready_to_close'  => ( $complete === $total ) ? __( 'Yes', 'mcp-ai-wpoos-pro' ) : __( 'No', 'mcp-ai-wpoos-pro' ),
+			'ready_to_close'   => ( $complete === $total ) ? __( 'Yes', 'mcp-ai-wpoos-pro' ) : __( 'No', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -342,101 +360,101 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 		// Base items common to all loan types.
 		$base_items = array(
 			array(
-				'item_id'    => 'appraisal',
-				'name'       => __( 'Appraisal Report (MAI)', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'valuation',
-				'required'   => true,
+				'item_id'     => 'appraisal',
+				'name'        => __( 'Appraisal Report (MAI)', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'valuation',
+				'required'    => true,
 				'description' => __( 'Full appraisal by MAI-designated appraiser, FIRREA compliant.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'environmental_phase1',
-				'name'       => __( 'Phase I Environmental Site Assessment', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'environmental',
-				'required'   => true,
+				'item_id'     => 'environmental_phase1',
+				'name'        => __( 'Phase I Environmental Site Assessment', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'environmental',
+				'required'    => true,
 				'description' => __( 'ASTM E1527-21 compliant Phase I ESA.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'title_commitment',
-				'name'       => __( 'Title Insurance Commitment', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'title',
-				'required'   => true,
+				'item_id'     => 'title_commitment',
+				'name'        => __( 'Title Insurance Commitment', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'title',
+				'required'    => true,
 				'description' => __( 'Preliminary title report with all exceptions listed.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'title_policy',
-				'name'       => __( 'Lender Title Insurance Policy', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'title',
-				'required'   => true,
+				'item_id'     => 'title_policy',
+				'name'        => __( 'Lender Title Insurance Policy', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'title',
+				'required'    => true,
 				'description' => __( 'ALTA lender title insurance policy.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'survey',
-				'name'       => __( 'ALTA/NSPS Survey', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'title',
-				'required'   => true,
+				'item_id'     => 'survey',
+				'name'        => __( 'ALTA/NSPS Survey', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'title',
+				'required'    => true,
 				'description' => __( 'Current ALTA/NSPS land title survey.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'insurance_coi',
-				'name'       => __( 'Property Insurance (COI)', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'insurance',
-				'required'   => true,
+				'item_id'     => 'insurance_coi',
+				'name'        => __( 'Property Insurance (COI)', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'insurance',
+				'required'    => true,
 				'description' => __( 'Certificate of insurance with lender named as loss payee/additional insured.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'legal_opinion',
-				'name'       => __( 'Legal Opinion Letter', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'legal',
-				'required'   => true,
+				'item_id'     => 'legal_opinion',
+				'name'        => __( 'Legal Opinion Letter', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'legal',
+				'required'    => true,
 				'description' => __( 'Enforceability, authority, and non-consolidation opinion.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'ucc_filing',
-				'name'       => __( 'UCC-1 Financing Statement', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'legal',
-				'required'   => true,
+				'item_id'     => 'ucc_filing',
+				'name'        => __( 'UCC-1 Financing Statement', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'legal',
+				'required'    => true,
 				'description' => __( 'Filed UCC-1 perfecting security interest in personal property.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'borrower_org_docs',
-				'name'       => __( 'Borrower Organizational Documents', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'borrower',
-				'required'   => true,
+				'item_id'     => 'borrower_org_docs',
+				'name'        => __( 'Borrower Organizational Documents', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'borrower',
+				'required'    => true,
 				'description' => __( 'Operating agreement, certificate of formation, good standing certificates.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'borrower_auth',
-				'name'       => __( 'Borrowing Authorization Resolution', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'borrower',
-				'required'   => true,
+				'item_id'     => 'borrower_auth',
+				'name'        => __( 'Borrowing Authorization Resolution', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'borrower',
+				'required'    => true,
 				'description' => __( 'Resolution authorizing the loan transaction.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'financial_statements',
-				'name'       => __( 'Borrower Financial Statements (3 years)', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'financial',
-				'required'   => true,
+				'item_id'     => 'financial_statements',
+				'name'        => __( 'Borrower Financial Statements (3 years)', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'financial',
+				'required'    => true,
 				'description' => __( 'Three years of audited or CPA-prepared financial statements.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'property_financials',
-				'name'       => __( 'Property Operating Statements (3 years)', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'financial',
-				'required'   => true,
+				'item_id'     => 'property_financials',
+				'name'        => __( 'Property Operating Statements (3 years)', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'financial',
+				'required'    => true,
 				'description' => __( 'Three years of historical operating statements plus T-12 and YTD.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'rent_roll',
-				'name'       => __( 'Current Rent Roll', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'financial',
-				'required'   => true,
+				'item_id'     => 'rent_roll',
+				'name'        => __( 'Current Rent Roll', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'financial',
+				'required'    => true,
 				'description' => __( 'Current certified rent roll with lease terms and expirations.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'item_id'    => 'estoppels',
-				'name'       => __( 'Tenant Estoppel Certificates', 'mcp-ai-wpoos-pro' ),
-				'category'   => 'financial',
-				'required'   => true,
+				'item_id'     => 'estoppels',
+				'name'        => __( 'Tenant Estoppel Certificates', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'financial',
+				'required'    => true,
 				'description' => __( 'Signed estoppels from major tenants confirming lease terms.', 'mcp-ai-wpoos-pro' ),
 			),
 		);
@@ -448,31 +466,31 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 			case 'cmbs':
 				$type_items = array(
 					array(
-						'item_id'    => 'cmbs_rating_letter',
-						'name'       => __( 'Rating Agency Confirmation', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'cmbs_specific',
-						'required'   => true,
+						'item_id'     => 'cmbs_rating_letter',
+						'name'        => __( 'Rating Agency Confirmation', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'cmbs_specific',
+						'required'    => true,
 						'description' => __( 'Rating agency confirmation for securitization.', 'mcp-ai-wpoos-pro' ),
 					),
 					array(
-						'item_id'    => 'cmbs_spv_docs',
-						'name'       => __( 'SPE/SPV Documentation', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'cmbs_specific',
-						'required'   => true,
+						'item_id'     => 'cmbs_spv_docs',
+						'name'        => __( 'SPE/SPV Documentation', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'cmbs_specific',
+						'required'    => true,
 						'description' => __( 'Single-purpose entity documentation and separateness covenants.', 'mcp-ai-wpoos-pro' ),
 					),
 					array(
-						'item_id'    => 'cmbs_servicer_agreement',
-						'name'       => __( 'Servicing Agreement', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'cmbs_specific',
-						'required'   => true,
+						'item_id'     => 'cmbs_servicer_agreement',
+						'name'        => __( 'Servicing Agreement', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'cmbs_specific',
+						'required'    => true,
 						'description' => __( 'Master and special servicer agreements.', 'mcp-ai-wpoos-pro' ),
 					),
 					array(
-						'item_id'    => 'cmbs_seismic',
-						'name'       => __( 'Seismic Risk Assessment (if applicable)', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'engineering',
-						'required'   => false,
+						'item_id'     => 'cmbs_seismic',
+						'name'        => __( 'Seismic Risk Assessment (if applicable)', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'engineering',
+						'required'    => false,
 						'description' => __( 'PML assessment for properties in seismic zones.', 'mcp-ai-wpoos-pro' ),
 					),
 				);
@@ -481,24 +499,24 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 			case 'agency':
 				$type_items = array(
 					array(
-						'item_id'    => 'agency_pca',
-						'name'       => __( 'Property Condition Assessment (PCA)', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'engineering',
-						'required'   => true,
+						'item_id'     => 'agency_pca',
+						'name'        => __( 'Property Condition Assessment (PCA)', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'engineering',
+						'required'    => true,
 						'description' => __( 'ASTM E2018 compliant property condition report.', 'mcp-ai-wpoos-pro' ),
 					),
 					array(
-						'item_id'    => 'agency_replacement_reserve',
-						'name'       => __( 'Replacement Reserve Schedule', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'agency_specific',
-						'required'   => true,
+						'item_id'     => 'agency_replacement_reserve',
+						'name'        => __( 'Replacement Reserve Schedule', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'agency_specific',
+						'required'    => true,
 						'description' => __( 'Annual replacement reserve escrow schedule.', 'mcp-ai-wpoos-pro' ),
 					),
 					array(
-						'item_id'    => 'agency_lura',
-						'name'       => __( 'LURA/Regulatory Agreement (if applicable)', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'agency_specific',
-						'required'   => false,
+						'item_id'     => 'agency_lura',
+						'name'        => __( 'LURA/Regulatory Agreement (if applicable)', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'agency_specific',
+						'required'    => false,
 						'description' => __( 'Land use restriction agreement for affordable housing.', 'mcp-ai-wpoos-pro' ),
 					),
 				);
@@ -507,24 +525,24 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 			case 'debt_fund':
 				$type_items = array(
 					array(
-						'item_id'    => 'df_business_plan',
-						'name'       => __( 'Borrower Business Plan', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'debt_fund_specific',
-						'required'   => true,
+						'item_id'     => 'df_business_plan',
+						'name'        => __( 'Borrower Business Plan', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'debt_fund_specific',
+						'required'    => true,
 						'description' => __( 'Detailed business plan with renovation budget and timeline.', 'mcp-ai-wpoos-pro' ),
 					),
 					array(
-						'item_id'    => 'df_construction_budget',
-						'name'       => __( 'Construction/Renovation Budget', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'debt_fund_specific',
-						'required'   => true,
+						'item_id'     => 'df_construction_budget',
+						'name'        => __( 'Construction/Renovation Budget', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'debt_fund_specific',
+						'required'    => true,
 						'description' => __( 'Detailed itemized budget with contractor bids.', 'mcp-ai-wpoos-pro' ),
 					),
 					array(
-						'item_id'    => 'df_exit_strategy',
-						'name'       => __( 'Exit Strategy Analysis', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'debt_fund_specific',
-						'required'   => true,
+						'item_id'     => 'df_exit_strategy',
+						'name'        => __( 'Exit Strategy Analysis', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'debt_fund_specific',
+						'required'    => true,
 						'description' => __( 'Documented exit strategy (sale, refinance, or hold).', 'mcp-ai-wpoos-pro' ),
 					),
 				);
@@ -533,17 +551,17 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 			case 'balance_sheet':
 				$type_items = array(
 					array(
-						'item_id'    => 'bs_guaranty',
-						'name'       => __( 'Personal/Corporate Guaranty', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'balance_sheet_specific',
-						'required'   => true,
+						'item_id'     => 'bs_guaranty',
+						'name'        => __( 'Personal/Corporate Guaranty', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'balance_sheet_specific',
+						'required'    => true,
 						'description' => __( 'Guaranty agreement from sponsor/principals.', 'mcp-ai-wpoos-pro' ),
 					),
 					array(
-						'item_id'    => 'bs_deposit_relationship',
-						'name'       => __( 'Deposit Relationship Documentation', 'mcp-ai-wpoos-pro' ),
-						'category'   => 'balance_sheet_specific',
-						'required'   => false,
+						'item_id'     => 'bs_deposit_relationship',
+						'name'        => __( 'Deposit Relationship Documentation', 'mcp-ai-wpoos-pro' ),
+						'category'    => 'balance_sheet_specific',
+						'required'    => false,
 						'description' => __( 'Evidence of deposit relationship for pricing benefit.', 'mcp-ai-wpoos-pro' ),
 					),
 				);

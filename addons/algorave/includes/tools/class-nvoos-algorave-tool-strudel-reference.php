@@ -21,6 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Algorave_Tool_Strudel_Reference implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -342,8 +344,8 @@ class NV_oOS_Algorave_Tool_Strudel_Reference implements WP_MCP_AI_Tool_Interface
 	 */
 	private function get_sample_banks_reference() {
 		return array(
-			'description' => 'Sample banks change the character of drum sounds. Use .bank("name") to switch. 65+ drum machines are available from the tidal-drum-machines collection. Short aliases are also supported (e.g. TR808 for RolandTR808).',
-			'banks'       => array(
+			'description'  => 'Sample banks change the character of drum sounds. Use .bank("name") to switch. 65+ drum machines are available from the tidal-drum-machines collection. Short aliases are also supported (e.g. TR808 for RolandTR808).',
+			'banks'        => array(
 				array(
 					'name'    => 'RolandTR808',
 					'alias'   => 'TR808',
@@ -508,9 +510,9 @@ class NV_oOS_Algorave_Tool_Strudel_Reference implements WP_MCP_AI_Tool_Interface
 				)
 			),
 			'other_sounds' => array(
-				'piano'     => 'Salamander Grand Piano. Use: note("c4 e4 g4").s("piano"). 29 velocity-sampled notes.',
-				'vcsl'      => 'VCSL orchestral samples (CC0). Includes brass, woodwinds, strings, percussion.',
-				'mridangam' => 'Indian mridangam percussion. Sounds: gumki, ka, nam, ta, ki, dhin, na, chaapu, dhum, ardha, thom, dhi, tha.',
+				'piano'      => 'Salamander Grand Piano. Use: note("c4 e4 g4").s("piano"). 29 velocity-sampled notes.',
+				'vcsl'       => 'VCSL orchestral samples (CC0). Includes brass, woodwinds, strings, percussion.',
+				'mridangam'  => 'Indian mridangam percussion. Sounds: gumki, ka, nam, ta, ki, dhin, na, chaapu, dhum, ardha, thom, dhi, tha.',
 				'wavetables' => 'Wavetable synthesis: wt_digital, wt_vgame collections for synth textures.',
 			),
 			'patternable'  => 'Banks can be patterned: .bank("<RolandTR808 RolandTR909>"). Aliases work too: .bank("<TR808 TR909>").',

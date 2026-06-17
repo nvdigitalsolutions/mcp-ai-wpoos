@@ -93,7 +93,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	public static function is_available() {
 		self::bootstrap();
 
-		$available = class_exists( 'Jet_Form_Builder' );
+		$available = class_exists( 'Jet_Form_Builder\\Plugin' );
 
 		/**
 		 * Allow tests or extensions to override JetFormBuilder availability detection.
@@ -132,13 +132,13 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	 * Optionally suppress route registration warnings for JetFormBuilder mocks during tests.
 	 *
 	 * @param bool   $trigger  Whether to trigger a PHP warning.
-	 * @param string $function Function name.
+	 * @param string $function_name Function name.
 	 * @param string $message  Warning message.
 	 * @param string $version  Version string.
 	 * @return bool
 	 */
-	public static function maybe_suppress_route_warning( $trigger, $function = '', $message = '', $version = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
-		if ( 'register_rest_route' === $function && false !== strpos( $message, '<code>jet-form-builder/v1</code>' ) ) {
+	public static function maybe_suppress_route_warning( $trigger, $function_name = '', $message = '', $version = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress filter signature.
+		if ( 'register_rest_route' === $function_name && false !== strpos( $message, '<code>jet-form-builder/v1</code>' ) ) {
 			return false;
 		}
 
@@ -191,11 +191,24 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			$transport = 'auto';
 		}
 
-		$route = self::build_route( $config['route'], $form_id );
+		// Accept a connection_id for remote WordPress sites configured in the Remote Site Manager.
+		$connection_id = isset( $payload['connection_id'] ) ? sanitize_key( (string) $payload['connection_id'] ) : '';
+		if ( empty( $connection_id ) && isset( $context['remote_connection_id'] ) ) {
+			$connection_id = sanitize_key( (string) $context['remote_connection_id'] );
+		}
+
+		$route          = self::build_route( $config['route'], $form_id );
+		$rest_namespace = isset( $config['namespace'] ) ? $config['namespace'] : self::REST_NAMESPACE;
 
 		$result = null;
+
+		// If a connection_id is provided, force remote dispatch through the saved connection.
+		if ( $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return self::dispatch_via_connection( $connection_id, $route, $config['method'], $params, $context, $rest_namespace );
+		}
+
 		if ( 'http' !== $transport ) {
-			$result = self::dispatch_internal( $route, $config['method'], $params, $config['args_location'] );
+			$result = self::dispatch_internal( $route, $config['method'], $params, $config['args_location'], $rest_namespace );
 
 			if ( null !== $result ) {
 				return $result;
@@ -212,7 +225,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			}
 		}
 
-		return self::dispatch_remote( $route, $config['method'], $params, $context );
+		return self::dispatch_remote( $route, $config['method'], $params, $context, $rest_namespace );
 	}
 
 	/**
@@ -239,7 +252,20 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 		}
 
 		if ( get_current_user_id() !== $user_id ) {
-			wp_set_current_user( $user_id );
+			// Switch the current-user context to match the verified caller.
+			// `$user_id` here originates from the request's authenticated
+			// `$context` (populated by the REST authenticator after a
+			// bearer token, nonce, or assistant credential has been
+			// validated upstream), or from `get_current_user_id()` when
+			// the request is already executing under a logged-in user.
+			// JetFormBuilder permission checks then run in this user's
+			// context for the duration of the dispatched request.
+			if ( ! WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_user',
+					__( 'The authenticated user could not be resolved on this site.', 'mcp-ai-wpoos' )
+				);
+			}
 		}
 
 		return $user_id;
@@ -248,19 +274,20 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	/**
 	 * Dispatch the request through the WordPress REST server.
 	 *
-	 * @param string $route         Route relative to the JetFormBuilder namespace.
-	 * @param string $method        HTTP method.
-	 * @param array  $params        Request parameters.
-	 * @param string $args_location Whether params belong in the query string or body.
+	 * @param string $route           Route relative to the namespace.
+	 * @param string $method          HTTP method.
+	 * @param array  $params          Request parameters.
+	 * @param string $args_location   Whether params belong in the query string or body.
+	 * @param string $rest_namespace  REST namespace (defaults to jet-form-builder/v1).
 	 * @return array|null
 	 */
-	protected static function dispatch_internal( $route, $method, array $params, $args_location ) {
+	protected static function dispatch_internal( $route, $method, array $params, $args_location, $rest_namespace = '' ) {
 		if ( ! function_exists( 'rest_do_request' ) ) {
 			return null;
 		}
 
 		$method     = strtoupper( $method );
-		$path       = self::prepare_rest_path( $route );
+		$path       = self::prepare_rest_path( $route, $rest_namespace );
 		$request    = new WP_REST_Request( $method, $path );
 		$args_place = 'body' === $args_location ? 'body' : 'query';
 
@@ -298,18 +325,167 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	}
 
 	/**
+	 * Dispatch via a saved Remote Site Manager connection.
+	 *
+	 * Uses the connection's stored URL and credentials to make an
+	 * authenticated HTTP request to the remote WordPress site's
+	 * JetFormBuilder REST API.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $connection_id   Remote connection identifier.
+	 * @param string $route           Route relative to the namespace.
+	 * @param string $method          HTTP method.
+	 * @param array  $params          Request parameters.
+	 * @param array  $context         Execution context.
+	 * @param string $rest_namespace  REST namespace (defaults to jet-form-builder/v1).
+	 * @return array|WP_Error
+	 */
+	protected static function dispatch_via_connection( $connection_id, $route, $method, array $params, array $context = array(), $rest_namespace = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $context reserved for future use.
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			return new WP_Error(
+				'wp_mcp_ai_connection_not_found',
+				sprintf(
+					/* translators: %s: connection ID */
+					__( 'Remote connection "%s" was not found.', 'mcp-ai-wpoos' ),
+					$connection_id
+				)
+			);
+		}
+
+		if ( empty( $connection['enabled'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_connection_disabled',
+				sprintf(
+					/* translators: %s: connection name */
+					__( 'Remote connection "%s" is disabled.', 'mcp-ai-wpoos' ),
+					isset( $connection['name'] ) ? $connection['name'] : $connection_id
+				)
+			);
+		}
+
+		if ( empty( $connection['url'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_connection_no_url',
+				__( 'The remote connection has no URL configured.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$base_url = rtrim( $connection['url'], '/' );
+		$rest_url = $base_url . '/wp-json/' . self::REST_NAMESPACE . '/' . ltrim( $route, '/' );
+
+		// Attach query parameters for GET requests.
+		if ( 'GET' === strtoupper( $method ) && ! empty( $params ) ) {
+			$rest_url = add_query_arg( $params, $rest_url );
+		}
+
+		$request_args = array(
+			'method'  => strtoupper( $method ),
+			'timeout' => 30,
+			'headers' => array(
+				'Accept' => 'application/json',
+			),
+		);
+
+		// Attach body for non-GET requests.
+		if ( 'GET' !== strtoupper( $method ) ) {
+			$request_args['body']                    = wp_json_encode( $params );
+			$request_args['headers']['Content-Type'] = 'application/json';
+		}
+
+		// Apply authentication.
+		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
+		switch ( $auth_type ) {
+			case 'application_password':
+			case 'basic_auth':
+				if ( ! empty( $connection['username'] ) && ! empty( $connection['password'] ) ) {
+					$password = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['password'] );
+					// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+					$encoded                                  = base64_encode( $connection['username'] . ':' . $password );
+					$request_args['headers']['Authorization'] = 'Basic ' . $encoded;
+				}
+				break;
+
+			case 'custom_header':
+				if ( ! empty( $connection['api_key'] ) ) {
+					$api_key                              = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+					$request_args['headers']['X-API-Key'] = $api_key;
+				}
+				break;
+
+			case 'jwt':
+				if ( ! empty( $connection['token'] ) ) {
+					$token                                    = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['token'] );
+					$request_args['headers']['Authorization'] = 'Bearer ' . $token;
+				}
+				break;
+
+			case 'none':
+			default:
+				break;
+		}
+
+		$response = wp_remote_request( $rest_url, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_remote_request_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Remote request failed: %s', 'mcp-ai-wpoos' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$status  = (int) wp_remote_retrieve_response_code( $response );
+		$body    = wp_remote_retrieve_body( $response );
+		$headers = wp_remote_retrieve_headers( $response );
+		$data    = json_decode( $body, true );
+
+		if ( null === $data && '' !== $body ) {
+			$data = $body;
+		}
+
+		if ( $status >= 400 ) {
+			return self::normalise_http_error( $status, $data, 'http' );
+		}
+
+		$header_array = array();
+		if ( $headers instanceof \Requests_Utility_CaseInsensitiveDictionary ) {
+			$header_array = $headers->getAll();
+		} elseif ( is_array( $headers ) ) {
+			$header_array = $headers;
+		}
+
+		$result = self::normalise_success( $data, $status, $header_array, 'http' );
+
+		// Tag the result with connection metadata.
+		if ( is_array( $result ) ) {
+			$result['connection_id']   = $connection_id;
+			$result['connection_name'] = isset( $connection['name'] ) ? $connection['name'] : $connection_id;
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Dispatch the request using wp_remote_request().
 	 *
-	 * @param string $route  Route relative to the JetFormBuilder namespace.
-	 * @param string $method HTTP method.
-	 * @param array  $params Request parameters.
-	 * @param array  $context Execution context.
+	 * @param string $route           Route relative to the namespace.
+	 * @param string $method          HTTP method.
+	 * @param array  $params          Request parameters.
+	 * @param array  $context         Execution context.
+	 * @param string $rest_namespace  REST namespace (defaults to jet-form-builder/v1).
 	 * @return array
 	 */
-	protected static function dispatch_remote( $route, $method, array $params, array $context = array() ) {
-		$method = strtoupper( $method );
-		$url    = WP_MCP_AI_Proxy_Utils::build_rest_url( self::REST_NAMESPACE, $route );
-		$args   = array(
+	protected static function dispatch_remote( $route, $method, array $params, array $context = array(), $rest_namespace = '' ) {
+		$method  = strtoupper( $method );
+		$rest_ns = $rest_namespace ? $rest_namespace : self::REST_NAMESPACE;
+		$url     = WP_MCP_AI_Proxy_Utils::build_rest_url( $rest_ns, $route );
+		$args    = array(
 			'method'  => $method,
 			'timeout' => 20,
 			'headers' => array(),
@@ -380,12 +556,14 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	/**
 	 * Build a REST URL suitable for remote proxy requests.
 	 *
-	 * @param string $route Route relative to the JetFormBuilder namespace.
+	 * @param string $route           Route relative to the namespace.
+	 * @param string $rest_namespace  REST namespace (defaults to jet-form-builder/v1).
 	 * @return string
 	 */
-	protected static function prepare_remote_rest_url( $route ) {
-		$route = ltrim( $route, '/' );
-		$url   = rest_url( ltrim( self::REST_NAMESPACE . '/' . $route, '/' ) );
+	protected static function prepare_remote_rest_url( $route, $rest_namespace = '' ) {
+		$rest_ns = $rest_namespace ? $rest_namespace : self::REST_NAMESPACE;
+		$route   = ltrim( $route, '/' );
+		$url     = rest_url( ltrim( $rest_ns . '/' . $route, '/' ) );
 
 		return WP_MCP_AI_Request_Context::normalise_rest_url( $url );
 	}
@@ -441,7 +619,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	 * @param WP_REST_Server|null  $server  REST server instance.
 	 * @return mixed
 	 */
-	public static function maybe_authenticate_proxy_request( $result, $request = null, $server = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
+	public static function maybe_authenticate_proxy_request( $result, $request = null, $server = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress filter signature.
 		if ( ! $request instanceof WP_REST_Request ) {
 			return $result;
 		}
@@ -477,7 +655,14 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			return $result;
 		}
 
-		wp_set_current_user( $user_id );
+		// `$user_id` is the verified user from the previously-stored
+		// proxy transient (keyed by a request-scoped header); this
+		// branch only runs as the response phase of a request that
+		// already authenticated. The capability gate for any
+		// subsequent JetFormBuilder action lives on the JetFormBuilder
+		// REST route's own `permission_callback`. The helper revalidates
+		// that the user still exists before we mutate global state.
+		WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id );
 
 		return $result;
 	}
@@ -514,13 +699,14 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	/**
 	 * Prepare the REST path for a JetFormBuilder route.
 	 *
-	 * @param string $route Route relative to the namespace.
+	 * @param string $route           Route relative to the namespace.
+	 * @param string $rest_namespace  REST namespace (defaults to jet-form-builder/v1).
 	 * @return string
 	 */
-	protected static function prepare_rest_path( $route ) {
-		$namespace = trim( self::REST_NAMESPACE, '/' );
-		$route     = ltrim( $route, '/' );
-		$path      = '/' . $namespace . '/' . $route;
+	protected static function prepare_rest_path( $route, $rest_namespace = '' ) {
+		$ns    = $rest_namespace ? trim( $rest_namespace, '/' ) : trim( self::REST_NAMESPACE, '/' );
+		$route = ltrim( $route, '/' );
+		$path  = '/' . $ns . '/' . $route;
 
 		return '/' . trim( $path, '/' );
 	}
@@ -608,15 +794,18 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			$status = (int) $data;
 		}
 
-		return array(
-			'success'   => false,
-			'transport' => $transport,
-			'status'    => $status,
-			'error'     => array(
-				'code'    => $code,
-				'message' => $message,
-				'data'    => $data,
-			),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			$message,
+			array(
+				'transport' => $transport,
+				'status'    => $status,
+				'error'     => array(
+					'code'    => $code,
+					'message' => $message,
+					'data'    => $data,
+				),
+			)
 		);
 	}
 
@@ -647,15 +836,18 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			$message = sprintf( __( 'JetFormBuilder request returned HTTP %d.', 'mcp-ai-wpoos' ), (int) $status );
 		}
 
-		return array(
-			'success'   => false,
-			'transport' => $transport,
-			'status'    => (int) $status,
-			'error'     => array(
-				'code'    => $code,
-				'message' => $message,
-				'data'    => $data,
-			),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			$message,
+			array(
+				'transport' => $transport,
+				'status'    => (int) $status,
+				'error'     => array(
+					'code'    => $code,
+					'message' => $message,
+					'data'    => $data,
+				),
+			)
 		);
 	}
 }

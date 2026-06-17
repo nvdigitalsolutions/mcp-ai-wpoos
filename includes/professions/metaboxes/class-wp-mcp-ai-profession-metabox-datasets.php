@@ -62,7 +62,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 	 * @return string
 	 */
 	public function get_documentation_url() {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/DATASET_ASSIGNMENT_GUIDE.md';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/admin-guides/DATASET_ASSIGNMENT_GUIDE.md';
 	}
 
 	/**
@@ -212,34 +212,23 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 			</p>
 		</div>
 
-		<style>
-			.wp-mcp-ai-category-badge,
-			.wp-mcp-ai-priority-badge {
-				display: inline-block;
-				padding: 2px 8px;
-				border-radius: 3px;
-				font-size: 11px;
-				font-weight: 600;
-			}
-			.wp-mcp-ai-category-badge {
-				background: #f0f0f1;
-			}
-			.wp-mcp-ai-category-nlp { background: #e3f2fd; color: #1976d2; }
-			.wp-mcp-ai-category-vision { background: #f3e5f5; color: #7b1fa2; }
-			.wp-mcp-ai-category-audio { background: #e8f5e9; color: #388e3c; }
-			.wp-mcp-ai-category-multimodal { background: #fff3e0; color: #f57c00; }
-			.wp-mcp-ai-priority-critical { background: #ffebee; color: #c62828; }
-			.wp-mcp-ai-priority-high { background: #fff8e1; color: #f57f17; }
-			.wp-mcp-ai-priority-medium { background: #e0f2f1; color: #00796b; }
-			.wp-mcp-ai-datasets-filters {
-				background: #f9f9f9;
-				padding: 10px;
-				border: 1px solid #ddd;
-				border-radius: 3px;
-			}
-		</style>
+		<?php
+		wp_add_inline_style(
+			'wp-mcp-ai-metabox-profession-datasets',
+			'.wp-mcp-ai-category-badge,.wp-mcp-ai-priority-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600}'
+			. '.wp-mcp-ai-category-badge{background:#f0f0f1}'
+			. '.wp-mcp-ai-category-nlp{background:#e3f2fd;color:#1976d2}'
+			. '.wp-mcp-ai-category-vision{background:#f3e5f5;color:#7b1fa2}'
+			. '.wp-mcp-ai-category-audio{background:#e8f5e9;color:#388e3c}'
+			. '.wp-mcp-ai-category-multimodal{background:#fff3e0;color:#f57c00}'
+			. '.wp-mcp-ai-priority-critical{background:#ffebee;color:#c62828}'
+			. '.wp-mcp-ai-priority-high{background:#fff8e1;color:#f57f17}'
+			. '.wp-mcp-ai-priority-medium{background:#e0f2f1;color:#00796b}'
+			. '.wp-mcp-ai-datasets-filters{background:#f9f9f9;padding:10px;border:1px solid #ddd;border-radius:3px}'
+		);
 
-		<script type="text/javascript">
+		ob_start();
+		?>
 		( function() {
 			var maxDatasets = 10;
 
@@ -295,8 +284,9 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 				}
 			} );
 		} )();
-		</script>
 		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
 		$this->render_documentation_link();
 	}
 

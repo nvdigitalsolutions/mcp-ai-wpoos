@@ -64,7 +64,7 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'provider'       => array(
 					'type'        => 'string',
 					'description' => __( 'AI provider name.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ),
+					'enum'        => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ),
 				),
 				'use_web_search' => array(
 					'type'        => 'boolean',
@@ -122,6 +122,13 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -152,13 +159,13 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$use_search = isset( $arguments['use_web_search'] ) ? (bool) $arguments['use_web_search'] : true;
 
 		// Validate provider.
-		$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+		$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 		if ( ! in_array( $provider, $valid_providers, true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_provider',
 				sprintf(
 					/* translators: %s: provider name */
-					__( 'Invalid provider: %s. Must be one of: openai, anthropic, gemini, huggingface, nvidia, ollama, lm_studio, cloudflare, embedded', 'mcp-ai-wpoos' ),
+					__( 'Invalid provider: %s.', 'mcp-ai-wpoos' ),
 					$provider
 				)
 			);

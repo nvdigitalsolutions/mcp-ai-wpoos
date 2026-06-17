@@ -91,6 +91,7 @@ addons/pro/assets/vendor/** -text
 .github/                    export-ignore
 
 # AI agent and editor configuration (dev-only)
+.agents/                    export-ignore
 .bmad/                      export-ignore
 .codex/                     export-ignore
 .context/                   export-ignore
@@ -155,6 +156,7 @@ addons/embedded/tests/      export-ignore
 
 # Docker (dev-only)
 docker-compose.yml          export-ignore
+docker/                     export-ignore
 Dockerfile                  export-ignore
 
 # Documentation (dev-only; readme.txt / README.md / CHANGELOG.md / CONTRIBUTING.md kept)
@@ -175,3 +177,6 @@ archive/production-status/         export-ignore
 # Misc dev artifacts
 mcp-diagnostic-debug.php    export-ignore
 test-storage-service.html   export-ignore
+
+# Cross-platform extraction library (dev-only; not bundled in plugin)
+lib/                        export-ignore

@@ -23,6 +23,11 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -31,14 +36,46 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_client_satisfaction_analyzer'; }
-	public function get_name() { return __( 'Client Satisfaction Analyzer', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Analyzes client satisfaction by evaluating communication responsiveness, payment timeliness, matter outcomes, and retention risk with a 0-100 satisfaction score.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_client_satisfaction_analyzer'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Client Satisfaction Analyzer', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Analyzes client satisfaction by evaluating communication responsiveness, payment timeliness, matter outcomes, and retention risk with a 0-100 satisfaction score.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -52,8 +89,28 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only', 'cacheable' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only', 'cacheable' ); }
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
@@ -75,17 +132,19 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 		}
 
 		// Fetch all matters for this client.
-		$matters = get_posts( array(
-			'post_type'      => 'mcp_ai_lf_matter',
-			'posts_per_page' => -1,
-			'post_status'    => 'any',
-			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		$matters = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lf_matter',
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_client_satisfaction_analyzer', 0, 1000 ) : 1000,
+				'post_status'    => 'any',
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				array(
 					'key'   => '_lf_client_id',
 					'value' => $client_id,
 				),
-			),
-		) );
+				),
+			)
+		);
 
 		if ( empty( $matters ) ) {
 			return array(
@@ -117,13 +176,13 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 					}
 					if ( isset( $comm['response_days'] ) ) {
 						$total_response_days += (float) $comm['response_days'];
-						$response_count++;
+						++$response_count;
 					}
 				}
 			}
 		}
 
-		$avg_response_days = $response_count > 0 ? round( $total_response_days / $response_count, 1 ) : 0;
+		$avg_response_days  = $response_count > 0 ? round( $total_response_days / $response_count, 1 ) : 0;
 		$days_since_contact = 0;
 		if ( ! empty( $last_contact_date ) ) {
 			$days_since_contact = (int) ( ( strtotime( current_time( 'Y-m-d' ) ) - strtotime( $last_contact_date ) ) / DAY_IN_SECONDS );
@@ -138,17 +197,19 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 		}
 
 		// 2. Payment timeliness analysis (25 points max).
-		$invoices_query = get_posts( array(
-			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => -1,
-			'post_status'    => 'publish',
-			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		$invoices_query = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lf_time_entry',
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_client_satisfaction_analyzer', 0, 1000 ) : 1000,
+				'post_status'    => 'publish',
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				array(
 					'key'   => '_lf_client_id',
 					'value' => $client_id,
 				),
-			),
-		) );
+				),
+			)
+		);
 
 		$total_billed    = 0;
 		$total_collected = 0;
@@ -169,20 +230,20 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 			$total_collected += $collected;
 
 			if ( $amount > 0 ) {
-				$total_invoices++;
+				++$total_invoices;
 			}
 
 			if ( ! empty( $due_date ) && ! empty( $paid_date ) ) {
-				$days_to_pay = (int) ( ( strtotime( $paid_date ) - strtotime( $due_date ) ) / DAY_IN_SECONDS );
+				$days_to_pay     = (int) ( ( strtotime( $paid_date ) - strtotime( $due_date ) ) / DAY_IN_SECONDS );
 				$pay_days_total += $days_to_pay;
-				$pay_days_count++;
+				++$pay_days_count;
 				if ( $days_to_pay <= 0 ) {
-					$on_time_count++;
+					++$on_time_count;
 				} else {
-					$overdue_count++;
+					++$overdue_count;
 				}
 			} elseif ( ! empty( $due_date ) && empty( $paid_date ) && strtotime( $due_date ) < time() ) {
-				$overdue_count++;
+				++$overdue_count;
 			}
 		}
 
@@ -213,12 +274,12 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 			$outcome = get_post_meta( $matter->ID, '_lf_outcome', true );
 
 			if ( in_array( $status, array( 'closed', 'resolved', 'completed' ), true ) ) {
-				$resolved_count++;
+				++$resolved_count;
 				if ( in_array( $outcome, array( 'favorable', 'settled', 'won' ), true ) ) {
-					$favorable_count++;
+					++$favorable_count;
 				}
 			} elseif ( in_array( $status, array( 'active', 'in_progress' ), true ) ) {
-				$active_count++;
+				++$active_count;
 			}
 		}
 
@@ -237,7 +298,7 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 			$relationship_months = max( 1, (int) ( ( time() - strtotime( $earliest_matter ) ) / MONTH_IN_SECONDS ) );
 		}
 
-		$repeat_client  = $total_matters > 1;
+		$repeat_client   = $total_matters > 1;
 		$retention_score = 15;
 		if ( $repeat_client ) {
 			$retention_score += min( 5, (int) ( $total_matters - 1 ) );
@@ -272,18 +333,18 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 				$retention_risk
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'client_id'                  => $client_id,
-				'client_name'                => $client->display_name,
-				'satisfaction_score'         => $satisfaction_score,
-				'retention_risk'             => $retention_risk,
+				'client_id'                    => $client_id,
+				'client_name'                  => $client->display_name,
+				'satisfaction_score'           => $satisfaction_score,
+				'retention_risk'               => $retention_risk,
 				'communication_responsiveness' => array(
-					'score'              => $comm_score,
+					'score'                => $comm_score,
 					'total_communications' => $total_comms,
-					'avg_response_days'  => $avg_response_days,
-					'last_contact_date'  => $last_contact_date,
-					'days_since_contact' => $days_since_contact,
+					'avg_response_days'    => $avg_response_days,
+					'last_contact_date'    => $last_contact_date,
+					'days_since_contact'   => $days_since_contact,
 				),
-				'payment_timeliness'         => array(
+				'payment_timeliness'           => array(
 					'score'            => $payment_score,
 					'collection_rate'  => $collection_rate,
 					'total_billed'     => round( $total_billed, 2 ),
@@ -292,7 +353,7 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 					'overdue_invoices' => $overdue_count,
 					'on_time_invoices' => $on_time_count,
 				),
-				'matter_outcomes'            => array(
+				'matter_outcomes'              => array(
 					'score'          => $outcome_score,
 					'total_matters'  => $total_matters,
 					'resolved'       => $resolved_count,
@@ -300,9 +361,9 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 					'favorable_rate' => $favorable_rate,
 					'active'         => $active_count,
 				),
-				'retention_signals'          => array(
-					'score'              => $retention_score,
-					'repeat_client'      => $repeat_client,
+				'retention_signals'            => array(
+					'score'               => $retention_score,
+					'repeat_client'       => $repeat_client,
 					'relationship_months' => $relationship_months,
 				),
 			),

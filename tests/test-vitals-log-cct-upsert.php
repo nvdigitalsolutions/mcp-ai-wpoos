@@ -63,7 +63,7 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 
 		$this->load_vitals_log_cct();
 
-		$tool_path = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-vitals.php';
+		$tool_path = WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-import-vitals.php';
 		if ( ! file_exists( $tool_path ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Tool_Import_Vitals file not found' );
 		}

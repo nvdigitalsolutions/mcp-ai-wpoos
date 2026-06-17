@@ -94,6 +94,26 @@ class WP_MCP_AI_Model_Service {
 				$models = $this->get_embedded_models( $settings );
 				break;
 
+			case 'deepseek':
+				$models = $this->get_deepseek_models( $settings, $requires_vision, $requires_multimodal );
+				break;
+
+			case 'openrouter':
+				$models = $this->get_openrouter_models( $settings, $requires_vision, $requires_multimodal );
+				break;
+
+			case 'digitalocean':
+				$models = $this->get_digitalocean_models( $settings, $requires_vision, $requires_multimodal );
+				break;
+
+			case 'kimi':
+				$models = $this->get_kimi_models( $settings, $requires_vision, $requires_multimodal );
+				break;
+
+			case 'baseten':
+				$models = $this->get_baseten_models( $settings, $requires_vision, $requires_multimodal );
+				break;
+
 			default:
 				WP_MCP_AI_Logger::log_event(
 					'model_service_invalid_provider',
@@ -308,9 +328,12 @@ class WP_MCP_AI_Model_Service {
 		$models             = array();
 		$requires_image_gen = isset( $args['requires_image_gen'] ) ? $args['requires_image_gen'] : false;
 
-		// Gemini 3.1 series (April 2026 GA - latest flagship).
+		// Gemini 3.5 series (May 2026 GA - latest flagship).
+		$models['gemini-3.5-flash']      = 'Gemini 3.5 Flash (Recommended)';
+
+		// Gemini 3.1 series (April 2026 GA).
 		$models['gemini-3.1-pro']        = 'Gemini 3.1 Pro';
-		$models['gemini-3.1-flash']      = 'Gemini 3.1 Flash (Recommended)';
+		$models['gemini-3.1-flash']      = 'Gemini 3.1 Flash';
 		$models['gemini-3.1-flash-lite'] = 'Gemini 3.1 Flash Lite (Budget)';
 
 		// Gemini 2.5 series (multimodal - text, image, video) - Stable.
@@ -533,6 +556,7 @@ class WP_MCP_AI_Model_Service {
 				'deepseek-r1'   => 'DeepSeek R1 (Reasoning)',
 				'deepseek-v3'   => 'DeepSeek V3',
 				'qwen3'         => 'Qwen 3',
+				'qwen3.6'       => 'Qwen 3.6',
 				// Established models.
 				'llama3.3'      => 'Llama 3.3',
 				'llama3.2'      => 'Llama 3.2',
@@ -552,6 +576,7 @@ class WP_MCP_AI_Model_Service {
 				'gemma4:31b-cloud'   => 'Gemma 4 31B ☁ (Cloud)',
 				'qwen3.5:397b-cloud' => 'Qwen 3.5 397B ☁ (Cloud)',
 				'kimi-k2.5:cloud'    => 'Kimi K2.5 ☁ (Cloud)',
+				'kimi-k2.6:cloud'    => 'Kimi K2.6 ☁ (Cloud)',
 				'glm-5:cloud'        => 'GLM-5 ☁ (Cloud)',
 				'minimax-m2.7:cloud' => 'MiniMax M2.7 ☁ (Cloud)',
 				'gpt-oss:120b-cloud' => 'GPT-OSS 120B ☁ (Cloud)',
@@ -594,6 +619,9 @@ class WP_MCP_AI_Model_Service {
 			'qwen/qwen3-30b-a3b'                        => 'Qwen 3 30B A3B',
 			'qwen/qwen3-14b'                            => 'Qwen 3 14B',
 			'qwen/qwen3-8b'                             => 'Qwen 3 8B',
+			// Qwen 3.6 (latest Qwen release).
+			'qwen/qwen3.6-27b'                          => 'Qwen 3.6 27B',
+			'qwen/qwen3.6-35b-a3b'                      => 'Qwen 3.6 35B A3B (MoE)',
 			// Qwen 2.5 (coding and multilingual models).
 			'qwen/qwen3-coder-30b'                      => 'Qwen 3 Coder 30B',
 			'qwen/qwen2.5-coder-32b'                    => 'Qwen 2.5 Coder 32B',
@@ -953,6 +981,149 @@ class WP_MCP_AI_Model_Service {
 	}
 
 	/**
+	 * Get DeepSeek models.
+	 *
+	 * @param array $settings             Plugin settings.
+	 * @param bool  $requires_vision      Whether vision capability is required.
+	 * @param bool  $requires_multimodal  Whether multimodal capability is required.
+	 * @return array Array of model_id => model_name pairs.
+	 */
+	protected function get_deepseek_models( $settings, $requires_vision, $requires_multimodal ) {
+		if ( empty( $settings['enable_deepseek'] ) || empty( $settings['deepseek_api_key'] ) ) {
+			return array();
+		}
+
+		$models = array();
+
+		// DeepSeek V4 series (current flagship).
+		$models['deepseek-v4-flash'] = 'DeepSeek V4 Flash (1M Context, Fast)';
+		$models['deepseek-v4-pro']   = 'DeepSeek V4 Pro (Enhanced Reasoning)';
+
+		// DeepSeek V3 (legacy).
+		$models['deepseek-chat'] = 'DeepSeek V3 (Chat)';
+
+		// DeepSeek R1 (legacy reasoning, no tool calling).
+		if ( empty( $requires_vision ) && empty( $requires_multimodal ) ) {
+			$models['deepseek-reasoner'] = 'DeepSeek R1 (Reasoning, No Tools)';
+		}
+
+		return $models;
+	}
+
+	/**
+	 * Get OpenRouter models.
+	 *
+	 * OpenRouter provides access to many models from different providers.
+	 * This returns a curated selection of popular models.
+	 *
+	 * @param array $settings             Plugin settings.
+	 * @param bool  $requires_vision      Whether vision capability is required.
+	 * @param bool  $requires_multimodal  Whether multimodal capability is required.
+	 * @return array Array of model_id => model_name pairs.
+	 */
+	protected function get_openrouter_models( $settings, $requires_vision, $requires_multimodal ) {
+		if ( empty( $settings['enable_openrouter'] ) || empty( $settings['openrouter_api_key'] ) ) {
+			return array();
+		}
+
+		$models = array();
+
+		// OpenAI models via OpenRouter.
+		$models['openai/gpt-5.4']         = 'OpenAI GPT-5.4 (1M Context)';
+		$models['openai/gpt-5.4-mini']    = 'OpenAI GPT-5.4 Mini (Budget)';
+		$models['openai/gpt-4.1']         = 'OpenAI GPT-4.1';
+
+		// Anthropic models via OpenRouter.
+		$models['anthropic/claude-sonnet-4-6'] = 'Anthropic Claude Sonnet 4.6';
+		$models['anthropic/claude-haiku-4-5']  = 'Anthropic Claude Haiku 4.5';
+
+		// Google models via OpenRouter.
+		$models['google/gemini-2.5-pro']  = 'Google Gemini 2.5 Pro';
+		$models['google/gemini-2.5-flash'] = 'Google Gemini 2.5 Flash';
+
+		// Meta models via OpenRouter.
+		$models['meta-llama/llama-4-maverick-17b-128e-instruct'] = 'Meta Llama 4 Maverick 17Bx128E';
+		$models['meta-llama/llama-4-scout-17b-16e-instruct']    = 'Meta Llama 4 Scout 17Bx16E';
+
+		// DeepSeek models via OpenRouter.
+		$models['deepseek/deepseek-chat']     = 'DeepSeek V3 (Chat)';
+		$models['deepseek/deepseek-r1']       = 'DeepSeek R1 (Reasoning)';
+		$models['deepseek/deepseek-r1-distill-llama-70b'] = 'DeepSeek R1 Distill Llama 70B';
+
+		return $models;
+	}
+
+	/**
+	 * Get DigitalOcean Serverless Inference models.
+	 *
+	 * @param array $settings             Plugin settings.
+	 * @param bool  $requires_vision      Whether vision capability is required.
+	 * @param bool  $requires_multimodal  Whether multimodal capability is required.
+	 * @return array Array of model_id => model_name pairs.
+	 */
+	protected function get_digitalocean_models( $settings, $requires_vision, $requires_multimodal ) {
+		if ( empty( $settings['enable_digitalocean'] ) || empty( $settings['digitalocean_api_key'] ) ) {
+			return array();
+		}
+
+		$models = array();
+
+		// Llama models.
+		$models['meta-llama/llama-3.3-70b-instruct'] = 'Llama 3.3 70B Instruct';
+		$models['meta-llama/llama-3.1-8b-instruct']  = 'Llama 3.1 8B Instruct';
+
+		// Mistral models.
+		$models['mistralai/mistral-large-latest'] = 'Mistral Large (Latest)';
+
+		return $models;
+	}
+
+	/**
+	 * Get Kimi (Moonshot AI) models.
+	 *
+	 * @param array $settings             Plugin settings.
+	 * @param bool  $requires_vision      Whether vision capability is required.
+	 * @param bool  $requires_multimodal  Whether multimodal capability is required.
+	 * @return array Array of model_id => model_name pairs.
+	 */
+	protected function get_kimi_models( $settings, $requires_vision, $requires_multimodal ) {
+		if ( empty( $settings['enable_kimi'] ) || empty( $settings['kimi_api_key'] ) ) {
+			return array();
+		}
+
+		$models = array();
+
+		$models['kimi-latest']   = 'Kimi Latest (1M Context)';
+		$models['moonshot-v1-8k']  = 'Moonshot V1 (8K)';
+		$models['moonshot-v1-32k'] = 'Moonshot V1 (32K)';
+		$models['moonshot-v1-128k'] = 'Moonshot V1 (128K)';
+
+		return $models;
+	}
+
+	/**
+	 * Get Baseten models.
+	 *
+	 * @param array $settings             Plugin settings.
+	 * @param bool  $requires_vision      Whether vision capability is required.
+	 * @param bool  $requires_multimodal  Whether multimodal capability is required.
+	 * @return array Array of model_id => model_name pairs.
+	 */
+	protected function get_baseten_models( $settings, $requires_vision, $requires_multimodal ) {
+		if ( empty( $settings['enable_baseten'] ) || empty( $settings['baseten_api_key'] ) ) {
+			return array();
+		}
+
+		$models = array();
+
+		// Note: Baseten hosts custom models. The model ID is typically the deployment ID.
+		// Users should configure specific models via the Baseten dashboard.
+		// We provide common deployment patterns as defaults.
+
+		return $models;
+	}
+
+	/**
 	 * Get provider default models organized by lane.
 	 *
 	 * Returns an associative array of default models for each lane:
@@ -1010,6 +1181,25 @@ class WP_MCP_AI_Model_Service {
 			),
 			'embedded'    => array(
 				'stable' => 'gemma-2-2b-it-q4f16_1-MLC',
+			),
+			'deepseek'    => array(
+				'stable' => 'deepseek-v4-flash',
+				'latest' => 'deepseek-v4-pro',
+				'budget' => 'deepseek-v4-flash',
+			),
+			'openrouter'  => array(
+				'stable' => 'openai/gpt-4.1',
+				'latest' => 'openai/gpt-5.4',
+				'budget' => 'openai/gpt-5.4-mini',
+			),
+			'digitalocean' => array(
+				'stable' => 'meta-llama/llama-3.3-70b-instruct',
+			),
+			'kimi'        => array(
+				'stable' => 'kimi-latest',
+			),
+			'baseten'     => array(
+				'stable' => '',
 			),
 		);
 

@@ -298,7 +298,7 @@ class WP_MCP_AI_Harmonization_Compositor {
 	 *
 	 * @param string $subject_path Transparent PNG for the subject.
 	 * @param string $output_path  Output PNG path (transparent layer with shadows only).
-	 * @param array  $opts         Shadow options. Supports keys:
+	 * @param array  $opts         Shadow options. Supports keys:.
 	 *                              direction_deg (float, light direction; 0=right, 90=down),
 	 *                              softness (float 0..1, blur radius),
 	 *                              opacity (float 0..1, final opacity),

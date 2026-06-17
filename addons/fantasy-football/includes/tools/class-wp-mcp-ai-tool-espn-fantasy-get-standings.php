@@ -25,6 +25,8 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * Tool for retrieving ESPN Fantasy Football league standings.
  */
 class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Standings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -155,7 +157,7 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Standings implements WP_MCP_AI_Tool_Interf
 
 		foreach ( $standings as $team ) {
 			$formatted_standings[] = $this->format_standing( $team, $rank );
-			$rank++;
+			++$rank;
 		}
 
 		/* translators: %d: number of teams */

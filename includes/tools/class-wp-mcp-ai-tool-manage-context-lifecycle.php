@@ -138,6 +138,13 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -147,16 +154,16 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['action'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Action is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Action is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $arguments['agent_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent ID is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent ID is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -189,9 +196,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 				return $this->delete_context( $agent_id, $arguments );
 
 			default:
-				return array(
-					'success' => false,
-					'message' => __( 'Invalid action.', 'mcp-ai-wpoos' ),
+				return new WP_Error(
+					'wp_mcp_ai_error',
+					__( 'Invalid action.', 'mcp-ai-wpoos' )
 				);
 		}
 	}
@@ -206,9 +213,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function refresh_context( $agent_id, $arguments, $options ) {
 		if ( empty( $arguments['context_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context ID is required for refresh action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context ID is required for refresh action.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -223,9 +230,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 		$context         = $context_manager->retrieve_context( $agent_id, $context_id, false );
 
 		if ( ! $context ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context not found or has expired.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context not found or has expired.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -256,16 +263,16 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function compress_context( $agent_id, $arguments, $options ) {
 		if ( empty( $arguments['context_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context ID is required for compress action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context ID is required for compress action.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Context_Compression_Service' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Compression service is not available.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Compression service is not available.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -276,9 +283,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 		$context         = $context_manager->retrieve_context( $agent_id, $context_id, false );
 
 		if ( ! $context ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context not found or has expired.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context not found or has expired.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -300,34 +307,34 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		return array(
-			'success' => false,
-			'message' => __( 'Context has expired.', 'mcp-ai-wpoos' ),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			__( 'Context has expired.', 'mcp-ai-wpoos' )
 		);
 	}
 
-	/**
-	 * Merge multiple contexts.
-	 *
-	 * @param int|string $agent_id   Agent ID.
-	 * @param array      $arguments  Arguments.
-	 * @param array      $options    Options.
-	 * @return array Result.
-	 */
+		/**
+		 * Merge multiple contexts.
+		 *
+		 * @param int|string $agent_id   Agent ID.
+		 * @param array      $arguments  Arguments.
+		 * @param array      $options    Options.
+		 * @return array Result.
+		 */
 	private function merge_contexts( $agent_id, $arguments, $options ) {
 		if ( empty( $arguments['context_ids'] ) || ! is_array( $arguments['context_ids'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context IDs array is required for merge action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context IDs array is required for merge action.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		$context_ids = array_map( 'sanitize_text_field', $arguments['context_ids'] );
 
 		if ( count( $context_ids ) < 2 ) {
-			return array(
-				'success' => false,
-				'message' => __( 'At least 2 context IDs are required for merge.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'At least 2 context IDs are required for merge.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -347,9 +354,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 		}
 
 		if ( count( $contexts ) < 2 ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Not enough valid contexts found to merge.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Not enough valid contexts found to merge.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -476,16 +483,16 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function update_context( $agent_id, $arguments, $options ) {
 		if ( empty( $arguments['context_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context ID is required for update action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context ID is required for update action.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $options['update_data'] ) || ! is_array( $options['update_data'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Update data is required for update action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Update data is required for update action.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -497,9 +504,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 		$context         = $context_manager->retrieve_context( $agent_id, $context_id, false );
 
 		if ( ! $context ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context not found or has expired.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context not found or has expired.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -537,9 +544,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 		}
 
 		if ( empty( $updated_fields ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'No valid fields provided for update.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'No valid fields provided for update.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -580,24 +587,24 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		return array(
-			'success' => false,
-			'message' => __( 'Context has expired and cannot be updated.', 'mcp-ai-wpoos' ),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			__( 'Context has expired and cannot be updated.', 'mcp-ai-wpoos' )
 		);
 	}
 
-	/**
-	 * Delete a specific context.
-	 *
-	 * @param int|string $agent_id   Agent ID.
-	 * @param array      $arguments  Arguments.
-	 * @return array Result.
-	 */
+		/**
+		 * Delete a specific context.
+		 *
+		 * @param int|string $agent_id   Agent ID.
+		 * @param array      $arguments  Arguments.
+		 * @return array Result.
+		 */
 	private function delete_context( $agent_id, $arguments ) {
 		if ( empty( $arguments['context_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context ID is required for delete action.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context ID is required for delete action.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -608,9 +615,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 		$context         = $context_manager->retrieve_context( $agent_id, $context_id, true );
 
 		if ( ! $context ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context not found.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Context not found.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -674,9 +681,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		return array(
-			'success' => false,
-			'message' => __( 'Failed to delete context. It may have already been removed.', 'mcp-ai-wpoos' ),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			__( 'Failed to delete context. It may have already been removed.', 'mcp-ai-wpoos' )
 		);
 	}
 

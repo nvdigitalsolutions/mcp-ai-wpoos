@@ -15,7 +15,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Html5Audio = exports.Audio = void 0;
-var Audio_js_1 = require("./Audio.js");
-Object.defineProperty(exports, "Audio", { enumerable: true, get: function () { return Audio_js_1.Audio; } });
-Object.defineProperty(exports, "Html5Audio", { enumerable: true, get: function () { return Audio_js_1.Html5Audio; } });
+var html5_audio_js_1 = require("./html5-audio.js");
+Object.defineProperty(exports, "Audio", { enumerable: true, get: function () { return html5_audio_js_1.Audio; } });
+Object.defineProperty(exports, "Html5Audio", { enumerable: true, get: function () { return html5_audio_js_1.Html5Audio; } });
 __exportStar(require("./props.js"), exports);

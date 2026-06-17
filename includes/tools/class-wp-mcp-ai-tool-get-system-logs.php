@@ -134,6 +134,13 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -400,9 +407,11 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 
 		$allowed_directories   = $this->get_default_log_directories();
-		$allowed_directories[] = $this->normalize_path( WP_PLUGIN_DIR );
+		if ( defined( 'WP_PLUGIN_DIR' ) ) {
+			$allowed_directories[] = $this->normalize_path( WP_PLUGIN_DIR );
+		}
 
-		$allowed = false;
+			$allowed = false;
 		foreach ( $allowed_directories as $directory ) {
 			if ( '' === $directory ) {
 				continue;
@@ -531,12 +540,12 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
 			if ( true === WP_DEBUG_LOG ) {
-				$path = WP_CONTENT_DIR . '/debug.log';
+				$path = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR . '/debug.log' : null;
 			} else {
 				$path = WP_DEBUG_LOG;
 			}
 		} else {
-			$path = WP_CONTENT_DIR . '/debug.log';
+			$path = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR . '/debug.log' : null;
 		}
 
 		if ( ! $path ) {
@@ -652,18 +661,18 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return array
 	 */
 	protected function get_default_log_directories() {
-		$directories = array(
-			$this->normalize_path( WP_CONTENT_DIR ),
-		);
+		$directories = array();
 
 		$uploads = wp_get_upload_dir();
 		if ( ! empty( $uploads['basedir'] ) ) {
 			$directories[] = $this->normalize_path( $uploads['basedir'] );
 		}
 
-		$directories[] = $this->normalize_path( WP_PLUGIN_DIR );
+		if ( defined( 'WP_PLUGIN_DIR' ) ) {
+					$directories[] = $this->normalize_path( WP_PLUGIN_DIR );
+		}
 
-		$directories = array_filter( array_unique( $directories ) );
+				$directories = array_filter( array_unique( $directories ) );
 
 		$validated = array();
 		foreach ( $directories as $directory ) {

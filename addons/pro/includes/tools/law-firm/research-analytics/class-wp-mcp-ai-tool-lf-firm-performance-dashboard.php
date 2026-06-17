@@ -23,6 +23,11 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -31,14 +36,46 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_firm_performance_dashboard'; }
-	public function get_name() { return __( 'Firm Performance Dashboard', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Generates firm-wide KPIs including realization rate, collection rate, utilization rate, revenue per lawyer, and matters per attorney for a given period.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_firm_performance_dashboard'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Firm Performance Dashboard', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Generates firm-wide KPIs including realization rate, collection rate, utilization rate, revenue per lawyer, and matters per attorney for a given period.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -57,8 +94,28 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only' ); }
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
@@ -113,12 +170,14 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 			);
 		}
 
-		$entries = get_posts( array(
-			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => -1,
-			'post_status'    => 'publish',
-			'meta_query'     => $entry_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-		) );
+		$entries = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lf_time_entry',
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_firm_performance_dashboard', 0, 1000 ) : 1000,
+				'post_status'    => 'publish',
+				'meta_query'     => $entry_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			)
+		);
 
 		$total_billable_hours     = 0;
 		$total_non_billable_hours = 0;
@@ -135,7 +194,7 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 			$collected    = (float) get_post_meta( $entry->ID, '_lf_collected_amount', true );
 			$author_id    = $entry->post_author;
 
-			$standard_amount      = $hours * $rate;
+			$standard_amount        = $hours * $rate;
 			$total_standard_amount += $standard_amount;
 
 			if ( 'billable' === $billing_type ) {
@@ -168,7 +227,7 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 		// Query matters for the period.
 		$matter_args = array(
 			'post_type'      => 'mcp_ai_lf_matter',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_firm_performance_dashboard', 0, 1000 ) : 1000,
 			'post_status'    => 'publish',
 			'date_query'     => array(
 				array( 'after' => $start_date ),
@@ -189,19 +248,21 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 		$total_matters = count( $matters );
 
 		// Query trust transactions in the period.
-		$trust_txns = get_posts( array(
-			'post_type'      => 'mcp_ai_lf_trust_txn',
-			'posts_per_page' => -1,
-			'post_status'    => 'publish',
-			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		$trust_txns = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lf_trust_txn',
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_firm_performance_dashboard', 0, 1000 ) : 1000,
+				'post_status'    => 'publish',
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				array(
 					'key'     => '_lf_transaction_date',
 					'value'   => $start_date,
 					'compare' => '>=',
 					'type'    => 'DATE',
 				),
-			),
-		) );
+				),
+			)
+		);
 
 		$trust_balance_total = 0;
 		foreach ( $trust_txns as $txn ) {
@@ -215,19 +276,19 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 		}
 
 		// Calculate KPIs.
-		$attorney_count      = max( count( $attorneys ), 1 );
-		$total_hours         = $total_billable_hours + $total_non_billable_hours;
-		$realization_rate    = $total_standard_amount > 0 ? round( ( $total_billed_amount / $total_standard_amount ) * 100, 1 ) : 0;
-		$collection_rate     = $total_billed_amount > 0 ? round( ( $total_collected_amount / $total_billed_amount ) * 100, 1 ) : 0;
-		$utilization_rate    = $total_hours > 0 ? round( ( $total_billable_hours / $total_hours ) * 100, 1 ) : 0;
-		$revenue_per_lawyer  = round( $total_billed_amount / $attorney_count, 2 );
+		$attorney_count       = max( count( $attorneys ), 1 );
+		$total_hours          = $total_billable_hours + $total_non_billable_hours;
+		$realization_rate     = $total_standard_amount > 0 ? round( ( $total_billed_amount / $total_standard_amount ) * 100, 1 ) : 0;
+		$collection_rate      = $total_billed_amount > 0 ? round( ( $total_collected_amount / $total_billed_amount ) * 100, 1 ) : 0;
+		$utilization_rate     = $total_hours > 0 ? round( ( $total_billable_hours / $total_hours ) * 100, 1 ) : 0;
+		$revenue_per_lawyer   = round( $total_billed_amount / $attorney_count, 2 );
 		$matters_per_attorney = round( $total_matters / $attorney_count, 1 );
 
 		// Per-attorney breakdown.
 		$attorney_breakdown = array();
 		foreach ( $attorneys as $atty_id => $atty_data ) {
-			$user = get_userdata( $atty_id );
-			$atty_total_hours = $atty_data['billable_hours'] + $atty_data['non_billable_hours'];
+			$user                 = get_userdata( $atty_id );
+			$atty_total_hours     = $atty_data['billable_hours'] + $atty_data['non_billable_hours'];
 			$attorney_breakdown[] = array(
 				'attorney_id'      => $atty_id,
 				'name'             => $user ? $user->display_name : __( 'Unknown', 'mcp-ai-wpoos-pro' ),
@@ -249,20 +310,20 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 				$attorney_count
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'period'               => $period,
-				'practice_area'        => $practice_area,
-				'date_range'           => array(
+				'period'             => $period,
+				'practice_area'      => $practice_area,
+				'date_range'         => array(
 					'start' => $start_date,
 					'end'   => $now,
 				),
-				'kpis'                 => array(
-					'realization_rate'    => $realization_rate,
-					'collection_rate'     => $collection_rate,
-					'utilization_rate'    => $utilization_rate,
-					'revenue_per_lawyer'  => $revenue_per_lawyer,
+				'kpis'               => array(
+					'realization_rate'     => $realization_rate,
+					'collection_rate'      => $collection_rate,
+					'utilization_rate'     => $utilization_rate,
+					'revenue_per_lawyer'   => $revenue_per_lawyer,
 					'matters_per_attorney' => $matters_per_attorney,
 				),
-				'totals'               => array(
+				'totals'             => array(
 					'total_revenue'        => round( $total_billed_amount, 2 ),
 					'total_collected'      => round( $total_collected_amount, 2 ),
 					'total_billable_hours' => round( $total_billable_hours, 1 ),
@@ -270,7 +331,7 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 					'attorney_count'       => $attorney_count,
 					'trust_balance'        => round( $trust_balance_total, 2 ),
 				),
-				'attorney_breakdown'   => $attorney_breakdown,
+				'attorney_breakdown' => $attorney_breakdown,
 			),
 			'disclaimer' => self::DISCLAIMER,
 		);

@@ -5,6 +5,9 @@
  * Provides settings page for configuring AI provider, model, and assistant
  * for ECA Research & Add functionality.
  *
+ * Now extends WP_MCP_AI_Toolkit_Settings_Base for a consistent tabbed
+ * interface with full MCP Server configuration.
+ *
  * @package WP_MCP_AI_Pro
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
@@ -16,25 +19,47 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Load base class.
-require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settings-base.php';
 
 /**
  * ECA Settings Page
+ *
+ * @since 1.2.0
  */
-class WP_MCP_AI_ECA_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
+class WP_MCP_AI_ECA_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 	/**
 	 * Constructor.
+	 *
+	 * @since 1.2.0
 	 */
 	public function __construct() {
-		$this->option_name = 'wp_mcp_ai_eca_settings';
-		$this->post_type   = 'mcp_ai_eca';
-		$this->page_title  = __( 'ECA Settings', 'mcp-ai-wpoos-pro' );
-		$this->menu_title  = __( 'Settings', 'mcp-ai-wpoos-pro' );
-		$this->page_slug   = 'eca-settings';
+		$this->toolkit_slug = 'eca';
+		$this->toolkit_name = __( 'ECA Management', 'mcp-ai-wpoos-pro' );
+		$this->option_name  = 'wp_mcp_ai_eca_settings';
+		$this->page_slug    = 'eca-settings';
+		$this->icon         = 'dashicons-groups';
+		$this->has_research = true;
 
-		// Call parent constructor to set up hooks.
 		parent::__construct();
+	}
+
+	/**
+	 * Get toolkit slug.
+	 *
+	 * @return string
+	 */
+	protected function get_toolkit_slug() {
+		return $this->toolkit_slug;
+	}
+
+	/**
+	 * Get toolkit name.
+	 *
+	 * @return string
+	 */
+	protected function get_toolkit_name() {
+		return $this->toolkit_name;
 	}
 
 	/**
@@ -83,6 +108,79 @@ class WP_MCP_AI_ECA_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			);
 			?>
 		</p>
+		<?php
+	}
+
+	/**
+	 * Render configuration tab content.
+	 *
+	 * @since 1.2.0
+	 */
+	protected function render_configuration_tab() {
+		$options      = get_option( $this->option_name, array() );
+		$research_on  = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : true;
+		$assistant_id = isset( $options['research_assistant_id'] ) ? absint( $options['research_assistant_id'] ) : 0;
+		?>
+		<h2><?php esc_html_e( 'ECA Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
+
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">
+					<label for="enable_research">
+						<?php esc_html_e( 'Enable Research & Add', 'mcp-ai-wpoos-pro' ); ?>
+					</label>
+				</th>
+				<td>
+					<label>
+						<input
+							type="checkbox"
+							name="<?php echo esc_attr( $this->option_name ); ?>[enable_research]"
+							id="enable_research"
+							value="1"
+							<?php checked( $research_on, true ); ?>
+						/>
+						<?php esc_html_e( 'Enable the Research & Add page for ECA research', 'mcp-ai-wpoos-pro' ); ?>
+					</label>
+					<p class="description">
+						<?php esc_html_e( 'When enabled, users can access the Research & Add page to create extra-curricular activities using AI assistance.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+				</td>
+			</tr>
+
+			<tr>
+				<th scope="row">
+					<label for="research_assistant_id">
+						<?php esc_html_e( 'Research Assistant', 'mcp-ai-wpoos-pro' ); ?>
+					</label>
+				</th>
+				<td>
+					<?php
+					$assistants = get_posts(
+						array(
+							'post_type'      => 'mcp_ai_assistant',
+							'posts_per_page' => -1,
+							'orderby'        => 'title',
+							'order'          => 'ASC',
+						)
+					);
+					?>
+					<select
+						name="<?php echo esc_attr( $this->option_name ); ?>[research_assistant_id]"
+						id="research_assistant_id"
+					>
+						<option value="0"><?php esc_html_e( '— Use default assistant —', 'mcp-ai-wpoos-pro' ); ?></option>
+						<?php foreach ( $assistants as $assistant ) : ?>
+							<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $assistant_id, $assistant->ID ); ?>>
+								<?php echo esc_html( $assistant->post_title ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+					<p class="description">
+						<?php esc_html_e( 'Select the AI assistant to use for ECA research and creation.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+				</td>
+			</tr>
+		</table>
 		<?php
 	}
 
@@ -145,61 +243,28 @@ class WP_MCP_AI_ECA_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
-	 * Register settings.
-	 */
-	public function register_settings() {
-		// Call parent to register base fields (assistant).
-		parent::register_settings();
-
-		// Add ECA-specific settings.
-		add_settings_field(
-			'enable_research',
-			__( 'Enable Research & Add', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_enable_research_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-	}
-
-	/**
-	 * Render enable research field.
-	 */
-	public function render_enable_research_field() {
-		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : true;
-
-		?>
-		<label>
-			<input
-				type="checkbox"
-				name="<?php echo esc_attr( $this->option_name ); ?>[enable_research]"
-				id="enable_research"
-				value="1"
-				<?php checked( $value, true ); ?>
-			/>
-			<?php esc_html_e( 'Enable the Research & Add page for ECA research', 'mcp-ai-wpoos-pro' ); ?>
-		</label>
-		<p class="description">
-			<?php esc_html_e( 'When enabled, users can access the Research & Add page to create extra-curricular activities using AI assistance.', 'mcp-ai-wpoos-pro' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
 	 * Sanitize settings.
+	 *
+	 * @since 1.2.0
 	 *
 	 * @param array $input Settings input.
 	 * @return array Sanitized settings.
 	 */
 	public function sanitize_settings( $input ) {
-		// Call parent sanitization for base fields.
-		$sanitized = parent::sanitize_settings( $input );
+		if ( ! is_array( $input ) ) {
+			return array();
+		}
 
-		// Add ECA-specific sanitization.
+		$sanitized = array();
+
 		if ( isset( $input['enable_research'] ) ) {
 			$sanitized['enable_research'] = (bool) $input['enable_research'];
 		} else {
 			$sanitized['enable_research'] = false;
+		}
+
+		if ( isset( $input['research_assistant_id'] ) ) {
+			$sanitized['research_assistant_id'] = absint( $input['research_assistant_id'] );
 		}
 
 		return $sanitized;

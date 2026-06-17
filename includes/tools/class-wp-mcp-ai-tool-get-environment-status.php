@@ -64,6 +64,13 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -204,8 +211,8 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			$plugin_file = isset( $definition['plugin_file'] ) ? $definition['plugin_file'] : $slug . '/' . $slug . '.php';
 			$status      = 'missing';
 
-			if ( file_exists( WP_PLUGIN_DIR . '/' . $plugin_file ) ) {
-				$status = is_plugin_active( $plugin_file ) ? 'active' : 'inactive';
+			if ( defined( 'WP_PLUGIN_DIR' ) && file_exists( WP_PLUGIN_DIR . '/' . $plugin_file ) ) {
+							$status = is_plugin_active( $plugin_file ) ? 'active' : 'inactive';
 			}
 
 			$statuses[] = array(
@@ -235,12 +242,12 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		$default_provider = isset( $plugin['default_provider'] ) ? $plugin['default_provider'] : '';
 
 		$provider_key_map = array(
-			'openai'     => 'openai_api_key',
-			'anthropic'  => 'anthropic_api_key',
-			'gemini'     => 'gemini_api_key',
+			'openai'      => 'openai_api_key',
+			'anthropic'   => 'anthropic_api_key',
+			'gemini'      => 'gemini_api_key',
 			'huggingface' => 'huggingface_api_key',
-			'nvidia'     => 'nvidia_api_key',
-			'cloudflare' => 'cloudflare_api_token',
+			'nvidia'      => 'nvidia_api_key',
+			'cloudflare'  => 'cloudflare_api_token',
 		);
 
 		$provider_endpoint_map = array(

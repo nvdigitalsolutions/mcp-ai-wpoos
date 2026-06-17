@@ -173,7 +173,6 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 			}
 		}
 
-
 		?>
 		<div class="wrap wp-mcp-ai-skill-manager">
 			<h1>
@@ -193,25 +192,25 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 			<?php /* Tab navigation */ ?>
 			<nav class="nav-tab-wrapper">
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=list' ) ); ?>"
-				   class="nav-tab <?php echo 'list' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					class="nav-tab <?php echo 'list' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Installed Skills', 'mcp-ai-wpoos-pro' ); ?>
 					<span class="skill-badge"><?php echo esc_html( (string) count( $skills ) ); ?></span>
 				</a>
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=install' ) ); ?>"
-				   class="nav-tab <?php echo 'install' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					class="nav-tab <?php echo 'install' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Upload &amp; Install', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=browse' ) ); ?>"
-				   class="nav-tab <?php echo 'browse' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					class="nav-tab <?php echo 'browse' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<span class="dashicons dashicons-cloud" style="font-size:16px;vertical-align:text-bottom;"></span>
 					<?php esc_html_e( 'Browse Catalogues', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=editor' ) ); ?>"
-				   class="nav-tab <?php echo 'editor' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					class="nav-tab <?php echo 'editor' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Skill Editor', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=research-skill' ) ); ?>"
-				   class="nav-tab wp-mcp-ai-skill-manager-research-tab <?php echo 'research-skill' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					class="nav-tab wp-mcp-ai-skill-manager-research-tab <?php echo 'research-skill' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<span class="dashicons dashicons-hammer" style="font-size:16px;vertical-align:text-bottom;"></span>
 					<?php esc_html_e( 'Builder', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
@@ -277,8 +276,8 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 			<label for="skill-list-search">
 				<?php esc_html_e( 'Search:', 'mcp-ai-wpoos-pro' ); ?>
 				<input type="text" id="skill-list-search"
-				       placeholder="<?php esc_attr_e( 'Filter skills...', 'mcp-ai-wpoos-pro' ); ?>"
-				       style="width:280px;margin-left:5px;" />
+						placeholder="<?php esc_attr_e( 'Filter skills...', 'mcp-ai-wpoos-pro' ); ?>"
+						style="width:280px;margin-left:5px;" />
 			</label>
 		</div>
 
@@ -294,7 +293,7 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 			<tbody>
 				<?php foreach ( $skills as $skill ) : ?>
 					<tr data-name="<?php echo esc_attr( mb_strtolower( $skill['name'], 'UTF-8' ) ); ?>"
-					    data-description="<?php echo esc_attr( mb_strtolower( $skill['description'], 'UTF-8' ) ); ?>">
+						data-description="<?php echo esc_attr( mb_strtolower( $skill['description'], 'UTF-8' ) ); ?>">
 						<td>
 							<strong><?php echo esc_html( $skill['name'] ); ?></strong>
 							<?php if ( ! empty( $skill['compatibility'] ) ) : ?>
@@ -305,13 +304,13 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 						<td><?php echo esc_html( $skill['license'] ); ?></td>
 						<td class="skill-actions">
 							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=editor&edit=' . rawurlencode( $skill['name'] ) ) ); ?>"
-							   class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+								class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
 								<span class="dashicons dashicons-edit" aria-hidden="true"></span>
 								<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 							</a>
 							<button type="button" class="button button-small button-link-delete skill-delete-btn"
-							        data-skill="<?php echo esc_attr( $skill['name'] ); ?>"
-							        title="<?php esc_attr_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?>">
+									data-skill="<?php echo esc_attr( $skill['name'] ); ?>"
+									title="<?php esc_attr_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?>">
 								<span class="dashicons dashicons-trash" aria-hidden="true"></span>
 								<span class="screen-reader-text"><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></span>
 							</button>
@@ -323,46 +322,46 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 		<?php
 	}
 
-/**
- * Render the "Builder" tab content.
- *
- * Provides a guided 4-step wizard for creating a new SKILL.md bundle,
- * informed by the agentskills.io specification and the OpenAI Cookbook
- * "Skills in API" patterns:
- *  1. Research     – define topic, purpose, and trigger scenarios.
- *  2. Configure    – set the name slug, description, license, and metadata.
- *  3. Instructions – write the Markdown body the AI agent will follow.
- *  4. Review & Install – preview the assembled SKILL.md and install it.
- *
- * @since 1.9.0
- * @return void
- */
-private static function render_tab_research() {
-$licenses = array(
-'MIT'          => 'MIT',
-'Apache-2.0'   => 'Apache 2.0',
-'GPL-2.0'      => 'GPL 2.0',
-'GPL-3.0'      => 'GPL 3.0',
-'BSD-2-Clause' => 'BSD 2-Clause',
-'BSD-3-Clause' => 'BSD 3-Clause',
-'ISC'          => 'ISC',
-'Proprietary'  => 'Proprietary',
-'CC0-1.0'      => 'CC0 (Public Domain)',
-);
-?>
+	/**
+	 * Render the "Builder" tab content.
+	 *
+	 * Provides a guided 4-step wizard for creating a new SKILL.md bundle,
+	 * informed by the agentskills.io specification and the OpenAI Cookbook
+	 * "Skills in API" patterns:
+	 *  1. Research     – define topic, purpose, and trigger scenarios.
+	 *  2. Configure    – set the name slug, description, license, and metadata.
+	 *  3. Instructions – write the Markdown body the AI agent will follow.
+	 *  4. Review & Install – preview the assembled SKILL.md and install it.
+	 *
+	 * @since 1.9.0
+	 * @return void
+	 */
+	private static function render_tab_research() {
+		$licenses = array(
+			'MIT'          => 'MIT',
+			'Apache-2.0'   => 'Apache 2.0',
+			'GPL-2.0'      => 'GPL 2.0',
+			'GPL-3.0'      => 'GPL 3.0',
+			'BSD-2-Clause' => 'BSD 2-Clause',
+			'BSD-3-Clause' => 'BSD 3-Clause',
+			'ISC'          => 'ISC',
+			'Proprietary'  => 'Proprietary',
+			'CC0-1.0'      => 'CC0 (Public Domain)',
+		);
+		?>
 <div class="research-wizard" style="margin-top:15px;">
 
-<?php /* ── OpenAI cookbook guidance card ── */ ?>
+		<?php /* ── OpenAI cookbook guidance card ── */ ?>
 <div style="background:#f0f6fc;border:1px solid #c3d9ee;border-radius:4px;padding:14px 18px;margin-bottom:20px;display:flex;gap:14px;align-items:flex-start;">
 <span class="dashicons dashicons-info-outline" style="color:#0073aa;font-size:22px;flex-shrink:0;margin-top:2px;"></span>
 <div style="font-size:12px;color:#333;line-height:1.6;">
 <strong style="font-size:13px;"><?php esc_html_e( 'Skills vs. Tools vs. System Prompts', 'mcp-ai-wpoos-pro' ); ?></strong><br />
-<?php esc_html_e( 'Use a Skill for reusable, version-controlled procedures an agent can invoke by name. Use a Tool for live API or database connections. Use a System Prompt for global tone and guardrails.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Use a Skill for reusable, version-controlled procedures an agent can invoke by name. Use a Tool for live API or database connections. Use a System Prompt for global tone and guardrails.', 'mcp-ai-wpoos-pro' ); ?>
 &mdash; <a href="https://developers.openai.com/cookbook/examples/skills_in_api" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'OpenAI Cookbook', 'mcp-ai-wpoos-pro' ); ?></a>
 </div>
 </div>
 
-<?php /* ── Progress bar ── */ ?>
+		<?php /* ── Progress bar ── */ ?>
 <div class="wizard-progress" role="navigation" aria-label="<?php esc_attr_e( 'Skill builder steps', 'mcp-ai-wpoos-pro' ); ?>">
 <div class="wizard-step-indicator active" data-step="1" id="wizard-step-ind-1">
 <span class="wizard-step-num" aria-hidden="true">1</span>
@@ -385,7 +384,7 @@ $licenses = array(
 </div>
 </div>
 
-<?php /* ═══ STEP 1: Research ═══ */ ?>
+		<?php /* ═══ STEP 1: Research ═══ */ ?>
 <div class="wizard-step-panel active" id="research-panel-1">
 <div class="wizard-panel-header">
 <h3><?php esc_html_e( 'Step 1 of 4 &#8212; Research Your Skill', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -399,9 +398,9 @@ $licenses = array(
 </th>
 <td>
 <input type="text" id="research-title" class="regular-text"
-       placeholder="<?php esc_attr_e( 'e.g. PDF Text Extractor', 'mcp-ai-wpoos-pro' ); ?>" />
+		placeholder="<?php esc_attr_e( 'e.g. PDF Text Extractor', 'mcp-ai-wpoos-pro' ); ?>" />
 <p class="description">
-<?php esc_html_e( 'A human-friendly title. Auto-generates the skill name slug in Step 2.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'A human-friendly title. Auto-generates the skill name slug in Step 2.', 'mcp-ai-wpoos-pro' ); ?>
 </p>
 </td>
 </tr>
@@ -411,9 +410,9 @@ $licenses = array(
 </th>
 <td>
 <textarea id="research-purpose" class="large-text" rows="4"
-          placeholder="<?php esc_attr_e( 'Describe what this skill does and why it exists&#8230;', 'mcp-ai-wpoos-pro' ); ?>"></textarea>
+			placeholder="<?php esc_attr_e( 'Describe what this skill does and why it exists&#8230;', 'mcp-ai-wpoos-pro' ); ?>"></textarea>
 <p class="description">
-<?php esc_html_e( 'A clear, specific explanation of the skill\'s function. Pre-fills the description in Step 2.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'A clear, specific explanation of the skill\'s function. Pre-fills the description in Step 2.', 'mcp-ai-wpoos-pro' ); ?>
 </p>
 </td>
 </tr>
@@ -423,9 +422,9 @@ $licenses = array(
 </th>
 <td>
 <textarea id="research-triggers" class="large-text" rows="3"
-          placeholder="<?php esc_attr_e( 'Describe specific scenarios where an AI agent should invoke this skill&#8230;', 'mcp-ai-wpoos-pro' ); ?>"></textarea>
+			placeholder="<?php esc_attr_e( 'Describe specific scenarios where an AI agent should invoke this skill&#8230;', 'mcp-ai-wpoos-pro' ); ?>"></textarea>
 <div class="research-field-tip">
-<?php esc_html_e( 'Tip: Precise trigger conditions lead to better agent behaviour. Per the OpenAI Cookbook, skills should be invoked by name only when the specific procedure applies &#8212; not as a catch-all.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Tip: Precise trigger conditions lead to better agent behaviour. Per the OpenAI Cookbook, skills should be invoked by name only when the specific procedure applies &#8212; not as a catch-all.', 'mcp-ai-wpoos-pro' ); ?>
 </div>
 </td>
 </tr>
@@ -448,7 +447,7 @@ $licenses = array(
 <option value="other"><?php esc_html_e( 'Other', 'mcp-ai-wpoos-pro' ); ?></option>
 </select>
 <p class="description">
-<?php esc_html_e( 'Optional. Stored as metadata.category to help organise and discover skills.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Optional. Stored as metadata.category to help organise and discover skills.', 'mcp-ai-wpoos-pro' ); ?>
 </p>
 </td>
 </tr>
@@ -460,15 +459,15 @@ $licenses = array(
 <fieldset>
 <label style="display:block;margin-bottom:5px;">
 <input type="radio" name="research_bundle_type" id="research-bundle-md" value="md" checked />
-<?php esc_html_e( 'SKILL.md only &#8212; instructions are self-contained in the Markdown file', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'SKILL.md only &#8212; instructions are self-contained in the Markdown file', 'mcp-ai-wpoos-pro' ); ?>
 </label>
 <label style="display:block;">
 <input type="radio" name="research_bundle_type" id="research-bundle-zip" value="zip" />
-<?php esc_html_e( 'Full bundle (ZIP) &#8212; SKILL.md + scripts/, references/, or assets/ sub-directories', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Full bundle (ZIP) &#8212; SKILL.md + scripts/, references/, or assets/ sub-directories', 'mcp-ai-wpoos-pro' ); ?>
 </label>
 </fieldset>
 <div id="research-bundle-zip-note" style="display:none;margin-top:8px;" class="research-field-tip">
-<?php esc_html_e( 'After installing the SKILL.md you can upload the full ZIP via the Upload &amp; Install tab. The wizard assembles the SKILL.md manifest; you add the supporting files separately.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'After installing the SKILL.md you can upload the full ZIP via the Upload &amp; Install tab. The wizard assembles the SKILL.md manifest; you add the supporting files separately.', 'mcp-ai-wpoos-pro' ); ?>
 </div>
 </td>
 </tr>
@@ -477,12 +476,12 @@ $licenses = array(
 <div class="wizard-step-nav">
 <div class="spacer"></div>
 <button type="button" class="button button-primary" id="research-next-1">
-<?php esc_html_e( 'Next: Configure', 'mcp-ai-wpoos-pro' ); ?> &rarr;
+		<?php esc_html_e( 'Next: Configure', 'mcp-ai-wpoos-pro' ); ?> &rarr;
 </button>
 </div>
 </div>
 
-<?php /* ═══ STEP 2: Configure ═══ */ ?>
+		<?php /* ═══ STEP 2: Configure ═══ */ ?>
 <div class="wizard-step-panel" id="research-panel-2">
 <div class="wizard-panel-header">
 <h3><?php esc_html_e( 'Step 2 of 4 &#8212; Configure Skill Identity', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -493,16 +492,16 @@ $licenses = array(
 <tr>
 <th scope="row">
 <label for="research-name">
-<?php esc_html_e( 'Skill Name (slug)', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Skill Name (slug)', 'mcp-ai-wpoos-pro' ); ?>
 <span style="color:#dc3232;" aria-label="<?php esc_attr_e( 'Required', 'mcp-ai-wpoos-pro' ); ?>">*</span>
 </label>
 </th>
 <td>
 <input type="text" id="research-name" class="regular-text"
-       placeholder="<?php esc_attr_e( 'my-skill', 'mcp-ai-wpoos-pro' ); ?>"
-       maxlength="64" />
+		placeholder="<?php esc_attr_e( 'my-skill', 'mcp-ai-wpoos-pro' ); ?>"
+		maxlength="64" />
 <p class="description">
-<?php esc_html_e( 'Lowercase letters, numbers, and hyphens only. Max 64 chars. Must match the skill directory name.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Lowercase letters, numbers, and hyphens only. Max 64 chars. Must match the skill directory name.', 'mcp-ai-wpoos-pro' ); ?>
 </p>
 </td>
 </tr>
@@ -512,16 +511,16 @@ $licenses = array(
 </th>
 <td>
 <input type="text" id="research-version" class="small-text"
-       placeholder="1.0.0" value="1.0.0" />
+		placeholder="1.0.0" value="1.0.0" />
 <p class="description">
-<?php esc_html_e( 'Semantic version (e.g. 1.0.0). The OpenAI Cookbook recommends explicit versioning for reproducibility across agents.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Semantic version (e.g. 1.0.0). The OpenAI Cookbook recommends explicit versioning for reproducibility across agents.', 'mcp-ai-wpoos-pro' ); ?>
 </p>
 </td>
 </tr>
 <tr>
 <th scope="row">
 <label for="research-description">
-<?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?>
 <span style="color:#dc3232;" aria-label="<?php esc_attr_e( 'Required', 'mcp-ai-wpoos-pro' ); ?>">*</span>
 </label>
 </th>
@@ -529,23 +528,23 @@ $licenses = array(
 <textarea id="research-description" class="large-text" rows="3" maxlength="1024"></textarea>
 <span class="char-counter" id="desc-counter">0 / 1024</span>
 <p class="description">
-<?php esc_html_e( 'What the skill does and precisely when to invoke it. Max 1024 characters. This is the text the AI model reads to decide whether to use this skill.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'What the skill does and precisely when to invoke it. Max 1024 characters. This is the text the AI model reads to decide whether to use this skill.', 'mcp-ai-wpoos-pro' ); ?>
 </p>
 </td>
 </tr>
 <tr>
 <th scope="row">
-<?php esc_html_e( 'License', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'License', 'mcp-ai-wpoos-pro' ); ?>
 </th>
 <td>
 <div class="license-grid" id="research-license-grid">
-<?php foreach ( $licenses as $value => $label ) : ?>
+		<?php foreach ( $licenses as $value => $label ) : ?>
 <label class="license-option <?php echo 'MIT' === $value ? 'selected' : ''; ?>"
-       data-value="<?php echo esc_attr( $value ); ?>">
+		data-value="<?php echo esc_attr( $value ); ?>">
 <input type="radio" name="research_license" value="<?php echo esc_attr( $value ); ?>"
-       style="display:none;"
-       <?php echo 'MIT' === $value ? 'checked' : ''; ?> />
-<?php echo esc_html( $label ); ?>
+		style="display:none;"
+			<?php echo 'MIT' === $value ? 'checked' : ''; ?> />
+			<?php echo esc_html( $label ); ?>
 </label>
 <?php endforeach; ?>
 </div>
@@ -558,16 +557,16 @@ $licenses = array(
 </th>
 <td>
 <input type="text" id="research-compatibility" class="large-text" maxlength="500"
-       placeholder="<?php esc_attr_e( 'e.g. Requires Python 3.8+, poppler-utils', 'mcp-ai-wpoos-pro' ); ?>" />
+		placeholder="<?php esc_attr_e( 'e.g. Requires Python 3.8+, poppler-utils', 'mcp-ai-wpoos-pro' ); ?>" />
 <span class="char-counter" id="compat-counter">0 / 500</span>
 <p class="description">
-<?php esc_html_e( 'Optional runtime or dependency notes. Max 500 characters.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Optional runtime or dependency notes. Max 500 characters.', 'mcp-ai-wpoos-pro' ); ?>
 </p>
 </td>
 </tr>
 <tr>
 <th scope="row">
-<?php esc_html_e( 'Author &amp; Homepage', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Author &amp; Homepage', 'mcp-ai-wpoos-pro' ); ?>
 </th>
 <td>
 <table style="border-collapse:collapse;width:100%;max-width:520px;">
@@ -577,7 +576,7 @@ $licenses = array(
 </td>
 <td style="padding:4px 0;">
 <input type="text" id="research-author" class="regular-text"
-       placeholder="<?php esc_attr_e( 'Your name or organisation', 'mcp-ai-wpoos-pro' ); ?>" />
+		placeholder="<?php esc_attr_e( 'Your name or organisation', 'mcp-ai-wpoos-pro' ); ?>" />
 </td>
 </tr>
 <tr>
@@ -586,7 +585,7 @@ $licenses = array(
 </td>
 <td style="padding:4px 0;">
 <input type="url" id="research-homepage" class="large-text"
-       placeholder="https://example.com/my-skill" />
+		placeholder="https://example.com/my-skill" />
 </td>
 </tr>
 </table>
@@ -598,9 +597,9 @@ $licenses = array(
 </th>
 <td>
 <input type="text" id="research-allowed-tools" class="large-text"
-       placeholder="<?php esc_attr_e( 'e.g. Bash WebSearch ReadFiles', 'mcp-ai-wpoos-pro' ); ?>" />
+		placeholder="<?php esc_attr_e( 'e.g. Bash WebSearch ReadFiles', 'mcp-ai-wpoos-pro' ); ?>" />
 <p class="description">
-<?php esc_html_e( 'Optional. Space-separated list of pre-approved tool names (agentskills.io spec, experimental). These map to function-calling tool names in the OpenAI API.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Optional. Space-separated list of pre-approved tool names (agentskills.io spec, experimental). These map to function-calling tool names in the OpenAI API.', 'mcp-ai-wpoos-pro' ); ?>
 </p>
 </td>
 </tr>
@@ -612,43 +611,43 @@ $licenses = array(
 </button>
 <div class="spacer"></div>
 <button type="button" class="button button-primary" id="research-next-2">
-<?php esc_html_e( 'Next: Instructions', 'mcp-ai-wpoos-pro' ); ?> &rarr;
+		<?php esc_html_e( 'Next: Instructions', 'mcp-ai-wpoos-pro' ); ?> &rarr;
 </button>
 </div>
 </div>
 
-<?php /* ═══ STEP 3: Instructions ═══ */ ?>
+		<?php /* ═══ STEP 3: Instructions ═══ */ ?>
 <div class="wizard-step-panel" id="research-panel-3">
 <div class="wizard-panel-header">
 <h3><?php esc_html_e( 'Step 3 of 4 &#8212; Write Skill Instructions', 'mcp-ai-wpoos-pro' ); ?></h3>
 <p>
-<?php
-printf(
-/* translators: 1: agentskills.io link, 2: OpenAI cookbook link */
-esc_html__( 'Write the Markdown body your AI agent will follow. See the %1$s specification and the %2$s for best-practice patterns.', 'mcp-ai-wpoos-pro' ),
-'<a href="https://agentskills.io/specification" target="_blank" rel="noopener noreferrer">agentskills.io</a>',
-'<a href="https://developers.openai.com/cookbook/examples/skills_in_api" target="_blank" rel="noopener noreferrer">' . esc_html__( 'OpenAI Cookbook', 'mcp-ai-wpoos-pro' ) . '</a>'
-);
-?>
+		<?php
+		printf(
+		/* translators: 1: agentskills.io link, 2: OpenAI cookbook link */
+			esc_html__( 'Write the Markdown body your AI agent will follow. See the %1$s specification and the %2$s for best-practice patterns.', 'mcp-ai-wpoos-pro' ),
+			'<a href="https://agentskills.io/specification" target="_blank" rel="noopener noreferrer">agentskills.io</a>',
+			'<a href="https://developers.openai.com/cookbook/examples/skills_in_api" target="_blank" rel="noopener noreferrer">' . esc_html__( 'OpenAI Cookbook', 'mcp-ai-wpoos-pro' ) . '</a>'
+		);
+		?>
 </p>
 </div>
 
 <p style="margin-bottom:8px;">
 <button type="button" class="button" id="research-gen-template">
 <span class="dashicons dashicons-editor-insertmore" style="vertical-align:middle;font-size:16px;"></span>
-<?php esc_html_e( 'Insert Starter Template', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Insert Starter Template', 'mcp-ai-wpoos-pro' ); ?>
 </button>
 <span style="margin-left:8px;font-size:12px;color:#666;">
-<?php esc_html_e( 'Builds a structured template using your research from Steps 1 &amp; 2.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Builds a structured template using your research from Steps 1 &amp; 2.', 'mcp-ai-wpoos-pro' ); ?>
 </span>
 </p>
 
 <textarea id="research-instructions" class="large-text" rows="20"
-          style="font-family:monospace;font-size:13px;line-height:1.55;"></textarea>
+			style="font-family:monospace;font-size:13px;line-height:1.55;"></textarea>
 
 <details style="margin-top:16px;">
 <summary style="cursor:pointer;font-weight:600;font-size:12px;color:#555;">
-<?php esc_html_e( 'Tips for effective skill instructions (OpenAI Cookbook &amp; agentskills.io)', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Tips for effective skill instructions (OpenAI Cookbook &amp; agentskills.io)', 'mcp-ai-wpoos-pro' ); ?>
 </summary>
 <table class="form-table" role="presentation" style="max-width:700px;margin-top:8px;">
 <tr>
@@ -680,12 +679,12 @@ esc_html__( 'Write the Markdown body your AI agent will follow. See the %1$s spe
 </button>
 <div class="spacer"></div>
 <button type="button" class="button button-primary" id="research-next-3">
-<?php esc_html_e( 'Next: Review &amp; Install', 'mcp-ai-wpoos-pro' ); ?> &rarr;
+		<?php esc_html_e( 'Next: Review &amp; Install', 'mcp-ai-wpoos-pro' ); ?> &rarr;
 </button>
 </div>
 </div>
 
-<?php /* ═══ STEP 4: Review & Install ═══ */ ?>
+		<?php /* ═══ STEP 4: Review & Install ═══ */ ?>
 <div class="wizard-step-panel" id="research-panel-4">
 <div class="wizard-panel-header">
 <h3><?php esc_html_e( 'Step 4 of 4 &#8212; Review &amp; Install', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -695,47 +694,47 @@ esc_html__( 'Write the Markdown body your AI agent will follow. See the %1$s spe
 <div style="overflow:hidden;margin-bottom:8px;">
 <button type="button" class="button button-small" id="research-copy-btn" style="float:right;">
 <span class="dashicons dashicons-clipboard" style="font-size:14px;vertical-align:middle;"></span>
-<?php esc_html_e( 'Copy to Clipboard', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Copy to Clipboard', 'mcp-ai-wpoos-pro' ); ?>
 </button>
 <strong style="font-size:13px;line-height:28px;"><?php esc_html_e( 'Generated SKILL.md', 'mcp-ai-wpoos-pro' ); ?></strong>
 </div>
 <pre class="skill-preview-block" id="research-preview" aria-live="polite"></pre>
 
-<?php /* OpenAI tool schema panel */ ?>
+		<?php /* OpenAI tool schema panel */ ?>
 <details style="margin-top:16px;" id="research-schema-details">
 <summary style="cursor:pointer;font-weight:600;font-size:12px;color:#555;">
 <span class="dashicons dashicons-rest-api" style="font-size:14px;vertical-align:middle;"></span>
-<?php esc_html_e( 'OpenAI API Tool Schema (JSON) &#8212; register this skill as a function-calling tool', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'OpenAI API Tool Schema (JSON) &#8212; register this skill as a function-calling tool', 'mcp-ai-wpoos-pro' ); ?>
 </summary>
 <div style="margin-top:8px;">
 <p class="description">
-<?php
-printf(
-/* translators: %s: OpenAI cookbook link */
-esc_html__( 'Copy this JSON object into your %s tools array to make this skill invocable via function calling.', 'mcp-ai-wpoos-pro' ),
-'<a href="https://platform.openai.com/docs/guides/function-calling" target="_blank" rel="noopener noreferrer">OpenAI API</a>'
-);
-?>
+		<?php
+		printf(
+		/* translators: %s: OpenAI cookbook link */
+			esc_html__( 'Copy this JSON object into your %s tools array to make this skill invocable via function calling.', 'mcp-ai-wpoos-pro' ),
+			'<a href="https://platform.openai.com/docs/guides/function-calling" target="_blank" rel="noopener noreferrer">OpenAI API</a>'
+		);
+		?>
 </p>
 <div style="overflow:hidden;margin-bottom:6px;">
 <button type="button" class="button button-small" id="research-copy-schema-btn" style="float:right;">
 <span class="dashicons dashicons-clipboard" style="font-size:14px;vertical-align:middle;"></span>
-<?php esc_html_e( 'Copy Schema', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Copy Schema', 'mcp-ai-wpoos-pro' ); ?>
 </button>
 </div>
 <pre class="skill-preview-block" id="research-schema-preview" style="max-height:260px;"></pre>
 </div>
 </details>
 
-<?php /* Directory structure preview */ ?>
+		<?php /* Directory structure preview */ ?>
 <details style="margin-top:12px;" id="research-dir-details">
 <summary style="cursor:pointer;font-weight:600;font-size:12px;color:#555;">
 <span class="dashicons dashicons-category" style="font-size:14px;vertical-align:middle;"></span>
-<?php esc_html_e( 'Skill Directory Structure', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Skill Directory Structure', 'mcp-ai-wpoos-pro' ); ?>
 </summary>
 <pre class="skill-preview-block" id="research-dir-preview" style="max-height:180px;margin-top:8px;"></pre>
 <p class="description" style="margin-top:6px;">
-<?php esc_html_e( 'For a full bundle (scripts, references, assets), upload a ZIP via the Upload &amp; Install tab after installing the SKILL.md here.', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'For a full bundle (scripts, references, assets), upload a ZIP via the Upload &amp; Install tab after installing the SKILL.md here.', 'mcp-ai-wpoos-pro' ); ?>
 </p>
 </details>
 
@@ -748,116 +747,116 @@ esc_html__( 'Copy this JSON object into your %s tools array to make this skill i
 <div class="spacer"></div>
 <button type="button" class="button" id="research-open-editor-btn">
 <span class="dashicons dashicons-edit" style="font-size:14px;vertical-align:middle;"></span>
-<?php esc_html_e( 'Open in Skill Editor', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Open in Skill Editor', 'mcp-ai-wpoos-pro' ); ?>
 </button>
 <button type="button" class="button button-primary" id="research-install-btn">
 <span class="dashicons dashicons-yes" style="font-size:14px;vertical-align:middle;"></span>
-<?php esc_html_e( 'Install Skill', 'mcp-ai-wpoos-pro' ); ?>
+		<?php esc_html_e( 'Install Skill', 'mcp-ai-wpoos-pro' ); ?>
 </button>
 </div>
 </div>
 
 </div><!-- /.research-wizard -->
-<?php
-}
+		<?php
+	}
 
-/**
- * Handle AJAX request to generate a validated SKILL.md from structured wizard inputs.
- *
- * Assembles the YAML frontmatter and Markdown body server-side, runs it
- * through the Skill Parser for validation, and returns the result. Acts as
- * an extension point for future AI-powered generation.
- *
- * @since 1.9.0
- * @return void Outputs JSON and dies.
- */
-public static function handle_ajax_generate_skill() {
-check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+	/**
+	 * Handle AJAX request to generate a validated SKILL.md from structured wizard inputs.
+	 *
+	 * Assembles the YAML frontmatter and Markdown body server-side, runs it
+	 * through the Skill Parser for validation, and returns the result. Acts as
+	 * an extension point for future AI-powered generation.
+	 *
+	 * @since 1.9.0
+	 * @return void Outputs JSON and dies.
+	 */
+	public static function handle_ajax_generate_skill() {
+		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
 
-if ( ! current_user_can( 'manage_options' ) ) {
-wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
-}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+		}
 
-// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce checked above.
-$name          = isset( $_POST['name'] )           ? sanitize_key( wp_unslash( $_POST['name'] ) )                          : '';
-$version       = isset( $_POST['version'] )        ? sanitize_text_field( wp_unslash( $_POST['version'] ) )                : '1.0.0';
-$description   = isset( $_POST['description'] )    ? sanitize_text_field( wp_unslash( $_POST['description'] ) )            : '';
-$license       = isset( $_POST['license'] )        ? sanitize_text_field( wp_unslash( $_POST['license'] ) )                : 'MIT';
-$compatibility = isset( $_POST['compatibility'] )  ? sanitize_text_field( wp_unslash( $_POST['compatibility'] ) )          : '';
-$author        = isset( $_POST['author'] )         ? sanitize_text_field( wp_unslash( $_POST['author'] ) )                 : '';
-$homepage      = isset( $_POST['homepage'] )       ? esc_url_raw( wp_unslash( $_POST['homepage'] ) )                       : '';
-$category      = isset( $_POST['category'] )       ? sanitize_key( wp_unslash( $_POST['category'] ) )                     : '';
-$allowed_tools = isset( $_POST['allowed_tools'] )  ? sanitize_text_field( wp_unslash( $_POST['allowed_tools'] ) )          : '';
-$instructions  = isset( $_POST['instructions'] )   ? sanitize_textarea_field( wp_unslash( $_POST['instructions'] ) )     : '';
-// phpcs:enable WordPress.Security.NonceVerification.Missing
+	// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce checked above.
+		$name          = isset( $_POST['name'] ) ? sanitize_key( wp_unslash( $_POST['name'] ) ) : '';
+		$version       = isset( $_POST['version'] ) ? sanitize_text_field( wp_unslash( $_POST['version'] ) ) : '1.0.0';
+		$description   = isset( $_POST['description'] ) ? sanitize_text_field( wp_unslash( $_POST['description'] ) ) : '';
+		$license       = isset( $_POST['license'] ) ? sanitize_text_field( wp_unslash( $_POST['license'] ) ) : 'MIT';
+		$compatibility = isset( $_POST['compatibility'] ) ? sanitize_text_field( wp_unslash( $_POST['compatibility'] ) ) : '';
+		$author        = isset( $_POST['author'] ) ? sanitize_text_field( wp_unslash( $_POST['author'] ) ) : '';
+		$homepage      = isset( $_POST['homepage'] ) ? esc_url_raw( wp_unslash( $_POST['homepage'] ) ) : '';
+		$category      = isset( $_POST['category'] ) ? sanitize_key( wp_unslash( $_POST['category'] ) ) : '';
+		$allowed_tools = isset( $_POST['allowed_tools'] ) ? sanitize_text_field( wp_unslash( $_POST['allowed_tools'] ) ) : '';
+		$instructions  = isset( $_POST['instructions'] ) ? sanitize_textarea_field( wp_unslash( $_POST['instructions'] ) ) : '';
+	// phpcs:enable WordPress.Security.NonceVerification.Missing
 
-if ( empty( $name ) ) {
-wp_send_json_error( __( 'Skill name is required.', 'mcp-ai-wpoos-pro' ) );
-}
+		if ( empty( $name ) ) {
+			wp_send_json_error( __( 'Skill name is required.', 'mcp-ai-wpoos-pro' ) );
+		}
 
-if ( empty( $description ) ) {
-wp_send_json_error( __( 'Description is required.', 'mcp-ai-wpoos-pro' ) );
-}
+		if ( empty( $description ) ) {
+			wp_send_json_error( __( 'Description is required.', 'mcp-ai-wpoos-pro' ) );
+		}
 
-// Assemble YAML frontmatter.
-$yaml  = "---\n";
-$yaml .= 'name: ' . $name . "\n";
-$yaml .= 'description: "' . str_replace( '"', '\\"', $description ) . "\"\n";
+		// Assemble YAML frontmatter.
+		$yaml  = "---\n";
+		$yaml .= 'name: ' . $name . "\n";
+		$yaml .= 'description: "' . str_replace( '"', '\\"', $description ) . "\"\n";
 
-if ( ! empty( $license ) ) {
-$yaml .= 'license: ' . $license . "\n";
-}
+		if ( ! empty( $license ) ) {
+			$yaml .= 'license: ' . $license . "\n";
+		}
 
-if ( ! empty( $compatibility ) ) {
-$yaml .= 'compatibility: "' . str_replace( '"', '\\"', $compatibility ) . "\"\n";
-}
+		if ( ! empty( $compatibility ) ) {
+			$yaml .= 'compatibility: "' . str_replace( '"', '\\"', $compatibility ) . "\"\n";
+		}
 
-if ( ! empty( $allowed_tools ) ) {
-$yaml .= 'allowed-tools: ' . $allowed_tools . "\n";
-}
+		if ( ! empty( $allowed_tools ) ) {
+			$yaml .= 'allowed-tools: ' . $allowed_tools . "\n";
+		}
 
-// Metadata block.
-$meta_lines = array();
-if ( ! empty( $version ) ) {
-$meta_lines[] = '  version: "' . $version . '"';
-}
-if ( ! empty( $author ) ) {
-$meta_lines[] = '  author: "' . str_replace( '"', '\\"', $author ) . '"';
-}
-if ( ! empty( $homepage ) ) {
-$meta_lines[] = '  homepage: "' . $homepage . '"';
-}
-if ( ! empty( $category ) ) {
-$meta_lines[] = '  category: "' . str_replace( '"', '\\"', $category ) . '"';
-}
-if ( ! empty( $meta_lines ) ) {
-$yaml .= "metadata:\n" . implode( "\n", $meta_lines ) . "\n";
-}
+		// Metadata block.
+		$meta_lines = array();
+		if ( ! empty( $version ) ) {
+			$meta_lines[] = '  version: "' . $version . '"';
+		}
+		if ( ! empty( $author ) ) {
+			$meta_lines[] = '  author: "' . str_replace( '"', '\\"', $author ) . '"';
+		}
+		if ( ! empty( $homepage ) ) {
+			$meta_lines[] = '  homepage: "' . $homepage . '"';
+		}
+		if ( ! empty( $category ) ) {
+			$meta_lines[] = '  category: "' . str_replace( '"', '\\"', $category ) . '"';
+		}
+		if ( ! empty( $meta_lines ) ) {
+			$yaml .= "metadata:\n" . implode( "\n", $meta_lines ) . "\n";
+		}
 
-$yaml .= "---\n\n";
+		$yaml .= "---\n\n";
 
-$body    = ! empty( trim( $instructions ) ) ? $instructions : '# ' . $name . "\n\n" . __( 'Describe the skill instructions here.', 'mcp-ai-wpoos-pro' );
-$content = $yaml . $body;
+		$body    = ! empty( trim( $instructions ) ) ? $instructions : '# ' . $name . "\n\n" . __( 'Describe the skill instructions here.', 'mcp-ai-wpoos-pro' );
+		$content = $yaml . $body;
 
-// Validate through the parser.
-$registry = self::get_registry();
+		// Validate through the parser.
+		$registry = self::get_registry();
 
-if ( class_exists( 'WP_MCP_AI_Skill_Parser' ) ) {
-$parser = new WP_MCP_AI_Skill_Parser();
-$parsed = $parser->parse( $content );
+		if ( class_exists( 'WP_MCP_AI_Skill_Parser' ) ) {
+			$parser = new WP_MCP_AI_Skill_Parser();
+			$parsed = $parser->parse( $content );
 
-if ( is_wp_error( $parsed ) ) {
-wp_send_json_error( $parsed->get_error_message() );
-}
-}
+			if ( is_wp_error( $parsed ) ) {
+				wp_send_json_error( $parsed->get_error_message() );
+			}
+		}
 
-wp_send_json_success(
-array(
-'content' => $content,
-'name'    => $name,
-)
-);
-}
+		wp_send_json_success(
+			array(
+				'content' => $content,
+				'name'    => $name,
+			)
+		);
+	}
 
 	/**
 	 * Render the "Upload & Install" tab content.
@@ -886,7 +885,7 @@ array(
 						</th>
 						<td>
 							<input type="file" id="skill-upload-file" accept=".md,.zip"
-							       style="display:block;margin-bottom:8px;" />
+									style="display:block;margin-bottom:8px;" />
 							<p class="description">
 								<?php esc_html_e( 'Accepted: .md (SKILL.md) or .zip (skill archive)', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
@@ -920,7 +919,7 @@ array(
 						</th>
 						<td>
 							<input type="url" id="skill-url-input" class="large-text"
-							       placeholder="https://raw.githubusercontent.com/…/SKILL.md" />
+									placeholder="https://raw.githubusercontent.com/…/SKILL.md" />
 						</td>
 					</tr>
 				</table>
@@ -973,16 +972,16 @@ array(
 			<?php endif; ?>
 
 			<textarea id="skill-editor-textarea" name="skill_content"
-			          placeholder="<?php echo esc_attr( $placeholder ); ?>"><?php echo esc_textarea( $edit_content ); ?></textarea>
+						placeholder="<?php echo esc_attr( $placeholder ); ?>"><?php echo esc_textarea( $edit_content ); ?></textarea>
 
 			<p style="margin-top:10px;">
 				<button type="button" id="skill-save-btn" class="button button-primary"
-				        data-editing="<?php echo esc_attr( $edit_name ); ?>">
+						data-editing="<?php echo esc_attr( $edit_name ); ?>">
 					<?php echo $edit_name ? esc_html__( 'Update Skill', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Install Skill', 'mcp-ai-wpoos-pro' ); ?>
 				</button>
 				<?php if ( $edit_name ) : ?>
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=editor' ) ); ?>"
-					   class="button" style="margin-left:8px;">
+						class="button" style="margin-left:8px;">
 						<?php esc_html_e( 'New Skill', 'mcp-ai-wpoos-pro' ); ?>
 					</a>
 				<?php endif; ?>
@@ -1028,9 +1027,11 @@ array(
 		<?php
 	}
 
-	/* ═══════════════════════════════════════════════════════
-	   AJAX handlers
-	   ═══════════════════════════════════════════════════════ */
+	/*
+	═══════════════════════════════════════════════════════
+		AJAX handlers
+		═══════════════════════════════════════════════════════
+	 */
 
 	/**
 	 * Handle AJAX file upload (SKILL.md or ZIP).
@@ -1326,9 +1327,11 @@ array(
 		);
 	}
 
-	/* ═══════════════════════════════════════════════════════
-	   Private helpers
-	   ═══════════════════════════════════════════════════════ */
+	/*
+	═══════════════════════════════════════════════════════
+		Private helpers
+		═══════════════════════════════════════════════════════
+	 */
 
 	/**
 	 * Extract a skill from a ZIP archive and install it.
@@ -1342,7 +1345,7 @@ array(
 	 * @return array|WP_Error Parsed skill data on success, WP_Error on failure.
 	 */
 	private static function install_from_zip( $zip_path ) {
-		$zip = new ZipArchive();
+		$zip    = new ZipArchive();
 		$opened = $zip->open( $zip_path );
 
 		if ( true !== $opened ) {
@@ -1357,7 +1360,7 @@ array(
 		$skill_md_entry = null;
 		$root_dir       = null;
 
-		for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+		for ( $i = 0; $i < $zip->num_files; $i++ ) {
 			$entry = $zip->getNameIndex( $i );
 
 			// Skip macOS metadata files.
@@ -1414,7 +1417,7 @@ array(
 		$extra_files = array();
 		$prefix      = '' !== $root_dir ? $root_dir . '/' : '';
 
-		for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+		for ( $i = 0; $i < $zip->num_files; $i++ ) {
 			$entry = $zip->getNameIndex( $i );
 
 			if ( false !== strpos( $entry, '__MACOSX' ) || false !== strpos( $entry, '.DS_Store' ) ) {
@@ -1493,7 +1496,7 @@ array(
 		// Inline a small JS payload that the browse-tab script will read for
 		// REST URL + nonce. We reuse the existing wp-mcp-ai-skill-manager script
 		// handle so we do not need a separate enqueue.
-		$rest_root = esc_url_raw( rest_url( 'mcp-ai-pro/v1/catalogues' ) );
+		$rest_root  = esc_url_raw( rest_url( 'mcp-ai-pro/v1/catalogues' ) );
 		$rest_nonce = wp_create_nonce( 'wp_rest' );
 		?>
 		<div class="wp-mcp-ai-skill-browse">
