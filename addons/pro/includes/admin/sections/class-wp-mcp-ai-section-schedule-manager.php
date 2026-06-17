@@ -801,6 +801,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 				'assistant_config'  => isset( $schedule['assistant_config'] ) ? $schedule['assistant_config'] : array(),
 				'broadcast_config'  => isset( $schedule['broadcast_config'] ) ? $schedule['broadcast_config'] : array(),
 				'notify_channels'   => isset( $schedule['notify_channels'] ) ? $schedule['notify_channels'] : array(),
+				'display'           => isset( $schedule['display'] ) ? $schedule['display'] : array(),
+				'result_delivery'   => isset( $schedule['result_delivery'] ) ? $schedule['result_delivery'] : array(),
 			);
 		}
 
