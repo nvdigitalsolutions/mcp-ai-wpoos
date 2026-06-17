@@ -237,6 +237,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 
 			$schedule_data = isset( $preset['schedule_data'] ) ? $preset['schedule_data'] : array();
 
+			// Pass through result_delivery when the preset pre-configures delivery channels.
+			if ( isset( $schedule_data['result_delivery'] ) && is_array( $schedule_data['result_delivery'] ) ) {
+				$data['result_delivery'] = $schedule_data['result_delivery'];
+			}
+
 			switch ( $data['schedule_type'] ) {
 				case 'task':
 					// Accept both 'hook' and legacy 'task_hook' key.
@@ -2657,6 +2662,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'assistant_config' => array(
 							'message' => 'Research trending blog topics for the coming week. Use research_blog_post to explore current industry trends, competitor content, and keyword opportunities. Analyse: 1) Trending topics in our niche with search volume estimates. 2) Content gaps our competitors are not covering. 3) Seasonal or timely topics relevant to our audience. 4) Long-tail keyword opportunities with low competition. 5) Suggested titles with primary and secondary keywords. 6) Recommended content format (how-to, listicle, case study, opinion, comparison) for each topic. Generate a prioritised editorial brief for 3-5 blog post ideas with target word count, suggested headings, and primary image recommendations.',
 						),
+						'result_delivery'  => array(
+							'on_success' => array(
+								'channels' => array(
+									'paper_store' => array(
+										'enabled'    => true,
+										'collection' => 'blog-research',
+										'driver'     => 'markdown_yaml',
+										'retention'  => 30,
+										'git_commit' => true,
+									),
+								),
+							),
+							'on_failure' => array(
+								'channels' => array(
+									'email' => array(
+										'enabled'  => true,
+										'template' => 'error',
+									),
+								),
+							),
+						),
 					),
 				),
 				'weekly_blog_post_writer'    => array(
@@ -2671,6 +2697,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'schedule_data' => array(
 						'assistant_config' => array(
 							'message' => 'Draft a complete blog post for this week. Use research_blog_post to perform deep research on the selected topic, then use create_post to generate a publish-ready draft. The post must include: 1) Compelling SEO-optimised title (H1) with primary keyword. 2) Meta description (150-160 chars) with call-to-action. 3) Introduction that hooks the reader with a statistic, question, or story. 4) Well-structured body with H2/H3 subheadings following the inverted pyramid. 5) 3-5 data points or statistics with citations. 6) Suggested image placements with alt-text descriptions. 7) Internal links to 2-3 related posts. 8) Schema.org Article markup. 9) Author bio snippet. 10) Call-to-action at the end. Set post status to draft for human review before publishing.',
+						),
+						'result_delivery'  => array(
+							'on_success' => array(
+								'channels' => array(
+									'paper_store' => array(
+										'enabled'    => true,
+										'collection' => 'blog-drafts',
+										'driver'     => 'markdown_yaml',
+										'retention'  => 30,
+										'git_commit' => true,
+									),
+								),
+							),
+							'on_failure' => array(
+								'channels' => array(
+									'email' => array(
+										'enabled'  => true,
+										'template' => 'error',
+									),
+								),
+							),
 						),
 					),
 				),
@@ -2687,6 +2734,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'assistant_config' => array(
 							'message' => 'Generate a 30-day editorial calendar for the blog. Structure around the topic cluster model: 1) Identify 2-3 pillar content topics for the month. 2) Map 6-8 cluster posts that link to each pillar. 3) Assign a publishing date and time for each post (recommend Tue-Thu for B2B, Mon-Wed for B2C). 4) Include content type (how-to, listicle, case study, news, opinion). 5) Assign target keywords and search intent (informational, commercial, transactional, navigational). 6) Note seasonal hooks, industry events, or product launches. 7) Suggest social media promotion angles for each post. 8) Identify repurposing opportunities (infographic, video, podcast, email newsletter). Output as a structured calendar view with status tracking.',
 						),
+						'result_delivery'  => array(
+							'on_success' => array(
+								'channels' => array(
+									'paper_store' => array(
+										'enabled'    => true,
+										'collection' => 'editorial-calendars',
+										'driver'     => 'json',
+										'retention'  => 12,
+										'git_commit' => true,
+									),
+								),
+							),
+							'on_failure' => array(
+								'channels' => array(
+									'email' => array(
+										'enabled'  => true,
+										'template' => 'error',
+									),
+								),
+							),
+						),
 					),
 				),
 				'post_seo_audit'             => array(
@@ -2701,6 +2769,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'schedule_data' => array(
 						'assistant_config' => array(
 							'message' => 'Perform a weekly SEO audit of existing blog posts. Use get_post to review the latest 20 published posts and check: 1) Meta title length (50-60 chars ideal, flag truncated titles). 2) Meta description presence and length (150-160 chars). 3) H1 tag count (must be exactly 1). 4) Keyword in first 100 words. 5) Image alt-text completeness. 6) Internal link count (recommend 3-5 per post). 7) External authoritative links. 8) Readability score (Flesch-Kincaid target 60-70). 9) Content length (flag posts under 300 words as thin content). 10) Last updated date (flag posts older than 6 months for refresh). 11) Mobile-friendliness indicators. Generate a prioritised fix list sorted by impact (critical, high, medium, low) with specific recommendations for each post.',
+						),
+						'result_delivery'  => array(
+							'on_success' => array(
+								'channels' => array(
+									'paper_store' => array(
+										'enabled'    => true,
+										'collection' => 'seo-audits',
+										'driver'     => 'markdown_yaml',
+										'retention'  => 30,
+										'git_commit' => true,
+									),
+								),
+							),
+							'on_failure' => array(
+								'channels' => array(
+									'email' => array(
+										'enabled'  => true,
+										'template' => 'error',
+									),
+								),
+							),
 						),
 					),
 				),
@@ -2733,6 +2822,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'assistant_config' => array(
 							'message' => 'Generate a monthly blog post performance report. Analyse: 1) Top 10 posts by pageviews, time on page, and conversion rate. 2) Bottom 10 posts (low traffic/engagement) with recommendations to update, merge, or retire. 3) Traffic sources breakdown (organic, social, direct, referral, email). 4) Keyword ranking changes for target keywords. 5) Social share counts by platform. 6) Comment engagement and sentiment. 7) Bounce rate trends and pages with above-average bounce rates. 8) Mobile vs desktop performance split. 9) Content format winners (which formats drive the most engagement). 10) Suggested content refreshes for high-potential underperforming posts. Include a summary dashboard and 3 actionable recommendations for next month.',
 						),
+						'result_delivery'  => array(
+							'on_success' => array(
+								'channels' => array(
+									'paper_store' => array(
+										'enabled'    => true,
+										'collection' => 'post-analytics',
+										'driver'     => 'json',
+										'retention'  => 12,
+										'git_commit' => true,
+									),
+								),
+							),
+							'on_failure' => array(
+								'channels' => array(
+									'email' => array(
+										'enabled'  => true,
+										'template' => 'error',
+									),
+								),
+							),
+						),
 					),
 				),
 				'content_gap_analysis'       => array(
@@ -2747,6 +2857,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'schedule_data' => array(
 						'assistant_config' => array(
 							'message' => 'Perform a weekly content gap analysis against 3-5 key competitors. Use research_blog_post to explore competitor content. Identify: 1) Keywords competitors rank for (top 20) that we do not. 2) Topics with high search volume and low competition where we have no content. 3) Content formats competitors use that we do not (video, infographics, podcasts, tools, calculators). 4) Questions people ask in our niche that no one is answering well (People Also Ask opportunities). 5) Content depth comparison — topics where competitor content is more comprehensive. 6) Quick-win opportunities (low-effort, high-impact topics we can produce within a week). Prioritise gaps by potential traffic impact and content effort. Generate a content roadmap for the next 30 days.',
+						),
+						'result_delivery'  => array(
+							'on_success' => array(
+								'channels' => array(
+									'paper_store' => array(
+										'enabled'    => true,
+										'collection' => 'content-gaps',
+										'driver'     => 'markdown_yaml',
+										'retention'  => 30,
+										'git_commit' => true,
+									),
+								),
+							),
+							'on_failure' => array(
+								'channels' => array(
+									'email' => array(
+										'enabled'  => true,
+										'template' => 'error',
+									),
+								),
+							),
 						),
 					),
 				),
@@ -2768,6 +2899,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'assistant_config' => array(
 							'message' => 'Perform a weekly content freshness audit of all published pages. Use get_post to review key pages (limit to 30 most important pages by traffic or business value). Check: 1) Content accuracy — flag outdated statistics, old dates, deprecated product references, or changed service offerings. 2) CTA functionality — verify all call-to-action buttons and forms reference current offers. 3) Brand voice consistency — flag pages that deviate from established tone and voice guidelines. 4) Legal/compliance — check for outdated terms, privacy policy dates, or missing cookie consent language. 5) Multimedia status — flag broken images, missing videos, or unoptimised embeds. 6) Page load indicators — flag extremely long pages or those with excessive embeds. 7) Last-reviewed date — flag pages not updated in 6+ months. Generate a freshness report with a RAG status (Red/Amber/Green) for each page and recommended update actions.',
 						),
+						'result_delivery'  => array(
+							'on_success' => array(
+								'channels' => array(
+									'paper_store' => array(
+										'enabled'    => true,
+										'collection' => 'page-audits',
+										'driver'     => 'markdown_yaml',
+										'retention'  => 30,
+										'git_commit' => true,
+									),
+								),
+							),
+							'on_failure' => array(
+								'channels' => array(
+									'email' => array(
+										'enabled'  => true,
+										'template' => 'error',
+									),
+								),
+							),
+						),
 					),
 				),
 				'page_seo_accessibility'     => array(
@@ -2782,6 +2934,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'schedule_data' => array(
 						'assistant_config' => array(
 							'message' => 'Perform a monthly SEO and accessibility audit of core pages (About, Services, Contact, and top 10 landing pages by traffic). SEO checks: 1) Title tag optimisation and uniqueness across pages. 2) Meta description quality and uniqueness. 3) URL structure (short, keyword-rich, no special characters). 4) Canonical tags presence. 5) Open Graph and Twitter Card meta tags. 6) Schema.org structured data validity. Accessibility checks (WCAG 2.1 AA): 7) Heading hierarchy (no skipped levels, exactly one H1). 8) All images have descriptive alt text (decorative images use empty alt). 9) Colour contrast ratios meet 4.5:1 minimum. 10) Form inputs have associated labels. 11) ARIA landmarks used correctly. 12) Keyboard-navigable interactive elements. 13) Skip-to-content link present. 14) Video captions and audio transcripts. Generate a combined report with violations grouped by severity and fix recommendations.',
+						),
+						'result_delivery'  => array(
+							'on_success' => array(
+								'channels' => array(
+									'paper_store' => array(
+										'enabled'    => true,
+										'collection' => 'accessibility-audits',
+										'driver'     => 'markdown_yaml',
+										'retention'  => 12,
+										'git_commit' => true,
+									),
+								),
+							),
+							'on_failure' => array(
+								'channels' => array(
+									'email' => array(
+										'enabled'  => true,
+										'template' => 'error',
+									),
+								),
+							),
 						),
 					),
 				),

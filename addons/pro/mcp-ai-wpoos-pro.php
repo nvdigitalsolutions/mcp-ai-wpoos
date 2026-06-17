@@ -388,6 +388,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once $schedule_manager_core;
 		}
 
+		// Load the Result Delivery Service alongside the Schedule Manager so that
+		// result delivery (email, chat, SMS, Paper Store, WordPress post, webhook)
+		// is available for all schedule types on both success and failure.
+		$delivery_service = WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-result-delivery-service.php';
+		if ( file_exists( $delivery_service ) ) {
+			require_once $delivery_service;
+		}
+
 		// Load Per-Toolkit MCP Server framework early so WP_MCP_AI_Toolkit_Server_Registry
 		// is defined before the admin block below checks class_exists() to register the
 		// Phase 7 admin page.  The framework lies dormant until a toolkit registers a
