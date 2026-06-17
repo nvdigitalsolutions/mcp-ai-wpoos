@@ -38,7 +38,7 @@ module.exports = {
 
 	// Setup files - use absolute path to ensure Jest can find it
 	setupFilesAfterEnv: [
-		path.resolve( __dirname, 'tests', 'js', 'setup.js' ),
+		path.resolve( __dirname, 'jest.setup.js' ),
 	],
 
 	// Ensure proper module resolution

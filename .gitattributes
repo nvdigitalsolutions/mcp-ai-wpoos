@@ -118,6 +118,7 @@ package-lock.json           export-ignore
 babel.config.js             export-ignore
 cleancss.config.js          export-ignore
 jest.config.js              export-ignore
+jest.setup.js               export-ignore
 esbuild.config.js           export-ignore
 esbuild.config.pro.js       export-ignore
 cosmos.config.json          export-ignore
