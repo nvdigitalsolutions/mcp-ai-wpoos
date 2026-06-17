@@ -4,7 +4,24 @@
  * @package WP_MCP_AI
  */
 
+const path = require( 'path' );
+const fs = require( 'fs' );
+
+// Probe for setup file — CI may not materialize committed files
+// (sparse-checkout / export-ignore interactions in actions/checkout).
+// Use __dirname (directory of this config file) for reliability.
+const SETUP_CANDIDATES = [
+	path.resolve( __dirname, 'jest.setup.js' ),
+	path.resolve( __dirname, 'tests', 'js', 'setup.js' ),
+];
+const SETUP_FILES = SETUP_CANDIDATES.filter( f => {
+	try { fs.accessSync( f ); return true; } catch (e) { return false; }
+} );
+
 module.exports = {
+	// Use the directory of this config file as the root
+	rootDir: __dirname,
+
 	// Test environment
 	testEnvironment: 'jsdom',
 
@@ -31,10 +48,8 @@ module.exports = {
 	// Module paths
 	modulePaths: [ '<rootDir>' ],
 
-	// Setup files - use absolute path to ensure Jest can find it
-	setupFilesAfterEnv: [
-		'<rootDir>/tests/js/setup.js',
-	],
+	// Setup files — probed at config load time; falls back to empty array
+	setupFilesAfterEnv: SETUP_FILES.length > 0 ? SETUP_FILES : [],
 
 	// Ensure proper module resolution
 	resolver: undefined,
