@@ -5,13 +5,6 @@
  */
 
 const path = require( 'path' );
-const fs = require( 'fs' );
-
-// Log which files exist for debugging CI
-const setupPath = path.resolve( __dirname, 'jest.setup.js' );
-console.error( '[jest.config.js] Looking for setup file at:', setupPath );
-console.error( '[jest.config.js] File exists:', fs.existsSync( setupPath ) );
-console.error( '[jest.config.js] __dirname contents:', fs.readdirSync( __dirname ).filter( f => f.startsWith('jest') ) );
 
 module.exports = {
 	// Use the directory of this config file as the root
@@ -43,10 +36,19 @@ module.exports = {
 	// Module paths
 	modulePaths: [ '<rootDir>' ],
 
-	// Setup files - use absolute path to ensure Jest can find it
-	setupFilesAfterEnv: [
-		path.resolve( __dirname, 'jest.setup.js' ),
-	],
+	// Setup files - resolved at config load time relative to cwd
+	setupFilesAfterEnv: ( () => {
+		const cwd = process.cwd();
+		const candidates = [
+			path.resolve( cwd, 'jest.setup.js' ),
+			path.resolve( cwd, 'tests', 'js', 'setup.js' ),
+		];
+		const found = candidates.filter( f => { try { require( 'fs' ).accessSync( f ); return true; } catch (e) { return false; } } );
+		if ( found.length === 0 ) {
+			console.error( '[jest.config.js] WARNING: No setup file found at any of:', candidates );
+		}
+		return found.length > 0 ? found : [];
+	} )(),
 
 	// Ensure proper module resolution
 	resolver: undefined,
