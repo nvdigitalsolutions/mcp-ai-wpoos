@@ -39,7 +39,7 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@typescript-eslint/eslint-plugin": "8.61.1",
-    "@typescript-eslint/parser": "8.59.2",
+    "@typescript-eslint/parser": "8.61.1",
     "@vitest/coverage-v8": "^4.1.5",
     "esbuild": "^0.28.1",
     "eslint": "^9.27.0",
