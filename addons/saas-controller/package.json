@@ -54,7 +54,7 @@
     "@wordpress/prettier-config": "^4.0.0",
     "@wordpress/scripts": "^32.1.0",
     "esbuild": "^0.28.1",
-    "miniflare": "^4.20260504.0",
+    "miniflare": "^4.20260616.0",
     "npm-run-all": "^4.1.5",
     "typescript": "^5.7.2",
     "wrangler": "^4.59.1"
