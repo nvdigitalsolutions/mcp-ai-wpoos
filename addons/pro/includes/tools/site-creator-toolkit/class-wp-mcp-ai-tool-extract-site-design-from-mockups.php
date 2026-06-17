@@ -33,7 +33,7 @@ require_once dirname( __DIR__, 2 ) . '/site-creator-toolkit/class-wp-mcp-ai-desi
 require_once dirname( __DIR__, 2 ) . '/site-creator-toolkit/class-wp-mcp-ai-design-snippet-renderer.php';
 
 /**
- * extract_site_design_from_mockups tool.
+ * Extract_site_design_from_mockups tool.
  *
  * @since 1.2.0
  */

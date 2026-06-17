@@ -1,12 +1,26 @@
 # CRM Toolkit
 
-**Added:** Phase A–E: May 29, 2026; Phase C–D completion: May 31, 2026 (v1.1.25)  
+**Added:** Phase A–E: May 29, 2026; Phase C–D completion: May 31, 2026 (v1.1.25); v1.1.29 enhancements: June 2026  
 **Tier:** Pro only  
 **Location:** `addons/pro/includes/tools/crm/`
 
 ## Overview
 
 The CRM Toolkit provides **70+ AI-powered tools** for end-to-end customer relationship management — from lead capture through deal closure to compliance auditing. Designed as a five-phase implementation (Phases A–E), the toolkit integrates with WordPress users, custom post types, and JetEngine CCTs to turn your site into a lightweight CRM with AI-assisted workflows.
+
+### v1.1.29 Enhancements
+
+The following features were added in v1.1.29:
+- **Email Import & Scheduled Polling** — IMAP email polling with message logging and deduplication. Inbound emails are classified and routed through the CRM Classifier.
+- **Automatic Lead Pruning** — Configurable retention policies with cron-based cleanup of stale leads.
+- **CRM Performance Optimization** — Autoload control, query caching, and retention windows via `WP_MCP_AI_CRM_Optimization`.
+- **Email Hygiene Module** — Classify, exclude/priority lists, and auto-prune for inbound email management.
+- **Inline Tag Editing** — Edit lead tags directly from the leads admin table without opening the edit screen.
+- **Email Priority/Exclude Actions** — One-click list management for email priority and exclusion on the leads table.
+- **Duplicate Detection & Merge** — Duplicates tab in the Command Center with one-click merge and bulk merge.
+- **Top Customers & Top Clients Analytics** — Dedicated analytics tabs showing top customers by revenue and top clients by engagement.
+- **Refresh All Sources** — One-click button to refresh all CRM data sources from the Support tab.
+- **Gmail Source Linking** — Automatic association of inbound Gmail messages with existing CRM leads and customers.
 
 ## Quick Start
 

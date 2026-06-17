@@ -232,31 +232,51 @@ class WP_MCP_AI_Tool_LF_Discovery_Request_Builder implements WP_MCP_AI_Tool_Inte
 	private function generate_requests( string $type, array $topic_areas, int $count ): array {
 		$templates = array(
 			'interrogatories'         => array(
+				/* translators: %s: topic area */
 				__( 'Identify all persons with knowledge of %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Describe in detail all facts supporting your contentions regarding %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Identify all documents that relate to %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'State the dates and substance of all communications regarding %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Describe any policies or procedures related to %s.', 'mcp-ai-wpoos-pro' ),
 			),
 			'requests_for_production' => array(
+				/* translators: %s: topic area */
 				__( 'All documents and communications relating to %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'All contracts, agreements, or memoranda concerning %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'All electronically stored information, including emails, relating to %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'All records, reports, or analyses regarding %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'All correspondence between any parties relating to %s.', 'mcp-ai-wpoos-pro' ),
 			),
 			'requests_for_admission'  => array(
+				/* translators: %s: topic area */
 				__( 'Admit that you had knowledge of %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Admit that the documents relating to %s are authentic.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Admit that you were responsible for %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Admit that the facts set forth regarding %s are true and correct.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Admit that no additional agreements exist concerning %s.', 'mcp-ai-wpoos-pro' ),
 			),
 			'deposition_notice'       => array(
+				/* translators: %s: topic area */
 				__( 'Testimony regarding your knowledge of %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Testimony regarding all communications concerning %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Testimony regarding your role in %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Testimony regarding documents you authored or received concerning %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %s: topic area */
 				__( 'Testimony regarding the chronology of events related to %s.', 'mcp-ai-wpoos-pro' ),
 			),
 		);

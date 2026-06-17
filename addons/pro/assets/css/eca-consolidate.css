@@ -1,0 +1,253 @@
+/**
+ * ECA Consolidate & Add Page Styles
+ *
+ * @package WP_MCP_AI_Pro
+ */
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-container {
+	display: flex;
+	gap: 24px;
+	margin-top: 16px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-sidebar {
+	flex: 0 0 320px;
+	max-width: 320px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-main {
+	flex: 1;
+	min-width: 0;
+}
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-intro,
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-eca-selector,
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-tips,
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-document-tools-info,
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-actions {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px;
+	margin-bottom: 16px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-intro h2,
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-eca-selector h3,
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-tips h3,
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-document-tools-info h3,
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-actions h3 {
+	margin-top: 0;
+}
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-document-tools-info {
+	background: #f0f6fc;
+	border-left: 4px solid #0073aa;
+}
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-intro ol {
+	margin-left: 18px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-tips ul,
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-document-tools-info ul {
+	margin-left: 4px;
+	list-style: none;
+	padding-left: 0;
+}
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-tips ul li,
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-document-tools-info ul li {
+	margin-bottom: 6px;
+}
+
+/* Workflow selector */
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-workflow-selector {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px 24px;
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-workflow-selector h2 {
+	margin-top: 0;
+}
+
+.wp-mcp-ai-eca-consolidate-page .workflow-options {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.wp-mcp-ai-eca-consolidate-page .workflow-option {
+	flex: 1;
+	min-width: 140px;
+	padding: 12px;
+	border: 2px solid #dcdcde;
+	border-radius: 6px;
+	background: #fff;
+	cursor: pointer;
+	text-align: center;
+	transition: all 0.15s ease;
+}
+
+.wp-mcp-ai-eca-consolidate-page .workflow-option:hover {
+	border-color: #0073aa;
+	background: #f0f6fc;
+}
+
+.wp-mcp-ai-eca-consolidate-page .workflow-option.active {
+	border-color: #0073aa;
+	background: #e8f4fd;
+}
+
+.wp-mcp-ai-eca-consolidate-page .workflow-option .dashicons {
+	font-size: 24px;
+	width: 24px;
+	height: 24px;
+	margin-bottom: 4px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .workflow-option strong {
+	display: block;
+	margin-bottom: 2px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .workflow-option p {
+	margin: 0;
+	font-size: 12px;
+	color: #757575;
+}
+
+/* Workflow content */
+.wp-mcp-ai-eca-consolidate-page .workflow-content {
+	display: none;
+}
+
+.wp-mcp-ai-eca-consolidate-page .workflow-content.active {
+	display: block;
+}
+
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-research-chat {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px;
+}
+
+/* Bulk import */
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-bulk-import-section {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px 24px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .bulk-import-tips {
+	background: #f0f6fc;
+	border-left: 4px solid #0073aa;
+	padding: 8px 16px;
+	margin: 12px 0;
+}
+
+.wp-mcp-ai-eca-consolidate-page .bulk-import-form {
+	margin-top: 16px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .file-upload-area {
+	margin: 10px 0;
+}
+
+.wp-mcp-ai-eca-consolidate-page .file-upload-note {
+	margin-left: 10px;
+	color: #757575;
+	font-style: italic;
+}
+
+.wp-mcp-ai-eca-consolidate-page .file-upload-list {
+	margin-top: 10px;
+	padding: 10px;
+	background: #f9f9f9;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .form-section-divider {
+	margin: 20px 0;
+}
+
+.wp-mcp-ai-eca-consolidate-page .bulk-import-options {
+	margin: 12px 0;
+}
+
+.wp-mcp-ai-eca-consolidate-page .bulk-import-options label {
+	display: block;
+	margin-bottom: 6px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .bulk-import-result {
+	margin-top: 16px;
+	padding: 12px;
+	border-radius: 4px;
+}
+
+/* Guided entry */
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-guided-section {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px 24px;
+}
+
+.wp-mcp-ai-eca-consolidate-page .record-type-buttons {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin: 12px 0;
+}
+
+.wp-mcp-ai-eca-consolidate-page .record-type-btn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 12px 16px;
+	border: 2px solid #dcdcde;
+	border-radius: 6px;
+	background: #fff;
+	cursor: pointer;
+	min-width: 100px;
+	transition: all 0.15s ease;
+}
+
+.wp-mcp-ai-eca-consolidate-page .record-type-btn:hover {
+	border-color: #0073aa;
+	background: #f0f6fc;
+}
+
+.wp-mcp-ai-eca-consolidate-page .record-type-btn .dashicons {
+	font-size: 28px;
+	width: 28px;
+	height: 28px;
+	margin-bottom: 4px;
+}
+
+/* Records preview */
+.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-records-preview {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px 24px;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+	.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-container {
+		flex-direction: column;
+	}
+
+	.wp-mcp-ai-eca-consolidate-page .wp-mcp-ai-consolidate-sidebar {
+		flex: 1 1 auto;
+		max-width: none;
+	}
+}

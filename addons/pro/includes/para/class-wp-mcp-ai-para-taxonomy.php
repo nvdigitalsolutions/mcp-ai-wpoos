@@ -74,6 +74,10 @@ class WP_MCP_AI_PARA_Taxonomy {
 	/**
 	 * Determine whether PARA is enabled.
 	 *
+	 * Checks the enable_para_organization feature flag. The Project
+	 * Management toolkit must also be enabled for PARA to function
+	 * (since it depends on PM CPTs and tool classes).
+	 *
 	 * @return bool
 	 */
 	public static function is_enabled() {
@@ -84,7 +88,7 @@ class WP_MCP_AI_PARA_Taxonomy {
 
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		// Requires Project Management toolkit to be enabled.
-		if ( empty( $settings['enable_project_management'] ) ) {
+		if ( empty( $settings['enable_project_management_toolkit'] ) && empty( $settings['enable_project_management'] ) ) {
 			return false;
 		}
 		// Opt-in feature flag.

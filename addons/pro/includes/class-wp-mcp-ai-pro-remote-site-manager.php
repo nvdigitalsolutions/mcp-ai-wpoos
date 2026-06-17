@@ -960,6 +960,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
+		// Handle LinkedIn connections separately.
+		if ( 'linkedin' === $connection_type ) {
+			return array(
+				'success'  => true,
+				'linkedin' => true,
+				'message'  => __( 'LinkedIn OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
 		// Handle ShipEngine (ShipStation API) connections separately.
 		if ( 'shipengine' === $connection_type ) {
 			return self::test_shipengine_connection( $connection );
@@ -1485,9 +1494,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$shop_name = isset( $response['data']['shop']['name'] ) ? $response['data']['shop']['name'] : '';
 		$shop_plan = isset( $response['data']['shop']['plan']['displayName'] ) ? $response['data']['shop']['plan']['displayName'] : '';
 
-		/* translators: 1: store name, 2: plan name */
 		$message = ! empty( $shop_name )
-			? sprintf( __( 'Shopify connection successful. Connected to "%1$s" (%2$s).', 'mcp-ai-wpoos-pro' ), $shop_name, $shop_plan )
+			? sprintf( /* translators: 1: store name, 2: plan name */ __( 'Shopify connection successful. Connected to "%1$s" (%2$s).', 'mcp-ai-wpoos-pro' ), $shop_name, $shop_plan )
 			: __( 'Shopify connection successful.', 'mcp-ai-wpoos-pro' );
 
 		return array(
@@ -2533,7 +2541,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$password = isset( $connection['password'] ) ? self::decrypt_value( $connection['password'] ) : '';
 
 				if ( ! empty( $username ) && ! empty( $password ) ) {
-					$headers['Authorization'] = 'Basic ' . base64_encode( $username . ':' . $password );
+					$headers['Authorization'] = 'Basic ' . base64_encode( $username . ':' . $password ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Used for HTTP Basic auth header encoding.
 				}
 				break;
 
@@ -2735,6 +2743,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
 		}
 
+		if ( 'linkedin' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_linkedin_credentials',
+					__( 'OAuth Client ID and client secret are required for LinkedIn connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
+		}
+
 		return true;
 	}
 
@@ -2822,7 +2840,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$encrypted .= chr( ord( $value[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
 		}
 
-		return base64_encode( $encrypted );
+		return base64_encode( $encrypted ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Used for credential encryption.
 	}
 
 	/**
@@ -2852,7 +2870,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// Legacy XOR format (no prefix).
-		$key  = wp_salt( 'auth' );
+		$key = wp_salt( 'auth' );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Used for credential decryption.
 		$data = base64_decode( $encrypted, true ); // Strict mode: reject malformed base64.
 		if ( false === $data ) {
 			return '';
@@ -3147,12 +3166,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @since 1.0.0
 	 *
 	 * @param array  $connection Connection data array.
-	 * @param string $resource   WooCommerce resource key: 'products', 'orders', 'customers', or 'categories'.
+	 * @param string $resource_type WooCommerce resource key: 'products', 'orders', 'customers', or 'categories'.
 	 * @param string $operation  CRUD operation: 'read', 'create', 'update', or 'delete'.
 	 * @return bool True if the operation is allowed; false otherwise.
 	 */
-	public static function is_wc_resource_operation_allowed( $connection, $resource, $operation = 'read' ) {
-		$resource  = sanitize_key( $resource );
+	public static function is_wc_resource_operation_allowed( $connection, $resource_type, $operation = 'read' ) {
+		$resource  = sanitize_key( $resource_type );
 		$operation = sanitize_key( $operation );
 
 		// When no access controls are configured, only permit reads (backward compatible).

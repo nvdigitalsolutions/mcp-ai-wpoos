@@ -58,19 +58,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'enable_kimi'       => array(
+				'enable_kimi'      => array(
 					'type'        => 'checkbox',
 					'label'       => __( 'Enable Kimi', 'mcp-ai-wpoos' ),
 					'description' => __( 'Enable Kimi as an AI provider.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
-				'kimi_api_key'      => array(
+				'kimi_api_key'     => array(
 					'type'        => 'password',
 					'label'       => __( 'API Key', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Moonshot AI API key from platform.moonshot.cn', 'mcp-ai-wpoos' ),
 					'placeholder' => __( 'Enter your Kimi API key', 'mcp-ai-wpoos' ),
 				),
-				'kimi_model'        => array(
+				'kimi_model'       => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Select the default Kimi model to use.', 'mcp-ai-wpoos' ),
@@ -82,14 +82,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 					),
 					'default'     => 'kimi-k2.6',
 				),
-				'kimi_base_url'     => array(
+				'kimi_base_url'    => array(
 					'type'        => 'text',
 					'label'       => __( 'Custom Base URL', 'mcp-ai-wpoos' ),
 					'description' => __( 'Optional. Use a custom base URL for Kimi API (e.g., for proxies). Leave empty to use the default.', 'mcp-ai-wpoos' ),
 					'placeholder' => 'https://api.moonshot.cn/v1',
 					'default'     => '',
 				),
-				'kimi_timeout'      => array(
+				'kimi_timeout'     => array(
 					'type'        => 'number',
 					'label'       => __( 'Request Timeout', 'mcp-ai-wpoos' ),
 					'description' => __( 'Timeout in seconds for Kimi API requests. Default: 60', 'mcp-ai-wpoos' ),
@@ -97,7 +97,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 					'min'         => 5,
 					'max'         => 300,
 				),
-				'kimi_temperature'  => array(
+				'kimi_temperature' => array(
 					'type'        => 'number',
 					'label'       => __( 'Default Temperature', 'mcp-ai-wpoos' ),
 					'description' => __( 'Sampling temperature (0-2). Higher values make output more random. Default: 0.7', 'mcp-ai-wpoos' ),
@@ -106,7 +106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 					'max'         => 2,
 					'step'        => 0.1,
 				),
-				'kimi_max_tokens'   => array(
+				'kimi_max_tokens'  => array(
 					'type'        => 'number',
 					'label'       => __( 'Default Max Completion Tokens', 'mcp-ai-wpoos' ),
 					'description' => __( 'Maximum tokens to generate. Default: 4096', 'mcp-ai-wpoos' ),
@@ -124,7 +124,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 		 * @param array $settings Current settings.
 		 */
 		public function render_test_connection( $settings ) {
-			$api_key = isset( $settings['kimi_api_key'] ) ? $settings['kimi_api_key'] : '';
+			$api_key  = isset( $settings['kimi_api_key'] ) ? $settings['kimi_api_key'] : '';
 			$disabled = empty( $api_key ) ? 'disabled' : '';
 			?>
 			<tr>
@@ -177,7 +177,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 
 			// Model.
 			if ( isset( $input['kimi_model'] ) ) {
-				$allowed_models = array_keys( self::get_available_models() );
+				$allowed_models          = array_keys( self::get_available_models() );
 				$sanitized['kimi_model'] = in_array( $input['kimi_model'], $allowed_models, true ) ? $input['kimi_model'] : 'kimi-k2.6';
 			}
 

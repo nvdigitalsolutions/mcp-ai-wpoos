@@ -1,19 +1,59 @@
 <?php
-/** List / Update / Delete Workflow Rules @package WP_MCP_AI_Pro @since 2.3.0 */
+/**
+ * List / Update / Delete Workflow Rules.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.3.0
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
+
+/**
+ * Manage Workflow Rules tool — list, update, or delete workflow automation rules.
+ */
 class WP_MCP_AI_Tool_Manage_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Check whether the tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $s['enable_crm_toolkit'] ); }
+	/**
+	 * Get the reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'manage_workflow_rules'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Manage Workflow Rules', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'List, update, or delete workflow automation rules.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the JSON Schema for the tool parameters.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -32,18 +72,40 @@ class WP_MCP_AI_Tool_Manage_Workflow_Rules implements WP_MCP_AI_Tool_Interface, 
 			),
 			'required'   => array( 'action' ),
 		); }
+	/**
+	 * Get the required WordPress capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'manage_options'; }
+	/**
+	 * Check whether this tool requires the base Pro version.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
 		return true; }
+	/**
+	 * Get capability flags for the tool.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'requires-capability' ); }
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments The tool arguments.
+	 * @param array $context   The execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$action = sanitize_key( $arguments['action'] );
 		if ( 'list' === $action ) {
 			$q     = new WP_Query(
 				array(
-					'post_type'      => 'mcp_ai_crm_workflow_rule',
+					'post_type'      => 'mcp_ai_crm_wf_rule',
 					'post_status'    => 'publish',
 					'posts_per_page' => min( 100, absint( $arguments['per_page'] ?? 20 ) ),
 					'paged'          => max( 1, absint( $arguments['page'] ?? 1 ) ),
@@ -66,7 +128,7 @@ class WP_MCP_AI_Tool_Manage_Workflow_Rules implements WP_MCP_AI_Tool_Interface, 
 		}
 		$rule_id = absint( $arguments['rule_id'] ?? 0 );
 		$p       = get_post( $rule_id );
-		if ( ! $p || 'mcp_ai_crm_workflow_rule' !== $p->post_type ) {
+		if ( ! $p || 'mcp_ai_crm_wf_rule' !== $p->post_type ) {
 			return new WP_Error( 'not_found', __( 'Rule not found.', 'mcp-ai-wpoos-pro' ) ); }
 		switch ( $action ) {
 			case 'update':

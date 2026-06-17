@@ -185,9 +185,30 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 	 * @return array Summary of the queued job.
 	 */
 	public static function enqueue() {
+		$current = NV_oOS_Docs_Hub_Rebuild_State::get();
+
+		// Auto-cancel a rebuild that has been stuck for > 30 minutes
+		// (cron stopped, server restart, etc.) so the next attempt
+		// doesn't silently no-op.
+		$stale_timeout = (int) apply_filters( 'nvoos_docs_hub_rebuild_stale_seconds', 30 * MINUTE_IN_SECONDS );
+		if ( NV_oOS_Docs_Hub_Rebuild_State::is_running( $current )
+			&& ! empty( $current['started_at'] )
+			&& ( time() - (int) $current['started_at'] ) > $stale_timeout
+		) {
+			error_log(
+				sprintf(
+					'[NV oOS Docs Hub] Auto-cancelling stale rebuild job %s (stuck in phase %s since %s).',
+					(string) $current['job_id'],
+					(string) $current['phase'],
+					gmdate( 'c', (int) $current['started_at'] )
+				)
+			);
+			self::cancel();
+			$current = NV_oOS_Docs_Hub_Rebuild_State::get();
+		}
+
 		// If a job is currently running, return its summary instead of
 		// stomping on it. The caller can cancel + re-enqueue if needed.
-		$current = NV_oOS_Docs_Hub_Rebuild_State::get();
 		if ( NV_oOS_Docs_Hub_Rebuild_State::is_running( $current ) ) {
 			return NV_oOS_Docs_Hub_Rebuild_State::to_summary( $current );
 		}
@@ -814,7 +835,14 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 	 */
 	private static function schedule_next_tick() {
 		if ( ! wp_next_scheduled( self::TICK_HOOK ) ) {
-			wp_schedule_single_event( time() + 1, self::TICK_HOOK );
+			$scheduled = wp_schedule_single_event( time() + 1, self::TICK_HOOK );
+			if ( false === $scheduled ) {
+				error_log(
+					'[NV oOS Docs Hub] Failed to schedule next async rebuild tick. ' .
+					'If WP-Cron is disabled (DISABLE_WP_CRON), the rebuild will stall. ' .
+					'Use the synchronous "Rebuild now" button to complete it.'
+				);
+			}
 		}
 	}
 
@@ -852,6 +880,15 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 	 * @return void
 	 */
 	private function fail( $message ) {
+		error_log(
+			sprintf(
+				'[NV oOS Docs Hub] Rebuild failed (phase %s, cursor %d): %s',
+				(string) NV_oOS_Docs_Hub_Rebuild_State::get()['phase'],
+				(int) NV_oOS_Docs_Hub_Rebuild_State::get()['cursor'],
+				(string) $message
+			)
+		);
+
 		wp_clear_scheduled_hook( self::TICK_HOOK );
 		$state                = NV_oOS_Docs_Hub_Rebuild_State::get();
 		$errors               = (array) $state['errors'];

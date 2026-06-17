@@ -70,10 +70,31 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 	/**
 	 * Generate post type slug from toolkit and entity.
 	 *
+	 * Uses an explicit map for known CRM post types that were created
+	 * before the toolkit data-store pattern was introduced.  Without this
+	 * map the auto-generated slug (e.g. mcp_crm_leads) differs from the
+	 * canonical post type (e.g. mcp_ai_lead), causing read-path tools to
+	 * fail with "Item not found" for records that actually exist.
+	 *
 	 * @return string Post type slug (max 20 characters).
 	 */
 	private function generate_post_type_slug() {
-		// Format: mcp_{toolkit}_{entity} (truncated to 20 chars).
+		// Canonical post-type map for toolkits where the auto-generated
+		// slug does not match the post type already in use.
+		$canonical_types = array(
+			'crm' => array(
+				'leads'      => 'mcp_ai_lead',
+				'contacts'   => 'mcp_crm_contacts',
+				'deals'      => 'mcp_ai_deal',
+				'activities' => 'mcp_ai_crm_activity',
+			),
+		);
+
+		if ( isset( $canonical_types[ $this->toolkit_slug ][ $this->entity_type ] ) ) {
+			return $canonical_types[ $this->toolkit_slug ][ $this->entity_type ];
+		}
+
+		// Default: mcp_{toolkit}_{entity} (truncated to 20 chars).
 		$slug = 'mcp_' . $this->toolkit_slug . '_' . $this->entity_type;
 		return substr( $slug, 0, 20 );
 	}
@@ -99,8 +120,17 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 
 	/**
 	 * Register custom post type.
+	 *
+	 * Skips registration when the post type already exists (e.g. because
+	 * it is one of the canonical types mapped in generate_post_type_slug
+	 * that was registered by another component).
 	 */
 	public function register_post_type() {
+		// Do not override a post type that is already registered.
+		if ( post_type_exists( $this->post_type ) ) {
+			return;
+		}
+
 		$labels = array(
 			'name'               => sprintf( '%s %s', ucwords( str_replace( '_', ' ', $this->toolkit_slug ) ), ucwords( str_replace( '_', ' ', $this->entity_type ) ) ),
 			'singular_name'      => sprintf( '%s %s', ucwords( str_replace( '_', ' ', $this->toolkit_slug ) ), rtrim( ucwords( str_replace( '_', ' ', $this->entity_type ) ), 's' ) ),

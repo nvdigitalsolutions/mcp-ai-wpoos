@@ -602,8 +602,8 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 		return new WP_Error(
 			'wp_mcp_ai_unsupported_decomposition',
-			/* translators: %s: function name */
 			sprintf(
+				/* translators: %s: function name */
 				__( 'Decomposition for "%s" is not encoded in this tool. See the paper\'s Table 4 / Figure 2 for the full catalogue.', 'mcp-ai-wpoos-pro' ),
 				$function
 			)

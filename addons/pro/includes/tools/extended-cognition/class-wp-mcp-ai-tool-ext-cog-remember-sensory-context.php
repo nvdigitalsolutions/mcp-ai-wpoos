@@ -20,7 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context {
+class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+
+	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
 	/**
 	 * WordPress option key prefix for stored sensory memories.
@@ -28,6 +30,33 @@ class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context {
 	 * @var string
 	 */
 	const MEMORY_OPTION_PREFIX = 'wp_mcp_ai_ext_cog_memory_';
+
+	/**
+	 * Get tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Remember Sensory Context (Extended Cognition)', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Store a labeled sensory snapshot in the assistant\'s persistent extended memory for future retrieval.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
 
 	/**
 	 * Get tool slug.
@@ -119,24 +148,37 @@ class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context {
 			return new WP_Error( 'missing_label', __( 'A label is required to store a sensory memory.', 'mcp-ai-wpoos' ) );
 		}
 
-		// Sanitize sensory_data: remove raw image data for storage if too large.
+		// Sanitize sensory_data: separate lightweight metadata from heavy base64.
+		// Base64 images are stored as media attachments (not in options)
+		// to avoid bloating the wp_options table. Only a reference (attachment ID
+		// or a "_truncated" flag) is kept in the memory record.
 		$settings       = wp_mcp_ai_ext_cog_get_settings();
 		$max_size_bytes = absint( $settings['max_capture_size_kb'] ) * 1024;
-		$stored_data    = array();
+		$light_data     = array();
+		$heavy_media    = array(); // attachment IDs keyed by sensor key.
 
 		foreach ( $sensory_data as $key => $value ) {
 			$safe_key = sanitize_key( $key );
 			if ( 'image_base64' === $safe_key || 'screen_base64' === $safe_key ) {
-				// Only store image data if within size limit.
 				if ( is_string( $value ) && strlen( $value ) <= $max_size_bytes ) {
-					$stored_data[ $safe_key ] = $value;
+					// Store as media attachment; keep only the ID in the record.
+					$attachment_id = self::save_base64_to_media( $value, $safe_key );
+					if ( ! is_wp_error( $attachment_id ) ) {
+						$heavy_media[ $safe_key ] = $attachment_id;
+						$light_data[ $safe_key ]  = array(
+							'attachment_id' => $attachment_id,
+							'stored_in'     => 'media_library',
+						);
+					} else {
+						$light_data[ $safe_key . '_truncated' ] = true;
+					}
 				} else {
-					$stored_data[ $safe_key . '_truncated' ] = true;
+					$light_data[ $safe_key . '_truncated' ] = true;
 				}
 			} elseif ( is_scalar( $value ) ) {
-				$stored_data[ $safe_key ] = sanitize_text_field( (string) $value );
+				$light_data[ $safe_key ] = sanitize_text_field( (string) $value );
 			} elseif ( is_array( $value ) ) {
-				$stored_data[ $safe_key ] = array_map(
+				$light_data[ $safe_key ] = array_map(
 					function ( $v ) {
 						return sanitize_text_field( (string) $v );
 					},
@@ -152,7 +194,8 @@ class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context {
 			'id'           => $memory_id,
 			'label'        => $label,
 			'tags'         => $tags,
-			'sensory_data' => $stored_data,
+			'sensory_data' => $light_data,
+			'heavy_media'  => $heavy_media,
 			'observation'  => $observation,
 			'user_id'      => $user_id,
 			'assistant_id' => $assistant_id,
@@ -211,14 +254,15 @@ class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context {
 		}
 
 		return array(
-			'success'    => true,
-			'memory_id'  => $memory_id,
-			'label'      => $label,
-			'tags'       => $tags,
-			'ttl_days'   => $ttl_days,
-			'expires_at' => $record['expires_at'],
-			'stored_via' => $stored_via_core ? 'core_memory_system' : 'ext_cog_options',
-			'message'    => sprintf(
+			'success'     => true,
+			'memory_id'   => $memory_id,
+			'label'       => $label,
+			'tags'        => $tags,
+			'ttl_days'    => $ttl_days,
+			'expires_at'  => $record['expires_at'],
+			'stored_via'  => $stored_via_core ? 'core_memory_system' : 'ext_cog_options',
+			'attachments' => $heavy_media,
+			'message'     => sprintf(
 				/* translators: %s: memory label */
 				__( 'Sensory memory "%s" stored successfully. Use this memory_id to retrieve or reference this context in future turns.', 'mcp-ai-wpoos' ),
 				$label
@@ -227,21 +271,66 @@ class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context {
 	}
 
 	/**
-	 * Check if the current user (or guest) is allowed to use sensors.
+	 * Save a base64-encoded image as a WordPress media attachment.
 	 *
-	 * @param array $context Execution context.
-	 * @return bool
+	 * Reuses the media-upload logic from WP_MCP_AI_Ext_Cog_REST so we
+	 * don't duplicate file-system code.
+	 *
+	 * @since 1.8.1
+	 *
+	 * @param string $base64     Base64 image data (with or without data URI prefix).
+	 * @param string $source_key Sensor key for filename prefix (e.g. "image_base64").
+	 * @return int|WP_Error Attachment ID on success.
 	 */
-	private function current_user_can_use_sensors( array $context ) {
-		if ( current_user_can( 'edit_posts' ) ) {
-			return true;
+	private static function save_base64_to_media( $base64, $source_key ) {
+		if ( ! function_exists( 'wp_upload_dir' ) ) {
+			return new WP_Error( 'upload_unavailable', __( 'Media upload not available.', 'mcp-ai-wpoos' ) );
 		}
 
-		$settings = wp_mcp_ai_ext_cog_get_settings();
-		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
-			return true;
+		$raw  = $base64;
+		$mime = 'image/jpeg';
+		$ext  = 'jpg';
+
+		if ( strpos( $raw, 'data:image/' ) === 0 ) {
+			$parts = explode( ',', $raw, 2 );
+			$raw   = isset( $parts[1] ) ? $parts[1] : $raw;
+			if ( strpos( $parts[0], 'image/png' ) !== false ) {
+				$mime = 'image/png';
+				$ext  = 'png';
+			}
 		}
 
-		return false;
+		$decoded = base64_decode( $raw, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		if ( false === $decoded ) {
+			return new WP_Error( 'decode_failed', __( 'Failed to decode image data.', 'mcp-ai-wpoos' ) );
+		}
+
+		$upload_dir = wp_upload_dir();
+		$filename   = sanitize_file_name(
+			'ext-cog-memory-' . $source_key . '-' . time() . '.' . $ext
+		);
+		$filepath   = trailingslashit( $upload_dir['path'] ) . $filename;
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		if ( false === file_put_contents( $filepath, $decoded ) ) {
+			return new WP_Error( 'write_failed', __( 'Failed to write image file.', 'mcp-ai-wpoos' ) );
+		}
+
+		$attachment = array(
+			'post_mime_type' => $mime,
+			'post_title'     => sanitize_file_name( $filename ),
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
+
+		$attach_id = wp_insert_attachment( $attachment, $filepath );
+
+		if ( ! is_wp_error( $attach_id ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			$attach_data = wp_generate_attachment_metadata( $attach_id, $filepath );
+			wp_update_attachment_metadata( $attach_id, $attach_data );
+		}
+
+		return $attach_id;
 	}
 }

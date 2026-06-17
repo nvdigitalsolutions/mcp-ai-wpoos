@@ -1,7 +1,7 @@
 # NV oOS Pro vs Base Version Guide
 
 > **GSD Context File** — Load this when making decisions about Base vs Pro feature placement.
-> Last reviewed: March 2026.
+> Last reviewed: June 2026.
 
 ---
 
@@ -11,8 +11,8 @@ NV oOS has two distribution modes:
 
 | Mode | Constant | Tools | Description |
 |------|---------|-------|-------------|
-| **Base** | `WP_MCP_AI_BASE_VERSION = true` | 165 core tools | Open-source, WordPress.org compatible |
-| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | 519+ tools (165 base + 348 pro + 6 core/memory) | Premium addon with third-party integrations |
+| **Base** | `WP_MCP_AI_BASE_VERSION = true` | ~195 core tools | Open-source, WordPress.org compatible |
+| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,000+ tools (~195 base + ~800+ Pro) | Premium addon with third-party integrations |
 
 ---
 
@@ -33,6 +33,10 @@ NV oOS has two distribution modes:
 - Enterprise features (DICOM imaging, custom workflows)
 - CRM integrations (Upwork, Bitwarden, Firefly)
 - Chat channels (Slack, Teams, Discord, WhatsApp, Telegram)
+- Server management (DietPi, SSH proxy, provisioning)
+- AI safety features (Layer I guardrails, jailbreak detection)
+- SaaS platforms (Schedule Anything with Stripe)
+- Advanced AI features (code interpreter, speech services via LibreChat)
 
 ---
 
@@ -86,7 +90,8 @@ if ( class_exists( 'RankMath' ) ) {
 mcp-ai-wpoos.php                    # Main plugin file
 mcp-ai-wpoos-base.php               # Base-only entry point
 includes/
-├── tools/class-wp-mcp-ai-tool-*.php    # 165 core tools
+├── tools/class-wp-mcp-ai-tool-*.php    # ~195 core tools
+├── class-wp-mcp-ai-transcript-retention.php  # Transcript retention (base)
 ├── class-wp-mcp-ai-rest.php            # Core REST API
 ├── class-wp-mcp-ai-admin.php           # Core admin
 └── ...
@@ -140,6 +145,9 @@ Available toolkit flags:
 - `enable_wpcode_toolkit`
 - `enable_media_toolkit`
 - `enable_workflow_toolkit`
+- `enable_dietpi_toolkit`
+- `enable_librechat_toolkit`
+- `enable_schedule_anything_toolkit`
 
 ---
 

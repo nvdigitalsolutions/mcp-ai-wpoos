@@ -12,10 +12,12 @@ Tools for creating and applying media collections and templates, processing imag
 |------|------|-------------|
 | Apply Collection Template | `apply_collection_template` | Apply a template to an existing media collection |
 | Apply Media Template | `apply_media_template` | Apply transformations from a media template |
+| Cleanup Orphaned Media | `cleanup_orphaned_media` | Remove orphaned media files and broken attachment records |
 | Create Media Collection | `create_media_collection` | Create a new grouped media collection |
 | Create Media Template | `create_media_template` | Define a reusable media transformation template |
 | List Media Templates | `list_media_templates` | List available media templates |
 | Process Collection | `process_collection` | Execute batch processing on a collection |
+| Scan Orphaned Media | `scan_orphaned_media` | Scan for orphaned and unreferenced media files |
 
 ## Dependencies
 

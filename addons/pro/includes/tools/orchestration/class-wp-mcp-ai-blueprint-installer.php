@@ -125,8 +125,32 @@ class WP_MCP_AI_Blueprint_Installer {
 				}
 			}
 		} else {
-			// CRM-style: abstracted blueprint.
-			$raw_meta   = $data['meta'] ?? array();
+			// Abstracted blueprint — two sub-formats:
+			// CRM-style: { name, meta: { profession, available_tools, instructions, ... } }.
+			// Flat/legacy: { name, profession, tools, instructions, ... } (no meta wrapper).
+			$raw_meta = $data['meta'] ?? array();
+
+			// If no meta wrapper but top-level keys exist, normalise flat format
+			// into CRM-style so remap_crm_meta_to_canonical() can process them.
+			if ( empty( $raw_meta ) && ! empty( $data['name'] ) ) {
+				if ( ! empty( $data['profession'] ) ) {
+					$raw_meta['profession'] = $data['profession'];
+				}
+				if ( ! empty( $data['tools'] ) && is_array( $data['tools'] ) ) {
+					$raw_meta['available_tools'] = $data['tools'];
+				}
+				if ( ! empty( $data['instructions'] ) ) {
+					$raw_meta['instructions'] = $data['instructions'];
+				}
+				// Carry over version and tags for raw-meta persistence.
+				if ( ! empty( $data['version'] ) ) {
+					$raw_meta['version'] = $data['version'];
+				}
+				if ( ! empty( $data['tags'] ) && is_array( $data['tags'] ) ) {
+					$raw_meta['tags'] = $data['tags'];
+				}
+			}
+
 			$post_title = $data['name'] ?? ucwords( str_replace( '-', ' ', $blueprint_slug ) );
 			// Use instructions as post_content when available (more useful than description).
 			$post_content = ! empty( $raw_meta['instructions'] )
@@ -318,15 +342,22 @@ class WP_MCP_AI_Blueprint_Installer {
 			}
 		}
 
-		// ── Provider / model / temperature defaults from plugin settings ──
+		// ── Provider / model / temperature ──
+		// Respect explicit per-blueprint overrides; fall back to global settings.
 		$settings         = get_option( 'wp_mcp_ai_settings', array() );
 		$default_provider = ! empty( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 		$default_model    = self::resolve_default_model( $settings, $default_provider );
 		$default_temp     = isset( $settings['default_temperature'] ) ? floatval( $settings['default_temperature'] ) : 0.7;
 
-		$canonical['_wp_mcp_ai_provider']    = sanitize_key( $default_provider );
-		$canonical['_wp_mcp_ai_model']       = sanitize_text_field( $default_model );
-		$canonical['_wp_mcp_ai_temperature'] = $default_temp;
+		$canonical['_wp_mcp_ai_provider']    = ! empty( $raw_meta['provider'] )
+			? sanitize_key( $raw_meta['provider'] )
+			: sanitize_key( $default_provider );
+		$canonical['_wp_mcp_ai_model']       = ! empty( $raw_meta['model'] )
+			? sanitize_text_field( $raw_meta['model'] )
+			: sanitize_text_field( $default_model );
+		$canonical['_wp_mcp_ai_temperature'] = isset( $raw_meta['temperature'] )
+			? floatval( $raw_meta['temperature'] )
+			: $default_temp;
 
 		return $canonical;
 	}

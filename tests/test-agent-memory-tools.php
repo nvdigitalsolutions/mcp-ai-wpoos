@@ -349,10 +349,9 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$flags = $tool->get_capability_flags();
 
 		$this->assertIsArray( $flags, 'Capability flags should be an array' );
-		$this->assertTrue( $flags['safe'], 'Tool should be safe' );
-		$this->assertTrue( $flags['local-only'], 'Tool should be local-only' );
-		$this->assertFalse( $flags['read-only'], 'Tool should not be read-only (writes data)' );
-		$this->assertTrue( $flags['requires-auth'], 'Tool should require authentication' );
+		$this->assertContains( 'local-only', $flags, 'Tool should be local-only' );
+		$this->assertNotContains( 'read-only', $flags, 'Tool should not be read-only (writes data)' );
+		$this->assertContains( 'requires-capability', $flags, 'Tool should require capability' );
 	}
 
 	/**
@@ -369,11 +368,10 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$flags = $tool->get_capability_flags();
 
 		$this->assertIsArray( $flags, 'Capability flags should be an array' );
-		$this->assertTrue( $flags['safe'], 'Tool should be safe' );
-		$this->assertTrue( $flags['local-only'], 'Tool should be local-only' );
-		$this->assertTrue( $flags['read-only'], 'Tool should be read-only' );
-		$this->assertTrue( $flags['cacheable'], 'Tool results should be cacheable' );
-		$this->assertTrue( $flags['requires-auth'], 'Tool should require authentication' );
+		$this->assertContains( 'local-only', $flags, 'Tool should be local-only' );
+		$this->assertContains( 'read-only', $flags, 'Tool should be read-only' );
+		$this->assertContains( 'cacheable', $flags, 'Tool results should be cacheable' );
+		$this->assertContains( 'requires-capability', $flags, 'Tool should require capability' );
 	}
 
 	/**
@@ -631,13 +629,13 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$flags = $tool->get_capability_flags();
 
 		$this->assertIsArray( $flags, 'Capability flags should be an array' );
-		$this->assertTrue( $flags['safe'], 'Tool should be safe (computation only)' );
-		$this->assertTrue( $flags['local-only'], 'Tool should be local-only' );
-		$this->assertTrue( $flags['read-only'], 'Tool should be read-only' );
-		$this->assertTrue( $flags['cacheable'], 'Tool results should be cacheable' );
-		$this->assertTrue( $flags['idempotent'], 'Tool should be idempotent' );
-		$this->assertFalse( $flags['uses-network'], 'Tool should not use network' );
-		$this->assertFalse( $flags['modifies-wp'], 'Tool should not modify WordPress data' );
+		$this->assertContains( 'read-only', $flags, 'Tool should be read-only' );
+		$this->assertContains( 'local-only', $flags, 'Tool should be local-only' );
+		$this->assertContains( 'idempotent', $flags, 'Tool should be idempotent' );
+		$this->assertContains( 'cacheable', $flags, 'Tool results should be cacheable' );
+		$this->assertContains( 'requires-capability', $flags, 'Tool should require capability' );
+		$this->assertNotContains( 'network-dependent', $flags, 'Tool should not use network' );
+		$this->assertNotContains( 'state-changing', $flags, 'Tool should not modify data' );
 	}
 
 	/**

@@ -132,7 +132,7 @@ class WP_MCP_AI_CRM_Ticket_Automation {
 		// Query all non-closed tickets.
 		$ticket_ids = get_posts(
 			array(
-				'post_type'      => 'mcp_ai_support_ticket',
+				'post_type'      => 'mcp_ai_ticket',
 				'post_status'    => 'publish',
 				'posts_per_page' => 200, // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- Background cron batch.
 				'fields'         => 'ids',

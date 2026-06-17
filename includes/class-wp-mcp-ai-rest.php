@@ -27,6 +27,8 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-thread-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-threads-controller.php';
 
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
@@ -533,6 +535,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Note: /files/{file_id}/download route now handled by Tools Controller (Phase 3.4).
 
 			// Note: /cron-status route now handled by Tools Controller (Phase 3.4).
+
+			// Register thread CRUD endpoints.
+			$threads_controller = new WP_MCP_AI_REST_Threads_Controller( $this );
+			$threads_controller->register_routes();
 
 			// Note: /mcp route now handled by MCP Controller (Phase 3.3).
 		}
@@ -3004,9 +3010,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$wants_streaming = $this->request_wants_event_stream( $request );
 
 			// Agentic loop: automatically execute tools server-side when LLM requests them.
-			// Default limit prevents infinite loops. /chat-client endpoint applies higher limit via filter.
-			// Temporarily reduced to 1 to prevent loops on tool errors while quality mapping is being fixed.
-			$max_iterations = 1;
+			// Industry standard base default is 5 iterations (OpenAI SDK defaults to 15; Anthropic
+			// Claude Code agent loop caps at 50). A base of 5 allows multi-step tool workflows
+			// (search → analyse → respond) while preventing runaway loops on misconfigured tools.
+			// Entry points raise this via the wp_mcp_ai_max_agentic_iterations filter:
+			// - Chat client (browser UI): 15 iterations (priority 10).
+			// - Channel webhooks (Telegram/Slack/WhatsApp): 10 iterations (priority 10).
+			// - Scheduled runs: 10 iterations (priority 10).
+			// - Admin setting (filter_max_agentic_iterations): priority 5.
+			// - PSO optimiser: dynamic (priority 50).
+			$max_iterations = 5;
 			$max_iterations = (int) apply_filters( 'wp_mcp_ai_max_agentic_iterations', $max_iterations, $assistant_config );
 			$max_iterations = max( 1, min( 50, $max_iterations ) ); // Safety bounds: 1-50.
 			$iteration      = 0;
@@ -3024,6 +3037,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// them when the final choice has empty content after the agentic loop
 			// exhausts its iteration cap.
 			$agentic_tool_messages = array();
+
+			// Accumulate cost across all agentic-loop LLM calls so that
+			// intermediate iterations are not silently discarded.
+			// Phase 8: Per-iteration cost tracking.
+			$agentic_cost_accumulator = array(
+				'cost_usd'                => 0.0,
+				'total_prompt_tokens'     => 0,
+				'total_completion_tokens' => 0,
+				'total_cached_tokens'     => 0,
+				'iterations'              => array(),
+			);
 
 			// If streaming is requested, use streaming-enabled agentic loop.
 			if ( $wants_streaming ) {
@@ -3106,6 +3130,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				WP_MCP_AI_Logger::log_error( $log_message, $context );
 				return $response;
+			}
+
+			// Capture cost of the initial LLM call before entering the agentic loop.
+			// This ensures the first response (which may contain tool_calls) is
+			// counted even when the loop executes multiple iterations.
+			$initial_cost = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'initial chat response' );
+			if ( is_array( $initial_cost ) ) {
+				$agentic_cost_accumulator['cost_usd']                += $initial_cost['cost_usd'];
+				$agentic_cost_accumulator['total_prompt_tokens']     += isset( $initial_cost['prompt_tokens'] ) ? (int) $initial_cost['prompt_tokens'] : 0;
+				$agentic_cost_accumulator['total_completion_tokens'] += isset( $initial_cost['completion_tokens'] ) ? (int) $initial_cost['completion_tokens'] : 0;
+				$agentic_cost_accumulator['iterations'][]             = array_merge(
+					$initial_cost,
+					array(
+						'iteration' => 0,
+						'phase'     => 'initial',
+					)
+				);
 			}
 
 			// Agentic loop: execute tools until LLM stops requesting them.
@@ -3387,20 +3428,39 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return $response;
 				}
 
+				// Capture cost for this agentic-loop LLM call so intermediate
+				// iterations are tracked and not silently discarded.
+				$iter_cost = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'agentic iteration ' . ( $iteration + 1 ) );
+				if ( is_array( $iter_cost ) ) {
+					$agentic_cost_accumulator['cost_usd']                += $iter_cost['cost_usd'];
+					$agentic_cost_accumulator['total_prompt_tokens']     += isset( $iter_cost['prompt_tokens'] ) ? (int) $iter_cost['prompt_tokens'] : 0;
+					$agentic_cost_accumulator['total_completion_tokens'] += isset( $iter_cost['completion_tokens'] ) ? (int) $iter_cost['completion_tokens'] : 0;
+					if ( isset( $iter_cost['cached_tokens'] ) ) {
+						$agentic_cost_accumulator['total_cached_tokens'] += (int) $iter_cost['cached_tokens'];
+					}
+					$agentic_cost_accumulator['iterations'][] = array_merge(
+						$iter_cost,
+						array(
+							'iteration' => $iteration + 1,
+							'phase'     => 'agentic',
+						)
+					);
+				}
+
 				++$iteration;
 
-				/**
-				 * Fires after a single agentic-loop iteration has completed in
-				 * the non-streaming REST chat path. Pure notification hook —
-				 * consumed by the measurement observer to emit the
-				 * `chat.agentic.iterations` histogram. No behaviour change.
-				 *
-				 * @since 1.3.0
-				 *
-				 * @param int   $iteration    Total iterations completed so far (1-based).
-				 * @param mixed $assistant_id Assistant identifier.
-				 */
-				do_action( 'wp_mcp_ai_agentic_iteration_complete', $iteration, $assistant_id );
+					/**
+					 * Fires after a single agentic-loop iteration has completed in
+					 * the non-streaming REST chat path. Pure notification hook —
+					 * consumed by the measurement observer to emit the
+					 * `chat.agentic.iterations` histogram. No behaviour change.
+					 *
+					 * @since 1.3.0
+					 *
+					 * @param int   $iteration    Total iterations completed so far (1-based).
+					 * @param mixed $assistant_id Assistant identifier.
+					 */
+					do_action( 'wp_mcp_ai_agentic_iteration_complete', $iteration, $assistant_id );
 			}
 
 			if ( $iteration >= $max_iterations ) {
@@ -3488,35 +3548,71 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$recorded_session_key = null;
 			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+				// Augment the response with tool_results so they are persisted
+				// alongside the LLM response in the transcript record. This
+				// ensures server-side transcripts carry the full agentic-loop
+				// context (tool names, results, and call IDs) for consumers.
+				$transcript_response = $response;
+				if ( ! empty( $tool_result_messages ) ) {
+					$transcript_response['tool_results'] = $tool_result_messages;
+				}
+
 				$recorded_session_key = WP_MCP_AI_Chat_Transcript_Recorder::record(
 					$assistant_id,
 					$messages,
 					$options,
-					$response,
+					$transcript_response,
 					$request,
 					$user_id,
 					$transcript_context
 				);
 			}
 
-			WP_MCP_AI_Usage_Tracker::record_chat_usage(
-				$user_id,
-				$assistant_id,
-				$options,
-				$response
-			);
+				WP_MCP_AI_Usage_Tracker::record_chat_usage(
+					$user_id,
+					$assistant_id,
+					$options,
+					$response
+				);
 
-			/**
-			 * Fires after a chat response has been received from the language model.
-			 *
-			 * @param int              $assistant_id Assistant identifier.
-			 * @param array            $response     Raw response array.
-			 * @param WP_REST_Request  $request      REST request instance.
-			 */
-			do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
+				/**
+				 * Fires after a chat response has been received from the language model.
+				 *
+				 * @param int              $assistant_id Assistant identifier.
+				 * @param array            $response     Raw response array.
+				 * @param WP_REST_Request  $request      REST request instance.
+				 */
+				do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 			// Extract cost information for Phase 7 Week 5-6 Enhanced Token Tracking.
 			$cost_data = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'chat response' );
+
+			// Merge accumulated agentic-loop costs into the final cost data so that
+			// intermediate iterations are not lost. The response payload (and all
+			// downstream consumers such as the billing observer and measurement
+			// collector) receive the true total cost.
+			if ( is_array( $cost_data ) ) {
+				$cost_data['cost_usd']                += $agentic_cost_accumulator['cost_usd'];
+				$cost_data['prompt_tokens']            = isset( $cost_data['prompt_tokens'] ) ? (int) $cost_data['prompt_tokens'] : 0;
+				$cost_data['completion_tokens']        = isset( $cost_data['completion_tokens'] ) ? (int) $cost_data['completion_tokens'] : 0;
+				$cost_data['prompt_tokens']           += $agentic_cost_accumulator['total_prompt_tokens'];
+				$cost_data['completion_tokens']       += $agentic_cost_accumulator['total_completion_tokens'];
+				$cost_data['agentic_accumulated']      = $agentic_cost_accumulator;
+				$cost_data['agentic_iterations_count'] = $iteration;
+			} elseif ( $agentic_cost_accumulator['cost_usd'] > 0.0 ) {
+				// Final response had no usable usage data, but intermediate iterations
+				// did — surface the accumulated cost so it is not entirely lost.
+				$cost_data = array(
+					'cost_usd'                 => $agentic_cost_accumulator['cost_usd'],
+					'provider'                 => isset( $options['provider'] ) ? $options['provider'] : 'openai',
+					'model'                    => isset( $options['model'] ) ? $options['model'] : '',
+					'is_estimated'             => false,
+					'prompt_tokens'            => $agentic_cost_accumulator['total_prompt_tokens'],
+					'completion_tokens'        => $agentic_cost_accumulator['total_completion_tokens'],
+					'agentic_accumulated'      => $agentic_cost_accumulator,
+					'agentic_iterations_count' => $iteration,
+				);
+			}
 
 			// Extract usage information from response for frontend display.
 			$usage_data = null;
@@ -3533,6 +3629,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 				if ( isset( $options['model'] ) ) {
 					$usage_data['model'] = $options['model'];
+				}
+
+				// Include accumulated agentic-loop tokens for frontend badge display.
+				if ( $agentic_cost_accumulator['total_prompt_tokens'] > 0 || $agentic_cost_accumulator['total_completion_tokens'] > 0 ) {
+					$usage_data['agentic_prompt_tokens']     = $agentic_cost_accumulator['total_prompt_tokens'];
+					$usage_data['agentic_completion_tokens'] = $agentic_cost_accumulator['total_completion_tokens'];
+					$usage_data['agentic_iterations']        = $iteration;
 				}
 			}
 
@@ -3712,6 +3815,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tool_result_messages  = array();
 			$agentic_tool_messages = array();
 			$native_streaming_used = false; // True when LM Studio real-time SSE streaming is active.
+
+			// Accumulate cost across all agentic-loop LLM calls so that
+			// intermediate iterations are not silently discarded.
+			// Phase 8: Per-iteration cost tracking (streaming path).
+			$agentic_cost_accumulator = array(
+				'cost_usd'                => 0.0,
+				'total_prompt_tokens'     => 0,
+				'total_completion_tokens' => 0,
+				'total_cached_tokens'     => 0,
+				'iterations'              => array(),
+			);
 
 			// Send status for attachment processing if attachments are present.
 			// This provides user feedback when images or documents are being analyzed.
@@ -3904,6 +4018,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$this->send_sse_done();
 				$this->finish_sse();
 				return;
+			}
+
+			// Capture cost of the initial LLM call before entering the agentic loop.
+			// This ensures the first response (which may contain tool_calls) is
+			// counted even when the loop executes multiple iterations.
+			$initial_cost = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'initial streaming chat response' );
+			if ( is_array( $initial_cost ) ) {
+				$agentic_cost_accumulator['cost_usd']                += $initial_cost['cost_usd'];
+				$agentic_cost_accumulator['total_prompt_tokens']     += isset( $initial_cost['prompt_tokens'] ) ? (int) $initial_cost['prompt_tokens'] : 0;
+				$agentic_cost_accumulator['total_completion_tokens'] += isset( $initial_cost['completion_tokens'] ) ? (int) $initial_cost['completion_tokens'] : 0;
+				$agentic_cost_accumulator['iterations'][]             = array_merge(
+					$initial_cost,
+					array(
+						'iteration' => 0,
+						'phase'     => 'initial',
+					)
+				);
 			}
 
 			// Remove native-streaming options to prevent them from leaking to a
@@ -4348,6 +4479,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return;
 				}
 
+				// Capture cost for this agentic-loop LLM call so intermediate
+				// iterations are tracked and not silently discarded.
+				$iter_cost = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'agentic streaming iteration ' . ( $iteration + 1 ) );
+				if ( is_array( $iter_cost ) ) {
+					$agentic_cost_accumulator['cost_usd']                += $iter_cost['cost_usd'];
+					$agentic_cost_accumulator['total_prompt_tokens']     += isset( $iter_cost['prompt_tokens'] ) ? (int) $iter_cost['prompt_tokens'] : 0;
+					$agentic_cost_accumulator['total_completion_tokens'] += isset( $iter_cost['completion_tokens'] ) ? (int) $iter_cost['completion_tokens'] : 0;
+					if ( isset( $iter_cost['cached_tokens'] ) ) {
+						$agentic_cost_accumulator['total_cached_tokens'] += (int) $iter_cost['cached_tokens'];
+					}
+					$agentic_cost_accumulator['iterations'][] = array_merge(
+						$iter_cost,
+						array(
+							'iteration' => $iteration + 1,
+							'phase'     => 'agentic',
+						)
+					);
+				}
+
 				++$iteration;
 
 				/**
@@ -4401,11 +4551,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$recorded_session_key = null;
 			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+				// Augment the response with tool_results so they are persisted
+				// alongside the LLM response in the transcript record.
+				$transcript_response = $response;
+				if ( ! empty( $tool_result_messages ) ) {
+					$transcript_response['tool_results'] = $tool_result_messages;
+				}
+
 				$recorded_session_key = WP_MCP_AI_Chat_Transcript_Recorder::record(
 					$assistant_id,
 					$messages,
 					$options,
-					$response,
+					$transcript_response,
 					$request,
 					$user_id,
 					$transcript_context
@@ -4423,6 +4580,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Extract cost information for Phase 7 Week 5-6 Enhanced Token Tracking (SSE streaming path).
 			$cost_data = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'streaming chat response' );
+
+			// Merge accumulated agentic-loop costs into the final cost data so that
+			// intermediate iterations are not lost. The response payload (and all
+			// downstream consumers such as the billing observer and measurement
+			// collector) receive the true total cost.
+			if ( is_array( $cost_data ) ) {
+				$cost_data['cost_usd']                += $agentic_cost_accumulator['cost_usd'];
+				$cost_data['prompt_tokens']            = isset( $cost_data['prompt_tokens'] ) ? (int) $cost_data['prompt_tokens'] : 0;
+				$cost_data['completion_tokens']        = isset( $cost_data['completion_tokens'] ) ? (int) $cost_data['completion_tokens'] : 0;
+				$cost_data['prompt_tokens']           += $agentic_cost_accumulator['total_prompt_tokens'];
+				$cost_data['completion_tokens']       += $agentic_cost_accumulator['total_completion_tokens'];
+				$cost_data['agentic_accumulated']      = $agentic_cost_accumulator;
+				$cost_data['agentic_iterations_count'] = $iteration;
+			} elseif ( $agentic_cost_accumulator['cost_usd'] > 0.0 ) {
+				// Final response had no usable usage data, but intermediate iterations
+				// did — surface the accumulated cost so it is not entirely lost.
+				$cost_data = array(
+					'cost_usd'                 => $agentic_cost_accumulator['cost_usd'],
+					'provider'                 => isset( $options['provider'] ) ? $options['provider'] : 'openai',
+					'model'                    => isset( $options['model'] ) ? $options['model'] : '',
+					'is_estimated'             => false,
+					'prompt_tokens'            => $agentic_cost_accumulator['total_prompt_tokens'],
+					'completion_tokens'        => $agentic_cost_accumulator['total_completion_tokens'],
+					'agentic_accumulated'      => $agentic_cost_accumulator,
+					'agentic_iterations_count' => $iteration,
+				);
+			}
 
 			// Extract thinking/reasoning text from the response if present.
 			// Supports multiple providers:
@@ -9194,10 +9378,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			$preview = '';
+			$preview    = '';
+			$turn_count = 0;
 
 			if ( '' !== $session_key ) {
-				$preview = $this->get_session_preview_text( $session_key, $user_id );
+				$session_data = $this->get_session_preview_and_turn_count( $session_key, $user_id );
+				$preview      = $session_data['preview'];
+				$turn_count   = $session_data['turn_count'];
+			}
+
+			// Fall back to SQL COUNT(*) only when the per-message count is zero (no
+			// request_payload rows found or payload missing messages).
+			if ( 0 === $turn_count && isset( $row['turn_count'] ) ) {
+				$turn_count = (int) $row['turn_count'];
 			}
 
 			return array(
@@ -9208,7 +9401,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'started_at'      => $this->format_transcript_timestamp( isset( $row['started_at'] ) ? $row['started_at'] : '', isset( $row['first_created'] ) ? $row['first_created'] : '' ),
 				'completed_at'    => $this->format_transcript_timestamp( isset( $row['completed_at'] ) ? $row['completed_at'] : '', isset( $row['last_created'] ) ? $row['last_created'] : '' ),
 				'updated_at'      => $this->format_transcript_timestamp( isset( $row['last_created'] ) ? $row['last_created'] : '', isset( $row['completed_at'] ) ? $row['completed_at'] : '' ),
-				'turn_count'      => isset( $row['turn_count'] ) ? (int) $row['turn_count'] : 0,
+				'turn_count'      => $turn_count,
 				'preview'         => $preview,
 			);
 		}
@@ -9267,6 +9460,85 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return '';
+		}
+
+		/**
+		 * Load preview text and accurate turn count from a session's stored
+		 * request_payload in a single query.
+		 *
+		 * The listing query uses COUNT(*) which always returns 1 after the
+		 * transcript recorder switched to upsert behaviour (each session_key
+		 * maps to exactly one row).  Counting user messages inside the
+		 * stored payload gives the true number of conversation turns.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $session_key Session key.
+		 * @param int    $user_id     User identifier.
+		 * @return array{preview: string, turn_count: int}
+		 */
+		protected function get_session_preview_and_turn_count( $session_key, $user_id ) {
+			global $wpdb;
+
+			$result = array(
+				'preview'    => '',
+				'turn_count' => 0,
+			);
+
+			if ( '' === $session_key ) {
+				return $result;
+			}
+
+			$table = esc_sql( $this->get_transcript_table_name() );
+
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql() above.
+			$query = $wpdb->prepare(
+				"SELECT request_payload
+	             FROM {$table}
+	             WHERE session_key = %s AND cct_author_id = %d
+	             ORDER BY cct_created ASC
+	             LIMIT 1",
+				$session_key,
+				absint( $user_id )
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+			$row = $wpdb->get_row( $query, ARRAY_A );
+
+			if ( empty( $row['request_payload'] ) ) {
+				return $result;
+			}
+
+			$payload = json_decode( $row['request_payload'], true );
+
+			if ( ! is_array( $payload ) || empty( $payload['messages'] ) || ! is_array( $payload['messages'] ) ) {
+				return $result;
+			}
+
+			$user_message_count = 0;
+
+			foreach ( $payload['messages'] as $message ) {
+				if ( ! isset( $message['role'] ) ) {
+					continue;
+				}
+
+				if ( 'user' === $message['role'] ) {
+					++$user_message_count;
+
+					// Capture the first user message as the preview.
+					if ( '' === $result['preview'] ) {
+						$text = $this->prepare_message_text( $message );
+						if ( '' !== $text ) {
+							$result['preview'] = $text;
+						}
+					}
+				}
+			}
+
+			$result['turn_count'] = $user_message_count;
+
+			return $result;
 		}
 
 		/**
@@ -11040,6 +11312,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Fallback: compute cost from tokens when the tool result includes
+			// provider/model/usage but no explicit cost. This covers tools that
+			// call external APIs (e.g. a DeepSeek assistant running a Gemini
+			// search tool) where the tool returns usage data but does not compute
+			// its own cost.
+			if ( ! isset( $usage_info['cost_usd'] ) && ! empty( $usage_info['provider'] ) && ! empty( $usage_info['model'] ) && class_exists( 'WP_MCP_AI_Cost_Calculator' ) ) {
+				$computed_cost = WP_MCP_AI_Cost_Calculator::calculate_cost(
+					$usage_info['provider'],
+					$usage_info['model'],
+					$prompt_tokens,
+					$completion_tokens
+				);
+				if ( $computed_cost > 0.0 ) {
+					$usage_info['cost_usd']           = $computed_cost;
+					$usage_info['cost_is_calculated'] = true;
+				}
+			}
+
 			return $usage_info;
 		}
 
@@ -11400,15 +11690,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Translate WordPress types to OOS domain types.
 				$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
 
-				// Reject requests with no assistant and no profession — matches the guard
-				// in the non-OOS handle_chat_request path.
-				if ( ! $assistant_id && ! $profession_id ) {
-					return new WP_Error(
-						'wp_mcp_ai_missing_assistant',
-						__( 'No assistant was provided and no default assistant is configured.', 'mcp-ai-wpoos' ),
-						array( 'status' => 400 )
-					);
-				}
+			// Reject requests with no assistant and no profession — matches the guard
+			// in the non-OOS handle_chat_request path.
+			if ( ! $assistant_id && ! $profession_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_assistant',
+					__( 'No assistant was provided and no default assistant is configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
 
 				$user_id = get_current_user_id();
 

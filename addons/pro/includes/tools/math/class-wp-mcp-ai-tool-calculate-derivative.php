@@ -167,6 +167,7 @@ class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, W
 
 		$result = array(
 			'success'    => true,
+			/* translators: %s: function expression */
 			'message'    => sprintf( __( 'Derivative calculated for: %s', 'mcp-ai-wpoos-pro' ), $function ),
 			'text'       => sprintf( 'd/d%s(%s) = %s', $variable, $function, $derivative ),
 			'function'   => $function,

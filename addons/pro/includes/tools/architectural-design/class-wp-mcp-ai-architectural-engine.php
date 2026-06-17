@@ -333,7 +333,7 @@ class WP_MCP_AI_Architectural_Engine {
 	/**
 	 * Calculate ASCE 7 simplified velocity pressure (Pa).
 	 *
-	 * q_z = 0.613 * Kz * Kzt * Kd * V^2  (V in m/s, q_z in Pa).
+	 * Q_z = 0.613 * Kz * Kzt * Kd * V^2  (V in m/s, q_z in Pa).
 	 * This is the simplified form suitable for low-rise residential and
 	 * small commercial buildings; complex projects must engage a structural
 	 * engineer.

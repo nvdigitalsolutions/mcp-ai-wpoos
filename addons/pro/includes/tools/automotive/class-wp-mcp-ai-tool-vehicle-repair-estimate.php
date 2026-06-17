@@ -752,7 +752,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 			. '"confidence" (float 0-1), '
 			. '"description" (string: brief description of the specific damage)), '
 			. '"has_damage" (boolean). Do not include any other text.',
-			$vehicle_desc ?: 'unknown'
+			$vehicle_desc ? $vehicle_desc : 'unknown'
 		);
 
 		$findings = array();
@@ -1507,14 +1507,11 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 		// Look up part cost.
 		if ( isset( $part_costs[ $part ][ $operation ] ) ) {
 			$unit_cost = $part_costs[ $part ][ $operation ];
-		} else {
-			// Generic fallback.
-			if ( 'replace' === $operation ) {
-				$unit_cost = 300;
-			} elseif ( 'refinish' === $operation ) {
-				$unit_cost  = 0; // Paint materials are included in labor typically.
-				$rate_group = 'paint';
-			}
+		} elseif ( 'replace' === $operation ) {
+			$unit_cost = 300;
+		} elseif ( 'refinish' === $operation ) {
+			$unit_cost  = 0; // Paint materials are included in labor typically.
+			$rate_group = 'paint';
 		}
 
 		// Apply severity multiplier to labor.
@@ -1601,7 +1598,8 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 				$vehicle['make'] ?? '',
 				$vehicle['model'] ?? ''
 			)
-		) ?: __( 'Unknown Vehicle', 'mcp-ai-wpoos' );
+		);
+		$vehicle_name = '' !== $vehicle_name ? $vehicle_name : __( 'Unknown Vehicle', 'mcp-ai-wpoos' );
 
 		$parts   = array();
 		$parts[] = sprintf(

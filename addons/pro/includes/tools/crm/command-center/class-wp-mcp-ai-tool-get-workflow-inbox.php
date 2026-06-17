@@ -2,22 +2,59 @@
 /**
  * Workflow Command Center Inbox — unified queue of things needing attention.
  * Hot leads + overdue follow-ups + pending approvals + unread replies.
- * @package WP_MCP_AI_Pro @since 2.3.0
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.3.0
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
+
+/**
+ * Workflow Command Center Inbox tool — unified queue of things needing attention.
+ */
 class WP_MCP_AI_Tool_Get_Workflow_Inbox implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Check whether the tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $s['enable_crm_toolkit'] ); }
+	/**
+	 * Get the reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'get_workflow_inbox'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Workflow Command Center Inbox', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Unified inbox: hot leads, overdue follow-ups, unread replies, and pending approvals.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the JSON Schema for the tool parameters.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -34,12 +71,34 @@ class WP_MCP_AI_Tool_Get_Workflow_Inbox implements WP_MCP_AI_Tool_Interface, WP_
 				),
 			),
 		); }
+	/**
+	 * Get the required WordPress capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts'; }
+	/**
+	 * Check whether this tool requires the base Pro version.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
 		return true; }
+	/**
+	 * Get capability flags for the tool.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'requires-capability' ); }
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments The tool arguments.
+	 * @param array $context   The execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid   = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		$per   = min( 50, max( 1, absint( $arguments['per_section'] ?? 10 ) ) );
@@ -152,7 +211,11 @@ class WP_MCP_AI_Tool_Get_Workflow_Inbox implements WP_MCP_AI_Tool_Interface, WP_
 
 		$total                = array_sum( array_column( $inbox['sections'], 'count' ) );
 		$inbox['total_items'] = $total;
-		$inbox['message']     = $total > 0 ? sprintf( __( '%d items need your attention.', 'mcp-ai-wpoos-pro' ), $total ) : __( 'Inbox is clear — great job!', 'mcp-ai-wpoos-pro' );
+		$inbox['message']     = $total > 0 ? sprintf(
+			/* translators: %d: number of inbox items needing attention */
+			__( '%d items need your attention.', 'mcp-ai-wpoos-pro' ),
+			$total
+		) : __( 'Inbox is clear — great job!', 'mcp-ai-wpoos-pro' );
 
 		/**
 		 * Filter the command center inbox response, allowing addons to inject

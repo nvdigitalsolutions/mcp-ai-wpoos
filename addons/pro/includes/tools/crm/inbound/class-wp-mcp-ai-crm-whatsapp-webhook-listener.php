@@ -142,8 +142,8 @@ class WP_MCP_AI_CRM_WhatsApp_Webhook_Listener {
 				// Process statuses (delivered, read, etc.) if needed — logged for now.
 				$statuses = isset( $value['statuses'] ) ? (array) $value['statuses'] : array();
 				foreach ( $statuses as $status ) {
-					// Status updates can be used for delivery tracking.
-					// Logged for future use.
+					// Status updates reserved for future delivery tracking.
+					continue;
 				}
 			}
 		}
@@ -203,6 +203,7 @@ class WP_MCP_AI_CRM_WhatsApp_Webhook_Listener {
 	 * @return bool True if signature is valid.
 	 */
 	private static function validate_hub_signature( $app_secret ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		$signature = isset( $_SERVER['HTTP_X_HUB_SIGNATURE_256'] )
 			? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ) )
 			: '';

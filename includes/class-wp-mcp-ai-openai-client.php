@@ -3271,6 +3271,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// Streaming flag — must be set before the real-time cURL guard below.
 			if ( ! empty( $options['stream'] ) ) {
 				$payload['stream'] = true;
+
+				// Include stream_options so the final chunk carries usage data.
+				// OpenAI requires stream_options.include_usage=true to emit
+				// prompt_tokens/completion_tokens/total_tokens in the last
+				// streaming delta. Without this the frontend cost/usage badges
+				// never render for the OpenAI provider.
+				if ( ! $should_use_responses_api ) {
+					$payload['stream_options'] = isset( $options['stream_options'] ) && is_array( $options['stream_options'] )
+						? $options['stream_options']
+						: array( 'include_usage' => true );
+				}
 			}
 
 			// Apply resource-aware max_tokens if not explicitly set.

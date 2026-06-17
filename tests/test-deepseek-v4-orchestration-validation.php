@@ -24,6 +24,12 @@ class Test_DeepSeek_V4_Orchestration_Validation extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// Ensure the orchestration seeder class is loaded — it is not part of
+		// the regular plugin bootstrap and must be required explicitly.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Orchestration_Seeder' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-orchestration-seeder.php';
+		}
 	}
 
 	/**

@@ -21,6 +21,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'WP_MCP_AI_Cloudways_Client' ) ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/cloudways/class-wp-mcp-ai-cloudways-client.php';
 }
+
+// Register Cloudways disconnect admin-post handler.
+add_action(
+	'admin_post_wp_mcp_ai_cloudways_disconnect',
+	function () {
+		if ( class_exists( 'WP_MCP_AI_Cloudways_Client' ) ) {
+			WP_MCP_AI_Cloudways_Client::instance()->handle_cloudways_disconnect();
+		}
+	}
+);
 if ( ! class_exists( 'WP_MCP_AI_Cloudways_Helpers' ) && ! function_exists( 'wp_mcp_ai_is_cloudways_toolkit_enabled' ) ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/cloudways/class-wp-mcp-ai-cloudways-helpers.php';
 }

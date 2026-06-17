@@ -266,7 +266,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model        = isset( $settings['gemini_image_model'] ) && '' !== $settings['gemini_image_model'] ? sanitize_text_field( $settings['gemini_image_model'] ) : 'gemini-2.5-flash-image';
+			$default_model        = isset( $settings['gemini_image_model'] ) && '' !== $settings['gemini_image_model'] ? sanitize_text_field( $settings['gemini_image_model'] ) : 'gemini-3.1-flash-image';
 			$default_mime_type    = isset( $settings['gemini_image_mime_type'] ) && '' !== $settings['gemini_image_mime_type'] ? $this->normalise_image_mime_type( $settings['gemini_image_mime_type'] ) : 'image/png';
 			$default_aspect_ratio = isset( $settings['gemini_image_aspect_ratio'] ) && '' !== $settings['gemini_image_aspect_ratio'] ? $this->normalise_aspect_ratio( $settings['gemini_image_aspect_ratio'] ) : '4:3';
 
@@ -506,7 +506,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model        = isset( $settings['gemini_image_model'] ) && '' !== $settings['gemini_image_model'] ? sanitize_text_field( $settings['gemini_image_model'] ) : 'gemini-2.5-flash-image';
+			$default_model        = isset( $settings['gemini_image_model'] ) && '' !== $settings['gemini_image_model'] ? sanitize_text_field( $settings['gemini_image_model'] ) : 'gemini-3.1-flash-image';
 			$default_mime_type    = isset( $settings['gemini_image_mime_type'] ) && '' !== $settings['gemini_image_mime_type'] ? $this->normalise_image_mime_type( $settings['gemini_image_mime_type'] ) : 'image/png';
 			$default_aspect_ratio = isset( $settings['gemini_image_aspect_ratio'] ) && '' !== $settings['gemini_image_aspect_ratio'] ? $this->normalise_aspect_ratio( $settings['gemini_image_aspect_ratio'] ) : '4:3';
 
@@ -1912,6 +1912,16 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$normalized = $this->normalize_response( $decoded );
 
+			// Extract text content from the first candidate for direct access.
+			if ( isset( $decoded['candidates'][0]['content']['parts'] ) && is_array( $decoded['candidates'][0]['content']['parts'] ) ) {
+				foreach ( $decoded['candidates'][0]['content']['parts'] as $part ) {
+					if ( isset( $part['text'] ) ) {
+						$normalized['content'] = (string) $part['text'];
+						break;
+					}
+				}
+			}
+
 			// Extract Google Maps context token if available.
 			if ( isset( $decoded['candidates'][0]['googleMapsWidgetContextToken'] ) ) {
 				$normalized['google_maps_context_token'] = $decoded['candidates'][0]['googleMapsWidgetContextToken'];
@@ -2357,7 +2367,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			// mark the last tool definition with cache_control so Gemini can cache the
 			// tool definitions across turns (mirrors what Anthropic does).
 			if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $payload['tools'] ) && is_array( $payload['tools'] ) ) {
-				$last_tool_idx = count( $payload['tools'] ) - 1;
+				$last_tool_idx                                       = count( $payload['tools'] ) - 1;
 				$payload['tools'][ $last_tool_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
 			}
 
@@ -3631,9 +3641,22 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 							}
 
 							if ( isset( $part['functionResponse'] ) && is_array( $part['functionResponse'] ) ) {
+								// Preserve function response as structured data so the
+								// frontend can render it with proper tool-call linkage.
+								// This mirrors the OpenAI-compatible tool_result format
+								// that the chat UI expects for agentic loop messages.
+								$function_name   = isset( $part['functionResponse']['name'] )
+									? sanitize_text_field( $part['functionResponse']['name'] )
+									: '';
+								$function_result = isset( $part['functionResponse']['response'] )
+									? $part['functionResponse']['response']
+									: array();
+
 								$segments[] = array(
-									'type' => 'text',
-									'text' => $this->render_function_response_text( $part['functionResponse'] ),
+									'type'        => 'tool_result',
+									'tool_name'   => $function_name,
+									'tool_result' => $function_result,
+									'text'        => $this->render_function_response_text( $part['functionResponse'] ),
 								);
 							}
 						}

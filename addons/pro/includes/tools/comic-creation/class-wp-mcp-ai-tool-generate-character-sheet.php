@@ -4,7 +4,7 @@
  *
  * Takes a character name, description, and style notes, then uses AI (DALL-E,
  * Gemini Imagen, or similar) to create a character reference image. Creates a
- * `mcp_ai_comic_character` post and uploads the generated image as a WordPress
+ * `mcp_ai_comic_char` post and uploads the generated image as a WordPress
  * attachment for reuse across panels.
  *
  * @package WP_MCP_AI_Pro
@@ -170,7 +170,7 @@ class WP_MCP_AI_Tool_Generate_Character_Sheet implements WP_MCP_AI_Tool_Interfac
 
 		// Create character post.
 		$post_data = array(
-			'post_type'    => 'mcp_ai_comic_character',
+			'post_type'    => 'mcp_ai_comic_char',
 			'post_title'   => wp_strip_all_tags( $name ),
 			'post_content' => $description,
 			'post_status'  => 'publish',

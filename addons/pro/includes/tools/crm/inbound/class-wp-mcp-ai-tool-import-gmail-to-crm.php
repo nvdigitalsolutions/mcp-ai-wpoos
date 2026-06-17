@@ -8,11 +8,18 @@
  * extract/upsert lead → score → qualify). Spam/non-sales emails are
  * filtered out by the classifier before reaching the CRM.
  *
+ * Supports incremental sync via Gmail historyId (poll only changes since
+ * last sync), idempotent processing via messageId dedup, and thread-level
+ * grouping via Gmail threadId.
+ *
  * Industry-standard pattern used by Copper, Streak, HubSpot, and
  * Salesflare: Gmail → SDR pipeline → CRM lead/deal records.
  *
  * @package WP_MCP_AI_Pro
  * @since 2.4.0
+ * @since 2.9.0 Added historyId incremental sync, messageId dedup,
+ *              threadId tracking, and message logging via
+ *              WP_MCP_AI_CRM_Message_Log.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -29,22 +36,60 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1';
 
+	/**
+	 * Option key prefix for storing last historyId per connection.
+	 *
+	 * @since 2.9.0
+	 * @var string
+	 */
+	const HISTORY_ID_OPTION_PREFIX = 'wp_mcp_ai_crm_gmail_history_id_';
+
+	/**
+	 * Whether this tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $s['enable_crm_toolkit'] ); }
 
+	/**
+	 * Reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'import_gmail_to_crm'; }
 
+	/**
+	 * Tool display name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Import Gmail to CRM', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Searches your Gmail inbox and imports matching emails into the CRM pipeline. Each email is classified for intent, scored, and upserted as a lead — spam and newsletters are automatically filtered out. Use this to turn raw inbox emails into structured CRM leads.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -69,15 +114,37 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			'required'   => array( 'query' ),
 		); }
 
+	/**
+	 * Required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts'; }
 
+	/**
+	 * Whether this tool requires base pro.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
 		return true; }
 
+	/**
+	 * Capability flags.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'outbound-network', 'database-write', 'requires-capability' ); }
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
 			return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }
@@ -86,9 +153,11 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
 
-		$query       = sanitize_text_field( $arguments['query'] ?? '' );
-		$max_results = min( 25, max( 1, absint( $arguments['max_results'] ?? 10 ) ) );
-		$auto_reply  = ! empty( $arguments['auto_reply'] );
+		$query           = sanitize_text_field( $arguments['query'] ?? '' );
+		$max_results     = min( 25, max( 1, absint( $arguments['max_results'] ?? 10 ) ) );
+		$auto_reply      = ! empty( $arguments['auto_reply'] );
+		$connection_id   = sanitize_text_field( $arguments['connection_id'] ?? '' );
+		$use_history_sync = ! empty( $arguments['use_history_sync'] );
 
 		if ( '' === $query ) {
 			// Fall back to the configured default Gmail query from CRM settings.
@@ -113,9 +182,37 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			return $access_token;
 		}
 
-		// Search Gmail for matching messages.
-		$gmail_user = $creds['user_email'] ?: 'me';
-		$messages   = $this->list_and_fetch_messages( $gmail_user, $query, $max_results, $access_token );
+		// Search Gmail for matching messages (with optional historyId incremental sync).
+		$gmail_user = $creds['user_email'] ? $creds['user_email'] : 'me';
+
+		if ( $use_history_sync && ! empty( $connection_id ) ) {
+			$last_history_id = get_option( self::HISTORY_ID_OPTION_PREFIX . $connection_id, '' );
+			if ( ! empty( $last_history_id ) ) {
+				$messages = $this->list_history_changes( $gmail_user, $last_history_id, $max_results, $access_token, $connection_id );
+				if ( is_wp_error( $messages ) ) {
+					// Fall back to search-based if history fails.
+					$messages = $this->list_and_fetch_messages( $gmail_user, $query, $max_results, $access_token, $connection_id );
+				} elseif ( empty( $messages ) ) {
+					// No changes — return early.
+					return array(
+						'success'       => true,
+						'message'       => __( 'No new messages since last sync.', 'mcp-ai-wpoos-pro' ),
+						'total_found'   => 0,
+						'leads_created' => 0,
+						'leads_updated' => 0,
+						'skipped_spam'  => 0,
+						'skipped_noise' => 0,
+						'skipped_dupes' => 0,
+						'results'       => array(),
+					);
+				}
+			} else {
+				$messages = $this->list_and_fetch_messages( $gmail_user, $query, $max_results, $access_token, $connection_id );
+			}
+		} else {
+			$messages = $this->list_and_fetch_messages( $gmail_user, $query, $max_results, $access_token, $connection_id );
+		}
+
 		if ( is_wp_error( $messages ) ) {
 			return $messages;
 		}
@@ -152,6 +249,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			'leads_updated' => 0,
 			'skipped_spam'  => 0,
 			'skipped_noise' => 0,
+			'skipped_dupes' => 0,
 			'errors'        => 0,
 		);
 		$results = array();
@@ -162,6 +260,43 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			$subject      = $msg['subject'] ?? '';
 			$body         = $msg['body'] ?? '';
 			$gmail_id     = $msg['id'] ?? '';
+			$thread_id    = $msg['thread_id'] ?? '';
+
+			// ── Dedup check: skip if already imported. ──
+			if ( ! empty( $gmail_id ) && class_exists( 'WP_MCP_AI_CRM_Message_Log' ) ) {
+				if ( WP_MCP_AI_CRM_Message_Log::is_duplicate( 'email', $gmail_id, $connection_id ) ) {
+					++$stats['skipped_dupes'];
+					$results[] = array(
+						'gmail_id' => $gmail_id,
+						'subject'  => $subject,
+						'from'     => $sender_email,
+						'status'   => 'skipped_duplicate',
+						'reason'   => __( 'Already imported — skipped.', 'mcp-ai-wpoos-pro' ),
+					);
+					continue;
+				}
+			}
+
+			// ── Log raw message before pipeline processing. ──
+			$message_log_id = 0;
+			if ( class_exists( 'WP_MCP_AI_CRM_Message_Log' ) ) {
+				$log_result = WP_MCP_AI_CRM_Message_Log::log(
+					array(
+						'message_id'    => $gmail_id,
+						'thread_id'     => $thread_id,
+						'channel'       => 'email',
+						'sender_email'  => $sender_email,
+						'sender_name'   => $sender_name,
+						'subject'       => $subject,
+						'body'          => $body,
+						'source'        => 'gmail_import',
+						'connection_id' => $connection_id,
+					)
+				);
+				if ( ! is_wp_error( $log_result ) ) {
+					$message_log_id = $log_result;
+				}
+			}
 
 			if ( empty( $body ) && empty( $subject ) ) {
 				++$stats['skipped_noise'];
@@ -248,12 +383,19 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 				++$stats['leads_updated'];
 			}
 
+			// Link message log to contact.
+			if ( $message_log_id && $contact_id && class_exists( 'WP_MCP_AI_CRM_Message_Log' ) ) {
+				WP_MCP_AI_CRM_Message_Log::link_to_contact( $message_log_id, $contact_id );
+			}
+
 			$results[] = array(
 				'gmail_id'       => $gmail_id,
+				'thread_id'      => $thread_id,
 				'subject'        => $subject,
 				'from'           => $sender_email,
 				'status'         => $is_new_lead ? 'lead_created' : 'lead_updated',
 				'contact_id'     => $contact_id,
+				'message_log_id' => $message_log_id,
 				'intent'         => $intent,
 				'lead_score'     => $lead_score,
 				'score_label'    => $score_label,
@@ -264,13 +406,14 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'success' => true,
 			'message' => sprintf(
-				/* translators: 1: total found, 2: leads created, 3: leads updated, 4: skipped spam, 5: skipped noise */
-				__( 'Processed %1$d emails: %2$d leads created, %3$d updated, %4$d spam filtered, %5$d noise skipped.', 'mcp-ai-wpoos-pro' ),
+				/* translators: 1: total found, 2: leads created, 3: leads updated, 4: skipped spam, 5: skipped noise, 6: skipped duplicates */
+				__( 'Processed %1$d emails: %2$d leads created, %3$d updated, %4$d spam filtered, %5$d noise skipped, %6$d duplicates skipped.', 'mcp-ai-wpoos-pro' ),
 				$stats['total_found'],
 				$stats['leads_created'],
 				$stats['leads_updated'],
 				$stats['skipped_spam'],
-				$stats['skipped_noise']
+				$stats['skipped_noise'],
+				$stats['skipped_dupes']
 			),
 			'stats'   => $stats,
 			'results' => $results,
@@ -365,19 +508,23 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * List messages matching the query, then fetch full details for each.
 	 *
-	 * @param string $gmail_user   Gmail user ('me' or email address).
-	 * @param string $query        Gmail search query.
-	 * @param int    $max_results  Max messages to fetch.
-	 * @param string $access_token OAuth access token.
+	 * @since 2.4.0
+	 * @since 2.9.0 Added $connection_id param for historyId persistence.
+	 *
+	 * @param string $gmail_user    Gmail user ('me' or email address).
+	 * @param string $query         Gmail search query.
+	 * @param int    $max_results   Max messages to fetch.
+	 * @param string $access_token  OAuth access token.
+	 * @param string $connection_id Optional connection ID for historyId tracking.
 	 * @return array<int, array>|WP_Error Array of message data or error.
 	 */
-	private function list_and_fetch_messages( $gmail_user, $query, $max_results, $access_token ) {
+	private function list_and_fetch_messages( $gmail_user, $query, $max_results, $access_token, $connection_id = '' ) {
 		// List message IDs.
 		$list_url = add_query_arg(
 			array(
 				'q'          => $query,
 				'maxResults' => $max_results,
-				'fields'     => 'messages(id)',
+				'fields'     => 'messages(id,threadId)',
 			),
 			self::GMAIL_API_BASE . '/users/' . rawurlencode( $gmail_user ) . '/messages'
 		);
@@ -401,7 +548,11 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		if ( 200 !== $code ) {
 			return new WP_Error(
 				'gmail_list_failed',
-				sprintf( __( 'Gmail list API returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $code )
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Gmail list API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
 			);
 		}
 
@@ -419,9 +570,170 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 
 			$detail = $this->fetch_message( $gmail_user, $msg_ref['id'], $access_token );
 			if ( ! is_wp_error( $detail ) && ! empty( $detail ) ) {
+				// Attach thread_id from list response if not in detail.
+				if ( empty( $detail['thread_id'] ) && ! empty( $msg_ref['threadId'] ) ) {
+					$detail['thread_id'] = $msg_ref['threadId'];
+				}
 				$messages[] = $detail;
 			}
 		}
+
+		// Persist the latest historyId for incremental sync.
+		if ( ! empty( $connection_id ) && ! empty( $body['resultSizeEstimate'] ) ) {
+			$profile_response = wp_remote_get(
+				self::GMAIL_API_BASE . '/users/' . rawurlencode( $gmail_user ) . '/profile',
+				array(
+					'timeout' => 10,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $access_token,
+						'Accept'        => 'application/json',
+					),
+				)
+			);
+			if ( ! is_wp_error( $profile_response ) && 200 === wp_remote_retrieve_response_code( $profile_response ) ) {
+				$profile_body = json_decode( wp_remote_retrieve_body( $profile_response ), true );
+				if ( ! empty( $profile_body['historyId'] ) ) {
+					update_option(
+						self::HISTORY_ID_OPTION_PREFIX . $connection_id,
+						$profile_body['historyId'],
+						false
+					);
+				}
+			}
+		}
+
+		return $messages;
+	}
+
+	/**
+	 * List Gmail history changes since a given historyId (incremental sync).
+	 *
+	 * Uses Gmail users.history.list() to fetch only messages added/modified
+	 * since the last sync, then fetches full message details for each.
+	 * This is the industry-standard approach used by HubSpot, Copper, and
+	 * Salesforce for efficient background email import.
+	 *
+	 * @since 2.9.0
+	 *
+	 * @param string $gmail_user    Gmail user.
+	 * @param string $start_history_id History ID to start from.
+	 * @param int    $max_results   Max messages to fetch.
+	 * @param string $access_token  OAuth access token.
+	 * @param string $connection_id Connection ID for persisting historyId.
+	 * @return array<int, array>|WP_Error Array of message data or error.
+	 */
+	private function list_history_changes( $gmail_user, $start_history_id, $max_results, $access_token, $connection_id ) {
+		$history_url = add_query_arg(
+			array(
+				'startHistoryId' => $start_history_id,
+				'maxResults'     => min( 50, $max_results * 2 ), // History can have more entries.
+				'historyTypes'   => 'messageAdded',
+				'fields'         => 'historyId,history(messagesAdded(message(id,threadId)))',
+			),
+			self::GMAIL_API_BASE . '/users/' . rawurlencode( $gmail_user ) . '/history'
+		);
+
+		$response = wp_remote_get(
+			$history_url,
+			array(
+				'timeout' => 20,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+					'Accept'        => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( 404 === $code ) {
+			// History ID is too old; Gmail recommends a full sync.
+			delete_option( self::HISTORY_ID_OPTION_PREFIX . $connection_id );
+			return new WP_Error(
+				'gmail_history_expired',
+				__( 'History ID expired — full re-sync required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+		if ( 200 !== $code ) {
+			return new WP_Error(
+				'gmail_history_failed',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Gmail history API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( ! is_array( $body ) || empty( $body['history'] ) ) {
+			// No changes, but update historyId.
+			if ( ! empty( $body['historyId'] ) ) {
+				update_option(
+					self::HISTORY_ID_OPTION_PREFIX . $connection_id,
+					$body['historyId'],
+					false
+				);
+			}
+			return array();
+		}
+
+		// Collect all new message IDs and thread IDs from history.
+		$msg_map  = array(); // message_id => thread_id.
+		$new_history_id = isset( $body['historyId'] ) ? $body['historyId'] : $start_history_id;
+
+		foreach ( $body['history'] as $history_entry ) {
+			if ( ! empty( $history_entry['historyId'] ) ) {
+				$new_history_id = $history_entry['historyId'];
+			}
+			if ( empty( $history_entry['messagesAdded'] ) || ! is_array( $history_entry['messagesAdded'] ) ) {
+				continue;
+			}
+			foreach ( $history_entry['messagesAdded'] as $added ) {
+				if ( ! empty( $added['message']['id'] ) ) {
+					$msg_map[ $added['message']['id'] ] = $added['message']['threadId'] ?? '';
+				}
+			}
+		}
+
+		// Limit to max_results.
+		$msg_ids = array_keys( $msg_map );
+		$msg_ids = array_slice( $msg_ids, 0, $max_results );
+
+		if ( empty( $msg_ids ) ) {
+			// Persist the new history ID even if no messages.
+			if ( $new_history_id !== $start_history_id ) {
+				update_option(
+					self::HISTORY_ID_OPTION_PREFIX . $connection_id,
+					$new_history_id,
+					false
+				);
+			}
+			return array();
+		}
+
+		// Fetch full details for each new message.
+		$messages = array();
+		foreach ( $msg_ids as $msg_id ) {
+			$detail = $this->fetch_message( $gmail_user, $msg_id, $access_token );
+			if ( ! is_wp_error( $detail ) && ! empty( $detail ) ) {
+				// Attach thread_id.
+				if ( empty( $detail['thread_id'] ) && ! empty( $msg_map[ $msg_id ] ) ) {
+					$detail['thread_id'] = $msg_map[ $msg_id ];
+				}
+				$messages[] = $detail;
+			}
+		}
+
+		// Persist the final history ID.
+		update_option(
+			self::HISTORY_ID_OPTION_PREFIX . $connection_id,
+			$new_history_id,
+			false
+		);
 
 		return $messages;
 	}
@@ -491,6 +803,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 
 		return array(
 			'id'         => $data['id'] ?? $message_id,
+			'thread_id'  => $data['threadId'] ?? '',
 			'from_email' => $from_email,
 			'from_name'  => $from_name,
 			'subject'    => $subject,

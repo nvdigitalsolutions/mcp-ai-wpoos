@@ -101,10 +101,22 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
 		if ( ! current_user_can( 'read' ) ) {
@@ -298,7 +310,7 @@ The downloaded file is empty.',
 			}
 			$temp_file = wp_mcp_ai_tempnam( 'mcp_ai_pdf_', '.pdf' );
 			if ( is_wp_error( $temp_file ) ) {
-				$temp_file = wp_tempnam( 'mcp_ai_pdf_' ); // fallback
+				$temp_file = wp_tempnam( 'mcp_ai_pdf_' ); // Fallback.
 			}
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			if ( false === file_put_contents( $temp_file, $body ) ) {
@@ -515,7 +527,7 @@ Failed to extract text from PDF: %s',
 		if ( ! empty( $pdftotext ) ) {
 			$output_file = wp_mcp_ai_tempnam( 'txt_', '.txt' );
 			if ( is_wp_error( $output_file ) ) {
-				$output_file = tempnam( sys_get_temp_dir(), 'txt_' ); // fallback
+				$output_file = tempnam( sys_get_temp_dir(), 'txt_' ); // Fallback.
 			}
 			$cmd = sprintf(
 				'pdftotext %s %s %s 2>&1',

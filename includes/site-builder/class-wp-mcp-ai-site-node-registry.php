@@ -76,6 +76,8 @@ if ( ! class_exists( 'WP_MCP_AI_Site_Node_Registry' ) ) :
 
 		/**
 		 * Prevent unserialisation.
+		 *
+		 * @throws \Exception Always.
 		 */
 		public function __wakeup() {
 			throw new \Exception( 'Cannot unserialise singleton' );
@@ -119,9 +121,9 @@ if ( ! class_exists( 'WP_MCP_AI_Site_Node_Registry' ) ) :
 		 */
 		protected function load_default_nodes() {
 			$default_nodes = array(
-				// Source nodes
-				'WP_MCP_AI_Site_Node_WP_Query'      => WP_MCP_AI_PATH . 'includes/site-builder/nodes/class-wp-mcp-ai-site-node-wp-query.php',
-				// Layout nodes
+				// Source nodes.
+				'WP_MCP_AI_Site_Node_WP_Query'       => WP_MCP_AI_PATH . 'includes/site-builder/nodes/class-wp-mcp-ai-site-node-wp-query.php',
+				// Layout nodes.
 				'WP_MCP_AI_Site_Node_Text_Block'     => WP_MCP_AI_PATH . 'includes/site-builder/nodes/class-wp-mcp-ai-site-node-text-block.php',
 				'WP_MCP_AI_Site_Node_Flex_Container' => WP_MCP_AI_PATH . 'includes/site-builder/nodes/class-wp-mcp-ai-site-node-flex-container.php',
 			);
@@ -167,7 +169,7 @@ if ( ! class_exists( 'WP_MCP_AI_Site_Node_Registry' ) ) :
 		 * @return void
 		 */
 		public function register_node( WP_MCP_AI_Site_Node_Interface $node ) {
-			$slug = $node->get_slug();
+			$slug                 = $node->get_slug();
 			$this->nodes[ $slug ] = $node;
 		}
 
@@ -203,9 +205,12 @@ if ( ! class_exists( 'WP_MCP_AI_Site_Node_Registry' ) ) :
 		 * @return WP_MCP_AI_Site_Node_Interface[]
 		 */
 		public function get_nodes_by_category( string $category ): array {
-			return array_filter( $this->nodes, function ( $node ) use ( $category ) {
-				return $node->get_category() === $category;
-			} );
+			return array_filter(
+				$this->nodes,
+				function ( $node ) use ( $category ) {
+					return $node->get_category() === $category;
+				}
+			);
 		}
 
 		/**
@@ -230,10 +235,13 @@ if ( ! class_exists( 'WP_MCP_AI_Site_Node_Registry' ) ) :
 			}
 
 			// Stable ordering for the UI: sort by category then name.
-			usort( $result, function ( $a, $b ) {
-				$cat = strcmp( $a['category'], $b['category'] );
-				return 0 !== $cat ? $cat : strcmp( $a['name'], $b['name'] );
-			} );
+			usort(
+				$result,
+				function ( $a, $b ) {
+					$cat = strcmp( $a['category'], $b['category'] );
+					return 0 !== $cat ? $cat : strcmp( $a['name'], $b['name'] );
+				}
+			);
 
 			return $result;
 		}

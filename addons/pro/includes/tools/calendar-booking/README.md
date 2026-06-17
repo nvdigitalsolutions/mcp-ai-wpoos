@@ -98,9 +98,10 @@ Tools are tagged with:
 
 ## Version
 
-- **Phase**: 2.6
-- **Tools**: 15
+**Phase**: 2.6
+- **Tools**: 20 (15 original + 4 no-show/unconfirmed + 1 calendar orchestration)
 - **Since**: 2.6.0
+- **v2.9.0 additions**: `get_no_show_appointments`, `get_unconfirmed_bookings`, `send_booking_confirmations`, `send_reschedule_invitation`
 
 ## Support
 

@@ -67,10 +67,22 @@ class WP_MCP_AI_Tool_Select_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_M
 		);
 	}
 
+	/**
+	 * Get the required capability for this tool.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the select prompt cue tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$task_class = isset( $arguments['task_class'] ) ? sanitize_key( (string) $arguments['task_class'] ) : 'general';
 		if ( '' === $task_class ) {

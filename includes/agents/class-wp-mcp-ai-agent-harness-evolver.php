@@ -222,7 +222,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 
 		$frequency = max( 1, $frequency );
 
-		return ( $iteration % $frequency === 0 );
+		return ( 0 === $iteration % $frequency );
 	}
 
 	/**
@@ -271,8 +271,8 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 		$signatures = $this->detect_failure_signatures( $trajectory );
 		if ( empty( $signatures ) ) {
 			return array(
-				'evolved'  => false,
-				'reason'   => __( 'No failure signatures detected in the trajectory window.', 'mcp-ai-wpoos' ),
+				'evolved'          => false,
+				'reason'           => __( 'No failure signatures detected in the trajectory window.', 'mcp-ai-wpoos' ),
 				'trajectory_count' => count( $trajectory ),
 			);
 		}
@@ -287,16 +287,16 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 		$memory_result = $this->safe_evolve_pass( 'evolve_memory', array( $summary ) );
 
 		$results = array(
-			'evolved'         => true,
-			'timestamp'       => time(),
-			'session_id'      => $this->session_id,
-			'assistant_id'    => $this->assistant_id,
+			'evolved'          => true,
+			'timestamp'        => time(),
+			'session_id'       => $this->session_id,
+			'assistant_id'     => $this->assistant_id,
 			'trajectory_count' => count( $trajectory ),
-			'signatures'      => $signatures,
-			'prompt'          => $prompt_result,
-			'roles'           => $roles_result,
-			'skills'          => $skills_result,
-			'memory'          => $memory_result,
+			'signatures'       => $signatures,
+			'prompt'           => $prompt_result,
+			'roles'            => $roles_result,
+			'skills'           => $skills_result,
+			'memory'           => $memory_result,
 		);
 
 		// Determine if all passes failed.
@@ -376,8 +376,8 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 		$trajectory = is_array( $trajectory ) ? $trajectory : array();
 
 		$signatures = array(
-			'tool_failures'   => array(),
-			'stuck_loops'     => array(),
+			'tool_failures'    => array(),
+			'stuck_loops'      => array(),
 			'budget_exhausted' => false,
 			'low_success_rate' => false,
 		);
@@ -413,15 +413,15 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 			if ( 'tool_call' === $step_type ) {
 				++$total_tool_calls;
 
-				$tool_slug = isset( $event['tool_slug'] ) ? $event['tool_slug'] : '';
+				$tool_slug  = isset( $event['tool_slug'] ) ? $event['tool_slug'] : '';
 				$event_data = isset( $event['data'] ) ? $event['data'] : '';
 				if ( is_string( $event_data ) ) {
 					$event_data = json_decode( $event_data, true );
 				}
 
-				$is_error    = false;
-				$error_info  = '';
-				$arguments   = isset( $event_data['arguments'] ) ? $event_data['arguments'] : array();
+				$is_error   = false;
+				$error_info = '';
+				$arguments  = isset( $event_data['arguments'] ) ? $event_data['arguments'] : array();
 
 				if ( is_array( $event_data ) && isset( $event_data['result'] ) ) {
 					$result = $event_data['result'];
@@ -433,10 +433,10 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 
 				if ( $is_error ) {
 					$signatures['tool_failures'][] = array(
-						'tool'        => $tool_slug,
-						'error'       => $error_info,
-						'arguments'   => $arguments,
-						'timestamp'   => isset( $event['timestamp'] ) ? $event['timestamp'] : 0,
+						'tool'      => $tool_slug,
+						'error'     => $error_info,
+						'arguments' => $arguments,
+						'timestamp' => isset( $event['timestamp'] ) ? $event['timestamp'] : 0,
 					);
 				} else {
 					++$successful_calls;
@@ -449,7 +449,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 				if ( ! empty( $consecutive_calls ) ) {
 					$last = end( $consecutive_calls );
 					if ( $last['key'] === $call_key ) {
-						$consecutive_calls[ count( $consecutive_calls ) - 1 ]['count']++;
+						++$consecutive_calls[ count( $consecutive_calls ) - 1 ]['count'];
 					} else {
 						$consecutive_calls[] = array(
 							'key'   => $call_key,
@@ -482,8 +482,8 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 		foreach ( $consecutive_calls as $call ) {
 			if ( $call['count'] >= 3 ) {
 				$signatures['stuck_loops'][] = array(
-					'tool'       => $call['tool'],
-					'arguments'  => $call['args'],
+					'tool'        => $call['tool'],
+					'arguments'   => $call['args'],
 					'repetitions' => $call['count'],
 				);
 			}
@@ -494,9 +494,9 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 			$rate = $successful_calls / $total_tool_calls;
 			if ( $rate < 0.5 ) {
 				$signatures['low_success_rate'] = array(
-					'total'     => $total_tool_calls,
+					'total'      => $total_tool_calls,
 					'successful' => $successful_calls,
-					'rate'      => round( $rate * 100, 1 ),
+					'rate'       => round( $rate * 100, 1 ),
 				);
 			}
 		}
@@ -656,7 +656,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 				if ( ! is_array( $role_def ) || empty( $role_def['type'] ) ) {
 					continue;
 				}
-				$type = sanitize_key( $role_def['type'] );
+				$type         = sanitize_key( $role_def['type'] );
 				$instructions = isset( $role_def['system_instructions'] ) ? sanitize_textarea_field( $role_def['system_instructions'] ) : '';
 
 				$role_data = array(
@@ -679,7 +679,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 				if ( ! is_array( $update_def ) || empty( $update_def['type'] ) ) {
 					continue;
 				}
-				$type = sanitize_key( $update_def['type'] );
+				$type     = sanitize_key( $update_def['type'] );
 				$existing = get_option( self::EVOLVED_ROLE_OPTION_PREFIX . $type, array() );
 
 				if ( ! is_array( $existing ) ) {
@@ -693,7 +693,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 				}
 
 				$existing['updated_at'] = time();
-				$stored = update_option( self::EVOLVED_ROLE_OPTION_PREFIX . $type, $existing, false );
+				$stored                 = update_option( self::EVOLVED_ROLE_OPTION_PREFIX . $type, $existing, false );
 				if ( $stored ) {
 					++$updated;
 				}
@@ -797,7 +797,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 					continue;
 				}
 
-				$skill_id = sanitize_key( $skill_def['name'] );
+				$skill_id                    = sanitize_key( $skill_def['name'] );
 				$evolved_skills[ $skill_id ] = array(
 					'id'          => $skill_id,
 					'name'        => sanitize_text_field( $skill_def['name'] ),
@@ -915,10 +915,10 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 					continue;
 				}
 
-				$title      = isset( $mem_def['title'] ) ? sanitize_text_field( $mem_def['title'] ) : __( 'Evolved Memory', 'mcp-ai-wpoos' );
+				$title       = isset( $mem_def['title'] ) ? sanitize_text_field( $mem_def['title'] ) : __( 'Evolved Memory', 'mcp-ai-wpoos' );
 				$content_mem = isset( $mem_def['content'] ) ? sanitize_textarea_field( $mem_def['content'] ) : '';
-				$importance = isset( $mem_def['importance'] ) ? (float) $mem_def['importance'] : 0.5;
-				$path       = isset( $mem_def['path'] ) ? sanitize_text_field( $mem_def['path'] ) : '';
+				$importance  = isset( $mem_def['importance'] ) ? (float) $mem_def['importance'] : 0.5;
+				$path        = isset( $mem_def['path'] ) ? sanitize_text_field( $mem_def['path'] ) : '';
 
 				if ( '' === trim( $content_mem ) ) {
 					continue;
@@ -946,7 +946,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 					continue;
 				}
 
-				$memory_id = sanitize_key( $update_def['id'] );
+				$memory_id        = sanitize_key( $update_def['id'] );
 				$evolved_memories = get_option( 'wp_mcp_ai_evolved_memories', array() );
 				if ( ! is_array( $evolved_memories ) ) {
 					continue;
@@ -1037,7 +1037,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 		);
 
 		// Summarize tool calls.
-		$tool_counts = array();
+		$tool_counts    = array();
 		$total_failures = 0;
 		foreach ( $trajectory as $event ) {
 			if ( ! is_array( $event ) || 'tool_call' !== ( isset( $event['step_type'] ) ? $event['step_type'] : '' ) ) {
@@ -1045,7 +1045,10 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 			}
 			$slug = isset( $event['tool_slug'] ) ? $event['tool_slug'] : 'unknown';
 			if ( ! isset( $tool_counts[ $slug ] ) ) {
-				$tool_counts[ $slug ] = array( 'total' => 0, 'failures' => 0 );
+				$tool_counts[ $slug ] = array(
+					'total'    => 0,
+					'failures' => 0,
+				);
 			}
 			++$tool_counts[ $slug ]['total'];
 
@@ -1194,13 +1197,13 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 
 		// Map provider slugs to known adapter classes.
 		$provider_map = array(
-			'openai'      => 'WP_MCP_AI_OpenAI_Provider_Client',
-			'gemini'      => 'WP_MCP_AI_Gemini_Provider_Client',
-			'anthropic'   => 'WP_MCP_AI_Anthropic_Provider_Client',
-			'ollama'      => 'WP_MCP_AI_Ollama_Provider_Client',
-			'cloudflare'  => 'WP_MCP_AI_Cloudflare_Provider_Client',
+			'openai'       => 'WP_MCP_AI_OpenAI_Provider_Client',
+			'gemini'       => 'WP_MCP_AI_Gemini_Provider_Client',
+			'anthropic'    => 'WP_MCP_AI_Anthropic_Provider_Client',
+			'ollama'       => 'WP_MCP_AI_Ollama_Provider_Client',
+			'cloudflare'   => 'WP_MCP_AI_Cloudflare_Provider_Client',
 			'digitalocean' => 'WP_MCP_AI_DigitalOcean_Provider_Client',
-			'baseten'     => 'WP_MCP_AI_Baseten_Provider_Client',
+			'baseten'      => 'WP_MCP_AI_Baseten_Provider_Client',
 		);
 
 		if ( ! isset( $provider_map[ $provider_slug ] ) ) {
@@ -1428,9 +1431,9 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 			foreach ( $registered as $type => $role ) {
 				if ( $role instanceof WP_MCP_AI_Agent_Role_Interface ) {
 					$roles[ $type ] = array(
-						'type'        => $type,
-						'name'        => $role->get_role_name(),
-						'description' => $role->get_role_description(),
+						'type'         => $type,
+						'name'         => $role->get_role_name(),
+						'description'  => $role->get_role_description(),
 						'capabilities' => $role->get_capabilities(),
 					);
 				}
@@ -1584,7 +1587,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 			$evolved_memories = array();
 		}
 
-		$memory_id                   = sanitize_key( $title ) . '_' . time();
+		$memory_id                      = sanitize_key( $title ) . '_' . time();
 		$evolved_memories[ $memory_id ] = array(
 			'id'         => $memory_id,
 			'title'      => sanitize_text_field( $title ),
@@ -1816,6 +1819,8 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 }
 
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile -- Lightweight adapter class.
+
 /**
  * Lightweight adapter to expose an evolved role through the
  * WP_MCP_AI_Agent_Role_Interface contract.
@@ -1962,3 +1967,5 @@ class WP_MCP_AI_Agent_Harness_Evolver_Role_Adapter implements WP_MCP_AI_Agent_Ro
 		return in_array( 'can-delegate', $this->get_capabilities(), true );
 	}
 }
+
+// phpcs:enable Generic.Files.OneObjectStructurePerFile

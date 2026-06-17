@@ -133,17 +133,11 @@ class WP_MCP_AI_Tool_Trace_Memory_Provenance implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,
-			'local-only'        => true,
-			'read-only'         => true,
-			'idempotent'        => true,
-			'cacheable'         => true,
-			'requires-auth'     => true,
-			'blocking'          => false,
-			'uses-network'      => false,
-			'modifies-wp'       => false,
-			'expensive'         => false,
-			'requires-approval' => false,
+			'read-only',            // Only reads data.
+			'local-only',           // No external API calls.
+			'idempotent',           // Same input = same output.
+			'cacheable',            // Results can be cached.
+			'requires-capability',  // Needs user authentication.
 		);
 	}
 

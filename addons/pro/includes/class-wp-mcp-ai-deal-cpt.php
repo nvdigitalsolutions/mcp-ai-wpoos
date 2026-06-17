@@ -121,7 +121,7 @@ class WP_MCP_AI_Deal_CPT {
 					$st = WP_MCP_AI_CRM_Pipeline_Stages::get_stage( $stage );
 					echo esc_html( $st ? $st['label'] : $stage );
 				} else {
-					echo esc_html( $stage ?: 'prospecting' );
+					echo esc_html( $stage ? $stage : 'prospecting' );
 				}
 				break;
 			case 'amount':
@@ -134,7 +134,7 @@ class WP_MCP_AI_Deal_CPT {
 				break;
 			case 'close_date':
 				$close = get_post_meta( $post_id, 'close_date', true );
-				echo esc_html( $close ?: '—' );
+				echo esc_html( $close ? $close : '—' );
 				break;
 			case 'owner':
 				$owner = get_post_meta( $post_id, 'deal_owner', true );

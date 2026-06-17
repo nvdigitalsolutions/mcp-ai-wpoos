@@ -303,7 +303,7 @@ The downloaded file is empty.
 			}
 			$temp_file = wp_mcp_ai_tempnam( 'mcp_ai_pdf_', '.pdf' );
 			if ( is_wp_error( $temp_file ) ) {
-				$temp_file = wp_tempnam( 'mcp_ai_pdf_' ); // fallback
+				$temp_file = wp_tempnam( 'mcp_ai_pdf_' ); // Fallback.
 			}
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			if ( false === file_put_contents( $temp_file, $body ) ) {

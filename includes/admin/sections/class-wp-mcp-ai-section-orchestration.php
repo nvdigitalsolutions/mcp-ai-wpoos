@@ -175,6 +175,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Allow logged-in users to use the long-term memory surface in the chat client. When disabled, the memory drawer, recall, and store endpoints are suppressed site-wide regardless of per-user preferences.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'memory_retention_days'           => array(
+					'type'        => 'slider',
+					'label'       => __( 'Memory Retention (Days)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Memories older than this many days will be pruned during weekly cleanup. Set to 0 to never automatically delete memories.', 'mcp-ai-wpoos' ),
+					'min'         => 0,
+					'max'         => 730,
+					'step'        => 30,
+					'default'     => 365,
+					'suffix'      => __( 'days', 'mcp-ai-wpoos' ),
+				),
+				'memory_dormancy_days'            => array(
+					'type'        => 'slider',
+					'label'       => __( 'Memory Dormancy Threshold (Days)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Memories not accessed in this many days are marked dormant. Dormant memories are deleted first when per-user caps are exceeded.', 'mcp-ai-wpoos' ),
+					'min'         => 7,
+					'max'         => 90,
+					'step'        => 1,
+					'default'     => 30,
+					'suffix'      => __( 'days', 'mcp-ai-wpoos' ),
+				),
+				'memory_per_user_max'             => array(
+					'type'        => 'slider',
+					'label'       => __( 'Max Memories Per User', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of memories a single user can store. Oldest dormant memories are deleted first when this cap is exceeded.', 'mcp-ai-wpoos' ),
+					'min'         => 100,
+					'max'         => 10000,
+					'step'        => 100,
+					'default'     => 1000,
+				),
 				'profession_default_provider'     => array(
 					'type'        => 'select',
 					'label'       => __( 'Professions Default Provider', 'mcp-ai-wpoos' ),
@@ -449,14 +478,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Semantic Prompt Compression', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Reduce token usage by stripping unnecessary grammar and filler words from prompts while preserving all facts, numbers, and technical terms.', 'mcp-ai-wpoos' ) . '</p>',
 				),
-				'enable_semantic_compression'      => array(
+				'enable_semantic_compression'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Semantic Prompt Compression', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Apply caveman-style compression to prompts before sending to AI models', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Strips unnecessary grammar, connectives, and filler words from prompts while preserving all facts, numbers, and technical terms. Reduces token usage by 20-35% with no quality loss. All facts and specific data are preserved verbatim.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'semantic_compression_level'       => array(
+				'semantic_compression_level'      => array(
 					'type'        => 'select',
 					'label'       => __( 'Compression Level', 'mcp-ai-wpoos' ),
 					'description' => __( 'Controls how aggressively prompts are compressed. Conservative preserves more original wording. Aggressive maximizes token savings.', 'mcp-ai-wpoos' ),
@@ -1704,6 +1733,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'enable_agent_coordination_tools',
 				'section_agent_memory', // Section header.
 				'enable_chat_memory',
+				'memory_retention_days',
+				'memory_dormancy_days',
+				'memory_per_user_max',
 				'profession_default_provider',
 				'profession_default_model',
 				'profession_default_temperature',
@@ -1729,6 +1761,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						// Close table for section headers, render HTML, reopen table.
 						echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						echo wp_kses_post( $field['content'] );
+						echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
+					} elseif ( 'slider' === $field['type'] || 'range' === $field['type'] ) {
+						// Close table, use orchestration renderer for slider/range, reopen table.
+						echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
+						if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+							echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field );
+						} else {
+							// Fallback: render as plain number input.
+							$this->render_field( $key, $field );
+						}
 						echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					} else {
 						$this->render_field( $key, $field );
@@ -1915,6 +1958,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'enable_agent_coordination_tools',
 						// Agent memory + profession/team defaults.
 						'enable_chat_memory',
+						'memory_retention_days',
+						'memory_dormancy_days',
+						'memory_per_user_max',
 						'profession_default_provider',
 						'profession_default_model',
 						'profession_default_temperature',
@@ -2190,8 +2236,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								<p class="description">
 									<?php
 									printf(
-										/* translators: %s: link to the OpenTelemetry connection settings page */
 										wp_kses(
+											/* translators: %s: link to the OpenTelemetry connection settings page */
 											__( 'Configure your OTLP/HTTP endpoint on the %s page.', 'mcp-ai-wpoos' ),
 											array( 'a' => array( 'href' => array() ) )
 										),

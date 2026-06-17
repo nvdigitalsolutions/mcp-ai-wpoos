@@ -32,7 +32,7 @@ class WP_MCP_AI_Support_Ticket_Settings_Page {
 	 *
 	 * @var string
 	 */
-	const OPTION_NAME = 'wp_mcp_ai_support_ticket_settings';
+	const OPTION_NAME = 'wp_mcp_ai_ticket_settings';
 
 	/**
 	 * Page slug.
@@ -58,7 +58,7 @@ class WP_MCP_AI_Support_Ticket_Settings_Page {
 	 * @since 2.6.0
 	 */
 	public function register_submenu_page() {
-		$post_type = class_exists( 'WP_MCP_AI_Support_Ticket_CPT' ) ? WP_MCP_AI_Support_Ticket_CPT::POST_TYPE : 'mcp_ai_support_ticket';
+		$post_type = class_exists( 'WP_MCP_AI_Support_Ticket_CPT' ) ? WP_MCP_AI_Support_Ticket_CPT::POST_TYPE : 'mcp_ai_ticket';
 
 		add_submenu_page(
 			'edit.php?post_type=' . $post_type,
@@ -135,7 +135,7 @@ class WP_MCP_AI_Support_Ticket_Settings_Page {
 		}
 
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$post_type  = class_exists( 'WP_MCP_AI_Support_Ticket_CPT' ) ? WP_MCP_AI_Support_Ticket_CPT::POST_TYPE : 'mcp_ai_support_ticket';
+		$post_type  = class_exists( 'WP_MCP_AI_Support_Ticket_CPT' ) ? WP_MCP_AI_Support_Ticket_CPT::POST_TYPE : 'mcp_ai_ticket';
 		?>
 		<div class="wrap">
 			<h1>
@@ -529,6 +529,6 @@ class WP_MCP_AI_Support_Ticket_Settings_Page {
 		 * @since 2.6.0
 		 * @param array $tools Map of tool slug => label.
 		 */
-		return apply_filters( 'wp_mcp_ai_support_ticket_tools', $tools );
+		return apply_filters( 'wp_mcp_ai_ticket_tools', $tools );
 	}
 }

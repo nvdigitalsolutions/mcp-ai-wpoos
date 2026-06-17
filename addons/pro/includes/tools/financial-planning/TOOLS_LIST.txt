@@ -33,3 +33,7 @@ Market Analysis & Research (8 tools - new):
 30. financial_logic_visualizer ✓
 31. financial_report_generator ✓
 32. financial_search ✓
+
+Transaction Categorisation (2 tools - new):
+33. get_uncategorised_transactions ✓
+34. categorise_transactions ✓

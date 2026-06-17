@@ -89,6 +89,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_regenerate_playbook', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_sync_all_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_delete_old_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_sync_media_templates', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_get_models_for_provider', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_clear_test_files', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_clear_dev_files', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -698,7 +699,47 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				}
 
 				// ========================================================================
-				// STEP 5: Merge Settings with Validation
+				// STEP 5: Auto-clear OAuth tokens when credentials change
+				// ========================================================================
+				// When a user changes their OAuth Client ID or Client Secret, the old
+				// refresh token is no longer valid for the new credentials. Force-clear
+				// associated tokens so the OAuth callback cannot resurrect stale
+				// account bindings via its fallback that reuses old refresh tokens.
+				$oauth_credential_token_map = array(
+					// Gmail.
+					'gmail_client_id'            => array( 'gmail_refresh_token', 'gmail_user_email' ),
+					'gmail_client_secret'        => array( 'gmail_refresh_token', 'gmail_user_email' ),
+					// Google Drive.
+					'google_drive_client_id'     => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
+					'google_drive_client_secret' => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
+					// Meta.
+					'meta_app_id'                => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
+					'meta_app_secret'            => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
+				);
+
+				foreach ( $oauth_credential_token_map as $credential_key => $token_keys ) {
+					$old_value = isset( $existing_settings[ $credential_key ] ) ? $existing_settings[ $credential_key ] : '';
+					$new_value = isset( $sanitized_new[ $credential_key ] ) ? $sanitized_new[ $credential_key ] : $old_value;
+
+					if ( $new_value !== $old_value && '' !== $new_value ) {
+						foreach ( $token_keys as $token_key ) {
+							$sanitized_new[ $token_key ] = '';
+						}
+						if ( $enable_logging ) {
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- user-enabled diagnostic logging.
+							error_log(
+								sprintf(
+									'[NV oOS Settings] Credential change: %s → clearing %s',
+									$credential_key,
+									implode( ', ', $token_keys )
+								)
+							);
+						}
+					}
+				}
+
+				// ========================================================================
+				// STEP 6: Merge Settings with Validation
 				// ========================================================================
 				// DEBUG: Log checkbox values before merge to diagnose persistence issue.
 				if ( $enable_logging ) {
@@ -753,7 +794,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				}
 
 				// ========================================================================
-				// STEP 5a: Auto-generate mesh API key if needed
+				// STEP 6a: Auto-generate mesh API key if needed
 				// ========================================================================
 				// Check if mesh networking or federation directory was just enabled and generate API key if needed.
 				// This must happen BEFORE validation and save to avoid race conditions.
@@ -1147,27 +1188,33 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				wp_set_script_translations( 'wp-mcp-ai-tool-orchestration', 'mcp-ai-wpoos' );
 			}
 
-			// Enqueue performance admin scripts if on advanced tab with performance_monitoring subtab.
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'advanced' === sanitize_key( wp_unslash( $_GET['tab'] ) ) && isset( $_GET['subtab'] ) && 'performance_monitoring' === sanitize_key( wp_unslash( $_GET['subtab'] ) ) ) {
-				$performance_js = $this->get_asset_file( 'assets/js/performance-admin.js' );
-				wp_enqueue_script(
-					'wp-mcp-ai-performance-admin',
-					$performance_js['url'],
-					array( 'jquery' ),
-					$performance_js['version'],
-					true
-				);
+			// Enqueue performance admin scripts if on advanced tab.
+			// When no subtab is specified, performance_monitoring is the default (see
+			// WP_MCP_AI_Section_Advanced::get_active_subtab).
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only query parameter checks.
+			if ( isset( $_GET['tab'] ) && 'advanced' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
+				$subtab = isset( $_GET['subtab'] ) ? sanitize_key( wp_unslash( $_GET['subtab'] ) ) : 'performance_monitoring';
+				// phpcs:enable WordPress.Security.NonceVerification.Recommended
+				if ( 'performance_monitoring' === $subtab ) {
+					$performance_js = $this->get_asset_file( 'assets/js/performance-admin.js' );
+					wp_enqueue_script(
+						'wp-mcp-ai-performance-admin',
+						$performance_js['url'],
+						array( 'jquery' ),
+						$performance_js['version'],
+						true
+					);
 
-				wp_localize_script(
-					'wp-mcp-ai-performance-admin',
-					'wpMcpAiPerformance',
-					array(
-						'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
-						'nonce'       => wp_create_nonce( 'wp_mcp_ai_performance' ),
-						'runningText' => __( 'Running...', 'mcp-ai-wpoos' ),
-					)
-				);
+					wp_localize_script(
+						'wp-mcp-ai-performance-admin',
+						'wpMcpAiPerformance',
+						array(
+							'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+							'nonce'       => wp_create_nonce( 'wp_mcp_ai_performance' ),
+							'runningText' => __( 'Running...', 'mcp-ai-wpoos' ),
+						)
+					);
+				}
 			}
 
 			// Enqueue mesh peer test scripts if on advanced tab with federation_mesh subtab.

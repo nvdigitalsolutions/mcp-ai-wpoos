@@ -118,7 +118,7 @@ class WP_MCP_AI_Agent_Capability_Boundary {
 	 * @param array<string> $allowed_tool_slugs List of tool slugs this session is permitted to call.
 	 */
 	public function __construct( $session_id, array $allowed_tool_slugs ) {
-		$this->session_id        = sanitize_key( $session_id );
+		$this->session_id         = sanitize_key( $session_id );
 		$this->allowed_tool_slugs = array_map( 'sanitize_key', $allowed_tool_slugs );
 
 		/**
@@ -132,7 +132,7 @@ class WP_MCP_AI_Agent_Capability_Boundary {
 		 * @param int   $max_iterations   Default maximum iterations.
 		 * @param array $assistant_config Assistant configuration array (empty here — boundary is assistant-agnostic).
 		 */
-		$default_iterations   = 1;
+		$default_iterations   = 5;
 		$this->max_iterations = (int) apply_filters( 'wp_mcp_ai_max_agentic_iterations', $default_iterations, array() );
 		$this->max_iterations = max( 1, min( 50, $this->max_iterations ) );
 
@@ -317,9 +317,9 @@ class WP_MCP_AI_Agent_Capability_Boundary {
 		}
 
 		$execution_log[] = array(
-			'tool_slug'  => $tool_slug,
-			'timestamp'  => time(),
-			'success'    => ! is_wp_error( $result ),
+			'tool_slug' => $tool_slug,
+			'timestamp' => time(),
+			'success'   => ! is_wp_error( $result ),
 		);
 
 		// Keep only the last 100 entries to bound transient size.
@@ -350,9 +350,9 @@ class WP_MCP_AI_Agent_Capability_Boundary {
 		$iteration_count = absint( $this->get_transient( 'iteration_count' ) );
 
 		// Aggregate tool-call count across all rate-tracked tools.
-		$rate_data    = $this->get_transient( 'rate_limits' );
-		$tool_calls   = 0;
-		$tool_max     = 0;
+		$rate_data  = $this->get_transient( 'rate_limits' );
+		$tool_calls = 0;
+		$tool_max   = 0;
 
 		if ( is_array( $rate_data ) ) {
 			foreach ( $rate_data as $record ) {
@@ -366,9 +366,9 @@ class WP_MCP_AI_Agent_Capability_Boundary {
 		return array(
 			'iterations_used' => $iteration_count,
 			'iterations_max'  => $this->max_iterations,
-			'tool_calls_used'  => $tool_calls,
-			'tool_calls_max'   => $tool_max,
-			'token_budget'     => null, // Reserved — not yet implemented.
+			'tool_calls_used' => $tool_calls,
+			'tool_calls_max'  => $tool_max,
+			'token_budget'    => null, // Reserved — not yet implemented.
 		);
 	}
 
@@ -475,6 +475,14 @@ class WP_MCP_AI_Agent_Capability_Boundary {
  *
  * @since 1.2.0
  */
+
+// phpcs:disable Generic.Files.OneObjectStructurePerFile -- Hooks companion class.
+
+/**
+ * Hooks bridge for capability boundary and approval gate.
+ *
+ * @since 1.2.0
+ */
 class WP_MCP_AI_Agent_Capability_Boundary_Hooks {
 
 	/**
@@ -513,6 +521,8 @@ class WP_MCP_AI_Agent_Capability_Boundary_Hooks {
 		if ( ! $boundary instanceof WP_MCP_AI_Agent_Capability_Boundary ) {
 			return; // No boundary active — allow all tools (backward compatible).
 		}
+
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- WP_Error objects passed to wp_die() are safe.
 
 		// Gate 1: Allow-list.
 		if ( ! $boundary->can_execute( $tool_slug ) ) {
@@ -574,8 +584,11 @@ class WP_MCP_AI_Agent_Capability_Boundary_Hooks {
 		);
 
 		if ( is_wp_error( $approval ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WP_Error is safe.
 			wp_die( $approval, 403 );
 		}
+
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
@@ -617,9 +630,9 @@ class WP_MCP_AI_Agent_Capability_Boundary_Hooks {
 		set_transient(
 			'wp_mcp_ai_boundary_current',
 			array(
-				'session_id'        => sanitize_key( $session_id ),
+				'session_id'         => sanitize_key( $session_id ),
 				'allowed_tool_slugs' => array_map( 'sanitize_key', $allowed_tool_slugs ),
-				'created_at'        => time(),
+				'created_at'         => time(),
 			),
 			HOUR_IN_SECONDS
 		);
@@ -636,3 +649,5 @@ class WP_MCP_AI_Agent_Capability_Boundary_Hooks {
 		delete_transient( 'wp_mcp_ai_boundary_current' );
 	}
 }
+
+// phpcs:enable Generic.Files.OneObjectStructurePerFile

@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore WordPress.Files.FileName -- Class name does not match filename; file included explicitly.
 /**
  * ECA Management Toolkit MCP Server
  *
@@ -61,6 +61,14 @@ class WP_MCP_AI_ECA_Management_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base 
 				'class_ref'          => 'WP_MCP_AI_ECA_Research_Page',
 				'bound_assistant_id' => 0,
 				'label'              => __( 'Research & Add ECAs', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'type'               => 'consolidate_add',
+				'page_slug'          => 'consolidate-eca',
+				'entity_type'        => 'mcp_ai_eca',
+				'class_ref'          => 'WP_MCP_AI_ECA_Consolidate_Page',
+				'bound_assistant_id' => 0,
+				'label'              => __( 'Consolidate & Add Records', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 	}

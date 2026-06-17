@@ -219,7 +219,7 @@ class WP_MCP_AI_Site_Blueprint_Compiler {
 	 *                        or WP_Error on failure.
 	 */
 	public function compile( array $blueprint, array $input_values = array() ) {
-		$slug = $blueprint['slug'] ?? 'unknown';
+		$slug     = $blueprint['slug'] ?? 'unknown';
 		$internal = $blueprint['internalGraph'] ?? array();
 
 		if ( empty( $internal['nodes'] ) ) {
@@ -249,7 +249,7 @@ class WP_MCP_AI_Site_Blueprint_Compiler {
 				foreach ( $node_config['inputs'] as $port => $value ) {
 					if ( is_string( $value ) && '{' === substr( $value, 0, 1 ) ) {
 						// Substitute {placeholder} with resolved input value.
-						$placeholder = trim( $value, '{}' );
+						$placeholder              = trim( $value, '{}' );
 						$compiled_inputs[ $port ] = $resolved_inputs[ $placeholder ] ?? $value;
 					} else {
 						$compiled_inputs[ $port ] = $value;

@@ -496,17 +496,11 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,  // Computation only, no side effects.
-			'local-only'        => true,  // No external API calls.
-			'read-only'         => true,  // Does not modify data.
-			'idempotent'        => true,  // Same input = same output.
-			'cacheable'         => true,  // Results can be cached.
-			'requires-auth'     => true,  // Needs user authentication.
-			'blocking'          => false, // Fast operation.
-			'uses-network'      => false, // No network calls.
-			'modifies-wp'       => false, // Does not modify data.
-			'expensive'         => false, // Low cost operation.
-			'requires-approval' => false, // Auto-approved.
+			'read-only',            // Computation only, no side effects.
+			'local-only',           // No external API calls.
+			'idempotent',           // Same input = same output.
+			'cacheable',            // Results can be cached.
+			'requires-capability',  // Needs user authentication.
 		);
 	}
 }

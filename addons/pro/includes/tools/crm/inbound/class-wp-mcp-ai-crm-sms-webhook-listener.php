@@ -95,10 +95,10 @@ class WP_MCP_AI_CRM_SMS_Webhook_Listener {
 			}
 		}
 
-		// Extract message fields from POST body.
-		$from_phone = sanitize_text_field( wp_unslash( $_POST['From'] ?? '' ) );
-		$to_phone   = sanitize_text_field( wp_unslash( $_POST['To'] ?? '' ) );
-		$body_text  = sanitize_textarea_field( wp_unslash( $_POST['Body'] ?? '' ) );
+		// Extract message fields from request body.
+		$from_phone = sanitize_text_field( $request->get_param( 'From' ) ?? '' );
+		$to_phone   = sanitize_text_field( $request->get_param( 'To' ) ?? '' );
+		$body_text  = sanitize_textarea_field( $request->get_param( 'Body' ) ?? '' );
 
 		if ( empty( $from_phone ) || empty( $body_text ) ) {
 			return new WP_Error(
@@ -125,6 +125,7 @@ class WP_MCP_AI_CRM_SMS_Webhook_Listener {
 	 * @return bool True if signature is valid.
 	 */
 	private static function validate_twilio_signature( $auth_token ) {
+		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		$signature = isset( $_SERVER['HTTP_X_TWILIO_SIGNATURE'] )
 			? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_TWILIO_SIGNATURE'] ) )
 			: '';
@@ -134,12 +135,15 @@ class WP_MCP_AI_CRM_SMS_Webhook_Listener {
 		}
 
 		// Build the full URL (with https forced for Twilio).
-		$url = ( isset( $_SERVER['HTTPS'] ) && 'on' === $_SERVER['HTTPS'] ? 'https://' : 'http://' )
-			. ( $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '' )
-			. ( $_SERVER['REQUEST_URI'] ?? '' );
+		$is_https = isset( $_SERVER['HTTPS'] ) && 'on' === $_SERVER['HTTPS'];
+		$url = ( $is_https ? 'https://' : 'http://' )
+			. sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '' ) )
+			. sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
 
 		// Sort POST params by key.
+		// phpcs:ignore WordPress.Security.NonceVerification -- External webhook from Twilio/notify.lk; no WordPress nonce available.
 		$params = $_POST;
+		// phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		ksort( $params );
 
 		// Build the data string: URL + concatenated keyvalue pairs.

@@ -481,6 +481,10 @@ class WP_MCP_AI_ECA_Dashboard_Page {
 						<span class="dashicons dashicons-search" style="vertical-align:middle;margin-right:4px"></span>
 						<?php esc_html_e( 'Research & Add', 'mcp-ai-wpoos-pro' ); ?>
 					</a>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_eca&page=consolidate-eca' ) ); ?>" class="button">
+						<span class="dashicons dashicons-media-document" style="vertical-align:middle;margin-right:4px"></span>
+						<?php esc_html_e( 'Consolidate & Add', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_eca&page=eca-settings' ) ); ?>" class="button">
 						<span class="dashicons dashicons-admin-settings" style="vertical-align:middle;margin-right:4px"></span>
 						<?php esc_html_e( 'ECA Settings', 'mcp-ai-wpoos-pro' ); ?>

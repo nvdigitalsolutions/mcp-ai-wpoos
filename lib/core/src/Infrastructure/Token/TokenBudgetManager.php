@@ -112,6 +112,7 @@ class TokenBudgetManager {
 		'gemini-3-flash-preview' => 1000000,
 		'gemini-2.5-pro'        => 1048576,
 		'gemini-2.5-flash'      => 1048576,
+		'gemini-3.1-flash-image' => 131072,
 		'gemini-2.5-flash-image' => 1048576,
 		'gemini-2.0-flash'      => 1048576,
 		'gemini-2.0-flash-image' => 1048576,

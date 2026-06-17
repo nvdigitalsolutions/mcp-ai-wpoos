@@ -84,15 +84,12 @@ function wp_mcp_ai_ext_cog_as_video_analysis_callback( $args ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-hf-vision-inference-service.php';
 	}
 
-	$tool      = new WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed();
-	$reflector = new ReflectionMethod( $tool, 'run_sync_analysis' );
-	$reflector->setAccessible( true );
+	$tool = new WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed();
 
 	$context = $user_id > 0 ? array( 'user_id' => $user_id ) : array();
 
 	try {
-		$result = $reflector->invoke(
-			$tool,
+		$result = $tool->run_sync_analysis(
 			$video_source,
 			$session_id,
 			$attachment_id,
@@ -113,8 +110,8 @@ function wp_mcp_ai_ext_cog_as_video_analysis_callback( $args ) {
 			$jobs = is_array( $jobs ) ? $jobs : array();
 
 			if ( $action_id > 0 && isset( $jobs[ $action_id ] ) ) {
-				$jobs[ $action_id ]['status']       = 'complete';
-				$jobs[ $action_id ]['completed_at'] = time();
+				$jobs[ $action_id ]['status']         = 'complete';
+				$jobs[ $action_id ]['completed_at']   = time();
 				$jobs[ $action_id ]['result_summary'] = array(
 					'frames_analyzed' => isset( $result['frames_analyzed'] ) ? $result['frames_analyzed'] : 0,
 					'unique_brands'   => isset( $result['unique_brands'] ) ? $result['unique_brands'] : array(),
@@ -126,8 +123,8 @@ function wp_mcp_ai_ext_cog_as_video_analysis_callback( $args ) {
 			if ( class_exists( 'WP_MCP_AI_Ext_Cog_Sensor_Session' ) ) {
 				$session_post_id = WP_MCP_AI_Ext_Cog_Sensor_Session::get_or_create( $session_id, $user_id );
 				if ( ! is_wp_error( $session_post_id ) ) {
-					$pending = get_post_meta( $session_post_id, WP_MCP_AI_Ext_Cog_Sensor_Session::META_DATA, true );
-					$pending = is_array( $pending ) ? $pending : array();
+					$pending                                   = get_post_meta( $session_post_id, WP_MCP_AI_Ext_Cog_Sensor_Session::META_DATA, true );
+					$pending                                   = is_array( $pending ) ? $pending : array();
 					$pending[ 'video_analysis_' . $action_id ] = $result;
 					update_post_meta( $session_post_id, WP_MCP_AI_Ext_Cog_Sensor_Session::META_DATA, $pending );
 				}

@@ -48,6 +48,7 @@ assistant / external MCP client
 | [`calendar-booking`](#calendar-booking) | Calendar & Booking | Native |
 | [`cre-debt`](#cre-debt) | CRE Debt | Native |
 | [`crm`](#crm) | CRM & Email Marketing | Native |
+| [`dietpi`](#dietpi) | DietPi Server Management | Native |
 | [`dj-management`](#dj-management) | DJ Management | Tools-only |
 | [`document-generation`](#document-generation) | Document Generation | Native |
 | [`eca`](#eca) | ECA Management | Native |
@@ -133,6 +134,23 @@ assistant / external MCP client
 | Tools | `GET /wp-json/mcp-ai-pro/v1/mcp/crm/tools/list` |
 | Resources | `GET /wp-json/mcp-ai-pro/v1/mcp/crm/resources/list` |
 | Prompts | `GET /wp-json/mcp-ai-pro/v1/mcp/crm/prompts/list` |
+
+---
+
+---
+
+### `dietpi`
+
+**Name:** DietPi Server Management  
+**Type:** Native (with SSH proxy tunneling)  
+**Description:** AI-powered server management for DietPi single-board computers (Raspberry Pi, Odroid, etc.). 19+ tools for system info, package management, service control, backup/restore, storage, provisioning, and SSH proxy.
+
+| Endpoint | URL |
+|----------|-----|
+| Tools | `GET /wp-json/mcp-ai-pro/v1/mcp/dietpi/tools/list` |
+| Call tool | `POST /wp-json/mcp-ai-pro/v1/mcp/dietpi/tools/call` |
+
+**Added:** v1.1.29 (Phases 0–3). See [`docs/features/dietpi-pro-toolkit.md`](dietpi-pro-toolkit.md) for full documentation.
 
 ---
 

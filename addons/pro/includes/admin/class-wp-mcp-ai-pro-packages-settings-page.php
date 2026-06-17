@@ -145,8 +145,8 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 		<p style="font-size: 12px; color: #555;">
 			<?php
 			printf(
-				/* translators: %s: link to the canonical CREDITS.md file. */
 				wp_kses(
+					/* translators: %s: link to the canonical CREDITS.md file. */
 					__( 'Each package below links back to its upstream maintainer and license. The full repository-wide attribution index lives in <a href="%s" target="_blank" rel="noopener noreferrer">CREDITS.md</a>.', 'mcp-ai-wpoos-pro' ),
 					array(
 						'a' => array(

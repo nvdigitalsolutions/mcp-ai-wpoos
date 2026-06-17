@@ -77,11 +77,11 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'edit_prompt'      => array(
+				'edit_prompt'       => array(
 					'type'        => 'string',
 					'description' => __( 'Natural language description of the edits to apply. Be specific (e.g., "change the background to a beach at sunset", "remove the person on the left", "stabilize the shaky footage", "make it look like a film noir").', 'mcp-ai-wpoos' ),
 				),
-				'source_video_id'  => array(
+				'source_video_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the video to edit. Required unless continuing a previous edit session via previous_video_id.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
@@ -90,12 +90,12 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'type'        => 'string',
 					'description' => __( 'Operation ID from a previous Omni video edit. Pass this to continue multi-turn editing with preserved context. The previous video becomes the source, so source_video_id is optional when this is set.', 'mcp-ai-wpoos' ),
 				),
-				'aspect_ratio'     => array(
+				'aspect_ratio'      => array(
 					'type'        => 'string',
 					'description' => __( 'Output aspect ratio override. If not set, preserves original video\'s aspect ratio.', 'mcp-ai-wpoos' ),
 					'enum'        => array( '1:1', '2:3', '3:2', '16:9', '9:16' ),
 				),
-				'async'            => array(
+				'async'             => array(
 					'type'        => 'boolean',
 					'description' => __( 'Run editing asynchronously. Returns a job ID for status tracking.', 'mcp-ai-wpoos' ),
 					'default'     => false,
@@ -106,16 +106,20 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the Omni Video edit tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
 	public function execute( $arguments, $context ) {
 		// Sanitize inputs (two-gate rule).
-		$edit_prompt      = isset( $arguments['edit_prompt'] ) ? sanitize_textarea_field( $arguments['edit_prompt'] ) : '';
-		$source_video_id  = isset( $arguments['source_video_id'] ) ? absint( $arguments['source_video_id'] ) : 0;
+		$edit_prompt       = isset( $arguments['edit_prompt'] ) ? sanitize_textarea_field( $arguments['edit_prompt'] ) : '';
+		$source_video_id   = isset( $arguments['source_video_id'] ) ? absint( $arguments['source_video_id'] ) : 0;
 		$previous_video_id = isset( $arguments['previous_video_id'] ) ? sanitize_text_field( $arguments['previous_video_id'] ) : '';
-		$aspect_ratio     = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '';
-		$use_async        = ! empty( $arguments['async'] );
-		$user_id          = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$aspect_ratio      = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '';
+		$use_async         = ! empty( $arguments['async'] );
+		$user_id           = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( empty( $edit_prompt ) ) {
 			return new WP_Error(
@@ -290,7 +294,7 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'background-only' => true,
+			'background-only'  => true,
 			'token_multiplier' => 2.5,
 		);
 	}

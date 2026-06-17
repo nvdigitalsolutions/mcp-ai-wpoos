@@ -1,0 +1,42 @@
+# Tool Status Labels
+# Format: tool_slug = status_label
+# Valid status labels: stable, beta, dev, experimental, bug
+# Tools marked "bug" are automatically disabled on init.
+#
+# Example:
+# example_tool = stable
+# another_tool = bug
+#
+# Add your entries below:
+get_abandoned_carts = stable
+send_cart_recovery_email = stable
+get_uncategorised_transactions = stable
+categorise_transactions = stable
+get_no_show_appointments = dev
+get_unconfirmed_bookings = dev
+send_booking_confirmations = dev
+send_reschedule_invitation = dev
+get_content_calendar = dev
+generate_social_captions = dev
+schedule_social_posts = dev
+publish_to_social = dev
+get_queued_videos = dev
+get_videos_without_thumbnails = dev
+get_videos_without_transcripts = dev
+upload_video_batch = dev
+transcribe_video = dev
+get_recent_health_appointments = dev
+send_appointment_followup = dev
+get_images_without_alt = dev
+get_unoptimised_images = dev
+get_unwatermarked_images = dev
+apply_watermark_batch = dev
+optimise_images_batch = dev
+get_expired_documents = dev
+get_uninvoiced_orders = dev
+archive_documents = dev
+generate_invoice_batch = dev
+get_contact_interactions = dev
+archive_stale_contacts = dev
+recalculate_engagement_scores = dev
+scan_duplicate_contacts = dev

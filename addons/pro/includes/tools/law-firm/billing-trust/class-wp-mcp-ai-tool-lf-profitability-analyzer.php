@@ -196,7 +196,12 @@ class WP_MCP_AI_Tool_LF_Profitability_Analyzer implements WP_MCP_AI_Tool_Interfa
 
 		return array(
 			'success'    => true,
-			'message'    => sprintf( __( 'Profitability: %s margin on $%s revenue. ', 'mcp-ai-wpoos-pro' ), $margin . '%', number_format( $total_revenue, 2 ) ) . self::DISCLAIMER,
+			'message'    => sprintf(
+				/* translators: %1$s: profit margin percentage, %2$s: total revenue */
+				__( 'Profitability: %1$s margin on $%2$s revenue. ', 'mcp-ai-wpoos-pro' ),
+				$margin . '%',
+				number_format( $total_revenue, 2 )
+			) . self::DISCLAIMER,
 			'data'       => array(
 				'matter_id'        => $matter_id,
 				'total_revenue'    => $total_revenue,

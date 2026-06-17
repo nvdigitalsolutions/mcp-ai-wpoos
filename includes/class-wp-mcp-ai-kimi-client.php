@@ -73,7 +73,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Default chat model when none is configured.
 		 *
-		 * kimi-k2.6 is the latest agentic model with 256K context and tool calling.
+		 * The kimi-k2.6 model is the latest agentic model with 256K context and tool calling.
 		 *
 		 * @var string
 		 */
@@ -93,7 +93,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Models that do not support tool/function calling.
 		 *
-		 * kimi-k2-thinking is a chain-of-thought model that rejects the `tools`
+		 * The kimi-k2-thinking model is a chain-of-thought model that rejects the `tools`
 		 * parameter. kimi-k1.5-* are long-context reasoning models without tool
 		 * support. Tools are stripped automatically when these models are selected.
 		 *

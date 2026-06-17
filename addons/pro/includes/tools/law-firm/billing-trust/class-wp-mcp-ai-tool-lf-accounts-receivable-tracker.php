@@ -198,7 +198,12 @@ class WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker implements WP_MCP_AI_Tool_In
 
 		return array(
 			'success'    => true,
-			'message'    => sprintf( __( 'Total outstanding: $%s. Collection rate: %s%%. ', 'mcp-ai-wpoos-pro' ), number_format( $total, 2 ), $collection_rate ) . self::DISCLAIMER,
+			'message'    => sprintf(
+				/* translators: %1$s: total outstanding amount, %2$s: collection rate percentage */
+				__( 'Total outstanding: $%1$s. Collection rate: %2$s%%. ', 'mcp-ai-wpoos-pro' ),
+				number_format( $total, 2 ),
+				$collection_rate
+			) . self::DISCLAIMER,
 			'data'       => array(
 				'aging_buckets'     => $buckets,
 				'total_outstanding' => round( $total, 2 ),

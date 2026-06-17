@@ -632,17 +632,11 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,
-			'local-only'        => true,
-			'read-only'         => false,
-			'idempotent'        => false,
-			'cacheable'         => true,
-			'requires-auth'     => true,
-			'blocking'          => false,
-			'uses-network'      => false,
-			'modifies-wp'       => true,
-			'expensive'         => false,
-			'requires-approval' => false,
+			'local-only',           // No external API calls.
+			'write',                // Supports rollback and save operations.
+			'state-changing',       // Modifies memory data.
+			'cacheable',            // Read operations are cacheable.
+			'requires-capability',  // Needs user authentication.
 		);
 	}
 }

@@ -202,6 +202,7 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 			$pass        = ( $lot_perches + 1e-6 >= $min_perch );
 			$checks[]    = array(
 				'rule'        => 'min_lot_perches_residential',
+				/* translators: %.1f: minimum lot size in perches */
 				'requirement' => sprintf( __( 'Minimum lot %.1f perches.', 'mcp-ai-wpoos-pro' ), $min_perch ),
 				'actual'      => sprintf( '%.2f perches', $lot_perches ),
 				'status'      => $pass ? 'pass' : 'fail',
@@ -221,6 +222,7 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 				$pass     = ( $far_actual <= $far_max + 1e-6 );
 				$checks[] = array(
 					'rule'        => 'far_max',
+					/* translators: %.2f: maximum FAR value */
 					'requirement' => sprintf( __( 'Maximum FAR %.2f.', 'mcp-ai-wpoos-pro' ), $far_max ),
 					'actual'      => sprintf( '%.2f', $far_actual ),
 					'status'      => $pass ? 'pass' : 'fail',
@@ -236,6 +238,7 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 				$pass       = ( $cov_actual <= $cov_max + 1e-6 );
 				$checks[]   = array(
 					'rule'        => 'site_coverage_max',
+					/* translators: %.0f: maximum site coverage percentage */
 					'requirement' => sprintf( __( 'Maximum site coverage %.0f%%.', 'mcp-ai-wpoos-pro' ), $cov_max ),
 					'actual'      => sprintf( '%.1f%%', $cov_actual ),
 					'status'      => $pass ? 'pass' : 'fail',
@@ -260,7 +263,8 @@ class WP_MCP_AI_Tool_Validate_Setbacks_And_Far implements WP_MCP_AI_Tool_Interfa
 				$pass     = ( $prov + 1e-6 >= $req[ $side ] );
 				$checks[] = array(
 					'rule'        => 'min_setback_' . $side . '_m',
-					'requirement' => sprintf( __( 'Minimum %s setback %.2f m.', 'mcp-ai-wpoos-pro' ), $side, $req[ $side ] ),
+					/* translators: %1$s: setback side, %2$.2f: required setback in meters */
+					'requirement' => sprintf( __( 'Minimum %1$s setback %2$.2f m.', 'mcp-ai-wpoos-pro' ), $side, $req[ $side ] ),
 					'actual'      => sprintf( '%.2f m', $prov ),
 					'status'      => $pass ? 'pass' : 'fail',
 				);

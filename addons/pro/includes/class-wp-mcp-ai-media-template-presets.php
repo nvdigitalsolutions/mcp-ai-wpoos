@@ -28,6 +28,13 @@ class WP_MCP_AI_Media_Template_Presets {
 	const SEEDED_VERSION_KEY = 'wp_mcp_ai_media_presets_seeded';
 
 	/**
+	 * Option key for tracking seeded collection presets.
+	 *
+	 * @var string
+	 */
+	const COLLECTIONS_SEEDED_KEY = 'wp_mcp_ai_media_collections_seeded';
+
+	/**
 	 * Current preset version.
 	 *
 	 * @var string
@@ -294,20 +301,30 @@ class WP_MCP_AI_Media_Template_Presets {
 	 * This method is called via activation hook and creates default template presets
 	 * if they haven't been seeded yet or if the preset version has been updated.
 	 *
-	 * @return void
+	 * @param bool $force If true, overwrite existing templates even if already seeded.
+	 * @return array Result with counts.
 	 */
-	public static function seed_presets() {
-		// Check if already seeded with current version.
+	public static function seed_presets( $force = false ) {
+		// Check if already seeded with current version (unless forced).
 		$seeded_version = get_option( self::SEEDED_VERSION_KEY, '' );
-		if ( self::PRESET_VERSION === $seeded_version ) {
-			return;
+		if ( ! $force && self::PRESET_VERSION === $seeded_version ) {
+			return array(
+				'created' => 0,
+				'skipped' => 0,
+				'errors'  => 0,
+				'message' => __( 'Media template presets are already up to date.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			// Don't seed if feature is disabled.
-			return;
+			return array(
+				'created' => 0,
+				'skipped' => 0,
+				'errors'  => 0,
+				'message' => __( 'Media Toolkit is not enabled. Please enable it in settings first.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		// Ensure categories exist first.
@@ -316,13 +333,30 @@ class WP_MCP_AI_Media_Template_Presets {
 		// Get all presets.
 		$presets = self::get_presets();
 
+		$created = 0;
+		$skipped = 0;
+		$errors  = 0;
+
 		// Create each preset template.
 		foreach ( $presets as $slug => $preset ) {
-			self::create_preset_template( $slug, $preset );
+			$result = self::create_preset_template( $slug, $preset, $force );
+			if ( is_wp_error( $result ) ) {
+				++$errors;
+			} elseif ( $result > 0 ) {
+				++$created;
+			} else {
+				++$skipped;
+			}
 		}
 
 		// Update seeded version.
 		update_option( self::SEEDED_VERSION_KEY, self::PRESET_VERSION );
+
+		return array(
+			'created' => $created,
+			'skipped' => $skipped,
+			'errors'  => $errors,
+		);
 	}
 
 	/**
@@ -356,9 +390,10 @@ class WP_MCP_AI_Media_Template_Presets {
 	 *
 	 * @param string $slug   Preset slug.
 	 * @param array  $preset Preset definition.
-	 * @return int|WP_Error Post ID on success, WP_Error on failure.
+	 * @param bool   $force  If true, update existing templates.
+	 * @return int|WP_Error Post ID on success, WP_Error on failure. Returns 0 if skipped.
 	 */
-	protected static function create_preset_template( $slug, $preset ) {
+	protected static function create_preset_template( $slug, $preset, $force = false ) {
 		// Check if template with this slug already exists.
 		$existing = get_posts(
 			array(
@@ -370,8 +405,21 @@ class WP_MCP_AI_Media_Template_Presets {
 		);
 
 		if ( ! empty( $existing ) ) {
+			if ( ! $force ) {
+				// Template already exists, skip unless forced.
+				return 0;
+			}
 			// Template already exists, update it.
 			$post_id = $existing[0]->ID;
+
+			// Update title and description.
+			wp_update_post(
+				array(
+					'ID'           => $post_id,
+					'post_title'   => $preset['title'],
+					'post_content' => isset( $preset['description'] ) ? $preset['description'] : '',
+				)
+			);
 		} else {
 			// Create new template.
 			$post_data = array(
@@ -435,5 +483,232 @@ class WP_MCP_AI_Media_Template_Presets {
 	 */
 	public static function is_preset( $post_id ) {
 		return (bool) get_post_meta( $post_id, '_mcp_ai_template_is_preset', true );
+	}
+
+	/**
+	 * Get all available collection presets.
+	 *
+	 * @return array Array of collection preset definitions.
+	 */
+	public static function get_collection_presets() {
+		return array(
+			'social_media_kit'     => array(
+				'title'       => __( 'Social Media Kit', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Pre-configured collection with Instagram, Facebook, Twitter, and LinkedIn templates for consistent social media branding.', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'social-media',
+				'operations'  => array( 'resize_graphic', 'add_logo' ),
+				'templates'   => array( 'instagram_square', 'facebook_cover', 'twitter_header', 'linkedin_banner' ),
+			),
+			'ecommerce_product_kit' => array(
+				'title'       => __( 'E-commerce Product Kit', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Collection for product images: thumbnails, hero banners, and category banners with WebP optimization.', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'e-commerce',
+				'operations'  => array( 'resize_graphic' ),
+				'templates'   => array( 'product_thumbnail', 'hero_banner', 'category_banner' ),
+			),
+			'branding_essentials'  => array(
+				'title'       => __( 'Branding Essentials', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Logo watermark collection with three watermark positions: bottom-right, center, and subtle bottom-left.', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'branding',
+				'operations'  => array( 'add_logo' ),
+				'templates'   => array( 'logo_watermark', 'logo_watermark_center', 'logo_watermark_subtle' ),
+			),
+			'content_marketing_kit' => array(
+				'title'       => __( 'Content Marketing Kit', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Blog featured images, newsletter headers, and email signature graphics for content marketing workflows.', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'content',
+				'operations'  => array( 'resize_graphic' ),
+				'templates'   => array( 'blog_featured_image', 'newsletter_header', 'email_signature' ),
+			),
+			'promotional_kit'      => array(
+				'title'       => __( 'Promotional Kit', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Promotional banners, sale badges, and event posters for marketing campaigns.', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'marketing',
+				'operations'  => array( 'resize_graphic' ),
+				'templates'   => array( 'promo_banner', 'sale_badge', 'event_poster' ),
+			),
+		);
+	}
+
+	/**
+	 * Get preset categories for collection taxonomy.
+	 *
+	 * @return array Array of category definitions.
+	 */
+	public static function get_collection_preset_categories() {
+		return self::get_preset_categories();
+	}
+
+	/**
+	 * Seed collection presets.
+	 *
+	 * Creates pre-configured media collections that group related templates together.
+	 *
+	 * @param bool $force If true, overwrite existing collections even if already seeded.
+	 * @return array Result with counts.
+	 */
+	public static function seed_collections( $force = false ) {
+		// Check if already seeded (unless forced).
+		$collections_seeded = get_option( self::COLLECTIONS_SEEDED_KEY, false );
+		if ( ! $force && $collections_seeded ) {
+			return array(
+				'created' => 0,
+				'skipped' => 0,
+				'errors'  => 0,
+				'message' => __( 'Media collection presets are already up to date.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Check if media toolkit is enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_media_toolkit'] ) ) {
+			return array(
+				'created' => 0,
+				'skipped' => 0,
+				'errors'  => 0,
+				'message' => __( 'Media Toolkit is not enabled. Please enable it in settings first.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Ensure collection categories exist.
+		self::seed_collection_categories();
+
+		// Get all collection presets.
+		$collections = self::get_collection_presets();
+
+		$created = 0;
+		$skipped = 0;
+		$errors  = 0;
+
+		foreach ( $collections as $slug => $collection ) {
+			$result = self::create_preset_collection( $slug, $collection, $force );
+			if ( is_wp_error( $result ) ) {
+				++$errors;
+			} elseif ( $result > 0 ) {
+				++$created;
+			} else {
+				++$skipped;
+			}
+		}
+
+		// Mark as seeded.
+		update_option( self::COLLECTIONS_SEEDED_KEY, true );
+
+		return array(
+			'created' => $created,
+			'skipped' => $skipped,
+			'errors'  => $errors,
+		);
+	}
+
+	/**
+	 * Seed collection taxonomy categories.
+	 *
+	 * @return void
+	 */
+	protected static function seed_collection_categories() {
+		$categories = self::get_collection_preset_categories();
+
+		foreach ( $categories as $slug => $category ) {
+			// Check if term already exists.
+			$term = term_exists( $slug, WP_MCP_AI_Media_Collection_CPT::TAXONOMY_CATEGORY );
+
+			if ( ! $term ) {
+				wp_insert_term(
+					$category['name'],
+					WP_MCP_AI_Media_Collection_CPT::TAXONOMY_CATEGORY,
+					array(
+						'slug'        => $slug,
+						'description' => $category['description'],
+					)
+				);
+			}
+		}
+	}
+
+	/**
+	 * Create a preset collection.
+	 *
+	 * @param string $slug       Collection slug.
+	 * @param array  $collection Collection definition.
+	 * @param bool   $force      If true, update existing collections.
+	 * @return int|WP_Error Post ID on success, WP_Error on failure. Returns 0 if skipped.
+	 */
+	protected static function create_preset_collection( $slug, $collection, $force = false ) {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Collection_CPT' ) ) {
+			return new WP_Error(
+				'cpt_not_found',
+				__( 'Media Collection CPT class not found.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Check if collection with this slug already exists.
+		$existing = get_posts(
+			array(
+				'post_type'   => WP_MCP_AI_Media_Collection_CPT::POST_TYPE,
+				'name'        => 'preset-' . $slug,
+				'post_status' => 'any',
+				'numberposts' => 1,
+			)
+		);
+
+		if ( ! empty( $existing ) ) {
+			if ( ! $force ) {
+				return 0;
+			}
+			$post_id = $existing[0]->ID;
+
+			// Update title and description.
+			wp_update_post(
+				array(
+					'ID'           => $post_id,
+					'post_title'   => $collection['title'],
+					'post_content' => isset( $collection['description'] ) ? $collection['description'] : '',
+				)
+			);
+		} else {
+			// Create new collection.
+			$post_data = array(
+				'post_type'    => WP_MCP_AI_Media_Collection_CPT::POST_TYPE,
+				'post_title'   => $collection['title'],
+				'post_content' => isset( $collection['description'] ) ? $collection['description'] : '',
+				'post_status'  => 'publish',
+				'post_name'    => 'preset-' . $slug,
+				'post_author'  => 1,
+				'meta_input'   => array(
+					'_mcp_ai_collection_is_preset' => true,
+					'_mcp_ai_collection_preset_id' => $slug,
+					'_mcp_ai_collection_preset_templates' => wp_json_encode( $collection['templates'] ),
+				),
+			);
+
+			$post_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $post_id ) ) {
+				return $post_id;
+			}
+		}
+
+		// Update collection meta.
+		update_post_meta( $post_id, '_mcp_ai_collection_is_preset', true );
+		update_post_meta( $post_id, '_mcp_ai_collection_preset_id', $slug );
+		update_post_meta( $post_id, '_mcp_ai_collection_preset_templates', wp_json_encode( $collection['templates'] ) );
+
+		// Assign category.
+		if ( isset( $collection['category'] ) ) {
+			wp_set_object_terms( $post_id, $collection['category'], WP_MCP_AI_Media_Collection_CPT::TAXONOMY_CATEGORY );
+		}
+
+		return $post_id;
+	}
+
+	/**
+	 * Check if a collection is a preset.
+	 *
+	 * @param int $post_id Collection post ID.
+	 * @return bool True if collection is a preset.
+	 */
+	public static function is_collection_preset( $post_id ) {
+		return (bool) get_post_meta( $post_id, '_mcp_ai_collection_is_preset', true );
 	}
 }

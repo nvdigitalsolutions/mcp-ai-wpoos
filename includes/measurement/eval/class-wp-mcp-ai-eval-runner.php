@@ -122,9 +122,9 @@ class WP_MCP_AI_Eval_Runner {
 		$summary = $this->summarize( $case_reports );
 
 		$report = array(
-			'suite'     => $suite->to_array(),
-			'summary'   => $summary,
-			'cases'     => $case_reports,
+			'suite'       => $suite->to_array(),
+			'summary'     => $summary,
+			'cases'       => $case_reports,
 			'duration_ms' => (int) round( ( microtime( true ) - $started_at ) * 1000 ),
 			'started_at'  => (int) $started_at,
 		);
@@ -180,7 +180,7 @@ class WP_MCP_AI_Eval_Runner {
 			? $generation['provider_context']
 			: $suite->get_generator_context();
 
-		$subject = array(
+		$subject          = array(
 			'value'    => $output,
 			'input'    => $case->get_input(),
 			'expected' => $case->get_expected(),
@@ -211,7 +211,7 @@ class WP_MCP_AI_Eval_Runner {
 			$passed ? 1 : 0,
 			array(
 				'suite' => $suite->get_slug(),
-				'case' => $case->get_slug(),
+				'case'  => $case->get_slug(),
 			)
 		);
 		$this->collector->record(
@@ -219,7 +219,7 @@ class WP_MCP_AI_Eval_Runner {
 			$score,
 			array(
 				'suite' => $suite->get_slug(),
-				'case' => $case->get_slug(),
+				'case'  => $case->get_slug(),
 			)
 		);
 		$this->collector->record(
@@ -227,7 +227,7 @@ class WP_MCP_AI_Eval_Runner {
 			$confidence,
 			array(
 				'suite' => $suite->get_slug(),
-				'case' => $case->get_slug(),
+				'case'  => $case->get_slug(),
 			)
 		);
 		$this->collector->record(
@@ -235,7 +235,7 @@ class WP_MCP_AI_Eval_Runner {
 			$case_latency_ms,
 			array(
 				'suite' => $suite->get_slug(),
-				'case' => $case->get_slug(),
+				'case'  => $case->get_slug(),
 			)
 		);
 		if ( $abstained ) {
@@ -244,7 +244,7 @@ class WP_MCP_AI_Eval_Runner {
 				1,
 				array(
 					'suite' => $suite->get_slug(),
-					'case' => $case->get_slug(),
+					'case'  => $case->get_slug(),
 				)
 			);
 		}
@@ -262,7 +262,7 @@ class WP_MCP_AI_Eval_Runner {
 				),
 				array(
 					'suite' => $suite->get_slug(),
-					'case' => $case->get_slug(),
+					'case'  => $case->get_slug(),
 				)
 			);
 			if ( is_wp_error( $value ) ) {
@@ -274,7 +274,7 @@ class WP_MCP_AI_Eval_Runner {
 					(float) $value,
 					array(
 						'suite' => $suite->get_slug(),
-						'case' => $case->get_slug(),
+						'case'  => $case->get_slug(),
 					)
 				);
 			}
@@ -327,16 +327,16 @@ class WP_MCP_AI_Eval_Runner {
 	 * @return array
 	 */
 	private function summarize( array $case_reports ) {
-		$total       = count( $case_reports );
+		$total = count( $case_reports );
 		if ( 0 === $total ) {
 			return $this->empty_summary();
 		}
 
-		$passed      = 0;
-		$abstained   = 0;
-		$errors      = 0;
-		$scores      = array();
-		$confidences = array();
+		$passed        = 0;
+		$abstained     = 0;
+		$errors        = 0;
+		$scores        = array();
+		$confidences   = array();
 		$reward_totals = array();
 
 		foreach ( $case_reports as $r ) {
@@ -357,11 +357,11 @@ class WP_MCP_AI_Eval_Runner {
 					if ( is_numeric( $value ) ) {
 						if ( ! isset( $reward_totals[ $slug ] ) ) {
 							$reward_totals[ $slug ] = array(
-								'sum' => 0.0,
+								'sum'   => 0.0,
 								'count' => 0,
 							);
 						}
-						$reward_totals[ $slug ]['sum']   += (float) $value;
+						$reward_totals[ $slug ]['sum'] += (float) $value;
 						++$reward_totals[ $slug ]['count'];
 					}
 				}
@@ -374,17 +374,17 @@ class WP_MCP_AI_Eval_Runner {
 		}
 
 		return array(
-			'total'             => $total,
-			'passed'            => $passed,
-			'abstained'         => $abstained,
-			'errors'            => $errors,
-			'pass_rate'         => $total > 0 ? (float) ( $passed / $total ) : 0.0,
-			'abstention_rate'   => $total > 0 ? (float) ( $abstained / $total ) : 0.0,
-			'error_rate'        => $total > 0 ? (float) ( $errors / $total ) : 0.0,
-			'mean_score'        => $this->mean( $scores ),
-			'median_score'      => $this->median( $scores ),
-			'mean_confidence'   => $this->mean( $confidences ),
-			'reward_means'      => $reward_means,
+			'total'           => $total,
+			'passed'          => $passed,
+			'abstained'       => $abstained,
+			'errors'          => $errors,
+			'pass_rate'       => $total > 0 ? (float) ( $passed / $total ) : 0.0,
+			'abstention_rate' => $total > 0 ? (float) ( $abstained / $total ) : 0.0,
+			'error_rate'      => $total > 0 ? (float) ( $errors / $total ) : 0.0,
+			'mean_score'      => $this->mean( $scores ),
+			'median_score'    => $this->median( $scores ),
+			'mean_confidence' => $this->mean( $confidences ),
+			'reward_means'    => $reward_means,
 		);
 	}
 
@@ -537,8 +537,8 @@ class WP_MCP_AI_Eval_Runner {
 		array $default_variants,
 		$flat_epsilon
 	) {
-		$case_started = microtime( true );
-		$generation   = call_user_func(
+		$case_started    = microtime( true );
+		$generation      = call_user_func(
 			$generator,
 			$case,
 			array(
@@ -606,7 +606,7 @@ class WP_MCP_AI_Eval_Runner {
 			$preferred ? 1 : 0,
 			array(
 				'suite' => $suite->get_slug(),
-				'case' => $case->get_slug(),
+				'case'  => $case->get_slug(),
 			)
 		);
 		if ( $flat ) {
@@ -615,7 +615,7 @@ class WP_MCP_AI_Eval_Runner {
 				1,
 				array(
 					'suite' => $suite->get_slug(),
-					'case' => $case->get_slug(),
+					'case'  => $case->get_slug(),
 				)
 			);
 		}

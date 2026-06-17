@@ -178,9 +178,11 @@ class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_I
 		// Wind zone basic speed.
 		$checks[] = array(
 			'category'    => 'structural',
+			/* translators: %s: hurricane wind zone name */
 			'requirement' => sprintf( __( 'JNBC 2018 wind zone "%s" basic wind speed.', 'mcp-ai-wpoos-pro' ), $wind_zone ),
 			'status'      => 'pass',
-			'details'     => sprintf( __( 'Basic wind speed: %.0f mph (%.1f m/s) — %s.', 'mcp-ai-wpoos-pro' ), (float) $wind['basic_wind_mph'], (float) $wind['basic_wind_ms'], $wind['standard'] ),
+			/* translators: 1: wind speed in mph, 2: wind speed in m/s, 3: design standard reference */
+			'details'     => sprintf( __( 'Basic wind speed: %1$.0f mph (%2$.1f m/s) — %3$s.', 'mcp-ai-wpoos-pro' ), (float) $wind['basic_wind_mph'], (float) $wind['basic_wind_ms'], $wind['standard'] ),
 		);
 
 		// Opening protection.
@@ -212,6 +214,7 @@ class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_I
 				'category'    => 'structural',
 				'requirement' => __( 'Roof-to-wall attachment must resist hurricane uplift (engineered strap or H-clip preferred).', 'mcp-ai-wpoos-pro' ),
 				'status'      => $adequate ? 'pass' : 'fail',
+				/* translators: %s: declared roof-to-wall attachment type */
 				'details'     => sprintf( __( 'Declared: %s. Toe-nail-only attachment is not adequate for Jamaica wind zones.', 'mcp-ai-wpoos-pro' ), $attachment ),
 			);
 		}
@@ -222,6 +225,7 @@ class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_I
 			if ( $req_uplift > 0 ) {
 				$checks[] = array(
 					'category'    => 'structural',
+					/* translators: %.2f: uplift design pressure in kPa */
 					'requirement' => sprintf( __( 'Essential facility — design for uplift ≥ %.2f kPa.', 'mcp-ai-wpoos-pro' ), $req_uplift ),
 					'status'      => 'warning',
 					'details'     => __( 'Essential facilities (hospitals, fire stations, shelters) must use Risk Category IV with Iw ≥ 1.15.', 'mcp-ai-wpoos-pro' ),
@@ -235,6 +239,7 @@ class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_I
 				'category'    => 'structural',
 				'requirement' => __( 'Low-slope roof.', 'mcp-ai-wpoos-pro' ),
 				'status'      => 'warning',
+				/* translators: %.1f: roof pitch angle in degrees */
 				'details'     => sprintf( __( 'Roof pitch %.1f° experiences elevated wind uplift in hurricanes — verify membrane attachment and roof edge securement.', 'mcp-ai-wpoos-pro' ), $roof_pitch ),
 			);
 		}
@@ -245,6 +250,7 @@ class WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance implements WP_MCP_AI_Tool_I
 				'category'    => 'fire_safety',
 				'requirement' => __( 'Sprinklers required per JNBC for buildings > 23 m.', 'mcp-ai-wpoos-pro' ),
 				'status'      => 'warning',
+				/* translators: %.1f: building height in meters */
 				'details'     => sprintf( __( 'Building height %.1f m exceeds 23 m — confirm sprinkler design.', 'mcp-ai-wpoos-pro' ), $height ),
 			);
 		}

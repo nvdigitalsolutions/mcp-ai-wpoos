@@ -20,7 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Capture_Screen {
+class WP_MCP_AI_Tool_Ext_Cog_Capture_Screen implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+
+	use WP_MCP_AI_Ext_Cog_Sensor_Access;
 
 	/**
 	 * Get tool slug.
@@ -29,6 +31,33 @@ class WP_MCP_AI_Tool_Ext_Cog_Capture_Screen {
 	 */
 	public function get_slug() {
 		return 'ext_cog_capture_screen';
+	}
+
+	/**
+	 * Get tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Capture Screen (Extended Cognition)', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Capture a screenshot of the user\'s screen, browser window, specific tab, or a CSS-selected DOM element (metacognitive mirror).', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
 	}
 
 	/**
@@ -188,24 +217,5 @@ class WP_MCP_AI_Tool_Ext_Cog_Capture_Screen {
 			'attachment_id' => isset( $captured['attachment_id'] ) ? absint( $captured['attachment_id'] ) : null,
 			'message'       => __( 'Screenshot captured. Analyze image_base64 to interpret the current screen state.', 'mcp-ai-wpoos' ),
 		);
-	}
-
-	/**
-	 * Check if the current user (or guest) is allowed to use sensors.
-	 *
-	 * @param array $context Execution context.
-	 * @return bool
-	 */
-	private function current_user_can_use_sensors( array $context ) {
-		if ( current_user_can( 'edit_posts' ) ) {
-			return true;
-		}
-
-		$settings = wp_mcp_ai_ext_cog_get_settings();
-		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
-			return true;
-		}
-
-		return false;
 	}
 }

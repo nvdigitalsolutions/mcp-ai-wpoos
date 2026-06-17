@@ -123,9 +123,9 @@ class WP_MCP_AI_Tool_Enable_Reasoning_Mode implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'          => true,
-			'modifies-wp'   => false,
-			'deterministic' => false, // Can vary based on historical data.
+			'read-only',          // Only reads historical data.
+			'local-only',         // No external API calls.
+			'non-deterministic',  // Can vary based on historical data.
 		);
 	}
 

@@ -120,9 +120,11 @@ class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interfa
 		$client_name  = get_post_meta( $appointment_id, '_client_name', true );
 		$start_time   = get_post_meta( $appointment_id, '_start_time', true );
 		$hours_before = ! empty( $arguments['hours_before'] ) ? absint( $arguments['hours_before'] ) : 24;
-		$subject      = sprintf( __( 'Appointment Reminder #%d', 'mcp-ai-wpoos-pro' ), $appointment_id );
-		$message      = sprintf( __( "Hello %1\$s,\n\nThis is a reminder about your upcoming appointment.\nTime: %2\$s\n\nSee you soon!", 'mcp-ai-wpoos-pro' ), $client_name, $start_time );
-		$sent         = wp_mail( $client_email, $subject, $message );
+		/* translators: %d: appointment ID */
+		$subject = sprintf( __( 'Appointment Reminder #%d', 'mcp-ai-wpoos-pro' ), $appointment_id );
+		/* translators: %1$s: client name, %2$s: appointment time */
+		$message = sprintf( __( "Hello %1\$s,\n\nThis is a reminder about your upcoming appointment.\nTime: %2\$s\n\nSee you soon!", 'mcp-ai-wpoos-pro' ), $client_name, $start_time );
+		$sent    = wp_mail( $client_email, $subject, $message );
 		if ( $sent ) {
 			$reminders   = get_post_meta( $appointment_id, '_reminders_sent', true ) ? get_post_meta( $appointment_id, '_reminders_sent', true ) : array();
 			$reminders[] = array(

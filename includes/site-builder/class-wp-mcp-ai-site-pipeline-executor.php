@@ -186,7 +186,7 @@ class WP_MCP_AI_Site_Pipeline_Executor {
 			// Try persistent cache.
 			$cached = $this->get_cached_output( $cache_key );
 			if ( null !== $cached ) {
-				$outputs[ $node_id ] = $cached;
+				$outputs[ $node_id ]           = $cached;
 				$this->run_cache[ $cache_key ] = $cached;
 				continue;
 			}
@@ -200,7 +200,7 @@ class WP_MCP_AI_Site_Pipeline_Executor {
 			// Cache and store.
 			$this->set_cached_output( $cache_key, $node_output );
 			$this->run_cache[ $cache_key ] = $node_output;
-			$outputs[ $node_id ] = $node_output;
+			$outputs[ $node_id ]           = $node_output;
 		}
 
 		return array(
@@ -240,7 +240,7 @@ class WP_MCP_AI_Site_Pipeline_Executor {
 				continue;
 			}
 
-			$in_degree[ $target ] = ( $in_degree[ $target ] ?? 0 ) + 1;
+			$in_degree[ $target ]   = ( $in_degree[ $target ] ?? 0 ) + 1;
 			$adjacency[ $source ][] = $target;
 		}
 
@@ -254,11 +254,11 @@ class WP_MCP_AI_Site_Pipeline_Executor {
 
 		$sorted = array();
 		while ( ! empty( $queue ) ) {
-			$current    = array_shift( $queue );
-			$sorted[]   = $current;
+			$current  = array_shift( $queue );
+			$sorted[] = $current;
 
 			foreach ( $adjacency[ $current ] as $neighbor ) {
-				$in_degree[ $neighbor ]--;
+				--$in_degree[ $neighbor ];
 				if ( 0 === $in_degree[ $neighbor ] ) {
 					$queue[] = $neighbor;
 				}
@@ -323,9 +323,9 @@ class WP_MCP_AI_Site_Pipeline_Executor {
 	 */
 	protected function resolve_inputs(
 		string $node_id,
-		array  $node_config,
-		array  $incoming,
-		array  $outputs
+		array $node_config,
+		array $incoming,
+		array $outputs
 	) {
 		// Start with static inputs.
 		$inputs = isset( $node_config['inputs'] ) ? (array) $node_config['inputs'] : array();
@@ -383,7 +383,7 @@ class WP_MCP_AI_Site_Pipeline_Executor {
 		string $pipeline_id,
 		string $node_id,
 		string $slug,
-		array  $inputs
+		array $inputs
 	): string {
 		// Sort inputs by key for deterministic hashing.
 		ksort( $inputs );

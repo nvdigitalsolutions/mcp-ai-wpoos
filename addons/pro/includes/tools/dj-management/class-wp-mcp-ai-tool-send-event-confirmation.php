@@ -212,7 +212,7 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 		if ( $nodemailer_service && $nodemailer_service->is_available() && '' !== $html_body ) {
 			$plain_text = sprintf(
 				/* translators: %s: client name */
-				__( "Dear %s,\n\nThank you for booking our DJ services!\n\nEvent: %s\nDate: %s\nTime: %s - %s\nVenue: %s\n", 'mcp-ai-wpoos-pro' ),
+				__( "Dear %1\$s,\n\nThank you for booking our DJ services!\n\nEvent: %2\$s\nDate: %3\$s\nTime: %4\$s - %5\$s\nVenue: %6\$s\n", 'mcp-ai-wpoos-pro' ),
 				$client_name,
 				$event_name,
 				gmdate( 'F j, Y', strtotime( $event_date ) ),

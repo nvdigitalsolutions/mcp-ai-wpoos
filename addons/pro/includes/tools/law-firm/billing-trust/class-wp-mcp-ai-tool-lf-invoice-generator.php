@@ -242,7 +242,12 @@ class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, W
 
 		return array(
 			'success'    => true,
-			'message'    => sprintf( __( 'Invoice %s generated: %s total. ', 'mcp-ai-wpoos-pro' ), $invoice_num, WP_MCP_AI_Law_Firm_Calculator::format_currency( $total_fees + $total_expenses ) ) . self::DISCLAIMER,
+			'message'    => sprintf(
+				/* translators: %1$s: invoice number, %2$s: total amount */
+				__( 'Invoice %1$s generated: %2$s total. ', 'mcp-ai-wpoos-pro' ),
+				$invoice_num,
+				WP_MCP_AI_Law_Firm_Calculator::format_currency( $total_fees + $total_expenses )
+			) . self::DISCLAIMER,
 			'data'       => array(
 				'invoice_number' => $invoice_num,
 				'matter_id'      => $matter_id,

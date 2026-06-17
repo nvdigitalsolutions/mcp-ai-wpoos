@@ -190,6 +190,7 @@ class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_
 
 		$result = array(
 			'success'  => true,
+			/* translators: %s: function expression */
 			'message'  => sprintf( __( 'Integral calculated for: %s', 'mcp-ai-wpoos-pro' ), $function ),
 			'text'     => 'definite' === $type ? sprintf( 'Integral = %s', $value ) : sprintf( 'Integral = %s + C', $integral ),
 			'function' => $function,

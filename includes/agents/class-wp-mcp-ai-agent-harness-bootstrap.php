@@ -554,7 +554,7 @@ class WP_MCP_AI_Agent_Harness_Bootstrap {
 			$index = array();
 		}
 
-		$key          = 'assistant_' . $assistant_id;
+		$key           = 'assistant_' . $assistant_id;
 		$index[ $key ] = $retained;
 
 		update_option( self::INDEX_OPTION, $index, false );

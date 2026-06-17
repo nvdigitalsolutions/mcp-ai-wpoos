@@ -56,6 +56,20 @@ function wp_mcp_ai_make( $class, $params = array() ) {
 }
 
 /**
+ * Get the tool registry instance.
+ *
+ * Convenience wrapper for WP_MCP_AI_Tool_Registry::get_instance().
+ * Used by REST controllers and tests to access the central tool registry.
+ *
+ * @since 1.2.0
+ *
+ * @return WP_MCP_AI_Tool_Registry Tool registry instance.
+ */
+function wp_mcp_ai_get_registry() {
+	return WP_MCP_AI_Tool_Registry::get_instance();
+}
+
+/**
  * Recursively sanitize an array of values (e.g. decoded JSON input).
  *
  * Strings are passed through sanitize_text_field(), integers and floats

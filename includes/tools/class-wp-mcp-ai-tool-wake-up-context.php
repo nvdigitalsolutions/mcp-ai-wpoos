@@ -567,17 +567,11 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,
-			'external-api'      => false,
-			'read-only'         => true,  // Pure read of stored memory.
-			'idempotent'        => true,  // Same inputs produce same block.
-			'cacheable'         => true,
-			'requires-auth'     => true,
-			'blocking'          => false,
-			'uses-network'      => false,
-			'modifies-wp'       => false,
-			'expensive'         => false,
-			'requires-approval' => false,
+			'read-only',            // Pure read of stored memory.
+			'local-only',           // No external API calls.
+			'idempotent',           // Same inputs produce same block.
+			'cacheable',            // Results can be cached.
+			'requires-capability',  // Needs user authentication.
 		);
 	}
 

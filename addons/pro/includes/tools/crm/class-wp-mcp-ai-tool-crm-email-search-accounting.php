@@ -140,29 +140,29 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_slug() {
 		return 'crm_email_search_accounting';
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_name() {
 		return __( 'CRM Email Search: Accounting & Service Tracking', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_description() {
 		return __( 'Search CRM contacts for accounting and service-tracking emails with TF-IDF free-text relevance scoring. Supports industry-standard transaction types (invoice, payment, quote, reminder, dispute), billing-status filtering, invoice-amount ranges, service categories, compliance audit metadata, and configurable sort order (relevance, invoice_amount, days_overdue, date, name, company). Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -292,22 +292,22 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function requires_base_pro() {
 		return true;
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -727,7 +727,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			 * @param string $default_currency Default ISO 4217 currency code.
 			 */
 			$default_currency = apply_filters( 'wp_mcp_ai_crm_default_currency', 'USD' );
-			$currency         = $raw_currency  ? $raw_currency : strtoupper( sanitize_text_field( $default_currency ) );
+			$currency         = $raw_currency ? $raw_currency : strtoupper( sanitize_text_field( $default_currency ) );
 
 			// Currency code filter (ISO 4217 – Xero/QuickBooks multi-currency standard).
 			if ( ! empty( $filters['currency_code'] ) && strtoupper( $filters['currency_code'] ) !== $currency ) {
@@ -829,15 +829,30 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 		$year    = absint( $year );
 		$quarter = strtoupper( $quarter ); // Normalise to uppercase for case-insensitive matching.
 		$map     = array(
-			'Q1' => array( 'start' => "{$year}-01-01", 'end' => "{$year}-03-31" ),
-			'Q2' => array( 'start' => "{$year}-04-01", 'end' => "{$year}-06-30" ),
-			'Q3' => array( 'start' => "{$year}-07-01", 'end' => "{$year}-09-30" ),
-			'Q4' => array( 'start' => "{$year}-10-01", 'end' => "{$year}-12-31" ),
+			'Q1' => array(
+				'start' => "{$year}-01-01",
+				'end' => "{$year}-03-31",
+			),
+			'Q2' => array(
+				'start' => "{$year}-04-01",
+				'end' => "{$year}-06-30",
+			),
+			'Q3' => array(
+				'start' => "{$year}-07-01",
+				'end' => "{$year}-09-30",
+			),
+			'Q4' => array(
+				'start' => "{$year}-10-01",
+				'end' => "{$year}-12-31",
+			),
 		);
 
 		return isset( $map[ $quarter ] )
 			? $map[ $quarter ]
-			: array( 'start' => "{$year}-01-01", 'end' => "{$year}-12-31" );
+			: array(
+				'start' => "{$year}-01-01",
+				'end' => "{$year}-12-31",
+			);
 	}
 
 	/**
@@ -857,7 +872,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 		}
 
 		$due_ts  = strtotime( $due_date_raw );
-		$now_ts  = current_time( 'timestamp', true );
+		$now_ts  = time();
 		$seconds = $now_ts - $due_ts;
 
 		if ( $seconds <= 0 ) {

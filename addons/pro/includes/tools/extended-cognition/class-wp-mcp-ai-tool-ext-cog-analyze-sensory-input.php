@@ -20,7 +20,27 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input {
+class WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input implements WP_MCP_AI_Ext_Cog_Tool_Interface {
+
+	use WP_MCP_AI_Ext_Cog_Sensor_Access;
+
+	/**
+	 * Get tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Analyze Sensory Input (Extended Cognition)', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Composite tool that simultaneously captures multiple sensors and returns a structured multi-modal analysis.', 'mcp-ai-wpoos' );
+	}
 
 	/**
 	 * {@inheritdoc}
@@ -249,24 +269,5 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input {
 		}
 
 		return $output;
-	}
-
-	/**
-	 * Check if the current user (or guest) is allowed to use sensors.
-	 *
-	 * @param array $context Execution context.
-	 * @return bool
-	 */
-	private function current_user_can_use_sensors( array $context ) {
-		if ( current_user_can( 'edit_posts' ) ) {
-			return true;
-		}
-
-		$settings = wp_mcp_ai_ext_cog_get_settings();
-		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
-			return true;
-		}
-
-		return false;
 	}
 }

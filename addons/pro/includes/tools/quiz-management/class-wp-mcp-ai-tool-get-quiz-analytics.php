@@ -175,8 +175,9 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'summary'           => sprintf(
-				/* translators: 1: quiz title, 2: number of submissions */
+			'summary'           =>
+			sprintf(
+				/* translators: %1$s: quiz title, %2$d: submission count */
 				__( 'Generated analytics for %1$s with %2$d submissions', 'mcp-ai-wpoos-pro' ),
 				$quiz_title,
 				count( $submissions )
@@ -518,6 +519,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 		$success_rates  = array();
 
 		foreach ( $questions as $index => $question ) {
+			/* translators: %d: question number */
 			$labels[] = sprintf( __( 'Q%d', 'mcp-ai-wpoos-pro' ), $index + 1 );
 
 			if ( isset( $question_stats[ $index ] ) ) {

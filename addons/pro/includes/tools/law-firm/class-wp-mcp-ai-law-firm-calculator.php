@@ -31,9 +31,6 @@ class WP_MCP_AI_Law_Firm_Calculator {
 	 * @param int    $days Parameter.
 	 * @param string $jurisdiction Parameter.
 	 * @return array|WP_Error Result.
-	 *
-	 * @param int    $start_date Parameter.
-	 * @param int    $jurisdiction Parameter.
 	 */
 	public static function add_business_days( string $start_date, int $days, string $jurisdiction = 'federal' ): string {
 		$date     = new DateTime( $start_date );
@@ -218,8 +215,6 @@ class WP_MCP_AI_Law_Firm_Calculator {
 	 * @param float $rate Parameter.
 	 * @param float $multiplier Parameter.
 	 * @return array|WP_Error Result.
-	 *
-	 * @param array $rate Parameter.
 	 */
 	public static function calculate_lodestar( float $hours, float $rate, float $multiplier = 1.0 ): float {
 		return round( $hours * $rate * $multiplier, 2 );
@@ -276,8 +271,6 @@ class WP_MCP_AI_Law_Firm_Calculator {
 	 * @param array $payments Parameter.
 	 * @param float $discount_rate Parameter.
 	 * @return array|WP_Error Result.
-	 *
-	 * @param array $discount_rate Parameter.
 	 */
 	public static function calculate_structured_settlement_npv( array $payments, float $discount_rate ): float {
 		$npv = 0.0;

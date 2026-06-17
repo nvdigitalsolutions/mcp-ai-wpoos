@@ -377,5 +377,44 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 				30
 			);
 		}
+
+		/**
+		 * Handle disconnecting from Meta.
+		 *
+		 * Clears the Meta access token and connected user info from settings.
+		 * App credentials (App ID, App Secret) are preserved for future reconnection.
+		 *
+		 * @since 1.0.0
+		 */
+		public function handle_meta_disconnect() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
+			}
+
+			check_admin_referer( 'wp_mcp_ai_meta_disconnect' );
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Clear OAuth tokens (but keep App ID and App Secret for reconnection).
+			unset( $settings['meta_access_token'] );
+			unset( $settings['meta_connected_user_name'] );
+			unset( $settings['meta_connected_user_id'] );
+
+			update_option( 'wp_mcp_ai_settings', $settings );
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'       => 'wp-mcp-ai-dashboard',
+						'tab'        => 'tools',
+						'subtab'     => 'connections',
+						'connection' => 'meta',
+						'meta_disconnected' => '1',
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
 	}
 }

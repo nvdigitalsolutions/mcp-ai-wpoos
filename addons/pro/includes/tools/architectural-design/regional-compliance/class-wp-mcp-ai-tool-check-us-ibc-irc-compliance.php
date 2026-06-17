@@ -194,6 +194,7 @@ class WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance implements WP_MCP_AI_Tool_Inter
 		$plan_corridor = isset( $building['corridor_width_m'] ) ? floatval( $building['corridor_width_m'] ) : 0.0;
 		if ( $min_corridor > 0 && 'ibc' === $code_path ) {
 			$status   = ( $plan_corridor <= 0 ) ? 'warning' : ( ( $plan_corridor + 1e-6 >= $min_corridor ) ? 'pass' : 'fail' );
+			/* translators: 1: minimum corridor width, 2: provided corridor width */
 			$checks[] = $this->mk( 'egress', sprintf( __( 'Minimum corridor width %.3f m (44").', 'mcp-ai-wpoos-pro' ), $min_corridor ), $status, $plan_corridor > 0 ? sprintf( __( 'Provided: %.2f m.', 'mcp-ai-wpoos-pro' ), $plan_corridor ) : __( 'Corridor width not provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -201,6 +202,7 @@ class WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance implements WP_MCP_AI_Tool_Inter
 		$plan_stair = isset( $building['stair_width_m'] ) ? floatval( $building['stair_width_m'] ) : 0.0;
 		if ( $min_stair > 0 ) {
 			$status   = ( $plan_stair <= 0 ) ? 'warning' : ( ( $plan_stair + 1e-6 >= $min_stair ) ? 'pass' : 'fail' );
+			/* translators: 1: minimum stair width, 2: provided stair width */
 			$checks[] = $this->mk( 'egress', sprintf( __( 'Minimum stair width %.3f m.', 'mcp-ai-wpoos-pro' ), $min_stair ), $status, $plan_stair > 0 ? sprintf( __( 'Provided: %.2f m.', 'mcp-ai-wpoos-pro' ), $plan_stair ) : __( 'Stair width not provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -208,6 +210,7 @@ class WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance implements WP_MCP_AI_Tool_Inter
 		$plan_travel = isset( $building['travel_distance_m'] ) ? floatval( $building['travel_distance_m'] ) : 0.0;
 		if ( $max_travel > 0 && 'ibc' === $code_path ) {
 			$status   = ( $plan_travel <= 0 ) ? 'warning' : ( ( $plan_travel <= $max_travel + 1e-6 ) ? 'pass' : 'fail' );
+			/* translators: 1: maximum travel distance, 2: provided travel distance */
 			$checks[] = $this->mk( 'egress', sprintf( __( 'Maximum travel distance %.1f m.', 'mcp-ai-wpoos-pro' ), $max_travel ), $status, $plan_travel > 0 ? sprintf( __( 'Provided: %.1f m.', 'mcp-ai-wpoos-pro' ), $plan_travel ) : __( 'Travel distance not provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -218,6 +221,7 @@ class WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance implements WP_MCP_AI_Tool_Inter
 			$plan_door = isset( $building['min_door_clear_width_mm'] ) ? floatval( $building['min_door_clear_width_mm'] ) : 0.0;
 			if ( $min_door > 0 ) {
 				$status   = ( $plan_door <= 0 ) ? 'warning' : ( ( $plan_door + 1e-6 >= $min_door ) ? 'pass' : 'fail' );
+				/* translators: 1: minimum door width, 2: provided door width */
 				$checks[] = $this->mk( 'accessibility', sprintf( __( 'Minimum door clear width %.0f mm (32").', 'mcp-ai-wpoos-pro' ), $min_door ), $status, $plan_door > 0 ? sprintf( __( 'Provided: %.0f mm.', 'mcp-ai-wpoos-pro' ), $plan_door ) : __( 'Door clear width not provided.', 'mcp-ai-wpoos-pro' ) );
 			}
 		}
@@ -229,6 +233,7 @@ class WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance implements WP_MCP_AI_Tool_Inter
 		if ( $sprinkler_at > 0 && $plan_height > 0 && 'ibc' === $code_path ) {
 			if ( $plan_height >= $sprinkler_at ) {
 				$has      = ! empty( $building['sprinklered'] );
+				/* translators: %.1f: sprinkler trigger height in meters */
 				$checks[] = $this->mk( 'fire_safety', sprintf( __( 'Sprinklers required for buildings ≥ %.1f m (55 ft).', 'mcp-ai-wpoos-pro' ), $sprinkler_at ), $has ? 'pass' : 'fail', $has ? __( 'Sprinkler system declared.', 'mcp-ai-wpoos-pro' ) : __( 'Provide a sprinkler system per IBC §403.', 'mcp-ai-wpoos-pro' ) );
 			}
 		}
@@ -247,10 +252,12 @@ class WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance implements WP_MCP_AI_Tool_Inter
 		$plan_u_roof = isset( $building['envelope_u_value_roof_w_m2k'] ) ? floatval( $building['envelope_u_value_roof_w_m2k'] ) : 0.0;
 		if ( $max_u_wall > 0 && $plan_u_wall > 0 ) {
 			$status   = ( $plan_u_wall <= $max_u_wall + 1e-6 ) ? 'pass' : 'fail';
+			/* translators: 1: IECC wall U-value limit, 2: provided wall U-value */
 			$checks[] = $this->mk( 'energy', sprintf( __( 'IECC 2024 wall U-value ≤ %.2f W/m²K.', 'mcp-ai-wpoos-pro' ), $max_u_wall ), $status, sprintf( __( 'Provided: %.2f W/m²K.', 'mcp-ai-wpoos-pro' ), $plan_u_wall ) );
 		}
 		if ( $max_u_roof > 0 && $plan_u_roof > 0 ) {
 			$status   = ( $plan_u_roof <= $max_u_roof + 1e-6 ) ? 'pass' : 'fail';
+			/* translators: 1: IECC roof U-value limit, 2: provided roof U-value */
 			$checks[] = $this->mk( 'energy', sprintf( __( 'IECC 2024 roof U-value ≤ %.2f W/m²K.', 'mcp-ai-wpoos-pro' ), $max_u_roof ), $status, sprintf( __( 'Provided: %.2f W/m²K.', 'mcp-ai-wpoos-pro' ), $plan_u_roof ) );
 		}
 

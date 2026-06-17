@@ -157,7 +157,11 @@ class WP_MCP_AI_Tool_LF_Brief_Outline_Generator implements WP_MCP_AI_Tool_Interf
 
 		return array(
 			'success'    => true,
-			'message'    => sprintf( __( '%s brief outline generated. ', 'mcp-ai-wpoos-pro' ), ucfirst( $brief_type ) ) . self::DISCLAIMER,
+			'message'    => sprintf(
+				/* translators: %s: brief type (appellate, trial, etc.) */
+				__( '%s brief outline generated. ', 'mcp-ai-wpoos-pro' ),
+				ucfirst( $brief_type )
+			) . self::DISCLAIMER,
 			'data'       => array(
 				'brief_type'   => $brief_type,
 				'issue'        => $issue,

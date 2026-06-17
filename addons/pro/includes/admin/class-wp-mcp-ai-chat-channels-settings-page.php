@@ -417,10 +417,11 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	protected function render_configuration_form() {
 		$settings = get_option( $this->option_name, array() );
 
-		$saved_assistant      = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
-		$enable_logging       = ! empty( $settings['enable_logging'] );
-		$enable_rate_limiting = isset( $settings['enable_rate_limiting'] ) ? (bool) $settings['enable_rate_limiting'] : true;
-		$verify_webhook       = isset( $settings['verify_webhook_signatures'] ) ? (bool) $settings['verify_webhook_signatures'] : true;
+		$saved_assistant        = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+		$enable_logging         = ! empty( $settings['enable_logging'] );
+		$enable_rate_limiting   = isset( $settings['enable_rate_limiting'] ) ? (bool) $settings['enable_rate_limiting'] : true;
+		$verify_webhook         = isset( $settings['verify_webhook_signatures'] ) ? (bool) $settings['verify_webhook_signatures'] : true;
+		$message_retention_days = isset( $settings['optimization']['message_retention_days'] ) ? absint( $settings['optimization']['message_retention_days'] ) : 90;
 
 		$assistants = get_posts(
 			array(
@@ -485,6 +486,25 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					</tr>
 				</table>
 
+					<h2 style="margin-top: 20px;"><?php esc_html_e( 'Performance &amp; Storage', 'mcp-ai-wpoos-pro' ); ?></h2>
+					<table class="form-table">
+						<tr>
+							<th scope="row">
+								<label for="cc-retention-days"><?php esc_html_e( 'Message Retention (days)', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<input type="number"
+									id="cc-retention-days"
+									name="<?php echo esc_attr( $this->option_name ); ?>[optimization][message_retention_days]"
+									value="<?php echo esc_attr( $message_retention_days ); ?>"
+									min="0" max="730" class="small-text" />
+								<p class="description">
+									<?php esc_html_e( 'Number of days to retain chat channel messages. Older messages are pruned daily at 2 AM. Set to 0 to keep forever. Default: 90.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							</td>
+						</tr>
+					</table>
+
 				<?php submit_button( __( 'Save Settings', 'mcp-ai-wpoos-pro' ) ); ?>
 			</form>
 		</div><!-- .toolkit-card -->
@@ -509,6 +529,14 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		$sanitized['enable_logging']            = ! empty( $input['enable_logging'] );
 		$sanitized['enable_rate_limiting']      = ! empty( $input['enable_rate_limiting'] );
 		$sanitized['verify_webhook_signatures'] = ! empty( $input['verify_webhook_signatures'] );
+
+		// Performance & Storage fields.
+		$sanitized['optimization']                           = isset( $sanitized['optimization'] ) && is_array( $sanitized['optimization'] )
+			? $sanitized['optimization']
+			: array();
+		$sanitized['optimization']['message_retention_days'] = isset( $input['optimization']['message_retention_days'] )
+			? max( 0, min( 730, absint( $input['optimization']['message_retention_days'] ) ) )
+			: 90;
 
 		return $sanitized;
 	}

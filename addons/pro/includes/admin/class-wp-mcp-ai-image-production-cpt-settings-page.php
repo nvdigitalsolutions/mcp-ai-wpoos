@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore WordPress.Files.FileName -- Class name does not match filename; file included explicitly.
 /**
  * Image Production Settings Page
  *
@@ -338,8 +338,8 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_CPT_Settings_Pa
 			<?php
 			esc_html_e( 'Select the OCR provider for extracting text from images. Used by image text extraction tools. Auto mode automatically selects the best available provider.', 'mcp-ai-wpoos-pro' );
 			echo '<br>';
-			/* translators: %s: Settings page URL */
 			printf(
+			/* translators: %s: Settings page URL */
 				esc_html__( 'Configure API keys in %s', 'mcp-ai-wpoos-pro' ),
 				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ) . '">' . esc_html__( 'Provider Settings', 'mcp-ai-wpoos-pro' ) . '</a>'
 			);

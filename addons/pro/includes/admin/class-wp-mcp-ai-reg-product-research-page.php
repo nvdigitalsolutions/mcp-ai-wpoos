@@ -1006,7 +1006,8 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 					'Brand'            => __( 'Please upload as CSV format', 'mcp-ai-wpoos-pro' ),
 					'Manufacturer'     => __( 'Or install PhpSpreadsheet', 'mcp-ai-wpoos-pro' ),
 					'Category'         => __( 'For full Excel support', 'mcp-ai-wpoos-pro' ),
-					'INCI Ingredients' => __( 'File: ' . basename( $file_path ), 'mcp-ai-wpoos-pro' ),
+					/* translators: %s: file path basename */
+					'INCI Ingredients' => sprintf( __( 'File: %s', 'mcp-ai-wpoos-pro' ), basename( $file_path ) ),
 				),
 			),
 		);

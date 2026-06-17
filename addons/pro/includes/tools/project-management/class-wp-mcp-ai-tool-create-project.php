@@ -212,6 +212,7 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Validate assigned users.
 		foreach ( $assigned_to as $user_id ) {
 			if ( ! get_user_by( 'id', $user_id ) ) {
+				/* translators: %d: user ID */
 				return new WP_Error( 'wp_mcp_ai_invalid_user', sprintf( __( 'User ID %d does not exist.', 'mcp-ai-wpoos-pro' ), $user_id ) );
 			}
 		}

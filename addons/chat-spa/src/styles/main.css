@@ -1093,3 +1093,404 @@ border-color: rgba( 255, 255, 255, 0.08 );
 background: #2a2a2a;
 border-color: rgba( 255, 255, 255, 0.1 );
 }
+
+/* ── Sidebar tabs (Threads integration, v0.5.0) ───────────────────── */
+
+.nvoos-chat-spa-sidebar-tabs {
+	display: flex;
+	border-bottom: 1px solid rgba( 0, 0, 0, 0.06 );
+}
+
+.nvoos-chat-spa-sidebar-tab {
+	flex: 1 1 auto;
+	font: inherit;
+	font-size: 0.75rem;
+	padding: 0.4rem 0.25rem;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: none;
+	color: rgba( 0, 0, 0, 0.55 );
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.nvoos-chat-spa-sidebar-tab:hover {
+	color: rgba( 0, 0, 0, 0.8 );
+}
+
+.nvoos-chat-spa-sidebar-tab--active {
+	color: inherit;
+	border-bottom-color: #8a2be2;
+}
+
+.nvoos-chat-spa-sidebar-panel {
+	flex: 1 1 auto;
+	overflow-y: auto;
+}
+
+.nvoos-chat-spa-sidebar-item-model {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	color: #8a2be2;
+}
+
+.nvoos-chat-spa-sidebar-item-stamp {
+	opacity: 0.8;
+}
+
+.nvoos-chat-spa-sidebar-item-count {
+	opacity: 0.7;
+}
+
+/* Dark-theme sidebar tab variants */
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-tab {
+	color: rgba( 255, 255, 255, 0.55 );
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-tab:hover {
+	color: rgba( 255, 255, 255, 0.8 );
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-tab--active {
+	color: #fff;
+	border-bottom-color: #b388ff;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-item-model {
+	color: #b388ff;
+}
+
+/* ==========================================================================
+   Phase 8 — Message Toolbar
+   ========================================================================== */
+
+.nvoos-chat-spa-toolbar {
+	display: flex;
+	gap: 2px;
+	margin-top: 6px;
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.nvoos-chat-spa-message:hover .nvoos-chat-spa-toolbar,
+.nvoos-chat-spa-toolbar:focus-within {
+	opacity: 1;
+}
+
+.nvoos-chat-spa-toolbar-btn {
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	padding: 2px 6px;
+	font-size: 13px;
+	line-height: 1;
+	cursor: pointer;
+	color: #6b7280;
+	transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.nvoos-chat-spa-toolbar-btn:hover {
+	background: #f3f4f6;
+	color: #374151;
+	border-color: #d1d5db;
+}
+
+.nvoos-chat-spa-toolbar-btn:focus-visible {
+	outline: 2px solid #7c3aed;
+	outline-offset: 1px;
+}
+
+/* Copy success flash */
+.nvoos-chat-spa-toolbar-copy--success {
+	color: #059669;
+	border-color: #6ee7b7;
+	background: #ecfdf5;
+}
+
+/* Save active state */
+.nvoos-chat-spa-toolbar-save--active {
+	color: #7c3aed;
+}
+
+/* Feedback active */
+.nvoos-chat-spa-toolbar-feedback--active {
+	color: #7c3aed;
+	border-color: #c4b5fd;
+	background: #f5f3ff;
+}
+
+/* Delete button */
+.nvoos-chat-spa-toolbar-delete:hover {
+	color: #dc2626;
+	border-color: #fca5a5;
+	background: #fef2f2;
+}
+
+/* ==========================================================================
+   Phase 8 — Code block copy buttons
+   ========================================================================== */
+
+.nvoos-chat-spa-code-wrapper {
+	position: relative;
+}
+
+.nvoos-chat-spa-code-wrapper pre {
+	padding-top: 32px; /* Make room for the copy button */
+}
+
+.nvoos-chat-spa-code-copy {
+	position: absolute;
+	top: 6px;
+	right: 8px;
+	font-size: 11px;
+	padding: 2px 8px;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+	background: #fff;
+	color: #6b7280;
+	cursor: pointer;
+	transition: all 0.15s;
+	line-height: 1.5;
+}
+
+.nvoos-chat-spa-code-copy:hover {
+	background: #f3f4f6;
+	color: #374151;
+	border-color: #9ca3af;
+}
+
+.nvoos-chat-spa-code-copy--success {
+	color: #059669;
+	border-color: #6ee7b7;
+	background: #ecfdf5;
+}
+
+/* ==========================================================================
+   Phase 8 — Special content blocks (JSON, Truncated, Chart, Video, Gallery)
+   ========================================================================== */
+
+/* Shared details/summary pattern for collapsible blocks */
+.nvoos-chat-spa-special {
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	margin: 8px 0;
+	overflow: hidden;
+}
+
+.nvoos-chat-spa-special[open] {
+	border-color: #d1d5db;
+}
+
+.nvoos-chat-spa-special-summary {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #6b7280;
+	cursor: pointer;
+	list-style: none;
+	user-select: none;
+	background: #f9fafb;
+	transition: background 0.15s;
+}
+
+.nvoos-chat-spa-special-summary::-webkit-details-marker {
+	display: none;
+}
+
+.nvoos-chat-spa-special-summary:hover {
+	background: #f3f4f6;
+}
+
+.nvoos-chat-spa-special-icon {
+	font-family: monospace;
+	font-size: 14px;
+	opacity: 0.7;
+}
+
+.nvoos-chat-spa-special-body {
+	margin: 0;
+	padding: 8px 10px;
+	font-size: 12px;
+	line-height: 1.45;
+	overflow-x: auto;
+	background: #fafafa;
+	border-top: 1px solid #e5e7eb;
+	max-height: 400px;
+	overflow-y: auto;
+}
+
+/* JSON block */
+.nvoos-chat-spa-special--json .nvoos-chat-spa-special-body {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+/* Truncated block */
+.nvoos-chat-spa-special--truncated .nvoos-chat-spa-special-summary {
+	color: #d97706;
+}
+
+/* Chart block */
+.nvoos-chat-spa-chart {
+	margin: 8px 0;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.nvoos-chat-spa-chart-title {
+	padding: 6px 10px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #6b7280;
+	background: #f9fafb;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.nvoos-chat-spa-chart-iframe {
+	display: block;
+	border: 0;
+	max-width: 100%;
+}
+
+/* Video block */
+.nvoos-chat-spa-video {
+	margin: 8px 0;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.nvoos-chat-spa-video-player {
+	display: block;
+	width: 100%;
+	max-width: 560px;
+	background: #000;
+}
+
+.nvoos-chat-spa-video-download {
+	display: block;
+	padding: 6px 10px;
+	font-size: 12px;
+	color: #6b7280;
+	text-decoration: none;
+	border-top: 1px solid #e5e7eb;
+}
+
+.nvoos-chat-spa-video-download:hover {
+	background: #f3f4f6;
+	color: #374151;
+}
+
+/* Image gallery */
+.nvoos-chat-spa-gallery {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 8px 0;
+}
+
+.nvoos-chat-spa-gallery-img {
+	max-width: 320px;
+	max-height: 240px;
+	border-radius: 6px;
+	border: 1px solid #e5e7eb;
+	object-fit: cover;
+}
+
+.nvoos-chat-spa-gallery-more {
+	width: 100%;
+	font-size: 12px;
+	color: #9ca3af;
+	margin: 2px 0 0;
+}
+
+/* ==========================================================================
+   Phase 8 — Dark mode overrides
+   ========================================================================== */
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-toolbar-btn {
+	color: #9ca3af;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-toolbar-btn:hover {
+	background: #374151;
+	color: #e5e7eb;
+	border-color: #4b5563;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-toolbar-copy--success {
+	color: #34d399;
+	border-color: #065f46;
+	background: #064e3b;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-toolbar-feedback--active {
+	color: #a78bfa;
+	border-color: #5b21b6;
+	background: #2e1065;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-toolbar-delete:hover {
+	color: #fca5a5;
+	border-color: #7f1d1d;
+	background: #450a0a;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-code-copy {
+	background: #1f2937;
+	color: #9ca3af;
+	border-color: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-code-copy:hover {
+	background: #374151;
+	color: #e5e7eb;
+	border-color: #4b5563;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-code-copy--success {
+	color: #34d399;
+	border-color: #065f46;
+	background: #064e3b;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-special {
+	border-color: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-special[open] {
+	border-color: #4b5563;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-special-summary {
+	background: #1f2937;
+	color: #9ca3af;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-special-summary:hover {
+	background: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-special-body {
+	background: #111827;
+	border-top-color: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-chart,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-video {
+	border-color: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-chart-title,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-video-download {
+	background: #1f2937;
+	color: #9ca3af;
+	border-bottom-color: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-gallery-img {
+	border-color: #374151;
+}

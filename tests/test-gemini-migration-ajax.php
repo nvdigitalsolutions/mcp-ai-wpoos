@@ -26,6 +26,13 @@ class Test_Gemini_Migration_AJAX extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php';
 		}
+
+		// Register the AJAX handler — in a real request WP_MCP_AI_Admin_Settings
+		// registers this, but in unit tests the settings class may not be instantiated.
+		if ( ! has_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs' ) ) {
+			$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+			add_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs', array( $ajax_handlers, 'safe_ajax_handler' ) );
+		}
 	}
 
 	/**

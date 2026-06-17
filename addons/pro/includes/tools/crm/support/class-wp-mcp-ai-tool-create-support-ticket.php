@@ -158,7 +158,7 @@ class WP_MCP_AI_Tool_Create_Support_Ticket implements WP_MCP_AI_Tool_Interface, 
 		// Create the ticket post.
 		$ticket_id = wp_insert_post(
 			array(
-				'post_type'    => 'mcp_ai_support_ticket',
+				'post_type'    => 'mcp_ai_ticket',
 				'post_title'   => $subject,
 				'post_content' => $body,
 				'post_status'  => 'publish',

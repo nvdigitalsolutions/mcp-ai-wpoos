@@ -206,7 +206,6 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 
 
 	/**
-
 	 * Get the required capability.
 	 *
 	 * @return string
@@ -215,15 +214,11 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		return 'edit_posts';
 	}
 
-
 	/**
-
 	 * Execute the tool.
-
-	 * @param array $arguments Tool arguments.
-
-	 *  * @param array $context   Execution context.
 	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {

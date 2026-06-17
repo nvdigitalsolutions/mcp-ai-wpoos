@@ -757,8 +757,8 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			$error_code    = 'wp_mcp_ai_omni_request_failed';
 
 			if ( isset( $data['error']['message'] ) ) {
-				$api_error      = $data['error']['message'];
-				$error_message  = $api_error;
+				$api_error     = $data['error']['message'];
+				$error_message = $api_error;
 
 				if ( false !== stripos( $api_error, 'not found' ) || false !== stripos( $api_error, 'does not exist' ) ) {
 					$error_code    = 'wp_mcp_ai_omni_unavailable';
@@ -766,17 +766,20 @@ class WP_MCP_AI_Gemini_Omni_Service {
 				} elseif ( false !== stripos( $api_error, 'quota' ) || false !== stripos( $api_error, 'rate limit' ) ) {
 					$error_code    = 'wp_mcp_ai_quota_exceeded';
 					$error_message = sprintf(
+						/* translators: %s: API error message */
 						__( 'Video generation quota exceeded: %s', 'mcp-ai-wpoos' ),
 						$api_error
 					);
 				} elseif ( false !== stripos( $api_error, 'content policy' ) || false !== stripos( $api_error, 'unsafe' ) ) {
 					$error_code    = 'wp_mcp_ai_content_policy_violation';
 					$error_message = sprintf(
+						/* translators: %s: API error message */
 						__( 'Prompt rejected by content policy. Try rephrasing: %s', 'mcp-ai-wpoos' ),
 						$api_error
 					);
 				} else {
 					$error_message = sprintf(
+						/* translators: %s: API error message */
 						__( 'Video request error: %s', 'mcp-ai-wpoos' ),
 						$api_error
 					);
@@ -844,9 +847,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			$operation_name
 		);
 
-		$is_edit   = isset( $operation['is_edit'] ) && $operation['is_edit'];
-		$attempts  = 0;
-		$in_async  = isset( $args['in_async_executor'] ) && $args['in_async_executor'];
+		$is_edit  = isset( $operation['is_edit'] ) && $operation['is_edit'];
+		$attempts = 0;
+		$in_async = isset( $args['in_async_executor'] ) && $args['in_async_executor'];
 
 		if ( ! class_exists( 'WP_MCP_AI_Timeout_Detection_Service' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
@@ -927,6 +930,7 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			return new WP_Error(
 				'wp_mcp_ai_omni_polling_timeout',
 				sprintf(
+					/* translators: %d: number of polling attempts */
 					__( 'Video operation timed out after %d attempts.', 'mcp-ai-wpoos' ),
 					$attempts
 				),
@@ -979,12 +983,12 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		}
 
 		return array(
-			'video_data'  => $video_data,
-			'model'       => $model,
-			'video_uri'   => $video_uri,
-			'prompt'      => isset( $args['prompt'] ) ? $args['prompt'] : '',
+			'video_data'   => $video_data,
+			'model'        => $model,
+			'video_uri'    => $video_uri,
+			'prompt'       => isset( $args['prompt'] ) ? $args['prompt'] : '',
 			'aspect_ratio' => isset( $args['aspect_ratio'] ) ? $args['aspect_ratio'] : '16:9',
-			'created'     => time(),
+			'created'      => time(),
 		);
 	}
 
@@ -1031,6 +1035,7 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			return new WP_Error(
 				'wp_mcp_ai_video_download_failed',
 				sprintf(
+					/* translators: %d: HTTP status code */
 					__( 'Failed to download video (HTTP %d).', 'mcp-ai-wpoos' ),
 					$code
 				),
@@ -1062,14 +1067,18 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		$prefix = self::ASYNC_OP_PREFIX;
 
 		// Store operation details for the cron callback.
-		set_transient( $prefix . $job_id, array(
-			'operation_name' => $operation['operation_name'],
-			'model'          => isset( $operation['model_used'] ) ? $operation['model_used'] : self::OMNI_MODEL,
-			'is_edit'        => isset( $operation['is_edit'] ) ? $operation['is_edit'] : false,
-			'args'           => $args,
-			'created_at'     => time(),
-			'status'         => 'queued',
-		), HOUR_IN_SECONDS * 6 );
+		set_transient(
+			$prefix . $job_id,
+			array(
+				'operation_name' => $operation['operation_name'],
+				'model'          => isset( $operation['model_used'] ) ? $operation['model_used'] : self::OMNI_MODEL,
+				'is_edit'        => isset( $operation['is_edit'] ) ? $operation['is_edit'] : false,
+				'args'           => $args,
+				'created_at'     => time(),
+				'status'         => 'queued',
+			),
+			HOUR_IN_SECONDS * 6
+		);
 
 		// Schedule cron event.
 		if ( ! wp_next_scheduled( self::CRON_POLL_HOOK, array( $job_id ) ) ) {
@@ -1086,12 +1095,12 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		);
 
 		return array(
-			'async'         => true,
-			'job_id'        => $job_id,
-			'status'        => 'queued',
-			'eta_seconds'   => self::ESTIMATED_COMPLETION_POLLS * self::POLLING_INTERVAL,
-			'check_hook'    => self::CRON_POLL_HOOK,
-			'model'         => isset( $operation['model_used'] ) ? $operation['model_used'] : self::OMNI_MODEL,
+			'async'       => true,
+			'job_id'      => $job_id,
+			'status'      => 'queued',
+			'eta_seconds' => self::ESTIMATED_COMPLETION_POLLS * self::POLLING_INTERVAL,
+			'check_hook'  => self::CRON_POLL_HOOK,
+			'model'       => isset( $operation['model_used'] ) ? $operation['model_used'] : self::OMNI_MODEL,
 		);
 	}
 
@@ -1123,14 +1132,14 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			'is_edit'        => $data['is_edit'],
 		);
 
-		$args               = $data['args'];
+		$args                      = $data['args'];
 		$args['in_async_executor'] = true;
 
 		$result = $this->poll_for_completion( $operation, $args );
 
 		if ( is_wp_error( $result ) ) {
-			$data['status']      = 'failed';
-			$data['error']       = $result->get_error_message();
+			$data['status']       = 'failed';
+			$data['error']        = $result->get_error_message();
 			$data['completed_at'] = time();
 			set_transient( $prefix . $job_id, $data, HOUR_IN_SECONDS * 6 );
 
@@ -1220,10 +1229,10 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			: 0;
 
 		return array(
-			'status'        => 'processing',
-			'progress'      => $progress,
-			'job_id'        => $job_id,
-			'model'         => isset( $data['model'] ) ? $data['model'] : self::OMNI_MODEL,
+			'status'   => 'processing',
+			'progress' => $progress,
+			'job_id'   => $job_id,
+			'model'    => isset( $data['model'] ) ? $data['model'] : self::OMNI_MODEL,
 		);
 	}
 
@@ -1277,7 +1286,8 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			return new WP_Error(
 				$omni_error->get_error_code(),
 				sprintf(
-					__( 'Video generation failed with both Omni and Veo. Omni: %s. Veo: %s', 'mcp-ai-wpoos' ),
+					/* translators: %1$s: Omni error message, %2$s: Veo error message */
+					__( 'Video generation failed with both Omni and Veo. Omni: %1$s. Veo: %2$s', 'mcp-ai-wpoos' ),
 					$omni_error->get_error_message(),
 					$result->get_error_message()
 				),

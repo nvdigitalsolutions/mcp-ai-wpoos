@@ -343,7 +343,7 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 			'content_meta'    => '',
 		),
 		array(
-			'slug'            => 'mcp_ai_arch_precedent',
+			'slug'            => 'mcp_ai_arch_prec',
 			'default_include' => true,
 			'label'           => 'Arch. Precedents',
 			'content_meta'    => '',

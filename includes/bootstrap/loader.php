@@ -230,6 +230,15 @@ require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-openrouter-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-digitalocean-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-baseten-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-deepseek-provider-client.php';
+
+// ---------------------------------------------------------------------------
+// WP 7.0 Connectors API bridge (no-op on WP < 7.0).
+// Must load after all provider client classes but before the tool
+// infrastructure so Credential_Resolver is available when
+// WP_MCP_AI_Model_Config::get_available_providers() is called.
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/bridge/bridge-init.php';
 
 // ---------------------------------------------------------------------------
 // Tool infrastructure and utilities
@@ -505,6 +514,12 @@ unset(
 );
 
 // ---------------------------------------------------------------------------
+// Settings section autoloader — MUST be available outside is_admin() so CLI
+// test runs can resolve WP_MCP_AI_Section_* classes during instantiation.
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
+
+// ---------------------------------------------------------------------------
 // Admin-only includes
 // ---------------------------------------------------------------------------
 
@@ -568,7 +583,6 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-rest-context-diagnostic.php';
 	WP_MCP_AI_REST_Context_Diagnostic::init();
 
-	require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 	wp_mcp_ai_container()->get( 'admin.auth0_setup' );
 	wp_mcp_ai_container()->get( 'admin.settings' );

@@ -89,7 +89,7 @@ if ( $is_enabled && ! $is_base ) {
 
 	// --- REST API: iCloud Drive webhook controller ---
 	$_icloud_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php';
-	if ( file_exists( $_icloud_rest ) && ! class_exists( 'WP_MCP_AI_iCloud_Webhook_Controller' ) ) {
+	if ( file_exists( $_icloud_rest ) && ! class_exists( 'WP_MCP_AI_ICloud_Webhook_Controller' ) ) {
 		require_once $_icloud_rest;
 		new WP_MCP_AI_iCloud_Webhook_Controller();
 	}
@@ -114,6 +114,10 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Register tools via the standard pro tools hook.
 	add_action( 'wp_mcp_ai_load_pro_tools', 'wp_mcp_ai_load_chat_channels_tools' );
+
+	// --- Performance optimization (message/contact retention, autoload fix, CPT gate) ---
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-chat-channels-optimization.php';
+	WP_MCP_AI_Chat_Channels_Optimization::init();
 }
 
 /**

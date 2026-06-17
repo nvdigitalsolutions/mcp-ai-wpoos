@@ -8,7 +8,7 @@
  * @license   GPL-3.0-or-later
  */
 
-// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound, Generic.Files.OneClassPerFile.MultipleFound, PSR1.Files.SideEffects.FoundWithSymbols -- CLI command file with multiple command classes and helper functions.
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO, Generic.Files, PSR1.Files.SideEffects.FoundWithSymbols, Squiz.Commenting.FunctionComment.Missing -- CLI command file with multiple command classes and helper functions.
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -18,6 +18,13 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	if ( ! function_exists( 'wp_mcp_ai_get_supported_plugins' ) ) {
 		/**
 		 * Retrieve a map of supported optional plugin dependencies.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return array[]
+		 */
+		/**
+		 * Get supported plugins list for WP-CLI diagnostics.
 		 *
 		 * @since 1.0.0
 		 *
@@ -1780,6 +1787,29 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	// Load Bulk-tool / massive-data CLI commands (Phase 5).
 	if ( ! class_exists( 'WP_MCP_AI_CLI_Bulk_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-bulk-command.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-bulk-command.php';
+	}
+
+	// Load v1.1.30 CLI commands — memory, thread, provider, cron, chat, transcript, approval.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Memory_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-memory-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-memory-command.php';
+	}
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Thread_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-thread-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-thread-command.php';
+	}
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Provider_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-provider-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-provider-command.php';
+	}
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Cron_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-cron-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-cron-command.php';
+	}
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Chat_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-chat-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-chat-command.php';
+	}
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Transcript_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-transcript-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-transcript-command.php';
+	}
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Approval_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-approval-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-approval-command.php';
 	}
 
 	WP_CLI::add_command( 'mcp-ai', 'WP_MCP_AI_CLI_Command' );

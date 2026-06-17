@@ -1,6 +1,6 @@
 {
   "name": "nvoos-chat-spa",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "NV oOS Chat SPA — React chat surface using the Vercel AI SDK UI layer (@ai-sdk/react) on top of NV oOS REST chat endpoints",
   "private": true,
   "type": "module",
@@ -32,11 +32,14 @@
     "@typescript-eslint/parser": "8.32.0",
     "@vitest/coverage-v8": "^4.1.5",
     "@wordpress/i18n": "5.12.0",
-    "esbuild": "^0.27.0",
+    "esbuild": "^0.28.1",
     "eslint": "9.27.0",
     "eslint-plugin-jsx-a11y": "6.10.2",
     "jsdom": "^29.1.1",
     "typescript": "5.8.3",
     "vitest": "^4.1.5"
+  },
+  "overrides": {
+    "vite": ">=8.0.16"
   }
 }

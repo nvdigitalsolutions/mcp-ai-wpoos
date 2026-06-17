@@ -85,10 +85,22 @@ class WP_MCP_AI_Tool_Retrieve_With_Provenance implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
+	/**
+	 * Get the required capability for this tool.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the retrieve with provenance tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$query = isset( $arguments['query'] ) ? trim( (string) $arguments['query'] ) : '';
 		if ( '' === $query ) {

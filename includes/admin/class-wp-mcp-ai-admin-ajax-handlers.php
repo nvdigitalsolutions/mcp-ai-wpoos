@@ -101,6 +101,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
 				'wp_ajax_wp_mcp_ai_delete_old_playbooks'   => 'handle_delete_old_playbooks',
 				'wp_ajax_wp_mcp_ai_get_models_for_provider' => 'handle_get_models_for_provider',
+				'wp_ajax_wp_mcp_ai_sync_media_templates'   => 'handle_sync_media_templates',
 				'wp_ajax_wp_mcp_ai_clear_test_files'       => 'handle_clear_test_files',
 				'wp_ajax_wp_mcp_ai_clear_dev_files'        => 'handle_clear_dev_files',
 			);
@@ -3614,7 +3615,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			do {
 				$result = WP_MCP_AI_Profession_Playbook_Seeder::delete_orphaned_system_playbooks( $batch_limit );
 
-				$total_deleted     += $result['deleted_count'];
+				$total_deleted += $result['deleted_count'];
 				++$batches_processed;
 
 				if ( $result['deleted_count'] < $batch_limit ) {
@@ -3626,7 +3627,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Older plugin versions may have created playbook attachments without
 			// _wp_mcp_ai_playbook_hash.  If the primary path found nothing, try a
 			// broader (but still guarded) sweep limited to a reasonable batch.
-			if ( $total_deleted === 0 ) {
+			if ( 0 === $total_deleted ) {
 				global $wpdb;
 
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
@@ -3656,8 +3657,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 				if ( ! empty( $legacy_ids ) ) {
 					foreach ( $legacy_ids as $legacy_id ) {
-						$legacy_id  = absint( $legacy_id );
-						$file_path  = get_attached_file( $legacy_id );
+						$legacy_id = absint( $legacy_id );
+						$file_path = get_attached_file( $legacy_id );
 
 						// Guard: only delete if the physical file lives in our directory.
 						if ( $file_path && false !== strpos( $file_path, 'wp-mcp-ai/profession-playbooks' ) ) {
@@ -3669,7 +3670,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				}
 			}
 
-			if ( $total_deleted === 0 ) {
+			if ( 0 === $total_deleted ) {
 				wp_send_json_success(
 					array(
 						'message' => __( 'No orphaned playbook attachments found to delete.', 'mcp-ai-wpoos' ),
@@ -3991,6 +3992,115 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			wp_send_json_success(
 				array(
 					'models' => $models,
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to sync media toolkit templates and collections.
+		 *
+		 * Seeds pre-configured template presets and collection presets for the
+		 * Pro Media Toolkit. Supports both "seed" (create new) and
+		 * "force_reseed" (update existing) modes.
+		 *
+		 * @since 1.12.0
+		 */
+		private function handle_sync_media_templates() {
+			check_ajax_referer( 'wp_mcp_ai_sync_media_templates', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			// Check if Pro addon is active.
+			if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Media template syncing requires the Pro addon.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			// Check if Media Toolkit is enabled.
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( empty( $settings['enable_media_toolkit'] ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			// Get action type: 'seed' (default, skip existing) or 'force_reseed' (update existing).
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$action_type = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'seed';
+			$force       = ( 'force_reseed' === $action_type );
+
+			// Load the presets class.
+			if ( ! class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-media-template-presets.php';
+			}
+
+			// Seed templates.
+			$template_result = WP_MCP_AI_Media_Template_Presets::seed_presets( $force );
+
+			// Seed collections.
+			$collection_result = WP_MCP_AI_Media_Template_Presets::seed_collections( $force );
+
+			// Build success message.
+			$parts = array();
+			if ( $template_result['created'] > 0 || $template_result['errors'] > 0 ) {
+				$parts[] = sprintf(
+					/* translators: 1: created count, 2: error count */
+					__( 'Templates: %1$d created, %2$d errors', 'mcp-ai-wpoos' ),
+					$template_result['created'],
+					$template_result['errors']
+				);
+			}
+			if ( $collection_result['created'] > 0 || $collection_result['errors'] > 0 ) {
+				$parts[] = sprintf(
+					/* translators: 1: created count, 2: error count */
+					__( 'Collections: %1$d created, %2$d errors', 'mcp-ai-wpoos' ),
+					$collection_result['created'],
+					$collection_result['errors']
+				);
+			}
+
+			$total_created = $template_result['created'] + $collection_result['created'];
+			$total_skipped = $template_result['skipped'] + $collection_result['skipped'];
+			$total_errors  = $template_result['errors'] + $collection_result['errors'];
+
+			if ( $total_created > 0 || $total_errors > 0 ) {
+				$message = sprintf(
+					/* translators: 1: created count, 2: skipped count, 3: error count */
+					__( 'Media presets synced! Created: %1$d, Skipped: %2$d, Errors: %3$d.', 'mcp-ai-wpoos' ),
+					$total_created,
+					$total_skipped,
+					$total_errors
+				);
+				if ( ! empty( $parts ) ) {
+					$message .= ' (' . implode( '; ', $parts ) . ')';
+				}
+			} else {
+				$message = __( 'Media presets are already up to date.', 'mcp-ai-wpoos' );
+			}
+
+			wp_send_json_success(
+				array(
+					'message'           => $message,
+					'templates_created' => $template_result['created'],
+					'templates_skipped' => $template_result['skipped'],
+					'templates_errors'  => $template_result['errors'],
+					'collections_created' => $collection_result['created'],
+					'collections_skipped' => $collection_result['skipped'],
+					'collections_errors'  => $collection_result['errors'],
 				)
 			);
 		}

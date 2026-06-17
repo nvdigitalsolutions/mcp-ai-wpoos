@@ -3645,33 +3645,33 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		 * @since 1.0.0
 		 */
 		return apply_filters( 'wp_mcp_ai_tool_presets', $presets );
-		}
+	}
 
 		/**
 		 * Get all tool presets (alias for get_presets).
 		 *
 		 * @return array
 		 */
-		public static function get_all_presets() {
-			return self::get_presets();
-		}
+	public static function get_all_presets() {
+		return self::get_presets();
+	}
 
 		/**
 		 * Render tool preset buttons with Clear All and Select All.
-	 *
-	 * @param array $args {
-	 *     Optional. Arguments for rendering presets.
-	 *
-	 *     @type array  $available_tools Array of available tool slugs to filter presets. Default empty (no filtering).
-	 *     @type string $title           Title for the presets section. Default 'Quick Tool Selection Presets'.
-	 *     @type string $description     Description text. Default preset description.
-	 *     @type string $button_class    Additional CSS class for buttons. Default 'button'.
-	 *     @type string $container_class CSS class for the container. Default 'wp-mcp-ai-tool-presets'.
-	 *     @type bool   $include_script  Whether to include JavaScript. Default true.
-	 *     @type string $checkbox_selector CSS selector for tool checkboxes. Default 'input[name="wp_mcp_ai_tools[]"]'.
-	 *     @type bool   $show_utility_buttons Whether to show Clear All and Select All buttons. Default true.
-	 * }
-	 */
+		 *
+		 * @param array $args {
+		 *     Optional. Arguments for rendering presets.
+		 *
+		 *     @type array  $available_tools Array of available tool slugs to filter presets. Default empty (no filtering).
+		 *     @type string $title           Title for the presets section. Default 'Quick Tool Selection Presets'.
+		 *     @type string $description     Description text. Default preset description.
+		 *     @type string $button_class    Additional CSS class for buttons. Default 'button'.
+		 *     @type string $container_class CSS class for the container. Default 'wp-mcp-ai-tool-presets'.
+		 *     @type bool   $include_script  Whether to include JavaScript. Default true.
+		 *     @type string $checkbox_selector CSS selector for tool checkboxes. Default 'input[name="wp_mcp_ai_tools[]"]'.
+		 *     @type bool   $show_utility_buttons Whether to show Clear All and Select All buttons. Default true.
+		 * }
+		 */
 	public static function render_presets( $args = array() ) {
 		$defaults = array(
 			'available_tools'      => array(),
@@ -3774,9 +3774,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			return;
 		}
 
-		$preset_script_printed = true;
+		$preset_script_printed  = true;
 		$checkbox_selector_json = wp_json_encode( $checkbox_selector );
-		$script = "( function() {
+		$script                 = "( function() {
 			'use strict';
 
 			document.addEventListener( 'DOMContentLoaded', function() {

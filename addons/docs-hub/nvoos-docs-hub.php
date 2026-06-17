@@ -178,7 +178,7 @@ function nvoos_docs_hub_is_base_active() {
  * @return bool True when the addon is operational.
  */
 function nvoos_docs_hub_is_ready() {
-	return NV_oOS_Docs_Hub_Plugin::is_enabled();
+	return nvoos_docs_hub_is_base_active() && NV_oOS_Docs_Hub_Plugin::is_enabled();
 }
 
 // Boot the plugin.

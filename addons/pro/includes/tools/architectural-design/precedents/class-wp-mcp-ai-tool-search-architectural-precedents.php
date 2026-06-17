@@ -3,7 +3,7 @@
  * Tool — Search Architectural Precedents.
  *
  * Performs embedding-based semantic search over the
- * `mcp_ai_arch_precedent` CPT using OpenAI embeddings + cosine similarity.
+ * `mcp_ai_arch_prec` CPT using OpenAI embeddings + cosine similarity.
  * Falls back to deterministic keyword scoring when embeddings are not
  * available (no API key, offline environment, or filter short-circuit).
  *

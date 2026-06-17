@@ -1,6 +1,6 @@
 # Financial Planning Toolkit
 
-This directory contains 32 financial planning tools for the NV oOS WordPress plugin.
+This directory contains 34 financial planning tools for the NV oOS WordPress plugin.
 
 ## Tools Created:
 
@@ -51,7 +51,11 @@ Inspired by [Awesome-finance-skills](https://github.com/RKiding/Awesome-finance-
 31. ✓ financial_report_generator - Generate structured professional financial reports
 32. ✓ financial_search - Specialized multi-source financial web search
 
+### Transaction Categorisation (2 tools)
+33. ✓ get_uncategorised_transactions - Retrieve uncategorised transactions with filters
+34. ✓ categorise_transactions - Assign categories by IDs or rules (merchant_match, amount_range, date_pattern)
+
 ## Implementation Status:
-- 32/32 tools fully implemented (100% complete)
+- 34/34 tools fully implemented (100% complete)
 
 All tools follow WordPress Coding Standards and implement required interfaces.

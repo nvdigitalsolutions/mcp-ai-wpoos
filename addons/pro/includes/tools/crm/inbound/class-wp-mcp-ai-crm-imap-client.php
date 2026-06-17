@@ -96,7 +96,7 @@ class WP_MCP_AI_CRM_IMAP_Client {
 	 * Parse connection string into components.
 	 */
 	private function parse_conn_string() {
-		// Format: {host:port/flags}MAILBOX or {host:port/flags} or {host/flags}MAILBOX
+		// Format: {host:port/flags}MAILBOX or {host:port/flags} or {host/flags}MAILBOX.
 		if ( ! preg_match( '/\{([^}]+)\}(.*)/', $this->conn_string, $m ) ) {
 			$this->params = array(
 				'host'    => 'localhost',
@@ -273,7 +273,7 @@ class WP_MCP_AI_CRM_IMAP_Client {
 		$tag  = $this->send_command( 'SEARCH ' . $criteria );
 		$resp = $this->read_response( $tag );
 
-		// Parse SEARCH response: * SEARCH 1 2 3
+		// Parse SEARCH response: * SEARCH 1 2 3.
 		$numbers = array();
 		foreach ( $resp as $line ) {
 			if ( preg_match( '/^\* SEARCH (.+)$/i', $line, $m ) ) {
@@ -370,7 +370,7 @@ class WP_MCP_AI_CRM_IMAP_Client {
 
 		foreach ( $resp as $line ) {
 			if ( ! $in_body ) {
-				// Look for literal size indicator: {N}
+				// Look for literal size indicator: {N}.
 				if ( preg_match( '/\{(\d+)\}$/', $line, $lm ) ) {
 					$byte_len = (int) $lm[1];
 					$in_body  = true;
@@ -387,7 +387,8 @@ class WP_MCP_AI_CRM_IMAP_Client {
 					break;
 				}
 				$body .= $line . "\r\n";
-				if ( strlen( $body ) >= $byte_len ) {
+				$body_len = strlen( $body );
+				if ( $body_len >= $byte_len ) {
 					break;
 				}
 			}
@@ -493,12 +494,15 @@ class WP_MCP_AI_CRM_IMAP_Client {
 			if ( preg_match( '/\{(\d+)\}$/', $line, $lm ) ) {
 				$literal_len = (int) $lm[1];
 				$literal     = '';
-				while ( strlen( $literal ) < $literal_len ) {
+				$literal_len_int = $literal_len;
+				$literal_strlen  = strlen( $literal );
+				while ( $literal_strlen < $literal_len_int ) {
 					$chunk = $this->read_line();
 					if ( false === $chunk ) {
 						break;
 					}
-					$literal .= $chunk;
+					$literal        .= $chunk;
+					$literal_strlen  = strlen( $literal );
 				}
 				$lines[] = $literal;
 			}
@@ -564,7 +568,7 @@ class WP_MCP_AI_CRM_IMAP_Client {
 	 * @return string Decoded value.
 	 */
 	private function decode_mime_header( $value ) {
-		// Match =?charset?encoding?encoded_text?=
+		// Match =?charset?encoding?encoded_text?= pattern.
 		if ( ! preg_match_all( '/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/', $value, $matches, PREG_SET_ORDER ) ) {
 			return $value;
 		}

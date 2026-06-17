@@ -1,5 +1,558 @@
 # oOS – Changelog
 
+## [1.1.31] - 2026-06-17
+
+### Added — Media Command Center (PR #5402)
+
+- Top-level "NV Media" admin menu with command center for managing media workflows.
+- Template and preset management with `implode()` WP_Error crash fix.
+- PHPCS cleanup across the Media Command Center page.
+- Admin menu label renamed to "NV oOS AI".
+
+### Added — Pro SPA v2 Migration & Rich Rendering (PRs #5401, #5412, #5414, #5416)
+
+- Pro SPA v2 ported to feature parity with chat-spa and old pro-spa.
+- **Rich markdown rendering** for assistant responses.
+- **Per-assistant scoping** dropdown and **agent selector** in the chat UI.
+- **Conversations** set as primary view; threads marked read-only after archival.
+- CSS class-name mismatches fixed, restoring previously unstyled UI.
+- Admin layout fit within WordPress chrome.
+- Cache-bust version bump; production assets built and dist un-gitignored.
+- Version bumped to **2.0.1**.
+
+### Added — 34 Missing Workflow Preset Tools (PR #5418)
+
+- All missing workflow presets implemented across 10 toolkits: AI Tool Builder, Analytics, Architect Agent, Architectural Design, Calendar Booking, CRM, Document Generation, DJ Management, Social Media, Video Production.
+- Orphaned media tools created and Upwork tool availability fixed.
+- Full PHPCS compliance for all 36 new tool files (short ternary → full ternary, count() in loops, docblock capitalisation).
+- Comprehensive test suite validating class existence, interface implementation, slug resolution, metadata, capability flags (including `pro` and `read-only`), and dry_run safety defaults.
+
+### Fixed — npm Audit CVEs — June 2026 (PR #5419)
+
+- **12 CVEs resolved** across the dependency tree:
+  - vite CVE-2026-53571 (server.fs.deny bypass)
+  - launch-editor CVE-2026-53632 (NTLMv2 disclosure)
+  - markdown-it CVE-2026-48988 (smartquotes quadratic DoS)
+  - ws (memory exhaustion DoS)
+  - js-yaml (quadratic DoS in merge keys)
+  - form-data >=4.0.6 (CRLF injection)
+  - hono >=4.12.25 (path traversal, CORS, Set-Cookie)
+  - dompurify >=3.4.9 (XSS sanitization bypasses)
+  - @babel/core >=7.29.6 (arbitrary file read)
+  - @opentelemetry/core >=2.8.0 (unbounded memory)
+  - joi >=18.2.1 (RangeError DoS)
+- ajv bump reverted to restore ESLint 8 compatibility.
+- Root npm audit: **51→0** vulnerabilities.
+
+### Changed — Gemini Image Default (PR #5404)
+
+- Default Gemini image generation model upgraded to `gemini-3.1-flash-image`.
+
+### Added — Media Toolkit Blueprints & Scheduler Presets (PRs #5398, #5411)
+
+- Blueprints and scheduler presets added to the media toolkit.
+- Media Toolkit sync integrated into the Data Management page.
+- Private `get_media_presets()` visibility fixed to prevent fatal error when called externally.
+
+### Fixed — Provider Streaming & Cost Tracking
+
+- `stream_options` added to OpenAI and DeepSeek streaming API payloads for accurate usage tracking (PR #5400).
+- Tool result costs now computed from token counts when not explicitly provided by the provider (PR #5395).
+- Missing provider pricing entries added across the cost-tracking layer, fixing under-reporting in agentic workflows (PR #5394).
+
+### Fixed — Security
+
+- vite pinned to ^8.0.16 to resolve CVE-2026-53571 and CVE-2026-53632 (PR #5403).
+
+### Fixed — Code Quality & CI
+
+- **1,658 PHPCS lint errors** fixed across base plugin and Pro addon (44 toolkits) (PR #5397).
+- `require_once` paths corrected for renamed optimization and tool files.
+- `Free disk space` step added to all build workflows to prevent runner disk exhaustion (PR #5417).
+
+### Fixed — Data Integrity
+
+- PII pseudonymisation logic restored after being lost during a merge conflict resolution (PR #5398).
+- CPT data store post type mismatch for CRM entities resolved (PR #5396).
+
+## [1.1.30] - 2026-06-15
+
+### Added — Chat SPA Phase 8: Message Actions & Content Enrichment (PRs #5381, #5383, #5390)
+
+- **Conversations sidebar** with assistant scoping in the Pro Chat SPA.
+- **Auto-create thread** when posting a message to a non-existent thread.
+- **Phase 8: message actions** — edit, delete, regenerate, copy, and content enrichment cards on every assistant message.
+- Pro SPA chat now routed through the chat-client endpoint; threads marked read-only after archiving.
+
+### Added — Project Management Toolkit Enhancement Phase A–D (PR #5370)
+
+- **Shared engine** (`WP_MCP_AI_PM_Engine`) powering the Command Center dashboard.
+- **Command Center dashboard** with real-time task visibility, status filters, and bulk actions.
+- **28 new AI tools** spanning task management, resource allocation, timeline generation, and reporting.
+- **Work Ingestion panel** on the Command Center tasks tab for importing external tasks.
+
+### Added — CRM Toolkit: Duplicates, Email Hygiene & Analytics (PRs #5362, #5367, #5368)
+
+- **Duplicate detection** engine with safe one-click merge and bulk merge from the Duplicates tab.
+- **Email hygiene module** — classify domains by reputation, manage exclusion/priority lists, auto-prune.
+- **Top Customers & Top Clients analytics** tools with dedicated Command Center tabs.
+- **Merged status filter** and column on the leads admin list.
+- **Inline tag editing** and email priority/exclude actions in the leads table.
+- **Repair CRM data** tool fixing broken dates, generic titles, and impersonal sender names.
+- **Refresh All Sources** button on the Command Center Support tab.
+- **LinkedIn & Upwork** external sourcing with LinkedIn as a Remote Sites OAuth 2.0 connection type.
+
+### Added — DietPi Pro Toolkit Phases 0–3 (PRs #5346, #5348, #5350)
+
+- **Phase 0–1:** Foundations — CPT/CCT scaffolding, admin settings page, 19 core tools for system monitoring, package management, and service control.
+- **Phase 2:** Backup, update, storage, and dashboard tools.
+- **Phase 3:** Provisioning automation, infrastructure blueprints, and SSH proxy.
+- Registered as an MCP server with Feature subtab toggle.
+
+### Added — Layer I Guardrails (PRs #5340, #5344)
+
+- **Stay-on-target jailbreak prevention** — harness Layer I intercepts prompt-injection and role-change attacks.
+- Activated per-assistant via the LLM Harness metabox.
+
+### Added — LibreChat Addon (PR #5336)
+
+- New `addons/librechat/` addon with code interpreter, speech-to-text/text-to-speech services, and web search reranker.
+- Added to SPA build workflow and addon ZIP build pipeline.
+
+### Added — Context Window Management (PRs #5335, #5348, #5352)
+
+- **Pre-flight context-window validation** across all 13 AI providers (OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA, Cloudflare, Hugging Face, LM Studio, Ollama).
+- **tiktoken integration** for accurate token counting before API dispatch.
+- **Estimator metabox** on the assistant edit screen showing real-time token budget.
+- **Token-budget tool capping** — tools exceeding the remaining budget are auto-excluded.
+- **Shared `validate_context_window()` helper** in the language model router.
+- **Chat parity drift detection** workflow and context-window validation in `lib/core`.
+- Model limits synced with June 2026 canonical catalog.
+
+### Added — WP 7.0 Connectors API Bridge (PR #5387)
+
+- Bridge for provider credentials enabling forward-compatibility with the WordPress 7.0 Connectors API.
+- Bridge classes load unconditionally to prevent fatal errors on WP < 7.0.
+
+### Added — Chat Transcript & Agent Memory Retention (PRs #5356, #5357)
+
+- **Base:** `WP_MCP_AI_Transcript_Retention` — configurable retention policies for chat transcripts, automatic cleanup cron.
+- **Pro:** `WP_MCP_AI_Memory_Retention` — agent memory lifecycle management with pruning and retention windows.
+
+### Added — Pro Toolkit Optimizations Phase 1–3 (PRs #5355, #5356, #5357)
+
+- **Phase 1:** Chat Channels and Social Media toolkits — autoload control and retention policies.
+- **Phase 2:** Healthcare, Ecommerce, Calendar, and Orchestration toolkits.
+- **Phase 3:** Document Generation and QMS toolkits.
+- All classes wired into their respective toolkit init files with 767-line PHPUnit test suite.
+
+### Added — OAuth & API Connection Management (PR #5351)
+
+- **Disconnect buttons** for OAuth and API connections in the admin UI.
+- **Auto-clear OAuth tokens** when provider credentials change on save.
+
+### Added — MCP Server Directory Addon Proposal (PR #5380)
+
+- Implementation proposal for a new addon cataloguing and discovering MCP servers.
+
+### Fixed — SPA Reliability Sweep (PRs #5371–#5379)
+
+- Register thread REST endpoints (fixes SPA `createThread` crash).
+- Fix SPA router context error — lift `HashRouter` to Layout component.
+- Fix `createThread` onClick event serialization crash.
+- Register `POST /threads/{id}/messages` endpoint for SPA chat.
+- Pass model and profile selections to `createThread`.
+- Fix SPA bootstrap tool iteration and transcript `turn_count`.
+- Fix SPA bootstrap REST route not registered for API calls.
+- Fix SPA enqueue paths and PM blueprints missing JS.
+- Restore Zed-inspired SPA accidentally deleted by revert.
+- Build SPA bundle and fix import paths for pre-packaged distribution.
+
+### Fixed — Core & Provider Fixes
+
+- **12 test suites** fixed and SPL autoloader moved before `is_admin()` gate.
+- **Toolkit MCP tools** returning empty `inputSchema` for image tools.
+- **OOS engine fatal error** from undefined `sendRequest` in provider streaming clients.
+- **Agentic loop tool result persistence** fixed across all providers.
+- **OpenAI real-time SSE streaming** never triggering.
+- **Fatal error** loading bridge classes unconditionally on WP < 7.0.
+- **Context-window validation** added to all 13 providers with shared helper.
+- **Stale provider validation lists** rejecting DeepSeek and newer providers.
+- **Schedule preset data mismatches** fixed with improved error logging.
+
+### Fixed — CRM & Data Fixes
+
+- CRM configured sources count showing 0 for valid Gmail connections.
+- Slider/range fields not rendering input controls.
+- 3 CPT slugs exceeding 20-character WordPress limit.
+- Support ticket CPT renamed from `mcp_ai_support_ticket` to `mcp_ai_ticket`.
+- Memory tools capability flags fixed for orchestration layer.
+- Extended Cognition review issues: interface, trait, pipeline, storage, menu.
+- Playbook orphan accumulation, unsafe deletion, and sync timeouts.
+
+### Fixed — Addon Fixes
+
+- **Docs Hub:** async rebuild stalls and browse critical error; broken Intuit privacy policy link.
+- **Cloudways Dashboard:** removed `Requires Plugins` header; added base-active check to `_is_ready()`.
+- **Pro Integrations:** subtab overwriting redirect after save.
+- **Performance monitor:** buttons, reports, and test execution restored.
+- **DietPi Toolkit:** PHPCS formatting across all files; PHPCompat hex-string comparison fix.
+
+### Fixed — Security
+
+- **guzzlehttp/psr7** pinned to `^2.10.2` to fix CVE-2026-49214 and CRLF injection.
+- **esbuild** pinned to `^0.28.1` across all addons; esbuild integrity check vulnerability in Pro addon.
+- **shell-quote** bumped to `>=1.8.4` via overrides to fix CVE-2026-9277.
+- **vitest/vite/esbuild** security alerts fixed in `schedule-anything-spa` addon.
+
+### Fixed — Infrastructure
+
+- `redirect_canonical` prevented from breaking well-known endpoints.
+- `tool-status.txt` reads guarded against missing file warnings.
+- WPCS lint issues in section-tools and tool-registry.
+- ESLint `no-var` violations in performance-admin.js.
+- PHPCS errors in CRM analytics and compliance tools.
+- CRM inline alignment and sprintf i18n placeholders fixed.
+- Chat parity workflow permissions and PR comment formatting.
+- YAML indentation error in chat-parity-check workflow.
+
+### Changed
+
+- **46 healthcare-style blueprints** converted to CRM-style format.
+- **All legacy flat-format blueprints** upgraded to canonical formats.
+- **README** updated with PM toolkit, repository map, and broken anchor link fixes.
+- **v1.1.29** comprehensive documentation refresh across all surfaces.
+- **66 proposal statuses** audited and refreshed for v1.1.29.
+- 75 PHPCS violations auto-fixed in Pro addon bootstrap file.
+- Composer production autoloader regenerated (`--no-dev --classmap-authoritative`).
+
+## [1.1.29] - 2026-06-11
+
+### Added — Pro Toolkit Optimizations Phase 1–3 (PRs #5355, #5356, #5357)
+
+Multi-phase performance optimization across 6 Pro toolkits with autoload control, caching, and lazy loading:
+- **Phase 1 (Chat Channels + Social Media):** `WP_MCP_AI_CC_Optimization` and `WP_MCP_AI_SM_Optimization` classes with autoload control and retention policies.
+- **Phase 2 (Healthcare + Ecommerce + Calendar/Orchestration):** `WP_MCP_AI_HC_Optimization`, `WP_MCP_AI_EC_Optimization`, and `WP_MCP_AI_Cal_Orch_Optimization` classes.
+- **Phase 3 (Document Generation + QMS):** `WP_MCP_AI_DG_Optimization` class.
+- All optimization classes wired into their respective toolkit init files.
+- 767-line PHPUnit test suite (`tests/test-pro-toolkit-optimization.php`).
+
+### Added — Chat Transcript & Agent Memory Retention (PRs #5356, #5357)
+
+- **Base:** `WP_MCP_AI_Transcript_Retention` (437 lines) — configurable retention policies for chat transcripts, automatic cleanup cron.
+- **Pro:** `WP_MCP_AI_Memory_Retention` (358 lines) — agent memory lifecycle management with pruning and retention windows.
+- Both classes enforce TTL-based cleanup with admin-configurable retention periods.
+
+### Added — DietPi Pro Toolkit Phases 0–3 (PRs #5346, #5348, #5350)
+
+Complete DietPi server management toolkit for Pro:
+- **Phase 0–1:** Foundations + 19 tools (system info, package management, service control, network diagnostics).
+- **Phase 2:** Backup/restore, system update, storage management, and dashboard tools.
+- **Phase 3:** Provisioning workflows, system blueprints, and SSH proxy tunneling.
+- Registered as an MCP server with admin toggle in Features subtab.
+- Full proposal at `docs/project/proposals/dietpi-pro-toolkit.md`.
+
+### Added — Layer I Guardrails: Jailbreak Prevention (PR #5340)
+
+Stay-on-target guardrails that detect and block jailbreak attempts before they reach the AI provider. Agent capability boundary enforcement with configurable thresholds.
+
+### Added — Context Window Management (PRs #5326, #5327, #5328, #5329)
+
+Comprehensive context-window management across all 13 AI providers:
+- **tiktoken integration** for accurate token counting.
+- **Pre-flight validation** via shared `validate_context_window()` helper.
+- **Estimator metabox** on the assistant edit screen showing real-time token budgets.
+- **Token-budget tool capping** — tools are automatically pruned when the context window is near capacity.
+- **Chat parity drift detection** in `lib/core` for monitoring model behavior consistency.
+- Refactored OpenAI and Anthropic clients to use the shared helper.
+
+### Added — LibreChat Addon (PR #5332)
+
+New standalone addon (`addons/librechat/`) providing:
+- **Code interpreter** — sandboxed Python/JavaScript execution.
+- **Speech services** — text-to-speech and speech-to-text integration.
+- **Web search reranker** — improved search result relevance scoring.
+- SPA build integration and CI pipeline.
+
+### Added — Schedule Anything SaaS Platform (PR #5319)
+
+Full SaaS booking platform with Stripe payment integration, calendar management, and multi-tenant architecture. See `docs/project/proposals/schedule-anything-saas-proposal.md`.
+
+### Added — CRM Email Import & Lead Pruning (PR #5355)
+
+- Scheduled IMAP email polling with message logging and deduplication.
+- Automatic lead pruning via CRM cron scheduler with configurable retention.
+- CRM performance optimization: autoload control, query caching, and retention windows.
+
+### Added — CRM Leads Enhancements (PR #5362)
+
+- Inline tag editing on the leads admin table.
+- Email priority/exclude actions with one-click list management.
+
+### Added — Vector Search Enhancements (PR #5318)
+
+- HNSW (Hierarchical Navigable Small World) index for fast approximate nearest neighbor search.
+- Content and context embedding stores with configurable dimensions.
+- Hybrid semantic search combining vector similarity with keyword relevance.
+
+### Added — OAuth & API Disconnect Buttons (PR #5351)
+
+- One-click disconnect buttons for OAuth and API connections in the Connections admin page.
+- Automatic token clearing when credentials change on save — prevents stale/revoked token errors.
+
+### Added — OpenAI-Compatible Client Parity (PR #5320)
+
+All OpenAI-compatible chat clients (DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, LM Studio, Ollama) brought to feature parity with the native OpenAI client — streaming, tool calls, and system message handling.
+
+### Added — Gmail Source Linking (PR #5325)
+
+Gmail OAuth bridge now supports automatic source linking — inbound emails are associated with existing CRM leads and customers.
+
+### Added — Customer Research & Add Page (PR #5324)
+
+New admin page with Customer 360 dashboard showing complete interaction history, deal pipeline, support tickets, and activity timeline for each customer.
+
+### Fixed — CPT Slug Length Limits (PRs #5360, #5361)
+
+- Support ticket CPT renamed from `mcp_ai_support_ticket` to `mcp_ai_ticket` (was 23 chars, now 12).
+- Architectural precedent, comic character, and CRM workflow rule CPT slugs all shortened to ≤20 characters.
+- NVOOS Graphify bridge slug corrected.
+- 17 files updated across base and Pro for the support ticket rename.
+
+### Fixed — Agentic Loop Tool Result Persistence (PR #5354)
+
+Tool results from agentic loop iterations now persist correctly across all 13 AI providers. Previously, some providers (DeepSeek, OpenRouter, Baseten) dropped tool results between iterations.
+
+### Fixed — Slider/Range Field Rendering (PR #5361)
+
+Slider and range input controls in settings sections now render correctly — regression introduced in the settings abstraction layer.
+
+### Fixed — Well-Known Endpoint Redirect (PR #5349)
+
+`redirect_canonical` no longer breaks `/.well-known/` endpoints used for MCP server discovery and federation.
+
+### Fixed — Tool Status File Guard (PR #5348)
+
+`tool-status.txt` reads now guarded against missing file warnings on first activation and after cache clears.
+
+### Fixed — Pro Integrations Subtab Redirect (PR #5347)
+
+Pro Integrations subtab no longer overwrites the redirect target after saving settings — users now stay on the correct tab.
+
+### Fixed — Docs Hub Async Rebuild & Browse Errors (PR #5359)
+
+- Async rebuild pipeline stalls fixed with proper Action Scheduler batching.
+- Browse critical error resolved — null cache entries now handled gracefully.
+- New WP-CLI command group (`nvoos docs-hub`) for manual rebuild and diagnostics.
+
+### Fixed — Chat Addon Endpoint Mismatches (PR #5339)
+
+Chat addon REST endpoints corrected to match the OOS engine's expected URL structure. OOS fatal errors from mismatched route registration resolved.
+
+### Fixed — Stale Provider Validation Lists (PR #5323)
+
+Provider validation now uses dynamic discovery instead of hardcoded allowlists — DeepSeek, OpenRouter, Kimi, and other newer providers no longer rejected.
+
+### Fixed — Playbook Orphan Cleanup & Batching (PRs #5321, #5322)
+
+- Orphaned playbook accumulation fixed with batch processing for deletion operations.
+- Unsafe deletion without JetEngine validation resolved.
+- Sync timeouts for large playbook sets corrected.
+
+### Fixed — OpenAI SSE Streaming Payload Flag (PR #5327)
+
+`stream_options` payload flag that prevented OpenAI real-time SSE streaming from triggering is now correctly sent.
+
+### Fixed — Cloudways Dashboard Requires Plugins Header (PR #5353)
+
+Removed `Requires Plugins` header from Cloudways Dashboard addon — the addon is self-contained and does not require other plugins.
+
+### Fixed — Chat Debug Console Display (PR #5333)
+
+- `chatDebugMode` string coercion fixed: PHP `'1'` now correctly treated as truthy in JS.
+- Legacy chat debug console now displays when enabled.
+
+### Fixed — OOS Bridge & Embedding Fatal Errors (PR #5338)
+
+- OOS bridge initialization race condition resolved.
+- Embedding service no longer fatals on missing API key — returns graceful `WP_Error`.
+- SSE header warnings suppressed when output buffering is active.
+
+### Fixed — Memory Cookie-Check Nonce (PR #5338)
+
+"Cookie check failed" error on the admin test assistant memory drawer resolved — nonce verification now runs after authentication.
+
+### Fixed — Chat Transcript Tests (PR #5338)
+
+Chat transcript REST controller test pass rate improved from ~4% to 87% (24 of 28 tests passing).
+
+### Fixed — Schedule Preset Data Mismatches (PR #5329)
+
+Preset install data mismatches resolved with improved error logging for debugging failed imports.
+
+### Fixed — Missing Voice/Embedded Assets (PR #5322)
+
+Missing `.min.js` assets for voice and embedded LLM scripts added to the build pipeline.
+
+### Security — guzzlehttp/psr7 CVE-2026-49214 (PR #5351)
+
+Pinned `guzzlehttp/psr7` to `^2.10.2` to fix CVE-2026-49214 (CRLF injection in header parsing).
+
+### Security — shell-quote CVE-2026-9277 (PR #5330)
+
+Bumped `shell-quote` to `>=1.8.4` via npm overrides to fix CVE-2026-9277 (command injection via unsanitized shell metacharacters).
+
+### Security — Dependabot Alerts #211, #212, #213 (PR #5338)
+
+Fixed vitest/vite/esbuild security alerts in the schedule-anything SPA addon.
+
+### Changed — Model Limits Sync (PR #5331)
+
+Model limits synchronized with June 2026 canonical catalog across all 13 providers.
+
+### Changed — Build Pipeline (PRs #5337, #5334)
+
+- LibreChat, Cloudways Dashboard, Funiq Bridge, and Schedule Anything Platform added to addon ZIP build.
+- LibreChat added to SPA build workflow.
+- Toolkit addon ZIPs included in distribution build.
+
+### Changed — Proposal Status Audit (PR #5332)
+
+All 66 proposals audited and refreshed for v1.1.29 — statuses updated, completed items marked, deferred items re-evaluated.
+
+### Changed — Documentation (PR #5332)
+
+- RAG infrastructure audit added (`docs/project/audits/`).
+- LibreChat proposal updated with implementation status.
+- Project docs moved from `docs/projects/` to `docs/project/`.
+- Broken Intuit privacy policy link fixed in `docs/reference/EXTERNAL_SERVICES.md` and `readme.txt`.
+
+## [1.1.28] - 2026-06-08
+
+### Added — CRM Phase C Complete: Multi-Channel Inbound Ingestion (PRs #5290–#5310)
+
+- **IMAP Email Polling** — scheduled inbox scanning with CRM Classifier triage.
+- **Twilio SMS Webhook** — inbound SMS captured and routed to the Workflow Command Center.
+- **Meta WhatsApp Webhook** — WhatsApp Business API messages ingested as CRM conversations.
+- **Gmail OAuth Bridge** — authenticated Gmail inbox polling with source linking.
+- All channels unified through the CRM Classifier and routed to the Workflow Command Center for automated response.
+
+### Added — Customer CPT + Customer 360 (PR #5324)
+
+- 5 CRUD tools for new `mcp_ai_customer` CPT (create, get, update, list, delete).
+- Customer Research & Add page with Customer 360 dashboard.
+- Lead-to-customer conversion with automatic deal promotion.
+- Complete interaction history, deal pipeline, support tickets, and activity timeline.
+
+### Added — Support Ticket Module (PRs #5300–#5310)
+
+Full ticket lifecycle with 10 AI tools:
+- **CRUD:** create, get, update, list support tickets.
+- **Workflow:** classify, escalate, resolve, reopen, merge tickets.
+- **Analytics:** SLA report with breach detection.
+- **Automation:** ticket automation via cron, email notifications on status change.
+- **Integration:** optional Zendesk sync.
+- SLA breach detection via scheduled cron with configurable thresholds.
+
+### Added — TF-IDF + BM25 Relevance Search (PR #5315)
+
+Dual-algorithm relevance ranking across CRM, healthcare, and base content search tools:
+- TF-IDF (Term Frequency-Inverse Document Frequency) for semantic relevance.
+- BM25 (Okapi Best Match 25) for keyword-driven relevance.
+- Shared traits in both Base and Pro for consistent scoring.
+- Configurable algorithm weights and fusion parameters.
+
+### Added — Transformer-Inspired Attention Routing (PR #5315)
+
+QKV (Query-Key-Value) multi-head attention mechanism for semantic tool selection:
+- **5 attention heads:** semantic similarity, capability match, recency, dependency, risk.
+- **Sliding-window conversation compressor** — retains only the most relevant recent messages.
+- **Persistent tool embedding store** — pre-computed embeddings for fast lookup.
+- **RRF (Reciprocal Rank Fusion)** with LLM Harness scoring for final tool ranking.
+
+### Added — Funiq Bridge Addon (PR #5240)
+
+New standalone addon (`addons/funiq-bridge/`, v1.0.0) bridging the Funiq React PWA frontend to WordPress:
+- Payload-compatible REST API at `/wp-json/funiq/v1/` — 7 collections + 2 globals.
+- Custom Post Types (`funiq_product`, `funiq_promotion`, `funiq_promocode`) and Custom Taxonomies.
+- React SPA Admin Panel embedded in WP Admin.
+- PHP 8.1+, WordPress 6.7+.
+
+### Added — NVOOS Graphify Ecosystem (PR #5325)
+
+Three standalone plugins forming a knowledge graph ecosystem:
+- `nvoos-graphify` — visual knowledge graph builder with 14 AI tools.
+- `nvoos-graphify-ai` — 13-provider AI with streaming chat, RAG, and embeddings.
+- `nvoos-graphify-ai-platform` — full AI platform: Agents, A2A, ACP, Blueprints, Federation, Harness, Measurement, Professions, Skills, Slash Commands.
+- Framework-agnostic `lib/core` and `lib/wordpress-adapter` composer packages.
+
+### Added — Automated Demo Video Pipeline Phases 1–3 (PR #5325)
+
+- Scripted scene recording with Playwright.
+- AI voiceover generation via TTS integration.
+- Automated video assembly with FFmpeg.
+
+### Added — CRM Lead/Deal Table Enhancements (PR #5325)
+
+- Enriched lead/company admin tables with additional columns.
+- Dedicated Leads tab in CRM Command Center.
+- Data completeness KPI with visual indicators.
+- Lead CPT admin expanded with contact details and remote channel link.
+
+### Added — OAuth & API Disconnect Buttons (PR #5351)
+
+One-click disconnect buttons for OAuth and API connections with automatic token clearing on credential change.
+
+### Added — Vector Search Enhancements (PR #5318)
+
+HNSW index for fast approximate nearest neighbor search, content/context embedding stores, and hybrid semantic search.
+
+### Added — Gmail Source Linking (PR #5325)
+
+Gmail OAuth bridge automatic source linking — inbound emails associated with existing CRM leads and customers.
+
+### Added — Customer Research & Add Page (PR #5324)
+
+Admin page with Customer 360 dashboard for complete customer interaction history.
+
+### Fixed — Chat Addon Endpoint Mismatches (PR #5339)
+
+Chat addon REST endpoints corrected to match the OOS engine's expected URL structure.
+
+### Fixed — Stale Provider Validation Lists (PR #5323)
+
+Provider validation now uses dynamic discovery instead of hardcoded allowlists.
+
+### Fixed — Playbook Orphan Cleanup & Batching (PRs #5321, #5322)
+
+Orphaned playbook accumulation fixed, unsafe deletion resolved, sync timeouts corrected.
+
+### Fixed — CRM Activity Titles/Due Dates (PR #5320)
+
+CRM activity titles and due dates now display correctly — block API v3 migration regression fixed.
+
+### Fixed — Voice/Embedded Asset Files (PR #5322)
+
+Missing `.min.js` assets for voice and embedded LLM scripts added.
+
+### Fixed — OpenAI-Compatible Client Parity (PR #5320)
+
+All OpenAI-compatible chat clients brought to feature parity with the native OpenAI client.
+
+### Fixed — Default Provider Validation (PR #5320)
+
+Default provider validation no longer rejects DeepSeek and newer providers.
+
+### Security — guzzlehttp/psr7 CVE-2026-49214 (PR #5351)
+
+Pinned to `^2.10.2` to fix CRLF injection vulnerability.
+
+### Changed — Documentation (PR #5332)
+
+- RAG infrastructure audit added.
+- LibreChat proposal updated with implementation status.
+- Project docs moved from `docs/projects/` to `docs/project/`.
+
 ## [1.1.27] - 2026-06-05
 
 ### Added — Funiq Bridge Addon (`addons/funiq-bridge/`, v1.0.0)

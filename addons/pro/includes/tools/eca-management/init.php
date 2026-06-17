@@ -33,6 +33,7 @@ if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-eca-research-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-eca-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-eca-dashboard-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-eca-consolidate-page.php';
 	}
 }
 
@@ -41,7 +42,7 @@ if ( is_admin() ) {
  *
  * @param string $hook Current admin page hook.
  */
-function wp_mcp_ai_enqueue_eca_management_admin_styles( $hook ) {
+function wp_mcp_ai_enqueue_eca_management_admin_styles( $hook ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter required by admin_enqueue_scripts action.
 	// Only load on ECA management edit screens.
 	$screen = get_current_screen();
 	if ( ! $screen || ! in_array( $screen->post_type, array( 'mcp_ai_eca', 'mcp_ai_student' ), true ) ) {

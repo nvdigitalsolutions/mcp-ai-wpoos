@@ -5,23 +5,72 @@
  * Uses nodemailer (PHP fallback via wp_mail) to send a templated email.
  * Enforces consent check before sending.
  *
- * @package WP_MCP_AI_Pro @since 2.3.0
+ * @package WP_MCP_AI_Pro
+ * @since  2.3.0
  */
-if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Send an outbound email to a lead. Requires active email consent.
+ *
+ * @since 2.3.0
+ */
 class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Check if the tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
-		return ! empty( $s['enable_crm_toolkit'] ); }
+		return ! empty( $s['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * Get the reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
-		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
-		return 'send_lead_email'; }
+		return 'send_lead_email';
+	}
+
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
-		return __( 'Send Lead Email', 'mcp-ai-wpoos-pro' ); }
+		return __( 'Send Lead Email', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
-		return __( 'Send an outbound email to a lead. Requires active email consent.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'Send an outbound email to a lead. Requires active email consent.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -46,29 +95,62 @@ class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'required'   => array( 'lead_id', 'subject', 'body' ),
 		);
 	}
-	public function get_required_capability() {
-		return 'edit_posts'; }
-	public function requires_base_pro() {
-		return true; }
-	public function get_capability_flags() {
-		return array( 'pro', 'outbound-network', 'database-write', 'requires-capability', 'requires-consent' ); }
 
+	/**
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * Whether the tool requires base pro.
+	 *
+	 * @return bool
+	 */
+	public function requires_base_pro() {
+		return true;
+	}
+
+	/**
+	 * Get the capability flags.
+	 *
+	 * @return array
+	 */
+	public function get_capability_flags() {
+		return array( 'pro', 'outbound-network', 'database-write', 'requires-capability', 'requires-consent' );
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }
+			return new WP_Error( 'unavailable', self::get_unavailable_reason() );
+		}
+
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
-			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
+			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		$lead_id = absint( $arguments['lead_id'] );
 		$email   = get_post_meta( $lead_id, 'email', true );
 		if ( ! $email ) {
-			return new WP_Error( 'no_email', __( 'Lead has no email address.', 'mcp-ai-wpoos-pro' ) ); }
+			return new WP_Error( 'no_email', __( 'Lead has no email address.', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		// Consent gate.
 		if ( class_exists( 'WP_MCP_AI_CRM_Consent' ) && ! WP_MCP_AI_CRM_Consent::is_permitted( $lead_id, 'email' ) ) {
 			return new WP_Error( 'consent_required', __( 'Lead has not consented to email communication.', 'mcp-ai-wpoos-pro' ) );
 		}
+
 		// DNC gate.
 		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) && WP_MCP_AI_CRM_Engine::check_dnc( $email, 'email' ) ) {
 			return new WP_Error( 'dnc_blocked', __( 'Lead email is on the Do Not Contact list.', 'mcp-ai-wpoos-pro' ) );
@@ -107,13 +189,18 @@ class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$sent = wp_mail( $email, $subject, $body, array( 'Content-Type: text/html; charset=UTF-8' ) );
 
 		if ( ! $sent ) {
-			return new WP_Error( 'send_failed', __( 'Email failed to send.', 'mcp-ai-wpoos-pro' ) ); }
+			return new WP_Error( 'send_failed', __( 'Email failed to send.', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		// Log as activity.
 		$activity_id = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_crm_activity',
-				'post_title'  => sprintf( __( 'Sent email: %s', 'mcp-ai-wpoos-pro' ), $subject ),
+				'post_title'  => sprintf(
+					/* translators: %s: email subject */
+					__( 'Sent email: %s', 'mcp-ai-wpoos-pro' ),
+					$subject
+				),
 				'post_status' => 'publish',
 			),
 			true
@@ -126,7 +213,8 @@ class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
-			WP_MCP_AI_CRM_Audit::record( 'outbound_email_sent', 'lead', $lead_id, array( 'email' => $email ) ); }
+			WP_MCP_AI_CRM_Audit::record( 'outbound_email_sent', 'lead', $lead_id, array( 'email' => $email ) );
+		}
 
 		do_action( 'wp_mcp_ai_crm_after_outbound_send', $lead_id, 'email', array( 'activity_id' => $activity_id ), $context );
 

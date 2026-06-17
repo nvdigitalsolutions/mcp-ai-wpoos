@@ -210,6 +210,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 		if ( $min_perch > 0 && $lot_area_m2 > 0 ) {
 			$lot_perches = WP_MCP_AI_Architectural_Engine::sqm_to_perches( $lot_area_m2 );
 			$pass        = ( $lot_perches + 1e-6 >= $min_perch );
+			/* translators: 1: minimum perches per lot, 2: provided perches */
 			$checks[]    = $this->mk( 'zoning', sprintf( __( 'Minimum %.1f perches per residential lot.', 'mcp-ai-wpoos-pro' ), $min_perch ), $pass ? 'pass' : 'fail', sprintf( __( 'Provided: %.2f perches.', 'mcp-ai-wpoos-pro' ), $lot_perches ) );
 		}
 
@@ -224,7 +225,8 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 			$far_actual = WP_MCP_AI_Architectural_Engine::calculate_far( $built_up_m2, $lot_area_m2 );
 			if ( $far_max > 0 ) {
 				$pass     = ( $far_actual <= $far_max + 1e-6 );
-				$checks[] = $this->mk( 'zoning', sprintf( __( 'Maximum FAR %.2f for %s.', 'mcp-ai-wpoos-pro' ), $far_max, $building_type ), $pass ? 'pass' : 'fail', sprintf( __( 'Calculated: %.2f.', 'mcp-ai-wpoos-pro' ), $far_actual ) );
+				/* translators: %1$.2f: maximum FAR value, %2$s: building type */
+				$checks[] = $this->mk( 'zoning', sprintf( __( 'Maximum FAR %1$.2f for %2$s.', 'mcp-ai-wpoos-pro' ), $far_max, $building_type ), $pass ? 'pass' : 'fail', sprintf( __( 'Calculated: %.2f.', 'mcp-ai-wpoos-pro' ), $far_actual ) );
 			}
 		}
 
@@ -234,6 +236,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 			if ( $cov_max > 0 ) {
 				$cov_actual = WP_MCP_AI_Architectural_Engine::calculate_site_coverage( $footprint_m2, $lot_area_m2 );
 				$pass       = ( $cov_actual <= $cov_max + 1e-6 );
+				/* translators: 1: maximum site coverage, 2: calculated site coverage */
 				$checks[]   = $this->mk( 'zoning', sprintf( __( 'Maximum site coverage %.0f%%.', 'mcp-ai-wpoos-pro' ), $cov_max ), $pass ? 'pass' : 'fail', sprintf( __( 'Calculated: %.1f%%.', 'mcp-ai-wpoos-pro' ), $cov_actual ) );
 			}
 		}
@@ -251,7 +254,8 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 				$checks[] = $this->mk( 'zoning', __( 'Setbacks meet UDA minima.', 'mcp-ai-wpoos-pro' ), 'pass', '' );
 			} else {
 				foreach ( $validation['violations'] as $v ) {
-					$checks[] = $this->mk( 'zoning', sprintf( __( 'Minimum %s setback %.2f m.', 'mcp-ai-wpoos-pro' ), $v['side'], $v['required'] ), 'fail', sprintf( __( 'Provided: %.2f m (short by %.2f m).', 'mcp-ai-wpoos-pro' ), $v['proposed'], $v['shortfall'] ) );
+					/* translators: %1$s: setback side, %2$.2f: required setback in meters, 3: provided setback, 4: shortfall in meters */
+					$checks[] = $this->mk( 'zoning', sprintf( __( 'Minimum %1$s setback %2$.2f m.', 'mcp-ai-wpoos-pro' ), $v['side'], $v['required'] ), 'fail', sprintf( __( 'Provided: %1$.2f m (short by %2$.2f m).', 'mcp-ai-wpoos-pro' ), $v['proposed'], $v['shortfall'] ) );
 				}
 			}
 		}
@@ -260,6 +264,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 		$eia_threshold = isset( $zoning['eia_threshold_units'] ) ? absint( $zoning['eia_threshold_units'] ) : 0;
 		if ( $eia_threshold > 0 && $units > 0 ) {
 			$triggered = ( $units > $eia_threshold );
+			/* translators: 1: EIA threshold units, 2: project dwelling units, 3: project dwelling units */
 			$checks[]  = $this->mk( 'planning', sprintf( __( 'EIA review required for housing projects > %d units.', 'mcp-ai-wpoos-pro' ), $eia_threshold ), $triggered ? 'fail' : 'pass', $triggered ? sprintf( __( 'Project has %d units — EIA submission required.', 'mcp-ai-wpoos-pro' ), $units ) : sprintf( __( 'Project has %d units — below EIA threshold.', 'mcp-ai-wpoos-pro' ), $units ) );
 		}
 
@@ -272,6 +277,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 		}
 		$slope_threshold = isset( $zoning['requires_geo_report_above_slope_deg'] ) ? floatval( $zoning['requires_geo_report_above_slope_deg'] ) : 0.0;
 		if ( $slope_threshold > 0 && $slope > $slope_threshold ) {
+			/* translators: 1: slope threshold in degrees, 2: site slope in degrees */
 			$checks[] = $this->mk( 'planning', sprintf( __( 'Geotechnical report required for slopes > %.0f°.', 'mcp-ai-wpoos-pro' ), $slope_threshold ), 'fail', sprintf( __( 'Site slope: %.1f°.', 'mcp-ai-wpoos-pro' ), $slope ) );
 		}
 

@@ -633,9 +633,11 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 
 		$demographics = $payload['member'];
 		if ( ! empty( $demographics['date_of_birth'] ) ) {
+			/* translators: %s: date of birth */
 			$lines[] = sprintf( __( 'Date of birth: %s', 'mcp-ai-wpoos-pro' ), esc_html( $demographics['date_of_birth'] ) );
 		}
 		if ( ! empty( $demographics['blood_type'] ) ) {
+			/* translators: %s: blood type */
 			$lines[] = sprintf( __( 'Blood type: %s', 'mcp-ai-wpoos-pro' ), esc_html( $demographics['blood_type'] ) );
 		}
 
@@ -650,18 +652,22 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 
 		if ( ! empty( $payload['health_records']['allergies'] ) ) {
 			$allergens = wp_list_pluck( $payload['health_records']['allergies'], 'allergen' );
+			/* translators: %s: comma-separated list of allergens */
 			$lines[]   = sprintf( __( 'Known allergies: %s', 'mcp-ai-wpoos-pro' ), implode( ', ', array_map( 'esc_html', $allergens ) ) );
 		}
 
 		if ( ! empty( $payload['health_records']['prescriptions'] ) ) {
 			$meds    = wp_list_pluck( $payload['health_records']['prescriptions'], 'medication' );
+			/* translators: %s: comma-separated list of medications */
 			$lines[] = sprintf( __( 'Active medications: %s', 'mcp-ai-wpoos-pro' ), implode( ', ', array_map( 'esc_html', $meds ) ) );
 		}
 
 		if ( ! empty( $payload['vector_context']['vector_store_id'] ) ) {
+			/* translators: %s: vector store ID */
 			$lines[] = sprintf( __( 'Vector store available for RAG: %s', 'mcp-ai-wpoos-pro' ), esc_html( $payload['vector_context']['vector_store_id'] ) );
 		}
 		if ( ! empty( $payload['vector_context']['corpus_name'] ) ) {
+			/* translators: %s: Gemini corpus name */
 			$lines[] = sprintf( __( 'Gemini corpus available for RAG: %s', 'mcp-ai-wpoos-pro' ), esc_html( $payload['vector_context']['corpus_name'] ) );
 		}
 

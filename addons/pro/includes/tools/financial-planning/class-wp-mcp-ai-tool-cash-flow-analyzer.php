@@ -134,12 +134,7 @@ class WP_MCP_AI_Tool_Cash_Flow_Analyzer implements WP_MCP_AI_Tool_Interface, WP_
 	 *
 	 * @return array Capability flags.
 	 */
-		/**
-	 * Get capability flags for this tool.
-	 *
-	 * @return array
-	 */
-public function get_capability_flags() {
+	public function get_capability_flags() {
 		return array( 'pro', 'computation' );
 	}
 

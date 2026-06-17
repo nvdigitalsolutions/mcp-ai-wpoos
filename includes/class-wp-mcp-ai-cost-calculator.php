@@ -30,7 +30,7 @@ class WP_MCP_AI_Cost_Calculator {
 	 * fallback below covers any stored snapshot ids (e.g., gpt-5-2025-08-07).
 	 */
 	const PRICING = array(
-		'openai'      => array(
+		'openai'       => array(
 			// GPT-5.5 series (April 2026 flagship).
 			'gpt-5.5'                      => array(
 				'input'        => 5.00,  // $5 per 1M input tokens.
@@ -153,7 +153,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'per_second' => 0.20, // $0.20 per second of generated video (estimated).
 			),
 		),
-		'gemini'      => array(
+		'gemini'       => array(
 			// Gemini 3.5 series (May 2026).
 			'gemini-3.5-flash'              => array(
 				'input'        => 1.50,   // $1.50 per 1M.
@@ -191,6 +191,11 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.10,   // $0.10 per 1M.
 				'output' => 0.40,   // $0.40 per 1M.
 			),
+			'gemini-3.1-flash-image'        => array(
+				'input'  => 0.50,   // $0.50 per 1M (text/image).
+				'output' => 60.00,  // $60 per 1M (images, ~$0.067/image at 1024x1024).
+			),
+			// [DEPRECATED] Gemini 2.5 Flash Image — migrate to gemini-3.1-flash-image.
 			'gemini-2.5-flash-image'        => array(
 				'input'  => 0.30,   // $0.30 per 1M (text).
 				'output' => 30.00,  // $30 per 1M (images, ~$0.039/image at 1024x1024).
@@ -208,7 +213,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'per_second' => 0.020,
 			),
 		),
-		'anthropic'   => array(
+		'anthropic'    => array(
 			// Claude 4.7 series (May 2026 flagship).
 			'claude-opus-4-7'            => array(
 				'input'  => 15.00,  // $15 per 1M input tokens.
@@ -254,19 +259,19 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 4.00,
 			),
 		),
-		'ollama'      => array(
+		'ollama'       => array(
 			'default' => array(
 				'input'  => 0.00,
 				'output' => 0.00,
 			),
 		),
-		'lm_studio'   => array(
+		'lm_studio'    => array(
 			'default' => array(
 				'input'  => 0.00,
 				'output' => 0.00,
 			),
 		),
-		'deepseek'    => array(
+		'deepseek'     => array(
 			// DeepSeek-V4-Flash — current flagship (cache-miss pricing).
 			// Standard: $0.14/$0.28 per 1M tokens. Cache hit: $0.0028.
 			'deepseek-v4-flash'     => array(
@@ -295,7 +300,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 1.10,
 			),
 		),
-		'huggingface' => array(
+		'huggingface'  => array(
 			// DeepSeek V3.2 (January 2026).
 			'deepseek-ai/DeepSeek-V3.2'          => array(
 				'input'  => 0.28, // $0.28 per 1M tokens (cache miss).
@@ -336,6 +341,62 @@ class WP_MCP_AI_Cost_Calculator {
 			'default'                            => array(
 				'input'  => 0.50, // $0.50 per 1M tokens (estimated average).
 				'output' => 0.50, // $0.50 per 1M tokens (estimated average).
+			),
+		),
+		'openrouter'   => array(
+			// OpenRouter passes through provider pricing; use OpenRouter's
+			// own pricing when known, otherwise fall back to estimated average.
+			// Prices as of June 2026.
+			'default' => array(
+				'input'  => 1.00, // $1.00 per 1M tokens (blended average).
+				'output' => 3.00, // $3.00 per 1M tokens (blended average).
+			),
+		),
+		'nvidia'       => array(
+			// NVIDIA NIM pricing varies by model. Default to estimated average.
+			'default' => array(
+				'input'  => 1.00, // $1.00 per 1M tokens (estimated).
+				'output' => 3.00, // $3.00 per 1M tokens (estimated).
+			),
+		),
+		'cloudflare'   => array(
+			// Cloudflare Workers AI — free during beta, token-based pricing
+			// after GA. Conservative estimates as of June 2026.
+			// Model-specific rates from Workers AI docs.
+			'@cf/meta/llama-3.2-1b-instruct' => array(
+				'input'  => 0.027,  // $0.027 per 1M input tokens.
+				'output' => 0.201,  // $0.201 per 1M output tokens.
+			),
+			'@cf/meta/llama-3.1-8b-instruct' => array(
+				'input'  => 0.10,  // $0.10 per 1M tokens.
+				'output' => 0.10,  // $0.10 per 1M tokens.
+			),
+			'default'                        => array(
+				'input'  => 0.10,  // $0.10 per 1M tokens (estimated average).
+				'output' => 0.10,  // $0.10 per 1M tokens (estimated average).
+			),
+		),
+		'digitalocean' => array(
+			// DigitalOcean GenAI Platform pricing (June 2026).
+			'default' => array(
+				'input'  => 1.00, // $1.00 per 1M tokens (estimated).
+				'output' => 3.00, // $3.00 per 1M tokens (estimated).
+			),
+		),
+		'baseten'      => array(
+			// Baseten model-dependent pricing. Default to conservative estimate.
+			'default' => array(
+				'input'  => 1.00, // $1.00 per 1M tokens (estimated).
+				'output' => 3.00, // $3.00 per 1M tokens (estimated).
+			),
+		),
+		'nv_hosted'    => array(
+			// NV oOS Cloud hosted models — wholesale cost plus 7 % service fee.
+			// The billing observer derives the exact cost per request; this
+			// fallback enables dashboard aggregation before the observer fires.
+			'default' => array(
+				'input'  => 0.50, // $0.50 per 1M tokens (wholesale estimate).
+				'output' => 2.00, // $2.00 per 1M tokens (wholesale estimate).
 			),
 		),
 	);
@@ -393,8 +454,9 @@ class WP_MCP_AI_Cost_Calculator {
 			return $provider_pricing[ $model_normalized ];
 		}
 
-		// For ollama, lm_studio, and huggingface, return default pricing if available.
-		if ( in_array( $provider, array( 'ollama', 'lm_studio', 'huggingface' ), true ) ) {
+		// For ollama, lm_studio, huggingface, openrouter, nvidia, cloudflare,
+		// digitalocean, baseten, and nv_hosted, return default pricing if available.
+		if ( in_array( $provider, array( 'ollama', 'lm_studio', 'huggingface', 'openrouter', 'nvidia', 'cloudflare', 'digitalocean', 'baseten', 'nv_hosted' ), true ) ) {
 			if ( isset( $provider_pricing['default'] ) ) {
 				return $provider_pricing['default'];
 			}

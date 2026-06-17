@@ -118,6 +118,8 @@ class WP_MCP_AI_Site_Node_Flex_Container implements WP_MCP_AI_Site_Node_Interfac
 	 * Execute: build a flexbox wrapper around children.
 	 *
 	 * {@inheritdoc}
+	 *
+	 * @param array $inputs Node input values keyed by input name.
 	 */
 	public function execute( array $inputs ) {
 		$direction = isset( $inputs['direction'] ) ? sanitize_text_field( $inputs['direction'] ) : 'row';

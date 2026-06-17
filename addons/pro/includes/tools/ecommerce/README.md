@@ -28,25 +28,27 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 - [x] low_stock_alert_automation - Automated notifications
 - [x] inventory_forecast - Predict inventory needs
 
-### Marketing & Sales (4 tools)
+### Marketing & Sales (6 tools)
 - [x] create_discount_campaign - Create coupons
 - [x] abandoned_cart_recovery - Cart recovery automation
+- [x] get_abandoned_carts - Query abandoned carts with filters
+- [x] send_cart_recovery_email - Send cart recovery emails
 - [x] upsell_recommendations - AI-powered recommendations
 - [x] sales_performance_dashboard - Sales analytics
 
 ## Implementation Status
 
 **Phase 1 (Foundation)**: ✅ Directory created  
-**Phase 2 (Tools)**: ✅ Complete (20/20 tools complete - 100%)
+**Phase 2 (Tools)**: ✅ Complete (22/22 tools complete - 100%)
 
 ## Completed Features
 
-All 20 E-commerce toolkit tools are now implemented:
+All 22 E-commerce toolkit tools are now implemented:
 - ✅ Product Management: All 5 tools complete
 - ✅ Order Management: All 5 tools complete
 - ✅ Customer Management: All 3 tools complete
 - ✅ Inventory & Stock: All 3 tools complete
-- ✅ Marketing & Sales: All 4 tools complete
+- ✅ Marketing & Sales: All 6 tools complete
 
 ## Dependencies
 

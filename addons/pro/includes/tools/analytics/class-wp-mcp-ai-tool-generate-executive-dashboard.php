@@ -426,14 +426,17 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 		$highlights = array();
 
 		if ( $revenue > 10000 ) {
+			/* translators: %s: revenue amount */
 			$highlights[] = sprintf( __( 'Strong revenue performance: $%s', 'mcp-ai-wpoos-pro' ), number_format( $revenue, 2 ) );
 		}
 
 		if ( $new_customers > 50 ) {
+			/* translators: %d: number of new customers */
 			$highlights[] = sprintf( __( 'Healthy customer acquisition: %d new customers', 'mcp-ai-wpoos-pro' ), $new_customers );
 		}
 
 		if ( $order_count > 100 ) {
+			/* translators: %d: number of orders */
 			$highlights[] = sprintf( __( 'High order volume: %d orders processed', 'mcp-ai-wpoos-pro' ), $order_count );
 		}
 

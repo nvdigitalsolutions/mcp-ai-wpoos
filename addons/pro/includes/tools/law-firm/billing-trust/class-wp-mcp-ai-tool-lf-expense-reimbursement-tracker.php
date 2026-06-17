@@ -183,7 +183,11 @@ class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_
 
 				return array(
 					'success'    => true,
-					'message'    => sprintf( __( 'Expense of $%s recorded. ', 'mcp-ai-wpoos-pro' ), number_format( $amount, 2 ) ) . self::DISCLAIMER,
+					'message'    => sprintf(
+						/* translators: %s: expense amount */
+						__( 'Expense of $%s recorded. ', 'mcp-ai-wpoos-pro' ),
+						number_format( $amount, 2 )
+					) . self::DISCLAIMER,
 					'data'       => array(
 						'expense_id' => $expense_id,
 						'expense'    => $expense,
@@ -203,7 +207,12 @@ class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_
 				}
 				return array(
 					'success'    => true,
-					'message'    => sprintf( __( '%d expenses tracked. Pending: $%s. ', 'mcp-ai-wpoos-pro' ), count( $expenses ), number_format( $total_pending, 2 ) ) . self::DISCLAIMER,
+					'message'    => sprintf(
+						/* translators: %1$d: number of expenses, %2$s: total pending amount */
+						__( '%1$d expenses tracked. Pending: $%2$s. ', 'mcp-ai-wpoos-pro' ),
+						count( $expenses ),
+						number_format( $total_pending, 2 )
+					) . self::DISCLAIMER,
 					'data'       => array(
 						'expenses'         => $expenses,
 						'total_pending'    => round( $total_pending, 2 ),

@@ -181,9 +181,11 @@ class Test_Workflow_Health_Check extends WP_UnitTestCase {
 		// Test capability flags.
 		$flags = $tool->get_capability_flags();
 		$this->assertIsArray( $flags );
-		$this->assertTrue( $flags['safe'], 'Tool should be safe (read-only)' );
-		$this->assertTrue( $flags['read-only'], 'Tool should be read-only' );
-		$this->assertFalse( $flags['modifies-wp'], 'Tool should not modify WordPress' );
+		$this->assertContains( 'read-only', $flags, 'Tool should be read-only' );
+		$this->assertContains( 'local-only', $flags, 'Tool should be local-only' );
+		$this->assertContains( 'idempotent', $flags, 'Tool should be idempotent' );
+		$this->assertContains( 'requires-capability', $flags, 'Tool should require capability' );
+		$this->assertNotContains( 'state-changing', $flags, 'Tool should not modify data' );
 	}
 
 	/**

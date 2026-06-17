@@ -174,7 +174,11 @@ class WP_MCP_AI_Tool_LF_Document_Version_Tracker implements WP_MCP_AI_Tool_Inter
 
 		return array(
 			'success'    => true,
-			'message'    => sprintf( __( 'Found %d versions. ', 'mcp-ai-wpoos-pro' ), count( $history ) ) . self::DISCLAIMER,
+			'message'    => sprintf(
+				/* translators: %d: number of document versions */
+				__( 'Found %d versions. ', 'mcp-ai-wpoos-pro' ),
+				count( $history )
+			) . self::DISCLAIMER,
 			'data'       => array(
 				'document_id'     => $document_id,
 				'version_history' => $history,

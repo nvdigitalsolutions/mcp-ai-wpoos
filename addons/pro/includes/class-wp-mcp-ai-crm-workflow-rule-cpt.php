@@ -1,17 +1,37 @@
 <?php
 /**
  * CRM Workflow Rule Custom Post Type — if-this-then-that automation rules.
- * @package WP_MCP_AI_Pro @subpackage CRM_Toolkit @since 2.3.0
+ *
+ * @package WP_MCP_AI_Pro
+ * @subpackage CRM_Toolkit
+ * @since 2.3.0
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
+	exit;
+}
+
+/**
+ * CRM Workflow Rule CPT registration.
+ */
 class WP_MCP_AI_CRM_Workflow_Rule_CPT {
-	const POST_TYPE = 'mcp_ai_crm_workflow_rule';
+
+	const POST_TYPE = 'mcp_ai_crm_wf_rule';
+
+	/**
+	 * Initialize the CPT.
+	 */
 	public static function init() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $s['enable_crm_toolkit'] ) ) {
 			return;
-		} add_action( 'init', array( __CLASS__, 'register_post_type' ) ); }
+		}
+		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
+	}
+
+	/**
+	 * Register the post type.
+	 */
 	public static function register_post_type() {
 		register_post_type(
 			self::POST_TYPE,

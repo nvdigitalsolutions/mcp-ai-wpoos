@@ -121,6 +121,7 @@ class WP_MCP_AI_Tool_Generate_Booking_Link implements WP_MCP_AI_Tool_Interface, 
 		$link_id          = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_booking_link',
+				/* translators: %s: appointment type */
 				'post_title'  => sprintf( __( 'Booking Link: %s', 'mcp-ai-wpoos-pro' ), $appointment_type ),
 				'post_status' => 'publish',
 				'meta_input'  => array(

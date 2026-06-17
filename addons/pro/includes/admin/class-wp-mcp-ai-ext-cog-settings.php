@@ -48,17 +48,22 @@ class WP_MCP_AI_Ext_Cog_Settings {
 	 * @return void
 	 */
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ), 20 );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 	}
 
 	/**
-	 * Add the settings page under Settings menu.
+	 * Add the settings page under the NV oOS admin menu.
+	 *
+	 * Registered as a submenu of the main NV oOS dashboard so it appears
+	 * in the sidebar alongside other toolkit pages.  Also accessible
+	 * directly at admin.php?page=wp-mcp-ai-ext-cognition.
 	 *
 	 * @return void
 	 */
 	public static function add_menu() {
-		add_options_page(
+		add_submenu_page(
+			'wp-mcp-ai-dashboard',
 			__( 'Extended Cognition Toolkit', 'mcp-ai-wpoos' ),
 			__( 'Ext. Cognition', 'mcp-ai-wpoos' ),
 			'manage_options',
@@ -392,7 +397,7 @@ class WP_MCP_AI_Ext_Cog_Settings {
 			? max( 100, min( 10240, absint( $input['ext_cog_max_capture_size_kb'] ) ) )
 			: 2048;
 
-		$allowed_models                  = array( 'auto', 'gpt-4o', 'gpt-4-vision-preview', 'gemini-3.5-flash', 'gemini-3.1-pro' );
+		$allowed_models                      = array( 'auto', 'gpt-4o', 'gpt-4-vision-preview', 'gemini-3.5-flash', 'gemini-3.1-pro' );
 			$submitted_model                 = isset( $input['ext_cog_vision_model'] ) ? $input['ext_cog_vision_model'] : 'auto';
 			$current['ext_cog_vision_model'] = in_array( $submitted_model, $allowed_models, true )
 				? sanitize_text_field( $submitted_model )
@@ -417,11 +422,11 @@ class WP_MCP_AI_Ext_Cog_Settings {
 				? sanitize_textarea_field( $input['ext_cog_brand_catalog'] )
 				: '';
 
-			if ( isset( $input['ext_cog_allowed_roles'] ) && is_array( $input['ext_cog_allowed_roles'] ) ) {
-				$current['ext_cog_allowed_roles'] = array_map( 'sanitize_text_field', $input['ext_cog_allowed_roles'] );
-			} elseif ( ! isset( $current['ext_cog_allowed_roles'] ) ) {
-				$current['ext_cog_allowed_roles'] = array( 'administrator', 'editor' );
-			}
+		if ( isset( $input['ext_cog_allowed_roles'] ) && is_array( $input['ext_cog_allowed_roles'] ) ) {
+			$current['ext_cog_allowed_roles'] = array_map( 'sanitize_text_field', $input['ext_cog_allowed_roles'] );
+		} elseif ( ! isset( $current['ext_cog_allowed_roles'] ) ) {
+			$current['ext_cog_allowed_roles'] = array( 'administrator', 'editor' );
+		}
 
 		return $current;
 	}

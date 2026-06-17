@@ -613,17 +613,10 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,
-			'local-only'        => true,
-			'read-only'         => false,
-			'idempotent'        => false,
-			'cacheable'         => false,
-			'requires-auth'     => true,
-			'blocking'          => false,
-			'uses-network'      => false,
-			'modifies-wp'       => true,
-			'expensive'         => false,
-			'requires-approval' => false,
+			'local-only',           // No external API calls.
+			'write',                // Supports bulk update/delete/import.
+			'state-changing',       // Modifies memory data.
+			'requires-capability',  // Needs user authentication.
 		);
 	}
 }

@@ -222,7 +222,11 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 			'test_types' => $test_types,
 			'file_size'  => $bytes_written,
 			'next_steps' => array(
-				'1' => __( 'Run: vendor/bin/phpunit ' . $output_path, 'mcp-ai-wpoos-pro' ),
+				'1' => sprintf(
+					/* translators: %s: test file output path */
+					__( 'Run: vendor/bin/phpunit %s', 'mcp-ai-wpoos-pro' ),
+					$output_path
+				),
 				'2' => __( 'Review test coverage', 'mcp-ai-wpoos-pro' ),
 				'3' => __( 'Add tool-specific assertions', 'mcp-ai-wpoos-pro' ),
 			),

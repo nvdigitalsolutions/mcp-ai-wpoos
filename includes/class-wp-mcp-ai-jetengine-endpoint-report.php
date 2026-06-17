@@ -12,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO, PSR1.Files.SideEffects.FoundWithSymbols
+
 /**
  * Utility for surfacing JetEngine endpoint metadata.
  */

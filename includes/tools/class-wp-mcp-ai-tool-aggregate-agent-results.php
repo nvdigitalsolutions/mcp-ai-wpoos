@@ -268,17 +268,10 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,  // Read-only aggregation.
-			'local-only'        => true,  // No external API calls.
-			'read-only'         => true,  // Does not write data.
-			'idempotent'        => true,  // Same inputs = same output.
-			'cacheable'         => true,  // Results can be cached.
-			'requires-auth'     => false, // Can be used by any authenticated user.
-			'blocking'          => false, // Fast operation.
-			'uses-network'      => false, // No network calls.
-			'modifies-wp'       => false, // No database writes.
-			'expensive'         => false, // Low cost operation.
-			'requires-approval' => false, // Auto-approved.
+			'read-only',   // Read-only aggregation.
+			'local-only',  // No external API calls.
+			'idempotent',  // Same inputs = same output.
+			'cacheable',   // Results can be cached.
 		);
 	}
 }

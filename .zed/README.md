@@ -82,7 +82,7 @@ The `context_servers` block in `settings.json` ships with three commented templa
 
 - **`github`** — official GitHub MCP server (`@modelcontextprotocol/server-github`). Useful for the `release-engineer`, `wp-org-compliance-auditor`, and any reviewer that wants to check CI runs, PRs, or issues from inside the agent.
 - **`filesystem`** — sandbox the agent to this repo only (`@modelcontextprotocol/server-filesystem`). Useful when you want extra-strict path scoping for writer profiles.
-- **`nv-oos-local`** — point Zed at the `mcp-ai/v1` REST endpoint of a local NV oOS site (e.g. `docker compose up -d` per [`MAINTAINER_MAP.md`](../MAINTAINER_MAP.md)). Gives the agent access to all ~960 in-product NV oOS tools while developing.
+- **`nv-oos-local`** — point Zed at the `mcp-ai/v1` REST endpoint of a local NV oOS site (e.g. `docker compose up -d` per [`MAINTAINER_MAP.md`](../MAINTAINER_MAP.md)). Gives the agent access to all ~1,000+ in-product NV oOS tools while developing.
 
 Each is **off by default**. Uncomment the block, supply the matching secret (Zed has a built-in secret store: `cmd-shift-p` → "agent: edit settings" → secrets), then reload the Agent Panel.
 

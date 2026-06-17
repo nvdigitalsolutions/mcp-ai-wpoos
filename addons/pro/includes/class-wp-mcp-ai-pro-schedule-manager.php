@@ -1925,12 +1925,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						$arguments = isset( $config['arguments'] ) && is_array( $config['arguments'] ) ? $config['arguments'] : array();
 
 						if ( '' === $tool_name ) {
+							/* translators: %s: node label */
 							$result = new WP_Error( 'missing_tool', sprintf( __( 'Tool node "%s" has no tool_name.', 'mcp-ai-wpoos-pro' ), $label ) );
 							break;
 						}
 
 						$tool = $registry->get_tool( $tool_name );
 						if ( ! $tool ) {
+							/* translators: %s: tool name */
 							$result = new WP_Error( 'tool_not_found', sprintf( __( 'Tool "%s" not found.', 'mcp-ai-wpoos-pro' ), $tool_name ) );
 							break;
 						}
@@ -2360,12 +2362,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$type_label = isset( $schedule['schedule_type'] ) ? ucfirst( str_replace( '_', ' ', $schedule['schedule_type'] ) ) : 'Task';
 
 			// Build plain-text body (always used as fallback).
+			/* translators: %s: schedule name */
 			$plain  = sprintf( __( 'The scheduled task "%s" has failed.', 'mcp-ai-wpoos-pro' ), $schedule['name'] );
 			$plain .= "\n\n";
+			/* translators: %s: schedule type label */
 			$plain .= sprintf( __( 'Type: %s', 'mcp-ai-wpoos-pro' ), $type_label );
 			$plain .= "\n";
+			/* translators: %s: error message */
 			$plain .= sprintf( __( 'Error: %s', 'mcp-ai-wpoos-pro' ), $error_msg );
 			$plain .= "\n\n";
+			/* translators: %s: manage schedules URL */
 			$plain .= sprintf( __( 'Manage schedules: %s', 'mcp-ai-wpoos-pro' ), $manage_url );
 
 			// ── MJML: compile a responsive HTML email template ───────────────────
@@ -2501,8 +2507,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				return;
 			}
 
-			/* translators: 1: site name, 2: schedule name, 3: error message */
 			$message = sprintf(
+				/* translators: 1: site name, 2: schedule name, 3: error message */
 				__( '\u26a0\ufe0f [%1$s] Scheduled Task Failed: *%2$s*\nError: %3$s', 'mcp-ai-wpoos-pro' ),
 				get_bloginfo( 'name' ),
 				$schedule['name'],

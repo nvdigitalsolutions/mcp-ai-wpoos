@@ -465,7 +465,7 @@ class WP_MCP_AI_Usage_Tracker {
 		$model = strtolower( sanitize_text_field( $model ) );
 
 		// Common model pricing (as of June 2026).
-		// https://openai.com/api/pricing/
+		// See: https://openai.com/api/pricing/.
 		$pricing_map = array(
 			// OpenAI GPT-5.5 series (April 2026).
 			'gpt-5.5'                                      => array(
@@ -745,6 +745,14 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.000027,
 				'output_cost_per_1k' => 0.000201,
 			),
+			'@cf/meta/llama-3.1-8b-instruct'               => array(
+				'input_cost_per_1k'  => 0.000282,
+				'output_cost_per_1k' => 0.000827,
+			),
+			'@cf/mistral/mistral-7b-instruct-v0.1'         => array(
+				'input_cost_per_1k'  => 0.000110,
+				'output_cost_per_1k' => 0.000190,
+			),
 			'@cf/meta/llama-3.2-3b-instruct'               => array(
 				'input_cost_per_1k'  => 0.000051,
 				'output_cost_per_1k' => 0.000335,
@@ -779,7 +787,7 @@ class WP_MCP_AI_Usage_Tracker {
 				'output_cost_per_1k' => 0.0002,
 			),
 			// Baseten Model APIs (as of June 2026).
-			// https://www.baseten.co/pricing/
+			// See: https://www.baseten.co/pricing/.
 			'deepseek-ai/deepseek-v3'                      => array(
 				'input_cost_per_1k'  => 0.0005, // $0.50 per 1M tokens = $0.0005 per 1K.
 				'output_cost_per_1k' => 0.0015, // $1.50 per 1M tokens = $0.0015 per 1K.
@@ -789,7 +797,7 @@ class WP_MCP_AI_Usage_Tracker {
 				'output_cost_per_1k' => 0.003,   // $3.00 per 1M tokens = $0.003 per 1K.
 			),
 			// DeepSeek direct API models (as of June 2026).
-			// https://api-docs.deepseek.com/quick_start/pricing
+			// See: https://api-docs.deepseek.com/quick_start/pricing.
 			'deepseek-v4-flash'                            => array(
 				'input_cost_per_1k'  => 0.00014, // $0.14 per 1M tokens = $0.00014 per 1K (cache miss).
 				'output_cost_per_1k' => 0.00028, // $0.28 per 1M tokens = $0.00028 per 1K.
@@ -819,7 +827,7 @@ class WP_MCP_AI_Usage_Tracker {
 				'output_cost_per_1k' => 0.0025, // $2.50 per 1M tokens = $0.0025 per 1K.
 			),
 			// Kimi (Moonshot AI) direct models (as of June 2026).
-			// https://platform.moonshot.ai/docs/pricing/chat
+			// See: https://platform.moonshot.ai/docs/pricing/chat.
 			'kimi-k2.6'                                    => array(
 				'input_cost_per_1k'  => 0.00095, // $0.95 per 1M tokens = $0.00095 per 1K.
 				'output_cost_per_1k' => 0.004,   // $4.00 per 1M tokens = $0.004 per 1K.

@@ -412,7 +412,11 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 		}
 
 		return array(
-			'summary'  => sprintf( __( 'Published to %s', 'mcp-ai-wpoos-pro' ), 'Instagram' ),
+			'summary'  => sprintf(
+				/* translators: %s: platform name */
+				__( 'Published to %s', 'mcp-ai-wpoos-pro' ),
+				'Instagram'
+			),
 			'platform' => 'instagram',
 			'post_id'  => $publish_decoded['id'],
 		);

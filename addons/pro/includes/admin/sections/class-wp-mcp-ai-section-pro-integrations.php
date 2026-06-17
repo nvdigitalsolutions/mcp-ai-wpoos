@@ -299,7 +299,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 
 					<!-- Hidden field to preserve subtab during form submission -->
 					<input type="hidden" name="subtab_<?php echo esc_attr( $this->get_id() ); ?>" value="<?php echo esc_attr( $active_subtab ); ?>" />
-					<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
+					<?php
+					// Only emit the generic 'subtab' hidden field when this section's own
+					// subtab is active in the URL. Otherwise a sibling section that also
+					// emits the generic 'subtab' field (e.g. WP_MCP_AI_Section_Tools)
+					// may have already set the correct value, and we would overwrite it
+					// with our default (mailjet), causing the post-save redirect to land
+					// on the wrong subtab.
+					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only UI state parameter.
+					$url_subtab = isset( $_GET['subtab'] ) ? sanitize_key( wp_unslash( $_GET['subtab'] ) ) : '';
+					if ( isset( $subtab_groups[ $url_subtab ] ) ) :
+						?>
+						<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
+						<?php
+					endif;
+					?>
 
 					<div class="wp-mcp-ai-subtab-content">
 						<table class="form-table" role="presentation">

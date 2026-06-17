@@ -783,11 +783,11 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
-					'section.comments',
-					function () {
-						return new WP_MCP_AI_Section_Comments();
-					}
-				);
+			'section.comments',
+			function () {
+				return new WP_MCP_AI_Section_Comments();
+			}
+		);
 
 				$this->singleton(
 					'section.form_submissions',
@@ -917,6 +917,27 @@ class WP_MCP_AI_Container {
 			'provider.baseten',
 			function () {
 				return new WP_MCP_AI_Baseten_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.deepseek',
+			function () {
+				return new WP_MCP_AI_DeepSeek_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.openrouter',
+			function () {
+				return new WP_MCP_AI_OpenRouter_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.digitalocean',
+			function () {
+				return new WP_MCP_AI_DigitalOcean_Provider_Client();
 			}
 		);
 	}

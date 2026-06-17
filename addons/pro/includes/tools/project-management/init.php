@@ -1,10 +1,13 @@
 <?php
 /**
- * Project Management Custom Post Types Registration
+ * Project Management Toolkit Initialization
  *
- * Registers custom post types for projects, tasks, and events.
+ * Loads the Project Management toolkit system for project tracking,
+ * task management, sprint planning, event coordination, resource
+ * allocation, and PARA organization.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
+ * @since 1.1.0
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
@@ -14,41 +17,175 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Check if Project Management toolkit is enabled.
+$settings   = get_option( 'wp_mcp_ai_settings', array() );
+$is_enabled = ! empty( $settings['enable_project_management'] );
+$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+
+// Only load if enabled and not in base version.
+if ( $is_enabled && ! $is_base ) {
+
+	// ---- Phase A: Shared PM engine (loaded before any tool) ----
+	$pm_engine_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/';
+
+	// Shared engine classes (mirrors CRM toolkit architecture).
+	$_pm_files = array(
+		'class-wp-mcp-ai-pm-engine.php',
+		'class-wp-mcp-ai-pm-codes.php',
+		'class-wp-mcp-ai-pm-pipeline-stages.php',
+		'class-wp-mcp-ai-pm-capabilities.php',
+		'class-wp-mcp-ai-pm-workflow-engine.php',
+	);
+	foreach ( $_pm_files as $_file ) {
+		$_path = $pm_engine_dir . $_file;
+		if ( file_exists( $_path ) ) {
+			require_once $_path;
+		}
+	}
+
+	// Load shared blueprint installer (used by import_pm_blueprint).
+	$_installer = WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-blueprint-installer.php';
+	if ( file_exists( $_installer ) ) {
+		require_once $_installer;
+	}
+
+	// Load CPT classes.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-project-cpt.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-cpt.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-event-cpt.php';
+
+	// Register Sprint CPT if not already registered.
+	if ( ! post_type_exists( 'mcp_ai_sprint' ) ) {
+		register_post_type(
+			'mcp_ai_sprint',
+			array(
+				'labels'             => array(
+					'name'               => __( 'Sprints', 'mcp-ai-wpoos-pro' ),
+					'singular_name'      => __( 'Sprint', 'mcp-ai-wpoos-pro' ),
+					'add_new'            => __( 'Add New', 'mcp-ai-wpoos-pro' ),
+					'add_new_item'       => __( 'Add New Sprint', 'mcp-ai-wpoos-pro' ),
+					'edit_item'          => __( 'Edit Sprint', 'mcp-ai-wpoos-pro' ),
+					'new_item'           => __( 'New Sprint', 'mcp-ai-wpoos-pro' ),
+					'view_item'          => __( 'View Sprint', 'mcp-ai-wpoos-pro' ),
+					'search_items'       => __( 'Search Sprints', 'mcp-ai-wpoos-pro' ),
+					'not_found'          => __( 'No sprints found', 'mcp-ai-wpoos-pro' ),
+					'not_found_in_trash' => __( 'No sprints found in trash', 'mcp-ai-wpoos-pro' ),
+				),
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => 'nvoos-pm-dashboard',
+				'show_in_rest'       => true,
+				'has_archive'        => false,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'supports'           => array( 'title', 'editor', 'author' ),
+				'menu_icon'          => 'dashicons-chart-line',
+			)
+		);
+	}
+
+	// Register PM Workflow Rule CPT if not already registered.
+	if ( ! post_type_exists( 'mcp_ai_pm_workflow_rule' ) ) {
+		register_post_type(
+			'mcp_ai_pm_workflow_rule', // phpcs:ignore -- slug is intentional, renaming would break data
+			array(
+				'labels'             => array(
+					'name'               => __( 'PM Workflow Rules', 'mcp-ai-wpoos-pro' ),
+					'singular_name'      => __( 'PM Workflow Rule', 'mcp-ai-wpoos-pro' ),
+					'add_new'            => __( 'Add New', 'mcp-ai-wpoos-pro' ),
+					'add_new_item'       => __( 'Add New PM Workflow Rule', 'mcp-ai-wpoos-pro' ),
+					'edit_item'          => __( 'Edit PM Workflow Rule', 'mcp-ai-wpoos-pro' ),
+					'new_item'           => __( 'New PM Workflow Rule', 'mcp-ai-wpoos-pro' ),
+					'view_item'          => __( 'View PM Workflow Rule', 'mcp-ai-wpoos-pro' ),
+					'search_items'       => __( 'Search PM Workflow Rules', 'mcp-ai-wpoos-pro' ),
+					'not_found'          => __( 'No PM workflow rules found', 'mcp-ai-wpoos-pro' ),
+					'not_found_in_trash' => __( 'No PM workflow rules found in trash', 'mcp-ai-wpoos-pro' ),
+				),
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => 'nvoos-pm-dashboard',
+				'show_in_rest'       => true,
+				'has_archive'        => false,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'supports'           => array( 'title', 'editor', 'author' ),
+				'menu_icon'          => 'dashicons-randomize',
+			)
+		);
+	}
+
+	// Load admin pages.
+	if ( is_admin() ) {
+		// Load PM Admin Menu registry (top-level "NV Projects" menu).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pm-admin-menu.php';
+		WP_MCP_AI_PM_Admin_Menu::init();
+
+		// Load PM Command Center page.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pm-command-center-page.php';
+		WP_MCP_AI_PM_Command_Center_Page::init();
+
+		// Load PM Toolkit Settings page (existing).
+		$_pm_settings_path = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-management-toolkit-settings-page.php';
+		if ( file_exists( $_pm_settings_path ) ) {
+			require_once $_pm_settings_path;
+			new WP_MCP_AI_Project_Management_Toolkit_Settings_Page();
+		}
+
+		// Load PM Blueprints page.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pm-blueprints-page.php';
+		WP_MCP_AI_PM_Blueprints_Page::init();
+
+		// Load Research & Add for CCT/CPT integration.
+		$_pm_research_add_path = WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-project-management-research-add.php';
+		if ( file_exists( $_pm_research_add_path ) ) {
+			require_once $_pm_research_add_path;
+			new WP_MCP_AI_Project_Management_Research_Add();
+		}
+
+		// Load Project Research & Add and Settings pages (under Projects menu).
+		$_project_research = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-research-page.php';
+		if ( file_exists( $_project_research ) ) {
+			require_once $_project_research;
+		}
+		$_project_settings = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-settings-page.php';
+		if ( file_exists( $_project_settings ) ) {
+			require_once $_project_settings;
+		}
+
+		// Load Event Research & Add and Settings pages (under Events menu).
+		$_event_research = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-event-research-page.php';
+		if ( file_exists( $_event_research ) ) {
+			require_once $_event_research;
+		}
+		$_event_settings = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-event-settings-page.php';
+		if ( file_exists( $_event_settings ) ) {
+			require_once $_event_settings;
+		}
+
+		// Load Event Consolidate & Add page (under Events menu).
+		$_event_consolidate = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-event-consolidate-page.php';
+		if ( file_exists( $_event_consolidate ) ) {
+			require_once $_event_consolidate;
+			WP_MCP_AI_Event_Consolidate_Page::init();
+		}
+
+		// Load Task Research & Add page (under Tasks menu).
+		$_task_research = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-task-research-page.php';
+		if ( file_exists( $_task_research ) ) {
+			require_once $_task_research;
+			WP_MCP_AI_Task_Research_Page::init();
+		}
+	}
+}
+
+// ---- Backward-compatible CPT registration (runs regardless of admin context) ----
+
 // Load CPT classes.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-project-cpt.php';
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-cpt.php';
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-event-cpt.php';
-
-// Load Research & Add and Settings pages for admin.
-if ( is_admin() ) {
-	// Check if project management is enabled and not in base version (unless Pro addon is active).
-	$settings      = get_option( 'wp_mcp_ai_settings', array() );
-	$is_enabled    = ! empty( $settings['enable_project_management'] );
-	$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-
-	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
-		// Load Research & Add for CCT/CPT integration.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-project-management-research-add.php';
-		new WP_MCP_AI_Project_Management_Research_Add();
-
-		// Load Project Research & Add and Settings pages (under Projects menu).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-research-page.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-settings-page.php';
-
-		// Load Event Research & Add and Settings pages (under Events menu).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-event-research-page.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-event-settings-page.php';
-
-		// Load Event Consolidate & Add page (under Events menu).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-event-consolidate-page.php';
-		WP_MCP_AI_Event_Consolidate_Page::init();
-
-		// Load Task Research & Add page (under Tasks menu).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-task-research-page.php';
-		WP_MCP_AI_Task_Research_Page::init();
-	}
-}
 
 /**
  * Initialize project management admin interface.

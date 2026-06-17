@@ -77,6 +77,8 @@ class WP_MCP_AI_Prompt_Cue_Library {
 	 * existing entry, allowing addons to ship newer cue versions.
 	 *
 	 * @param array $cue {
+	 *     Array of cue data with the following keys.
+	 *
 	 *   @type string $slug        Required. Lowercase identifier.
 	 *   @type string $label       Required. Human-readable label.
 	 *   @type string $description Required. One-line description for admin UIs.

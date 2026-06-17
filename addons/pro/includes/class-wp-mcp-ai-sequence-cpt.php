@@ -1,17 +1,37 @@
 <?php
 /**
  * Outreach Sequence Custom Post Type — multi-step outreach cadence definitions.
- * @package WP_MCP_AI_Pro @subpackage CRM_Toolkit @since 2.3.0
+ *
+ * @package WP_MCP_AI_Pro
+ * @subpackage CRM_Toolkit
+ * @since 2.3.0
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
+	exit;
+}
+
+/**
+ * Outreach Sequence CPT registration.
+ */
 class WP_MCP_AI_Sequence_CPT {
+
 	const POST_TYPE = 'mcp_ai_sequence';
+
+	/**
+	 * Initialize the CPT.
+	 */
 	public static function init() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $s['enable_crm_toolkit'] ) ) {
 			return;
-		} add_action( 'init', array( __CLASS__, 'register_post_type' ) ); }
+		}
+		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
+	}
+
+	/**
+	 * Register the post type.
+	 */
 	public static function register_post_type() {
 		register_post_type(
 			self::POST_TYPE,

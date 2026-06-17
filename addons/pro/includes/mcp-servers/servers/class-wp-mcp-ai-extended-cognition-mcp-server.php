@@ -74,19 +74,19 @@ class WP_MCP_AI_Extended_Cognition_MCP_Server extends WP_MCP_AI_Toolkit_Server_B
 		 * @param string[] $slugs Default candidate slugs.
 		 */
 		return apply_filters(
-				'wp_mcp_ai_toolkit_mcp_server_extended_cognition_candidate_tools',
-				array(
-					'ext_cog_capture_screen',
-					'ext_cog_capture_audio',
-					'ext_cog_capture_visual',
-					'ext_cog_get_motion_context',
-					'ext_cog_analyze_sensory_input',
-					'ext_cog_remember_sensory_context',
-					'ext_cog_manage_sensor_permissions',
-					'ext_cog_detect_objects',
-					'ext_cog_recognize_products',
-					'ext_cog_analyze_video_feed',
-				)
-			);
+			'wp_mcp_ai_toolkit_mcp_server_extended_cognition_candidate_tools',
+			array(
+				'ext_cog_capture_screen',
+				'ext_cog_capture_audio',
+				'ext_cog_capture_visual',
+				'ext_cog_get_motion_context',
+				'ext_cog_analyze_sensory_input',
+				'ext_cog_remember_sensory_context',
+				'ext_cog_manage_sensor_permissions',
+				'ext_cog_detect_objects',
+				'ext_cog_recognize_products',
+				'ext_cog_analyze_video_feed',
+			)
+		);
 	}
 }

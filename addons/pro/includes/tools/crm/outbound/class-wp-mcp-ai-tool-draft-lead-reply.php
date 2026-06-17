@@ -14,24 +14,61 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
+/**
+ * Draft Lead Reply — AI-assisted reply draft using the WP MCP AI provider.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 2.3.0
+ * @since 2.4.0 Uses wp_mcp_ai_chat_completion for real AI drafting.
+ */
 class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Whether this tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $s['enable_crm_toolkit'] ); }
 
+	/**
+	 * Reason the tool is unavailable.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'draft_lead_reply'; }
 
+	/**
+	 * Tool display name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Draft Lead Reply', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Generate an AI-assisted reply draft for a lead message using the configured AI provider. Does NOT send — returns the draft for review.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+	 * Parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -58,15 +95,37 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 			'required'   => array( 'incoming_message' ),
 		); }
 
+	/**
+	 * Required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts'; }
 
+	/**
+	 * Whether this tool requires base pro.
+	 *
+	 * @return bool
+	 */
 	public function requires_base_pro() {
 		return true; }
 
+	/**
+	 * Capability flags.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'requires-capability', 'ai-call' ); }
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$incoming = sanitize_textarea_field( $arguments['incoming_message'] );
 		$tone     = sanitize_key( $arguments['tone'] ?? 'professional' );

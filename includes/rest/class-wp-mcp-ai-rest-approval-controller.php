@@ -142,9 +142,9 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * GET /approvals — list pending approvals.
+	 * GET /approvals u2014 list pending approvals.
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_items( $request ) {
@@ -168,7 +168,7 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	/**
 	 * GET /approvals/{id}
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
@@ -185,7 +185,7 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	/**
 	 * POST /approvals/{id}/approve
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function approve_item( $request ) {
@@ -216,7 +216,7 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	/**
 	 * POST /approvals/{id}/deny
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function deny_item( $request ) {
@@ -247,7 +247,7 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	/**
 	 * Permission check: list approvals requires manage_options.
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Request object.
 	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
@@ -265,7 +265,7 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	 * Permission check: reading a single approval.
 	 * Admin OR the original requester can read their own approval.
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Request object.
 	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
@@ -276,7 +276,7 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 		// Check if current user is the requester.
 		$queue  = WP_MCP_AI_Approval_Queue::get_instance();
 		$record = $queue->get( (int) $request['id'] );
-		if ( $record && (int) $record['requester_id'] === get_current_user_id() ) {
+		if ( $record && get_current_user_id() === (int) $record['requester_id'] ) {
 			return true;
 		}
 
@@ -290,7 +290,7 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	/**
 	 * Permission check: resolve (approve/deny) requires manage_options.
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Request object.
 	 * @return bool|WP_Error
 	 */
 	public function resolve_permissions_check( $request ) {

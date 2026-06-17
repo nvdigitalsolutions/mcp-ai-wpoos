@@ -351,7 +351,7 @@ class WP_MCP_AI_Optional_Components {
 			</div>
 			<?php
 				ob_start();
-				?>
+			?>
 					(function() {
 						var downloadBtn = document.getElementById('wp-mcp-ai-download-components-btn');
 						var dismissBtn = document.getElementById('wp-mcp-ai-dismiss-components-btn');
@@ -382,7 +382,7 @@ class WP_MCP_AI_Optional_Components {
 										if (notice) {
 											var errorP = document.createElement('p');
 											errorP.style.color = '#d63638';
-											errorP.innerHTML = <?php echo wp_json_encode( sprintf( __( 'Download failed. Please try again or manage your data on the <a href="%s">Data Management</a> page.', 'mcp-ai-wpoos' ), esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=data_management' ) ) ) ); ?>;
+											errorP.innerHTML = <?php echo wp_json_encode( sprintf( /* translators: %s: URL to the Data Management admin page */ __( 'Download failed. Please try again or manage your data on the <a href="%s">Data Management</a> page.', 'mcp-ai-wpoos' ), esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=data_management' ) ) ) ); ?>;
 											notice.appendChild(errorP);
 										}
 									});

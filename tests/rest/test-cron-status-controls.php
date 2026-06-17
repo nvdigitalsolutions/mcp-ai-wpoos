@@ -47,6 +47,15 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 	protected $subscriber_id;
 
 	/**
+	 * Pre-generated REST nonces for each test user.
+	 *
+	 * @var string
+	 */
+	protected $admin_nonce;
+	protected $author_nonce;
+	protected $subscriber_nonce;
+
+	/**
 	 * Set up REST server and test users.
 	 */
 	public function setUp(): void {
@@ -67,6 +76,11 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		$this->admin_id      = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		$this->author_id     = self::factory()->user->create( array( 'role' => 'author' ) );
 		$this->subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		// Pre-generate nonces so authenticated tests can attach them to requests.
+		$this->admin_nonce      = wp_create_nonce( 'wp_rest' );
+		$this->author_nonce     = wp_create_nonce( 'wp_rest' );
+		$this->subscriber_nonce = wp_create_nonce( 'wp_rest' );
 	}
 
 	/**
@@ -163,6 +177,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/cancel' );
 		$request->set_param( 'job_id', $job_id );
+		$request->set_header( 'X-WP-Nonce', $this->author_nonce );
 
 		$response = $this->server->dispatch( $request );
 		$this->assertSame( 200, $response->get_status() );
@@ -185,6 +200,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/cancel' );
 		$request->set_param( 'job_id', $job_id );
+		$request->set_header( 'X-WP-Nonce', $this->admin_nonce );
 
 		$response = $this->server->dispatch( $request );
 		$this->assertSame( 200, $response->get_status() );
@@ -204,6 +220,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/cancel' );
 		$request->set_param( 'job_id', $job_id );
+		$request->set_header( 'X-WP-Nonce', $this->admin_nonce );
 
 		$response = $this->server->dispatch( $request );
 		// Should be a 4xx error.
@@ -223,6 +240,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/cancel' );
 		$request->set_param( 'job_id', $job_id );
+		$request->set_header( 'X-WP-Nonce', $this->subscriber_nonce );
 
 		$response = $this->server->dispatch( $request );
 		$this->assertNotSame( 200, $response->get_status() );
@@ -242,6 +260,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
 		$request->set_param( 'job_id', $job_id );
+		$request->set_header( 'X-WP-Nonce', $this->author_nonce );
 
 		$response = $this->server->dispatch( $request );
 		$this->assertSame( 200, $response->get_status() );
@@ -264,6 +283,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
 		$request->set_param( 'job_id', $job_id );
+		$request->set_header( 'X-WP-Nonce', $this->admin_nonce );
 
 		$response = $this->server->dispatch( $request );
 		$this->assertSame( 200, $response->get_status() );
@@ -283,6 +303,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
 		$request->set_param( 'job_id', $job_id );
+		$request->set_header( 'X-WP-Nonce', $this->admin_nonce );
 
 		$response = $this->server->dispatch( $request );
 		$this->assertGreaterThanOrEqual( 400, $response->get_status() );
@@ -297,6 +318,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
 		$request->set_param( 'job_id', $job_id );
+		$request->set_header( 'X-WP-Nonce', $this->admin_nonce );
 
 		$response = $this->server->dispatch( $request );
 		$this->assertGreaterThanOrEqual( 400, $response->get_status() );
@@ -345,6 +367,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/mock_job_xyz/cancel' );
 		$request->set_param( 'job_id', 'mock_job_xyz' );
+		$request->set_header( 'X-WP-Nonce', $this->admin_nonce );
 
 		$response = $this->server->dispatch( $request );
 

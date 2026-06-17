@@ -84,13 +84,13 @@ class WP_MCP_AI_Video_Production_MCP_Server extends WP_MCP_AI_Toolkit_Server_Bas
 				'add_watermark_to_video',
 				'generate_video_thumbnails',
 				'generate_video_captions',
-					'extract_video_frames',
-					'extract_video_metadata',
-					'get_video_metadata',
-					'optimize_for_platform',
-					// Omni Flash video generation (May 2026).
-					'generate_omni_video',
-					'edit_omni_video',
+				'extract_video_frames',
+				'extract_video_metadata',
+				'get_video_metadata',
+				'optimize_for_platform',
+				// Omni Flash video generation (May 2026).
+				'generate_omni_video',
+				'edit_omni_video',
 			)
 		);
 	}

@@ -97,13 +97,6 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 
 	/**
 	 * {@inheritdoc}
-	 *
-	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
-	 *
-	 *
-	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
-	 *
-	 * @param array $context   Execution context.
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';

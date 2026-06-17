@@ -116,7 +116,7 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 		?>
 		<div class="quiz-question-row" data-index="<?php echo esc_attr( $index ); ?>">
 			<div class="question-header">
-				<span class="question-number"><?php echo esc_html( sprintf( __( 'Question %s', 'mcp-ai-wpoos-pro' ), '{NUMBER}' ) ); ?></span>
+				<span class="question-number"><?php echo esc_html( sprintf( /* translators: %s: question number */ __( 'Question %s', 'mcp-ai-wpoos-pro' ), '{NUMBER}' ) ); ?></span>
 				<span class="question-handle dashicons dashicons-move"></span>
 				<button type="button" class="button-link remove-question" title="<?php esc_attr_e( 'Remove Question', 'mcp-ai-wpoos-pro' ); ?>">
 					<span class="dashicons dashicons-trash"></span>

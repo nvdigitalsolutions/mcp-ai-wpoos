@@ -31,10 +31,18 @@ This directory contains all tools for the Video Production Toolkit.
 - [x] extract_video_metadata - Get video information
 - [x] generate_video_thumbnails - Create thumbnail options
 
+### Queue & Batch Operations (5 tools) — Phase 2.8
+- [x] get_queued_videos - Retrieve queued videos by status
+- [x] get_videos_without_thumbnails - Find videos missing thumbnails
+- [x] get_videos_without_transcripts - Find videos lacking transcripts
+- [x] upload_video_batch - Batch upload to YouTube/Vimeo
+- [x] transcribe_video - Generate video transcripts
+
 ## Implementation Status
 
 **Phase 1 (Foundation)**: ✅ Directory created  
 **Phase 6 (Tools)**: ✅ Complete (12/12 tools implemented)  
+**Phase 2.8 (Query & Batch Tools)**: ✅ Complete (5/5 tools implemented)  
 **Phase 7 (Omni Integration)**: 🔄 Planned — Omni Flash video generation + conversational editing
 
 ## Dependencies

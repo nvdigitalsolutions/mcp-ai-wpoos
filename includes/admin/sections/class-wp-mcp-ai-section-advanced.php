@@ -31,7 +31,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			 */
 		public function enqueue_admin_assets( $hook_suffix ) {
 			// Only on our plugin's settings page.
-			if ( ! isset( $_GET['page'] ) || 'wp-mcp-ai-dashboard' !== wp_unslash( $_GET['page'] ) ) {
+			$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+			if ( 'wp-mcp-ai-dashboard' !== $page ) {
 				return;
 			}
 
@@ -124,26 +125,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'step'        => 1,
 				),
 				'enable_opcache_reset'          => array(
-							'type'           => 'checkbox',
-							'label'          => __( 'Auto OPcache Reset', 'mcp-ai-wpoos' ),
-							'checkbox_label' => __( 'Automatically reset OPcache when needed', 'mcp-ai-wpoos' ),
-							'description'    => __( 'Automatically clears OPcache when plugin files are updated. Helps ensure code changes take effect immediately without manually clearing cache. Recommended for development environments.', 'mcp-ai-wpoos' ),
-							'default'        => false,
-						),
-						'disable_native_streaming'      => array(
-							'type'           => 'checkbox',
-							'label'          => __( 'Disable Native Streaming', 'mcp-ai-wpoos' ),
-							'checkbox_label' => __( 'Use simulated chunking instead of real-time streaming', 'mcp-ai-wpoos' ),
-							'description'    => __( 'When enabled, responses are fully buffered then split into chunks with delays (simulated streaming) instead of streaming token-by-token in real time. Use this if you encounter issues with real-time streaming or your server does not support long-running cURL connections.', 'mcp-ai-wpoos' ),
-							'default'        => false,
-						),
-					'enable_oos_engine'             => array(
-						'type'           => 'checkbox',
-						'label'          => __( 'OOS Engine (Experimental)', 'mcp-ai-wpoos' ),
-						'checkbox_label' => __( 'Use the framework-agnostic OOS extraction engine', 'mcp-ai-wpoos' ),
-						'description'    => __( 'Routes chat requests through the extracted oOS/core engine instead of the legacy WordPress-specific path. This cross-platform AI orchestration engine is designed to run identically on WordPress, Laravel, and Craft CMS via hexagonal Ports &amp; Adapters architecture. Requires PHP 8.1+. The legacy engine handles all requests when disabled.', 'mcp-ai-wpoos' ),
-						'default'        => false,
-					),
+					'type'           => 'checkbox',
+					'label'          => __( 'Auto OPcache Reset', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically reset OPcache when needed', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Automatically clears OPcache when plugin files are updated. Helps ensure code changes take effect immediately without manually clearing cache. Recommended for development environments.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'disable_native_streaming'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Disable Native Streaming', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Use simulated chunking instead of real-time streaming', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, responses are fully buffered then split into chunks with delays (simulated streaming) instead of streaming token-by-token in real time. Use this if you encounter issues with real-time streaming or your server does not support long-running cURL connections.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_oos_engine'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'OOS Engine (Experimental)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Use the framework-agnostic OOS extraction engine', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Routes chat requests through the extracted oOS/core engine instead of the legacy WordPress-specific path. This cross-platform AI orchestration engine is designed to run identically on WordPress, Laravel, and Craft CMS via hexagonal Ports &amp; Adapters architecture. Requires PHP 8.1+. The legacy engine handles all requests when disabled.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 				// Federation & Mesh Settings.
 				'enable_mesh'                   => array(
 					'type'           => 'checkbox',
@@ -277,11 +278,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					),
 				),
 				'system'                 => array(
-						'id'     => 'system',
-						'label'  => __( 'System', 'mcp-ai-wpoos' ),
-						'icon'   => 'dashicons-admin-settings',
-						'fields' => array( 'enable_opcache_reset', 'enable_oos_engine', 'disable_native_streaming' ),
-					),
+					'id'     => 'system',
+					'label'  => __( 'System', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-admin-settings',
+					'fields' => array( 'enable_opcache_reset', 'enable_oos_engine', 'disable_native_streaming' ),
+				),
 				'settings_management'    => array(
 					'id'     => 'settings_management',
 					'label'  => __( 'Settings Management', 'mcp-ai-wpoos' ),
@@ -782,11 +783,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 				<?php
-				$reseed_processing    = __( 'Processing...', 'mcp-ai-wpoos' );
-				$reseed_nonce         = wp_create_nonce( 'wp_mcp_ai_reseed_professions' );
-				$reseed_error         = __( 'An error occurred.', 'mcp-ai-wpoos' );
-				$reseed_ajax_error    = __( 'AJAX error: ', 'mcp-ai-wpoos' );
-				$reseed_update_confirm = __( 'This will update existing professions and add new ones from the knowledge base. Continue?', 'mcp-ai-wpoos' );
+				$reseed_processing      = __( 'Processing...', 'mcp-ai-wpoos' );
+				$reseed_nonce           = wp_create_nonce( 'wp_mcp_ai_reseed_professions' );
+				$reseed_error           = __( 'An error occurred.', 'mcp-ai-wpoos' );
+				$reseed_ajax_error      = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+				$reseed_update_confirm  = __( 'This will update existing professions and add new ones from the knowledge base. Continue?', 'mcp-ai-wpoos' );
 				$reseed_replace_confirm = __( 'WARNING: This will DELETE all existing professions and replace them with fresh data from the knowledge base. This cannot be undone! Continue?', 'mcp-ai-wpoos' );
 
 				ob_start();
@@ -980,12 +981,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 				<?php
-				$orch_processing     = __( 'Processing...', 'mcp-ai-wpoos' );
-				$orch_nonce          = wp_create_nonce( 'wp_mcp_ai_seed_orchestration' );
-				$orch_error          = __( 'An error occurred.', 'mcp-ai-wpoos' );
-				$orch_ajax_error     = __( 'AJAX error: ', 'mcp-ai-wpoos' );
-				$orch_seed_confirm   = __( 'This will assign agent roles to all professions based on their category and expertise. Continue?', 'mcp-ai-wpoos' );
-				$orch_force_confirm  = __( 'This will overwrite all existing orchestration settings. Continue?', 'mcp-ai-wpoos' );
+				$orch_processing    = __( 'Processing...', 'mcp-ai-wpoos' );
+				$orch_nonce         = wp_create_nonce( 'wp_mcp_ai_seed_orchestration' );
+				$orch_error         = __( 'An error occurred.', 'mcp-ai-wpoos' );
+				$orch_ajax_error    = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+				$orch_seed_confirm  = __( 'This will assign agent roles to all professions based on their category and expertise. Continue?', 'mcp-ai-wpoos' );
+				$orch_force_confirm = __( 'This will overwrite all existing orchestration settings. Continue?', 'mcp-ai-wpoos' );
 
 				ob_start();
 				?>
@@ -1146,11 +1147,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 				<?php
-				$team_processing     = __( 'Processing...', 'mcp-ai-wpoos' );
-				$team_nonce          = wp_create_nonce( 'wp_mcp_ai_reseed_teams' );
-				$team_error          = __( 'An error occurred.', 'mcp-ai-wpoos' );
-				$team_ajax_error     = __( 'AJAX error: ', 'mcp-ai-wpoos' );
-				$team_update_confirm = __( 'This will update existing teams and add new ones from the knowledge base. Continue?', 'mcp-ai-wpoos' );
+				$team_processing      = __( 'Processing...', 'mcp-ai-wpoos' );
+				$team_nonce           = wp_create_nonce( 'wp_mcp_ai_reseed_teams' );
+				$team_error           = __( 'An error occurred.', 'mcp-ai-wpoos' );
+				$team_ajax_error      = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+				$team_update_confirm  = __( 'This will update existing teams and add new ones from the knowledge base. Continue?', 'mcp-ai-wpoos' );
 				$team_replace_confirm = __( 'WARNING: This will DELETE all existing teams and replace them with fresh data from the knowledge base. This cannot be undone! Continue?', 'mcp-ai-wpoos' );
 
 				ob_start();
@@ -1368,11 +1369,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 					<?php
-					$tpl_seeding     = __( 'Seeding...', 'mcp-ai-wpoos' );
-					$tpl_nonce       = wp_create_nonce( 'wp_mcp_ai_seed_task_templates' );
-					$tpl_error       = __( 'An error occurred.', 'mcp-ai-wpoos' );
-					$tpl_ajax_error  = __( 'AJAX error: ', 'mcp-ai-wpoos' );
-					$tpl_seed_confirm   = __( 'This will seed the task template library with pre-built professional templates. Existing templates will not be modified. Continue?', 'mcp-ai-wpoos' );
+					$tpl_seeding           = __( 'Seeding...', 'mcp-ai-wpoos' );
+					$tpl_nonce             = wp_create_nonce( 'wp_mcp_ai_seed_task_templates' );
+					$tpl_error             = __( 'An error occurred.', 'mcp-ai-wpoos' );
+					$tpl_ajax_error        = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+					$tpl_seed_confirm      = __( 'This will seed the task template library with pre-built professional templates. Existing templates will not be modified. Continue?', 'mcp-ai-wpoos' );
 					$tpl_overwrite_confirm = __( 'This will update existing templates with the latest versions from the library. Continue?', 'mcp-ai-wpoos' );
 
 					ob_start();
@@ -1516,17 +1517,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 				<?php
-				$gm_processing       = __( 'Processing...', 'mcp-ai-wpoos' );
-				$gm_deleting         = __( 'Deleting...', 'mcp-ai-wpoos' );
-				$gm_nonce_gemini     = wp_create_nonce( 'wp_mcp_ai_migrate_gemini_costs' );
-				$gm_nonce_sync       = wp_create_nonce( 'wp_mcp_ai_sync_all_playbooks' );
-				$gm_nonce_delete     = wp_create_nonce( 'wp_mcp_ai_delete_old_playbooks' );
-				$gm_error            = __( 'An error occurred.', 'mcp-ai-wpoos' );
-				$gm_ajax_error       = __( 'AJAX error: ', 'mcp-ai-wpoos' );
-				$gm_migrate_confirm  = __( 'This will update historical cost tracking data to fix Gemini provider attribution. This cannot be undone, but you can preview the changes first. Continue?', 'mcp-ai-wpoos' );
-				$gm_reload_confirm   = __( 'Migration completed successfully! Would you like to reload the page to see updated statistics?', 'mcp-ai-wpoos' );
+				$gm_processing         = __( 'Processing...', 'mcp-ai-wpoos' );
+				$gm_deleting           = __( 'Deleting...', 'mcp-ai-wpoos' );
+				$gm_nonce_gemini       = wp_create_nonce( 'wp_mcp_ai_migrate_gemini_costs' );
+				$gm_nonce_sync         = wp_create_nonce( 'wp_mcp_ai_sync_all_playbooks' );
+				$gm_nonce_delete       = wp_create_nonce( 'wp_mcp_ai_delete_old_playbooks' );
+				$gm_error              = __( 'An error occurred.', 'mcp-ai-wpoos' );
+				$gm_ajax_error         = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+				$gm_migrate_confirm    = __( 'This will update historical cost tracking data to fix Gemini provider attribution. This cannot be undone, but you can preview the changes first. Continue?', 'mcp-ai-wpoos' );
+				$gm_reload_confirm     = __( 'Migration completed successfully! Would you like to reload the page to see updated statistics?', 'mcp-ai-wpoos' );
 				$gm_sync_force_confirm = __( 'This will force regenerate all profession playbooks even if unchanged. This may take a moment. Continue?', 'mcp-ai-wpoos' );
-				$gm_delete_confirm   = __( 'WARNING: This will permanently delete all orphaned playbook attachments from the media library. This cannot be undone! Continue?', 'mcp-ai-wpoos' );
+				$gm_delete_confirm     = __( 'WARNING: This will permanently delete all orphaned playbook attachments from the media library. This cannot be undone! Continue?', 'mcp-ai-wpoos' );
 
 				ob_start();
 				?>
@@ -1978,13 +1979,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				<?php endif; ?>
 
 				<?php
-				$skills_processing       = __( 'Processing...', 'mcp-ai-wpoos' );
-				$skills_nonce            = wp_create_nonce( 'wp_mcp_ai_refresh_skills' );
-				$skills_error            = __( 'An error occurred.', 'mcp-ai-wpoos' );
-				$skills_ajax_error       = __( 'AJAX error: ', 'mcp-ai-wpoos' );
-				$skills_pack_fail        = __( 'Pack install failed.', 'mcp-ai-wpoos' );
-				$skills_install_confirm  = __( 'This will install any bundled skills that are not yet installed. Existing skills will be preserved. Continue?', 'mcp-ai-wpoos' );
-				$skills_force_confirm    = __( 'WARNING: This will remove and reinstall all bundled skills, resetting them to their default versions. Any customizations to bundled skills will be lost. Continue?', 'mcp-ai-wpoos' );
+				$skills_processing      = __( 'Processing...', 'mcp-ai-wpoos' );
+				$skills_nonce           = wp_create_nonce( 'wp_mcp_ai_refresh_skills' );
+				$skills_error           = __( 'An error occurred.', 'mcp-ai-wpoos' );
+				$skills_ajax_error      = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+				$skills_pack_fail       = __( 'Pack install failed.', 'mcp-ai-wpoos' );
+				$skills_install_confirm = __( 'This will install any bundled skills that are not yet installed. Existing skills will be preserved. Continue?', 'mcp-ai-wpoos' );
+				$skills_force_confirm   = __( 'WARNING: This will remove and reinstall all bundled skills, resetting them to their default versions. Any customizations to bundled skills will be lost. Continue?', 'mcp-ai-wpoos' );
 
 				ob_start();
 				?>
@@ -2116,6 +2117,272 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				?>
 			</div>
 
+			<!-- MEDIA TOOLKIT DATA MANAGEMENT SECTION -->
+			<?php
+			// Check if Pro addon is active and media toolkit is enabled.
+			$pro_active                = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$media_settings            = get_option( 'wp_mcp_ai_settings', array() );
+			$media_toolkit_enabled     = ! empty( $media_settings['enable_media_toolkit'] );
+			$media_templates_count     = 0;
+			$media_collections_count   = 0;
+			$media_templates_presets   = 0;
+			$media_collections_presets = 0;
+
+			if ( $pro_active && $media_toolkit_enabled ) {
+				// Count media templates.
+				if ( post_type_exists( 'mcp_ai_media_tpl' ) ) {
+					$tpl_counts             = wp_count_posts( 'mcp_ai_media_tpl' );
+					$media_templates_count  = isset( $tpl_counts->publish ) ? $tpl_counts->publish : 0;
+
+					// Count preset templates.
+					$preset_tpl_query = new WP_Query(
+						array(
+							'post_type'      => 'mcp_ai_media_tpl',
+							'post_status'    => 'publish',
+							'posts_per_page' => -1,
+							'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+								array(
+									'key'   => '_mcp_ai_template_is_preset',
+									'value' => true,
+								),
+							),
+							'fields'         => 'ids',
+						)
+					);
+					$media_templates_presets = $preset_tpl_query->found_posts;
+					wp_reset_postdata();
+				}
+
+				// Count media collections.
+				if ( post_type_exists( 'mcp_ai_media_coll' ) ) {
+					$coll_counts              = wp_count_posts( 'mcp_ai_media_coll' );
+					$media_collections_count  = isset( $coll_counts->publish ) ? $coll_counts->publish : 0;
+
+					// Count preset collections.
+					$preset_coll_query = new WP_Query(
+						array(
+							'post_type'      => 'mcp_ai_media_coll',
+							'post_status'    => 'publish',
+							'posts_per_page' => -1,
+							'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+								array(
+									'key'   => '_mcp_ai_collection_is_preset',
+									'value' => true,
+								),
+							),
+							'fields'         => 'ids',
+						)
+					);
+					$media_collections_presets = $preset_coll_query->found_posts;
+					wp_reset_postdata();
+				}
+
+				// Get available preset counts from the presets class.
+				if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
+					$media_presets_available  = count( WP_MCP_AI_Media_Template_Presets::get_presets() );
+					$media_coll_available     = count( WP_MCP_AI_Media_Template_Presets::get_collection_presets() );
+				} else {
+					$media_presets_available  = 0;
+					$media_coll_available     = 0;
+				}
+
+				// Determine sync status.
+				$tpl_sync_needed  = ( $media_templates_presets < $media_presets_available );
+				$coll_sync_needed = ( $media_collections_presets < $media_coll_available );
+				$media_seeded     = get_option( 'wp_mcp_ai_media_presets_seeded', '' );
+				$coll_seeded      = get_option( 'wp_mcp_ai_media_collections_seeded', false );
+
+				$tpl_status_text  = $tpl_sync_needed ? __( 'Updates Available', 'mcp-ai-wpoos' ) : __( 'Up to Date', 'mcp-ai-wpoos' );
+				$tpl_status_class = $tpl_sync_needed ? 'warning' : 'success';
+				$coll_status_text  = $coll_sync_needed ? __( 'Presets Available', 'mcp-ai-wpoos' ) : __( 'Up to Date', 'mcp-ai-wpoos' );
+				$coll_status_class = $coll_sync_needed ? 'warning' : 'success';
+			}
+			?>
+			<div class="wp-mcp-ai-media-toolkit-data-management-section" style="margin-top: 50px;">
+				<h3><?php esc_html_e( 'Media Toolkit Data Management', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Manage the pre-configured media templates and collections for the Pro Media Toolkit. Sync presets to get the latest template dimensions and collection groupings for your image processing workflows.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<?php if ( ! $pro_active ) : ?>
+					<div class="wp-mcp-ai-media-toolkit-notice" style="margin: 15px 0; padding: 12px; background: #f0f6fc; border-left: 3px solid #0073aa; border-radius: 3px;">
+						<p>
+							<span class="dashicons dashicons-info" style="color: #0073aa;"></span>
+							<?php esc_html_e( 'Media Toolkit presets require the Pro addon. Please install and activate the Pro addon to access pre-configured templates and collections.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					</div>
+				<?php elseif ( ! $media_toolkit_enabled ) : ?>
+					<div class="wp-mcp-ai-media-toolkit-notice" style="margin: 15px 0; padding: 12px; background: #f0f6fc; border-left: 3px solid #0073aa; border-radius: 3px;">
+						<p>
+							<span class="dashicons dashicons-info" style="color: #0073aa;"></span>
+							<?php
+							printf(
+								wp_kses(
+									/* translators: %s: Link to toolkit settings page */
+									__( 'The Media Toolkit is currently disabled. <a href="%s">Enable it in settings</a> to sync templates and collections.', 'mcp-ai-wpoos' ),
+									array( 'a' => array( 'href' => array() ) )
+								),
+								esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=features' ) )
+							);
+							?>
+						</p>
+					</div>
+				<?php else : ?>
+					<div class="wp-mcp-ai-media-toolkit-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+						<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></h4>
+						<ul style="margin: 10px 0; padding-left: 20px;">
+							<li><strong><?php esc_html_e( 'Published Templates:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $media_templates_count ); ?></li>
+							<li><strong><?php esc_html_e( 'Preset Templates:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $media_templates_presets ); ?> / <?php echo absint( $media_presets_available ); ?> available</li>
+							<li><strong><?php esc_html_e( 'Template Sync Status:', 'mcp-ai-wpoos' ); ?></strong>
+								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $tpl_status_class ); ?>">
+									<?php echo esc_html( $tpl_status_text ); ?>
+								</span>
+							</li>
+							<li><strong><?php esc_html_e( 'Published Collections:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $media_collections_count ); ?></li>
+							<li><strong><?php esc_html_e( 'Preset Collections:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $media_collections_presets ); ?> / <?php echo absint( $media_coll_available ); ?> available</li>
+							<li><strong><?php esc_html_e( 'Collection Sync Status:', 'mcp-ai-wpoos' ); ?></strong>
+								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $coll_status_class ); ?>">
+									<?php echo esc_html( $coll_status_text ); ?>
+								</span>
+							</li>
+						</ul>
+						<p class="description" style="margin: 10px 0 0 0;">
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_media_tpl' ) ); ?>">
+								<?php esc_html_e( 'View all media templates', 'mcp-ai-wpoos' ); ?> &rarr;
+							</a>
+							&nbsp;|&nbsp;
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_media_coll' ) ); ?>">
+								<?php esc_html_e( 'View all media collections', 'mcp-ai-wpoos' ); ?> &rarr;
+							</a>
+						</p>
+					</div>
+
+					<div class="wp-mcp-ai-media-toolkit-actions" style="margin-top: 20px;">
+						<h4><?php esc_html_e( 'Sync Media Presets', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description">
+							<?php esc_html_e( 'Load pre-configured template presets and collection groupings for the Media Toolkit. Templates include social media sizes, e-commerce product images, branding watermarks, and marketing graphics.', 'mcp-ai-wpoos' ); ?>
+						</p>
+
+						<div style="margin: 15px 0;">
+							<p>
+								<button type="button" class="button button-secondary" id="wp-mcp-ai-sync-media-templates-btn">
+									<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Sync Media Templates &amp; Collections', 'mcp-ai-wpoos' ); ?>
+								</button>
+								<span class="description" style="margin-left: 10px;">
+									<?php esc_html_e( 'Adds preset templates and collections without overwriting existing ones.', 'mcp-ai-wpoos' ); ?>
+								</span>
+							</p>
+
+							<p>
+								<button type="button" class="button button-secondary" id="wp-mcp-ai-force-reseed-media-btn">
+									<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Force Reseed Media Presets', 'mcp-ai-wpoos' ); ?>
+								</button>
+								<span class="description" style="margin-left: 10px;">
+									<?php esc_html_e( 'Updates existing presets with latest versions. Use after plugin updates to refresh template specs.', 'mcp-ai-wpoos' ); ?>
+								</span>
+							</p>
+						</div>
+
+						<div id="wp-mcp-ai-sync-media-templates-message" class="notice" style="display: none; margin: 15px 0;">
+							<p></p>
+						</div>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<?php
+			$media_sync_processing      = __( 'Syncing...', 'mcp-ai-wpoos' );
+			$media_sync_nonce           = wp_create_nonce( 'wp_mcp_ai_sync_media_templates' );
+			$media_sync_error           = __( 'An error occurred.', 'mcp-ai-wpoos' );
+			$media_sync_ajax_error      = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+			$media_sync_seed_confirm    = __( 'This will add pre-configured media templates and collections without modifying existing ones. Continue?', 'mcp-ai-wpoos' );
+			$media_sync_force_confirm   = __( 'This will update all preset media templates and collections with the latest versions. Existing presets will be overwritten. Continue?', 'mcp-ai-wpoos' );
+
+			ob_start();
+			?>
+			jQuery(document).ready(function($) {
+				function performMediaSync(actionType, buttonId) {
+					var $button = $(buttonId);
+					var $message = $('#wp-mcp-ai-sync-media-templates-message');
+					var originalText = $button.html();
+
+					// Disable both buttons.
+					$('#wp-mcp-ai-sync-media-templates-btn, #wp-mcp-ai-force-reseed-media-btn')
+						.prop('disabled', true)
+						.addClass('disabled');
+
+					// Update button text.
+					$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> ' + <?php echo wp_json_encode( $media_sync_processing ); ?>);
+
+					// Hide any previous messages.
+					$message.hide().removeClass('notice-success notice-error notice-warning');
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_sync_media_templates',
+							action_type: actionType,
+							nonce: <?php echo wp_json_encode( $media_sync_nonce ); ?>
+						},
+						success: function(response) {
+							if (response.success) {
+								$message
+									.removeClass('notice-error notice-warning')
+									.addClass('notice-success')
+									.find('p').html(response.data.message);
+								$message.show();
+
+								// Reload stats after a short delay.
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(response.data.message || <?php echo wp_json_encode( $media_sync_error ); ?>);
+								$message.show();
+							}
+						},
+						error: function(xhr, status, error) {
+							$message
+								.removeClass('notice-success notice-warning')
+								.addClass('notice-error')
+								.find('p').html(<?php echo wp_json_encode( $media_sync_ajax_error ); ?> + error);
+							$message.show();
+						},
+						complete: function() {
+							// Re-enable buttons and restore text.
+							$('#wp-mcp-ai-sync-media-templates-btn, #wp-mcp-ai-force-reseed-media-btn')
+								.prop('disabled', false)
+								.removeClass('disabled');
+							$button.html(originalText);
+						}
+					});
+				}
+
+				$('#wp-mcp-ai-sync-media-templates-btn').on('click', function(e) {
+					e.preventDefault();
+					if (confirm(<?php echo wp_json_encode( $media_sync_seed_confirm ); ?>)) {
+						performMediaSync('seed', '#wp-mcp-ai-sync-media-templates-btn');
+					}
+				});
+
+				$('#wp-mcp-ai-force-reseed-media-btn').on('click', function(e) {
+					e.preventDefault();
+					if (confirm(<?php echo wp_json_encode( $media_sync_force_confirm ); ?>)) {
+						performMediaSync('force_reseed', '#wp-mcp-ai-force-reseed-media-btn');
+					}
+				});
+			});
+			<?php
+			$media_sync_js = ob_get_clean();
+			wp_print_inline_script_tag( $media_sync_js );
+			?>
+
 			<!-- PRODUCTION CLEANUP SECTION -->
 			<div class="wp-mcp-ai-production-cleanup-section" style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd;">
 				<h3><?php esc_html_e( 'Production Cleanup', 'mcp-ai-wpoos' ); ?></h3>
@@ -2152,13 +2419,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 				<?php
-				$cleanup_processing    = __( 'Processing...', 'mcp-ai-wpoos' );
-				$cleanup_error         = __( 'An error occurred.', 'mcp-ai-wpoos' );
-				$cleanup_ajax_error    = __( 'AJAX error: ', 'mcp-ai-wpoos' );
-				$cleanup_test_nonce    = wp_create_nonce( 'wp_mcp_ai_clear_test_files' );
-				$cleanup_dev_nonce     = wp_create_nonce( 'wp_mcp_ai_clear_dev_files' );
-				$cleanup_test_confirm  = __( 'This will permanently delete the tests directory and all PHPUnit configuration files. This cannot be undone on this server. Continue?', 'mcp-ai-wpoos' );
-				$cleanup_dev_confirm   = __( 'This will permanently delete developer-only files (docs, build tools, CI configs, bin scripts). This cannot be undone on this server. Continue?', 'mcp-ai-wpoos' );
+				$cleanup_processing   = __( 'Processing...', 'mcp-ai-wpoos' );
+				$cleanup_error        = __( 'An error occurred.', 'mcp-ai-wpoos' );
+				$cleanup_ajax_error   = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+				$cleanup_test_nonce   = wp_create_nonce( 'wp_mcp_ai_clear_test_files' );
+				$cleanup_dev_nonce    = wp_create_nonce( 'wp_mcp_ai_clear_dev_files' );
+				$cleanup_test_confirm = __( 'This will permanently delete the tests directory and all PHPUnit configuration files. This cannot be undone on this server. Continue?', 'mcp-ai-wpoos' );
+				$cleanup_dev_confirm  = __( 'This will permanently delete developer-only files (docs, build tools, CI configs, bin scripts). This cannot be undone on this server. Continue?', 'mcp-ai-wpoos' );
 
 				ob_start();
 				?>
@@ -2352,19 +2619,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				<?php endif; ?>
 
 				<?php
-				$tx_rest_base       = esc_url_raw( rest_url( 'mcp-ai/v1/transcript-mining' ) );
-				$tx_rest_nonce      = wp_create_nonce( 'wp_rest' );
-				$tx_errors_url      = esc_url_raw( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=logging' ) );
-				$tx_completed_err   = __( 'Mining job completed with errors.', 'mcp-ai-wpoos' );
-				$tx_check_errors    = __( 'Check NV oOS → Settings → Advanced → Recent Errors.', 'mcp-ai-wpoos' );
-				$tx_open_errors     = __( 'Open Recent Errors', 'mcp-ai-wpoos' );
-				$tx_no_memories     = __( 'Job completed but no new memories were extracted. Common causes: (1) all eligible transcripts have already been mined — uncheck "Skip transcripts that have already been mined" to re-process them; (2) the assistant has no stored transcripts yet; (3) JetEngine data-stores is inactive — check Settings → NV oOS → Recent Errors for details.', 'mcp-ai-wpoos' );
-				$tx_poll_failed     = __( 'Failed to poll job.', 'mcp-ai-wpoos' );
-				$tx_choose_asst     = __( 'Choose an assistant first.', 'mcp-ai-wpoos' );
-				$tx_job_started     = __( 'Mining job started.', 'mcp-ai-wpoos' );
-				$tx_start_failed    = __( 'Failed to start mining job.', 'mcp-ai-wpoos' );
-				$tx_job_cancelled   = __( 'Mining job cancelled.', 'mcp-ai-wpoos' );
-				$tx_cancel_failed   = __( 'Failed to cancel job.', 'mcp-ai-wpoos' );
+				$tx_rest_base     = esc_url_raw( rest_url( 'mcp-ai/v1/transcript-mining' ) );
+				$tx_rest_nonce    = wp_create_nonce( 'wp_rest' );
+				$tx_errors_url    = esc_url_raw( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=logging' ) );
+				$tx_completed_err = __( 'Mining job completed with errors.', 'mcp-ai-wpoos' );
+				$tx_check_errors  = __( 'Check NV oOS → Settings → Advanced → Recent Errors.', 'mcp-ai-wpoos' );
+				$tx_open_errors   = __( 'Open Recent Errors', 'mcp-ai-wpoos' );
+				$tx_no_memories   = __( 'Job completed but no new memories were extracted. Common causes: (1) all eligible transcripts have already been mined — uncheck "Skip transcripts that have already been mined" to re-process them; (2) the assistant has no stored transcripts yet; (3) JetEngine data-stores is inactive — check Settings → NV oOS → Recent Errors for details.', 'mcp-ai-wpoos' );
+				$tx_poll_failed   = __( 'Failed to poll job.', 'mcp-ai-wpoos' );
+				$tx_choose_asst   = __( 'Choose an assistant first.', 'mcp-ai-wpoos' );
+				$tx_job_started   = __( 'Mining job started.', 'mcp-ai-wpoos' );
+				$tx_start_failed  = __( 'Failed to start mining job.', 'mcp-ai-wpoos' );
+				$tx_job_cancelled = __( 'Mining job cancelled.', 'mcp-ai-wpoos' );
+				$tx_cancel_failed = __( 'Failed to cancel job.', 'mcp-ai-wpoos' );
 
 				ob_start();
 				?>
@@ -3145,24 +3412,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			</div>
 
 			<?php
-			$sm_nonce              = wp_create_nonce( 'wp-mcp-ai-dashboard' );
-			$sm_select_file        = __( 'Please select a JSON file to import.', 'mcp-ai-wpoos' );
-			$sm_import_confirm     = __( 'Import settings from file? Your current settings will be backed up first.', 'mcp-ai-wpoos' );
-			$sm_importing          = __( 'Importing...', 'mcp-ai-wpoos' );
-			$sm_import_failed      = __( 'Import failed.', 'mcp-ai-wpoos' );
-			$sm_upload_import      = __( 'Upload & Import', 'mcp-ai-wpoos' );
-			$sm_ajax_error         = __( 'AJAX error occurred.', 'mcp-ai-wpoos' );
-			$sm_clear_confirm      = __( 'Clear all settings caches?', 'mcp-ai-wpoos' );
-			$sm_clearing           = __( 'Clearing...', 'mcp-ai-wpoos' );
-			$sm_clear_failed       = __( 'Failed to clear cache.', 'mcp-ai-wpoos' );
-			$sm_clear_all          = __( 'Clear All Caches', 'mcp-ai-wpoos' );
-			$sm_reset_confirm      = __( 'Reset ALL settings to defaults? This cannot be undone! (Current settings will be backed up)', 'mcp-ai-wpoos' );
-			$sm_resetting          = __( 'Resetting...', 'mcp-ai-wpoos' );
-			$sm_reset_failed       = __( 'Failed to reset settings.', 'mcp-ai-wpoos' );
-			$sm_reset_all          = __( 'Reset All Settings', 'mcp-ai-wpoos' );
-			$sm_checking           = __( 'Checking...', 'mcp-ai-wpoos' );
-			$sm_health_failed      = __( 'Health check failed.', 'mcp-ai-wpoos' );
-			$sm_check_health       = __( 'Check Settings Health', 'mcp-ai-wpoos' );
+			$sm_nonce          = wp_create_nonce( 'wp-mcp-ai-dashboard' );
+			$sm_select_file    = __( 'Please select a JSON file to import.', 'mcp-ai-wpoos' );
+			$sm_import_confirm = __( 'Import settings from file? Your current settings will be backed up first.', 'mcp-ai-wpoos' );
+			$sm_importing      = __( 'Importing...', 'mcp-ai-wpoos' );
+			$sm_import_failed  = __( 'Import failed.', 'mcp-ai-wpoos' );
+			$sm_upload_import  = __( 'Upload & Import', 'mcp-ai-wpoos' );
+			$sm_ajax_error     = __( 'AJAX error occurred.', 'mcp-ai-wpoos' );
+			$sm_clear_confirm  = __( 'Clear all settings caches?', 'mcp-ai-wpoos' );
+			$sm_clearing       = __( 'Clearing...', 'mcp-ai-wpoos' );
+			$sm_clear_failed   = __( 'Failed to clear cache.', 'mcp-ai-wpoos' );
+			$sm_clear_all      = __( 'Clear All Caches', 'mcp-ai-wpoos' );
+			$sm_reset_confirm  = __( 'Reset ALL settings to defaults? This cannot be undone! (Current settings will be backed up)', 'mcp-ai-wpoos' );
+			$sm_resetting      = __( 'Resetting...', 'mcp-ai-wpoos' );
+			$sm_reset_failed   = __( 'Failed to reset settings.', 'mcp-ai-wpoos' );
+			$sm_reset_all      = __( 'Reset All Settings', 'mcp-ai-wpoos' );
+			$sm_checking       = __( 'Checking...', 'mcp-ai-wpoos' );
+			$sm_health_failed  = __( 'Health check failed.', 'mcp-ai-wpoos' );
+			$sm_check_health   = __( 'Check Settings Health', 'mcp-ai-wpoos' );
 
 			ob_start();
 			?>

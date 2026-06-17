@@ -193,18 +193,18 @@ class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool
 			}
 
 			$variance_psf = ( null !== $bench_psf ) ? $actual_psf - $bench_psf : null;
-			$variance_pct = ( $bench_psf !== null && $bench_psf > 0 )
+			$variance_pct = ( null !== $bench_psf && $bench_psf > 0 )
 				? ( $actual_psf - $bench_psf ) / $bench_psf
 				: null;
 
-			$is_outlier = ( $variance_pct !== null && $variance_pct > $outlier_threshold );
+			$is_outlier = ( null !== $variance_pct && $variance_pct > $outlier_threshold );
 
 			if ( null !== $variance_psf ) {
 				$total_variance += $variance_psf * $total_sf;
 			}
 
 			// Savings potential if we could reduce to benchmark.
-			if ( $variance_psf !== null && $variance_psf > 0 ) {
+			if ( null !== $variance_psf && 0 < $variance_psf ) {
 				$savings_potential += $variance_psf * $total_sf;
 			}
 
