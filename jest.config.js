@@ -5,6 +5,13 @@
  */
 
 const path = require( 'path' );
+const fs = require( 'fs' );
+
+// Log which files exist for debugging CI
+const setupPath = path.resolve( __dirname, 'jest.setup.js' );
+console.error( '[jest.config.js] Looking for setup file at:', setupPath );
+console.error( '[jest.config.js] File exists:', fs.existsSync( setupPath ) );
+console.error( '[jest.config.js] __dirname contents:', fs.readdirSync( __dirname ).filter( f => f.startsWith('jest') ) );
 
 module.exports = {
 	// Use the directory of this config file as the root
