@@ -1203,7 +1203,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [ARCHITECTURE.md](developer/architecture/ARCHITECTURE.md) | **UPDATED (Apr 2026):** High-level architecture overview — 9 providers, 837 tool classes, 34 REST controllers, 64 services, full directory structure with file counts | Everyone |
+| [ARCHITECTURE.md](developer/architecture/ARCHITECTURE.md) | **UPDATED (Apr 2026):** High-level architecture overview — 13 providers, ~990 tool classes, 34 REST controllers, 64 services, full directory structure with file counts | Everyone |
 | [REQUEST-FLOW-WALKTHROUGH.md](developer/architecture/REQUEST-FLOW-WALKTHROUGH.md) | **NEW (Apr 2026):** End-to-end chat request lifecycle trace — authentication → assistant → SSE → provider routing → agentic loop → tool execution → token budget → response | Everyone |
 | [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](visual-guides/workflow/AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | **NEW:** Quick visual reference showing agentic workflow flow (print-friendly diagrams) | Everyone |
 | [CURRENT-STATE-AGENTIC-WORKFLOW.md](developer/architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
@@ -1336,6 +1336,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | **[features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)** ⭐ **NEW (Mar 2026)** | **Healthcare DICOM Imaging Viewer** — Full manager: upload, study browser with search/filter, Cornerstone3D viewer, W/L presets, flip/rotate, AI interpretation, audit log, REST API reference, HIPAA notes | Admins/Clinical Staff |
 | [PRO_CPT_OVERVIEW.md](features/pro-cpt/PRO_CPT_OVERVIEW.md) | **NEW:** Events, Quizzes, and Places CPT overview (21 tools) | Users/Admins |
 | [telegram-mini-app-templates.md](features/telegram-mini-app-templates.md) | **NEW:** Health & Wellness and Medical Vitals Telegram Mini App templates — member selection, auth flow, role-based access, offline-first sync, custom template API | Developers/Users |
+| **[features/media-command-center.md](features/media-command-center.md)** ⭐ **NEW (Jun 2026)** | **Media Command Center** — Top-level NV Media admin menu, templates, presets, blueprints, scheduler. Manages media generation workflows. | Admins/Users |
+| **[features/pro-spa-v2.md](features/pro-spa-v2.md)** ⭐ **NEW (Jun 2026)** | **Pro SPA v2** — Next-gen React chat UI with rich markdown rendering, assistant scoping, agent selector. Conversations primary, threads read-only. v2.0.1. | Developers/Admins |
 
 **Pro Custom Post Types:**
 - **Customers** (5 tools) — Customer CPT with full CRUD, Customer 360 dashboard, lead-to-customer conversion
@@ -1345,6 +1347,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 - **Places** (7 tools) - Location management, Google Places API integration
 
 **New Addons (June 2026):**
+- **Media Command Center** (`admin.php?page=nv-media`) — Top-level NV Media admin menu with templates, presets, blueprints, and scheduler
+- **Pro SPA v2** (`addons/pro-spa-v2/`) — Next-gen React chat SPA with rich markdown rendering, assistant scoping, agent selector, v2.0.1
 - **Funiq Bridge** (`addons/funiq-bridge/`) — Payload-to-WordPress bridge with React admin SPA, REST controllers, transformers, post types (Product, Promocode, Promotion), taxonomies (Brand, Category, Color, Status)
 - **NV Platform** (`addons/ai-platform/`) — Top-level admin dashboard + CPTs (Project, Resource, Template)
 

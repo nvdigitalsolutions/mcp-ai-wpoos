@@ -1,5 +1,80 @@
 # oOS – Changelog
 
+## [1.1.31] - 2026-06-17
+
+### Added — Media Command Center (PR #5402)
+
+- Top-level "NV Media" admin menu with command center for managing media workflows.
+- Template and preset management with `implode()` WP_Error crash fix.
+- PHPCS cleanup across the Media Command Center page.
+- Admin menu label renamed to "NV oOS AI".
+
+### Added — Pro SPA v2 Migration & Rich Rendering (PRs #5401, #5412, #5414, #5416)
+
+- Pro SPA v2 ported to feature parity with chat-spa and old pro-spa.
+- **Rich markdown rendering** for assistant responses.
+- **Per-assistant scoping** dropdown and **agent selector** in the chat UI.
+- **Conversations** set as primary view; threads marked read-only after archival.
+- CSS class-name mismatches fixed, restoring previously unstyled UI.
+- Admin layout fit within WordPress chrome.
+- Cache-bust version bump; production assets built and dist un-gitignored.
+- Version bumped to **2.0.1**.
+
+### Added — 34 Missing Workflow Preset Tools (PR #5418)
+
+- All missing workflow presets implemented across 10 toolkits: AI Tool Builder, Analytics, Architect Agent, Architectural Design, Calendar Booking, CRM, Document Generation, DJ Management, Social Media, Video Production.
+- Orphaned media tools created and Upwork tool availability fixed.
+- Full PHPCS compliance for all 36 new tool files (short ternary → full ternary, count() in loops, docblock capitalisation).
+- Comprehensive test suite validating class existence, interface implementation, slug resolution, metadata, capability flags (including `pro` and `read-only`), and dry_run safety defaults.
+
+### Fixed — npm Audit CVEs — June 2026 (PR #5419)
+
+- **12 CVEs resolved** across the dependency tree:
+  - vite CVE-2026-53571 (server.fs.deny bypass)
+  - launch-editor CVE-2026-53632 (NTLMv2 disclosure)
+  - markdown-it CVE-2026-48988 (smartquotes quadratic DoS)
+  - ws (memory exhaustion DoS)
+  - js-yaml (quadratic DoS in merge keys)
+  - form-data >=4.0.6 (CRLF injection)
+  - hono >=4.12.25 (path traversal, CORS, Set-Cookie)
+  - dompurify >=3.4.9 (XSS sanitization bypasses)
+  - @babel/core >=7.29.6 (arbitrary file read)
+  - @opentelemetry/core >=2.8.0 (unbounded memory)
+  - joi >=18.2.1 (RangeError DoS)
+- ajv bump reverted to restore ESLint 8 compatibility.
+- Root npm audit: **51→0** vulnerabilities.
+
+### Changed — Gemini Image Default (PR #5404)
+
+- Default Gemini image generation model upgraded to `gemini-3.1-flash-image`.
+
+### Added — Media Toolkit Blueprints & Scheduler Presets (PRs #5398, #5411)
+
+- Blueprints and scheduler presets added to the media toolkit.
+- Media Toolkit sync integrated into the Data Management page.
+- Private `get_media_presets()` visibility fixed to prevent fatal error when called externally.
+
+### Fixed — Provider Streaming & Cost Tracking
+
+- `stream_options` added to OpenAI and DeepSeek streaming API payloads for accurate usage tracking (PR #5400).
+- Tool result costs now computed from token counts when not explicitly provided by the provider (PR #5395).
+- Missing provider pricing entries added across the cost-tracking layer, fixing under-reporting in agentic workflows (PR #5394).
+
+### Fixed — Security
+
+- vite pinned to ^8.0.16 to resolve CVE-2026-53571 and CVE-2026-53632 (PR #5403).
+
+### Fixed — Code Quality & CI
+
+- **1,658 PHPCS lint errors** fixed across base plugin and Pro addon (44 toolkits) (PR #5397).
+- `require_once` paths corrected for renamed optimization and tool files.
+- `Free disk space` step added to all build workflows to prevent runner disk exhaustion (PR #5417).
+
+### Fixed — Data Integrity
+
+- PII pseudonymisation logic restored after being lost during a merge conflict resolution (PR #5398).
+- CPT data store post type mismatch for CRM entities resolved (PR #5396).
+
 ## [1.1.30] - 2026-06-15
 
 ### Added — Chat SPA Phase 8: Message Actions & Content Enrichment (PRs #5381, #5383, #5390)

@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.30  
-**Release Date:** 2026-06-15
+**Version:** 1.1.31  
+**Release Date:** 2026-06-17
 
-**Latest Updates:** June 15, 2026 (v1.1.30) — See [§ Latest Updates (v1.1.30 — June 2026)](#-latest-updates-v1130--june-2026) (Chat SPA Phase 8: message actions, conversations sidebar, auto-create thread. PM Toolkit Enhancement Phase A–D: 28 new AI tools, Command Center dashboard. CRM Toolkit: duplicate detection & merge, email hygiene, Top Customers/Clients analytics, LinkedIn/Upwork sourcing, leads inline editing. DietPi Pro Toolkit Phases 0–3: 19+ tools, provisioning, SSH proxy. Layer I Guardrails: jailbreak prevention. LibreChat Addon: code interpreter, speech, search reranker. Context Window Management: pre-flight validation across all 13 providers with tiktoken integration. WP 7.0 Connectors API bridge. Pro Toolkit Optimizations Phase 1–3. Chat Transcript & Agent Memory Retention. OAuth/API disconnect buttons. 30+ bug fixes including SPA reliability, security CVEs, docs-hub rebuild, and CPT slug length limits).
+**Latest Updates:** June 17, 2026 (v1.1.31) — See [§ Latest Updates (v1.1.31 — June 2026)](#-latest-updates-v1131--june-2026) (Media Command Center: top-level NV Media admin menu. Pro SPA v2: rich markdown rendering, assistant scoping, agent selector, conversations primary. 34 Workflow Preset Tools across 10 toolkits with full test suite. npm audit CVEs: 12 resolved. Gemini 3.1 flash image default. Media Toolkit blueprints & presets. OpenAI/DeepSeek stream_options. Agentic-loop cost tracking. Vite CVEs. 1,658 PHPCS lint fixes. CI disk space cleanup. Plus prior v1.1.30 items below).
 
-**Previous Updates (v1.1.29):** June 11, 2026 — Pro Toolkit Optimizations Phase 1–3 across 6 toolkits, Chat Transcript & Agent Memory Retention, DietPi Pro Toolkit Phases 0–3, Layer I Guardrails — jailbreak prevention, Context Window Management across all 14 providers, CRM Email Import & Lead Pruning, LibreChat Addon, Schedule Anything SaaS Platform, Vector Search Enhancements, OAuth/API Disconnect Buttons, 25+ bug fixes, security patches for guzzlehttp/psr7 and shell-quote CVEs.
+**Previous Updates (v1.1.30):** June 15, 2026 — Chat SPA Phase 8 message actions & conversations sidebar. PM Toolkit A–D: 28 tools, Command Center dashboard. CRM duplicates, email hygiene, LinkedIn/Upwork sourcing. DietPi Pro Toolkit Phases 0–3. LibreChat Addon. Layer I Guardrails. Context Window Management across 13 providers. WP 7.0 Bridge. Pro Toolkit Optimizations. Chat Transcript & Memory Retention. OAuth/API disconnect. 30+ fixes.
 
 **Previous Updates (v1.1.26):** June 3, 2026 — Cross-Platform Extraction Engine Phases 0–2, Site-Builder Node-Graph Pipeline, SPA a11y Hardening, Screenshot & Docs Overhaul.
 
@@ -129,8 +129,8 @@
 
 | Directory | Purpose |
 |-----------|---------|
-| `includes/` | Core plugin classes — admin, assistants, tools, services, REST, security, providers (~14 AI backends), harness, data, markup, measurement, skills, professions, teams, slash-commands, A2A/ACP protocols, federation, elementor, blocks, crawler, integrations |
-| `addons/` | 22 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Graphify, Comic Reader, Funiq Bridge, AI Platform, Algorave, Cornerstone3D, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router) |
+| `includes/` | Core plugin classes — admin, assistants, tools, services, REST, security, providers (~13 AI backends), harness, data, markup, measurement, skills, professions, teams, slash-commands, A2A/ACP protocols, federation, elementor, blocks, crawler, integrations |
+| `addons/` | 23 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Graphify, Comic Reader, Funiq Bridge, AI Platform, Algorave, Cornerstone3D, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router) |
 | `assets/` | Frontend JS/CSS, images, CSV templates, examples |
 | `lib/` | Framework-agnostic core library + WordPress/Laravel/Craft CMS adapters |
 | `plugins/` | Standalone plugins: NVOOS Graphify, NVOOS Graphify AI, NVOOS Graphify AI Platform |
@@ -152,25 +152,50 @@
 
 ## 🧩 Overview
 
-Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 14 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 13 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.31)
+
+- 🎬 **Media Command Center.** Top-level NV Media admin menu with command center for media templates, presets, and blueprints.
+- 💬 **Pro SPA v2 — Rich Rendering & Scoping.** Rich markdown rendering, per-assistant scoping, agent selector dropdown. Conversations primary, threads read-only. Version 2.0.1.
+- 🧰 **34 Workflow Preset Tools.** All missing workflow presets implemented across 10 toolkits. Full PHPCS compliance and test suite for 36 tools.
+- 🔒 **npm Audit CVEs Resolved.** 12 CVEs fixed: vite, launch-editor, markdown-it, ws, js-yaml, form-data, hono, dompurify, babel, opentelemetry, joi.
+- 🎨 **Gemini 3.1 Flash Image.** Default Gemini image model upgraded to `gemini-3.1-flash-image`.
+- 🖼 **Media Toolkit Blueprints & Presets.** Blueprints and scheduler presets synced to Data Management page.
+- ⚡ **OpenAI/DeepSeek stream_options.** Streaming usage payloads now include proper `stream_options` for accurate usage tracking.
+- 💰 **Agentic-Loop Cost Tracking.** Tool result costs computed from tokens when not explicitly provided. Missing provider pricing added.
+- 🛡️ **Vite CVEs.** vite ^8.0.16 for CVE-2026-53571 (server.fs.deny bypass) and CVE-2026-53632 (NTLMv2 disclosure).
+- 🧹 **1,658 PHPCS Lint Fixes.** Across base + pro addon (44 toolkits).
+- 🔧 **CI Disk Space.** Free disk space step added to all build workflows.
+
+### ✨ What's New at a Glance (v1.1.30)
+
+- 💬 **Chat SPA Phase 8 — Message Actions.** Edit, delete, regenerate, copy, and content enrichment cards on every assistant message. Conversations sidebar with assistant scoping. Auto-create thread on first message.
+- 📊 **PM Toolkit Enhancement Phase A–D.** Shared engine powering Command Center dashboard with real-time task visibility. Work Ingestion panel. 28 new AI tools for task management, resource allocation, timeline generation, and reporting.
+- 🏢 **CRM Toolkit — Duplicates & Hygiene.** Duplicate detection engine with safe one-click merge. Email hygiene module: domain reputation classification, exclusion/priority lists, auto-pruning. Top Customers/Clients analytics. LinkedIn & Upwork external sourcing.
+- 🥧 **DietPi Pro Toolkit Phases 0–3.** 19+ tools for server management: system info, package/service control, backup/restore, storage, provisioning, SSH proxy. Registered as MCP server.
+- 🛡️ **Layer I Guardrails — Jailbreak Prevention.** Stay-on-target guardrails blocking prompt-injection and role-change attacks. Configurable per-assistant via LLM Harness metabox.
+- 🪟 **Context Window Management.** Pre-flight validation across all 13 AI providers. tiktoken integration, estimator metabox, token-budget tool capping, chat parity drift detection.
+- 🌉 **WP 7.0 Connectors API Bridge.** Forward-compatible provider credential bridge. Classes load unconditionally on WP < 7.0.
+- 🧠 **Chat Transcript & Agent Memory Retention.** Configurable TTL-based transcript cleanup (base). Agent memory lifecycle management with pruning and retention windows (Pro).
+- ⚡ **Pro Toolkit Optimizations Phase 1–3.** Performance optimization across 6 Pro toolkits with autoload control, caching, and lazy loading.
+- 🔌 **OAuth & API Disconnect Buttons.** One-click disconnect for OAuth and API connections with automatic token clearing.
+- 💬 **LibreChat Addon.** New standalone addon with code interpreter, speech-to-text/text-to-speech, and web search reranker.
+- 🪲 **30+ Bug Fixes.** SPA reliability sweep (thread endpoints, router context, event serialization). Agentic loop tool result persistence. CPT slug limits. Security CVEs (guzzlehttp/psr7, shell-quote, esbuild).
 
 ### ✨ What's New at a Glance (v1.1.29)
 
-- ⚡ **Pro Toolkit Optimizations Phase 1–3.** Performance optimization across 6 Pro toolkits (Chat Channels, Social Media, Healthcare, Ecommerce, Calendar/Orchestration, Document Generation) with autoload control, query caching, and lazy loading. 767-line PHPUnit test suite.
-- 🧠 **Chat Transcript & Agent Memory Retention.** Base plugin now includes `WP_MCP_AI_Transcript_Retention` (437 lines) for configurable TTL-based transcript cleanup. Pro adds `WP_MCP_AI_Memory_Retention` (358 lines) for agent memory lifecycle management.
-- 🥧 **DietPi Pro Toolkit Phases 0–3.** 19+ tools for DietPi server management: system info, package/service control, backup/restore, storage, provisioning, SSH proxy tunneling. Registered as an MCP server.
-- 🛡️ **Layer I Guardrails — Jailbreak Prevention.** Stay-on-target guardrails that detect and block jailbreak attempts before they reach the AI provider. Configurable per-assistant capability boundaries.
-- 🪟 **Context Window Management.** Pre-flight validation across all 13 AI providers via shared `validate_context_window()` helper. tiktoken integration, estimator metabox, token-budget tool capping, and chat parity drift detection in `lib/core`.
-- 📧 **CRM Email Import & Lead Pruning.** Scheduled IMAP email polling with message logging and dedup. Automatic lead pruning via cron with configurable retention.
-- 🔌 **OAuth & API Disconnect Buttons.** One-click disconnect for OAuth and API connections with automatic token clearing on credential change.
-- 💬 **LibreChat Addon.** New standalone addon with code interpreter, speech services, and web search reranker.
-- 📅 **Schedule Anything SaaS Platform.** Full SaaS booking platform with Stripe payment integration.
-- 🔍 **Vector Search Enhancements.** HNSW index for fast ANN search, content/context embedding stores, hybrid semantic search.
-- 🏷️ **CRM Leads Enhancements.** Inline tag editing and email priority/exclude actions on the leads admin table.
-- 🪲 **Bug-Fix & Stabilisation Sweep.** 25+ fixes across the stack: CPT slug length limits (3 slugs fixed), agentic loop tool result persistence across all providers, slider/range field rendering, well-known endpoint redirect guard, tool-status file guard, Pro Integrations subtab redirect, docs hub async rebuild stalls, chat addon endpoint mismatches, stale provider validation lists, playbook orphan cleanup, OpenAI SSE streaming payload flag, Cloudways Dashboard Requires Plugins header, chat debug console, OOS bridge & embedding fatal errors, memory cookie-check nonce, and more.
-- 🧪 **Tests.** Chat transcript REST controller tests improved from ~4% to 87% pass rate. New 767-line pro toolkit optimization test suite.
-- 🛡️ **Security Patches.** guzzlehttp/psr7 CVE-2026-49214 (CRLF injection), shell-quote CVE-2026-9277 (command injection), vitest/vite/esbuild dependabot alerts #211–#213.
-- 📋 **Proposal Status Audit.** All 66 proposals audited and refreshed for v1.1.29.
+- 🔧 **Chat Bubble Assistant Dropdown.** Settings UX fixed: `chat_bubble_assistant_id` changed from manual ID input to proper assistant `<select>` dropdown.
+- 🪟 **Context-Window Pre-Flight Validation.** Added to all AI provider clients with shared `validate_context_window()` helper, tiktoken integration, and estimator metabox.
+- ⚡ **OpenAI SSE Streaming Fix.** `stream_options` payload flag corrected so OpenAI real-time SSE streaming triggers properly.
+- 📅 **Schedule Preset Data Mismatches.** Fixed presets losing configuration data after save. Improved error logging for preset operations.
+- 🧹 **Playbook Orphan Cleanup & Batching.** Fixed orphan accumulation and sync timeouts with configurable chunk size batching.
+- 🔄 **Stale Provider Validation Lists.** Provider checks moved to dynamic discovery instead of hardcoded arrays, fixing DeepSeek rejection.
+- 📊 **CRM Activity Titles, Due Dates & Block API v3.** Activity post titles, recurring due dates, and admin blocks migrated to WordPress Block API v3.
+- 🎯 **OpenAI-Compatible Client — DeepSeek Parity.** OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM clients upgraded to DeepSeek parity.
+- 🎤 **Voice & Embedded LLM Missing Assets.** Missing `.min.js` files added for voice recording/transcription and embedded LLM worker scripts.
+- 🪲 **25+ Additional Fixes.** Chat config messagesEndpoint, debug console, OOS bridge fatal error, embedding service WP_Error, SSE header warnings, memory cookie nonce, graphify content leak, model limits sync, shell-quote CVE-2026-9277, and more.
+- 🧪 **Tests.** Chat transcript REST controller tests improved from ~4% to 87% pass rate.
 
 ### ✨ What's New at a Glance (v1.1.28)
 
@@ -245,7 +270,7 @@ The plugin works standalone with **~195 base tools** and optionally extends thro
 
 > **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~195 tools) works standalone. The full version requires the Pro addon and provides ~990 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
-**Addon Ecosystem:** NV oOS ships a growing family of 22 installable addons: **Pro** (`addons/pro/` — ~795 additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **AI Platform** (`addons/ai-platform/` — AI platform admin dashboard + CPTs), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Graphify** (`plugins/nvoos-graphify/` — visual knowledge graph), **NVOOS Graphify AI** (`plugins/nvoos-graphify-ai/` — AI providers + chat + RAG), **NVOOS Graphify AI Platform** (`plugins/nvoos-graphify-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
+**Addon Ecosystem:** NV oOS ships a growing family of 23 installable addons: **Pro** (`addons/pro/` — ~795 additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **AI Platform** (`addons/ai-platform/` — AI platform admin dashboard + CPTs), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Graphify** (`plugins/nvoos-graphify/` — visual knowledge graph), **NVOOS Graphify AI** (`plugins/nvoos-graphify-ai/` — AI providers + chat + RAG), **NVOOS Graphify AI Platform** (`plugins/nvoos-graphify-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -432,7 +457,23 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.30 — June 2026)
+## 🆕 Latest Updates (v1.1.31 — June 2026)
+
+### June 16–17, 2026 — Media Command Center, Pro SPA v2, Workflow Presets, npm CVEs, Gemini 3.1 Flash 🎬💬🧰🔒🎨
+
+- ✅ **Media Command Center (PR #5402).** Top-level "NV Media" admin menu with command center for managing media workflows. Template and preset management. PHPCS cleanup and `implode()` WP_Error crash fix in the templates tab.
+- ✅ **Pro SPA v2 Migration & Rich Rendering (PRs #5401, #5412, #5414).** Pro SPA v2 ported to feature parity with chat-spa and old pro-spa. Rich markdown rendering for assistant responses. Per-assistant scoping dropdown and agent selector. Conversations set as primary view; threads marked read-only after archival. CSS class-name mismatches fixed, causing previously unstyled UI to render correctly. Cache-bust version bump and admin layout fit within WordPress chrome (PR #5416). Bumped to v2.0.1.
+- ✅ **34 Missing Workflow Preset Tools (PR #5418).** All missing workflow presets implemented across 10 toolkits (AI Tool Builder, Analytics, Architect Agent, Architectural Design, Calendar Booking, CRM, Document Generation, DJ Management, Social Media, Video Production). Orphaned media tools created and Upwork tool availability fixed. Full PHPCS compliance and comprehensive test suite validating all 36 new tools (class existence, interface implementation, slug resolution, metadata, capability flags).
+- ✅ **npm Audit CVE Fixes (PR #5419).** 12 CVEs resolved across the dependency tree: vite (CVE-2026-53571 server.fs.deny bypass), launch-editor (CVE-2026-53632 NTLMv2 disclosure), markdown-it (CVE-2026-48988 smartquotes DoS), ws (memory exhaustion), js-yaml (quadratic DoS), form-data (CRLF injection), hono (path traversal, CORS, Set-Cookie), dompurify (XSS sanitization bypasses), @babel/core (arbitrary file read), @opentelemetry/core (unbounded memory), joi (RangeError DoS). ajv bump reverted to restore ESLint 8 compatibility. Root npm audit: 51→0 vulnerabilities.
+- ✅ **Gemini 3.1 Flash Image Default (PR #5404).** Default Gemini image generation model upgraded to `gemini-3.1-flash-image`.
+- ✅ **Media Toolkit Blueprints & Scheduler Presets (PRs #5398, #5411).** Blueprints and scheduler presets added to the media toolkit. Media Toolkit sync integrated into the Data Management page. Private `get_media_presets()` visibility fixed to prevent fatal error when called externally.
+- ✅ **OpenAI/DeepSeek stream_options (PR #5400).** `stream_options` payload added to OpenAI and DeepSeek streaming API calls, enabling proper usage-tracking inclusion during streaming responses.
+- ✅ **Tool Result Cost Calculation (PR #5395).** Tool result costs now computed from token counts when not explicitly provided by the provider, ensuring accurate cost attribution in agentic loops.
+- ✅ **Agentic-Loop Cost Tracking (PR #5394).** Missing provider pricing entries added across the cost-tracking layer, fixing under-reporting in multi-turn agentic workflows.
+- ✅ **Vite CVE Fixes (PR #5403).** vite pinned to ^8.0.16 in devDeps to resolve CVE-2026-53571 (server.fs.deny bypass) and CVE-2026-53632 (NTLMv2 disclosure via launch-editor middleware). Pro SPA v2 production assets built and dist output un-gitignored.
+- ✅ **1,658 PHPCS Lint Fixes (PR #5397).** Full lint pass across base plugin and Pro addon (44 toolkits). Short ternaries converted to full, count() moved out of loops, docblock capitalisation normalized, require_once paths corrected for renamed optimization and tool files.
+- ✅ **CI Disk Space Cleanup (PR #5417).** `Free disk space` step added to all build workflows to prevent runner disk exhaustion during large ZIP assembly.
+- ✅ **Data Integrity Fixes.** PII pseudonymisation logic restored after being lost during a merge conflict resolution (PR #5398). CPT data store post type mismatch for CRM entities resolved (PR #5396).
 
 ### June 12–15, 2026 — Chat SPA Phase 8, PM Toolkit A–D, CRM Duplicates & Hygiene, DietPi Toolkit, LibreChat Addon, Context Windows, WP 7.0 Bridge 🪲💬📊🔧🛡️
 
@@ -454,7 +495,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - ✅ **Security.** guzzlehttp/psr7 pinned to ^2.10.2 for CVE-2026-49214 (#5352). esbuild pinned to ^0.28.1; integrity check vulnerability in Pro addon (#5382). shell-quote bumped to >=1.8.4 for CVE-2026-9277 (#5330). vitest/vite/esbuild alerts in schedule-anything-spa (#5338).
 - ✅ **Infrastructure.** `redirect_canonical` no longer breaks well-known endpoints (#5349). `tool-status.txt` reads guarded against missing files (#5348). WPCS lint in section-tools and tool-registry (#5348). ESLint `no-var` in performance-admin.js (#5366). PHPCS in CRM analytics (#5320). Chat parity workflow YAML and permissions fix (#5336).
 - ✅ **Blueprint & Doc Updates.** 46 healthcare-style blueprints converted to CRM-style format (#5373). All legacy flat-format blueprints upgraded to canonical (#5372). v1.1.29 comprehensive documentation refresh across all surfaces (#5365). 66 proposal statuses audited (#5335). README updated with PM toolkit and repository map (#5370). 75 PHPCS violations auto-fixed in Pro bootstrap (#5321).
-- 📦 **Versioning** — bumped to **1.1.30** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, and `CHANGELOG.md`. Provider count: **13** first-class language-model providers (unchanged). Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- 📦 **Versioning** — bumped to **1.1.31** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, and `CHANGELOG.md`. Provider count: **13** first-class language-model providers (unchanged). Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
 ---
 
@@ -463,7 +504,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 ### June 7–11, 2026 — Bug-Fix & Stabilisation Sweep 🪲🔧⚡
 
 - ✅ **Chat Bubble Assistant Dropdown (PR #5333).** Fixed settings UX: `chat_bubble_assistant_id` field on the Chat Bubble settings page (`wp-admin/admin.php?page=wp-mcp-ai-dashboard&tab=general&subtab=chat_bubble`) changed from a plain `<input type="number">` to a proper `<select>` dropdown populated with all published assistants. Added `get_assistant_options()` helper method to `WP_MCP_AI_Section_Chat_Client` matching the pattern used by `default_assistant` in General → Core Settings. Users can now select assistants by name instead of manually typing numeric IDs.
-- ✅ **Context-Window Pre-Flight Validation — All 14 Providers (PR #5328).** Added pre-flight context-window validation to all AI provider clients: OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, and Ollama. Shared `validate_context_window()` helper method in `WP_MCP_AI_AI_Client_Base`. Integrated `tiktoken` for accurate token counting with estimator metabox on the Assistant editor. Token-budget tool capping prevents exceeding model limits. Context-window management documentation at `docs/developer/architecture/context-window-management.md`.
+- ✅ **Context-Window Pre-Flight Validation — All 13 Providers (PR #5328).** Added pre-flight context-window validation to all AI provider clients: OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, and Ollama. Shared `validate_context_window()` helper method in `WP_MCP_AI_AI_Client_Base`. Integrated `tiktoken` for accurate token counting with estimator metabox on the Assistant editor. Token-budget tool capping prevents exceeding model limits. Context-window management documentation at `docs/developer/architecture/context-window-management.md`.
 - ✅ **OpenAI SSE Streaming Fix (PR #5327).** Fixed `stream_options` payload flag that prevented OpenAI real-time SSE streaming from triggering. The `include_usage` flag was incorrectly nested, causing the OpenAI API to ignore the streaming request and return a non-streamed response.
 - ✅ **Schedule Preset Data Mismatches (PR #5329).** Fixed schedule preset data mismatches where presets would lose configuration data after save. Improved error logging for preset operations with structured log contexts.
 - ✅ **Playbook Orphan Cleanup & Batching (PRs #5322, #5325).** Fixed orphan playbook accumulation where deleted parent records left unreachable children. Added JetEngine validation before deletion to prevent data corruption. Fixed sync timeouts for large playbook sets by implementing batch processing with configurable chunk sizes. `playbook_delete_batch_timeout` now uses iterative deletion instead of single-query operations.
@@ -489,6 +530,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **v1.1.31** | Jun 2026 | Media Command Center, Pro SPA v2 (rich rendering, assistant scoping, agent selector, v2.0.1), 34 workflow preset tools, npm audit CVEs (12 resolved), Gemini 3.1 flash image default, Media toolkit blueprints & presets, stream_options, agentic-loop cost tracking, Vite CVEs, 1,658 PHPCS lint fixes, CI disk space, data integrity fixes |
 | **v1.1.30** | Jun 2026 | Chat SPA Phase 8, PM Toolkit A–D, CRM duplicates/hygiene/analytics, DietPi Pro Toolkit, LibreChat Addon, Layer I Guardrails, Context Window Management, WP 7.0 Bridge, Pro Toolkit Optimizations, OAuth disconnect, 30+ fixes |
 | **v1.1.28** | Jun 2026 | CRM Phase C complete (IMAP, SMS, WhatsApp ingestion), Customer CPT + 360 dashboard, Support Ticket module (10 AI tools + SLA), QKV Attention Routing, Funiq Bridge addon, NVOOS Graphify ecosystem (3 standalone plugins), NV Platform AI addon, automated demo video pipeline, TF-IDF + BM25 relevance search |
 | **v1.1.27** | Jun 2026 | Real-time SSE streaming for all OpenAI-compatible providers, 35 new OOS core tools migrated, JFB submission tools — 8 fixes, Extended Cognition vision recognition, DeepSeek agentic tool handling, 9 HIGH-severity security findings fixed, 95% PHPUnit failures resolved |
@@ -1278,7 +1320,7 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (14 providers, ~990 tool classes, 36 REST controllers)
+- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (13 providers, ~990 tool classes, 36 REST controllers)
 - **[Request Flow Walkthrough](docs/developer/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
@@ -2974,6 +3016,13 @@ Manage the NV oOS environment from the command line when WP-CLI is available.
 | `wp mcp-ai plugins list` | Lists optional dependencies (WooCommerce, JetEngine, etc.) with install and activation state. |
 | `wp mcp-ai plugins activate <slug>` | Activates a supported plugin; pass `--network` on multisite installations. |
 | `wp mcp-ai plugins deactivate <slug>` | Deactivates a supported plugin; pass `--network` on multisite installations. |
+| `wp mcp-ai chat send` | Sends a one-shot chat message to an assistant via the language model router. Accepts `--assistant-id`, `--message`, `--model`, and `--stream` flags. |
+| `wp mcp-ai memory <action>` | Manages agent memory: `recall`, `store`, `forget`, and `stats`. Use `--assistant-id` to scope operations. |
+| `wp mcp-ai thread <action>` | Manages chat threads: `list`, `get`, `create`, `delete`, and `export`. Use `--assistant-id` and `--thread-id` flags. |
+| `wp mcp-ai provider <action>` | Manages AI providers: `list` (all configured), `test` (connectivity check), and `models` (available model IDs). |
+| `wp mcp-ai cron <action>` | Manages scheduled cron jobs: `list`, `get`, `run`, and `delete`. Use `--job-id` for single-job operations. |
+| `wp mcp-ai transcript <action>` | Manages transcript mining: `list` (active jobs), `status` (job progress), and `cancel` (stop a running job). |
+| `wp mcp-ai approval <action>` | Manages human-in-the-loop approval queue: `list` (pending items), `approve`, and `reject`. Use `--item-id` for single-item operations. |
 
 `wp mcp-ai remote` accepts additional flags so you can mirror the authentication mode used by your deployment while exercising TLS and timeout controls:
 
