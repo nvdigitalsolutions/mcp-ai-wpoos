@@ -51,7 +51,7 @@
     "@types/wordpress__components": "^23.8.0",
     "@wordpress/eslint-plugin": "^21.0.0",
     "@wordpress/jest-preset-default": "^12.0.0",
-    "@wordpress/prettier-config": "^4.0.0",
+    "@wordpress/prettier-config": "^4.48.1",
     "@wordpress/scripts": "^32.1.0",
     "esbuild": "^0.28.1",
     "miniflare": "^4.20260504.0",
