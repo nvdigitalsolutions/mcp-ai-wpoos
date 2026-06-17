@@ -46,7 +46,7 @@
     "brace-expansion@^5": ">=5.0.6"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260511.1",
+    "@cloudflare/workers-types": "^4.20260617.1",
     "@types/diff": "^8.0.0",
     "@types/wordpress__components": "^23.8.0",
     "@wordpress/eslint-plugin": "^21.0.0",
