@@ -392,7 +392,7 @@ class WP_MCP_AI_ECA_Research_Page {
 	 * @param string $format File format.
 	 * @return array|WP_Error Array of processed items or WP_Error on failure.
 	 */
-	protected static function process_import_data( $data, $format ) {
+	protected static function process_import_data( $data, $format ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed, Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters required by trait contract.
 		return new WP_Error( 'not_implemented', __( 'ECA import processing coming soon', 'mcp-ai-wpoos-pro' ) );
 	}
 
