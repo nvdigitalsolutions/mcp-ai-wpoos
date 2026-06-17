@@ -1519,7 +1519,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @param array $dependencies Dependency requirements.
 		 * @return true|WP_Error
 		 */
-		protected function validate_dependencies( $dependencies ) {
+		public function validate_dependencies( $dependencies ) {
 			// Check required plugins.
 			if ( ! empty( $dependencies['required_plugins'] ) ) {
 				foreach ( $dependencies['required_plugins'] as $plugin ) {

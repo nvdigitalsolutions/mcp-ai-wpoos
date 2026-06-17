@@ -578,7 +578,22 @@ class WP_MCP_AI_Tool_Attention_Router {
 				continue;
 			}
 
-			$deps = $tool_registry->validate_dependencies( $slug );
+			// Resolve the tool slug to its dependency requirements.
+			$tool     = $tool_registry->get_tool( $slug );
+			$dep_reqs = array();
+			if ( $tool instanceof WP_MCP_AI_Tool_Rules_Interface ) {
+				$rules    = $tool->get_tool_rules();
+				$dep_reqs = isset( $rules['dependencies'] ) && is_array( $rules['dependencies'] )
+					? $rules['dependencies']
+					: array();
+			}
+
+			// If the tool defines no dependencies, skip validation.
+			if ( empty( $dep_reqs ) ) {
+				continue;
+			}
+
+			$deps = $tool_registry->validate_dependencies( $dep_reqs );
 			if ( is_wp_error( $deps ) ) {
 				// Dependencies failed — score low but not zero (could be wrong).
 				$scores[ $slug ] = 0.2;
@@ -602,7 +617,7 @@ class WP_MCP_AI_Tool_Attention_Router {
 	 * @param string|null             $approval_gate Approval gate class name.
 	 * @return array<string, float> Slug → risk score (0–1).
 	 */
-	private function head_risk( array $tool_slugs, $tool_registry, $approval_gate ) {
+	private function head_risk( array $tool_slugs, $tool_registry, $approval_gate ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- reserved for future approval gate integration
 		$risk_map = array(
 			'low'      => 1.0,
 			'medium'   => 0.8,
