@@ -14,12 +14,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "hono": "^4.12.21",
+    "hono": "^4.12.25",
     "stripe": "^17.4.0"
   },
   "overrides": {
     "qs": ">=6.15.2",
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "ws": ">=8.21.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.3",
