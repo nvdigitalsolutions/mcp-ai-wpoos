@@ -1,3 +1,0 @@
-# This file ensures the build/ directory is tracked by git.
-# The build/ directory contains generated ZIP files for the plugin distributions.
-# All *.zip files are gitignored, but this .gitkeep is not.
