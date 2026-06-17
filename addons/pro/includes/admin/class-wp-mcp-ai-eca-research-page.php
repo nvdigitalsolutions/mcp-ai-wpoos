@@ -191,9 +191,10 @@ class WP_MCP_AI_ECA_Research_Page {
 
 					<?php
 					// Check if Document Generation toolkit is enabled.
-					$dg_settings = get_option( 'wp_mcp_ai_settings', array() );
+					$dg_settings     = get_option( 'wp_mcp_ai_settings', array() );
 					$doc_gen_enabled = ! empty( $dg_settings['enable_document_generation_toolkit'] );
-					if ( $doc_gen_enabled ) : ?>
+					if ( $doc_gen_enabled ) :
+						?>
 					<div class="wp-mcp-ai-research-doc-tools">
 						<h3><?php esc_html_e( '📄 Document Processing Tools', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p><?php esc_html_e( 'The AI assistant now has access to document tools:', 'mcp-ai-wpoos-pro' ); ?></p>

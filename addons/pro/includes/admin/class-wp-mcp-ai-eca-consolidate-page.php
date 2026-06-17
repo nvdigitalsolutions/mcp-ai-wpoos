@@ -170,21 +170,21 @@ class WP_MCP_AI_ECA_Consolidate_Page {
 			'wp-mcp-ai-eca-consolidate',
 			'wpMcpAiEcaConsolidate',
 			array(
-				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-				'nonce'        => wp_create_nonce( 'wp_mcp_ai_eca_consolidate' ),
-				'ecasUrl'      => admin_url( 'edit.php?post_type=mcp_ai_eca' ),
-				'addEcaUrl'    => admin_url( 'post-new.php?post_type=mcp_ai_eca' ),
+				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+				'nonce'         => wp_create_nonce( 'wp_mcp_ai_eca_consolidate' ),
+				'ecasUrl'       => admin_url( 'edit.php?post_type=mcp_ai_eca' ),
+				'addEcaUrl'     => admin_url( 'post-new.php?post_type=mcp_ai_eca' ),
 				'addStudentUrl' => admin_url( 'post-new.php?post_type=mcp_ai_student' ),
-				'strings'      => array(
-					'loading'             => __( 'Loading ECA data...', 'mcp-ai-wpoos-pro' ),
-					'loadEca'             => __( 'Load ECA Records', 'mcp-ai-wpoos-pro' ),
-					'error'               => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'selectEca'           => __( 'Select an ECA to view its consolidated records.', 'mcp-ai-wpoos-pro' ),
-					'noRecords'           => __( 'No records found for this ECA.', 'mcp-ai-wpoos-pro' ),
-					'analyzing'           => __( 'Analyzing ECA completeness...', 'mcp-ai-wpoos-pro' ),
-					'aiAssisting'         => __( 'AI is guiding you through ECA management...', 'mcp-ai-wpoos-pro' ),
-					'enterEcaInfo'        => __( 'Please enter ECA information to import.', 'mcp-ai-wpoos-pro' ),
-					'noDocGenAvailable'   => __( 'Document Generation toolkit is not enabled. Enable it in Settings to unlock PDF, Word, and Excel document tools.', 'mcp-ai-wpoos-pro' ),
+				'strings'       => array(
+					'loading'           => __( 'Loading ECA data...', 'mcp-ai-wpoos-pro' ),
+					'loadEca'           => __( 'Load ECA Records', 'mcp-ai-wpoos-pro' ),
+					'error'             => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'selectEca'         => __( 'Select an ECA to view its consolidated records.', 'mcp-ai-wpoos-pro' ),
+					'noRecords'         => __( 'No records found for this ECA.', 'mcp-ai-wpoos-pro' ),
+					'analyzing'         => __( 'Analyzing ECA completeness...', 'mcp-ai-wpoos-pro' ),
+					'aiAssisting'       => __( 'AI is guiding you through ECA management...', 'mcp-ai-wpoos-pro' ),
+					'enterEcaInfo'      => __( 'Please enter ECA information to import.', 'mcp-ai-wpoos-pro' ),
+					'noDocGenAvailable' => __( 'Document Generation toolkit is not enabled. Enable it in Settings to unlock PDF, Word, and Excel document tools.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -225,7 +225,7 @@ class WP_MCP_AI_ECA_Consolidate_Page {
 		);
 
 		// Check if Document Generation toolkit is enabled.
-		$dg_settings = get_option( 'wp_mcp_ai_settings', array() );
+		$dg_settings     = get_option( 'wp_mcp_ai_settings', array() );
 		$doc_gen_enabled = ! empty( $dg_settings['enable_document_generation_toolkit'] );
 
 		?>
@@ -564,29 +564,29 @@ class WP_MCP_AI_ECA_Consolidate_Page {
 		}
 
 		// Gather ECA data.
-		$category    = get_post_meta( $eca_id, 'category', true );
-		$schedule    = get_post_meta( $eca_id, 'schedule', true );
-		$location    = get_post_meta( $eca_id, 'location', true );
-		$capacity    = get_post_meta( $eca_id, 'capacity', true );
-		$instructor  = get_post_meta( $eca_id, 'instructor', true );
-		$enrolled    = get_post_meta( $eca_id, 'enrolled_count', true );
-		$term        = get_post_meta( $eca_id, 'term', true );
+		$category   = get_post_meta( $eca_id, 'category', true );
+		$schedule   = get_post_meta( $eca_id, 'schedule', true );
+		$location   = get_post_meta( $eca_id, 'location', true );
+		$capacity   = get_post_meta( $eca_id, 'capacity', true );
+		$instructor = get_post_meta( $eca_id, 'instructor', true );
+		$enrolled   = get_post_meta( $eca_id, 'enrolled_count', true );
+		$term       = get_post_meta( $eca_id, 'term', true );
 
 		wp_send_json_success(
 			array(
 				'eca' => array(
-					'id'           => $eca_id,
-					'title'        => $eca->post_title,
-					'content'      => wp_kses_post( $eca->post_content ),
-					'category'     => $category,
-					'schedule'     => $schedule,
-					'location'     => $location,
-					'capacity'     => $capacity,
-					'instructor'   => $instructor,
-					'enrolled'     => $enrolled,
-					'term'         => $term,
-					'status'       => $eca->post_status,
-					'edit_url'     => admin_url( 'post.php?post=' . $eca_id . '&action=edit' ),
+					'id'         => $eca_id,
+					'title'      => $eca->post_title,
+					'content'    => wp_kses_post( $eca->post_content ),
+					'category'   => $category,
+					'schedule'   => $schedule,
+					'location'   => $location,
+					'capacity'   => $capacity,
+					'instructor' => $instructor,
+					'enrolled'   => $enrolled,
+					'term'       => $term,
+					'status'     => $eca->post_status,
+					'edit_url'   => admin_url( 'post.php?post=' . $eca_id . '&action=edit' ),
 				),
 			)
 		);
@@ -643,10 +643,10 @@ class WP_MCP_AI_ECA_Consolidate_Page {
 
 		wp_send_json_success(
 			array(
-				'percentage' => $percentage,
-				'complete'   => $complete,
-				'total'      => $total,
-				'missing'    => $missing,
+				'percentage'  => $percentage,
+				'complete'    => $complete,
+				'total'       => $total,
+				'missing'     => $missing,
 				'suggestions' => array(
 					__( 'Add a detailed description of the activity', 'mcp-ai-wpoos-pro' ),
 					__( 'Specify the schedule and location', 'mcp-ai-wpoos-pro' ),
