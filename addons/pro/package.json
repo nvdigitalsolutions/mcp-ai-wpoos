@@ -41,7 +41,7 @@
 		"mathjs": "^15.2.0",
 		"mjml": "^5.0.0-alpha.10",
 		"node-ensure": "^0.0.0",
-		"nodemailer": "^8.0.5",
+		"nodemailer": "^8.0.9",
 		"p-queue": "^8.0.1",
 		"pdf-lib": "^1.17.1",
 		"pdf-parse": "^1.1.4",
@@ -75,9 +75,9 @@
 		"shelljs": "~0.8.5",
 		"html-minifier": "^5.0.0",
 		"tmp": ">=0.2.6",
-		"tar-fs": ">=3.0.8",
+		"tar-fs": ">=3.1.1",
 		"ws": ">=8.17.1",
-		"tar": ">=7.5.11",
+		"tar": ">=7.5.16",
 		"minimatch@^3": "3.1.5",
 		"minimatch@^5": "5.1.9",
 		"minimatch@^9": "9.0.9",
@@ -93,7 +93,7 @@
 		"fast-uri": ">=3.1.2",
 		"@babel/plugin-transform-modules-systemjs": ">=7.29.4",
 		"mailparser": {
-			"nodemailer": ">=8.0.5"
+			"nodemailer": ">=8.0.9"
 		}
 	},
 	"keywords": [
