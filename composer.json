@@ -34,7 +34,7 @@
         "cweagans/composer-patches": "^2.0",
         "dealerdirect/phpcodesniffer-composer-installer": "^1.2",
         "phpcompatibility/phpcompatibility-wp": "^2.1",
-        "php-stubs/wordpress-stubs": "^6.4",
+        "php-stubs/wordpress-stubs": "^7.0",
         "squizlabs/php_codesniffer": "*",
         "wp-coding-standards/wpcs": "*",
         "phpunit/phpunit": "^11.5",
