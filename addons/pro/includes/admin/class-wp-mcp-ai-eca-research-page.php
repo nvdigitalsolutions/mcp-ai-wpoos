@@ -189,6 +189,26 @@ class WP_MCP_AI_ECA_Research_Page {
 						</ul>
 					</div>
 
+					<?php
+					// Check if Document Generation toolkit is enabled.
+					$dg_settings = get_option( 'wp_mcp_ai_settings', array() );
+					$doc_gen_enabled = ! empty( $dg_settings['enable_document_generation_toolkit'] );
+					if ( $doc_gen_enabled ) : ?>
+					<div class="wp-mcp-ai-research-doc-tools">
+						<h3><?php esc_html_e( '📄 Document Processing Tools', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<p><?php esc_html_e( 'The AI assistant now has access to document tools:', 'mcp-ai-wpoos-pro' ); ?></p>
+						<ul>
+							<li><?php esc_html_e( 'Extract text from PDFs (schedules, curricula)', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate ECA reports (PDF, Word, Excel)', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Import/export ECA data from spreadsheets', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Merge documents and add watermarks', 'mcp-ai-wpoos-pro' ); ?></li>
+						</ul>
+						<p>
+							<em><?php esc_html_e( 'Try: "Extract text from this ECA schedule PDF" or "Generate an attendance report"', 'mcp-ai-wpoos-pro' ); ?></em>
+						</p>
+					</div>
+					<?php endif; ?>
+
 					<div class="wp-mcp-ai-research-actions">
 						<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p>
@@ -247,6 +267,20 @@ class WP_MCP_AI_ECA_Research_Page {
 								'web_search',
 								'search_content',
 								'semantic_content_search',
+								// Document processing tools (from Document Generation toolkit).
+								'extract_pdf_text',          // Extract text from ECA documents, schedules, curricula.
+								'pro_pdf_document',          // Generate professional ECA reports as PDFs.
+								'pro_word_document',         // Generate ECA documents in Word format.
+								'pro_excel_document',        // Export ECA data to Excel for analysis.
+								'generate_pdf',              // Quick PDF generation for schedules/reports.
+								'generate_word',             // Quick Word document generation.
+								'generate_excel',            // Quick Excel generation for ECA data.
+								'html_to_pdf',               // Convert ECA content from HTML to PDF.
+								'merge_pdfs',                // Combine multiple ECA documents.
+								'add_watermark_to_pdf',      // Add branding/confidentiality watermarks.
+								'excel_data_import',         // Import ECA data from spreadsheets.
+								'excel_data_export',         // Export consolidated ECA data.
+								'generate_invoice_pdf',      // Generate ECA fee/invoice documents.
 							);
 							echo do_shortcode(
 								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $eca_tools ) ) . '"]'
