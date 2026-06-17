@@ -73,6 +73,10 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | `WP_MCP_AI_Tool_Classify_Email_Hygiene` | `compliance/class-wp-mcp-ai-tool-classify-email-hygiene.php` | tool registry |
 | `WP_MCP_AI_Tool_Manage_Email_Hygiene` | `compliance/class-wp-mcp-ai-tool-manage-email-hygiene.php` | tool registry |
 | `WP_MCP_AI_Tool_Prune_CRM_Messages` | `compliance/class-wp-mcp-ai-tool-prune-crm-messages.php` | tool registry |
+| `WP_MCP_AI_Tool_Get_Contact_Interactions` | `class-wp-mcp-ai-tool-get-contact-interactions.php` | tool registry |
+| `WP_MCP_AI_Tool_Archive_Stale_Contacts` | `class-wp-mcp-ai-tool-archive-stale-contacts.php` | tool registry |
+| `WP_MCP_AI_Tool_Recalculate_Engagement_Scores` | `class-wp-mcp-ai-tool-recalculate-engagement-scores.php` | tool registry |
+| `WP_MCP_AI_Tool_Scan_Duplicate_Contacts` | `class-wp-mcp-ai-tool-scan-duplicate-contacts.php` | tool registry |
 
 ### Email Hygiene Module
 
@@ -85,6 +89,19 @@ Three new Phase E tools (v2.8.0) provide email list hygiene for WordPress plugin
 | `prune_crm_messages` | Batch-clean leads by spam flag, excluded domains, staleness (configurable age threshold), and zero-engagement. Dry-run mode for safe preview. Industry recommendation: remove unengaged after 90–180 days |
 
 Both lists are managed through **NV CRM → Settings → Configuration → Email Hygiene & List Management** with textarea-based editing.
+
+### Data Hygiene & Engagement Module (v2.9.0)
+
+Four new tools provide CRM data quality management and contact engagement analysis:
+
+| Tool | Purpose |
+|---|---|
+| `get_contact_interactions` | Retrieve all interactions (emails, calls, meetings, notes) for a CRM contact, filterable by type and date range |
+| `archive_stale_contacts` | Archive contacts with no activity for a configurable period (default 365 days). Dry-run mode for safe preview |
+| `recalculate_engagement_scores` | Recalculate engagement scores using activity volume (40%), recency (25%), diversity (20%), and completion (15%). Supports all contacts or specific IDs |
+| `scan_duplicate_contacts` | Detect potential duplicate contacts by email, phone, or name similarity with configurable match thresholds |
+
+All tools respect the `enable_crm_toolkit` setting gate.
 
 ### Top Customers vs Top Clients — what's the difference?
 

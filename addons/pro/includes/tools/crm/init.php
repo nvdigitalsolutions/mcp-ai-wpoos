@@ -44,6 +44,12 @@ if ( $is_enabled && ! $is_base ) {
 		}
 	}
 
+	// Load Upwork client so availability checks succeed at tool registration time.
+	$_upwork_client = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-upwork-client.php';
+	if ( file_exists( $_upwork_client ) ) {
+		require_once $_upwork_client;
+	}
+
 	// Load shared blueprint installer (used by import_crm_blueprint and import_healthcare_blueprint).
 	$_installer = WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-blueprint-installer.php';
 	if ( file_exists( $_installer ) ) {

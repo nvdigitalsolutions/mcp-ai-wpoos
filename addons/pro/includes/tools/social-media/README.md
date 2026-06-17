@@ -4,12 +4,16 @@ This directory contains all tools for the Social Media Management Toolkit.
 
 ## Tool Categories
 
-### Content Publishing (5 tools)
+### Content Publishing (9 tools)
 - [x] post_to_multiple_platforms - Publish to all platforms
 - [x] schedule_social_post - Schedule with optimal timing
 - [x] bulk_schedule_posts - Schedule from CSV
 - [x] auto_optimize_images - Resize for each platform
 - [x] create_social_video - Generate platform-specific formats
+- [x] get_content_calendar - Retrieve content calendar
+- [x] generate_social_captions - AI-powered caption suggestions
+- [x] schedule_social_posts - Batch schedule multiple posts
+- [x] publish_to_social - Immediate platform publishing
 
 ### Engagement Management (3 tools)
 - [x] monitor_mentions_replies - Track brand mentions
@@ -30,12 +34,13 @@ This directory contains all tools for the Social Media Management Toolkit.
 ## Implementation Status
 
 **Phase 1 (Foundation)**: ✅ Directory created  
-**Phase 3 (Tools)**: ✅ Complete (15/15 tools complete - 100%)
+**Phase 3 (Tools)**: ✅ Complete (15/15 tools complete - 100%)  
+**Phase 2.8 (Query & Batch Tools)**: ✅ Complete (4/4 tools complete - 100%)
 
 ## Completed Features
 
-All 15 Social Media toolkit tools are now implemented:
-- ✅ Content Publishing: All 5 tools complete
+All 19 Social Media toolkit tools are now implemented:
+- ✅ Content Publishing: All 9 tools complete (5 original + 4 new)
 - ✅ Engagement Management: All 3 tools complete
 - ✅ Analytics & Insights: All 4 tools complete
 - ✅ Content Management: All 3 tools complete

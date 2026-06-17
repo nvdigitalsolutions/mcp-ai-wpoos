@@ -2557,7 +2557,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				// Maintenance (existing)
 				// ================================================================
 
-				'media_library_cleanup'     => array(
+				'media_library_cleanup'      => array(
 					'name'          => __( 'Media Library Cleanup', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Removes orphaned media files, clears broken attachment records, and reclaims storage space.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2583,7 +2583,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'unused_media_scan'         => array(
+				'unused_media_scan'          => array(
 					'name'          => __( 'Unused Media Scan', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Identifies media files that are not referenced in any post, page, or widget content.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2596,7 +2596,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_media_unused_scan',
 					),
 				),
-				'media_optimization_report' => array(
+				'media_optimization_report'  => array(
 					'name'          => __( 'Weekly Media Optimisation Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Reports on media library health including total storage, compression savings, and files needing optimisation.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2611,7 +2611,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'media_backup_check'        => array(
+				'media_backup_check'         => array(
 					'name'          => __( 'Media Backup Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Verifies that all media files are included in the latest backup and flags any files missing from backup sets.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2624,7 +2624,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_media_backup_check',
 					),
 				),
-				'media_usage_audit'         => array(
+				'media_usage_audit'          => array(
 					'name'          => __( 'Monthly Media Usage Audit', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Comprehensive monthly audit of media usage patterns, storage growth trends, and bandwidth consumption.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2659,7 +2659,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'weekly_blog_post_writer'   => array(
+				'weekly_blog_post_writer'    => array(
 					'name'          => __( 'Weekly Blog Post Writer', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Drafts a complete, publish-ready blog post each week with SEO metadata, schema markup, embedded media suggestions, and accessibility best practices following Google E-E-A-T content quality guidelines.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2674,7 +2674,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'blog_editorial_calendar'   => array(
+				'blog_editorial_calendar'    => array(
 					'name'          => __( 'Editorial Calendar Generator', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Generates a 30-day editorial calendar with topic clusters, publishing cadence, content pillar mapping, and social media promotion suggestions — following the topic cluster model used by HubSpot and Content Marketing Institute.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2689,7 +2689,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'post_seo_audit'            => array(
+				'post_seo_audit'             => array(
 					'name'          => __( 'Weekly Post SEO Audit', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Audits existing blog posts for SEO health including keyword rankings, meta completeness, internal linking opportunities, content freshness, and Core Web Vitals alignment — following Yoast and Google Search Essentials best practices.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2704,7 +2704,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'draft_post_review_alert'   => array(
+				'draft_post_review_alert'    => array(
 					'name'          => __( 'Draft Post Review Alert', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Daily Slack broadcast listing all draft posts ready for editorial review, with word count, author, last-modified date, and completeness score — ensuring no content gets stuck in draft limbo.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2720,7 +2720,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'post_performance_report'   => array(
+				'post_performance_report'    => array(
 					'name'          => __( 'Monthly Post Performance Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Analyses blog post performance including traffic, engagement, conversions, bounce rate, and social shares — provides data-driven recommendations for content optimisation and repurposing.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2735,7 +2735,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'content_gap_analysis'      => array(
+				'content_gap_analysis'       => array(
 					'name'          => __( 'Content Gap Analysis', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Weekly competitive content gap analysis identifying topics your competitors rank for that your site does not cover — following the Ahrefs and SEMrush content gap methodology.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2755,7 +2755,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				// Page Management
 				// ================================================================
 
-				'page_content_freshness'    => array(
+				'page_content_freshness'     => array(
 					'name'          => __( 'Page Content Freshness Audit', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Weekly audit of key pages (About, Services, Contact, Landing Pages) for content freshness, broken CTAs, outdated information, and brand voice consistency — following the Website Content Lifecycle model.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2770,7 +2770,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'page_seo_accessibility'    => array(
+				'page_seo_accessibility'     => array(
 					'name'          => __( 'Monthly Page SEO & Accessibility Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Comprehensive monthly audit of core pages for SEO best practices and WCAG 2.1 AA accessibility compliance including heading hierarchy, ARIA landmarks, colour contrast, and keyboard navigation.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2785,7 +2785,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'broken_link_scanner'       => array(
+				'broken_link_scanner'        => array(
 					'name'          => __( 'Weekly Broken Link Scanner', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Scans all published pages and posts for broken internal and external links, 404 errors, and redirect chains — critical for both SEO health and user experience.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2798,7 +2798,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_media_broken_link_scan',
 					),
 				),
-				'landing_page_performance'  => array(
+				'landing_page_performance'   => array(
 					'name'          => __( 'Landing Page Performance Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Weekly analysis of landing page conversion rates, bounce rates, and Core Web Vitals (LCP, FID, CLS) with actionable optimisation recommendations following Google Page Experience guidelines.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2813,7 +2813,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'page_meta_audit'           => array(
+				'page_meta_audit'            => array(
 					'name'          => __( 'Monthly Page Metadata Audit', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Audits all pages for complete and accurate metadata including SEO titles, descriptions, social sharing cards, schema markup, and canonical URLs — ensuring every indexed page is fully optimised.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2833,7 +2833,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				// Media Management — Image & Asset Optimisation
 				// ================================================================
 
-				'media_alt_text_audit'      => array(
+				'media_alt_text_audit'       => array(
 					'name'          => __( 'Weekly Alt Text Audit', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Audits all media library images for missing or low-quality alt text, generates AI-suggested alt descriptions, and reports accessibility compliance rate — essential for both WCAG and image SEO.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2848,7 +2848,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'media_compression_sweep'   => array(
+				'media_compression_sweep'    => array(
 					'name'          => __( 'Weekly Media Compression Sweep', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Scans for uncompressed or oversized images, automatically compresses them using Sharp, converts to WebP/AVIF where supported, and reports storage savings — following Google PageSpeed Insights image optimisation guidelines.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2861,7 +2861,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_media_compression_sweep',
 					),
 				),
-				'featured_image_check'      => array(
+				'featured_image_check'       => array(
 					'name'          => __( 'Daily Featured Image Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Daily check for posts and pages missing featured images, with Slack notification listing affected content — featured images are critical for social sharing, Open Graph cards, and blog listing pages.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2877,7 +2877,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'media_duplicate_detector'  => array(
+				'media_duplicate_detector'   => array(
 					'name'          => __( 'Monthly Duplicate Media Detector', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Detects duplicate and near-duplicate images in the media library using perceptual hashing, reports wasted storage, and suggests deduplication actions — essential for media library hygiene at scale.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2890,7 +2890,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_media_duplicate_detect',
 					),
 				),
-				'media_copyright_review'    => array(
+				'media_copyright_review'     => array(
 					'name'          => __( 'Monthly Copyright & Licence Review', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Monthly review of media library for potential copyright issues — flags images without licence information, stock photos nearing licence expiry, and suggests attribution compliance improvements.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2905,7 +2905,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'image_seo_report'          => array(
+				'image_seo_report'           => array(
 					'name'          => __( 'Weekly Image SEO Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Generates a weekly image SEO report covering file names, alt text quality, image sitemap status, structured data for images, and Google Image Search optimisation recommendations.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2920,7 +2920,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'media_collection_health'   => array(
+				'media_collection_health'    => array(
 					'name'          => __( 'Weekly Media Collection Health Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Monitors media collections for completeness, template consistency, processing errors, and stale items — ensuring organised media stays organised.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -3167,6 +3167,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 * @return array<string, array> Preset definitions.
 		 */
 		private static function get_upwork_freelancer_presets() {
+			// Only show Upwork Freelancer presets when the CRM toolkit is enabled,
+			// since the referenced tools (search_upwork_jobs, score_upwork_job, etc.)
+			// are registered under that toolkit.
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( empty( $settings['enable_crm_toolkit'] ) ) {
+				return array();
+			}
+
 			return array(
 				'upwork_job_discovery_scan'  => array(
 					'name'          => __( 'Upwork Job Discovery Scan', 'mcp-ai-wpoos-pro' ),
