@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** June 11, 2026  
-**Plugin Version:** 1.1.29  
+**Last Updated:** June 19, 2026  
+**Plugin Version:** 1.1.32  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,19 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **📌 JUNE 19, 2026 UPDATE (v1.1.32):** 📝📬⏱️🔧 **CONTENT FORMAT TEMPLATES, RESULT DELIVERY PIPELINE, FEATURED IMAGE SERVICE, PROVIDER TIMEOUT FIXES, SCHEDULE TRIGGER STABILITY**
+> - **Content Format Templates & Featured Image Generation (PR #5433)** — Content Format Template CPT (`mcp_ai_content_format_template`). `WP_MCP_AI_Content_Template_Engine` with Anthropic-optimised AI prompts. `WP_MCP_AI_Featured_Image_Service` with 3-provider fallback (DALL-E/Gemini/Cloudflare) and 5 image styles. Image Generation Provider dropdown on CPT metabox. Provider image settings respected instead of hardcoded `dall-e-3`/`hd`. 5 workflow presets updated with image gen nodes. `resolve_node_template_variables` for cross-node variable passthrough. 5 default templates seeded on activation.
+> - **Result Delivery Pipeline (PR #5425)** — `WP_MCP_AI_Result_Delivery_Service` (1,056 lines) routes schedule results to 8 channels (email, Slack, Discord, Telegram, SMS, Paper Store, WordPress post, webhook). Both success and failure paths deliver. Pre-configured for 8 presets.
+> - **ECA Document Generation (PR #5423)** — ECA Consolidate & Add page with document generation tools.
+> - **Duplicate Posts & Provider Image Fixes (PR #5434)** — WordPress delivery removed from blog presets to prevent duplicates. Systemic guard skips WordPress delivery when AI tool calls include `create_post`/`save_post`.
+> - **6 Provider Clients Timeout Fix (PR #5431)** — DeepSeek, Baseten, DigitalOcean, OpenRouter, Kimi, Cloudflare now respect global `request_timeout` setting instead of hardcoding 60s.
+> - **Schedule Trigger Stability (PRs #5429, #5430)** — Trigger crash fixed. Save persistence restored for delivery channels and display fields.
+> - **Paper Store Delete Fix (PR #5432)** — Hidden POST inputs added to delete confirmation form.
+> - **ECA Settings & Attachment Fix (PR #5421)** — Menu placement and upload crash resolved.
+> - **npm CI & Jest Resilience (PR #5428)** — Babel ESM override for Node 18/20. Jest graceful fallback. npm ci lockfile sync for 5 addons.
+> - **Dependencies** — 14 safe Dependabot bumps. 8 npm audit CVEs. phpspreadsheet 5.7.0→5.8.0.
+> - **Versioning** — bumped to 1.1.32 across all manifests. Tool count: ~195 base + ~795 Pro (~990 total; live registry is authoritative).
+>
 > **📌 JUNE 12, 2026 UPDATE (v1.1.29):** ⚡🧠🥧🛡️ **PRO TOOLKIT OPTIMIZATIONS, CHAT TRANSCRIPT & MEMORY RETENTION, DIETPI PRO TOOLKIT, LAYER I GUARDRAILS, CONTEXT WINDOW MANAGEMENT, LIBRECHAT, SCHEDULE ANYTHING SAAS, VECTOR SEARCH, CRM ENHANCEMENTS**
 > - **Pro Toolkit Optimizations Phase 1–3** — Autoload control, query caching, and lazy loading across 6 Pro toolkits (Chat Channels, Social Media, Healthcare, Ecommerce, Calendar/Orchestration, Document Generation). Full doc: [`docs/features/pro-toolkit-optimization.md`](features/pro-toolkit-optimization.md).
 > - **Chat Transcript & Memory Retention** — `WP_MCP_AI_Transcript_Retention` (Base, 437 lines) and `WP_MCP_AI_Memory_Retention` (Pro, 358 lines) with configurable TTL-based cleanup. Full doc: [`docs/features/chat-transcript-retention.md`](features/chat-transcript-retention.md).

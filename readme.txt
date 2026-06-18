@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.31
+Stable tag: 1.1.32
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -296,6 +296,78 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.32 - June 19, 2026 =
+
+Bumped to 1.1.32 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, and `CHANGELOG.md`. Tool count: ~195 base + ~795 Pro (~990 total; live registry via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+
+**Content Format Templates, Result Delivery Pipeline, Featured Images, Provider Timeout Fixes**
+
+* **Content Format Templates & Featured Image Generation (PR #5433).** New Content Format Template CPT. Content Template Engine with Anthropic-optimised AI prompts. Featured Image Service with 3-provider fallback (DALL-E/Gemini/Cloudflare) and 5 image styles. Image Generation Provider dropdown on CPT metabox. Provider image settings (model, quality, aspect ratio) respected instead of hardcoded defaults. 5 workflow presets updated with image gen nodes. `resolve_node_template_variables` for cross-node variable passthrough. 5 default templates seeded on activation.
+* **Result Delivery Pipeline (PR #5425).** `WP_MCP_AI_Result_Delivery_Service` (1,056 lines) routes schedule results to 8 channels: email, Slack, Discord, Telegram, SMS, Paper Store, WordPress post, webhook. Both success and failure paths deliver. Pre-configured Paper Store delivery for 8 presets.
+* **ECA Document Generation (PR #5423).** ECA Consolidate & Add page with document generation tools.
+* **Duplicate Posts Fix (PR #5434).** WordPress delivery removed from `weekly_blog_post_writer` and `weekly_blog_topic_research` presets. Systemic guard skips WordPress delivery when AI tool calls include `create_post`/`save_post`.
+* **6 Provider Clients Timeout Fix (PR #5431).** DeepSeek, Baseten, DigitalOcean, OpenRouter, Kimi, and Cloudflare now respect global `request_timeout` setting.
+* **Schedule Trigger Stability (PRs #5429, #5430).** Trigger crash fixed with try/catch + REST check. Result delivery sanitizer preserves channels wrapper. AJAX handler captures PHP warnings that corrupt JSON.
+* **Paper Store Delete Fix (PR #5432).** Hidden inputs added to delete confirmation form.
+* **ECA Settings & Attachment Fix (PR #5421).** Menu placement and upload crash resolved.
+* **npm CI & Jest Resilience (PR #5428).** Babel ESM override for Node 18/20. Jest graceful fallback. npm ci lockfile sync for 5 addons.
+* **Dependencies.** 14 Dependabot bumps. 8 npm audit CVEs (nodemailer, tar, tar-fs). phpspreadsheet 5.7.0→5.8.0.
+
+= 1.1.31 - June 17, 2026 =
+
+Bumped to 1.1.31 across plugin header, constants, readme.txt, README.md, and CHANGELOG.md. Tool count: ~195 base + ~795 Pro (~990 total; live registry authoritative).
+
+**Media Command Center, Pro SPA v2, Workflow Presets, npm CVE Fixes, Gemini 3.1 Flash**
+
+* **Media Command Center (PR #5402).** Top-level NV Media admin menu with command center for media templates, presets, and blueprints.
+* **Pro SPA v2 — Rich Rendering & Scoping (PRs #5401, #5412, #5414, #5416).** Ported to feature parity. Rich markdown rendering, per-assistant scoping, agent selector. Conversations primary, threads read-only. Version 2.0.1.
+* **34 Workflow Preset Tools (PR #5418).** All missing presets implemented across 10 toolkits. PHPCS compliance and test suite for 36 tools.
+* **npm Audit CVE Fixes (PR #5419).** 12 CVEs (vite, launch-editor, markdown-it, ws, js-yaml, form-data, hono, dompurify, babel, opentelemetry, joi). Root audit: 51→0.
+* **Gemini 3.1 Flash Image (PR #5404).** Default image model upgraded.
+* **Media Toolkit Blueprints (PRs #5398, #5411).** Blueprints and presets synced to Data Management.
+* **OpenAI/DeepSeek stream_options (PR #5400).** Streaming usage tracking enabled.
+* **Agentic-Loop Cost Tracking (PRs #5394, #5395).** Tool result costs and provider pricing fixed.
+* **Vite CVEs (PR #5403).** vite ^8.0.16 for CVE-2026-53571 / CVE-2026-53632.
+* **1,658 PHPCS Lint Fixes (PR #5397).** Across base + pro (44 toolkits).
+* **CI Disk Space (PR #5417).** Free disk space step in build workflows.
+* **Data Integrity Fixes.** PII pseudonymisation restored (PR #5398). CPT type mismatch resolved (PR #5396).
+
+= 1.1.30 - June 15, 2026 =
+
+Bumped to 1.1.30 across manifests. Tool count: ~195 base + ~795 Pro (~990 total; live registry authoritative).
+
+**Chat SPA Phase 8, PM Toolkit A–D, CRM Duplicates/Hygiene, DietPi Toolkit, LibreChat, Context Windows, WP 7.0 Bridge**
+
+* **Chat SPA Phase 8 (PRs #5381, #5383, #5390).** Conversations sidebar. Auto-create thread. Message actions: edit, delete, regenerate, copy, content enrichment.
+* **PM Toolkit A–D (PR #5370).** Shared PM Engine. Command Center dashboard. 28 new AI tools.
+* **CRM Duplicates & Hygiene (PRs #5362, #5367, #5368).** Duplicate detection/merge. Email hygiene. Top Customers/Clients analytics. LinkedIn & Upwork sourcing.
+* **DietPi Pro Toolkit (PRs #5346, #5348, #5350).** 19+ tools for DietPi server management. MCP server integration.
+* **LibreChat Addon (PR #5336).** Code interpreter, speech services, web search reranker.
+* **Layer I Guardrails (PRs #5340, #5344).** Jailbreak prevention. Configurable per-assistant.
+* **Context Window Management (PRs #5335, #5348, #5352).** Pre-flight validation for all 13 providers. tiktoken integration. Token-budget tool capping.
+* **WP 7.0 Bridge (PR #5387).** Forward-compatible provider credential bridge.
+* **Chat Transcript & Memory Retention (PRs #5356, #5357).** TTL-based cleanup (base). Agent memory lifecycle (Pro).
+* **Pro Toolkit Optimizations (PRs #5355, #5356, #5357).** Performance across 6 toolkits.
+* **OAuth Disconnect (PR #5351).** One-click disconnect with token clearing.
+* **30+ Fixes.** SPA reliability sweep. CPT slug limits. Security CVEs (guzzlehttp/psr7, esbuild, shell-quote).
+
+= 1.1.28 - June 8, 2026 =
+
+Bumped to 1.1.28 across manifests. Tool count: ~195 base + ~765 Pro (~960 total; live registry authoritative).
+
+**CRM Phase C, Customer CPT, Support Tickets, QKV Attention Routing, Graphify Ecosystem**
+
+* **CRM Phase C (PRs #5290–#5310).** IMAP email polling, Twilio SMS, Meta WhatsApp, Gmail OAuth.
+* **Customer CPT + 360 (PR #5324).** 5 CRUD tools. Customer Research & Add with 360 dashboard. Lead-to-customer conversion.
+* **Support Ticket Module (PRs #5300–#5310).** 10 AI tools + SLA. Ticket lifecycle with cron.
+* **QKV Attention Routing (PR #5315).** 5-head multi-head attention for semantic tool selection.
+* **TF-IDF + BM25 Search (PR #5315).** Dual-algorithm relevance ranking.
+* **Funiq Bridge Addon (PR #5240).** Payload-to-WordPress bridge with React admin SPA.
+* **NVOOS Graphify Ecosystem (PR #5325).** 3 standalone plugins. 14 tools. Visual knowledge graph.
+* **Demo Video Pipeline (PR #5325).** Scripted scene recording, AI voiceover, automated assembly.
+* **CRM Enhancements.** Lead/company tables enriched. Data completeness KPI.
+* **Documentation.** Folder READMEs for new CRM subdirectories. Compliance check errors resolved.
 
 = 1.1.27 - June 5, 2026 =
 

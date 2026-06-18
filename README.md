@@ -154,6 +154,18 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 13 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
+### ✨ What's New at a Glance (v1.1.32)
+
+- 📝 **Content Format Templates & Featured Images.** Content Format Template CPT with user-editable blog templates. Content Template Engine generates Anthropic-optimised AI prompts. Featured Image Service with 3-provider fallback (DALL-E → Gemini → Cloudflare) and 5 image styles. Provider image settings now respected instead of hardcoded defaults.
+- 📬 **Result Delivery Pipeline.** 1,056-line service routes schedule results to 8 channels (email, Slack, Discord, Telegram, SMS, Paper Store, WordPress post, webhook). Both success and failure paths now deliver — previously only failures were surfaced.
+- 📄 **ECA Document Generation.** ECA Consolidate & Add page with document generation tools.
+- 🪲 **Duplicate Posts Fixed.** WordPress delivery channel removed from `weekly_blog_post_writer` and `weekly_blog_topic_research` presets. Systemic guard skips WordPress delivery when AI tool calls already include `create_post` or `save_post`.
+- ⏱️ **6 Provider Clients Timeout Fix.** DeepSeek, Baseten, DigitalOcean, OpenRouter, Kimi, and Cloudflare clients now respect the global `request_timeout` setting instead of hardcoding 60 seconds.
+- 🔧 **Schedule Trigger Stability.** Trigger crash on `rest_do_request()` fixed with try/catch + pre-flight REST check. Result delivery sanitizer preserves `channels` wrapper so edit modal shows saved values. AJAX handler captures PHP warnings that corrupt JSON.
+- 📋 **Paper Store Delete Fix.** Hidden inputs added to delete confirmation form so `handle_delete_record()` receives required POST fields.
+- 🧪 **npm CI & Jest Resilience.** Babel ESM override pinned for Node 18/20 compatibility. Jest config probes for setup files at load time with graceful fallback. npm ci lockfile sync for 5 addons.
+- 📦 **Dependencies.** 14 safe Dependabot bumps. 8 npm audit CVEs (nodemailer, tar, tar-fs). phpspreadsheet 5.7.0 → 5.8.0.
+
 ### ✨ What's New at a Glance (v1.1.31)
 
 - 🎬 **Media Command Center.** Top-level NV Media admin menu with command center for media templates, presets, and blueprints.
@@ -457,7 +469,21 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.31 — June 2026)
+## 🆕 Latest Updates (v1.1.32 — June 2026)
+
+### June 17–19, 2026 — Content Format Templates, Result Delivery Pipeline, Featured Images, Provider Timeout Fixes 📝📬⏱️🔧
+
+- ✅ **Content Format Templates & Featured Image Generation (PR #5433).** Content Format Template CPT (`mcp_ai_content_format_template`) with user-editable blog post templates. New `WP_MCP_AI_Content_Template_Engine` generates Anthropic-optimised XML-sectioned AI prompts. New `WP_MCP_AI_Featured_Image_Service` with 3-provider fallback (OpenAI DALL-E → Google Gemini → Cloudflare AI) and 5 image styles. Image Generation Provider dropdown on the CPT metabox. Provider settings (model, quality, aspect ratio) now respected instead of hardcoding `dall-e-3`/`hd`. AI prompts updated across all schedule presets to instruct image generation before post creation. 5 workflow presets updated with image gen nodes, node reorder, and `featured_image_id` wiring. Template resolution via Content Template Engine in `dispatch_assistant_run`. `resolve_node_template_variables` for cross-node variable passthrough. 5 default templates seeded on activation.
+- ✅ **Result Delivery Pipeline (PR #5425).** New `WP_MCP_AI_Result_Delivery_Service` (1,056 lines) routes successful schedule results to 8 delivery channels: email, Slack, Discord, Telegram, SMS, Paper Store, WordPress post, webhook. Per-channel formatting and sending with `deliver_success()` and `deliver_failure()` pathways. `result_delivery` schema added to schedule CRUD. Result Delivery section in schedule edit modal UI. Delivery status appended to run history and result envelopes. Pre-configured Paper Store delivery for 8 research/audit presets. Both success and failure paths now deliver — previously only failures were surfaced.
+- ✅ **ECA Document Generation (PR #5423).** ECA Consolidate & Add page with document generation tools. PHPCS alignment fixes across ECA admin pages.
+- ✅ **Duplicate Posts & Provider Image Fixes (PR #5434).** WordPress delivery channel removed from `weekly_blog_post_writer` and `weekly_blog_topic_research` presets to prevent duplicate draft posts when the AI already calls `create_post` during assistant runs. Systemic guard in Result Delivery Service skips WordPress delivery when AI tool calls include `create_post` or `save_post`. Provider image settings now properly flow through Content Template Engine and Featured Image Service.
+- ✅ **6 Provider Clients Now Respect Timeout (PR #5431).** DeepSeek, Baseten, DigitalOcean, OpenRouter, Kimi, and Cloudflare clients had hardcoded 60-second timeouts ignoring the admin **Request Timeout (seconds)** setting. All six `resolve_timeout()` methods now read `WP_MCP_AI_Admin_Settings`, matching the existing Anthropic/Gemini/Ollama pattern. Kimi retains its provider-specific `kimi_timeout` override.
+- ✅ **Schedule Trigger Stability (PRs #5429, #5430).** Trigger crash on `rest_do_request()` wrapped in try/catch with pre-flight REST server check (PR #5429). User context restored and filters cleaned up in all error paths. `display` and `result_delivery` fields added to `ajax_get_schedules` response for edit modal persistence. `sanitize_result_delivery` preserves `channels` wrapper so all consumers read saved delivery config (PR #5430). Chat-channel `channel` field preserved through `sanitize_delivery_channels`. `ajax_trigger_schedule` wrapped in `ob_start` + try/catch to capture PHP warnings that corrupt JSON. Trigger debug output logged to browser console when `WP_DEBUG` is on.
+- ✅ **Paper Store Delete Confirmation Fix (PR #5432).** Hidden inputs added to record delete confirmation form so `handle_delete_record()` receives required POST fields. `handle_delete_collection()` updated to read from `$_REQUEST` for GET-based admin-post.php links.
+- ✅ **ECA Settings Menu & Attachment Fix (PR #5421).** ECA settings menu placement corrected. Attachment upload crash in ECA admin pages resolved.
+- ✅ **npm CI & Jest Resilience (PR #5428).** `@babel/plugin-transform-modules-systemjs` override pinned to v7 (v8 is ESM-only, breaking eslint on Node 18/20). Root `package-lock.json` regenerated with override applied. `jest.config.js` probes for setup files at load time with graceful fallback to empty array. `jest.setup.js` at repo root. `|| exit 0` on `test:coverage` for CI. npm ci lockfile sync for chat-spa, media-studio, docs-hub, comic-reader, and saas-controller.
+- ✅ **Dependency Updates.** 14 safe Dependabot version bumps across docs-hub, cloud-worker, saas-controller, Pro (react 19.2.6→19.2.7, vitest 4.1.5→4.1.9, stripe, workers-types, eslint 8.59.2→8.61.1, php-stubs 6.9.1→7.0.0, mailparser 3.7.1→3.9.9, validator 13.12.0→13.15.35). 8 npm audit CVEs fixed: nodemailer, tar, tar-fs. Security overrides added to 8 addon package.json files. `phpoffice/phpspreadsheet` lock synced 5.7.0→5.8.0.
+- 📦 **Versioning** — bumped to **1.1.32** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, and `CHANGELOG.md`. Provider count: **13** first-class language-model providers (unchanged). Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
 ### June 16–17, 2026 — Media Command Center, Pro SPA v2, Workflow Presets, npm CVEs, Gemini 3.1 Flash 🎬💬🧰🔒🎨
 
@@ -499,7 +525,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.29 — June 2026)
+## 🆕 Previous Updates (v1.1.29 — June 2026)
 
 ### June 7–11, 2026 — Bug-Fix & Stabilisation Sweep 🪲🔧⚡
 
@@ -530,6 +556,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **v1.1.32** | Jun 2026 | Content Format Templates + Featured Image Service (3-provider fallback), Result Delivery Pipeline (8 channels), ECA document generation, duplicate posts fix, 6 provider clients timeout fix, schedule trigger stability, Paper Store delete fix, ECA settings/attachment fix, npm CI & Jest resilience, 14 dependabot bumps + 8 npm audit CVEs |
 | **v1.1.31** | Jun 2026 | Media Command Center, Pro SPA v2 (rich rendering, assistant scoping, agent selector, v2.0.1), 34 workflow preset tools, npm audit CVEs (12 resolved), Gemini 3.1 flash image default, Media toolkit blueprints & presets, stream_options, agentic-loop cost tracking, Vite CVEs, 1,658 PHPCS lint fixes, CI disk space, data integrity fixes |
 | **v1.1.30** | Jun 2026 | Chat SPA Phase 8, PM Toolkit A–D, CRM duplicates/hygiene/analytics, DietPi Pro Toolkit, LibreChat Addon, Layer I Guardrails, Context Window Management, WP 7.0 Bridge, Pro Toolkit Optimizations, OAuth disconnect, 30+ fixes |
 | **v1.1.28** | Jun 2026 | CRM Phase C complete (IMAP, SMS, WhatsApp ingestion), Customer CPT + 360 dashboard, Support Ticket module (10 AI tools + SLA), QKV Attention Routing, Funiq Bridge addon, NVOOS Graphify ecosystem (3 standalone plugins), NV Platform AI addon, automated demo video pipeline, TF-IDF + BM25 relevance search |

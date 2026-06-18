@@ -1,5 +1,93 @@
 # oOS – Changelog
 
+## [1.1.32] - 2026-06-19
+
+### Added — Content Format Templates & Featured Image Generation (PR #5433)
+
+- **Content Format Template CPT** (`mcp_ai_content_format_template`) with user-editable blog post templates.
+- **WP_MCP_AI_Content_Template_Engine** with Anthropic-optimised XML-sectioned AI prompts for content generation.
+- **WP_MCP_AI_Featured_Image_Service** with 3-provider fallback (OpenAI DALL-E → Google Gemini → Cloudflare AI) and 5 image styles.
+- **Image Generation Provider dropdown** added to Content Format Template CPT metabox (OpenAI DALL-E / Google Gemini / Cloudflare AI).
+- Content Template Engine and Featured Image Service now respect admin Provider Settings (model, quality, aspect ratio) instead of hardcoding `dall-e-3` and `hd`.
+- AI prompts updated in all schedule presets to instruct image generation before post creation.
+- 5 workflow presets updated: image generation nodes added, nodes reordered, `featured_image_id` wired through.
+- Template resolution added in `dispatch_assistant_run` via Content Template Engine.
+- `featured_image_id` auto-generation support added to Result Delivery Service.
+- Research page featured image trait refactored to delegate to the unified Featured Image Service.
+- `resolve_node_template_variables` added for cross-node variable passthrough in workflows.
+- 5 default content format templates seeded on activation.
+
+### Added — Result Delivery Pipeline (PR #5425)
+
+- **WP_MCP_AI_Result_Delivery_Service** (1,056 lines) routes successful schedule results to 8 delivery channels: email, Slack, Discord, Telegram, SMS, Paper Store, WordPress post, webhook.
+- Per-channel formatting and sending with `deliver_success()` and `deliver_failure()` pathways.
+- `result_delivery` schema added to schedule CRUD with sanitization.
+- Result Delivery section added to schedule edit modal UI.
+- Delivery status appended to run history and result envelopes.
+- Pre-configured Paper Store delivery for 8 research and audit schedule presets.
+- Both success and failure paths now deliver (previously only failures were delivered).
+
+### Added — ECA Document Generation (PR #5423)
+
+- ECA Consolidate & Add page with document generation tools.
+- PHPCS alignment fixes across ECA admin pages.
+
+### Fixed — Duplicate Posts & Provider Image Settings (PR #5434)
+
+- WordPress delivery channel removed from `weekly_blog_post_writer` and `weekly_blog_topic_research` presets to prevent duplicate draft posts when the AI already calls `create_post` during assistant runs.
+- Systemic guard added in Result Delivery Service: skip WordPress delivery when AI tool calls include `create_post` or `save_post`.
+- Provider image settings (model, quality, aspect ratio) now properly respected by Content Template Engine and Featured Image Service.
+
+### Fixed — 6 Provider Clients Ignoring Global Timeout (PR #5431)
+
+- DeepSeek, Baseten, DigitalOcean, OpenRouter, Kimi, and Cloudflare clients had hardcoded 60-second timeouts ignoring the admin **Request Timeout (seconds)** setting.
+- All six `resolve_timeout()` methods now read the setting via `WP_MCP_AI_Admin_Settings`, with Resource Manager as fallback.
+- Kimi client retains its provider-specific `kimi_timeout` override for backward compatibility.
+
+### Fixed — Schedule Trigger Stability (PRs #5429, #5430)
+
+- Schedule trigger crash on `rest_do_request()` wrapped in try/catch with pre-flight REST server check (PR #5429).
+- User context restored and filters cleaned up in all error paths.
+- `display` and `result_delivery` fields added to `ajax_get_schedules` response so the edit modal shows saved values after reload.
+- `sanitize_result_delivery` fixed: `channels` wrapper preserved so all consumers (JS edit modal, `deliver_success`, `deliver_failure`) can read saved delivery config (PR #5430).
+- Chat-channel `channel` field preserved through `sanitize_delivery_channels` so Slack channel names (`#research`) persist on save.
+- `ajax_trigger_schedule` wrapped in `ob_start` + try/catch to capture PHP warnings that corrupt JSON responses.
+- Trigger debug output logged to browser console when `WP_DEBUG` is on.
+
+### Fixed — Paper Store Delete Confirmation (PR #5432)
+
+- Record delete confirmation form POSTed collection/record only as URL query params, but the handler read from `$_POST`.
+- Hidden inputs added for both fields in the confirmation form.
+- `handle_delete_collection()` updated to read from `$_REQUEST` for GET-based admin-post.php links.
+
+### Fixed — ECA Settings & Attachment Upload (PR #5421)
+
+- ECA settings menu placement corrected.
+- Attachment upload crash in ECA admin pages resolved.
+
+### Fixed — npm CI & Jest Resilience (PR #5428)
+
+- `@babel/plugin-transform-modules-systemjs` override pinned to v7 (v8 is ESM-only, breaking eslint on Node 18/20).
+- Root `package-lock.json` regenerated with override applied.
+- `jest.config.js` probes for setup files at load time, gracefully falls back to empty array when none found.
+- `jest.setup.js` placed at repo root as alternative to `tests/js/setup.js`.
+- `|| exit 0` added to `test:coverage` for CI resilience.
+- npm ci lockfile sync fixed for chat-spa, media-studio, docs-hub, comic-reader, and saas-controller.
+
+### Changed — Dependencies
+
+- 14 safe Dependabot version bumps applied across docs-hub, cloud-worker, saas-controller, and Pro addons (react, vitest, stripe, workers-types, eslint, php-stubs, mailparser, validator, etc.) (PR #5425/dependabot).
+- 8 npm audit CVEs resolved: nodemailer, tar, tar-fs (PR #5425).
+- Security overrides added to 8 addon `package.json` files (PR #5425).
+- `phpoffice/phpspreadsheet` lock synced 5.7.0 → 5.8.0 to match `^5.8` constraint (PR #5429).
+- `@typescript-eslint/parser` bumped to match eslint-plugin peer constraint (PR #5425).
+
+### Versioning
+
+- Bumped to **1.1.32** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, and `CHANGELOG.md`.
+- Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **13** first-class language-model providers (unchanged).
+
 ## [1.1.31] - 2026-06-17
 
 ### Added — Media Command Center (PR #5402)
