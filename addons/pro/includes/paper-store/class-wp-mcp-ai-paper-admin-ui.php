@@ -723,8 +723,10 @@ class WP_MCP_AI_Paper_Admin_UI {
 		echo '<p>' . esc_html( sprintf( __( 'Title: %s', 'mcp-ai-wpoos-pro' ), $record['title'] ?? '(no title)' ) ) . '</p>';
 		echo '<p style="color:#b32d2e;">' . esc_html__( 'This action cannot be undone.', 'mcp-ai-wpoos-pro' ) . '</p>';
 		echo '<form method="post" action="' . esc_url( $confirm_url ) . '" style="margin-top:1rem;">';
-		wp_nonce_field( 'paper_delete_record_' . $collection . '_' . $record_id, '_wpnonce' );
-		echo '<button type="submit" class="button button-primary" style="background:#b32d2e;border-color:#b32d2e;color:#fff;">' . esc_html__( 'Confirm Delete', 'mcp-ai-wpoos-pro' ) . '</button> ';
+			wp_nonce_field( 'paper_delete_record_' . $collection . '_' . $record_id, '_wpnonce' );
+			echo '<input type="hidden" name="collection" value="' . esc_attr( $collection ) . '" />';
+			echo '<input type="hidden" name="record" value="' . esc_attr( $record_id ) . '" />';
+			echo '<button type="submit" class="button button-primary" style="background:#b32d2e;border-color:#b32d2e;color:#fff;">' . esc_html__( 'Confirm Delete', 'mcp-ai-wpoos-pro' ) . '</button> ';
 		echo '<a href="' . esc_url( $back_url ) . '" class="button">' . esc_html__( 'Cancel', 'mcp-ai-wpoos-pro' ) . '</a>';
 		echo '</form>';
 		echo '</div>';
@@ -941,8 +943,8 @@ class WP_MCP_AI_Paper_Admin_UI {
 			wp_die( esc_html__( 'You do not have permission to manage the Paper Store.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- admin_post handler; nonce verified below.
-		$collection = isset( $_POST['collection'] ) ? sanitize_key( wp_unslash( $_POST['collection'] ) ) : '';
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- admin_post handler; nonce verified below.
+		$collection = isset( $_REQUEST['collection'] ) ? sanitize_key( wp_unslash( $_REQUEST['collection'] ) ) : '';
 		// phpcs:enable
 
 		if ( empty( $collection ) ) {
