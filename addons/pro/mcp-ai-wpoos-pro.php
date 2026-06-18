@@ -499,6 +499,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Media Toolkit if enabled (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/media/init.php';
 
+		// Load Content Format Templates for AI-generated blog posts.
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-content-format-template-cpt.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-content-format-template-cpt.php';
+			WP_MCP_AI_Content_Format_Template_CPT::init();
+			WP_MCP_AI_Content_Format_Template_CPT::seed_defaults();
+		}
+
+		// Load Content Template Engine (prompt builder).
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-content-template-engine.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-content-template-engine.php';
+		}
+
 		// Load MCP Apps subsystem (remote MCP server connections per assistant).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/mcp-apps-init.php';
 

@@ -716,6 +716,27 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				return $post_id;
 			}
 
+			// Set featured image if provided in the payload.
+			if ( ! empty( $payload['featured_image_id'] ) ) {
+				$thumbnail_id = absint( $payload['featured_image_id'] );
+				if ( $thumbnail_id > 0 && wp_attachment_is_image( $thumbnail_id ) ) {
+					set_post_thumbnail( $post_id, $thumbnail_id );
+				}
+			}
+
+			// Auto-generate featured image if configured.
+			if ( ! empty( $config['generate_featured_image'] ) && class_exists( 'WP_MCP_AI_Featured_Image_Service' ) ) {
+				$image_style  = isset( $config['image_style'] ) ? sanitize_key( $config['image_style'] ) : 'photographic';
+				$image_result = WP_MCP_AI_Featured_Image_Service::generate(
+					$post_data['post_title'],
+					'blog post',
+					array( 'style' => $image_style )
+				);
+				if ( ! is_wp_error( $image_result ) ) {
+					set_post_thumbnail( $post_id, $image_result['attachment_id'] );
+				}
+			}
+
 			return true;
 		}
 

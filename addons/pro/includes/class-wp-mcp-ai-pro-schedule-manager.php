@@ -1328,6 +1328,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$message      = (string) $config['message'];
 			$user_id      = isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0;
 
+			// Resolve content format template if configured.
+			if ( ! empty( $config['template'] ) && class_exists( 'WP_MCP_AI_Content_Template_Engine' ) ) {
+				$template_vars    = isset( $config['variables'] ) && is_array( $config['variables'] ) ? $config['variables'] : array();
+				$template_message = WP_MCP_AI_Content_Template_Engine::build_prompt( $config['template'], $template_vars );
+				if ( ! empty( $template_message ) ) {
+					$message = $template_message;
+					self::debug_log( sprintf( '[assistant_run] Using content template "%s" for schedule %s', $config['template'], $schedule_id ) );
+				}
+			}
+
 			self::debug_log(
 				sprintf(
 					'[assistant_run] schedule=%s assistant_id=%d user_id=%d message="%s"',
@@ -3537,6 +3547,34 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
 				WP_MCP_AI_Cache_Helper::delete( 'pro_schedule_results' );
 			}
+		}
+
+		/**
+		 * Resolve {{node_X.field}} template variables in tool node arguments.
+		 *
+		 * Walks through argument values and replaces {{node_id.field_name}}
+		 * placeholders with actual values from previously executed node results.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $arguments    Tool node arguments (may contain {{placeholders}}).
+		 * @param array $node_results Previously executed node results keyed by node ID.
+		 * @return array Arguments with template variables resolved.
+		 */
+		protected static function resolve_node_template_variables( $arguments, $node_results ) {
+			foreach ( $arguments as $key => $value ) {
+				if ( ! is_string( $value ) ) {
+					continue;
+				}
+				if ( preg_match( '/\{\{(\w+)\.(\w+)\}\}/', $value, $matches ) ) {
+					$source_node  = $matches[1];
+					$source_field = $matches[2];
+					if ( isset( $node_results[ $source_node ]['result'][ $source_field ] ) ) {
+						$arguments[ $key ] = $node_results[ $source_node ]['result'][ $source_field ];
+					}
+				}
+			}
+			return $arguments;
 		}
 	}
 
