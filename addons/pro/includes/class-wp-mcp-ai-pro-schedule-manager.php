@@ -2894,12 +2894,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$default = self::get_default_result_delivery();
 
 			$sanitized = array(
-				'on_success' => isset( $delivery['on_success']['channels'] ) && is_array( $delivery['on_success']['channels'] )
-					? self::sanitize_delivery_channels( $delivery['on_success']['channels'] )
-					: $default['on_success']['channels'],
-				'on_failure' => isset( $delivery['on_failure']['channels'] ) && is_array( $delivery['on_failure']['channels'] )
-					? self::sanitize_delivery_channels( $delivery['on_failure']['channels'] )
-					: $default['on_failure']['channels'],
+				'on_success' => array(
+					'channels' => isset( $delivery['on_success']['channels'] ) && is_array( $delivery['on_success']['channels'] )
+						? self::sanitize_delivery_channels( $delivery['on_success']['channels'] )
+						: $default['on_success']['channels'],
+				),
+				'on_failure' => array(
+					'channels' => isset( $delivery['on_failure']['channels'] ) && is_array( $delivery['on_failure']['channels'] )
+						? self::sanitize_delivery_channels( $delivery['on_failure']['channels'] )
+						: $default['on_failure']['channels'],
+				),
 			);
 
 			return $sanitized;
@@ -2939,8 +2943,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				if ( 'sms' === $channel && isset( $config['to'] ) ) {
 					$entry['to'] = sanitize_text_field( $config['to'] );
 				}
-				if ( in_array( $channel, array( 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp' ), true ) && isset( $config[ $channel . '_credentials' ] ) ) {
-					$entry[ $channel . '_credentials' ] = $config[ $channel . '_credentials' ];
+				if ( in_array( $channel, array( 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp' ), true ) ) {
+					if ( isset( $config[ $channel . '_credentials' ] ) ) {
+						$entry[ $channel . '_credentials' ] = $config[ $channel . '_credentials' ];
+					}
+					if ( isset( $config['channel'] ) ) {
+						$entry['channel'] = sanitize_text_field( $config['channel'] );
+					}
 				}
 				if ( 'paper_store' === $channel ) {
 					if ( isset( $config['collection'] ) ) {

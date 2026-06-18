@@ -973,7 +973,39 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			wp_send_json_error( array( 'message' => __( 'Missing schedule_id.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now( $schedule_id, get_current_user_id() );
+		// Capture any unexpected output (PHP warnings/notices) that would
+		// corrupt the JSON response and cause jQuery's .fail() to fire.
+		ob_start();
+
+		try {
+			$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now( $schedule_id, get_current_user_id() );
+		} catch ( \Throwable $e ) {
+			ob_end_clean();
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Pro schedule trigger exception',
+					array(
+						'schedule_id' => $schedule_id,
+						'error'       => $e->getMessage(),
+						'file'        => str_replace( ABSPATH, '', $e->getFile() ),
+						'line'        => $e->getLine(),
+					)
+				);
+			}
+
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Schedule trigger crashed: %s', 'mcp-ai-wpoos-pro' ),
+						$e->getMessage()
+					),
+				)
+			);
+		}
+
+		$unexpected_output = ob_get_clean();
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -982,14 +1014,19 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		$success = (bool) $result;
 		$status  = $success ? 'success' : 'failure';
 
-		wp_send_json_success(
-			array(
-				'run_status' => $status,
-				'message'    => $success
-					? __( 'Schedule triggered successfully.', 'mcp-ai-wpoos-pro' )
-					: __( 'Schedule triggered but reported a failure. Check run history.', 'mcp-ai-wpoos-pro' ),
-			)
+		$response = array(
+			'run_status' => $status,
+			'message'    => $success
+				? __( 'Schedule triggered successfully.', 'mcp-ai-wpoos-pro' )
+				: __( 'Schedule triggered but reported a failure. Check run history.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		// Surface any unexpected output in the response for debugging.
+		if ( '' !== $unexpected_output && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$response['debug_output'] = $unexpected_output;
+		}
+
+		wp_send_json_success( $response );
 	}
 
 	/**
