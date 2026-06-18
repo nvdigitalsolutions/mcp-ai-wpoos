@@ -708,7 +708,7 @@
 			this.ajax(
 				'wp_mcp_ai_sm_trigger_schedule',
 				{ schedule_id: id },
-				function ( err, _data ) {
+				function ( err, data ) {
 					$row.removeClass( 'wp-mcp-ai-sm-running' );
 
 					if ( err ) {
@@ -719,7 +719,13 @@
 					}
 
 					// eslint-disable-next-line no-console
-					console.log( '[NV oOS Schedule Manager] Trigger completed:', id, _data );
+					console.log( '[NV oOS Schedule Manager] Trigger completed:', id, data );
+
+					// Surface debug output if present.
+					if ( data && data.debug_output ) {
+						// eslint-disable-next-line no-console
+						console.warn( '[NV oOS Schedule Manager] Debug output from trigger:', data.debug_output );
+					}
 
 					// Reload to show updated status.
 					self.loadSchedules();
