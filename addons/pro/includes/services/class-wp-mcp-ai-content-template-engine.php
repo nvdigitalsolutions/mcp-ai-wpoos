@@ -109,12 +109,10 @@ if ( ! class_exists( 'WP_MCP_AI_Content_Template_Engine' ) ) {
 			);
 
 			if ( ! empty( $data['required_sections']['featured_image'] ) ) {
-				$parts[] = sprintf(
-					/* translators: %s: image style */
-					__( '2. Generate a featured image using generate_openai_image with the prompt: "Professional %s blog featured image for: {article title}", size: "1792x1024", model: "dall-e-3", quality: "hd". Capture the attachment_id from the result.', 'mcp-ai-wpoos-pro' ),
-					$data['featured_image_style']
-				);
-				$parts[] = __( '3. Create the post using create_post with featured_image_id set to the attachment_id from Step 2. Set post_status to draft.', 'mcp-ai-wpoos-pro' );
+				$image_style    = isset( $data['featured_image_style'] ) ? $data['featured_image_style'] : 'photographic';
+				$image_provider = isset( $data['featured_image_provider'] ) ? $data['featured_image_provider'] : 'openai';
+				$parts[]        = self::get_image_gen_instruction( $image_provider, $image_style );
+				$parts[]        = __( '3. Create the post using create_post with featured_image_id set to the attachment_id from Step 2. Set post_status to draft.', 'mcp-ai-wpoos-pro' );
 			} else {
 				$parts[] = __( '2. Create the post using create_post. Set post_status to draft.', 'mcp-ai-wpoos-pro' );
 			}
@@ -323,6 +321,48 @@ if ( ! class_exists( 'WP_MCP_AI_Content_Template_Engine' ) ) {
 			}
 
 			return implode( ', ', $enabled );
+		}
+
+		/**
+		 * Build the AI instruction string for featured image generation.
+		 *
+		 * Produces a provider-specific tool-call instruction so the AI calls the
+		 * correct tool with the right arguments.  Each provider uses different
+		 * argument shapes: OpenAI takes size/model/quality, Gemini takes
+		 * aspect_ratio, and Cloudflare only needs the prompt.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $provider Image generation provider slug.
+		 * @param string $style    Image style slug.
+		 * @return string Formatted instruction line.
+		 */
+		protected static function get_image_gen_instruction( $provider, $style ) {
+			$style_label = ucfirst( $style );
+
+			switch ( $provider ) {
+				case 'gemini':
+					return sprintf(
+						/* translators: %s: image style */
+						__( '2. Generate a featured image using generate_gemini_image with the prompt: "Professional %s blog featured image for: {article title}". The tool uses the model and aspect ratio from Provider Settings. Capture the attachment_id from the result.', 'mcp-ai-wpoos-pro' ),
+						$style_label
+					);
+
+				case 'cloudflare':
+					return sprintf(
+						/* translators: %s: image style */
+						__( '2. Generate a featured image using generate_cloudflareai_image with the prompt: "Professional %s blog featured image for: {article title}". Capture the attachment_id from the result.', 'mcp-ai-wpoos-pro' ),
+						$style_label
+					);
+
+				case 'openai':
+				default:
+					return sprintf(
+						/* translators: %s: image style */
+						__( '2. Generate a featured image using generate_openai_image with the prompt: "Professional %s blog featured image for: {article title}". The tool uses the model and quality from Provider Settings. Capture the attachment_id from the result.', 'mcp-ai-wpoos-pro' ),
+						$style_label
+					);
+			}
 		}
 	}
 }

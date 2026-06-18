@@ -157,12 +157,28 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		protected static function deliver_to_channels( $schedule_id, array $envelope, array $channel_cfgs, array $schedule, array $action_log, $is_success ) {
 			$statuses = array();
 
+			// Detect whether the AI already created posts via its own tool calls.
+			// When the assistant uses create_post / save_post during the run,
+			// the WordPress delivery channel would produce a duplicate post.
+			$skip_wordpress = self::should_skip_wordpress_delivery( $action_log );
+
 			foreach ( $channel_cfgs as $channel => $config ) {
 				if ( ! is_array( $config ) || empty( $config['enabled'] ) ) {
 					continue;
 				}
 
 				if ( ! in_array( $channel, self::SUPPORTED_CHANNELS, true ) ) {
+					continue;
+				}
+
+				// Skip WordPress delivery when the AI already handled post creation
+				// via create_post or save_post tool calls during the run.
+				if ( 'WordPress' === $channel && $skip_wordpress ) {
+					$statuses['wordpress'] = self::log_delivery_skip(
+						$schedule_id,
+						__( 'Skipped — AI already created post via create_post/save_post tool.', 'mcp-ai-wpoos-pro' ),
+						$is_success
+					);
 					continue;
 				}
 
@@ -182,6 +198,46 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			}
 
 			return $statuses;
+		}
+
+		/**
+		 * Determine whether the WordPress delivery channel should be skipped.
+		 *
+		 * When an assistant_run schedule instructs the AI to call create_post
+		 * or save_post, the post already exists in WordPress.  Enabling the
+		 * WordPress delivery channel on top of that would produce a duplicate
+		 * envelope-summary post, which is almost never the desired behaviour.
+		 *
+		 * This guard inspects the action_log to see whether any tool call
+		 * during the run matches a post-creation slug.  It is intentionally
+		 * scoped to assistant_run dispatches; workflow, task, and broadcast
+		 * schedules are unaffected because they do not populate the
+		 * `assistant.tool_calls` key.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $action_log Raw action log from the dispatcher.
+		 * @return bool True if WordPress delivery should be suppressed.
+		 */
+		protected static function should_skip_wordpress_delivery( array $action_log ) {
+			$tool_calls = isset( $action_log['assistant']['tool_calls'] ) && is_array( $action_log['assistant']['tool_calls'] )
+				? $action_log['assistant']['tool_calls']
+				: array();
+
+			if ( empty( $tool_calls ) ) {
+				return false;
+			}
+
+			$post_creation_tools = array( 'create_post', 'save_post' );
+
+			foreach ( $tool_calls as $tool_call ) {
+				$name = isset( $tool_call['name'] ) ? (string) $tool_call['name'] : '';
+				if ( in_array( $name, $post_creation_tools, true ) ) {
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		// -------------------------------------------------------------------------
@@ -843,6 +899,54 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				$channel,
 				$is_ok,
 				$status['error'],
+				$is_success
+			);
+
+			return $status;
+		}
+
+		/**
+		 * Log an intentional WordPress channel skip (AI already created the post).
+		 *
+		 * Produces the same status-array shape as {@see self::log_delivery()} so
+		 * callers that iterate the per-channel statuses don't need a special case.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $schedule_id Schedule identifier.
+		 * @param string $reason      Human-readable reason for the skip.
+		 * @param bool   $is_success  Whether this was a success-run or failure-run delivery.
+		 * @return array Status array with channel, success, skipped, and reason keys.
+		 */
+		protected static function log_delivery_skip( $schedule_id, $reason, $is_success ) {
+			$status = array(
+				'channel' => 'wordpress',
+				'success' => true,
+				'skipped' => true,
+				'reason'  => $reason,
+				'error'   => '',
+			);
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'info',
+					sprintf(
+						'Result delivery to WordPress: SKIPPED (schedule: %s, type: %s) — %s',
+						$schedule_id,
+						$is_success ? 'success' : 'failure',
+						$reason
+					),
+					$status
+				);
+			}
+
+			/** This action is documented in log_delivery(). */
+			do_action(
+				'wp_mcp_ai_pro_schedule_result_delivered',
+				$schedule_id,
+				'WordPress',
+				true,
+				$reason,
 				$is_success
 			);
 

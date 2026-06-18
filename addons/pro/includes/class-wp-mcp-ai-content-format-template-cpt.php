@@ -91,16 +91,17 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 	 */
 	protected static function register_meta_fields() {
 		$meta_fields = array(
-			'_content_type'          => 'string',
-			'_target_word_count_min' => 'integer',
-			'_target_word_count_max' => 'integer',
-			'_tone'                  => 'string',
-			'_target_audience'       => 'string',
-			'_heading_structure'     => 'string', // JSON-encoded.
-			'_required_sections'     => 'string', // JSON-encoded.
-			'_featured_image_style'  => 'string',
-			'_custom_instructions'   => 'string',
-			'_template_variables'    => 'string', // JSON-encoded.
+			'_content_type'            => 'string',
+			'_target_word_count_min'   => 'integer',
+			'_target_word_count_max'   => 'integer',
+			'_tone'                    => 'string',
+			'_target_audience'         => 'string',
+			'_heading_structure'       => 'string', // JSON-encoded.
+			'_required_sections'       => 'string', // JSON-encoded.
+			'_featured_image_style'    => 'string',
+			'_featured_image_provider' => 'string',
+			'_custom_instructions'     => 'string',
+			'_template_variables'      => 'string', // JSON-encoded.
 		);
 
 		foreach ( $meta_fields as $meta_key => $type ) {
@@ -145,20 +146,22 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 	public static function render_config_metabox( $post ) {
 		wp_nonce_field( 'content_template_meta', 'content_template_meta_nonce' );
 
-		$raw_type                 = get_post_meta( $post->ID, '_content_type', true );
-			$content_type         = ! empty( $raw_type ) ? $raw_type : 'how-to';
-		$target_word_count_min    = get_post_meta( $post->ID, '_target_word_count_min', true ) ?: 1500;
-		$target_word_count_max    = get_post_meta( $post->ID, '_target_word_count_max', true ) ?: 2500;
-		$raw_tone                 = get_post_meta( $post->ID, '_tone', true );
-			$tone                 = ! empty( $raw_tone ) ? $raw_tone : 'professional';
-		$target_audience          = (string) get_post_meta( $post->ID, '_target_audience', true );
-		$raw_headings             = get_post_meta( $post->ID, '_heading_structure', true );
-			$heading_structure    = ! empty( $raw_headings ) ? $raw_headings : '[]';
-		$raw_sections             = get_post_meta( $post->ID, '_required_sections', true );
-			$required_sections    = ! empty( $raw_sections ) ? $raw_sections : '{}';
-		$raw_style                = get_post_meta( $post->ID, '_featured_image_style', true );
-			$featured_image_style = ! empty( $raw_style ) ? $raw_style : 'photographic';
-		$custom_instructions      = (string) get_post_meta( $post->ID, '_custom_instructions', true );
+		$raw_type                    = get_post_meta( $post->ID, '_content_type', true );
+			$content_type            = ! empty( $raw_type ) ? $raw_type : 'how-to';
+		$target_word_count_min       = get_post_meta( $post->ID, '_target_word_count_min', true ) ?: 1500;
+		$target_word_count_max       = get_post_meta( $post->ID, '_target_word_count_max', true ) ?: 2500;
+		$raw_tone                    = get_post_meta( $post->ID, '_tone', true );
+			$tone                    = ! empty( $raw_tone ) ? $raw_tone : 'professional';
+		$target_audience             = (string) get_post_meta( $post->ID, '_target_audience', true );
+		$raw_headings                = get_post_meta( $post->ID, '_heading_structure', true );
+			$heading_structure       = ! empty( $raw_headings ) ? $raw_headings : '[]';
+		$raw_sections                = get_post_meta( $post->ID, '_required_sections', true );
+			$required_sections       = ! empty( $raw_sections ) ? $raw_sections : '{}';
+		$raw_style                   = get_post_meta( $post->ID, '_featured_image_style', true );
+			$featured_image_style    = ! empty( $raw_style ) ? $raw_style : 'photographic';
+		$raw_provider                = get_post_meta( $post->ID, '_featured_image_provider', true );
+			$featured_image_provider = ! empty( $raw_provider ) ? $raw_provider : 'openai';
+		$custom_instructions         = (string) get_post_meta( $post->ID, '_custom_instructions', true );
 
 		$headings     = json_decode( $heading_structure, true );
 			$headings = is_array( $headings ) ? $headings : array();
@@ -269,6 +272,27 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 			</tr>
 
 			<tr>
+				<th><label for="featured_image_provider"><?php esc_html_e( 'Image Generation Provider', 'mcp-ai-wpoos-pro' ); ?></label></th>
+				<td>
+					<select name="featured_image_provider" id="featured_image_provider" class="regular-text">
+						<?php
+						$providers = array(
+							'openai'     => __( 'OpenAI DALL-E', 'mcp-ai-wpoos-pro' ),
+							'gemini'     => __( 'Google Gemini', 'mcp-ai-wpoos-pro' ),
+							'cloudflare' => __( 'Cloudflare AI', 'mcp-ai-wpoos-pro' ),
+						);
+						foreach ( $providers as $slug => $label ) :
+							?>
+							<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $featured_image_provider, $slug ); ?>>
+								<?php echo esc_html( $label ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+					<p class="description"><?php esc_html_e( 'The AI image generation tool the assistant will use. OpenAI DALL-E is recommended for highest quality.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+
+			<tr>
 				<th><label for="custom_instructions"><?php esc_html_e( 'Custom Instructions', 'mcp-ai-wpoos-pro' ); ?></label></th>
 				<td>
 					<textarea name="custom_instructions" id="custom_instructions" rows="4" class="large-text"><?php echo esc_textarea( $custom_instructions ); ?></textarea>
@@ -305,13 +329,14 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 
 		// Simple scalar fields.
 		$scalar_fields = array(
-			'content_type'          => 'sanitize_key',
-			'target_word_count_min' => 'absint',
-			'target_word_count_max' => 'absint',
-			'tone'                  => 'sanitize_key',
-			'target_audience'       => 'sanitize_text_field',
-			'featured_image_style'  => 'sanitize_key',
-			'custom_instructions'   => 'sanitize_textarea_field',
+			'content_type'            => 'sanitize_key',
+			'target_word_count_min'   => 'absint',
+			'target_word_count_max'   => 'absint',
+			'tone'                    => 'sanitize_key',
+			'target_audience'         => 'sanitize_text_field',
+			'featured_image_style'    => 'sanitize_key',
+			'featured_image_provider' => 'sanitize_key',
+			'custom_instructions'     => 'sanitize_textarea_field',
 		);
 
 		foreach ( $scalar_fields as $field => $sanitize_callback ) {
@@ -419,19 +444,20 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 		}
 
 		return array(
-			'id'                    => $post->ID,
-			'slug'                  => $post->post_name,
-			'title'                 => $post->post_title,
-			'content_type'          => get_post_meta( $post->ID, '_content_type', true ) ?: 'how-to',
-			'target_word_count_min' => absint( get_post_meta( $post->ID, '_target_word_count_min', true ) ) ?: 1500,
-			'target_word_count_max' => absint( get_post_meta( $post->ID, '_target_word_count_max', true ) ) ?: 2500,
-			'tone'                  => get_post_meta( $post->ID, '_tone', true ) ?: 'professional',
-			'target_audience'       => get_post_meta( $post->ID, '_target_audience', true ) ?: '',
-			'heading_structure'     => json_decode( get_post_meta( $post->ID, '_heading_structure', true ), true ) ?: array(),
-			'required_sections'     => json_decode( get_post_meta( $post->ID, '_required_sections', true ), true ) ?: array(),
-			'featured_image_style'  => get_post_meta( $post->ID, '_featured_image_style', true ) ?: 'photographic',
-			'custom_instructions'   => get_post_meta( $post->ID, '_custom_instructions', true ) ?: '',
-			'template_variables'    => json_decode( get_post_meta( $post->ID, '_template_variables', true ), true ) ?: array(),
+			'id'                      => $post->ID,
+			'slug'                    => $post->post_name,
+			'title'                   => $post->post_title,
+			'content_type'            => get_post_meta( $post->ID, '_content_type', true ) ?: 'how-to',
+			'target_word_count_min'   => absint( get_post_meta( $post->ID, '_target_word_count_min', true ) ) ?: 1500,
+			'target_word_count_max'   => absint( get_post_meta( $post->ID, '_target_word_count_max', true ) ) ?: 2500,
+			'tone'                    => get_post_meta( $post->ID, '_tone', true ) ?: 'professional',
+			'target_audience'         => get_post_meta( $post->ID, '_target_audience', true ) ?: '',
+			'heading_structure'       => json_decode( get_post_meta( $post->ID, '_heading_structure', true ), true ) ?: array(),
+			'required_sections'       => json_decode( get_post_meta( $post->ID, '_required_sections', true ), true ) ?: array(),
+			'featured_image_style'    => get_post_meta( $post->ID, '_featured_image_style', true ) ?: 'photographic',
+			'featured_image_provider' => get_post_meta( $post->ID, '_featured_image_provider', true ) ?: 'openai',
+			'custom_instructions'     => get_post_meta( $post->ID, '_custom_instructions', true ) ?: '',
+			'template_variables'      => json_decode( get_post_meta( $post->ID, '_template_variables', true ), true ) ?: array(),
 		);
 	}
 
@@ -448,20 +474,20 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 
 		$defaults = array(
 			array(
-				'title'                 => __( 'Standard Blog Post', 'mcp-ai-wpoos-pro' ),
-				'slug'                  => 'standard-blog-post',
-				'content_type'          => 'how-to',
-				'target_word_count_min' => 1500,
-				'target_word_count_max' => 2500,
-				'tone'                  => 'professional',
-				'heading_structure'     => array(
+				'title'                   => __( 'Standard Blog Post', 'mcp-ai-wpoos-pro' ),
+				'slug'                    => 'standard-blog-post',
+				'content_type'            => 'how-to',
+				'target_word_count_min'   => 1500,
+				'target_word_count_max'   => 2500,
+				'tone'                    => 'professional',
+				'heading_structure'       => array(
 					__( 'Introduction', 'mcp-ai-wpoos-pro' ),
 					__( 'Why This Matters', 'mcp-ai-wpoos-pro' ),
 					__( 'Key Strategies', 'mcp-ai-wpoos-pro' ),
 					__( 'Common Mistakes to Avoid', 'mcp-ai-wpoos-pro' ),
 					__( 'Conclusion', 'mcp-ai-wpoos-pro' ),
 				),
-				'required_sections'     => array(
+				'required_sections'       => array(
 					'seo_title'        => true,
 					'meta_description' => true,
 					'intro_hook'       => true,
@@ -472,16 +498,17 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 					'cta'              => true,
 					'featured_image'   => true,
 				),
-				'featured_image_style'  => 'photographic',
+				'featured_image_style'    => 'photographic',
+				'featured_image_provider' => 'openai',
 			),
 			array(
-				'title'                 => __( 'How-To Guide', 'mcp-ai-wpoos-pro' ),
-				'slug'                  => 'how-to-guide',
-				'content_type'          => 'how-to',
-				'target_word_count_min' => 1200,
-				'target_word_count_max' => 2000,
-				'tone'                  => 'technical',
-				'heading_structure'     => array(
+				'title'                   => __( 'How-To Guide', 'mcp-ai-wpoos-pro' ),
+				'slug'                    => 'how-to-guide',
+				'content_type'            => 'how-to',
+				'target_word_count_min'   => 1200,
+				'target_word_count_max'   => 2000,
+				'tone'                    => 'technical',
+				'heading_structure'       => array(
 					__( 'What You Will Learn', 'mcp-ai-wpoos-pro' ),
 					__( 'Prerequisites', 'mcp-ai-wpoos-pro' ),
 					__( 'Step 1', 'mcp-ai-wpoos-pro' ),
@@ -490,7 +517,7 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 					__( 'Troubleshooting', 'mcp-ai-wpoos-pro' ),
 					__( 'Next Steps', 'mcp-ai-wpoos-pro' ),
 				),
-				'required_sections'     => array(
+				'required_sections'       => array(
 					'seo_title'        => true,
 					'meta_description' => true,
 					'intro_hook'       => true,
@@ -501,21 +528,22 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 					'cta'              => true,
 					'featured_image'   => true,
 				),
-				'featured_image_style'  => 'illustration',
+				'featured_image_style'    => 'illustration',
+				'featured_image_provider' => 'openai',
 			),
 			array(
-				'title'                 => __( 'Listicle', 'mcp-ai-wpoos-pro' ),
-				'slug'                  => 'listicle',
-				'content_type'          => 'listicle',
-				'target_word_count_min' => 800,
-				'target_word_count_max' => 1500,
-				'tone'                  => 'conversational',
-				'heading_structure'     => array(
+				'title'                   => __( 'Listicle', 'mcp-ai-wpoos-pro' ),
+				'slug'                    => 'listicle',
+				'content_type'            => 'listicle',
+				'target_word_count_min'   => 800,
+				'target_word_count_max'   => 1500,
+				'tone'                    => 'conversational',
+				'heading_structure'       => array(
 					__( 'Introduction', 'mcp-ai-wpoos-pro' ),
 					__( 'The List', 'mcp-ai-wpoos-pro' ),
 					__( 'Key Takeaways', 'mcp-ai-wpoos-pro' ),
 				),
-				'required_sections'     => array(
+				'required_sections'       => array(
 					'seo_title'        => true,
 					'meta_description' => true,
 					'intro_hook'       => true,
@@ -526,16 +554,17 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 					'cta'              => true,
 					'featured_image'   => true,
 				),
-				'featured_image_style'  => 'infographic',
+				'featured_image_style'    => 'infographic',
+				'featured_image_provider' => 'openai',
 			),
 			array(
-				'title'                 => __( 'Case Study', 'mcp-ai-wpoos-pro' ),
-				'slug'                  => 'case-study',
-				'content_type'          => 'case_study',
-				'target_word_count_min' => 1500,
-				'target_word_count_max' => 2500,
-				'tone'                  => 'persuasive',
-				'heading_structure'     => array(
+				'title'                   => __( 'Case Study', 'mcp-ai-wpoos-pro' ),
+				'slug'                    => 'case-study',
+				'content_type'            => 'case_study',
+				'target_word_count_min'   => 1500,
+				'target_word_count_max'   => 2500,
+				'tone'                    => 'persuasive',
+				'heading_structure'       => array(
 					__( 'Executive Summary', 'mcp-ai-wpoos-pro' ),
 					__( 'The Challenge', 'mcp-ai-wpoos-pro' ),
 					__( 'The Solution', 'mcp-ai-wpoos-pro' ),
@@ -543,7 +572,7 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 					__( 'Results', 'mcp-ai-wpoos-pro' ),
 					__( 'Key Lessons', 'mcp-ai-wpoos-pro' ),
 				),
-				'required_sections'     => array(
+				'required_sections'       => array(
 					'seo_title'        => true,
 					'meta_description' => true,
 					'intro_hook'       => true,
@@ -554,21 +583,22 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 					'cta'              => true,
 					'featured_image'   => true,
 				),
-				'featured_image_style'  => 'photographic',
+				'featured_image_style'    => 'photographic',
+				'featured_image_provider' => 'openai',
 			),
 			array(
-				'title'                 => __( 'News Roundup', 'mcp-ai-wpoos-pro' ),
-				'slug'                  => 'news-roundup',
-				'content_type'          => 'news',
-				'target_word_count_min' => 500,
-				'target_word_count_max' => 1000,
-				'tone'                  => 'journalistic',
-				'heading_structure'     => array(
+				'title'                   => __( 'News Roundup', 'mcp-ai-wpoos-pro' ),
+				'slug'                    => 'news-roundup',
+				'content_type'            => 'news',
+				'target_word_count_min'   => 500,
+				'target_word_count_max'   => 1000,
+				'tone'                    => 'journalistic',
+				'heading_structure'       => array(
 					__( 'Top Stories This Week', 'mcp-ai-wpoos-pro' ),
 					__( 'Industry Impact', 'mcp-ai-wpoos-pro' ),
 					__( 'What to Watch Next Week', 'mcp-ai-wpoos-pro' ),
 				),
-				'required_sections'     => array(
+				'required_sections'       => array(
 					'seo_title'        => true,
 					'meta_description' => true,
 					'intro_hook'       => true,
@@ -579,7 +609,8 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 					'cta'              => false,
 					'featured_image'   => true,
 				),
-				'featured_image_style'  => 'minimal',
+				'featured_image_style'    => 'minimal',
+				'featured_image_provider' => 'openai',
 			),
 		);
 
@@ -601,6 +632,7 @@ class WP_MCP_AI_Content_Format_Template_CPT {
 				update_post_meta( $post_id, '_heading_structure', wp_json_encode( $template['heading_structure'] ) );
 				update_post_meta( $post_id, '_required_sections', wp_json_encode( $template['required_sections'] ) );
 				update_post_meta( $post_id, '_featured_image_style', $template['featured_image_style'] );
+				update_post_meta( $post_id, '_featured_image_provider', $template['featured_image_provider'] );
 			}
 		}
 	}
