@@ -2660,7 +2660,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'tags'          => array( 'media', 'blog', 'research', 'content-strategy', 'seo' ),
 					'schedule_data' => array(
 						'assistant_config' => array(
-							'message' => 'Research trending blog topics for the coming week. Use research_blog_post to explore current industry trends, competitor content, and keyword opportunities. Analyse: 1) Trending topics in our niche with search volume estimates. 2) Content gaps our competitors are not covering. 3) Seasonal or timely topics relevant to our audience. 4) Long-tail keyword opportunities with low competition. 5) Suggested titles with primary and secondary keywords. 6) Recommended content format (how-to, listicle, case study, opinion, comparison) for each topic. Generate a prioritised editorial brief for 3-5 blog post ideas with target word count, suggested headings, and primary image recommendations.',
+							'message' => 'Research trending blog topics for the coming week. Use research_blog_post to explore current industry trends, competitor content, and keyword opportunities. Analyse: 1) Trending topics in our niche with search volume estimates. 2) Content gaps our competitors are not covering. 3) Seasonal or timely topics relevant to our audience. 4) Long-tail keyword opportunities with low competition. 5) Suggested titles with primary and secondary keywords. 6) Recommended content format (how-to, listicle, case study, opinion, comparison) for each topic. Generate a prioritised editorial brief for 3-5 blog post ideas with target word count, suggested headings, primary image recommendations, and a suggested DALL-E prompt for each topic\'s featured image.',
 						),
 						'result_delivery'  => array(
 							'on_success' => array(
@@ -2671,6 +2671,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'driver'     => 'markdown_yaml',
 										'retention'  => 30,
 										'git_commit' => true,
+									),
+									'wordpress'   => array(
+										'enabled'     => true,
+										'post_type'   => 'post',
+										'post_status' => 'draft',
+										'category'    => 0,
 									),
 								),
 							),
@@ -2696,8 +2702,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'tags'          => array( 'media', 'blog', 'writing', 'content', 'eeat' ),
 					'schedule_data' => array(
 						'assistant_config' => array(
-							'message' => 'Draft a complete blog post for this week. Use research_blog_post to perform deep research on the selected topic, then use create_post to generate a publish-ready draft. The post must include: 1) Compelling SEO-optimised title (H1) with primary keyword. 2) Meta description (150-160 chars) with call-to-action. 3) Introduction that hooks the reader with a statistic, question, or story. 4) Well-structured body with H2/H3 subheadings following the inverted pyramid. 5) 3-5 data points or statistics with citations. 6) Suggested image placements with alt-text descriptions. 7) Internal links to 2-3 related posts. 8) Schema.org Article markup. 9) Author bio snippet. 10) Call-to-action at the end. Set post status to draft for human review before publishing.',
+							'message' => 'Draft a complete blog post for this week. STEP 1: Use research_blog_post to perform deep research on the selected topic. STEP 2: BEFORE creating the post, use generate_openai_image to create a professional featured image — prompt: "Professional blog featured image for: {your article title}", size: "1792x1024", model: "dall-e-3", quality: "hd". Capture the attachment_id from the result. STEP 3: Use create_post with featured_image_id set to the attachment_id from Step 2 to generate a publish-ready draft. The post must include: 1) Compelling SEO-optimised title (H1) with primary keyword. 2) Meta description (150-160 chars) with call-to-action. 3) Introduction that hooks the reader with a statistic, question, or story. 4) Well-structured body with H2/H3 subheadings following the inverted pyramid. 5) 3-5 data points or statistics with citations. 6) Suggested image placements with alt-text descriptions. 7) Internal links to 2-3 related posts. 8) Schema.org Article markup. 9) Author bio snippet. 10) Call-to-action at the end. Set post status to draft for human review before publishing.',
 						),
+						'template'         => 'standard-blog-post',
 						'result_delivery'  => array(
 							'on_success' => array(
 								'channels' => array(
@@ -2707,6 +2714,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'driver'     => 'markdown_yaml',
 										'retention'  => 30,
 										'git_commit' => true,
+									),
+									'wordpress'   => array(
+										'enabled'     => true,
+										'post_type'   => 'post',
+										'post_status' => 'draft',
+										'category'    => 0,
 									),
 								),
 							),
@@ -2744,6 +2757,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'retention'  => 12,
 										'git_commit' => true,
 									),
+									'wordpress'   => array(
+										'enabled'     => true,
+										'post_type'   => 'post',
+										'post_status' => 'draft',
+										'category'    => 0,
+									),
 								),
 							),
 							'on_failure' => array(
@@ -2779,6 +2798,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'driver'     => 'markdown_yaml',
 										'retention'  => 30,
 										'git_commit' => true,
+									),
+									'wordpress'   => array(
+										'enabled'     => true,
+										'post_type'   => 'post',
+										'post_status' => 'draft',
+										'category'    => 0,
 									),
 								),
 							),
@@ -2832,6 +2857,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'retention'  => 12,
 										'git_commit' => true,
 									),
+									'wordpress'   => array(
+										'enabled'     => true,
+										'post_type'   => 'post',
+										'post_status' => 'draft',
+										'category'    => 0,
+									),
 								),
 							),
 							'on_failure' => array(
@@ -2867,6 +2898,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'driver'     => 'markdown_yaml',
 										'retention'  => 30,
 										'git_commit' => true,
+									),
+									'wordpress'   => array(
+										'enabled'     => true,
+										'post_type'   => 'post',
+										'post_status' => 'draft',
+										'category'    => 0,
 									),
 								),
 							),
@@ -2909,6 +2946,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'retention'  => 30,
 										'git_commit' => true,
 									),
+									'wordpress'   => array(
+										'enabled'     => true,
+										'post_type'   => 'post',
+										'post_status' => 'draft',
+										'category'    => 0,
+									),
 								),
 							),
 							'on_failure' => array(
@@ -2944,6 +2987,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'driver'     => 'markdown_yaml',
 										'retention'  => 12,
 										'git_commit' => true,
+									),
+									'wordpress'   => array(
+										'enabled'     => true,
+										'post_type'   => 'post',
+										'post_status' => 'draft',
+										'category'    => 0,
 									),
 								),
 							),
