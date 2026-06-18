@@ -200,12 +200,12 @@ if ( ! class_exists( 'WP_MCP_AI_Featured_Image_Service' ) ) {
 
 			$tool = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 
+			// Let the tool use the model and quality from admin Provider Settings.
+			// Only override size for a landscape blog-header aspect ratio.
 			return $tool->execute(
 				array(
-					'prompt'  => $prompt,
-					'size'    => '1792x1024',
-					'model'   => 'dall-e-3',
-					'quality' => 'hd',
+					'prompt' => $prompt,
+					'size'   => '1536x1024',
 				),
 				array( 'user_id' => $user_id )
 			);
@@ -225,10 +225,10 @@ if ( ! class_exists( 'WP_MCP_AI_Featured_Image_Service' ) ) {
 
 			$tool = new WP_MCP_AI_Tool_Generate_Gemini_Image();
 
+			// Let the tool use the model and aspect ratio from admin Provider Settings.
 			return $tool->execute(
 				array(
-					'prompt'       => $prompt,
-					'aspect_ratio' => '16:9',
+					'prompt' => $prompt,
 				),
 				array( 'user_id' => $user_id )
 			);
