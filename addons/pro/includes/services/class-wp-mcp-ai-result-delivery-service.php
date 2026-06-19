@@ -157,12 +157,17 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		protected static function deliver_to_channels( $schedule_id, array $envelope, array $channel_cfgs, array $schedule, array $action_log, $is_success ) {
 			$statuses = array();
 
-			// Detect whether the AI already created posts via its own tool calls.
-			// When the assistant uses create_post / save_post during the run,
-			// the WordPress delivery channel would produce a duplicate post.
-			$skip_wordpress = self::should_skip_wordpress_delivery( $action_log );
+			// Pre-compute whether the AI already created posts via its own tool
+			// calls, so that each WordPress channel can decide individually
+			// (based on its skip_if_ai_posted setting) whether to auto-skip.
+			$ai_created_post = self::should_skip_wordpress_delivery( $action_log );
 
-			foreach ( $channel_cfgs as $channel => $config ) {
+			foreach ( $channel_cfgs as $raw_channel => $config ) {
+				// Normalise canonical casing for WordPress to avoid case-sensitivity
+				// bugs (older data may have been stored with lowercase key).
+				// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- intentional lowercase key comparison
+				$channel = 'wordpress' === $raw_channel ? 'WordPress' : $raw_channel;
+
 				if ( ! is_array( $config ) || empty( $config['enabled'] ) ) {
 					continue;
 				}
@@ -172,14 +177,18 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				}
 
 				// Skip WordPress delivery when the AI already handled post creation
-				// via create_post or save_post tool calls during the run.
-				if ( 'WordPress' === $channel && $skip_wordpress ) {
-					$statuses['wordpress'] = self::log_delivery_skip(
-						$schedule_id,
-						__( 'Skipped — AI already created post via create_post/save_post tool.', 'mcp-ai-wpoos-pro' ),
-						$is_success
-					);
-					continue;
+				// via create_post or save_post tool calls during the run — UNLESS
+				// the user explicitly opted out of this guard.
+				if ( 'WordPress' === $channel && $ai_created_post ) {
+					$skip_if_ai = ! isset( $config['skip_if_ai_posted'] ) || ! empty( $config['skip_if_ai_posted'] );
+					if ( $skip_if_ai ) {
+						$statuses['wordpress'] = self::log_delivery_skip(
+							$schedule_id,
+							__( 'Skipped — AI already created post via create_post/save_post tool.', 'mcp-ai-wpoos-pro' ),
+							$is_success
+						);
+						continue;
+					}
 				}
 
 				$template = isset( $config['template'] ) ? (string) $config['template'] : 'summary';
@@ -228,7 +237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				return false;
 			}
 
-			$post_creation_tools = array( 'create_post', 'save_post' );
+			$post_creation_tools = array( 'create_post', 'save_post', 'save_post_validated' );
 
 			foreach ( $tool_calls as $tool_call ) {
 				$name = isset( $tool_call['name'] ) ? (string) $tool_call['name'] : '';

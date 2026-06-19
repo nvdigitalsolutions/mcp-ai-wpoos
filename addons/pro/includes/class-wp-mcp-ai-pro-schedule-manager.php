@@ -1523,13 +1523,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					// When the assistant uses tools (agent workflow), the chat endpoint
 					// includes tool_results and agentic_tool_messages in the response
 					// data so consumers can inspect what the agent did.
-					$llm_data         = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : $data;
-					$tool_results     = isset( $llm_data['tool_results'] ) && is_array( $llm_data['tool_results'] )
-					? $llm_data['tool_results']
-					: array();
-					$agentic_messages = isset( $llm_data['agentic_tool_messages'] ) && is_array( $llm_data['agentic_tool_messages'] )
-					? $llm_data['agentic_tool_messages']
-					: array();
+					//
+					// The REST payload places tool_results at the top level:
+					// { assistant_id: …, data: { choices: [ … ] }, tool_results: [ … ] }
+					// We check BOTH locations so this continues working regardless of
+					// future structural changes to the chat response envelope.
+					$tool_results = array();
+					if ( isset( $data['tool_results'] ) && is_array( $data['tool_results'] ) ) {
+						$tool_results = $data['tool_results'];
+					} elseif ( isset( $data['data']['tool_results'] ) && is_array( $data['data']['tool_results'] ) ) {
+						$tool_results = $data['data']['tool_results'];
+					}
+
+					$agentic_messages = array();
+					if ( isset( $data['agentic_tool_messages'] ) && is_array( $data['agentic_tool_messages'] ) ) {
+						$agentic_messages = $data['agentic_tool_messages'];
+					} elseif ( isset( $data['data']['agentic_tool_messages'] ) && is_array( $data['data']['agentic_tool_messages'] ) ) {
+						$agentic_messages = $data['data']['agentic_tool_messages'];
+					}
 
 					$tool_results_count     = count( $tool_results );
 					$agentic_messages_count = count( $agentic_messages );
@@ -2939,6 +2950,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					continue;
 				}
 
+				// Normalise canonical casing for WordPress to avoid case-sensitivity
+				// bugs in downstream switch / if comparisons.
+				// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- intentional lowercase key comparison
+				if ( 'wordpress' === $channel ) {
+					$channel = 'WordPress';
+				}
+
 				$entry = array(
 					'enabled'  => ! empty( $config['enabled'] ),
 					'template' => 'email' === $channel
@@ -2981,9 +2999,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					}
 				}
 				if ( 'WordPress' === $channel ) {
-					$entry['post_type']   = isset( $config['post_type'] ) ? sanitize_key( $config['post_type'] ) : 'post';
-					$entry['post_status'] = isset( $config['post_status'] ) ? sanitize_key( $config['post_status'] ) : 'draft';
-					$entry['category']    = isset( $config['category'] ) ? absint( $config['category'] ) : 0;
+					$entry['post_type']         = isset( $config['post_type'] ) ? sanitize_key( $config['post_type'] ) : 'post';
+					$entry['post_status']       = isset( $config['post_status'] ) ? sanitize_key( $config['post_status'] ) : 'draft';
+					$entry['category']          = isset( $config['category'] ) ? absint( $config['category'] ) : 0;
+					$entry['skip_if_ai_posted'] = ! isset( $config['skip_if_ai_posted'] ) || ! empty( $config['skip_if_ai_posted'] );
 				}
 
 				$sanitized[ $channel ] = $entry;

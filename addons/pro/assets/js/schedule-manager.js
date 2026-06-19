@@ -1102,6 +1102,18 @@
 				' <input type="number" id="edit-rd-success-paper-retention" class="small-text" value="' + ( parseInt( ( rdSuccess.paper_store || {} ).retention, 10 ) || 30 ) + '" min="0" max="100" style="width:60px"> runs'
 			);
 
+			// WordPress post auto-creation.
+			var wpCfg = rdSuccess.wordpress || {};
+			html += this.editRow(
+				'WordPress Post',
+				'<label><input type="checkbox" id="edit-rd-success-wordpress" ' + ( wpCfg.enabled ? 'checked' : '' ) + '> Auto-create post from result</label>' +
+				'<br><span class="description">When the AI already calls create_post during the run, this channel is automatically skipped to avoid duplicate posts.</span>' +
+				'<br><label style="margin-top:4px;display:inline-block"><input type="checkbox" id="edit-rd-success-wordpress-skip-if-ai" ' + ( false !== wpCfg.skip_if_ai_posted ? 'checked' : '' ) + '> Skip if AI already created posts</label>' +
+				'<br><select id="edit-rd-success-wordpress-post-type" style="margin-top:4px"><option value="post" ' + ( 'post' === ( wpCfg.post_type || 'post' ) ? 'selected' : '' ) + '>Post</option><option value="page" ' + ( 'page' === ( wpCfg.post_type || '' ) ? 'selected' : '' ) + '>Page</option></select>' +
+				' <select id="edit-rd-success-wordpress-post-status"><option value="draft" ' + ( 'draft' === ( wpCfg.post_status || 'draft' ) ? 'selected' : '' ) + '>Draft</option><option value="publish" ' + ( 'publish' === ( wpCfg.post_status || '' ) ? 'selected' : '' ) + '>Publish</option><option value="pending" ' + ( 'pending' === ( wpCfg.post_status || '' ) ? 'selected' : '' ) + '>Pending Review</option></select>' +
+				' Category ID: <input type="number" id="edit-rd-success-wordpress-category" class="small-text" value="' + ( parseInt( wpCfg.category, 10 ) || 0 ) + '" min="0" style="width:80px">'
+			);
+
 			// On Failure channels.
 			html += '<tr><td colspan="2"><hr><em>On Failure</em></td></tr>';
 			html += this.editRow(
@@ -1186,6 +1198,13 @@
 							collection: $( '#edit-rd-success-paper-collection' ).val().trim(),
 							driver:     $( '#edit-rd-success-paper-driver' ).val() || 'json',
 							retention:  parseInt( $( '#edit-rd-success-paper-retention' ).val(), 10 ) || 30,
+						},
+						wordpress: {
+							enabled:           $( '#edit-rd-success-wordpress' ).is( ':checked' ),
+							skip_if_ai_posted: $( '#edit-rd-success-wordpress-skip-if-ai' ).is( ':checked' ),
+							post_type:         $( '#edit-rd-success-wordpress-post-type' ).val() || 'post',
+							post_status:       $( '#edit-rd-success-wordpress-post-status' ).val() || 'draft',
+							category:          parseInt( $( '#edit-rd-success-wordpress-category' ).val(), 10 ) || 0,
 						},
 					},
 				},
