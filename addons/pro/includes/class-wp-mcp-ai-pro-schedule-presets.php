@@ -2745,12 +2745,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'retention'  => 12,
 										'git_commit' => true,
 									),
-									'wordpress'   => array(
-										'enabled'     => true,
-										'post_type'   => 'post',
-										'post_status' => 'draft',
-										'category'    => 0,
-									),
 								),
 							),
 							'on_failure' => array(
@@ -2786,12 +2780,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'driver'     => 'markdown_yaml',
 										'retention'  => 30,
 										'git_commit' => true,
-									),
-									'wordpress'   => array(
-										'enabled'     => true,
-										'post_type'   => 'post',
-										'post_status' => 'draft',
-										'category'    => 0,
 									),
 								),
 							),
@@ -2845,12 +2833,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'retention'  => 12,
 										'git_commit' => true,
 									),
-									'wordpress'   => array(
-										'enabled'     => true,
-										'post_type'   => 'post',
-										'post_status' => 'draft',
-										'category'    => 0,
-									),
 								),
 							),
 							'on_failure' => array(
@@ -2886,12 +2868,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'driver'     => 'markdown_yaml',
 										'retention'  => 30,
 										'git_commit' => true,
-									),
-									'wordpress'   => array(
-										'enabled'     => true,
-										'post_type'   => 'post',
-										'post_status' => 'draft',
-										'category'    => 0,
 									),
 								),
 							),
@@ -2934,12 +2910,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'retention'  => 30,
 										'git_commit' => true,
 									),
-									'wordpress'   => array(
-										'enabled'     => true,
-										'post_type'   => 'post',
-										'post_status' => 'draft',
-										'category'    => 0,
-									),
 								),
 							),
 							'on_failure' => array(
@@ -2975,12 +2945,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 										'driver'     => 'markdown_yaml',
 										'retention'  => 12,
 										'git_commit' => true,
-									),
-									'wordpress'   => array(
-										'enabled'     => true,
-										'post_type'   => 'post',
-										'post_status' => 'draft',
-										'category'    => 0,
 									),
 								),
 							),
