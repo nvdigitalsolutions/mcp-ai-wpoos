@@ -52,7 +52,7 @@
 		"regression": "^2.0.1",
 		"remotion": "^4.0.459",
 		"sharp": "^0.33.5",
-		"stripe": "^14.0.0",
+		"stripe": "^22.2.3",
 		"subtitle": "^3.0.0",
 		"tesseract.js": "^5.1.1",
 		"turndown": "^7.2.0",
