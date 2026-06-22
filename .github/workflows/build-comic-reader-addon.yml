@@ -275,7 +275,7 @@ jobs:
           path: artifacts/
 
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: comic-reader-v${{ steps.version.outputs.version }}
           name: "NV oOS Comic Reader Addon v${{ steps.version.outputs.version }}"
