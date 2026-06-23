@@ -82,10 +82,10 @@ class Analyzer {
 		$edges_table = Db::edgesTable();
 
 		// Load all nodes.
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$nodes = $wpdb->get_results( "SELECT node_id, degree FROM {$nodes_table}", ARRAY_A );
 		$edges = $wpdb->get_results( "SELECT source_node_id, target_node_id, confidence FROM {$edges_table}", ARRAY_A );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		if ( empty( $nodes ) ) {
 			return 0;
@@ -341,7 +341,7 @@ class Analyzer {
 		$edges_table = Db::edgesTable();
 		$nodes_table = Db::nodesTable();
 
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$edges = $wpdb->get_results(
 			"SELECT e.*,
                     sn.type AS source_type, sn.community_id AS source_comm, sn.degree AS source_degree,
@@ -353,7 +353,7 @@ class Analyzer {
              LIMIT 500",
 			ARRAY_A
 		);
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		if ( empty( $edges ) ) {
 			return array();
@@ -423,7 +423,7 @@ class Analyzer {
 		$edges_table = Db::edgesTable();
 
 		// Orphan nodes.
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$orphans = $wpdb->get_results(
 			"SELECT node_id, label, type FROM {$nodes_table} WHERE degree = 0 LIMIT 50",
 			ARRAY_A
@@ -440,7 +440,7 @@ class Analyzer {
 		// Ambiguity rate.
 		$total     = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$edges_table}" );
 		$ambiguous = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$edges_table} WHERE provenance = 'AMBIGUOUS'" );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$ambiguity_rate = $total > 0 ? round( $ambiguous / $total, 4 ) : 0.0;
 
@@ -469,7 +469,7 @@ class Analyzer {
 		$nodes_table = Db::nodesTable();
 		$edges_table = Db::edgesTable();
 
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		// Find pairs of nodes in the same community that aren't directly linked.
 		// Restricting to `post_id > 0` covers every real WordPress post (post,
 		// page, and any public/REST-visible CPT, including JetEngine CPTs)
@@ -493,7 +493,7 @@ class Analyzer {
              LIMIT 200",
 			ARRAY_A
 		);
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$recommendations = array();
 		foreach ( $candidates as $pair ) {

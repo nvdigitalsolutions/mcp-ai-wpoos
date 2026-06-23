@@ -33,26 +33,28 @@ Exposes the knowledge graph via WordPress REST API under the `nvoos-graphify/v1`
 
 | Method | Path | Description | Auth |
 |---|---|---|---|
-| `GET` | `/graph` | Get full graph data | `edit_posts` |
-| `GET` | `/nodes` | List/paginate nodes | `edit_posts` |
-| `GET` | `/nodes/{id}` | Get single node with edges | `edit_posts` |
+| `GET` | `/graph` | Get full graph data | `read` + guest token |
+| `GET` | `/nodes` | List/paginate nodes | `read` + guest token |
+| `GET` | `/nodes/{id}` | Get single node with edges | `read` + guest token |
 | `POST` | `/build` | Trigger a graph build | `manage_options` |
-| `GET` | `/search` | Search nodes by label | `edit_posts` |
-| `GET` | `/export` | Export graph as JSON/Cytoscape | `edit_posts` |
-| `GET` | `/context` | Retrieve RAG context for a post | `edit_posts` |
-| `GET` | `/resolve` | Resolve external entity | `edit_posts` |
+| `GET` | `/search` | Search nodes by label | `read` + guest token |
+| `GET` | `/export` | Export graph (all formats) | `manage_options` |
+| `GET` | `/context` | Retrieve RAG context for a post | `read` + guest token |
+| `GET` | `/resolve` | Resolve external entity | `read` + guest token |
 | `GET` | `/sources` | List remote sources | `manage_options` |
 | `POST` | `/sources` | Create remote source | `manage_options` |
 | `DELETE` | `/sources/{id}` | Delete remote source | `manage_options` |
 | `POST` | `/sources/{id}/sync` | Trigger remote source sync | `manage_options` |
 | `POST` | `/sources/{id}/test` | Test remote source connection | `manage_options` |
-| `POST` | `/webhook/{slug}` | Receive webhook payload | Public (validated) |
+| `POST` | `/webhooks/{slug}` | Receive webhook payload | Public (validated) |
 
 ## Conventions
 
-- All routes use `permission_callback` — read endpoints require `edit_posts`, write endpoints require `manage_options`.
-- Webhook endpoint validates source configuration before accepting payloads.
+- Read endpoints require the `read` capability (all logged-in users) or a valid guest token. Write endpoints require `manage_options`.
+- The `/export` endpoint requires `manage_options` — bulk data export is an administrative operation.
+- Webhook endpoint validates source configuration and HMAC signature before accepting payloads.
 - Graph data responses use the canonical node/edge shape from `src/Graph/Db`.
+- The graph contains only public content: public post types, public taxonomies, and user display names. No private or non-public data is exposed through read endpoints.
 
 ## Tests
 

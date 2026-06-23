@@ -112,7 +112,7 @@ class SyncRemoteSource extends AbstractTool {
 		}
 
 		$enricher = new \NvoosGraphify\Remote\Enricher();
-		$summary  = $enricher->sync_source( $slug, $async );
+		$summary  = $enricher->syncSource( $slug, $async );
 
 		if ( is_wp_error( $summary ) ) {
 			return array(

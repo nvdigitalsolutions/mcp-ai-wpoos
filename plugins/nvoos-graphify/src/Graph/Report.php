@@ -70,7 +70,7 @@ class Report {
 		if ( ! empty( $stats['nodes_by_type'] ) ) {
 			global $wpdb;
 			$nodesTable = Db::nodesTable();
-            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$communityRows = $wpdb->get_results(
 				$wpdb->prepare(
 					'SELECT community_id, COUNT(*) AS cnt FROM %i WHERE community_id != %s GROUP BY community_id ORDER BY cnt DESC LIMIT 20',
@@ -79,7 +79,7 @@ class Report {
 				),
 				ARRAY_A
 			);
-            // phpcs:enable
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$communities = is_array( $communityRows ) ? $communityRows : array();
 		}
 

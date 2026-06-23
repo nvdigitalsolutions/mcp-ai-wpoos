@@ -61,9 +61,9 @@ class GraphStats extends AbstractTool {
 	 * @return array<string,mixed>|\WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$stats        = \NvoosGraphify\Graph\Db::get_stats();
-		$last_build   = \NvoosGraphify\Graph\Db::get_meta( 'last_build_completed', 'never' );
-		$build_status = \NvoosGraphify\Graph\Db::get_meta( 'build_status', 'idle' );
+		$stats        = \NvoosGraphify\Graph\Db::getStats();
+		$last_build   = \NvoosGraphify\Graph\Db::getMeta( 'last_build_completed', 'never' );
+		$build_status = \NvoosGraphify\Graph\Db::getMeta( 'build_status', 'idle' );
 
 		return array(
 			'success'      => true,

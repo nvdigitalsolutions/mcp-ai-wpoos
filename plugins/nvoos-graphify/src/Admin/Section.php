@@ -170,7 +170,11 @@ abstract class Section {
 		switch ( $type ) {
 			case 'checkbox':
 				echo '<label>';
-				echo '<input type="checkbox" name="' . $name . '" value="1" ' . \checked( 1, $value, false ) . '>';
+				printf(
+					'<input type="checkbox" name="%s" value="1" %s>',
+					esc_attr( $name ),
+					\checked( 1, $value, false )
+				);
 				if ( $desc ) {
 					echo ' ' . \esc_html( $desc );
 				}
@@ -178,7 +182,7 @@ abstract class Section {
 				break;
 
 			case 'select':
-				echo '<select name="' . $name . '">';
+				printf( '<select name="%s">', esc_attr( $name ) );
 				foreach ( ( $field['options'] ?? array() ) as $opt_value => $opt_label ) {
 					echo '<option value="' . \esc_attr( $opt_value ) . '" ' . \selected( $value, $opt_value, false ) . '>' . \esc_html( $opt_label ) . '</option>';
 				}
@@ -189,16 +193,24 @@ abstract class Section {
 				break;
 
 			case 'number':
-				$min = isset( $field['min'] ) ? ' min="' . \absint( $field['min'] ) . '"' : '';
-				$max = isset( $field['max'] ) ? ' max="' . \absint( $field['max'] ) . '"' : '';
-				echo '<input type="number" name="' . $name . '" value="' . \absint( $value ) . '"' . $min . $max . ' class="small-text">';
+				printf(
+					'<input type="number" name="%s" value="%d"%s%s class="small-text">',
+					esc_attr( $name ),
+					\absint( $value ),
+					isset( $field['min'] ) ? sprintf( ' min="%d"', \absint( $field['min'] ) ) : '',
+					isset( $field['max'] ) ? sprintf( ' max="%d"', \absint( $field['max'] ) ) : ''
+				);
 				if ( $desc ) {
 					echo '<p class="description">' . \esc_html( $desc ) . '</p>';
 				}
 				break;
 
 			case 'password':
-				echo '<input type="password" name="' . $name . '" value="' . \esc_attr( $value ) . '" class="regular-text" autocomplete="new-password">';
+				printf(
+					'<input type="password" name="%s" value="%s" class="regular-text" autocomplete="new-password">',
+					esc_attr( $name ),
+					\esc_attr( $value )
+				);
 				if ( $desc ) {
 					echo '<p class="description">' . \esc_html( $desc ) . '</p>';
 				}
@@ -206,7 +218,11 @@ abstract class Section {
 
 			case 'text':
 			default:
-				echo '<input type="text" name="' . $name . '" value="' . \esc_attr( $value ) . '" class="regular-text">';
+				printf(
+					'<input type="text" name="%s" value="%s" class="regular-text">',
+					esc_attr( $name ),
+					\esc_attr( $value )
+				);
 				if ( $desc ) {
 					echo '<p class="description">' . \esc_html( $desc ) . '</p>';
 				}
@@ -222,7 +238,7 @@ abstract class Section {
 	 * @param string $page_slug The settings page slug (unused in this implementation).
 	 * @return void
 	 */
-	public function render_wrapper( string $page_slug = '' ): void {
+	public function render_wrapper( string $page_slug = '' ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- public API, used by SettingsRegistry
 		?>
 		<h2><?php echo \esc_html( $this->get_title() ); ?></h2>
 		<?php if ( $this->get_description() ) : ?>

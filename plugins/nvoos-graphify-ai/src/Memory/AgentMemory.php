@@ -171,7 +171,7 @@ class AgentMemory {
 				continue;
 			}
 
-			$node = Db::get_node( $r['node_id'] );
+			$node = Db::getNode( $r['node_id'] );
 			if ( null === $node ) {
 				continue;
 			}

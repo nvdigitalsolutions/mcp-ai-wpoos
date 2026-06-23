@@ -188,9 +188,9 @@ class RemoteAdmin {
 	public static function renderEmbeddingsPanel(): void {
 		global $wpdb;
 		$emb_table = \NvoosGraphify\Graph\Db::embeddingsTable();
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$emb_table}" );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$settings = \NvoosGraphify\Settings::all();
 		$model    = isset( $settings['embeddings_model'] ) ? $settings['embeddings_model'] : 'text-embedding-3-small';

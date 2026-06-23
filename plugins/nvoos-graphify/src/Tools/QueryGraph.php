@@ -104,7 +104,7 @@ class QueryGraph extends AbstractTool {
 		}
 
 		// Find seed nodes via label search.
-		$seeds = \NvoosGraphify\Graph\Db::search_nodes( $question, '', 5 );
+		$seeds = \NvoosGraphify\Graph\Db::searchNodes( $question, '', 5 );
 		if ( empty( $seeds ) ) {
 			return array(
 				'success'  => false,

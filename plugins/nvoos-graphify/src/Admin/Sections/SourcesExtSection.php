@@ -88,13 +88,14 @@ class SourcesExtSection extends Section {
 	public function sanitize( array $input ): array {
 		$sanitized = parent::sanitize( $input );
 
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by WP settings API before sanitization callbacks run.
 		if ( ! isset( $_POST['nvoos_ext_table'] ) || ! \is_array( $_POST['nvoos_ext_table'] ) ) {
 			$sanitized['external_tables']          = array();
 			$sanitized['disabled_external_tables'] = array();
 			return $sanitized;
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map below.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified by WP settings API; sanitized via array_map below.
 		$enabled = \array_map( 'sanitize_key', \wp_unslash( $_POST['nvoos_ext_table'] ) );
 
 		$sanitized['external_tables'] = array_values( $enabled );
@@ -106,6 +107,7 @@ class SourcesExtSection extends Section {
 		}
 		$sanitized['disabled_external_tables'] = array_values( array_diff( $known, $enabled ) );
 
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 		return $sanitized;
 	}
 }

@@ -1,6 +1,4 @@
 <?php
-declare(strict_types=1);
-
 /**
  * PHPUnit bootstrap for NV oOS Graphify.
  *
@@ -8,6 +6,7 @@ declare(strict_types=1);
  *
  * @package NvoosGraphify
  */
+declare(strict_types=1);
 
 // Composer autoloader.
 $autoload = __DIR__ . '/../vendor/autoload.php';

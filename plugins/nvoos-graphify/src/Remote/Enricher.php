@@ -20,7 +20,7 @@ class Enricher {
 	 * @param bool $async Whether to run asynchronously.
 	 * @return array{success: bool, nodes: int, edges: int, message: string}
 	 */
-	public function enrichAll( bool $async = false ): array {
+	public function enrichAll( bool $async = false ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- stub; implementation deferred to addon
 		return array(
 			'success' => true,
 			'nodes'   => 0,
@@ -36,11 +36,12 @@ class Enricher {
 	 * @param bool   $async Whether to run asynchronously.
 	 * @return array{success: bool, nodes: int, edges: int}
 	 */
-	public function syncSource( string $slug, bool $async = false ): array {
+	public function syncSource( string $slug, bool $async = false ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- stub; implementation deferred to addon
 		return array(
 			'success' => true,
 			'nodes'   => 0,
 			'edges'   => 0,
+			'message' => 'Remote enrichment not available. Install the nvoos-graphify-remote addon.',
 		);
 	}
 }

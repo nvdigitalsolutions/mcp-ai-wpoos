@@ -1,15 +1,15 @@
-=== NV oOS Graphify — Visual Knowledge Graph for WordPress ===
+=== NV oOS Graphify ===
 
 Contributors: nvdigitalsolutions
-Tags: knowledge graph, content visualization, cytoscape, content strategy, internal links, SEO, schema, structured data, related posts
+Tags: knowledge graph, content visualization, cytoscape, content strategy, semantic web
 Requires at least: 6.5
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 8.1
 Stable tag: 1.0.0
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Map your WordPress content into an interactive, navigable knowledge graph. See relationships between posts, terms, and authors. Discover content gaps. Export to JSON, GraphML, CSV, Neo4j, or Obsidian. **Zero API keys required.**
+Map your WordPress content into an interactive knowledge graph. See relationships between posts, terms, and authors. Discover content gaps. Zero API keys required.
 
 == Description ==
 
@@ -17,7 +17,7 @@ NV oOS Graphify transforms your WordPress content into a visual knowledge graph 
 
 **No API keys. No external services. No AI required.** The core graph engine runs entirely on your WordPress server using your existing content.
 
-[youtube https://www.youtube.com/watch?v=DEMO_VIDEO_ID]
+
 
 ### What You Get
 
@@ -40,7 +40,7 @@ Automatic structured data injection for SEO — taxonomy terms as `about` and in
 Appends graph-neighbor posts to your content based on knowledge graph proximity.
 
 = REST API =
-Full programmatic access with 13 endpoints. Read endpoints require `edit_posts`; write endpoints require `manage_options`.
+Full programmatic access with 14 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token; write endpoints require `manage_options`.
 
 = Extensible Tool System =
 14 built-in tools for graph operations: query, search, traverse, analyze, export. Addon plugins can register their own tools.
@@ -111,7 +111,7 @@ All custom tables and options are removed (see `uninstall.php`). Export your gra
 * PSR-4 architecture: `NvoosGraphify\` namespace
 * 5 custom database tables with dbDelta() migrations
 * 14 built-in tools implementing `NvoosGraphify\Contracts\Tool`
-* 13 REST API endpoints at `/wp-json/nvoos-graphify/v1/`
+* 14 REST API endpoints at `/wp-json/nvoos-graphify/v1/`
 * Cytoscape.js graph explorer (admin + frontend)
 * Tabbed settings page with per-tab sanitisation
 * 6 export formats (JSON, GraphML, CSV, Neo4j, Obsidian, HTML)
