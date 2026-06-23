@@ -155,7 +155,7 @@
     "minimatch@^5": "5.1.9",
     "minimatch@^9": "9.0.9",
     "serialize-javascript": ">=7.0.5",
-    "undici": ">=7.28.0",
+    "undici": ">=8.5.0",
     "http-proxy-middleware": ">=3.0.7",
     "flatted": ">=3.4.2",
     "picomatch@^2": "2.3.2",
