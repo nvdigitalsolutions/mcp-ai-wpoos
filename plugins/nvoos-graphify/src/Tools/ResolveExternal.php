@@ -269,11 +269,11 @@ class ResolveExternal extends AbstractTool {
 	private function findNodeByUrl( string $url ) {
 		global $wpdb;
 		$table = \NvoosGraphify\Graph\Db::nodesTable();
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return $wpdb->get_row(
 			$wpdb->prepare( "SELECT * FROM {$table} WHERE url = %s LIMIT 1", esc_url_raw( $url ) )
 		);
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	/**

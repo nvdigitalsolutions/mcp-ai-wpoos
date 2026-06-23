@@ -31,6 +31,12 @@ use function wp_json_encode;
  */
 class Db {
 
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	// This entire class is a dedicated data-access layer for the plugin's custom
+	// database tables. Every query intentionally uses $wpdb directly because
+	// WordPress core APIs (WP_Query, WP_Term_Query, etc.) do not operate on
+	// custom plugin tables.
+
 	// ─── Table name helpers ────────────────────────────────────
 
 	/** @return string */
@@ -164,7 +170,7 @@ class Db {
             node_id    VARCHAR(191)        NOT NULL,
             model      VARCHAR(128)        NOT NULL DEFAULT 'text-embedding-3-small',
             dim        INT(11)             NOT NULL DEFAULT 0,
-            vector     LONGBLOB,
+            embedding_vector LONGBLOB,
             updated_at DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             UNIQUE KEY node_model (node_id, model(64))
@@ -343,11 +349,11 @@ class Db {
 		$params[] = $limit;
 		$params[] = $offset;
 
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$table} {$whereSql} ORDER BY {$orderBy} {$order} LIMIT %d OFFSET %d",
-				$params
+				...$params
 			)
 		);
         // phpcs:enable
@@ -386,7 +392,7 @@ class Db {
 	/** @return void */
 	public static function truncateNodes(): void {
 		global $wpdb;
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query( 'TRUNCATE TABLE ' . self::nodesTable() );
 	}
 
@@ -515,7 +521,7 @@ class Db {
 	/** @return void */
 	public static function truncateEdges(): void {
 		global $wpdb;
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query( 'TRUNCATE TABLE ' . self::edgesTable() );
 	}
 
@@ -583,6 +589,7 @@ class Db {
 		);
         // phpcs:enable
 
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Targeting plugin's custom nvoos_graphify_meta table, not wp_postmeta.
 		if ( $exists ) {
 			$wpdb->update( $table, array( 'meta_value' => $serialized ), array( 'meta_key' => sanitize_text_field( $key ) ), array( '%s' ), array( '%s' ) );
 		} else {
@@ -747,8 +754,8 @@ class Db {
 			$wpdb->update(
 				$table,
 				array(
-					'dim'    => $dim,
-					'vector' => $vector,
+					'dim'              => $dim,
+					'embedding_vector' => $vector,
 				),
 				array( 'id' => absint( $existingId ) ),
 				array( '%d', '%s' ),
@@ -759,10 +766,10 @@ class Db {
 		$result = $wpdb->insert(
 			$table,
 			array(
-				'node_id' => $nodeId,
-				'model'   => $model,
-				'dim'     => $dim,
-				'vector'  => $vector,
+				'node_id'          => $nodeId,
+				'model'            => $model,
+				'dim'              => $dim,
+				'embedding_vector' => $vector,
 			),
 			array( '%s', '%s', '%d', '%s' )
 		);
@@ -786,7 +793,7 @@ class Db {
 		$table = self::embeddingsTable();
         // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$results = $wpdb->get_results(
-			$wpdb->prepare( "SELECT node_id, vector FROM {$table} WHERE model = %s", sanitize_text_field( $model ) )
+			$wpdb->prepare( "SELECT node_id, embedding_vector FROM {$table} WHERE model = %s", sanitize_text_field( $model ) )
 		);
         // phpcs:enable
 		return is_array( $results ) ? $results : array();

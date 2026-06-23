@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Manages external data-source integration — a driver registry, SSRF-safe HTTP client, enrichment orchestrator, state store, and crypto utilities for remote-source credentials.
+Manages external data-source integration — a driver registry, HTTP client stub, enrichment orchestrator stub, state store, and crypto utilities for remote-source credentials. Full implementations ship in the `nvoos-graphify-remote` addon.
 
 ## Tier
 
@@ -36,9 +36,9 @@ Manages external data-source integration — a driver registry, SSRF-safe HTTP c
 ## Conventions
 
 - Drivers implement `NvoosGraphify\Contracts\RemoteSource` and are registered via `Registry::registerDriver()`.
-- Seven built-in drivers: Wikidata, GenericRest, RssSitemap, Sparql, WooCommerce, Csv, Webhook.
-- `HttpClient` wraps `wp_remote_get`/`wp_remote_post` with SSRF-safe defaults.
-- Remote-source credentials are encrypted at rest via `Crypto`.
+- **No drivers ship in the core plugin.** Driver implementations (Wikidata, GenericRest, RssSitemap, Sparql, WooCommerce, Csv, Webhook) are provided by the `nvoos-graphify-remote` addon.
+- `HttpClient` is a stub that delegates to `wp_remote_get`/`wp_remote_post`. SSRF-safe URL validation is deferred to the remote addon.
+- `Crypto` is a stub (encrypt/decrypt are pass-through). Credential encryption is deferred to the remote addon. Core stores remote source configs as plain JSON.
 
 ## Tests
 

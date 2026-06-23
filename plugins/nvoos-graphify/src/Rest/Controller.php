@@ -676,7 +676,7 @@ class Controller {
 		$slug     = sanitize_key( $request->get_param( 'slug' ) );
 		$async    = (bool) $request->get_param( 'async' );
 		$enricher = new \NvoosGraphify\Remote\Enricher();
-		$summary  = $enricher->sync_source( $slug, $async );
+		$summary  = $enricher->syncSource( $slug, $async );
 
 		if ( is_wp_error( $summary ) ) {
 			return $summary;
@@ -760,14 +760,18 @@ class Controller {
 			$decoded = json_decode( $dbSource->config_json, true );
 			if ( is_array( $decoded ) ) {
 				foreach ( $decoded as $k => $v ) {
-					if ( is_string( $v ) && class_exists( \NvoosGraphify\Crypto::class ) && \NvoosGraphify\Crypto::isSensitiveKey( $k ) ) {
-						$decoded[ $k ] = \NvoosGraphify\Crypto::decrypt( $v );
+					if ( is_string( $v ) && class_exists( \NvoosGraphify\Remote\Crypto::class ) && \NvoosGraphify\Remote\Crypto::isSensitiveKey( $k ) ) {
+						$decoded[ $k ] = \NvoosGraphify\Remote\Crypto::decrypt( $v );
 					}
 				}
 				$config = $decoded;
 			}
 		}
 		$config['_slug'] = $slug;
+
+		if ( ! class_exists( \NvoosGraphify\Remote\Drivers\Webhook::class ) ) {
+			return new WP_Error( 'webhook_driver_missing', __( 'Webhook driver is not installed. Install the nvoos-graphify-remote addon.', 'nvoos-graphify' ), array( 'status' => 501 ) );
+		}
 
 		$driver = new \NvoosGraphify\Remote\Drivers\Webhook();
 		$driver->setConfig( $config );

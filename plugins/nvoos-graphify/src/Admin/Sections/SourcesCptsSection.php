@@ -88,22 +88,24 @@ class SourcesCptsSection extends Section {
 	public function sanitize( array $input ): array {
 		$sanitized = parent::sanitize( $input );
 
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by WP settings API before sanitization callbacks run.
 		if ( ! isset( $_POST['nvoos_cpt_include'] ) || ! \is_array( $_POST['nvoos_cpt_include'] ) ) {
 			$sanitized['excluded_post_types'] = array( 'post', 'page' );
 			$sanitized['extra_post_types']    = array();
 			return $sanitized;
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map below.
-		$included    = \array_map( 'sanitize_key', \wp_unslash( $_POST['nvoos_cpt_include'] ) );
-		$builtin     = array( 'post', 'page' );
-		$extra       = array_diff( $included, $builtin );
-		$all_cpts    = \get_post_types( array( 'public' => true ), 'names' );
-		$excluded    = array_values( array_diff( $all_cpts, $included ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified by WP settings API; sanitized via array_map below.
+		$included = \array_map( 'sanitize_key', \wp_unslash( $_POST['nvoos_cpt_include'] ) );
+		$builtin  = array( 'post', 'page' );
+		$extra    = array_diff( $included, $builtin );
+		$all_cpts = \get_post_types( array( 'public' => true ), 'names' );
+		$excluded = array_values( array_diff( $all_cpts, $included ) );
 
 		$sanitized['excluded_post_types'] = $excluded;
 		$sanitized['extra_post_types']    = array_values( $extra );
 
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 		return $sanitized;
 	}
 }

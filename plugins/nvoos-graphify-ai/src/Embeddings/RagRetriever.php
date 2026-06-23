@@ -63,7 +63,7 @@ class RagRetriever {
 		// Compute cosine similarity for each candidate.
 		$scored = array();
 		foreach ( $allEmbeddings as $row ) {
-			$vector = $this->decodeVector( $row->vector );
+			$vector = $this->decodeVector( $row->embedding_vector );
 			if ( null === $vector || array() === $vector ) {
 				continue;
 			}
@@ -73,7 +73,7 @@ class RagRetriever {
 				continue;
 			}
 
-			$node = Db::get_node( $row->node_id );
+			$node = Db::getNode( $row->node_id );
 			if ( null === $node ) {
 				continue;
 			}

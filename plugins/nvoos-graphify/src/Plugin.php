@@ -288,7 +288,7 @@ final class Plugin {
 	 * @param bool     $update Whether this is an update.
 	 * @return void
 	 */
-	public function onSavePost( int $postId, \WP_Post $post, bool $update ): void {
+	public function onSavePost( int $postId, \WP_Post $post, bool $update ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- WordPress save_post action signature
 		$settings = Settings::all();
 		if ( empty( $settings['auto_rebuild'] ) ) {
 			return;

@@ -31,7 +31,7 @@ class SemanticExtractor {
 	 * @param bool  $async   Whether to dispatch to WP Cron (unused in stub).
 	 * @return array{nodes: array, edges: array}
 	 */
-	public static function extract( array $posts, bool $async = false ): array {
+	public static function extract( array $posts, bool $async = false ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- stub; implementation deferred to addon
 		return array(
 			'nodes' => array(),
 			'edges' => array(),
@@ -45,7 +45,7 @@ class SemanticExtractor {
 	 * @param bool  $async Whether to dispatch to WP Cron.
 	 * @return array{nodes: array, edges: array}
 	 */
-	public static function extractCcts( array $ccts, bool $async = false ): array {
+	public static function extractCcts( array $ccts, bool $async = false ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- stub; implementation deferred to addon
 		return array(
 			'nodes' => array(),
 			'edges' => array(),
@@ -59,7 +59,7 @@ class SemanticExtractor {
 	 * @param bool  $async        Whether to dispatch to WP Cron.
 	 * @return array{nodes: array, edges: array}|null
 	 */
-	public static function extractExternal( array $externalRows, bool $async = false ): ?array {
+	public static function extractExternal( array $externalRows, bool $async = false ): ?array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- stub; implementation deferred to addon
 		return array(
 			'nodes' => array(),
 			'edges' => array(),

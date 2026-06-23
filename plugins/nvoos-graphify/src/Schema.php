@@ -68,7 +68,7 @@ final class Schema {
 	 */
 	public static function defaultSettings(): array {
 		$defaults = array(
-			'enabled'                 => true,
+			'enabled'                  => true,
 			'auto_rebuild'             => true,
 			'rebuild_schedule'         => 'weekly',
 			'post_types'               => array( 'post', 'page' ),
