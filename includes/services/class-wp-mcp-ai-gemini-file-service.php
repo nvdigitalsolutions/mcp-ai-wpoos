@@ -580,6 +580,10 @@ class WP_MCP_AI_Gemini_File_Service {
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
+		if ( empty( $api_key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			$api_key = WP_MCP_AI_Credential_Resolver::get_api_key( 'gemini' ) ?? '';
+		}
+
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_gemini_api_key',

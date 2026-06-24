@@ -79,7 +79,8 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Render the diagnostic page.
 		 */
 		public static function render_page() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_resolver = class_exists( 'WP_MCP_AI_Credential_Resolver' );
 			?>
 			<div class="wrap">
 				<h1><?php esc_html_e( 'AI Provider Connectivity Diagnostics', 'mcp-ai-wpoos' ); ?></h1>
@@ -92,14 +93,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<h2><?php esc_html_e( '1. OpenAI', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
+							<?php $openai_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) : ! empty( $settings['openai_api_key'] ); ?>
 							<tr>
 								<th style="width: 30%;"><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['openai_api_key'] ) ) : ?>
+									<?php if ( $openai_has_key ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['openai_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$openai_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'openai' ) : ( $settings['openai_api_key'] ?? '' );
+										if ( $openai_key ) {
+											echo '<code>' . esc_html( substr( $openai_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'openai' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -120,11 +137,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="openai"
-						<?php echo esc_attr( empty( $settings['openai_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( ! $openai_has_key ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test OpenAI Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['openai_api_key'] ) ) : ?>
+					<?php if ( ! $openai_has_key ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your OpenAI API key in settings to enable testing.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>">
@@ -139,14 +156,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<h2><?php esc_html_e( '2. Anthropic (Claude)', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
+							<?php $anthropic_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' ) : ! empty( $settings['anthropic_api_key'] ); ?>
 							<tr>
 								<th style="width: 30%;"><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['anthropic_api_key'] ) ) : ?>
+									<?php if ( $anthropic_has_key ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['anthropic_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$anthropic_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'anthropic' ) : ( $settings['anthropic_api_key'] ?? '' );
+										if ( $anthropic_key ) {
+											echo '<code>' . esc_html( substr( $anthropic_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'anthropic' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -173,11 +206,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="anthropic"
-						<?php echo esc_attr( empty( $settings['anthropic_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( ! $anthropic_has_key ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Anthropic Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['anthropic_api_key'] ) ) : ?>
+					<?php if ( ! $anthropic_has_key ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your Anthropic API key in settings to enable testing.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
@@ -196,14 +229,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<h2><?php esc_html_e( '3. Google Gemini', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
+							<?php $gemini_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) : ! empty( $settings['gemini_api_key'] ); ?>
 							<tr>
 								<th style="width: 30%;"><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['gemini_api_key'] ) ) : ?>
+									<?php if ( $gemini_has_key ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['gemini_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$gemini_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'gemini' ) : ( $settings['gemini_api_key'] ?? '' );
+										if ( $gemini_key ) {
+											echo '<code>' . esc_html( substr( $gemini_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'gemini' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -224,11 +273,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="gemini"
-						<?php echo esc_attr( empty( $settings['gemini_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( ! $gemini_has_key ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Gemini Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['gemini_api_key'] ) ) : ?>
+					<?php if ( ! $gemini_has_key ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your Google Gemini API key in settings to enable testing.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>">
@@ -243,14 +292,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<h2><?php esc_html_e( '4. Hugging Face', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
+							<?php $huggingface_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'huggingface' ) : ! empty( $settings['huggingface_api_key'] ); ?>
 							<tr>
 								<th style="width: 30%;"><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['huggingface_api_key'] ) ) : ?>
+									<?php if ( $huggingface_has_key ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['huggingface_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$huggingface_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'huggingface' ) : ( $settings['huggingface_api_key'] ?? '' );
+										if ( $huggingface_key ) {
+											echo '<code>' . esc_html( substr( $huggingface_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'huggingface' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -283,11 +348,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="huggingface"
-						<?php echo esc_attr( empty( $settings['huggingface_api_key'] ) || empty( $settings['huggingface_endpoint_url'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( ! $huggingface_has_key || empty( $settings['huggingface_endpoint_url'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Hugging Face Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['huggingface_api_key'] ) || empty( $settings['huggingface_endpoint_url'] ) ) : ?>
+					<?php if ( ! $huggingface_has_key || empty( $settings['huggingface_endpoint_url'] ) ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your Hugging Face API key and endpoint URL in settings to enable testing.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>">
@@ -416,14 +481,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 									<?php endif; ?>
 								</td>
 							</tr>
+							<?php $cloudflare_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'cloudflare' ) : ! empty( $settings['cloudflare_api_token'] ); ?>
 							<tr>
 								<th><?php esc_html_e( 'API Token Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['cloudflare_api_token'] ) ) : ?>
+									<?php if ( $cloudflare_has_key ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['cloudflare_api_token'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$cloudflare_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'cloudflare' ) : ( $settings['cloudflare_api_token'] ?? '' );
+										if ( $cloudflare_key ) {
+											echo '<code>' . esc_html( substr( $cloudflare_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'cloudflare' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -456,11 +537,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="cloudflare"
-						<?php echo esc_attr( empty( $settings['enable_cloudflare'] ) || empty( $settings['cloudflare_api_token'] ) || empty( $settings['cloudflare_account_id'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( empty( $settings['enable_cloudflare'] ) || ! $cloudflare_has_key || empty( $settings['cloudflare_account_id'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Cloudflare Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['enable_cloudflare'] ) || empty( $settings['cloudflare_api_token'] ) || empty( $settings['cloudflare_account_id'] ) ) : ?>
+					<?php if ( empty( $settings['enable_cloudflare'] ) || ! $cloudflare_has_key || empty( $settings['cloudflare_account_id'] ) ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your Cloudflare Workers AI settings in the Providers tab. You need to enable the provider, set your API token, and account ID.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
@@ -489,14 +570,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 									<?php endif; ?>
 								</td>
 							</tr>
+							<?php $nvidia_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'nvidia' ) : ! empty( $settings['nvidia_api_key'] ); ?>
 							<tr>
 								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['nvidia_api_key'] ) ) : ?>
+									<?php if ( $nvidia_has_key ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['nvidia_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$nvidia_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'nvidia' ) : ( $settings['nvidia_api_key'] ?? '' );
+										if ( $nvidia_key ) {
+											echo '<code>' . esc_html( substr( $nvidia_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'nvidia' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -530,11 +627,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="nvidia"
-						<?php echo esc_attr( empty( $settings['enable_nvidia'] ) || empty( $settings['nvidia_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( empty( $settings['enable_nvidia'] ) || ! $nvidia_has_key ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test NVIDIA Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['enable_nvidia'] ) || empty( $settings['nvidia_api_key'] ) ) : ?>
+					<?php if ( empty( $settings['enable_nvidia'] ) || ! $nvidia_has_key ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your NVIDIA NIM settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
@@ -563,14 +660,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 									<?php endif; ?>
 								</td>
 							</tr>
+							<?php $deepseek_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'deepseek' ) : ! empty( $settings['deepseek_api_key'] ); ?>
 							<tr>
 								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['deepseek_api_key'] ) ) : ?>
+									<?php if ( $deepseek_has_key ) : ?>
 										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['deepseek_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$deepseek_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'deepseek' ) : ( $settings['deepseek_api_key'] ?? '' );
+										if ( $deepseek_key ) {
+											echo '<code>' . esc_html( substr( $deepseek_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'deepseek' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -600,11 +713,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="deepseek"
-						<?php echo esc_attr( empty( $settings['enable_deepseek'] ) || empty( $settings['deepseek_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( empty( $settings['enable_deepseek'] ) || ! $deepseek_has_key ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test DeepSeek Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['enable_deepseek'] ) || empty( $settings['deepseek_api_key'] ) ) : ?>
+					<?php if ( empty( $settings['enable_deepseek'] ) || ! $deepseek_has_key ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your DeepSeek settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=deepseek' ) ); ?>">
@@ -633,14 +746,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 									<?php endif; ?>
 								</td>
 							</tr>
+							<?php $openrouter_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'openrouter' ) : ! empty( $settings['openrouter_api_key'] ); ?>
 							<tr>
 								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['openrouter_api_key'] ) ) : ?>
+									<?php if ( $openrouter_has_key ) : ?>
 										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['openrouter_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$openrouter_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'openrouter' ) : ( $settings['openrouter_api_key'] ?? '' );
+										if ( $openrouter_key ) {
+											echo '<code>' . esc_html( substr( $openrouter_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'openrouter' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -670,11 +799,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="openrouter"
-						<?php echo esc_attr( empty( $settings['enable_openrouter'] ) || empty( $settings['openrouter_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( empty( $settings['enable_openrouter'] ) || ! $openrouter_has_key ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test OpenRouter Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['enable_openrouter'] ) || empty( $settings['openrouter_api_key'] ) ) : ?>
+					<?php if ( empty( $settings['enable_openrouter'] ) || ! $openrouter_has_key ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your OpenRouter settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=openrouter' ) ); ?>">
@@ -703,14 +832,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 									<?php endif; ?>
 								</td>
 							</tr>
+							<?php $digitalocean_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'digitalocean' ) : ! empty( $settings['digitalocean_api_key'] ); ?>
 							<tr>
 								<th><?php esc_html_e( 'Model Access Key Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['digitalocean_api_key'] ) ) : ?>
+									<?php if ( $digitalocean_has_key ) : ?>
 										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['digitalocean_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$digitalocean_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'digitalocean' ) : ( $settings['digitalocean_api_key'] ?? '' );
+										if ( $digitalocean_key ) {
+											echo '<code>' . esc_html( substr( $digitalocean_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'digitalocean' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -740,11 +885,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="digitalocean"
-						<?php echo esc_attr( empty( $settings['enable_digitalocean'] ) || empty( $settings['digitalocean_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( empty( $settings['enable_digitalocean'] ) || ! $digitalocean_has_key ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test DigitalOcean Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['enable_digitalocean'] ) || empty( $settings['digitalocean_api_key'] ) ) : ?>
+					<?php if ( empty( $settings['enable_digitalocean'] ) || ! $digitalocean_has_key ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your DigitalOcean settings in the Providers tab. You need to enable the provider and create a model access key in Gradient Platform → Serverless Inference.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=digitalocean' ) ); ?>">
@@ -773,14 +918,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 									<?php endif; ?>
 								</td>
 							</tr>
+							<?php $kimi_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'kimi' ) : ! empty( $settings['kimi_api_key'] ); ?>
 							<tr>
 								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['kimi_api_key'] ) ) : ?>
+									<?php if ( $kimi_has_key ) : ?>
 										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['kimi_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$kimi_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'kimi' ) : ( $settings['kimi_api_key'] ?? '' );
+										if ( $kimi_key ) {
+											echo '<code>' . esc_html( substr( $kimi_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'kimi' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -810,11 +971,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="kimi"
-						<?php echo esc_attr( empty( $settings['enable_kimi'] ) || empty( $settings['kimi_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( empty( $settings['enable_kimi'] ) || ! $kimi_has_key ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Kimi Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['enable_kimi'] ) || empty( $settings['kimi_api_key'] ) ) : ?>
+					<?php if ( empty( $settings['enable_kimi'] ) || ! $kimi_has_key ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your Kimi settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=kimi' ) ); ?>">
@@ -843,14 +1004,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 										<?php endif; ?>
 									</td>
 								</tr>
+								<?php $baseten_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'baseten' ) : ! empty( $settings['baseten_api_key'] ); ?>
 								<tr>
 									<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
 									<td>
-										<?php if ( ! empty( $settings['baseten_api_key'] ) ) : ?>
+										<?php if ( $baseten_has_key ) : ?>
 											<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-											<code><?php echo esc_html( substr( $settings['baseten_api_key'], 0, 12 ) . '...' ); ?></code>
+											<?php
+											$baseten_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'baseten' ) : ( $settings['baseten_api_key'] ?? '' );
+											if ( $baseten_key ) {
+												echo '<code>' . esc_html( substr( $baseten_key, 0, 12 ) . '...' ) . '</code>';
+											}
+											?>
 										<?php else : ?>
 											<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+										<?php endif; ?>
+									</td>
+								</tr>
+								<tr>
+									<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+									<td>
+										<?php if ( $has_resolver ) : ?>
+											<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'baseten' ) ) ); ?></code>
+										<?php else : ?>
+											<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 										<?php endif; ?>
 									</td>
 								</tr>
@@ -880,11 +1057,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							type="button"
 							class="button button-primary test-provider"
 							data-provider="baseten"
-							<?php echo esc_attr( empty( $settings['enable_baseten'] ) || empty( $settings['baseten_api_key'] ) ? 'disabled' : '' ); ?>>
+							<?php echo esc_attr( empty( $settings['enable_baseten'] ) || ! $baseten_has_key ? 'disabled' : '' ); ?>>
 							<?php esc_html_e( 'Test Baseten Connection', 'mcp-ai-wpoos' ); ?>
 						</button>
 
-						<?php if ( empty( $settings['enable_baseten'] ) || empty( $settings['baseten_api_key'] ) ) : ?>
+						<?php if ( empty( $settings['enable_baseten'] ) || ! $baseten_has_key ) : ?>
 							<p class="description" style="margin-top: 10px;">
 								<?php esc_html_e( 'Configure your Baseten settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
 								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=baseten' ) ); ?>">
@@ -1099,14 +1276,30 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<h2><?php esc_html_e( '10. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
+							<?php $google_maps_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'google_maps' ) : ! empty( $settings['google_maps_api_key'] ); ?>
 							<tr>
 								<th style="width: 30%;"><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['google_maps_api_key'] ) ) : ?>
+									<?php if ( $google_maps_has_key ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
-										<code><?php echo esc_html( substr( $settings['google_maps_api_key'], 0, 12 ) . '...' ); ?></code>
+										<?php
+										$google_maps_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'google_maps' ) : ( $settings['google_maps_api_key'] ?? '' );
+										if ( $google_maps_key ) {
+											echo '<code>' . esc_html( substr( $google_maps_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
 									<?php else : ?>
 										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'google_maps' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -1123,11 +1316,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="google_maps"
-						<?php echo esc_attr( empty( $settings['google_maps_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( ! $google_maps_has_key ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Google Maps Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['google_maps_api_key'] ) ) : ?>
+					<?php if ( ! $google_maps_has_key ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Configure your Google Maps API key in settings to enable testing.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>">
@@ -1148,16 +1341,16 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 					$configured       = array();
 
-					if ( ! empty( $settings['openai_api_key'] ) ) {
+					if ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) : ! empty( $settings['openai_api_key'] ) ) {
 						$configured[] = 'OpenAI';
 					}
-					if ( ! empty( $settings['anthropic_api_key'] ) ) {
+					if ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' ) : ! empty( $settings['anthropic_api_key'] ) ) {
 						$configured[] = 'Anthropic';
 					}
-					if ( ! empty( $settings['gemini_api_key'] ) ) {
+					if ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) : ! empty( $settings['gemini_api_key'] ) ) {
 						$configured[] = 'Gemini';
 					}
-					if ( ! empty( $settings['huggingface_api_key'] ) && ! empty( $settings['huggingface_endpoint_url'] ) ) {
+					if ( ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'huggingface' ) : ! empty( $settings['huggingface_api_key'] ) ) && ! empty( $settings['huggingface_endpoint_url'] ) ) {
 						$configured[] = 'Hugging Face';
 					}
 					if ( ! empty( $settings['ollama_endpoint_url'] ) ) {
@@ -1166,28 +1359,28 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					if ( ! empty( $settings['lm_studio_endpoint_url'] ) ) {
 						$configured[] = 'LM Studio';
 					}
-					if ( ! empty( $settings['enable_cloudflare'] ) && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
+					if ( ! empty( $settings['enable_cloudflare'] ) && ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'cloudflare' ) : ! empty( $settings['cloudflare_api_token'] ) ) && ! empty( $settings['cloudflare_account_id'] ) ) {
 						$configured[] = 'Cloudflare Workers AI';
 					}
-					if ( ! empty( $settings['enable_nvidia'] ) && ! empty( $settings['nvidia_api_key'] ) ) {
+					if ( ! empty( $settings['enable_nvidia'] ) && ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'nvidia' ) : ! empty( $settings['nvidia_api_key'] ) ) ) {
 						$configured[] = 'NVIDIA NIM';
 					}
-					if ( ! empty( $settings['enable_deepseek'] ) && ! empty( $settings['deepseek_api_key'] ) ) {
+					if ( ! empty( $settings['enable_deepseek'] ) && ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'deepseek' ) : ! empty( $settings['deepseek_api_key'] ) ) ) {
 						$configured[] = 'DeepSeek';
 					}
-					if ( ! empty( $settings['enable_openrouter'] ) && ! empty( $settings['openrouter_api_key'] ) ) {
+					if ( ! empty( $settings['enable_openrouter'] ) && ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'openrouter' ) : ! empty( $settings['openrouter_api_key'] ) ) ) {
 						$configured[] = 'OpenRouter';
 					}
-					if ( ! empty( $settings['enable_digitalocean'] ) && ! empty( $settings['digitalocean_api_key'] ) ) {
+					if ( ! empty( $settings['enable_digitalocean'] ) && ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'digitalocean' ) : ! empty( $settings['digitalocean_api_key'] ) ) ) {
 						$configured[] = 'DigitalOcean Serverless Inference';
 					}
-					if ( ! empty( $settings['enable_kimi'] ) && ! empty( $settings['kimi_api_key'] ) ) {
+					if ( ! empty( $settings['enable_kimi'] ) && ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'kimi' ) : ! empty( $settings['kimi_api_key'] ) ) ) {
 						$configured[] = 'Kimi (Moonshot AI)';
 					}
-					if ( ! empty( $settings['enable_baseten'] ) && ! empty( $settings['baseten_api_key'] ) ) {
+					if ( ! empty( $settings['enable_baseten'] ) && ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'baseten' ) : ! empty( $settings['baseten_api_key'] ) ) ) {
 						$configured[] = 'Baseten';
 					}
-					if ( ! empty( $settings['google_maps_api_key'] ) ) {
+					if ( $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'google_maps' ) : ! empty( $settings['google_maps_api_key'] ) ) {
 						$configured[] = 'Google Maps';
 					}
 					?>
@@ -1518,7 +1711,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * @param array $settings Plugin settings.
 		 */
 		private static function test_openai( $settings ) {
-			if ( empty( $settings['openai_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' )
+				: ! empty( $settings['openai_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'OpenAI API key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -1602,7 +1798,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * @param array $settings Plugin settings.
 		 */
 		private static function test_anthropic( $settings ) {
-			if ( empty( $settings['anthropic_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' )
+				: ! empty( $settings['anthropic_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'Anthropic API key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -1703,7 +1902,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * @param array $settings Plugin settings.
 		 */
 		private static function test_gemini( $settings ) {
-			if ( empty( $settings['gemini_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' )
+				: ! empty( $settings['gemini_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'Gemini API key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -1830,7 +2032,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * @param array $settings Plugin settings.
 		 */
 		private static function test_huggingface( $settings ) {
-			if ( empty( $settings['huggingface_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'huggingface' )
+				: ! empty( $settings['huggingface_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'Hugging Face API key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -1931,7 +2136,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				return;
 			}
 
-			if ( empty( $settings['cloudflare_api_token'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'cloudflare' )
+				: ! empty( $settings['cloudflare_api_token'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'Cloudflare API token is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -2017,7 +2225,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				return;
 			}
 
-			if ( empty( $settings['nvidia_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'nvidia' )
+				: ! empty( $settings['nvidia_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'NVIDIA API key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -2089,7 +2300,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				return;
 			}
 
-			if ( empty( $settings['deepseek_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'deepseek' )
+				: ! empty( $settings['deepseek_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'DeepSeek API key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -2194,7 +2408,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				return;
 			}
 
-			if ( empty( $settings['openrouter_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'openrouter' )
+				: ! empty( $settings['openrouter_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'OpenRouter API key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -2313,7 +2530,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				return;
 			}
 
-			if ( empty( $settings['digitalocean_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'digitalocean' )
+				: ! empty( $settings['digitalocean_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'DigitalOcean model access key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -2414,7 +2634,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				return;
 			}
 
-			if ( empty( $settings['kimi_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'kimi' )
+				: ! empty( $settings['kimi_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'Kimi API key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -2521,7 +2744,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				return;
 			}
 
-			if ( empty( $settings['baseten_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'baseten' )
+				: ! empty( $settings['baseten_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'Baseten API key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
@@ -2772,7 +2998,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * @param array $settings Plugin settings.
 		 */
 		private static function test_google_maps( $settings ) {
-			if ( empty( $settings['google_maps_api_key'] ) ) {
+			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::has_credentials( 'google_maps' )
+				: ! empty( $settings['google_maps_api_key'] );
+			if ( ! $has_key ) {
 				wp_send_json_error( array( 'message' => __( 'Google Maps API key is not configured.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}

@@ -202,6 +202,63 @@ if ( ! class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) :
 		}
 
 		/**
+		 * Get the source of the resolved API key for a provider.
+		 *
+		 * Returns a machine-readable label indicating which source supplied the
+		 * active key. Useful for admin UI indicators and diagnostic pages.
+		 *
+		 * @since 1.8.0
+		 * @param string $provider Provider slug (e.g., 'openai', 'deepseek').
+		 * @return string One of: 'nvoos_settings', 'wp70_connector', 'env_var',
+		 *                'constant', 'none'.
+		 */
+		public static function get_key_source( string $provider ): string {
+			// Check each source in priority order.
+			$key = self::from_nvoos_settings( $provider );
+			if ( null !== $key ) {
+				return 'nvoos_settings';
+			}
+
+			if ( WP_MCP_AI_WP70_Bridge::is_available() ) {
+				$key = self::from_connector_db( $provider );
+				if ( null !== $key ) {
+					return 'wp70_connector';
+				}
+			}
+
+			$key = self::from_env( $provider );
+			if ( null !== $key ) {
+				return 'env_var';
+			}
+
+			$key = self::from_constant( $provider );
+			if ( null !== $key ) {
+				return 'constant';
+			}
+
+			return 'none';
+		}
+
+		/**
+		 * Get a human-readable label for a key source.
+		 *
+		 * @since 1.8.0
+		 * @param string $source Source returned by get_key_source().
+		 * @return string Translated label.
+		 */
+		public static function get_key_source_label( string $source ): string {
+			$labels = array(
+				'nvoos_settings' => __( 'NV oOS Settings', 'mcp-ai-wpoos' ),
+				'wp70_connector' => __( 'WP 7.0 Connectors', 'mcp-ai-wpoos' ),
+				'env_var'        => __( 'Environment Variable', 'mcp-ai-wpoos' ),
+				'constant'       => __( 'PHP Constant', 'mcp-ai-wpoos' ),
+				'none'           => __( 'Not Configured', 'mcp-ai-wpoos' ),
+			);
+
+			return $labels[ $source ] ?? __( 'Unknown', 'mcp-ai-wpoos' );
+		}
+
+		/**
 		 * Clear the internal key cache.
 		 *
 		 * Useful in tests or when settings have been updated mid-request.
@@ -213,4 +270,4 @@ if ( ! class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) :
 		}
 	}
 
-endif;
+	endif;

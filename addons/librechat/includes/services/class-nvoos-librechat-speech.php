@@ -294,9 +294,8 @@ class NV_oOS_LibreChat_Speech {
 	 * @return string API key or empty string.
 	 */
 	protected static function get_openai_api_key() {
-		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			return isset( $settings['openai_api_key'] ) ? trim( $settings['openai_api_key'] ) : '';
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			return WP_MCP_AI_Credential_Resolver::get_api_key( 'openai' ) ?? '';
 		}
 
 		return '';

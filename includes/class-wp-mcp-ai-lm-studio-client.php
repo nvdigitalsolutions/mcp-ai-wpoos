@@ -70,7 +70,13 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 		 */
 		public function get_api_key() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			return isset( $settings['lm_studio_api_key'] ) ? (string) $settings['lm_studio_api_key'] : '';
+			$key      = isset( $settings['lm_studio_api_key'] ) ? (string) $settings['lm_studio_api_key'] : '';
+
+			if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'lm_studio' ) ?? '';
+			}
+
+			return $key;
 		}
 
 		/**

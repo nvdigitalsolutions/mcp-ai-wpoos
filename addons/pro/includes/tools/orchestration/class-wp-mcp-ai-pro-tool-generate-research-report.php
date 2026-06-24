@@ -746,16 +746,19 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 	 * @return string|WP_Error Provider name or error.
 	 */
 	protected function get_research_provider( $settings ) {
+		// $settings kept for backward compatibility with subclasses.
+		unset( $settings );
+
 		// Prefer OpenAI or Gemini for research tasks.
-		if ( ! empty( $settings['openai_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) ) {
 			return 'openai';
 		}
 
-		if ( ! empty( $settings['gemini_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) ) {
 			return 'gemini';
 		}
 
-		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' ) ) {
 			return 'anthropic';
 		}
 
@@ -800,6 +803,9 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 	 * @return object|WP_Error AI client or error.
 	 */
 	protected function get_ai_client( $provider, $settings ) {
+		// $settings kept for backward compatibility with subclasses.
+		unset( $settings );
+
 		switch ( $provider ) {
 			case 'openai':
 				if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
@@ -808,7 +814,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 						__( 'OpenAI client not available.', 'mcp-ai-wpoos-pro' )
 					);
 				}
-				return new WP_MCP_AI_OpenAI_Client( $settings['openai_api_key'] );
+				return new WP_MCP_AI_OpenAI_Client( WP_MCP_AI_Credential_Resolver::get_api_key( 'openai' ) );
 
 			case 'gemini':
 				if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
@@ -817,7 +823,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 						__( 'Gemini client not available.', 'mcp-ai-wpoos-pro' )
 					);
 				}
-				return new WP_MCP_AI_Gemini_Client( $settings['gemini_api_key'] );
+				return new WP_MCP_AI_Gemini_Client( WP_MCP_AI_Credential_Resolver::get_api_key( 'gemini' ) );
 
 			case 'anthropic':
 				if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
@@ -826,7 +832,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 						__( 'Anthropic client not available.', 'mcp-ai-wpoos-pro' )
 					);
 				}
-				return new WP_MCP_AI_Anthropic_Client( $settings['anthropic_api_key'] );
+				return new WP_MCP_AI_Anthropic_Client( WP_MCP_AI_Credential_Resolver::get_api_key( 'anthropic' ) );
 
 			default:
 				return new WP_Error(

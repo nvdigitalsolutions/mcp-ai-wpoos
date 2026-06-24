@@ -550,13 +550,16 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 	 * @return string|WP_Error Provider name or WP_Error.
 	 */
 	private function get_ai_provider( $settings ) {
-		if ( ! empty( $settings['openai_api_key'] ) ) {
+		// $settings kept for backward compatibility with subclasses.
+		unset( $settings );
+
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) ) {
 			return 'openai';
 		}
-		if ( ! empty( $settings['gemini_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) ) {
 			return 'gemini';
 		}
-		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' ) ) {
 			return 'anthropic';
 		}
 		return new WP_Error(
