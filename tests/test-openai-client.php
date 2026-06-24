@@ -2870,15 +2870,24 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	private function user_msg( $text = 'Hello' ) {
-		return array( 'role' => 'user', 'content' => $text );
+		return array(
+			'role'    => 'user',
+			'content' => $text,
+		);
 	}
 
 	private function system_msg( $text = 'You are an assistant.' ) {
-		return array( 'role' => 'system', 'content' => $text );
+		return array(
+			'role'    => 'system',
+			'content' => $text,
+		);
 	}
 
 	private function assistant_msg( $text = 'Sure.' ) {
-		return array( 'role' => 'assistant', 'content' => $text );
+		return array(
+			'role'    => 'assistant',
+			'content' => $text,
+		);
 	}
 
 	private function assistant_with_tool_calls( array $tool_ids, $text = null ) {
@@ -2887,10 +2896,16 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 			$tool_calls[] = array(
 				'id'       => $id,
 				'type'     => 'function',
-				'function' => array( 'name' => $name, 'arguments' => '{}' ),
+				'function' => array(
+					'name'      => $name,
+					'arguments' => '{}',
+				),
 			);
 		}
-		$msg = array( 'role' => 'assistant', 'tool_calls' => $tool_calls );
+		$msg = array(
+			'role'       => 'assistant',
+			'tool_calls' => $tool_calls,
+		);
 		if ( null !== $text ) {
 			$msg['content'] = $text;
 		}
@@ -3156,7 +3171,392 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 		$filtered = $this->client->public_filter_tool_messages( $messages );
 
 		$this->assertCount( 4, $filtered );
-		$this->assertSame( 'tool', $filtered[3]['role'] );
-		$this->assertSame( 'call_VIS', $filtered[3]['tool_call_id'] );
+			$this->assertSame( 'tool', $filtered[3]['role'] );
+			$this->assertSame( 'call_VIS', $filtered[3]['tool_call_id'] );
+	}
+
+		// ---------------------------------------------------------------------
+		// gpt-image Responses API routing tests.
+		// ---------------------------------------------------------------------
+
+		/**
+		 * Confirm that is_gpt_image_model() returns true for known gpt-image identifiers.
+		 */
+	public function test_is_gpt_image_model_recognises_gpt_image_family() {
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'gpt-image-1' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'gpt-image-1.5' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'gpt-image-2' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'GPT-IMAGE-2' ) );
+	}
+
+		/**
+		 * Confirm that is_gpt_image_model() returns false for non-gpt-image models.
+		 */
+	public function test_is_gpt_image_model_rejects_dalle_and_unknown_models() {
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'dall-e-2' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'dall-e-3' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'gpt-image-test' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( '' ) );
+	}
+
+		/**
+		 * Ensure generate_image with a gpt-image model sends to the Responses API endpoint.
+		 */
+	public function test_generate_image_routes_gpt_image_to_responses_endpoint() {
+		$settings                    = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key']  = 'sk-test';
+		$settings['request_timeout'] = 30;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$client           = new WP_MCP_AI_OpenAI_Client();
+		$captured_request = null;
+		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			$payload = array(
+				'model'  => 'gpt-image-2',
+				'output' => array(
+					array(
+						'type'    => 'image_generation',
+						'content' => array(
+							array(
+								'type'  => 'output_image',
+								'image' => array(
+									'b64_json' => $png_base64,
+								),
+							),
+						),
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+			add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+			$response = $client->generate_image(
+				'A mountain at dawn',
+				array(
+					'model'   => 'gpt-image-2',
+					'size'    => '2048x2048',
+					'quality' => 'high',
+				)
+			);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request );
+		$this->assertSame(
+			$this->resolve_responses_endpoint(),
+			$captured_request['url']
+		);
+
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertIsArray( $payload );
+		$this->assertSame( 'gpt-image-2', $payload['model'] );
+		$this->assertSame( 'A mountain at dawn', $payload['input'] );
+		$this->assertArrayNotHasKey( 'prompt', $payload );
+		$this->assertArrayNotHasKey( 'n', $payload );
+		$this->assertArrayNotHasKey( 'response_format', $payload );
+
+		$this->assertArrayHasKey( 'tools', $payload );
+		$this->assertCount( 1, $payload['tools'] );
+		$this->assertSame( 'image_generation', $payload['tools'][0]['type'] );
+		$this->assertSame( '2048x2048', $payload['tools'][0]['size'] );
+		$this->assertSame( 'high', $payload['tools'][0]['quality'] );
+
+		// Verify parsed response.
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'image', $response );
+		$this->assertSame( 'gpt-image-2', $response['model'] );
+	}
+
+		/**
+		 * Ensure generate_image with gpt-image model parses Responses API output correctly.
+		 */
+	public function test_generate_image_parses_responses_api_output() {
+		$settings                    = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key']  = 'sk-test';
+		$settings['request_timeout'] = 30;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$client     = new WP_MCP_AI_OpenAI_Client();
+		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+		$png_binary = base64_decode( $png_base64 );
+
+		$http_stub = function () use ( $png_base64 ) {
+			$payload = array(
+				'model'  => 'gpt-image-2',
+				'output' => array(
+					array(
+						'type'    => 'image_generation',
+						'content' => array(
+							array(
+								'type'  => 'output_image',
+								'image' => array(
+									'b64_json' => $png_base64,
+								),
+							),
+						),
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+			add_filter( 'pre_http_request', $http_stub );
+
+			$response = $client->generate_image(
+				'Abstract art',
+				array( 'model' => 'gpt-image-2' )
+			);
+
+		remove_filter( 'pre_http_request', $http_stub );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'image', $response );
+		$this->assertSame( $png_binary, $response['image'] );
+		$this->assertSame( 'png', $response['format'] );
+		$this->assertSame( 'image/png', $response['mime_type'] );
+		$this->assertSame( 'gpt-image-2', $response['model'] );
+		$this->assertSame( 0, $response['created'] );
+	}
+
+		/**
+		 * Ensure generate_image with gpt-image model returns error on empty output.
+		 */
+	public function test_generate_image_errors_on_empty_responses_output() {
+		$settings                    = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key']  = 'sk-test';
+		$settings['request_timeout'] = 30;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$client = new WP_MCP_AI_OpenAI_Client();
+
+		$http_stub = function () {
+			return array(
+				'body'     => wp_json_encode(
+					array(
+						'model'  => 'gpt-image-2',
+						'output' => array(),
+					)
+				),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+			add_filter( 'pre_http_request', $http_stub );
+
+			$response = $client->generate_image(
+				'Failing prompt',
+				array( 'model' => 'gpt-image-2' )
+			);
+
+		remove_filter( 'pre_http_request', $http_stub );
+
+		$this->assertWPError( $response );
+		$this->assertSame( 'wp_mcp_ai_image_empty', $response->get_error_code() );
+	}
+
+		/**
+		 * Ensure generate_image with DALL-E model still uses the classic Images endpoint (regression).
+		 */
+	public function test_generate_image_routes_dalle_to_images_endpoint() {
+		$settings                    = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key']  = 'sk-test';
+		$settings['request_timeout'] = 30;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$client           = new WP_MCP_AI_OpenAI_Client();
+		$captured_request = null;
+		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			$payload = array(
+				'created' => 99,
+				'data'    => array(
+					array(
+						'b64_json'       => $png_base64,
+						'revised_prompt' => 'Revised',
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+			add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+			$response = $client->generate_image(
+				'Vintage photograph',
+				array(
+					'model'   => 'dall-e-3',
+					'size'    => '1024x1024',
+					'quality' => 'hd',
+					'style'   => 'vivid',
+				)
+			);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request );
+		$this->assertSame( WP_MCP_AI_OpenAI_Client::IMAGES_ENDPOINT, $captured_request['url'] );
+
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertIsArray( $payload );
+		$this->assertSame( 'dall-e-3', $payload['model'] );
+		$this->assertSame( 'Vintage photograph', $payload['prompt'] );
+		$this->assertArrayHasKey( 'n', $payload );
+		$this->assertSame( 'hd', $payload['quality'] );
+		$this->assertSame( 'vivid', $payload['style'] );
+		$this->assertArrayNotHasKey( 'tools', $payload );
+
+		// Verify parsed response.
+		$this->assertIsArray( $response );
+		$this->assertSame( 99, $response['created'] );
+		$this->assertSame( 'Revised', $response['revised_prompt'] );
+	}
+
+		/**
+		 * Ensure edit_image with a gpt-image model delegates to the Responses API.
+		 */
+	public function test_edit_image_routes_gpt_image_to_responses_api() {
+		$settings                    = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key']  = 'sk-test';
+		$settings['request_timeout'] = 30;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$client           = new WP_MCP_AI_OpenAI_Client();
+		$captured_request = null;
+		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		// Create a temporary PNG file for the test.
+		$temp_file = tempnam( sys_get_temp_dir(), 'wp-mcp-ai-test-' ) . '.png';
+		file_put_contents( $temp_file, base64_decode( $png_base64 ) );
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			$payload = array(
+				'model'  => 'gpt-image-2',
+				'output' => array(
+					array(
+						'type'    => 'image_generation',
+						'content' => array(
+							array(
+								'type'  => 'output_image',
+								'image' => array(
+									'b64_json' => $png_base64,
+								),
+							),
+						),
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+			add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+			$response = $client->edit_image(
+				$temp_file,
+				'Add a rainbow',
+				array(
+					'model' => 'gpt-image-2',
+					'size'  => '1024x1024',
+				)
+			);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		// Clean up temp file.
+		if ( file_exists( $temp_file ) ) {
+			unlink( $temp_file );
+		}
+
+		$this->assertNotNull( $captured_request );
+		$this->assertSame(
+			$this->resolve_responses_endpoint(),
+			$captured_request['url']
+		);
+
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertIsArray( $payload );
+		$this->assertSame( 'gpt-image-2', $payload['model'] );
+		$this->assertArrayHasKey( 'input', $payload );
+		$this->assertIsArray( $payload['input'] );
+
+		// Input should contain a text part and an image part.
+		$has_text  = false;
+		$has_image = false;
+		foreach ( $payload['input'] as $part ) {
+			if ( 'input_text' === $part['type'] ) {
+				$has_text = true;
+				$this->assertSame( 'Add a rainbow', $part['text'] );
+			}
+			if ( 'input_image' === $part['type'] ) {
+				$has_image = true;
+				$this->assertArrayHasKey( 'image_url', $part );
+				$this->assertStringStartsWith( 'data:image/', $part['image_url']['url'] );
+			}
+		}
+		$this->assertTrue( $has_text, 'Input should include input_text.' );
+		$this->assertTrue( $has_image, 'Input should include input_image.' );
+
+		$this->assertArrayHasKey( 'tools', $payload );
+		$this->assertCount( 1, $payload['tools'] );
+		$this->assertSame( 'image_generation', $payload['tools'][0]['type'] );
+
+		// Verify response envelope.
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'success', $response );
+		$this->assertTrue( $response['success'] );
+		$this->assertArrayHasKey( 'data', $response );
+		$this->assertCount( 1, $response['data'] );
+		$this->assertSame( $png_base64, $response['data'][0]['b64_json'] );
+	}
+
+		/**
+		 * Resolve the configured Responses API endpoint for assertion purposes.
+		 *
+		 * @return string
+		 */
+	private function resolve_responses_endpoint() {
+		$client = new WP_MCP_AI_OpenAI_Client();
+
+		return $client->resolve_endpoint( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT );
 	}
 }
