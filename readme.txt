@@ -307,8 +307,10 @@ Bumped to 1.1.33 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` 
 * **nvoos-graphify v1.0.0 Release (PR #5456).** Standalone nvoos-graphify plugin released at v1.0.0 (Plugin Check compliant). nvoos-graphify-ai plugin released at v1.0.0-dev. Fixed 8 output-escaping errors and critical `->prepare()` spread-operator bug in `Db::listNodes()`. Renamed `vector` column → `embedding_vector` to avoid MariaDB/MySQL reserved-word conflict; bumped DB version. Fixed snake_case→camelCase method calls across tools, controllers, and cross-plugin integrations. Documented actual REST access model: read + guest token for reads, `manage_options` for export/write.
 * **Security Dependencies (PR #5457).** guzzlehttp/guzzle 7.10.0 → 7.12.1 (CVE-2026-55568, CVE-2026-55767). guzzlehttp/psr7 2.11.0 → 2.12.1 (CVE-2026-55766). guzzlehttp/promises 2.3.0 → 2.5.0. undici npm override tightened from `>=7.28.0` to `>=8.5.0`.
 * **npm Security (PR #5438).** 29 npm alerts resolved across 14 packages: undici (TLS bypass CVE-2026-9697, cache info disclosure CVE-2026-9678), http-proxy-middleware (CRLF injection CVE-2026-55603), nodemailer (raw option bypass GHSA-p6gq-j5cr-w38f), webpack-dev-server (HMR interception CVE-2026-9595), dompurify (ALLOWED_ATTR pollution GHSA-cmwh-pvxp-8882). Fixed critical duplicate `overrides` key in root `package.json`.
+* **Bug Fix — WP All Import/Export Pro Tools.** Fixed four missing `-pro-` in require_once paths in the Pro bootstrap, causing fatal errors when those tools loaded.
+* **Bug Fix — Tool Status Label Loader.** Replaced `@file_get_contents()` with explicit `set_error_handler` to prevent leaked warnings from corrupting MCP JSON-RPC HTTP responses.
 * **Dependencies.** 15 Dependabot bumps: composer (guzzlehttp/psr7), npm (eslint-plugin, stripe, zod, p-queue, csv-parse, react-query, puppeteer, vitest, workers-types, types/node, wrangler), GitHub Actions (codecov/codecov-action 4→7, softprops/action-gh-release 2→3).
-* **Housekeeping.** Stale 1.1.31 build zips removed (PR #5437). SPA addon ZIPs rebuilt with updated security overrides.
+* **Housekeeping.** Stale 1.1.31 and 1.1.32 build zips removed. SPA addon ZIPs rebuilt with updated security overrides.
 
 = 1.1.32 - June 19, 2026 =
 

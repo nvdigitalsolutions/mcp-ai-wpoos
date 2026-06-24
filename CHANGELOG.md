@@ -45,6 +45,21 @@
 - dompurify: ALLOWED_ATTR pollution (GHSA-cmwh-pvxp-8882) — bumped `^3.4.9` → `^3.4.11` in addons/pro/spa-v2.
 - Fixed **critical duplicate `overrides` key** in root `package.json` that silently discarded all 39 security overrides.
 
+### Fixed — WP All Import/Export Pro Tool Paths (commit `0de3cdf`)
+
+- Four `require_once` paths in the Pro bootstrap map (`addons/pro/mcp-ai-wpoos-pro.php` lines 1049–1052) were missing `-pro-` in the filenames.
+- Referenced `class-wp-mcp-ai-tool-*.php` instead of the actual `class-wp-mcp-ai-pro-tool-*.php` files on disk.
+- Affected tools: `Schedule_All_Export`, `Delete_All_Export`, `Schedule_All_Import`, `Delete_All_Import`.
+- Caused fatal errors when those Pro tools were loaded.
+
+### Fixed — Tool Status Label Loader Warning Leak (commit `749ffce`)
+
+- Replaced fragile `@file_get_contents()` with explicit `set_error_handler('__return_true')` / `restore_error_handler()` in both copies of `load_tool_status_labels()`:
+  - `includes/class-wp-mcp-ai-tool-registry.php`
+  - `includes/admin/sections/class-wp-mcp-ai-section-tools.php`
+- The `@` operator does not reliably suppress warnings across all PHP 8 configurations (e.g. xdebug.scream, custom error handlers).
+- A leaked `file_get_contents()` warning emitted before JSON-RPC response headers corrupted the HTTP payload, causing MCP bridge timeouts.
+
 ### Changed — Dependencies
 
 - 15 Dependabot version bumps applied across the monorepo:
@@ -58,6 +73,7 @@
 ### Housekeeping
 
 - Stale 1.1.31 build zips removed (PR #5437).
+- Stale 1.1.32 build zips removed (6 files).
 - SPA addon ZIPs rebuilt with updated security overrides and dependency bumps.
 - nvoos-graphify standalone ZIP built at v1.0.0 (353,998 bytes).
 - nvoos-graphify-ai ZIP built at v1.0.0-dev (316,367 bytes).
