@@ -388,6 +388,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once $schedule_manager_core;
 		}
 
+		// Load the Result Delivery Service alongside the Schedule Manager so that
+		// result delivery (email, chat, SMS, Paper Store, WordPress post, webhook)
+		// is available for all schedule types on both success and failure.
+		$delivery_service = WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-result-delivery-service.php';
+		if ( file_exists( $delivery_service ) ) {
+			require_once $delivery_service;
+		}
+
 		// Load Per-Toolkit MCP Server framework early so WP_MCP_AI_Toolkit_Server_Registry
 		// is defined before the admin block below checks class_exists() to register the
 		// Phase 7 admin page.  The framework lies dormant until a toolkit registers a
@@ -490,6 +498,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load Media Toolkit if enabled (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/media/init.php';
+
+		// Load Content Format Templates for AI-generated blog posts.
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-content-format-template-cpt.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-content-format-template-cpt.php';
+			WP_MCP_AI_Content_Format_Template_CPT::init();
+			WP_MCP_AI_Content_Format_Template_CPT::seed_defaults();
+		}
+
+		// Load Content Template Engine (prompt builder).
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-content-template-engine.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-content-template-engine.php';
+		}
 
 		// Load MCP Apps subsystem (remote MCP server connections per assistant).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/mcp-apps-init.php';
@@ -1026,10 +1046,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme' => WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-install-and-activate-theme.php',
 			'WP_MCP_AI_Pro_Tool_Update_Option'             => WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-update-option.php',
 			// WP All Import/Export Pro tools.
-			'WP_MCP_AI_Pro_Tool_Schedule_All_Export'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-schedule-all-export.php',
-			'WP_MCP_AI_Pro_Tool_Delete_All_Export'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-delete-all-export.php',
-			'WP_MCP_AI_Pro_Tool_Schedule_All_Import'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-schedule-all-import.php',
-			'WP_MCP_AI_Pro_Tool_Delete_All_Import'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-delete-all-import.php',
+			'WP_MCP_AI_Pro_Tool_Schedule_All_Export'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-pro-tool-schedule-all-export.php',
+			'WP_MCP_AI_Pro_Tool_Delete_All_Export'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-pro-tool-delete-all-export.php',
+			'WP_MCP_AI_Pro_Tool_Schedule_All_Import'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-pro-tool-schedule-all-import.php',
+			'WP_MCP_AI_Pro_Tool_Delete_All_Import'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-pro-tool-delete-all-import.php',
 			// Pro Schedule Manager tools.
 			'WP_MCP_AI_Pro_Tool_Create_Pro_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-pro-schedule.php',
 			'WP_MCP_AI_Pro_Tool_Update_Pro_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-update-pro-schedule.php',

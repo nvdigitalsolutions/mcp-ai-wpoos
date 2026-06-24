@@ -34,10 +34,11 @@
 - All tools extend `AbstractTool` with default `edit_posts` capability
 
 **REST API:**
-- 13 endpoints at `/wp-json/nvoos-graphify/v1/`
-- Read endpoints: `edit_posts` capability
+- 14 endpoints at `/wp-json/nvoos-graphify/v1/`
+- Read endpoints: `read` capability (all logged-in users) or valid guest token
 - Write endpoints: `manage_options` capability (NEVER `__return_true`)
 - Webhook endpoint: HMAC-SHA256 authentication
+- Export endpoint: `manage_options` (bulk data is an administrative operation)
 - Pagination, filtering, search, export
 
 **Admin:**

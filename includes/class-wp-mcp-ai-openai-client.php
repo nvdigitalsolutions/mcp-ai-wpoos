@@ -45,8 +45,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// Default to true for backward compatibility, but explicitly block the gpt-image family.
 			$supported = true;
 
-			$model_lower = strtolower( $model );
-			if ( in_array( $model_lower, array( 'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2' ), true ) ) {
+			if ( self::is_gpt_image_model( $model ) ) {
 				$supported = false;
 			}
 			/**
@@ -84,6 +83,203 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
+		 * Determine whether a model identifier refers to a gpt-image family model.
+		 *
+		 * The gpt-image-1, gpt-image-1.5, and gpt-image-2 models use the
+		 * Responses API endpoint (/v1/responses) rather than the classic
+		 * Images API (/v1/images/generations). This helper centralises that
+		 * check so payload construction, endpoint selection, and response
+		 * parsing can branch correctly.
+		 *
+		 * @param string $model Image model identifier.
+		 * @return bool
+		 */
+		public static function is_gpt_image_model( $model ) {
+			$model       = sanitize_text_field( $model );
+			$model_lower = strtolower( $model );
+
+			$is_gpt = in_array( $model_lower, array( 'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2' ), true );
+
+			/**
+			 * Filter whether the supplied model is a gpt-image family model.
+			 *
+			 * @param bool   $is_gpt Whether the model uses the Responses API.
+			 * @param string $model  Model identifier.
+			 */
+			return (bool) apply_filters( 'wp_mcp_ai_is_gpt_image_model', $is_gpt, $model );
+		}
+
+		/**
+		 * Extract the base64-encoded image from a Responses API response body.
+		 *
+		 * The Responses API nests image data inside
+		 * output[0].content[0].image.b64_json. This helper walks that
+		 * structure and returns the raw base64 string or a WP_Error.
+		 *
+		 * @param array $decoded JSON-decoded Responses API response body.
+		 * @return string|WP_Error Base64 string or WP_Error on failure.
+		 */
+		private function extract_b64_from_responses_output( $decoded ) {
+			if ( empty( $decoded['output'] ) || ! is_array( $decoded['output'] ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Responses API response missing output array.',
+					array( 'response' => $decoded )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_image_empty',
+					__( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Walk each output item looking for image_generation content.
+			foreach ( $decoded['output'] as $output_item ) {
+				if ( empty( $output_item['content'] ) || ! is_array( $output_item['content'] ) ) {
+					continue;
+				}
+
+				foreach ( $output_item['content'] as $content_part ) {
+					if ( ! empty( $content_part['image']['b64_json'] ) ) {
+						return (string) $content_part['image']['b64_json'];
+					}
+				}
+			}
+
+			WP_MCP_AI_Logger::log_error(
+				'Responses API output contained no image payload.',
+				array( 'response' => $decoded )
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_image_empty',
+				__( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		/**
+		 * Edit an image via the Responses API (gpt-image models).
+		 *
+		 * Sends the image as a base64 data URL inside the input array
+		 * along with the text prompt. Returns the same envelope shape
+		 * as the classic edit_image() path so callers don't need to
+		 * branch on the model family.
+		 *
+		 * @param string $image_path Local path to the source image.
+		 * @param string $prompt     Edit instruction.
+		 * @param string $model      gpt-image model identifier.
+		 * @param string $size       Requested output size.
+		 * @param int    $n          Number of images to generate.
+		 * @param string $api_key    OpenAI API key.
+		 * @param int    $timeout    HTTP request timeout in seconds.
+		 * @return array|WP_Error
+		 */
+		private function edit_image_via_responses_api( $image_path, $prompt, $model, $size, $n, $api_key, $timeout ) {
+			$image_binary = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
+			if ( false === $image_binary || '' === $image_binary ) {
+				return new WP_Error(
+					'wp_mcp_ai_image_not_found',
+					__( 'The image file to edit could not be read.', 'mcp-ai-wpoos' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			$mime_type = mime_content_type( $image_path );
+			if ( ! $mime_type || ! $this->is_image_content_type( $mime_type ) ) {
+				$mime_type = 'image/png';
+			}
+
+			$b64_image = base64_encode( $image_binary ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding image payload for OpenAI Responses API.
+			$data_url  = 'data:' . $mime_type . ';base64,' . $b64_image;
+
+			$payload = array(
+				'model' => $model,
+				'input' => array(
+					array(
+						'type' => 'input_text',
+						'text' => $prompt,
+					),
+					array(
+						'type'      => 'input_image',
+						'image_url' => array(
+							'url' => $data_url,
+						),
+					),
+				),
+				'tools' => array(
+					array(
+						'type' => 'image_generation',
+						'size' => $size,
+					),
+				),
+			);
+
+			$encoded_payload = wp_json_encode( $payload );
+			if ( false === $encoded_payload ) {
+				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the OpenAI request payload.', 'mcp-ai-wpoos' ) );
+			}
+
+			$request_args = array(
+				'headers' => $this->build_request_headers( $api_key ),
+				'timeout' => $timeout,
+				'body'    => $encoded_payload,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_image_edit_request',
+				'Sending image edit request to OpenAI Responses API.',
+				array(
+					'model' => $model,
+					'size'  => $size,
+					'n'     => $n,
+				)
+			);
+
+			$response = wp_remote_post( $this->resolve_endpoint( self::RESPONSES_ENDPOINT ), $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_event( 'openai_image_edit_error', 'Image edit request failed.', array( 'error' => $response->get_error_message() ) );
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI image edit request failed.', 'mcp-ai-wpoos' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'openai_image_edit_error',
+					'Image edit failed with HTTP code ' . $http_code,
+					array( 'response' => $decoded )
+				);
+
+				return new WP_Error( 'wp_mcp_ai_openai_image_edit_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			$b64 = $this->extract_b64_from_responses_output( $decoded );
+			if ( is_wp_error( $b64 ) ) {
+				return $b64;
+			}
+
+			WP_MCP_AI_Logger::log_event( 'openai_image_edit_success', 'Image edit completed successfully via Responses API.' );
+
+			// Return in the same envelope shape as the classic edit endpoint.
+			return array(
+				'success' => true,
+				'data'    => array(
+					array(
+						'b64_json' => $b64,
+					),
+				),
+				'created' => time(),
+			);
+		}
+
+		/**
 		 * Default OpenAI API base URL.
 		 */
 		const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
@@ -95,8 +291,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 */
 		public function get_api_key() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$key      = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
 
-			return isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+			if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'openai' ) ?? '';
+			}
+
+			return $key;
 		}
 
 		/**
@@ -1796,8 +1997,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// Determine model-specific default quality.
 			// gpt-image-1/1.5/2 models default to 'medium', DALL-E models default to 'standard'.
 			$model_for_quality = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
-			$model_for_quality = strtolower( $model_for_quality );
-			$default_quality   = in_array( $model_for_quality, array( 'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2' ), true ) ? 'medium' : 'standard';
+			$default_quality   = self::is_gpt_image_model( $model_for_quality ) ? 'medium' : 'standard';
 
 			// Allow settings to override if a valid quality is configured.
 			if ( isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ) {
@@ -1816,8 +2016,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// Different OpenAI image models accept different quality parameter values:
 			// - gpt-image-1/1.5/2 accept: 'low', 'medium', 'high', 'auto'
 			// - DALL-E 2/3 accept: 'standard', 'hd'.
-			$model_lower        = strtolower( $model );
-			$is_gpt_image_model = in_array( $model_lower, array( 'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2' ), true );
+			$is_gpt_image_model = self::is_gpt_image_model( $model );
 
 			if ( $is_gpt_image_model ) {
 				// For gpt-image models, validate and use quality values directly.
@@ -1865,24 +2064,44 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout = max( 5, $timeout );
 
-			$payload = array(
-				'model'   => $model,
-				'prompt'  => $prompt,
-				'size'    => $size,
-				'quality' => $quality,
-				'n'       => 1,
-			);
+			if ( $is_gpt_image_model ) {
+				// gpt-image-1 / 1.5 / 2 use the Responses API endpoint.
+				$endpoint = self::RESPONSES_ENDPOINT;
 
-			// Add style parameter only for models that support it (DALL-E 3).
-			if ( isset( $options['style'] ) && '' !== $options['style'] ) {
-				$style = sanitize_key( $options['style'] );
-				if ( in_array( $style, array( 'natural', 'vivid' ), true ) && self::image_model_supports_style( $model ) ) {
-					$payload['style'] = $style;
+				$payload = array(
+					'model' => $model,
+					'input' => $prompt,
+					'tools' => array(
+						array(
+							'type'    => 'image_generation',
+							'size'    => $size,
+							'quality' => $quality,
+						),
+					),
+				);
+			} else {
+				// DALL-E models use the classic Images API endpoint.
+				$endpoint = self::IMAGES_ENDPOINT;
+
+				$payload = array(
+					'model'   => $model,
+					'prompt'  => $prompt,
+					'size'    => $size,
+					'quality' => $quality,
+					'n'       => 1,
+				);
+
+				// Add style parameter only for models that support it (DALL-E 3).
+				if ( isset( $options['style'] ) && '' !== $options['style'] ) {
+					$style = sanitize_key( $options['style'] );
+					if ( in_array( $style, array( 'natural', 'vivid' ), true ) && self::image_model_supports_style( $model ) ) {
+						$payload['style'] = $style;
+					}
 				}
-			}
 
-			if ( $model_supports_response_format && '' !== $response_format ) {
-				$payload['response_format'] = $response_format;
+				if ( $model_supports_response_format && '' !== $response_format ) {
+					$payload['response_format'] = $response_format;
+				}
 			}
 
 			/**
@@ -1913,10 +2132,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					'quality'          => $quality,
 					'requested_format' => $requested_format,
 					'response_format'  => $response_format,
+					'endpoint'         => $endpoint,
 				)
 			);
 
-			$response = wp_remote_post( $this->resolve_endpoint( self::IMAGES_ENDPOINT ), $request_args );
+			$response = wp_remote_post( $this->resolve_endpoint( $endpoint ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'OpenAI image request failed.', array( 'error' => $response->get_error_message() ) );
@@ -1985,19 +2205,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( ! empty( $decoded ) ) {
-				if ( empty( $decoded['data'] ) || empty( $decoded['data'][0] ) || ! is_array( $decoded['data'][0] ) ) {
-					WP_MCP_AI_Logger::log_error( 'OpenAI image response missing payload data.', array( 'response' => $decoded ) );
+				if ( $is_gpt_image_model ) {
+					// Responses API format: output[0].content[0].image.b64_json.
+					$b64 = $this->extract_b64_from_responses_output( $decoded );
+					if ( is_wp_error( $b64 ) ) {
+						return $b64;
+					}
 
-					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
-				}
-
-				$image_response = $decoded['data'][0];
-
-				if ( isset( $image_response['b64_json'] ) && '' !== $image_response['b64_json'] ) {
-					$image_data = base64_decode( $image_response['b64_json'], true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding a base64 image payload returned by the OpenAI API.
+					$image_data = base64_decode( $b64, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding a base64 image payload returned by the OpenAI API.
 
 					if ( false === $image_data ) {
-						WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI image payload.', array( 'response' => $decoded ) );
+						WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI Responses API image payload.', array( 'response' => $decoded ) );
 
 						return new WP_Error( 'wp_mcp_ai_image_decode_error', __( 'OpenAI returned an invalid image payload.', 'mcp-ai-wpoos' ) );
 					}
@@ -2006,50 +2224,77 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					if ( '' === $response_format ) {
 						$response_format = 'png';
 					}
-					$response_mime = $this->normalise_image_mime_type( $response_format );
-				} elseif ( isset( $image_response['url'] ) && '' !== $image_response['url'] ) {
-					$image_url = esc_url_raw( $image_response['url'] );
-
-					if ( '' === $image_url ) {
-						WP_MCP_AI_Logger::log_error( 'OpenAI image response returned an invalid URL.', array( 'url' => $image_response['url'] ) );
-
-						return new WP_Error( 'wp_mcp_ai_image_invalid_url', __( 'OpenAI returned an invalid image URL.', 'mcp-ai-wpoos' ) );
-					}
-
-					$downloaded_image = $this->download_image_from_url( $image_url, $timeout );
-
-					if ( is_wp_error( $downloaded_image ) ) {
-						return $downloaded_image;
-					}
-
-					$image_data      = $downloaded_image['body'];
-					$content_type    = $downloaded_image['content_type'];
-					$response_format = $this->detect_format_from_mime_type( $content_type );
-
-					if ( '' === $response_format ) {
-						$response_format = $this->detect_format_from_binary( $image_data );
-					}
-
-					if ( '' === $response_format ) {
-						$response_format = 'png';
-					}
-
-					$response_mime = '' !== $content_type ? $content_type : $this->normalise_image_mime_type( $response_format );
+					$response_mime    = $this->normalise_image_mime_type( $response_format );
+					$response_model   = isset( $decoded['model'] ) ? sanitize_text_field( $decoded['model'] ) : $model;
+					$response_created = 0;
 				} else {
-					WP_MCP_AI_Logger::log_error( 'OpenAI image response missing supported payload keys.', array( 'response' => $decoded ) );
+					// Classic Images API format: data[0].b64_json or data[0].url.
+					if ( empty( $decoded['data'] ) || empty( $decoded['data'][0] ) || ! is_array( $decoded['data'][0] ) ) {
+						WP_MCP_AI_Logger::log_error( 'OpenAI image response missing payload data.', array( 'response' => $decoded ) );
 
-					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
+						return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
+					}
+
+					$image_response = $decoded['data'][0];
+
+					if ( isset( $image_response['b64_json'] ) && '' !== $image_response['b64_json'] ) {
+						$image_data = base64_decode( $image_response['b64_json'], true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding a base64 image payload returned by the OpenAI API.
+
+						if ( false === $image_data ) {
+							WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI image payload.', array( 'response' => $decoded ) );
+
+							return new WP_Error( 'wp_mcp_ai_image_decode_error', __( 'OpenAI returned an invalid image payload.', 'mcp-ai-wpoos' ) );
+						}
+
+						$response_format = $this->detect_format_from_binary( $image_data );
+						if ( '' === $response_format ) {
+							$response_format = 'png';
+						}
+						$response_mime = $this->normalise_image_mime_type( $response_format );
+					} elseif ( isset( $image_response['url'] ) && '' !== $image_response['url'] ) {
+						$image_url = esc_url_raw( $image_response['url'] );
+
+						if ( '' === $image_url ) {
+							WP_MCP_AI_Logger::log_error( 'OpenAI image response returned an invalid URL.', array( 'url' => $image_response['url'] ) );
+
+							return new WP_Error( 'wp_mcp_ai_image_invalid_url', __( 'OpenAI returned an invalid image URL.', 'mcp-ai-wpoos' ) );
+						}
+
+						$downloaded_image = $this->download_image_from_url( $image_url, $timeout );
+
+						if ( is_wp_error( $downloaded_image ) ) {
+							return $downloaded_image;
+						}
+
+						$image_data      = $downloaded_image['body'];
+						$content_type    = $downloaded_image['content_type'];
+						$response_format = $this->detect_format_from_mime_type( $content_type );
+
+						if ( '' === $response_format ) {
+							$response_format = $this->detect_format_from_binary( $image_data );
+						}
+
+						if ( '' === $response_format ) {
+							$response_format = 'png';
+						}
+
+						$response_mime = '' !== $content_type ? $content_type : $this->normalise_image_mime_type( $response_format );
+					} else {
+						WP_MCP_AI_Logger::log_error( 'OpenAI image response missing supported payload keys.', array( 'response' => $decoded ) );
+
+						return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
+					}
+
+					if ( '' === $image_data ) {
+						WP_MCP_AI_Logger::log_error( 'OpenAI image response contained no data.', array( 'response' => $decoded ) );
+
+						return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
+					}
+
+					$response_created  = isset( $decoded['created'] ) ? intval( $decoded['created'] ) : 0;
+					$response_model    = isset( $decoded['model'] ) ? sanitize_text_field( $decoded['model'] ) : $model;
+					$response_revision = isset( $image_response['revised_prompt'] ) ? (string) $image_response['revised_prompt'] : '';
 				}
-
-				if ( '' === $image_data ) {
-					WP_MCP_AI_Logger::log_error( 'OpenAI image response contained no data.', array( 'response' => $decoded ) );
-
-					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
-				}
-
-				$response_created  = isset( $decoded['created'] ) ? intval( $decoded['created'] ) : 0;
-				$response_model    = isset( $decoded['model'] ) ? sanitize_text_field( $decoded['model'] ) : $model;
-				$response_revision = isset( $image_response['revised_prompt'] ) ? (string) $image_response['revised_prompt'] : '';
 			} elseif ( $this->is_image_content_type( $content_type ) || 'application/octet-stream' === $content_type ) {
 				$image_data = $body;
 
@@ -2421,6 +2666,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			if ( ! in_array( $response_format, array( 'b64_json', 'url' ), true ) ) {
 				$response_format = 'b64_json';
+			}
+
+			// gpt-image models use the Responses API; DALL-E models use the classic edits endpoint.
+			if ( self::is_gpt_image_model( $model ) ) {
+				return $this->edit_image_via_responses_api( $image_path, $prompt, $model, $size, $n, $api_key, $timeout );
 			}
 
 			// gpt-image-1, gpt-image-1.5, and gpt-image-2 do not accept the response_format parameter.

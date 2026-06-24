@@ -140,8 +140,13 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$key      = isset( $settings['kimi_api_key'] ) ? $settings['kimi_api_key'] : '';
 
-			return isset( $settings['kimi_api_key'] ) ? $settings['kimi_api_key'] : '';
+			if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'kimi' ) ?? '';
+			}
+
+			return $key;
 		}
 
 		/**
@@ -291,8 +296,12 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Resolve the request timeout in seconds.
 		 *
-		 * Checks $options['timeout'] first (per-request override), then the
-		 * kimi_timeout setting, then falls back to 60 seconds.
+		 * Priority order:
+		 * 1. Per-request `timeout` option.
+		 * 2. Provider-specific `kimi_timeout` setting (if configured).
+		 * 3. Global `request_timeout` admin setting (Settings → NV oOS → General →
+		 *    Behavior).
+		 * 4. Resource Manager's workload-tier recommendation.
 		 *
 		 * @since 2026.05
 		 * @param array $options Request options may carry a 'timeout' key.
@@ -303,10 +312,17 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 				return max( 10, absint( $options['timeout'] ) );
 			}
 
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $settings['kimi_timeout'] ) ? absint( $settings['kimi_timeout'] ) : 0;
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 
-			return ( $timeout > 0 ) ? $timeout : 60;
+			// Provider-specific override (for backward compatibility).
+			if ( ! empty( $settings['kimi_timeout'] ) ) {
+				return max( 10, absint( $settings['kimi_timeout'] ) );
+			}
+
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+
+			return max( 10, $timeout );
 		}
 
 		/**

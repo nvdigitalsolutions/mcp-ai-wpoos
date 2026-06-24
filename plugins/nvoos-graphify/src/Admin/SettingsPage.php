@@ -177,9 +177,9 @@ class SettingsPage {
 		$existing = Settings::all();
 
 		// Determine the active tab from the referer.
-		$referer = isset( $_REQUEST['_wp_http_referer'] )
-			? esc_url_raw( wp_unslash( $_REQUEST['_wp_http_referer'] ) )
-			: '';
+		// This runs inside a register_setting() sanitization callback;
+		// WordPress core handles nonce verification before invoking sanitizers.
+		$referer = wp_get_referer();
 
 		$tab = 'general';
 		if ( is_string( $referer ) && '' !== $referer ) {

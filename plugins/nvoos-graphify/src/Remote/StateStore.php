@@ -20,7 +20,7 @@ class StateStore {
 	 * @param string $slug Source slug.
 	 * @return string|null
 	 */
-	public function getCursor( string $slug ): ?string {
+	public function getCursor( string $slug ): ?string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- stub; implementation deferred to addon
 		return null;
 	}
 

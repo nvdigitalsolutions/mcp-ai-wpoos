@@ -1324,15 +1324,8 @@ composer install</pre>
 	protected function check_api_keys_configured() {
 		// Get settings from the centralized settings storage.
 		// Following SoC: Delegate settings retrieval to WP_MCP_AI_Admin_Settings.
-		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-			$settings   = WP_MCP_AI_Admin_Settings::get_settings();
-			$has_openai = ! empty( $settings['openai_api_key'] );
-			$has_gemini = ! empty( $settings['gemini_api_key'] );
-		} else {
-			// Fallback: Check legacy individual options (backward compatibility).
-			$has_openai = ! empty( get_option( 'wp_mcp_ai_openai_api_key' ) );
-			$has_gemini = ! empty( get_option( 'wp_mcp_ai_gemini_api_key' ) );
-		}
+		$has_openai = WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' );
+		$has_gemini = WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' );
 
 		$configured = $has_openai || $has_gemini;
 

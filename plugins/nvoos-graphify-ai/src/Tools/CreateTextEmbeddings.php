@@ -101,22 +101,12 @@ class CreateTextEmbeddings extends AbstractAiTool {
 	}
 
 	private function storeEmbedding( string $nodeId, array $vector ): void {
-		global $wpdb;
-		$packed = '';
-		foreach ( $vector as $f ) {
-			$packed .= pack( 'f', (float) $f );
-		}
-		// Use core's table name constant if available.
-		$table = $wpdb->prefix . 'nvoos_graphify_embeddings';
-		$wpdb->replace(
-			$table,
+		\NvoosGraphify\Graph\Db::upsertEmbedding(
 			array(
-				'node_id'    => $nodeId,
-				'vector'     => $packed,
-				'dimensions' => count( $vector ),
-				'created_at' => current_time( 'mysql' ),
-			),
-			array( '%s', '%s', '%d', '%s' )
+				'node_id' => $nodeId,
+				'dim'     => count( $vector ),
+				'vector'  => \wp_json_encode( $vector ),
+			)
 		);
 	}
 }

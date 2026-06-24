@@ -1923,9 +1923,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				return $status_labels;
 			}
 
-			// Read file content, suppressing warnings since failure is handled below.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents,WordPress.PHP.NoSilencedErrors.Discouraged -- Local file read; failure handled below.
-			$content = @file_get_contents( $status_file );
+			// Read file content. Use an explicit error handler instead of @
+			// because the @ operator is not reliable across all PHP 8
+			// configurations (e.g. xdebug.scream, custom error handlers).
+			// A leaked warning corrupts MCP JSON-RPC HTTP responses when
+			// this runs during a tools/list or tools/call request.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; failure handled below.
+			set_error_handler( '__return_true' );
+			$content = file_get_contents( $status_file );
+			restore_error_handler();
 			if ( false === $content ) {
 				return $status_labels;
 			}

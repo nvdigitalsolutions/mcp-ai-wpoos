@@ -369,7 +369,7 @@ class Detector {
 	// ─── Node ID helpers ───────────────────────────────────────
 
 	/** @return string */
-	public static function postNodeId( int $postId, string $postType = 'post' ): string {
+	public static function postNodeId( int $postId, string $postType = 'post' ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- public API, future extensibility
 		return 'post_' . absint( $postId );
 	}
 

@@ -1196,16 +1196,23 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		/**
 		 * Resolve the timeout to use for the request.
 		 *
+		 * Reads the global 'request_timeout' admin setting (Settings → NV oOS → General →
+		 * Behavior), falling back to the Resource Manager's workload-tier recommendation
+		 * when no explicit timeout has been saved.  A per-request `timeout` option still
+		 * takes precedence when provided by the caller.
+		 *
 		 * @param array $options Request options.
 		 * @return int
 		 */
 		protected function resolve_timeout( array $options ) {
 			if ( isset( $options['timeout'] ) ) {
-				return (int) $options['timeout'];
+				return max( 5, (int) $options['timeout'] );
 			}
 
-			// Default timeout for Cloudflare Workers AI.
-			return 60;
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+
+			return isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 		}
 
 		/**

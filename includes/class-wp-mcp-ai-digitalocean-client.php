@@ -101,8 +101,13 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 		 */
 		public function get_api_key() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$key      = isset( $settings['digitalocean_api_key'] ) ? $settings['digitalocean_api_key'] : '';
 
-			return isset( $settings['digitalocean_api_key'] ) ? $settings['digitalocean_api_key'] : '';
+			if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'digitalocean' ) ?? '';
+			}
+
+			return $key;
 		}
 
 		/**
@@ -166,17 +171,25 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 		/**
 		 * Resolve the request timeout in seconds.
 		 *
+		 * Reads the global 'request_timeout' admin setting (Settings → NV oOS → General →
+		 * Behavior), falling back to the Resource Manager's workload-tier recommendation
+		 * when no explicit timeout has been saved.  A per-request `timeout` option still
+		 * takes precedence when provided by the caller.
+		 *
 		 * @param array $options Request options may carry a 'timeout' key.
 		 * @return int
 		 */
 		protected function resolve_timeout( array $options ) {
-			$default = 60;
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 
 			if ( ! empty( $options['timeout'] ) && is_numeric( $options['timeout'] ) ) {
-				return max( 10, absint( $options['timeout'] ) );
+				$timeout = max( 10, absint( $options['timeout'] ) );
 			}
 
-			return $default;
+			return max( 10, $timeout );
 		}
 
 		/**

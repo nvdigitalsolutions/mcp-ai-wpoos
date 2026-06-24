@@ -87,9 +87,9 @@ class GetNeighbors extends AbstractTool {
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$node = null;
 		if ( ! empty( $arguments['node_id'] ) ) {
-			$node = \NvoosGraphify\Graph\Db::get_node( sanitize_text_field( $arguments['node_id'] ) );
+			$node = \NvoosGraphify\Graph\Db::getNode( sanitize_text_field( $arguments['node_id'] ) );
 		} elseif ( ! empty( $arguments['label'] ) ) {
-			$results = \NvoosGraphify\Graph\Db::search_nodes( sanitize_text_field( $arguments['label'] ), '', 1 );
+			$results = \NvoosGraphify\Graph\Db::searchNodes( sanitize_text_field( $arguments['label'] ), '', 1 );
 			$node    = ! empty( $results ) ? $results[0] : null;
 		}
 
@@ -102,12 +102,12 @@ class GetNeighbors extends AbstractTool {
 
 		$relation      = isset( $arguments['relation'] ) ? sanitize_text_field( $arguments['relation'] ) : '';
 		$max_neighbors = isset( $arguments['max_neighbors'] ) ? max( 1, min( 500, absint( $arguments['max_neighbors'] ) ) ) : 100;
-		$edges         = \NvoosGraphify\Graph\Db::get_edges_for_node( $node->node_id, $relation, $max_neighbors );
+		$edges         = \NvoosGraphify\Graph\Db::getEdgesForNode( $node->node_id, $relation, $max_neighbors );
 
 		$neighbors = array();
 		foreach ( $edges as $edge ) {
 			$nid         = ( $edge->source_node_id === $node->node_id ) ? $edge->target_node_id : $edge->source_node_id;
-			$nbr_node    = \NvoosGraphify\Graph\Db::get_node( $nid );
+			$nbr_node    = \NvoosGraphify\Graph\Db::getNode( $nid );
 			$neighbors[] = array(
 				'node_id'    => $nid,
 				'label'      => $nbr_node ? $nbr_node->label : $nid,

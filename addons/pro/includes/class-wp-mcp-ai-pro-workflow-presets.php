@@ -911,9 +911,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				),
 				'keyword_research_pipeline' => array(
 					'name'        => __( 'Keyword Pipeline', 'mcp-ai-wpoos-pro' ),
-					'description' => __( 'Research keywords, analyse competition, prioritise opportunities, and create content briefs.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Research keywords, analyse competition, prioritise opportunities, generate an image, and create content briefs.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'seo',
-					'icon'        => 'dashicons-chart-bar',
+					'icon'        => 'dashicons-search',
 					'tags'        => array( 'seo', 'keywords', 'research' ),
 					'nodes'       => array(
 						array(
@@ -938,8 +938,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Research Keywords', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'web_search',
-								'arguments'   => array( 'query' => '{{input.keywords}} keyword ideas' ),
-								'description' => __( 'Expand seed keywords into a keyword list.', 'mcp-ai-wpoos-pro' ),
+								'arguments'   => array( 'query' => '{{input.keywords}} keyword research' ),
+								'description' => __( 'Find related keywords and search volumes.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
 						array(
@@ -971,6 +971,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							),
 						),
 						array(
+							'id'       => 'node_4b',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 525,
+							),
+							'data'     => array(
+								'label'       => __( 'Generate Featured Image', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'generate_openai_image',
+								'arguments'   => array(
+									'prompt'  => '{{node_1.value}}',
+									'size'    => '1792x1024',
+									'model'   => 'dall-e-3',
+									'quality' => 'hd',
+								),
+								'description' => __( 'Generate an AI featured image for the content.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
 							'id'       => 'node_5',
 							'type'     => 'tool',
 							'position' => array(
@@ -981,8 +1000,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 								'label'       => __( 'Create Content Briefs', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'create_post',
 								'arguments'   => array(
-									'post_type'   => 'post',
-									'post_status' => 'draft',
+									'post_type'         => 'post',
+									'post_status'       => 'draft',
+									'featured_image_id' => '{{node_4b.attachment_id}}',
 								),
 								'description' => __( 'Generate content briefs for prioritised keywords.', 'mcp-ai-wpoos-pro' ),
 							),
@@ -1020,8 +1040,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'sourceHandle' => 'output',
 						),
 						array(
-							'id'           => 'edge_4_5',
+							'id'           => 'edge_4_4b',
 							'source'       => 'node_4',
+							'target'       => 'node_4b',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_4b_5',
+							'source'       => 'node_4b',
 							'target'       => 'node_5',
 							'sourceHandle' => 'output',
 						),
@@ -1031,6 +1057,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'target'       => 'node_6',
 							'sourceHandle' => 'output',
 						),
+
 					),
 				),
 			);
@@ -1119,7 +1146,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Publish Product', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'save_post',
-								'arguments'   => array( 'post_status' => 'publish' ),
+								'arguments'   => array(
+									'post_status'       => 'publish',
+									'featured_image_id' => '{{node_4.attachment_id}}',
+								),
 								'description' => __( 'Set the product to published status.', 'mcp-ai-wpoos-pro' ),
 							),
 						),

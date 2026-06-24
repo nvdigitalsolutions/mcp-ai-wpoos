@@ -3833,13 +3833,70 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Render a credential source note for API key fields.
+		 *
+		 * Displays the current key source (NV oOS Settings, WP 7.0 Connectors,
+		 * env var, constant, or "Not Configured") and a hint about alternative
+		 * configuration methods available on WP 7.0+.
+		 *
+		 * @since 1.8.0
+		 * @param string $provider Provider slug (e.g., 'openai', 'gemini').
+		 */
+		private function render_credential_source_note( string $provider ): void {
+			if ( ! class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				return;
+			}
+
+			$source = WP_MCP_AI_Credential_Resolver::get_key_source( $provider );
+			$label  = WP_MCP_AI_Credential_Resolver::get_key_source_label( $source );
+
+			// Source indicator badge.
+			$badge_classes = array(
+				'nvoos_settings' => 'wp-mcp-ai-key-source wp-mcp-ai-key-source--settings',
+				'wp70_connector' => 'wp-mcp-ai-key-source wp-mcp-ai-key-source--connector',
+				'env_var'        => 'wp-mcp-ai-key-source wp-mcp-ai-key-source--env',
+				'constant'       => 'wp-mcp-ai-key-source wp-mcp-ai-key-source--constant',
+				'none'           => 'wp-mcp-ai-key-source wp-mcp-ai-key-source--none',
+			);
+
+			$badge_class = $badge_classes[ $source ] ?? 'wp-mcp-ai-key-source';
+
+			echo '<br><span class="' . esc_attr( $badge_class ) . '">';
+			printf(
+				/* translators: %s: key source label (e.g., "NV oOS Settings", "Environment Variable") */
+				esc_html__( 'Key source: %s', 'mcp-ai-wpoos' ),
+				esc_html( $label )
+			);
+			echo '</span>';
+
+			// Alternative configuration hint for WP 7.0+ sites.
+			if ( function_exists( 'wp_supports_ai' ) && wp_supports_ai() && 'wp70_connector' !== $source ) {
+				echo '<br><span class="wp-mcp-ai-key-source-hint">';
+				printf(
+					/* translators: 1: URL to Settings → Connectors, 2: env var name (e.g., OPENAI_API_KEY) */
+					esc_html__( 'You can also configure this key in %1$s, or via the %2$s environment variable.', 'mcp-ai-wpoos' ),
+					sprintf(
+						'<a href="%s">%s</a>',
+						esc_url( admin_url( 'admin.php?page=connectors' ) ),
+						esc_html__( 'Settings → Connectors', 'mcp-ai-wpoos' )
+					),
+					'<code>' . esc_html( strtoupper( $provider ) . '_API_KEY' ) . '</code>'
+				);
+				echo '</span>';
+			}
+		}
+
+		/**
 		 * Render the OpenAI API key field.
 		 */
 		public function render_api_key_field() {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'openai_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Enter the OpenAI secret key with access to the Chat Completions API.', 'mcp-ai-wpoos' ); ?></p>
+		<p class="description">
+			<?php esc_html_e( 'Enter the OpenAI secret key with access to the Chat Completions API.', 'mcp-ai-wpoos' ); ?>
+			<?php $this->render_credential_source_note( 'openai' ); ?>
+		</p>
 			<?php
 		}
 
@@ -3850,7 +3907,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemini_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'gemini_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Enter the Gemini API key with access to the Generative Language API.', 'mcp-ai-wpoos' ); ?></p>
+		<p class="description">
+			<?php esc_html_e( 'Enter the Gemini API key with access to the Generative Language API.', 'mcp-ai-wpoos' ); ?>
+			<?php $this->render_credential_source_note( 'gemini' ); ?>
+		</p>
 			<?php
 		}
 
@@ -3870,7 +3930,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_maps_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'google_maps_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Enter your Google Maps Platform API key with Geocoding API and Places API enabled.', 'mcp-ai-wpoos' ); ?></p>
+		<p class="description">
+			<?php esc_html_e( 'Enter your Google Maps Platform API key with Geocoding API and Places API enabled.', 'mcp-ai-wpoos' ); ?>
+			<?php $this->render_credential_source_note( 'google_maps' ); ?>
+		</p>
 			<?php
 		}
 
@@ -3972,7 +4035,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_api_key]" value="<?php echo esc_attr( $this->get_masked_sensitive_setting_value( $settings, 'lm_studio_api_key' ) ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Optional: enter a bearer token when your LM Studio server has API-key authentication enabled (LM Studio 0.3.6+). Leave empty for open access.', 'mcp-ai-wpoos' ); ?></p>
+		<p class="description">
+			<?php esc_html_e( 'Optional: enter a bearer token when your LM Studio server has API-key authentication enabled (LM Studio 0.3.6+). Leave empty for open access.', 'mcp-ai-wpoos' ); ?>
+			<?php $this->render_credential_source_note( 'lm_studio' ); ?>
+		</p>
 			<?php
 		}
 

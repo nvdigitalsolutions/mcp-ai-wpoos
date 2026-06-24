@@ -708,7 +708,7 @@
 			this.ajax(
 				'wp_mcp_ai_sm_trigger_schedule',
 				{ schedule_id: id },
-				function ( err, _data ) {
+				function ( err, data ) {
 					$row.removeClass( 'wp-mcp-ai-sm-running' );
 
 					if ( err ) {
@@ -719,7 +719,13 @@
 					}
 
 					// eslint-disable-next-line no-console
-					console.log( '[NV oOS Schedule Manager] Trigger completed:', id, _data );
+					console.log( '[NV oOS Schedule Manager] Trigger completed:', id, data );
+
+					// Surface debug output if present.
+					if ( data && data.debug_output ) {
+						// eslint-disable-next-line no-console
+						console.warn( '[NV oOS Schedule Manager] Debug output from trigger:', data.debug_output );
+					}
 
 					// Reload to show updated status.
 					self.loadSchedules();
@@ -1069,6 +1075,53 @@
 			html += this.editRow( 'Widget render mode', '<select id="edit-widget-render-mode">' + renderModeOpts + '</select>' );
 			html += this.editRow( 'Widget auto-refresh (s)', '<input type="number" id="edit-widget-refresh-interval" class="small-text" min="0" max="3600" value="' + ( parseInt( dWd.refresh_interval, 10 ) || 0 ) + '"><br><span class="description">0 = off</span>' );
 
+			// Result Delivery section.
+			var rd = schedule.result_delivery || {};
+			var rdSuccess = ( rd.on_success || {} ).channels || {};
+			var rdFailure = ( rd.on_failure || {} ).channels || {};
+			html += '<tr><td colspan="2"><hr><strong>Result Delivery</strong></td></tr>';
+
+			// On Success channels.
+			html += '<tr><td colspan="2"><em>On Success</em></td></tr>';
+			html += this.editRow(
+				'Email',
+				'<label><input type="checkbox" id="edit-rd-success-email" ' + ( ( rdSuccess.email || {} ).enabled ? 'checked' : '' ) + '> Send result email</label>' +
+				'<br><input type="email" id="edit-rd-success-email-to" class="regular-text" value="' + this.esc( ( rdSuccess.email || {} ).to || '' ) + '" placeholder="team@example.com">' +
+				'<br><select id="edit-rd-success-email-template"><option value="full">Full Report</option><option value="summary">Summary</option></select>'
+			);
+			html += this.editRow(
+				'Slack',
+				'<label><input type="checkbox" id="edit-rd-success-slack" ' + ( ( rdSuccess.slack || {} ).enabled ? 'checked' : '' ) + '> Post to Slack</label>' +
+				'<br><input type="text" id="edit-rd-success-slack-channel" class="regular-text" value="' + this.esc( ( rdSuccess.slack || {} ).channel || '' ) + '" placeholder="#research">'
+			);
+			html += this.editRow(
+				'Paper Store',
+				'<label><input type="checkbox" id="edit-rd-success-paper" ' + ( ( rdSuccess.paper_store || {} ).enabled ? 'checked' : '' ) + '> Save to Paper Store</label>' +
+				'<br><input type="text" id="edit-rd-success-paper-collection" class="regular-text" value="' + this.esc( ( rdSuccess.paper_store || {} ).collection || '' ) + '" placeholder="blog-research">' +
+				'<br><select id="edit-rd-success-paper-driver"><option value="json">JSON</option><option value="markdown_yaml">Markdown + YAML</option></select>' +
+				' <input type="number" id="edit-rd-success-paper-retention" class="small-text" value="' + ( parseInt( ( rdSuccess.paper_store || {} ).retention, 10 ) || 30 ) + '" min="0" max="100" style="width:60px"> runs'
+			);
+
+			// WordPress post auto-creation.
+			var wpCfg = rdSuccess.wordpress || {};
+			html += this.editRow(
+				'WordPress Post',
+				'<label><input type="checkbox" id="edit-rd-success-wordpress" ' + ( wpCfg.enabled ? 'checked' : '' ) + '> Auto-create post from result</label>' +
+				'<br><span class="description">When the AI already calls create_post during the run, this channel is automatically skipped to avoid duplicate posts.</span>' +
+				'<br><label style="margin-top:4px;display:inline-block"><input type="checkbox" id="edit-rd-success-wordpress-skip-if-ai" ' + ( false !== wpCfg.skip_if_ai_posted ? 'checked' : '' ) + '> Skip if AI already created posts</label>' +
+				'<br><select id="edit-rd-success-wordpress-post-type" style="margin-top:4px"><option value="post" ' + ( 'post' === ( wpCfg.post_type || 'post' ) ? 'selected' : '' ) + '>Post</option><option value="page" ' + ( 'page' === ( wpCfg.post_type || '' ) ? 'selected' : '' ) + '>Page</option></select>' +
+				' <select id="edit-rd-success-wordpress-post-status"><option value="draft" ' + ( 'draft' === ( wpCfg.post_status || 'draft' ) ? 'selected' : '' ) + '>Draft</option><option value="publish" ' + ( 'publish' === ( wpCfg.post_status || '' ) ? 'selected' : '' ) + '>Publish</option><option value="pending" ' + ( 'pending' === ( wpCfg.post_status || '' ) ? 'selected' : '' ) + '>Pending Review</option></select>' +
+				' Category ID: <input type="number" id="edit-rd-success-wordpress-category" class="small-text" value="' + ( parseInt( wpCfg.category, 10 ) || 0 ) + '" min="0" style="width:80px">'
+			);
+
+			// On Failure channels.
+			html += '<tr><td colspan="2"><hr><em>On Failure</em></td></tr>';
+			html += this.editRow(
+				'Failure Email',
+				'<label><input type="checkbox" id="edit-rd-failure-email" ' + ( ( rdFailure.email || {} ).enabled ? 'checked' : '' ) + '> Send failure alert</label>' +
+				'<br><input type="email" id="edit-rd-failure-email-to" class="regular-text" value="' + this.esc( ( rdFailure.email || {} ).to || '' ) + '" placeholder="admin@example.com">'
+			);
+
 			html += '</table>';
 
 			$body.html( html );
@@ -1124,6 +1177,45 @@
 				widget_defaults: {
 					render_mode:      $( '#edit-widget-render-mode' ).val() || 'summary-card',
 					refresh_interval: parseInt( $( '#edit-widget-refresh-interval' ).val(), 10 ) || 0,
+				},
+			};
+
+			// Result delivery config.
+			data.result_delivery = {
+				on_success: {
+					channels: {
+						email: {
+							enabled:  $( '#edit-rd-success-email' ).is( ':checked' ),
+							to:       $( '#edit-rd-success-email-to' ).val().trim(),
+							template: $( '#edit-rd-success-email-template' ).val() || 'full',
+						},
+						slack: {
+							enabled: $( '#edit-rd-success-slack' ).is( ':checked' ),
+							channel: $( '#edit-rd-success-slack-channel' ).val().trim(),
+						},
+						paper_store: {
+							enabled:    $( '#edit-rd-success-paper' ).is( ':checked' ),
+							collection: $( '#edit-rd-success-paper-collection' ).val().trim(),
+							driver:     $( '#edit-rd-success-paper-driver' ).val() || 'json',
+							retention:  parseInt( $( '#edit-rd-success-paper-retention' ).val(), 10 ) || 30,
+						},
+						wordpress: {
+							enabled:           $( '#edit-rd-success-wordpress' ).is( ':checked' ),
+							skip_if_ai_posted: $( '#edit-rd-success-wordpress-skip-if-ai' ).is( ':checked' ),
+							post_type:         $( '#edit-rd-success-wordpress-post-type' ).val() || 'post',
+							post_status:       $( '#edit-rd-success-wordpress-post-status' ).val() || 'draft',
+							category:          parseInt( $( '#edit-rd-success-wordpress-category' ).val(), 10 ) || 0,
+						},
+					},
+				},
+				on_failure: {
+					channels: {
+						email: {
+							enabled:  $( '#edit-rd-failure-email' ).is( ':checked' ),
+							to:       $( '#edit-rd-failure-email-to' ).val().trim(),
+							template: 'error',
+						},
+					},
 				},
 			};
 

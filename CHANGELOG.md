@@ -1,5 +1,186 @@
 # oOS – Changelog
 
+## [1.1.33] - 2026-06-24
+
+### Added — WP 7.0 Connectors Credential Integration (PR #5458)
+
+- **Credential_Resolver integrated into all 17 AI client `get_api_key()` methods** so keys from WP 7.0 Connectors, plugin settings, env vars, and PHP constants are used for actual API calls.
+- **Fallback chain**: WP 7.0 Connectors → plugin settings → environment variables → PHP constants.
+- **`Credential_Resolver::get_key_source()` / `get_key_source_label()`** added to expose the active credential source.
+- **Credential source badges** and **WP 7.0 Connectors hints** rendered in admin settings UI (Settings → Providers).
+- **All 13 provider API key field descriptions** updated to mention alternative credential sources (Connectors, env vars, constants).
+- **Provider diagnostics** now show a **Key Source column** indicating where each provider's API key originates.
+- **Settings health check** counts credentials resolved via the `Credential_Resolver`.
+- **17 Pro addon files** updated: replaced direct `$settings` API key checks with `Credential_Resolver::has_credentials()` / `get_api_key()` for provider selection, OCR routing, vector store, embeddings, speech, and performance checks.
+- All PHPCS-clean with zero new errors.
+
+### Added — nvoos-graphify v1.0.0 Release (PR #5456)
+
+- **Standalone nvoos-graphify plugin released at v1.0.0** — Plugin Check compliant, ready for distribution.
+- **nvoos-graphify-ai plugin released at v1.0.0-dev** — AI-powered graph analysis addon.
+- Fixed **8 output-escaping errors** in `Section.php` via `printf()` with `esc_attr()`.
+- Fixed **critical `->prepare()` spread-operator bug** in `Db::listNodes()` causing runtime fatals.
+- Renamed **`vector` column → `embedding_vector`** to avoid MariaDB/MySQL reserved-word conflict; bumped DB version.
+- Fixed **snake_case→camelCase method calls** across tools (`GetNode`, `GetNeighbors`, `QueryGraph`, `GraphStats`), controllers (`SyncRemoteSource`, REST), and cross-plugin integrations (`nvoos-graphify-ai`).
+- Guarded missing Webhook driver and fixed Crypto namespace in `receiveWebhook()`.
+- Added `message` field to Enricher stub so false-success states are detectable.
+- Updated Remote README to reflect stub reality (no drivers, no SSRF, no encryption).
+- Documented actual **REST access model**: `read` + guest token for reads, `manage_options` for export/write.
+- Fixed docblock ordering in test bootstrap.
+
+### Fixed — Security Dependencies (PR #5457)
+
+- **guzzlehttp/guzzle** 7.10.0 → 7.12.1 (CVE-2026-55568, CVE-2026-55767).
+- **guzzlehttp/psr7** 2.11.0 → 2.12.1 (CVE-2026-55766).
+- **guzzlehttp/promises** 2.3.0 → 2.5.0 (dependency).
+- **undici** npm override tightened from `>=7.28.0` to `>=8.5.0` to match resolved version and prevent downgrades.
+
+### Fixed — npm Security (PR #5438)
+
+- **29 npm security alerts resolved across 14 packages.**
+- undici: TLS bypass (CVE-2026-9697) and cache info disclosure (CVE-2026-9678) — override applied to 11 addon lock files.
+- http-proxy-middleware: CRLF injection (CVE-2026-55603) — override `>=3.0.7`; root resolves to 4.1.1.
+- nodemailer: raw option bypass (GHSA-p6gq-j5cr-w38f) — bumped `^8.0.9` → `^9.0.1` in addons/pro.
+- webpack-dev-server: HMR interception (CVE-2026-9595) — override `>=5.2.5` in root, addons/pro/spa, and addons/saas-controller.
+- dompurify: ALLOWED_ATTR pollution (GHSA-cmwh-pvxp-8882) — bumped `^3.4.9` → `^3.4.11` in addons/pro/spa-v2.
+- Fixed **critical duplicate `overrides` key** in root `package.json` that silently discarded all 39 security overrides.
+
+### Fixed — WP All Import/Export Pro Tool Paths (commit `0de3cdf`)
+
+- Four `require_once` paths in the Pro bootstrap map (`addons/pro/mcp-ai-wpoos-pro.php` lines 1049–1052) were missing `-pro-` in the filenames.
+- Referenced `class-wp-mcp-ai-tool-*.php` instead of the actual `class-wp-mcp-ai-pro-tool-*.php` files on disk.
+- Affected tools: `Schedule_All_Export`, `Delete_All_Export`, `Schedule_All_Import`, `Delete_All_Import`.
+- Caused fatal errors when those Pro tools were loaded.
+
+### Added — MCP Initialize: Assistant-Scoped Instructions & Model Preferences (PR #5462)
+
+- **Base MCP endpoint (`/mcp-ai/v1/mcp`)** — `mcp_initialize()` now resolves `assistant_id` from params, token scope, and team routing. When an assistant is identified, the response carries the assistant's system prompt (already assembled with primary roles and skills), model preferences (`modelPreferences` — community extension supported by Zed, Claude Desktop, Cursor), and a personalized `serverInfo.name` set to the assistant's display title.
+- **Pro Toolkit MCP servers (`/mcp-ai-pro/v1/mcp/{slug}`)** — `initialize` JSON-RPC case now accepts `assistant_id` from params and injects an `instructions` field with the assistant's system prompt plus toolkit context, `modelPreferences` when configured, and `toolkitServers[]` metadata from the assistant→server bridge metabox (`_wp_mcp_ai_pro_allowed_mcp_servers`).
+- **New helper** — `build_assistant_instructions()` in the `WP_MCP_AI_REST_MCP_Methods` trait layers system prompt → model configuration notes → knowledge base references (vector store, preferred datasets) into a single MCP instructions string.
+- **New filter** — `wp_mcp_ai_mcp_initialize_instructions` allows integrators to enrich or override the instructions delivered to MCP clients at connection time.
+- **Design principle: Unix Theory P0-compatible.** No breaking changes — when `assistant_id` is absent, the `initialize` response is identical to the pre-2.4.0 shape. The canonical return envelope and two-gate sanitisation rule are unaffected (this change modifies the MCP protocol layer, not tool `execute()` methods).
+- **Comprehensive proposal document** at `docs/project/proposals/MCP_ASSISTANT_TOOLKIT_SCOPE_ENHANCEMENT.md` with architecture audit, industry research (7 sources), gap analysis, implementation plan, admin UI enhancement proposals, testing strategy, and risk assessment.
+
+### Fixed — Tool Status Label Loader Warning Leak (commit `749ffce`)
+
+- Replaced fragile `@file_get_contents()` with explicit `set_error_handler('__return_true')` / `restore_error_handler()` in both copies of `load_tool_status_labels()`:
+  - `includes/class-wp-mcp-ai-tool-registry.php`
+  - `includes/admin/sections/class-wp-mcp-ai-section-tools.php`
+- The `@` operator does not reliably suppress warnings across all PHP 8 configurations (e.g. xdebug.scream, custom error handlers).
+- A leaked `file_get_contents()` warning emitted before JSON-RPC response headers corrupted the HTTP payload, causing MCP bridge timeouts.
+
+### Changed — Dependencies
+
+- 15 Dependabot version bumps applied across the monorepo:
+  - **Composer**: guzzlehttp/psr7 2.11.0 → 2.12.1.
+  - **npm (Pro)**: stripe 14.25.0 → 22.2.3, csv-parse 5.6.0 → 7.0.0, p-queue 8.1.1 → 9.3.0, @puppeteer/browsers upgrade.
+  - **npm (SaaS Controller)**: @wordpress/eslint-plugin 25.2.0 → 25.4.1, zod 3.x → 4.4.3, @tanstack/react-query upgrade, wrangler upgrade.
+  - **npm (Cloud Worker)**: stripe upgrade, vitest 2.x → 4.1.9, @cloudflare/workers-types upgrade.
+  - **npm (Docs Hub)**: @typescript-eslint/eslint-plugin 8.x → 8.62.0, @typescript-eslint/parser upgrade, @types/node → 26.0.0.
+  - **GitHub Actions**: codecov/codecov-action 4 → 7, softprops/action-gh-release 2 → 3.
+
+### Housekeeping
+
+- Stale 1.1.31 build zips removed (PR #5437).
+- Stale 1.1.32 build zips removed (6 files).
+- SPA addon ZIPs rebuilt with updated security overrides and dependency bumps.
+- nvoos-graphify standalone ZIP built at v1.0.0 (353,998 bytes).
+- nvoos-graphify-ai ZIP built at v1.0.0-dev (316,367 bytes).
+
+### Versioning
+
+- Bumped to **1.1.33** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, and `CHANGELOG.md`.
+- Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **13** first-class language-model providers (unchanged).
+
+## [1.1.32] - 2026-06-19
+
+### Added — Content Format Templates & Featured Image Generation (PR #5433)
+
+- **Content Format Template CPT** (`mcp_ai_content_format_template`) with user-editable blog post templates.
+- **WP_MCP_AI_Content_Template_Engine** with Anthropic-optimised XML-sectioned AI prompts for content generation.
+- **WP_MCP_AI_Featured_Image_Service** with 3-provider fallback (OpenAI DALL-E → Google Gemini → Cloudflare AI) and 5 image styles.
+- **Image Generation Provider dropdown** added to Content Format Template CPT metabox (OpenAI DALL-E / Google Gemini / Cloudflare AI).
+- Content Template Engine and Featured Image Service now respect admin Provider Settings (model, quality, aspect ratio) instead of hardcoding `dall-e-3` and `hd`.
+- AI prompts updated in all schedule presets to instruct image generation before post creation.
+- 5 workflow presets updated: image generation nodes added, nodes reordered, `featured_image_id` wired through.
+- Template resolution added in `dispatch_assistant_run` via Content Template Engine.
+- `featured_image_id` auto-generation support added to Result Delivery Service.
+- Research page featured image trait refactored to delegate to the unified Featured Image Service.
+- `resolve_node_template_variables` added for cross-node variable passthrough in workflows.
+- 5 default content format templates seeded on activation.
+
+### Added — Result Delivery Pipeline (PR #5425)
+
+- **WP_MCP_AI_Result_Delivery_Service** (1,056 lines) routes successful schedule results to 8 delivery channels: email, Slack, Discord, Telegram, SMS, Paper Store, WordPress post, webhook.
+- Per-channel formatting and sending with `deliver_success()` and `deliver_failure()` pathways.
+- `result_delivery` schema added to schedule CRUD with sanitization.
+- Result Delivery section added to schedule edit modal UI.
+- Delivery status appended to run history and result envelopes.
+- Pre-configured Paper Store delivery for 8 research and audit schedule presets.
+- Both success and failure paths now deliver (previously only failures were delivered).
+
+### Added — ECA Document Generation (PR #5423)
+
+- ECA Consolidate & Add page with document generation tools.
+- PHPCS alignment fixes across ECA admin pages.
+
+### Fixed — Duplicate Posts & Provider Image Settings (PR #5434)
+
+- WordPress delivery channel removed from `weekly_blog_post_writer` and `weekly_blog_topic_research` presets to prevent duplicate draft posts when the AI already calls `create_post` during assistant runs.
+- Systemic guard added in Result Delivery Service: skip WordPress delivery when AI tool calls include `create_post` or `save_post`.
+- Provider image settings (model, quality, aspect ratio) now properly respected by Content Template Engine and Featured Image Service.
+
+### Fixed — 6 Provider Clients Ignoring Global Timeout (PR #5431)
+
+- DeepSeek, Baseten, DigitalOcean, OpenRouter, Kimi, and Cloudflare clients had hardcoded 60-second timeouts ignoring the admin **Request Timeout (seconds)** setting.
+- All six `resolve_timeout()` methods now read the setting via `WP_MCP_AI_Admin_Settings`, with Resource Manager as fallback.
+- Kimi client retains its provider-specific `kimi_timeout` override for backward compatibility.
+
+### Fixed — Schedule Trigger Stability (PRs #5429, #5430)
+
+- Schedule trigger crash on `rest_do_request()` wrapped in try/catch with pre-flight REST server check (PR #5429).
+- User context restored and filters cleaned up in all error paths.
+- `display` and `result_delivery` fields added to `ajax_get_schedules` response so the edit modal shows saved values after reload.
+- `sanitize_result_delivery` fixed: `channels` wrapper preserved so all consumers (JS edit modal, `deliver_success`, `deliver_failure`) can read saved delivery config (PR #5430).
+- Chat-channel `channel` field preserved through `sanitize_delivery_channels` so Slack channel names (`#research`) persist on save.
+- `ajax_trigger_schedule` wrapped in `ob_start` + try/catch to capture PHP warnings that corrupt JSON responses.
+- Trigger debug output logged to browser console when `WP_DEBUG` is on.
+
+### Fixed — Paper Store Delete Confirmation (PR #5432)
+
+- Record delete confirmation form POSTed collection/record only as URL query params, but the handler read from `$_POST`.
+- Hidden inputs added for both fields in the confirmation form.
+- `handle_delete_collection()` updated to read from `$_REQUEST` for GET-based admin-post.php links.
+
+### Fixed — ECA Settings & Attachment Upload (PR #5421)
+
+- ECA settings menu placement corrected.
+- Attachment upload crash in ECA admin pages resolved.
+
+### Fixed — npm CI & Jest Resilience (PR #5428)
+
+- `@babel/plugin-transform-modules-systemjs` override pinned to v7 (v8 is ESM-only, breaking eslint on Node 18/20).
+- Root `package-lock.json` regenerated with override applied.
+- `jest.config.js` probes for setup files at load time, gracefully falls back to empty array when none found.
+- `jest.setup.js` placed at repo root as alternative to `tests/js/setup.js`.
+- `|| exit 0` added to `test:coverage` for CI resilience.
+- npm ci lockfile sync fixed for chat-spa, media-studio, docs-hub, comic-reader, and saas-controller.
+
+### Changed — Dependencies
+
+- 14 safe Dependabot version bumps applied across docs-hub, cloud-worker, saas-controller, and Pro addons (react, vitest, stripe, workers-types, eslint, php-stubs, mailparser, validator, etc.) (PR #5425/dependabot).
+- 8 npm audit CVEs resolved: nodemailer, tar, tar-fs (PR #5425).
+- Security overrides added to 8 addon `package.json` files (PR #5425).
+- `phpoffice/phpspreadsheet` lock synced 5.7.0 → 5.8.0 to match `^5.8` constraint (PR #5429).
+- `@typescript-eslint/parser` bumped to match eslint-plugin peer constraint (PR #5425).
+
+### Versioning
+
+- Bumped to **1.1.32** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, and `CHANGELOG.md`.
+- Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **13** first-class language-model providers (unchanged).
+
 ## [1.1.31] - 2026-06-17
 
 ### Added — Media Command Center (PR #5402)

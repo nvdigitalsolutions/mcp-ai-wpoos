@@ -141,7 +141,7 @@ class Builder {
 		$nodesTable = Db::nodesTable();
 		$edgesTable = Db::edgesTable();
 
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query(
 			"UPDATE {$nodesTable} n
              SET n.degree = (
@@ -149,6 +149,6 @@ class Builder {
                  WHERE e.source_node_id = n.node_id OR e.target_node_id = n.node_id
              )"
 		);
-        // phpcs:enable
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 }
