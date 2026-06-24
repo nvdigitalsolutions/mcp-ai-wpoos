@@ -45,6 +45,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			'teams',
 			'messenger',
 			'whatsapp',
+			'google_chat',
 			'sms',
 			'paper_store',
 			'webhook',
@@ -492,6 +493,107 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		}
 
 		// -------------------------------------------------------------------------
+		// Credential resolution
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Resolve credentials for a delivery channel using a three-tier fallback.
+		 *
+		 * Priority:
+		 *   1. connection_id → Remote Sites stored connection
+		 *   2. Inline {channel}_credentials in the channel config
+		 *   3. Chat Channels Toolkit global settings (via filter)
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $channel Channel slug (slack, telegram, etc.).
+		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @return array Empty array if no credentials resolved, or credential map keyed by channel.
+		 */
+		protected static function resolve_channel_credentials( $channel, array $config ) {
+			// 1. Try Remote Sites connection reference.
+			if ( ! empty( $config['connection_id'] ) ) {
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $config['connection_id'] );
+					if ( is_array( $connection ) && ! empty( $connection ) ) {
+						$creds = self::extract_credentials_from_connection( $channel, $connection );
+						if ( ! empty( $creds ) ) {
+							return $creds;
+						}
+					}
+				}
+			}
+
+			// 2. Try inline credentials stored under the canonical key.
+			if ( isset( $config[ $channel . '_credentials' ] ) && is_array( $config[ $channel . '_credentials' ] ) ) {
+				return $config[ $channel . '_credentials' ];
+			}
+
+			// 3. Allow integrators to supply global defaults.
+			return apply_filters( 'wp_mcp_ai_delivery_channel_default_credentials', array(), $channel, $config );
+		}
+
+		/**
+		 * Extract delivery credentials from a Remote Sites connection record.
+		 *
+		 * Maps the connection-type-agnostic storage to the per-channel shape
+		 * expected by unified_channel_broadcast.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $channel    Channel slug.
+		 * @param array  $connection Remote Sites connection record.
+		 * @return array Credential map for this channel, or empty array.
+		 */
+		protected static function extract_credentials_from_connection( $channel, array $connection ) {
+			$map = array(
+				'slack'       => array(
+					'token'   => isset( $connection['slack_bot_token'] ) ? (string) $connection['slack_bot_token'] : '',
+					'channel' => isset( $connection['slack_default_channel'] ) ? (string) $connection['slack_default_channel'] : '',
+				),
+				'telegram'    => array(
+					'token'   => isset( $connection['telegram_bot_token'] ) ? (string) $connection['telegram_bot_token'] : '',
+					'chat_id' => isset( $connection['telegram_chat_id'] ) ? (string) $connection['telegram_chat_id'] : '',
+				),
+				'discord'     => array(
+					'token'      => isset( $connection['discord_bot_token'] ) ? (string) $connection['discord_bot_token'] : '',
+					'channel_id' => isset( $connection['discord_channel_id'] ) ? (string) $connection['discord_channel_id'] : '',
+				),
+				'teams'       => array(
+					'token'      => isset( $connection['teams_token'] ) ? (string) $connection['teams_token'] : '',
+					'team_id'    => isset( $connection['teams_team_id'] ) ? (string) $connection['teams_team_id'] : '',
+					'channel_id' => isset( $connection['teams_channel_id'] ) ? (string) $connection['teams_channel_id'] : '',
+				),
+				'messenger'   => array(
+					'access_token' => isset( $connection['messenger_access_token'] ) ? (string) $connection['messenger_access_token'] : '',
+					'recipient_id' => isset( $connection['messenger_recipient_id'] ) ? (string) $connection['messenger_recipient_id'] : '',
+				),
+				'whatsapp'    => array(
+					'access_token'    => isset( $connection['whatsapp_access_token'] ) ? (string) $connection['whatsapp_access_token'] : '',
+					'phone_number_id' => isset( $connection['whatsapp_phone_number_id'] ) ? (string) $connection['whatsapp_phone_number_id'] : '',
+					'to'              => isset( $connection['whatsapp_to'] ) ? (string) $connection['whatsapp_to'] : '',
+				),
+				'google_chat' => array(
+					'webhook_url' => isset( $connection['google_chat_webhook_url'] ) ? (string) $connection['google_chat_webhook_url'] : '',
+				),
+			);
+
+			if ( isset( $map[ $channel ] ) ) {
+				$filtered = array_filter(
+					$map[ $channel ],
+					function ( $v ) {
+						return '' !== $v;
+					}
+				);
+				if ( ! empty( $filtered ) ) {
+					return $filtered;
+				}
+			}
+
+			return array();
+		}
+
+		// -------------------------------------------------------------------------
 		// Senders — payload → channel API
 		// -------------------------------------------------------------------------
 
@@ -527,6 +629,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				case 'teams':
 				case 'messenger':
 				case 'whatsapp':
+				case 'google_chat':
 					return self::send_chat( $channel, $payload, $config );
 
 				default:
@@ -608,9 +711,17 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 
 			$message = isset( $payload['message'] ) ? (string) $payload['message'] : '';
 
-			// Resolve credentials: per-channel config wins over schedule-level.
+			/*
+			 * Resolve credentials using three-tier fallback:
+			 *   1. connection_id → Remote Sites connection.
+			 *   2. Inline {channel}_credentials in config.
+			 *   3. Chat Channels Toolkit global settings (via filter).
+			 */
 			$credentials = array();
-			if ( isset( $config['credentials'] ) && is_array( $config['credentials'] ) ) {
+			$resolved    = self::resolve_channel_credentials( $channel, $config );
+			if ( ! empty( $resolved ) ) {
+				$credentials[ $channel ] = $resolved;
+			} elseif ( isset( $config['credentials'] ) && is_array( $config['credentials'] ) ) {
 				$credentials[ $channel ] = $config['credentials'];
 			} elseif ( isset( $config[ $channel . '_credentials' ] ) ) {
 				$credentials[ $channel ] = $config[ $channel . '_credentials' ];

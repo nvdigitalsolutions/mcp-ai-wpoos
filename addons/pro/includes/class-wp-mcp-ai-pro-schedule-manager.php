@@ -2939,7 +2939,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * @return array Sanitized channel configs.
 		 */
 		protected static function sanitize_delivery_channels( array $channels ) {
-			$allowed         = array( 'email', 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp', 'sms', 'paper_store', 'webhook', 'wordpress' );
+			$allowed         = array( 'email', 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp', 'google_chat', 'sms', 'paper_store', 'webhook', 'wordpress' );
 			$email_templates = array( 'full', 'summary', 'error' );
 			$chat_templates  = array( 'summary', 'error' );
 
@@ -2971,12 +2971,41 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				if ( 'sms' === $channel && isset( $config['to'] ) ) {
 					$entry['to'] = sanitize_text_field( $config['to'] );
 				}
-				if ( in_array( $channel, array( 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp' ), true ) ) {
+				if ( in_array( $channel, array( 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp', 'google_chat' ), true ) ) {
+					// Reference a Remote Sites connection (preferred — avoids credential duplication).
+					if ( isset( $config['connection_id'] ) && is_string( $config['connection_id'] ) ) {
+						$entry['connection_id'] = sanitize_text_field( $config['connection_id'] );
+					}
+					// Inline credentials (fallback when no connection is configured).
 					if ( isset( $config[ $channel . '_credentials' ] ) ) {
 						$entry[ $channel . '_credentials' ] = $config[ $channel . '_credentials' ];
 					}
 					if ( isset( $config['channel'] ) ) {
 						$entry['channel'] = sanitize_text_field( $config['channel'] );
+					}
+					// Channel-specific identifier fields.
+					if ( 'telegram' === $channel && isset( $config['chat_id'] ) ) {
+						$entry['chat_id'] = sanitize_text_field( $config['chat_id'] );
+					}
+					if ( 'discord' === $channel && isset( $config['channel_id'] ) ) {
+						$entry['channel_id'] = sanitize_text_field( $config['channel_id'] );
+					}
+					if ( 'teams' === $channel ) {
+						if ( isset( $config['team_id'] ) ) {
+							$entry['team_id'] = sanitize_text_field( $config['team_id'] );
+						}
+						if ( isset( $config['channel_id'] ) ) {
+							$entry['channel_id'] = sanitize_text_field( $config['channel_id'] );
+						}
+					}
+					if ( 'messenger' === $channel && isset( $config['recipient_id'] ) ) {
+						$entry['recipient_id'] = sanitize_text_field( $config['recipient_id'] );
+					}
+					if ( 'whatsapp' === $channel && isset( $config['to'] ) ) {
+						$entry['to'] = sanitize_text_field( $config['to'] );
+					}
+					if ( 'google_chat' === $channel && isset( $config['space_id'] ) ) {
+						$entry['space_id'] = sanitize_text_field( $config['space_id'] );
 					}
 				}
 				if ( 'paper_store' === $channel ) {
