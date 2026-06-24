@@ -346,10 +346,10 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	private function get_provider( array $settings, $require_vision ) {
 		// For vision, prefer OpenAI (gpt-4o) then Gemini.
 		if ( $require_vision ) {
-			if ( ! empty( $settings['openai_api_key'] ) ) {
+			if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) ) {
 				return 'openai';
 			}
-			if ( ! empty( $settings['gemini_api_key'] ) ) {
+			if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) ) {
 				return 'gemini';
 			}
 			return new WP_Error(
@@ -359,16 +359,15 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Metadata-only: any provider works.
-		if ( ! empty( $settings['openai_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) ) {
 			return 'openai';
 		}
-		if ( ! empty( $settings['gemini_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) ) {
 			return 'gemini';
 		}
-		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' ) ) {
 			return 'anthropic';
 		}
-
 		return new WP_Error(
 			'imaging_no_provider',
 			__( 'No AI provider configured. Please add an OpenAI, Gemini, or Anthropic API key in the NV oOS settings.', 'mcp-ai-wpoos-pro' )

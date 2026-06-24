@@ -289,8 +289,7 @@ class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	protected function get_ai_service( $context ) {
 		// Check for OpenAI API key.
-		$settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
-		$api_key  = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+		$api_key = WP_MCP_AI_Credential_Resolver::get_api_key( 'openai' ) ?? '';
 
 		if ( empty( $api_key ) ) {
 			return new WP_Error(

@@ -59,7 +59,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, NVIDIA NIM, Hugging Face, Cloudflare, DeepSeek, OpenRouter, DigitalOcean, Kimi, Baseten, Ollama, LM Studio).', 'mcp-ai-wpoos' );
+			$description = __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, NVIDIA NIM, Hugging Face, Cloudflare, DeepSeek, OpenRouter, DigitalOcean, Kimi, Baseten, Ollama, LM Studio).', 'mcp-ai-wpoos' );
+
+			// WP 7.0+ notice: keys configured in Settings → Connectors are automatically shared.
+			if ( function_exists( 'wp_supports_ai' ) && wp_supports_ai() && function_exists( 'wp_get_connectors' ) ) {
+				$description .= '<br><span class="wp-mcp-ai-wp70-notice" style="display:inline-block;margin-top:8px;padding:6px 10px;background:#f0f6fc;border-left:4px solid #2271b1;">';
+				$description .= sprintf(
+					/* translators: %s: URL to Settings → Connectors screen */
+					__( 'Keys configured in Settings → Connectors are automatically shared with NV oOS. Manage your connections on the %s screen.', 'mcp-ai-wpoos' ),
+					sprintf(
+						'<a href="%s">%s</a>',
+						esc_url( admin_url( 'admin.php?page=connectors' ) ),
+						esc_html__( 'Connectors', 'mcp-ai-wpoos' )
+					)
+				);
+				$description .= '</span>';
+			}
+
+			return $description;
 		}
 
 		/**
@@ -297,9 +314,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'OpenAI API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: OpenAI API keys URL */
-						__( 'Your OpenAI API key. Supports standard, project-scoped, Business, and Enterprise keys. Get one from <a href="%s" target="_blank">OpenAI Platform</a>.', 'mcp-ai-wpoos' ),
-						'https://platform.openai.com/api-keys'
+						/* translators: %1$s: OpenAI API keys URL, %2$s: env var name */
+						__( 'Your OpenAI API key. Supports standard, project-scoped, Business, and Enterprise keys. Get one from <a href="%1$s" target="_blank">OpenAI Platform</a>. You can also set the %2$s environment variable or configure this key in Settings → Connectors (WP 7.0+).', 'mcp-ai-wpoos' ),
+						'https://platform.openai.com/api-keys',
+						'<code>OPENAI_API_KEY</code>'
 					),
 					'placeholder'  => 'sk-...',
 					'autocomplete' => 'new-password',
@@ -579,9 +597,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'Anthropic API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: Anthropic Console URL */
-						__( 'Your Anthropic API key. Supports standard, Team, and Enterprise workspace keys. Get one from <a href="%s" target="_blank">Anthropic Console</a>.', 'mcp-ai-wpoos' ),
-						'https://console.anthropic.com/'
+						/* translators: %1$s: Anthropic Console URL, %2$s: env var name */
+						__( 'Your Anthropic API key. Supports standard, Team, and Enterprise workspace keys. Get one from <a href="%1$s" target="_blank">Anthropic Console</a>. You can also set the %2$s environment variable or configure this key in Settings → Connectors (WP 7.0+).', 'mcp-ai-wpoos' ),
+						'https://console.anthropic.com/',
+						'<code>ANTHROPIC_API_KEY</code>'
 					),
 					'placeholder'  => 'sk-ant-...',
 					'autocomplete' => 'new-password',
@@ -666,9 +685,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'Gemini API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: Google AI Studio URL */
-						__( 'Your Google Gemini API key. Supports AI Studio, Business, and Enterprise keys. Get one from <a href="%s" target="_blank">Google AI Studio</a>.', 'mcp-ai-wpoos' ),
-						'https://aistudio.google.com/app/apikey'
+						/* translators: %1$s: Google AI Studio URL, %2$s: env var name */
+						__( 'Your Google Gemini API key. Supports AI Studio, Business, and Enterprise keys. Get one from <a href="%1$s" target="_blank">Google AI Studio</a>. You can also set the %2$s environment variable or configure this key in Settings → Connectors (WP 7.0+).', 'mcp-ai-wpoos' ),
+						'https://aistudio.google.com/app/apikey',
+						'<code>GEMINI_API_KEY</code>'
 					),
 					'placeholder'  => 'AIza...',
 					'autocomplete' => 'new-password',
@@ -971,9 +991,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'Hugging Face API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: Hugging Face tokens URL */
-						__( 'Your Hugging Face API token. Get one from <a href="%s" target="_blank">Hugging Face Settings</a>. Use a token with "Inference" permissions.', 'mcp-ai-wpoos' ),
-						'https://huggingface.co/settings/tokens'
+						/* translators: %1$s: Hugging Face tokens URL, %2$s: env var name */
+						__( 'Your Hugging Face API token. Get one from <a href="%1$s" target="_blank">Hugging Face Settings</a>. Use a token with "Inference" permissions. You can also set the %2$s environment variable or configure this key in Settings → Connectors (WP 7.0+).', 'mcp-ai-wpoos' ),
+						'https://huggingface.co/settings/tokens',
+						'<code>HUGGINGFACE_API_KEY</code>'
 					),
 					'placeholder'  => 'hf_...',
 					'autocomplete' => 'new-password',
@@ -1177,9 +1198,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'NVIDIA API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: NVIDIA Build Portal URL */
-						__( 'Your NVIDIA NIM API key. Get one from <a href="%s" target="_blank">NVIDIA Build Portal</a>. Sign up for an NVIDIA account and generate an API key for NIM access.', 'mcp-ai-wpoos' ),
-						'https://build.nvidia.com/'
+						/* translators: %1$s: NVIDIA Build Portal URL, %2$s: env var name */
+						__( 'Your NVIDIA NIM API key. Get one from <a href="%1$s" target="_blank">NVIDIA Build Portal</a>. Sign up for an NVIDIA account and generate an API key for NIM access. You can also set the %2$s environment variable.', 'mcp-ai-wpoos' ),
+						'https://build.nvidia.com/',
+						'<code>NVIDIA_API_KEY</code>'
 					),
 					'placeholder'  => 'nvapi-...',
 					'autocomplete' => 'new-password',
@@ -1211,9 +1233,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'DeepSeek API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: DeepSeek Platform API keys URL */
-						__( 'Your DeepSeek API key. Get one from <a href="%s" target="_blank">DeepSeek Platform</a>. The same key works for all DeepSeek models.', 'mcp-ai-wpoos' ),
-						'https://platform.deepseek.com/api_keys'
+						/* translators: %1$s: DeepSeek Platform API keys URL, %2$s: env var name */
+						__( 'Your DeepSeek API key. Get one from <a href="%1$s" target="_blank">DeepSeek Platform</a>. The same key works for all DeepSeek models. You can also set the %2$s environment variable.', 'mcp-ai-wpoos' ),
+						'https://platform.deepseek.com/api_keys',
+						'<code>DEEPSEEK_API_KEY</code>'
 					),
 					'placeholder'  => 'sk-...',
 					'autocomplete' => 'new-password',
@@ -1244,9 +1267,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'OpenRouter API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: OpenRouter API keys URL */
-						__( 'Your OpenRouter API key. Get one from <a href="%s" target="_blank">OpenRouter Keys</a>. The same key works for every model in the OpenRouter catalogue.', 'mcp-ai-wpoos' ),
-						'https://openrouter.ai/keys'
+						/* translators: %1$s: OpenRouter API keys URL, %2$s: env var name */
+						__( 'Your OpenRouter API key. Get one from <a href="%1$s" target="_blank">OpenRouter Keys</a>. The same key works for every model in the OpenRouter catalogue. You can also set the %2$s environment variable.', 'mcp-ai-wpoos' ),
+						'https://openrouter.ai/keys',
+						'<code>OPENROUTER_API_KEY</code>'
 					),
 					'placeholder'  => 'sk-or-v1-...',
 					'autocomplete' => 'new-password',
@@ -1289,9 +1313,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'DigitalOcean Model Access Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: DigitalOcean Gradient Platform URL */
-						__( 'Your DigitalOcean Serverless Inference model access key. Create one from <a href="%s" target="_blank">Gradient Platform → Serverless Inference → Model access keys</a>. Keys can be scoped to specific models, inference routers, or batch jobs.', 'mcp-ai-wpoos' ),
-						'https://cloud.digitalocean.com/gen-ai/serverless-inference'
+						/* translators: %1$s: DigitalOcean Gradient Platform URL, %2$s: env var name */
+						__( 'Your DigitalOcean Serverless Inference model access key. Create one from <a href="%1$s" target="_blank">Gradient Platform → Serverless Inference → Model access keys</a>. Keys can be scoped to specific models, inference routers, or batch jobs. You can also set the %2$s environment variable.', 'mcp-ai-wpoos' ),
+						'https://cloud.digitalocean.com/gen-ai/serverless-inference',
+						'<code>DIGITALOCEAN_API_KEY</code>'
 					),
 					'placeholder'  => 'do-…',
 					'autocomplete' => 'new-password',
@@ -1328,9 +1353,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'Kimi API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: Moonshot AI Platform URL */
-						__( 'Your Moonshot AI (Kimi) API key. Get one from <a href="%s" target="_blank">Moonshot AI Platform</a>. The same key works for all Kimi / Moonshot models.', 'mcp-ai-wpoos' ),
-						'https://platform.moonshot.cn/console/api-keys'
+						/* translators: %1$s: Moonshot AI Platform URL, %2$s: env var name */
+						__( 'Your Moonshot AI (Kimi) API key. Get one from <a href="%1$s" target="_blank">Moonshot AI Platform</a>. The same key works for all Kimi / Moonshot models. You can also set the %2$s environment variable.', 'mcp-ai-wpoos' ),
+						'https://platform.moonshot.cn/console/api-keys',
+						'<code>KIMI_API_KEY</code>'
 					),
 					'placeholder'  => 'sk-...',
 					'autocomplete' => 'new-password',
@@ -1361,9 +1387,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'Baseten API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: Baseten API keys URL */
-						__( 'Your Baseten API key. Create one from <a href="%s" target="_blank">Baseten API Keys</a>. The same key works for all models in the Model APIs catalog.', 'mcp-ai-wpoos' ),
-						'https://app.baseten.co/settings/api-keys'
+						/* translators: %1$s: Baseten API keys URL, %2$s: env var name */
+						__( 'Your Baseten API key. Create one from <a href="%1$s" target="_blank">Baseten API Keys</a>. The same key works for all models in the Model APIs catalog. You can also set the %2$s environment variable.', 'mcp-ai-wpoos' ),
+						'https://app.baseten.co/settings/api-keys',
+						'<code>BASETEN_API_KEY</code>'
 					),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',

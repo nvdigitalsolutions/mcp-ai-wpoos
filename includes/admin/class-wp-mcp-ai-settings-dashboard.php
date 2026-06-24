@@ -1789,11 +1789,20 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Check 4: Provider keys configured.
-			$provider_keys        = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url' );
 			$configured_providers = 0;
-			foreach ( $provider_keys as $key ) {
-				if ( ! empty( $settings[ $key ] ) ) {
-					++$configured_providers;
+			if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				$providers_to_check = array( 'openai', 'gemini', 'ollama' );
+				foreach ( $providers_to_check as $provider ) {
+					if ( WP_MCP_AI_Credential_Resolver::has_credentials( $provider ) ) {
+						++$configured_providers;
+					}
+				}
+			} else {
+				$provider_keys = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url' );
+				foreach ( $provider_keys as $key ) {
+					if ( ! empty( $settings[ $key ] ) ) {
+						++$configured_providers;
+					}
 				}
 			}
 			if ( 0 === $configured_providers ) {

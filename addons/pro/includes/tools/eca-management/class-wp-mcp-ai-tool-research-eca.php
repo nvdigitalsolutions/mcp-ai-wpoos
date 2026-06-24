@@ -658,16 +658,19 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @return string|WP_Error Provider name or error.
 	 */
 	protected function get_research_provider( $settings ) {
+		// $settings kept for backward compatibility with subclasses.
+		unset( $settings );
+
 		// Prefer OpenAI or Gemini for research tasks.
-		if ( ! empty( $settings['openai_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) ) {
 			return 'openai';
 		}
 
-		if ( ! empty( $settings['gemini_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) ) {
 			return 'gemini';
 		}
 
-		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' ) ) {
 			return 'anthropic';
 		}
 

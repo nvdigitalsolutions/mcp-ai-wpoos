@@ -32,8 +32,13 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 		 */
 		public function get_api_key() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$key      = isset( $settings['google_maps_api_key'] ) ? $settings['google_maps_api_key'] : '';
 
-			return isset( $settings['google_maps_api_key'] ) ? $settings['google_maps_api_key'] : '';
+			if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'google_maps' ) ?? '';
+			}
+
+			return $key;
 		}
 
 		/**

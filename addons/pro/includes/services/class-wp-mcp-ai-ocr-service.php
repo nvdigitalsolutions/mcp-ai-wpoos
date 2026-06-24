@@ -610,9 +610,7 @@ class WP_MCP_AI_OCR_Service {
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	protected function extract_with_openai( $image_path, $options = array() ) {
-		// Get settings.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( empty( $settings['openai_api_key'] ) ) {
+		if ( ! WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) ) {
 			return new WP_Error( 'no_api_key', __( 'OpenAI API key not configured.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -685,10 +683,11 @@ class WP_MCP_AI_OCR_Service {
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	protected function extract_with_gemini( $image_path, $options = array() ) {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( empty( $settings['gemini_api_key'] ) ) {
+		if ( ! WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) ) {
 			return new WP_Error( 'no_api_key', __( 'Gemini API key not configured.', 'mcp-ai-wpoos-pro' ) );
 		}
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		// Encode image to base64.
 		$image_data = file_get_contents( $image_path );
@@ -931,12 +930,12 @@ class WP_MCP_AI_OCR_Service {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		// Prefer OpenAI if API key is configured.
-		if ( ! empty( $settings['openai_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) ) {
 			return 'openai';
 		}
 
 		// Next try Gemini.
-		if ( ! empty( $settings['gemini_api_key'] ) ) {
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) ) {
 			return 'gemini';
 		}
 

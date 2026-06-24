@@ -204,19 +204,10 @@ class NV_oOS_Graphify_Embeddings {
 
 		// Fallback: OpenAI embeddings API.
 		if ( null === $vector ) {
-			$api_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
-			// NV oOS stores the OpenAI key inside the `wp_mcp_ai_settings` array,
-			// not as a top-level option, so check that location before falling back
-			// to the legacy top-level option name.
-			if ( empty( $api_key ) ) {
-				$nvoos_settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
-				if ( is_array( $nvoos_settings ) && ! empty( $nvoos_settings['openai_api_key'] ) ) {
-					$api_key = sanitize_text_field( $nvoos_settings['openai_api_key'] );
-				}
-			}
-			if ( empty( $api_key ) && function_exists( 'wp_mcp_ai_get_option' ) ) {
-				$api_key = wp_mcp_ai_get_option( 'openai_api_key', '' );
-			}
+			$api_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
+				? WP_MCP_AI_Credential_Resolver::get_api_key( 'openai' )
+				: null;
+
 			if ( empty( $api_key ) ) {
 				return false;
 			}

@@ -179,7 +179,7 @@ class WP_MCP_AI_Vector_Store_Adapter {
 			case 'pgvector':
 				return ! empty( $settings['pgvector_dsn'] );
 			case 'qdrant':
-				return ! empty( $settings['qdrant_url'] ) && ! empty( $settings['qdrant_api_key'] );
+				return ! empty( $settings['qdrant_url'] ) && WP_MCP_AI_Credential_Resolver::has_credentials( 'qdrant' );
 		}
 		return false;
 	}
@@ -489,7 +489,7 @@ class WP_MCP_AI_Vector_Store_Adapter {
 	protected function qdrant_upsert( $namespace, array $documents ) {
 		$settings = $this->get_settings();
 		$base_url = rtrim( $settings['qdrant_url'], '/' );
-		$api_key  = $settings['qdrant_api_key'];
+		$api_key  = WP_MCP_AI_Credential_Resolver::get_api_key( 'qdrant' );
 
 		if ( empty( $base_url ) || empty( $api_key ) ) {
 			return $this->stub_response( 'qdrant', 'upsert', array( 'would_upsert' => count( $documents ) ) );
@@ -591,7 +591,7 @@ class WP_MCP_AI_Vector_Store_Adapter {
 	protected function qdrant_query( $namespace, $query_text, $top_k, array $filter ) {
 		$settings = $this->get_settings();
 		$base_url = rtrim( $settings['qdrant_url'], '/' );
-		$api_key  = $settings['qdrant_api_key'];
+		$api_key  = WP_MCP_AI_Credential_Resolver::get_api_key( 'qdrant' );
 
 		if ( empty( $base_url ) || empty( $api_key ) ) {
 			return $this->stub_response( 'qdrant', 'query', array( 'matches' => array() ) );

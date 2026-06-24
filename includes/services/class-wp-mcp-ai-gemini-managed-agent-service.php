@@ -124,7 +124,13 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 	 */
 	protected function get_api_key() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		return isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+		$key      = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+
+		if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'gemini' ) ?? '';
+		}
+
+		return $key;
 	}
 
 	/**

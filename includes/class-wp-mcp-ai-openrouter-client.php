@@ -91,8 +91,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		 */
 		public function get_api_key() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$key      = isset( $settings['openrouter_api_key'] ) ? $settings['openrouter_api_key'] : '';
 
-			return isset( $settings['openrouter_api_key'] ) ? $settings['openrouter_api_key'] : '';
+			if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'openrouter' ) ?? '';
+			}
+
+			return $key;
 		}
 
 		/**
