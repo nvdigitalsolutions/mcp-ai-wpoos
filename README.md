@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.31  
-**Release Date:** 2026-06-17
+**Version:** 1.1.33  
+**Release Date:** 2026-06-24
 
-**Latest Updates:** June 17, 2026 (v1.1.31) — See [§ Latest Updates (v1.1.31 — June 2026)](#-latest-updates-v1131--june-2026) (Media Command Center: top-level NV Media admin menu. Pro SPA v2: rich markdown rendering, assistant scoping, agent selector, conversations primary. 34 Workflow Preset Tools across 10 toolkits with full test suite. npm audit CVEs: 12 resolved. Gemini 3.1 flash image default. Media Toolkit blueprints & presets. OpenAI/DeepSeek stream_options. Agentic-loop cost tracking. Vite CVEs. 1,658 PHPCS lint fixes. CI disk space cleanup. Plus prior v1.1.30 items below).
+**Latest Updates:** June 24, 2026 (v1.1.33) — See [§ Latest Updates (v1.1.33 — June 2026)](#-latest-updates-v1133--june-2026) (WP 7.0 Connectors: credential resolution across all 17 AI clients with source badges in admin UI. nvoos-graphify v1.0.0: Plugin Check compliant standalone release. Security: 3 guzzlehttp CVEs + undici override + 29 npm alerts across 14 packages. 15 Dependabot bumps. Plus prior v1.1.32 items below).
 
-**Previous Updates (v1.1.30):** June 15, 2026 — Chat SPA Phase 8 message actions & conversations sidebar. PM Toolkit A–D: 28 tools, Command Center dashboard. CRM duplicates, email hygiene, LinkedIn/Upwork sourcing. DietPi Pro Toolkit Phases 0–3. LibreChat Addon. Layer I Guardrails. Context Window Management across 13 providers. WP 7.0 Bridge. Pro Toolkit Optimizations. Chat Transcript & Memory Retention. OAuth/API disconnect. 30+ fixes.
+**Previous Updates (v1.1.32):** June 19, 2026 — Content Format Templates & Featured Image Service (3-provider fallback), Result Delivery Pipeline (8 channels), ECA document generation, duplicate posts fix, 6 provider clients timeout fix, schedule trigger stability, Paper Store delete fix, ECA settings/attachment fix, npm CI & Jest resilience, 14 dependabot bumps + 8 npm audit CVEs.
 
 **Previous Updates (v1.1.26):** June 3, 2026 — Cross-Platform Extraction Engine Phases 0–2, Site-Builder Node-Graph Pipeline, SPA a11y Hardening, Screenshot & Docs Overhaul.
 
@@ -47,7 +47,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.30 — June 2026)](#-latest-updates-v1130--june-2026)
+- [🆕 Latest Updates (v1.1.33 — June 2026)](#-latest-updates-v1133--june-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -153,6 +153,16 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 13 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.33)
+
+- 🔌 **WP 7.0 Connectors Credential Integration.** Credential_Resolver now integrated into all 17 AI client `get_api_key()` methods. Fallback chain: WP 7.0 Connectors → plugin settings → env vars → PHP constants. Credential source badges and WP 7.0 Connectors hints rendered in admin settings UI. All 13 provider API key field descriptions updated. Provider diagnostics show key source column. Settings health check counts credentials via resolver.
+- 🧩 **nvoos-graphify v1.0.0.** Standalone nvoos-graphify plugin released at v1.0.0 (Plugin Check compliant). nvoos-graphify-ai released at v1.0.0-dev. Fixed critical `->prepare()` spread-operator bug in `Db::listNodes()`. Renamed `vector` column → `embedding_vector` to avoid MariaDB/MySQL reserved-word conflict. Fixed snake_case→camelCase method calls across tools, controllers, and cross-plugin integrations.
+- 🛡️ **Security Dependencies.** guzzlehttp/guzzle 7.10.0 → 7.12.1 (CVE-2026-55568, CVE-2026-55767). guzzlehttp/psr7 2.11.0 → 2.12.1 (CVE-2026-55766). guzzlehttp/promises 2.3.0 → 2.5.0. undici npm override tightened `>=7.28.0` → `>=8.5.0`.
+- 🔒 **npm Security.** 29 alerts resolved across 14 packages: undici (TLS bypass CVE-2026-9697, cache info CVE-2026-9678), http-proxy-middleware (CRLF injection CVE-2026-55603), nodemailer (GHSA-p6gq-j5cr-w38f), webpack-dev-server (HMR CVE-2026-9595), dompurify (GHSA-cmwh-pvxp-8882). Fixed critical duplicate `overrides` key in root `package.json`.
+- 🪲 **Bug Fixes.** Fixed missing `-pro-` in WP All Import/Export require_once paths causing fatal errors when those Pro tools load. Fixed fragile `@file_get_contents()` warning suppression in tool status label loader — replaced with explicit `set_error_handler('__return_true')` to prevent leaked warnings from corrupting MCP JSON-RPC HTTP responses.
+- 📦 **Dependencies.** 15 Dependabot bumps across Composer, npm (stripe, zod, p-queue, csv-parse, react-query, puppeteer, vitest, wrangler, eslint-plugin, workers-types, types/node), and GitHub Actions (codecov 4→7, action-gh-release 2→3).
+- 🧹 **Housekeeping.** Stale 1.1.31 and 1.1.32 build zips removed. SPA addon ZIPs rebuilt with updated security overrides.
 
 ### ✨ What's New at a Glance (v1.1.32)
 
@@ -469,7 +479,19 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.32 — June 2026)
+## 🆕 Latest Updates (v1.1.33 — June 2026)
+
+### June 20–24, 2026 — WP 7.0 Connectors Credential Integration, nvoos-graphify v1.0.0, Security Fixes 🔌🧩🛡️🔒
+
+- ✅ **WP 7.0 Connectors Credential Integration (PR #5458).** `Credential_Resolver` integrated into all 17 AI client `get_api_key()` methods (Anthropic, Baseten, DeepSeek, DigitalOcean, Gemini, Gemini Live, Google Maps, Hugging Face, Kimi, LM Studio, NVIDIA, OpenAI, OpenAI Realtime, OpenRouter, plus 3 service classes). Fallback chain: WP 7.0 Connectors → plugin settings → environment variables → PHP constants. New `get_key_source()` / `get_key_source_label()` methods added to `Credential_Resolver`. Credential source badges and WP 7.0 Connectors hints rendered in admin settings UI (Settings → Providers). All 13 provider API key field descriptions updated to mention alternative credential sources. Provider diagnostics now show a **Key Source column** indicating where each provider's API key originates. Settings health check counts credentials resolved via the `Credential_Resolver`. 17 Pro addon files updated to use `Credential_Resolver::has_credentials()` / `get_api_key()` for provider selection, OCR routing, vector store, embeddings, speech, and performance checks. All PHPCS-clean with zero new errors.
+- ✅ **nvoos-graphify v1.0.0 Release (PR #5456).** Standalone nvoos-graphify plugin released at v1.0.0 — Plugin Check compliant and ready for distribution. nvoos-graphify-ai plugin released at v1.0.0-dev. Fixed 8 output-escaping errors in `Section.php` via `printf()` with `esc_attr()`. Fixed critical `->prepare()` spread-operator bug in `Db::listNodes()` causing runtime fatals. Renamed `vector` column → `embedding_vector` to avoid MariaDB/MySQL reserved-word conflict; bumped DB version. Fixed snake_case→camelCase method calls across tools (`GetNode`, `GetNeighbors`, `QueryGraph`, `GraphStats`), controllers (`SyncRemoteSource`, REST), and cross-plugin integrations (`nvoos-graphify-ai`). Guarded missing Webhook driver and fixed Crypto namespace. Added `message` field to Enricher stub for detectable false-success states. Updated Remote README to reflect stub reality (no drivers, no SSRF, no encryption). Documented actual REST access model: `read` + guest token for reads, `manage_options` for export/write.
+- ✅ **Security Dependencies (PR #5457).** guzzlehttp/guzzle 7.10.0 → 7.12.1 (CVE-2026-55568, CVE-2026-55767). guzzlehttp/psr7 2.11.0 → 2.12.1 (CVE-2026-55766). guzzlehttp/promises 2.3.0 → 2.5.0. undici npm override tightened from `>=7.28.0` to `>=8.5.0` to match resolved version and prevent downgrades.
+- ✅ **npm Security (PR #5438).** 29 npm security alerts resolved across 14 packages. undici: TLS bypass (CVE-2026-9697) and cache info disclosure (CVE-2026-9678) — override applied to 11 addon lock files. http-proxy-middleware: CRLF injection (CVE-2026-55603) — override `>=3.0.7`. nodemailer: raw option bypass (GHSA-p6gq-j5cr-w38f) — bumped `^8.0.9` → `^9.0.1`. webpack-dev-server: HMR interception (CVE-2026-9595) — override `>=5.2.5`. dompurify: ALLOWED_ATTR pollution (GHSA-cmwh-pvxp-8882) — bumped `^3.4.9` → `^3.4.11`. Fixed critical duplicate `overrides` key in root `package.json` that silently discarded all 39 security overrides.
+- ✅ **Bug Fix — WP All Import/Export Pro Tools (commit `0de3cdf`).** Four `require_once` paths in the Pro bootstrap map (`addons/pro/mcp-ai-wpoos-pro.php`) were missing `-pro-` in the filenames, referencing `class-wp-mcp-ai-tool-*.php` instead of the actual `class-wp-mcp-ai-pro-tool-*.php` files on disk, causing fatal errors when those tools loaded.
+- ✅ **Bug Fix — Tool Status Label Loader (commit `749ffce`).** Replaced fragile `@file_get_contents()` with explicit `set_error_handler('__return_true')` / `restore_error_handler()` in both copies of `load_tool_status_labels()` (`includes/class-wp-mcp-ai-tool-registry.php` and `includes/admin/sections/class-wp-mcp-ai-section-tools.php`). The `@` operator does not reliably suppress warnings across all PHP 8 configurations (e.g. xdebug.scream, custom error handlers), and leaked warnings corrupt MCP JSON-RPC HTTP responses.
+- ✅ **Dependency Updates.** 15 Dependabot version bumps across the monorepo: Composer (guzzlehttp/psr7 2.11.0→2.12.1). npm/Pro (stripe 14.25.0→22.2.3, csv-parse 5.6.0→7.0.0, p-queue 8.1.1→9.3.0, @puppeteer/browsers upgrade). npm/SaaS Controller (@wordpress/eslint-plugin 25.2.0→25.4.1, zod 3.x→4.4.3, @tanstack/react-query upgrade, wrangler upgrade). npm/Cloud Worker (stripe upgrade, vitest 2.x→4.1.9, @cloudflare/workers-types upgrade). npm/Docs Hub (@typescript-eslint 8.x→8.62.0, @types/node→26.0.0). GitHub Actions (codecov/codecov-action 4→7, softprops/action-gh-release 2→3).
+- ✅ **Housekeeping.** Stale 1.1.31 build zips removed (PR #5437). Stale 1.1.32 build zips removed (6 files). SPA addon ZIPs rebuilt with updated security overrides and dependency bumps. nvoos-graphify standalone ZIP built at v1.0.0. nvoos-graphify-ai ZIP built at v1.0.0-dev.
+- 📦 **Versioning** — bumped to **1.1.33** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, and `CHANGELOG.md`. Provider count: **13** first-class language-model providers (unchanged). Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
 ### June 17–19, 2026 — Content Format Templates, Result Delivery Pipeline, Featured Images, Provider Timeout Fixes 📝📬⏱️🔧
 
@@ -525,7 +547,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Previous Updates (v1.1.29 — June 2026)
+## 🆕 Previous Updates (v1.1.32 — June 2026)
 
 ### June 7–11, 2026 — Bug-Fix & Stabilisation Sweep 🪲🔧⚡
 
@@ -556,6 +578,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **v1.1.33** | Jun 2026 | WP 7.0 Connectors credential integration across all 17 AI clients with source badges, nvoos-graphify v1.0.0 release (Plugin Check compliant), 3 guzzlehttp CVEs + undici override, 29 npm alerts across 14 packages, 2 bug fixes (Pro tool paths, JSON-RPC warning leak), 15 dependabot bumps |
 | **v1.1.32** | Jun 2026 | Content Format Templates + Featured Image Service (3-provider fallback), Result Delivery Pipeline (8 channels), ECA document generation, duplicate posts fix, 6 provider clients timeout fix, schedule trigger stability, Paper Store delete fix, ECA settings/attachment fix, npm CI & Jest resilience, 14 dependabot bumps + 8 npm audit CVEs |
 | **v1.1.31** | Jun 2026 | Media Command Center, Pro SPA v2 (rich rendering, assistant scoping, agent selector, v2.0.1), 34 workflow preset tools, npm audit CVEs (12 resolved), Gemini 3.1 flash image default, Media toolkit blueprints & presets, stream_options, agentic-loop cost tracking, Vite CVEs, 1,658 PHPCS lint fixes, CI disk space, data integrity fixes |
 | **v1.1.30** | Jun 2026 | Chat SPA Phase 8, PM Toolkit A–D, CRM duplicates/hygiene/analytics, DietPi Pro Toolkit, LibreChat Addon, Layer I Guardrails, Context Window Management, WP 7.0 Bridge, Pro Toolkit Optimizations, OAuth disconnect, 30+ fixes |

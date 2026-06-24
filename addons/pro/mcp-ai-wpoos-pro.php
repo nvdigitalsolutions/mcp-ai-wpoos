@@ -1046,10 +1046,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme' => WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-install-and-activate-theme.php',
 			'WP_MCP_AI_Pro_Tool_Update_Option'             => WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-update-option.php',
 			// WP All Import/Export Pro tools.
-			'WP_MCP_AI_Pro_Tool_Schedule_All_Export'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-schedule-all-export.php',
-			'WP_MCP_AI_Pro_Tool_Delete_All_Export'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-delete-all-export.php',
-			'WP_MCP_AI_Pro_Tool_Schedule_All_Import'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-schedule-all-import.php',
-			'WP_MCP_AI_Pro_Tool_Delete_All_Import'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-delete-all-import.php',
+			'WP_MCP_AI_Pro_Tool_Schedule_All_Export'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-pro-tool-schedule-all-export.php',
+			'WP_MCP_AI_Pro_Tool_Delete_All_Export'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-pro-tool-delete-all-export.php',
+			'WP_MCP_AI_Pro_Tool_Schedule_All_Import'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-pro-tool-schedule-all-import.php',
+			'WP_MCP_AI_Pro_Tool_Delete_All_Import'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-pro-tool-delete-all-import.php',
 			// Pro Schedule Manager tools.
 			'WP_MCP_AI_Pro_Tool_Create_Pro_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-pro-schedule.php',
 			'WP_MCP_AI_Pro_Tool_Update_Pro_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-update-pro-schedule.php',
