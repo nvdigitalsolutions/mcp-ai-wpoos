@@ -52,6 +52,15 @@
 - Affected tools: `Schedule_All_Export`, `Delete_All_Export`, `Schedule_All_Import`, `Delete_All_Import`.
 - Caused fatal errors when those Pro tools were loaded.
 
+### Added — MCP Initialize: Assistant-Scoped Instructions & Model Preferences (PR #5462)
+
+- **Base MCP endpoint (`/mcp-ai/v1/mcp`)** — `mcp_initialize()` now resolves `assistant_id` from params, token scope, and team routing. When an assistant is identified, the response carries the assistant's system prompt (already assembled with primary roles and skills), model preferences (`modelPreferences` — community extension supported by Zed, Claude Desktop, Cursor), and a personalized `serverInfo.name` set to the assistant's display title.
+- **Pro Toolkit MCP servers (`/mcp-ai-pro/v1/mcp/{slug}`)** — `initialize` JSON-RPC case now accepts `assistant_id` from params and injects an `instructions` field with the assistant's system prompt plus toolkit context, `modelPreferences` when configured, and `toolkitServers[]` metadata from the assistant→server bridge metabox (`_wp_mcp_ai_pro_allowed_mcp_servers`).
+- **New helper** — `build_assistant_instructions()` in the `WP_MCP_AI_REST_MCP_Methods` trait layers system prompt → model configuration notes → knowledge base references (vector store, preferred datasets) into a single MCP instructions string.
+- **New filter** — `wp_mcp_ai_mcp_initialize_instructions` allows integrators to enrich or override the instructions delivered to MCP clients at connection time.
+- **Design principle: Unix Theory P0-compatible.** No breaking changes — when `assistant_id` is absent, the `initialize` response is identical to the pre-2.4.0 shape. The canonical return envelope and two-gate sanitisation rule are unaffected (this change modifies the MCP protocol layer, not tool `execute()` methods).
+- **Comprehensive proposal document** at `docs/project/proposals/MCP_ASSISTANT_TOOLKIT_SCOPE_ENHANCEMENT.md` with architecture audit, industry research (7 sources), gap analysis, implementation plan, admin UI enhancement proposals, testing strategy, and risk assessment.
+
 ### Fixed — Tool Status Label Loader Warning Leak (commit `749ffce`)
 
 - Replaced fragile `@file_get_contents()` with explicit `set_error_handler('__return_true')` / `restore_error_handler()` in both copies of `load_tool_status_labels()`:

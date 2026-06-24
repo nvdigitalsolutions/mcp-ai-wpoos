@@ -278,28 +278,53 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	/**
 	 * Handle MCP initialize request.
 	 *
-	 * @param array           $params  Method parameters.
+	 * When an assistant_id is provided, the response carries the assistant's
+	 * system prompt, professional role context, model preferences, and knowledge
+	 * base references — turning every NV oOS assistant into a fully-scoped,
+	 * personality-aware MCP server.
+	 *
+	 * @since 1.0.0
+	 * @since 2.4.0 Added assistant_id resolution for scoped instructions and modelPreferences.
+	 *
+	 * @param array           $params  Method parameters. Accepts optional 'assistant_id'.
 	 * @param WP_REST_Request $request REST request instance.
-	 * @return array
+	 * @return array Initialize result payload.
 	 */
 	protected function mcp_initialize( $params, WP_REST_Request $request ) {
-		$site_name = get_bloginfo( 'name' );
-		$site_desc = get_bloginfo( 'description' );
+		// Resolve assistant identity from params, token scope, and team routing.
+		$assistant_id = 0;
+		if ( isset( $params['assistant_id'] ) ) {
+			$assistant_id = absint( $params['assistant_id'] );
+		}
+		$assistant_id = $this->resolve_assistant_id( $assistant_id );
+		$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
 
-		// Build instructions dynamically based on site info.
-		if ( ! empty( $site_desc ) ) {
-			$instructions = sprintf(
-				/* translators: 1: site name, 2: site description */
-				__( 'This is a WordPress site (%1$s). %2$s. You can use the available tools to interact with WordPress content, users, and functionality.', 'mcp-ai-wpoos' ),
-				$site_name,
-				$site_desc
-			);
+		if ( ! is_wp_error( $scoped_id ) ) {
+			$assistant_id = $scoped_id;
+		}
+
+		// Build instructions: assistant-scoped when available, generic site-level otherwise.
+		if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			$instructions     = $this->build_assistant_instructions( $assistant_config, $assistant_id );
 		} else {
-			$instructions = sprintf(
-				/* translators: %s: site name */
-				__( 'This is a WordPress site (%s). You can use the available tools to interact with WordPress content, users, and functionality.', 'mcp-ai-wpoos' ),
-				$site_name
-			);
+			$site_name = get_bloginfo( 'name' );
+			$site_desc = get_bloginfo( 'description' );
+
+			if ( ! empty( $site_desc ) ) {
+				$instructions = sprintf(
+					/* translators: 1: site name, 2: site description */
+					__( 'This is a WordPress site (%1$s). %2$s. You can use the available tools to interact with WordPress content, users, and functionality.', 'mcp-ai-wpoos' ),
+					$site_name,
+					$site_desc
+				);
+			} else {
+				$instructions = sprintf(
+					/* translators: %s: site name */
+					__( 'This is a WordPress site (%s). You can use the available tools to interact with WordPress content, users, and functionality.', 'mcp-ai-wpoos' ),
+					$site_name
+				);
+			}
 		}
 
 		$response = array(
@@ -315,10 +340,44 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				'logging'     => new stdClass(),
 			),
 			'serverInfo'      => array(
-				'name'    => 'NV oOS',
+				'name'    => $assistant_id ? get_the_title( $assistant_id ) : 'NV oOS',
 				'version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
 			),
 			'instructions'    => $instructions,
+		);
+
+		// Include model preferences when the assistant has them configured.
+		// This is a community extension supported by Zed, Claude Desktop, and Cursor.
+		if ( $assistant_id && ! empty( $assistant_config['model'] ) ) {
+			$model_prefs = array();
+			if ( ! empty( $assistant_config['model'] ) ) {
+				$model_prefs['model'] = $assistant_config['model'];
+			}
+			if ( null !== $assistant_config['temperature'] ) {
+				$model_prefs['temperature'] = $assistant_config['temperature'];
+			}
+			if ( ! empty( $model_prefs ) ) {
+				$response['modelPreferences'] = $model_prefs;
+			}
+		}
+
+		/**
+		 * Filter the instructions returned in the MCP initialize response.
+		 *
+		 * Allows plugins and integrators to enrich or override the system
+		 * prompt delivered to MCP clients at connection time.
+		 *
+		 * @since 2.4.0
+		 *
+		 * @param string $instructions  The assembled instructions string.
+		 * @param int    $assistant_id  Resolved assistant post ID (0 when generic).
+		 * @param array  $assistant_config Full assistant configuration (empty when generic).
+		 */
+		$response['instructions'] = apply_filters(
+			'wp_mcp_ai_mcp_initialize_instructions',
+			$response['instructions'],
+			$assistant_id,
+			$assistant_id ? $assistant_config : array()
 		);
 
 		/**
@@ -347,6 +406,74 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Build complete MCP instructions from assistant configuration.
+	 *
+	 * Layering order (each subsequent layer is appended when present):
+	 * 1. System prompt from post meta (already assembled by get_assistant_configuration
+	 *    with primary roles and skills injected).
+	 * 2. Model and configuration notes for client awareness.
+	 * 3. Knowledge base references (vector store, preferred datasets).
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array $assistant_config Full assistant configuration from get_assistant_configuration().
+	 * @param int   $assistant_id     Assistant post ID for reading additional meta.
+	 * @return string Complete MCP system prompt for the initialize handshake.
+	 */
+	protected function build_assistant_instructions( array $assistant_config, $assistant_id ) {
+		$instructions = '';
+
+		// 1. System prompt — the canonical personality definition.
+		if ( ! empty( $assistant_config['system_prompt'] ) ) {
+			$instructions = $assistant_config['system_prompt'];
+		}
+
+		// 2. Model and configuration notes.
+		$config_notes = array();
+		if ( ! empty( $assistant_config['model'] ) ) {
+			$config_notes[] = sprintf(
+				/* translators: %s: model identifier */
+				__( 'Model: %s', 'mcp-ai-wpoos' ),
+				$assistant_config['model']
+			);
+		}
+		if ( null !== $assistant_config['temperature'] ) {
+			$config_notes[] = sprintf(
+				/* translators: %s: temperature value */
+				__( 'Temperature: %s', 'mcp-ai-wpoos' ),
+				$assistant_config['temperature']
+			);
+		}
+		if ( ! empty( $config_notes ) ) {
+			$instructions .= "\n\n---\n\n## " . __( 'Configuration', 'mcp-ai-wpoos' ) . "\n\n";
+			$instructions .= implode( "\n", $config_notes );
+		}
+
+		// 3. Knowledge base references.
+		$kb_notes = array();
+		if ( ! empty( $assistant_config['vector_store_id'] ) ) {
+			$kb_notes[] = sprintf(
+				/* translators: %s: vector store identifier */
+				__( 'Vector store: %s', 'mcp-ai-wpoos' ),
+				$assistant_config['vector_store_id']
+			);
+		}
+		if ( ! empty( $assistant_config['preferred_datasets'] ) && is_array( $assistant_config['preferred_datasets'] ) ) {
+			$kb_notes[] = sprintf(
+				/* translators: %s: comma-separated dataset names */
+				__( 'Preferred datasets: %s', 'mcp-ai-wpoos' ),
+				implode( ', ', $assistant_config['preferred_datasets'] )
+			);
+		}
+		if ( ! empty( $kb_notes ) ) {
+			$instructions .= "\n\n---\n\n## " . __( 'Knowledge Base', 'mcp-ai-wpoos' ) . "\n\n";
+			$instructions .= implode( "\n", $kb_notes );
+		}
+
+		return $instructions;
 	}
 
 	/**

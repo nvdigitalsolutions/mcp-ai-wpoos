@@ -419,6 +419,9 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 
 		switch ( $method ) {
 			case 'initialize':
+				$params       = isset( $payload['params'] ) && is_array( $payload['params'] ) ? $payload['params'] : array();
+				$assistant_id = isset( $params['assistant_id'] ) ? absint( $params['assistant_id'] ) : 0;
+
 				$result = array(
 					'protocolVersion' => '2025-06-18',
 					'capabilities'    => array(
@@ -435,6 +438,66 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 						'slug'    => $server->get_slug(),
 					),
 				);
+
+				// When an assistant is provided, inject personality and model preferences.
+				if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+					$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+					$instructions = 'You are connected to the ' . $server->get_name() . ' toolkit MCP server.';
+					if ( ! empty( $assistant_config['system_prompt'] ) ) {
+						$instructions = $assistant_config['system_prompt'] . "\n\n---\n\n" . $instructions;
+					}
+
+					// Append toolkit instructions from the server's descriptor.
+					$instructions .= "\n\n" . sprintf(
+						/* translators: %s: toolkit description */
+						__( 'Toolkit: %s', 'mcp-ai-wpoos-pro' ),
+						$server->get_description()
+					);
+
+					$result['instructions'] = $instructions;
+
+					// Model preferences — community extension for Zed, Claude Desktop, Cursor.
+					if ( ! empty( $assistant_config['model'] ) ) {
+						$prefs = array( 'model' => $assistant_config['model'] );
+						if ( null !== $assistant_config['temperature'] ) {
+							$prefs['temperature'] = $assistant_config['temperature'];
+						}
+						$result['modelPreferences'] = $prefs;
+					}
+
+					// Personalize serverInfo with the assistant's display name.
+					$assistant_title = get_the_title( $assistant_id );
+					if ( ! empty( $assistant_title ) ) {
+						$result['serverInfo']['name']        = $assistant_title;
+						$result['serverInfo']['assistantId'] = $assistant_id;
+					}
+
+					// Inject toolkit grouping metadata from the assistant→server bridge.
+					if ( class_exists( 'WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers' ) ) {
+						$allowed_servers = WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::get_allowed_servers( $assistant_id );
+						if ( ! empty( $allowed_servers ) ) {
+							$registry = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
+							$toolkit_meta = array();
+							foreach ( $allowed_servers as $server_slug ) {
+								$linked = $registry->get( $server_slug );
+								if ( null === $linked ) {
+									continue;
+								}
+								$toolkit_meta[] = array(
+									'slug'        => $linked->get_slug(),
+									'name'        => $linked->get_name(),
+									'description' => $linked->get_description(),
+									'enabled'     => $linked instanceof WP_MCP_AI_Toolkit_Server_Base && $linked->is_enabled(),
+								);
+							}
+							if ( ! empty( $toolkit_meta ) ) {
+								$result['toolkitServers'] = $toolkit_meta;
+							}
+						}
+					}
+				}
+
 				return rest_ensure_response(
 					array(
 						'jsonrpc' => '2.0',

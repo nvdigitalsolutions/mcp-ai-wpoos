@@ -27,6 +27,16 @@ assistant / external MCP client
                                 (WP_MCP_AI_Toolkit_MCP_Audit_Log)
 ```
 
+**Assistant-scoped initialize (v1.1.33):** When an `assistant_id` is passed in
+the JSON-RPC `initialize` params, the response includes:
+- `instructions` — the assistant's system prompt + toolkit context
+- `modelPreferences` — model and temperature hints for MCP clients
+- `serverInfo.name` — the assistant's display title (instead of the toolkit name)
+- `toolkitServers[]` — metadata about all toolkit servers linked to that assistant
+
+When no `assistant_id` is provided, the response behaves as before (toolkit
+name, no instructions field, no model hints).
+
 **Enabling a server** — per-server toggle at  
 `Admin → NV oOS Settings → Orchestration → MCP Servers` or via the `/mcp-server enable <slug>` slash command.
 
