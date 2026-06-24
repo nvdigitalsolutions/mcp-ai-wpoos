@@ -2121,12 +2121,13 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				if ( ! empty( $system_parts ) ) {
 					$payload['system_instruction'] = array( 'parts' => $system_parts );
 
-					// Prompt caching: mark the last system instruction part with cache_control.
-					// This tells Gemini to cache the system prompt for reuse across turns.
-					if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $payload['system_instruction']['parts'] ) ) {
-						$last_part_idx = count( $payload['system_instruction']['parts'] ) - 1;
-						$payload['system_instruction']['parts'][ $last_part_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
-					}
+					// Prompt caching: Gemini 2.5+ models use automatic implicit caching
+					// (no inline cache_control needed). The WP_MCP_AI_Prompt_Optimizer
+					// already reorders messages to put static content first, maximising
+					// cache-hit probability. For older models, explicit caching via the
+					// cachedContents API requires pre-creating a cache resource — this is
+					// not currently implemented because implicit caching covers the
+					// majority of production use (Gemini 2.5+).
 				}
 			}
 
@@ -2368,13 +2369,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 			}
 
-			// Prompt caching: when cache_system_prompt is enabled and tools are present,
-			// mark the last tool definition with cache_control so Gemini can cache the
-			// tool definitions across turns (mirrors what Anthropic does).
-			if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $payload['tools'] ) && is_array( $payload['tools'] ) ) {
-				$last_tool_idx                                       = count( $payload['tools'] ) - 1;
-				$payload['tools'][ $last_tool_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
-			}
+			// Prompt caching: Gemini does not support inline cache_control on
+			// tools[] (unlike Anthropic). See system_instruction comment above
+			// for details on Gemini's implicit caching mechanism.
 
 			// Tool config: controls function calling behaviour (function_calling_mode: AUTO, ANY, NONE).
 			// Optionally restrict to specific function names via allowed_function_names.
