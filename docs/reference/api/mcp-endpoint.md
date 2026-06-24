@@ -183,7 +183,12 @@ MCP now supports JSON-RPC batching for efficient parallel operations:
 
 Initialize the MCP connection and retrieve server capabilities.
 
-**Request:**
+**When `assistant_id` is provided**, the response carries the assistant's
+system prompt, professional role context, model preferences, and knowledge
+base references — turning the assistant into a fully-scoped, personality-aware
+MCP server for clients like Zed, Claude Desktop, and Cursor.
+
+**Request (generic):**
 ```json
 {
   "jsonrpc": "2.0",
@@ -199,7 +204,7 @@ Initialize the MCP connection and retrieve server capabilities.
 }
 ```
 
-**Response:**
+**Response (generic — no assistant_id):**
 ```json
 {
   "jsonrpc": "2.0",
@@ -210,17 +215,68 @@ Initialize the MCP connection and retrieve server capabilities.
       "tools": { "listChanged": true },
       "resources": { "subscribe": false, "listChanged": true },
       "prompts": { "listChanged": true },
-      "completions": { "enabled": true },
-      "progress": { "enabled": true }
+      "completions": {},
+      "logging": {}
     },
     "serverInfo": {
       "name": "NV oOS",
-      "version": "1.0.0"
+      "version": "1.1.33"
     },
-    "instructions": "This is a WordPress site. You can use the available tools to interact with WordPress content, users, and functionality."
+    "instructions": "This is a WordPress site (My Site). Just another WordPress site. You can use the available tools to interact with WordPress content, users, and functionality."
   }
 }
 ```
+
+**Request (assistant-scoped):**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2024-11-05",
+    "assistant_id": 42,
+    "clientInfo": {
+      "name": "Zed",
+      "version": "1.0"
+    }
+  }
+}
+```
+
+**Response (assistant-scoped):**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "tools": { "listChanged": true },
+      "resources": { "subscribe": false, "listChanged": true },
+      "prompts": { "listChanged": true },
+      "completions": {},
+      "logging": {}
+    },
+    "serverInfo": {
+      "name": "Content Editor for Acme Corp",
+      "version": "1.1.33"
+    },
+    "instructions": "You are a content editor for Acme Corp. Your role is to draft, edit, and publish high-quality blog posts...\n\n---\n\n## Configuration\n\nModel: gpt-4o\nTemperature: 0.7\n\n---\n\n## Knowledge Base\n\nVector store: vs_abc123",
+    "modelPreferences": {
+      "model": "gpt-4o",
+      "temperature": 0.7
+    }
+  }
+}
+```
+
+**New fields (v1.1.33):**
+- `modelPreferences` — Community extension supported by Zed, Claude Desktop, and Cursor. Includes `model` and `temperature` when the assistant has them configured. Clients that don't recognise this field ignore it safely per JSON-RPC spec.
+- `serverInfo.name` — Set to the assistant's post title when `assistant_id` is provided; falls back to `"NV oOS"`.
+- `instructions` — When scoped, carries the assistant's complete system prompt (assembled by `get_assistant_configuration()` with primary roles and skills), plus model configuration notes and knowledge base references. When unscoped, delivers the generic site-level description.
+
+**Filter hook:** `wp_mcp_ai_mcp_initialize_instructions` — Allows plugins and integrators to enrich or override the instructions delivered at connection time.
 
 **New Capabilities (MCP 2024-11-05):**
 - `completions`: Argument autocompletion support for better UX
