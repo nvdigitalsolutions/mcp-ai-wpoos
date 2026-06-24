@@ -22,7 +22,7 @@
     "worker:dryrun": "wrangler deploy --dry-run --outdir=worker/dist"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.62.0",
+    "@tanstack/react-query": "^5.101.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "diff": "^9.0.0",
