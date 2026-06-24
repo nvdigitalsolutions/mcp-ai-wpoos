@@ -1,5 +1,73 @@
 # oOS – Changelog
 
+## [1.1.33] - 2026-06-24
+
+### Added — WP 7.0 Connectors Credential Integration (PR #5458)
+
+- **Credential_Resolver integrated into all 17 AI client `get_api_key()` methods** so keys from WP 7.0 Connectors, plugin settings, env vars, and PHP constants are used for actual API calls.
+- **Fallback chain**: WP 7.0 Connectors → plugin settings → environment variables → PHP constants.
+- **`Credential_Resolver::get_key_source()` / `get_key_source_label()`** added to expose the active credential source.
+- **Credential source badges** and **WP 7.0 Connectors hints** rendered in admin settings UI (Settings → Providers).
+- **All 13 provider API key field descriptions** updated to mention alternative credential sources (Connectors, env vars, constants).
+- **Provider diagnostics** now show a **Key Source column** indicating where each provider's API key originates.
+- **Settings health check** counts credentials resolved via the `Credential_Resolver`.
+- **17 Pro addon files** updated: replaced direct `$settings` API key checks with `Credential_Resolver::has_credentials()` / `get_api_key()` for provider selection, OCR routing, vector store, embeddings, speech, and performance checks.
+- All PHPCS-clean with zero new errors.
+
+### Added — nvoos-graphify v1.0.0 Release (PR #5456)
+
+- **Standalone nvoos-graphify plugin released at v1.0.0** — Plugin Check compliant, ready for distribution.
+- **nvoos-graphify-ai plugin released at v1.0.0-dev** — AI-powered graph analysis addon.
+- Fixed **8 output-escaping errors** in `Section.php` via `printf()` with `esc_attr()`.
+- Fixed **critical `->prepare()` spread-operator bug** in `Db::listNodes()` causing runtime fatals.
+- Renamed **`vector` column → `embedding_vector`** to avoid MariaDB/MySQL reserved-word conflict; bumped DB version.
+- Fixed **snake_case→camelCase method calls** across tools (`GetNode`, `GetNeighbors`, `QueryGraph`, `GraphStats`), controllers (`SyncRemoteSource`, REST), and cross-plugin integrations (`nvoos-graphify-ai`).
+- Guarded missing Webhook driver and fixed Crypto namespace in `receiveWebhook()`.
+- Added `message` field to Enricher stub so false-success states are detectable.
+- Updated Remote README to reflect stub reality (no drivers, no SSRF, no encryption).
+- Documented actual **REST access model**: `read` + guest token for reads, `manage_options` for export/write.
+- Fixed docblock ordering in test bootstrap.
+
+### Fixed — Security Dependencies (PR #5457)
+
+- **guzzlehttp/guzzle** 7.10.0 → 7.12.1 (CVE-2026-55568, CVE-2026-55767).
+- **guzzlehttp/psr7** 2.11.0 → 2.12.1 (CVE-2026-55766).
+- **guzzlehttp/promises** 2.3.0 → 2.5.0 (dependency).
+- **undici** npm override tightened from `>=7.28.0` to `>=8.5.0` to match resolved version and prevent downgrades.
+
+### Fixed — npm Security (PR #5438)
+
+- **29 npm security alerts resolved across 14 packages.**
+- undici: TLS bypass (CVE-2026-9697) and cache info disclosure (CVE-2026-9678) — override applied to 11 addon lock files.
+- http-proxy-middleware: CRLF injection (CVE-2026-55603) — override `>=3.0.7`; root resolves to 4.1.1.
+- nodemailer: raw option bypass (GHSA-p6gq-j5cr-w38f) — bumped `^8.0.9` → `^9.0.1` in addons/pro.
+- webpack-dev-server: HMR interception (CVE-2026-9595) — override `>=5.2.5` in root, addons/pro/spa, and addons/saas-controller.
+- dompurify: ALLOWED_ATTR pollution (GHSA-cmwh-pvxp-8882) — bumped `^3.4.9` → `^3.4.11` in addons/pro/spa-v2.
+- Fixed **critical duplicate `overrides` key** in root `package.json` that silently discarded all 39 security overrides.
+
+### Changed — Dependencies
+
+- 15 Dependabot version bumps applied across the monorepo:
+  - **Composer**: guzzlehttp/psr7 2.11.0 → 2.12.1.
+  - **npm (Pro)**: stripe 14.25.0 → 22.2.3, csv-parse 5.6.0 → 7.0.0, p-queue 8.1.1 → 9.3.0, @puppeteer/browsers upgrade.
+  - **npm (SaaS Controller)**: @wordpress/eslint-plugin 25.2.0 → 25.4.1, zod 3.x → 4.4.3, @tanstack/react-query upgrade, wrangler upgrade.
+  - **npm (Cloud Worker)**: stripe upgrade, vitest 2.x → 4.1.9, @cloudflare/workers-types upgrade.
+  - **npm (Docs Hub)**: @typescript-eslint/eslint-plugin 8.x → 8.62.0, @typescript-eslint/parser upgrade, @types/node → 26.0.0.
+  - **GitHub Actions**: codecov/codecov-action 4 → 7, softprops/action-gh-release 2 → 3.
+
+### Housekeeping
+
+- Stale 1.1.31 build zips removed (PR #5437).
+- SPA addon ZIPs rebuilt with updated security overrides and dependency bumps.
+- nvoos-graphify standalone ZIP built at v1.0.0 (353,998 bytes).
+- nvoos-graphify-ai ZIP built at v1.0.0-dev (316,367 bytes).
+
+### Versioning
+
+- Bumped to **1.1.33** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, and `CHANGELOG.md`.
+- Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **13** first-class language-model providers (unchanged).
+
 ## [1.1.32] - 2026-06-19
 
 ### Added — Content Format Templates & Featured Image Generation (PR #5433)

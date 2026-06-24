@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.32
+Stable tag: 1.1.33
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -296,6 +296,19 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.33 - June 24, 2026 =
+
+Bumped to 1.1.33 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, and `CHANGELOG.md`. Tool count: ~195 base + ~795 Pro (~990 total; live registry via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+
+**WP 7.0 Connectors Credential Integration, nvoos-graphify v1.0.0, Security Fixes**
+
+* **WP 7.0 Connectors Credential Integration (PR #5458).** Credential_Resolver integrated into all 17 AI client `get_api_key()` methods. Fallback chain: WP 7.0 Connectors → plugin settings → env vars → PHP constants. `get_key_source()` / `get_key_source_label()` added to Credential_Resolver. Credential source badges and WP 7.0 Connectors hints rendered in admin settings UI. All 13 provider API key field descriptions updated to mention alternative sources. Provider diagnostics now show key source column. Settings health check counts credentials via resolver.
+* **nvoos-graphify v1.0.0 Release (PR #5456).** Standalone nvoos-graphify plugin released at v1.0.0 (Plugin Check compliant). nvoos-graphify-ai plugin released at v1.0.0-dev. Fixed 8 output-escaping errors and critical `->prepare()` spread-operator bug in `Db::listNodes()`. Renamed `vector` column → `embedding_vector` to avoid MariaDB/MySQL reserved-word conflict; bumped DB version. Fixed snake_case→camelCase method calls across tools, controllers, and cross-plugin integrations. Documented actual REST access model: read + guest token for reads, `manage_options` for export/write.
+* **Security Dependencies (PR #5457).** guzzlehttp/guzzle 7.10.0 → 7.12.1 (CVE-2026-55568, CVE-2026-55767). guzzlehttp/psr7 2.11.0 → 2.12.1 (CVE-2026-55766). guzzlehttp/promises 2.3.0 → 2.5.0. undici npm override tightened from `>=7.28.0` to `>=8.5.0`.
+* **npm Security (PR #5438).** 29 npm alerts resolved across 14 packages: undici (TLS bypass CVE-2026-9697, cache info disclosure CVE-2026-9678), http-proxy-middleware (CRLF injection CVE-2026-55603), nodemailer (raw option bypass GHSA-p6gq-j5cr-w38f), webpack-dev-server (HMR interception CVE-2026-9595), dompurify (ALLOWED_ATTR pollution GHSA-cmwh-pvxp-8882). Fixed critical duplicate `overrides` key in root `package.json`.
+* **Dependencies.** 15 Dependabot bumps: composer (guzzlehttp/psr7), npm (eslint-plugin, stripe, zod, p-queue, csv-parse, react-query, puppeteer, vitest, workers-types, types/node, wrangler), GitHub Actions (codecov/codecov-action 4→7, softprops/action-gh-release 2→3).
+* **Housekeeping.** Stale 1.1.31 build zips removed (PR #5437). SPA addon ZIPs rebuilt with updated security overrides.
 
 = 1.1.32 - June 19, 2026 =
 
