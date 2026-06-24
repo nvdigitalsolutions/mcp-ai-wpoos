@@ -987,8 +987,157 @@
 			);
 		},
 
+		/**
+		 * Channel definition registry — canonical source for delivery channel UI config.
+		 *
+		 * Each entry defines the label, target identifier fields, available templates,
+		 * and any extra configuration fields needed for the edit modal.
+		 */
+		CHANNEL_DEFS: {
+			email:       { label: 'Email',           fields: ['to'],                         templates: ['full','summary','error'], group: 'direct' },
+			slack:       { label: 'Slack',           fields: ['channel'],                    templates: ['summary','error'],       group: 'chat' },
+			telegram:    { label: 'Telegram',        fields: ['chat_id'],                    templates: ['summary','error'],       group: 'chat' },
+			discord:     { label: 'Discord',         fields: ['channel_id'],                 templates: ['summary','error'],       group: 'chat' },
+			teams:       { label: 'Microsoft Teams', fields: ['team_id','channel_id'],       templates: ['summary','error'],       group: 'chat' },
+			messenger:   { label: 'Messenger',       fields: ['recipient_id'],               templates: ['summary','error'],       group: 'chat' },
+			whatsapp:    { label: 'WhatsApp',        fields: ['to'],                         templates: ['summary','error'],       group: 'chat' },
+			google_chat: { label: 'Google Chat',     fields: ['space_id'],                   templates: ['summary','error'],       group: 'chat' },
+			sms:         { label: 'SMS',             fields: ['to'],                         templates: ['summary','error'],       group: 'direct' },
+			webhook:     { label: 'Webhook',         fields: ['url'],                        templates: [],                        group: 'automation' },
+			paper_store: { label: 'Paper Store',     fields: ['collection'],                 templates: [],                        group: 'automation', extra: ['driver','retention'] },
+			wordpress:   { label: 'WordPress Post',  fields: [],                             templates: [],                        group: 'automation', extra: ['post_type','post_status','category','skip_if_ai_posted'] },
+		},
+
+		/**
+		 * Build a delivery channel row for the edit modal.
+		 *
+		 * @param {string} channelSlug Internal slug (e.g., "telegram", "teams").
+		 * @param {object} config      Current channel config from schedule data.
+		 * @param {string} prefix      Element ID prefix (edit-rd-success- or edit-rd-failure-).
+		 * @return {string} HTML table row.
+		 */
+		editChannelRow: function ( channelSlug, config, prefix ) {
+			var def      = this.CHANNEL_DEFS[ channelSlug ];
+			var cfg      = config || {};
+			var label    = def.label;
+			var html     = '';
+			var fieldHtml = '';
+			var i;
+
+			// Checkbox + label.
+			html += '<label><input type="checkbox" id="' + prefix + channelSlug + '" ' + ( cfg.enabled ? 'checked' : '' ) + '> ' + this.esc( label ) + '</label>';
+
+			// Target identifier fields per channel type.
+			for ( i = 0; i < def.fields.length; i++ ) {
+				var f = def.fields[ i ];
+				var placeholder = '';
+				switch ( f ) {
+					case 'to':          placeholder = channelSlug === 'email' ? 'team@example.com' : '+15551234567'; break;
+					case 'channel':     placeholder = '#research'; break;
+					case 'chat_id':     placeholder = '-1001234567890'; break;
+					case 'channel_id':  placeholder = '123456789012345678'; break;
+					case 'team_id':     placeholder = 'Team ID'; break;
+					case 'recipient_id': placeholder = 'Recipient PSID'; break;
+					case 'space_id':    placeholder = 'spaces/AAAABBBB'; break;
+					case 'url':         placeholder = 'https://hooks.example.com/...'; break;
+					case 'collection':  placeholder = 'blog-research'; break;
+				}
+				fieldHtml += ' <input type="text" id="' + prefix + channelSlug + '-' + f + '" class="regular-text" value="' + this.esc( cfg[ f ] || '' ) + '" placeholder="' + placeholder + '" style="max-width:180px">';
+			}
+			html += fieldHtml;
+
+			// Template selector (where applicable).
+			if ( def.templates.length > 0 ) {
+				var tplSel = cfg.template || def.templates[ 0 ];
+				html += ' <select id="' + prefix + channelSlug + '-template">';
+				for ( i = 0; i < def.templates.length; i++ ) {
+					var t = def.templates[ i ];
+					html += '<option value="' + t + '"' + ( t === tplSel ? ' selected' : '' ) + '>' + t.charAt( 0 ).toUpperCase() + t.slice( 1 ) + '</option>';
+				}
+				html += '</select>';
+			}
+
+			// Extra fields for paper_store and wordpress (dropdowns, checkboxes).
+			if ( def.extra && def.extra.length > 0 && channelSlug === 'paper_store' ) {
+				var driverVal = cfg.driver || 'json';
+				html += ' <select id="' + prefix + channelSlug + '-driver"><option value="json"' + ( driverVal === 'json' ? ' selected' : '' ) + '>JSON</option><option value="markdown_yaml"' + ( driverVal === 'markdown_yaml' ? ' selected' : '' ) + '>Markdown + YAML</option></select>';
+				html += ' <input type="number" id="' + prefix + channelSlug + '-retention" class="small-text" value="' + ( parseInt( cfg.retention, 10 ) || 30 ) + '" min="0" max="100" style="width:60px"> runs';
+			}
+			if ( def.extra && def.extra.length > 0 && channelSlug === 'wordpress' ) {
+				var wpPostType = cfg.post_type || 'post';
+				var wpStatus = cfg.post_status || 'draft';
+				html += '<br><span class="description">When the AI already calls create_post during the run, this channel is automatically skipped to avoid duplicate posts.</span>';
+				html += '<br><label style="margin-top:4px;display:inline-block"><input type="checkbox" id="' + prefix + channelSlug + '-skip-if-ai" ' + ( false !== cfg.skip_if_ai_posted ? 'checked' : '' ) + '> Skip if AI already created posts</label>';
+				html += '<br><select id="' + prefix + channelSlug + '-post-type" style="margin-top:4px"><option value="post"' + ( wpPostType === 'post' ? ' selected' : '' ) + '>Post</option><option value="page"' + ( wpPostType === 'page' ? ' selected' : '' ) + '>Page</option></select>';
+				html += ' <select id="' + prefix + channelSlug + '-post-status"><option value="draft"' + ( wpStatus === 'draft' ? ' selected' : '' ) + '>Draft</option><option value="publish"' + ( wpStatus === 'publish' ? ' selected' : '' ) + '>Publish</option><option value="pending"' + ( wpStatus === 'pending' ? ' selected' : '' ) + '>Pending Review</option></select>';
+				html += ' Category ID: <input type="number" id="' + prefix + channelSlug + '-category" class="small-text" value="' + ( parseInt( cfg.category, 10 ) || 0 ) + '" min="0" style="width:80px">';
+			}
+
+			// Credential reference (connection_id or inline).
+			html += ' <input type="text" id="' + prefix + channelSlug + '-creds" class="regular-text" value="' + this.esc( cfg.connection_id || cfg[ channelSlug + '_credentials' ] || '' ) + '" placeholder="Connection ID or token" style="max-width:200px">';
+
+			return this.editRow( label, html );
+		},
+
+	/**
+	 * Collect channel config from the edit modal form fields.
+	 *
+	 * Reads the enabled checkbox, target identifier fields, template selector,
+	 * and credential reference from the DOM and returns a sanitized channel
+	 * config object suitable for the result_delivery schema.
+	 *
+	 * @param {string} channelSlug Channel slug (e.g., "telegram").
+	 * @param {string} prefix      Element ID prefix (edit-rd-success- or edit-rd-failure-).
+	 * @param {object} def         Channel definition from CHANNEL_DEFS.
+	 * @return {object} Sanitized channel config.
+	 */
+		collectChannelConfig: function ( channelSlug, prefix, def ) {
+			var cfg = {
+				enabled:  $( '#' + prefix + channelSlug ).is( ':checked' ),
+				template: $( '#' + prefix + channelSlug + '-template' ).val() || def.templates[ 0 ] || 'summary',
+			};
+
+			// Target identifier fields.
+			var i, f, val;
+			for ( i = 0; i < def.fields.length; i++ ) {
+				f = def.fields[ i ];
+				val = $( '#' + prefix + channelSlug + '-' + f ).val();
+				if ( val ) {
+					cfg[ f ] = val.trim();
+				}
+			}
+
+			// Extra fields (paper_store, wordpress).
+			if ( def.extra && def.extra.length > 0 ) {
+				for ( i = 0; i < def.extra.length; i++ ) {
+					f = def.extra[ i ];
+					val = $( '#' + prefix + channelSlug + '-' + f ).val();
+					if ( val !== undefined && val !== null && val !== '' ) {
+						cfg[ f ] = ( f === 'retention' || f === 'category' ) ? ( parseInt( val, 10 ) || 0 ) : val.trim();
+					}
+				}
+				// Checkbox extras.
+				if ( channelSlug === 'wordpress' ) {
+					cfg.skip_if_ai_posted = $( '#' + prefix + channelSlug + '-skip-if-ai' ).is( ':checked' );
+				}
+			}
+
+			// Credential reference.
+			var credsRaw = $( '#' + prefix + channelSlug + '-creds' ).val().trim();
+			if ( credsRaw ) {
+				// If it looks like a UUID or numeric ID, treat as connection_id.
+				if ( /^[a-f0-9\-]{20,}$/i.test( credsRaw ) || /^\d+$/.test( credsRaw ) ) {
+					cfg.connection_id = credsRaw;
+				} else {
+					cfg[ channelSlug + '_credentials' ] = credsRaw;
+				}
+			}
+
+			return cfg;
+		},
+
 		/** ------------------------------------------------------------------ *
-		 *  Edit modal
+		 *  Edit Modal
 		 * ------------------------------------------------------------------ */
 		openEditModal: function ( id ) {
 			const schedule = this.schedules[ id ];
@@ -1075,52 +1224,27 @@
 			html += this.editRow( 'Widget render mode', '<select id="edit-widget-render-mode">' + renderModeOpts + '</select>' );
 			html += this.editRow( 'Widget auto-refresh (s)', '<input type="number" id="edit-widget-refresh-interval" class="small-text" min="0" max="3600" value="' + ( parseInt( dWd.refresh_interval, 10 ) || 0 ) + '"><br><span class="description">0 = off</span>' );
 
-			// Result Delivery section.
+			// Result Delivery section — all supported channels.
 			var rd = schedule.result_delivery || {};
 			var rdSuccess = ( rd.on_success || {} ).channels || {};
 			var rdFailure = ( rd.on_failure || {} ).channels || {};
-			html += '<tr><td colspan="2"><hr><strong>Result Delivery</strong></td></tr>';
+			var self = this;
+			html += '<tr><td colspan="2"><hr><strong>Result Delivery</strong><br><span class="description">Configure where results are sent. Credentials can reference a Remote Sites connection ID.</span></td></tr>';
 
-			// On Success channels.
+			// On Success — all channels.
 			html += '<tr><td colspan="2"><em>On Success</em></td></tr>';
-			html += this.editRow(
-				'Email',
-				'<label><input type="checkbox" id="edit-rd-success-email" ' + ( ( rdSuccess.email || {} ).enabled ? 'checked' : '' ) + '> Send result email</label>' +
-				'<br><input type="email" id="edit-rd-success-email-to" class="regular-text" value="' + this.esc( ( rdSuccess.email || {} ).to || '' ) + '" placeholder="team@example.com">' +
-				'<br><select id="edit-rd-success-email-template"><option value="full">Full Report</option><option value="summary">Summary</option></select>'
-			);
-			html += this.editRow(
-				'Slack',
-				'<label><input type="checkbox" id="edit-rd-success-slack" ' + ( ( rdSuccess.slack || {} ).enabled ? 'checked' : '' ) + '> Post to Slack</label>' +
-				'<br><input type="text" id="edit-rd-success-slack-channel" class="regular-text" value="' + this.esc( ( rdSuccess.slack || {} ).channel || '' ) + '" placeholder="#research">'
-			);
-			html += this.editRow(
-				'Paper Store',
-				'<label><input type="checkbox" id="edit-rd-success-paper" ' + ( ( rdSuccess.paper_store || {} ).enabled ? 'checked' : '' ) + '> Save to Paper Store</label>' +
-				'<br><input type="text" id="edit-rd-success-paper-collection" class="regular-text" value="' + this.esc( ( rdSuccess.paper_store || {} ).collection || '' ) + '" placeholder="blog-research">' +
-				'<br><select id="edit-rd-success-paper-driver"><option value="json">JSON</option><option value="markdown_yaml">Markdown + YAML</option></select>' +
-				' <input type="number" id="edit-rd-success-paper-retention" class="small-text" value="' + ( parseInt( ( rdSuccess.paper_store || {} ).retention, 10 ) || 30 ) + '" min="0" max="100" style="width:60px"> runs'
-			);
+			Object.keys( this.CHANNEL_DEFS ).forEach( function ( ch ) {
+				html += self.editChannelRow( ch, rdSuccess[ ch ] || {}, 'edit-rd-success-' );
+			} );
 
-			// WordPress post auto-creation.
-			var wpCfg = rdSuccess.wordpress || {};
-			html += this.editRow(
-				'WordPress Post',
-				'<label><input type="checkbox" id="edit-rd-success-wordpress" ' + ( wpCfg.enabled ? 'checked' : '' ) + '> Auto-create post from result</label>' +
-				'<br><span class="description">When the AI already calls create_post during the run, this channel is automatically skipped to avoid duplicate posts.</span>' +
-				'<br><label style="margin-top:4px;display:inline-block"><input type="checkbox" id="edit-rd-success-wordpress-skip-if-ai" ' + ( false !== wpCfg.skip_if_ai_posted ? 'checked' : '' ) + '> Skip if AI already created posts</label>' +
-				'<br><select id="edit-rd-success-wordpress-post-type" style="margin-top:4px"><option value="post" ' + ( 'post' === ( wpCfg.post_type || 'post' ) ? 'selected' : '' ) + '>Post</option><option value="page" ' + ( 'page' === ( wpCfg.post_type || '' ) ? 'selected' : '' ) + '>Page</option></select>' +
-				' <select id="edit-rd-success-wordpress-post-status"><option value="draft" ' + ( 'draft' === ( wpCfg.post_status || 'draft' ) ? 'selected' : '' ) + '>Draft</option><option value="publish" ' + ( 'publish' === ( wpCfg.post_status || '' ) ? 'selected' : '' ) + '>Publish</option><option value="pending" ' + ( 'pending' === ( wpCfg.post_status || '' ) ? 'selected' : '' ) + '>Pending Review</option></select>' +
-				' Category ID: <input type="number" id="edit-rd-success-wordpress-category" class="small-text" value="' + ( parseInt( wpCfg.category, 10 ) || 0 ) + '" min="0" style="width:80px">'
-			);
-
-			// On Failure channels.
+			// On Failure — all channels except content-creation types.
 			html += '<tr><td colspan="2"><hr><em>On Failure</em></td></tr>';
-			html += this.editRow(
-				'Failure Email',
-				'<label><input type="checkbox" id="edit-rd-failure-email" ' + ( ( rdFailure.email || {} ).enabled ? 'checked' : '' ) + '> Send failure alert</label>' +
-				'<br><input type="email" id="edit-rd-failure-email-to" class="regular-text" value="' + this.esc( ( rdFailure.email || {} ).to || '' ) + '" placeholder="admin@example.com">'
-			);
+			Object.keys( this.CHANNEL_DEFS ).forEach( function ( ch ) {
+				if ( ch === 'paper_store' || ch === 'wordpress' ) {
+					return;
+				}
+				html += self.editChannelRow( ch, rdFailure[ ch ] || {}, 'edit-rd-failure-' );
+			} );
 
 			html += '</table>';
 
@@ -1181,43 +1305,30 @@
 			};
 
 			// Result delivery config.
-			data.result_delivery = {
-				on_success: {
-					channels: {
-						email: {
-							enabled:  $( '#edit-rd-success-email' ).is( ':checked' ),
-							to:       $( '#edit-rd-success-email-to' ).val().trim(),
-							template: $( '#edit-rd-success-email-template' ).val() || 'full',
-						},
-						slack: {
-							enabled: $( '#edit-rd-success-slack' ).is( ':checked' ),
-							channel: $( '#edit-rd-success-slack-channel' ).val().trim(),
-						},
-						paper_store: {
-							enabled:    $( '#edit-rd-success-paper' ).is( ':checked' ),
-							collection: $( '#edit-rd-success-paper-collection' ).val().trim(),
-							driver:     $( '#edit-rd-success-paper-driver' ).val() || 'json',
-							retention:  parseInt( $( '#edit-rd-success-paper-retention' ).val(), 10 ) || 30,
-						},
-						wordpress: {
-							enabled:           $( '#edit-rd-success-wordpress' ).is( ':checked' ),
-							skip_if_ai_posted: $( '#edit-rd-success-wordpress-skip-if-ai' ).is( ':checked' ),
-							post_type:         $( '#edit-rd-success-wordpress-post-type' ).val() || 'post',
-							post_status:       $( '#edit-rd-success-wordpress-post-status' ).val() || 'draft',
-							category:          parseInt( $( '#edit-rd-success-wordpress-category' ).val(), 10 ) || 0,
-						},
-					},
-				},
-				on_failure: {
-					channels: {
-						email: {
-							enabled:  $( '#edit-rd-failure-email' ).is( ':checked' ),
-							to:       $( '#edit-rd-failure-email-to' ).val().trim(),
-							template: 'error',
-						},
-					},
-				},
-			};
+			data.result_delivery = (function() {
+				var rdSuccessChannels = {};
+				var rdFailureChannels = {};
+				var chDefs = self.CHANNEL_DEFS;
+
+				Object.keys( chDefs ).forEach( function ( ch ) {
+					var def = chDefs[ ch ];
+					var sc  = self.collectChannelConfig( ch, 'edit-rd-success-', def );
+					if ( sc.enabled ) {
+						rdSuccessChannels[ ch ] = sc;
+					}
+					if ( ch !== 'paper_store' && ch !== 'wordpress' ) {
+						var fc = self.collectChannelConfig( ch, 'edit-rd-failure-', def );
+						if ( fc.enabled ) {
+							rdFailureChannels[ ch ] = fc;
+						}
+					}
+				} );
+
+				return {
+					on_success: { channels: rdSuccessChannels },
+					on_failure: { channels: rdFailureChannels },
+				};
+			})();
 
 			this.ajax(
 				'wp_mcp_ai_sm_update_schedule',

@@ -77,38 +77,38 @@ class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Int
 				),
 				'channels'    => array(
 					'type'        => 'array',
-					'description' => __( 'Array of channel names to broadcast to: telegram, slack, discord, teams, messenger, whatsapp.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Array of channel names to broadcast to: telegram, slack, discord, teams, messenger, whatsapp, google_chat.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
-						'enum' => array( 'telegram', 'slack', 'discord', 'teams', 'messenger', 'whatsapp' ),
+						'enum' => array( 'telegram', 'slack', 'discord', 'teams', 'messenger', 'whatsapp', 'google_chat' ),
 					),
 				),
 				'credentials' => array(
 					'type'        => 'object',
 					'description' => __( 'Credentials object containing tokens/keys for each channel.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'telegram'  => array(
+						'telegram'    => array(
 							'type'       => 'object',
 							'properties' => array(
 								'token'   => array( 'type' => 'string' ),
 								'chat_id' => array( 'type' => 'string' ),
 							),
 						),
-						'slack'     => array(
+						'slack'       => array(
 							'type'       => 'object',
 							'properties' => array(
 								'token'   => array( 'type' => 'string' ),
 								'channel' => array( 'type' => 'string' ),
 							),
 						),
-						'discord'   => array(
+						'discord'     => array(
 							'type'       => 'object',
 							'properties' => array(
 								'token'      => array( 'type' => 'string' ),
 								'channel_id' => array( 'type' => 'string' ),
 							),
 						),
-						'teams'     => array(
+						'teams'       => array(
 							'type'       => 'object',
 							'properties' => array(
 								'token'      => array( 'type' => 'string' ),
@@ -116,19 +116,25 @@ class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Int
 								'channel_id' => array( 'type' => 'string' ),
 							),
 						),
-						'messenger' => array(
+						'messenger'   => array(
 							'type'       => 'object',
 							'properties' => array(
 								'access_token' => array( 'type' => 'string' ),
 								'recipient_id' => array( 'type' => 'string' ),
 							),
 						),
-						'whatsapp'  => array(
+						'whatsapp'    => array(
 							'type'       => 'object',
 							'properties' => array(
 								'access_token'    => array( 'type' => 'string' ),
 								'phone_number_id' => array( 'type' => 'string' ),
 								'to'              => array( 'type' => 'string' ),
+							),
+						),
+						'google_chat' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'webhook_url' => array( 'type' => 'string' ),
 							),
 						),
 					),
@@ -355,6 +361,24 @@ class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Int
 						'phone_number_id' => $credentials['phone_number_id'],
 						'to'              => $credentials['to'],
 						'text'            => $message,
+					),
+					$context
+				);
+
+			case 'google_chat':
+				if ( ! isset( $credentials['webhook_url'] ) ) {
+					return new WP_Error( 'missing_google_chat_credentials', __( 'webhook_url is required for Google Chat.', 'mcp-ai-wpoos-pro' ) );
+				}
+
+				$tool = $tool_registry->get_tool( 'send_google_chat_message' );
+				if ( ! $tool ) {
+					return new WP_Error( 'tool_not_found', __( 'Google Chat tool not found.', 'mcp-ai-wpoos-pro' ) );
+				}
+
+				return $tool->execute(
+					array(
+						'webhook_url' => $credentials['webhook_url'],
+						'text'        => $message,
 					),
 					$context
 				);
