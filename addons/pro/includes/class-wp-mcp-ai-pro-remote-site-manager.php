@@ -421,6 +421,29 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['custom_post_types'] = $existing_connection['custom_post_types'];
 			}
 
+			// Preserve Upwork/LinkedIn mode and search criteria when updating.
+			if ( ! isset( $connection_data['upwork_mode'] ) && isset( $existing_connection['upwork_mode'] ) ) {
+				$connection_data['upwork_mode'] = $existing_connection['upwork_mode'];
+			}
+			if ( ! isset( $connection_data['upwork_search_query'] ) && isset( $existing_connection['upwork_search_query'] ) ) {
+				$connection_data['upwork_search_query'] = $existing_connection['upwork_search_query'];
+			}
+			if ( ! isset( $connection_data['upwork_search_category'] ) && isset( $existing_connection['upwork_search_category'] ) ) {
+				$connection_data['upwork_search_category'] = $existing_connection['upwork_search_category'];
+			}
+			if ( ! isset( $connection_data['upwork_search_job_type'] ) && isset( $existing_connection['upwork_search_job_type'] ) ) {
+				$connection_data['upwork_search_job_type'] = $existing_connection['upwork_search_job_type'];
+			}
+			if ( ! isset( $connection_data['linkedin_mode'] ) && isset( $existing_connection['linkedin_mode'] ) ) {
+				$connection_data['linkedin_mode'] = $existing_connection['linkedin_mode'];
+			}
+			if ( ! isset( $connection_data['linkedin_search_query'] ) && isset( $existing_connection['linkedin_search_query'] ) ) {
+				$connection_data['linkedin_search_query'] = $existing_connection['linkedin_search_query'];
+			}
+			if ( ! isset( $connection_data['linkedin_search_location'] ) && isset( $existing_connection['linkedin_search_location'] ) ) {
+				$connection_data['linkedin_search_location'] = $existing_connection['linkedin_search_location'];
+			}
+
 			// Preserve created timestamp.
 			if ( ! isset( $connection_data['created'] ) && ! empty( $existing_connection['created'] ) ) {
 				$connection_data['created'] = $existing_connection['created'];
@@ -560,6 +583,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shipstation_carrier_code'       => isset( $connection_data['shipstation_carrier_code'] )
 				? sanitize_text_field( $connection_data['shipstation_carrier_code'] )
 				: 'stamps_com',
+			// Upwork/LinkedIn operation mode: 'api' (OAuth) or 'web_search' (AI-powered web search).
+			'upwork_mode'                    => isset( $connection_data['upwork_mode'] ) && in_array( $connection_data['upwork_mode'], array( 'api', 'web_search' ), true )
+				? $connection_data['upwork_mode']
+				: 'api',
+			'upwork_search_query'            => isset( $connection_data['upwork_search_query'] ) ? sanitize_text_field( $connection_data['upwork_search_query'] ) : '',
+			'upwork_search_category'         => isset( $connection_data['upwork_search_category'] ) ? sanitize_text_field( $connection_data['upwork_search_category'] ) : '',
+			'upwork_search_job_type'         => isset( $connection_data['upwork_search_job_type'] ) && in_array( $connection_data['upwork_search_job_type'], array( 'hourly', 'fixed', '' ), true )
+				? $connection_data['upwork_search_job_type']
+				: '',
+			'linkedin_mode'                  => isset( $connection_data['linkedin_mode'] ) && in_array( $connection_data['linkedin_mode'], array( 'api', 'web_search' ), true )
+				? $connection_data['linkedin_mode']
+				: 'api',
+			'linkedin_search_query'          => isset( $connection_data['linkedin_search_query'] ) ? sanitize_text_field( $connection_data['linkedin_search_query'] ) : '',
+			'linkedin_search_location'       => isset( $connection_data['linkedin_search_location'] ) ? sanitize_text_field( $connection_data['linkedin_search_location'] ) : '',
 			// WordPress/WooCommerce granular access controls.
 			'post_type_access'               => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
 			'wc_resource_access'             => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
@@ -2734,21 +2771,27 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		if ( 'upwork' === $connection_type ) {
-			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_pro_missing_upwork_credentials',
-					__( 'OAuth Client ID and client secret are required for Upwork connections.', 'mcp-ai-wpoos-pro' )
-				);
+			$upwork_mode = isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : 'api';
+			if ( 'api' === $upwork_mode ) {
+				if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_missing_upwork_credentials',
+						__( 'OAuth Client ID and client secret are required for Upwork API connections. Switch to Web Search mode to use without OAuth credentials.', 'mcp-ai-wpoos-pro' )
+					);
+				}
 			}
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
 		}
 
 		if ( 'linkedin' === $connection_type ) {
-			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_pro_missing_linkedin_credentials',
-					__( 'OAuth Client ID and client secret are required for LinkedIn connections.', 'mcp-ai-wpoos-pro' )
-				);
+			$linkedin_mode = isset( $connection['linkedin_mode'] ) ? $connection['linkedin_mode'] : 'api';
+			if ( 'api' === $linkedin_mode ) {
+				if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_missing_linkedin_credentials',
+						__( 'OAuth Client ID and client secret are required for LinkedIn API connections. Switch to Web Search mode to use without OAuth credentials.', 'mcp-ai-wpoos-pro' )
+					);
+				}
 			}
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
 		}
