@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace NvoosGraphify\Remote;
 
 use NvoosGraphify\Contracts\RemoteSource;
+use NvoosGraphify\Graph\Db;
 
 /**
  * Registry for remote-source driver instances.
@@ -71,5 +72,61 @@ final class Registry {
 			);
 		}
 		return $list;
+	}
+
+	/**
+	 * Return a freshly-configured driver instance for the given driver ID.
+	 *
+	 * Clones the registered prototype and applies the given config, so
+	 * that each DB-configured source gets its own independent instance.
+	 *
+	 * @param string              $driverId Driver identifier.
+	 * @param array<string,mixed> $config   Configuration array.
+	 * @return RemoteSource|null Driver instance or null if not found.
+	 */
+	public function getDriverInstance( string $driverId, array $config = array() ): ?RemoteSource {
+		if ( ! isset( $this->drivers[ $driverId ] ) ) {
+			return null;
+		}
+		$class = \get_class( $this->drivers[ $driverId ] );
+		if ( ! \class_exists( $class ) ) {
+			return null;
+		}
+		$instance = new $class();
+		if ( ! empty( $config ) ) {
+			$instance->setConfig( $config );
+		}
+		return $instance;
+	}
+
+	/**
+	 * Return instantiated driver objects for all enabled DB-configured sources.
+	 *
+	 * @return array<string,RemoteSource>
+	 */
+	public function getActiveSources(): array {
+		$rows    = Db::listRemoteSources( array( 'enabled' => 1 ) );
+		$sources = array();
+		foreach ( $rows as $row ) {
+			$config = array();
+			if ( ! empty( $row->config_json ) ) {
+				$rawConfig = json_decode( $row->config_json, true );
+				if ( is_array( $rawConfig ) ) {
+					foreach ( $rawConfig as $k => $v ) {
+						if ( is_string( $v ) && Crypto::isSensitiveKey( $k ) ) {
+							$rawConfig[ $k ] = Crypto::decrypt( $v );
+						}
+					}
+					$config = $rawConfig;
+				}
+			}
+			$config['_slug']       = $row->slug;
+			$config['_rate_limit'] = absint( $row->rate_limit ?? 0 );
+			$instance              = $this->getDriverInstance( $row->driver, $config );
+			if ( $instance ) {
+				$sources[ $row->slug ] = $instance;
+			}
+		}
+		return $sources;
 	}
 }

@@ -5,6 +5,7 @@ namespace NvoosGraphify;
 
 use NvoosGraphify\Memory\Bridge;
 use NvoosGraphify\Memory\EmbeddingsOnIngest;
+use NvoosGraphify\Remote\Enricher;
 use NvoosGraphify\Remote\Registry as RemoteRegistry;
 
 /**
@@ -282,7 +283,8 @@ final class Plugin {
 
 	/** @return void */
 	public function runScheduledEnrich(): void {
-		// Enrichment from remote sources — wired in Phase 7.
+		$enricher = new Enricher();
+		$enricher->enrichAll( false );
 	}
 
 	/** @return void */
