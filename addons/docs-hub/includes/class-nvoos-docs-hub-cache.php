@@ -225,7 +225,7 @@ class NV_oOS_Docs_Hub_Cache {
 			return;
 		}
 
-		// Delete manifest and search index.
+		// Delete manifest, search index, and any other top-level JSON blobs.
 		$root_jsons = glob( $dir . '/*.json' );
 		if ( ! empty( $root_jsons ) ) {
 			foreach ( $root_jsons as $file ) {
@@ -238,6 +238,19 @@ class NV_oOS_Docs_Hub_Cache {
 		$page_jsons = is_dir( $pages_dir ) ? glob( $pages_dir . '/*.json' ) : array();
 		if ( ! empty( $page_jsons ) ) {
 			foreach ( $page_jsons as $file ) {
+				wp_delete_file( $file );
+			}
+		}
+
+		// Clear the staging namespace so any half-finished rebuild starts fresh.
+		$this->clear_staging();
+
+		// Delete remote content cache files (individual .md files fetched from
+		// GitHub). The next rebuild will re-fetch them.
+		$remote_dir  = $dir . '/remote';
+		$remote_mds  = is_dir( $remote_dir ) ? glob( $remote_dir . '/*.md' ) : array();
+		if ( ! empty( $remote_mds ) ) {
+			foreach ( $remote_mds as $file ) {
 				wp_delete_file( $file );
 			}
 		}
@@ -365,6 +378,26 @@ class NV_oOS_Docs_Hub_Cache {
 		$htaccess = $dir . DIRECTORY_SEPARATOR . '.htaccess';
 		if ( ! file_exists( $htaccess ) ) {
 			file_put_contents( $htaccess, "Deny from all\n" );  // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		}
+
+		// IIS / Windows Server equivalent.
+		$web_config = $dir . DIRECTORY_SEPARATOR . 'web.config';
+		if ( ! file_exists( $web_config ) ) {
+			file_put_contents( // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				$web_config,
+				"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" .
+				"<configuration>\n" .
+				"  <system.webServer>\n" .
+				"    <security>\n" .
+				"      <requestFiltering>\n" .
+				"        <hiddenSegments>\n" .
+				"          <add segment=\"nvoos-docs-hub\" />\n" .
+				"        </hiddenSegments>\n" .
+				"      </requestFiltering>\n" .
+				"    </security>\n" .
+				"  </system.webServer>\n" .
+				"</configuration>\n"
+			);
 		}
 
 		$index_guard = $dir . DIRECTORY_SEPARATOR . 'index.php';

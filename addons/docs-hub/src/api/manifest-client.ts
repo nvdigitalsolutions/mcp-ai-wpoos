@@ -40,6 +40,8 @@ export interface ManifestGroup {
 export interface Manifest {
 	version: string;
 	built_at: number;
+	/** Changes on every rebuild — used to invalidate sessionStorage cache. */
+	cache_version: string;
 	tree: ManifestGroup[];
 	slug_map: Record<string, string>;
 	total_pages: number;
@@ -258,11 +260,21 @@ export async function fetchManifest(): Promise<Manifest> {
 	const CACHE_KEY = 'nvoos_dh_manifest';
 	const cached = cacheGet<Manifest>( CACHE_KEY );
 
+	// Fast path: cached manifest has not expired.
 	if ( cached ) {
 		return cached;
 	}
 
 	const manifest = await apiFetchPublic<Manifest>( 'manifest' );
+
+	// Cache-version guard: if the freshly-fetched cache_version differs
+	// from what was cached before expiry, the manifest was rebuilt by
+	// someone else — drop stale page caches so slugs don't 404.
+	const oldVersion = cached?.cache_version ?? '';
+	if ( oldVersion && manifest.cache_version !== oldVersion ) {
+		clearCache();
+	}
+
 	cacheSet( CACHE_KEY, manifest );
 	return manifest;
 }

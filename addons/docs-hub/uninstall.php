@@ -16,52 +16,61 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 // Remove addon settings.
 delete_option( 'nvoos_docs_hub_settings' );
 
+// Remove rebuild state.
+delete_option( 'nvoos_docs_hub_rebuild_state' );
+
 // Clear known transients.
 delete_transient( 'nvoos_dh_manifest' );
 delete_transient( 'nvoos_dh_search' );
 
+// Clear picker cache transients (keyed by md5 hash — use wildcard cleanup).
+global $wpdb;
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+$wpdb->query(
+	$wpdb->prepare(
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+		$wpdb->esc_like( '_transient_nvoos_docs_hub_tree_' ) . '%'
+	)
+);
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+$wpdb->query(
+	$wpdb->prepare(
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+		$wpdb->esc_like( '_transient_timeout_nvoos_docs_hub_tree_' ) . '%'
+	)
+);
+
 // Note: page transients use md5 hashes so we cannot enumerate them here.
 // They will expire naturally or be cleaned by WP transient maintenance.
 
-// Unschedule the rebuild cron.
+// Unschedule all rebuild-related cron events.
 wp_clear_scheduled_hook( 'nvoos_docs_hub_rebuild_cron' );
+wp_clear_scheduled_hook( 'nvoos_docs_hub_rebuild_tick' );
 
 // Delete cached JSON files from the upload directory.
 $upload_info = wp_upload_dir();
 $cache_dir   = $upload_info['basedir'] . DIRECTORY_SEPARATOR . 'nvoos-docs-hub';
 
 if ( is_dir( $cache_dir ) ) {
-	// Delete JSON files in root of cache dir.
-	$json_files = glob( $cache_dir . DIRECTORY_SEPARATOR . '*.json' );
-	if ( ! empty( $json_files ) ) {
-		foreach ( $json_files as $file ) {
-			wp_delete_file( $file );
+	// Helper: recursively delete a directory.
+	$rm_rf = null;
+	$rm_rf = static function ( $dir ) use ( &$rm_rf ) {
+		if ( ! is_dir( $dir ) ) {
+			return;
 		}
-	}
-
-	// Delete JSON files in pages subdirectory.
-	$pages_dir  = $cache_dir . DIRECTORY_SEPARATOR . 'pages';
-	$page_files = is_dir( $pages_dir ) ? glob( $pages_dir . DIRECTORY_SEPARATOR . '*.json' ) : array();
-	if ( ! empty( $page_files ) ) {
-		foreach ( $page_files as $file ) {
-			wp_delete_file( $file );
+		$entries = array_diff( scandir( $dir ), array( '.', '..' ) );
+		foreach ( $entries as $entry ) {
+			$path = $dir . DIRECTORY_SEPARATOR . $entry;
+			if ( is_dir( $path ) ) {
+				$rm_rf( $path );
+			} else {
+				wp_delete_file( $path );
+			}
 		}
-	}
+		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+	};
 
-	// Remove security guard files.
-	$htaccess    = $cache_dir . DIRECTORY_SEPARATOR . '.htaccess';
-	$index_guard = $cache_dir . DIRECTORY_SEPARATOR . 'index.php';
-
-	if ( file_exists( $htaccess ) ) {
-		wp_delete_file( $htaccess );
-	}
-	if ( file_exists( $index_guard ) ) {
-		wp_delete_file( $index_guard );
-	}
-
-	// Attempt to remove the now-empty directories.
-	if ( is_dir( $pages_dir ) ) {
-		@rmdir( $pages_dir );  // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-	}
-	@rmdir( $cache_dir );  // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+	// Delete the entire cache directory tree (includes pages/, remote/, _staging/,
+	// .htaccess, web.config, index.php, and all JSON files).
+	$rm_rf( $cache_dir );
 }
