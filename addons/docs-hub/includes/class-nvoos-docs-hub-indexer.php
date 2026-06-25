@@ -143,13 +143,15 @@ class NV_oOS_Docs_Hub_Indexer {
 			}
 		}
 
+		$built_at = time();
 		$manifest = array(
-			'version'      => NVOOS_DOCS_HUB_VERSION,
-			'built_at'     => time(),
-			'tree'         => $this->tree,
-			'slug_map'     => $this->slug_map,
-			'total_pages'  => count( $this->slug_map ),
-			'broken_links' => $this->broken_links,
+			'version'       => NVOOS_DOCS_HUB_VERSION,
+			'built_at'      => $built_at,
+			'cache_version' => md5( (string) $built_at . '|' . wp_json_encode( array_keys( $this->slug_map ) ) ),
+			'tree'          => $this->tree,
+			'slug_map'      => $this->slug_map,
+			'total_pages'   => count( $this->slug_map ),
+			'broken_links'  => $this->broken_links,
 		);
 
 		/**

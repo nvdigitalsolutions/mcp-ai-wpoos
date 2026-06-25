@@ -287,12 +287,13 @@ class NV_oOS_Docs_Hub_REST {
 
 		if ( ! is_array( $manifest ) ) {
 			$manifest = array(
-				'version'      => NVOOS_DOCS_HUB_VERSION,
-				'built_at'     => 0,
-				'tree'         => array(),
-				'slug_map'     => array(),
-				'total_pages'  => 0,
-				'broken_links' => array(),
+				'version'       => NVOOS_DOCS_HUB_VERSION,
+				'built_at'      => 0,
+				'cache_version' => '0',
+				'tree'          => array(),
+				'slug_map'      => array(),
+				'total_pages'   => 0,
+				'broken_links'  => array(),
 			);
 		}
 

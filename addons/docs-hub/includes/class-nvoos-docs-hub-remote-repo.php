@@ -163,9 +163,10 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		}
 
 		// Step 3: fetch (or load from local cache) each file's content.
-		$entries = array();
-		$count   = 0;
-		$max     = (int) apply_filters( 'nvoos_docs_hub_remote_max_files', self::MAX_FILES_PER_REPO, $owner, $repo );
+		$entries      = array();
+		$count        = 0;
+		$fetch_errors = array();
+		$max          = (int) apply_filters( 'nvoos_docs_hub_remote_max_files', self::MAX_FILES_PER_REPO, $owner, $repo );
 
 		foreach ( $md_files as $file_info ) {
 			if ( $count >= $max ) {
@@ -203,7 +204,17 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 
 				$content = $this->safe_get( $raw_url, $headers );
 				if ( is_wp_error( $content ) ) {
-					// Skip individual file fetch failures (rate limit, not found, etc.).
+					// Accumulate fetch failures so the admin gets a summary
+					// rather than silently missing files.
+					$code = $content->get_error_code();
+					if ( ! isset( $fetch_errors[ $code ] ) ) {
+						$fetch_errors[ $code ] = array(
+							'code'    => $code,
+							'message' => $content->get_error_message(),
+							'count'   => 0,
+						);
+					}
+					$fetch_errors[ $code ]['count']++;
 					continue;
 				}
 
@@ -228,6 +239,16 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 			);
 
 			++$count;
+		}
+
+		// Surface accumulated fetch errors via an action so callers
+		// (the scanner and rebuild pipeline) can log or display them.
+		if ( ! empty( $fetch_errors ) ) {
+			do_action(
+				'nvoos_docs_hub_remote_fetch_warnings',
+				$owner . '/' . $repo,
+				$fetch_errors
+			);
 		}
 
 		return $entries;
@@ -303,6 +324,23 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 * @param bool   $recursive Whether to fetch the tree recursively (default true).
 	 * @return array|WP_Error Array of tree items on success.
 	 */
+	/**
+	 * Fetch a Git tree from the GitHub API.
+	 *
+	 * When `$recursive` is true and the response is truncated (GitHub's
+	 * 1 000-item limit on recursive trees), a WP_Error with code
+	 * `nvoos_docs_hub_tree_truncated` is returned so callers can surface
+	 * a warning rather than silently presenting an incomplete file list.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $owner     GitHub owner.
+	 * @param string $repo      GitHub repo name.
+	 * @param string $ref       Commit SHA or ref.
+	 * @param string $token     Optional bearer token.
+	 * @param bool   $recursive Whether to fetch the tree recursively (default true).
+	 * @return array|WP_Error Array of tree items on success.
+	 */
 	private function fetch_tree( $owner, $repo, $ref, $token, $recursive = true ) {
 		$url = 'https://api.github.com/repos/'
 			. rawurlencode( $owner ) . '/'
@@ -333,11 +371,39 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 			);
 		}
 
+		// Detect rate-limiting (403 with specific message).
 		if ( ! empty( $decoded['message'] ) ) {
+			$msg = (string) $decoded['message'];
+			if ( false !== stripos( $msg, 'API rate limit exceeded' ) || false !== stripos( $msg, 'rate limit' ) ) {
+				return new WP_Error(
+					'nvoos_docs_hub_rate_limited',
+					sprintf(
+						/* translators: %s: GitHub API error message */
+						__( 'GitHub API rate limit reached: %s Add a Personal Access Token in Docs Hub settings for a higher limit (5 000 req/hr).', 'nvoos-docs-hub' ),
+						esc_html( $msg )
+					)
+				);
+			}
 			return new WP_Error(
 				'nvoos_docs_hub_tree_api_error',
 				/* translators: %s: GitHub API error message */
-				sprintf( __( 'GitHub API error: %s', 'nvoos-docs-hub' ), esc_html( $decoded['message'] ) )
+				sprintf( __( 'GitHub API error: %s', 'nvoos-docs-hub' ), esc_html( $msg ) )
+			);
+		}
+
+		// GitHub's recursive tree API truncates at 1 000 entries. When
+		// truncated, the `tree` array is still returned but incomplete.
+		// Surface this so admins can narrow the path prefix or split repos.
+		if ( $recursive && ! empty( $decoded['truncated'] ) ) {
+			$tree_count = isset( $decoded['tree'] ) && is_array( $decoded['tree'] ) ? count( $decoded['tree'] ) : 0;
+			return new WP_Error(
+				'nvoos_docs_hub_tree_truncated',
+				sprintf(
+					/* translators: 1: tree item count, 2: owner/repo name */
+					__( 'The Git tree for %2$s is too large (%1$d entries) and was truncated by GitHub. Set a "Path prefix" in the repo settings to restrict scanning to a subdirectory (e.g. "docs"), or split the repository across multiple rows with different prefixes.', 'nvoos-docs-hub' ),
+					$tree_count,
+					$owner . '/' . $repo
+				)
 			);
 		}
 

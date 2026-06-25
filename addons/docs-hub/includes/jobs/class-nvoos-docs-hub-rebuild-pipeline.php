@@ -271,12 +271,24 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 	/**
 	 * Resume a stalled or failed rebuild from its last cursor.
 	 *
+	 * Handles: FAILED, CANCELED (restart at PAGES), and stuck active
+	 * phases (e.g. cron died mid-PAGES — schedule a tick and let it
+	 * pick up where it left off).
+	 *
 	 * @since 1.2.0
 	 *
 	 * @return array Summary.
 	 */
 	public static function resume() {
 		$state = NV_oOS_Docs_Hub_Rebuild_State::get();
+
+		// Stuck mid-phase (cron died, server restart): just reschedule
+		// the tick and let the pipeline pick up at its cursor.
+		if ( NV_oOS_Docs_Hub_Rebuild_State::is_running( $state ) ) {
+			self::schedule_next_tick();
+			return NV_oOS_Docs_Hub_Rebuild_State::to_summary();
+		}
+
 		if ( in_array(
 			$state['phase'],
 			array(
