@@ -11,8 +11,9 @@ declare(strict_types=1);
 // Composer autoloader.
 $autoload = __DIR__ . '/../vendor/autoload.php';
 if ( ! file_exists( $autoload ) ) {
-	fwrite( STDERR, "Composer autoloader not found. Run `composer install` first.\n" );
-	exit( 1 );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- STDERR stream; WP_Filesystem not loaded yet.
+		fwrite( STDERR, "Composer autoloader not found. Run `composer install` first.\n" );
+		exit( 1 );
 }
 require_once $autoload;
 
@@ -24,14 +25,15 @@ if ( ! $_tests_dir ) {
 }
 
 if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
-	fwrite(
-		STDERR,
-		sprintf(
-			"WordPress test suite not found at %s. Set WP_TESTS_DIR or run `composer run test:install`.\n",
-			$_tests_dir
-		)
-	);
-	exit( 1 );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- STDERR stream; WP_Filesystem not loaded yet.
+		fwrite(
+			STDERR,
+			sprintf(
+				"WordPress test suite not found at %s. Set WP_TESTS_DIR or run `composer run test:install`.\n",
+				$_tests_dir
+			)
+		);
+		exit( 1 );
 }
 
 // Give access to tests_add_filter() function.

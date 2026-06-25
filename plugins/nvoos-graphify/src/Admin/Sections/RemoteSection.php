@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace NvoosGraphify\Admin\Sections;
 
+use NvoosGraphify\Admin\RemoteAdmin;
 use NvoosGraphify\Admin\Section;
 
 /**
  * Remote enrichment settings section.
  *
- * Controls enrichment of graph nodes from configured remote sources.
+ * Renders the remote enrichment configuration fields (enabled, budget,
+ * async) plus the full Remote Sources management UI below them — driver
+ * cards, configured sources table, and the add-source modal.
  *
  * @since 1.0.0
  */
@@ -66,5 +69,19 @@ class RemoteSection extends Section {
 				'description' => __( 'Run enrichment in the background via WP-Cron (recommended for large sites).', 'nvoos-graphify' ),
 			),
 		);
+	}
+
+	/**
+	 * Render the section wrapper, then the Remote Sources management
+	 * UI outside the form-table.
+	 *
+	 * @inheritDoc
+	 */
+	public function render_wrapper( string $page_slug = '' ): void {
+		parent::render_wrapper( $page_slug );
+
+		if ( class_exists( 'NvoosGraphify\Admin\RemoteAdmin' ) ) {
+			RemoteAdmin::renderTab();
+		}
 	}
 }

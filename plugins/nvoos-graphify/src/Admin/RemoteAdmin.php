@@ -62,7 +62,11 @@ class RemoteAdmin {
 		add_action( 'wp_ajax_nvoos_graphify_sync_remote_source', array( $this, 'ajaxSyncSource' ) );
 		add_action( 'wp_ajax_nvoos_graphify_reindex_embeddings', array( $this, 'ajaxReindexEmbeddings' ) );
 		add_action( 'wp_ajax_nvoos_graphify_validate_field_map', array( $this, 'ajaxValidateFieldMap' ) );
-		add_action( 'nvoos_graphify_cron_reindex_embeddings', array( 'NV_oOS_Graphify_Embeddings', 'reindex_all' ) );
+
+		// Embeddings reindex cron — wired by the nvoos-graphify-ai addon.
+		if ( class_exists( 'NvoosGraphify\Remote\Embeddings' ) ) {
+			add_action( 'nvoos_graphify_cron_reindex_embeddings', array( 'NvoosGraphify\Remote\Embeddings', 'reindex_all' ) );
+		}
 	}
 
 	/**

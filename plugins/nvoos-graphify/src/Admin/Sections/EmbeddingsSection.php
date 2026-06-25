@@ -3,13 +3,16 @@ declare(strict_types=1);
 
 namespace NvoosGraphify\Admin\Sections;
 
+use NvoosGraphify\Admin\RemoteAdmin;
 use NvoosGraphify\Admin\Section;
 
 /**
  * Embeddings settings section.
  *
  * Controls vector embedding generation for graph nodes using
- * OpenAI embedding models.
+ * OpenAI embedding models. Renders the standard settings fields
+ * followed by the embeddings index panel (stored count, model,
+ * re-index button).
  *
  * @since 1.0.0
  */
@@ -65,5 +68,19 @@ class EmbeddingsSection extends Section {
 				'default'     => 'text-embedding-3-small',
 			),
 		);
+	}
+
+	/**
+	 * Render the section wrapper, then the embeddings index panel
+	 * outside the form-table.
+	 *
+	 * @inheritDoc
+	 */
+	public function render_wrapper( string $page_slug = '' ): void {
+		parent::render_wrapper( $page_slug );
+
+		if ( class_exists( 'NvoosGraphify\Admin\RemoteAdmin' ) ) {
+			RemoteAdmin::renderEmbeddingsPanel();
+		}
 	}
 }
