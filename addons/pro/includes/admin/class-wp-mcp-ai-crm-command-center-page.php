@@ -1576,20 +1576,8 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		$total_leads = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
 
-		// Count of sources (Gmail connections).
-		$source_count = 0;
-		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
-			foreach ( $all_connections as $conn ) {
-				$ct = isset( $conn['connection_type'] ) ? sanitize_key( $conn['connection_type'] ) : '';
-				if (
-					in_array( $ct, array( 'gmail', 'google_workspace', 'email_imap' ), true )
-					&& ! empty( $conn['enabled'] )
-				) {
-					++$source_count;
-				}
-			}
-		}
+		// Count of configured inbound lead sources (Gmail, Upwork, LinkedIn, etc.).
+		$source_count  = self::get_crm_source_count();
 		$refresh_nonce = wp_create_nonce( self::NONCE_ACTION );
 		?>
 		<!-- Lead Source Refresh Section -->
@@ -1609,7 +1597,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				</div>
 				<div>
 					<strong><?php esc_html_e( 'Configured Sources:', 'mcp-ai-wpoos-pro' ); ?></strong>
-					<?php echo absint( $source_count ); ?>
+					<span id="crm-cc-configured-sources"><?php echo absint( $source_count ); ?></span>
 				</div>
 				<div>
 					<strong><?php esc_html_e( 'Last Refresh:', 'mcp-ai-wpoos-pro' ); ?></strong>
@@ -1623,7 +1611,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					<?php esc_html_e( 'Pull & Score from All Sources', 'mcp-ai-wpoos-pro' ); ?>
 				</button>
 				<span class="description" style="margin-left: 10px;">
-					<?php esc_html_e( 'Imports new leads from Gmail and email sources, then scores all unscored leads.', 'mcp-ai-wpoos-pro' ); ?>
+					<?php esc_html_e( 'Imports new leads from Gmail, Upwork, LinkedIn, and email sources, then scores all unscored leads.', 'mcp-ai-wpoos-pro' ); ?>
 				</span>
 			</p>
 
@@ -1824,10 +1812,21 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		</div>
 
 		<?php
-		$refresh_processing = __( 'Pulling from sources and scoring leads...', 'mcp-ai-wpoos-pro' );
-		$refresh_error      = __( 'An error occurred during refresh.', 'mcp-ai-wpoos-pro' );
-		$refresh_ajax_error = __( 'AJAX error: ', 'mcp-ai-wpoos-pro' );
-		$refresh_confirm    = __( 'This will pull new leads from all configured Gmail/email sources and re-score unscored leads. This may take a moment. Continue?', 'mcp-ai-wpoos-pro' );
+		$refresh_processing  = __( 'Pulling from all sources and scoring leads…', 'mcp-ai-wpoos-pro' );
+		$refresh_error       = __( 'An error occurred during refresh.', 'mcp-ai-wpoos-pro' );
+		$refresh_ajax_error  = __( 'AJAX error: ', 'mcp-ai-wpoos-pro' );
+		$refresh_confirm     = __( 'This will pull new leads from all configured sources (Gmail, Upwork, LinkedIn) and re-score unscored leads. This may take a moment. Continue?', 'mcp-ai-wpoos-pro' );
+		$lbl_sources_checked = __( 'Sources checked:', 'mcp-ai-wpoos-pro' );
+		$lbl_emails_fetched  = __( 'Emails fetched:', 'mcp-ai-wpoos-pro' );
+		$lbl_leads_created   = __( 'New leads created:', 'mcp-ai-wpoos-pro' );
+		$lbl_leads_scored    = __( 'Leads scored:', 'mcp-ai-wpoos-pro' );
+		$lbl_spam_skipped    = __( 'Spam skipped:', 'mcp-ai-wpoos-pro' );
+		$lbl_upwork_jobs     = __( 'Upwork jobs found:', 'mcp-ai-wpoos-pro' );
+		$lbl_upwork_imported = __( 'Upwork projects imported:', 'mcp-ai-wpoos-pro' );
+		$lbl_linkedin_jobs   = __( 'LinkedIn jobs found:', 'mcp-ai-wpoos-pro' );
+		$lbl_linkedin_saved  = __( 'LinkedIn projects saved:', 'mcp-ai-wpoos-pro' );
+		$lbl_no_new          = __( 'Refresh complete. No new leads found.', 'mcp-ai-wpoos-pro' );
+		$lbl_just_now        = __( 'Just now', 'mcp-ai-wpoos-pro' );
 
 		ob_start();
 		?>
@@ -1862,29 +1861,49 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						var data = response.data;
 						var msg  = '';
 
+						// Email/Gmail stats.
 						if (data.sources_checked > 0) {
-							msg += <?php echo wp_json_encode( __( 'Sources checked:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + data.sources_checked + '. ';
-						}
-						if (data.leads_created > 0) {
-							msg += <?php echo wp_json_encode( __( 'New leads created:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + data.leads_created + '. ';
-						}
-						if (data.leads_scored > 0) {
-							msg += <?php echo wp_json_encode( __( 'Leads scored:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + data.leads_scored + '. ';
+							msg += <?php echo wp_json_encode( $lbl_sources_checked ); ?> + ' ' + data.sources_checked + '. ';
 						}
 						if (data.emails_fetched > 0) {
-							msg += <?php echo wp_json_encode( __( 'Emails fetched:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + data.emails_fetched + '. ';
+							msg += <?php echo wp_json_encode( $lbl_emails_fetched ); ?> + ' ' + data.emails_fetched + '. ';
+						}
+						if (data.leads_created > 0) {
+							msg += <?php echo wp_json_encode( $lbl_leads_created ); ?> + ' ' + data.leads_created + '. ';
 						}
 						if (data.skipped_spam > 0) {
-							msg += <?php echo wp_json_encode( __( 'Spam skipped:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + data.skipped_spam + '. ';
+							msg += <?php echo wp_json_encode( $lbl_spam_skipped ); ?> + ' ' + data.skipped_spam + '. ';
+						}
+
+						// Upwork stats.
+						if (data.upwork_jobs_found > 0) {
+							msg += <?php echo wp_json_encode( $lbl_upwork_jobs ); ?> + ' ' + data.upwork_jobs_found + '. ';
+						}
+						if (data.upwork_projects_imported > 0) {
+							msg += <?php echo wp_json_encode( $lbl_upwork_imported ); ?> + ' ' + data.upwork_projects_imported + '. ';
+						}
+
+						// LinkedIn stats.
+						if (data.linkedin_jobs_found > 0) {
+							msg += <?php echo wp_json_encode( $lbl_linkedin_jobs ); ?> + ' ' + data.linkedin_jobs_found + '. ';
+						}
+						if (data.linkedin_projects_saved > 0) {
+							msg += <?php echo wp_json_encode( $lbl_linkedin_saved ); ?> + ' ' + data.linkedin_projects_saved + '. ';
+						}
+
+						// Lead scoring stats.
+						if (data.leads_scored > 0) {
+							msg += <?php echo wp_json_encode( $lbl_leads_scored ); ?> + ' ' + data.leads_scored + '. ';
 						}
 
 						if ( ! msg ) {
-							msg = <?php echo wp_json_encode( __( 'Refresh complete. No new leads found.', 'mcp-ai-wpoos-pro' ) ); ?>;
+							msg = <?php echo wp_json_encode( $lbl_no_new ); ?>;
 						}
 
 						// Update stats.
 						$('#crm-cc-total-leads').text(data.total_leads_after);
-						$('#crm-cc-last-refresh').text(<?php echo wp_json_encode( __( 'Just now', 'mcp-ai-wpoos-pro' ) ); ?>);
+						$('#crm-cc-configured-sources').text(data.sources_checked);
+						$('#crm-cc-last-refresh').text(<?php echo wp_json_encode( $lbl_just_now ); ?>);
 
 						$message
 							.removeClass('notice-error notice-warning')
@@ -1895,7 +1914,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						// Reload after a short delay to refresh all dashboard stats.
 						setTimeout(function() {
 							location.reload();
-						}, 2500);
+						}, 3000);
 					} else {
 						$message
 							.removeClass('notice-success notice-warning')
@@ -3086,6 +3105,48 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	}
 
 	/**
+	 * Count configured CRM inbound lead sources from Remote Site connections.
+	 *
+	 * Scans all registered remote connections and counts enabled sources
+	 * that can feed leads into the CRM: Gmail/Google Workspace/IMAP email
+	 * accounts, Upwork freelance marketplace, and LinkedIn professional
+	 * network connections.
+	 *
+	 * Mirrors the pattern established by get_pm_source_count() in the
+	 * PM Command Center for cross-toolkit consistency.
+	 *
+	 * @since 2.11.0
+	 * @return int Number of enabled, CRM-relevant source connections.
+	 */
+	private static function get_crm_source_count() {
+		$count = 0;
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return $count;
+		}
+
+		$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+		// Connection types that can serve as inbound lead sources for the CRM.
+		$crm_source_types = array(
+			'gmail',
+			'google_workspace',
+			'email_imap',
+			'upwork',
+			'linkedin',
+		);
+
+		foreach ( $all_connections as $connection ) {
+			$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+			if ( in_array( $conn_type, $crm_source_types, true ) && ! empty( $connection['enabled'] ) ) {
+				++$count;
+			}
+		}
+
+		return $count;
+	}
+
+	/**
 	 * Calculate total pipeline value from open deals.
 	 *
 	 * @return float
@@ -3733,11 +3794,21 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	/**
 	 * AJAX handler: refresh all lead sources.
 	 *
-	 * Pulls leads from all configured inbound sources (Gmail connections,
-	 * remote sites) into the CRM and scores them using the configured
+	 * Pulls leads from all configured inbound sources — Gmail/email
+	 * connections, Upwork freelance marketplace, and LinkedIn professional
+	 * network — into the CRM and scores them using the configured
 	 * lead-scoring framework.
 	 *
+	 * Pipeline per source:
+	 *  - Email/Gmail: import emails via Gmail-to-CRM bridge.
+	 *  - Upwork:     search jobs → score → import high-scoring ones as deals.
+	 *  - LinkedIn:   search jobs → score → save high-scoring ones as deals.
+	 *
+	 * Each source fails independently without breaking the overall refresh.
+	 * After all sources are processed, all unscored leads are re-scored.
+	 *
 	 * @since 2.7.0
+	 * @since 2.11.0 Added Upwork and LinkedIn pipeline sourcing.
 	 */
 	public static function ajax_refresh_all_sources() {
 		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
@@ -3747,14 +3818,21 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		}
 
 		$stats = array(
-			'sources_checked'    => 0,
-			'emails_fetched'     => 0,
-			'leads_created'      => 0,
-			'leads_updated'      => 0,
-			'skipped_spam'       => 0,
-			'skipped_noise'      => 0,
-			'leads_scored'       => 0,
-			'total_leads_before' => self::get_cpt_count( 'mcp_ai_lead', 'publish' ),
+			'sources_checked'          => 0,
+			'emails_fetched'           => 0,
+			'leads_created'            => 0,
+			'leads_updated'            => 0,
+			'skipped_spam'             => 0,
+			'skipped_noise'            => 0,
+			'upwork_jobs_found'        => 0,
+			'upwork_jobs_scored'       => 0,
+			'upwork_projects_imported' => 0,
+			'linkedin_jobs_found'      => 0,
+			'linkedin_jobs_scored'     => 0,
+			'linkedin_projects_saved'  => 0,
+			'leads_scored'             => 0,
+			'total_leads_before'       => self::get_cpt_count( 'mcp_ai_lead', 'publish' ),
+			'total_deals_before'       => self::get_cpt_count( 'mcp_ai_deal', 'publish' ),
 		);
 
 		$user_context = array( 'user_id' => get_current_user_id() );
@@ -3821,7 +3899,231 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			}
 		}
 
-		// ── 2. Re-score all leads without a score ──
+		// ── 2. Pull from Upwork connections (search → score → import high-scoring jobs) ──
+		$_upwork_search_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/upwork/class-wp-mcp-ai-tool-search-upwork-jobs.php';
+		$_upwork_score_file  = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/upwork/class-wp-mcp-ai-tool-score-upwork-job.php';
+		$_upwork_import_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/upwork/class-wp-mcp-ai-tool-import-upwork-project.php';
+		$upwork_search_ok    = file_exists( $_upwork_search_file );
+		$upwork_score_ok     = file_exists( $_upwork_score_file );
+		$upwork_import_ok    = file_exists( $_upwork_import_file );
+
+		if ( $upwork_search_ok && $upwork_score_ok && $upwork_import_ok ) {
+			require_once $_upwork_search_file;
+			require_once $_upwork_score_file;
+			require_once $_upwork_import_file;
+
+			$crm_settings   = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_toolkit_settings() : array();
+			$upwork_config  = isset( $crm_settings['external_sourcing']['upwork'] ) ? $crm_settings['external_sourcing']['upwork'] : array();
+			$min_score      = isset( $upwork_config['auto_import_min_score'] ) ? (int) $upwork_config['auto_import_min_score'] : 60;
+			$save_as        = isset( $upwork_config['auto_import_as'] ) ? sanitize_key( $upwork_config['auto_import_as'] ) : 'deal';
+			$excluded_words = isset( $crm_settings['external_sourcing']['excluded_keywords'] ) ? $crm_settings['external_sourcing']['excluded_keywords'] : '';
+
+			foreach ( $all_connections as $conn_id => $connection ) {
+				$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+				if ( 'upwork' !== $conn_type || empty( $connection['enabled'] ) ) {
+					continue;
+				}
+
+				++$stats['sources_checked'];
+
+				try {
+					$searcher = new WP_MCP_AI_Tool_Search_Upwork_Jobs();
+					$results  = $searcher->execute(
+						array(
+							'connection_id' => $conn_id,
+							'limit'         => 10,
+						),
+						$user_context
+					);
+
+					if ( is_wp_error( $results ) || empty( $results['success'] ) ) {
+						continue;
+					}
+
+					$jobs = isset( $results['data']['jobs'] ) ? $results['data']['jobs'] : array();
+					if ( empty( $jobs ) ) {
+						continue;
+					}
+
+					$stats['upwork_jobs_found'] += count( $jobs );
+
+					foreach ( $jobs as $job ) {
+						$job_id    = isset( $job['id'] ) ? sanitize_text_field( $job['id'] ) : '';
+						$job_title = isset( $job['title'] ) ? sanitize_text_field( $job['title'] ) : '';
+
+						if ( ! $job_id ) {
+							continue;
+						}
+
+						// Skip excluded keywords.
+						if ( $excluded_words && $job_title ) {
+							$_excluded = array_filter( array_map( 'trim', explode( "\n", $excluded_words ) ) );
+							foreach ( $_excluded as $_kw ) {
+								if ( $_kw && false !== stripos( $job_title, $_kw ) ) {
+									continue 2;
+								}
+							}
+						}
+
+						// Score the job.
+						$scorer = new WP_MCP_AI_Tool_Score_Upwork_Job();
+						$score  = $scorer->execute(
+							array( 'job_id' => $job_id ),
+							$user_context
+						);
+
+						++$stats['upwork_jobs_scored'];
+
+						$score_val = 0;
+						if ( ! is_wp_error( $score ) && ! empty( $score['success'] ) ) {
+							$score_val = isset( $score['total_score'] ) ? (int) $score['total_score'] : 0;
+						}
+
+						// Import if score meets threshold.
+						if ( $score_val >= $min_score ) {
+							$importer = new WP_MCP_AI_Tool_Import_Upwork_Project();
+							$imported = $importer->execute(
+								array(
+									'job_id'        => $job_id,
+									'save_as'       => $save_as,
+									'connection_id' => $conn_id,
+								),
+								$user_context
+							);
+
+							if ( ! is_wp_error( $imported ) && ! empty( $imported['success'] ) ) {
+								++$stats['upwork_projects_imported'];
+							}
+						}
+					}
+				} catch ( \Exception $e ) {
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						error_log( 'CRM CC Upwork source refresh error: ' . $e->getMessage() );
+					}
+				}
+			}
+		}
+
+		// ── 3. Pull from LinkedIn connections (search → score → save high-scoring jobs) ──
+		$_linkedin_search_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/linkedin/class-wp-mcp-ai-tool-search-linkedin-jobs.php';
+		$_linkedin_score_file  = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/linkedin/class-wp-mcp-ai-tool-score-linkedin-job.php';
+		$_linkedin_save_file   = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/linkedin/class-wp-mcp-ai-tool-save-linkedin-job.php';
+		$linkedin_search_ok    = file_exists( $_linkedin_search_file );
+		$linkedin_score_ok     = file_exists( $_linkedin_score_file );
+		$linkedin_save_ok      = file_exists( $_linkedin_save_file );
+
+		if ( $linkedin_search_ok && $linkedin_score_ok && $linkedin_save_ok ) {
+			require_once $_linkedin_search_file;
+			require_once $_linkedin_score_file;
+			require_once $_linkedin_save_file;
+
+			// Re-resolve CRM settings (may have been loaded already above).
+			if ( ! isset( $crm_settings ) && class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+				$crm_settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+			}
+			$linkedin_config = isset( $crm_settings['external_sourcing']['linkedin'] ) ? $crm_settings['external_sourcing']['linkedin'] : array();
+			$li_min_score    = isset( $linkedin_config['auto_import_min_score'] ) ? (int) $linkedin_config['auto_import_min_score'] : 60;
+			$li_save_as      = isset( $linkedin_config['auto_import_as'] ) ? sanitize_key( $linkedin_config['auto_import_as'] ) : 'deal';
+			$li_keywords     = isset( $linkedin_config['default_search_keywords'] ) ? $linkedin_config['default_search_keywords'] : '';
+			$li_location     = isset( $linkedin_config['default_location'] ) ? $linkedin_config['default_location'] : '';
+			// Re-resolve excluded words if not set.
+			if ( ! isset( $excluded_words ) ) {
+				$excluded_words = isset( $crm_settings['external_sourcing']['excluded_keywords'] ) ? $crm_settings['external_sourcing']['excluded_keywords'] : '';
+			}
+
+			foreach ( $all_connections as $conn_id => $connection ) {
+				$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+				if ( 'linkedin' !== $conn_type || empty( $connection['enabled'] ) ) {
+					continue;
+				}
+
+				++$stats['sources_checked'];
+
+				try {
+					$li_searcher = new WP_MCP_AI_Tool_Search_LinkedIn_Jobs();
+					$li_args     = array(
+						'connection_id' => $conn_id,
+						'limit'         => 10,
+					);
+					if ( $li_keywords ) {
+						$li_args['query'] = $li_keywords;
+					}
+					if ( $li_location ) {
+						$li_args['location'] = $li_location;
+					}
+					$li_results = $li_searcher->execute( $li_args, $user_context );
+
+					if ( is_wp_error( $li_results ) || empty( $li_results['success'] ) ) {
+						continue;
+					}
+
+					$li_jobs = isset( $li_results['data']['jobs'] ) ? $li_results['data']['jobs'] : array();
+					if ( empty( $li_jobs ) ) {
+						continue;
+					}
+
+					$stats['linkedin_jobs_found'] += count( $li_jobs );
+
+					foreach ( $li_jobs as $li_job ) {
+						$li_job_id    = isset( $li_job['id'] ) ? sanitize_text_field( $li_job['id'] ) : '';
+						$li_job_title = isset( $li_job['title'] ) ? sanitize_text_field( $li_job['title'] ) : '';
+
+						if ( ! $li_job_id ) {
+							continue;
+						}
+
+						// Skip excluded keywords.
+						if ( $excluded_words && $li_job_title ) {
+							$_excluded = array_filter( array_map( 'trim', explode( "\n", $excluded_words ) ) );
+							foreach ( $_excluded as $_kw ) {
+								if ( $_kw && false !== stripos( $li_job_title, $_kw ) ) {
+									continue 2;
+								}
+							}
+						}
+
+						// Score the job.
+						$li_scorer = new WP_MCP_AI_Tool_Score_LinkedIn_Job();
+						$li_score  = $li_scorer->execute(
+							array( 'job_id' => $li_job_id ),
+							$user_context
+						);
+
+						++$stats['linkedin_jobs_scored'];
+
+						$li_score_val = 0;
+						if ( ! is_wp_error( $li_score ) && ! empty( $li_score['success'] ) ) {
+							$li_score_val = isset( $li_score['total_score'] ) ? (int) $li_score['total_score'] : 0;
+						}
+
+						// Save if score meets threshold.
+						if ( $li_score_val >= $li_min_score ) {
+							$li_saver = new WP_MCP_AI_Tool_Save_LinkedIn_Job();
+							$li_saved = $li_saver->execute(
+								array(
+									'job_id'        => $li_job_id,
+									'save_as'       => $li_save_as,
+									'connection_id' => $conn_id,
+								),
+								$user_context
+							);
+
+							if ( ! is_wp_error( $li_saved ) && ! empty( $li_saved['success'] ) ) {
+								++$stats['linkedin_projects_saved'];
+							}
+						}
+					}
+				} catch ( \Exception $e ) {
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						error_log( 'CRM CC LinkedIn source refresh error: ' . $e->getMessage() );
+					}
+				}
+			}
+		}
+
+		// ── 4. Re-score all leads without a score ──
 		$unscored_args  = array(
 			'post_type'      => array( 'mcp_ai_lead', 'mcp_crm_contacts' ),
 			'post_status'    => 'publish',
@@ -3865,7 +4167,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		}
 
 		$stats['total_leads_after'] = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
+		$stats['total_deals_after'] = self::get_cpt_count( 'mcp_ai_deal', 'publish' );
 		$stats['new_leads']         = max( 0, $stats['total_leads_after'] - $stats['total_leads_before'] );
+		$stats['new_deals']         = max( 0, $stats['total_deals_after'] - $stats['total_deals_before'] );
 
 		// Save the last-refresh timestamp.
 		update_option( 'wp_mcp_ai_crm_cc_last_source_refresh', time(), false );

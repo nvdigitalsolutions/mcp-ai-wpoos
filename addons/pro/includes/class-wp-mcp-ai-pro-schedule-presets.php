@@ -2260,6 +2260,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					),
 				),
 
+				// -- Scheduled Multi-Source Auto-Import --
+				'auto_import_scheduled_sources'     => array(
+					'name'          => __( 'Auto-Import from Upwork & LinkedIn', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Scheduled workflow that automatically searches Upwork and LinkedIn for new jobs matching your ideal client profile, scores them using the configured scoring framework, and imports high-scoring jobs into the CRM pipeline as deals. Ensures your pipeline stays fresh without manual intervention.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'lead_intake',
+					'icon'          => 'dashicons-download',
+					'schedule_type' => 'task',
+					'schedule'      => 'wp_mcp_ai_crm_auto_import_sources',
+					'tags'          => array( 'crm', 'leads', 'upwork', 'linkedin', 'auto-import', 'pipeline' ),
+					'schedule_data' => array(
+						'description' => __( 'Searches Upwork and LinkedIn for new jobs, scores them, and imports qualifying ones into the CRM pipeline.', 'mcp-ai-wpoos-pro' ),
+					),
+				),
+
 				// -- Customer Management presets (v2.6.0) --
 				'customer_lifetime_value_refresh'   => array(
 					'name'          => __( 'Customer LTV Refresh', 'mcp-ai-wpoos-pro' ),
