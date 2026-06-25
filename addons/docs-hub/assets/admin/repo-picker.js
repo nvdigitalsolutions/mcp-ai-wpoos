@@ -146,8 +146,9 @@
 		tree.style.display = 'block';
 		tree.innerHTML = '';
 
+		var sep = restBase.indexOf( '?' ) === -1 ? '?' : '&';
 		var url = restBase
-			+ '?owner=' + encodeURIComponent( owner )
+			+ sep + 'owner=' + encodeURIComponent( owner )
 			+ '&repo='  + encodeURIComponent( repo )
 			+ '&ref='   + encodeURIComponent( ref )
 			+ '&path='  + encodeURIComponent( path )
@@ -158,19 +159,91 @@
 			credentials: 'same-origin',
 			headers: { 'X-WP-Nonce': restNonce, 'Accept': 'application/json' }
 		} ).then( function ( r ) {
-			return r.json().then( function ( body ) {
-				return { ok: r.ok, body: body };
-			} );
+						if ( ! r.ok ) {
+							// Try to read the error body — might be JSON or might
+							// be a PHP fatal-error HTML page.
+							var ct = r.headers.get( 'content-type' ) || '';
+							if ( ct.indexOf( 'application/json' ) !== -1 ) {
+								return r.json().then( function ( body ) {
+									return { ok: false, body: body };
+								} );
+							}
+							return r.text().then( function ( text ) {
+								if ( text.indexOf( 'critical error' ) !== -1 ) {
+									return { ok: false, body: { message: 'Server returned a fatal error (HTTP ' + r.status + '). Check the WordPress debug log.' } };
+								}
+								return { ok: false, body: { message: 'Request failed (HTTP ' + r.status + ').' } };
+							} );
+						}
+						return r.json().then( function ( body ) {
+							return { ok: true, body: body };
+						} );
+					} ).then( function ( res ) {
+						if ( ! res.ok || ! res.body || ! Array.isArray( res.body.files ) ) {
+							var msg = ( res.body && res.body.message ) ? res.body.message : 'Request failed';
+							status.textContent = msg;
+							return;
+						}
+						renderTree( row, tree, res.body.files );
+						status.textContent = res.body.files.length + ' ' + ( i18n.filesFound || 'files found.' );
+					} ).catch( function ( err ) {
+						status.textContent = ( err && err.message ) ? err.message : 'Request failed';
+					} );
+	}
+
+		/**
+		 * Quick connectivity test: resolves owner/repo/ref and returns the
+		 * count of discoverable Markdown files without rendering the tree.
+		 */
+		function testConnection( row ) {
+		if ( ! row ) { return; }
+		var status = row.querySelector( '.nvoos-dh-picker-status' );
+		if ( ! status ) { return; }
+
+		var owner = fieldVal( row, 'owner' );
+		var repo  = fieldVal( row, 'repo' );
+		var ref   = fieldVal( row, 'ref' ) || 'HEAD';
+		var path  = fieldVal( row, 'path' );
+
+		if ( ! owner || ! repo ) {
+			status.textContent = i18n.enterOwnerRepo || 'Enter owner and repo first.';
+			return;
+		}
+
+		var btn = row.querySelector( '.nvoos-dh-test-btn' );
+		var idx = btn ? parseInt( btn.getAttribute( 'data-row-index' ) || '-1', 10 ) : -1;
+
+		status.textContent = i18n.loading || 'Loading\u2026';
+
+		var sep = restBase.indexOf( '?' ) === -1 ? '?' : '&';
+		var url = restBase
+			+ sep + 'owner=' + encodeURIComponent( owner )
+			+ '&repo='  + encodeURIComponent( repo )
+			+ '&ref='   + encodeURIComponent( ref )
+			+ '&path='  + encodeURIComponent( path )
+			+ '&index=' + encodeURIComponent( idx )
+			+ '&force=1';
+
+		fetch( url, {
+			credentials: 'same-origin',
+			headers: { 'X-WP-Nonce': restNonce, 'Accept': 'application/json' }
+		} ).then( function ( r ) {
+			return r.json().then( function ( body ) { return { ok: r.ok, body: body }; } );
 		} ).then( function ( res ) {
-			if ( ! res.ok || ! res.body || ! Array.isArray( res.body.files ) ) {
-				var msg = ( res.body && res.body.message ) ? res.body.message : 'Request failed';
-				status.textContent = msg;
+			if ( ! res.ok ) {
+				var msg = ( res.body && res.body.message ) ? res.body.message : 'HTTP ' + ( res.body && res.body.code ? res.body.code : 'error' );
+				status.textContent = '\u274c ' + msg;
 				return;
 			}
-			renderTree( row, tree, res.body.files );
-			status.textContent = res.body.files.length + ' ' + ( i18n.filesFound || 'files found.' );
+			if ( res.body && Array.isArray( res.body.files ) ) {
+				status.textContent = '\u2705 ' + res.body.files.length + ' ' + ( i18n.filesFound || 'files found.' );
+			} else if ( res.body && res.body.message ) {
+				status.textContent = '\u274c ' + res.body.message;
+			} else {
+				status.textContent = '\u274c Request failed';
+			}
 		} ).catch( function ( err ) {
-			status.textContent = ( err && err.message ) ? err.message : 'Request failed';
+			status.textContent = '\u274c ' + ( ( err && err.message ) ? err.message : 'Request failed' );
 		} );
 	}
 

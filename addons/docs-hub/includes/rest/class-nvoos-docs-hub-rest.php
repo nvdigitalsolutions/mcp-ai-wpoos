@@ -173,7 +173,9 @@ class NV_oOS_Docs_Hub_REST {
 						'description'       => __( 'Index into the saved remote_repos array (so the persisted token can be reused without round-tripping it through the browser).', 'nvoos-docs-hub' ),
 						'type'              => 'integer',
 						'default'           => -1,
-						'sanitize_callback' => 'intval',
+						'sanitize_callback' => static function ( $value ) {
+							return (int) $value;
+						},
 					),
 					'force' => array(
 						'type'    => 'boolean',
