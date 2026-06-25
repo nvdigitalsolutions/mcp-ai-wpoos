@@ -333,6 +333,17 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 			return false;
 		}
 
+		// If explicitly set to web_search mode, never use the API.
+		$mode = isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : 'api';
+		if ( 'web_search' === $mode ) {
+			return false;
+		}
+
+		// API mode: require OAuth credentials.
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) || empty( $connection['refresh_token'] ) ) {
+			return false;
+		}
+
 		return true;
 	}
 

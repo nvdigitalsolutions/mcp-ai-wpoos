@@ -249,7 +249,18 @@ class WP_MCP_AI_Tool_Import_LinkedIn_Profile implements WP_MCP_AI_Tool_Interface
 		}
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-		return ! empty( $connection ) && ! empty( $connection['refresh_token'] );
+
+		if ( empty( $connection ) ) {
+			return false;
+		}
+
+		// If explicitly set to web_search mode, never use the API.
+		$mode = isset( $connection['linkedin_mode'] ) ? $connection['linkedin_mode'] : 'api';
+		if ( 'web_search' === $mode ) {
+			return false;
+		}
+
+		return ! empty( $connection['refresh_token'] );
 	}
 
 	/**

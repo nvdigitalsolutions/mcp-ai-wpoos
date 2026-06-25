@@ -3940,7 +3940,13 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						continue;
 					}
 
-					$jobs = isset( $results['data']['jobs'] ) ? $results['data']['jobs'] : array();
+					// Accept both API format (data.jobs) and fallback format (jobs).
+					$jobs = array();
+					if ( isset( $results['data']['jobs'] ) && is_array( $results['data']['jobs'] ) ) {
+						$jobs = $results['data']['jobs'];
+					} elseif ( isset( $results['jobs'] ) && is_array( $results['jobs'] ) ) {
+						$jobs = $results['jobs'];
+					}
 					if ( empty( $jobs ) ) {
 						continue;
 					}
@@ -4058,7 +4064,13 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						continue;
 					}
 
-					$li_jobs = isset( $li_results['data']['jobs'] ) ? $li_results['data']['jobs'] : array();
+					// Accept both API format (data.jobs) and fallback format (jobs).
+					$li_jobs = array();
+					if ( isset( $li_results['data']['jobs'] ) && is_array( $li_results['data']['jobs'] ) ) {
+						$li_jobs = $li_results['data']['jobs'];
+					} elseif ( isset( $li_results['jobs'] ) && is_array( $li_results['jobs'] ) ) {
+						$li_jobs = $li_results['jobs'];
+					}
 					if ( empty( $li_jobs ) ) {
 						continue;
 					}
