@@ -1036,6 +1036,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 							$error_msg = $result->get_error_message();
 						} else {
 							$action_log['workflow_builder_id'] = isset( $schedule['workflow_builder_id'] ) ? $schedule['workflow_builder_id'] : '';
+							// Carry the full node results so build_result_envelope()
+							// can extract a human-readable response from the last
+							// agent/tool node's output.
+							$action_log['nodes'] = is_array( $result ) ? $result : array();
 						}
 						break;
 
@@ -1555,8 +1559,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						)
 					);
 
-					$result_log['response'] = wp_trim_words( (string) $reply, 120, '…' );
-					$result_log['status']   = 'completed';
+					// Store the full untruncated reply so the envelope can
+					// carry the complete response for delivery channels.
+					// The truncated version remains for the action-log UI.
+					$result_log['full_response'] = (string) $reply;
+					$result_log['response']      = wp_trim_words( (string) $reply, 120, '…' );
+					$result_log['status']        = 'completed';
 
 					// Record agentic workflow details in the action log.
 					$result_log['tool_results_count']     = $tool_results_count;
@@ -2376,10 +2384,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			if ( isset( $action_log['steps'] ) && is_array( $action_log['steps'] ) ) {
 				$trimmed['steps'] = array();
 				foreach ( $action_log['steps'] as $idx => $step ) {
+					$step_result              = isset( $step['result'] ) ? $step['result'] : null;
 					$trimmed['steps'][ $idx ] = array(
-						'tool_slug' => isset( $step['tool_slug'] ) ? $step['tool_slug'] : '',
-						'label'     => isset( $step['label'] ) ? $step['label'] : '',
-						'duration'  => isset( $step['duration'] ) ? $step['duration'] : 0,
+						'tool_slug'      => isset( $step['tool_slug'] ) ? $step['tool_slug'] : '',
+						'label'          => isset( $step['label'] ) ? $step['label'] : '',
+						'duration'       => isset( $step['duration'] ) ? $step['duration'] : 0,
+						'result_excerpt' => is_string( $step_result )
+							? wp_trim_words( $step_result, 40, '…' )
+							: '',
 					);
 				}
 			}
@@ -2939,9 +2951,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * @return array Sanitized channel configs.
 		 */
 		protected static function sanitize_delivery_channels( array $channels ) {
-			$allowed         = array( 'email', 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp', 'sms', 'paper_store', 'webhook', 'wordpress' );
-			$email_templates = array( 'full', 'summary', 'error' );
-			$chat_templates  = array( 'summary', 'error' );
+			$allowed         = array( 'email', 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp', 'google_chat', 'sms', 'paper_store', 'webhook', 'wordpress' );
+			$email_templates = array( 'full', 'summary', 'error', 'response_only' );
+			$chat_templates  = array( 'summary', 'error', 'response_only' );
 
 			$sanitized = array();
 			foreach ( $channels as $channel => $config ) {
@@ -2971,12 +2983,41 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				if ( 'sms' === $channel && isset( $config['to'] ) ) {
 					$entry['to'] = sanitize_text_field( $config['to'] );
 				}
-				if ( in_array( $channel, array( 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp' ), true ) ) {
+				if ( in_array( $channel, array( 'slack', 'telegram', 'discord', 'teams', 'messenger', 'whatsapp', 'google_chat' ), true ) ) {
+					// Reference a Remote Sites connection (preferred — avoids credential duplication).
+					if ( isset( $config['connection_id'] ) && is_string( $config['connection_id'] ) ) {
+						$entry['connection_id'] = sanitize_text_field( $config['connection_id'] );
+					}
+					// Inline credentials (fallback when no connection is configured).
 					if ( isset( $config[ $channel . '_credentials' ] ) ) {
 						$entry[ $channel . '_credentials' ] = $config[ $channel . '_credentials' ];
 					}
 					if ( isset( $config['channel'] ) ) {
 						$entry['channel'] = sanitize_text_field( $config['channel'] );
+					}
+					// Channel-specific identifier fields.
+					if ( 'telegram' === $channel && isset( $config['chat_id'] ) ) {
+						$entry['chat_id'] = sanitize_text_field( $config['chat_id'] );
+					}
+					if ( 'discord' === $channel && isset( $config['channel_id'] ) ) {
+						$entry['channel_id'] = sanitize_text_field( $config['channel_id'] );
+					}
+					if ( 'teams' === $channel ) {
+						if ( isset( $config['team_id'] ) ) {
+							$entry['team_id'] = sanitize_text_field( $config['team_id'] );
+						}
+						if ( isset( $config['channel_id'] ) ) {
+							$entry['channel_id'] = sanitize_text_field( $config['channel_id'] );
+						}
+					}
+					if ( 'messenger' === $channel && isset( $config['recipient_id'] ) ) {
+						$entry['recipient_id'] = sanitize_text_field( $config['recipient_id'] );
+					}
+					if ( 'whatsapp' === $channel && isset( $config['to'] ) ) {
+						$entry['to'] = sanitize_text_field( $config['to'] );
+					}
+					if ( 'google_chat' === $channel && isset( $config['space_id'] ) ) {
+						$entry['space_id'] = sanitize_text_field( $config['space_id'] );
 					}
 				}
 				if ( 'paper_store' === $channel ) {
@@ -3129,9 +3170,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		/**
 		 * Build a structured result envelope from a dispatcher's raw action log.
 		 *
-		 * The envelope shape — summary / data / render — is the contract consumed
-		 * by the Scheduled Result widget and block, the REST controller, and the
-		 * `get_schedule_latest_result` / `render_schedule_result` tools.
+		 * The envelope shape — summary / data / render / response — is the
+		 * contract consumed by the Scheduled Result widget and block, the REST
+		 * controller, the `get_schedule_latest_result` / `render_schedule_result`
+		 * tools, and the Result Delivery Service for email/chat/SMS/webhook/etc.
+		 *
+		 * The `response` field (added 1.x) carries the substantive output the
+		 * schedule produced — the AI reply, the last tool result, or the final
+		 * node output — so delivery channels can include the actual answer, not
+		 * just a "1 step completed" execution log.
 		 *
 		 * @since 1.0.0
 		 *
@@ -3139,7 +3186,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * @param array  $action_log    Action log produced by the dispatcher.
 		 * @param bool   $success       Whether the run succeeded.
 		 * @param string $error_msg     Error message if the run failed.
-		 * @return array Envelope: { summary, data, render, generated_at, status }.
+		 * @return array Envelope: { summary, data, render, response, generated_at, status, duration?, error }.
 		 */
 		public static function build_result_envelope( array $schedule, array $action_log, $success, $error_msg ) {
 			$schedule_type = isset( $schedule['schedule_type'] ) ? (string) $schedule['schedule_type'] : self::TYPE_TASK;
@@ -3147,9 +3194,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				? (string) $schedule['display']['widget_defaults']['render_mode']
 				: 'summary-card';
 
-			$summary = '';
-			$data    = array();
-			$render  = 'text';
+			$summary  = '';
+			$data     = array();
+			$render   = 'text';
+			$response = '';
 
 			if ( ! $success ) {
 				$summary = $error_msg ? (string) $error_msg : __( 'Schedule run failed.', 'mcp-ai-wpoos-pro' );
@@ -3157,14 +3205,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			} else {
 				switch ( $schedule_type ) {
 					case self::TYPE_ASSISTANT_RUN:
-						$response = isset( $action_log['assistant']['response'] ) ? (string) $action_log['assistant']['response'] : '';
-						$summary  = $response ? wp_trim_words( wp_strip_all_tags( $response ), 25, '…' ) : __( 'Assistant run completed.', 'mcp-ai-wpoos-pro' );
-						$data     = array(
-							'response'     => $response,
+						// Prefer the untruncated full_response when available; fall
+						// back to the truncated version for backward compatibility.
+						$full_response = isset( $action_log['assistant']['full_response'] )
+							? (string) $action_log['assistant']['full_response']
+							: '';
+						$truncated     = isset( $action_log['assistant']['response'] )
+							? (string) $action_log['assistant']['response']
+							: '';
+						$response      = '' !== $full_response ? $full_response : $truncated;
+						$summary       = $response
+							? wp_trim_words( wp_strip_all_tags( $response ), 25, '…' )
+							: __( 'Assistant run completed.', 'mcp-ai-wpoos-pro' );
+						$data          = array(
+							'response'     => $truncated,
 							'assistant_id' => isset( $action_log['assistant']['assistant_id'] ) ? (int) $action_log['assistant']['assistant_id'] : 0,
 							'is_agentic'   => ! empty( $action_log['assistant']['is_agentic'] ),
 						);
-						$render   = 'markdown';
+						$render        = 'markdown';
 						break;
 
 					case self::TYPE_WORKFLOW:
@@ -3178,6 +3236,31 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 							'steps' => $steps,
 						);
 						$render = 'list';
+
+						// Build the response from the last step's result. When the
+						// last step's result is a string, use it directly; otherwise
+						// collect text from all steps in order for a composite output.
+						if ( ! empty( $steps ) ) {
+							$last_idx = max( array_keys( $steps ) );
+							$last     = isset( $steps[ $last_idx ] ) && is_array( $steps[ $last_idx ] ) ? $steps[ $last_idx ] : array();
+							$last_res = isset( $last['result'] ) ? $last['result'] : null;
+							if ( is_string( $last_res ) && '' !== $last_res ) {
+								$response = (string) $last_res;
+							} else {
+								// Composite: concatenate all string step results.
+								$parts = array();
+								foreach ( $steps as $step ) {
+									if ( ! is_array( $step ) ) {
+										continue;
+									}
+									$sr = isset( $step['result'] ) ? $step['result'] : null;
+									if ( is_string( $sr ) && '' !== $sr ) {
+										$parts[] = $sr;
+									}
+								}
+								$response = implode( "\n\n", $parts );
+							}
+						}
 						break;
 
 					case self::TYPE_CHANNEL_BROADCAST:
@@ -3194,8 +3277,37 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 					case self::TYPE_WORKFLOW_BUILDER:
 						$summary = __( 'Workflow builder run completed.', 'mcp-ai-wpoos-pro' );
-						$data    = array( 'workflow_builder_id' => isset( $action_log['workflow_builder_id'] ) ? (string) $action_log['workflow_builder_id'] : '' );
+						$data    = array(
+							'workflow_builder_id' => isset( $action_log['workflow_builder_id'] ) ? (string) $action_log['workflow_builder_id'] : '',
+						);
 						$render  = 'text';
+
+						// Build the response from the last agent/tool node's output.
+						// dispatch_workflow_builder() stores its result in the action
+						// log under a structured key. We walk the node results in
+						// reverse order to find the first tool/agent node with a
+						// string result and use that as the response.
+						if ( isset( $action_log['nodes'] ) && is_array( $action_log['nodes'] ) ) {
+							$node_results = $action_log['nodes'];
+						} else {
+							// Fallback: check if the whole action_log is the node
+							// results map returned by dispatch_workflow_builder().
+							$node_results = $action_log;
+						}
+						foreach ( array_reverse( $node_results ) as $node ) {
+							if ( ! is_array( $node ) ) {
+								continue;
+							}
+							$node_result = isset( $node['result'] ) ? $node['result'] : null;
+							if ( is_string( $node_result ) && '' !== $node_result ) {
+								$response = $node_result;
+								break;
+							}
+							if ( is_array( $node_result ) && isset( $node_result['output'] ) && is_string( $node_result['output'] ) ) {
+								$response = $node_result['output'];
+								break;
+							}
+						}
 						break;
 
 					case self::TYPE_TASK:
@@ -3229,6 +3341,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'summary'      => (string) $summary,
 				'data'         => is_array( $data ) ? $data : array(),
 				'render'       => $render,
+				'response'     => (string) $response,
 				'status'       => $success ? 'success' : 'failure',
 				'error'        => $success ? '' : (string) $error_msg,
 				'generated_at' => time(),
@@ -3239,7 +3352,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			 *
 			 * Integrators can shape the envelope per schedule type — for instance,
 			 * an assistant_run that returns JSON can populate `data.items` so the
-			 * Scheduled Result widget renders a list.
+			 * Scheduled Result widget renders a list, or inject a curated
+			 * `response` string for delivery to external channels.
 			 *
 			 * @since 1.0.0
 			 *
@@ -3436,6 +3550,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					'summary'      => '',
 					'data'         => array(),
 					'render'       => 'text',
+					'response'     => '',
 					'status'       => 'forbidden',
 					'error'        => '',
 					'generated_at' => isset( $envelope['generated_at'] ) ? (int) $envelope['generated_at'] : 0,
@@ -3451,6 +3566,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'summary'      => isset( $envelope['summary'] ) ? (string) $envelope['summary'] : '',
 				'data'         => array(),
 				'render'       => isset( $envelope['render'] ) ? (string) $envelope['render'] : 'text',
+				'response'     => '',
 				'status'       => isset( $envelope['status'] ) ? (string) $envelope['status'] : 'success',
 				'error'        => '',
 				'generated_at' => isset( $envelope['generated_at'] ) ? (int) $envelope['generated_at'] : 0,
@@ -3458,13 +3574,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			// Apply allow-list to the data tree. Each allowed entry is a dotted path; we copy that path through.
 			foreach ( $allowed as $path ) {
-				if ( 'summary' === $path ) {
-					continue; // Already included.
+				if ( 'summary' === $path || 'response' === $path ) {
+					continue; // Already included in redacted base; handled below.
 				}
 				$value = self::extract_path( $envelope, $path );
 				if ( null !== $value ) {
 					self::assign_path( $redacted, $path, $value );
 				}
+			}
+
+			// The `response` field is a top-level envelope key alongside
+			// `summary`.  Include it when the allow-list explicitly lists
+			// "response" or "data.response".
+			if ( in_array( 'response', $allowed, true ) || in_array( 'data.response', $allowed, true ) ) {
+				$redacted['response'] = isset( $envelope['response'] ) ? (string) $envelope['response'] : '';
 			}
 
 			/**

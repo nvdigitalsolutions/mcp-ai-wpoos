@@ -45,6 +45,10 @@ class NV_oOS_Docs_Hub_Plugin {
 		add_action( 'deactivated_plugin', array( __CLASS__, 'clear_cache_on_change' ) );
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_complete' ), 10, 2 );
 
+		// Auto-trigger a rebuild when settings that affect the index are changed
+		// (sources, remote_repos, context_enabled, include_addon_readmes).
+		add_action( 'update_option_' . self::OPTION_KEY, array( __CLASS__, 'on_settings_changed' ), 10, 2 );
+
 		// Register the chunked-rebuild tick handler. Settings page
 		// registers itself when its file is loaded (admin context only).
 		NV_oOS_Docs_Hub_Rebuild_Pipeline::register();
@@ -199,6 +203,49 @@ class NV_oOS_Docs_Hub_Plugin {
 	 */
 	public static function on_upgrader_complete( $upgrader_object, $options ) {
 		NV_oOS_Docs_Hub_Rebuild_Job::handle_upgrade( $upgrader_object, $options );
+	}
+
+	/**
+	 * Auto-rebuild after settings affecting the documentation index are saved.
+	 *
+	 * Fires on `update_option_nvoos_docs_hub_settings`. Only enqueues a
+	 * rebuild when the saved old/new values for sources, remote_repos,
+	 * context_enabled, or include_addon_readmes actually differ — a no-op
+	 * re-save of the same values does not trigger work.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $old_value Previous settings.
+	 * @param array $value     New settings.
+	 * @return void
+	 */
+	public static function on_settings_changed( $old_value, $value ) {
+		// Compare the fields that affect the index.
+		$index_keys = array( 'sources', 'remote_repos', 'context_enabled', 'include_addon_readmes' );
+		$changed    = false;
+		foreach ( $index_keys as $key ) {
+			$old = isset( $old_value[ $key ] ) ? $old_value[ $key ] : null;
+			$new = isset( $value[ $key ] ) ? $value[ $key ] : null;
+			// phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison -- arrays may be re-ordered; loose comparison is sufficient.
+			if ( $old != $new ) {
+				$changed = true;
+				break;
+			}
+		}
+
+		if ( ! $changed ) {
+			return;
+		}
+
+		// Clear the live cache so the next manifest request triggers a rebuild
+		// (the GET /manifest endpoint already auto-enqueues when the cache is
+		// empty and an admin is logged in).
+		$cache = new NV_oOS_Docs_Hub_Cache();
+		$cache->clear();
+
+		// Also enqueue the async rebuild immediately so it starts building
+		// without waiting for the next visitor request.
+		NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
 	}
 
 	/**

@@ -198,14 +198,14 @@ class WP_MCP_AI_CRM_Engine {
 			),
 			// External freelancer platform sourcing (since 2.10.0).
 			'external_sourcing'       => array(
-				'upwork'               => array(
+				'upwork'                     => array(
 					'default_connection_id' => '',
 					'auto_import_as'        => 'deal',
 					'auto_import_enabled'   => false,
 					'auto_import_min_score' => 60,
 					'use_profile_context'   => false,
 				),
-				'linkedin'             => array(
+				'linkedin'                   => array(
 					'default_connection_id'   => '',
 					'auto_import_as'          => 'deal',
 					'auto_import_enabled'     => false,
@@ -214,10 +214,11 @@ class WP_MCP_AI_CRM_Engine {
 					'default_search_keywords' => '',
 					'default_location'        => '',
 				),
-				'ideal_client_profile' => '',
-				'default_budget_min'   => '',
-				'default_budget_max'   => '',
-				'excluded_keywords'    => '',
+				'auto_import_interval_hours' => 6,
+				'ideal_client_profile'       => '',
+				'default_budget_min'         => '',
+				'default_budget_max'         => '',
+				'excluded_keywords'          => '',
 			),
 		);
 

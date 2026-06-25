@@ -665,7 +665,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load NV oOS Cloud — hosted "Managed Tokens" service via Cloudflare AI Gateway → OpenRouter.
 		// Pro-only: paid third-party billing (Stripe merchant of record).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
+		$wp_mcp_ai_nv_cloud_init = WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
+		if ( file_exists( $wp_mcp_ai_nv_cloud_init ) ) {
+			require_once $wp_mcp_ai_nv_cloud_init;
+		} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'WP MCP AI Pro: nv-cloud-init.php not found — NV oOS Cloud features will be unavailable. Path: ' . $wp_mcp_ai_nv_cloud_init );
+		}
 
 		// Load Pro Paper Store (Phase 3) — Markdown+YAML driver, Git sync, admin UI, import/export.
 		// Always enabled when Pro is active and base Paper Store is loaded.

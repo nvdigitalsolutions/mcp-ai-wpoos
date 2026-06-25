@@ -574,6 +574,15 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 						</label>
 					</td>
 				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable Scheduled Auto-Import', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][auto_import_enabled]" value="1" <?php checked( ! empty( $settings['external_sourcing']['upwork']['auto_import_enabled'] ) ); ?> />
+							<?php esc_html_e( 'Automatically search Upwork, score jobs, and import high-scoring ones into the CRM pipeline on a schedule. Uses the min-score and import-as settings above.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
 
 				<!-- LinkedIn External Sourcing -->
 				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'LinkedIn', 'mcp-ai-wpoos-pro' ); ?></h4></td></tr>
@@ -631,6 +640,15 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					</td>
 				</tr>
 				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable Scheduled Auto-Import', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][auto_import_enabled]" value="1" <?php checked( ! empty( $settings['external_sourcing']['linkedin']['auto_import_enabled'] ) ); ?> />
+							<?php esc_html_e( 'Automatically search LinkedIn, score jobs, and save high-scoring ones into the CRM pipeline on a schedule. Uses the min-score, import-as, and keyword/location defaults above.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
 					<th scope="row"><?php esc_html_e( 'Auto-Import Jobs As', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][auto_import_as]">
@@ -646,6 +664,17 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					<td>
 						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][auto_import_min_score]" value="<?php echo esc_attr( $settings['external_sourcing']['linkedin']['auto_import_min_score'] ?? 60 ); ?>" min="0" max="100" class="small-text" />
 						<p class="description"><?php esc_html_e( 'Only auto-import LinkedIn jobs scoring at or above this threshold (0–100). Set to 0 to import all.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Shared: Scheduled Auto-Import & Search Filters -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Scheduled Auto-Import', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p class="description" style="margin: 4px 0 8px 0;"><?php esc_html_e( 'When enabled above, the auto-import background job periodically searches Upwork and LinkedIn for new jobs, scores them, and imports qualifying ones into the CRM pipeline.', 'mcp-ai-wpoos-pro' ); ?></p></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Import Interval (hours)', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][auto_import_interval_hours]" value="<?php echo esc_attr( $settings['external_sourcing']['auto_import_interval_hours'] ?? 6 ); ?>" min="1" max="24" step="1" class="small-text" />
+						<p class="description"><?php esc_html_e( 'How often to run the automated job import (1–24 hours). Default: 6 hours. Shorter intervals may hit API rate limits on Upwork/LinkedIn.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -1117,6 +1146,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				$sanitized['external_sourcing']['upwork']['auto_import_min_score'] = min( 100, max( 0, absint( $es['upwork']['auto_import_min_score'] ) ) );
 			}
 			$sanitized['external_sourcing']['upwork']['use_profile_context'] = ! empty( $es['upwork']['use_profile_context'] );
+			$sanitized['external_sourcing']['upwork']['auto_import_enabled'] = ! empty( $es['upwork']['auto_import_enabled'] );
 
 			// LinkedIn.
 			if ( isset( $es['linkedin']['default_connection_id'] ) ) {
@@ -1132,6 +1162,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				$sanitized['external_sourcing']['linkedin']['auto_import_min_score'] = min( 100, max( 0, absint( $es['linkedin']['auto_import_min_score'] ) ) );
 			}
 			$sanitized['external_sourcing']['linkedin']['use_profile_context'] = ! empty( $es['linkedin']['use_profile_context'] );
+			$sanitized['external_sourcing']['linkedin']['auto_import_enabled'] = ! empty( $es['linkedin']['auto_import_enabled'] );
 			if ( isset( $es['linkedin']['default_search_keywords'] ) ) {
 				$sanitized['external_sourcing']['linkedin']['default_search_keywords'] = sanitize_text_field( $es['linkedin']['default_search_keywords'] );
 			}
@@ -1140,6 +1171,9 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			}
 
 			// Shared fields.
+			if ( isset( $es['auto_import_interval_hours'] ) ) {
+				$sanitized['external_sourcing']['auto_import_interval_hours'] = max( 1, min( 24, absint( $es['auto_import_interval_hours'] ) ) );
+			}
 			if ( isset( $es['ideal_client_profile'] ) ) {
 				$sanitized['external_sourcing']['ideal_client_profile'] = sanitize_textarea_field( $es['ideal_client_profile'] );
 			}

@@ -40,6 +40,8 @@ export interface ManifestGroup {
 export interface Manifest {
 	version: string;
 	built_at: number;
+	/** Changes on every rebuild — used to invalidate sessionStorage cache. */
+	cache_version: string;
 	tree: ManifestGroup[];
 	slug_map: Record<string, string>;
 	total_pages: number;
@@ -254,18 +256,28 @@ async function apiFetchAuthed<T>( path: string, options: RequestInit = {} ): Pro
  * Uses the public fetch helper — no nonce sent so guests are never
  * rejected by third-party REST auth middleware.
  */
-export async function fetchManifest(): Promise<Manifest> {
-	const CACHE_KEY = 'nvoos_dh_manifest';
-	const cached = cacheGet<Manifest>( CACHE_KEY );
+	export async function fetchManifest(): Promise<Manifest> {
+		const CACHE_KEY = 'nvoos_dh_manifest';
+		const cached = cacheGet<Manifest>( CACHE_KEY );
+		const oldVersion = cached?.cache_version ?? '';
 
-	if ( cached ) {
-		return cached;
+		// Fast path: cached manifest hasn't expired.
+		if ( cached ) {
+			return cached;
+		}
+
+		const manifest = await apiFetchPublic<Manifest>( 'manifest' );
+
+		// Cache-version guard: if the freshly-fetched cache_version differs
+		// from what was cached before expiry, the manifest was rebuilt by
+		// someone else — drop stale page caches so slugs don't 404.
+		if ( oldVersion && manifest.cache_version !== oldVersion ) {
+			clearCache();
+		}
+
+		cacheSet( CACHE_KEY, manifest );
+		return manifest;
 	}
-
-	const manifest = await apiFetchPublic<Manifest>( 'manifest' );
-	cacheSet( CACHE_KEY, manifest );
-	return manifest;
-}
 
 /**
  * Fetch the rendered content for a single page by slug.

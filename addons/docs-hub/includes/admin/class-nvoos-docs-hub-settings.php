@@ -32,6 +32,7 @@ class NV_oOS_Docs_Hub_Settings {
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 		add_action( 'admin_init', array( __CLASS__, 'handle_rebuild_action' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
+		add_action( 'wp_ajax_nvoos_docs_hub_import_settings', array( __CLASS__, 'ajax_import_settings' ) );
 	}
 
 	/**
@@ -357,6 +358,85 @@ class NV_oOS_Docs_Hub_Settings {
 	 *
 	 * @return void
 	 */
+	/**
+	 * AJAX handler: import settings from a JSON file.
+	 *
+	 * Accepts a `data` field containing the JSON string. Runs the
+	 * same sanitize_settings pipeline as a normal save so invalid
+	 * values are dropped. Tokens are stripped by the exporter, so
+	 * the imported repos have blank tokens that the admin must re-enter.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return void
+	 */
+	public static function ajax_import_settings() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'nvoos-docs-hub' ) ), 403 );
+		}
+
+		check_ajax_referer( 'nvoos_docs_hub_import_settings' );
+
+		$raw_json = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON will be validated below.
+		if ( '' === $raw_json ) {
+			wp_send_json_error( array( 'message' => __( 'No data received.', 'nvoos-docs-hub' ) ) );
+		}
+
+		$imported = json_decode( $raw_json, true );
+		if ( ! is_array( $imported ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid JSON structure.', 'nvoos-docs-hub' ) ) );
+		}
+
+		// Run through the same sanitization pipeline as the settings form.
+		$sanitized = self::sanitize_settings( $imported );
+
+		// Preserve existing tokens for repos that match by owner/repo.
+		$existing         = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$existing_repos   = isset( $existing['remote_repos'] ) ? (array) $existing['remote_repos'] : array();
+		$sanitized_repos  = isset( $sanitized['remote_repos'] ) ? (array) $sanitized['remote_repos'] : array();
+		$new_repos        = array();
+		foreach ( $sanitized_repos as $sr ) {
+			if ( ! is_array( $sr ) || empty( $sr['owner'] ) || empty( $sr['repo'] ) ) {
+				$new_repos[] = $sr;
+				continue;
+			}
+			// If the imported token is blank, look up existing token.
+			if ( empty( $sr['token'] ) ) {
+				$key = strtolower( (string) $sr['owner'] ) . '|' . strtolower( (string) $sr['repo'] );
+				foreach ( $existing_repos as $er ) {
+					if ( ! is_array( $er ) ) {
+						continue;
+					}
+					$ek = strtolower( (string) ( $er['owner'] ?? '' ) ) . '|' . strtolower( (string) ( $er['repo'] ?? '' ) );
+					if ( $key === $ek && ! empty( $er['token'] ) ) {
+						$sr['token'] = (string) $er['token'];
+						break;
+					}
+				}
+			}
+			$new_repos[] = $sr;
+		}
+		$sanitized['remote_repos'] = $new_repos;
+
+		update_option( NV_oOS_Docs_Hub_Plugin::OPTION_KEY, $sanitized );
+
+		$repo_count = count( $sanitized['remote_repos'] );
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: %d: number of remote repos imported */
+					_n(
+						'Imported %d remote repository. A rebuild will run automatically. Refresh the page to see the changes.',
+						'Imported %d remote repositories. A rebuild will run automatically. Refresh the page to see the changes.',
+						$repo_count,
+						'nvoos-docs-hub'
+					),
+					$repo_count
+				),
+			)
+		);
+	}
+
 	public static function handle_rebuild_action() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -434,26 +514,56 @@ class NV_oOS_Docs_Hub_Settings {
 		);
 
 		// Sanitize remote repos.
-		// Preserve existing tokens when the password field is left blank on re-save.
-		$existing_settings = NV_oOS_Docs_Hub_Plugin::get_settings();
-		$existing_repos    = isset( $existing_settings['remote_repos'] ) ? (array) $existing_settings['remote_repos'] : array();
+		// Build a lookup map of existing tokens keyed by owner|repo so token
+		// preservation survives row reordering (add/remove) that would otherwise
+		// cause tokens to silently transfer between repos when matched by index.
+		$existing_settings    = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$existing_repos       = isset( $existing_settings['remote_repos'] ) ? (array) $existing_settings['remote_repos'] : array();
+		$existing_token_map   = array();
+		foreach ( $existing_repos as $er ) {
+			if ( ! is_array( $er ) || empty( $er['owner'] ) || empty( $er['repo'] ) ) {
+				continue;
+			}
+			$key = strtolower( trim( (string) $er['owner'] ) ) . '|' . strtolower( trim( (string) $er['repo'] ) );
+			if ( ! empty( $er['token'] ) ) {
+				$existing_token_map[ $key ] = (string) $er['token'];
+			}
+		}
 
-		$sanitized['remote_repos'] = array();
-		$raw_repos                 = isset( $input['remote_repos'] ) && is_array( $input['remote_repos'] ) ? $input['remote_repos'] : array();
+		$sanitized['remote_repos']   = array();
+		$raw_repos                   = isset( $input['remote_repos'] ) && is_array( $input['remote_repos'] ) ? $input['remote_repos'] : array();
+		$dropped_empty               = 0;
+		$dropped_invalid_chars       = 0;
+		$dropped_invalid_chars_label = '';
+
 		foreach ( $raw_repos as $i => $repo ) {
+			if ( ! is_array( $repo ) ) {
+				$dropped_empty++;
+				continue;
+			}
 			$owner     = sanitize_text_field( $repo['owner'] ?? '' );
 			$repo_name = sanitize_text_field( $repo['repo'] ?? '' );
 			if ( '' === $owner || '' === $repo_name ) {
+				$dropped_empty++;
 				continue;
 			}
 			// Enforce safe characters: letters, digits, hyphens, underscores, dots only.
 			if ( ! preg_match( '/^[a-zA-Z0-9_.\-]+$/', $owner ) || ! preg_match( '/^[a-zA-Z0-9_.\-]+$/', $repo_name ) ) {
+				$dropped_invalid_chars++;
+				if ( '' === $dropped_invalid_chars_label ) {
+					$dropped_invalid_chars_label = $owner . '/' . $repo_name;
+				}
 				continue;
 			}
+
 			$new_token = sanitize_text_field( $repo['token'] ?? '' );
-			// When the token field is submitted blank, keep the previously saved token.
-			if ( '' === $new_token && isset( $existing_repos[ $i ]['token'] ) ) {
-				$new_token = $existing_repos[ $i ]['token'];
+			// When the token field is submitted blank, preserve the existing token
+			// for this specific owner/repo pair (matched by key, not array index).
+			if ( '' === $new_token ) {
+				$lookup_key = strtolower( $owner ) . '|' . strtolower( $repo_name );
+				if ( isset( $existing_token_map[ $lookup_key ] ) ) {
+					$new_token = $existing_token_map[ $lookup_key ];
+				}
 			}
 
 			// Selection mode values: all (default), prefix, or selected.
@@ -478,6 +588,46 @@ class NV_oOS_Docs_Hub_Settings {
 				'selected_paths' => $selected_paths,
 				'excluded_paths' => $excluded_paths,
 			);
+		}
+
+		// Surface sanitization warnings via WordPress settings errors so the
+		// admin gets feedback when repo rows were silently dropped.
+		$total_dropped = $dropped_empty + $dropped_invalid_chars;
+		if ( $total_dropped > 0 ) {
+			$messages = array();
+			if ( $dropped_empty > 0 ) {
+				$messages[] = sprintf(
+					/* translators: %d: number of rows dropped */
+					_n(
+						'%d remote repository row was dropped because owner or repo was empty.',
+						'%d remote repository rows were dropped because owner or repo was empty.',
+						$dropped_empty,
+						'nvoos-docs-hub'
+					),
+					$dropped_empty
+				);
+			}
+			if ( $dropped_invalid_chars > 0 ) {
+				$messages[] = sprintf(
+					/* translators: 1: number of rows, 2: example owner/repo label */
+					_n(
+						'%1$d remote repository row (e.g. "%2$s") was dropped because the owner or repo name contains invalid characters. Only letters, digits, hyphens, underscores, and dots are allowed.',
+						'%1$d remote repository rows (e.g. "%2$s") were dropped because the owner or repo name contains invalid characters. Only letters, digits, hyphens, underscores, and dots are allowed.',
+						$dropped_invalid_chars,
+						'nvoos-docs-hub'
+					),
+					$dropped_invalid_chars,
+					$dropped_invalid_chars_label
+				);
+			}
+			foreach ( $messages as $msg ) {
+				add_settings_error(
+					'nvoos_docs_hub_settings_group',
+					'nvoos_docs_hub_dropped_rows',
+					$msg,
+					'warning'
+				);
+			}
 		}
 
 		return $sanitized;
@@ -737,10 +887,53 @@ class NV_oOS_Docs_Hub_Settings {
 				try {
 					applyState( JSON.parse( panel.getAttribute( 'data-initial-state' ) ) );
 				} catch ( e ) {}
-			}());
-			</script>
+					}());
 
-			<form method="post" action="options.php">
+					// Dirty-state tracking: warn before leaving when the form has unsaved
+					// changes (repo rows added/removed, fields edited, etc.).
+					( function () {
+						var form = document.querySelector( 'form[action="options.php"]' );
+						if ( ! form ) { return; }
+						var isDirty = false;
+
+						function markDirty() {
+							if ( ! isDirty ) {
+								isDirty = true;
+								window.addEventListener( 'beforeunload', warnUnsaved );
+							}
+						}
+
+						function warnUnsaved( e ) {
+							e.preventDefault();
+							e.returnValue = '';
+							return '';
+						}
+
+						// Watch input/textarea/select changes.
+						form.addEventListener( 'input', markDirty, { passive: true } );
+						form.addEventListener( 'change', markDirty, { passive: true } );
+
+						// The "Add Repository" button adds new rows via cloneNode() —
+						// those fire DOM mutations but no input events on the form
+						// itself, so we listen for click on the add button.
+						var addBtn = document.getElementById( 'nvoos-dh-add-repo' );
+						if ( addBtn ) { addBtn.addEventListener( 'click', markDirty ); }
+
+						// The "Remove this repository" button is handled via delegation
+						// in repo-picker.js; we listen for the click on the wrapper.
+						var wrap = document.getElementById( 'nvoos-dh-remote-repos-wrap' );
+						if ( wrap ) { wrap.addEventListener( 'click', markDirty ); }
+
+						// Clear dirty flag on form submit so the warning doesn't fire
+						// when the user intentionally saves.
+						form.addEventListener( 'submit', function () {
+							isDirty = false;
+							window.removeEventListener( 'beforeunload', warnUnsaved );
+						} );
+					}() );
+					</script>
+
+					<form method="post" action="options.php">
 				<?php
 					settings_fields( 'nvoos_docs_hub_settings_group' );
 				try {
@@ -766,13 +959,127 @@ class NV_oOS_Docs_Hub_Settings {
 				}
 					submit_button();
 				?>
-			</form>
-		</div>
-		<?php
-	}
+				</form>
 
-	/**
-	 * Render a checkbox field.
+				<hr />
+
+				<h2><?php esc_html_e( 'Export / Import Settings', 'nvoos-docs-hub' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Download your Docs Hub configuration as JSON or restore a previously exported file. Importing overwrites the current settings (a rebuild will be triggered automatically).', 'nvoos-docs-hub' ); ?>
+				</p>
+
+				<p>
+					<button type="button" id="nvoos-dh-export-settings" class="button">
+						<?php esc_html_e( 'Export Settings (JSON)', 'nvoos-docs-hub' ); ?>
+					</button>
+				</p>
+
+				<p>
+					<label for="nvoos-dh-import-file" class="button" style="cursor:pointer;">
+						<?php esc_html_e( 'Import Settings (JSON)', 'nvoos-docs-hub' ); ?>
+					</label>
+					<input type="file"
+						id="nvoos-dh-import-file"
+						accept=".json,application/json"
+						style="display:none;" />
+					<span id="nvoos-dh-import-status" style="margin-left:8px; color:#646970; font-style:italic;"></span>
+				</p>
+
+				<script>
+				( function () {
+					// --- Export ---
+					var exportBtn = document.getElementById( 'nvoos-dh-export-settings' );
+					if ( exportBtn ) {
+						exportBtn.addEventListener( 'click', function () {
+							var settings = <?php echo wp_json_encode( NV_oOS_Docs_Hub_Plugin::get_settings() ); ?>;
+							// Strip sensitive token values from the export.
+							if ( settings.remote_repos && Array.isArray( settings.remote_repos ) ) {
+								settings.remote_repos = settings.remote_repos.map( function ( r ) {
+									var copy = Object.assign( {}, r );
+									delete copy.token;
+									return copy;
+								} );
+							}
+							var blob = new Blob(
+								[ JSON.stringify( settings, null, 2 ) ],
+								{ type: 'application/json' }
+							);
+							var a = document.createElement( 'a' );
+							a.href = URL.createObjectURL( blob );
+							a.download = 'nvoos-docs-hub-settings-' + new Date().toISOString().slice( 0, 10 ) + '.json';
+							document.body.appendChild( a );
+							a.click();
+							document.body.removeChild( a );
+							URL.revokeObjectURL( a.href );
+						} );
+					}
+
+					// --- Import ---
+					var importFile = document.getElementById( 'nvoos-dh-import-file' );
+					var importLabel = document.querySelector( 'label[for="nvoos-dh-import-file"]' );
+					var importStatus = document.getElementById( 'nvoos-dh-import-status' );
+
+					if ( importLabel && importFile ) {
+						importLabel.addEventListener( 'click', function () {
+							importFile.click();
+						} );
+					}
+
+					if ( importFile && importStatus ) {
+						importFile.addEventListener( 'change', function () {
+							var file = importFile.files && importFile.files[ 0 ];
+							if ( ! file ) { return; }
+							importStatus.textContent = '<?php echo esc_js( __( 'Importing…', 'nvoos-docs-hub' ) ); ?>';
+							var reader = new FileReader();
+							reader.onload = function ( e ) {
+								try {
+									var imported = JSON.parse( e.target.result );
+									if ( ! imported || typeof imported !== 'object' || Array.isArray( imported ) ) {
+										throw new Error( 'Invalid JSON structure' );
+									}
+									// POST via hidden form to trigger settings save.
+									var formData = new FormData();
+									formData.append( 'action', 'nvoos_docs_hub_import_settings' );
+									formData.append( 'data', JSON.stringify( imported ) );
+									formData.append( '_wpnonce', '<?php echo esc_js( wp_create_nonce( 'nvoos_docs_hub_import_settings' ) ); ?>' );
+									fetch( ajaxurl, { method: 'POST', credentials: 'same-origin', body: formData } )
+										.then( function ( r ) { return r.json(); } )
+										.then( function ( data ) {
+											if ( data.success ) {
+												importStatus.textContent = '\u2705 ' + ( data.data && data.data.message ? data.data.message : '<?php echo esc_js( __( 'Imported. A rebuild will run automatically.', 'nvoos-docs-hub' ) ); ?>' );
+												setTimeout( function () { location.reload(); }, 1500 );
+											} else {
+												importStatus.textContent = '\u274c ' + ( ( data.data && data.data.message ) ? data.data.message : '<?php echo esc_js( __( 'Import failed.', 'nvoos-docs-hub' ) ); ?>' );
+											}
+										} )
+										.catch( function () {
+											importStatus.textContent = '\u274c <?php echo esc_js( __( 'Import request failed.', 'nvoos-docs-hub' ) ); ?>';
+										} );
+								} catch ( err ) {
+									importStatus.textContent = '\u274c ' + ( err.message || '<?php echo esc_js( __( 'Invalid JSON file.', 'nvoos-docs-hub' ) ); ?>' );
+								}
+							};
+							reader.readAsText( file );
+						} );
+					}
+				}() );
+				</script>
+
+				<p class="description">
+					<?php
+					esc_html_e( 'Note: Exported files do NOT include Personal Access Tokens. After importing, re-enter your tokens and save. If your server runs Nginx, add a location rule to deny direct access to the cache directory:', 'nvoos-docs-hub' );
+					?><br />
+					<code style="display:inline-block; margin-top:4px; background:#f0f0f1; padding:4px 8px;">
+						location /wp-content/uploads/nvoos-docs-hub/ { deny all; return 403; }
+					</code>
+				</p>
+
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render a checkbox field.
 	 *
 	 * @since 1.0.0
 	 *
@@ -1103,6 +1410,12 @@ class NV_oOS_Docs_Hub_Settings {
 								data-row-index="<?php echo esc_attr( (string) $i ); ?>"
 								title="<?php esc_attr_e( 'Bypass the 10-minute cache and re-fetch from GitHub', 'nvoos-docs-hub' ); ?>">
 								<?php esc_html_e( 'Refresh', 'nvoos-docs-hub' ); ?>
+							</button>
+							<button type="button"
+								class="button nvoos-dh-test-btn"
+								data-row-index="<?php echo esc_attr( (string) $i ); ?>"
+								title="<?php esc_attr_e( 'Verify the owner, repo, and ref are reachable without saving', 'nvoos-docs-hub' ); ?>">
+								<?php esc_html_e( 'Test', 'nvoos-docs-hub' ); ?>
 							</button>
 							<span class="nvoos-dh-picker-status" style="margin-left:8px; color:#646970; font-style:italic;"></span>
 							<div class="nvoos-dh-picker-tree"

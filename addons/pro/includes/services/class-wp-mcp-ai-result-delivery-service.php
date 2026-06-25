@@ -45,6 +45,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			'teams',
 			'messenger',
 			'whatsapp',
+			'google_chat',
 			'sms',
 			'paper_store',
 			'webhook',
@@ -54,16 +55,21 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 		/**
 		 * Valid template modes for email delivery.
 		 *
+		 * - `full`: response + execution log (all structured envelope data).
+		 * - `summary`: summary line only (no response or execution log).
+		 * - `error`: error message.
+		 * - `response_only`: the substantive response only — no summary, no log.
+		 *
 		 * @var string[]
 		 */
-		const EMAIL_TEMPLATES = array( 'full', 'summary', 'error' );
+		const EMAIL_TEMPLATES = array( 'full', 'summary', 'error', 'response_only' );
 
 		/**
 		 * Valid template modes for chat / SMS delivery.
 		 *
 		 * @var string[]
 		 */
-		const CHAT_TEMPLATES = array( 'summary', 'error' );
+		const CHAT_TEMPLATES = array( 'summary', 'error', 'response_only' );
 
 		/**
 		 * Valid template modes for SMS delivery.
@@ -267,6 +273,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$schedule_name = isset( $schedule['name'] ) ? (string) $schedule['name'] : '';
 			$schedule_type = isset( $schedule['schedule_type'] ) ? (string) $schedule['schedule_type'] : 'task';
 			$summary       = isset( $envelope['summary'] ) ? (string) $envelope['summary'] : '';
+			$response      = isset( $envelope['response'] ) ? (string) $envelope['response'] : '';
 			$status        = isset( $envelope['status'] ) ? (string) $envelope['status'] : '';
 			$is_success    = 'failure' !== $status;
 			$generated_at  = isset( $envelope['generated_at'] ) ? (int) $envelope['generated_at'] : time();
@@ -274,6 +281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$formatted = array(
 				'schedule_name' => $schedule_name,
 				'summary'       => $summary,
+				'response'      => $response,
 				'status'        => $status,
 				'is_success'    => $is_success,
 				'generated_at'  => $generated_at,
@@ -326,9 +334,19 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$body = '';
 			if ( $is_error ) {
 				$body = $shared['summary'];
+			} elseif ( 'response_only' === $template ) {
+				// Deliver only the substantive AI/tool response — no summary, no log.
+				$body = isset( $shared['response'] ) ? (string) $shared['response'] : $shared['summary'];
 			} elseif ( 'full' === $template && isset( $envelope['data'] ) ) {
-				// Full mode: include the raw data structure in a readable form.
-				$body = $shared['summary'];
+				// Full mode: include the response prominently, then the data structure.
+				$body     = $shared['summary'];
+				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				if ( '' !== $response ) {
+					$body .= "\n\n---\n\n";
+					/* translators: heading for the main result output in emails */
+					$body .= __( 'Results', 'mcp-ai-wpoos-pro' ) . ":\n";
+					$body .= $response;
+				}
 				if ( ! empty( $envelope['data'] ) ) {
 					$body .= "\n\n---\n\n";
 					$body .= self::envelope_data_to_text( $envelope['data'] );
@@ -367,9 +385,29 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$message .= "\u{1F3E2} " . esc_html( $site ) . '  |  ';
 			$message .= "\u{1F4C5} " . esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $shared['generated_at'] ) ) . "\n";
 
-			if ( ! empty( $shared['summary'] ) ) {
+			if ( 'response_only' === $template ) {
+				// Deliver only the substantive AI/tool response.
+				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				if ( '' !== $response ) {
+					$message .= "\n" . esc_html( $response );
+				} else {
+					$message .= "\n" . esc_html( $shared['summary'] );
+				}
+			} else {
 				$truncated = wp_trim_words( $shared['summary'], 60, '…' );
 				$message  .= "\n" . esc_html( $truncated );
+			}
+
+				// Include a response excerpt when available — this is the substantive
+				// output the schedule produced and is what recipients actually want.
+				// Only appended in summary/error modes; response_only already includes
+				// the full response as the main content.
+			if ( 'response_only' !== $template && 'error' !== $template ) {
+				$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+				if ( '' !== $response ) {
+					$excerpt  = wp_trim_words( $response, 80, '…' );
+					$message .= "\n\n\u{1F4CB} " . esc_html( $excerpt );
+				}
 			}
 
 			return array(
@@ -395,6 +433,13 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			$message = $prefix . $name;
 			if ( ! empty( $summary ) ) {
 				$message .= ': ' . $summary;
+			}
+
+			// Append a response excerpt when available and not an error.
+			$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+			if ( ! $is_error && '' !== $response ) {
+				$excerpt  = wp_trim_words( $response, 12, '…' );
+				$message .= ' - ' . $excerpt;
 			}
 
 			// Truncate to ~160 chars (GSM-7 safe).
@@ -485,10 +530,112 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				'schedule_type' => $shared['schedule_type'],
 				'status'        => $shared['status'],
 				'summary'       => $shared['summary'],
+				'response'      => isset( $shared['response'] ) ? (string) $shared['response'] : '',
 				'action_log'    => $action_log,
 				'timestamp'     => gmdate( 'c', $shared['generated_at'] ),
 				'site_url'      => home_url(),
 			);
+		}
+
+		// -------------------------------------------------------------------------
+		// Credential resolution
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Resolve credentials for a delivery channel using a three-tier fallback.
+		 *
+		 * Priority:
+		 *   1. connection_id → Remote Sites stored connection
+		 *   2. Inline {channel}_credentials in the channel config
+		 *   3. Chat Channels Toolkit global settings (via filter)
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $channel Channel slug (slack, telegram, etc.).
+		 * @param array  $config  Channel config from schedule['result_delivery'].
+		 * @return array Empty array if no credentials resolved, or credential map keyed by channel.
+		 */
+		protected static function resolve_channel_credentials( $channel, array $config ) {
+			// 1. Try Remote Sites connection reference.
+			if ( ! empty( $config['connection_id'] ) ) {
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $config['connection_id'] );
+					if ( is_array( $connection ) && ! empty( $connection ) ) {
+						$creds = self::extract_credentials_from_connection( $channel, $connection );
+						if ( ! empty( $creds ) ) {
+							return $creds;
+						}
+					}
+				}
+			}
+
+			// 2. Try inline credentials stored under the canonical key.
+			if ( isset( $config[ $channel . '_credentials' ] ) && is_array( $config[ $channel . '_credentials' ] ) ) {
+				return $config[ $channel . '_credentials' ];
+			}
+
+			// 3. Allow integrators to supply global defaults.
+			return apply_filters( 'wp_mcp_ai_delivery_channel_default_credentials', array(), $channel, $config );
+		}
+
+		/**
+		 * Extract delivery credentials from a Remote Sites connection record.
+		 *
+		 * Maps the connection-type-agnostic storage to the per-channel shape
+		 * expected by unified_channel_broadcast.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $channel    Channel slug.
+		 * @param array  $connection Remote Sites connection record.
+		 * @return array Credential map for this channel, or empty array.
+		 */
+		protected static function extract_credentials_from_connection( $channel, array $connection ) {
+			$map = array(
+				'slack'       => array(
+					'token'   => isset( $connection['slack_bot_token'] ) ? (string) $connection['slack_bot_token'] : '',
+					'channel' => isset( $connection['slack_default_channel'] ) ? (string) $connection['slack_default_channel'] : '',
+				),
+				'telegram'    => array(
+					'token'   => isset( $connection['telegram_bot_token'] ) ? (string) $connection['telegram_bot_token'] : '',
+					'chat_id' => isset( $connection['telegram_chat_id'] ) ? (string) $connection['telegram_chat_id'] : '',
+				),
+				'discord'     => array(
+					'token'      => isset( $connection['discord_bot_token'] ) ? (string) $connection['discord_bot_token'] : '',
+					'channel_id' => isset( $connection['discord_channel_id'] ) ? (string) $connection['discord_channel_id'] : '',
+				),
+				'teams'       => array(
+					'token'      => isset( $connection['teams_token'] ) ? (string) $connection['teams_token'] : '',
+					'team_id'    => isset( $connection['teams_team_id'] ) ? (string) $connection['teams_team_id'] : '',
+					'channel_id' => isset( $connection['teams_channel_id'] ) ? (string) $connection['teams_channel_id'] : '',
+				),
+				'messenger'   => array(
+					'access_token' => isset( $connection['messenger_access_token'] ) ? (string) $connection['messenger_access_token'] : '',
+					'recipient_id' => isset( $connection['messenger_recipient_id'] ) ? (string) $connection['messenger_recipient_id'] : '',
+				),
+				'whatsapp'    => array(
+					'access_token'    => isset( $connection['whatsapp_access_token'] ) ? (string) $connection['whatsapp_access_token'] : '',
+					'phone_number_id' => isset( $connection['whatsapp_phone_number_id'] ) ? (string) $connection['whatsapp_phone_number_id'] : '',
+					'to'              => isset( $connection['whatsapp_to'] ) ? (string) $connection['whatsapp_to'] : '',
+				),
+				'google_chat' => array(
+					'webhook_url' => isset( $connection['google_chat_webhook_url'] ) ? (string) $connection['google_chat_webhook_url'] : '',
+				),
+			);
+
+			if ( isset( $map[ $channel ] ) ) {
+				$filtered = array_filter(
+					$map[ $channel ],
+					function ( $v ) {
+						return '' !== $v;
+					}
+				);
+				if ( ! empty( $filtered ) ) {
+					return $filtered;
+				}
+			}
+
+			return array();
 		}
 
 		// -------------------------------------------------------------------------
@@ -527,6 +674,7 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				case 'teams':
 				case 'messenger':
 				case 'whatsapp':
+				case 'google_chat':
 					return self::send_chat( $channel, $payload, $config );
 
 				default:
@@ -608,9 +756,17 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 
 			$message = isset( $payload['message'] ) ? (string) $payload['message'] : '';
 
-			// Resolve credentials: per-channel config wins over schedule-level.
+			/*
+			 * Resolve credentials using three-tier fallback:
+			 *   1. connection_id → Remote Sites connection.
+			 *   2. Inline {channel}_credentials in config.
+			 *   3. Chat Channels Toolkit global settings (via filter).
+			 */
 			$credentials = array();
-			if ( isset( $config['credentials'] ) && is_array( $config['credentials'] ) ) {
+			$resolved    = self::resolve_channel_credentials( $channel, $config );
+			if ( ! empty( $resolved ) ) {
+				$credentials[ $channel ] = $resolved;
+			} elseif ( isset( $config['credentials'] ) && is_array( $config['credentials'] ) ) {
 				$credentials[ $channel ] = $config['credentials'];
 			} elseif ( isset( $config[ $channel . '_credentials' ] ) ) {
 				$credentials[ $channel ] = $config[ $channel . '_credentials' ];
@@ -1131,6 +1287,37 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 			}
 
 			$md .= "\n---\n\n";
+
+			// Response — the substantive output: the AI reply, tool results,
+			// or final node output that the schedule produced. This is what
+			// recipients actually want; the execution log follows below.
+			$response = isset( $shared['response'] ) ? (string) $shared['response'] : '';
+			if ( '' !== $response ) {
+				$md .= "## Response\n\n";
+				// Allow basic Markdown in the response (assistant runs produce
+				// formatted output); escape only bare-HTML that could break layout.
+				$md .= wp_kses(
+					$response,
+					array(
+						'strong'     => array(),
+						'em'         => array(),
+						'code'       => array(),
+						'pre'        => array(),
+						'a'          => array( 'href' => array() ),
+						'ul'         => array(),
+						'ol'         => array(),
+						'li'         => array(),
+						'p'          => array(),
+						'br'         => array(),
+						'h1'         => array(),
+						'h2'         => array(),
+						'h3'         => array(),
+						'h4'         => array(),
+						'blockquote' => array(),
+					)
+				) . "\n\n";
+				$md .= "---\n\n";
+			}
 
 			if ( ! empty( $shared['summary'] ) ) {
 				$md .= "## Summary\n\n" . esc_html( $shared['summary'] ) . "\n\n";

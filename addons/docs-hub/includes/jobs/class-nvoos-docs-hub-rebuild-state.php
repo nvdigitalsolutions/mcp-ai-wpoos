@@ -104,7 +104,8 @@ class NV_oOS_Docs_Hub_Rebuild_State {
 		$current            = self::get();
 		$next               = array_merge( $current, (array) $patch );
 		$next['updated_at'] = time();
-		update_option( self::OPTION_KEY, $next, false );
+		// Keep autoload off — the _slugs payload can exceed 200 KB.
+		update_option( self::OPTION_KEY, $next, 'no' );
 		return $next;
 	}
 
@@ -118,7 +119,10 @@ class NV_oOS_Docs_Hub_Rebuild_State {
 	 */
 	public static function set( $state ) {
 		$state['updated_at'] = time();
-		update_option( self::OPTION_KEY, $state, false );
+		// Do not autoload — this option can carry a bulky _slugs list (up to
+		// ~5 000 entries at ~40 chars each ≈ 200 KB) that should never be
+		// loaded on every frontend request.
+		update_option( self::OPTION_KEY, $state, 'no' );
 	}
 
 	/**
