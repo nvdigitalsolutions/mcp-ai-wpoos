@@ -337,6 +337,67 @@ class WP_MCP_AI_Project_CPT {
 
 		return $columns;
 	}
+
+	/**
+	 * Create a project from structured data.
+	 *
+	 * Used by Upwork/LinkedIn importers and programmatic project creation.
+	 *
+	 * @since 2.11.0
+	 *
+	 * @param array $data {
+	 *     Project creation data.
+	 *
+	 *     @type string $name        Project title (required).
+	 *     @type string $description Project description / notes.
+	 *     @type float  $budget      Project budget.
+	 *     @type string $source      Source identifier (e.g. 'upwork', 'linkedin').
+	 * }
+	 * @return int|WP_Error Post ID on success, WP_Error on failure.
+	 */
+	public static function create( array $data ) {
+		$name = isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '';
+		if ( '' === $name ) {
+			return new WP_Error(
+				'wp_mcp_ai_project_missing_name',
+				__( 'Project name is required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$description = isset( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
+		$budget      = isset( $data['budget'] ) ? (float) $data['budget'] : 0;
+		$source      = isset( $data['source'] ) ? sanitize_text_field( $data['source'] ) : '';
+
+		$post_data = array(
+			'post_type'    => self::POST_TYPE,
+			'post_title'   => $name,
+			'post_content' => $description,
+			'post_status'  => 'publish',
+			'meta_input'   => array(
+				'_project_status' => 'planning',
+				'_project_budget' => $budget,
+				'_project_source' => $source,
+			),
+		);
+
+		$post_id = wp_insert_post( $post_data, true );
+
+		if ( is_wp_error( $post_id ) ) {
+			return $post_id;
+		}
+
+		/**
+		 * Fires after a project is created via the programmatic create() method.
+		 *
+		 * @since 2.11.0
+		 *
+		 * @param int   $post_id The project post ID.
+		 * @param array $data    The original creation data.
+		 */
+		do_action( 'wp_mcp_ai_project_created', $post_id, $data );
+
+		return $post_id;
+	}
 }
 
 WP_MCP_AI_Project_CPT::init();

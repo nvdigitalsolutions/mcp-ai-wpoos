@@ -3121,25 +3121,56 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	private static function get_crm_source_count() {
 		$count = 0;
 
-		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			return $count;
+		// Count Remote Site connections.
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+			// Connection types that can serve as inbound lead sources for the CRM.
+			$crm_source_types = array(
+				'gmail',
+				'google_workspace',
+				'email_imap',
+				'upwork',
+				'linkedin',
+			);
+
+			if ( is_array( $all_connections ) ) {
+				foreach ( $all_connections as $connection ) {
+					$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+					if ( in_array( $conn_type, $crm_source_types, true ) && ! empty( $connection['enabled'] ) ) {
+						++$count;
+					}
+				}
+			}
 		}
 
-		$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+		// Count base-settings Gmail when no Remote Site Gmail connection exists.
+		// The importer tool falls back to base settings automatically, so this
+		// source should be reflected in the UI when configured.
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$base_settings  = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_base_gmail = ! empty( $base_settings['gmail_client_id'] )
+				&& ! empty( $base_settings['gmail_refresh_token'] );
 
-		// Connection types that can serve as inbound lead sources for the CRM.
-		$crm_source_types = array(
-			'gmail',
-			'google_workspace',
-			'email_imap',
-			'upwork',
-			'linkedin',
-		);
+			if ( $has_base_gmail ) {
+				// Only count if no Remote Site Gmail is already counted.
+				$has_remote_gmail = false;
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+					if ( is_array( $all_connections ) ) {
+						foreach ( $all_connections as $connection ) {
+							$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+							if ( in_array( $conn_type, array( 'gmail', 'google_workspace', 'email_imap' ), true ) && ! empty( $connection['enabled'] ) ) {
+								$has_remote_gmail = true;
+								break;
+							}
+						}
+					}
+				}
 
-		foreach ( $all_connections as $connection ) {
-			$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
-			if ( in_array( $conn_type, $crm_source_types, true ) && ! empty( $connection['enabled'] ) ) {
-				++$count;
+				if ( ! $has_remote_gmail ) {
+					++$count;
+				}
 			}
 		}
 
@@ -3838,23 +3869,30 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		$user_context = array( 'user_id' => get_current_user_id() );
 
 		// ── 1. Pull from Gmail connections via Remote Site Manager ──
+		$all_connections = array();
 		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+		}
 
-			// Filter to Gmail-type connections.
-			$_import_file       = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-import-gmail-to-crm.php';
-			$importer_available = file_exists( $_import_file );
+		$_import_file       = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-import-gmail-to-crm.php';
+		$importer_available = file_exists( $_import_file );
 
-			if ( $importer_available && ! empty( $all_connections ) ) {
-				require_once $_import_file;
+		if ( $importer_available ) {
+			require_once $_import_file;
 
-				// Resolve the default Gmail query.
-				$default_query = 'newer_than:7d is:unread';
-				if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
-					$crm_settings  = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
-					$default_query = $crm_settings['integrations']['gmail_default_query'] ?? $default_query;
-				}
+			// Resolve the default Gmail query.
+			$default_query = 'newer_than:7d is:unread';
+			if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+				$crm_settings  = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+				$default_query = $crm_settings['integrations']['gmail_default_query'] ?? $default_query;
+			}
 
+			// Track whether we found at least one Gmail source to avoid
+			// double-pulling when a Remote Site connection also exists.
+			$gmail_pulled = false;
+
+			// Pull from Remote Site Gmail connections first.
+			if ( ! empty( $all_connections ) ) {
 				foreach ( $all_connections as $conn_id => $connection ) {
 					$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
 
@@ -3881,18 +3919,64 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 							);
 
 							if ( ! is_wp_error( $result ) ) {
-								$stats['emails_fetched'] += isset( $result['total_found'] ) ? (int) $result['total_found'] : 0;
-								$stats['leads_created']  += isset( $result['leads_created'] ) ? (int) $result['leads_created'] : 0;
-								$stats['leads_updated']  += isset( $result['leads_updated'] ) ? (int) $result['leads_updated'] : 0;
-								$stats['skipped_spam']   += isset( $result['skipped_spam'] ) ? (int) $result['skipped_spam'] : 0;
-								$stats['skipped_noise']  += isset( $result['skipped_noise'] ) ? (int) $result['skipped_noise'] : 0;
+								// Import tool nests stats under 'stats' key.
+								$import_stats             = isset( $result['stats'] ) ? $result['stats'] : array();
+								$stats['emails_fetched'] += isset( $import_stats['total_found'] ) ? (int) $import_stats['total_found'] : 0;
+								$stats['leads_created']  += isset( $import_stats['leads_created'] ) ? (int) $import_stats['leads_created'] : 0;
+								$stats['leads_updated']  += isset( $import_stats['leads_updated'] ) ? (int) $import_stats['leads_updated'] : 0;
+								$stats['skipped_spam']   += isset( $import_stats['skipped_spam'] ) ? (int) $import_stats['skipped_spam'] : 0;
+								$stats['skipped_noise']  += isset( $import_stats['skipped_noise'] ) ? (int) $import_stats['skipped_noise'] : 0;
 							}
+							$gmail_pulled = true;
 						} catch ( \Exception $e ) {
 							// Continue to the next source — individual connection failure is non-fatal.
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 								// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 								error_log( 'CRM CC source refresh error: ' . $e->getMessage() );
 							}
+						}
+					}
+				}
+			}
+
+			// Fall back to base-settings Gmail credentials when no Remote Site
+			// Gmail connection was processed (the importer resolves credentials
+			// from base settings automatically when Remote Sites are absent).
+			if ( ! $gmail_pulled && class_exists( 'WP_MCP_AI_Tool_Import_Gmail_To_CRM' ) ) {
+				// Check if base Gmail settings are configured.
+				$has_base_gmail = false;
+				if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+					$base_settings  = WP_MCP_AI_Admin_Settings::get_settings();
+					$has_base_gmail = ! empty( $base_settings['gmail_client_id'] )
+						&& ! empty( $base_settings['gmail_refresh_token'] );
+				}
+
+				if ( $has_base_gmail ) {
+					++$stats['sources_checked'];
+
+					try {
+							$importer = new WP_MCP_AI_Tool_Import_Gmail_To_CRM();
+							$result   = $importer->execute(
+								array(
+									'query'       => $default_query,
+									'max_results' => 10,
+									'auto_reply'  => false,
+								),
+								$user_context
+							);
+
+						if ( ! is_wp_error( $result ) ) {
+							$import_stats             = isset( $result['stats'] ) ? $result['stats'] : array();
+							$stats['emails_fetched'] += isset( $import_stats['total_found'] ) ? (int) $import_stats['total_found'] : 0;
+							$stats['leads_created']  += isset( $import_stats['leads_created'] ) ? (int) $import_stats['leads_created'] : 0;
+							$stats['leads_updated']  += isset( $import_stats['leads_updated'] ) ? (int) $import_stats['leads_updated'] : 0;
+							$stats['skipped_spam']   += isset( $import_stats['skipped_spam'] ) ? (int) $import_stats['skipped_spam'] : 0;
+							$stats['skipped_noise']  += isset( $import_stats['skipped_noise'] ) ? (int) $import_stats['skipped_noise'] : 0;
+						}
+					} catch ( \Exception $e ) {
+						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+							error_log( 'CRM CC base Gmail source refresh error: ' . $e->getMessage() );
 						}
 					}
 				}
@@ -3982,7 +4066,12 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 						$score_val = 0;
 						if ( ! is_wp_error( $score ) && ! empty( $score['success'] ) ) {
-							$score_val = isset( $score['total_score'] ) ? (int) $score['total_score'] : 0;
+							// Accept both overall_score (canonical key from scoring tool)
+							// and total_score for backwards compatibility.
+							$score_val = isset( $score['overall_score'] ) ? (int) $score['overall_score'] : 0;
+							if ( 0 === $score_val && isset( $score['total_score'] ) ) {
+								$score_val = (int) $score['total_score'];
+							}
 						}
 
 						// Import if score meets threshold.
@@ -4106,7 +4195,14 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 						$li_score_val = 0;
 						if ( ! is_wp_error( $li_score ) && ! empty( $li_score['success'] ) ) {
-							$li_score_val = isset( $li_score['total_score'] ) ? (int) $li_score['total_score'] : 0;
+							// LinkedIn scorer nests score under a 'score' sub-key.
+							if ( isset( $li_score['score']['overall_score'] ) ) {
+								$li_score_val = (int) $li_score['score']['overall_score'];
+							} elseif ( isset( $li_score['overall_score'] ) ) {
+								$li_score_val = (int) $li_score['overall_score'];
+							} elseif ( isset( $li_score['total_score'] ) ) {
+								$li_score_val = (int) $li_score['total_score'];
+							}
 						}
 
 						// Save if score meets threshold.
