@@ -86,58 +86,32 @@ final class Plugin {
 		// ─── Auto-rebuild on post save ─────────────────────────
 		add_action( 'save_post', array( $this, 'onSavePost' ), 20, 3 );
 
-		// ─── Built-in tools (registered at plugins_loaded:11) ──
-		add_action(
-			'plugins_loaded',
-			function (): void {
-				$this->registerBuiltinTools();
-			},
-			11
-		);
+		// ─── Built-in tools ────────────────────────────────────
+		$this->registerBuiltinTools();
 
-		// ─── Addon tool registration hook (plugins_loaded:20) ──
-		add_action(
-			'plugins_loaded',
-			function (): void {
-				/**
-				 * Fires when NV oOS Graphify is ready for tool registration.
-				 *
-				 * Consumer addons hook into this to register their tools.
-				 *
-				 * @since 1.0.0
-				 * @param ToolRegistry $registry The tool registry instance.
-				 */
-				do_action( Schema::ACTION_REGISTER_TOOLS, $this->toolRegistry );
-			},
-			20
-		);
+		/**
+		 * Fires when NV oOS Graphify is ready for tool registration.
+		 *
+		 * Consumer addons hook into this to register their tools.
+		 *
+		 * @since 1.0.0
+		 * @param ToolRegistry $registry The tool registry instance.
+		 */
+		do_action( Schema::ACTION_REGISTER_TOOLS, $this->toolRegistry );
 
-		// ─── Built-in remote source drivers (plugins_loaded:10) ──
-		add_action(
-			'plugins_loaded',
-			function (): void {
-				$this->registerBuiltinDrivers();
-			},
-			10
-		);
+		// ─── Built-in remote source drivers ────────────────────
+		$this->registerBuiltinDrivers();
 
-		// ─── Addon remote source driver registration (plugins_loaded:20) ──
-		add_action(
-			'plugins_loaded',
-			function (): void {
-				/**
-				 * Fires when Graphify is ready for remote source driver
-				 * registration.
-				 *
-				 * Consumer addons hook into this to register their drivers.
-				 *
-				 * @since 1.0.0
-				 * @param \NvoosGraphify\Remote\Registry $registry The remote source registry.
-				 */
-				do_action( Schema::ACTION_REGISTER_REMOTE_SOURCES, $this->remoteRegistry );
-			},
-			20
-		);
+		/**
+		 * Fires when Graphify is ready for remote source driver
+		 * registration.
+		 *
+		 * Consumer addons hook into this to register their drivers.
+		 *
+		 * @since 1.0.0
+		 * @param \NvoosGraphify\Remote\Registry $registry The remote source registry.
+		 */
+		do_action( Schema::ACTION_REGISTER_REMOTE_SOURCES, $this->remoteRegistry );
 
 		// ─── Memory bridge ─────────────────────────────────────
 		if ( class_exists( 'NvoosGraphify\Memory\Bridge' ) ) {
