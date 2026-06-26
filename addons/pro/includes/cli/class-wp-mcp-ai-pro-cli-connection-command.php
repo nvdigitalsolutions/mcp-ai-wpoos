@@ -104,7 +104,7 @@ class WP_MCP_AI_Pro_CLI_Connection_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 	 * --name=<name>
 	 * : Human-readable label for the connection.
 	 *
-	 * --url=<url>
+	 * --remote-url=<url>
 	 * : Remote site URL.
 	 *
 	 * --type=<type>
@@ -131,13 +131,13 @@ class WP_MCP_AI_Pro_CLI_Connection_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 	 * ## EXAMPLES
 	 *
 	 *     # Create a basic connection.
-	 *     $ wp mcp-ai connection create --name="Staging" --url="https://staging.example.com" --type="wordpress"
+	 *     $ wp mcp-ai connection create --name="Staging" --remote-url="https://staging.example.com" --type="wordpress"
 	 *
 	 *     # Create with API key auth.
-	 *     $ wp mcp-ai connection create --name="API Site" --url="https://api.example.com" --type="rest" --auth-type="api_key" --api-key="sk-abc123"
+	 *     $ wp mcp-ai connection create --name="API Site" --remote-url="https://api.example.com" --type="rest" --auth-type="api_key" --api-key="sk-abc123"
 	 *
 	 *     # Capture the new connection ID.
-	 *     $ CID=$(wp mcp-ai connection create --name="Prod" --url="https://prod.example.com" --type="wordpress" --porcelain)
+	 *     $ CID=$(wp mcp-ai connection create --name="Prod" --remote-url="https://prod.example.com" --type="wordpress" --porcelain)
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
@@ -147,7 +147,7 @@ class WP_MCP_AI_Pro_CLI_Connection_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 		$this->assert_pro_loaded();
 
 		$name      = sanitize_text_field( \WP_CLI\Utils\get_flag_value( $assoc_args, 'name', '' ) );
-		$url       = esc_url_raw( \WP_CLI\Utils\get_flag_value( $assoc_args, 'url', '' ) );
+		$url       = esc_url_raw( \WP_CLI\Utils\get_flag_value( $assoc_args, 'remote-url', '' ) );
 		$type      = sanitize_key( \WP_CLI\Utils\get_flag_value( $assoc_args, 'type', '' ) );
 		$auth_type = sanitize_key( \WP_CLI\Utils\get_flag_value( $assoc_args, 'auth-type', '' ) );
 		$porcelain = \WP_CLI\Utils\get_flag_value( $assoc_args, 'porcelain', false );
@@ -157,7 +157,7 @@ class WP_MCP_AI_Pro_CLI_Connection_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 		}
 
 		if ( '' === $url ) {
-			WP_CLI::error( __( 'Please provide a --url for the connection.', 'mcp-ai-wpoos-pro' ) );
+			WP_CLI::error( __( 'Please provide a --remote-url for the connection.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( '' === $type ) {
