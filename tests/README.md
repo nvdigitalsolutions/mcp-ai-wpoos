@@ -395,3 +395,58 @@ vendor/bin/phpunit --coverage-clover coverage.xml
 - [PHPUnit Documentation](https://phpunit.de/documentation.html)
 - [WordPress Test Factory](https://make.wordpress.org/core/handbook/testing/automated-testing/writing-phpunit-tests/#fixtures-and-factories)
 - [WordPress REST API Testing](https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-custom-endpoints/#testing)
+
+---
+
+## WP-CLI Smoke & Regression Tests (v1.1.34+)
+
+These `eval-file` scripts complement the PHPUnit suite with fast WP-CLI-based
+regression gates. They require an active WordPress site with NV oOS installed.
+
+### Test Files
+
+| File | Purpose | Runtime |
+|------|---------|--------|
+| `wp-cli-smoke.php` | Tests all tools with empty args — fast regression gate | ~30s |
+| `fixtures/create.php` | Creates prerequisite data (project, lead, deal, etc.) | ~10s |
+| `fixtures/delete.php` | Cleans up fixture data | ~5s |
+| `regression/bugs.php` | Reproduces 11 known bugs to verify fixes | ~5s |
+
+### Usage
+
+```bash
+# Studio environment setup
+export TMPDIR=/tmp
+studio site start --skip-browser
+
+# Run smoke test
+studio wp --user=admin eval-file tests/wp-cli-smoke.php
+
+# Run fixture + regression + teardown
+studio wp --user=admin eval-file tests/fixtures/create.php
+studio wp --user=admin eval-file tests/regression/bugs.php
+studio wp --user=admin eval-file tests/fixtures/delete.php
+```
+
+### CI Integration
+
+```yaml
+# .github/workflows/wp-cli-tests.yml
+- name: Smoke Test
+  run: studio wp --user=admin eval-file tests/wp-cli-smoke.php
+
+- name: Fixtures
+  run: studio wp --user=admin eval-file tests/fixtures/create.php
+
+- name: Regression
+  run: studio wp --user=admin eval-file tests/regression/bugs.php
+
+- name: Teardown
+  run: studio wp --user=admin eval-file tests/fixtures/delete.php
+```
+
+### Expected Results
+
+- **Smoke test:** ~101 tools pass with empty args; ~271 return parameter errors; 0 fatals
+- **Regression:** B6, B9, B10, B11 should pass (fixed in v1.1.34)
+- **Fixtures:** Creates project, lead, deal, task, event, sprint, template, sequence
