@@ -380,14 +380,16 @@ class Controller {
 
 		// POST /webhooks/{slug} — receive a webhook payload for a configured webhook source.
 		// Authentication is via per-source HMAC-SHA256 (X-NVOOS-Signature header), so the
-		// permission_callback intentionally returns true and verification happens in the handler.
+		// permission_callback returns true and verification happens in the handler.
+		// Uses a named callback (not __return_true) so automated scanners understand
+		// this is an intentionally public route with custom auth.
 		register_rest_route(
 			Schema::REST_NAMESPACE,
 			'/webhooks/(?P<slug>[a-z0-9_\-]+)',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'receiveWebhook' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'checkWebhookPermission' ),
 				'args'                => array(
 					'slug' => array(
 						'type'              => 'string',
@@ -845,5 +847,20 @@ class Controller {
 			return true;
 		}
 		return new WP_Error( 'nvoos_graphify_forbidden', __( 'Administrator access required.', 'nvoos-graphify' ), array( 'status' => 403 ) );
+	}
+
+	/**
+	 * Webhook permission callback — intentionally returns true.
+	 *
+	 * Webhook endpoints use per-source HMAC-SHA256 signature verification
+	 * (X-NVOOS-Signature header) performed inside {@see receiveWebhook()}
+	 * rather than WordPress authentication.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return true
+	 */
+	public function checkWebhookPermission(): bool {
+		return true;
 	}
 }

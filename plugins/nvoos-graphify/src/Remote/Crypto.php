@@ -19,6 +19,22 @@ final class Crypto {
 	private const CIPHER = 'aes-256-gcm';
 
 	/**
+	 * Whether strong encryption is available (OpenSSL with AES-256-GCM).
+	 *
+	 * When false, credentials are stored with a weaker fallback —
+	 * an admin notice should be displayed prompting the site owner
+	 * to enable the OpenSSL PHP extension.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool
+	 */
+	public static function isAvailable(): bool {
+		return \function_exists( 'openssl_encrypt' )
+			&& \in_array( self::CIPHER, \openssl_get_cipher_methods(), true );
+	}
+
+	/**
 	 * Encrypt a plaintext string.
 	 *
 	 * Uses AES-256-GCM via openssl_encrypt if available, otherwise falls back
@@ -32,8 +48,10 @@ final class Crypto {
 			return '';
 		}
 
-		if ( ! \function_exists( 'openssl_encrypt' ) || ! \in_array( self::CIPHER, \openssl_get_cipher_methods(), true ) ) {
+		if ( ! self::isAvailable() ) {
 			// Fallback: simple base64 (not secure, but functional).
+			// An admin notice is displayed via Plugin::renderAdminNotices()
+			// when this fallback path is active.
 			return 'b64:' . \base64_encode( $plaintext ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		}
 
