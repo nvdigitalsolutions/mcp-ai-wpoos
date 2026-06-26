@@ -9,6 +9,7 @@
  * functionality without modifying the core chat-bundle.js file.
  *
  * @since 1.2.0
+ * @since 1.3.0 Added WebRTC transport support with graceful fallback.
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
@@ -22,7 +23,8 @@
 	}
 
 	const realtimeVoice = window.wpMcpAiRealtimeVoice || null;
-	const browserVoice = window.wpMcpAiBrowserVoice || null;
+		const browserVoice = window.wpMcpAiBrowserVoice || null;
+		const webrtcVoice = window.wpMcpAiWebRTC || null;
 
 	/**
 	 * Voice mode states.
@@ -41,6 +43,9 @@
 
 		/** Active realtime connection, if any. */
 		realtimeConn: null,
+
+		/** Active WebRTC connection, if any. */
+		webrtcConn: null,
 
 		/** Active browser voice recognizer, if any. */
 		browserRecognizer: null,
@@ -272,12 +277,109 @@
 		},
 
 		/**
-		 * Start a realtime voice session.
-		 */
+			 * Start a realtime voice session.
+			 *
+			 * Prefers WebRTC when available (lower latency, simpler audio).
+			 * Falls back to WebSocket realtime if WebRTC is unsupported.
+			 * Falls back to chained mode if neither works.
+			 */
 		startRealtimeSession: function () {
+			// Prefer WebRTC if available.
+			if (webrtcVoice && webrtcVoice.isSupported()) {
+				this.startWebRTCSession();
+				return;
+			}
+
+			// Fall back to WebSocket realtime.
+			if (realtimeVoice && realtimeVoice.isSupported()) {
+				this.startWebSocketSession();
+				return;
+			}
+
+			// Fall back to chained mode.
+			this.setMode(MODE_CHAINED, true);
+			this.setStatusMessage('Realtime voice not supported in this browser. Switched to chained mode.');
+		},
+
+		/**
+		 * Start a WebRTC realtime session (preferred transport).
+		 */
+		startWebRTCSession: function () {
+			if (!webrtcVoice || !webrtcVoice.isSupported()) {
+				this.setMode(MODE_CHAINED, true);
+				return;
+			}
+
+			const self = this;
+			const config = this.config;
+			const assistantId = config.assistantId;
+
+			if (!assistantId) {
+				this.setMode(MODE_CHAINED, true);
+				return;
+			}
+
+			this.setStatusMessage('Connecting via WebRTC…');
+
+			const buildJsonHeaders = function () {
+				return {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': config.nonce || '',
+				};
+			};
+
+			const voiceOptions = {
+				model: config.realtimeModel || '',
+				voice: config.realtimeVoice || '',
+				reasoning_effort: config.reasoningEffort || 'low',
+			};
+
+			self.webrtcConn = webrtcVoice.connectWithToken(
+				config,
+				assistantId,
+				voiceOptions,
+				buildJsonHeaders,
+				{
+					onStateChange: function (state) {
+						self.handleRealtimeState(state);
+					},
+					onTranscript: function (text) {
+						self.showTranscription('You: ' + text);
+					},
+					onResponseText: function (text) {
+						self.showTranscription('AI: ' + text);
+					},
+					onCommentary: function (text) {
+						self.showTranscription('💬 ' + text);
+					},
+					onError: function (error) {
+						self.setStatusMessage('Voice error: ' + (error.message || 'Unknown error'));
+						self.setMode(MODE_CHAINED, true);
+					},
+					onFunctionCall: function (call) {
+						self.setStatusMessage('Running tool: ' + call.name + '…');
+					},
+				}
+			);
+
+			if (!self.webrtcConn) {
+				self.setStatusMessage('Failed to start WebRTC voice. Trying WebSocket…');
+				self.startWebSocketSession();
+				return;
+			}
+
+			if (self.state) {
+				self.state.voiceRealtimeConn = self.webrtcConn;
+			}
+		},
+
+		/**
+		 * Start a WebSocket realtime session (fallback transport).
+		 */
+		startWebSocketSession: function () {
 			if (!realtimeVoice || !realtimeVoice.isSupported()) {
 				this.setMode(MODE_CHAINED, true);
-				this.setStatusMessage('Realtime voice not supported in this browser. Switched to chained mode.');
+				this.setStatusMessage('Realtime voice not supported. Switched to chained mode.');
 				return;
 			}
 
@@ -290,10 +392,9 @@
 				return;
 			}
 
-			this.setStatusMessage('Connecting to voice server…');
+			this.setStatusMessage('Connecting via WebSocket…');
 
-			// Build headers function using config.
-			const buildJsonHeaders = function (_state) {
+			const buildJsonHeaders = function () {
 				return {
 					'Content-Type': 'application/json',
 					'X-WP-Nonce': config.nonce || '',
@@ -318,9 +419,12 @@
 								self.showTranscription('AI: ' + text);
 							},
 							onResponseAudio: function (buffer) {
-								realtimeVoice.playAudioBuffer(self.instanceKey, buffer, 24000);
-							},
-							onError: function (error) {
+									realtimeVoice.playAudioBuffer(self.instanceKey, buffer, 24000);
+								},
+								onCommentary: function (text) {
+									self.showTranscription('💬 ' + text);
+								},
+								onError: function (error) {
 								self.setStatusMessage('Voice error: ' + (error.message || 'Unknown error'));
 								self.setMode(MODE_CHAINED, true);
 							},
@@ -355,7 +459,8 @@
 					'wp-mcp-ai-chat__voice-realtime--active',
 					'wp-mcp-ai-chat__voice-realtime--listening',
 					'wp-mcp-ai-chat__voice-realtime--speaking',
-					'wp-mcp-ai-chat__voice-realtime--error'
+					'wp-mcp-ai-chat__voice-realtime--error',
+					'wp-mcp-ai-chat__voice-realtime--reconnecting'
 				);
 			}
 
@@ -381,12 +486,20 @@
 		},
 
 		/**
-		 * Start push-to-talk (browser mode).
+		 * Start push-to-talk (browser mode or WebRTC).
 		 */
 		startPTT: function () {
-			if (this.currentMode !== MODE_BROWSER || !browserVoice || !browserVoice.isSTTSupported()) {
-				return;
+			if (this.currentMode === MODE_BROWSER && browserVoice && browserVoice.isSTTSupported()) {
+				this.startBrowserPTT();
+			} else if (this.currentMode === MODE_REALTIME && this.webrtcConn) {
+				this.startWebRTCPTT();
 			}
+		},
+
+		/**
+		 * Start browser-based push-to-talk.
+		 */
+		startBrowserPTT: function () {
 
 			if (this.elements.pttButton) {
 				this.elements.pttButton.classList.add('wp-mcp-ai-chat__voice-ptt--active');
@@ -426,6 +539,33 @@
 				this.browserRecognizer.stop();
 				this.browserRecognizer = null;
 			}
+			// For WebRTC PTT: commit audio buffer if mic was active.
+			if (this.webrtcConn && this.webrtcConn.sendEvent) {
+				this.webrtcConn.sendEvent({ type: 'input_audio_buffer.commit' });
+				this.webrtcConn.sendEvent({ type: 'response.create' });
+			}
+			if (this.elements.pttButton) {
+				this.elements.pttButton.classList.remove('wp-mcp-ai-chat__voice-ptt--active');
+				this.elements.pttButton.textContent = 'Hold to Talk';
+			}
+		},
+
+		/**
+		 * Start WebRTC push-to-talk (clears buffer on push, commits on release).
+		 */
+		startWebRTCPTT: function () {
+			if (!this.webrtcConn || !this.webrtcConn.sendEvent) {
+				return;
+			}
+
+			// Clear any previous audio input buffer.
+			this.webrtcConn.sendEvent({ type: 'input_audio_buffer.clear' });
+
+			if (this.elements.pttButton) {
+				this.elements.pttButton.classList.add('wp-mcp-ai-chat__voice-ptt--active');
+				this.elements.pttButton.textContent = 'Listening…';
+			}
+			this.setStatusMessage('PTT active — release to send.');
 		},
 
 		/**
@@ -481,7 +621,17 @@
 		 * End current voice session.
 		 */
 		endVoiceSession: function () {
-			// Disconnect realtime.
+			// Disconnect WebRTC.
+			if (this.webrtcConn) {
+				this.webrtcConn.close();
+				this.webrtcConn = null;
+			}
+
+			if (webrtcVoice) {
+				webrtcVoice.disconnect(this.instanceKey);
+			}
+
+			// Disconnect realtime (WebSocket fallback).
 			if (this.realtimeConn) {
 				this.realtimeConn.close();
 				this.realtimeConn = null;

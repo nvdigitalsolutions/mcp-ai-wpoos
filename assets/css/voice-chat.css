@@ -105,6 +105,56 @@
     background: #d9534f;
 }
 
+.wp-mcp-ai-chat__voice-realtime--reconnecting .wp-mcp-ai-chat__voice-status-dot {
+    background: #f0ad4e;
+    animation: wp-mcp-ai-voice-pulse-active 0.5s ease-in-out infinite;
+}
+
+/* ── WebRTC State Classes ─────────────────────────────────────────── */
+
+.wp-mcp-ai-chat__webrtc--active {
+    border-color: #5cb85c;
+}
+
+.wp-mcp-ai-chat__webrtc--connecting {
+    border-color: #f0ad4e;
+}
+
+.wp-mcp-ai-chat__webrtc--listening {
+    border-color: #d9534f;
+}
+
+.wp-mcp-ai-chat__webrtc--speaking {
+    border-color: #2271b1;
+}
+
+.wp-mcp-ai-chat__webrtc--error {
+    border-color: #d9534f;
+}
+
+.wp-mcp-ai-chat__webrtc--reconnecting {
+    border-color: #f0ad4e;
+    animation: wp-mcp-ai-voice-pulse 1s ease-in-out infinite;
+}
+
+/* ── Commentary Phase Display (preambles / tool progress) ─────────── */
+
+.wp-mcp-ai-chat__voice-commentary {
+    display: none;
+    padding: 0.35rem 0.75rem;
+    margin-bottom: 0.35rem;
+    font-size: 12px;
+    font-style: italic;
+    color: #888;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 4px;
+    border-left: 2px solid #ccc;
+}
+
+.wp-mcp-ai-chat--voice-realtime .wp-mcp-ai-chat__voice-commentary {
+    display: block;
+}
+
 @keyframes wp-mcp-ai-voice-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
