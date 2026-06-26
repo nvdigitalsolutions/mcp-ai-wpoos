@@ -8,6 +8,8 @@ use NvoosGraphify\Settings;
 
 use function absint;
 use function __;
+use function esc_html;
+use function esc_url;
 use function get_transient;
 use function sanitize_text_field;
 use function set_transient;
@@ -231,9 +233,9 @@ class RetrieveContext extends AbstractTool {
 		$lines[] = '### Entities';
 
 		foreach ( $nodes as $node ) {
-			$label = is_object( $node ) ? $node->label : ( $node['label'] ?? '' );
-			$type  = is_object( $node ) ? $node->type : ( $node['type'] ?? '' );
-			$url   = is_object( $node ) ? $node->url : ( $node['url'] ?? '' );
+			$label = is_object( $node ) ? esc_html( $node->label ) : esc_html( $node['label'] ?? '' );
+			$type  = is_object( $node ) ? esc_html( $node->type ) : esc_html( $node['type'] ?? '' );
+			$url   = is_object( $node ) ? esc_url( $node->url ) : esc_url( $node['url'] ?? '' );
 			$line  = sprintf( '- **%s** (%s)', $label, $type );
 			if ( $url ) {
 				$line .= sprintf( ' — %s', $url );
@@ -277,12 +279,12 @@ class RetrieveContext extends AbstractTool {
 	private function formatNode( $node ) {
 		if ( is_object( $node ) ) {
 			return array(
-				'node_id'    => $node->node_id,
-				'label'      => $node->label,
-				'type'       => $node->type,
-				'url'        => $node->url,
-				'degree'     => $node->degree,
-				'community'  => $node->community_id,
+				'node_id'    => esc_html( $node->node_id ),
+				'label'      => esc_html( $node->label ),
+				'type'       => esc_html( $node->type ),
+				'url'        => esc_url( $node->url ),
+				'degree'     => absint( $node->degree ),
+				'community'  => esc_html( $node->community_id ),
 				'properties' => is_string( $node->properties ) ? json_decode( $node->properties, true ) : $node->properties,
 			);
 		}
@@ -298,11 +300,11 @@ class RetrieveContext extends AbstractTool {
 	private function formatEdge( $edge ) {
 		if ( is_object( $edge ) ) {
 			return array(
-				'source'     => $edge->source_node_id,
-				'target'     => $edge->target_node_id,
-				'relation'   => $edge->relation,
-				'confidence' => $edge->confidence,
-				'provenance' => $edge->provenance,
+				'source'     => esc_html( $edge->source_node_id ),
+				'target'     => esc_html( $edge->target_node_id ),
+				'relation'   => esc_html( $edge->relation ),
+				'confidence' => (float) $edge->confidence,
+				'provenance' => esc_html( $edge->provenance ),
 			);
 		}
 		return (array) $edge;

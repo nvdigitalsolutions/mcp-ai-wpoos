@@ -307,7 +307,15 @@ final class Plugin {
 
 	/** @return void */
 	public function renderAdminNotices(): void {
-		$transientKey = Schema::TRANSIENT_PREFIX . 'build_complete';
+			// Warn when OpenSSL is unavailable (credentials stored with weak fallback).
+			if ( class_exists( 'NvoosGraphify\Remote\Crypto' ) && ! \NvoosGraphify\Remote\Crypto::isAvailable() ) {
+				printf(
+					'<div class="notice notice-warning"><p>%s</p></div>',
+					esc_html__( 'NV oOS Graphify: The OpenSSL PHP extension is not available. Remote-source credentials (API keys, tokens) will be stored with weak encryption. Please enable the OpenSSL extension for secure credential storage.', 'nvoos-graphify' )
+				);
+			}
+
+			$transientKey = Schema::TRANSIENT_PREFIX . 'build_complete';
 		if ( get_transient( $transientKey ) ) {
 			delete_transient( $transientKey );
 			printf(
