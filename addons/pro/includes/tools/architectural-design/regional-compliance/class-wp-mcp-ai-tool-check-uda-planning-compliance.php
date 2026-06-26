@@ -171,7 +171,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',

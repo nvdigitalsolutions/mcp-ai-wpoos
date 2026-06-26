@@ -154,7 +154,7 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? (int) $context['user_id'] : 0;
+		$user_id = isset( $context['user_id'] ) ? (int) $context['user_id'] : get_current_user_id();
 
 		if ( ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(

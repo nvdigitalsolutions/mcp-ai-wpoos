@@ -60,6 +60,7 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai thread list --assistant=123
 	 *     $ wp mcp-ai thread list --status=archived --format=json
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -138,6 +139,7 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai thread get 42
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -222,6 +224,7 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai thread delete 42 --yes
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -290,6 +293,7 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai thread compact 42
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */

@@ -60,6 +60,7 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai memory recall --query="project deadlines"
 	 *     $ wp mcp-ai memory recall --importance=high --format=json
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -178,6 +179,7 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai memory store "The client prefers email communication" --importance=high
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -237,6 +239,7 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai memory forget abc123def456
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -287,6 +290,7 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai memory audit --limit=20
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -345,6 +349,7 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai memory stats
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */

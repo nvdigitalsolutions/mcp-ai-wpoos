@@ -57,6 +57,7 @@ class WP_MCP_AI_CLI_Transcript_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai transcript mine --assistant=42
 	 *     $ wp mcp-ai transcript mine --since=2026-06-01 --min-messages=5
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -137,6 +138,7 @@ class WP_MCP_AI_CLI_Transcript_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai transcript status abc123
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -211,6 +213,7 @@ class WP_MCP_AI_CLI_Transcript_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai transcript cancel abc123
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -276,6 +279,7 @@ class WP_MCP_AI_CLI_Transcript_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai transcript list --assistant=42
 	 *
 	 * @subcommand list
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */

@@ -63,6 +63,7 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai provider list
 	 *     $ wp mcp-ai provider list --format=json
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -120,6 +121,7 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai provider test openai
 	 *     $ wp mcp-ai provider test ollama
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -223,6 +225,7 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai provider models openai
 	 *     $ wp mcp-ai provider models ollama
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */

@@ -42,6 +42,7 @@ class WP_MCP_AI_CLI_Cron_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai cron list
 	 *     $ wp mcp-ai cron list --format=json
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -115,6 +116,7 @@ class WP_MCP_AI_CLI_Cron_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai cron run abc123def456
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -187,6 +189,7 @@ class WP_MCP_AI_CLI_Cron_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai cron delete abc123 --yes
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -249,6 +252,7 @@ class WP_MCP_AI_CLI_Cron_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai cron clear --yes
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
