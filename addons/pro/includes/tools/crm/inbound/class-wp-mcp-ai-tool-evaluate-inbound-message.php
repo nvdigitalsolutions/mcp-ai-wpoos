@@ -224,6 +224,7 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 		);
 
 		// --- Step 1: Classify intent ---
+		$classification = null;
 		if ( class_exists( 'WP_MCP_AI_CRM_Classifier' ) ) {
 			$classification = WP_MCP_AI_CRM_Classifier::classify( $message_body, $channel );
 			if ( ! is_wp_error( $classification ) ) {
@@ -232,6 +233,8 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 					$result['message'] = __( 'Message classified as spam — skipped further processing.', 'mcp-ai-wpoos-pro' );
 					return $result;
 				}
+			} else {
+				$classification = null;
 			}
 		}
 
@@ -354,10 +357,11 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 
 		// --- Step 4: Score lead ---
 		if ( $contact_id && class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$classification_intent = ( is_array( $classification ) && isset( $classification['intent'] ) ) ? $classification['intent'] : '';
 			$score = WP_MCP_AI_CRM_Engine::calculate_lead_score(
 				array(
 					'fit'        => 40,
-					'intent'     => isset( $classification['intent'] ) && in_array( $classification['intent'], array( 'demo_request', 'pricing_inquiry' ), true ) ? 80 : 30,
+					'intent'     => in_array( $classification_intent, array( 'demo_request', 'pricing_inquiry' ), true ) ? 80 : 30,
 					'engagement' => 50,
 					'recency'    => 90,
 				)
@@ -372,18 +376,22 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 		if ( $contact_id && class_exists( 'WP_MCP_AI_CRM_Classifier' ) ) {
 			if ( 'meddic' === $framework ) {
 				$qual = WP_MCP_AI_CRM_Classifier::extract_meddic( $message_body );
-				update_post_meta( $contact_id, 'meddic_assessment', $qual );
-				$result['pipeline']['meddic'] = $qual;
+				if ( ! is_wp_error( $qual ) ) {
+					update_post_meta( $contact_id, 'meddic_assessment', $qual );
+					$result['pipeline']['meddic'] = $qual;
+				}
 			} else {
 				$qual = WP_MCP_AI_CRM_Classifier::extract_bant( $message_body );
-				update_post_meta( $contact_id, 'bant_assessment', $qual );
-				$result['pipeline']['bant'] = $qual;
+				if ( ! is_wp_error( $qual ) ) {
+					update_post_meta( $contact_id, 'bant_assessment', $qual );
+					$result['pipeline']['bant'] = $qual;
+				}
 			}
 		}
 
 		// --- Step 6: Auto-reply (if enabled) ---
 		if ( ! empty( $arguments['auto_reply'] ) && $contact_id ) {
-			$intent                           = isset( $classification['intent'] ) ? $classification['intent'] : 'general';
+			$intent                           = ( is_array( $classification ) && isset( $classification['intent'] ) ) ? $classification['intent'] : 'general';
 			$auto_msg                         = sprintf(
 				/* translators: %s: intent type */
 				__( 'Thanks for reaching out! Our team will get back to you shortly. (Auto-reply for: %s)', 'mcp-ai-wpoos-pro' ),
@@ -396,7 +404,7 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 			);
 
 			// If this is a support request, include ticket info in auto-reply.
-			if ( isset( $classification['intent'] ) && 'support_request' === $classification['intent'] && $contact_id ) {
+			if ( is_array( $classification ) && isset( $classification['intent'] ) && 'support_request' === $classification['intent'] && $contact_id ) {
 				/**
 				 * Fires when an inbound support request is detected.
 				 *

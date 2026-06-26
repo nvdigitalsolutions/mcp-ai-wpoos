@@ -60,10 +60,11 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai thread list --assistant=123
 	 *     $ wp mcp-ai thread list --status=archived --format=json
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
-	public function list_( $args, $assoc_args ) {
+	public function list( $args, $assoc_args ) {
 		$manager = $this->get_manager();
 
 		global $wpdb;
@@ -94,16 +95,20 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		$items = array();
 		foreach ( $threads as $t ) {
-			$items[] = array(
-				'ID'        => $t->id,
-				'Title'     => mb_strimwidth( $t->title, 0, 50, '…' ),
-				'Status'    => $t->status,
-				'User'      => $t->user_id,
-				'Assistant' => $t->assistant_id,
-				'Model'     => $t->model_name ? $t->model_name : '-',
-				'Messages'  => $t->message_count,
-				'Updated'   => $t->updated_at,
-			);
+			$title_short = function_exists( 'mb_strimwidth' )
+					? mb_strimwidth( $t->title, 0, 50, '…' )
+					: ( strlen( $t->title ) > 50 ? substr( $t->title, 0, 49 ) . '…' : $t->title );
+
+				$items[] = array(
+					'ID'        => $t->id,
+					'Title'     => $title_short,
+					'Status'    => $t->status,
+					'User'      => $t->user_id,
+					'Assistant' => $t->assistant_id,
+					'Model'     => $t->model_name ? $t->model_name : '-',
+					'Messages'  => $t->message_count,
+					'Updated'   => $t->updated_at,
+				);
 		}
 
 		$this->format_output( $items, $format );
@@ -134,6 +139,7 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai thread get 42
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -218,6 +224,7 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai thread delete 42 --yes
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -286,6 +293,7 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai thread compact 42
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */

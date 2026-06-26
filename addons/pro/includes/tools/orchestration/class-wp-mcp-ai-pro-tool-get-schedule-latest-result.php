@@ -83,7 +83,7 @@ class WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result implements WP_MCP_AI_Tool_In
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id     = isset( $context['user_id'] ) ? (int) $context['user_id'] : 0;
+		$user_id     = isset( $context['user_id'] ) ? (int) $context['user_id'] : get_current_user_id();
 		$schedule_id = isset( $arguments['schedule_id'] ) ? sanitize_text_field( $arguments['schedule_id'] ) : '';
 
 		if ( ! user_can( $user_id, 'read_private_posts' ) && ! user_can( $user_id, 'manage_options' ) ) {

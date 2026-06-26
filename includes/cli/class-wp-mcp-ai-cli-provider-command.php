@@ -63,24 +63,33 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai provider list
 	 *     $ wp mcp-ai provider list --format=json
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
-	public function list_( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+	public function list( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 		$format = $assoc_args['format'] ?? 'table';
 		$items  = array();
 
 		$all_providers = self::$provider_labels;
 
 		// Discover active providers via the model config when available.
-		if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
-			$active = WP_MCP_AI_Model_Config::get_active_providers();
+		if ( class_exists( 'WP_MCP_AI_Model_Config' ) && method_exists( 'WP_MCP_AI_Model_Config', 'get_available_providers' ) ) {
+			$available = WP_MCP_AI_Model_Config::get_available_providers();
 		} else {
-			$active = array();
+			// Fallback: check settings for enabled providers the old way.
+			$settings  = get_option( 'wp_mcp_ai_settings', array() );
+			$available = array();
+			foreach ( array_keys( self::$provider_labels ) as $slug ) {
+				$enable_key = 'enable_' . $slug;
+				if ( ! empty( $settings[ $enable_key ] ) ) {
+					$available[ $slug ] = self::$provider_labels[ $slug ];
+				}
+			}
 		}
 
 		foreach ( $all_providers as $slug => $label ) {
-			$enabled = in_array( $slug, $active, true );
+			$enabled = isset( $available[ $slug ] );
 			$items[] = array(
 				'Provider' => $label,
 				'Slug'     => $slug,
@@ -94,7 +103,7 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 				/* translators: %1$d: total provider count, %2$d: enabled provider count */
 				__( 'Found %1$d providers (%2$d enabled).', 'mcp-ai-wpoos' ),
 				count( $items ),
-				count( $active )
+				count( $available )
 			)
 		);
 	}
@@ -112,6 +121,7 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai provider test openai
 	 *     $ wp mcp-ai provider test ollama
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -127,6 +137,16 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 			$this->error( $client->get_error_message() );
 		}
 
+		if ( ! method_exists( $client, 'test_connection' ) ) {
+			$this->error(
+				sprintf(
+					/* translators: %s: provider name */
+					__( '%s does not support connection testing.', 'mcp-ai-wpoos' ),
+					self::$provider_labels[ $slug ] ?? $slug
+				)
+			);
+		}
+
 		WP_CLI::log(
 			sprintf(
 				/* translators: %s: provider name */
@@ -135,8 +155,13 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 			)
 		);
 
-		$start   = microtime( true );
-		$result  = $client->test_connection();
+		$start  = microtime( true );
+		$result = null;
+		try {
+			$result = $client->test_connection();
+		} catch ( \Exception $e ) {
+			$result = new WP_Error( 'connection_test_exception', $e->getMessage() );
+		}
 		$elapsed = round( ( microtime( true ) - $start ) * 1000, 2 );
 
 		if ( is_wp_error( $result ) ) {
@@ -200,6 +225,7 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai provider models openai
 	 *     $ wp mcp-ai provider models ollama
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -224,7 +250,17 @@ class WP_MCP_AI_CLI_Provider_Command extends WP_MCP_AI_CLI_Base_Command {
 			)
 		);
 
-		$models = $client->list_models();
+		try {
+			$models = $client->list_models();
+		} catch ( \Exception $e ) {
+			$this->error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to list models: %s', 'mcp-ai-wpoos' ),
+					$e->getMessage()
+				)
+			);
+		}
 
 		if ( is_wp_error( $models ) ) {
 			$this->error( $models->get_error_message() );

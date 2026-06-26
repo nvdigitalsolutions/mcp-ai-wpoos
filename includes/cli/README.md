@@ -20,19 +20,26 @@ The folder's external contract is the **`wp mcp-ai <subcommand>`** invocation, n
 | Symbol | File | Description | Used by |
 |---|---|---|---|
 | `WP_MCP_AI_CLI_Base_Command` (abstract) | `class-wp-mcp-ai-cli-base-command.php` | Abstract base for all concrete CLI commands | All concrete commands in this folder |
-| `WP_MCP_AI_CLI_Assistant_Command` → `wp mcp-ai assistant` | `class-wp-mcp-ai-cli-assistant-command.php` | Manage assistants (`update`, `import`) | WP-CLI runtime |
-| `WP_MCP_AI_CLI_Bulk_Command` → `wp mcp-ai bulk` | `class-wp-mcp-ai-cli-bulk-command.php` | Bulk content operations (`retry-failed`) | WP-CLI runtime |
-| `WP_MCP_AI_CLI_Cache_Command` → `wp mcp-ai cache` | `../class-wp-mcp-ai-cli-command.php` | Clear plugin caches | WP-CLI runtime |
-| `WP_MCP_AI_CLI_Content_Command` → `wp mcp-ai content` | `class-wp-mcp-ai-cli-content-command.php` | Content management | WP-CLI runtime |
-| `WP_MCP_AI_CLI_Credential_Command` → `wp mcp-ai credential` | `class-wp-mcp-ai-cli-credential-command.php` | Credential management (`list` supports optional assistant-id) | WP-CLI runtime |
-| `WP_MCP_AI_CLI_DLQ` → `wp mcp-ai dlq` | `class-wp-mcp-ai-cli-dlq.php` | Dead-letter queue management; extends `Base_Command`, `--dry-run` for `purge`/`clear` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Assistant_Command` → `wp mcp-ai assistant` | `class-wp-mcp-ai-cli-assistant-command.php` | Full CRUD: `list`, `get`, `create`, `delete`, `update`, `import`, `export` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Approval_Command` → `wp mcp-ai approval` | `class-wp-mcp-ai-cli-approval-command.php` | Approval workflow: `list`, `approve`, `reject` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Bulk_Command` → `wp mcp-ai bulk` | `class-wp-mcp-ai-cli-bulk-command.php` | Bulk operations: `audit`, `cleanup-artifacts`, `dispatch`, `retry-failed`, `status` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Cache_Command` → `wp mcp-ai cache` | `../class-wp-mcp-ai-cli-command.php` | `clear` (use `wp mcp-ai cache clear` directly) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Chat_Command` → `wp mcp-ai chat` | `class-wp-mcp-ai-cli-chat-command.php` | Send one-shot message: accepts `--assistant`, `--assistant-id`, `--model`, `--provider`, `--stream` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Content_Command` → `wp mcp-ai content` | `class-wp-mcp-ai-cli-content-command.php` | `auto-categorize` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Credential_Command` → `wp mcp-ai credential` | `class-wp-mcp-ai-cli-credential-command.php` | `list`, `issue`, `revoke` (gated: `manage_options`) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Cron_Command` → `wp mcp-ai cron` | `class-wp-mcp-ai-cli-cron-command.php` | `list`, `run`, `delete`, `clear` (gated: `manage_options`) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_DLQ` → `wp mcp-ai dlq` | `class-wp-mcp-ai-cli-dlq.php` | Dead-letter queue: `list`, `stats`, `retry`, `delete`, `dismiss`, `purge`, `clear` | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Health_Command` → `wp mcp-ai health` | `../class-wp-mcp-ai-cli-command.php` | Unified diagnostic health check | WP-CLI runtime |
-| `WP_MCP_AI_CLI_Log_Command` → `wp mcp-ai log` | `class-wp-mcp-ai-cli-log-command.php` | Log viewing | WP-CLI runtime |
-| `WP_MCP_AI_CLI_Measurement_Command` → `wp mcp-ai measurement` | `class-wp-mcp-ai-cli-measurement-command.php` | Performance measurements | WP-CLI runtime |
-| `WP_MCP_AI_CLI_Settings_Command` → `wp mcp-ai settings` | `class-wp-mcp-ai-cli-settings-command.php` | Plugin settings management | WP-CLI runtime |
-| `WP_MCP_AI_CLI_SLA` → `wp mcp-ai sla` | `class-wp-mcp-ai-cli-sla.php` | Service-level agreement tracking; extends `Base_Command` | WP-CLI runtime |
-| `WP_MCP_AI_CLI_Slash_Command` → `wp mcp-ai slash` | `class-wp-mcp-ai-cli-slash-command.php` | Slash-command management | WP-CLI runtime |
-| `WP_MCP_AI_CLI_Tool_Command` → `wp mcp-ai tool` | `class-wp-mcp-ai-cli-tool-command.php` | Tool registry management | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Log_Command` → `wp mcp-ai log` | `class-wp-mcp-ai-cli-log-command.php` | `errors`, `activity`, `clear`, `prune` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Measurement_Command` → `wp mcp-ai measurement` | `class-wp-mcp-ai-cli-measurement-command.php` | CI-grade: `run`, `alert_check`, `list_runs` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Memory_Command` → `wp mcp-ai memory` | `class-wp-mcp-ai-cli-memory-command.php` | `recall`, `store`, `forget`, `stats`, `audit` (accepts `--assistant`/`--assistant-id`) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Provider_Command` → `wp mcp-ai provider` | `class-wp-mcp-ai-cli-provider-command.php` | `list`, `test`, `models` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Settings_Command` → `wp mcp-ai settings` | `class-wp-mcp-ai-cli-settings-command.php` | `get`, `set`, `reset` (gated: `manage_options`) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_SLA` → `wp mcp-ai sla` | `class-wp-mcp-ai-cli-sla.php` | `status`, `tune`, `analyze`, `enable`, `disable` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Slash_Command` → `wp mcp-ai slash` | `class-wp-mcp-ai-cli-slash-command.php` | `execute`, `list`, `help` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Thread_Command` → `wp mcp-ai thread` | `class-wp-mcp-ai-cli-thread-command.php` | `list`, `get`, `delete`, `compact` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Tool_Command` → `wp mcp-ai tool` | `class-wp-mcp-ai-cli-tool-command.php` | `list`, `enable`, `disable` (gated: `manage_options`; disable requires `--yes`) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Transcript_Command` → `wp mcp-ai transcript` | `class-wp-mcp-ai-cli-transcript-command.php` | `mine`/`list`, `status`, `cancel` (accepts `--assistant`/`--assistant-id`) | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Version_Command` → `wp mcp-ai version` | `../class-wp-mcp-ai-cli-command.php` | Plugin version information | WP-CLI runtime |
 
 The umbrella verbs (`mcp-ai`, `mcp-ai plugins`, `mcp-ai queue`, `mcp-ai token`, `mcp-ai rabbitmq`, `mcp-ai stdio`) live in the top-level `includes/class-wp-mcp-ai-cli-command.php` for historical reasons.
@@ -53,8 +60,11 @@ Folder-specific deltas:
 - Every concrete command extends `WP_MCP_AI_CLI_Base_Command` (which itself extends `WP_CLI_Command`) so progress bars, batch counters, and error/success summaries stay consistent — **including `DLQ` and `SLA`**, which were migrated to extend `Base_Command`.
 - Each file MUST be a no-op outside WP-CLI — guard with `if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) { return; }` at the top.
 - Operator-facing output goes through `WP_CLI::log` / `WP_CLI::success` / `WP_CLI::warning` / `WP_CLI::error`; never `echo` or `print_r`.
-- Mutating subcommands MUST honour the same capability checks as their REST/tool counterparts — the CLI is not an authentication bypass.
+- Mutating subcommands MUST call `$this->require_capability( 'manage_options' )` (or the specific tool capability) after input validation. The CLI is not an authentication bypass.
+- All subcommands that touch the database, options, or post types MUST declare `@when after_wp_load` in their docblock.
+- List subcommands SHOULD use `list` as the method name (PHP 7.4+ supported). Use `@subcommand list` annotation if a different internal name is needed.
 - Long-running subcommands SHOULD accept `--dry-run` and `--batch-size=` flags where applicable; see `WP_MCP_AI_CLI_Bulk_Command` for the canonical shape.
+- Use `$this->get_format( $assoc_args )` for consistent format parsing instead of raw `$assoc_args['format'] ?? 'table'`.
 
 ## Tests
 

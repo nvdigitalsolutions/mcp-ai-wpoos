@@ -17,15 +17,15 @@ Hosts the Pro-only WP-CLI command handlers (`wp mcp-ai connection`, `task`, `pro
 
 The contract is the **`wp mcp-ai <subcommand>`** invocation, not the PHP class. Operators script against the CLI command; do not call the classes directly.
 
-| Symbol | File | Used by |
-|---|---|---|
-| `WP_MCP_AI_Pro_CLI_Base_Command` (abstract) | `class-wp-mcp-ai-pro-cli-base-command.php` | All concrete Pro commands — extends Base's `WP_MCP_AI_CLI_Base_Command`; adds `assert_pro_loaded()` + `assert_toolkit_enabled()` |
-| `WP_MCP_AI_Pro_CLI_Connection_Command` → `wp mcp-ai connection` | `class-wp-mcp-ai-pro-cli-connection-command.php` | Remote-site connections: create, CRUD (mesh peers, Shopify, WP) |
-| `WP_MCP_AI_Pro_CLI_Project_Command` → `wp mcp-ai project` | `class-wp-mcp-ai-pro-cli-project-command.php` | Project CPT CRUD, update + task plan ops |
-| `WP_MCP_AI_Pro_CLI_Task_Command` → `wp mcp-ai task` | `class-wp-mcp-ai-pro-cli-task-command.php` | Task CPT CRUD, update + dependencies + bulk ops |
-| `WP_MCP_AI_Pro_CLI_Mcp_Server_Command` → `wp mcp-ai mcp-server` | `class-wp-mcp-ai-pro-cli-mcp-server-command.php` | Per-toolkit MCP servers: list/show/enable/disable/tools |
-| `WP_MCP_AI_Pro_CLI_Toolkit_Command` → `wp mcp-ai toolkit` | `class-wp-mcp-ai-pro-cli-toolkit-command.php` | Toolkit enable/disable, status, configuration |
-| `WP_MCP_AI_Pro_CLI_Status_Command` → `wp mcp-ai pro status` | `class-wp-mcp-ai-pro-cli-status-command.php` | Pro addon dependency + toolkit health snapshot |
+| Symbol | File | Subcommands | Used by |
+|---|---|---|---|
+| `WP_MCP_AI_Pro_CLI_Base_Command` (abstract) | `class-wp-mcp-ai-pro-cli-base-command.php` | — extends Base's `WP_MCP_AI_CLI_Base_Command`; adds `assert_pro_loaded()` + `assert_toolkit_enabled()` | All concrete Pro commands |
+| `WP_MCP_AI_Pro_CLI_Connection_Command` → `wp mcp-ai connection` | `class-wp-mcp-ai-pro-cli-connection-command.php` | `list`, `create`, `get`, `delete`, `test`. Use `--remote-url` (not `--url`) for create. | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Project_Command` → `wp mcp-ai project` | `class-wp-mcp-ai-pro-cli-project-command.php` | `list`, `create`, `get`, `update`, `delete`. Requires `enable_project_management` toolkit. | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Task_Command` → `wp mcp-ai task` | `class-wp-mcp-ai-pro-cli-task-command.php` | `list`, `create`, `get`, `update`, `delete`, `complete`, `dependencies`. Requires `enable_project_management` toolkit. | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Mcp_Server_Command` → `wp mcp-ai mcp-server` | `class-wp-mcp-ai-pro-cli-mcp-server-command.php` | `list`, `get`, `enable`, `disable`, `tools`, `token-generate`, `token-list`, `token-revoke`. Reference implementation. | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Toolkit_Command` → `wp mcp-ai toolkit` | `class-wp-mcp-ai-pro-cli-toolkit-command.php` | `list`, `enable`, `disable` (accepts `--yes`). 24 toolkits. | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Status_Command` → `wp mcp-ai pro status` | `class-wp-mcp-ai-pro-cli-status-command.php` | Default action showing Pro version, core version, active toolkits, remote connections. | WP-CLI runtime |
 
 ## Inputs / Outputs / Neighbors
 
@@ -40,11 +40,12 @@ The contract is the **`wp mcp-ai <subcommand>`** invocation, not the PHP class. 
 
 Folder-specific deltas:
 
-- Every concrete command extends `WP_MCP_AI_Pro_CLI_Base_Command` (which extends Base's `WP_MCP_AI_CLI_Base_Command`) so progress bars, batch counters, and error/success summaries stay consistent with Base.
+- Every concrete command extends `WP_MCP_AI_Pro_CLI_Base_Command` (which extends Base's `WP_MCP_AI_CLI_Base_Command`) so progress bars, batch counters, capability checks, and error/success summaries stay consistent with Base.
 - Each file MUST be a no-op outside WP-CLI — guard with `if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) { return; }` near the top, and gate `WP_CLI::add_command(…)` on `class_exists( 'WP_CLI' )`.
-- Always call `assert_pro_loaded()` first and `assert_toolkit_enabled( $setting_key, $label )` before invoking toolkit-scoped operations — the CLI must not surface tools whose toolkit is disabled in settings.
+- Always call `assert_pro_loaded()` first and `assert_toolkit_enabled( $setting_key, $label )` before invoking toolkit-scoped operations.
+- Mutating subcommands MUST call `$this->require_capability( 'manage_options' )` (inherited from base) after input validation.
 - Output goes through `WP_CLI::log` / `WP_CLI::success` / `WP_CLI::warning` / `WP_CLI::error` — never `echo` or `print_r`.
-- Mutating subcommands MUST honour the same capability checks as their REST/tool counterparts — the CLI is not an authentication bypass.
+- Use `$this->get_format( $assoc_args )` for consistent format parsing (inherited from base).
 - Long-running subcommands SHOULD accept `--dry-run` and `--batch-size=` flags where applicable; mirror the shapes used by Base's `WP_MCP_AI_CLI_Bulk_Command`.
 
 ## Tests
