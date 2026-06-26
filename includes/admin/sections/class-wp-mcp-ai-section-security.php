@@ -890,7 +890,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				),
 				array(
 					'label' => __( 'Approvals Queue', 'mcp-ai-wpoos' ),
-					'url'   => admin_url( 'admin.php?page=nvoos-pro-approvals' ),
+					'url'   => admin_url( 'admin.php?page=mcp-ai-approvals' ),
 					'icon'  => 'dashicons-yes-alt',
 				),
 				array(
