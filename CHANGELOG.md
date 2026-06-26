@@ -1,5 +1,59 @@
 # oOS – Changelog
 
+## [Unreleased] — GPT-Realtime-2 Voice Models Upgrade
+
+### Added — OpenAI Realtime API GA Migration
+
+- **Migrated from deprecated beta endpoints to GA Realtime API** (`/v1/realtime/client_secrets`, `/v1/realtime/calls`).
+- **Nested GA session format**: `session.type`, `audio.input/output` structure replacing flat beta format.
+- **Removed deprecated `OpenAI-Beta` header**; added `OpenAI-Safety-Identifier` with hashed user ID for abuse monitoring.
+- **Default model updated**: `gpt-realtime` → `gpt-realtime-2` with 128K context and reasoning.
+- **Voice list updated**: added `cedar`; removed deprecated `fable`/`nova`/`onyx`.
+
+### Added — WebRTC Transport (Primary)
+
+- **New `chat-webrtc-service.js`** — browser WebRTC peer connection manager with ephemeral token and unified SDP relay flows.
+- **New REST endpoints**: `POST /mcp-ai/v1/realtime/token` (ephemeral token minting) and `POST /mcp-ai/v1/realtime/session` (SDP relay).
+- **WebSocket fallback preserved** in updated `chat-voice-realtime-service.js` with GA event names.
+- **WebRTC-first transport selection** in voice mode integration with automatic fallback.
+- **ICE reconnection** with exponential backoff (max 3 attempts).
+
+### Added — GPT-Realtime-2 Reasoning & Prompting
+
+- **Configurable reasoning effort**: `minimal` / `low` (default) / `medium` / `high` / `xhigh` via admin setting `realtime_reasoning_effort`.
+- **12-section structured prompt template**: Role, Tone, Language, Reasoning, Message Channels, Preambles, Verbosity, Tools, Unclear Audio, Entity Capture, Long Context, Escalation.
+- **Per-section filter hooks**: `wp_mcp_ai_realtime_prompt_{section}` for prompt customization.
+- **Parallel tool calling** enabled by default in session config.
+- **Commentary phase support** — `onCommentary` callback for preamble/tool-progress display.
+
+### Added — New Models: Translation & Transcription
+
+- **GPT-Realtime-Translate provider** (`WP_MCP_AI_OpenAI_Realtime_Translate_Client`): 70+ input → 13 output languages.
+- **GPT-Realtime-Whisper provider** (`WP_MCP_AI_OpenAI_Realtime_Whisper_Client`): Streaming STT with configurable latency.
+- **Translation JS service** (`chat-translation-service.js`) and **transcription JS service** (`chat-transcription-realtime-service.js`).
+- **Provider registration** with voice controller including translate/whisper mappings.
+
+### Added — Voice Tooling & UI
+
+- **`wait_for_user` tool** — no-op tool for handling silence, background noise, and non-addressed audio.
+- **PTT (Push-to-Talk) mode** extended to WebRTC connections with buffer clear/commit flow.
+- **Reconnecting state CSS** and **commentary phase display** styles in `voice-chat.css`.
+- **New admin settings defaults**: `realtime_reasoning_effort`, `realtime_preambles_enabled`, `voice_realtime_transport`, `realtime_translate_input_lang`, `realtime_translate_output_lang`, `realtime_whisper_latency_delay`, `realtime_safety_identifier_enabled`.
+
+### Changed
+
+- `openai_realtime_model` default changed from `gpt-realtime` to `gpt-realtime-2`.
+- `WP_MCP_AI_OpenAI_Realtime_Client` rewritten for GA endpoints and nested session format.
+- `chat-voice-realtime-service.js` updated for GA event names (`response.output_audio.delta`, `response.output_audio_transcript.delta`).
+- `chat-voice-mode-integration.js` updated with WebRTC-first transport and commentary support.
+- Voice REST controller expanded with 2 new routes, reasoning effort param, and translation language info.
+
+### Documentation
+
+- **Proposal document**: `docs/project/proposals/GPT-REALTIME-2-UPGRADE-PROPOSAL.md`.
+- **Implementation plan**: `docs/project/proposals/GPT-REALTIME-2-IMPLEMENTATION-PLAN.md` (1,166-line comprehensive plan).
+- **ROADMAP.md** updated with v1.3.0 milestone details.
+
 ## [1.1.33] - 2026-06-24
 
 ### Added — WP 7.0 Connectors Credential Integration (PR #5458)

@@ -194,10 +194,25 @@ const builds = [
 		outfile: 'assets/js/offline-chat-manager.min.js',
 		...commonOptions,
 	},
-	// Voice enhancement files (realtime, browser, integration)
+	// Voice enhancement files (realtime, webrtc, browser, integration)
 	{
 		entryPoints: ['assets/js/chat-voice-realtime-service.js'],
 		outfile: 'assets/js/chat-voice-realtime-service.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/chat-webrtc-service.js'],
+		outfile: 'assets/js/chat-webrtc-service.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/chat-translation-service.js'],
+		outfile: 'assets/js/chat-translation-service.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/chat-transcription-realtime-service.js'],
+		outfile: 'assets/js/chat-transcription-realtime-service.min.js',
 		...commonOptions,
 	},
 	{

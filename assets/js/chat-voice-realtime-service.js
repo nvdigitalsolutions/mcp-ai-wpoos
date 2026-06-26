@@ -2,13 +2,18 @@
  * Realtime Voice Service for NV oOS Chat
  *
  * Provides WebSocket-based realtime speech-to-speech (S2S) voice chat using
- * OpenAI's Realtime API and Google Gemini's Multimodal Live API.
+ * OpenAI's GA Realtime API and Google Gemini's Multimodal Live API.
  *
  * This is a self-contained service that connects to the voice session endpoint,
  * manages the WebSocket lifecycle, handles audio I/O through the browser's
  * MediaStream APIs, and integrates with the chat UI for transcription display.
  *
+ * Note: WebRTC is the recommended transport for browsers (see chat-webrtc-service.js).
+ * This WebSocket service is kept as a fallback for environments that don't
+ * support WebRTC or for server-side audio pipelines.
+ *
  * @since 1.2.0
+ * @since 1.3.0 Updated for GA event names and session format.
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
@@ -208,7 +213,7 @@
 						}
 						return;
 					}
-					wsUrl = sessionConfig.endpoint + '?model=' + encodeURIComponent(sessionConfig.model || 'gpt-realtime');
+					wsUrl = sessionConfig.endpoint + '?model=' + encodeURIComponent(sessionConfig.model || 'gpt-realtime-2');
 					isOpenAI = true;
 				} else if (sessionConfig.type === 'gemini_live') {
 					wsUrl = sessionConfig.ws_url;
@@ -235,22 +240,30 @@
 					reconnectAttempts = 0;
 
 					if (isOpenAI) {
-						// Send session update with configuration.
+						// Send session update with GA session format.
 						ws.send(JSON.stringify({
 							type: 'session.update',
 							session: {
-								modalities: ['text', 'audio'],
-								input_audio_format: 'pcm16',
-								output_audio_format: 'pcm16',
-								turn_detection: {
-									type: 'server_vad',
-									threshold: 0.5,
-									prefix_padding_ms: 300,
-									silence_duration_ms: 700,
+								type: 'realtime',
+								model: sessionConfig.model || 'gpt-realtime-2',
+								output_modalities: ['audio', 'text'],
+								audio: {
+									input: {
+										format: { type: 'audio/pcm', rate: 24000 },
+										turn_detection: {
+											type: 'semantic_vad',
+											threshold: 0.5,
+											prefix_padding_ms: 300,
+											silence_duration_ms: 700,
+										},
+									},
+									output: {
+										format: { type: 'audio/pcm' },
+										voice: sessionConfig.voice || 'marin',
+									},
 								},
 								tools: sessionConfig.tools || [],
 								instructions: sessionConfig.instructions || '',
-								voice: sessionConfig.voice || 'marin',
 								temperature: 0.8,
 							},
 						}));
@@ -313,69 +326,85 @@
 			 */
 			function handleServerMessage(msg, isOpenAI) {
 				if (isOpenAI) {
-					// OpenAI Realtime protocol.
-					switch (msg.type) {
-						case 'session.created':
-						case 'session.updated':
-							emitState('active');
-							break;
+					// OpenAI Realtime GA protocol.
+						switch (msg.type) {
+							case 'session.created':
+							case 'session.updated':
+								emitState('active');
+								break;
 
-						case 'input_audio_buffer.speech_started':
-							emitState('listening');
-							break;
+							case 'input_audio_buffer.speech_started':
+								emitState('listening');
+								break;
 
-						case 'input_audio_buffer.speech_stopped':
-							emitState('processing');
-							break;
+							case 'input_audio_buffer.speech_stopped':
+								emitState('processing');
+								break;
 
-						case 'conversation.item.input_audio_transcription.completed':
-							if (callbacks.onTranscript && msg.transcript) {
-								callbacks.onTranscript(msg.transcript);
-							}
-							break;
-
-						case 'response.audio_transcript.delta':
-							if (callbacks.onResponseText && msg.delta) {
-								callbacks.onResponseText(msg.delta);
-							}
-							break;
-
-						case 'response.audio.delta':
-							if (callbacks.onResponseAudio && msg.delta) {
-								// Base64-encoded PCM16 audio.
-								const binaryStr = atob(msg.delta);
-								const bytes = new Uint8Array(binaryStr.length);
-								for (let i = 0; i < binaryStr.length; i++) {
-									bytes[i] = binaryStr.charCodeAt(i);
+							case 'conversation.item.input_audio_transcription.completed':
+								if (callbacks.onTranscript && msg.transcript) {
+									callbacks.onTranscript(msg.transcript);
 								}
-								callbacks.onResponseAudio(bytes.buffer);
-							}
-							break;
+								break;
 
-						case 'response.audio.done':
-							emitState('active');
-							break;
+							case 'response.output_audio_transcript.delta':
+								if (callbacks.onResponseText && msg.delta) {
+									callbacks.onResponseText(msg.delta);
+								}
+								break;
 
-						case 'response.function_call_arguments.done':
-							if (callbacks.onFunctionCall && msg.name) {
-								let args = {};
-								try {
-									args = JSON.parse(msg.arguments || '{}');
-								} catch (e) {}
-								callbacks.onFunctionCall({
-									name: msg.name,
-									call_id: msg.call_id,
-									arguments: args,
-								});
-							}
-							break;
+							case 'response.output_audio.delta':
+								if (callbacks.onResponseAudio && msg.delta) {
+									// Base64-encoded PCM16 audio.
+									const binaryStr = atob(msg.delta);
+									const bytes = new Uint8Array(binaryStr.length);
+									for (let ai = 0; ai < binaryStr.length; ai++) {
+										bytes[ai] = binaryStr.charCodeAt(ai);
+									}
+									callbacks.onResponseAudio(bytes.buffer);
+								}
+								break;
 
-						case 'error':
-							if (callbacks.onError) {
-								callbacks.onError(new Error(msg.error && msg.error.message || 'Unknown server error.'));
-							}
-							break;
-					}
+							case 'response.output_audio.done':
+								emitState('active');
+								break;
+
+							case 'response.done':
+								// Handle response phases (commentary vs final_answer).
+								if (msg.response && Array.isArray(msg.response.output)) {
+									msg.response.output.forEach(function (item) {
+										if (item.phase === 'commentary' && callbacks.onCommentary && item.content) {
+											item.content.forEach(function (part) {
+												if (part.transcript && callbacks.onCommentary) {
+													callbacks.onCommentary(part.transcript);
+												}
+											});
+										}
+									});
+								}
+								emitState('active');
+								break;
+
+							case 'response.function_call_arguments.done':
+								if (callbacks.onFunctionCall && msg.name) {
+									let fnArgs = {};
+									try {
+										fnArgs = JSON.parse(msg.arguments || '{}');
+									} catch (e) { /* use empty args */ }
+									callbacks.onFunctionCall({
+										name: msg.name,
+										call_id: msg.call_id,
+										arguments: fnArgs,
+									});
+								}
+								break;
+
+							case 'error':
+								if (callbacks.onError) {
+									callbacks.onError(new Error(msg.error && msg.error.message || 'Unknown server error.'));
+								}
+								break;
+						}
 				} else {
 					// Gemini Live protocol.
 					if (msg.serverContent && msg.serverContent.modelTurn) {

@@ -130,10 +130,48 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ---
 
-## Next Minor (v1.2.0) - Q2 2026 ⚡
+## Next Minor (v1.3.0) - Q2 2026 ⚡
 
 **Target:** June 2026  
-**Focus:** AI Provider enhancements, developer experience improvements
+**Focus:** GPT-Realtime-2 voice models upgrade, WebRTC transport, translation & transcription
+
+### Major Features
+
+#### 1. OpenAI Realtime API GA Migration ✅
+- Migrated from deprecated beta endpoints to GA Realtime API
+- Nested session format: `session.type`, `audio.input/output` structure
+- Removed deprecated `OpenAI-Beta` header; added `OpenAI-Safety-Identifier`
+- Updated default model: `gpt-realtime` → `gpt-realtime-2`
+- Updated voice list: added `cedar`, removed deprecated `fable`/`nova`/`onyx`
+
+#### 2. WebRTC Transport ✅
+- New `chat-webrtc-service.js` — browser WebRTC peer connection manager
+- Ephemeral token flow: `POST /v1/realtime/client_secrets` → browser RTCPeerConnection
+- Unified interface flow: SDP relay via `POST /v1/realtime/calls`
+- New REST endpoints: `POST /mcp-ai/v1/realtime/token`, `POST /mcp-ai/v1/realtime/session`
+- WebSocket fallback preserved in updated `chat-voice-realtime-service.js`
+
+#### 3. GPT-Realtime-2 Reasoning ✅
+- Configurable reasoning effort: `minimal` / `low` / `medium` / `high` / `xhigh`
+- 12-section structured prompt template (role, tone, reasoning, preambles, tools, etc.)
+- Per-section filter hooks for prompt customization
+- Parallel tool calling enabled by default
+
+#### 4. New Models ✅
+- **GPT-Realtime-Translate**: 70+ input → 13 output languages; dedicated translation endpoint
+- **GPT-Realtime-Whisper**: Streaming speech-to-text with configurable latency
+- Translation + transcription JS services with WebRTC transport
+- Provider registration with voice controller
+
+#### 5. Voice Tooling ✅
+- `wait_for_user` no-op tool for silence/background noise handling
+- PTT (Push-to-Talk) mode support for WebRTC connections
+- Commentary phase display (preambles / tool progress) in chat UI
+- WebRTC-specific state classes and CSS
+
+---
+
+## Next Minor (v1.2.0) - Q2 2026 ⚡
 
 ---
 
