@@ -453,7 +453,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 * @param array $args       Positional arguments.
 			 * @param array $assoc_args Associative arguments.
 			 */
-			public function list_( $args, $assoc_args ) {
+			public function list( $args, $assoc_args ) {
 				$format  = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
 				$plugins = self::get_supported_plugins_with_status();
 

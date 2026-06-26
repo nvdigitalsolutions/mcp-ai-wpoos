@@ -51,10 +51,13 @@ class WP_MCP_AI_CLI_Approval_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai approval list
 	 *     $ wp mcp-ai approval list --assistant=42 --format=json
 	 *
+	 * @subcommand list
+	 * @when after_wp_load
+	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
-	public function list_( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+	public function list( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 		$queue  = $this->get_queue();
 		$format = $assoc_args['format'] ?? 'table';
 

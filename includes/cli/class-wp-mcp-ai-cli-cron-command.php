@@ -45,7 +45,7 @@ class WP_MCP_AI_CLI_Cron_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
-	public function list_( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+	public function list( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 		$format = $assoc_args['format'] ?? 'table';
 
 		if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {

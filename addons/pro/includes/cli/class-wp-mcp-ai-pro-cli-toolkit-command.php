@@ -99,7 +99,7 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 * @param array $assoc_args Associative arguments.
 	 * @when after_wp_load
 	 */
-	public function list_( $args, $assoc_args ) {
+	public function list( $args, $assoc_args ) {
 		$this->assert_pro_loaded();
 
 		$status_filter = \WP_CLI\Utils\get_flag_value( $assoc_args, 'status', '' );

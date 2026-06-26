@@ -279,7 +279,7 @@ class WP_MCP_AI_CLI_Transcript_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
-	public function list_( $args, $assoc_args ) {
+	public function list( $args, $assoc_args ) {
 		// Accept --assistant-id as an alias for --assistant.
 		if ( ! isset( $assoc_args['assistant'] ) && isset( $assoc_args['assistant-id'] ) ) {
 			$assoc_args['assistant'] = $assoc_args['assistant-id'];

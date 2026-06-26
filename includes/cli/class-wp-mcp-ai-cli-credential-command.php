@@ -68,7 +68,7 @@ class WP_MCP_AI_CLI_Credential_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * @param array $assoc_args Associative arguments.
 	 * @when after_wp_load
 	 */
-	public function list_( $args, $assoc_args ) {
+	public function list( $args, $assoc_args ) {
 		$assistant_id = isset( $args[0] ) ? absint( $args[0] ) : 0;
 		$format       = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 

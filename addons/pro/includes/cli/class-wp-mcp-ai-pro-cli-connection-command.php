@@ -60,7 +60,7 @@ class WP_MCP_AI_Pro_CLI_Connection_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 	 * @param array $assoc_args Associative arguments.
 	 * @when after_wp_load
 	 */
-	public function list_( $args, $assoc_args ) {
+	public function list( $args, $assoc_args ) {
 		$this->assert_pro_loaded();
 
 		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );

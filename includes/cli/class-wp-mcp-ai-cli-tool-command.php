@@ -68,7 +68,7 @@ class WP_MCP_AI_CLI_Tool_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * @param array $assoc_args Associative arguments.
 	 * @when after_wp_load
 	 */
-	public function list_( $args, $assoc_args ) {
+	public function list( $args, $assoc_args ) {
 		$status_filter = \WP_CLI\Utils\get_flag_value( $assoc_args, 'status', '' );
 		$format        = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 

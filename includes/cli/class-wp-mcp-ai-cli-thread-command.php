@@ -63,7 +63,7 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
-	public function list_( $args, $assoc_args ) {
+	public function list( $args, $assoc_args ) {
 		$manager = $this->get_manager();
 
 		global $wpdb;
@@ -101,13 +101,13 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 				$items[] = array(
 					'ID'        => $t->id,
 					'Title'     => $title_short,
-				'Status'    => $t->status,
-				'User'      => $t->user_id,
-				'Assistant' => $t->assistant_id,
-				'Model'     => $t->model_name ? $t->model_name : '-',
-				'Messages'  => $t->message_count,
-				'Updated'   => $t->updated_at,
-			);
+					'Status'    => $t->status,
+					'User'      => $t->user_id,
+					'Assistant' => $t->assistant_id,
+					'Model'     => $t->model_name ? $t->model_name : '-',
+					'Messages'  => $t->message_count,
+					'Updated'   => $t->updated_at,
+				);
 		}
 
 		$this->format_output( $items, $format );
