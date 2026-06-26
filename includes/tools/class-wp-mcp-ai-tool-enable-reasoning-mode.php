@@ -200,6 +200,6 @@ class WP_MCP_AI_Tool_Enable_Reasoning_Mode implements WP_MCP_AI_Tool_Interface, 
 
 		$result['message'] = $message;
 
-		return $this->success( $result, $message );
+		return $this->format_chat_response( $result, $message );
 	}
 }

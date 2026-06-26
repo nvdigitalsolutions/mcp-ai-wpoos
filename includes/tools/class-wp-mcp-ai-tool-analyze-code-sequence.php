@@ -202,6 +202,6 @@ class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, 
 			$result['security_alert'] = __( 'SECURITY WARNING: Code contains potential vulnerabilities. Review security issues before use.', 'mcp-ai-wpoos' );
 		}
 
-		return $this->success( $result, $message );
+		return $this->format_chat_response( $result, $message );
 	}
 }

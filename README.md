@@ -11,10 +11,10 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.33  
-**Release Date:** 2026-06-24
+**Version:** 1.1.34  
+**Release Date:** 2026-06-27
 
-**Latest Updates:** June 24, 2026 (v1.1.33) — See [§ Latest Updates (v1.1.33 — June 2026)](#-latest-updates-v1133--june-2026) (WP 7.0 Connectors: credential resolution across all 17 AI clients with source badges in admin UI. nvoos-graphify v1.0.0: Plugin Check compliant standalone release. Security: 3 guzzlehttp CVEs + undici override + 29 npm alerts across 14 packages. 15 Dependabot bumps. Plus prior v1.1.32 items below).
+**Latest Updates:** June 27, 2026 (v1.1.34) — See [§ Latest Updates (v1.1.34 — June 2026)](#-latest-updates-v1134--june-2026) (GPT-Realtime-2 voice models with WebRTC transport + Translate/Whisper + reasoning. Multi-channel result delivery UI: Telegram, Discord, WhatsApp, Google Chat. Pro scheduler AI/workflow response delivery. Graphify ecosystem: remote drivers, WP 7.0 Connectors, wp.org compliance. 3 reasoning-tool fatal bugs fixed. CRM deal import fix + multi-source auto-import. Docs Hub REST + settings sync fixes. http-proxy-middleware CVE-2026-55602, Gemini cache fix, GPT image routing fix. FastAPI porting plan. Plus prior v1.1.33 items below).
 
 **Previous Updates (v1.1.32):** June 19, 2026 — Content Format Templates & Featured Image Service (3-provider fallback), Result Delivery Pipeline (8 channels), ECA document generation, duplicate posts fix, 6 provider clients timeout fix, schedule trigger stability, Paper Store delete fix, ECA settings/attachment fix, npm CI & Jest resilience, 14 dependabot bumps + 8 npm audit CVEs.
 
@@ -49,7 +49,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.33 — June 2026)](#-latest-updates-v1133--june-2026)
+- [🆕 Latest Updates (v1.1.34 — June 2026)](#-latest-updates-v1134--june-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -156,7 +156,18 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 13 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-### ✨ What's New at a Glance (v1.1.33)
+### ✨ What's New at a Glance (v1.1.34)
+
+- 🎤 **GPT-Realtime-2 Voice Models Upgrade.** Migrated from deprecated beta to GA Realtime API with WebRTC transport (WebSocket fallback preserved). GPT-Realtime-2 with 128K context and configurable reasoning effort (5 levels). 2 new models: Translate (70+ input -> 13 output languages) and Whisper (streaming STT). 12-section structured prompt template with per-section filters. Parallel tool calling. wait_for_user tool. New admin settings for reasoning effort, preambles, transport, and translation.
+- 📬 **Multi-Channel Result Delivery UI.** Schedule edit modal now exposes Telegram, Discord, WhatsApp, and Google Chat delivery channels alongside existing Email, Slack, Paper Store, and WordPress Post. All 11 delivery channels supported in admin UI.
+- 🔄 **Pro Scheduler AI/Workflow Response Delivery.** AI/workflow-generated responses routed through pro scheduler delivery pipeline for richer formatting and multi-step output.
+- 🧩 **Graphify Ecosystem Maturation.** Standalone remote source drivers with Bridge class (PRs #5476, #5477). WP 7.0 Connectors credential resolution in graphify (PR #5478). wp.org compliance sweep: escape, crypto, webhook, config, truncate, readme (PR #5480). Plugin Sources tab and Remote UI fixes (PR #5475).
+- 🔧 **CRM Pipeline Fixes.** Deal import and Gmail source pipeline fix (PR #5474). Configured sources count and multi-source auto-import pipeline (PR #5469). API/web_search mode toggle for Upwork and LinkedIn remote connections (PR #5473).
+- 🐛 **3 Reasoning-Tool Fatal Bugs Fixed.** `enable_reasoning_mode`, `analyze_code_sequence`, and `validate_reasoning_chain` called non-existent `$this->success()` causing PHP fatal errors — replaced with canonical `format_chat_response()`. Also fixed `trim()` on array TypeError in `validate_reasoning_chain` and added `count()` on null guard in `get_environment_status`.
+- 🛡️ **Security.** http-proxy-middleware CVE-2026-55602 fix (PR #5464). Gemini prompt caching cache_control error resolved (PR #5463). GPT image models correctly routed to Responses API (PR #5461).
+- 🐛 **Bug Fixes.** Docs Hub REST fatal error + plain-permalink URL fix (PR #5472). Docs Hub settings sync, rebuild reliability, and repo lookup (PR #5468). nv-cloud-init file_exists guard (PR #5470). wait_for_user tool base class loading fix.
+- 📋 **Documentation.** GPT-Realtime-2 upgrade proposal + 1,166-line implementation plan. FastAPI porting implementation plan (PR #5467).
+- 🧹 **Housekeeping.** Stale build artifacts and toolkit-addons directory removed.
 
 - 🔌 **WP 7.0 Connectors Credential Integration.** Credential_Resolver now integrated into all 17 AI client `get_api_key()` methods. Fallback chain: WP 7.0 Connectors → plugin settings → env vars → PHP constants. Credential source badges and WP 7.0 Connectors hints rendered in admin settings UI. All 13 provider API key field descriptions updated. Provider diagnostics show key source column. Settings health check counts credentials via resolver.
 - 🧩 **nvoos-graphify v1.0.0.** Standalone nvoos-graphify plugin released at v1.0.0 (Plugin Check compliant). nvoos-graphify-ai released at v1.0.0-dev. Fixed critical `->prepare()` spread-operator bug in `Db::listNodes()`. Renamed `vector` column → `embedding_vector` to avoid MariaDB/MySQL reserved-word conflict. Fixed snake_case→camelCase method calls across tools, controllers, and cross-plugin integrations.
@@ -481,6 +492,26 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
+## 🆕 Latest Updates (v1.1.34 — June 2026)
+
+### June 24–27, 2026 — GPT-Realtime-2 Voice Models, Multi-Channel Result Delivery UI, Graphify Ecosystem, Bug Fixes 🎤📬🧩🐛🛡️
+
+- ✅ **GPT-Realtime-2 Voice Models Upgrade (PR #5479).** Migrated from deprecated beta endpoints to GA Realtime API (`/v1/realtime/client_secrets`, `/v1/realtime/calls`). Nested GA session format with `session.type` and `audio.input/output` structure. Removed deprecated `OpenAI-Beta` header; added `OpenAI-Safety-Identifier` with hashed user ID for abuse monitoring. Default model updated `gpt-realtime` -> `gpt-realtime-2` with 128K context and reasoning. Voice list updated: added `cedar`; removed deprecated `fable`/`nova`/`onyx`. WebRTC transport as primary with new `chat-webrtc-service.js`, ephemeral token minting endpoint, and SDP relay. WebSocket fallback preserved. ICE reconnection with exponential backoff. Configurable reasoning effort (5 levels). 12-section structured prompt template with per-section filter hooks. Parallel tool calling enabled by default. Commentary phase support. **New models**: GPT-Realtime-Translate (70+ in -> 13 out languages) and GPT-Realtime-Whisper (streaming STT). New JS services: `chat-translation-service.js`, `chat-transcription-realtime-service.js`. `wait_for_user` tool for silence/noise handling. PTT mode extended to WebRTC. 7 new admin settings defaults.
+- ✅ **Multi-Channel Result Delivery UI (PR #5465).** Telegram, Discord, WhatsApp, and Google Chat channels added to schedule edit modal Result Delivery section. All 11 delivery channels now exposed in admin UI (up from 4: Email, Slack, Paper Store, WordPress Post).
+- ✅ **Pro Scheduler AI/Workflow Response Delivery (PR #5466).** AI/workflow-generated responses routed through pro scheduler delivery pipeline for richer formatting and multi-step AI output delivery.
+- ✅ **Graphify Ecosystem Enhancements (PRs #5475–#5480).** Standalone remote source drivers with Bridge class for nvoos-graphify standalone plugin (PRs #5476, #5477). WP 7.0 Connectors credential resolution integrated into graphify ecosystem (PR #5478). wp.org compliance sweep: escape, crypto, webhook, config, truncate, and readme fixes for nvoos-graphify (PR #5480). Plugin Sources tab and Remote Sources UI fix (PR #5475).
+- ✅ **API/Web Search Mode Toggle for Upwork & LinkedIn (PR #5473).** New `mode` parameter on Upwork and LinkedIn remote connections: `api` (direct API access) or `web_search` (browser-based search). Allows fallback to web search when API credentials are unavailable.
+- ✅ **3 Reasoning-Tool Fatal Bugs Fixed.** `enable_reasoning_mode`, `analyze_code_sequence`, and `validate_reasoning_chain` called non-existent `$this->success()` on the `WP_MCP_AI_Tool_Chat_Response` trait, causing `Call to undefined method` fatal errors in PHP 8.x. Replaced with canonical `$this->format_chat_response()`. Also fixed `trim()` on array TypeError in `validate_reasoning_chain` (PHP 8.x) and added `count()` on null guard in `get_environment_status` (`apply_filters` return safety).
+- ✅ **CRM Pipeline Fixes.** Deal import and Gmail source pipeline fixed (PR #5474). Configured sources count corrected for valid Gmail connections and multi-source auto-import pipeline added (PR #5469).
+- ✅ **Docs Hub Fixes.** REST fatal error and plain-permalink URL bug resolved (PR #5472). Settings sync reliability improved, rebuild reliability hardened, and repo lookup logic fixed (PR #5468).
+- ✅ **Security.** http-proxy-middleware CVE-2026-55602 CRLF injection fix in addon overrides (PR #5464). Gemini prompt caching `cache_control` error resolved (PR #5463). GPT image models (`gpt-image-*`) correctly routed to Responses API instead of classic Images API (PR #5461).
+- ✅ **Bug Fix — nv-cloud-init file_exists Guard (PR #5470).** `require_once` for nv-cloud-init.php now guarded with `file_exists()` check to prevent fatal errors when the file is absent.
+- ✅ **Bug Fix — wait_for_user Tool.** Base class loading ensured before extending, invalid base class extension removed, explicit `require_once` for translate and whisper client classes.
+- ✅ **Documentation.** GPT-Realtime-2 upgrade proposal + 1,166-line implementation plan. FastAPI porting implementation plan (PR #5467).
+- ✅ **WP-CLI Smart Tool Test (June 26).** 409 tools registered; 271 parameter-gated; 60 tested. 28 tools now confirmed working. 6 fatal bugs identified (3 fixed in this release). ~60% of tools usable immediately.
+- ✅ **Housekeeping.** Stale build artifacts and `build/toolkit-addons` directory removed.
+- 📦 **Versioning** — bumped to **1.1.34** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, and `CHANGELOG.md`. Provider count: **13** first-class language-model providers (unchanged). Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+
 ## 🆕 Latest Updates (v1.1.33 — June 2026)
 
 ### June 20–24, 2026 — WP 7.0 Connectors Credential Integration, nvoos-graphify v1.0.0, Security Fixes 🔌🧩🛡️🔒
@@ -581,6 +612,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **v1.1.34** | Jun 2026 | GPT-Realtime-2 voice models with WebRTC + Translate/Whisper + reasoning, multi-channel result delivery UI (11 channels, up from 4), pro scheduler AI/workflow delivery, Graphify ecosystem: remote drivers, WP 7.0 Connectors, wp.org compliance, 3 reasoning-tool fatal bugs fixed, CRM deal import + multi-source auto-import, Upwork/LinkedIn mode toggle, Docs Hub REST + settings sync fixes, http-proxy-middleware CVE, Gemini cache fix, GPT image routing fix, FastAPI porting plan |
 | **v1.1.33** | Jun 2026 | WP 7.0 Connectors credential integration across all 17 AI clients with source badges, nvoos-graphify v1.0.0 release (Plugin Check compliant), 3 guzzlehttp CVEs + undici override, 29 npm alerts across 14 packages, 2 bug fixes (Pro tool paths, JSON-RPC warning leak), 15 dependabot bumps |
 | **v1.1.32** | Jun 2026 | Content Format Templates + Featured Image Service (3-provider fallback), Result Delivery Pipeline (8 channels), ECA document generation, duplicate posts fix, 6 provider clients timeout fix, schedule trigger stability, Paper Store delete fix, ECA settings/attachment fix, npm CI & Jest resilience, 14 dependabot bumps + 8 npm audit CVEs |
 | **v1.1.31** | Jun 2026 | Media Command Center, Pro SPA v2 (rich rendering, assistant scoping, agent selector, v2.0.1), 34 workflow preset tools, npm audit CVEs (12 resolved), Gemini 3.1 flash image default, Media toolkit blueprints & presets, stream_options, agentic-loop cost tracking, Vite CVEs, 1,658 PHPCS lint fixes, CI disk space, data integrity fixes |
@@ -3069,13 +3101,19 @@ Manage the NV oOS environment from the command line when WP-CLI is available.
 | `wp mcp-ai plugins list` | Lists optional dependencies (WooCommerce, JetEngine, etc.) with install and activation state. |
 | `wp mcp-ai plugins activate <slug>` | Activates a supported plugin; pass `--network` on multisite installations. |
 | `wp mcp-ai plugins deactivate <slug>` | Deactivates a supported plugin; pass `--network` on multisite installations. |
-| `wp mcp-ai chat send` | Sends a one-shot chat message to an assistant via the language model router. Accepts `--assistant-id`, `--message`, `--model`, and `--stream` flags. |
-| `wp mcp-ai memory <action>` | Manages agent memory: `recall`, `store`, `forget`, and `stats`. Use `--assistant-id` to scope operations. |
-| `wp mcp-ai thread <action>` | Manages chat threads: `list`, `get`, `create`, `delete`, and `export`. Use `--assistant-id` and `--thread-id` flags. |
-| `wp mcp-ai provider <action>` | Manages AI providers: `list` (all configured), `test` (connectivity check), and `models` (available model IDs). |
-| `wp mcp-ai cron <action>` | Manages scheduled cron jobs: `list`, `get`, `run`, and `delete`. Use `--job-id` for single-job operations. |
-| `wp mcp-ai transcript <action>` | Manages transcript mining: `list` (active jobs), `status` (job progress), and `cancel` (stop a running job). |
-| `wp mcp-ai approval <action>` | Manages human-in-the-loop approval queue: `list` (pending items), `approve`, and `reject`. Use `--item-id` for single-item operations. |
+| `wp mcp-ai chat <message>` | Sends a one-shot chat message to an assistant via the language model router. Accepts `--assistant`, `--model`, `--provider`, `--temperature`, `--max-tokens`, `--stream`, and `--format` flags. |
+| `wp mcp-ai memory recall` | Recalls agent memory entries. Use `--assistant` to scope operations. |
+| `wp mcp-ai thread list` | Lists chat threads. Use `--assistant` to filter. Also supports `get` and `delete` subcommands with `--thread-id`. |
+| `wp mcp-ai provider list` | Lists all 13 AI providers with enabled/disabled status. Also supports `test <slug>` and `models <slug>` subcommands. |
+| `wp mcp-ai cron list` | Lists scheduled cron jobs tracked by NV oOS. Also supports `run <job-id>` and `delete <job-id>` subcommands. |
+| `wp mcp-ai transcript list` | Lists transcripts eligible for mining. Use `--assistant` to filter. Also supports `mine` subcommand for batch mining. |
+| `wp mcp-ai approval list` | Lists pending human-in-the-loop approval items. Accepts `--format` flag. Also supports `approve` and `reject` subcommands with `--item-id`. |
+| `wp mcp-ai tool list` | Lists all registered tools with status, capability, and toolkit metadata. Accepts `--status`, `--format`, `--toolkit`, and `--search` flags. Also supports `enable <slug>` and `disable <slug>`. |
+| `wp mcp-ai assistant list` | Lists all published AI assistants. Accepts `--status` and `--format` flags. |
+| `wp mcp-ai credential list` | Lists API credentials configured for an assistant. |
+| `wp mcp-ai slash-command list` | Lists registered slash commands. |
+| `wp mcp-ai settings get` | Retrieves all NV oOS settings. |
+| `wp mcp-ai cache clear` | Clears the NV oOS object cache. |
 
 `wp mcp-ai remote` accepts additional flags so you can mirror the authentication mode used by your deployment while exercising TLS and timeout controls:
 

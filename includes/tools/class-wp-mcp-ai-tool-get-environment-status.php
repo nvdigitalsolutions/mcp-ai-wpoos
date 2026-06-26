@@ -202,6 +202,10 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		 */
 		$definitions = apply_filters( 'wp_mcp_ai_supported_plugins', $definitions );
 
+		if ( ! is_array( $definitions ) ) {
+			$definitions = array();
+		}
+
 		if ( ! function_exists( 'is_plugin_active' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}

@@ -212,7 +212,7 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 
 		$result['message'] = $message;
 
-		return $this->success( $result, $message );
+		return $this->format_chat_response( $result, $message );
 	}
 
 	/**
@@ -229,7 +229,7 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 
 		// Check for empty steps.
 		foreach ( $reasoning_steps as $index => $step ) {
-			if ( empty( trim( $step ) ) ) {
+			if ( ! is_string( $step ) || empty( trim( $step ) ) ) {
 				$issues[] = sprintf(
 					/* translators: %d: step number */
 					__( 'Step %d is empty or contains only whitespace.', 'mcp-ai-wpoos' ),
