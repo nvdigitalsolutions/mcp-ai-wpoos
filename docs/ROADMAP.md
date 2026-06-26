@@ -1,7 +1,7 @@
 # NV oOS Roadmap
 
-**Last Updated:** June 12, 2026  
-**Version:** 1.1.29
+**Last Updated:** June 27, 2026  
+**Version:** 1.1.34
 
 ---
 
@@ -16,6 +16,30 @@
 3. **Open Standards** - MCP protocol compliance, extensible architecture
 4. **Community Driven** - Open source with transparent development
 5. **Production Ready** - Enterprise reliability with community accessibility
+
+---
+
+## Released: v1.1.34 — June 2026 ✅
+
+**Release Date:** June 27, 2026
+
+### What was delivered in v1.1.34
+
+- ✅ **GPT-Realtime-2 Voice Models Upgrade (PR #5479).** GA Realtime API migration with WebRTC transport (WebSocket fallback). GPT-Realtime-2 with 128K context + reasoning. 2 new models: Translate (70+ in -> 13 out) and Whisper (streaming STT). 12-section prompt template. Parallel tool calling. wait_for_user tool. 7 new admin settings.
+- ✅ **Multi-Channel Result Delivery UI (PR #5465).** Telegram, Discord, WhatsApp, Google Chat channels in schedule modal. 11 channels now exposed in admin UI.
+- ✅ **Pro Scheduler AI/Workflow Response Delivery (PR #5466).** AI responses routed through scheduler delivery pipeline.
+- ✅ **Graphify Ecosystem (PRs #5475-#5480).** Remote source drivers with Bridge class. WP 7.0 Connectors credential resolution. wp.org compliance sweep. Plugin Sources tab and Remote UI fixes.
+- ✅ **3 Reasoning-Tool Fatal Bugs Fixed.** enable_reasoning_mode, analyze_code_sequence, validate_reasoning_chain called non-existent success() method; replaced with format_chat_response(). Plus trim() on array fix and count() on null guard.
+- ✅ **CRM Pipeline Fixes (PRs #5469, #5474, #5473).** Deal import + Gmail fix. Multi-source auto-import. Upwork/LinkedIn API/web_search mode toggle.
+- ✅ **Docs Hub Fixes (PRs #5472, #5468).** REST fatal error + plain-permalink URL bug. Settings sync reliability + rebuild reliability + repo lookup.
+- ✅ **Security (PRs #5464, #5463, #5461).** http-proxy-middleware CVE-2026-55602. Gemini cache fix. GPT image routing fix.
+- ✅ **nv-cloud-init Guard (PR #5470).** file_exists() check before require_once.
+- ✅ **wait_for_user Tool Fixes.** Base class loading and invalid extension resolved.
+- ✅ **Documentation.** GPT-Realtime-2 upgrade proposal + 1,166-line implementation plan. FastAPI porting plan (PR #5467).
+- ✅ **WP-CLI Smart Tool Test.** 409 tools tested; 28 confirmed working; 3 fatal bugs fixed.
+- ✅ **Housekeeping.** Stale build artifacts and toolkit-addons directory removed.
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ---
 

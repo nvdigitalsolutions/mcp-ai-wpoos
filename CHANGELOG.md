@@ -1,6 +1,8 @@
 # oOS – Changelog
 
-## [Unreleased] — GPT-Realtime-2 Voice Models Upgrade
+## [1.1.34] - 2026-06-27
+
+### Added — GPT-Realtime-2 Voice Models Upgrade (PR #5479)
 
 ### Added — OpenAI Realtime API GA Migration
 
@@ -53,6 +55,76 @@
 - **Proposal document**: `docs/project/proposals/GPT-REALTIME-2-UPGRADE-PROPOSAL.md`.
 - **Implementation plan**: `docs/project/proposals/GPT-REALTIME-2-IMPLEMENTATION-PLAN.md` (1,166-line comprehensive plan).
 - **ROADMAP.md** updated with v1.3.0 milestone details.
+
+### Added — Multi-Channel Result Delivery UI (PR #5465)
+
+- **Telegram, Discord, WhatsApp, and Google Chat** channels added to schedule edit modal Result Delivery section.
+- All 11 delivery channels now exposed in admin UI (up from 4: Email, Slack, Paper Store, WordPress Post).
+- Proposal document at `docs/project/proposals/multi-channel-result-delivery-enhancement.md`.
+
+### Added — Pro Scheduler AI/Workflow Response Delivery (PR #5466)
+
+- AI/workflow-generated responses now routed through the pro scheduler delivery pipeline.
+- Enables richer formatting and multi-step AI output delivery alongside schedule results.
+
+### Added — Graphify Ecosystem Enhancements (PRs #5475-#5480)
+
+- **Standalone remote source drivers** with Bridge class for nvoos-graphify standalone plugin (PRs #5476, #5477).
+- **WP 7.0 Connectors credential resolution** integrated into graphify ecosystem (PR #5478).
+- **wp.org compliance sweep** - escape, crypto, webhook, config, truncate, and readme fixes for nvoos-graphify (PR #5480).
+- **Plugin Sources tab and Remote Sources UI** fix (PR #5475).
+
+### Added — API/Web Search Mode Toggle for Upwork & LinkedIn (PR #5473)
+
+- New `mode` parameter on Upwork and LinkedIn remote connections: `api` (direct API access) or `web_search` (browser-based search).
+- Allows fallback to web search when API credentials are unavailable.
+
+### Fixed — Reasoning Tools: Missing success() Method (3 tools)
+
+- `enable_reasoning_mode`, `analyze_code_sequence`, and `validate_reasoning_chain` called non-existent `$this->success()` method on the `WP_MCP_AI_Tool_Chat_Response` trait, causing `Call to undefined method` fatal errors in PHP 8.x.
+- Replaced with `$this->format_chat_response()` which provides the same canonical envelope from the `WP_MCP_AI_Tool_Envelope` trait.
+
+### Fixed — validate_reasoning_chain: trim() on Array TypeError (PHP 8.x)
+
+- `trim()` called on array elements within `$reasoning_steps` caused a type error. Added `is_string()` guard before `trim()`.
+
+### Fixed — get_environment_status: count() on Null Guard
+
+- `apply_filters('wp_mcp_ai_supported_plugins')` return value now guarded with `is_array()` check to prevent `count()` on null when a filter returns a non-array value.
+
+### Fixed — CRM Deal Import & Gmail Source Pipeline (PR #5474)
+
+### Fixed — CRM Configured Sources Count & Multi-Source Auto-Import (PR #5469)
+
+### Fixed — Docs Hub REST Fatal Error & Plain-Permalink URL Bug (PR #5472)
+
+### Fixed — Docs Hub Settings Sync, Rebuild Reliability & Repo Lookup (PR #5468)
+
+### Fixed — nv-cloud-init file_exists Guard (PR #5470)
+
+### Fixed — Gemini Prompt Caching cache_control Error (PR #5463)
+
+### Fixed — GPT Image Models -> Responses API Routing (PR #5461)
+
+### Fixed — http-proxy-middleware CVE-2026-55602 (PR #5464)
+
+### Fixed — wait_for_user Tool: Base Class Loading & Invalid Extension (4 commits)
+
+### Documentation
+
+- **FastAPI porting implementation plan** at `docs/project/proposals/fastapi-porting-implementation-plan.md` (PR #5467).
+- **GPT-Realtime-2 upgrade proposal** at `docs/project/proposals/GPT-REALTIME-2-UPGRADE-PROPOSAL.md`.
+- **GPT-Realtime-2 implementation plan** at `docs/project/proposals/GPT-REALTIME-2-IMPLEMENTATION-PLAN.md` (1,166 lines).
+
+### Housekeeping
+
+- Stale `build/toolkit-addons` directory and build artifacts removed.
+
+### Versioning
+
+- Bumped to **1.1.34** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, `CHANGELOG.md`, `DOCUMENTATION_INDEX.md`, `QUICK_REFERENCE.md`, and `ROADMAP.md`.
+- Tool count: ~195 base + ~795 Pro (~990 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **13** first-class language-model providers (unchanged).
 
 ## [1.1.33] - 2026-06-24
 
