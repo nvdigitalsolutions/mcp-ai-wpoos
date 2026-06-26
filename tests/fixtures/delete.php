@@ -17,6 +17,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+	// Gracefully skip when run under PHPUnit or direct web access.
+	if ( defined( 'PHPUNIT_COMPOSER_INSTALL' ) || defined( 'WP_TESTS_DOMAIN' ) ) {
+		return;
+	}
 	fwrite( STDERR, "This script must be run via WP-CLI.\n" );
 	exit( 1 );
 }

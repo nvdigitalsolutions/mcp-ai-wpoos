@@ -16,6 +16,8 @@
             <exclude>tests/manual</exclude>
             <exclude>tests/bootstrap.php</exclude>
             <exclude>tests/fixtures</exclude>
+            <exclude>tests/regression</exclude>
+            <exclude>tests/wp-cli-smoke.php</exclude>
             <exclude>tests/wp-tests-config.php</exclude>
             <exclude>tests/helpers</exclude>
             <exclude>addons/saas-controller/tests/bootstrap.php</exclude>
