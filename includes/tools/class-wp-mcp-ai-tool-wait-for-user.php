@@ -22,6 +22,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Ensure the base tool class is loaded before extending it.
+if ( ! class_exists( 'WP_MCP_AI_Tool_Base' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-base.php';
+}
+
 /**
  * Wait for User tool class.
  */
