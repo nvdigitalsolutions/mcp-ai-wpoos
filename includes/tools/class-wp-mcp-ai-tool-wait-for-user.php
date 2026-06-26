@@ -22,15 +22,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Ensure the base tool class is loaded before extending it.
-if ( ! class_exists( 'WP_MCP_AI_Tool_Base' ) ) {
-	require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-base.php';
-}
-
 /**
  * Wait for User tool class.
+ *
+ * Note: NV oOS tools are standalone classes implementing the tool pattern
+ * (get_slug, get_definition, execute). There is no base class to extend.
  */
-class WP_MCP_AI_Tool_Wait_For_User extends WP_MCP_AI_Tool_Base {
+class WP_MCP_AI_Tool_Wait_For_User {
 
 	/**
 	 * Get the unique tool slug.
@@ -71,7 +69,9 @@ class WP_MCP_AI_Tool_Wait_For_User extends WP_MCP_AI_Tool_Base {
 	 * @param array $context   Execution context.
 	 * @return array Success envelope.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( $arguments = array(), $context = array() ) {
+		unset( $arguments, $context );
+
 		return array(
 			'success' => true,
 			'action'  => 'waiting',
