@@ -19,7 +19,7 @@ A systematic audit of all 33 `wp mcp-ai` subcommands across Base (20 files) and 
 
 | # | Command | Tier | Files | Subcommands | Status |
 |---|---------|------|-------|-------------|--------|
-| 1 | `assistant` | Base | 1 | `list`, `update`, `import` | Missing `create`, `delete` |
+| 1 | `assistant` | Base | 1 | `list`, `get`, `create`, `delete`, `update`, `import`, `export` | Exists (full CRUD); missing capability checks |
 | 2 | `approval` | Base | 1 | `list_`, `approve`, `reject` | list_ naming |
 | 3 | `bulk` | Base | 1 | `audit`, `cleanup-artifacts`, `dispatch`, `retry-failed`, `status` | OK |
 | 4 | `cache` | Base | * | `clear` (nested as `clear clear`) | Double-nesting UX |
@@ -37,7 +37,7 @@ A systematic audit of all 33 `wp mcp-ai` subcommands across Base (20 files) and 
 | 16 | `provider` | Base | 1 | `list_`, `test`, `models` | Fixed: method name + test_connection |
 | 17 | `queue` | Base | * | `show`, `stats`, `process`, `retry`, `clear` | OK |
 | 18 | `remote` | Base | * | (single verb) | Fixed: docblock flags; needs `--verify-ssl` |
-| 19 | `settings` | Base | 1 | `get` only | **Missing `set`/`update`** |
+| 19 | `settings` | Base | 1 | `get`, `set`, `reset` | Exists (full CRUD); missing capability checks |
 | 20 | `sla` | Base | 1 | `status`, `tune`, `analyze`, `enable`, `disable` | Fixed: class loading |
 | 21 | `slash` | Base | 1 | `execute`, `list` | list naming (correct) |
 | 22 | `status` | Base | * | (single verb) | OK |
@@ -94,23 +94,22 @@ WP_CLI_Command                              ← WordPress core
 
 ### 3.1 CRITICAL — Missing Commands (User-Facing)
 
-#### GAP-001: `settings set` / `settings update`
-**Severity:** High  
-**Impact:** Operators cannot configure the plugin via CLI — must use admin UI for all writes. Blocks CI/CD automation and headless deployments.  
-**Current:** `wp mcp-ai settings get [<key>]` (read-only).  
-**Recommended:** Add `wp mcp-ai settings set <key> <value>` with type-aware validation (bool, int, string, array). Redact API keys on success.  
-**Dependencies:** `WP_MCP_AI_Settings_Validator` already exists.
+#### GAP-001: Hardening `settings set` (exists but lacks validation + capability check)
+**Severity:** Medium  
+**Impact:** `wp mcp-ai settings set <key> <value>` exists at line 162 but lacks input sanitization beyond `sanitize_key`, has no type-aware validation, and has no capability check.  
+**Current:** Basic key/value write with JSON auto-decode.  
+**Recommended:** Add `$this->require_capability( 'manage_options' )` and validate value types against known setting schemas where available.
 
 #### GAP-002: `plugins activate <slug>` / `plugins deactivate <slug>`
 **Severity:** High  
 **Impact:** Documented in README but not implemented. Operators must use `wp plugin activate` separately for supported integrations (WooCommerce, JetEngine, etc.).  
 **Recommended:** Implement with `--yes` flag and pre-activation dependency checks.
 
-#### GAP-003: `assistant create` / `assistant delete`
+#### GAP-003: Hardening `assistant create` / `assistant delete` (exist but lack capability checks)
 **Severity:** Medium  
-**Impact:** Operators cannot provision or tear down assistants via CLI. Full lifecycle management requires admin UI.  
-**Current:** Only `list`, `update`, `import` exist.  
-**Recommended:** Add `assistant create --title --model --provider --system-prompt` and `assistant delete <id> --yes`. Mirror the REST endpoint shape.
+**Impact:** `assistant create` (line 240) and `assistant delete` (line 311) exist and work, but lack `manage_options` capability checks. Any WP-CLI user can provision or tear down assistants.  
+**Current:** Full CRUD exists (`create`, `get`, `delete`, `update`, `import`, `export`).  
+**Recommended:** Add `$this->require_capability( 'manage_options' )` to `create()`, `delete()`, and `update()`.
 
 #### GAP-004: `thread create` / `thread export`
 **Severity:** Low  
@@ -200,30 +199,28 @@ WP_CLI_Command                              ← WordPress core
 
 ## 5. Recommended Phased Plan
 
-### Phase 1: Critical Gaps (v1.2.0) — ~3 days
-1. **GAP-001** — Implement `settings set <key> <value>` with type-aware validation
-2. **GAP-002** — Implement `plugins activate` / `plugins deactivate`
-3. **GAP-003** — Implement `assistant create` / `assistant delete`
+### Phase 1: New Subcommands (v1.2.0) — ~1 day
+1. **GAP-002** — Implement `plugins activate` / `plugins deactivate`
+2. **GAP-012** — Add `transcript list` alias delegating to `mine`
 
-### Phase 2: Security Hardening (v1.2.0) — ~2 days
-4. **GAP-008** — Add capability checks to all mutating commands (add `require_capability()` to base class)
-5. **GAP-009** — Gate `credential issue` / `credential revoke` on `manage_options`
+### Phase 2: Security Hardening (v1.2.0) — ~1.5 days
+3. **GAP-008** — Add `require_capability()` helper + capability checks to all mutating commands (`assistant create/delete/update`, `settings set/reset`, `tool enable/disable`, `credential issue/revoke`, `cron run/delete/clear`)
+4. **GAP-001 + GAP-003** — The commands exist but need capability gates (not new implementations)
+5. **GAP-007** — Add `--yes` to `tool disable` and `credential revoke`
 
-### Phase 3: Consistency Cleanup (v1.2.1) — ~2 days
-6. **GAP-005** — Migrate all `list_` methods to `list`
+### Phase 3: Consistency Cleanup (v1.2.1) — ~1.5 days
+6. **GAP-005** — Migrate all `list_` methods to `list` + `@subcommand list`
 7. **GAP-006** — Add `@when after_wp_load` to every subcommand
-8. **GAP-007** — Add `--yes` to `tool disable` and `credential revoke`
-9. **GAP-011** — Add `get_format()` helper to base class
+8. **GAP-011** — Add `get_format()` helper to base class
 
-### Phase 4: UX Polish (v1.2.1) — ~1 day
-10. **GAP-010** — Support `wp mcp-ai cache clear` as alias
-11. **GAP-012** — Add `transcript list` alias
-12. **GAP-013** — Add `--assistant-id` alias where `--assistant` is used
+### Phase 4: UX Polish (v1.2.1) — ~0.5 days
+9. **GAP-010** — Support `wp mcp-ai cache clear` as alias (single command)
+10. **GAP-013** — Add `--assistant-id` alias where `--assistant` is used
 
 ### Phase 5: Legacy Modernization (v1.3.0) — ~2 days
-13. Extract all commands from `includes/class-wp-mcp-ai-cli-command.php` into `includes/cli/` following the file-per-class convention
-14. Add PHPUnit test scaffolding for all uncovered CLI commands
-15. Update all README documentation to reflect actual CLI surface
+11. Extract all commands from `includes/class-wp-mcp-ai-cli-command.php` into `includes/cli/`
+12. Add PHPUnit test scaffolding for all uncovered CLI commands
+13. Update all README documentation to reflect actual CLI surface
 
 ---
 
