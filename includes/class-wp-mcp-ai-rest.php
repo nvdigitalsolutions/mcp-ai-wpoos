@@ -256,6 +256,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Register Voice REST endpoints (realtime voice sessions).
 			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-translate-client.php';
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-whisper-client.php';
 			$this->voice_controller = new WP_MCP_AI_REST_Voice_Controller();
 			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Client() );
 			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Translate_Client() );
