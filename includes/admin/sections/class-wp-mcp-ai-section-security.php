@@ -895,17 +895,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				),
 				array(
 					'label' => __( 'Security Monitor', 'mcp-ai-wpoos' ),
-					'url'   => admin_url( 'admin.php?page=nvoos-pro-security-monitor' ),
+					'url'   => admin_url( 'admin.php?page=nvoos-pro-dashboard&tab=monitoring' ),
 					'icon'  => 'dashicons-visibility',
 				),
 				array(
 					'label' => __( 'Security Training', 'mcp-ai-wpoos' ),
-					'url'   => admin_url( 'admin.php?page=nvoos-pro-security-training' ),
+					'url'   => admin_url( 'admin.php?page=nvoos-security-training' ),
 					'icon'  => 'dashicons-welcome-learn-more',
 				),
 				array(
 					'label' => __( 'Supplier Security', 'mcp-ai-wpoos' ),
-					'url'   => admin_url( 'admin.php?page=nvoos-pro-supplier-security' ),
+					'url'   => admin_url( 'admin.php?page=nvoos-pro-dashboard-suppliers' ),
 					'icon'  => 'dashicons-shield-alt',
 				),
 			);
