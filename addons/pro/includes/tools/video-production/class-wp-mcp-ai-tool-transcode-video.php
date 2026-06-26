@@ -259,6 +259,136 @@ class WP_MCP_AI_Tool_Transcode_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/**
+	 * Get video file information from arguments.
+	 *
+	 * Resolves video source from attachment_id, file_id, url, or video_url.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array|WP_Error Array with file_path and temp_file flag.
+	 */
+	protected function get_video_file_info( $arguments ) {
+		$attachment_id = 0;
+		$video_url     = '';
+
+		// Try to resolve from attachment_id, file_id, or url first.
+		if ( ! empty( $arguments['attachment_id'] ) || ! empty( $arguments['file_id'] ) || ! empty( $arguments['url'] ) ) {
+			$resolved = $this->resolve_attachment_id( $arguments );
+
+			// Handle remote URL case.
+			if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
+				$video_url = $resolved['url'];
+			} elseif ( is_wp_error( $resolved ) ) {
+				return $resolved;
+			} elseif ( $resolved > 0 ) {
+				$attachment_id = $resolved;
+			}
+		}
+
+		// Fallback to legacy video_url parameter.
+		if ( 0 === $attachment_id && '' === $video_url && ! empty( $arguments['video_url'] ) ) {
+			$video_url = esc_url_raw( $arguments['video_url'] );
+		}
+
+		if ( $attachment_id > 0 ) {
+			$file_path = get_attached_file( $attachment_id );
+			$mime_type = get_post_mime_type( $attachment_id );
+
+			if ( ! $file_path || ! file_exists( $file_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_file_not_found',
+					__( 'Video file not found on server.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			// Verify it's a video attachment.
+			if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_not_video',
+					__( 'The provided attachment is not a video file.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			return array(
+				'file_path' => $file_path,
+				'temp_file' => false,
+			);
+		}
+
+		if ( '' !== $video_url ) {
+			return $this->download_video_to_temp( $video_url );
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_missing_video',
+			__( 'You must provide video_url, url, attachment_id, or file_id.', 'mcp-ai-wpoos-pro' ),
+			array( 'status' => 400 )
+		);
+	}
+
+	/**
+	 * Download video from URL to temporary file.
+	 *
+	 * @param string $video_url Video URL.
+	 * @return array|WP_Error Array with file_path and temp_file flag.
+	 */
+	protected function download_video_to_temp( $video_url ) {
+		$response = wp_remote_get(
+			$video_url,
+			array( 'timeout' => 300 )
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( $code < 200 || $code >= 300 ) {
+			return new WP_Error(
+				'wp_mcp_ai_download_failed',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Failed to download video. HTTP status: %d', 'mcp-ai-wpoos-pro' ),
+					$code
+				),
+				array( 'status' => $code )
+			);
+		}
+
+		$body      = wp_remote_retrieve_body( $response );
+		$mime_type = wp_remote_retrieve_header( $response, 'content-type' );
+
+		if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_not_video',
+				__( 'Downloaded file is not a video.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		$temp_file = wp_tempnam( 'video' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		$written = file_put_contents( $temp_file, $body );
+
+		if ( false === $written ) {
+			return new WP_Error(
+				'wp_mcp_ai_temp_file_failed',
+				__( 'Failed to write video to temporary file.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		return array(
+			'file_path' => $temp_file,
+			'temp_file' => true,
+		);
+	}
+
+	/**
 	 * Build transcoding options from arguments
 	 *
 	 * @param array $arguments Tool arguments.
