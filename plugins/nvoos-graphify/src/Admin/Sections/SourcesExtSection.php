@@ -89,25 +89,20 @@ class SourcesExtSection extends Section {
 	public function sanitize( array $input ): array {
 		$sanitized = parent::sanitize( $input );
 
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by WP settings API before sanitization callbacks run.
-		if ( ! isset( $_POST['nvoos_ext_table'] ) || ! \is_array( $_POST['nvoos_ext_table'] ) ) {
-			$sanitized['external_tables']          = array();
-			$sanitized['disabled_external_tables'] = array();
-			return $sanitized;
+		$enabled = array();
+		if ( isset( $input['nvoos_ext_table'] ) && \is_array( $input['nvoos_ext_table'] ) ) {
+			$enabled = \array_keys( \array_filter( $input['nvoos_ext_table'] ) );
+			$enabled = \array_values( \array_map( 'sanitize_key', $enabled ) );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$enabled = \array_map( 'sanitize_key', \wp_unslash( $_POST['nvoos_ext_table'] ) );
-
-		$sanitized['external_tables'] = array_values( $enabled );
+		$sanitized['external_tables'] = $enabled;
 
 		// Build the disabled list from all known external tables minus enabled ones.
 		$known = array();
 		if ( function_exists( '\nvoos_graphify_get_external_tables' ) ) {
 			$known = \nvoos_graphify_get_external_tables();
 		}
-		$sanitized['disabled_external_tables'] = array_values( array_diff( $known, $enabled ) );
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		$sanitized['disabled_external_tables'] = array_values( \array_diff( $known, $enabled ) );
 
 		return $sanitized;
 	}
