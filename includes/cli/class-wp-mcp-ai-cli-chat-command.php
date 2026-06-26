@@ -37,6 +37,9 @@ class WP_MCP_AI_CLI_Chat_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * [--assistant=<id>]
 	 * : Assistant post ID (default: site default assistant).
 	 *
+	 * [--assistant-id=<id>]
+	 * : Alias for --assistant.
+	 *
 	 * [--model=<model>]
 	 * : Override the assistant's model.
 	 *
@@ -70,12 +73,18 @@ class WP_MCP_AI_CLI_Chat_Command extends WP_MCP_AI_CLI_Base_Command {
 	public function __invoke( $args, $assoc_args ) {
 		$message      = sanitize_textarea_field( (string) ( $args[0] ?? '' ) );
 		$assistant_id = isset( $assoc_args['assistant'] ) ? absint( $assoc_args['assistant'] ) : $this->default_assistant_id();
-		$model        = sanitize_text_field( (string) ( $assoc_args['model'] ?? '' ) );
-		$provider     = sanitize_key( (string) ( $assoc_args['provider'] ?? '' ) );
-		$temperature  = isset( $assoc_args['temperature'] ) ? (float) $assoc_args['temperature'] : null;
-		$max_tokens   = isset( $assoc_args['max-tokens'] ) ? absint( $assoc_args['max-tokens'] ) : null;
-		$stream       = WP_CLI\Utils\get_flag_value( $assoc_args, 'stream', false );
-		$format       = $assoc_args['format'] ?? 'text';
+
+		// Accept --assistant-id as an alias for --assistant (documented in README).
+		if ( 0 === $assistant_id && isset( $assoc_args['assistant-id'] ) ) {
+			$assistant_id = absint( $assoc_args['assistant-id'] );
+		}
+
+		$model       = sanitize_text_field( (string) ( $assoc_args['model'] ?? '' ) );
+		$provider    = sanitize_key( (string) ( $assoc_args['provider'] ?? '' ) );
+		$temperature = isset( $assoc_args['temperature'] ) ? (float) $assoc_args['temperature'] : null;
+		$max_tokens  = isset( $assoc_args['max-tokens'] ) ? absint( $assoc_args['max-tokens'] ) : null;
+		$stream      = WP_CLI\Utils\get_flag_value( $assoc_args, 'stream', false );
+		$format      = $assoc_args['format'] ?? 'text';
 
 		if ( '' === $message ) {
 			$this->error( __( 'Message is required.', 'mcp-ai-wpoos' ) );

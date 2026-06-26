@@ -171,6 +171,8 @@ class WP_MCP_AI_CLI_Settings_Command extends WP_MCP_AI_CLI_Base_Command {
 			WP_CLI::error( __( 'Please provide a valid setting key.', 'mcp-ai-wpoos' ) );
 		}
 
+		$this->require_capability( 'manage_options' );
+
 		// Attempt JSON decode; keep as string if not valid JSON.
 		$decoded = json_decode( $value, true );
 		if ( null !== $decoded && JSON_ERROR_NONE === json_last_error() ) {
@@ -212,6 +214,8 @@ class WP_MCP_AI_CLI_Settings_Command extends WP_MCP_AI_CLI_Base_Command {
 	 */
 	public function reset( $args, $assoc_args ) {
 		$yes = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
+
+		$this->require_capability( 'manage_options' );
 
 		if ( ! $yes ) {
 			WP_CLI::confirm( __( 'Are you sure you want to reset all NV oOS settings to their defaults?', 'mcp-ai-wpoos' ) );

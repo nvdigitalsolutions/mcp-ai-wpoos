@@ -192,6 +192,8 @@ class WP_MCP_AI_CLI_Credential_Command extends WP_MCP_AI_CLI_Base_Command {
 			WP_CLI::error( __( 'Please provide a valid assistant ID.', 'mcp-ai-wpoos' ) );
 		}
 
+		$this->require_capability( 'manage_options' );
+
 		$this->assert_assistant_exists( $assistant_id );
 
 		if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
@@ -265,6 +267,8 @@ class WP_MCP_AI_CLI_Credential_Command extends WP_MCP_AI_CLI_Base_Command {
 		if ( ! $credential_id ) {
 			WP_CLI::error( __( 'Please provide a credential ID.', 'mcp-ai-wpoos' ) );
 		}
+
+		$this->require_capability( 'manage_options' );
 
 		$this->assert_assistant_exists( $assistant_id );
 

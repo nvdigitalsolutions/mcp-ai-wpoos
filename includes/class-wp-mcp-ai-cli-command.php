@@ -1589,6 +1589,21 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		class WP_MCP_AI_CLI_Cache_Command extends WP_CLI_Command {
 
 			/**
+			 * Clear all NV oOS caches (default action).
+			 *
+			 * ## EXAMPLES
+			 *
+			 *     # Clear all caches.
+			 *     $ wp mcp-ai cache clear
+			 *
+			 * @param array $args       Positional arguments.
+			 * @param array $assoc_args Associative arguments.
+			 */
+			public function __invoke( $args, $assoc_args ) {
+				$this->clear();
+			}
+
+			/**
 			 * Clear all NV oOS caches.
 			 *
 			 * ## EXAMPLES

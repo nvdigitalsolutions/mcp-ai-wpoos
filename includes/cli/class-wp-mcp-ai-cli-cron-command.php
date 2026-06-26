@@ -125,6 +125,8 @@ class WP_MCP_AI_CLI_Cron_Command extends WP_MCP_AI_CLI_Base_Command {
 			$this->error( __( 'Job ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
+		$this->require_capability( 'manage_options' );
+
 		if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			$this->error( __( 'Cron manager not available.', 'mcp-ai-wpoos' ) );
 		}
@@ -195,6 +197,8 @@ class WP_MCP_AI_CLI_Cron_Command extends WP_MCP_AI_CLI_Base_Command {
 			$this->error( __( 'Job ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
+		$this->require_capability( 'manage_options' );
+
 		if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			$this->error( __( 'Cron manager not available.', 'mcp-ai-wpoos' ) );
 		}
@@ -252,6 +256,8 @@ class WP_MCP_AI_CLI_Cron_Command extends WP_MCP_AI_CLI_Base_Command {
 		if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			$this->error( __( 'Cron manager not available.', 'mcp-ai-wpoos' ) );
 		}
+
+		$this->require_capability( 'manage_options' );
 
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 		if ( empty( $jobs ) ) {

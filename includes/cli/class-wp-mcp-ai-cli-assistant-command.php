@@ -250,6 +250,8 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 			WP_CLI::error( __( 'Please provide a --title for the assistant.', 'mcp-ai-wpoos' ) );
 		}
 
+		$this->require_capability( 'manage_options' );
+
 		$status = in_array( $status, array( 'draft', 'publish' ), true ) ? $status : 'draft';
 
 		$post_data = array(
@@ -316,6 +318,8 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		if ( ! $id ) {
 			WP_CLI::error( __( 'Please provide a valid assistant ID.', 'mcp-ai-wpoos' ) );
 		}
+
+		$this->require_capability( 'manage_options' );
 
 		$post = get_post( $id );
 

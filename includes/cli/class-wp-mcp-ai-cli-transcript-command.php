@@ -239,6 +239,55 @@ class WP_MCP_AI_CLI_Transcript_Command extends WP_MCP_AI_CLI_Base_Command {
 	}
 
 	/**
+	 * List available transcripts (alias for "mine").
+	 *
+	 * Starts a transcript mining job, which processes stored chat
+	 * transcripts to extract agent memories.  This is the same as
+	 * `wp mcp-ai transcript mine`.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--assistant=<id>]
+	 * : Filter transcripts by assistant post ID.
+	 *
+	 * [--assistant-id=<id>]
+	 * : Alias for --assistant.
+	 *
+	 * [--user=<id>]
+	 * : Filter transcripts by user ID.
+	 *
+	 * [--since=<date>]
+	 * : Only mine transcripts after this date (Y-m-d format).
+	 *
+	 * [--min-messages=<number>]
+	 * : Minimum messages per transcript (default: 3).
+	 * ---
+	 * default: 3
+	 * ---
+	 *
+	 * [--batch-size=<number>]
+	 * : Sessions per tick (default: 10).
+	 * ---
+	 * default: 10
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     $ wp mcp-ai transcript list --assistant=42
+	 *
+	 * @subcommand list
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 */
+	public function list_( $args, $assoc_args ) {
+		// Accept --assistant-id as an alias for --assistant.
+		if ( ! isset( $assoc_args['assistant'] ) && isset( $assoc_args['assistant-id'] ) ) {
+			$assoc_args['assistant'] = $assoc_args['assistant-id'];
+		}
+		$this->mine( $args, $assoc_args );
+	}
+
+	/**
 	 * Ensure the transcript mining class is loaded.
 	 */
 	private function ensure_transcript_mining_loaded() {
