@@ -75,8 +75,13 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 			$this->error( __( 'Memory tools are not available. Ensure the plugin is properly configured.', 'mcp-ai-wpoos' ) );
 		}
 
+		if ( 0 === $assistant_id ) {
+			$this->error( __( 'Agent ID is required. Use --assistant=<id> or configure a site default assistant.', 'mcp-ai-wpoos' ) );
+		}
+
 		$tool_args = array(
-			'limit' => $limit,
+			'agent_id' => $assistant_id,
+			'limit'    => $limit,
 		);
 
 		if ( '' !== $query ) {
@@ -104,11 +109,18 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		$items = array();
 		foreach ( $memories as $mem ) {
+			// Safe truncation: mb_strimwidth requires mbstring; fall back to substr.
+			$content_short = function_exists( 'mb_strimwidth' )
+				? mb_strimwidth( $mem['content'] ?? $mem['text'] ?? '', 0, 120, '…' )
+				: ( strlen( (string) ( $mem['content'] ?? $mem['text'] ?? '' ) ) > 120
+					? substr( (string) ( $mem['content'] ?? $mem['text'] ?? '' ), 0, 119 ) . '…'
+					: (string) ( $mem['content'] ?? $mem['text'] ?? '' ) );
+
 			$items[] = array(
 				'ID'         => $mem['context_id'] ?? $mem['id'] ?? '',
 				'Type'       => $mem['context_type'] ?? $mem['type'] ?? '',
 				'Importance' => $mem['importance'] ?? '',
-				'Content'    => mb_strimwidth( $mem['content'] ?? $mem['text'] ?? '', 0, 120, '…' ),
+				'Content'    => $content_short,
 				'Created'    => isset( $mem['created_at'] ) ? wp_date( 'Y-m-d H:i', $mem['created_at'] ) : '',
 			);
 		}
@@ -295,11 +307,11 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 		$items = array();
 		foreach ( $entries as $entry ) {
 			$items[] = array(
-				'ID'      => $entry['event_id'] ?? $entry['id'] ?? '',
-				'Action'  => $entry['action'] ?? $entry['event'] ?? '',
-				'Context' => mb_strimwidth( $entry['context_id'] ?? $entry['summary'] ?? '', 0, 60, '…' ),
-				'Time'    => isset( $entry['timestamp'] ) ? wp_date( 'Y-m-d H:i:s', $entry['timestamp'] ) : '',
-			);
+					'ID'      => $entry['event_id'] ?? $entry['id'] ?? '',
+					'Action'  => $entry['action'] ?? $entry['event'] ?? '',
+					'Context' => function_exists( 'mb_strimwidth' ) ? mb_strimwidth( $entry['context_id'] ?? $entry['summary'] ?? '', 0, 60, '…' ) : ( strlen( (string) ( $entry['context_id'] ?? $entry['summary'] ?? '' ) ) > 60 ? substr( (string) ( $entry['context_id'] ?? $entry['summary'] ?? '' ), 0, 59 ) . '…' : (string) ( $entry['context_id'] ?? $entry['summary'] ?? '' ) ),
+					'Time'    => isset( $entry['timestamp'] ) ? wp_date( 'Y-m-d H:i:s', $entry['timestamp'] ) : '',
+				);
 		}
 
 		$this->format_output( $items, $format );

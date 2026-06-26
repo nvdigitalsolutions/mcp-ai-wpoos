@@ -77,7 +77,7 @@ class WP_MCP_AI_CLI_Approval_Command extends WP_MCP_AI_CLI_Base_Command {
 				'Tool'      => $item['tool'] ?? $item['tool_slug'] ?? '-',
 				'Assistant' => $item['assistant_id'] ?? $item['assistant'] ?? '-',
 				'Requester' => $item['requester_id'] ?? $item['requester'] ?? '-',
-				'Reason'    => mb_strimwidth( $item['reason'] ?? '', 0, 60, '…' ),
+				'Reason'    => function_exists( 'mb_strimwidth' ) ? mb_strimwidth( $item['reason'] ?? '', 0, 60, '…' ) : ( strlen( (string) ( $item['reason'] ?? '' ) ) > 60 ? substr( (string) ( $item['reason'] ?? '' ), 0, 59 ) . '…' : (string) ( $item['reason'] ?? '' ) ),
 				'Created'   => $item['created_at'] ?? $item['date'] ?? '-',
 			);
 		}

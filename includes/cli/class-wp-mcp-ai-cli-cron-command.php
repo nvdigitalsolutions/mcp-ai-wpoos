@@ -52,7 +52,17 @@ class WP_MCP_AI_CLI_Cron_Command extends WP_MCP_AI_CLI_Base_Command {
 			$this->error( __( 'Cron manager not available.', 'mcp-ai-wpoos' ) );
 		}
 
-		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		try {
+			$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		} catch ( \Exception $e ) {
+			$this->error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to retrieve cron jobs: %s', 'mcp-ai-wpoos' ),
+					$e->getMessage()
+				)
+			);
+		}
 
 		if ( empty( $jobs ) ) {
 			$this->warning( __( 'No cron jobs found.', 'mcp-ai-wpoos' ) );
@@ -61,12 +71,21 @@ class WP_MCP_AI_CLI_Cron_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		$items = array();
 		foreach ( $jobs as $job_id => $job ) {
+			// Guard against malformed job entries.
+			if ( ! is_array( $job ) ) {
+				continue;
+			}
 			$hook  = $job['hook'] ?? '';
 			$args  = isset( $job['args'] ) && is_array( $job['args'] ) ? $job['args'] : array();
 			$event = wp_get_scheduled_event( $hook, WP_MCP_AI_Cron_Manager::normalise_args( $args ) );
 
+			// Safe truncation: mb_strimwidth requires mbstring; fall back to substr.
+			$job_id_short = function_exists( 'mb_strimwidth' )
+				? mb_strimwidth( (string) $job_id, 0, 16, '…' )
+				: ( strlen( (string) $job_id ) > 16 ? substr( (string) $job_id, 0, 15 ) . '…' : (string) $job_id );
+
 			$items[] = array(
-				'ID'       => mb_strimwidth( $job_id, 0, 16, '…' ),
+				'ID'       => $job_id_short,
 				'Hook'     => $hook,
 				'Schedule' => $job['schedule'] ?? 'single',
 				'Next Run' => $event ? wp_date( 'Y-m-d H:i', $event->timestamp ) : __( 'Not scheduled', 'mcp-ai-wpoos' ),

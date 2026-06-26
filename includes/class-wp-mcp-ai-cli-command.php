@@ -146,54 +146,6 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			}
 
 			/**
-			 * Test remote MCP REST API connectivity from this site.
-			 *
-			 * ## OPTIONS
-			 *
-			 * <base>
-			 * : Base URL to the remote MCP REST namespace (for example, https://example.com/wp-json/mcp-ai/v1).
-			 *
-			 * [--token=<token>]
-			 * : Optional bearer credential (Auth0 access token or assistant credential).
-			 *
-			 * [--guest-token=<token>]
-			 * : Optional guest token sent via the X-WP-MCP-AI-Guest header.
-			 *
-			 * [--nonce=<nonce>]
-			 * : Optional WordPress REST nonce for same-origin checks.
-			 *
-			 * [--assistant-id=<id>]
-			 * : Include an assistant hint when probing the directory endpoint.
-			 *
-			 * [--timeout=<seconds>]
-			 * : Request timeout in seconds. Default: 15.
-			 *
-			 * [--verify-ssl=<boolean>]
-			 * : Whether to verify the remote SSL certificate. Default: true.
-			 *
-			 * [--user-agent=<agent>]
-			 * : Override the default user agent string.
-			 *
-			 * [--format=<format>]
-			 * : Render the check output in table, json, or yaml format.
-			 * ---
-			 * default: table
-			 * options:
-			 *   - table
-			 *   - json
-			 *   - yaml
-			 *
-			 * ## EXAMPLES
-			 *
-			 *     # Probe a remote MCP deployment with an Auth0 access token.
-			 *     $ wp mcp-ai remote https://example.com/wp-json/mcp-ai/v1 --token=ey...
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param array $args       Positional arguments.
-			 * @param array $assoc_args Associative arguments.
-			 */
-			/**
 			 * Clean up orphaned CCT items for non-published assistants.
 			 *
 			 * Removes JetEngine CCT items that are linked to auto-drafts, drafts,
@@ -245,7 +197,25 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 * : The REST base URL of the remote server.
 			 *
 			 * [--token=<token>]
-			 * : An Auth0 access token for authenticated requests.
+			 * : Optional bearer credential (Auth0 access token or assistant credential).
+			 *
+			 * [--guest-token=<token>]
+			 * : Optional guest token sent via the X-WP-MCP-AI-Guest header.
+			 *
+			 * [--nonce=<nonce>]
+			 * : Optional WordPress REST nonce for same-origin checks.
+			 *
+			 * [--assistant-id=<id>]
+			 * : Include an assistant hint when probing the directory endpoint.
+			 *
+			 * [--timeout=<seconds>]
+			 * : Request timeout in seconds. Default: 15.
+			 *
+			 * [--verify-ssl=<boolean>]
+			 * : Whether to verify the remote SSL certificate. Default: true.
+			 *
+			 * [--user-agent=<agent>]
+			 * : Override the default user agent string.
 			 *
 			 * [--format=<format>]
 			 * : Render the check output in table, json, or yaml format.
@@ -260,6 +230,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 *
 			 *     # Probe a remote MCP deployment with an Auth0 access token.
 			 *     $ wp mcp-ai remote https://example.com/wp-json/mcp-ai/v1 --token=ey...
+			 *
+			 *     # Probe with SSL verification disabled (local dev).
+			 *     $ wp mcp-ai remote https://localhost/wp-json/mcp-ai/v1 --verify-ssl=false
 			 *
 			 * @since 1.0.0
 			 *

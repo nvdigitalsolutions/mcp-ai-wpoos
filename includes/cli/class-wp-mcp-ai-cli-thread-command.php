@@ -94,9 +94,13 @@ class WP_MCP_AI_CLI_Thread_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		$items = array();
 		foreach ( $threads as $t ) {
-			$items[] = array(
-				'ID'        => $t->id,
-				'Title'     => mb_strimwidth( $t->title, 0, 50, '…' ),
+			$title_short = function_exists( 'mb_strimwidth' )
+					? mb_strimwidth( $t->title, 0, 50, '…' )
+					: ( strlen( $t->title ) > 50 ? substr( $t->title, 0, 49 ) . '…' : $t->title );
+
+				$items[] = array(
+					'ID'        => $t->id,
+					'Title'     => $title_short,
 				'Status'    => $t->status,
 				'User'      => $t->user_id,
 				'Assistant' => $t->assistant_id,

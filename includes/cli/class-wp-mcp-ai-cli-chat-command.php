@@ -148,7 +148,7 @@ class WP_MCP_AI_CLI_Chat_Command extends WP_MCP_AI_CLI_Base_Command {
 		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $assistant used for context
 		$options['stream'] = true;
 
-		$result = $router->route_to_provider( $messages, $options );
+		$result = $router->create_chat_completion( $messages, $options );
 		if ( is_wp_error( $result ) ) {
 			$this->error( $result->get_error_message() );
 		}
@@ -175,7 +175,7 @@ class WP_MCP_AI_CLI_Chat_Command extends WP_MCP_AI_CLI_Base_Command {
 	private function render_response( $router, $messages, $options, $assistant, $format ) {
 		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $assistant used for context
 		$start   = microtime( true );
-		$result  = $router->route_to_provider( $messages, $options );
+		$result  = $router->create_chat_completion( $messages, $options );
 		$elapsed = round( ( microtime( true ) - $start ) * 1000, 2 );
 
 		if ( is_wp_error( $result ) ) {
