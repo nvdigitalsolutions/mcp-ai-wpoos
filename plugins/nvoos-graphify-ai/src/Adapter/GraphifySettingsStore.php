@@ -111,21 +111,34 @@ class GraphifySettingsStore implements SettingsStoreInterface {
 	/**
 	 * Resolve an API key for the given provider slug.
 	 *
-	 * Graphify stores keys with the `ai_api_key_` prefix.
+	 * Delegates to {@see CredentialResolver} which checks sources
+	 * in priority order:
+	 *
+	 *  1. nvoos_graphify_settings → ai_api_key_{provider}
+	 *  2. Base plugin's Credential_Resolver (wp_mcp_ai_settings +
+	 *     WP 7.0 Connector DB)
+	 *  3. {PROVIDER}_API_KEY environment variable
+	 *  4. {PROVIDER}_API_KEY PHP constant
+	 *
 	 * Local providers (ollama, lm_studio) have no key requirement.
 	 *
 	 * @return string|null  The API key string, or null if not configured.
 	 */
 	public function getApiKey( string $provider ): ?string {
-		// Local providers — no API key needed.
-		$localProviders = array( 'ollama', 'lm_studio' );
-		if ( in_array( $provider, $localProviders, true ) ) {
-			return '';
-		}
+		return CredentialResolver::getApiKey( $provider );
+	}
 
-		$key = $this->get( "ai_api_key_{$provider}" );
-
-		return is_string( $key ) && '' !== $key ? $key : null;
+	/**
+	 * Check whether a provider has usable credentials.
+	 *
+	 * Returns true when an API key is found (via any source) or the
+	 * provider uses 'none' authentication (Ollama, LM Studio).
+	 *
+	 * @param string $provider Provider slug.
+	 * @return bool
+	 */
+	public function hasCredentials( string $provider ): bool {
+		return CredentialResolver::hasCredentials( $provider );
 	}
 
 	/**
