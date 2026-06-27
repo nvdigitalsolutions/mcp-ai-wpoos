@@ -297,6 +297,26 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
+= 1.1.34 - June 27, 2026 =
+
+Bumped to 1.1.34 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, `CHANGELOG.md`, `DOCUMENTATION_INDEX.md`, `QUICK_REFERENCE.md`, and `ROADMAP.md`. Tool count: ~195 base + ~795 Pro (~990 total; live registry via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+
+**GPT-Realtime-2 Voice Models, Multi-Channel Result Delivery UI, Graphify Ecosystem, Bug Fixes**
+
+* **GPT-Realtime-2 Voice Models Upgrade (PR #5479).** Migrated from deprecated beta to GA Realtime API endpoints. WebRTC transport as primary (WebSocket fallback preserved) with ephemeral token minting and SDP relay. GPT-Realtime-2 model with 128K context and 5-level configurable reasoning effort. 12-section structured prompt template with per-section filter hooks. 2 new models: GPT-Realtime-Translate (70+ input → 13 output languages) and GPT-Realtime-Whisper (streaming STT). New `wait_for_user` tool for silence/noise handling. PTT mode extended to WebRTC. Commentary phase support. 7 new admin settings defaults. Per-session ICE reconnection with exponential backoff.
+* **Multi-Channel Result Delivery UI (PR #5465).** Telegram, Discord, WhatsApp, and Google Chat channels added to schedule edit modal Result Delivery section. All 11 delivery channels now exposed in admin UI (up from 4: Email, Slack, Paper Store, WordPress Post).
+* **Pro Scheduler AI/Workflow Response Delivery (PR #5466).** AI/workflow-generated responses routed through the pro scheduler delivery pipeline for richer formatting and multi-step AI output delivery.
+* **Graphify Ecosystem Enhancements (PRs #5475–#5480).** Standalone remote source drivers with Bridge class for nvoos-graphify standalone plugin (PRs #5476, #5477). WP 7.0 Connectors credential resolution integrated into graphify ecosystem (PR #5478). wp.org compliance sweep: escape, crypto, webhook, config, truncate, and readme fixes for nvoos-graphify (PR #5480). Plugin Sources tab and Remote Sources UI fix (PR #5475).
+* **API/Web Search Mode Toggle for Upwork & LinkedIn (PR #5473).** New `mode` parameter on Upwork and LinkedIn remote connections: `api` (direct API access) or `web_search` (browser-based search). Allows fallback to web search when API credentials are unavailable.
+* **Bug Fix — 3 Reasoning Tools.** `enable_reasoning_mode`, `analyze_code_sequence`, and `validate_reasoning_chain` called non-existent `$this->success()` causing PHP fatal errors. Replaced with canonical `format_chat_response()`. Also fixed `trim()` on array TypeError in `validate_reasoning_chain` and added `count()` on null guard in `get_environment_status`.
+* **Bug Fix — CRM Pipeline (PRs #5474, #5469).** Deal import and Gmail source pipeline fixed. Configured sources count corrected and multi-source auto-import pipeline added.
+* **Bug Fix — Docs Hub (PRs #5472, #5468).** REST fatal error and plain-permalink URL bug resolved. Settings sync reliability improved, rebuild reliability hardened, repo lookup logic fixed.
+* **Bug Fix — nv-cloud-init (PR #5470).** `require_once` for nv-cloud-init.php now guarded with `file_exists()` check to prevent fatal errors when the file is absent.
+* **Bug Fix — wait_for_user Tool.** Base class loading ensured before extending and invalid base class extension removed.
+* **Security.** http-proxy-middleware CVE-2026-55602 CRLF injection fix (PR #5464). Gemini prompt caching `cache_control` error resolved (PR #5463). GPT image models correctly routed to Responses API (PR #5461).
+* **Documentation.** GPT-Realtime-2 upgrade proposal + 1,166-line implementation plan. FastAPI porting implementation plan (PR #5467). Multi-channel result delivery enhancement proposal. Voice feature guide and wait_for_user tool reference added.
+* **Housekeeping.** Stale build artifacts and `build/toolkit-addons` directory removed.
+
 = 1.1.33 - June 24, 2026 =
 
 Bumped to 1.1.33 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, and `CHANGELOG.md`. Tool count: ~195 base + ~795 Pro (~990 total; live registry via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
