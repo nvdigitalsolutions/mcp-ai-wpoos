@@ -92,7 +92,7 @@ class WP_MCP_AI_Tool_List_PM_Workflow_Rules implements WP_MCP_AI_Tool_Interface,
 			'name'                  => $this->get_name(),
 			'description'           => $this->get_description(),
 			'toolkit'               => 'project_management',
-			'post_type'             => 'mcp_ai_pm_workflow_rule',
+			'post_type'             => 'mcp_ai_pm_wf_rule',
 			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
 			'profession_tags'       => array( 'project_manager', 'team_lead' ),
 			'risk_level'            => 'info',
@@ -142,7 +142,7 @@ class WP_MCP_AI_Tool_List_PM_Workflow_Rules implements WP_MCP_AI_Tool_Interface,
 		$limit = isset( $arguments['limit'] ) ? min( absint( $arguments['limit'] ), 100 ) : 20;
 
 		$query_args = array(
-			'post_type'      => 'mcp_ai_pm_workflow_rule',
+			'post_type'      => 'mcp_ai_pm_wf_rule',
 			'post_status'    => 'publish',
 			'posts_per_page' => $limit,
 			'orderby'        => 'date',

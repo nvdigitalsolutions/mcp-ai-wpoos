@@ -4,7 +4,7 @@
  *
  * Ensures the Social Media toolkit keeps the WordPress site performant:
  *
- *  1. CPT registration fix — registers the missing social_scheduled_post
+ *  1. CPT registration fix — registers the missing social_sched_post
  *     CPT that schedule and bulk-schedule tools write to.
  *  2. Cron handler wire — registers the missing wp_mcp_ai_publish_scheduled_post
  *     cron handler so scheduled posts actually transition to publish.
@@ -31,7 +31,7 @@ class WP_MCP_AI_Social_Media_Optimization {
 	 *
 	 * @var string
 	 */
-	const SCHEDULED_POST_TYPE = 'social_scheduled_post';
+	const SCHEDULED_POST_TYPE = 'social_sched_post';
 
 	/**
 	 * Cron hook for daily cleanup.
@@ -99,7 +99,7 @@ class WP_MCP_AI_Social_Media_Optimization {
 	}
 
 	/**
-	 * Register the social_scheduled_post custom post type.
+	 * Register the social_sched_post custom post type.
 	 *
 	 * This CPT was used by schedule_social_post and bulk_schedule_posts
 	 * tools but never registered — posts would silently fail or become

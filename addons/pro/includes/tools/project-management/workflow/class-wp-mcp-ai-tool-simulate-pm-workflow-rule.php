@@ -86,7 +86,7 @@ class WP_MCP_AI_Tool_Simulate_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interfa
 			'name'                  => $this->get_name(),
 			'description'           => $this->get_description(),
 			'toolkit'               => 'project_management',
-			'post_type'             => 'mcp_ai_pm_workflow_rule',
+			'post_type'             => 'mcp_ai_pm_wf_rule',
 			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
 			'profession_tags'       => array( 'project_manager', 'team_lead' ),
 			'risk_level'            => 'info',

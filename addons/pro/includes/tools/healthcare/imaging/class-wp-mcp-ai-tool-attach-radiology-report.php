@@ -3,7 +3,7 @@
  * Tool: attach_radiology_report
  *
  * Attaches a radiology report to a `mcp_ai_imaging_study` post.  The
- * report is stored as a child post of type `mcp_ai_radiology_report`
+ * report is stored as a child post of type `mcp_ai_rad_report`
  * (auto-registered if absent) with a back-reference to the study and
  * the reporting clinician.  Optionally, a minimal DICOM Structured
  * Report (SR) JSON document is generated and stored as `_report_sr`
@@ -42,12 +42,11 @@ class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface
 	 * Lazily register the radiology report CPT.
 	 */
 	public static function ensure_cpt() {
-		if ( post_type_exists( 'mcp_ai_radiology_report' ) ) {
+		if ( post_type_exists( 'mcp_ai_rad_report' ) ) {
 			return;
 		}
 		register_post_type(
-			// phpcs:ignore WordPress.NamingConventions.ValidPostTypeSlug.TooLong
-			'mcp_ai_radiology_report',
+			'mcp_ai_rad_report',
 			array(
 				'labels'              => array(
 					'name'          => __( 'Radiology Reports', 'mcp-ai-wpoos-pro' ),
@@ -187,7 +186,7 @@ class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface
 
 		$report_id = wp_insert_post(
 			array(
-				'post_type'    => 'mcp_ai_radiology_report',
+				'post_type'    => 'mcp_ai_rad_report',
 				'post_status'  => 'publish',
 				'post_title'   => $title,
 				'post_content' => $body,

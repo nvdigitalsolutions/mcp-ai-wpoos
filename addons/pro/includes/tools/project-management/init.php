@@ -86,9 +86,9 @@ if ( $is_enabled && ! $is_base ) {
 	}
 
 	// Register PM Workflow Rule CPT if not already registered.
-	if ( ! post_type_exists( 'mcp_ai_pm_workflow_rule' ) ) {
+	if ( ! post_type_exists( 'mcp_ai_pm_wf_rule' ) ) {
 		register_post_type(
-			'mcp_ai_pm_workflow_rule', // phpcs:ignore -- slug is intentional, renaming would break data
+			'mcp_ai_pm_wf_rule',
 			array(
 				'labels'             => array(
 					'name'               => __( 'PM Workflow Rules', 'mcp-ai-wpoos-pro' ),

@@ -152,8 +152,8 @@ class Test_Pro_Toolkit_Optimization extends WP_UnitTestCase {
 		WP_MCP_AI_Social_Media_Optimization::register_scheduled_post_cpt();
 
 		$this->assertTrue(
-			post_type_exists( 'social_scheduled_post' ),
-			'social_scheduled_post CPT should be registered'
+			post_type_exists( 'social_sched_post' ),
+			'social_sched_post CPT should be registered'
 		);
 	}
 
@@ -180,7 +180,7 @@ class Test_Pro_Toolkit_Optimization extends WP_UnitTestCase {
 		// Create a scheduled post.
 		$post_id = wp_insert_post(
 			array(
-				'post_type'   => 'social_scheduled_post',
+				'post_type'   => 'social_sched_post',
 				'post_status' => 'future',
 				'post_title'  => 'Test Scheduled Post',
 				'post_date'   => gmdate( 'Y-m-d H:i:s', strtotime( '+1 hour' ) ),
