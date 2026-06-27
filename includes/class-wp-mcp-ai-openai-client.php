@@ -96,10 +96,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return bool
 		 */
 		public static function is_gpt_image_model( $model ) {
-			$model       = sanitize_text_field( $model );
-			$model_lower = strtolower( $model );
+						$model       = sanitize_text_field( $model );
+						$model_lower = strtolower( $model );
 
-			$is_gpt = in_array( $model_lower, array( 'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2' ), true );
+						$is_gpt = in_array( $model_lower, array( 'gpt-image', 'gpt-image-1', 'gpt-image-1-mini', 'gpt-image-1.5', 'gpt-image-2' ), true );
 
 			/**
 			 * Filter whether the supplied model is a gpt-image family model.
@@ -111,7 +111,79 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
-		 * Extract the base64-encoded image from a Responses API response body.
+		 * Determine whether the given gpt-image model is directly supported
+		 * as a mainline model in the Responses API.
+		 *
+		 * As of mid-2026, only gpt-image-1 and gpt-image-1-mini are
+		 * supported as mainline models. gpt-image-1.5 and gpt-image-2
+		 * require using a chat model (e.g. gpt-5.4) with the
+		 * image_generation tool instead.
+		 *
+		 * @param string $model Image model identifier.
+		 * @return bool
+		 */
+		public static function is_directly_supported_gpt_image_model( $model ) {
+			if ( ! self::is_gpt_image_model( $model ) ) {
+				return false;
+			}
+
+			$model_lower = strtolower( sanitize_text_field( $model ) );
+
+			return in_array( $model_lower, array( 'gpt-image-1', 'gpt-image-1-mini' ), true );
+		}
+
+		/**
+		 * Get a suitable chat model to use as fallback for image generation
+		 * when the requested gpt-image model is not directly supported.
+		 *
+		 * Prefers the site's configured default OpenAI model if it is a GPT
+		 * family model; otherwise falls back to gpt-5.4.
+		 *
+		 * @return string
+		 */
+		public static function get_image_fallback_chat_model() {
+				$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+				$default_model = isset( $settings['default_model'] ) ? sanitize_text_field( $settings['default_model'] ) : 'gpt-5.4';
+
+				// The image_generation tool requires GPT-5 or newer models.
+				// Prefer the site's configured default if it's a GPT-5.x model,
+				// otherwise fall back to gpt-5.4.
+				if ( 0 === stripos( $default_model, 'gpt-5' ) ) {
+					return $default_model;
+				}
+
+				return 'gpt-5.4';
+				}
+
+				/**
+				 * Determine whether a model is a GPT chat model that can use the
+				 * image_generation tool via the Responses API.
+				 *
+				 * GPT-5 and newer chat models support the image_generation tool
+				 * when sent to the Responses API endpoint.
+				 *
+				 * @param string $model Model identifier.
+				 * @return bool
+				 */
+				public static function is_chat_model_for_image_gen( $model ) {
+					$model = sanitize_text_field( $model );
+
+					// GPT-5.x and newer chat models support image_generation.
+					if ( 0 === stripos( $model, 'gpt-5' ) ) {
+						return true;
+					}
+
+					/**
+					 * Filter whether a model can use the image_generation tool.
+					 *
+					 * @param bool   $is_chat_model Whether the model supports image_generation.
+					 * @param string $model         Model identifier.
+					 */
+					return (bool) apply_filters( 'wp_mcp_ai_is_chat_model_for_image_gen', false, $model );
+				}
+
+				/**
+				 * Extract the base64-encoded image from a Responses API response body.
 		 *
 		 * The Responses API nests image data inside
 		 * output[0].content[0].image.b64_json. This helper walks that
@@ -2018,9 +2090,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// - gpt-image-1/1.5/2 accept: 'low', 'medium', 'high', 'auto'
 			// - DALL-E 2/3 accept: 'standard', 'hd'.
 			$is_gpt_image_model = self::is_gpt_image_model( $model );
+				$is_chat_model      = self::is_chat_model_for_image_gen( $model );
 
-			if ( $is_gpt_image_model ) {
-				// For gpt-image models, validate and use quality values directly.
+				if ( $is_gpt_image_model || $is_chat_model ) {
+					// For gpt-image / chat models, validate and use quality values directly.
 				$valid_gpt_qualities = array( 'low', 'medium', 'high', 'auto' );
 
 				// If quality is a DALL-E value, map it to gpt-image values.
@@ -2065,8 +2138,31 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout = max( 5, $timeout );
 
-			if ( $is_gpt_image_model ) {
-				// gpt-image-1 / 1.5 / 2 use the Responses API endpoint.
+			if ( $is_gpt_image_model || $is_chat_model ) {
+				// If the requested gpt-image model is not directly supported
+				// as a mainline Responses API model (gpt-image-1.5 and
+				// gpt-image-2), fall back to a chat model with the
+				// image_generation tool. Only gpt-image-1 and
+				// gpt-image-1-mini are directly supported as of mid-2026.
+				if ( ! self::is_directly_supported_gpt_image_model( $model ) ) {
+					$fallback_model = self::get_image_fallback_chat_model();
+					WP_MCP_AI_Logger::log_event(
+						'openai_image_model_fallback',
+						sprintf(
+							/* translators: 1: requested image model, 2: fallback chat model */
+							__( 'gpt-image model %1$s is not directly supported in the Responses API. Using chat model %2$s with image_generation tool instead.', 'mcp-ai-wpoos' ),
+							$model,
+							$fallback_model
+						),
+						array(
+							'requested_model' => $model,
+							'fallback_model'  => $fallback_model,
+						)
+					);
+					$model = $fallback_model;
+				}
+
+				// gpt-image / chat models use the Responses API endpoint.
 				$endpoint = self::RESPONSES_ENDPOINT;
 
 				$payload = array(
@@ -2206,8 +2302,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( ! empty( $decoded ) ) {
-				if ( $is_gpt_image_model ) {
-					// Responses API format: output[0].content[0].image.b64_json.
+					if ( $is_gpt_image_model || $is_chat_model ) {
+						// Responses API format: output[0].content[0].image.b64_json.
 					$b64 = $this->extract_b64_from_responses_output( $decoded );
 					if ( is_wp_error( $b64 ) ) {
 						return $b64;
