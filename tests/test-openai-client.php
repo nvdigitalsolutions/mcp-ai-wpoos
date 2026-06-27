@@ -117,7 +117,8 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * GPT-Image-1 should allow callers to control the response_format flag.
+	 * All image models should return false for response_format support by default
+	 * since the OpenAI API currently rejects the response_format parameter.
 	 */
 	public function test_image_model_supports_response_format_for_gpt_image() {
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'gpt-image-2' ) );
