@@ -16,8 +16,6 @@
 
 **Latest Updates:** June 27, 2026 (v1.1.34) — See [§ Latest Updates (v1.1.34 — June 2026)](#-latest-updates-v1134--june-2026) (GPT-Realtime-2 voice models with WebRTC transport + Translate/Whisper + reasoning. Multi-channel result delivery UI: Telegram, Discord, WhatsApp, Google Chat. Pro scheduler AI/workflow response delivery. Graphify ecosystem: remote drivers, WP 7.0 Connectors, wp.org compliance. 3 reasoning-tool fatal bugs fixed. CRM deal import fix + multi-source auto-import. Docs Hub REST + settings sync fixes. http-proxy-middleware CVE-2026-55602, Gemini cache fix, GPT image routing fix. FastAPI porting plan. Plus prior v1.1.33 items below).
 
-**Previous Updates (v1.1.32):** June 19, 2026 — Content Format Templates & Featured Image Service (3-provider fallback), Result Delivery Pipeline (8 channels), ECA document generation, duplicate posts fix, 6 provider clients timeout fix, schedule trigger stability, Paper Store delete fix, ECA settings/attachment fix, npm CI & Jest resilience, 14 dependabot bumps + 8 npm audit CVEs.
-
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
 **MCP Specification:** 2024-11-05 (Full Compliance)  
