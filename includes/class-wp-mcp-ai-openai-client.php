@@ -123,9 +123,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return bool
 		 */
 		public static function is_directly_supported_gpt_image_model( $model ) {
-				// As of mid-2026, gpt-image models do not work reliably as
-				// mainline Responses API models on all accounts. Use chat
-				// models (gpt-5.x) with the image_generation tool instead.
+				// As of mid-2026, gpt-image models (1, 1-mini, 1.5, 2) are not
+				// reliably available as mainline Responses API models on all
+				// accounts. Always fall back to chat models with the
+				// image_generation tool.
 				return false;
 		}
 
@@ -140,17 +141,18 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 */
 		public static function get_image_fallback_chat_model() {
 				$settings      = WP_MCP_AI_Admin_Settings::get_settings();
-				$default_model = isset( $settings['default_model'] ) ? sanitize_text_field( $settings['default_model'] ) : 'gpt-5.4';
+				$default_model = isset( $settings['default_model'] ) ? sanitize_text_field( $settings['default_model'] ) : 'gpt-4.1';
 
-				// The image_generation tool requires GPT-5 or newer models.
-				// Prefer the site's configured default if it's a GPT-5.x model,
-				// otherwise fall back to gpt-5.4.
-			if ( 0 === stripos( $default_model, 'gpt-5' ) ) {
+				// Use the site's configured default chat model if it is a GPT
+				// family model that can use the image_generation tool.
+				// GPT-4.x and GPT-5.x models both support this via the
+				// Responses API.
+			if ( self::is_chat_model_for_image_gen( $default_model ) ) {
 				return $default_model;
 			}
 
-				return 'gpt-5.4';
-		}
+				return 'gpt-4.1';
+			}
 
 				/**
 				 * Determine whether a model is a GPT chat model that can use the
@@ -165,8 +167,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		public static function is_chat_model_for_image_gen( $model ) {
 			$model = sanitize_text_field( $model );
 
-			// GPT-5.x and newer chat models support image_generation.
-			if ( 0 === stripos( $model, 'gpt-5' ) ) {
+			// GPT-4.x and GPT-5.x chat models support the image_generation
+			// tool via the Responses API.
+			if (
+				0 === stripos( $model, 'gpt-4' ) ||
+				0 === stripos( $model, 'gpt-5' )
+			) {
 				return true;
 			}
 
@@ -2075,7 +2081,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model                       = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'dall-e-3';
+			$default_model                       = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1';
 						$default_size            = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
 						$default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'url';
 
@@ -2102,10 +2108,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// - gpt-image-1/1.5/2 accept: 'low', 'medium', 'high', 'auto'
 			// - DALL-E 2/3 accept: 'standard', 'hd'.
 			$is_gpt_image_model = self::is_gpt_image_model( $model );
-				$is_chat_model  = self::is_chat_model_for_image_gen( $model );
+							$is_chat_model  = self::is_chat_model_for_image_gen( $model );
 
-			if ( $is_gpt_image_model || $is_chat_model ) {
-				// For gpt-image / chat models, validate and use quality values directly.
+						if ( $is_gpt_image_model || $is_chat_model ) {
+							// For gpt-image / chat models, validate and use quality values directly.
 				$valid_gpt_qualities = array( 'low', 'medium', 'high', 'auto' );
 
 				// If quality is a DALL-E value, map it to gpt-image values.
@@ -2148,33 +2154,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout = max( 5, $timeout );
+						$timeout = max( 5, $timeout );
 
-			if ( $is_gpt_image_model || $is_chat_model ) {
-				// If the requested gpt-image model is not directly supported
-				// as a mainline Responses API model (gpt-image-1.5 and
-				// gpt-image-2), fall back to a chat model with the
-				// image_generation tool. Only gpt-image-1 and
-				// gpt-image-1-mini are directly supported as of mid-2026.
-				if ( ! self::is_directly_supported_gpt_image_model( $model ) ) {
-					$fallback_model = self::get_image_fallback_chat_model();
-					WP_MCP_AI_Logger::log_event(
-						'openai_image_model_fallback',
-						sprintf(
-							/* translators: 1: requested image model, 2: fallback chat model */
-							__( 'gpt-image model %1$s is not directly supported in the Responses API. Using chat model %2$s with image_generation tool instead.', 'mcp-ai-wpoos' ),
-							$model,
-							$fallback_model
-						),
-						array(
-							'requested_model' => $model,
-							'fallback_model'  => $fallback_model,
-						)
-					);
-					$model = $fallback_model;
-				}
-
-				// gpt-image / chat models use the Responses API endpoint.
+						if ( $is_chat_model ) {
+							// Chat models use the Responses API endpoint with the
+							// image_generation tool.
 				$endpoint = self::RESPONSES_ENDPOINT;
 
 				$payload = array(
@@ -2314,7 +2298,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( ! empty( $decoded ) ) {
-				if ( $is_gpt_image_model || $is_chat_model ) {
+				if ( $is_chat_model ) {
 					// Responses API format: output[0].content[0].image.b64_json.
 					$b64 = $this->extract_b64_from_responses_output( $decoded );
 					if ( is_wp_error( $b64 ) ) {

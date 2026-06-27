@@ -29,9 +29,9 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Image_Response;
 
-	const DEFAULT_MODEL           = 'dall-e-3';
+	const DEFAULT_MODEL           = 'gpt-image-1';
 	const DEFAULT_SIZE            = '1024x1024';
-	const DEFAULT_QUALITY         = 'standard'; // Dall-E 3 default. gpt-image models use 'medium'.
+	const DEFAULT_QUALITY         = 'medium'; // gpt-image models default to 'medium'.
 	const DEFAULT_FORMAT          = 'png';
 	const DEFAULT_RESPONSE_FORMAT = 'url';
 
@@ -1016,7 +1016,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'model_requirements'    => array(
 				'providers' => array( 'openai' ),
-				'models'    => array( 'gpt-image-2', 'gpt-image-1.5', 'gpt-image-1', 'dall-e-3', 'dall-e-2' ),
+				'models'    => array( 'gpt-image-2', 'gpt-image-1.5', 'gpt-image-1', 'gpt-image-1-mini' ),
 				'required'  => true,
 			),
 			'parameter_constraints' => array(
