@@ -51,3 +51,4 @@ $wpdb->query(
 // Clear scheduled hooks.
 wp_unschedule_hook( 'nvoos_graphify/cron_build' );
 wp_unschedule_hook( 'nvoos_graphify/cron_enrich' );
+wp_unschedule_hook( 'nvoos_graphify/initial_build' );
