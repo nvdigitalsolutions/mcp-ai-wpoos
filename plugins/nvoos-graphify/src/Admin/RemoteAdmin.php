@@ -182,7 +182,7 @@ class RemoteAdmin {
 			<?php self::renderSourceModal(); ?>
 			</div>
 			<?php
-		}
+	}
 
 	/**
 	 * Render the Embeddings panel (called from settings page Embeddings tab).
@@ -525,17 +525,17 @@ class RemoteAdmin {
 				'ajaxurl' => \admin_url( 'admin-ajax.php' ),
 				'nonce'   => \wp_create_nonce( 'nvoos_graphify_remote_action' ),
 				'i18n'    => array(
-					'addSource'    => \__( 'Add Remote Source', 'nvoos-graphify' ),
-					'sync'         => \__( 'Sync', 'nvoos-graphify' ),
-					'connectionOk' => \__( 'Connection OK', 'nvoos-graphify' ),
+					'addSource'     => \__( 'Add Remote Source', 'nvoos-graphify' ),
+					'sync'          => \__( 'Sync', 'nvoos-graphify' ),
+					'connectionOk'  => \__( 'Connection OK', 'nvoos-graphify' ),
 					'deleteConfirm' => \__( 'Delete this source?', 'nvoos-graphify' ),
-					'reindexing'   => \__( 'Reindexing…', 'nvoos-graphify' ),
-					'doneStored'   => \__( 'Done. Stored:', 'nvoos-graphify' ),
-					'failed'       => \__( 'Failed:', 'nvoos-graphify' ),
-					'checkApiKey'  => \__( 'check OpenAI API key in NV oOS settings', 'nvoos-graphify' ),
-					'validMap'     => \__( 'Valid map', 'nvoos-graphify' ),
-					'invalidMap'   => \__( 'Invalid map', 'nvoos-graphify' ),
-					'paths'        => \__( 'paths', 'nvoos-graphify' ),
+					'reindexing'    => \__( 'Reindexing…', 'nvoos-graphify' ),
+					'doneStored'    => \__( 'Done. Stored:', 'nvoos-graphify' ),
+					'failed'        => \__( 'Failed:', 'nvoos-graphify' ),
+					'checkApiKey'   => \__( 'check OpenAI API key in NV oOS settings', 'nvoos-graphify' ),
+					'validMap'      => \__( 'Valid map', 'nvoos-graphify' ),
+					'invalidMap'    => \__( 'Invalid map', 'nvoos-graphify' ),
+					'paths'         => \__( 'paths', 'nvoos-graphify' ),
 				),
 			)
 		);
@@ -693,4 +693,4 @@ class RemoteAdmin {
 		}
 		// phpcs:enable Squiz.PHP.CommentedOutCode.Found
 		*/
-	}
+}
