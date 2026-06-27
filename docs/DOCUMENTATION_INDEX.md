@@ -1268,6 +1268,11 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [PLAYWRIGHT_INTEGRATION_EVALUATION.md](project/proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md) | **NEW (Jan 2026):** Full technical evaluation of Playwright browser automation integration - Decision to create Pro tool `web_browser` (15KB) | Developers/Decision Makers |
 | [WEB_BROWSER_PRO_TOOL_SUMMARY.md](project/proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md) | **NEW (Jan 2026):** Executive summary for web_browser Pro tool decision - Base version size management rationale (7KB) | Stakeholders/Admins |
 | [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](project/proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md) | **NEW (Mar 2026):** Comprehensive Telegram Mini App enhancement - Stars payments, inline mode, deep linking, all 23 Pro toolkits integration, monetization strategy (41KB) | Developers/Stakeholders |
+| **[GPT-REALTIME-2-UPGRADE-PROPOSAL.md](project/proposals/GPT-REALTIME-2-UPGRADE-PROPOSAL.md)** | **NEW (Jun 2026):** GPT-Realtime-2 upgrade proposal — beta→GA migration, WebRTC transport, Translate/Whisper models, reasoning effort, structured prompts | Developers/Decision Makers |
+| **[GPT-REALTIME-2-IMPLEMENTATION-PLAN.md](project/proposals/GPT-REALTIME-2-IMPLEMENTATION-PLAN.md)** | **NEW (Jun 2026):** GPT-Realtime-2 implementation plan — 1,166-line comprehensive engineering specification with testing strategy | Developers |
+| **[MCP_ASSISTANT_TOOLKIT_SCOPE_ENHANCEMENT.md](project/proposals/MCP_ASSISTANT_TOOLKIT_SCOPE_ENHANCEMENT.md)** | **NEW (Jun 2026):** MCP initialize assistant-scoped instructions & model preferences — architecture audit, industry research, implementation plan | Developers |
+| **[fastapi-porting-implementation-plan.md](project/proposals/fastapi-porting-implementation-plan.md)** | **NEW (Jun 2026):** FastAPI porting implementation plan — Python FastAPI migration from legacy microservices | Developers |
+| **[multi-channel-result-delivery-enhancement.md](project/proposals/multi-channel-result-delivery-enhancement.md)** | **NEW (Jun 2026):** Multi-channel result delivery UI — Telegram, Discord, WhatsApp, Google Chat in schedule modal | Developers |
 
 ### Integration Guides
 
@@ -1336,6 +1341,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [tool-grouping.md](reference/tools/tool-grouping.md) | Tool categorization system (WordPress Core, Plugins, External) | Users/Admins |
 | [tools-manager.md](admin-guides/tools/tools-manager.md) | Tools Manager admin interface guide | Admins/Users |
 | [gemini-api-enhancements.md](reference/api/gemini/gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
+| **[wait-for-user-tool.md](reference/tools/wait-for-user-tool.md)** ⭐ **NEW (v1.1.34)** | **wait_for_user voice tool reference** — no-op tool for silence/noise handling in GPT-Realtime-2 voice sessions, prompt integration, capability requirements | Users/Devs |
 | [send-group-email-usage.md](features/tools/communication/send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
 | [tool-image-download.md](developer/tool-development/tool-image-download.md) | Image download tool specifics | Developers |
 | **[CRAWL4AI_SERVICE_IMPLEMENTATION.md](features/tools/crawl4ai/CRAWL4AI_SERVICE_IMPLEMENTATION.md)** ⭐ **NEW (Jan 2026)** | **Complete Crawl4AI remote service implementation** - Copy-paste ready Python/FastAPI code, Docker deployment, browser pool management (30KB) | Developers |
@@ -1351,6 +1357,14 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [CROSS-WIDGET-COMMUNICATION.md](user-guides/chat/CROSS-WIDGET-COMMUNICATION.md) | Load sessions between User Chat History and Chat widgets | Users/Devs |
 | [chat-history-persistence.md](user-guides/chat/chat-history-persistence.md) | Chat history persistence system | Users/Devs |
 | [chat-history-persistence-quickstart.md](getting-started/quick-starts/chat-history-persistence-quickstart.md) | Quick guide for chat persistence | Users |
+
+### Voice Features ⭐ **NEW (v1.1.34 — June 2026)**
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| **[GPT-REALTIME-2-VOICE-MODELS.md](features/voice/gpt-realtime-2-voice-models.md)** ⭐ **NEW (Jun 2026)** | **GPT-Realtime-2 voice models** — GA Realtime API migration, WebRTC transport, Translate + Whisper clients, reasoning effort, structured prompts, PTT mode, admin settings reference | Users/Admins |
+| **[features/voice/README.md](features/voice/README.md)** | Voice feature guide index — scope, what belongs/doesn't belong | Admins/Devs |
+| **[voice-chat-troubleshooting.md](operations/troubleshooting/chat/voice-chat-troubleshooting.md)** | Voice chat 404 error diagnosis and fixes | All Users |
 
 ### Chat Channels & WebChat ⭐ **NEW (Feb 2026)**
 
