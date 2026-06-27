@@ -429,7 +429,7 @@ class WP_MCP_AI_Tool_Schedule_Social_Post implements WP_MCP_AI_Tool_Interface, W
 			),
 			'post_content' => $schedule_data['content'],
 			'post_status'  => 'future',
-			'post_type'    => 'social_scheduled_post',
+			'post_type'    => 'social_sched_post',
 			'post_author'  => $schedule_data['user_id'],
 		);
 

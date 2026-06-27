@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new PM workflow automation rule.
  *
- * Saves as mcp_ai_pm_workflow_rule CPT with trigger type, conditions,
+ * Saves as mcp_ai_pm_wf_rule CPT with trigger type, conditions,
  * actions, and active flag stored as post meta.
  */
 class WP_MCP_AI_Tool_Create_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
@@ -165,7 +165,7 @@ class WP_MCP_AI_Tool_Create_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interface
 			'name'                  => $this->get_name(),
 			'description'           => $this->get_description(),
 			'toolkit'               => 'project_management',
-			'post_type'             => 'mcp_ai_pm_workflow_rule',
+			'post_type'             => 'mcp_ai_pm_wf_rule',
 			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
 			'profession_tags'       => array( 'project_manager', 'team_lead' ),
 			'risk_level'            => 'standard',
@@ -293,7 +293,7 @@ class WP_MCP_AI_Tool_Create_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interface
 
 		// Create workflow rule post.
 		$post_data = array(
-			'post_type'   => 'mcp_ai_pm_workflow_rule',
+			'post_type'   => 'mcp_ai_pm_wf_rule',
 			'post_title'  => $title,
 			'post_status' => 'publish',
 			'post_author' => $current_user_id,

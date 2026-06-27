@@ -545,7 +545,7 @@ class WP_MCP_AI_Tool_Bulk_Schedule_Posts implements WP_MCP_AI_Tool_Interface, WP
 				),
 				'post_content' => $post_data['content'],
 				'post_status'  => 'future',
-				'post_type'    => 'social_scheduled_post',
+				'post_type'    => 'social_sched_post',
 				'post_author'  => $user_id,
 			),
 			true

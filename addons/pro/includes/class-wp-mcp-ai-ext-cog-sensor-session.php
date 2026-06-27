@@ -25,7 +25,7 @@ class WP_MCP_AI_Ext_Cog_Sensor_Session {
 	 *
 	 * @var string
 	 */
-	const POST_TYPE = 'wp_mcp_ai_cog_session';
+	const POST_TYPE = 'mcp_ai_cog_session';
 
 	/**
 	 * Meta key for pending sensor requests queue.

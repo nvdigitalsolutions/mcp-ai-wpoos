@@ -987,7 +987,7 @@ class WP_MCP_AI_PM_Command_Center_Page {
 			<?php
 			$rules = get_posts(
 				array(
-					'post_type'      => 'mcp_ai_pm_workflow_rule',
+					'post_type'      => 'mcp_ai_pm_wf_rule',
 					'post_status'    => 'publish',
 					'posts_per_page' => 20,
 				)

@@ -3,7 +3,7 @@
  * Project Management Toolkit Workflow Engine
  *
  * Simple trigger/condition/action engine that evaluates rules stored as
- * post meta on mcp_ai_pm_workflow_rule CPT posts and executes the
+ * post meta on mcp_ai_pm_wf_rule CPT posts and executes the
  * resulting actions.  Supports task status transitions, project status
  * changes, assignment updates, and notification dispatching.
  *
@@ -31,7 +31,7 @@ class WP_MCP_AI_PM_Workflow_Engine {
 	/**
 	 * Evaluate all active rules for a given trigger type and entity.
 	 *
-	 * Queries published mcp_ai_pm_workflow_rule posts whose trigger type
+	 * Queries published mcp_ai_pm_wf_rule posts whose trigger type
 	 * and active flag match, then checks each rule's conditions against
 	 * the entity.  When conditions are met, the rule's actions are
 	 * executed and a wp_mcp_ai_pm_workflow_trigger action fires.
@@ -44,7 +44,7 @@ class WP_MCP_AI_PM_Workflow_Engine {
 	public static function evaluate_rules( $trigger_type, $entity_id, $context = array() ) {
 		$rules = get_posts(
 			array(
-				'post_type'      => 'mcp_ai_pm_workflow_rule',
+				'post_type'      => 'mcp_ai_pm_wf_rule',
 				'post_status'    => 'publish',
 				'posts_per_page' => 20,
 				'meta_query'     => array(
@@ -198,7 +198,7 @@ class WP_MCP_AI_PM_Workflow_Engine {
 	 */
 	public static function simulate_rule( $rule_id, $limit = 50 ) {
 		$rule = get_post( $rule_id );
-		if ( ! $rule || 'mcp_ai_pm_workflow_rule' !== $rule->post_type ) {
+		if ( ! $rule || 'mcp_ai_pm_wf_rule' !== $rule->post_type ) {
 			return new WP_Error( 'not_found', __( 'Workflow rule not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
