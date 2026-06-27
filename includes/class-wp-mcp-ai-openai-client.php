@@ -127,7 +127,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				// mainline Responses API models on all accounts. Use chat
 				// models (gpt-5.x) with the image_generation tool instead.
 				return false;
-			}
+		}
 
 		/**
 		 * Get a suitable chat model to use as fallback for image generation
@@ -145,12 +145,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				// The image_generation tool requires GPT-5 or newer models.
 				// Prefer the site's configured default if it's a GPT-5.x model,
 				// otherwise fall back to gpt-5.4.
-				if ( 0 === stripos( $default_model, 'gpt-5' ) ) {
-					return $default_model;
-				}
+			if ( 0 === stripos( $default_model, 'gpt-5' ) ) {
+				return $default_model;
+			}
 
 				return 'gpt-5.4';
-				}
+		}
 
 				/**
 				 * Determine whether a model is a GPT chat model that can use the
@@ -162,68 +162,68 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				 * @param string $model Model identifier.
 				 * @return bool
 				 */
-				public static function is_chat_model_for_image_gen( $model ) {
-					$model = sanitize_text_field( $model );
+		public static function is_chat_model_for_image_gen( $model ) {
+			$model = sanitize_text_field( $model );
 
-					// GPT-5.x and newer chat models support image_generation.
-					if ( 0 === stripos( $model, 'gpt-5' ) ) {
-						return true;
-					}
+			// GPT-5.x and newer chat models support image_generation.
+			if ( 0 === stripos( $model, 'gpt-5' ) ) {
+				return true;
+			}
 
-					/**
-					 * Filter whether a model can use the image_generation tool.
-					 *
-					 * @param bool   $is_chat_model Whether the model supports image_generation.
-					 * @param string $model         Model identifier.
-					 */
-					return (bool) apply_filters( 'wp_mcp_ai_is_chat_model_for_image_gen', false, $model );
-				}
+			/**
+			 * Filter whether a model can use the image_generation tool.
+			 *
+			 * @param bool   $is_chat_model Whether the model supports image_generation.
+			 * @param string $model         Model identifier.
+			 */
+			return (bool) apply_filters( 'wp_mcp_ai_is_chat_model_for_image_gen', false, $model );
+		}
 
 				/**
 				 * Extract the base64-encoded image from a Responses API response body.
-		 *
-		 * The Responses API nests image data inside
-		 * output[0].content[0].image.b64_json. This helper walks that
-		 * structure and returns the raw base64 string or a WP_Error.
-		 *
-		 * @param array $decoded JSON-decoded Responses API response body.
-		 * @return string|WP_Error Base64 string or WP_Error on failure.
-		 */
+				 *
+				 * The Responses API nests image data inside
+				 * output[0].content[0].image.b64_json. This helper walks that
+				 * structure and returns the raw base64 string or a WP_Error.
+				 *
+				 * @param array $decoded JSON-decoded Responses API response body.
+				 * @return string|WP_Error Base64 string or WP_Error on failure.
+				 */
 		private function extract_b64_from_responses_output( $decoded ) {
-				if ( empty( $decoded['output'] ) || ! is_array( $decoded['output'] ) ) {
-					WP_MCP_AI_Logger::log_error(
-						'Responses API response missing output array.',
-						array( 'response' => $decoded )
-					);
+			if ( empty( $decoded['output'] ) || ! is_array( $decoded['output'] ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Responses API response missing output array.',
+					array( 'response' => $decoded )
+				);
 
-					return new WP_Error(
-						'wp_mcp_ai_image_empty',
-						__( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' )
-					);
-				}
+				return new WP_Error(
+					'wp_mcp_ai_image_empty',
+					__( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' )
+				);
+			}
 
 				// Walk each output item looking for image data.
-				foreach ( $decoded['output'] as $output_item ) {
-					// Format 1: image_generation_call type (used by chat models).
-					// The result field contains the base64-encoded image.
-					if ( ! empty( $output_item['type'] ) && 'image_generation_call' === $output_item['type'] ) {
-						if ( ! empty( $output_item['result'] ) ) {
-							return (string) $output_item['result'];
-						}
-						continue;
+			foreach ( $decoded['output'] as $output_item ) {
+				// Format 1: image_generation_call type (used by chat models).
+				// The result field contains the base64-encoded image.
+				if ( ! empty( $output_item['type'] ) && 'image_generation_call' === $output_item['type'] ) {
+					if ( ! empty( $output_item['result'] ) ) {
+						return (string) $output_item['result'];
 					}
+					continue;
+				}
 
-					// Format 2: content[0].image.b64_json (used by gpt-image models).
-					if ( empty( $output_item['content'] ) || ! is_array( $output_item['content'] ) ) {
-						continue;
-					}
+				// Format 2: content[0].image.b64_json (used by gpt-image models).
+				if ( empty( $output_item['content'] ) || ! is_array( $output_item['content'] ) ) {
+					continue;
+				}
 
-					foreach ( $output_item['content'] as $content_part ) {
-						if ( ! empty( $content_part['image']['b64_json'] ) ) {
-							return (string) $content_part['image']['b64_json'];
-						}
+				foreach ( $output_item['content'] as $content_part ) {
+					if ( ! empty( $content_part['image']['b64_json'] ) ) {
+						return (string) $content_part['image']['b64_json'];
 					}
 				}
+			}
 
 			WP_MCP_AI_Logger::log_error(
 				'Responses API output contained no image payload.',
@@ -254,6 +254,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return array|WP_Error
 		 */
 		private function edit_image_via_responses_api( $image_path, $prompt, $model, $size, $n, $api_key, $timeout ) {
+				// Use chat model fallback if the requested image model is not
+				// directly supported as a mainline Responses API model.
+			if ( self::is_gpt_image_model( $model ) && ! self::is_directly_supported_gpt_image_model( $model ) ) {
+				$model = self::get_image_fallback_chat_model();
+			}
 			$image_binary = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 			if ( false === $image_binary || '' === $image_binary ) {
 				return new WP_Error(
@@ -2097,10 +2102,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// - gpt-image-1/1.5/2 accept: 'low', 'medium', 'high', 'auto'
 			// - DALL-E 2/3 accept: 'standard', 'hd'.
 			$is_gpt_image_model = self::is_gpt_image_model( $model );
-				$is_chat_model      = self::is_chat_model_for_image_gen( $model );
+				$is_chat_model  = self::is_chat_model_for_image_gen( $model );
 
-				if ( $is_gpt_image_model || $is_chat_model ) {
-					// For gpt-image / chat models, validate and use quality values directly.
+			if ( $is_gpt_image_model || $is_chat_model ) {
+				// For gpt-image / chat models, validate and use quality values directly.
 				$valid_gpt_qualities = array( 'low', 'medium', 'high', 'auto' );
 
 				// If quality is a DALL-E value, map it to gpt-image values.
@@ -2173,16 +2178,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$endpoint = self::RESPONSES_ENDPOINT;
 
 				$payload = array(
-							'model' => $model,
-							'input' => $prompt,
-							'tools' => array(
-								array(
-									'type'    => 'image_generation',
-									'size'    => $size,
-									'quality' => $quality,
-								),
-							),
-						);
+					'model' => $model,
+					'input' => $prompt,
+					'tools' => array(
+						array(
+							'type'    => 'image_generation',
+							'size'    => $size,
+							'quality' => $quality,
+						),
+					),
+				);
 			} else {
 				// DALL-E models use the classic Images API endpoint.
 				$endpoint = self::IMAGES_ENDPOINT;
@@ -2309,8 +2314,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( ! empty( $decoded ) ) {
-					if ( $is_gpt_image_model || $is_chat_model ) {
-						// Responses API format: output[0].content[0].image.b64_json.
+				if ( $is_gpt_image_model || $is_chat_model ) {
+					// Responses API format: output[0].content[0].image.b64_json.
 					$b64 = $this->extract_b64_from_responses_output( $decoded );
 					if ( is_wp_error( $b64 ) ) {
 						return $b64;
