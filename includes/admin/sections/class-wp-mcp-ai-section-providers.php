@@ -363,15 +363,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_image_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Image Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for image generation via OpenAI. gpt-image-2 (Images 2.0, April 2026) is the current state-of-the-art with native 2K resolution, multi-image coherency, and near-flawless multilingual text rendering. gpt-image-1.5 and gpt-image-1 are previous generations. DALL-E 3 offers high quality with HD option. DALL-E 2 is faster and more economical.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for image generation via OpenAI. gpt-image-2 (Images 2.0, April 2026) is the current state-of-the-art with native 2K resolution, multi-image coherency, and near-flawless multilingual text rendering. gpt-image-1.5, gpt-image-1, and gpt-image-1-mini are previous generations. DALL-E 2 and DALL-E 3 were deprecated and removed from the API on May 12, 2026.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gpt-image-2'   => 'gpt-image-2 — Images 2.0 (Latest)',
-						'gpt-image-1.5' => 'gpt-image-1.5',
-						'gpt-image-1'   => 'gpt-image-1',
-						'dall-e-3'      => 'DALL-E 3',
-						'dall-e-2'      => 'DALL-E 2',
+						'gpt-image-2'      => 'gpt-image-2 — Images 2.0 (Latest)',
+						'gpt-image-1.5'    => 'gpt-image-1.5',
+						'gpt-image-1'      => 'gpt-image-1',
+						'gpt-image-1-mini' => 'gpt-image-1-mini',
 					),
-					'default'     => 'dall-e-3',
+					'default'     => 'gpt-image-1',
 				),
 				'openai_image_size'                  => array(
 					'type'        => 'select',
@@ -391,7 +390,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_image_quality'               => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Image Quality', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default quality setting for image generation. For gpt-image-1/1.5/2: low is faster/cheaper, medium balances quality and cost, high provides best results. For DALL-E models: standard or hd.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default quality setting for image generation. For gpt-image models: low is faster/cheaper, medium balances quality and cost, high provides best results. Auto lets the model decide.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'low'      => 'Low (gpt-image)',
 						'medium'   => 'Medium (gpt-image)',

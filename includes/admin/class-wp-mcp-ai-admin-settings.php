@@ -5932,8 +5932,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'gpt-image-1.5'    => __( 'GPT-Image-1.5', 'mcp-ai-wpoos' ),
 				'gpt-image-1'      => __( 'GPT-Image-1', 'mcp-ai-wpoos' ),
 				'gpt-image-1-mini' => __( 'GPT-Image-1 Mini', 'mcp-ai-wpoos' ),
-				'dall-e-3'         => __( 'DALL·E 3', 'mcp-ai-wpoos' ),
-				'dall-e-2'         => __( 'DALL·E 2', 'mcp-ai-wpoos' ),
 			);
 
 			$models = apply_filters( 'wp_mcp_ai_openai_image_models', $models );
@@ -5943,8 +5941,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'gpt-image-2'   => __( 'GPT-Image-2 — Images 2.0 (Recommended)', 'mcp-ai-wpoos' ),
 					'gpt-image-1.5' => __( 'GPT-Image-1.5', 'mcp-ai-wpoos' ),
 					'gpt-image-1'   => __( 'GPT-Image-1', 'mcp-ai-wpoos' ),
-					'dall-e-3'      => __( 'DALL·E 3', 'mcp-ai-wpoos' ),
-					'dall-e-2'      => __( 'DALL·E 2', 'mcp-ai-wpoos' ),
 				);
 			}
 
