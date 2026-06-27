@@ -18,12 +18,6 @@
 
 **Previous Updates (v1.1.32):** June 19, 2026 — Content Format Templates & Featured Image Service (3-provider fallback), Result Delivery Pipeline (8 channels), ECA document generation, duplicate posts fix, 6 provider clients timeout fix, schedule trigger stability, Paper Store delete fix, ECA settings/attachment fix, npm CI & Jest resilience, 14 dependabot bumps + 8 npm audit CVEs.
 
-**Previous Updates (v1.1.27):** June 5, 2026 (v1.1.27) — See [§ Latest Updates (v1.1.27 — June 2026)](#-latest-updates-v1127--june-2026) (Real-time SSE streaming for OpenAI, DeepSeek, and all OpenAI-compatible providers. 35 new OOS core tools migrated. JetFormBuilder submission tools: 8 fixes for empty results, capability ordering, and form discovery. Extended Cognition vision recognition. Graphify tools capability compliance. DeepSeek agentic tool result handling. Documentation link fixes. June 2026 model pricing update. Plugin restructuring proposals v3.0).
-
-**Previous Updates (v1.1.26):** June 3, 2026 — Cross-Platform Extraction Engine Phases 0–2, Site-Builder Node-Graph Pipeline, SPA a11y Hardening, Screenshot & Docs Overhaul.
-
-**Previous Updates (v1.1.25):** May 31, 2026 — Unified Blueprint System, Cloudways Toolkit, CRM Toolkit Phases A–E, Chat UI enhancements, Unix-theory tool reorg Phase 4–5, Pro Toolkit MCP Server settings, Build infrastructure hardening.
-
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
 **MCP Specification:** 2024-11-05 (Full Compliance)  
