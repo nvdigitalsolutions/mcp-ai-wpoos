@@ -1702,7 +1702,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 *
 	 * @param WP_REST_Response $response Response object to modify.
 	 */
-	protected function add_cors_headers( $response ) {
+	public function add_cors_headers( $response ) {
 		/**
 		 * Filter the Access-Control-Allow-Origin header value.
 		 *
