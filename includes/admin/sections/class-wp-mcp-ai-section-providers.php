@@ -371,7 +371,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'dall-e-3'      => 'DALL-E 3',
 						'dall-e-2'      => 'DALL-E 2',
 					),
-					'default'     => 'gpt-image-2',
+					'default'     => 'dall-e-3',
 				),
 				'openai_image_size'                  => array(
 					'type'        => 'select',

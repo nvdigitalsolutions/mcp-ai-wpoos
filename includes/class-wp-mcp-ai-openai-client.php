@@ -40,14 +40,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		public static function image_model_supports_response_format( $model ) {
 			$model = sanitize_text_field( $model );
 
-			// gpt-image-1, gpt-image-1.5, and gpt-image-2 do NOT support the response_format parameter
-			// (they always return base64 in the data[].b64_json field). DALL·E variants do.
-			// Default to true for backward compatibility, but explicitly block the gpt-image family.
-			$supported = true;
-
-			if ( self::is_gpt_image_model( $model ) ) {
-				$supported = false;
-			}
+			// As of mid-2026, the OpenAI Images API rejects the response_format parameter
+			// for all models (both DALL·E and gpt-image families). gpt-image models never
+			// supported it and always return base64; DALL·E models return "Unknown
+			// parameter: response_format" when it is included. The API defaults to "url"
+			// which the client already handles by downloading the image.
+			//
+			// Callers that still need this parameter can re-enable it via the
+			// wp_mcp_ai_image_model_supports_response_format filter.
+			$supported = false;
 			/**
 			 * Filter whether the supplied image model supports the response_format parameter.
 			 *
@@ -1990,9 +1991,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model           = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-2';
-			$default_size            = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
-			$default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
+			$default_model                       = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'dall-e-3';
+						$default_size            = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
+						$default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'url';
 
 			// Determine model-specific default quality.
 			// gpt-image-1/1.5/2 models default to 'medium', DALL-E models default to 'standard'.
@@ -2856,9 +2857,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$body .= "Content-Disposition: form-data; name=\"size\"\r\n\r\n";
 			$body .= $size . "\r\n";
 
-			$body .= "--{$boundary}\r\n";
-			$body .= "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
-			$body .= $response_format . "\r\n";
+			// Only include response_format when the model supports it.
+			// As of mid-2026, the OpenAI API rejects response_format for all models.
+			if ( self::image_model_supports_response_format( $model ) ) {
+				$body .= "--{$boundary}\r\n";
+				$body .= "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
+				$body .= $response_format . "\r\n";
+			}
 
 			$body .= "--{$boundary}--\r\n";
 
