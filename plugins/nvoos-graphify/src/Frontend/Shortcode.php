@@ -58,16 +58,18 @@ class Shortcode {
 		$containerId = 'nvoos-graphify-' . wp_unique_id();
 
 		// Enqueue Cytoscape.js + layout extensions (vendored).
+		// Handles are prefixed 'nvoos-graphify-' to avoid collisions with
+		// other plugins that enqueue cytoscape under the bare 'cytoscape' handle.
 		$vendorUrl = NVOOS_GRAPHIFY_URL . 'assets/vendor/';
-		wp_enqueue_script( 'cytoscape-layout-base', $vendorUrl . 'layout-base/layout-base.js', array(), NVOOS_GRAPHIFY_VERSION, true );
-		wp_enqueue_script( 'cytoscape-cose-base', $vendorUrl . 'cose-base/cose-base.js', array( 'cytoscape-layout-base' ), NVOOS_GRAPHIFY_VERSION, true );
-		wp_enqueue_script( 'cytoscape', $vendorUrl . 'cytoscape/cytoscape.min.js', array(), NVOOS_GRAPHIFY_VERSION, true );
-		wp_enqueue_script( 'cytoscape-fcose', $vendorUrl . 'cytoscape-fcose/cytoscape-fcose.js', array( 'cytoscape', 'cytoscape-cose-base' ), NVOOS_GRAPHIFY_VERSION, true );
+		wp_enqueue_script( 'nvoos-graphify-layout-base', $vendorUrl . 'layout-base/layout-base.js', array(), NVOOS_GRAPHIFY_VERSION, true );
+		wp_enqueue_script( 'nvoos-graphify-cose-base', $vendorUrl . 'cose-base/cose-base.js', array( 'nvoos-graphify-layout-base' ), NVOOS_GRAPHIFY_VERSION, true );
+		wp_enqueue_script( 'nvoos-graphify-cytoscape', $vendorUrl . 'cytoscape/cytoscape.min.js', array(), NVOOS_GRAPHIFY_VERSION, true );
+		wp_enqueue_script( 'nvoos-graphify-cytoscape-fcose', $vendorUrl . 'cytoscape-fcose/cytoscape-fcose.js', array( 'nvoos-graphify-cytoscape', 'nvoos-graphify-cose-base' ), NVOOS_GRAPHIFY_VERSION, true );
 
 		wp_enqueue_script(
 			'nvoos-graphify-frontend',
 			NVOOS_GRAPHIFY_URL . 'assets/js/graphify-frontend.js',
-			array( 'jquery', 'cytoscape', 'cytoscape-fcose' ),
+			array( 'jquery', 'nvoos-graphify-cytoscape', 'nvoos-graphify-cytoscape-fcose' ),
 			NVOOS_GRAPHIFY_VERSION,
 			true
 		);

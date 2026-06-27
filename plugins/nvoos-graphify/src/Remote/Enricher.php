@@ -17,6 +17,7 @@ use function in_array;
 use function sanitize_key;
 use function set_transient;
 use function time;
+use function wp_next_scheduled;
 use function wp_schedule_single_event;
 
 /**
@@ -156,10 +157,12 @@ class Enricher {
 	/**
 	 * Sync a single named remote source by slug.
 	 *
-	 * @param string $slug Source slug.
+	 * @param string $slug  Source slug.
+	 * @param bool   $async When true, schedules a background cron event
+	 *                      instead of running synchronously.
 	 * @return array<string,mixed>|WP_Error Summary array or WP_Error.
 	 */
-	public static function syncSource( string $slug ) {
+	public static function syncSource( string $slug, bool $async = false ) {
 		$slug = sanitize_key( $slug );
 		if ( empty( $slug ) ) {
 			return new WP_Error( 'invalid_slug', __( 'Invalid source slug.', 'nvoos-graphify' ) );
@@ -168,6 +171,20 @@ class Enricher {
 		$dbSource = Db::getRemoteSource( $slug );
 		if ( ! $dbSource ) {
 			return new WP_Error( 'not_found', __( 'Remote source not found.', 'nvoos-graphify' ) );
+		}
+
+		if ( $async ) {
+			// Delegate to the existing enrich-all cron handler, which iterates
+			// every active source.  This source will be picked up alongside any
+			// others that are ready to sync.
+			if ( ! wp_next_scheduled( Schema::CRON_ENRICH ) ) {
+				wp_schedule_single_event( time() + 10, Schema::CRON_ENRICH );
+			}
+			return array(
+				'slug'   => $slug,
+				'async'  => true,
+				'status' => 'scheduled',
+			);
 		}
 
 		$registry = Plugin::instance()->getRemoteRegistry();

@@ -63,6 +63,9 @@ class RemoteAdmin {
 		add_action( 'wp_ajax_nvoos_graphify_reindex_embeddings', array( $this, 'ajaxReindexEmbeddings' ) );
 		add_action( 'wp_ajax_nvoos_graphify_validate_field_map', array( $this, 'ajaxValidateFieldMap' ) );
 
+		// Enqueue remote-admin JS on the Graphify settings page.
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueueRemoteAdminAssets' ) );
+
 		// Embeddings reindex cron — wired by the nvoos-graphify-ai addon.
 		if ( class_exists( 'NvoosGraphify\Remote\Embeddings' ) ) {
 			add_action( 'nvoos_graphify_cron_reindex_embeddings', array( 'NvoosGraphify\Remote\Embeddings', 'reindex_all' ) );
@@ -177,9 +180,8 @@ class RemoteAdmin {
 			<?php endif; ?>
 
 			<?php self::renderSourceModal(); ?>
-		</div>
-		<?php
-		self::enqueueAdminJs();
+			</div>
+			<?php
 	}
 
 	/**
@@ -493,13 +495,57 @@ class RemoteAdmin {
 	}
 
 	/**
-	 * Enqueue the inline admin JS for remote sources UI interactions.
+	 * Enqueue the remote-admin JS file with localized config on the
+	 * Graphify settings page.  Replaces the previous inline <script>
+	 * block, which could conflict with Content Security Policy headers
+	 * and made the JS uncacheable.
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string $hook Current admin page hook.
 	 * @return void
 	 */
-	private static function enqueueAdminJs(): void {
+	public function enqueueRemoteAdminAssets( string $hook ): void {
+		if ( false === strpos( $hook, \NvoosGraphify\Admin\SettingsPage::PAGE_SLUG ) ) {
+			return;
+		}
+
+		\wp_enqueue_script(
+			'nvoos-graphify-remote-admin',
+			NVOOS_GRAPHIFY_URL . 'assets/js/graphify-remote-admin.js',
+			array( 'jquery' ),
+			NVOOS_GRAPHIFY_VERSION,
+			true
+		);
+
+		\wp_localize_script(
+			'nvoos-graphify-remote-admin',
+			'nvoosGraphifyRemoteAdmin',
+			array(
+				'ajaxurl' => \admin_url( 'admin-ajax.php' ),
+				'nonce'   => \wp_create_nonce( 'nvoos_graphify_remote_action' ),
+				'i18n'    => array(
+					'addSource'     => \__( 'Add Remote Source', 'nvoos-graphify' ),
+					'sync'          => \__( 'Sync', 'nvoos-graphify' ),
+					'connectionOk'  => \__( 'Connection OK', 'nvoos-graphify' ),
+					'deleteConfirm' => \__( 'Delete this source?', 'nvoos-graphify' ),
+					'reindexing'    => \__( 'Reindexing…', 'nvoos-graphify' ),
+					'doneStored'    => \__( 'Done. Stored:', 'nvoos-graphify' ),
+					'failed'        => \__( 'Failed:', 'nvoos-graphify' ),
+					'checkApiKey'   => \__( 'check OpenAI API key in NV oOS settings', 'nvoos-graphify' ),
+					'validMap'      => \__( 'Valid map', 'nvoos-graphify' ),
+					'invalidMap'    => \__( 'Invalid map', 'nvoos-graphify' ),
+					'paths'         => \__( 'paths', 'nvoos-graphify' ),
+				),
+			)
+		);
+	}
+
+	// phpcs:disable Squiz.PHP.CommentedOutCode.Found
+	// ── Retained for reference during migration — remove after
+	// confirming no regressions in the Remote Sources tab.
+	/*
+	private static function __enqueueAdminJs_legacy(): void {
 		?>
 		<script>
 		(function($){
@@ -644,5 +690,7 @@ class RemoteAdmin {
 		}(jQuery));
 		</script>
 		<?php
-	}
+		}
+		// phpcs:enable Squiz.PHP.CommentedOutCode.Found
+		*/
 }

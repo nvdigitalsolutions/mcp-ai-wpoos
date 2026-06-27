@@ -82,10 +82,10 @@ class GraphExplorer {
 			'nvoos-graphify-admin',
 			'nvoosGraphifyAdmin',
 			array(
-				'rest_url'   => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
-				'nonce'      => wp_create_nonce( 'wp_rest' ),
-				'max_nodes'  => 300,
-				'height'     => '600px',
+				'rest_url'  => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
+				'nonce'     => wp_create_nonce( 'wp_rest' ),
+				'max_nodes' => 300,
+				'height'    => '600px',
 			)
 		);
 
