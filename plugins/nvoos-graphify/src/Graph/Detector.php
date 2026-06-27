@@ -79,6 +79,10 @@ class Detector {
 			? $allSettings['post_types']
 			: self::getDefaultPostTypes();
 
+		// @todo Batch this query for sites with 10 000+ posts.  The
+		// query is gated by no_found_rows and a date_query on incremental
+		// builds, but a full rebuild on a large site can still OOM.
+		// A 500-post chunk size with a looped offset would be safer.
 		$args = array(
 			'post_type'      => array_map( 'sanitize_key', $postTypes ),
 			'post_status'    => 'publish',

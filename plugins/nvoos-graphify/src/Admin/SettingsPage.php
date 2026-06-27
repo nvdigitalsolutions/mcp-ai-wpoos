@@ -369,31 +369,33 @@ class SettingsPage {
 		}
 
 		// Cytoscape.js + fcose layout (bundled locally — see assets/vendor/).
+		// Handles are prefixed 'nvoos-graphify-' to avoid collisions with
+		// other plugins that enqueue cytoscape under the bare 'cytoscape' handle.
 		\wp_enqueue_script(
-			'layout-base',
+			'nvoos-graphify-layout-base',
 			NVOOS_GRAPHIFY_URL . 'assets/vendor/layout-base/layout-base.js',
 			array(),
 			'2.0.1',
 			true
 		);
 		\wp_enqueue_script(
-			'cose-base',
+			'nvoos-graphify-cose-base',
 			NVOOS_GRAPHIFY_URL . 'assets/vendor/cose-base/cose-base.js',
-			array( 'layout-base' ),
+			array( 'nvoos-graphify-layout-base' ),
 			'2.2.0',
 			true
 		);
 		\wp_enqueue_script(
-			'cytoscape',
+			'nvoos-graphify-cytoscape',
 			NVOOS_GRAPHIFY_URL . 'assets/vendor/cytoscape/cytoscape.min.js',
 			array(),
 			'3.28.1',
 			true
 		);
 		\wp_enqueue_script(
-			'cytoscape-fcose',
+			'nvoos-graphify-cytoscape-fcose',
 			NVOOS_GRAPHIFY_URL . 'assets/vendor/cytoscape-fcose/cytoscape-fcose.js',
-			array( 'cytoscape', 'cose-base' ),
+			array( 'nvoos-graphify-cytoscape', 'nvoos-graphify-cose-base' ),
 			'2.2.0',
 			true
 		);
@@ -401,7 +403,7 @@ class SettingsPage {
 		\wp_enqueue_script(
 			'nvoos-graphify-admin',
 			NVOOS_GRAPHIFY_URL . 'assets/js/graphify-admin.js',
-			array( 'jquery', 'cytoscape', 'cytoscape-fcose' ),
+			array( 'jquery', 'nvoos-graphify-cytoscape', 'nvoos-graphify-cytoscape-fcose' ),
 			NVOOS_GRAPHIFY_VERSION,
 			true
 		);
