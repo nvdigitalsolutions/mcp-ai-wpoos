@@ -24,8 +24,8 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 	}
 
 	/**
-		 * Test that gpt-image-1 defaults to 'medium' quality when no settings exist.
-		 */
+	 * Test that gpt-image-1 defaults to 'medium' quality when no settings exist.
+	 */
 	public function test_gpt_image_1_defaults_to_medium_quality_via_responses() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['openai_api_key'] = 'sk-test';
@@ -86,8 +86,8 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 	}
 
 	/**
-		 * Test that gpt-image-1 defaults to 'medium' quality when no settings exist.
-		 */
+	 * Test that gpt-image-1 defaults to 'medium' quality when no settings exist.
+	 */
 	public function test_gpt_image_1_defaults_to_medium_quality() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['openai_api_key'] = 'sk-test';
