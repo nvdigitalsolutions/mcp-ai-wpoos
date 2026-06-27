@@ -123,14 +123,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return bool
 		 */
 		public static function is_directly_supported_gpt_image_model( $model ) {
-			if ( ! self::is_gpt_image_model( $model ) ) {
+				// As of mid-2026, gpt-image models do not work reliably as
+				// mainline Responses API models on all accounts. Use chat
+				// models (gpt-5.x) with the image_generation tool instead.
 				return false;
 			}
-
-			$model_lower = strtolower( sanitize_text_field( $model ) );
-
-			return in_array( $model_lower, array( 'gpt-image-1', 'gpt-image-1-mini' ), true );
-		}
 
 		/**
 		 * Get a suitable chat model to use as fallback for image generation
@@ -193,30 +190,40 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return string|WP_Error Base64 string or WP_Error on failure.
 		 */
 		private function extract_b64_from_responses_output( $decoded ) {
-			if ( empty( $decoded['output'] ) || ! is_array( $decoded['output'] ) ) {
-				WP_MCP_AI_Logger::log_error(
-					'Responses API response missing output array.',
-					array( 'response' => $decoded )
-				);
+				if ( empty( $decoded['output'] ) || ! is_array( $decoded['output'] ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Responses API response missing output array.',
+						array( 'response' => $decoded )
+					);
 
-				return new WP_Error(
-					'wp_mcp_ai_image_empty',
-					__( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' )
-				);
-			}
-
-			// Walk each output item looking for image_generation content.
-			foreach ( $decoded['output'] as $output_item ) {
-				if ( empty( $output_item['content'] ) || ! is_array( $output_item['content'] ) ) {
-					continue;
+					return new WP_Error(
+						'wp_mcp_ai_image_empty',
+						__( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' )
+					);
 				}
 
-				foreach ( $output_item['content'] as $content_part ) {
-					if ( ! empty( $content_part['image']['b64_json'] ) ) {
-						return (string) $content_part['image']['b64_json'];
+				// Walk each output item looking for image data.
+				foreach ( $decoded['output'] as $output_item ) {
+					// Format 1: image_generation_call type (used by chat models).
+					// The result field contains the base64-encoded image.
+					if ( ! empty( $output_item['type'] ) && 'image_generation_call' === $output_item['type'] ) {
+						if ( ! empty( $output_item['result'] ) ) {
+							return (string) $output_item['result'];
+						}
+						continue;
+					}
+
+					// Format 2: content[0].image.b64_json (used by gpt-image models).
+					if ( empty( $output_item['content'] ) || ! is_array( $output_item['content'] ) ) {
+						continue;
+					}
+
+					foreach ( $output_item['content'] as $content_part ) {
+						if ( ! empty( $content_part['image']['b64_json'] ) ) {
+							return (string) $content_part['image']['b64_json'];
+						}
 					}
 				}
-			}
 
 			WP_MCP_AI_Logger::log_error(
 				'Responses API output contained no image payload.',
@@ -2166,16 +2173,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$endpoint = self::RESPONSES_ENDPOINT;
 
 				$payload = array(
-					'model' => $model,
-					'input' => $prompt,
-					'tools' => array(
-						array(
-							'type'    => 'image_generation',
-							'size'    => $size,
-							'quality' => $quality,
-						),
-					),
-				);
+							'model' => $model,
+							'input' => $prompt,
+							'tools' => array(
+								array(
+									'type'    => 'image_generation',
+									'size'    => $size,
+									'quality' => $quality,
+								),
+							),
+						);
 			} else {
 				// DALL-E models use the classic Images API endpoint.
 				$endpoint = self::IMAGES_ENDPOINT;
