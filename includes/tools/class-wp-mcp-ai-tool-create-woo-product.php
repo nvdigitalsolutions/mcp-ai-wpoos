@@ -23,9 +23,10 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
 /**
  * Creates draft WooCommerce products using a reference identifier.
  */
-class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	/**
 	 * Determine whether WooCommerce is available.
@@ -1466,11 +1467,12 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'write',                // Creates products.
-			'external-api',         // May fetch external URLs for brand lookup and image sideloading.
-			'requires-capability',  // Requires product creation capabilities.
-			'state-changing',       // Modifies database state.
-			'reversible',           // Can be undone by deleting the product.
+			'write',                    // Creates products.
+			'external-api',             // May fetch external URLs for brand lookup and image sideloading.
+			'requires-capability',      // Requires product creation capabilities.
+			'state-changing',           // Modifies database state.
+			'irreversible',             // Products become publicly visible; cannot be truly undone (since 1.9.0).
+			'external-communication',   // Products are visible to the public (since 1.9.0).
 		);
 	}
 }

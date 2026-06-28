@@ -15,8 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Deletes (trashes or permanently removes) a WordPress post.
  */
-class WP_MCP_AI_Tool_Delete_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	/**
 	 * {@inheritdoc}
@@ -178,6 +179,8 @@ class WP_MCP_AI_Tool_Delete_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'requires-capability',  // Requires delete_posts capability.
 			'state-changing',       // Modifies database state.
 			'destructive',          // May permanently remove data.
+			'data-destruction',     // Permanently removes data beyond recovery (since 1.9.0).
+			'irreversible',         // Cannot be undone once executed (since 1.9.0).
 		);
 	}
 }

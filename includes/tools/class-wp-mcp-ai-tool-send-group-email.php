@@ -19,9 +19,10 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
 /**
  * Provides a tool for sending a group email based on an uploaded file.
  */
-class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	const DEFAULT_MAX_RECIPIENTS = 100;
 
@@ -711,9 +712,12 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
-			'requires-capability',  // Requires user capabilities.
+			'write',                    // Sends real emails to recipients.
+			'local-only',               // Uses WordPress mailer, no external API.
+			'requires-capability',      // Requires user capabilities.
+			'state-changing',           // Sends external communication.
+			'irreversible',             // Emails cannot be recalled once sent (since 1.9.0).
+			'external-communication',   // Sends messages to recipients outside the system (since 1.9.0).
 		);
 	}
 }

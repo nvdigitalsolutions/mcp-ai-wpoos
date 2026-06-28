@@ -43,6 +43,8 @@ class SA_Toolkit_Manager {
 		'calendar-booking'        => 'enable_calendar_booking_toolkit',
 		'crm'                     => 'enable_crm_toolkit',
 		'ecommerce'               => 'enable_ecommerce_toolkit',
+		'flowhub'                 => 'enable_flowhub_toolkit',
+		'shopify-sync'            => 'enable_shopify_sync_toolkit',
 		'social-media'            => 'enable_social_media_toolkit',
 		'analytics'               => 'enable_analytics_toolkit',
 		'project-management'      => 'enable_project_management',

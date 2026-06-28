@@ -3,7 +3,7 @@
  * FlowHub API Client.
  *
  * Provides a wrapper around the FlowHub REST API (https://api.flowhub.co/v0/).
- * Authentication uses X-Api-Client-Id and X-Api-Key headers populated from
+ * Authentication uses clientId and key headers populated from
  * the FlowHub toolkit settings (encrypted at rest).
  *
  * @package WP_MCP_AI_Pro
@@ -416,10 +416,9 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 				'redirection' => 3,
 				'httpversion' => '1.1',
 				'headers'     => array(
-					'X-Api-Client-Id' => $this->client_id,
-					'X-Api-Key'       => $this->api_key,
-					'Accept'          => 'application/json',
-					'Content-Type'    => 'application/json',
+					'clientId'     => $this->client_id,
+					'key'          => $this->api_key,
+					'Accept'       => 'application/json',
 				),
 			);
 

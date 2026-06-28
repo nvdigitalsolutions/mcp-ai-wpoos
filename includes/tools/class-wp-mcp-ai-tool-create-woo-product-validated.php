@@ -24,7 +24,8 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-create-woo-product.php';
  * This class extends the original create_woo_product tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Create_Woo_Product_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Woo_Product_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	/**
 	 * The original create_woo_product tool instance for delegation.
