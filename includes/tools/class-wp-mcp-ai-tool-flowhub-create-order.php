@@ -209,6 +209,33 @@ class WP_MCP_AI_Tool_Flowhub_Create_Order implements WP_MCP_AI_Tool_Interface, W
 			}
 		}
 
+		// Resolve credentials explicitly from connection or settings.
+		$client_id   = '';
+		$api_key     = '';
+		$location_id = '';
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection_data = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			$client_id       = isset( $connection_data['client_id'] ) ? $connection_data['client_id'] : '';
+			$api_key         = isset( $connection_data['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection_data['api_key'] ) : '';
+			$location_id     = isset( $connection_data['location_id'] ) ? $connection_data['location_id'] : '';
+		} else {
+			$settings    = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			$client_id   = isset( $settings['client_id'] ) ? wp_unslash( $settings['client_id'] ) : '';
+			$api_key     = isset( $settings['api_key'] ) ? wp_unslash( $settings['api_key'] ) : '';
+			$location_id = isset( $settings['location_id'] ) ? wp_unslash( $settings['location_id'] ) : '';
+		}
+
+		if ( empty( $client_id ) || empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_flowhub_missing_credentials',
+				__( 'FlowHub API credentials are not configured.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Use the base client class, passing connection_id for lazy credential resolution.
+		if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+		}
 		$client     = new WP_MCP_AI_Flowhub_Client( $connection_id );
 		$order_data = array(
 			'customer_id' => sanitize_text_field( $arguments['customer_id'] ),
