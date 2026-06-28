@@ -222,14 +222,14 @@ class WP_MCP_AI_Necessity_Gate {
 	 *
 	 * @return bool
 	 */
-	public static function is_enabled() {
+	public static function is_enabled( $assistant_id = 0 ) {
 		// Global kill-switch constant.
 		if ( defined( 'WP_MCP_AI_DISABLE_NECESSITY_GATE' ) && WP_MCP_AI_DISABLE_NECESSITY_GATE ) {
 			return false;
 		}
 
 		// Per-assistant harness profile check.
-		$assistant_id = self::get_current_assistant_id();
+		$assistant_id = (int) $assistant_id ?: self::get_current_assistant_id();
 		if ( $assistant_id > 0 ) {
 			$profile = WP_MCP_AI_Harness_Profile::get( $assistant_id );
 			if ( ! empty( $profile['necessity_gate']['enabled'] ) ) {
@@ -271,7 +271,7 @@ class WP_MCP_AI_Necessity_Gate {
 		$system_prompt = (string) $system_prompt;
 		$assistant_id  = (int) $assistant_id;
 
-		if ( ! self::is_enabled() ) {
+		if ( ! self::is_enabled( $assistant_id ) ) {
 			return $system_prompt;
 		}
 
@@ -613,7 +613,7 @@ class WP_MCP_AI_Necessity_Gate {
 	 */
 	private static function get_current_assistant_id() {
 		// Check if Request_Context provides an assistant ID.
-		if ( class_exists( 'WP_MCP_AI_Request_Context' ) ) {
+		if ( class_exists( 'WP_MCP_AI_Request_Context' ) && method_exists( 'WP_MCP_AI_Request_Context', 'get_instance' ) ) {
 			$context = WP_MCP_AI_Request_Context::get_instance();
 			if ( method_exists( $context, 'get_assistant_id' ) ) {
 				return (int) $context->get_assistant_id();
@@ -631,7 +631,7 @@ class WP_MCP_AI_Necessity_Gate {
 	 * @return string Session ID, or 'default' if not available.
 	 */
 	private static function get_current_session_id() {
-		if ( class_exists( 'WP_MCP_AI_Request_Context' ) ) {
+		if ( class_exists( 'WP_MCP_AI_Request_Context' ) && method_exists( 'WP_MCP_AI_Request_Context', 'get_instance' ) ) {
 			$context = WP_MCP_AI_Request_Context::get_instance();
 			if ( method_exists( $context, 'get_session_id' ) ) {
 				return sanitize_text_field( (string) $context->get_session_id() );
