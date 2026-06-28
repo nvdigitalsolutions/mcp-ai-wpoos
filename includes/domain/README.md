@@ -18,7 +18,8 @@ Holds the plugin's pure-PHP domain layer — value objects and constant catalogu
 | Symbol | File | Used by |
 |---|---|---|
 | `WP_MCP_AI_Pattern_Constants` (8 multi-agent pattern slugs) | `class-wp-mcp-ai-pattern-constants.php` | `includes/class-wp-mcp-ai-pattern-registry.php`, `includes/class-wp-mcp-ai-pattern-workflow-templates.php`, `agents/`, `teams/` |
-| `WP_MCP_AI_Risk_Level_Constants` (`RISK_INFO`, `RISK_STANDARD`, `RISK_DESTRUCTIVE`) | `class-wp-mcp-ai-risk-level-constants.php` | `tools/`, `services/class-wp-mcp-ai-tool-execution-orchestrator.php`, capability gates |
+| `WP_MCP_AI_Risk_Level_Constants` (`RISK_INFO`, `RISK_STANDARD`, `RISK_DESTRUCTIVE`, `RISK_IRREVERSIBLE`) | `class-wp-mcp-ai-risk-level-constants.php` | `tools/`, `services/class-wp-mcp-ai-tool-execution-orchestrator.php`, capability gates, `Necessity_Gate` |
+| `WP_MCP_AI_Action_Safety_Profile` (irreversibility scores 0.0–1.0, necessity levels, gating verdicts, decision matrix) | `class-wp-mcp-ai-action-safety-profile.php` | `harness/class-wp-mcp-ai-necessity-gate.php`, tool metadata, safety annotations |
 | `WP_MCP_AI_Toolkit_Constants` (toolkit slugs) | `class-wp-mcp-ai-toolkit-constants.php` | `includes/class-wp-mcp-ai-toolkit-enhancement-integration.php`, slash commands, profession service |
 
 ## Inputs / Outputs / Neighbors

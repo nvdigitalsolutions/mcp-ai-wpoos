@@ -128,6 +128,8 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 		if ( class_exists( 'WP_MCP_AI_Harness_Eval_Scheduler' ) ) {
 			$eval_last = WP_MCP_AI_Harness_Eval_Scheduler::get_last_runs( $assistant_id );
 		}
+		$guardrails     = isset( $profile['guardrails'] ) && is_array( $profile['guardrails'] ) ? $profile['guardrails'] : array();
+		$necessity_gate = isset( $profile['necessity_gate'] ) && is_array( $profile['necessity_gate'] ) ? $profile['necessity_gate'] : array();
 
 		wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD );
 		?>
@@ -455,10 +457,68 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 					<?php endforeach; ?>
 				</ul>
 			<?php endif; ?>
-		</fieldset>
+			</fieldset>
 
-		<?php
-		$this->render_documentation_link();
+			<fieldset style="border: 1px solid #dcdcde; padding: 10px 15px; margin-top: 15px;">
+				<legend style="font-weight: 600; padding: 0 5px;"><?php esc_html_e( 'Guardrails (Layer I)', 'mcp-ai-wpoos' ); ?></legend>
+				<p class="description" style="margin-top: 0;">
+					<?php esc_html_e( 'Stay-on-target jailbreak prevention. Screens user messages for prompt injection, role-play manipulation, and boundary-testing attempts before they reach the LLM. Runs before every AI provider request.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<p>
+					<label>
+						<input type="checkbox" name="wp_mcp_ai_harness_profile[guardrails][enabled]" value="1" <?php checked( ! empty( $guardrails['enabled'] ) ); ?> />
+						<?php esc_html_e( 'Enable Layer I guardrails', 'mcp-ai-wpoos' ); ?>
+					</label>
+				</p>
+				<p>
+					<label for="wp_mcp_ai_harness_profile_guardrails_strictness">
+						<?php esc_html_e( 'Strictness', 'mcp-ai-wpoos' ); ?>
+					</label>
+					<select id="wp_mcp_ai_harness_profile_guardrails_strictness" name="wp_mcp_ai_harness_profile[guardrails][strictness]">
+						<option value="low" <?php selected( isset( $guardrails['strictness'] ) ? $guardrails['strictness'] : 'medium', 'low' ); ?>><?php esc_html_e( 'Low — warn only on clear violations', 'mcp-ai-wpoos' ); ?></option>
+						<option value="medium" <?php selected( isset( $guardrails['strictness'] ) ? $guardrails['strictness'] : 'medium', 'medium' ); ?>><?php esc_html_e( 'Medium — block likely violations (recommended)', 'mcp-ai-wpoos' ); ?></option>
+						<option value="high" <?php selected( isset( $guardrails['strictness'] ) ? $guardrails['strictness'] : 'medium', 'high' ); ?>><?php esc_html_e( 'High — block even borderline cases', 'mcp-ai-wpoos' ); ?></option>
+					</select>
+				</p>
+			</fieldset>
+
+			<fieldset style="border: 1px solid #dcdcde; padding: 10px 15px; margin-top: 15px;">
+				<legend style="font-weight: 600; padding: 0 5px;"><?php esc_html_e( 'Necessity Gate (Layer J)', 'mcp-ai-wpoos' ); ?></legend>
+				<p class="description" style="margin-top: 0;">
+					<?php esc_html_e( '3-tier gating that prevents unnecessary and overeager tool calls. Tier 1 auto-approves safe read-only tools. Tier 2 classifies whether each call is truly needed. Tier 3 combines irreversibility score with necessity level to gate the action (allow, warn, skip, or block). Industry reference: Anthropic Claude Code auto mode reversibility-weighted risk assessment.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<p>
+					<label>
+						<input type="checkbox" name="wp_mcp_ai_harness_profile[necessity_gate][enabled]" value="1" <?php checked( ! empty( $necessity_gate['enabled'] ) ); ?> />
+						<?php esc_html_e( 'Enable Layer J necessity gate', 'mcp-ai-wpoos' ); ?>
+					</label>
+				</p>
+				<p>
+					<label for="wp_mcp_ai_harness_profile_necessity_gate_strictness">
+						<?php esc_html_e( 'Strictness', 'mcp-ai-wpoos' ); ?>
+					</label>
+					<select id="wp_mcp_ai_harness_profile_necessity_gate_strictness" name="wp_mcp_ai_harness_profile[necessity_gate][strictness]">
+						<option value="low" <?php selected( isset( $necessity_gate['strictness'] ) ? $necessity_gate['strictness'] : 'medium', 'low' ); ?>><?php esc_html_e( 'Low — block only clearly unnecessary calls', 'mcp-ai-wpoos' ); ?></option>
+						<option value="medium" <?php selected( isset( $necessity_gate['strictness'] ) ? $necessity_gate['strictness'] : 'medium', 'medium' ); ?>><?php esc_html_e( 'Medium — balanced gating (recommended)', 'mcp-ai-wpoos' ); ?></option>
+						<option value="high" <?php selected( isset( $necessity_gate['strictness'] ) ? $necessity_gate['strictness'] : 'medium', 'high' ); ?>><?php esc_html_e( 'High — require approval for most write operations', 'mcp-ai-wpoos' ); ?></option>
+					</select>
+				</p>
+				<p>
+					<label>
+						<input type="checkbox" name="wp_mcp_ai_harness_profile[necessity_gate][auto_skip]" value="1" <?php checked( ! isset( $necessity_gate['auto_skip'] ) || ! empty( $necessity_gate['auto_skip'] ) ); ?> />
+						<?php esc_html_e( 'Auto-skip unnecessary read-only calls (saves tokens)', 'mcp-ai-wpoos' ); ?>
+					</label>
+				</p>
+				<p>
+					<label>
+						<input type="checkbox" name="wp_mcp_ai_harness_profile[necessity_gate][require_approval_for_irreversible]" value="1" <?php checked( ! isset( $necessity_gate['require_approval_for_irreversible'] ) || ! empty( $necessity_gate['require_approval_for_irreversible'] ) ); ?> />
+						<?php esc_html_e( 'Require human approval for irreversible actions', 'mcp-ai-wpoos' ); ?>
+					</label>
+				</p>
+			</fieldset>
+
+			<?php
+			$this->render_documentation_link();
 	}
 
 	/**
@@ -552,10 +612,34 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 			? $raw['evals_enabled']
 			: array();
 
+		// Guardrails (Layer I).
+		$guardrails_raw        = isset( $raw['guardrails'] ) && is_array( $raw['guardrails'] ) ? $raw['guardrails'] : array();
+		$payload['guardrails'] = array(
+			'enabled'        => ! empty( $guardrails_raw['enabled'] ),
+			'strictness'     => isset( $guardrails_raw['strictness'] ) && in_array( $guardrails_raw['strictness'], array( 'low', 'medium', 'high' ), true )
+				? (string) $guardrails_raw['strictness']
+				: 'medium',
+			'mode'           => isset( $guardrails_raw['mode'] ) ? (string) $guardrails_raw['mode'] : 'warn',
+			'allowed_topics' => isset( $guardrails_raw['allowed_topics'] ) && is_array( $guardrails_raw['allowed_topics'] )
+				? $guardrails_raw['allowed_topics']
+				: array(),
+		);
+
+		// Necessity Gate (Layer J).
+		$necessity_gate_raw        = isset( $raw['necessity_gate'] ) && is_array( $raw['necessity_gate'] ) ? $raw['necessity_gate'] : array();
+		$payload['necessity_gate'] = array(
+			'enabled'                           => ! empty( $necessity_gate_raw['enabled'] ),
+			'strictness'                        => isset( $necessity_gate_raw['strictness'] ) && in_array( $necessity_gate_raw['strictness'], array( 'low', 'medium', 'high' ), true )
+				? (string) $necessity_gate_raw['strictness']
+				: 'medium',
+			'auto_skip'                         => ! empty( $necessity_gate_raw['auto_skip'] ),
+			'require_approval_for_irreversible' => ! empty( $necessity_gate_raw['require_approval_for_irreversible'] ),
+		);
+
 		// Preserve fields that aren't (yet) surfaced in the UI so saving
 		// from this metabox doesn't silently reset them.
 		$existing = WP_MCP_AI_Harness_Profile::get( (int) $post_id );
-		foreach ( array( 'verifiers' ) as $passthrough ) {
+		foreach ( array( 'verifiers', 'guardrails', 'necessity_gate' ) as $passthrough ) {
 			if ( isset( $existing[ $passthrough ] ) && ! isset( $payload[ $passthrough ] ) ) {
 				$payload[ $passthrough ] = $existing[ $passthrough ];
 			}
