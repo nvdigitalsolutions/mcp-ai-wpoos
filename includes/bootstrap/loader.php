@@ -194,6 +194,7 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-data-budget-tra
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-async-scheduler-bridge.php';
 WP_MCP_AI_Async_Scheduler_Bridge::register_hooks();
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-sla-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-default-assistants.php';
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';

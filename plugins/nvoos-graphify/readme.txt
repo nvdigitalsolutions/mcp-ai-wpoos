@@ -84,6 +84,10 @@ Yes. The graph explorer, shortcode, related content widget, and schema.org injec
 
 Yes. Any public post type (including JetEngine CPTs) is automatically detected. You can configure which post types to index in Settings.
 
+= Does the plugin connect to external services? =
+
+The core graph engine runs entirely on your server. The optional "Resolve External Entity" tool queries Wikidata (wikidata.org) when you explicitly ask it to look up a QID. Remote source drivers connect to user-configured endpoints (REST APIs, RSS feeds, SPARQL, etc.) only when you set them up in Settings. No data is ever sent off-site without your explicit configuration.
+
 = Does it work on multisite? =
 
 Yes. The plugin supports WordPress multisite with per-site configuration.

@@ -117,6 +117,9 @@ class WP_MCP_AI_Deal_CPT {
 		switch ( $column ) {
 			case 'stage':
 				$stage = get_post_meta( $post_id, 'deal_stage', true );
+				if ( ! $stage ) {
+					$stage = get_post_meta( $post_id, '_deal_stage', true );
+				}
 				if ( $stage && class_exists( 'WP_MCP_AI_CRM_Pipeline_Stages' ) ) {
 					$st = WP_MCP_AI_CRM_Pipeline_Stages::get_stage( $stage );
 					echo esc_html( $st ? $st['label'] : $stage );
@@ -126,18 +129,30 @@ class WP_MCP_AI_Deal_CPT {
 				break;
 			case 'amount':
 				$amount = get_post_meta( $post_id, 'deal_amount', true );
+				if ( ! $amount ) {
+					$amount = get_post_meta( $post_id, '_deal_amount', true );
+				}
 				echo esc_html( $amount ? WP_MCP_AI_CRM_Engine::format_currency( (float) $amount ) : '—' );
 				break;
 			case 'probability':
 				$prob = get_post_meta( $post_id, 'deal_probability', true );
+				if ( ! $prob ) {
+					$prob = get_post_meta( $post_id, '_deal_probability', true );
+				}
 				echo esc_html( is_numeric( $prob ) ? round( (float) $prob * 100 ) . '%' : '—' );
 				break;
 			case 'close_date':
 				$close = get_post_meta( $post_id, 'close_date', true );
+				if ( ! $close ) {
+					$close = get_post_meta( $post_id, '_deal_close_date', true );
+				}
 				echo esc_html( $close ? $close : '—' );
 				break;
 			case 'owner':
 				$owner = get_post_meta( $post_id, 'deal_owner', true );
+				if ( ! $owner ) {
+					$owner = get_post_meta( $post_id, '_deal_owner', true );
+				}
 				if ( $owner ) {
 					$user = get_userdata( (int) $owner );
 					echo esc_html( $user ? $user->display_name : $owner );
@@ -146,5 +161,83 @@ class WP_MCP_AI_Deal_CPT {
 				}
 				break;
 		}
+	}
+
+	/**
+	 * Create a deal from structured data.
+	 *
+	 * Used by Upwork/LinkedIn importers and programmatic deal creation.
+	 *
+	 * @since 2.11.0
+	 *
+	 * @param array $data {
+	 *     Deal creation data.
+	 *
+	 *     @type string $name   Deal title (required).
+	 *     @type float  $value  Deal monetary value.
+	 *     @type string $stage  Pipeline stage key (default: qualification).
+	 *     @type string $source Source identifier (e.g. 'upwork', 'linkedin').
+	 *     @type string $notes  Deal description / notes.
+	 * }
+	 * @return int|WP_Error Post ID on success, WP_Error on failure.
+	 */
+	public static function create( array $data ) {
+		$name = isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '';
+		if ( '' === $name ) {
+			return new WP_Error(
+				'wp_mcp_ai_deal_missing_name',
+				__( 'Deal name is required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$value       = isset( $data['value'] ) ? (float) $data['value'] : 0;
+		$stage       = isset( $data['stage'] ) ? sanitize_key( $data['stage'] ) : 'qualification';
+		$source      = isset( $data['source'] ) ? sanitize_text_field( $data['source'] ) : '';
+		$notes       = isset( $data['notes'] ) ? sanitize_textarea_field( $data['notes'] ) : '';
+		$probability = isset( $data['probability'] ) ? (float) $data['probability'] : 0;
+
+		// Resolve default stage probability from pipeline config if available.
+		if ( 0 === $probability && class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+			$stages   = isset( $settings['pipeline']['stages'] ) ? $settings['pipeline']['stages'] : array();
+			if ( isset( $stages[ $stage ]['probability'] ) ) {
+				$probability = (float) $stages[ $stage ]['probability'];
+			}
+		}
+
+		$post_data = array(
+			'post_type'    => self::POST_TYPE,
+			'post_title'   => $name,
+			'post_content' => $notes,
+			'post_status'  => 'publish',
+			'meta_input'   => array(
+				'_deal_stage'       => $stage,
+				'deal_stage'        => $stage,
+				'_deal_amount'      => $value,
+				'deal_amount'       => $value,
+				'_deal_probability' => $probability,
+				'deal_probability'  => $probability,
+				'_deal_source'      => $source,
+				'deal_source'       => $source,
+			),
+		);
+
+		$post_id = wp_insert_post( $post_data, true );
+
+		if ( is_wp_error( $post_id ) ) {
+			return $post_id;
+		}
+
+		/**
+		 * Fires after a deal is created via the programmatic create() method.
+		 *
+		 * @since 2.11.0
+		 *
+		 * @param int   $post_id The deal post ID.
+		 * @param array $data    The original creation data.
+		 */
+		do_action( 'wp_mcp_ai_deal_created', $post_id, $data );
+
+		return $post_id;
 	}
 }

@@ -154,6 +154,7 @@ class WP_MCP_AI_REST_Authenticator {
 			array(
 				'credential'   => $validated,
 				'assistant_id' => isset( $validated['assistant_id'] ) ? absint( $validated['assistant_id'] ) : 0,
+				'user_id'      => isset( $validated['created_by'] ) ? absint( $validated['created_by'] ) : 0,
 			)
 		);
 

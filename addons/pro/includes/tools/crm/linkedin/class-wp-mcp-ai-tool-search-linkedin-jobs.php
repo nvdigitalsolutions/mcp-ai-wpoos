@@ -248,7 +248,18 @@ class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, W
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
-		return ! empty( $connection ) && ! empty( $connection['refresh_token'] );
+		if ( empty( $connection ) ) {
+			return false;
+		}
+
+		// If explicitly set to web_search mode, never use the API.
+		$mode = isset( $connection['linkedin_mode'] ) ? $connection['linkedin_mode'] : 'api';
+		if ( 'web_search' === $mode ) {
+			return false;
+		}
+
+		// API mode: require OAuth credentials and a refresh token.
+		return ! empty( $connection['refresh_token'] );
 	}
 
 	/**
@@ -265,14 +276,34 @@ class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, W
 		// Build a search query targeting LinkedIn job listings.
 		$query_parts = array( 'site:linkedin.com/jobs' );
 
-		if ( ! empty( $arguments['query'] ) ) {
-			$query_parts[] = sanitize_text_field( $arguments['query'] );
+		// Load per-connection defaults when a connection_id is provided.
+		$conn_defaults = array();
+		if ( ! empty( $arguments['connection_id'] ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$conn = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection(
+				sanitize_text_field( $arguments['connection_id'] )
+			);
+			if ( $conn && 'linkedin' === ( isset( $conn['connection_type'] ) ? $conn['connection_type'] : '' ) ) {
+				if ( ! empty( $conn['linkedin_search_query'] ) ) {
+					$conn_defaults['query'] = $conn['linkedin_search_query'];
+				}
+				if ( ! empty( $conn['linkedin_search_location'] ) ) {
+					$conn_defaults['location'] = $conn['linkedin_search_location'];
+				}
+			}
+		}
+
+		// Argument values take precedence; connection defaults fill gaps.
+		$arg_query    = ! empty( $arguments['query'] ) ? $arguments['query'] : ( $conn_defaults['query'] ?? '' );
+		$arg_location = ! empty( $arguments['location'] ) ? $arguments['location'] : ( $conn_defaults['location'] ?? '' );
+
+		if ( ! empty( $arg_query ) ) {
+			$query_parts[] = sanitize_text_field( $arg_query );
 		}
 		if ( ! empty( $arguments['keywords'] ) ) {
 			$query_parts[] = sanitize_text_field( $arguments['keywords'] );
 		}
-		if ( ! empty( $arguments['location'] ) ) {
-			$query_parts[] = sanitize_text_field( $arguments['location'] );
+		if ( ! empty( $arg_location ) ) {
+			$query_parts[] = sanitize_text_field( $arg_location );
 		}
 		if ( ! empty( $arguments['remote'] ) ) {
 			$query_parts[] = 'remote';

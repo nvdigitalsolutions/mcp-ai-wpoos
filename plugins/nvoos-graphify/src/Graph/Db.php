@@ -392,8 +392,8 @@ class Db {
 	/** @return void */
 	public static function truncateNodes(): void {
 		global $wpdb;
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-		$wpdb->query( 'TRUNCATE TABLE ' . self::nodesTable() );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', self::nodesTable() ) );
 	}
 
 	/** @return void */
@@ -521,8 +521,8 @@ class Db {
 	/** @return void */
 	public static function truncateEdges(): void {
 		global $wpdb;
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
-		$wpdb->query( 'TRUNCATE TABLE ' . self::edgesTable() );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', self::edgesTable() ) );
 	}
 
 	/** @return int */

@@ -60,11 +60,18 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *     $ wp mcp-ai memory recall --query="project deadlines"
 	 *     $ wp mcp-ai memory recall --importance=high --format=json
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function recall( $args, $assoc_args ) {
 		$assistant_id = isset( $assoc_args['assistant'] ) ? absint( $assoc_args['assistant'] ) : $this->default_assistant_id();
+
+		// Accept --assistant-id as an alias for --assistant (documented in README).
+		if ( 0 === $assistant_id && isset( $assoc_args['assistant-id'] ) ) {
+			$assistant_id = absint( $assoc_args['assistant-id'] );
+		}
+
 		$query        = sanitize_text_field( (string) ( $assoc_args['query'] ?? '' ) );
 		$context_type = isset( $assoc_args['context-type'] ) ? sanitize_key( $assoc_args['context-type'] ) : '';
 		$importance   = isset( $assoc_args['importance'] ) ? sanitize_key( $assoc_args['importance'] ) : '';
@@ -75,8 +82,13 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 			$this->error( __( 'Memory tools are not available. Ensure the plugin is properly configured.', 'mcp-ai-wpoos' ) );
 		}
 
+		if ( 0 === $assistant_id ) {
+			$this->error( __( 'Agent ID is required. Use --assistant=<id> or configure a site default assistant.', 'mcp-ai-wpoos' ) );
+		}
+
 		$tool_args = array(
-			'limit' => $limit,
+			'agent_id' => $assistant_id,
+			'limit'    => $limit,
 		);
 
 		if ( '' !== $query ) {
@@ -104,11 +116,18 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		$items = array();
 		foreach ( $memories as $mem ) {
+			// Safe truncation: mb_strimwidth requires mbstring; fall back to substr.
+			$content_short = function_exists( 'mb_strimwidth' )
+				? mb_strimwidth( $mem['content'] ?? $mem['text'] ?? '', 0, 120, '…' )
+				: ( strlen( (string) ( $mem['content'] ?? $mem['text'] ?? '' ) ) > 120
+					? substr( (string) ( $mem['content'] ?? $mem['text'] ?? '' ), 0, 119 ) . '…'
+					: (string) ( $mem['content'] ?? $mem['text'] ?? '' ) );
+
 			$items[] = array(
 				'ID'         => $mem['context_id'] ?? $mem['id'] ?? '',
 				'Type'       => $mem['context_type'] ?? $mem['type'] ?? '',
 				'Importance' => $mem['importance'] ?? '',
-				'Content'    => mb_strimwidth( $mem['content'] ?? $mem['text'] ?? '', 0, 120, '…' ),
+				'Content'    => $content_short,
 				'Created'    => isset( $mem['created_at'] ) ? wp_date( 'Y-m-d H:i', $mem['created_at'] ) : '',
 			);
 		}
@@ -160,6 +179,7 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai memory store "The client prefers email communication" --importance=high
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -219,6 +239,7 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai memory forget abc123def456
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -269,6 +290,7 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai memory audit --limit=20
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -297,7 +319,7 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 			$items[] = array(
 				'ID'      => $entry['event_id'] ?? $entry['id'] ?? '',
 				'Action'  => $entry['action'] ?? $entry['event'] ?? '',
-				'Context' => mb_strimwidth( $entry['context_id'] ?? $entry['summary'] ?? '', 0, 60, '…' ),
+				'Context' => function_exists( 'mb_strimwidth' ) ? mb_strimwidth( $entry['context_id'] ?? $entry['summary'] ?? '', 0, 60, '…' ) : ( strlen( (string) ( $entry['context_id'] ?? $entry['summary'] ?? '' ) ) > 60 ? substr( (string) ( $entry['context_id'] ?? $entry['summary'] ?? '' ), 0, 59 ) . '…' : (string) ( $entry['context_id'] ?? $entry['summary'] ?? '' ) ),
 				'Time'    => isset( $entry['timestamp'] ) ? wp_date( 'Y-m-d H:i:s', $entry['timestamp'] ) : '',
 			);
 		}
@@ -327,6 +349,7 @@ class WP_MCP_AI_CLI_Memory_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai memory stats
 	 *
+	 * @when after_wp_load
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */

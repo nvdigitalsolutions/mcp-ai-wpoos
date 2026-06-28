@@ -8,8 +8,10 @@ use NvoosGraphify\Admin\Section;
 /**
  * Sources — Custom Post Types section.
  *
- * This section renders checkboxes for NV oOS internal post types
- * and does not use the standard field-rendering pipeline.
+ * Renders checkboxes for every public WordPress post type so site
+ * owners can choose which content types the knowledge graph indexes.
+ *
+ * Post and Page are included by default; all other types are opt-in.
  *
  * @since 1.0.0
  */
@@ -47,7 +49,7 @@ class SourcesCptsSection extends Section {
 	 * @inheritDoc
 	 */
 	public function get_description(): string {
-		return __( 'Choose which oOS internal post types should be indexed into the knowledge graph.', 'nvoos-graphify' );
+		return __( 'Choose which post types should be indexed into the knowledge graph.', 'nvoos-graphify' );
 	}
 
 	/**
@@ -63,8 +65,7 @@ class SourcesCptsSection extends Section {
 	/**
 	 * Render the CPT checkbox grid.
 	 *
-	 * Shows a placeholder message when the NV oOS bridge addon
-	 * is not active.
+	 * Delegates to {@see \NvoosGraphify\Admin\Bridge::renderCptCheckboxes()}.
 	 *
 	 * @return void
 	 */
@@ -72,40 +73,45 @@ class SourcesCptsSection extends Section {
 		if ( class_exists( '\NvoosGraphify\Admin\Bridge' ) && method_exists( '\NvoosGraphify\Admin\Bridge', 'renderCptCheckboxes' ) ) {
 			\NvoosGraphify\Admin\Bridge::renderCptCheckboxes();
 		} else {
-			echo '<p>' . \esc_html__( 'NV oOS integration not active. Install the NV oOS bridge addon to index oOS internal post types.', 'nvoos-graphify' ) . '</p>';
+			echo '<p>' . \esc_html__( 'No post types available.', 'nvoos-graphify' ) . '</p>';
 		}
 	}
 
 	/**
-	 * Sanitize sources tab CPT checkbox input.
+	 * Sanitize the CPT checkbox input from the Sources tab.
 	 *
-	 * Reads `$_POST['nvoos_cpt_include']` and translates the
-	 * checked post types into `excluded_post_types` and
-	 * `extra_post_types` arrays.
+	 * Translates `$_POST['nvoos_cpt_include'][slug] = 1` into
+	 * `excluded_post_types` and `extra_post_types` arrays.
+	 *
+	 *   - post and page are default-on — unchecked → excluded.
+	 *   - All other public CPTs are default-off — checked → extra.
 	 *
 	 * @inheritDoc
 	 */
 	public function sanitize( array $input ): array {
 		$sanitized = parent::sanitize( $input );
 
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by WP settings API before sanitization callbacks run.
-		if ( ! isset( $_POST['nvoos_cpt_include'] ) || ! \is_array( $_POST['nvoos_cpt_include'] ) ) {
-			$sanitized['excluded_post_types'] = array( 'post', 'page' );
-			$sanitized['extra_post_types']    = array();
-			return $sanitized;
+		// Read nvoos_cpt_include from the input array (WordPress nests form
+		// fields under the option name: nvoos_graphify_settings[nvoos_cpt_include][slug]).
+		$checked_slugs = array();
+		if ( isset( $input['nvoos_cpt_include'] ) && \is_array( $input['nvoos_cpt_include'] ) ) {
+			// Filter out unchecked (0/empty) values, keep checked (1).
+			$checked_slugs = \array_keys( \array_filter( $input['nvoos_cpt_include'] ) );
+			$checked_slugs = \array_values( \array_map( 'sanitize_key', $checked_slugs ) );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified by WP settings API; sanitized via array_map below.
-		$included = \array_map( 'sanitize_key', \wp_unslash( $_POST['nvoos_cpt_include'] ) );
-		$builtin  = array( 'post', 'page' );
-		$extra    = array_diff( $included, $builtin );
 		$all_cpts = \get_post_types( array( 'public' => true ), 'names' );
-		$excluded = array_values( array_diff( $all_cpts, $included ) );
+		$builtin  = array( 'post', 'page' );
+
+		// Build excluded: all CPTs not checked.
+		$excluded = array_values( \array_diff( $all_cpts, $checked_slugs ) );
+
+		// Build extra: non-builtin checked CPTs.
+		$extra = array_values( \array_diff( $checked_slugs, $builtin ) );
 
 		$sanitized['excluded_post_types'] = $excluded;
-		$sanitized['extra_post_types']    = array_values( $extra );
+		$sanitized['extra_post_types']    = $extra;
 
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
 		return $sanitized;
 	}
 }

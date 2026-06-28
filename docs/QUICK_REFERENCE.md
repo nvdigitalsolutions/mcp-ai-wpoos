@@ -1,11 +1,14 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.29  
-**Last Updated:** June 12, 2026
+**Version:** 1.1.34
+**Last Updated:** June 27, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
-## 🆕 Recent Updates (June 2026)
+## Recent Updates (June 2026)
+
+- **v1.1.34** (June 27): GPT-Realtime-2 voice models with WebRTC transport + Translate/Whisper clients + reasoning. Multi-channel result delivery UI (Telegram, Discord, WhatsApp, Google Chat). Pro scheduler AI/workflow response delivery. Graphify ecosystem: remote drivers, WP 7.0 Connectors, wp.org compliance. 3 reasoning-tool fatal bugs fixed. CRM deal import, multi-source auto-import, Upwork/LinkedIn toggle. Docs Hub REST + settings sync fixes. CVE-2026-55602, Gemini cache fix, GPT image routing fix. FastAPI porting plan.
+- **v1.1.29**
 
 - **v1.1.29** (June 12): **Pro Toolkit Optimizations Phase 1–3** across 6 toolkits; **Chat Transcript & Agent Memory Retention**; **DietPi Pro Toolkit** (19+ tools, MCP server, SSH proxy); **Layer I Guardrails** (jailbreak prevention); **Context Window Management** (13-provider validation, tiktoken, token capping); **LibreChat Addon**; **Schedule Anything SaaS**; **Vector Search** (HNSW, hybrid); **CRM Enhancements** (email import, lead pruning, inline tags, duplicates); **25+ bug fixes**. Full docs: [`docs/features/`](features/).
 - **v1.1.28** (June 8): CRM Phase C (IMAP/Twilio/WhatsApp/Gmail inbound), Customer CPT + 360, Support Ticket Module (10 tools + SLA), TF-IDF + BM25, Attention Routing (QKV 5-head), Funiq Bridge, NVOOS Graphify.

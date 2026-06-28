@@ -68,7 +68,7 @@ class WP_MCP_AI_CLI_Tool_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * @param array $assoc_args Associative arguments.
 	 * @when after_wp_load
 	 */
-	public function list_( $args, $assoc_args ) {
+	public function list( $args, $assoc_args ) {
 		$status_filter = \WP_CLI\Utils\get_flag_value( $assoc_args, 'status', '' );
 		$format        = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 
@@ -141,6 +141,8 @@ class WP_MCP_AI_CLI_Tool_Command extends WP_MCP_AI_CLI_Base_Command {
 			WP_CLI::error( __( 'Please provide a tool slug.', 'mcp-ai-wpoos' ) );
 		}
 
+		$this->require_capability( 'manage_options' );
+
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			WP_CLI::error( __( 'Tool registry is not available.', 'mcp-ai-wpoos' ) );
 		}
@@ -177,9 +179,13 @@ class WP_MCP_AI_CLI_Tool_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * <slug>
 	 * : The tool slug to disable.
 	 *
+	 * [--yes]
+	 * : Skip the confirmation prompt.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     $ wp mcp-ai tool disable search_posts
+	 *     $ wp mcp-ai tool disable search_posts --yes
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
@@ -191,6 +197,10 @@ class WP_MCP_AI_CLI_Tool_Command extends WP_MCP_AI_CLI_Base_Command {
 		if ( ! $slug ) {
 			WP_CLI::error( __( 'Please provide a tool slug.', 'mcp-ai-wpoos' ) );
 		}
+
+		$this->require_capability( 'manage_options' );
+
+		$yes = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
 
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			WP_CLI::error( __( 'Tool registry is not available.', 'mcp-ai-wpoos' ) );
@@ -207,6 +217,16 @@ class WP_MCP_AI_CLI_Tool_Command extends WP_MCP_AI_CLI_Base_Command {
 			/* translators: %s: tool slug */
 			WP_CLI::success( sprintf( __( 'Tool "%s" is already disabled.', 'mcp-ai-wpoos' ), $slug ) );
 			return;
+		}
+
+		if ( ! $yes ) {
+			WP_CLI::confirm(
+				sprintf(
+					/* translators: %s: tool slug */
+					__( 'Disable tool "%s"? This will remove it from all assistants.', 'mcp-ai-wpoos' ),
+					$slug
+				)
+			);
 		}
 
 		$result = $registry->disable_tool( $slug );

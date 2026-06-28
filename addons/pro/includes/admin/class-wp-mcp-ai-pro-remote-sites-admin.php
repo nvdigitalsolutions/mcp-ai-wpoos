@@ -641,6 +641,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'folder_id'                      => isset( $_POST['google_drive_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_folder_id'] ) ) : '',
 				// Upwork-specific fields.
 				'upwork_username'                => isset( $_POST['upwork_user_email'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_user_email'] ) ) : '',
+				'upwork_mode'                    => isset( $_POST['upwork_mode'] ) && in_array( $_POST['upwork_mode'], array( 'api', 'web_search' ), true )
+					? sanitize_key( wp_unslash( $_POST['upwork_mode'] ) )
+					: 'api',
+				'upwork_search_query'            => isset( $_POST['upwork_search_query'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_search_query'] ) ) : '',
+				'upwork_search_category'         => isset( $_POST['upwork_search_category'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_search_category'] ) ) : '',
+				'upwork_search_job_type'         => isset( $_POST['upwork_search_job_type'] ) && in_array( $_POST['upwork_search_job_type'], array( 'hourly', 'fixed' ), true )
+					? sanitize_key( wp_unslash( $_POST['upwork_search_job_type'] ) )
+					: '',
 				// Telegram-specific fields.
 				'bot_username'                   => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
 				'secret_token'                   => $telegram_secret_token,
@@ -763,6 +771,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'assigned_assistant_ids'         => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					: array(),
+				// LinkedIn-specific fields.
+				'linkedin_mode'                  => isset( $_POST['linkedin_mode'] ) && in_array( $_POST['linkedin_mode'], array( 'api', 'web_search' ), true )
+					? sanitize_key( wp_unslash( $_POST['linkedin_mode'] ) )
+					: 'api',
+				'linkedin_search_query'          => isset( $_POST['linkedin_search_query'] ) ? sanitize_text_field( wp_unslash( $_POST['linkedin_search_query'] ) ) : '',
+				'linkedin_search_location'       => isset( $_POST['linkedin_search_location'] ) ? sanitize_text_field( wp_unslash( $_POST['linkedin_search_location'] ) ) : '',
 				// WordPress/WooCommerce granular access controls.
 				'post_type_access'               => $this->resolve_post_type_access(),
 				'wc_resource_access'             => $this->resolve_wc_resource_access(),
@@ -2327,6 +2341,59 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for Upwork -->
 				<tr class="upwork-only-field" style="display: none;">
 					<th scope="row">
+						<label for="upwork_mode"><?php esc_html_e( 'Connection Mode', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php
+						$saved_upwork_mode = $is_edit && 'upwork' === $connection_type && ! empty( $connection['upwork_mode'] )
+							? $connection['upwork_mode']
+							: 'api';
+						?>
+						<select name="upwork_mode" id="upwork_mode" onchange="toggleUpworkMode(this.value)">
+							<option value="api" <?php selected( $saved_upwork_mode, 'api' ); ?>><?php esc_html_e( 'API — direct Upwork GraphQL access (requires OAuth)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="web_search" <?php selected( $saved_upwork_mode, 'web_search' ); ?>><?php esc_html_e( 'Web Search — AI-powered job discovery (no OAuth needed)', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'API mode uses the Upwork GraphQL API for real-time results. Web Search mode uses AI-powered web search for job discovery without requiring OAuth credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Upwork Web Search criteria fields (shown when mode is web_search) -->
+				<tr class="upwork-only-field upwork-web-search-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_search_query"><?php esc_html_e( 'Default Search Keywords', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="upwork_search_query" id="upwork_search_query" class="regular-text" value="<?php echo $is_edit && isset( $connection['upwork_search_query'] ) ? esc_attr( $connection['upwork_search_query'] ) : ''; ?>" autocomplete="off" placeholder="e.g. WordPress developer, PHP, Elementor">
+						<p class="description"><?php esc_html_e( 'Default keywords used when searching Upwork via web search. Leave empty to use CRM toolkit defaults.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="upwork-only-field upwork-web-search-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_search_category"><?php esc_html_e( 'Default Category', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="upwork_search_category" id="upwork_search_category" class="regular-text" value="<?php echo $is_edit && isset( $connection['upwork_search_category'] ) ? esc_attr( $connection['upwork_search_category'] ) : ''; ?>" autocomplete="off" placeholder="e.g. Web, Mobile & Software Dev">
+						<p class="description"><?php esc_html_e( 'Default job category filter for web search. Leave empty for all categories.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="upwork-only-field upwork-web-search-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_search_job_type"><?php esc_html_e( 'Default Job Type', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php $saved_upwork_job_type = $is_edit && isset( $connection['upwork_search_job_type'] ) ? $connection['upwork_search_job_type'] : ''; ?>
+						<select name="upwork_search_job_type" id="upwork_search_job_type">
+							<option value="" <?php selected( $saved_upwork_job_type, '' ); ?>><?php esc_html_e( '— All Types —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="hourly" <?php selected( $saved_upwork_job_type, 'hourly' ); ?>><?php esc_html_e( 'Hourly', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="fixed" <?php selected( $saved_upwork_job_type, 'fixed' ); ?>><?php esc_html_e( 'Fixed Price', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default job type filter. Leave empty for all types.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Upwork API credential fields (shown when mode is api) -->
+				<tr class="upwork-only-field upwork-api-field" style="display: none;">
+					<th scope="row">
 						<label for="upwork_client_id"><?php esc_html_e( 'OAuth Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
@@ -2334,7 +2401,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description"><?php esc_html_e( 'Your Upwork app Client ID from the API access page.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
-				<tr class="upwork-only-field" style="display: none;">
+				<tr class="upwork-only-field upwork-api-field" style="display: none;">
 					<th scope="row">
 						<label for="upwork_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
@@ -2349,7 +2416,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</p>
 					</td>
 				</tr>
-				<tr class="upwork-only-field" style="display: none;">
+				<tr class="upwork-only-field upwork-api-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Redirect URI', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<?php
@@ -2365,7 +2432,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description"><?php esc_html_e( 'Add this URL as an Authorized Redirect URI in your Upwork app settings.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
-				<tr class="upwork-only-field" style="display: none;">
+				<tr class="upwork-only-field upwork-api-field" style="display: none;">
 					<th scope="row">
 						<label for="upwork_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -2380,7 +2447,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</p>
 					</td>
 				</tr>
-				<tr class="upwork-only-field" style="display: none;">
+				<tr class="upwork-only-field upwork-api-field" style="display: none;">
 					<th scope="row">
 						<label for="upwork_user_email"><?php esc_html_e( 'Upwork Username (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -2390,7 +2457,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 				<?php if ( $is_edit && 'upwork' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
-				<tr class="upwork-only-field" style="display: none;">
+				<tr class="upwork-only-field upwork-api-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Connect Upwork Account', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<?php
@@ -2433,6 +2500,45 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for LinkedIn -->
 				<tr class="linkedin-only-field" style="display: none;">
 					<th scope="row">
+						<label for="linkedin_mode"><?php esc_html_e( 'Connection Mode', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php
+						$saved_linkedin_mode = $is_edit && 'linkedin' === $connection_type && ! empty( $connection['linkedin_mode'] )
+							? $connection['linkedin_mode']
+							: 'api';
+						?>
+						<select name="linkedin_mode" id="linkedin_mode" onchange="toggleLinkedinMode(this.value)">
+							<option value="api" <?php selected( $saved_linkedin_mode, 'api' ); ?>><?php esc_html_e( 'API — direct LinkedIn REST access (requires OAuth)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="web_search" <?php selected( $saved_linkedin_mode, 'web_search' ); ?>><?php esc_html_e( 'Web Search — AI-powered job discovery (no OAuth needed)', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'API mode uses the LinkedIn REST API for real-time results. Web Search mode uses AI-powered web search for job discovery without requiring OAuth credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- LinkedIn Web Search criteria fields (shown when mode is web_search) -->
+				<tr class="linkedin-only-field linkedin-web-search-field" style="display: none;">
+					<th scope="row">
+						<label for="linkedin_search_query"><?php esc_html_e( 'Default Search Keywords', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="linkedin_search_query" id="linkedin_search_query" class="regular-text" value="<?php echo $is_edit && isset( $connection['linkedin_search_query'] ) ? esc_attr( $connection['linkedin_search_query'] ) : ''; ?>" autocomplete="off" placeholder="e.g. WordPress developer, PHP, remote">
+						<p class="description"><?php esc_html_e( 'Default keywords used when searching LinkedIn via web search. Leave empty to use CRM toolkit defaults.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="linkedin-only-field linkedin-web-search-field" style="display: none;">
+					<th scope="row">
+						<label for="linkedin_search_location"><?php esc_html_e( 'Default Location', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="linkedin_search_location" id="linkedin_search_location" class="regular-text" value="<?php echo $is_edit && isset( $connection['linkedin_search_location'] ) ? esc_attr( $connection['linkedin_search_location'] ) : ''; ?>" autocomplete="off" placeholder="e.g. United States, Remote, London">
+						<p class="description"><?php esc_html_e( 'Default location filter for web search. Leave empty for all locations.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- LinkedIn API credential fields (shown when mode is api) -->
+				<tr class="linkedin-only-field linkedin-api-field" style="display: none;">
+					<th scope="row">
 						<label for="linkedin_client_id"><?php esc_html_e( 'OAuth Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
@@ -2440,7 +2546,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description"><?php esc_html_e( 'Your LinkedIn app Client ID from the LinkedIn Developer Portal.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
-				<tr class="linkedin-only-field" style="display: none;">
+				<tr class="linkedin-only-field linkedin-api-field" style="display: none;">
 					<th scope="row">
 						<label for="linkedin_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
@@ -2453,7 +2559,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php endif; ?>
 					</td>
 				</tr>
-				<tr class="linkedin-only-field" style="display: none;">
+				<tr class="linkedin-only-field linkedin-api-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Redirect URI', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<?php
@@ -2469,7 +2575,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description"><?php esc_html_e( 'Add this URL as an Authorized Redirect URI in your LinkedIn app settings.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
-				<tr class="linkedin-only-field" style="display: none;">
+				<tr class="linkedin-only-field linkedin-api-field" style="display: none;">
 					<th scope="row">
 						<label for="linkedin_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -2478,7 +2584,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description"><?php esc_html_e( 'Auto-populated after completing the OAuth flow. Do not enter manually.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
-				<tr class="linkedin-only-field" style="display: none;">
+				<tr class="linkedin-only-field linkedin-api-field" style="display: none;">
 					<th scope="row">
 						<label for="linkedin_user_email"><?php esc_html_e( 'LinkedIn Email (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -2488,7 +2594,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 				<?php if ( $is_edit && 'linkedin' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
-				<tr class="linkedin-only-field" style="display: none;">
+				<tr class="linkedin-only-field linkedin-api-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Connect LinkedIn Account', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<?php
@@ -6001,6 +6107,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlDescription.style.display = 'none';
 				// Upwork doesn't use the standard auth_type, it has its own OAuth flow
 				authTypeSelect.value = 'none';
+				// Apply the saved mode selection.
+				var upworkModeSelect = document.getElementById('upwork_mode');
+				if (upworkModeSelect) { toggleUpworkMode(upworkModeSelect.value); }
 			} else if (connectionType === 'linkedin') {
 				linkedinFields.forEach(function(field) {
 					field.style.display = 'table-row';
@@ -6012,6 +6121,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlDescription.style.display = 'none';
 				// LinkedIn doesn't use the standard auth_type, it has its own OAuth flow
 				authTypeSelect.value = 'none';
+				// Apply the saved mode selection.
+				var linkedinModeSelect = document.getElementById('linkedin_mode');
+				if (linkedinModeSelect) { toggleLinkedinMode(linkedinModeSelect.value); }
 			} else if (connectionType === 'telegram') {
 				telegramFields.forEach(function(field) {
 					field.style.display = 'table-row';
@@ -6233,6 +6345,42 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		/**
+		 * Show/hide Upwork API vs Web Search sub-fields based on the selected mode.
+		 *
+		 * @param {string} mode 'api' or 'web_search'
+		 */
+		function toggleUpworkMode(mode) {
+			var apiFields   = document.querySelectorAll('.upwork-api-field');
+			var searchFields = document.querySelectorAll('.upwork-web-search-field');
+
+			if (mode === 'web_search') {
+				apiFields.forEach(function(f) { f.style.display = 'none'; });
+				searchFields.forEach(function(f) { f.style.display = 'table-row'; });
+			} else {
+				apiFields.forEach(function(f) { f.style.display = 'table-row'; });
+				searchFields.forEach(function(f) { f.style.display = 'none'; });
+			}
+		}
+
+		/**
+		 * Show/hide LinkedIn API vs Web Search sub-fields based on the selected mode.
+		 *
+		 * @param {string} mode 'api' or 'web_search'
+		 */
+		function toggleLinkedinMode(mode) {
+			var apiFields   = document.querySelectorAll('.linkedin-api-field');
+			var searchFields = document.querySelectorAll('.linkedin-web-search-field');
+
+			if (mode === 'web_search') {
+				apiFields.forEach(function(f) { f.style.display = 'none'; });
+				searchFields.forEach(function(f) { f.style.display = 'table-row'; });
+			} else {
+				apiFields.forEach(function(f) { f.style.display = 'table-row'; });
+				searchFields.forEach(function(f) { f.style.display = 'none'; });
+			}
+		}
+
+		/**
 		 * Show/hide per-service settings rows based on service checkbox state.
 		 *
 		 * Rows carry a CSS class like "office365-service-outlook_mail" or "icloud-service-icloud_drive".
@@ -6299,6 +6447,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				shopifyModeSelect.addEventListener('change', function() {
 					toggleShopifyApiMode(this.value);
 				});
+			}
+
+			// Upwork: listen for mode changes to toggle API vs web search sub-fields.
+			var upworkModeSelect = document.getElementById('upwork_mode');
+			if (upworkModeSelect) {
+				upworkModeSelect.addEventListener('change', function() {
+					toggleUpworkMode(this.value);
+				});
+				// Also apply on initial load if Upwork is the selected type.
+				if (connectionType === 'upwork') { toggleUpworkMode(upworkModeSelect.value); }
+			}
+
+			// LinkedIn: listen for mode changes to toggle API vs web search sub-fields.
+			var linkedinModeSelect = document.getElementById('linkedin_mode');
+			if (linkedinModeSelect) {
+				linkedinModeSelect.addEventListener('change', function() {
+					toggleLinkedinMode(this.value);
+				});
+				// Also apply on initial load if LinkedIn is the selected type.
+				if (connectionType === 'linkedin') { toggleLinkedinMode(linkedinModeSelect.value); }
 			}
 
 			// Shopify shop domain input: update the (read-only) URL field in real time (Admin API only).

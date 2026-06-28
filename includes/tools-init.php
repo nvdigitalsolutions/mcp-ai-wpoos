@@ -30,6 +30,7 @@ add_filter(
 			return $default_tools;
 		}
 		$default_tools['WP_MCP_AI_Tool_Trace_Memory_Provenance'] = WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-trace-memory-provenance.php';
+		$default_tools['WP_MCP_AI_Tool_Wait_For_User']           = WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-wait-for-user.php';
 		return $default_tools;
 	}
 );

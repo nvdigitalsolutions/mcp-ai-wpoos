@@ -5,6 +5,7 @@ namespace NvoosGraphify;
 
 use NvoosGraphify\Memory\Bridge;
 use NvoosGraphify\Memory\EmbeddingsOnIngest;
+use NvoosGraphify\Remote\Enricher;
 use NvoosGraphify\Remote\Registry as RemoteRegistry;
 
 /**
@@ -85,39 +86,32 @@ final class Plugin {
 		// ─── Auto-rebuild on post save ─────────────────────────
 		add_action( 'save_post', array( $this, 'onSavePost' ), 20, 3 );
 
-		// ─── Built-in tools (registered at plugins_loaded:11) ──
-		add_action(
-			'plugins_loaded',
-			function (): void {
-				$this->registerBuiltinTools();
-			},
-			11
-		);
+		// ─── Built-in tools ────────────────────────────────────
+		$this->registerBuiltinTools();
 
-		// ─── Addon tool registration hook (plugins_loaded:20) ──
-		add_action(
-			'plugins_loaded',
-			function (): void {
-				/**
-				 * Fires when NV oOS Graphify is ready for tool registration.
-				 *
-				 * Consumer addons hook into this to register their tools.
-				 *
-				 * @since 1.0.0
-				 * @param ToolRegistry $registry The tool registry instance.
-				 */
-				do_action( Schema::ACTION_REGISTER_TOOLS, $this->toolRegistry );
-			},
-			20
-		);
+		/**
+		 * Fires when NV oOS Graphify is ready for tool registration.
+		 *
+		 * Consumer addons hook into this to register their tools.
+		 *
+		 * @since 1.0.0
+		 * @param ToolRegistry $registry The tool registry instance.
+		 */
+		do_action( Schema::ACTION_REGISTER_TOOLS, $this->toolRegistry );
 
-		// ─── Remote source driver registration ─────────────────
-		add_action(
-			Schema::ACTION_REGISTER_REMOTE_SOURCES,
-			function (): void {
-				$this->registerBuiltinDrivers();
-			}
-		);
+		// ─── Built-in remote source drivers ────────────────────
+		$this->registerBuiltinDrivers();
+
+		/**
+		 * Fires when Graphify is ready for remote source driver
+		 * registration.
+		 *
+		 * Consumer addons hook into this to register their drivers.
+		 *
+		 * @since 1.0.0
+		 * @param \NvoosGraphify\Remote\Registry $registry The remote source registry.
+		 */
+		do_action( Schema::ACTION_REGISTER_REMOTE_SOURCES, $this->remoteRegistry );
 
 		// ─── Memory bridge ─────────────────────────────────────
 		if ( class_exists( 'NvoosGraphify\Memory\Bridge' ) ) {
@@ -263,7 +257,8 @@ final class Plugin {
 
 	/** @return void */
 	public function runScheduledEnrich(): void {
-		// Enrichment from remote sources — wired in Phase 7.
+		$enricher = new Enricher();
+		$enricher->enrichAll( false );
 	}
 
 	/** @return void */
@@ -312,7 +307,15 @@ final class Plugin {
 
 	/** @return void */
 	public function renderAdminNotices(): void {
-		$transientKey = Schema::TRANSIENT_PREFIX . 'build_complete';
+		// Warn when OpenSSL is unavailable (credentials stored with weak fallback).
+		if ( class_exists( 'NvoosGraphify\Remote\Crypto' ) && ! \NvoosGraphify\Remote\Crypto::isAvailable() ) {
+			printf(
+				'<div class="notice notice-warning"><p>%s</p></div>',
+				esc_html__( 'NV oOS Graphify: The OpenSSL PHP extension is not available. Remote-source credentials (API keys, tokens) will be stored with weak encryption. Please enable the OpenSSL extension for secure credential storage.', 'nvoos-graphify' )
+			);
+		}
+
+			$transientKey = Schema::TRANSIENT_PREFIX . 'build_complete';
 		if ( get_transient( $transientKey ) ) {
 			delete_transient( $transientKey );
 			printf(

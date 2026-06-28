@@ -71,7 +71,7 @@ class WP_MCP_AI_Pro_CLI_Project_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 * @param array $assoc_args Associative arguments.
 	 * @when after_wp_load
 	 */
-	public function list_( $args, $assoc_args ) {
+	public function list( $args, $assoc_args ) {
 		$this->assert_pro_loaded();
 		$this->assert_toolkit_enabled( 'enable_project_management', 'Project Management' );
 

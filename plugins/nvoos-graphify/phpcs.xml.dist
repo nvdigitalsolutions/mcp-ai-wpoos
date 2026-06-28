@@ -44,11 +44,12 @@
     </rule>
 
     <!--
-        Tool interfaces are documented in Contracts/; concrete tool methods
-        don't need redundant docblocks.
+        Interface implementations are documented in Contracts/; concrete
+        tool and driver methods don't need redundant docblocks.
     -->
     <rule ref="Squiz.Commenting.FunctionComment.Missing">
         <exclude-pattern>*/src/Tools/*</exclude-pattern>
+        <exclude-pattern>*/src/Remote/Drivers/*</exclude-pattern>
     </rule>
 
     <!--
@@ -76,6 +77,24 @@
     -->
     <rule ref="Universal.NamingConventions.NoReservedKeywordParameterNames">
         <severity>0</severity>
+    </rule>
+
+    <!--
+        Short ternary (?:) is idiomatic PHP and used throughout the codebase.
+    -->
+    <rule ref="Universal.Operators.DisallowShortTernary">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        CSV driver uses native PHP fgetcsv for efficiency; WP_Filesystem is
+        overly complex for local file parsing.
+    -->
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fopen">
+        <exclude-pattern>*/src/Remote/Drivers/Csv.php</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_fclose">
+        <exclude-pattern>*/src/Remote/Drivers/Csv.php</exclude-pattern>
     </rule>
 
     <!--

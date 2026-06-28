@@ -145,7 +145,7 @@ class WP_MCP_AI_Tool_Generate_Material_Schedule implements WP_MCP_AI_Tool_Interf
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(

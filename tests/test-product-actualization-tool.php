@@ -513,10 +513,11 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_OpenAI_Client class not available.' );
 		}
 
+		// All models default to false since the OpenAI API currently rejects response_format.
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'gpt-image-1' ) );
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'gpt-image-1.5' ) );
-		$this->assertTrue( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'dall-e-2' ) );
-		$this->assertTrue( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'dall-e-3' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'dall-e-2' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'dall-e-3' ) );
 	}
 
 	/**

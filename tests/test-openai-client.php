@@ -117,7 +117,8 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * GPT-Image-1 should allow callers to control the response_format flag.
+	 * All image models should return false for response_format support by default
+	 * since the OpenAI API currently rejects the response_format parameter.
 	 */
 	public function test_image_model_supports_response_format_for_gpt_image() {
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'gpt-image-2' ) );
@@ -3184,6 +3185,7 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 		 */
 	public function test_is_gpt_image_model_recognises_gpt_image_family() {
 		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'gpt-image-1' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'gpt-image-1-mini' ) );
 		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'gpt-image-1.5' ) );
 		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'gpt-image-2' ) );
 		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_gpt_image_model( 'GPT-IMAGE-2' ) );
@@ -3219,7 +3221,7 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 			);
 
 			$payload = array(
-				'model'  => 'gpt-image-2',
+				'model'  => 'gpt-image-1',
 				'output' => array(
 					array(
 						'type'    => 'image_generation',
@@ -3247,38 +3249,38 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 			$response = $client->generate_image(
 				'A mountain at dawn',
 				array(
-					'model'   => 'gpt-image-2',
-					'size'    => '2048x2048',
-					'quality' => 'high',
-				)
-			);
+					'model'   => 'gpt-image-1',
+							'size'    => '2048x2048',
+							'quality' => 'high',
+						)
+					);
 
-		remove_filter( 'pre_http_request', $http_stub, 10 );
+				remove_filter( 'pre_http_request', $http_stub, 10 );
 
-		$this->assertNotNull( $captured_request );
-		$this->assertSame(
-			$this->resolve_responses_endpoint(),
-			$captured_request['url']
-		);
+				$this->assertNotNull( $captured_request );
+				$this->assertSame(
+					$this->resolve_responses_endpoint(),
+					$captured_request['url']
+				);
 
-		$payload = json_decode( $captured_request['args']['body'], true );
-		$this->assertIsArray( $payload );
-		$this->assertSame( 'gpt-image-2', $payload['model'] );
-		$this->assertSame( 'A mountain at dawn', $payload['input'] );
-		$this->assertArrayNotHasKey( 'prompt', $payload );
-		$this->assertArrayNotHasKey( 'n', $payload );
-		$this->assertArrayNotHasKey( 'response_format', $payload );
+				$payload = json_decode( $captured_request['args']['body'], true );
+				$this->assertIsArray( $payload );
+				$this->assertSame( 'gpt-image-1', $payload['model'] );
+					$this->assertSame( 'A mountain at dawn', $payload['input'] );
+					$this->assertArrayNotHasKey( 'prompt', $payload );
+					$this->assertArrayNotHasKey( 'n', $payload );
+					$this->assertArrayNotHasKey( 'response_format', $payload );
 
-		$this->assertArrayHasKey( 'tools', $payload );
-		$this->assertCount( 1, $payload['tools'] );
-		$this->assertSame( 'image_generation', $payload['tools'][0]['type'] );
-		$this->assertSame( '2048x2048', $payload['tools'][0]['size'] );
-		$this->assertSame( 'high', $payload['tools'][0]['quality'] );
+					$this->assertArrayHasKey( 'tools', $payload );
+					$this->assertCount( 1, $payload['tools'] );
+					$this->assertSame( 'image_generation', $payload['tools'][0]['type'] );
+					$this->assertSame( '2048x2048', $payload['tools'][0]['size'] );
+					$this->assertSame( 'high', $payload['tools'][0]['quality'] );
 
-		// Verify parsed response.
-		$this->assertIsArray( $response );
-		$this->assertArrayHasKey( 'image', $response );
-		$this->assertSame( 'gpt-image-2', $response['model'] );
+					// Verify parsed response.
+					$this->assertIsArray( $response );
+					$this->assertArrayHasKey( 'image', $response );
+					$this->assertSame( 'gpt-image-1', $response['model'] );
 	}
 
 		/**
@@ -3296,7 +3298,7 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 
 		$http_stub = function () use ( $png_base64 ) {
 			$payload = array(
-				'model'  => 'gpt-image-2',
+				'model'  => 'gpt-image-1',
 				'output' => array(
 					array(
 						'type'    => 'image_generation',
@@ -3323,7 +3325,7 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 
 			$response = $client->generate_image(
 				'Abstract art',
-				array( 'model' => 'gpt-image-2' )
+				array( 'model' => 'gpt-image-1' )
 			);
 
 		remove_filter( 'pre_http_request', $http_stub );
@@ -3333,7 +3335,7 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 		$this->assertSame( $png_binary, $response['image'] );
 		$this->assertSame( 'png', $response['format'] );
 		$this->assertSame( 'image/png', $response['mime_type'] );
-		$this->assertSame( 'gpt-image-2', $response['model'] );
+		$this->assertSame( 'gpt-image-1', $response['model'] );
 		$this->assertSame( 0, $response['created'] );
 	}
 
@@ -3352,7 +3354,7 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 			return array(
 				'body'     => wp_json_encode(
 					array(
-						'model'  => 'gpt-image-2',
+						'model'  => 'gpt-image-1',
 						'output' => array(),
 					)
 				),
@@ -3365,7 +3367,7 @@ class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
 
 			$response = $client->generate_image(
 				'Failing prompt',
-				array( 'model' => 'gpt-image-2' )
+				array( 'model' => 'gpt-image-1' )
 			);
 
 		remove_filter( 'pre_http_request', $http_stub );

@@ -112,6 +112,14 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		$supported_plugins = $this->get_supported_plugin_statuses();
 		$warnings          = $this->build_warnings( $plugin, $settings, $assistants, $supported_plugins );
 
+		// Build the human-readable summary text here where the data is available.
+		$summary_text = sprintf(
+			/* translators: 1: plugin count, 2: total warnings */
+			__( 'Environment status: %1$d plugin(s) checked, %2$d warning(s)', 'mcp-ai-wpoos' ),
+			count( $supported_plugins ),
+			count( $warnings )
+		);
+
 		return array(
 			'checked_at'        => gmdate( 'c' ),
 			'environment'       => $environment,
@@ -119,6 +127,8 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			'assistants'        => $assistants,
 			'supported_plugins' => $supported_plugins,
 			'warnings'          => $warnings,
+			'message'           => $summary_text,
+			'summary'           => $summary_text,
 		);
 	}
 
@@ -159,16 +169,7 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
-		$summary_text = sprintf(
-			/* translators: 1: plugin count, 2: total warnings */
-			__( 'Environment status: %1$d plugin(s) checked, %2$d warning(s)', 'mcp-ai-wpoos' ),
-			count( $summary['plugin_statuses'] ),
-			count( $summary['warnings'] )
-		);
-
 		return array(
-			'message'     => $summary_text, // Chat client display.
-			'summary'     => $summary_text, // Backward compatibility.
 			'environment' => $summary,
 		);
 	}
@@ -200,6 +201,10 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		 * @param array[] $definitions Associative array of plugin metadata keyed by slug.
 		 */
 		$definitions = apply_filters( 'wp_mcp_ai_supported_plugins', $definitions );
+
+		if ( ! is_array( $definitions ) ) {
+			$definitions = array();
+		}
 
 		if ( ! function_exists( 'is_plugin_active' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';

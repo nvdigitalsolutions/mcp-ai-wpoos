@@ -8,8 +8,10 @@ use NvoosGraphify\Admin\Section;
 /**
  * Sources — External Tables section.
  *
- * This section renders checkboxes for NV oOS internal database
- * tables and does not use the standard field-rendering pipeline.
+ * Placeholder in the core plugin. The NV oOS Graphify AI Platform
+ * addon populates this section with checkboxes for NV oOS custom
+ * database tables (slash-command audit, metric events, compliance
+ * evidence, etc.).
  *
  * @since 1.0.0
  */
@@ -47,7 +49,7 @@ class SourcesExtSection extends Section {
 	 * @inheritDoc
 	 */
 	public function get_description(): string {
-		return __( 'Choose which oOS internal database tables should be indexed into the knowledge graph.', 'nvoos-graphify' );
+		return __( 'Choose which database tables should be indexed into the knowledge graph.', 'nvoos-graphify' );
 	}
 
 	/**
@@ -63,8 +65,7 @@ class SourcesExtSection extends Section {
 	/**
 	 * Render the external table checkbox grid.
 	 *
-	 * Shows a placeholder message when the NV oOS bridge addon
-	 * is not active.
+	 * Delegates to {@see \NvoosGraphify\Admin\Bridge::renderExtTableCheckboxes()}.
 	 *
 	 * @return void
 	 */
@@ -72,42 +73,37 @@ class SourcesExtSection extends Section {
 		if ( class_exists( '\NvoosGraphify\Admin\Bridge' ) && method_exists( '\NvoosGraphify\Admin\Bridge', 'renderExtTableCheckboxes' ) ) {
 			\NvoosGraphify\Admin\Bridge::renderExtTableCheckboxes();
 		} else {
-			echo '<p>' . \esc_html__( 'NV oOS integration not active. Install the NV oOS bridge addon to index oOS internal database tables.', 'nvoos-graphify' ) . '</p>';
+			echo '<p>' . \esc_html__( 'No external tables available.', 'nvoos-graphify' ) . '</p>';
 		}
 	}
 
 	/**
-	 * Sanitize sources tab external table checkbox input.
+	 * Sanitize the external table checkbox input from the Sources tab.
 	 *
-	 * Reads `$_POST['nvoos_ext_table']` and translates the
-	 * checked tables into `external_tables` and
-	 * `disabled_external_tables` arrays.
+	 * Reads `$_POST['nvoos_ext_table']` and translates the checked
+	 * tables into `external_tables` and `disabled_external_tables`
+	 * arrays.
 	 *
 	 * @inheritDoc
 	 */
 	public function sanitize( array $input ): array {
 		$sanitized = parent::sanitize( $input );
 
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by WP settings API before sanitization callbacks run.
-		if ( ! isset( $_POST['nvoos_ext_table'] ) || ! \is_array( $_POST['nvoos_ext_table'] ) ) {
-			$sanitized['external_tables']          = array();
-			$sanitized['disabled_external_tables'] = array();
-			return $sanitized;
+		$enabled = array();
+		if ( isset( $input['nvoos_ext_table'] ) && \is_array( $input['nvoos_ext_table'] ) ) {
+			$enabled = \array_keys( \array_filter( $input['nvoos_ext_table'] ) );
+			$enabled = \array_values( \array_map( 'sanitize_key', $enabled ) );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified by WP settings API; sanitized via array_map below.
-		$enabled = \array_map( 'sanitize_key', \wp_unslash( $_POST['nvoos_ext_table'] ) );
-
-		$sanitized['external_tables'] = array_values( $enabled );
+		$sanitized['external_tables'] = $enabled;
 
 		// Build the disabled list from all known external tables minus enabled ones.
 		$known = array();
 		if ( function_exists( '\nvoos_graphify_get_external_tables' ) ) {
 			$known = \nvoos_graphify_get_external_tables();
 		}
-		$sanitized['disabled_external_tables'] = array_values( array_diff( $known, $enabled ) );
+		$sanitized['disabled_external_tables'] = array_values( \array_diff( $known, $enabled ) );
 
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
 		return $sanitized;
 	}
 }

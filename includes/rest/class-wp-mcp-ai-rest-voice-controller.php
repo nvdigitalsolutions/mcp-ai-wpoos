@@ -83,8 +83,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Voice_Controller' ) ) {
 
 				// Map provider slugs to voice provider slugs.
 				$map = array(
-					'openai' => 'openai_realtime',
-					'gemini' => 'gemini_live',
+					'openai'           => 'openai_realtime',
+					'openai_translate' => 'openai_realtime_translate',
+					'openai_whisper'   => 'openai_realtime_whisper',
+					'gemini'           => 'gemini_live',
 				);
 
 				$voice_slug = isset( $map[ $provider_slug ] ) ? $map[ $provider_slug ] : $provider_slug;
@@ -132,29 +134,93 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Voice_Controller' ) ) {
 					'callback'            => array( $this, 'create_voice_session' ),
 					'permission_callback' => array( $this, 'check_permission' ),
 					'args'                => array(
-						'assistant_id' => array(
+						'assistant_id'      => array(
 							'required'          => true,
 							'type'              => 'integer',
 							'sanitize_callback' => 'absint',
 						),
-						'provider'     => array(
+						'provider'          => array(
 							'required'          => false,
 							'type'              => 'string',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'model'        => array(
+						'model'             => array(
 							'required'          => false,
 							'type'              => 'string',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'voice'        => array(
+						'voice'             => array(
 							'required'          => false,
 							'type'              => 'string',
 							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'reasoning_effort'  => array(
+							'required'          => false,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'enum'              => array( 'minimal', 'low', 'medium', 'high', 'xhigh' ),
+						),
+						'connection_method' => array(
+							'required'          => false,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'enum'              => array( 'webrtc_ephemeral', 'webrtc_unified', 'websocket' ),
 						),
 					),
 				)
 			);
+
+					// POST /realtime/token — Create ephemeral token for WebRTC.
+					register_rest_route(
+						self::REST_NAMESPACE,
+						'/realtime/token',
+						array(
+							'methods'             => 'POST',
+							'callback'            => array( $this, 'create_realtime_token' ),
+							'permission_callback' => array( $this, 'check_permission' ),
+							'args'                => array(
+								'assistant_id'     => array(
+									'required'          => true,
+									'type'              => 'integer',
+									'sanitize_callback' => 'absint',
+								),
+								'model'            => array(
+									'required'          => false,
+									'type'              => 'string',
+									'sanitize_callback' => 'sanitize_text_field',
+								),
+								'voice'            => array(
+									'required'          => false,
+									'type'              => 'string',
+									'sanitize_callback' => 'sanitize_text_field',
+								),
+								'reasoning_effort' => array(
+									'required'          => false,
+									'type'              => 'string',
+									'sanitize_callback' => 'sanitize_text_field',
+									'enum'              => array( 'minimal', 'low', 'medium', 'high', 'xhigh' ),
+								),
+							),
+						)
+					);
+
+					// POST /realtime/session — SDP relay for unified WebRTC.
+					register_rest_route(
+						self::REST_NAMESPACE,
+						'/realtime/session',
+						array(
+							'methods'             => 'POST',
+							'callback'            => array( $this, 'create_realtime_session' ),
+							'permission_callback' => array( $this, 'check_permission' ),
+							'args'                => array(
+								'assistant_id' => array(
+									'required'          => true,
+									'type'              => 'integer',
+									'sanitize_callback' => 'absint',
+								),
+							),
+						)
+					);
 		}
 
 		/**
@@ -250,14 +316,30 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Voice_Controller' ) ) {
 			// Check realtime provider availability.
 			foreach ( $this->providers as $slug => $provider ) {
 				if ( $provider->is_available() ) {
-					$modes['realtime']['available']   = true;
-					$modes['realtime']['providers'][] = array(
+					$provider_info = array(
 						'slug'          => $slug,
 						'name'          => $provider->get_name(),
 						'model'         => $provider->get_default_model(),
 						'voices'        => $provider->get_available_voices(),
 						'default_voice' => $provider->get_default_voice(),
 					);
+
+					// Add reasoning efforts for OpenAI realtime provider.
+					if ( method_exists( $provider, 'get_reasoning_efforts' ) ) {
+						$provider_info['reasoning_efforts']        = $provider->get_reasoning_efforts();
+						$provider_info['default_reasoning_effort'] = $provider->get_default_reasoning_effort();
+					}
+
+					// Add translation languages for translate provider.
+					if ( method_exists( $provider, 'get_input_languages' ) ) {
+						$provider_info['input_languages']         = $provider->get_input_languages();
+						$provider_info['output_languages']        = $provider->get_output_languages();
+						$provider_info['default_input_language']  = $provider->get_default_input_language();
+						$provider_info['default_output_language'] = $provider->get_default_output_language();
+					}
+
+					$modes['realtime']['available']   = true;
+					$modes['realtime']['providers'][] = $provider_info;
 				}
 			}
 
@@ -272,6 +354,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Voice_Controller' ) ) {
 					'model' => $active_provider->get_default_model(),
 					'voice' => $active_provider->get_default_voice(),
 				);
+
+				if ( method_exists( $active_provider, 'get_default_reasoning_effort' ) ) {
+					$active_info['reasoning_effort'] = $active_provider->get_default_reasoning_effort();
+				}
 			}
 
 			// Build response.
@@ -350,11 +436,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Voice_Controller' ) ) {
 					: 'openai';
 
 				$map = array(
-					'openai' => 'openai_realtime',
-					'gemini' => 'gemini_live',
+					'openai'           => 'openai_realtime',
+					'openai_translate' => 'openai_realtime_translate',
+					'openai_whisper'   => 'openai_realtime_whisper',
+					'gemini'           => 'gemini_live',
 				);
 
-				$provider_slug = isset( $map[ $provider_key ] ) ? $map[ $provider_key ] : 'openai_realtime';
+				$provider_slug = isset( $map[ $provider_key ] )
+					? $map[ $provider_key ]
+					: 'openai_realtime';
 			}
 
 			if ( ! isset( $this->providers[ $provider_slug ] ) ) {
@@ -379,15 +469,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Voice_Controller' ) ) {
 				);
 			}
 
-			$options = array();
-			$model   = $request->get_param( 'model' );
-			$voice   = $request->get_param( 'voice' );
+			$options   = array();
+			$model     = $request->get_param( 'model' );
+			$voice     = $request->get_param( 'voice' );
+			$reasoning = $request->get_param( 'reasoning_effort' );
+			$conn      = $request->get_param( 'connection_method' );
 
 			if ( ! empty( $model ) ) {
 				$options['model'] = $model;
 			}
 			if ( ! empty( $voice ) ) {
 				$options['voice'] = $voice;
+			}
+			if ( ! empty( $reasoning ) ) {
+				$options['reasoning_effort'] = $reasoning;
+			}
+			if ( ! empty( $conn ) ) {
+				$options['connection_method'] = $conn;
 			}
 
 			$session = $provider->create_session( $assistant_id, $options );
@@ -397,6 +495,111 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Voice_Controller' ) ) {
 			}
 
 			return rest_ensure_response( $session );
+		}
+
+		/**
+		 * POST /realtime/token — Create an ephemeral token for WebRTC connection.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param WP_REST_Request $request The request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function create_realtime_token( $request ) {
+			$assistant_id = $request->get_param( 'assistant_id' );
+
+			$provider = $this->get_active_provider();
+			if ( ! $provider || 'openai_realtime' !== $provider->get_slug() ) {
+				return new WP_Error(
+					'wp_mcp_ai_realtime_unavailable',
+					__( 'OpenAI Realtime provider is not active.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$options = array();
+			$model   = $request->get_param( 'model' );
+			$voice   = $request->get_param( 'voice' );
+			$effort  = $request->get_param( 'reasoning_effort' );
+
+			if ( ! empty( $model ) ) {
+				$options['model'] = $model;
+			}
+			if ( ! empty( $voice ) ) {
+				$options['voice'] = $voice;
+			}
+			if ( ! empty( $effort ) ) {
+				$options['reasoning_effort'] = $effort;
+			}
+
+			if ( ! method_exists( $provider, 'create_ephemeral_token' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_realtime_not_supported',
+					__( 'Ephemeral token creation is not supported by this provider.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$token = $provider->create_ephemeral_token( $assistant_id, $options );
+
+			if ( is_wp_error( $token ) ) {
+				return $token;
+			}
+
+			return rest_ensure_response( $token );
+		}
+
+		/**
+		 * POST /realtime/session — SDP relay for unified WebRTC interface.
+		 *
+		 * Accepts a raw SDP offer in the request body and relays it to OpenAI.
+		 * Returns the SDP answer for the browser to set as remote description.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param WP_REST_Request $request The request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function create_realtime_session( $request ) {
+			$assistant_id = $request->get_param( 'assistant_id' );
+			$sdp_offer    = $request->get_body();
+
+			if ( empty( $sdp_offer ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_realtime_missing_sdp',
+					__( 'Missing SDP offer in request body.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$provider = $this->get_active_provider();
+			if ( ! $provider || 'openai_realtime' !== $provider->get_slug() ) {
+				return new WP_Error(
+					'wp_mcp_ai_realtime_unavailable',
+					__( 'OpenAI Realtime provider is not active.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( ! method_exists( $provider, 'create_unified_session' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_realtime_not_supported',
+					__( 'Unified session creation is not supported by this provider.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$sdp_answer = $provider->create_unified_session( $sdp_offer, $assistant_id );
+
+			if ( is_wp_error( $sdp_answer ) ) {
+				return $sdp_answer;
+			}
+
+			return new WP_REST_Response(
+				$sdp_answer,
+				200,
+				array( 'Content-Type' => 'application/sdp' )
+			);
 		}
 	}
 }

@@ -78,17 +78,15 @@ class GraphExplorer {
 		);
 
 		// Pass REST config to JS.
-		wp_add_inline_script(
+		wp_localize_script(
 			'nvoos-graphify-admin',
-			'window.NvoosGraphify = ' . wp_json_encode(
-				array(
-					'restUrl'  => rest_url( Schema::REST_NAMESPACE ),
-					'nonce'    => wp_create_nonce( 'wp_rest' ),
-					'maxNodes' => 300,
-					'height'   => '600px',
-				)
-			) . ';',
-			'before'
+			'nvoosGraphifyAdmin',
+			array(
+				'rest_url'  => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
+				'nonce'     => wp_create_nonce( 'wp_rest' ),
+				'max_nodes' => 300,
+				'height'    => '600px',
+			)
 		);
 
 		// Admin styles.

@@ -1,7 +1,7 @@
 # NV oOS Roadmap
 
-**Last Updated:** June 12, 2026  
-**Version:** 1.1.29
+**Last Updated:** June 27, 2026  
+**Version:** 1.1.34
 
 ---
 
@@ -16,6 +16,30 @@
 3. **Open Standards** - MCP protocol compliance, extensible architecture
 4. **Community Driven** - Open source with transparent development
 5. **Production Ready** - Enterprise reliability with community accessibility
+
+---
+
+## Released: v1.1.34 — June 2026 ✅
+
+**Release Date:** June 27, 2026
+
+### What was delivered in v1.1.34
+
+- ✅ **GPT-Realtime-2 Voice Models Upgrade (PR #5479).** GA Realtime API migration with WebRTC transport (WebSocket fallback). GPT-Realtime-2 with 128K context + reasoning. 2 new models: Translate (70+ in -> 13 out) and Whisper (streaming STT). 12-section prompt template. Parallel tool calling. wait_for_user tool. 7 new admin settings.
+- ✅ **Multi-Channel Result Delivery UI (PR #5465).** Telegram, Discord, WhatsApp, Google Chat channels in schedule modal. 11 channels now exposed in admin UI.
+- ✅ **Pro Scheduler AI/Workflow Response Delivery (PR #5466).** AI responses routed through scheduler delivery pipeline.
+- ✅ **Graphify Ecosystem (PRs #5475-#5480).** Remote source drivers with Bridge class. WP 7.0 Connectors credential resolution. wp.org compliance sweep. Plugin Sources tab and Remote UI fixes.
+- ✅ **3 Reasoning-Tool Fatal Bugs Fixed.** enable_reasoning_mode, analyze_code_sequence, validate_reasoning_chain called non-existent success() method; replaced with format_chat_response(). Plus trim() on array fix and count() on null guard.
+- ✅ **CRM Pipeline Fixes (PRs #5469, #5474, #5473).** Deal import + Gmail fix. Multi-source auto-import. Upwork/LinkedIn API/web_search mode toggle.
+- ✅ **Docs Hub Fixes (PRs #5472, #5468).** REST fatal error + plain-permalink URL bug. Settings sync reliability + rebuild reliability + repo lookup.
+- ✅ **Security (PRs #5464, #5463, #5461).** http-proxy-middleware CVE-2026-55602. Gemini cache fix. GPT image routing fix.
+- ✅ **nv-cloud-init Guard (PR #5470).** file_exists() check before require_once.
+- ✅ **wait_for_user Tool Fixes.** Base class loading and invalid extension resolved.
+- ✅ **Documentation.** GPT-Realtime-2 upgrade proposal + 1,166-line implementation plan. FastAPI porting plan (PR #5467).
+- ✅ **WP-CLI Smart Tool Test.** 409 tools tested; 28 confirmed working; 3 fatal bugs fixed.
+- ✅ **Housekeeping.** Stale build artifacts and toolkit-addons directory removed.
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ---
 
@@ -130,10 +154,48 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ---
 
-## Next Minor (v1.2.0) - Q2 2026 ⚡
+## Next Minor (v1.3.0) - Q2 2026 ⚡
 
 **Target:** June 2026  
-**Focus:** AI Provider enhancements, developer experience improvements
+**Focus:** GPT-Realtime-2 voice models upgrade, WebRTC transport, translation & transcription
+
+### Major Features
+
+#### 1. OpenAI Realtime API GA Migration ✅
+- Migrated from deprecated beta endpoints to GA Realtime API
+- Nested session format: `session.type`, `audio.input/output` structure
+- Removed deprecated `OpenAI-Beta` header; added `OpenAI-Safety-Identifier`
+- Updated default model: `gpt-realtime` → `gpt-realtime-2`
+- Updated voice list: added `cedar`, removed deprecated `fable`/`nova`/`onyx`
+
+#### 2. WebRTC Transport ✅
+- New `chat-webrtc-service.js` — browser WebRTC peer connection manager
+- Ephemeral token flow: `POST /v1/realtime/client_secrets` → browser RTCPeerConnection
+- Unified interface flow: SDP relay via `POST /v1/realtime/calls`
+- New REST endpoints: `POST /mcp-ai/v1/realtime/token`, `POST /mcp-ai/v1/realtime/session`
+- WebSocket fallback preserved in updated `chat-voice-realtime-service.js`
+
+#### 3. GPT-Realtime-2 Reasoning ✅
+- Configurable reasoning effort: `minimal` / `low` / `medium` / `high` / `xhigh`
+- 12-section structured prompt template (role, tone, reasoning, preambles, tools, etc.)
+- Per-section filter hooks for prompt customization
+- Parallel tool calling enabled by default
+
+#### 4. New Models ✅
+- **GPT-Realtime-Translate**: 70+ input → 13 output languages; dedicated translation endpoint
+- **GPT-Realtime-Whisper**: Streaming speech-to-text with configurable latency
+- Translation + transcription JS services with WebRTC transport
+- Provider registration with voice controller
+
+#### 5. Voice Tooling ✅
+- `wait_for_user` no-op tool for silence/background noise handling
+- PTT (Push-to-Talk) mode support for WebRTC connections
+- Commentary phase display (preambles / tool progress) in chat UI
+- WebRTC-specific state classes and CSS
+
+---
+
+## Next Minor (v1.2.0) - Q2 2026 ⚡
 
 ---
 

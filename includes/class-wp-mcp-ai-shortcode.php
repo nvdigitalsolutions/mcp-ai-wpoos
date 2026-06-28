@@ -201,6 +201,36 @@ class WP_MCP_AI_Shortcode {
 			true
 		);
 
+		// Register WebRTC voice service (standalone, loaded on demand).
+		$voice_webrtc_relative = $this->resolve_js_asset_path( $js_dir, 'chat-webrtc-service', $js_ext );
+		wp_register_script(
+			'wp-mcp-ai-voice-webrtc',
+			WP_MCP_AI_URL . $voice_webrtc_relative,
+			array(),
+			$this->get_asset_version( $voice_webrtc_relative ),
+			true
+		);
+
+		// Register translation service (standalone, loaded on demand).
+		$translation_relative = $this->resolve_js_asset_path( $js_dir, 'chat-translation-service', $js_ext );
+		wp_register_script(
+			'wp-mcp-ai-translation',
+			WP_MCP_AI_URL . $translation_relative,
+			array( 'wp-mcp-ai-voice-webrtc' ),
+			$this->get_asset_version( $translation_relative ),
+			true
+		);
+
+		// Register transcription service (standalone, loaded on demand).
+		$transcription_relative = $this->resolve_js_asset_path( $js_dir, 'chat-transcription-realtime-service', $js_ext );
+		wp_register_script(
+			'wp-mcp-ai-transcription',
+			WP_MCP_AI_URL . $transcription_relative,
+			array( 'wp-mcp-ai-voice-webrtc' ),
+			$this->get_asset_version( $transcription_relative ),
+			true
+		);
+
 		// Register browser voice service (standalone, loaded on demand).
 		$voice_browser_relative = $this->resolve_js_asset_path( $js_dir, 'chat-browser-voice-service', $js_ext );
 		wp_register_script(
@@ -366,8 +396,8 @@ class WP_MCP_AI_Shortcode {
 		// so the second wp_localize_script call (which WordPress appends
 		// as a new `var wpMcpAiChat = {...}` declaration) does not strip
 		// the debugging flag from the JS global.
-		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
-		$chat_debug_mode  = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
+		$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+		$chat_debug_mode = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
 
 		// Overwrite the nonce and current user ID that were set (with user 0)
 		// during register_assets() on init.

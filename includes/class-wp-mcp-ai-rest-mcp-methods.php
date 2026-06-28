@@ -256,6 +256,9 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			case 'notifications/cancelled':
 				return $this->mcp_notifications_cancelled( $params );
 
+			case 'notifications/initialized':
+				return $this->mcp_notifications_initialized( $params );
+
 			default:
 				return new WP_Error(
 					'wp_mcp_ai_method_not_found',
@@ -268,7 +271,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 						'status'  => 404,
 						'actions' => array(
 							'check_method' => __( 'Verify the method name is spelled correctly and supported by this server.', 'mcp-ai-wpoos' ),
-							'list_methods' => __( 'Supported methods: initialize, ping, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get, completion/complete, logging/setLevel, notifications/cancelled', 'mcp-ai-wpoos' ),
+							'list_methods' => __( 'Supported methods: initialize, ping, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get, completion/complete, logging/setLevel, notifications/cancelled, notifications/initialized', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -1562,6 +1565,30 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	}
 
 	/**
+	 * Handle MCP notifications/initialized notification.
+	 *
+	 * Standard MCP 2024-11-05 notification sent by the client after
+	 * receiving the initialize response. Acknowledges the handshake
+	 * is complete and the server may begin sending requests.
+	 *
+	 * Per spec this is a notification (no response expected).
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param array $params Notification parameters (unused).
+	 * @return stdClass Empty result.
+	 */
+	protected function mcp_notifications_initialized( $params ) {
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'MCP client initialized',
+			array( 'params' => $params )
+		);
+
+		return new stdClass();
+	}
+
+	/**
 	 * Build MCP tool annotations from the tool's capability flags.
 	 *
 	 * Maps the plugin's WP_MCP_AI_Tool_Capability_Flags_Interface flags
@@ -1702,7 +1729,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 *
 	 * @param WP_REST_Response $response Response object to modify.
 	 */
-	protected function add_cors_headers( $response ) {
+	public function add_cors_headers( $response ) {
 		/**
 		 * Filter the Access-Control-Allow-Origin header value.
 		 *

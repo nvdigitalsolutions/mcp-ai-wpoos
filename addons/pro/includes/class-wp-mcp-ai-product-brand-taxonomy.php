@@ -89,7 +89,7 @@ class WP_MCP_AI_Product_Brand_Taxonomy {
 			'query_var'         => false,
 		);
 
-		register_taxonomy( self::TAXONOMY, array( 'wp_mcp_ai_cog_session' ), $args );
+		register_taxonomy( self::TAXONOMY, array( 'mcp_ai_cog_session' ), $args );
 	}
 
 	/**

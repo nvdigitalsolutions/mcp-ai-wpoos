@@ -417,6 +417,46 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 	}
 
 	/**
+	 * Require a WordPress capability, or exit with an error.
+	 *
+	 * When run via WP-CLI, the current user is typically the system user
+	 * (ID 0 or 1).  This check ensures that even in CLI context, privileged
+	 * operations respect the same capability gates as the admin UI and REST API.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $capability WordPress capability name (e.g. 'manage_options').
+	 * @return void
+	 */
+	protected function require_capability( $capability = 'manage_options' ) {
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- $capability is validated by callers against known capabilities.
+		if ( ! current_user_can( $capability ) ) {
+			WP_CLI::error(
+				sprintf(
+					/* translators: %s: WordPress capability name */
+					__( 'Sorry, you are not allowed to perform this action. Required capability: %s', 'mcp-ai-wpoos' ),
+					$capability
+				)
+			);
+		}
+	}
+
+	/**
+	 * Get the output format from associative args with validation.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array  $assoc_args Associative arguments from the command.
+	 * @param string $fallback   Default format (default: 'table').
+	 * @return string Sanitised format string.
+	 */
+	protected function get_format( $assoc_args, $fallback = 'table' ) {
+		$format  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', $fallback );
+		$allowed = array( 'table', 'json', 'yaml', 'csv', 'ids' );
+		return in_array( $format, $allowed, true ) ? $format : $fallback;
+	}
+
+	/**
 	 * Check if dry run mode is enabled.
 	 *
 	 * @param array $assoc_args Associative arguments.

@@ -364,7 +364,10 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
-	 * Check whether the arguments include a valid, enabled Upwork connection.
+	 * Check whether the arguments include a valid, enabled Upwork API connection.
+	 *
+	 * Returns false when the connection is in web_search mode or lacks OAuth credentials,
+	 * causing the tool to fall back to AI-powered web search.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @return bool True when the Upwork API can be used.
@@ -388,6 +391,17 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			return false;
 		}
 		if ( empty( $connection['enabled'] ) ) {
+			return false;
+		}
+
+		// If explicitly set to web_search mode, never use the API.
+		$mode = isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : 'api';
+		if ( 'web_search' === $mode ) {
+			return false;
+		}
+
+		// API mode: require OAuth credentials (client_id, client_secret, and refresh_token).
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) || empty( $connection['refresh_token'] ) ) {
 			return false;
 		}
 
