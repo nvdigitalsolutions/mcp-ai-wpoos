@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_Create_Comic_Layout implements WP_MCP_AI_Tool_Interface, WP
 	 * @return array|WP_Error  Canonical success array or WP_Error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		// Capability check.
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {

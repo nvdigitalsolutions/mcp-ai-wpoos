@@ -195,7 +195,7 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Capability check — same requirement as web_browser for consistency.
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(

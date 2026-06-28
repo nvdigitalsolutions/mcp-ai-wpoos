@@ -410,7 +410,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array|WP_Error
 	 */
 	protected function create_product( $arguments, $context ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! user_can( $user_id, 'publish_products' ) ) {
 			return new WP_Error(
@@ -538,7 +538,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! user_can( $user_id, 'edit_products' ) ) {
 			return new WP_Error(
@@ -706,7 +706,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! user_can( $user_id, 'delete_products' ) ) {
 			return new WP_Error(
@@ -756,7 +756,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array|WP_Error
 	 */
 	protected function manage_categories( $arguments, $context ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! user_can( $user_id, 'manage_product_terms' ) ) {
 			return new WP_Error(
@@ -963,7 +963,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array|WP_Error
 	 */
 	protected function manage_tags( $arguments, $context ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! user_can( $user_id, 'manage_product_terms' ) ) {
 			return new WP_Error(
@@ -1158,7 +1158,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array|WP_Error
 	 */
 	protected function manage_attributes( $arguments, $context ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! user_can( $user_id, 'manage_product_terms' ) ) {
 			return new WP_Error(

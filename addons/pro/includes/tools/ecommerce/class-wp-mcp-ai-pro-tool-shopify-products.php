@@ -160,7 +160,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id  = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id  = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		$is_guest = ! empty( $context['guest_request'] ) && ! empty( $context['assistant_id'] );
 		$action   = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
 

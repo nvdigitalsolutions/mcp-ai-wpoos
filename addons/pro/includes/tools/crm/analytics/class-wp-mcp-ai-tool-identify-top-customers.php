@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_Identify_Top_Customers implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {
 			return new WP_Error(

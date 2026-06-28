@@ -213,7 +213,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 			);
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		$action  = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
 
 		// Check permissions based on action.
