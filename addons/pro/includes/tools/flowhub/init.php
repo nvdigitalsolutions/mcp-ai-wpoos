@@ -41,10 +41,23 @@ if ( wp_mcp_ai_is_flowhub_toolkit_enabled()
 	// Initialize sync engine.
 	WP_MCP_AI_FlowHub_Sync_Engine::init();
 
+	// Load alert manager for low-stock notifications.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-flowhub-alert-manager.php';
+	WP_MCP_AI_FlowHub_Alert_Manager::init();
+
 	// Load admin page in admin context.
 	if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-flowhub-toolkit-settings-page.php';
 		new WP_MCP_AI_FlowHub_Toolkit_Settings_Page();
+
+		// Load dashboard widget.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-flowhub-dashboard-widget.php';
+		WP_MCP_AI_FlowHub_Dashboard_Widget::init();
+	}
+
+	// Load WP-CLI commands when running via CLI.
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-cli.php';
 	}
 
 	// Load migration helper if standalone plugin is active.

@@ -37,6 +37,15 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		const CCT_SLUG_DEFAULT = 'flowhub_inventory';
 
 		/**
+		 * Schema version for auto-discovery of new columns on update.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @var string
+		 */
+		const SCHEMA_VERSION = '1.4.0';
+
+		/**
 		 * Current CCT slug.
 		 *
 		 * @var string
@@ -58,27 +67,36 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 * @var array
 		 */
 		protected $columns = array(
-			'product_id'           => 'text',
-			'variant_id'           => 'text',
-			'parent_product_id'    => 'text',
-			'sku'                  => 'text',
-			'product_name'         => 'text',
-			'variant_name'         => 'text',
-			'category'             => 'text',
-			'custom_category_name' => 'text',
-			'purchase_category'    => 'text',
-			'product_description'  => 'textarea',
-			'quantity'             => 'number',
-			'location_id'          => 'text',
-			'location_name'        => 'text',
-			'unit_of_measure'      => 'text',
-			'image_url'            => 'text',
-			'price'                => 'number',
-			'woo_product_id'       => 'number',
-			'last_updated'         => 'datetime',
-			'item_data'            => 'textarea',
-			'sync_status'          => 'text',
-			'sync_hash'            => 'text',
+			'product_id'             => 'text',
+			'variant_id'             => 'text',
+			'parent_product_id'      => 'text',
+			'sku'                    => 'text',
+			'product_name'           => 'text',
+			'variant_name'           => 'text',
+			'category'               => 'text',
+			'custom_category_name'   => 'text',
+			'purchase_category'      => 'text',
+			'product_description'    => 'textarea',
+			'quantity'               => 'number',
+			'location_id'            => 'text',
+			'location_name'          => 'text',
+			'unit_of_measure'        => 'text',
+			'image_url'              => 'text',
+			'price'                  => 'number',
+			'woo_product_id'         => 'number',
+			'last_updated'           => 'datetime',
+			'item_data'              => 'textarea',
+			'sync_status'            => 'text',
+			'sync_hash'              => 'text',
+			// Compliance fields (v1.4.0).
+			'strain_name'            => 'text',
+			'thc_percentage'         => 'number',
+			'cbd_percentage'         => 'number',
+			'lab_test_id'            => 'text',
+			'compliance_status'      => 'text',
+			'metrc_uid'              => 'text',
+			'previous_quantity'      => 'number',
+			'quantity_change_reason' => 'text',
 		);
 
 		/**
@@ -219,6 +237,9 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			}
 
 			do_action( 'wp_mcp_ai_flowhub_after_columns_ensure', $this->cct_slug, $created );
+
+			// Track schema version so columns are only auto-created once per version.
+			update_option( 'wp_mcp_ai_flowhub_sync_db_version', self::SCHEMA_VERSION );
 
 			return $created;
 		}

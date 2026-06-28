@@ -386,6 +386,9 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 			// Rate limiting.
 			$this->throttle();
 
+			// Track API request count for telemetry.
+			$this->track_api_request();
+
 			$url = $this->base_url . ltrim( $endpoint, '/' );
 
 			if ( ! empty( $params ) ) {
@@ -515,6 +518,61 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 			}
 
 			$this->last_request_time = microtime( true );
+		}
+
+		/**
+		 * Track API request count for telemetry.
+		 *
+		 * @since 1.4.0
+		 */
+		protected function track_api_request() {
+			$today  = gmdate( 'Y-m-d' );
+			$stored = get_option( 'wp_mcp_ai_flowhub_api_requests', array() );
+
+			if ( ! isset( $stored['date'] ) || $stored['date'] !== $today ) {
+				$stored = array(
+					'date'      => $today,
+					'count'     => 0,
+					'last_hour' => array(),
+				);
+			}
+
+			++$stored['count'];
+
+			// Sliding window for last hour.
+			$now                   = time();
+			$stored['last_hour'][] = $now;
+			$stored['last_hour']   = array_filter(
+				$stored['last_hour'],
+				function ( $t ) use ( $now ) {
+					return ( $now - $t ) < HOUR_IN_SECONDS;
+				}
+			);
+
+			update_option( 'wp_mcp_ai_flowhub_api_requests', $stored );
+		}
+
+		/**
+		 * Get API request statistics.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @return array Request stats.
+		 */
+		public static function get_api_stats() {
+			$stored   = get_option( 'wp_mcp_ai_flowhub_api_requests', array() );
+			$today    = gmdate( 'Y-m-d' );
+			$is_today = isset( $stored['date'] ) && $stored['date'] === $today;
+
+			$last_sync_duration = get_option( 'wp_mcp_ai_flowhub_last_sync_duration', '' );
+			$rate_limit_hits    = absint( get_option( 'wp_mcp_ai_flowhub_api_rate_limit_hits', 0 ) );
+
+			return array(
+				'today'              => $is_today ? absint( isset( $stored['count'] ) ? $stored['count'] : 0 ) : 0,
+				'last_hour'          => $is_today ? count( isset( $stored['last_hour'] ) ? $stored['last_hour'] : array() ) : 0,
+				'last_sync_duration' => $last_sync_duration,
+				'rate_limit_hits'    => $rate_limit_hits,
+			);
 		}
 	}
 }
