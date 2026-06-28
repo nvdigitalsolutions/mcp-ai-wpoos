@@ -41,6 +41,10 @@ if ( wp_mcp_ai_is_flowhub_toolkit_enabled()
 	// Initialize sync engine.
 	WP_MCP_AI_FlowHub_Sync_Engine::init();
 
+	// Load alert manager for low-stock notifications.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-flowhub-alert-manager.php';
+	WP_MCP_AI_FlowHub_Alert_Manager::init();
+
 	// Load admin page in admin context.
 	if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-flowhub-toolkit-settings-page.php';

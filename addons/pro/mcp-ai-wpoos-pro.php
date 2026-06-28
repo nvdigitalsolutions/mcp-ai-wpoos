@@ -1601,6 +1601,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Pro_Tool_FlowHub_Locations' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-locations.php',
 				'WP_MCP_AI_Pro_Tool_FlowHub_Sync'      => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-sync.php',
 				'WP_MCP_AI_Pro_Tool_FlowHub_Settings'  => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-settings.php',
+				'WP_MCP_AI_Pro_Tool_FlowHub_Analytics' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-analytics.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $flowhub_toolkit_tools );
 		}

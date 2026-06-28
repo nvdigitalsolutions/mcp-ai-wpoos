@@ -257,6 +257,21 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 				$items_count = count( $items );
 			} while ( $items_count >= $per_page );
 
+			/**
+			 * Fires after WooCommerce stock writeback completes.
+			 *
+			 * @since 1.4.0
+			 *
+			 * @param array $result Result data.
+			 */
+			do_action(
+				'wp_mcp_ai_flowhub_after_wc_sync',
+				array(
+					'updated'   => $updated,
+					'direction' => 'flowhub_to_woo',
+				)
+			);
+
 			return $updated;
 		}
 
