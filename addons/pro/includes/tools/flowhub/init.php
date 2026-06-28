@@ -49,6 +49,10 @@ if ( wp_mcp_ai_is_flowhub_toolkit_enabled()
 	if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-flowhub-toolkit-settings-page.php';
 		new WP_MCP_AI_FlowHub_Toolkit_Settings_Page();
+
+		// Load dashboard widget.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-flowhub-dashboard-widget.php';
+		WP_MCP_AI_FlowHub_Dashboard_Widget::init();
 	}
 
 	// Load WP-CLI commands when running via CLI.
