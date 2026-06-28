@@ -579,6 +579,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/init.php';
 		}
 
+		// Load FlowHub Toolkit if enabled (Pro feature — FlowHub POS inventory sync).
+		if ( ! empty( $settings['enable_flowhub_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/init.php';
+		}
+
 		// Load Social Media Management Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_social_media_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/init.php';
@@ -852,7 +857,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			// Remote WordPress/WooCommerce Connection tool.
 			'WP_MCP_AI_Tool_Remote_WP_Connection'          => WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-wp-connection.php',
 			// Printful Print-on-Demand tool.
-			'WP_MCP_AI_Pro_Tool_Printful'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-printful.php',
+			'WP_MCP_AI_Pro_Tool_Printful'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-printful.php',
 			// Generic REST API Connection tool.
 			'WP_MCP_AI_Tool_Generic_REST_API'              => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-generic-rest-api.php',
 			// NPM Package Enhanced Tools (new in 1.1.0).
@@ -1581,6 +1586,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Shipping_Rate_Estimator'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-shipping-rate-estimator.php',
 			);
 			$pro_tools               = array_merge( $pro_tools, $ecommerce_toolkit_tools );
+		}
+
+		// Add FlowHub Inventory Sync Toolkit tools if enabled (Pro feature — FlowHub POS integration).
+		if ( ! empty( $settings['enable_flowhub_toolkit'] ) && class_exists( 'WooCommerce' ) ) {
+			$flowhub_toolkit_tools = array(
+				'WP_MCP_AI_Pro_Tool_FlowHub_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-inventory.php',
+				'WP_MCP_AI_Pro_Tool_FlowHub_Products'  => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-products.php',
+				'WP_MCP_AI_Pro_Tool_FlowHub_Locations' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-locations.php',
+				'WP_MCP_AI_Pro_Tool_FlowHub_Sync'      => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-sync.php',
+				'WP_MCP_AI_Pro_Tool_FlowHub_Settings'  => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-settings.php',
+			);
+			$pro_tools             = array_merge( $pro_tools, $flowhub_toolkit_tools );
 		}
 
 			// Add Cloudways Pro Toolkit tools if enabled (Phase 1-4 — server/application management).
