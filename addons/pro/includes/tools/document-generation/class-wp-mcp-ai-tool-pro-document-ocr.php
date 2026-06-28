@@ -225,7 +225,7 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		$start_time = microtime( true );
 
 		// Check user permissions.
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
 			return array(
 				'success' => false,

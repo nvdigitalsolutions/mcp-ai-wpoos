@@ -172,7 +172,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		$required_capability = apply_filters( 'wp_mcp_ai_google_analytics_required_capability', 'manage_options', $context, $arguments, $this );
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {

@@ -441,7 +441,7 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * @return array|WP_Error
 	 */
 	protected function list_items( $arguments, $context ) {
-		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to list CPT items.', 'mcp-ai-wpoos-pro' ) );
@@ -515,7 +515,7 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * @return array|WP_Error
 	 */
 	protected function get_item( $arguments, $context ) {
-		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to read CPT items.', 'mcp-ai-wpoos-pro' ) );
@@ -556,7 +556,7 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * @return array|WP_Error
 	 */
 	protected function create_item( $arguments, $context ) {
-		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create CPT items.', 'mcp-ai-wpoos-pro' ) );
@@ -639,7 +639,7 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * @return array|WP_Error
 	 */
 	protected function bulk_create( $arguments, $context ) {
-		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create CPT items.', 'mcp-ai-wpoos-pro' ) );
@@ -704,7 +704,7 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * @return array|WP_Error
 	 */
 	protected function update_item( $arguments, $context ) {
-		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update CPT items.', 'mcp-ai-wpoos-pro' ) );
@@ -813,7 +813,7 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * @return array|WP_Error
 	 */
 	protected function delete_item( $arguments, $context ) {
-		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'delete_posts' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete CPT items.', 'mcp-ai-wpoos-pro' ) );

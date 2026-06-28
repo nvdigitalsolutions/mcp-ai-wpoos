@@ -147,7 +147,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_SOCS implements WP_MCP_AI_Tool_Interface, WP
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'manage_options' ) ) {
 			return new WP_Error(
@@ -372,7 +372,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_SOCS implements WP_MCP_AI_Tool_Interface, WP
 			$action  = 'updated';
 		} else {
 			// Create new ECA.
-			$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+			$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 			$post_data = array(
 				'post_title'   => $eca_name,

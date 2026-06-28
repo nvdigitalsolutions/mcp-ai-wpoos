@@ -126,7 +126,7 @@ class WP_MCP_AI_Tool_LF_Brief_Outline_Generator implements WP_MCP_AI_Tool_Interf
 	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$uid = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
 		}

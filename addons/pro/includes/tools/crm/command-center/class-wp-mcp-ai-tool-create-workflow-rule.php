@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
 			return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }
-		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$uid = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'manage_options' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
 		$name       = sanitize_text_field( $arguments['name'] );

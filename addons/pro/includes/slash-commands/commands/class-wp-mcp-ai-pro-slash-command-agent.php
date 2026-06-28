@@ -50,7 +50,7 @@ class WP_MCP_AI_Pro_Slash_Command_Agent {
 			);
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		$as_json = isset( $flags['json'] );
 		$limit   = isset( $flags['limit'] ) ? absint( $flags['limit'] ) : 10;
 		$limit   = max( 1, min( 100, $limit ) );

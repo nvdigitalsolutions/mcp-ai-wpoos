@@ -105,7 +105,7 @@ class WP_MCP_AI_Pro_Tool_Send_Slack_Message implements WP_MCP_AI_Tool_Interface,
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		$default_capability  = 'manage_options';
 		$required_capability = apply_filters( 'wp_mcp_ai_send_slack_message_capability', $default_capability, $context, $arguments, $this );
