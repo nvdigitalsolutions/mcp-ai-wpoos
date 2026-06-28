@@ -73,6 +73,18 @@ class NV_oOS_Embedded {
 		// Register WebLLM script registration.
 		add_action( 'wp_mcp_ai_register_embedded_scripts', array( __CLASS__, 'register_embedded_scripts' ) );
 
+		// Register STT/voice scripts.
+		add_action( 'wp_mcp_ai_register_embedded_scripts', array( __CLASS__, 'register_stt_scripts' ) );
+
+		// Register transcribe REST endpoint.
+		add_action( 'rest_api_init', array( __CLASS__, 'register_transcribe_endpoint' ) );
+
+		// Extend embedded client config with voice settings.
+		add_filter( 'wp_mcp_ai_embedded_client_config', array( __CLASS__, 'add_voice_config' ), 10, 2 );
+
+		// Register voice CSS.
+		add_action( 'wp_mcp_ai_enqueue_embedded_scripts', array( __CLASS__, 'enqueue_voice_styles' ), 10, 4 );
+
 		// Load webchat if enabled.
 		self::maybe_load_webchat();
 
@@ -311,6 +323,245 @@ class NV_oOS_Embedded {
 				require_once NVOOS_EMBEDDED_PATH . 'includes/webchat/class-wp-mcp-ai-webchat-settings-page.php';
 			}
 		}
+	}
+
+	// ── Voice / STT Methods ────────────────────────────────────────
+
+	/**
+	 * Register STT and voice scripts.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return void
+	 */
+	public static function register_stt_scripts() {
+		$version = NVOOS_EMBEDDED_VERSION;
+		$suffix  = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
+
+		// Audio capture service.
+		if ( ! wp_script_is( 'nvoos-audio-capture', 'registered' ) ) {
+			wp_register_script(
+				'nvoos-audio-capture',
+				NVOOS_EMBEDDED_URL . 'assets/js/audio-capture-service' . $suffix,
+				array(),
+				$version,
+				true
+			);
+		}
+
+		// STT service API.
+		if ( ! wp_script_is( 'nvoos-stt-service-api', 'registered' ) ) {
+			wp_register_script(
+				'nvoos-stt-service-api',
+				NVOOS_EMBEDDED_URL . 'assets/js/stt-service-api' . $suffix,
+				array(),
+				$version,
+				true
+			);
+		}
+
+		// VAD processor.
+		if ( ! wp_script_is( 'nvoos-stt-vad', 'registered' ) ) {
+			wp_register_script(
+				'nvoos-stt-vad',
+				NVOOS_EMBEDDED_URL . 'assets/js/stt-vad-processor' . $suffix,
+				array(),
+				$version,
+				true
+			);
+		}
+
+		// whisper.cpp WASM backend.
+		if ( ! wp_script_is( 'nvoos-stt-whisper-cpp', 'registered' ) ) {
+			wp_register_script(
+				'nvoos-stt-whisper-cpp',
+				NVOOS_EMBEDDED_URL . 'assets/js/stt-whisper-cpp-backend' . $suffix,
+				array( 'nvoos-stt-service-api' ),
+				$version,
+				true
+			);
+		}
+
+		// Gemma 4 audio backend.
+		if ( ! wp_script_is( 'nvoos-stt-gemma4', 'registered' ) ) {
+			wp_register_script(
+				'nvoos-stt-gemma4',
+				NVOOS_EMBEDDED_URL . 'assets/js/stt-gemma4-backend' . $suffix,
+				array( 'nvoos-stt-service-api', 'nvoos-audio-capture' ),
+				$version,
+				true
+			);
+		}
+
+		// Transformers.js Whisper backend.
+		if ( ! wp_script_is( 'nvoos-stt-transformers', 'registered' ) ) {
+			wp_register_script(
+				'nvoos-stt-transformers',
+				NVOOS_EMBEDDED_URL . 'assets/js/stt-transformers-backend' . $suffix,
+				array( 'nvoos-stt-service-api' ),
+				$version,
+				true
+			);
+		}
+
+		// Voice mode embedded UI.
+		if ( ! wp_script_is( 'nvoos-voice-mode-embedded', 'registered' ) ) {
+			wp_register_script(
+				'nvoos-voice-mode-embedded',
+				NVOOS_EMBEDDED_URL . 'assets/js/voice-mode-embedded' . $suffix,
+				array( 'nvoos-audio-capture', 'nvoos-stt-service-api', 'nvoos-stt-vad' ),
+				$version,
+				true
+			);
+		}
+	}
+
+	/**
+	 * Enqueue voice mode CSS styles.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param bool $needs_embedded  Whether embedded is needed.
+	 * @param bool $has_tools       Whether tools exist.
+	 * @param bool $has_system_prompt Whether system prompt exists.
+	 * @param bool $has_knowledge   Whether knowledge files exist.
+	 * @return void
+	 */
+	public static function enqueue_voice_styles( $needs_embedded, $has_tools, $has_system_prompt, $has_knowledge ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress action callback.
+		if ( ! $needs_embedded ) {
+			return;
+		}
+
+		$settings = get_option( 'nvoos_embedded_settings', array() );
+		if ( empty( $settings['enable_voice_mode'] ) ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'nvoos-voice-embedded',
+			NVOOS_EMBEDDED_URL . 'assets/css/voice-embedded.css',
+			array(),
+			NVOOS_EMBEDDED_VERSION
+		);
+	}
+
+	/**
+	 * Add voice configuration to embedded client config.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $config       Current config.
+	 * @param int   $assistant_id Assistant ID.
+	 * @return array
+	 */
+	public static function add_voice_config( $config, $assistant_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress filter callback.
+		$settings = get_option( 'nvoos_embedded_settings', array() );
+
+		$config['enableVoiceMode'] = ! empty( $settings['enable_voice_mode'] );
+		$config['sttBackend']      = isset( $settings['stt_backend'] ) ? sanitize_key( $settings['stt_backend'] ) : 'whisper_cpp_wasm';
+		$config['sttModel']        = isset( $settings['stt_model'] ) ? sanitize_text_field( $settings['stt_model'] ) : 'tiny.en';
+		$config['vadThreshold']    = isset( $settings['vad_threshold'] ) ? floatval( $settings['vad_threshold'] ) : 0.01;
+		$config['sttEndpoint']     = isset( $settings['gemma4_audio_endpoint'] ) ? esc_url_raw( $settings['gemma4_audio_endpoint'] ) : '';
+		$config['sttConfig']       = array(
+			'wasmJsUrl' => NVOOS_EMBEDDED_URL . 'assets/stt/whisper.js',
+			'workerUrl' => NVOOS_EMBEDDED_URL . 'assets/js/stt-whisper-cpp-worker' . ( ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js' ),
+			'modelUrl'  => NVOOS_EMBEDDED_URL . 'assets/stt/models/',
+		);
+		$config['restNonce']       = wp_create_nonce( 'wp_rest' );
+
+		return $config;
+	}
+
+	/**
+	 * Register the embedded transcribe REST endpoint.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return void
+	 */
+	public static function register_transcribe_endpoint() {
+		register_rest_route(
+			'mcp-ai/v1',
+			'/embedded/transcribe',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'permission_callback' => function () {
+					return is_user_logged_in() || apply_filters(
+						'nvoos_embedded_allow_guest_transcribe',
+						false
+					);
+				},
+				'callback'            => array( __CLASS__, 'handle_transcribe_request' ),
+				'args'                => array(
+					'audio'        => array(
+						'description' => __( 'Base64-encoded audio or data URI.', 'nvoos-embedded' ),
+						'type'        => 'string',
+						'required'    => true,
+					),
+					'model'        => array(
+						'description' => __( 'Model identifier.', 'nvoos-embedded' ),
+						'type'        => 'string',
+						'default'     => 'gemma4:e4b',
+					),
+					'language'     => array(
+						'description' => __( 'Language code.', 'nvoos-embedded' ),
+						'type'        => 'string',
+						'default'     => 'en',
+					),
+					'unified_mode' => array(
+						'description' => __( 'Use unified STT+LLM mode.', 'nvoos-embedded' ),
+						'type'        => 'boolean',
+						'default'     => false,
+					),
+					'prompt'       => array(
+						'description' => __( 'Prompt for unified mode.', 'nvoos-embedded' ),
+						'type'        => 'string',
+						'default'     => '',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Handle POST /embedded/transcribe request.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function handle_transcribe_request( WP_REST_Request $request ) {
+		$audio_data   = $request->get_param( 'audio' );
+		$model        = $request->get_param( 'model' );
+		$language     = $request->get_param( 'language' );
+		$unified_mode = (bool) $request->get_param( 'unified_mode' );
+		$prompt       = $request->get_param( 'prompt' );
+
+		if ( empty( $audio_data ) ) {
+			return new WP_Error(
+				'missing_audio',
+				__( 'Audio data is required.', 'nvoos-embedded' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$transcriber = new WP_MCP_AI_Embedded_Transcribe();
+		$result      = $transcriber->transcribe(
+			$audio_data,
+			array(
+				'model'        => $model,
+				'language'     => $language,
+				'unified_mode' => $unified_mode,
+				'prompt'       => $prompt,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
 	}
 
 	/**

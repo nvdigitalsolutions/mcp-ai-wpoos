@@ -681,6 +681,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'gemini_live_model'                     => 'gemini-2.5-flash-live',
 				'gemini_live_voice'                     => 'Puck',
 				'chat_enable_voice_chat_button'         => true,
+
+				// ── Embedded Voice & STT Settings ─────────────────────────
+				'embedded_stt_backend'                  => 'whisper_cpp_wasm',
+				'embedded_stt_model'                    => 'tiny.en',
 			);
 		}
 

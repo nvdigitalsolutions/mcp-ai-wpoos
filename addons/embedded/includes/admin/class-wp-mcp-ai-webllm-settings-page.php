@@ -181,6 +181,62 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			self::PAGE_SLUG,
 			'webllm_debug'
 		);
+
+		// Voice & STT Section.
+		add_settings_section(
+			'webllm_voice_stt',
+			__( 'Voice & Speech-to-Text', 'mcp-ai-wpoos' ),
+			array( $this, 'render_voice_stt_section' ),
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'enable_voice_mode',
+			__( 'Enable Voice Mode', 'mcp-ai-wpoos' ),
+			array( $this, 'render_enable_voice_mode_field' ),
+			self::PAGE_SLUG,
+			'webllm_voice_stt'
+		);
+
+		add_settings_field(
+			'stt_backend',
+			__( 'STT Backend', 'mcp-ai-wpoos' ),
+			array( $this, 'render_stt_backend_field' ),
+			self::PAGE_SLUG,
+			'webllm_voice_stt'
+		);
+
+		add_settings_field(
+			'stt_model',
+			__( 'STT Model', 'mcp-ai-wpoos' ),
+			array( $this, 'render_stt_model_field' ),
+			self::PAGE_SLUG,
+			'webllm_voice_stt'
+		);
+
+		add_settings_field(
+			'vad_threshold',
+			__( 'VAD Threshold', 'mcp-ai-wpoos' ),
+			array( $this, 'render_vad_threshold_field' ),
+			self::PAGE_SLUG,
+			'webllm_voice_stt'
+		);
+
+		add_settings_field(
+			'gemma4_audio_endpoint',
+			__( 'Gemma 4 Audio Endpoint', 'mcp-ai-wpoos' ),
+			array( $this, 'render_gemma4_endpoint_field' ),
+			self::PAGE_SLUG,
+			'webllm_voice_stt'
+		);
+
+		add_settings_field(
+			'gemma4_audio_model',
+			__( 'Gemma 4 Audio Model', 'mcp-ai-wpoos' ),
+			array( $this, 'render_gemma4_model_field' ),
+			self::PAGE_SLUG,
+			'webllm_voice_stt'
+		);
 	}
 
 	/**
@@ -200,6 +256,13 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			'langchain_memory_window'    => 10,
 			'langchain_max_retries'      => 3,
 			'enable_console_logs'        => false,
+			// Voice & STT defaults.
+			'enable_voice_mode'          => false,
+			'stt_backend'                => 'whisper_cpp_wasm',
+			'stt_model'                  => 'tiny.en',
+			'vad_threshold'              => 0.01,
+			'gemma4_audio_endpoint'      => '',
+			'gemma4_audio_model'         => 'gemma4:e4b',
 		);
 	}
 
@@ -582,6 +645,125 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			<code>[NV oOS WebLLM] Tool calling enabled...</code>
 			<br>
 			<em><?php esc_html_e( 'Note: Some logging is always enabled for PR #3197 diagnostics', 'mcp-ai-wpoos' ); ?></em>
+		</p>
+		<?php
+	}
+
+	// ── Voice & STT Render Methods ────────────────────────────────
+
+	/**
+	 * Render voice & STT section description.
+	 */
+	public function render_voice_stt_section() {
+		echo '<p>' . esc_html__( 'Configure browser-side or server-side speech-to-text for embedded assistants. Audio stays in-browser for WASM backends — zero data leaves the device.', 'mcp-ai-wpoos' ) . '</p>';
+	}
+
+	/**
+	 * Render enable voice mode field.
+	 */
+	public function render_enable_voice_mode_field() {
+		$settings = get_option( self::OPTION_NAME, $this->get_default_settings() );
+		$checked  = ! empty( $settings['enable_voice_mode'] );
+		?>
+		<label>
+			<input type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_voice_mode]" value="1" <?php checked( $checked ); ?>>
+			<?php esc_html_e( 'Enable voice input for embedded assistants', 'mcp-ai-wpoos' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'Adds a push-to-talk button to embedded chat widgets. Requires a configured STT backend.', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render STT backend field.
+	 */
+	public function render_stt_backend_field() {
+		$settings = get_option( self::OPTION_NAME, $this->get_default_settings() );
+		$value    = $settings['stt_backend'] ?? 'whisper_cpp_wasm';
+		$backends = array(
+			'whisper_cpp_wasm' => __( 'whisper.cpp WASM (Browser-side, offline)', 'mcp-ai-wpoos' ),
+			'gemma4_audio'     => __( 'Gemma 4 Audio (Server-side, Ollama/vLLM)', 'mcp-ai-wpoos' ),
+			'transformers_js'  => __( 'Transformers.js Whisper (Browser-side, WebGPU)', 'mcp-ai-wpoos' ),
+		);
+		?>
+		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[stt_backend]">
+			<?php foreach ( $backends as $slug => $label ) : ?>
+				<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $value, $slug ); ?>>
+					<?php echo esc_html( $label ); ?>
+				</option>
+			<?php endforeach; ?>
+		</select>
+		<p class="description">
+			<?php esc_html_e( 'Select the speech-to-text engine. whisper.cpp WASM runs entirely in-browser (privacy-first, $0 cost). Gemma 4 Audio requires a server running Ollama or vLLM.', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render STT model field.
+	 */
+	public function render_stt_model_field() {
+		$settings = get_option( self::OPTION_NAME, $this->get_default_settings() );
+		$value    = $settings['stt_model'] ?? 'tiny.en';
+		$models   = array(
+			'tiny.en'  => __( 'Whisper Tiny English (75 MB, fastest)', 'mcp-ai-wpoos' ),
+			'base.en'  => __( 'Whisper Base English (142 MB)', 'mcp-ai-wpoos' ),
+			'small.en' => __( 'Whisper Small English (466 MB, most accurate)', 'mcp-ai-wpoos' ),
+			'tiny'     => __( 'Whisper Tiny Multilingual (75 MB)', 'mcp-ai-wpoos' ),
+		);
+		?>
+		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[stt_model]">
+			<?php foreach ( $models as $slug => $label ) : ?>
+				<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $value, $slug ); ?>>
+					<?php echo esc_html( $label ); ?>
+				</option>
+			<?php endforeach; ?>
+		</select>
+		<p class="description">
+			<?php esc_html_e( 'Larger models are more accurate but slower to download and run. For Gemma 4, this selects the server-side model variant.', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render VAD threshold field.
+	 */
+	public function render_vad_threshold_field() {
+		$settings = get_option( self::OPTION_NAME, $this->get_default_settings() );
+		$value    = $settings['vad_threshold'] ?? 0.01;
+		?>
+		<input type="number" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[vad_threshold]" value="<?php echo esc_attr( $value ); ?>" min="0.001" max="0.5" step="0.001" class="small-text">
+		<p class="description">
+			<?php esc_html_e( 'Voice Activity Detection energy threshold. Lower values detect quieter speech but may trigger on background noise. Range: 0.001–0.5. Default: 0.01.', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render Gemma 4 endpoint field.
+	 */
+	public function render_gemma4_endpoint_field() {
+		$settings = get_option( self::OPTION_NAME, $this->get_default_settings() );
+		$value    = $settings['gemma4_audio_endpoint'] ?? '';
+		?>
+		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemma4_audio_endpoint]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="http://localhost:11434/v1/chat/completions">
+		<p class="description">
+			<?php esc_html_e( 'OpenAI-compatible endpoint for Gemma 4 audio transcription. For Ollama, use: http://localhost:11434/v1/chat/completions', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render Gemma 4 model field.
+	 */
+	public function render_gemma4_model_field() {
+		$settings = get_option( self::OPTION_NAME, $this->get_default_settings() );
+		$value    = $settings['gemma4_audio_model'] ?? 'gemma4:e4b';
+		?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemma4_audio_model]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="gemma4:e4b">
+		<p class="description">
+			<?php esc_html_e( 'Model identifier for Gemma 4 audio. E2B (~2.6B) is fastest; E4B (~4.4B) balances speed and quality; 12B is most capable for unified mode.', 'mcp-ai-wpoos' ); ?>
 		</p>
 		<?php
 	}
