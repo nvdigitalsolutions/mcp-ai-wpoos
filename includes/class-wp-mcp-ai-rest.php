@@ -6177,6 +6177,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $assistant_id;
 			}
 
+			// When a token is authenticated, prefer its scoped assistant over the
+			// site default. This prevents scope-mismatch errors in downstream
+			// callers like mcp_tools_list when the client doesn't send an explicit
+			// assistant_id but the site default differs from the token's assistant.
+			$auth_context = $this->get_auth_context();
+			if ( ! empty( $auth_context['token_authenticated'] ) && 'local_token' === $auth_context['token_type'] ) {
+				$token_assistant = isset( $auth_context['assistant_id'] ) ? absint( $auth_context['assistant_id'] ) : 0;
+				if ( ! $token_assistant && isset( $auth_context['token_context']['credential']['assistant_id'] ) ) {
+					$token_assistant = absint( $auth_context['token_context']['credential']['assistant_id'] );
+				}
+				if ( $token_assistant ) {
+					return $token_assistant;
+				}
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$default  = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 
