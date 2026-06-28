@@ -394,6 +394,12 @@ isThinkingModel: false
 			this.tools = config.tools || [];
 			this.memoryFiles = config.memoryFiles || [];
 			this.vectorStoreId = config.vectorStoreId || null;
+
+			// Store the full config for voice transcript integration.
+			this.config = config;
+
+			// Message history for multi-turn conversations (voice + text).
+			this.messageHistory = [];
 			
 			// Computed configuration flags for easy checking
 			// Use stored values (this.*) instead of config values for consistency
@@ -953,6 +959,96 @@ isThinkingModel: false
 				console.error('[NV oOS Embedded Client] Error getting runtime stats for instance:', this.instanceId, error);
 				return null;
 			}
+		}
+
+		/**
+		 * Send a voice transcript as a user message to the LLM.
+		 *
+		 * This is the primary integration point for voice mode —
+		 * transcribed speech is injected into the message history
+		 * and a completion is generated, exactly as if the user
+		 * had typed the text.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param {string} transcript  The transcribed speech text.
+		 * @param {Object} [options]   Generation options.
+		 * @param {Function} [onChunk] Streaming callback (text, done) => void.
+		 * @return {Promise<Object>}   Completion result { text, usage }.
+		 */
+		async sendVoiceTranscript( transcript, options, onChunk ) {
+			if ( ! transcript || typeof transcript !== 'string' || ! transcript.trim() ) {
+				console.warn( '[NV oOS Embedded Client] Empty voice transcript — nothing to send.' );
+				return { text: '', usage: null };
+			}
+
+			options = options || {};
+
+			// Build the user message from the transcript.
+			var userMessage = {
+				role: 'user',
+				content: transcript.trim(),
+			};
+
+			// Build full message array: system prompt + history + transcript.
+			var messages = [];
+
+			// Include system prompt from config if present.
+			if ( this.config && this.config.systemPrompt ) {
+				messages.push( {
+					role: 'system',
+					content: this.config.systemPrompt,
+				} );
+			}
+
+			// Include recent message history.
+			var historyLimit = options.historyLimit || 10;
+			if ( this.messageHistory && this.messageHistory.length ) {
+				var recent = this.messageHistory.slice( -historyLimit );
+				messages.push.apply( messages, recent );
+			}
+
+			// Append the voice transcript.
+			messages.push( userMessage );
+
+			// Update message history.
+			if ( ! this.messageHistory ) {
+				this.messageHistory = [];
+			}
+			this.messageHistory.push( userMessage );
+
+			console.log( '[NV oOS Embedded Client] Voice transcript → LLM:', {
+				instanceId: this.instanceId,
+				transcriptLength: transcript.length,
+				messageCount: messages.length,
+			} );
+
+			// Generate completion.
+			if ( typeof onChunk === 'function' ) {
+				return await this.generateStreamingCompletion( messages, options, onChunk );
+			}
+
+			return await this.generateCompletion( messages, options );
+		}
+
+		/**
+		 * Get the current message history for this instance.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return {Array} Message history array.
+		 */
+		getMessageHistory() {
+			return this.messageHistory || [];
+		}
+
+		/**
+		 * Clear the message history for this instance.
+		 *
+		 * @since 1.2.0
+		 */
+		clearMessageHistory() {
+			this.messageHistory = [];
 		}
 	}
 
