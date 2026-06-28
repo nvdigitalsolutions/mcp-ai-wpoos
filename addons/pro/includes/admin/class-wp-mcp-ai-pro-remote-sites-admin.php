@@ -281,9 +281,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			// Get connection type first to determine which fields to use.
-			$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'WordPress';
+				$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'WordPress';
 
-			// Map connection-type-specific fields to generic field names.
+				// Normalise canonical casing. The select element sends lowercase values
+					// (e.g., the lowercased form of the WordPress string), but downstream
+					// code and existing stored data use the canonical capital-W form
+					// 'WordPress'. Without this normalisation, saved connections would
+					// have the wrong case and the edit-form JavaScript toggle plus other
+					// type-guards would fail to match.
+					// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- intentional lowercase comparison
+			if ( 'wordpress' === $connection_type ) {
+				$connection_type = 'WordPress';
+			}
+
+				// Map connection-type-specific fields to generic field names.
 			$api_key        = '';
 			$api_secret     = '';
 			$client_id      = '';
@@ -416,6 +427,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						$api_secret = isset( $_POST['shopify_storefront_token'] ) ? wp_unslash( $_POST['shopify_storefront_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- storefront token must not be sanitized.
 					}
 					break;
+				case 'printful':
+					$api_key = isset( $_POST['printful_api_key'] ) ? wp_unslash( $_POST['printful_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
 				case 'shipengine':
 					$api_key = isset( $_POST['shipengine_api_key'] ) ? wp_unslash( $_POST['shipengine_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized.
 					break;
@@ -430,7 +444,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$auth_type = isset( $_POST['auth_type'] ) ? sanitize_key( wp_unslash( $_POST['auth_type'] ) ) : 'none';
 
 			if ( 'flowhub' === $connection_type ) {
-				$url       = 'https://api.flowhub.co';
+				$sandbox   = ! empty( $_POST['sandbox_mode'] );
+				$url       = $sandbox ? 'https://api.sandbox.flowhub.co' : 'https://api.flowhub.co';
 				$auth_type = 'custom_header';
 			}
 
@@ -569,6 +584,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				}
 			}
 
+			// For Printful connections, always use the fixed API URL.
+			if ( 'printful' === $connection_type ) {
+				$url       = 'https://api.printful.com';
+				$auth_type = 'none'; // Bearer token auth is handled directly in get_auth_headers().
+			}
+
 			// For mesh peer connections, use custom_header auth with mesh API key.
 			if ( 'mesh_peer' === $connection_type ) {
 				$auth_type = 'custom_header';
@@ -629,6 +650,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'app_secret'                     => isset( $_POST['app_secret'] ) ? wp_unslash( $_POST['app_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'location_id'                    => isset( $_POST['location_id'] ) ? sanitize_text_field( wp_unslash( $_POST['location_id'] ) ) : '',
 				'company_id'                     => isset( $_POST['company_id'] ) ? sanitize_text_field( wp_unslash( $_POST['company_id'] ) ) : '',
+				'store_id'                       => isset( $_POST['printful_store_id'] ) ? sanitize_text_field( wp_unslash( $_POST['printful_store_id'] ) ) : '',
 				'sandbox_mode'                   => ! empty( $_POST['sandbox_mode'] ),
 				'has_woocommerce'                => ! empty( $_POST['has_woocommerce'] ),
 				'enabled'                        => ! empty( $_POST['enabled'] ),
@@ -1041,7 +1063,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'office365'          => __( 'Office 365', 'mcp-ai-wpoos-pro' ),
 									'icloud'             => __( 'iCloud Drive', 'mcp-ai-wpoos-pro' ),
 									'shopify'            => __( 'Shopify', 'mcp-ai-wpoos-pro' ),
-									'shipengine'         => __( 'ShipStation API', 'mcp-ai-wpoos-pro' ),
+									'printful'           => __( 'Printful', 'mcp-ai-wpoos-pro' ),
+									'shipengine'         => __( 'ShipEngine', 'mcp-ai-wpoos-pro' ),
 									'shipstation'        => __( 'ShipStation V1', 'mcp-ai-wpoos-pro' ),
 								);
 
@@ -1071,6 +1094,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'office365'          => '#d83b01', // Microsoft Office orange.
 									'icloud'             => '#3693f5', // iCloud blue.
 									'shopify'            => '#96bf48', // Shopify green.
+									'printful'           => '#e5675b', // Printful coral.
 									'shipengine'         => '#0072ce', // ShipStation API blue.
 									'shipstation'        => '#f26522', // ShipStation V1 orange.
 								);
@@ -1081,41 +1105,41 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<span style="display: inline-block; padding: 2px 8px; background: <?php echo esc_attr( $type_badge_color ); ?>; color: white; border-radius: 3px; font-size: 11px;">
 									<?php echo esc_html( $type_label ); ?>
 								</span>
-								<?php if ( 'WordPress' === $connection_type && ! empty( $connection['has_woocommerce'] ) ) : ?>
+								<?php if ( in_array( $connection_type, array( 'wordpress', 'WordPress' ), true ) && ! empty( $connection['has_woocommerce'] ) ) : ?>
 									<span style="display: inline-block; padding: 2px 8px; background: #96588a; color: white; border-radius: 3px; font-size: 11px; margin-left: 4px;">WC</span>
 								<?php endif; ?>
-							</td>
-								<td>
-								<?php
-								// For WhatsApp channels, show phone number link, channel description, and unique channel link.
-								if ( 'whatsapp' === $connection_type ) {
-									$wa_display = array();
-									if ( ! empty( $connection['channel_url'] ) ) {
-										// Prefer a custom channel URL (e.g. WhatsApp Group invite link) when set.
-										$wa_display[] = '<a href="' . esc_url( $connection['channel_url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $connection['channel_url'] ) . '</a>';
-									} elseif ( ! empty( $connection['display_phone_number'] ) ) {
-										$wa_phone_digits = preg_replace( '/[^0-9]/', '', $connection['display_phone_number'] );
-										if ( ! empty( $wa_phone_digits ) ) {
-											$wa_phone_link = 'https://wa.me/' . $wa_phone_digits;
-											$wa_display[]  = '<a href="' . esc_url( $wa_phone_link ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $connection['display_phone_number'] ) . '</a>';
-										} else {
-											$wa_display[] = esc_html( $connection['display_phone_number'] );
-										}
-									} elseif ( ! empty( $connection['phone_number_id'] ) ) {
-										$wa_display[] = esc_html__( 'Phone ID:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( substr( $connection['phone_number_id'], 0, 8 ) . '…' );
-									}
-									if ( ! empty( $connection['channel_description'] ) ) {
-										$wa_display[] = '<em>' . esc_html( $connection['channel_description'] ) . '</em>';
-									}
-									if ( ! empty( $connection_id ) ) {
-										$channel_webhook = home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp/' . $connection_id );
-										$wa_display[]    = '<small><a href="' . esc_url( $channel_webhook ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Channel Webhook', 'mcp-ai-wpoos-pro' ) . '</a></small>';
-									}
-									echo ! empty( $wa_display ) ? implode( '<br>', $wa_display ) : esc_html( $connection['url'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-								} else {
-									echo esc_html( $connection['url'] );
-								}
-								?>
+											</td>
+												<td>
+												<?php
+												// For WhatsApp channels, show phone number link, channel description, and unique channel link.
+												if ( 'whatsapp' === $connection_type ) {
+													$wa_display = array();
+													if ( ! empty( $connection['channel_url'] ) ) {
+														// Prefer a custom channel URL (e.g. WhatsApp Group invite link) when set.
+														$wa_display[] = '<a href="' . esc_url( $connection['channel_url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $connection['channel_url'] ) . '</a>';
+													} elseif ( ! empty( $connection['display_phone_number'] ) ) {
+														$wa_phone_digits = preg_replace( '/[^0-9]/', '', $connection['display_phone_number'] );
+														if ( ! empty( $wa_phone_digits ) ) {
+															$wa_phone_link = 'https://wa.me/' . $wa_phone_digits;
+															$wa_display[]  = '<a href="' . esc_url( $wa_phone_link ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $connection['display_phone_number'] ) . '</a>';
+														} else {
+															$wa_display[] = esc_html( $connection['display_phone_number'] );
+														}
+													} elseif ( ! empty( $connection['phone_number_id'] ) ) {
+														$wa_display[] = esc_html__( 'Phone ID:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( substr( $connection['phone_number_id'], 0, 8 ) . '…' );
+													}
+													if ( ! empty( $connection['channel_description'] ) ) {
+														$wa_display[] = '<em>' . esc_html( $connection['channel_description'] ) . '</em>';
+													}
+													if ( ! empty( $connection_id ) ) {
+														$channel_webhook = home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp/' . $connection_id );
+														$wa_display[]    = '<small><a href="' . esc_url( $channel_webhook ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Channel Webhook', 'mcp-ai-wpoos-pro' ) . '</a></small>';
+													}
+													echo ! empty( $wa_display ) ? implode( '<br>', $wa_display ) : esc_html( $connection['url'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+												} else {
+													echo esc_html( $connection['url'] );
+												}
+												?>
 							</td>
 							<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $connection['auth_type'] ) ) ); ?></td>
 							<td>
@@ -1348,7 +1372,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						$connection_type = $is_edit && isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
 						?>
 						<select name="connection_type" id="connection_type" class="regular-text" required>
-							<option value="wordpress" <?php selected( $connection_type, 'WordPress' ); ?>>
+							<option value="wordpress" <?php selected( strtolower( (string) $connection_type ), 'WordPress' ); ?>>
 								<?php esc_html_e( 'WordPress / WooCommerce', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="mesh_peer" <?php selected( $connection_type, 'mesh_peer' ); ?>>
@@ -1428,6 +1452,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="shopify" <?php selected( $connection_type, 'shopify' ); ?>>
 								<?php esc_html_e( 'Shopify (E-Commerce Platform)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="printful" <?php selected( $connection_type, 'printful' ); ?>>
+								<?php esc_html_e( 'Printful (Print-on-Demand)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="shipengine" <?php selected( $connection_type, 'shipengine' ); ?>>
 								<?php esc_html_e( 'ShipStation API (Recommended)', 'mcp-ai-wpoos-pro' ); ?>
@@ -1616,6 +1643,32 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							value="<?php echo $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['shopify_api_version'] ) ? esc_attr( $connection['shopify_api_version'] ) : '2025-01'; ?>"
 							autocomplete="off" placeholder="2025-01">
 						<p class="description"><?php esc_html_e( 'Shopify Admin GraphQL API version in YYYY-MM format (e.g. 2025-01). Defaults to 2025-01. See Shopify API versioning docs for available versions.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php
+						// Show deprecation warning when the configured version is older than the latest known stable.
+						$saved_version = $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['shopify_api_version'] )
+							? $connection['shopify_api_version']
+							: '2025-01';
+						if ( class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+							$latest = defined( 'WP_MCP_AI_Shopify_Client::LATEST_KNOWN_VERSION' )
+								? WP_MCP_AI_Shopify_Client::LATEST_KNOWN_VERSION
+								: '2025-04';
+							if ( version_compare( $saved_version, $latest, '<' ) ) :
+								?>
+								<p style="color: #d63638; font-weight: 500; margin-top: 6px;">
+									<span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
+									<?php
+									printf(
+										/* translators: 1: current version, 2: latest version */
+										esc_html__( 'Your API version (%1$s) is older than the latest stable release (%2$s). Shopify deprecates API versions after 12 months. Consider updating to avoid disruptions.', 'mcp-ai-wpoos-pro' ),
+										esc_html( $saved_version ),
+										esc_html( $latest )
+									);
+									?>
+								</p>
+								<?php
+							endif;
+						}
+						?>
 					</td>
 				</tr>
 
@@ -1686,6 +1739,53 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								</ol>
 							</div>
 						</div>
+					</td>
+				</tr>
+
+				<tr class="shopify-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Sandbox / Development Mode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="sandbox_mode" value="1" <?php checked( $is_edit && ! empty( $connection['sandbox_mode'] ) ); ?>>
+							<?php esc_html_e( 'This is a Shopify development / test store', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Development stores are created from the Shopify Partners dashboard. Enabling this flag helps differentiate test environments from production stores in logs and alerts.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for Printful -->
+				<tr class="printful-only-field" style="display: none;">
+					<th scope="row">
+						<label for="printful_api_key"><?php esc_html_e( 'API Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="printful_api_key" id="printful_api_key" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API token.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your Printful API token from the Developer Portal. Private tokens do not expire until manually deleted. Stored encrypted.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="printful-only-field" style="display: none;">
+					<th scope="row">
+						<label for="printful_store_id"><?php esc_html_e( 'Store ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="printful_store_id" id="printful_store_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['store_id'] ) ? esc_attr( $connection['store_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Required only for account-level tokens. Sent as the X-PF-Store-Id header. Leave empty for store-level tokens.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="printful-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Sandbox / Development Mode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="sandbox_mode" value="1" <?php checked( $is_edit && ! empty( $connection['sandbox_mode'] ) ); ?>>
+							<?php esc_html_e( 'This is a Printful development / test store', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Printful does not have a separate sandbox API. This flag marks the connection as a development store for logging and alerting purposes.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -1859,6 +1959,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" name="location_id" id="location_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['location_id'] ) ? esc_attr( $connection['location_id'] ) : ''; ?>" autocomplete="off">
 						<p class="description"><?php esc_html_e( 'Optional: The Flowhub location/dispensary ID for filtering requests.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Sandbox / Development Mode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="sandbox_mode" value="1" <?php checked( $is_edit && ! empty( $connection['sandbox_mode'] ) ); ?>>
+							<?php esc_html_e( 'Use Flowhub Sandbox environment (api.sandbox.flowhub.co)', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Enable when testing against Flowhub\'s sandbox API instead of production. Uses separate credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -3177,7 +3288,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$_woo_remote_connections = array();
 				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 					foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $_rc ) {
-						if ( isset( $_rc['connection_type'] ) && 'WordPress' === $_rc['connection_type'] && ! empty( $_rc['enabled'] ) ) {
+						if ( isset( $_rc['connection_type'] ) && in_array( $_rc['connection_type'], array( 'wordpress', 'WordPress' ), true ) && ! empty( $_rc['enabled'] ) ) {
 							$_woo_remote_connections[] = $_rc;
 						}
 					}
@@ -5919,6 +6030,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var office365Fields = document.querySelectorAll('.office365-only-field');
 			var icloudFields = document.querySelectorAll('.icloud-only-field');
 			var shopifyFields = document.querySelectorAll('.shopify-only-field');
+			var printfulFields = document.querySelectorAll('.printful-only-field');
 			var shipengineFields = document.querySelectorAll('.shipengine-only-field');
 			var shipstationFields = document.querySelectorAll('.shipstation-only-field');
 			var upworkFields = document.querySelectorAll('.upwork-only-field');
@@ -6002,6 +6114,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			shopifyFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
+			printfulFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
 			shipengineFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
@@ -6022,19 +6137,34 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			urlDescriptionFlowhub.style.display = 'none';
 
 			// Show/hide auth_type field based on connection type
-			// Only show for WordPress and Generic API connections
-			if (connectionType === 'WordPress' || connectionType === 'generic') {
-				authTypeRow.style.display = 'table-row';
+				// Only show for WordPress and Generic API connections.
+					// The select element sends lowercase values;
+					// toLowerCase() normalises both old and new casing.
+				var ctLower = (connectionType || '').toLowerCase();
+				
+				if (ctLower === <?php echo wp_json_encode( strtolower( 'WordPress' ) ); // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText ?> || ctLower === 'generic') {
+					authTypeRow.style.display = 'table-row';
+				// Sync the credential fields (username/password/token/consumer keys)
+				// with the current auth_type dropdown value so the correct fields
+				// are visible — previously they could stay hidden in an inconsistent
+				// state left over from a previously selected connection type.
+				if (typeof toggleAuthFields === 'function' && authTypeSelect) {
+					toggleAuthFields(authTypeSelect.value);
+				}
 			} else {
 				authTypeRow.style.display = 'none';
+				// Hide all auth credential fields when switching away from WordPress/Generic.
+				if (typeof toggleAuthFields === 'function') {
+					toggleAuthFields('none');
+				}
 			}
 
 			// Show fields for selected connection type
-			if (connectionType === 'WordPress') {
-				wordpressFields.forEach(function(field) {
-					field.style.display = 'table-row';
-				});
-			} else if (connectionType === 'generic') {
+				if (ctLower === <?php echo wp_json_encode( strtolower( 'WordPress' ) ); // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText ?>) {
+					wordpressFields.forEach(function(field) {
+						field.style.display = 'table-row';
+					});
+				} else if (ctLower === 'generic') {
 				genericFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
@@ -6287,6 +6417,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				var shopifyModeSelect = document.getElementById('shopify_api_mode');
 				var currentMode = shopifyModeSelect ? shopifyModeSelect.value : 'admin_api';
 				toggleShopifyApiMode(currentMode);
+			} else if (connectionType === 'printful') {
+				printfulFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Printful uses a fixed API URL and Bearer token auth.
+				urlField.value = 'https://api.printful.com';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
 			} else if (connectionType === 'shipengine') {
 				shipengineFields.forEach(function(field) {
 					field.style.display = 'table-row';

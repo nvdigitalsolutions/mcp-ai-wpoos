@@ -851,6 +851,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Evaluate_Eml'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-evaluate-eml.php',
 			// Remote WordPress/WooCommerce Connection tool.
 			'WP_MCP_AI_Tool_Remote_WP_Connection'          => WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-wp-connection.php',
+			// Printful Print-on-Demand tool.
+			'WP_MCP_AI_Pro_Tool_Printful'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-printful.php',
 			// Generic REST API Connection tool.
 			'WP_MCP_AI_Tool_Generic_REST_API'              => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-generic-rest-api.php',
 			// NPM Package Enhanced Tools (new in 1.1.0).
@@ -2321,6 +2323,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		$pro_tools = array(
 			// Remote WordPress/WooCommerce Connection - Requires external API access.
 			'remote_wp_connection'            => 'external-tools',
+			// Printful Print-on-Demand - Requires external API access.
+			'printful'                        => 'external-tools',
 			// Exec service tools (video, audio, CLI) - Pro features.
 			'check_wp_cli'                    => 'wordpress-core',
 			'extract_video_frames'            => 'wordpress-core',
