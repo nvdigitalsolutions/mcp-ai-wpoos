@@ -36,6 +36,19 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		const DEFAULT_API_VERSION = '2025-01';
 
 		/**
+		 * Latest known stable Shopify Admin API version for deprecation warnings.
+		 *
+		 * Shopify deprecates versions after 12 months.  When the configured
+		 * version is older than LATEST_KNOWN_VERSION the admin UI shows a
+		 * notice encouraging an upgrade.
+		 *
+		 * Update this constant each quarter when Shopify releases a new version.
+		 *
+		 * @var string
+		 */
+		const LATEST_KNOWN_VERSION = '2025-04';
+
+		/**
 		 * Maximum response body size in bytes (5 MB).
 		 *
 		 * @var int
@@ -88,6 +101,23 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		 */
 		public function __construct( $connection_id = null ) {
 			$this->connection_id = $connection_id;
+		}
+
+		/**
+		 * Determine whether sandbox / development mode is active.
+	 *
+	 * Development stores created from the Shopify Partners dashboard are
+	 * used for testing.  When sandbox_mode is on, certain safety checks
+	 * (e.g. writing to a production store) may be relaxed or logged
+	 * differently.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool
+	 */
+		public function is_sandbox() {
+			$connection = $this->get_connection();
+			return $connection && ! empty( $connection['sandbox_mode'] );
 		}
 
 		// ------------------------------------------------------------------ //
@@ -473,6 +503,45 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 					'wp_mcp_ai_shopify_invalid_json',
 					__( 'Shopify API returned an invalid JSON response.', 'mcp-ai-wpoos-pro' )
 				);
+			}
+
+			// ── GraphQL cost telemetry ───────────────────────────────────
+			// Shopify's Admin GraphQL API returns cost metadata in
+			// extensions.cost so callers can track query expense and
+			// throttle budget.  Log it on every response; when the
+			// remaining budget dips below 10% of the maximum, include a
+			// warning in the data so upstream tool handlers can back off.
+			if ( isset( $decoded['extensions']['cost'] ) ) {
+				$cost = $decoded['extensions']['cost'];
+
+				if ( function_exists( 'WP_MCP_AI_Logger' ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'shopify_graphql_cost',
+						'Shopify GraphQL cost telemetry.',
+						array(
+							'requestedQueryCost'     => isset( $cost['requestedQueryCost'] ) ? absint( $cost['requestedQueryCost'] ) : 0,
+							'actualQueryCost'        => isset( $cost['actualQueryCost'] ) ? absint( $cost['actualQueryCost'] ) : null,
+							'throttleStatus'         => isset( $cost['throttleStatus'] ) ? $cost['throttleStatus'] : null,
+							'connection_id'          => $this->connection_id,
+						)
+					);
+				}
+
+				// Warn when remaining budget is critically low.
+				if (
+					isset( $cost['throttleStatus']['maximumAvailable'], $cost['throttleStatus']['currentlyAvailable'] )
+					&& $cost['throttleStatus']['maximumAvailable'] > 0
+				) {
+					$pct_remaining = ( $cost['throttleStatus']['currentlyAvailable'] / $cost['throttleStatus']['maximumAvailable'] ) * 100;
+					if ( $pct_remaining < 10 ) {
+						$decoded['_cost_warning'] = sprintf(
+							/* translators: 1: available points, 2: max points */
+							__( 'Shopify API cost budget nearly exhausted (%1$d of %2$d points remaining). Consider batching requests or reducing query complexity.', 'mcp-ai-wpoos-pro' ),
+							(int) $cost['throttleStatus']['currentlyAvailable'],
+							(int) $cost['throttleStatus']['maximumAvailable']
+						);
+					}
+				}
 			}
 
 			return $decoded;
@@ -948,6 +1017,199 @@ query GetShopInfo {
   }
 }';
 			return $this->graphql( $gql_query );
+		}
+
+		// ------------------------------------------------------------------ //
+		// Bulk Operations — efficient large data exports                      //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Polling interval (seconds) between bulk operation status checks.
+		 *
+		 * @var int
+		 */
+		const BULK_POLL_INTERVAL = 2;
+
+		/**
+		 * Maximum time (seconds) to wait for a bulk operation to complete.
+		 *
+		 * @var int
+		 */
+		const BULK_MAX_WAIT = 300;
+
+		/**
+		 * Initiate a Shopify GraphQL Bulk Operation and wait for results.
+		 *
+		 * Bulk operations are the recommended way to export large data-sets
+		 * (all products, all orders, etc.).  They use a flat per-operation
+		 * cost instead of per-query-point costs, making them dramatically
+		 * cheaper for full-store exports.  Results are returned as JSONL.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $query     GraphQL query to run as a bulk operation
+		 *                          (use the `bulkOperationRunQuery` mutation).
+		 * @param bool   $wait      Whether to poll until completion (default: true).
+		 * @return array|WP_Error   Parsed result or WP_Error on failure.
+		 */
+		public function bulk_query( $query, $wait = true ) {
+			$store_url    = $this->get_store_url();
+			$access_token = $this->get_access_token();
+
+			if ( empty( $store_url ) || empty( $access_token ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_bulk_missing_config',
+					__( 'Shopify store URL and access token are required for bulk operations.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Step 1 — create the bulk operation.
+			$mutation = 'mutation { bulkOperationRunQuery( query: """' . $query . '""" ) { bulkOperation { id status } userErrors { field message } } }';
+			$result   = $this->graphql( $mutation );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			if ( ! empty( $result['data']['bulkOperationRunQuery']['userErrors'] ) ) {
+				$first_error = $result['data']['bulkOperationRunQuery']['userErrors'][0];
+				return new WP_Error(
+					'wp_mcp_ai_shopify_bulk_error',
+					sprintf(
+						/* translators: 1: field, 2: message */
+						__( 'Bulk operation error on %1$s: %2$s', 'mcp-ai-wpoos-pro' ),
+						$first_error['field'],
+						$first_error['message']
+					)
+				);
+			}
+
+			$bulk_op_id = isset( $result['data']['bulkOperationRunQuery']['bulkOperation']['id'] )
+				? $result['data']['bulkOperationRunQuery']['bulkOperation']['id']
+				: '';
+
+			if ( empty( $bulk_op_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_bulk_no_id',
+					__( 'Bulk operation was created but no ID was returned.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( ! $wait ) {
+				return array(
+					'bulk_operation_id' => $bulk_op_id,
+					'status'            => 'CREATED',
+					'message'           => __( 'Bulk operation created. Poll for status using the bulk_operation_id.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Step 2 — poll until completed.
+			$poll_query   = 'query PollBulk($id: ID!) { node(id: $id) { ... on BulkOperation { id status errorCode objectCount url partialDataUrl } } }';
+			$elapsed      = 0;
+			$result_url   = '';
+
+			while ( $elapsed < self::BULK_MAX_WAIT ) {
+				sleep( self::BULK_POLL_INTERVAL );
+				$elapsed += self::BULK_POLL_INTERVAL;
+
+				$poll_result = $this->graphql( $poll_query, array( 'id' => $bulk_op_id ) );
+
+				if ( is_wp_error( $poll_result ) ) {
+					return $poll_result;
+				}
+
+				$status = isset( $poll_result['data']['node']['status'] )
+					? $poll_result['data']['node']['status']
+					: 'RUNNING';
+
+				if ( 'COMPLETED' === $status ) {
+					$result_url = isset( $poll_result['data']['node']['url'] )
+						? $poll_result['data']['node']['url']
+						: '';
+					break;
+				}
+
+				if ( 'FAILED' === $status ) {
+					$error_code = isset( $poll_result['data']['node']['errorCode'] )
+						? $poll_result['data']['node']['errorCode']
+						: 'UNKNOWN';
+					return new WP_Error(
+						'wp_mcp_ai_shopify_bulk_failed',
+						sprintf(
+							/* translators: %s: error code */
+							__( 'Bulk operation failed with error code: %s', 'mcp-ai-wpoos-pro' ),
+							$error_code
+						)
+					);
+				}
+
+				// CANCELLED, EXPIRED, etc. — terminal but not success.
+				if ( ! in_array( $status, array( 'CREATED', 'RUNNING' ), true ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_shopify_bulk_terminal',
+						sprintf(
+							/* translators: %s: status */
+							__( 'Bulk operation ended with status: %s', 'mcp-ai-wpoos-pro' ),
+							$status
+						)
+					);
+				}
+			}
+
+			if ( empty( $result_url ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_bulk_timeout',
+					sprintf(
+						/* translators: %d: seconds */
+						__( 'Bulk operation did not complete within %d seconds.', 'mcp-ai-wpoos-pro' ),
+						self::BULK_MAX_WAIT
+					)
+				);
+			}
+
+			// Step 3 — download and parse the JSONL result.
+			$raw_response = wp_safe_remote_get( $result_url, array( 'timeout' => 60 ) );
+
+			if ( is_wp_error( $raw_response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_bulk_download_failed',
+					/* translators: %s: error message */
+					sprintf( __( 'Failed to download bulk operation result: %s', 'mcp-ai-wpoos-pro' ), $raw_response->get_error_message() )
+				);
+			}
+
+			$body = wp_remote_retrieve_body( $raw_response );
+
+			if ( strlen( $body ) > self::MAX_RESPONSE_SIZE ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_bulk_too_large',
+					sprintf(
+						/* translators: %d: size in MB */
+						__( 'Bulk operation result exceeds the maximum allowed size of %d MB.', 'mcp-ai-wpoos-pro' ),
+						(int) ( self::MAX_RESPONSE_SIZE / 1048576 )
+					)
+				);
+			}
+
+			// Parse JSONL: each line is a complete JSON object.
+			$lines  = explode( "\n", trim( $body ) );
+			$parsed = array();
+			foreach ( $lines as $line ) {
+				$line = trim( $line );
+				if ( '' === $line ) {
+					continue;
+				}
+				$item = json_decode( $line, true );
+				if ( null !== $item ) {
+					$parsed[] = $item;
+				}
+			}
+
+			return array(
+				'bulk_operation_id' => $bulk_op_id,
+				'count'             => count( $parsed ),
+				'items'             => $parsed,
+			);
 		}
 
 		/**

@@ -391,17 +391,26 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['cache_ttl'] = $existing_connection['cache_ttl'];
 			}
 
-			// Preserve existing location_id if not provided.
-			if ( empty( $connection_data['location_id'] ) && ! empty( $existing_connection['location_id'] ) ) {
+			// Preserve existing location_id only when the key is absent from submission
+			// (use array_key_exists so an explicit empty string — user cleared the field —
+			// is honoured instead of being overwritten by the stored value).
+			if ( ! array_key_exists( 'location_id', $connection_data ) && ! empty( $existing_connection['location_id'] ) ) {
 				$connection_data['location_id'] = $existing_connection['location_id'];
 			}
 
-			// Preserve existing company_id if not provided.
-			if ( empty( $connection_data['company_id'] ) && ! empty( $existing_connection['company_id'] ) ) {
+			// Preserve existing company_id only when the key is absent from submission.
+			if ( ! array_key_exists( 'company_id', $connection_data ) && ! empty( $existing_connection['company_id'] ) ) {
 				$connection_data['company_id'] = $existing_connection['company_id'];
 			}
 
-			// Preserve existing sandbox_mode if not provided.
+				// Preserve existing store_id only when the key is absent from submission
+					// (use array_key_exists so an explicit empty string — user cleared the
+					// field — is honoured instead of being overwritten by the stored value).
+			if ( ! array_key_exists( 'store_id', $connection_data ) && ! empty( $existing_connection['store_id'] ) ) {
+				$connection_data['store_id'] = $existing_connection['store_id'];
+			}
+
+				// Preserve existing sandbox_mode if not provided.
 			if ( ! isset( $connection_data['sandbox_mode'] ) && isset( $existing_connection['sandbox_mode'] ) ) {
 				$connection_data['sandbox_mode'] = $existing_connection['sandbox_mode'];
 			}
@@ -476,6 +485,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'app_secret'                     => isset( $connection_data['app_secret'] ) ? $connection_data['app_secret'] : '',
 			'location_id'                    => isset( $connection_data['location_id'] ) ? sanitize_text_field( $connection_data['location_id'] ) : '',
 			'company_id'                     => isset( $connection_data['company_id'] ) ? sanitize_text_field( $connection_data['company_id'] ) : '',
+			'store_id'                       => isset( $connection_data['store_id'] ) ? sanitize_text_field( $connection_data['store_id'] ) : '',
 			'sandbox_mode'                   => ! empty( $connection_data['sandbox_mode'] ),
 			'has_woocommerce'                => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'                        => ! empty( $connection_data['enabled'] ),
@@ -953,6 +963,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// Handle Shopify connections separately.
 		if ( 'shopify' === $connection_type ) {
 			return self::test_shopify_connection( $connection );
+		}
+
+		// Handle Printful connections separately.
+		if ( 'printful' === $connection_type ) {
+			return self::test_printful_connection( $connection );
 		}
 
 		// Handle EZuite ERP connections separately.
@@ -1486,6 +1501,67 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$results['inventory_count'] = absint( $response['total'] );
 			/* translators: %d: number of inventory items */
 			$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'mcp-ai-wpoos-pro' ), $results['inventory_count'] );
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Test Printful API connection.
+	 *
+	 * Verifies the Bearer token by fetching the authorized stores list.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_printful_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Printful_Client' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-printful-client.php';
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Printful_Client( $connection_id );
+
+		$response = $client->get_stores();
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$store_count = is_array( $response ) ? count( $response ) : 0;
+
+		$results = array(
+			'success'     => true,
+			'printful'    => true,
+			'store_count' => $store_count,
+		);
+
+		if ( $store_count > 0 ) {
+			$results['message'] = sprintf(
+				/* translators: %d: number of authorized stores */
+				_n(
+					'Printful connection successful. %d store authorized.',
+					'Printful connection successful. %d stores authorized.',
+					$store_count,
+					'mcp-ai-wpoos-pro'
+				),
+				$store_count
+			);
+
+			// Collect store names for the test result display.
+			$store_names = array();
+			foreach ( $response as $store ) {
+				if ( ! empty( $store['name'] ) ) {
+					$store_names[] = $store['name'] . ' (ID: ' . ( isset( $store['id'] ) ? $store['id'] : '?' ) . ')';
+				}
+			}
+			if ( ! empty( $store_names ) ) {
+				$results['stores'] = $store_names;
+			}
+		} else {
+			$results['message'] = __( 'Printful connection successful, but no stores found. Create a store in your Printful dashboard.', 'mcp-ai-wpoos-pro' );
 		}
 
 		return $results;
@@ -2569,6 +2645,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return $headers;
 		}
 
+		// For Printful connections, use Bearer token + optional Store ID header.
+		if ( ! empty( $connection['connection_type'] ) && 'printful' === $connection['connection_type'] ) {
+			$token = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+			if ( ! empty( $token ) ) {
+				$headers['Authorization'] = 'Bearer ' . $token;
+			}
+			if ( ! empty( $connection['store_id'] ) ) {
+				$headers['X-PF-Store-Id'] = $connection['store_id'];
+			}
+			$headers['Accept']       = 'application/json';
+			$headers['Content-Type'] = 'application/json';
+			return $headers;
+		}
+
 		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
 
 		switch ( $auth_type ) {
@@ -2684,6 +2774,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_flowhub_credentials',
 					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		if ( 'printful' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_printful_token',
+					__( 'API token is required for Printful connections. Generate one in the Printful Developer Portal.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
