@@ -76,3 +76,8 @@ interface WP_MCP_AI_Tool_Safety_Profile_Interface {
 	 */
 	public function get_safety_profile();
 }
+
+// Load the default safety profile trait so it is available wherever this
+// interface file is included — matching the pattern established by
+// interface-wp-mcp-ai-tool.php which loads trait-wp-mcp-ai-tool-default-capability.php.
+require_once dirname( __DIR__ ) . '/tools/trait-wp-mcp-ai-tool-safety-profile.php';
