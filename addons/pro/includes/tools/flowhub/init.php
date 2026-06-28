@@ -47,6 +47,11 @@ if ( wp_mcp_ai_is_flowhub_toolkit_enabled()
 		new WP_MCP_AI_FlowHub_Toolkit_Settings_Page();
 	}
 
+	// Load WP-CLI commands when running via CLI.
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-cli.php';
+	}
+
 	// Load migration helper if standalone plugin is active.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-migration.php';
 	WP_MCP_AI_FlowHub_Migration::init();
