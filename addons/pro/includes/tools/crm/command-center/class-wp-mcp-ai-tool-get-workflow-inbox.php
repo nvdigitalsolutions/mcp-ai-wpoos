@@ -100,7 +100,7 @@ class WP_MCP_AI_Tool_Get_Workflow_Inbox implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$uid   = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$uid   = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		$per   = min( 50, max( 1, absint( $arguments['per_section'] ?? 10 ) ) );
 		$owner = ! empty( $arguments['owner_id'] ) ? absint( $arguments['owner_id'] ) : 0;
 

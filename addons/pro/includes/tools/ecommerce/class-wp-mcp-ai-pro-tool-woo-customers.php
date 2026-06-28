@@ -166,7 +166,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		// Check permission.
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! user_can( $user_id, 'list_users' ) ) {
 			return new WP_Error(
 				'permission_denied',

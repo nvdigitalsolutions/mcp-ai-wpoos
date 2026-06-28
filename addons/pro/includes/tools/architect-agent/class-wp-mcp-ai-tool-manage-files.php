@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		// Verify user is logged in.
 		if ( ! $user_id ) {
@@ -518,7 +518,7 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			return;
 		}
 
-		$user_id      = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id      = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
 
 		wp_mcp_ai_log_activity(

@@ -222,7 +222,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			);
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		// Verify user is logged in.
 		if ( ! $user_id ) {
@@ -767,7 +767,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				'post_status'    => 'inherit',
 			);
 
-			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+			$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 			if ( $user_id ) {
 				$attachment['post_author'] = $user_id;
 			}

@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_In
 	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$uid = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'manage_options' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
 		}

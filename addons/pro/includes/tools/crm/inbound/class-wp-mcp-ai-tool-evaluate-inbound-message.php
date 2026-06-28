@@ -181,7 +181,7 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 			return new WP_Error( 'unavailable', self::get_unavailable_reason() );
 		}
 
-		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$uid = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
 		}

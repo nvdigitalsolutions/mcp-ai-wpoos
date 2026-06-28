@@ -1021,7 +1021,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Get authenticated user ID from auth context (supports bearer tokens, nonces, mesh keys).
 			$auth_context = $this->get_auth_context();
-			$user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : get_current_user_id();
+			$user_id      = ! empty( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : get_current_user_id();
 
 			$limit = $request->get_param( 'limit' );
 			if ( ! $limit ) {
@@ -1098,7 +1098,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Get authenticated user ID from auth context (supports bearer tokens, nonces, mesh keys).
 			$auth_context = $this->get_auth_context();
-			$user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : get_current_user_id();
+			$user_id      = ! empty( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : get_current_user_id();
 
 			// Get job ID from URL parameter.
 			$job_id = $request->get_param( 'job_id' );
@@ -5583,7 +5583,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$auth_context = $this->get_auth_context();
-			$user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : 0;
+			$user_id      = ! empty( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : get_current_user_id();
 			$is_guest     = ! empty( $auth_context['is_guest'] );
 
 			$context = array(

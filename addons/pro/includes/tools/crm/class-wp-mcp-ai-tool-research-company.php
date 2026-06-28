@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_Research_Company implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'wp_mcp_ai_tool_unavailable', self::get_unavailable_reason() );
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to research companies.', 'mcp-ai-wpoos-pro' ) );

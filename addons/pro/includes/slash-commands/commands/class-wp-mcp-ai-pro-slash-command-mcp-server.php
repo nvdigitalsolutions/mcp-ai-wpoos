@@ -58,7 +58,7 @@ class WP_MCP_AI_Pro_Slash_Command_Mcp_Server {
 			);
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		$as_json = isset( $flags['json'] );
 
 		if ( ! user_can( $user_id, 'edit_posts' ) ) {

@@ -184,7 +184,7 @@ class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'unavailable', self::get_unavailable_reason(), array( 'status' => 403 ) );
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}

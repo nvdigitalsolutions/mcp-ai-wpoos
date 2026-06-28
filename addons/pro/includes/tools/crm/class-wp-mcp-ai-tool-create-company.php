@@ -164,7 +164,7 @@ class WP_MCP_AI_Tool_Create_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			return new WP_Error( 'wp_mcp_ai_company_cpt_missing', __( 'Company CPT is not registered. Enable CRM Toolkit in settings.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create companies.', 'mcp-ai-wpoos-pro' ) );

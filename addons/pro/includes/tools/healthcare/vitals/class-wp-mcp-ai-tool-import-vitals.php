@@ -395,7 +395,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Enforce capability — importing PHI/vitals requires elevated permissions.
-		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_others_posts' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
