@@ -56,6 +56,10 @@ if ( wp_mcp_ai_is_shopify_sync_toolkit_enabled()
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-shopify-sync-toolkit-settings-page.php';
 		}
 		new WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page();
+
+		// Load dashboard widget.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-shopify-sync-dashboard-widget.php';
+		WP_MCP_AI_Shopify_Sync_Dashboard_Widget::init();
 	}
 
 	// Load WP-CLI commands when running via CLI.
