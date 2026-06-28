@@ -1508,19 +1508,72 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array|WP_Error Connection test results or error.
 	 */
 	protected static function test_flowhub_connection( $connection ) {
-		if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+		$client_id   = isset( $connection['client_id'] ) ? $connection['client_id'] : '';
+		$api_key     = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+		$location_id = isset( $connection['location_id'] ) ? $connection['location_id'] : '';
+
+		if ( empty( $client_id ) || empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_flowhub_credentials',
+				__( 'API key and client ID are required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
+			);
 		}
 
-		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
-		$client        = new WP_MCP_AI_Flowhub_Client( $connection_id );
+		if ( empty( $location_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_flowhub_location',
+				__( 'Location ID is required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
+			);
+		}
 
-		// Test with a simple inventory request.
-		$response = $client->get_inventory( array( 'limit' => 1 ) );
+		// Build the location-scoped inventory endpoint as per Flowhub API v0 docs.
+		$url = 'https://api.flowhub.co/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero?limit=1';
+
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'clientId' => $client_id,
+					'key'      => $api_key,
+					'Accept'   => 'application/json',
+				),
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
-			return $response;
+			return new WP_Error(
+				'wp_mcp_ai_pro_flowhub_connection_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Flowhub connection failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
 		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 401 === $code || 403 === $code ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_flowhub_auth_failed',
+				__( 'Flowhub API authentication failed. Check your client ID and API key.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_flowhub_api_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Flowhub API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
+		}
+
+		$body            = json_decode( wp_remote_retrieve_body( $response ), true );
+		$inventory_count = isset( $body['data'] ) && is_array( $body['data'] ) ? count( $body['data'] ) : 0;
 
 		$results = array(
 			'success' => true,
@@ -1528,11 +1581,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'message' => __( 'Flowhub connection successful. API credentials verified.', 'mcp-ai-wpoos-pro' ),
 		);
 
-		// Add inventory count if available.
-		if ( isset( $response['total'] ) ) {
-			$results['inventory_count'] = absint( $response['total'] );
+		if ( $inventory_count > 0 ) {
+			$results['inventory_count'] = $inventory_count;
 			/* translators: %d: number of inventory items */
-			$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'mcp-ai-wpoos-pro' ), $results['inventory_count'] );
+			$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'mcp-ai-wpoos-pro' ), $inventory_count );
 		}
 
 		return $results;
@@ -2806,6 +2858,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_flowhub_credentials',
 					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			if ( empty( $connection['location_id'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_flowhub_location',
+					__( 'Location ID is required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}

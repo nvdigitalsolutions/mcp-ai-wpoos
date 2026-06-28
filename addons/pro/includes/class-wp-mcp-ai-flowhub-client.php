@@ -78,6 +78,13 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 		protected $api_key = '';
 
 		/**
+		 * FlowHub location ID for location-scoped endpoints.
+		 *
+		 * @var string
+		 */
+		protected $location_id = '';
+
+		/**
 		 * FlowHub API base URL.
 		 *
 		 * @var string
@@ -117,16 +124,18 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 		 *
 		 * @since 1.2.0
 		 *
-		 * @param string $client_id FlowHub API client ID.
-		 * @param string $api_key   FlowHub API key.
-		 * @param string $base_url  Optional. API base URL override.
-		 * @param int    $timeout   Optional. Request timeout in seconds.
+		 * @param string $client_id   FlowHub API client ID.
+		 * @param string $api_key     FlowHub API key.
+		 * @param string $base_url    Optional. API base URL override.
+		 * @param int    $timeout     Optional. Request timeout in seconds.
+		 * @param string $location_id Optional. FlowHub location ID for location-scoped endpoints.
 		 */
-		public function __construct( $client_id = '', $api_key = '', $base_url = '', $timeout = null ) {
-			$this->client_id = $client_id;
-			$this->api_key   = $api_key;
-			$this->base_url  = ! empty( $base_url ) ? trailingslashit( $base_url ) : self::DEFAULT_API_BASE_URL;
-			$this->timeout   = null !== $timeout ? absint( $timeout ) : self::DEFAULT_TIMEOUT;
+		public function __construct( $client_id = '', $api_key = '', $base_url = '', $timeout = null, $location_id = '' ) {
+			$this->client_id   = $client_id;
+			$this->api_key     = $api_key;
+			$this->location_id = $location_id;
+			$this->base_url    = ! empty( $base_url ) ? trailingslashit( $base_url ) : self::DEFAULT_API_BASE_URL;
+			$this->timeout     = null !== $timeout ? absint( $timeout ) : self::DEFAULT_TIMEOUT;
 		}
 
 		/**
@@ -139,9 +148,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 		public static function from_settings() {
 			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
 
-			$client_id = isset( $settings['client_id'] ) ? wp_unslash( $settings['client_id'] ) : '';
-			$api_key   = isset( $settings['api_key'] ) ? wp_unslash( $settings['api_key'] ) : '';
-			$base_url  = isset( $settings['api_base_url'] ) ? wp_unslash( $settings['api_base_url'] ) : '';
+			$client_id   = isset( $settings['client_id'] ) ? wp_unslash( $settings['client_id'] ) : '';
+			$api_key     = isset( $settings['api_key'] ) ? wp_unslash( $settings['api_key'] ) : '';
+			$base_url    = isset( $settings['api_base_url'] ) ? wp_unslash( $settings['api_base_url'] ) : '';
+			$location_id = isset( $settings['location_id'] ) ? wp_unslash( $settings['location_id'] ) : '';
 
 			if ( empty( $client_id ) || empty( $api_key ) ) {
 				return new WP_Error(
@@ -150,7 +160,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 				);
 			}
 
-			return new self( $client_id, $api_key, $base_url );
+			return new self( $client_id, $api_key, $base_url, null, $location_id );
 		}
 
 		// ------------------------------------------------------------------ //
@@ -165,7 +175,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 		 * @return bool|WP_Error True if connection is healthy, WP_Error on failure.
 		 */
 		public function check_connection() {
-			$result = $this->request( 'inventoryNonZero', array( 'limit' => 1 ) );
+			$endpoint = ! empty( $this->location_id )
+				? 'locations/' . rawurlencode( $this->location_id ) . '/inventoryNonZero'
+				: 'inventoryNonZero';
+			$result = $this->request( $endpoint, array( 'limit' => 1 ) );
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -191,7 +204,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 			$params['limit']  = min( absint( $params['limit'] ), 100 );
 			$params['offset'] = absint( $params['offset'] );
 
-			$response = $this->request( 'inventoryNonZero', $params );
+			$endpoint = ! empty( $this->location_id )
+				? 'locations/' . rawurlencode( $this->location_id ) . '/inventoryNonZero'
+				: 'inventoryNonZero';
+			$response = $this->request( $endpoint, $params );
 
 			if ( is_wp_error( $response ) ) {
 				return $response;

@@ -17,6 +17,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load the PRO FlowHub client on-demand.
+// NOTE: The PRO client (WP_MCP_AI_FlowHub_Client, uppercase H) shares the same
+// case-insensitive class name as the base client (WP_MCP_AI_Flowhub_Client).
+// The init.php no longer loads it early to avoid collisions with base tools.
+// Load it here so that sync_from_api() and sync_single_product() have access
+// to from_settings().
+if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+}
+
 if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 	/**

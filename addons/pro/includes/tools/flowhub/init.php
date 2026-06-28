@@ -34,7 +34,11 @@ if ( wp_mcp_ai_is_flowhub_toolkit_enabled()
 	&& ! ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() )
 ) {
 	// Load core classes.
-	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+	// NOTE: The PRO FlowHub client (WP_MCP_AI_FlowHub_Client, uppercase H)
+	// uses the same class name (case-insensitive) as the base client.
+	// Loading it here causes PHP to resolve 'WP_MCP_AI_Flowhub_Client'
+	// to the PRO class, breaking base tools that expect the base class
+	// constructor and methods. Do NOT load the PRO client here.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-cct-manager.php';
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-sync-engine.php';
 

@@ -173,7 +173,34 @@ class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
-		$client  = new WP_MCP_AI_Flowhub_Client( $connection_id );
+		// Resolve credentials and location from connection or toolkit settings.
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection_data = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			$client_id       = isset( $connection_data['client_id'] ) ? $connection_data['client_id'] : '';
+			$api_key         = isset( $connection_data['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection_data['api_key'] ) : '';
+			$location_id     = isset( $connection_data['location_id'] ) ? $connection_data['location_id'] : '';
+		} else {
+			$settings    = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			$client_id   = isset( $settings['client_id'] ) ? wp_unslash( $settings['client_id'] ) : '';
+			$api_key     = isset( $settings['api_key'] ) ? wp_unslash( $settings['api_key'] ) : '';
+			$location_id = isset( $settings['location_id'] ) ? wp_unslash( $settings['location_id'] ) : '';
+		}
+
+		if ( empty( $client_id ) || empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_flowhub_missing_credentials',
+				__( 'FlowHub API credentials are not configured. Please set up your client ID and API key.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( empty( $location_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_flowhub_missing_location',
+				__( 'FlowHub Location ID is required for inventory requests.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Build the location-scoped endpoint per FlowHub API v0.
 		$options = array();
 
 		if ( isset( $arguments['limit'] ) ) {
@@ -189,7 +216,67 @@ class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, 
 			$options['timeout'] = max( 5, min( 60, absint( $arguments['timeout'] ) ) );
 		}
 
-		$result = $client->get_inventory( $options );
+		$endpoint = 'https://api.flowhub.co/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero';
+		$endpoint = add_query_arg( $options, $endpoint );
+
+		$response = wp_remote_get(
+			$endpoint,
+			array(
+				'timeout'     => isset( $options['timeout'] ) ? $options['timeout'] : 30,
+				'redirection' => 3,
+				'httpversion' => '1.1',
+				'headers'     => array(
+					'clientId' => $client_id,
+					'key'      => $api_key,
+					'Accept'   => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_flowhub_request_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'FlowHub API request failed: %s', 'mcp-ai-wpoos' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
+
+		if ( 401 === $code || 403 === $code ) {
+			return new WP_Error(
+				'wp_mcp_ai_flowhub_auth_failed',
+				__( 'FlowHub API authentication failed. Check your client ID and API key.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			return new WP_Error(
+				'wp_mcp_ai_flowhub_http_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'FlowHub API returned unexpected status (HTTP %d).', 'mcp-ai-wpoos' ),
+					$code
+				)
+			);
+		}
+
+		$result = json_decode( $body, true );
+
+		if ( null === $result && json_last_error() !== JSON_ERROR_NONE ) {
+			return new WP_Error(
+				'wp_mcp_ai_flowhub_json_error',
+				sprintf(
+					/* translators: %s: JSON parse error */
+					__( 'Failed to parse FlowHub API response: %s', 'mcp-ai-wpoos' ),
+					json_last_error_msg()
+				)
+			);
+		}
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
