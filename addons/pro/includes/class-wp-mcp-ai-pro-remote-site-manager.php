@@ -46,6 +46,38 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	const ENCRYPT_V2_PREFIX = 'v2.';
 
 	/**
+	 * Determine whether a stored value is already encrypted.
+	 *
+	 * A value is considered encrypted if it carries the V2 prefix (AES-256-CBC)
+	 * or is a valid base64 string (legacy XOR cipher). Plaintext values return
+	 * false so they will be encrypted on the next save.
+	 *
+	 * @since 1.1.35
+	 *
+	 * @param string $value Stored credential value.
+	 * @return bool True if the value appears already encrypted.
+	 */
+	private static function is_value_encrypted( $value ) {
+		if ( '' === $value ) {
+			return false;
+		}
+
+		// V2 AES-256-CBC: starts with the version prefix.
+		if ( str_starts_with( $value, self::ENCRYPT_V2_PREFIX ) ) {
+			return true;
+		}
+
+		// Legacy XOR cipher: valid base64.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Used for format detection only.
+		if ( false !== base64_decode( $value, true ) ) {
+			return true;
+		}
+
+		// Plaintext — re-encrypt on next save.
+		return false;
+	}
+
+	/**
 	 * Get all configured remote site connections.
 	 *
 	 * @since 1.0.0
@@ -111,39 +143,39 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing password if not provided.
 			if ( empty( $connection_data['password'] ) && ! empty( $existing_connection['password'] ) ) {
 				$connection_data['password'] = $existing_connection['password'];
-				// Mark as already encrypted.
-				$connection_data['_password_encrypted'] = true;
+				// Mark as already encrypted only if it actually is.
+				$connection_data['_password_encrypted'] = self::is_value_encrypted( $existing_connection['password'] );
 			}
 
 			// Preserve existing token if not provided.
 			if ( empty( $connection_data['token'] ) && ! empty( $existing_connection['token'] ) ) {
 				$connection_data['token'] = $existing_connection['token'];
-				// Mark as already encrypted.
-				$connection_data['_token_encrypted'] = true;
+				// Mark as already encrypted only if it actually is.
+				$connection_data['_token_encrypted'] = self::is_value_encrypted( $existing_connection['token'] );
 			}
 
 			// Preserve existing consumer_key if not provided.
 			if ( empty( $connection_data['consumer_key'] ) && ! empty( $existing_connection['consumer_key'] ) ) {
 				$connection_data['consumer_key']            = $existing_connection['consumer_key'];
-				$connection_data['_consumer_key_encrypted'] = true;
+				$connection_data['_consumer_key_encrypted'] = self::is_value_encrypted( $existing_connection['consumer_key'] );
 			}
 
 			// Preserve existing consumer_secret if not provided.
 			if ( empty( $connection_data['consumer_secret'] ) && ! empty( $existing_connection['consumer_secret'] ) ) {
 				$connection_data['consumer_secret']            = $existing_connection['consumer_secret'];
-				$connection_data['_consumer_secret_encrypted'] = true;
+				$connection_data['_consumer_secret_encrypted'] = self::is_value_encrypted( $existing_connection['consumer_secret'] );
 			}
 
 			// Preserve existing api_key if not provided.
 			if ( empty( $connection_data['api_key'] ) && ! empty( $existing_connection['api_key'] ) ) {
 				$connection_data['api_key']            = $existing_connection['api_key'];
-				$connection_data['_api_key_encrypted'] = true;
+				$connection_data['_api_key_encrypted'] = self::is_value_encrypted( $existing_connection['api_key'] );
 			}
 
 			// Preserve existing api_secret if not provided.
 			if ( empty( $connection_data['api_secret'] ) && ! empty( $existing_connection['api_secret'] ) ) {
 				$connection_data['api_secret']            = $existing_connection['api_secret'];
-				$connection_data['_api_secret_encrypted'] = true;
+				$connection_data['_api_secret_encrypted'] = self::is_value_encrypted( $existing_connection['api_secret'] );
 			}
 
 			// Preserve existing client_id if not provided.
@@ -154,7 +186,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing client_secret if not provided.
 			if ( empty( $connection_data['client_secret'] ) && ! empty( $existing_connection['client_secret'] ) ) {
 				$connection_data['client_secret']            = $existing_connection['client_secret'];
-				$connection_data['_client_secret_encrypted'] = true;
+				$connection_data['_client_secret_encrypted'] = self::is_value_encrypted( $existing_connection['client_secret'] );
 			}
 
 			// Preserve existing app_id if not provided.
@@ -165,13 +197,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing app_secret if not provided.
 			if ( empty( $connection_data['app_secret'] ) && ! empty( $existing_connection['app_secret'] ) ) {
 				$connection_data['app_secret']            = $existing_connection['app_secret'];
-				$connection_data['_app_secret_encrypted'] = true;
+				$connection_data['_app_secret_encrypted'] = self::is_value_encrypted( $existing_connection['app_secret'] );
 			}
 
 			// Preserve existing refresh_token (Gmail) if not provided.
 			if ( empty( $connection_data['refresh_token'] ) && ! empty( $existing_connection['refresh_token'] ) ) {
 				$connection_data['refresh_token']            = $existing_connection['refresh_token'];
-				$connection_data['_refresh_token_encrypted'] = true;
+				$connection_data['_refresh_token_encrypted'] = self::is_value_encrypted( $existing_connection['refresh_token'] );
 			}
 
 			// Preserve existing user_email (Gmail) if not provided.
@@ -333,13 +365,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing signing_secret (Slack / Teams outgoing webhook) if not provided.
 			if ( empty( $connection_data['signing_secret'] ) && ! empty( $existing_connection['signing_secret'] ) ) {
 				$connection_data['signing_secret']            = $existing_connection['signing_secret'];
-				$connection_data['_signing_secret_encrypted'] = true;
+				$connection_data['_signing_secret_encrypted'] = self::is_value_encrypted( $existing_connection['signing_secret'] );
 			}
 
 			// Preserve existing secret_token (Telegram webhook) if not provided.
 			if ( empty( $connection_data['secret_token'] ) && ! empty( $existing_connection['secret_token'] ) ) {
 				$connection_data['secret_token']            = $existing_connection['secret_token'];
-				$connection_data['_secret_token_encrypted'] = true;
+				$connection_data['_secret_token_encrypted'] = self::is_value_encrypted( $existing_connection['secret_token'] );
 			}
 
 			// Preserve existing page_id (Facebook Messenger) if not provided.
@@ -3008,26 +3040,32 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$decrypted = WP_MCP_AI_Encryption::decrypt( substr( $encrypted, strlen( self::ENCRYPT_V2_PREFIX ) ) );
 				return ( false !== $decrypted ) ? $decrypted : '';
 			}
+			// WP_MCP_AI_Encryption not available — the encrypted value cannot be
+			// decrypted. Return empty so callers can detect the failure.
 			return '';
 		}
 
-		// Legacy XOR format (no prefix).
-		$key = wp_salt( 'auth' );
+		// Legacy XOR format (no prefix) — valid base64.
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Used for credential decryption.
 		$data = base64_decode( $encrypted, true ); // Strict mode: reject malformed base64.
-		if ( false === $data ) {
-			return '';
+		if ( false !== $data ) {
+			$key = wp_salt( 'auth' );
+
+			$decrypted   = '';
+			$key_length  = strlen( $key );
+			$data_length = strlen( $data );
+
+			for ( $i = 0; $i < $data_length; $i++ ) {
+				$decrypted .= chr( ord( $data[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
+			}
+
+			return $decrypted;
 		}
 
-		$decrypted   = '';
-		$key_length  = strlen( $key );
-		$data_length = strlen( $data );
-
-		for ( $i = 0; $i < $data_length; $i++ ) {
-			$decrypted .= chr( ord( $data[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
-		}
-
-		return $decrypted;
+		// Not base64 and not V2-prefixed — value was stored as plaintext.
+		// Return as-is so callers get the original credential rather than
+		// an empty string (which would cause a confusing auth failure).
+		return $encrypted;
 	}
 
 	/**
