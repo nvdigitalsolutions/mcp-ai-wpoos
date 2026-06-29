@@ -1,7 +1,7 @@
 # NV oOS Pro vs Base Version Guide
 
 > **GSD Context File** — Load this when making decisions about Base vs Pro feature placement.
-> Last reviewed: June 2026.
+> Last reviewed: June 29, 2026.
 
 ---
 
@@ -32,6 +32,8 @@ NV oOS has two distribution modes:
 - Healthcare/medical tools (HIPAA-sensitive)
 - Enterprise features (DICOM imaging, custom workflows)
 - CRM integrations (Upwork, Bitwarden, Firefly)
+- Cannabis dispensary management (FlowHub API integration)
+- Shopify e-commerce sync (Shopify Admin API integration)
 - Chat channels (Slack, Teams, Discord, WhatsApp, Telegram)
 - Server management (DietPi, SSH proxy, provisioning)
 - AI safety features (Layer I guardrails, jailbreak detection)

@@ -653,6 +653,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'store_id'                       => isset( $_POST['printful_store_id'] ) ? sanitize_text_field( wp_unslash( $_POST['printful_store_id'] ) ) : '',
 				'sandbox_mode'                   => ! empty( $_POST['sandbox_mode'] ),
 				'has_woocommerce'                => ! empty( $_POST['has_woocommerce'] ),
+				// FlowHub proxy fields.
+				'proxy_enabled'                  => ! empty( $_POST['flowhub_proxy_enabled'] ),
+				'proxy_url'                      => isset( $_POST['flowhub_proxy_url'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_proxy_url'] ) ) : '',
+				'proxy_username'                 => isset( $_POST['flowhub_proxy_username'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_proxy_username'] ) ) : '',
+				'proxy_password'                 => isset( $_POST['flowhub_proxy_password'] ) ? wp_unslash( $_POST['flowhub_proxy_password'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password; stored as-is for encryption.
 				'enabled'                        => ! empty( $_POST['enabled'] ),
 				'cache_ttl'                      => isset( $_POST['cache_ttl'] ) ? max( 0, min( 3600, absint( $_POST['cache_ttl'] ) ) ) : 300,
 				'test_endpoint'                  => isset( $_POST['test_endpoint'] ) ? sanitize_text_field( wp_unslash( $_POST['test_endpoint'] ) ) : '',
@@ -1970,6 +1975,57 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php esc_html_e( 'Use Flowhub Sandbox environment (api.sandbox.flowhub.co)', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'Enable when testing against Flowhub\'s sandbox API instead of production. Uses separate credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="flowhub_proxy_enabled"><?php esc_html_e( 'Enable Proxy', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<label>
+							<input type="checkbox" name="flowhub_proxy_enabled" id="flowhub_proxy_enabled" value="1"
+								<?php checked( $is_edit && ! empty( $connection['proxy_enabled'] ) ); ?> />
+							<?php esc_html_e( 'Route FlowHub API requests through a proxy server', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Use when FlowHub blocks requests from your server location. Services like Webshare offer free/cheap HTTP proxies.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="flowhub_proxy_url"><?php esc_html_e( 'Proxy URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="flowhub_proxy_url" id="flowhub_proxy_url"
+							value="<?php echo $is_edit && isset( $connection['proxy_url'] ) ? esc_attr( $connection['proxy_url'] ) : ''; ?>"
+							class="regular-text" placeholder="proxy.example.com:8080" autocomplete="off" />
+						<p class="description"><?php esc_html_e( 'Proxy hostname and port (e.g., p.webshare.io:80). Supports HTTP proxies.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="flowhub_proxy_username"><?php esc_html_e( 'Proxy Username', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="flowhub_proxy_username" id="flowhub_proxy_username"
+							value="<?php echo $is_edit && isset( $connection['proxy_username'] ) ? esc_attr( $connection['proxy_username'] ) : ''; ?>"
+							class="regular-text" autocomplete="off" />
+						<p class="description"><?php esc_html_e( 'Optional — only needed if your proxy requires authentication.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="flowhub_proxy_password"><?php esc_html_e( 'Proxy Password', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="password" name="flowhub_proxy_password" id="flowhub_proxy_password"
+							value="" class="regular-text" autocomplete="off" />
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing proxy password.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 

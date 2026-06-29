@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** June 27, 2026  
-**Plugin Version:** 1.1.34  
+**Last Updated:** June 29, 2026  
+**Plugin Version:** 1.1.35  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,20 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **JUNE 29, 2026 UPDATE (v1.1.35):** FLOWHUB INVENTORY SYNC, SHOPIFY SYNC, NECESSITY GATE LAYER J, LOCAL VOICE STT, REMOTE SITE ADMINISTRATOR BLUEPRINT, BULK IMPORT TOOLS, FIXES
+> - **FlowHub Inventory Sync Pro Toolkit (PR #5501)** — 6-tool cannabis dispensary management: products, inventory, locations, sync, analytics, alerts. P1 proxy support + P2 CCT auto-registration (PR #5502). Auth, decryption, location_id, null-guard fixes (PRs #5500, #5503, #5507, #5510).
+> - **Shopify Sync Pro Toolkit (PR #5502)** — 5-tool bi-directional sync: products, orders, inventory, analytics, settings. Dashboard widget. Tool reference docs.
+> - **Necessity Gate Layer J** — irreversibility-weighted safety profiles scoring tool calls by risk before execution. Request context crash fix.
+> - **Local Voice Embedded STT (PR #5498)** — three pluggable browser-side STT backends (Web Speech, Whisper.cpp WASM, Vosk WASM). Offline-first.
+> - **Remote Site Administrator Blueprint** — 22-tool assistant blueprint for full remote/local WP/WooCommerce site management with JetEngine, JetFormBuilder, and REST API control.
+> - **Places & Calendar Bulk Import (PR #5509)** — batch import tools for Places and Calendar Booking toolkits.
+> - **CLI site-import** — multi-phase HTML mirror import subcommand for migrating static sites.
+> - **Voice Realtime Auto-Detect (PR #5508)** — WebRTC/WebSocket auto-selection, duplicate message fix, VAD improvements.
+> - **Remote Connections Fixes (PR #5499)** — WordPress case handling, FlowHub/Printful credential storage, Printful connection type.
+> - **Bug Fixes** — token-scoped assistant resolution (PR #5497), user_id empty fallback (PR #5495), credential token mapping (PR #5493), post type name lengths (PR #5484), OpenAI image cleanup (PRs #5489–#5491).
+> - **Agent Context Sync** — AGENTS.md, CLAUDE.md, .context/pro-vs-base.md updated for v1.1.35.
+> - **Versioning** — bumped to 1.1.35 placeholder.
+>
 > **JUNE 27, 2026 UPDATE (v1.1.34):** GPT-REALTIME-2 VOICE MODELS, MULTI-CHANNEL RESULT DELIVERY UI, GRAPHIFY ECOSYSTEM, BUG FIXES
 > - **GPT-Realtime-2 Voice Models (PR #5479)** - GA Realtime API, WebRTC transport, Translate + Whisper models, 128K context, reasoning effort. wait_for_user tool.
 > - **Multi-Channel Result Delivery UI (PR #5465)** - Telegram, Discord, WhatsApp, Google Chat in schedule modal.

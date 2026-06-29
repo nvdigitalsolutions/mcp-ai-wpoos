@@ -1,5 +1,126 @@
 # oOS – Changelog
 
+## [1.1.35] - 2026-06-29
+
+### Added — FlowHub Inventory Sync Pro Toolkit (PR #5501)
+
+- **6-tool FlowHub inventory management toolkit** for cannabis dispensary operations.
+- **FlowHub Products tool** (`flowhub_products`) — query products by location, category, brand, strain type with pagination.
+- **FlowHub Inventory tool** (`flowhub_inventory`) — real-time inventory levels, room/zone filtering, low-stock detection.
+- **FlowHub Locations tool** (`flowhub_locations`) — list all dispensary locations with address, contact, and operational status.
+- **FlowHub Sync tool** (`flowhub_sync`) — scheduled inventory sync with webhook support and conflict resolution.
+- **FlowHub Analytics tool** (`flowhub_analytics`) — sales trends, top products, category performance, inventory turnover.
+- **FlowHub Alert Manager** (`WP_MCP_AI_FlowHub_Alert_Manager`) — configurable low-stock and compliance alerts.
+- **FlowHub Settings tool** (`flowhub_settings`) — manage API credentials, sync intervals, and notification preferences from the assistant.
+- **Connection resolver trait** (`WP_MCP_AI_FlowHub_Connection_Resolver`) — shared credential resolution logic.
+- **Admin UI**: FlowHub toolkit checkbox on Tools & Features → Features tab.
+- **Folder README**: `addons/pro/includes/tools/flowhub/README.md`.
+
+### Added — FlowHub P1+P2 Enhancements (PR #5502)
+
+- **P1**: Proxy support for FlowHub API via `http_api_curl` hook for environments behind forward proxies.
+- **P2**: FlowHub CCT auto-registration — inventory data stored in JetEngine custom content type tables.
+- **Connection auth fixes**: API auth header names corrected; class-name collision with `WP_MCP_AI_FlowHub_Client` resolved.
+- **API key decryption fix**: credential decryption failure when preserving API keys on connection update resolved (PR #5500).
+- **location_id made optional**: FlowHub tools no longer require a location_id — defaults to primary location when omitted.
+- **Null guard**: guard against null `jet_engine()->cct` in CCT Manager for sites without JetEngine.
+
+### Added — Shopify Sync Pro Toolkit (PR #5502)
+
+- **5-tool Shopify synchronization toolkit** for e-commerce operations.
+- **Shopify Products tool** (`shopify_sync_products`) — bi-directional product sync with variant support.
+- **Shopify Orders tool** (`shopify_sync_orders`) — order import with fulfillment status tracking.
+- **Shopify Inventory tool** (`shopify_sync_inventory`) — real-time stock level synchronization.
+- **Shopify Analytics tool** (`shopify_sync_analytics`) — cross-platform sales reporting and trend analysis.
+- **Shopify Settings tool** (`shopify_sync_settings`) — API credential and sync configuration management.
+- **Shopify dashboard widget** — admin dashboard card showing sync status and recent activity.
+- **Connection resolver trait** (`WP_MCP_AI_Shopify_Sync_Connection_Resolver`).
+- **Admin UI**: Shopify Sync toolkit checkbox on Tools & Features → Features tab.
+- **Tool reference docs**: `docs/tools/shopify-sync-toolkit.md` and `docs/tools/flowhub-toolkit.md`.
+- **Folder README**: `addons/pro/includes/tools/shopify-sync/README.md`.
+
+### Added — Necessity Gate (Layer J) — Irreversibility-Weighted Safety Profiles
+
+- **Necessity Gate** (`WP_MCP_AI_Necessity_Gate`) — pre-execution safety layer that scores tool calls by irreversibility risk.
+- **Irreversibility-weighted safety profiles**: assigns risk scores to write operations (create/update/delete) based on resource type.
+- **Safety profile trait** (`WP_MCP_AI_Safety_Profile_Trait`) loaded from its interface for clean autoload.
+- **Request context crash fix**: guards against `WP_MCP_AI_Request_Context` lacking `get_instance()` method.
+
+### Added — Local Voice Embedded STT (PR #5498)
+
+- **Three pluggable speech-to-text backends**: browser-native Web Speech API, Whisper.cpp (WASM), and Vosk (WASM).
+- **Offline-first architecture**: STT engines run entirely in the browser — no server dependency.
+- **Auto-detection**: selects the best available backend based on browser capabilities.
+
+### Added — Remote Site Administrator Blueprint
+
+- **New assistant blueprint** `remote-site-administrator.json` in the Site Creator toolkit.
+- Pre-configured with 22 tools: `remote_wp_connection`, full JetEngine suite (11 tools), JetFormBuilder (2), site admin (4), WooCommerce, and generic REST API.
+- Comprehensive system prompt with discovery→schema→execution workflow, tool reference, and 8 safety rules.
+- Temperature 0.3, `manage_options` capability, `pro_website_builder` profession.
+- Auto-discovered by the Unified Blueprints page and `import_site_creator_blueprint` tool.
+
+### Added — Places & Calendar Bulk Import Tools (PR #5509)
+
+- **Bulk import tools** for Places and Calendar Booking toolkits — import multiple records in a single call.
+- **Places bulk import**: batch geocode and store location records.
+- **Calendar bulk import**: batch create events, appointments, and bookings.
+
+### Added — CLI site-import Subcommand
+
+- **`wp mcp-ai site-import`** — multi-phase HTML mirror import for migrating static sites into WordPress.
+- Handles page structure extraction, content mapping, and media sideloading.
+
+### Added — Voice Realtime Auto-Detect (PR #5508)
+
+- **WebRTC realtime voice auto-detection** — automatically selects WebRTC or WebSocket transport based on browser support.
+- **Duplicate message fix** — prevents echoed messages in realtime voice sessions.
+- **VAD threshold improvements** — better voice activity detection sensitivity.
+
+### Fixed — Remote Connections: WordPress Case, FlowHub/Printful Storage (PR #5499)
+
+- WordPress connection case handling normalized across remote site manager.
+- FlowHub and Printful credential storage fixed — credentials now correctly encrypted at rest.
+- Printful connection type added to Remote Sites connection types.
+
+### Fixed — Token-Scoped Assistant Resolution (PR #5497)
+
+- Token-scoped assistant now preferred over site default in the assistant resolver, ensuring bearer-token-authenticated requests use the correct assistant configuration.
+
+### Fixed — User ID Empty Fallback (PR #5495)
+
+- `user_id` resolution updated to use `empty()` instead of `isset()` for context fallback, fixing edge cases where a zero or empty-string user ID would bypass the fallback.
+
+### Fixed — Local Credential Token User ID Mapping (PR #5493)
+
+- Local credential token user ID mapping corrected to ensure consistent identity resolution.
+
+### Fixed — Post Type Name Lengths Exceeding 20-Character Limit (PR #5484)
+
+- Post type names exceeding the 20-character WordPress limit now truncated with validation warnings.
+
+### Fixed — OpenAI Image Deprecation Cleanup (PRs #5489-#5491)
+
+- Removed deprecated DALL-E models from the provider registry.
+- Applied chat model fallback to `edit_image_via_responses_api`.
+- GPT-5.x chat models used for image generation with `image_generation_call` response parsing.
+- OpenAI image generation defaults and `response_format` handling fixed.
+
+### Documentation
+
+- Shopify Sync and FlowHub tool reference docs at `docs/tools/shopify-sync-toolkit.md` and `docs/tools/flowhub-toolkit.md`.
+- Agent context synchronization sweep — `AGENTS.md`, `CLAUDE.md`, `.context/pro-vs-base.md` updated.
+
+### Housekeeping
+
+- Stale `build/toolkit-addons` directory and build artifacts removed.
+
+### Versioning
+
+- Bumped to **1.1.35** placeholder across `CHANGELOG.md`, `DOCUMENTATION_INDEX.md`, `includes/bootstrap/constants.php`, `AGENTS.md`, `CLAUDE.md`.
+- Tool count: ~195 base + ~810+ Pro (~1,005+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **13** first-class language-model providers (unchanged).
+
 ## [1.1.34] - 2026-06-27
 
 ### Added — GPT-Realtime-2 Voice Models Upgrade (PR #5479)
