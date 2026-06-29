@@ -56,6 +56,17 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		const SCHEMA_VERSION = '1.4.0';
 
 		/**
+		 * Base ID for meta field identifiers.
+		 *
+		 * Using 40000 range to avoid conflicts with other CCT fields.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @var int
+		 */
+		const FIELD_ID_BASE = 40000;
+
+		/**
 		 * Current CCT slug.
 		 *
 		 * @var string
@@ -291,27 +302,35 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 */
 		protected function get_column_label( $column_name ) {
 			$labels = array(
-				'product_id'           => __( 'Product ID', 'mcp-ai-wpoos-pro' ),
-				'variant_id'           => __( 'Variant ID', 'mcp-ai-wpoos-pro' ),
-				'parent_product_id'    => __( 'Parent Product ID', 'mcp-ai-wpoos-pro' ),
-				'sku'                  => __( 'SKU', 'mcp-ai-wpoos-pro' ),
-				'product_name'         => __( 'Product Name', 'mcp-ai-wpoos-pro' ),
-				'variant_name'         => __( 'Variant Name', 'mcp-ai-wpoos-pro' ),
-				'category'             => __( 'Category', 'mcp-ai-wpoos-pro' ),
-				'custom_category_name' => __( 'Custom Category', 'mcp-ai-wpoos-pro' ),
-				'purchase_category'    => __( 'Purchase Category', 'mcp-ai-wpoos-pro' ),
-				'product_description'  => __( 'Description', 'mcp-ai-wpoos-pro' ),
-				'quantity'             => __( 'Quantity', 'mcp-ai-wpoos-pro' ),
-				'location_id'          => __( 'Location ID', 'mcp-ai-wpoos-pro' ),
-				'location_name'        => __( 'Location Name', 'mcp-ai-wpoos-pro' ),
-				'unit_of_measure'      => __( 'Unit of Measure', 'mcp-ai-wpoos-pro' ),
-				'image_url'            => __( 'Image URL', 'mcp-ai-wpoos-pro' ),
-				'price'                => __( 'Price', 'mcp-ai-wpoos-pro' ),
-				'woo_product_id'       => __( 'WooCommerce Product ID', 'mcp-ai-wpoos-pro' ),
-				'last_updated'         => __( 'Last Updated', 'mcp-ai-wpoos-pro' ),
-				'item_data'            => __( 'Raw API Data', 'mcp-ai-wpoos-pro' ),
-				'sync_status'          => __( 'Sync Status', 'mcp-ai-wpoos-pro' ),
-				'sync_hash'            => __( 'Sync Hash', 'mcp-ai-wpoos-pro' ),
+				'product_id'             => __( 'Product ID', 'mcp-ai-wpoos-pro' ),
+				'variant_id'             => __( 'Variant ID', 'mcp-ai-wpoos-pro' ),
+				'parent_product_id'      => __( 'Parent Product ID', 'mcp-ai-wpoos-pro' ),
+				'sku'                    => __( 'SKU', 'mcp-ai-wpoos-pro' ),
+				'product_name'           => __( 'Product Name', 'mcp-ai-wpoos-pro' ),
+				'variant_name'           => __( 'Variant Name', 'mcp-ai-wpoos-pro' ),
+				'category'               => __( 'Category', 'mcp-ai-wpoos-pro' ),
+				'custom_category_name'   => __( 'Custom Category', 'mcp-ai-wpoos-pro' ),
+				'purchase_category'      => __( 'Purchase Category', 'mcp-ai-wpoos-pro' ),
+				'product_description'    => __( 'Description', 'mcp-ai-wpoos-pro' ),
+				'quantity'               => __( 'Quantity', 'mcp-ai-wpoos-pro' ),
+				'location_id'            => __( 'Location ID', 'mcp-ai-wpoos-pro' ),
+				'location_name'          => __( 'Location Name', 'mcp-ai-wpoos-pro' ),
+				'unit_of_measure'        => __( 'Unit of Measure', 'mcp-ai-wpoos-pro' ),
+				'image_url'              => __( 'Image URL', 'mcp-ai-wpoos-pro' ),
+				'price'                  => __( 'Price', 'mcp-ai-wpoos-pro' ),
+				'woo_product_id'         => __( 'WooCommerce Product ID', 'mcp-ai-wpoos-pro' ),
+				'last_updated'           => __( 'Last Updated', 'mcp-ai-wpoos-pro' ),
+				'item_data'              => __( 'Raw API Data', 'mcp-ai-wpoos-pro' ),
+				'sync_status'            => __( 'Sync Status', 'mcp-ai-wpoos-pro' ),
+				'sync_hash'              => __( 'Sync Hash', 'mcp-ai-wpoos-pro' ),
+				'strain_name'            => __( 'Strain Name', 'mcp-ai-wpoos-pro' ),
+				'thc_percentage'         => __( 'THC %', 'mcp-ai-wpoos-pro' ),
+				'cbd_percentage'         => __( 'CBD %', 'mcp-ai-wpoos-pro' ),
+				'lab_test_id'            => __( 'Lab Test ID', 'mcp-ai-wpoos-pro' ),
+				'compliance_status'      => __( 'Compliance Status', 'mcp-ai-wpoos-pro' ),
+				'metrc_uid'              => __( 'Metrc UID', 'mcp-ai-wpoos-pro' ),
+				'previous_quantity'      => __( 'Previous Quantity', 'mcp-ai-wpoos-pro' ),
+				'quantity_change_reason' => __( 'Change Reason', 'mcp-ai-wpoos-pro' ),
 			);
 
 			return isset( $labels[ $column_name ] ) ? $labels[ $column_name ] : ucwords( str_replace( '_', ' ', $column_name ) );
@@ -987,6 +1006,331 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			$orderby = sanitize_key( $orderby );
 
 			return isset( $map[ $orderby ] ) ? $map[ $orderby ] : 'last_updated';
+		}
+
+		// ------------------------------------------------------------------ //
+		// CCT Auto-Registration                                               //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Hook into JetEngine to auto-create the FlowHub inventory CCT on init.
+		 *
+		 * JetEngine's CCT module hydrates its table cache on `init` at priorities
+		 * 1-10; registering inside that window races with it and stomps
+		 * JetEngine's CCT state. Priority 11 is the documented safe window.
+		 *
+		 * @since 1.5.0
+		 */
+		public static function bootstrap() {
+			add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 11 );
+			add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
+		}
+
+		/**
+		 * Register the FlowHub inventory CCT if it is missing.
+		 *
+		 * @since 1.5.0
+		 */
+		public static function maybe_register_cct() {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( empty( $settings['enable_flowhub_toolkit'] ) ) {
+				return;
+			}
+
+			$module = self::get_cct_module();
+
+			if ( ! $module ) {
+				return;
+			}
+
+			if ( empty( $module->manager ) || empty( $module->manager->data ) ) {
+				return;
+			}
+
+			if ( self::cct_exists( $module ) ) {
+				return;
+			}
+
+			$data    = $module->manager->data;
+			$request = self::get_registration_request();
+
+			$data->set_request( $request );
+
+			if ( method_exists( $data, 'sanitize_item_request' ) && ! $data->sanitize_item_request() ) {
+				return;
+			}
+
+			$item = $data->sanitize_item_from_request();
+
+			if ( empty( $item ) || ! is_array( $item ) ) {
+				return;
+			}
+
+			$data->before_item_update( $item, true );
+
+			$item_id = $data->update_item_in_db( $item );
+
+			if ( ! $item_id ) {
+				return;
+			}
+
+			$item['id'] = $item_id;
+
+			$data->after_item_update( $item, true );
+
+			if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
+				$data->db->query_raw( 'post_types' );
+			}
+		}
+
+		/**
+		 * Determine whether the FlowHub inventory CCT already exists.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param \Jet_Engine\Modules\Custom_Content_Types\Module $module Module instance.
+		 * @return bool
+		 */
+		protected static function cct_exists( $module ) {
+			$data = $module->manager->data;
+
+			if ( empty( $data->db ) ) {
+				return false;
+			}
+
+			$slug     = self::CCT_SLUG_DEFAULT;
+			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			if ( ! empty( $settings['cct_slug'] ) ) {
+				$slug = sanitize_key( $settings['cct_slug'] );
+			}
+
+			$records = $data->db->query(
+				'post_types',
+				array(
+					'slug'   => $slug,
+					'status' => 'content-type',
+				),
+				null,
+				false
+			);
+
+			return ! empty( $records );
+		}
+
+		/**
+		 * Retrieve the JetEngine Custom Content Types module instance.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @return \Jet_Engine\Modules\Custom_Content_Types\Module|null
+		 */
+		protected static function get_cct_module() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return null;
+			}
+
+			$engine = jet_engine();
+
+			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
+				return null;
+			}
+
+			if ( ! $engine->modules->is_module_active( 'custom-content-types' ) ) {
+				return null;
+			}
+
+			$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
+
+			if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+				return null;
+			}
+
+			return $module_wrapper->instance;
+		}
+
+		/**
+		 * Automatically enable the JetEngine data stores module if it's not already active.
+		 *
+		 * @since 1.5.0
+		 */
+		public static function maybe_enable_data_stores() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return;
+			}
+
+			$engine = jet_engine();
+
+			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
+				return;
+			}
+
+			// Check if data stores module is already active.
+			if ( $engine->modules->is_module_active( 'data-stores' ) ) {
+				return;
+			}
+
+			// Check if the module exists.
+			if ( ! method_exists( $engine->modules, 'get_module' ) ) {
+				return;
+			}
+
+			$module = $engine->modules->get_module( 'data-stores' );
+
+			if ( ! $module ) {
+				return;
+			}
+
+			// Activate the data stores module.
+			if ( method_exists( $engine->modules, 'activate_module' ) ) {
+				$engine->modules->activate_module( 'data-stores' );
+			}
+		}
+
+		/**
+		 * Build the request payload used to register the content type.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @return array
+		 */
+		protected static function get_registration_request() {
+			$label = __( 'FlowHub Inventory', 'mcp-ai-wpoos-pro' );
+
+			return array(
+				'name'        => $label,
+				'slug'        => self::CCT_SLUG_DEFAULT,
+				'args'        => self::get_cct_args( $label ),
+				'meta_fields' => self::get_meta_fields(),
+			);
+		}
+
+		/**
+		 * Assemble the JetEngine arguments for the FlowHub inventory CCT.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string $label Human-readable label for the content type.
+		 * @return array
+		 */
+		protected static function get_cct_args( $label ) {
+			return array(
+				'name'                => $label,
+				'slug'                => self::CCT_SLUG_DEFAULT,
+				'position'            => '-1',
+				'icon'                => 'dashicons-store',
+				'capability'          => 'manage_woocommerce',
+				'has_single'          => false,
+				'create_index'        => true,
+				'hide_field_names'    => false,
+				'rest_get_enabled'    => false,
+				'rest_put_enabled'    => false,
+				'rest_post_enabled'   => false,
+				'rest_delete_enabled' => false,
+				'admin_columns'       => array(
+					'_ID'           => array(
+						'enabled'     => true,
+						'prefix'      => '#',
+						'is_sortable' => true,
+						'is_num'      => true,
+					),
+					'product_name'  => array(
+						'enabled'     => true,
+						'is_sortable' => true,
+					),
+					'sku'           => array(
+						'enabled'     => true,
+						'is_sortable' => true,
+					),
+					'quantity'      => array(
+						'enabled'     => true,
+						'is_sortable' => true,
+						'is_num'      => true,
+					),
+					'location_name' => array(
+						'enabled'     => true,
+						'is_sortable' => true,
+					),
+					'sync_status'   => array(
+						'enabled'     => true,
+						'is_sortable' => true,
+					),
+				),
+			);
+		}
+
+		/**
+		 * Define the meta fields for the FlowHub inventory CCT.
+		 *
+		 * Uses the column definitions from {@see $columns} and labels from
+		 * {@see get_column_label()} to stay in sync with the runtime schema.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @return array
+		 */
+		protected static function get_meta_fields() {
+			$instance = new self();
+			$columns  = $instance->get_column_definitions();
+			$fields   = array();
+			$field_id = self::FIELD_ID_BASE;
+
+			foreach ( $columns as $column_name => $column_type ) {
+				$args = array();
+
+				// Map internal type names to JetEngine field types.
+				switch ( $column_type ) {
+					case 'number':
+						$jet_type           = 'number';
+						$args['is_numeric'] = true;
+						break;
+					case 'textarea':
+						$jet_type = 'textarea';
+						break;
+					case 'datetime':
+						$jet_type = 'datetime-local';
+						break;
+					default:
+						$jet_type = 'text';
+						break;
+				}
+
+				$fields[] = self::build_field(
+					$field_id,
+					$column_name,
+					$instance->get_column_label( $column_name ),
+					$jet_type,
+					$args
+				);
+
+				++$field_id;
+			}
+
+			return $fields;
+		}
+
+		/**
+		 * Build a field definition for JetEngine.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param int    $id    Field ID.
+		 * @param string $name  Field name.
+		 * @param string $label Field label.
+		 * @param string $type  Field type.
+		 * @param array  $args  Additional arguments.
+		 * @return array
+		 */
+		protected static function build_field( $id, $name, $label, $type, $args = array() ) {
+			return array_merge(
+				array(
+					'id'          => (string) $id,
+					'name'        => $name,
+					'title'       => $label,
+					'type'        => $type,
+					'object_type' => 'field',
+				),
+				$args
+			);
 		}
 	}
 }

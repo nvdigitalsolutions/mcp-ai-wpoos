@@ -42,6 +42,9 @@ if ( wp_mcp_ai_is_flowhub_toolkit_enabled()
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-cct-manager.php';
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-sync-engine.php';
 
+	// Bootstrap CCT auto-registration on init.
+	WP_MCP_AI_FlowHub_CCT_Manager::bootstrap();
+
 	// Initialize sync engine.
 	WP_MCP_AI_FlowHub_Sync_Engine::init();
 
