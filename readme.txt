@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.34
+Stable tag: 1.1.35
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -296,6 +296,29 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.35 - June 29, 2026 =
+
+Bumped to 1.1.35 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~810+ Pro (~1,005+ total; live registry via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+
+**FlowHub Inventory Sync, Shopify Sync, Necessity Gate Layer J, Local Voice STT, Remote Site Admin Blueprint, Bulk Import, Fixes**
+
+* **FlowHub Inventory Sync Pro Toolkit (PR #5501).** 6-tool cannabis dispensary management: products, inventory, locations, sync, analytics, alerts. P1 proxy support via `http_api_curl` hook + P2 CCT auto-registration (PR #5502). Auth, decryption, location_id, null-guard fixes (PRs #5500, #5503, #5507, #5510).
+* **Shopify Sync Pro Toolkit (PR #5502).** 5-tool bi-directional e-commerce sync: products, orders, inventory, analytics, settings. Dashboard widget. Tool reference docs.
+* **Necessity Gate Layer J.** Irreversibility-weighted safety profiles scoring tool calls by risk before execution. Safety profile trait. Request context crash fix.
+* **Local Voice Embedded STT (PR #5498).** Three pluggable browser-side STT backends (Web Speech, Whisper.cpp WASM, Vosk WASM). Offline-first architecture.
+* **Remote Site Administrator Blueprint.** 22-tool assistant blueprint for full remote/local WP/WooCommerce management with JetEngine, JetFormBuilder, and REST API control.
+* **Places & Calendar Bulk Import (PR #5509).** Batch import tools for Places and Calendar Booking toolkits.
+* **CLI site-import Subcommand.** Multi-phase HTML mirror import for migrating static sites into WordPress.
+* **Voice Realtime Auto-Detect (PR #5508).** WebRTC/WebSocket auto-selection, duplicate message fix, VAD improvements.
+* **Remote Connections Fixes (PR #5499).** WordPress case handling, FlowHub/Printful storage, Printful connection type.
+* **Bug Fix — Token-Scoped Assistant Resolution (PR #5497).** Token-scoped assistant preferred over site default.
+* **Bug Fix — User ID Empty Fallback (PR #5495).** `user_id` fallback uses `empty()` instead of `isset()`.
+* **Bug Fix — Local Credential Token Mapping (PR #5493).** Identity resolution consistency fix.
+* **Bug Fix — Post Type Name Lengths (PR #5484).** Exceeding 20-char limit now truncated with warnings.
+* **Bug Fix — OpenAI Image Deprecation Cleanup (PRs #5489–#5491).** Removed deprecated DALL-E models, applied chat model fallback, fixed defaults.
+* **Documentation.** Agent context sync — AGENTS.md, CLAUDE.md, .context/pro-vs-base.md updated.
+* **Housekeeping.** Stale 1.1.34 build zips removed (6 files).
 
 = 1.1.34 - June 27, 2026 =
 

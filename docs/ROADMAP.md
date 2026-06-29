@@ -1,10 +1,30 @@
 # NV oOS Roadmap
 
-**Last Updated:** June 27, 2026  
-**Version:** 1.1.34
+**Last Updated:** June 29, 2026  
+**Version:** 1.1.35
 
 ---
 
+## Released: v1.1.35 — June 2026 ✅
+
+**Release Date:** June 29, 2026
+
+### What was delivered in v1.1.35
+
+- ✅ **FlowHub Inventory Sync Pro Toolkit (PR #5501).** 6-tool cannabis dispensary management: products, inventory, locations, sync, analytics, alerts. P1 proxy support + P2 CCT auto-registration (PR #5502). Auth, decryption, location_id, null-guard fixes (PRs #5500, #5503, #5507, #5510).
+- ✅ **Shopify Sync Pro Toolkit (PR #5502).** 5-tool bi-directional e-commerce sync: products, orders, inventory, analytics, settings. Dashboard widget. Tool reference docs.
+- ✅ **Necessity Gate Layer J.** Irreversibility-weighted safety profiles scoring tool calls by risk before execution. Request context crash fix.
+- ✅ **Local Voice Embedded STT (PR #5498).** Three pluggable browser-side STT backends (Web Speech, Whisper.cpp WASM, Vosk WASM). Offline-first architecture.
+- ✅ **Remote Site Administrator Blueprint.** 22-tool assistant blueprint for full remote/local WP/WooCommerce site management with JetEngine, JetFormBuilder, and REST API control.
+- ✅ **Places & Calendar Bulk Import (PR #5509).** Batch import tools for Places and Calendar Booking toolkits.
+- ✅ **CLI site-import Subcommand.** Multi-phase HTML mirror import for migrating static sites into WordPress.
+- ✅ **Voice Realtime Auto-Detect (PR #5508).** WebRTC/WebSocket auto-selection, duplicate message fix, VAD threshold improvements.
+- ✅ **Remote Connections Fixes (PR #5499).** WordPress case handling, FlowHub/Printful credential storage, Printful connection type.
+- ✅ **7 Bug Fixes.** Token-scoped assistant resolution (PR #5497), user_id empty fallback (PR #5495), credential token mapping (PR #5493), post type name lengths (PR #5484), OpenAI image deprecation cleanup (PRs #5489-#5491).
+- ✅ **Documentation.** Agent context sync — AGENTS.md, CLAUDE.md, .context/pro-vs-base.md updated.
+- 📦 **Versioning** — bumped to **1.1.35** placeholder across all manifests. Tool count: ~195 base + ~810+ Pro (~1,005+ total; live registry authoritative).
+
+## Released: v1.1.34 — June 2026 ✅
 ## Vision
 
 **NV oOS** aims to be the leading open-source AI orchestration platform for WordPress, enabling small to medium-sized businesses to modernize their websites with enterprise-grade AI capabilities without expensive custom development or middleware.
