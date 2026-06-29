@@ -525,6 +525,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'company_id'                     => isset( $connection_data['company_id'] ) ? sanitize_text_field( $connection_data['company_id'] ) : '',
 			'store_id'                       => isset( $connection_data['store_id'] ) ? sanitize_text_field( $connection_data['store_id'] ) : '',
 			'sandbox_mode'                   => ! empty( $connection_data['sandbox_mode'] ),
+			// FlowHub proxy fields.
+			'proxy_enabled'                  => ! empty( $connection_data['proxy_enabled'] ),
+			'proxy_url'                      => isset( $connection_data['proxy_url'] ) ? sanitize_text_field( $connection_data['proxy_url'] ) : '',
+			'proxy_username'                 => isset( $connection_data['proxy_username'] ) ? sanitize_text_field( $connection_data['proxy_username'] ) : '',
+			'proxy_password'                 => isset( $connection_data['proxy_password'] ) ? $connection_data['proxy_password'] : '',
 			'has_woocommerce'                => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'                        => ! empty( $connection_data['enabled'] ),
 			'created'                        => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
