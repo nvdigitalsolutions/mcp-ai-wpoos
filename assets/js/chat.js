@@ -4042,18 +4042,36 @@
                 // Enable voice chat mode to auto-play the response
                 state.voiceChatModeActive = true;
 
-                // Automatically send the transcribed text as a message
-                state.textarea.value = result.text.trim();
+                // Automatically send the transcribed text as a message.
+                // Use sendChat directly instead of clicking the submit button to avoid
+                // double-submission when both form 'submit' and button 'click' handlers fire
+                // (which can happen when the chat form is nested inside an outer page <form>).
+                const transcribedText = result.text.trim();
+                state.textarea.value = transcribedText;
                 setStatus(state.container, getString('voiceChatSending', 'Sending your message…'));
 
-                // Trigger form submission via the submit button so the correct event path
-                // fires whether the chat form is a standalone <form> or is nested inside an
-                // outer page <form> (in which case the button type has been changed to
-                // 'button' and a click listener handles submission instead).
-                const submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
-                if (submitButton) {
-                    submitButton.click();
-                }
+                // Build a synthetic submission context that matches what handleSubmit creates.
+                // This bypasses the button-click/form-submit ambiguity entirely.
+                const submissionContext = {
+                    previousConversationLength: state.conversation.length,
+                    pendingAttachments: [],
+                    messageElement: null,
+                    inputValue: transcribedText,
+                };
+
+                // Add the user message to the conversation before sending.
+                const displayPayload = { text: transcribedText, attachments: [] };
+                const userMessageElement = appendMessage(state.messagesEl, 'user', displayPayload, false, { state: state });
+                submissionContext.messageElement = userMessageElement;
+
+                const userMessage = createConversationMessage('user', transcribedText, extractDisplayMetadata(userMessageElement, displayPayload));
+                state.conversation.push(userMessage);
+                saveConversationToStorage(state);
+                state.textarea.value = '';
+
+                // Send directly, bypassing the form submit button.
+                updateSubmitButtonForStop(state);
+                sendChat(state, submissionContext);
             })
             .catch(function (error) {
                 setStatus(
@@ -12784,6 +12802,17 @@
         if (state.busy) {
             return;
         }
+
+        // Debounce guard: prevent double-submission from simultaneous
+        // form 'submit' + button 'click' handlers firing within 500ms.
+        const now = Date.now();
+        if (state._lastSubmitTime && (now - state._lastSubmitTime) < 500) {
+            if (window.console && console.warn) {
+                console.warn('[NV oOS] Duplicate submit prevented (debounce)');
+            }
+            return;
+        }
+        state._lastSubmitTime = now;
 
         if (state.uploading > 0) {
             setStatus(state.container, getString('uploadInProgress', 'Please wait for uploads to finish before sending.'));
