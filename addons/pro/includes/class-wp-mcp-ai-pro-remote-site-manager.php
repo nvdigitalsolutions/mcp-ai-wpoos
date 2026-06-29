@@ -216,6 +216,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['folder_id'] = $existing_connection['folder_id'];
 			}
 
+			// Preserve existing proxy_password if not provided.
+			if ( empty( $connection_data['proxy_password'] ) && ! empty( $existing_connection['proxy_password'] ) ) {
+				$connection_data['proxy_password']            = $existing_connection['proxy_password'];
+				$connection_data['_proxy_password_encrypted'] = self::is_value_encrypted( $existing_connection['proxy_password'] );
+			}
+
 			// Preserve existing upwork_username (Upwork) if not provided.
 			if ( empty( $connection_data['upwork_username'] ) && ! empty( $existing_connection['upwork_username'] ) ) {
 				$connection_data['upwork_username'] = $existing_connection['upwork_username'];
@@ -688,6 +694,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( ! empty( $connection['secret_token'] ) && empty( $connection_data['_secret_token_encrypted'] ) ) {
 			$connection['secret_token'] = self::encrypt_value( $connection['secret_token'] );
+		}
+
+		if ( ! empty( $connection['proxy_password'] ) && empty( $connection_data['_proxy_password_encrypted'] ) ) {
+			$connection['proxy_password'] = self::encrypt_value( $connection['proxy_password'] );
 		}
 
 		$connections[ $connection_id ] = $connection;
@@ -1511,6 +1521,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$client_id   = isset( $connection['client_id'] ) ? $connection['client_id'] : '';
 		$api_key     = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
 		$location_id = isset( $connection['location_id'] ) ? $connection['location_id'] : '';
+		$sandbox     = ! empty( $connection['sandbox_mode'] );
 
 		if ( empty( $client_id ) || empty( $api_key ) ) {
 			return new WP_Error(
@@ -1519,73 +1530,106 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
+		// Determine base URL — respect sandbox mode.
+		$base_url = $sandbox ? 'https://api.sandbox.flowhub.co' : 'https://api.flowhub.co';
+
 		// Build the inventory endpoint. When location_id is available, scope to that
 		// location. Otherwise use the root inventoryNonZero endpoint (no location required).
 		if ( ! empty( $location_id ) ) {
-			$url = 'https://api.flowhub.co/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero?limit=1';
+			$url = $base_url . '/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero?limit=1';
 		} else {
-			$url = 'https://api.flowhub.co/v0/inventoryNonZero?limit=1';
+			$url = $base_url . '/v0/inventoryNonZero?limit=1';
 		}
 
-		$response = wp_remote_get(
-			$url,
-			array(
-				'timeout' => 15,
-				'headers' => array(
-					'clientId' => $client_id,
-					'key'      => $api_key,
-					'Accept'   => 'application/json',
-				),
-			)
-		);
+		// Attach proxy via http_api_curl when configured.
+		$proxy_enabled  = ! empty( $connection['proxy_enabled'] );
+		$proxy_url      = isset( $connection['proxy_url'] ) ? $connection['proxy_url'] : '';
+		$proxy_username = isset( $connection['proxy_username'] ) ? $connection['proxy_username'] : '';
+		$proxy_password = isset( $connection['proxy_password'] ) ? self::decrypt_value( $connection['proxy_password'] ) : '';
 
-		if ( is_wp_error( $response ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_pro_flowhub_connection_failed',
-				sprintf(
-					/* translators: %s: error message */
-					__( 'Flowhub connection failed: %s', 'mcp-ai-wpoos-pro' ),
-					$response->get_error_message()
+		$curl_proxy = null;
+		if ( $proxy_enabled && ! empty( $proxy_url ) ) {
+			$proxy_auth = ( ! empty( $proxy_username ) || ! empty( $proxy_password ) )
+				? $proxy_username . ':' . $proxy_password
+				: '';
+			$curl_proxy = function ( $handle ) use ( $proxy_url, $proxy_auth ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- Proxy support requires cURL-level configuration.
+				curl_setopt( $handle, CURLOPT_PROXY, $proxy_url );
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+				curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+				if ( ! empty( $proxy_auth ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+					curl_setopt( $handle, CURLOPT_PROXYUSERPWD, $proxy_auth );
+				}
+			};
+			add_action( 'http_api_curl', $curl_proxy, 10, 1 );
+		}
+
+		try {
+			$response = wp_remote_get(
+				$url,
+				array(
+					'timeout' => 15,
+					'headers' => array(
+						'clientId' => $client_id,
+						'key'      => $api_key,
+						'Accept'   => 'application/json',
+					),
 				)
 			);
-		}
 
-		$code = (int) wp_remote_retrieve_response_code( $response );
+			if ( is_wp_error( $response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_flowhub_connection_failed',
+					sprintf(
+						/* translators: %s: error message */
+						__( 'Flowhub connection failed: %s', 'mcp-ai-wpoos-pro' ),
+						$response->get_error_message()
+					)
+				);
+			}
 
-		if ( 401 === $code || 403 === $code ) {
-			return new WP_Error(
-				'wp_mcp_ai_pro_flowhub_auth_failed',
-				__( 'Flowhub API authentication failed. Check your client ID and API key.', 'mcp-ai-wpoos-pro' )
+			$code = (int) wp_remote_retrieve_response_code( $response );
+
+			if ( 401 === $code || 403 === $code ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_flowhub_auth_failed',
+					__( 'Flowhub API authentication failed. Check your client ID and API key.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_flowhub_api_error',
+					sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'Flowhub API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+						$code
+					)
+				);
+			}
+
+			$body            = json_decode( wp_remote_retrieve_body( $response ), true );
+			$inventory_count = isset( $body['data'] ) && is_array( $body['data'] ) ? count( $body['data'] ) : 0;
+
+			$results = array(
+				'success' => true,
+				'flowhub' => true,
+				'message' => __( 'Flowhub connection successful. API credentials verified.', 'mcp-ai-wpoos-pro' ),
 			);
+
+			if ( $inventory_count > 0 ) {
+				$results['inventory_count'] = $inventory_count;
+				/* translators: %d: number of inventory items */
+				$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'mcp-ai-wpoos-pro' ), $inventory_count );
+			}
+
+			return $results;
+		} finally {
+			if ( null !== $curl_proxy ) {
+				remove_action( 'http_api_curl', $curl_proxy, 10 );
+			}
 		}
-
-		if ( $code < 200 || $code >= 300 ) {
-			return new WP_Error(
-				'wp_mcp_ai_pro_flowhub_api_error',
-				sprintf(
-					/* translators: %d: HTTP status code */
-					__( 'Flowhub API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
-					$code
-				)
-			);
-		}
-
-		$body            = json_decode( wp_remote_retrieve_body( $response ), true );
-		$inventory_count = isset( $body['data'] ) && is_array( $body['data'] ) ? count( $body['data'] ) : 0;
-
-		$results = array(
-			'success' => true,
-			'flowhub' => true,
-			'message' => __( 'Flowhub connection successful. API credentials verified.', 'mcp-ai-wpoos-pro' ),
-		);
-
-		if ( $inventory_count > 0 ) {
-			$results['inventory_count'] = $inventory_count;
-			/* translators: %d: number of inventory items */
-			$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'mcp-ai-wpoos-pro' ), $inventory_count );
-		}
-
-		return $results;
 	}
 
 	/**
