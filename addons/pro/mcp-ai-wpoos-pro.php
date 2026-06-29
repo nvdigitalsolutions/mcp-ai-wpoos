@@ -917,6 +917,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Seed_Template_Library'     => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php',
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'           => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-export-calendar-ics.php',
+			// Calendar Booking Toolkit — service CRUD + bulk import (Pro feature - v1.4.0).
+			'WP_MCP_AI_Tool_Create_Service'              => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-create-service.php',
+			'WP_MCP_AI_Tool_Import_Services'             => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-import-services.php',
 			// Calendar Booking Toolkit — no-show / unconfirmed query tools (Pro feature - v2.9.0).
 			'WP_MCP_AI_Tool_Get_No_Show_Appointments'      => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-no-show-appointments.php',
 			'WP_MCP_AI_Tool_Get_Unconfirmed_Bookings'      => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-unconfirmed-bookings.php',
@@ -1296,15 +1299,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add places management tools if enabled.
 		if ( ! empty( $settings['enable_places_management'] ) ) {
 			$places_tools = array(
-				'WP_MCP_AI_Tool_Create_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-create-place.php',
-				'WP_MCP_AI_Tool_List_Places'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-list-places.php',
-				'WP_MCP_AI_Tool_Update_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-update-place.php',
-				'WP_MCP_AI_Tool_Delete_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-delete-place.php',
-				'WP_MCP_AI_Tool_Get_Place'              => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-get-place.php',
-				'WP_MCP_AI_Tool_Search_And_Save_Places' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-search-and-save-places.php',
-				'WP_MCP_AI_Tool_Research_Place'         => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-research-place.php',
+				'WP_MCP_AI_Tool_Create_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-create-place.php',
+				'WP_MCP_AI_Tool_List_Places'             => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-list-places.php',
+				'WP_MCP_AI_Tool_Update_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-update-place.php',
+				'WP_MCP_AI_Tool_Delete_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-delete-place.php',
+				'WP_MCP_AI_Tool_Get_Place'               => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-get-place.php',
+				'WP_MCP_AI_Tool_Search_And_Save_Places'  => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-search-and-save-places.php',
+				'WP_MCP_AI_Tool_Research_Place'          => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-research-place.php',
 				// Turf.js geospatial analysis tool (enhanced with NPM package).
-				'WP_MCP_AI_Tool_Analyze_Geospatial'     => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-analyze-geospatial.php',
+				'WP_MCP_AI_Tool_Analyze_Geospatial'      => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-analyze-geospatial.php',
+				// Bulk import tools (v1.4.0).
+				'WP_MCP_AI_Tool_Import_Places'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places.php',
+				'WP_MCP_AI_Tool_Import_Places_From_Html' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places-from-html.php',
 			);
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
 		}
@@ -2771,6 +2777,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_unconfirmed_bookings']   = 'wordpress-core';
 			$pro_tools['send_booking_confirmations'] = 'wordpress-core';
 			$pro_tools['send_reschedule_invitation'] = 'wordpress-core';
+			$pro_tools['create_service']             = 'wordpress-core';
+			$pro_tools['import_services']            = 'wordpress-core';
 		}
 
 		// Pro Schedule Manager tools — always available (no toolkit gate).
@@ -2919,6 +2927,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		'class-wp-mcp-ai-pro-cli-project-command.php',
 		'class-wp-mcp-ai-pro-cli-task-command.php',
 		'class-wp-mcp-ai-pro-cli-mcp-server-command.php',
+		'class-wp-mcp-ai-pro-cli-place-command.php',
+		'class-wp-mcp-ai-pro-cli-calendar-command.php',
 	);
 
 	foreach ( $wp_mcp_ai_pro_cli_files as $wp_mcp_ai_pro_cli_file ) {
