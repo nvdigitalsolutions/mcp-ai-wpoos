@@ -1,8 +1,18 @@
+# ⚠️ HISTORICAL — SUPERSEDED
+
+> **This document has been retired as of June 29, 2026.** All gaps identified in March 2026 have been closed: Federation rate limiting (v1.1.1), SSE rate limiting (v1.1.x), Anthropic Claude (v1.1.3), PM task dependencies (v1.1.x), PM notifications (v1.1.x), threat model (v1.1.x), CORS allowlist (v1.1.x), and automated security tests (v1.1.x).
+>
+> **Current state:** See [`../../ROADMAP.md`](../../ROADMAP.md) — Current Capability Snapshot and v1.4.0 sections. See [`PROPOSALS_COMPLETION_STATUS.md`](./PROPOSALS_COMPLETION_STATUS.md) for up-to-date proposals tracking.
+>
+> Retained for historical reference only. Do not use for planning.
+
+---
+
 # NV oOS Feature Gap Analysis & Forward Proposal — March 2026
 
 **Date:** March 8, 2026 (original), updated June 11, 2026 (v1.1.29)  
 **Plugin Version:** 1.1.29 (was 1.1.3 at time of writing)  
-**Status:** Superseded — retain as historical reference. Many gaps identified have been closed (ROADMAP updated, toolkits documented). Open items tracked elsewhere.  
+**Status:** ⛔ RETIRED — See banner above.  
 **Review Type:** Base + Pro Plugin Gap Analysis & Documentation Alignment
 
 ---

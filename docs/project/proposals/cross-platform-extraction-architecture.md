@@ -8,7 +8,7 @@
 **Author:** AI Agent (via NV oOS)  
 **Audience:** Engineering leadership, architecture reviewers  
 
-> **📌 Implementation Status (v1.1.29):** Phases 0–2 are **complete**. The `nvoos/core` package with 9 domain contracts, 10 entities, 8 events, 4 application services, 12 provider clients, and 43 migrated tools lives at `lib/core/`. All 8 WordPress adapters (`lib/wordpress-adapter/`), plus Craft and Laravel adapters, are complete. Phase 3 (tool migration) is at ~22% (43/195 tools). The extraction runs behind a feature flag (`?engine=oos`) and `WP_MCP_AI_OOS_ENGINE` constant. See [`cross-platform-extraction-gap-analysis.md`](./cross-platform-extraction-gap-analysis.md) for detailed current-state assessment.
+> **📌 Implementation Status (v1.1.35):** Phases 0–2 are **complete**. The `nvoos/core` package with 9 domain contracts, 10 entities, 8 events, 4 application services, 12 provider clients, and 43 migrated base tools lives at `lib/core/`. All 8 WordPress adapters (`lib/wordpress-adapter/`), plus Craft and Laravel adapter stubs, are complete. Phase 3 (tool migration) is at ~22% (43/~195 base tools). Pro tool migration (0/~810+) is the next frontier. The extraction runs behind a feature flag (`?engine=oos`) and `WP_MCP_AI_OOS_ENGINE` constant. See [`cross-platform-extraction-gap-analysis.md`](./cross-platform-extraction-gap-analysis.md) for detailed current-state assessment.
 
 ---
 

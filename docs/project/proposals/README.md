@@ -1,10 +1,10 @@
 # NV oOS Proposals Directory
 
-**Last Updated:** March 2026  
-**Total Proposals:** 65 files  
-**Completed:** 18 (28%) | **In Progress:** 6 (9%) | **Pending:** 41 (63%)
+**Last Updated:** June 29, 2026
+**Total Proposals:** 100+ files
+**Completed:** 30+ | **In Progress:** 3 | **Pending:** ~30 (many stale)
 
-📊 **[View Complete Status Tracking →](PROPOSALS_COMPLETION_STATUS.md)**
+📊 **[View Complete Status Tracking →](PROPOSALS_COMPLETION_STATUS.md)**  ·  📋 **[Retirement Log →](proposals-retirement-log.md)**
 
 This directory contains proposals, research, and implementation status for major features and enhancements to the NV oOS plugin.
 
@@ -12,26 +12,32 @@ This directory contains proposals, research, and implementation status for major
 
 ## 🎯 Quick Status Overview
 
-### ✅ Recently Completed (January 2026)
-- **DeepSeek V4 Multi-Agent Orchestration** - All phases 1-5 complete
-- **Web Browser Pro Tool** - Playwright integration production ready
-- **WebLLM Enhancement** - Phases 1-3 complete (tool calling, Transformers.js, LangChain)
-- **Toolkit Enhancement System** - 12 toolkits, 207 tools categorized
-- **Phase 5** - 100% complete
+### ✅ Recently Completed (June 2026 — v1.1.32–v1.1.35)
+- **FlowHub Inventory Sync Pro Toolkit** — 6-tool cannabis dispensary management (v1.1.35, Jun 29)
+- **Shopify Sync Pro Toolkit** — 5-tool bi-directional e-commerce sync (v1.1.35, Jun 29)
+- **Necessity Gate Layer J** — Irreversibility-weighted safety profiles (v1.1.35, Jun 29)
+- **Local Voice Embedded STT** — Three browser-side STT backends, offline-first (v1.1.35, Jun 29)
+- **GPT-Realtime-2 Voice Models** — GA Realtime API, WebRTC, Translate + Whisper (v1.1.34, Jun 27)
+- **Multi-Channel Result Delivery UI** — 11 channels in schedule modal (v1.1.34, Jun 27)
+- **Content Format Templates** — AI-powered template engine + featured image service (v1.1.32, Jun 19)
+- **Result Delivery Pipeline** — 8-channel delivery with success + failure paths (v1.1.32, Jun 19)
+- **WP 7.0 Connectors Credential Integration** — Across all 17 AI clients (v1.1.33, Jun 24)
+- **DietPi Pro Toolkit** — 19+ server management tools (v1.1.29, Jun 12)
+- **Layer I Guardrails** — Jailbreak prevention (v1.1.29, Jun 12)
 
 ### 🚧 Currently In Progress
-- **WordPress Integration Enhancement** - 42-82% complete (varies by component)
-- **Bitwarden/Vaultwarden Integration** - Research phase, Pro feature
-- **Ralph Wiggum CCT Orchestration** - Awaiting implementation resources
+- **Cross-Platform Extraction Phase 3** — ~22% tool migration (43/195 base); Pro tools pending
+- **WordPress Integration Enhancement** — 42-82% complete
+- **Ralph Wiggum CCT Orchestration** — Awaiting implementation resources
 
-### ⏳ High Priority Pending
-- **NV oOS App Plugin Distribution** - New proposal (March 2026): separate app plugin bundling base+pro+canvas for platform-specific distribution → [NVOOS_APP_PLUGIN_DISTRIBUTION_PROPOSAL.md](./NVOOS_APP_PLUGIN_DISTRIBUTION_PROPOSAL.md)
-- **Toolkit Enhancement (Extended Features)** - High ROI proposal ready for approval
-- **Firefly III Integration** - Comprehensive proposal ready for review
-- **WordPress Core Integration Enhancement** - Planning phase (0% complete)
-- **WP Native Password Manager** - Detailed plan ready
+### ⏳ Deferred / Parked
+- **Firefly III Integration** — Defer to post-v2.0.0
+- **Bitwarden/Vaultwarden Integration** — Defer to post-v2.0.0
+- **WP Native Password Manager** — Defer
+- **WebLLM Phases 4-8** — Park as Future Research
+- See [`proposals-retirement-log.md`](./proposals-retirement-log.md) for full retirement decisions.
 
-For detailed status of all 64 proposals, see [PROPOSALS_COMPLETION_STATUS.md](PROPOSALS_COMPLETION_STATUS.md).
+For detailed status of all proposals, see [PROPOSALS_COMPLETION_STATUS.md](PROPOSALS_COMPLETION_STATUS.md).
 
 ---
 
