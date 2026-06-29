@@ -76,13 +76,15 @@ class WP_MCP_AI_Place_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 */
 	protected function get_tools_list() {
 		return array(
-			'create_place'           => __( 'Create Place', 'mcp-ai-wpoos-pro' ),
-			'list_places'            => __( 'List Places', 'mcp-ai-wpoos-pro' ),
-			'get_place'              => __( 'Get Place', 'mcp-ai-wpoos-pro' ),
-			'update_place'           => __( 'Update Place', 'mcp-ai-wpoos-pro' ),
-			'delete_place'           => __( 'Delete Place', 'mcp-ai-wpoos-pro' ),
-			'research_place'         => __( 'Research Place', 'mcp-ai-wpoos-pro' ),
-			'search_and_save_places' => __( 'Search and Save Places', 'mcp-ai-wpoos-pro' ),
+			'create_place'              => __( 'Create Place', 'mcp-ai-wpoos-pro' ),
+			'list_places'               => __( 'List Places', 'mcp-ai-wpoos-pro' ),
+			'get_place'                 => __( 'Get Place', 'mcp-ai-wpoos-pro' ),
+			'update_place'              => __( 'Update Place', 'mcp-ai-wpoos-pro' ),
+			'delete_place'              => __( 'Delete Place', 'mcp-ai-wpoos-pro' ),
+			'research_place'            => __( 'Research Place', 'mcp-ai-wpoos-pro' ),
+			'search_and_save_places'    => __( 'Search and Save Places', 'mcp-ai-wpoos-pro' ),
+			'import_places'             => __( 'Import Places (Bulk)', 'mcp-ai-wpoos-pro' ),
+			'import_places_from_html'   => __( 'Import Places from HTML', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
