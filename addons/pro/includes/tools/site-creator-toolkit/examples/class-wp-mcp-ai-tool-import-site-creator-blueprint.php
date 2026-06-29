@@ -19,7 +19,7 @@ class WP_MCP_AI_Tool_Import_Site_Creator_Blueprint implements WP_MCP_AI_Tool_Int
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	const BLUEPRINTS_DIR  = WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/examples';
-	const BLUEPRINT_SLUGS = array( 'wordpress-site-builder' );
+	const BLUEPRINT_SLUGS = array( 'wordpress-site-builder', 'remote-site-administrator' );
 
 	/**
 	 * {@inheritdoc}
@@ -48,7 +48,7 @@ class WP_MCP_AI_Tool_Import_Site_Creator_Blueprint implements WP_MCP_AI_Tool_Int
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Install the WordPress Site Builder assistant blueprint for AI-assisted site creation workflows.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'Install a site creator assistant blueprint. Available blueprints: wordpress-site-builder (AI-assisted site creation) and remote-site-administrator (full remote/local WordPress/WooCommerce site management with JetEngine, JetFormBuilder, and REST API control).', 'mcp-ai-wpoos-pro' ); }
 	/**
 	 * {@inheritdoc}
 	 */
