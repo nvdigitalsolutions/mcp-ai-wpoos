@@ -27,11 +27,17 @@ function wp_mcp_ai_is_shopify_sync_toolkit_enabled() {
 	return ! empty( $settings['enable_shopify_sync_toolkit'] );
 }
 
+// Ensure the Shopify Client class is available before checking.
+// It is lazy-loaded by individual tools but not pre-loaded at init,
+// so class_exists() would fail and silently skip the entire toolkit.
+if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+}
+
 // Load Shopify Sync toolkit when enabled.
 if ( wp_mcp_ai_is_shopify_sync_toolkit_enabled()
 	&& class_exists( 'WooCommerce' )
 	&& ! ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() )
-	&& class_exists( 'WP_MCP_AI_Shopify_Client' )
 ) {
 	// Load core sync classes.
 	if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {

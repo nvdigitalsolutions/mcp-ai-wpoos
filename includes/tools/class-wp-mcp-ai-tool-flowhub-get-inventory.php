@@ -193,14 +193,8 @@ class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		if ( empty( $location_id ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_flowhub_missing_location',
-				__( 'FlowHub Location ID is required for inventory requests.', 'mcp-ai-wpoos' )
-			);
-		}
-
-		// Build the location-scoped endpoint per FlowHub API v0.
+		// Build the inventory endpoint. When location_id is available, scope to that
+		// location. Otherwise use the root inventoryNonZero endpoint (no location required).
 		$options = array();
 
 		if ( isset( $arguments['limit'] ) ) {
@@ -216,7 +210,11 @@ class WP_MCP_AI_Tool_Flowhub_Get_Inventory implements WP_MCP_AI_Tool_Interface, 
 			$options['timeout'] = max( 5, min( 60, absint( $arguments['timeout'] ) ) );
 		}
 
-		$endpoint = 'https://api.flowhub.co/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero';
+		if ( ! empty( $location_id ) ) {
+			$endpoint = 'https://api.flowhub.co/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero';
+		} else {
+			$endpoint = 'https://api.flowhub.co/v0/inventoryNonZero';
+		}
 		$endpoint = add_query_arg( $options, $endpoint );
 
 		$response = wp_remote_get(

@@ -176,7 +176,17 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				);
 			}
 
-			$cct = jet_engine()->cct->data->get_item_by_slug( $this->cct_slug );
+			// JetEngine's cct property is initialised on after_setup_theme (priority 0).
+			// If called before that hook fires, jet_engine()->cct will be null.
+			$jet_engine = jet_engine();
+			if ( ! isset( $jet_engine->cct ) || null === $jet_engine->cct ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_jetengine_not_ready',
+					__( 'JetEngine is not fully initialised yet. Please try again.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$cct = $jet_engine->cct->data->get_item_by_slug( $this->cct_slug );
 
 			if ( ! $cct ) {
 				return new WP_Error(
