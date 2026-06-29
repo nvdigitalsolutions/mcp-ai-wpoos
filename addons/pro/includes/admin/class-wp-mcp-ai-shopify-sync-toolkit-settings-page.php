@@ -434,6 +434,62 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 	}
 
 	/**
+	 * Sanitize and save the settings form submission.
+	 *
+	 * Overrides the base class to handle Shopify-specific fields
+	 * that are rendered directly in render_configuration_tab()
+	 * instead of through the WordPress Settings API field registration.
+	 *
+	 * @param array $input Raw input from the Settings API (unused; fields
+	 *                     are read directly from $_POST).
+	 * @return array Sanitized settings array.
+	 */
+	public function sanitize_settings( $input ) {
+		// Load existing settings as the fallback for every key.
+		$sanitized = get_option( $this->option_name, array() );
+
+		// Only process when the form was actually submitted via POST.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! isset( $_POST['submit'] ) && ! isset( $_POST['action'] ) ) {
+			return $sanitized;
+		}
+
+		// Sync connections (checkboxes).
+		$sanitized['sync_connections'] = array();
+		if ( isset( $_POST['shopify_sync_connections'] ) && is_array( $_POST['shopify_sync_connections'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['sync_connections'] = array_map( 'sanitize_key', wp_unslash( $_POST['shopify_sync_connections'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+		}
+
+		// Sync interval.
+		if ( isset( $_POST['shopify_sync_interval'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['sync_interval'] = absint( $_POST['shopify_sync_interval'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		}
+
+		// Sync direction.
+		if ( isset( $_POST['shopify_sync_direction'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['sync_direction'] = sanitize_key( wp_unslash( $_POST['shopify_sync_direction'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+
+		// WooCommerce sync toggle.
+		$sanitized['enable_wc_sync'] = isset( $_POST['shopify_enable_wc_sync'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		// Low stock threshold.
+		if ( isset( $_POST['shopify_low_stock_threshold'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['low_stock_threshold'] = absint( $_POST['shopify_low_stock_threshold'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		}
+
+		// Webhooks toggle.
+		$sanitized['enable_webhooks'] = isset( $_POST['shopify_enable_webhooks'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		// CCT slug.
+		if ( isset( $_POST['shopify_cct_slug'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['cct_slug'] = sanitize_key( wp_unslash( $_POST['shopify_cct_slug'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+
+		return $sanitized;
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	protected function get_tools_list() {
