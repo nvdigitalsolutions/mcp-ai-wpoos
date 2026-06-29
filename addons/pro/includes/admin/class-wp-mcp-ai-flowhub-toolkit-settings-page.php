@@ -86,6 +86,77 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 	}
 
 	/**
+	 * Sanitize all configuration fields on save.
+	 *
+	 * The base class sanitizer only handles a subset of fields. This override
+	 * reads from the flat POST field names used in the configuration tab and
+	 * merges them with previously-stored settings so that unchecked checkboxes
+	 * and omitted fields are preserved.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $input Raw input (from Settings API; may be empty for flat-named fields).
+	 * @return array Sanitized settings merged with existing.
+	 */
+	public function sanitize_settings( $input ) {
+		// Load existing settings as the fallback for every key.
+		$sanitized = get_option( $this->option_name, array() );
+
+		// Only process when the form was actually submitted via POST.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! isset( $_POST['submit'] ) && ! isset( $_POST['action'] ) ) {
+			return $sanitized;
+		}
+
+		// API credentials.
+		if ( isset( $_POST['flowhub_client_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['client_id'] = sanitize_text_field( wp_unslash( $_POST['flowhub_client_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+		if ( isset( $_POST['flowhub_api_key'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['api_key'] = wp_unslash( $_POST['flowhub_api_key'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key; stored as-is.
+		}
+		if ( isset( $_POST['flowhub_api_base_url'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['api_base_url'] = esc_url_raw( wp_unslash( $_POST['flowhub_api_base_url'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+
+		// Location.
+		if ( isset( $_POST['flowhub_location_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['location_id'] = sanitize_text_field( wp_unslash( $_POST['flowhub_location_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+
+		// Sync settings.
+		if ( isset( $_POST['flowhub_sync_interval'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['sync_interval'] = absint( $_POST['flowhub_sync_interval'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		}
+		$sanitized['enable_wc_sync'] = isset( $_POST['flowhub_enable_wc_sync'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( isset( $_POST['flowhub_sync_direction'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['sync_direction'] = sanitize_key( wp_unslash( $_POST['flowhub_sync_direction'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+		if ( isset( $_POST['flowhub_low_stock_threshold'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['low_stock_threshold'] = absint( $_POST['flowhub_low_stock_threshold'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		}
+
+		// CCT.
+		if ( isset( $_POST['flowhub_cct_slug'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['cct_slug'] = sanitize_key( wp_unslash( $_POST['flowhub_cct_slug'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+
+		// Proxy.
+		$sanitized['proxy_enabled'] = isset( $_POST['flowhub_proxy_enabled'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( isset( $_POST['flowhub_proxy_url'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['proxy_url'] = sanitize_text_field( wp_unslash( $_POST['flowhub_proxy_url'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+		if ( isset( $_POST['flowhub_proxy_username'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['proxy_username'] = sanitize_text_field( wp_unslash( $_POST['flowhub_proxy_username'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+		if ( isset( $_POST['flowhub_proxy_password'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['proxy_password'] = wp_unslash( $_POST['flowhub_proxy_password'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password; stored as-is.
+		}
+
+		return $sanitized;
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	protected function render_overview_tab() {
@@ -231,6 +302,57 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 							value="<?php echo esc_url( isset( $settings['api_base_url'] ) ? $settings['api_base_url'] : 'https://api.flowhub.co/v0/' ); ?>"
 							class="regular-text" />
 						<p class="description"><?php esc_html_e( 'Override the FlowHub API base URL if needed.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+			</table>
+
+			<h3><?php esc_html_e( 'Proxy Configuration', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<p class="description">
+				<?php esc_html_e( 'If FlowHub blocks requests from your server location, route API calls through a US-based proxy. Services like Webshare offer free/cheap HTTP proxies.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			<table class="form-table">
+				<tr>
+					<th scope="row">
+						<label for="flowhub_proxy_enabled"><?php esc_html_e( 'Enable Proxy', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<label>
+							<input type="checkbox" name="flowhub_proxy_enabled" id="flowhub_proxy_enabled" value="yes"
+								<?php checked( ! empty( $settings['proxy_enabled'] ) ); ?> />
+							<?php esc_html_e( 'Route FlowHub API requests through a proxy server', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="flowhub_proxy_url"><?php esc_html_e( 'Proxy URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="flowhub_proxy_url" id="flowhub_proxy_url"
+							value="<?php echo esc_attr( isset( $settings['proxy_url'] ) ? $settings['proxy_url'] : '' ); ?>"
+							class="regular-text" placeholder="proxy.example.com:8080" />
+						<p class="description"><?php esc_html_e( 'Proxy hostname and port (e.g., p.webshare.io:80). Supports HTTP proxies.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="flowhub_proxy_username"><?php esc_html_e( 'Proxy Username', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="flowhub_proxy_username" id="flowhub_proxy_username"
+							value="<?php echo esc_attr( isset( $settings['proxy_username'] ) ? $settings['proxy_username'] : '' ); ?>"
+							class="regular-text" autocomplete="off" />
+						<p class="description"><?php esc_html_e( 'Optional — only needed if your proxy requires authentication.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="flowhub_proxy_password"><?php esc_html_e( 'Proxy Password', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="password" name="flowhub_proxy_password" id="flowhub_proxy_password"
+							value="<?php echo esc_attr( isset( $settings['proxy_password'] ) ? $settings['proxy_password'] : '' ); ?>"
+							class="regular-text" autocomplete="off" />
 					</td>
 				</tr>
 			</table>

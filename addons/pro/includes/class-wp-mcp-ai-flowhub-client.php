@@ -99,6 +99,24 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 		protected $timeout = 30;
 
 		/**
+		 * HTTP/SOCKS proxy URL (host:port).
+		 *
+		 * Empty means no proxy.
+		 *
+		 * @var string
+		 */
+		protected $proxy_url = '';
+
+		/**
+		 * Proxy username:password string.
+		 *
+		 * Empty means no auth.
+		 *
+		 * @var string
+		 */
+		protected $proxy_auth = '';
+
+		/**
 		 * Last HTTP response code.
 		 *
 		 * @var int|null
@@ -129,13 +147,17 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 		 * @param string $base_url    Optional. API base URL override.
 		 * @param int    $timeout     Optional. Request timeout in seconds.
 		 * @param string $location_id Optional. FlowHub location ID for location-scoped endpoints.
+		 * @param string $proxy_url   Optional. HTTP/SOCKS proxy URL (host:port).
+		 * @param string $proxy_auth  Optional. Proxy credentials (user:pass).
 		 */
-		public function __construct( $client_id = '', $api_key = '', $base_url = '', $timeout = null, $location_id = '' ) {
+		public function __construct( $client_id = '', $api_key = '', $base_url = '', $timeout = null, $location_id = '', $proxy_url = '', $proxy_auth = '' ) {
 			$this->client_id   = $client_id;
 			$this->api_key     = $api_key;
 			$this->location_id = $location_id;
 			$this->base_url    = ! empty( $base_url ) ? trailingslashit( $base_url ) : self::DEFAULT_API_BASE_URL;
 			$this->timeout     = null !== $timeout ? absint( $timeout ) : self::DEFAULT_TIMEOUT;
+			$this->proxy_url   = $proxy_url;
+			$this->proxy_auth  = $proxy_auth;
 		}
 
 		/**
@@ -153,6 +175,16 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 			$base_url    = isset( $settings['api_base_url'] ) ? wp_unslash( $settings['api_base_url'] ) : '';
 			$location_id = isset( $settings['location_id'] ) ? wp_unslash( $settings['location_id'] ) : '';
 
+			// Proxy configuration.
+			$proxy_url  = '';
+			$proxy_auth = '';
+			if ( ! empty( $settings['proxy_enabled'] ) && ! empty( $settings['proxy_url'] ) ) {
+				$proxy_url  = wp_unslash( $settings['proxy_url'] );
+				$proxy_auth = ! empty( $settings['proxy_username'] )
+					? wp_unslash( $settings['proxy_username'] ) . ':' . wp_unslash( $settings['proxy_password'] )
+					: '';
+			}
+
 			if ( empty( $client_id ) || empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_flowhub_missing_credentials',
@@ -160,7 +192,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 				);
 			}
 
-			return new self( $client_id, $api_key, $base_url, null, $location_id );
+			return new self( $client_id, $api_key, $base_url, null, $location_id, $proxy_url, $proxy_auth );
 		}
 
 		// ------------------------------------------------------------------ //
@@ -178,7 +210,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 			$endpoint = ! empty( $this->location_id )
 				? 'locations/' . rawurlencode( $this->location_id ) . '/inventoryNonZero'
 				: 'inventoryNonZero';
-			$result = $this->request( $endpoint, array( 'limit' => 1 ) );
+			$result   = $this->request( $endpoint, array( 'limit' => 1 ) );
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -416,104 +448,130 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
 				'redirection' => 3,
 				'httpversion' => '1.1',
 				'headers'     => array(
-					'clientId'     => $this->client_id,
-					'key'          => $this->api_key,
-					'Accept'       => 'application/json',
+					'clientId' => $this->client_id,
+					'key'      => $this->api_key,
+					'Accept'   => 'application/json',
 				),
 			);
 
-			$attempt  = 0;
-			$response = null;
+			// Attach proxy via http_api_curl when configured.
+			$curl_proxy = null;
+			if ( ! empty( $this->proxy_url ) ) {
+				$proxy_url  = $this->proxy_url;
+				$proxy_auth = $this->proxy_auth;
+				$curl_proxy = function ( $handle ) use ( $proxy_url, $proxy_auth ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- Proxy support requires cURL-level configuration; wp_remote_get provides no proxy API.
+					curl_setopt( $handle, CURLOPT_PROXY, $proxy_url );
+					// HTTP proxy is the most widely compatible.
+					// Use CURLPROXY_SOCKS5 if your proxy is SOCKS.
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+					curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+					if ( ! empty( $proxy_auth ) ) {
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+						curl_setopt( $handle, CURLOPT_PROXYUSERPWD, $proxy_auth );
+					}
+				};
+				add_action( 'http_api_curl', $curl_proxy, 10, 1 );
+			}
 
-			while ( $attempt < self::MAX_RETRIES ) {
-				$response = wp_remote_get( $url, $args );
-				++$attempt;
+			try {
+				$attempt  = 0;
+				$response = null;
 
-				if ( is_wp_error( $response ) ) {
-					$this->last_error         = $response->get_error_message();
-					$this->last_response_code = null;
-					continue; // Retry on network errors.
-				}
+				while ( $attempt < self::MAX_RETRIES ) {
+					$response = wp_remote_get( $url, $args );
+					++$attempt;
 
-				$this->last_response_code = wp_remote_retrieve_response_code( $response );
-				$body                     = wp_remote_retrieve_body( $response );
+					if ( is_wp_error( $response ) ) {
+						$this->last_error         = $response->get_error_message();
+						$this->last_response_code = null;
+						continue; // Retry on network errors.
+					}
 
-				// Check response size.
-				if ( strlen( $body ) > self::MAX_RESPONSE_SIZE ) {
-					$this->last_error = __( 'Response body exceeds maximum allowed size.', 'mcp-ai-wpoos-pro' );
-					return new WP_Error(
-						'wp_mcp_ai_flowhub_response_too_large',
-						$this->last_error
-					);
-				}
+					$this->last_response_code = wp_remote_retrieve_response_code( $response );
+					$body                     = wp_remote_retrieve_body( $response );
 
-				// Handle HTTP errors.
-				$code = $this->last_response_code;
-				if ( $code >= 500 ) {
-					// Server error — retry.
-					$this->last_error = sprintf(
+					// Check response size.
+					if ( strlen( $body ) > self::MAX_RESPONSE_SIZE ) {
+						$this->last_error = __( 'Response body exceeds maximum allowed size.', 'mcp-ai-wpoos-pro' );
+						return new WP_Error(
+							'wp_mcp_ai_flowhub_response_too_large',
+							$this->last_error
+						);
+					}
+
+					// Handle HTTP errors.
+					$code = $this->last_response_code;
+					if ( $code >= 500 ) {
+						// Server error — retry.
+						$this->last_error = sprintf(
 						/* translators: %d: HTTP status code */
-						__( 'FlowHub API server error (HTTP %d).', 'mcp-ai-wpoos-pro' ),
-						$code
-					);
-					continue;
-				}
+							__( 'FlowHub API server error (HTTP %d).', 'mcp-ai-wpoos-pro' ),
+							$code
+						);
+						continue;
+					}
 
-				if ( 429 === $code ) {
-					// Rate limited — wait and retry.
-					$this->last_error = __( 'FlowHub API rate limit exceeded.', 'mcp-ai-wpoos-pro' );
-					sleep( 2 );
-					continue;
-				}
+					if ( 429 === $code ) {
+						// Rate limited — wait and retry.
+						$this->last_error = __( 'FlowHub API rate limit exceeded.', 'mcp-ai-wpoos-pro' );
+						sleep( 2 );
+						continue;
+					}
 
-				if ( 401 === $code || 403 === $code ) {
-					$this->last_error = __( 'FlowHub API authentication failed. Check your client ID and API key.', 'mcp-ai-wpoos-pro' );
-					return new WP_Error(
-						'wp_mcp_ai_flowhub_auth_failed',
-						$this->last_error
-					);
-				}
+					if ( 401 === $code || 403 === $code ) {
+						$this->last_error = __( 'FlowHub API authentication failed. Check your client ID and API key.', 'mcp-ai-wpoos-pro' );
+						return new WP_Error(
+							'wp_mcp_ai_flowhub_auth_failed',
+							$this->last_error
+						);
+					}
 
-				if ( $code < 200 || $code >= 300 ) {
-					$this->last_error = sprintf(
+					if ( $code < 200 || $code >= 300 ) {
+						$this->last_error = sprintf(
 						/* translators: %d: HTTP status code */
-						__( 'FlowHub API returned unexpected status (HTTP %d).', 'mcp-ai-wpoos-pro' ),
-						$code
-					);
-					return new WP_Error(
-						'wp_mcp_ai_flowhub_http_error',
-						$this->last_error
-					);
-				}
+							__( 'FlowHub API returned unexpected status (HTTP %d).', 'mcp-ai-wpoos-pro' ),
+							$code
+						);
+						return new WP_Error(
+							'wp_mcp_ai_flowhub_http_error',
+							$this->last_error
+						);
+					}
 
-				// Parse JSON.
-				$data = json_decode( $body, true );
+					// Parse JSON.
+					$data = json_decode( $body, true );
 
-				if ( null === $data && json_last_error() !== JSON_ERROR_NONE ) {
-					$this->last_error = sprintf(
+					if ( null === $data && json_last_error() !== JSON_ERROR_NONE ) {
+						$this->last_error = sprintf(
 						/* translators: %s: JSON parse error */
-						__( 'Failed to parse FlowHub API response: %s', 'mcp-ai-wpoos-pro' ),
-						json_last_error_msg()
-					);
-					return new WP_Error(
-						'wp_mcp_ai_flowhub_json_error',
-						$this->last_error
-					);
+							__( 'Failed to parse FlowHub API response: %s', 'mcp-ai-wpoos-pro' ),
+							json_last_error_msg()
+						);
+						return new WP_Error(
+							'wp_mcp_ai_flowhub_json_error',
+							$this->last_error
+						);
+					}
+
+					$this->last_error = '';
+					return $data;
 				}
 
-				$this->last_error = '';
-				return $data;
-			}
+				// Exhausted retries.
+				if ( is_null( $response ) ) {
+					$this->last_error = __( 'Failed to connect to FlowHub API after multiple attempts.', 'mcp-ai-wpoos-pro' );
+				}
 
-			// Exhausted retries.
-			if ( is_null( $response ) ) {
-				$this->last_error = __( 'Failed to connect to FlowHub API after multiple attempts.', 'mcp-ai-wpoos-pro' );
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_request_failed',
+					$this->last_error
+				);
+			} finally {
+				if ( null !== $curl_proxy ) {
+					remove_action( 'http_api_curl', $curl_proxy, 10 );
+				}
 			}
-
-			return new WP_Error(
-				'wp_mcp_ai_flowhub_request_failed',
-				$this->last_error
-			);
 		}
 
 		/**
