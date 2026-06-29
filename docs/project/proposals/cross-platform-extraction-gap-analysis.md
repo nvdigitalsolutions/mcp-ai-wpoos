@@ -1,7 +1,7 @@
 # Cross-Platform Extraction — Implementation Status & Gap Analysis
 
-**Date:** 2026-06-03 (original), refreshed 2026-06-11 (v1.1.29)  
-**Status:** Live assessment — the extraction is operational behind a feature flag. Phases 0-2 complete, Phase 3 (tool migration) at ~22% (43/195 tools).  
+**Date:** 2026-06-03 (original), refreshed 2026-06-29 (v1.1.35)
+**Status:** Live assessment — the extraction is operational behind a feature flag. Phases 0-2 complete, Phase 3 (tool migration) at ~22% (43/195 base tools). Pro tool migration not yet started (0/~810).
 **Feature Flag:** `?engine=oos`, `X-WP-MCP-AI-Engine: oos` header, `WP_MCP_AI_OOS_ENGINE` constant, or admin setting `enable_oos_engine`
 
 **Key Files:**
@@ -15,11 +15,13 @@
 
 ## Executive Summary
 
-The cross-platform extraction is **far more advanced** than the proposal alone suggests. A fully functional `nvoos/core` package with 9 domain contracts, 10 entities, 5 error classes, 8 events, 4 application services, 12 provider clients, SSE streaming, cost calculation, and **43 migrated tools** already exists at `lib/core/`. A companion `nvoos/wordpress-adapter` package with 8 adapter implementations and a DI bridge in `includes/bootstrap/oos-bridge.php` wires everything into the WordPress plugin behind a feature flag (`?engine=oos`). The existing plugin path is completely unaffected — the extraction is additive.
+The cross-platform extraction is **far more advanced** than the proposal alone suggests. A fully functional `nvoos/core` package with 9 domain contracts, 10 entities, 5 error classes, 8 events, 4 application services, 12 provider clients, SSE streaming, cost calculation, and **43 migrated base tools** already exists at `lib/core/`. A companion `nvoos/wordpress-adapter` package with 8 adapter implementations and a DI bridge in `includes/bootstrap/oos-bridge.php` wires everything into the WordPress plugin behind a feature flag (`?engine=oos`). The existing plugin path is completely unaffected — the extraction is additive.
 
 **What's operational:** A complete Hexagonal Architecture inside `lib/` running the agentic loop via `ChatOrchestrator` with 43 framework-agnostic tools, 12 AI providers, and WordPress adapters behind every port.
 
-**What remains:** ~152 tools to migrate, tests for the extracted packages, the Laravel and Craft adapters, and monorepo/CI tooling.
+**What's new since v1.1.29:** The Pro addon has grown significantly — from ~765 Pro tools to ~810+ (FlowHub +6, Shopify +5, DietPi +19, Cloudways +60, CRM expansions, new toolkit features). These tools remain in the WordPress-only path. Pro tool migration to the OOS engine is the next major frontier.
+
+**What remains:** ~152 base tools to migrate (78%), ~810+ Pro tools to migrate (0%), tests for the extracted packages, the Laravel and Craft adapters, and monorepo/CI tooling.
 
 ---
 
@@ -165,21 +167,24 @@ The existing `handle_chat_request()` in `class-wp-mcp-ai-rest.php` checks `wp_mc
 
 ## What Remains (Gap Summary)
 
+> **v1.1.35 Refresh (June 29, 2026):** Base tool count is now ~195 (was 195 at v1.1.29). Pro tools have grown from ~765 to ~810+ with the addition of FlowHub (6), Shopify Sync (5), DietPi (19+), Cloudways (60), and CRM expansions. Migration percentages recalculated below.
+
 ### 🔴 Blocking Full Production Activation
 
 | Gap | Impact | Effort |
 |---|---|---|
 | **Tests for lib/core** | No test directory exists under `lib/core/tests/` — the extracted packages lack test coverage | Medium (3–4 weeks) |
-| **~152 tool migrations** | 78% of tools still call WordPress APIs directly. These work in the legacy path but aren't available in the OOS engine. | High (8–16 weeks) |
+| **~152 base tool migrations (78% remaining)** | 78% of base tools still call WordPress APIs directly. These work in the legacy path but aren't available in the OOS engine. | High (8–16 weeks) |
+| **~810+ Pro tool migrations (0% complete)** | All Pro tools (FlowHub, Shopify, DietPi, Cloudways, CRM, etc.) remain in the WordPress-only path. External API tools are easy to migrate; plugin-specific tools (WooCommerce, JetEngine) are harder. | High (ongoing) |
 | **PHP 8.1+ requirement for core** | Core uses `readonly`/enums. WordPress sites on PHP 7.4 can't use the OOS engine. The adapter targets PHP 7.4 but the core doesn't. | Low (documentation only — this is by design per the proposal) |
 
 ### 🟡 Medium Priority
 
 | Gap | Impact | Effort |
 |---|---|---|
+| **Pro addon tools (~810+)** | All ~810+ Pro tools not migrated. Many are external API tools (easy to migrate — FlowHub, Shopify, Cloudways), some are plugin-specific (WooCommerce, JetEngine — harder). This is the largest migration block. | High (ongoing — 16+ weeks) |
 | **Laravel adapter** | 0% — not started. The 8 domain contracts are ready; adapters need Eloquent/Sanctum/Storage/Queue implementations. | Medium (4–6 weeks) |
 | **Craft adapter** | 0% — not started. Craft Commerce and element-type expertise needed. | Medium (4–6 weeks) |
-| **Pro addon tools** | ~765 pro tools not migrated. Many are external API tools (easy to migrate), some are plugin-specific (WooCommerce, JetEngine — harder). | High (ongoing) |
 | **Monorepo tooling** | `lib/` lives inside the WP plugin repo. Not yet a standalone monorepo with CI/CD across packages. | Low (1–2 weeks) |
 | **Composer package publishing** | Neither `nvoos/core` nor `nvoos/wordpress-adapter` are published to Packagist. | Low (setup + docs) |
 | **PHPStan/static analysis** | No PHPStan config for `lib/core` or `lib/wordpress-adapter`. | Low (1 week) |
