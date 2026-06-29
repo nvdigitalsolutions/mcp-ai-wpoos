@@ -504,8 +504,10 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		if ( is_wp_error( $response ) ) {
-			// If it's a pending response, return it as-is for orchestration layer.
-			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code() ) {
+			// Preserve pending and rate-limited responses as-is for orchestration layer.
+			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code()
+				|| 'wp_mcp_ai_search_rate_limited' === $response->get_error_code()
+			) {
 				return $response;
 			}
 
@@ -697,8 +699,10 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		if ( is_wp_error( $response ) ) {
-			// If it's a pending response, return it as-is for orchestration layer.
-			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code() ) {
+			// Preserve pending and rate-limited responses as-is for the orchestration layer.
+			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code()
+				|| 'wp_mcp_ai_search_rate_limited' === $response->get_error_code()
+			) {
 				return $response;
 			}
 
@@ -936,7 +940,10 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		if ( is_wp_error( $response ) ) {
-			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code() ) {
+			// Preserve pending and rate-limited responses as-is for orchestration layer.
+			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code()
+				|| 'wp_mcp_ai_search_rate_limited' === $response->get_error_code()
+			) {
 				return $response;
 			}
 
@@ -1389,29 +1396,91 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return array|WP_Error HTTP response array or WP_Error for pending requests.
 	 */
 	protected function perform_search_with_retry( $url, $args = array() ) {
-		// Execute single HTTP request - no retry loop.
-		$response = wp_remote_get( $url, $args );
+		$max_retries = 3;
 
-		// Network or WordPress errors should be returned immediately.
-		if ( is_wp_error( $response ) ) {
+		/**
+		 * Filter the maximum number of retry attempts for web search HTTP requests.
+		 *
+		 * Retries are attempted only for 429 (Too Many Requests) responses.
+		 *
+		 * @since 2.9.0
+		 *
+		 * @param int    $max_retries Maximum retry attempts (default: 3).
+		 * @param string $url         The request URL.
+		 * @param array  $args        The request arguments.
+		 */
+		$max_retries = apply_filters( 'wp_mcp_ai_web_search_max_retries', $max_retries, $url, $args );
+
+		$attempt = 0;
+
+		while ( $attempt <= $max_retries ) {
+			$response = wp_remote_get( $url, $args );
+
+			// Network or WordPress errors should be returned immediately.
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$status_code = (int) wp_remote_retrieve_response_code( $response );
+
+			// Success - return the response.
+			if ( 200 === $status_code ) {
+				return $response;
+			}
+
+			// HTTP 202 (Accepted) - request is being processed asynchronously.
+			// Return pending error immediately for orchestration layer to handle.
+			if ( 202 === $status_code ) {
+				return $this->handle_pending_response( $response );
+			}
+
+			// HTTP 429 (Too Many Requests) - apply rate-limit backoff and retry.
+			if ( 429 === $status_code && $attempt < $max_retries ) {
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				if ( '' !== $retry_after && is_numeric( $retry_after ) ) {
+					$wait = min( (int) $retry_after, 10 ); // Cap at 10 seconds.
+				} else {
+					// Exponential backoff: 1s, 2s, 4s.
+					$wait = pow( 2, $attempt );
+				}
+
+				++$attempt;
+
+				if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
+					WP_MCP_AI_Logger::log_event(
+						'warning',
+						'Web search rate-limited, retrying after backoff',
+						array(
+							'url'         => $url,
+							'attempt'     => $attempt,
+							'max_retries' => $max_retries,
+							'wait'        => $wait,
+						)
+					);
+				}
+
+				sleep( $wait );
+				continue;
+			}
+
+			// Other HTTP status codes (errors) - return the response for handling.
 			return $response;
 		}
 
-		$status_code = (int) wp_remote_retrieve_response_code( $response );
-
-		// Success - return the response.
-		if ( 200 === $status_code ) {
-			return $response;
-		}
-
-		// HTTP 202 (Accepted) - request is being processed asynchronously.
-		// Return pending error immediately for orchestration layer to handle.
-		if ( 202 === $status_code ) {
-			return $this->handle_pending_response( $response );
-		}
-
-		// Other HTTP status codes (errors) - return the response for handling.
-		return $response;
+		// All retries exhausted for 429 — return a clear rate-limit error.
+		return new WP_Error(
+			'wp_mcp_ai_search_rate_limited',
+			sprintf(
+				/* translators: %d: number of retry attempts made */
+				__( 'The web search service is temporarily rate-limited. Tried %d times — please wait a moment and try again.', 'mcp-ai-wpoos' ),
+				$max_retries + 1
+			),
+			array(
+				'status'      => 429,
+				'retry_after' => isset( $wait ) ? $wait * 2 : 8,
+				'should_wait' => true,
+			)
+		);
 	}
 
 	/**
