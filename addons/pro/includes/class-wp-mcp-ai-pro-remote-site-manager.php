@@ -1519,15 +1519,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
-		if ( empty( $location_id ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_pro_missing_flowhub_location',
-				__( 'Location ID is required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
-			);
+		// Build the inventory endpoint. When location_id is available, scope to that
+		// location. Otherwise use the root inventoryNonZero endpoint (no location required).
+		if ( ! empty( $location_id ) ) {
+			$url = 'https://api.flowhub.co/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero?limit=1';
+		} else {
+			$url = 'https://api.flowhub.co/v0/inventoryNonZero?limit=1';
 		}
-
-		// Build the location-scoped inventory endpoint as per Flowhub API v0 docs.
-		$url = 'https://api.flowhub.co/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero?limit=1';
 
 		$response = wp_remote_get(
 			$url,
@@ -2860,12 +2858,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
-			if ( empty( $connection['location_id'] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_pro_missing_flowhub_location',
-					__( 'Location ID is required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
-				);
-			}
+			// Location ID is optional: the root /inventoryNonZero endpoint works without it.
 		}
 
 		if ( 'printful' === $connection_type ) {
