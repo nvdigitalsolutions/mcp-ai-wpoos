@@ -134,12 +134,11 @@ class NV_oOS_Graphify_Detector {
 	/**
 	 * Return the default public post types to index.
 	 *
-	 * Includes any post type registered with `public => true` OR
-	 * `show_in_rest => true`. JetEngine-registered CPTs are frequently
-	 * configured as REST-only (admin-managed data), so relying solely on
-	 * the `public` flag would silently exclude them. The WordPress core
-	 * "system" post types (revisions, navigation menu items, block
-	 * patterns, FSE templates, etc.) are excluded.
+	 * Only includes post types registered with `public => true`,
+	 * excluding system internal post types. Post types that are
+	 * non-public but expose `show_in_rest => true` are intentionally
+	 * excluded to prevent leaking non-public content through the
+	 * knowledge graph read endpoints.
 	 *
 	 * Sites can override the list with the
 	 * `nvoos_graphify_indexed_post_types` filter.
@@ -149,12 +148,7 @@ class NV_oOS_Graphify_Detector {
 	 * @return string[]
 	 */
 	public static function get_default_post_types() {
-		$candidates = array_unique(
-			array_merge(
-				array_keys( get_post_types( array( 'public' => true ), 'names' ) ),
-				array_keys( get_post_types( array( 'show_in_rest' => true ), 'names' ) )
-			)
-		);
+		$candidates = array_keys( get_post_types( array( 'public' => true ), 'names' ) );
 
 		// Built-in WordPress system post types that should never be indexed
 		// — internal storage for menus, the block editor, FSE, privacy
