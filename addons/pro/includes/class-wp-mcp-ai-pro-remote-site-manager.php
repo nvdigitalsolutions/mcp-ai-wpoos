@@ -468,6 +468,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['custom_post_types'] = $existing_connection['custom_post_types'];
 			}
 
+			// Preserve existing jetengine_cct_access if not provided.
+			if ( ! isset( $connection_data['jetengine_cct_access'] ) && isset( $existing_connection['jetengine_cct_access'] ) ) {
+				$connection_data['jetengine_cct_access'] = $existing_connection['jetengine_cct_access'];
+			}
+
 			// Preserve Upwork/LinkedIn mode and search criteria when updating.
 			if ( ! isset( $connection_data['upwork_mode'] ) && isset( $existing_connection['upwork_mode'] ) ) {
 				$connection_data['upwork_mode'] = $existing_connection['upwork_mode'];
@@ -654,6 +659,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'post_type_access'               => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
 			'wc_resource_access'             => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
 			'custom_post_types'              => isset( $connection_data['custom_post_types'] ) ? sanitize_text_field( $connection_data['custom_post_types'] ) : '',
+			// JetEngine CCT granular access controls.
+			'jetengine_cct_access'           => self::sanitize_access_controls( isset( $connection_data['jetengine_cct_access'] ) ? $connection_data['jetengine_cct_access'] : array() ),
 		);
 
 		// Encrypt sensitive data (only if not already encrypted).
@@ -3728,6 +3735,82 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		$allowed_ops = $access[ $resource ];
+
+		return is_array( $allowed_ops ) && in_array( $operation, $allowed_ops, true );
+	}
+
+	/**
+	 * Discover JetEngine Custom Content Types (CCTs) available on the remote site.
+	 *
+	 * Hits GET /wp-json/jet-cct/v1/ to enumerate CCTs that have at least one
+	 * REST endpoint enabled in JetEngine settings. Falls back gracefully when
+	 * JetEngine is not installed or no CCTs are exposed.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Array of CCT descriptors, or WP_Error on failure.
+	 */
+	public static function discover_jetengine_ccts( $connection ) {
+		$response = self::make_request( $connection, 'jet-cct/v1' );
+
+		if ( is_wp_error( $response ) ) {
+			// Graceful fallback: JetEngine not installed or REST disabled.
+			return array();
+		}
+
+		if ( ! is_array( $response ) ) {
+			return array();
+		}
+
+		$ccts = array();
+
+		foreach ( $response as $cct_slug => $cct_data ) {
+			if ( ! is_array( $cct_data ) ) {
+				continue;
+			}
+
+			$ccts[ $cct_slug ] = array(
+				'slug'   => $cct_slug,
+				'label'  => isset( $cct_data['label'] ) ? $cct_data['label'] : $cct_slug,
+				'args'   => isset( $cct_data['args'] ) ? $cct_data['args'] : array(),
+				'fields' => isset( $cct_data['fields'] ) ? $cct_data['fields'] : array(),
+			);
+		}
+
+		return $ccts;
+	}
+
+	/**
+	 * Check whether a CRUD operation is permitted for a JetEngine CCT on a connection.
+	 *
+	 * When jetengine_cct_access is not configured (empty array or missing key),
+	 * backward-compatible behaviour applies: only read operations are allowed
+	 * for all CCTs; write operations are denied unless explicitly enabled.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array  $connection Connection data array.
+	 * @param string $cct_slug   JetEngine CCT slug (e.g. 'attendees', 'inventory').
+	 * @param string $operation  CRUD operation: 'read', 'create', 'update', or 'delete'.
+	 * @return bool True if the operation is allowed; false otherwise.
+	 */
+	public static function is_jetengine_cct_operation_allowed( $connection, $cct_slug, $operation = 'read' ) {
+		$cct_slug  = sanitize_key( $cct_slug );
+		$operation = sanitize_key( $operation );
+
+		// When no JetEngine access controls are configured, only permit reads (backward compatible).
+		if ( empty( $connection['jetengine_cct_access'] ) ) {
+			return 'read' === $operation;
+		}
+
+		$access = $connection['jetengine_cct_access'];
+
+		if ( ! isset( $access[ $cct_slug ] ) ) {
+			return false; // CCT not in the allowlist.
+		}
+
+		$allowed_ops = $access[ $cct_slug ];
 
 		return is_array( $allowed_ops ) && in_array( $operation, $allowed_ops, true );
 	}

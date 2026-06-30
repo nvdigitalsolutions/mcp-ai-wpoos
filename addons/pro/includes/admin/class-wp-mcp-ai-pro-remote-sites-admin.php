@@ -38,6 +38,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_live', array( $this, 'ajax_test_messenger_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_auto_reply', array( $this, 'ajax_test_messenger_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_discover_jetengine_ccts', array( $this, 'ajax_discover_jetengine_ccts' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_whatsapp_phone_numbers', array( $this, 'ajax_fetch_whatsapp_phone_numbers' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_register_whatsapp_phone_number', array( $this, 'ajax_register_whatsapp_phone_number' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_whatsapp_group', array( $this, 'ajax_create_whatsapp_group' ) );
@@ -808,6 +809,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'post_type_access'               => $this->resolve_post_type_access(),
 				'wc_resource_access'             => $this->resolve_wc_resource_access(),
 				'custom_post_types'              => isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '',
+				// JetEngine CCT access controls.
+				'jetengine_cct_access'           => $this->resolve_jetengine_cct_access(),
 			);
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -5981,7 +5984,60 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
-				<tr class="generic-only-field" style="display:none;">
+			<tr class="wordpress-only-field">
+				<th scope="row"><?php esc_html_e( 'JetEngine CCT Access Controls', 'mcp-ai-wpoos-pro' ); ?></th>
+				<td>
+					<?php
+					$je_access_enabled = $is_edit && ! empty( $connection['jetengine_cct_access'] );
+					$je_access         = $is_edit && isset( $connection['jetengine_cct_access'] ) ? $connection['jetengine_cct_access'] : array();
+					?>
+					<label style="display:block; margin-bottom:8px;">
+						<input type="checkbox" name="enable_je_access_controls" id="enable_je_access_controls" value="1"
+							<?php checked( $je_access_enabled ); ?>
+							onchange="document.getElementById('je_access_controls_section').style.display=this.checked?'block':'none';">
+						<strong><?php esc_html_e( 'Restrict JetEngine CCT access (leave unchecked to auto-discover and allow all CCTs with read access)', 'mcp-ai-wpoos-pro' ); ?></strong>
+					</label>
+					<div id="je_access_controls_section" style="<?php echo $je_access_enabled ? '' : 'display:none;'; ?> margin-left:24px;">
+						<p class="description" style="margin-bottom:8px;"><?php esc_html_e( 'Select which JetEngine CCTs can be accessed and which CRUD operations are permitted. Use the Discover button to fetch available CCTs from the remote site after saving the connection.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php if ( $is_edit && $editing ) : ?>
+							<p>
+								<button type="button" id="je_discover_ccts_btn" class="button"
+									data-connection-id="<?php echo esc_attr( $editing ); ?>"
+									data-nonce="<?php echo esc_attr( wp_create_nonce( 'discover_jetengine_ccts' ) ); ?>">
+									<?php esc_html_e( 'Discover CCTs from Remote', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+								<span id="je_discover_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+							</p>
+							<div id="je_discover_result" style="display: none; margin: 10px 0;"></div>
+						<?php endif; ?>
+						<table class="widefat striped" style="max-width:560px;" id="je_access_table">
+							<thead>
+								<tr>
+									<th><?php esc_html_e( 'CCT', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Read', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Create', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Update', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></th>
+								</tr>
+							</thead>
+							<tbody id="je_access_tbody">
+								<?php foreach ( $je_access as $cct_slug => $cct_ops ) : ?>
+									<?php $cct_ops = (array) $cct_ops; ?>
+									<tr>
+										<td><strong><?php echo esc_html( $cct_slug ); ?></strong></td>
+										<td><input type="checkbox" name="je_<?php echo esc_attr( $cct_slug ); ?>_read" value="1" <?php checked( in_array( 'read', $cct_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="je_<?php echo esc_attr( $cct_slug ); ?>_create" value="1" <?php checked( in_array( 'create', $cct_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="je_<?php echo esc_attr( $cct_slug ); ?>_update" value="1" <?php checked( in_array( 'update', $cct_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="je_<?php echo esc_attr( $cct_slug ); ?>_delete" value="1" <?php checked( in_array( 'delete', $cct_ops, true ) ); ?>></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				</td>
+			</tr>
+
+			<tr class="generic-only-field" style="display:none;">
 					<th scope="row">
 						<label for="test_endpoint"><?php esc_html_e( 'Test Endpoint', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -9089,6 +9145,91 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						})
 						.catch(function() {
 							testBtn.disabled = false;
+							if (spinner) { spinner.style.display = 'none'; }
+							if (resultDiv) {
+								resultDiv.style.display = 'block';
+								resultDiv.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// JetEngine CCT discovery button.
+			var jeDiscoverBtn = document.getElementById('je_discover_ccts_btn');
+			if (jeDiscoverBtn) {
+				jeDiscoverBtn.addEventListener('click', function() {
+					var connectionId = jeDiscoverBtn.getAttribute('data-connection-id');
+					var nonce        = jeDiscoverBtn.getAttribute('data-nonce');
+					var spinner      = document.getElementById('je_discover_spinner');
+					var resultDiv    = document.getElementById('je_discover_result');
+
+					jeDiscoverBtn.disabled = true;
+					if (spinner) { spinner.style.display = 'inline-block'; }
+					if (resultDiv) { resultDiv.style.display = 'none'; resultDiv.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_discover_jetengine_ccts');
+					data.append('nonce', nonce);
+					data.append('connection_id', connectionId);
+
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							jeDiscoverBtn.disabled = false;
+							if (spinner) { spinner.style.display = 'none'; }
+							if (!resultDiv) { return; }
+							resultDiv.style.display = 'block';
+
+							if (result.success && result.data && result.data.ccts && result.data.ccts.length > 0) {
+								var tbody = document.getElementById('je_access_tbody');
+								var existingRows = {};
+								// Preserve existing row selections.
+								if (tbody) {
+									var rows = tbody.querySelectorAll('tr');
+									rows.forEach(function(row) {
+										var nameCell = row.querySelector('td:first-child strong');
+										if (nameCell) {
+											var slug = nameCell.textContent.trim();
+											var checks = row.querySelectorAll('input[type=checkbox]');
+											existingRows[slug] = [];
+											checks.forEach(function(cb, i) {
+												existingRows[slug].push(cb.checked);
+											});
+										}
+									});
+								}
+
+								if (tbody) {
+									tbody.innerHTML = '';
+									result.data.ccts.forEach(function(cct) {
+										var prev = existingRows[cct.slug] || [true, false, false, false];
+										var tr = document.createElement('tr');
+										tr.innerHTML =
+											'<td><strong>' + cct.slug + '</strong>' + (cct.label && cct.label !== cct.slug ? ' <small>(' + cct.label + ')</small>' : '') + '</td>' +
+											'<td><input type="checkbox" name="je_' + cct.slug + '_read" value="1"' + (prev[0] ? ' checked' : '') + '></td>' +
+											'<td><input type="checkbox" name="je_' + cct.slug + '_create" value="1"' + (prev[1] ? ' checked' : '') + '></td>' +
+											'<td><input type="checkbox" name="je_' + cct.slug + '_update" value="1"' + (prev[2] ? ' checked' : '') + '></td>' +
+											'<td><input type="checkbox" name="je_' + cct.slug + '_delete" value="1"' + (prev[3] ? ' checked' : '') + '></td>';
+										tbody.appendChild(tr);
+									});
+								}
+
+								resultDiv.innerHTML = '<div class="notice notice-success inline" style="margin:0;"><p>' +
+									<?php echo wp_json_encode( __( 'Discovered CCTs from remote site. Check the operations you want to allow, then save the connection.', 'mcp-ai-wpoos-pro' ) ); ?> +
+									'</p></div>';
+							} else if (result.success) {
+								resultDiv.innerHTML = '<div class="notice notice-warning inline" style="margin:0;"><p>' +
+									<?php echo wp_json_encode( __( 'No JetEngine CCTs found on the remote site. Ensure JetEngine is installed and at least one CCT has REST endpoints enabled (JetEngine → Custom Content Types → Edit CCT → enable "Register get items/item REST API Endpoint").', 'mcp-ai-wpoos-pro' ) ); ?> +
+									'</p></div>';
+							} else {
+								resultDiv.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Discovery failed. The remote site may not have JetEngine REST endpoints enabled.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							jeDiscoverBtn.disabled = false;
 							if (spinner) { spinner.style.display = 'none'; }
 							if (resultDiv) {
 								resultDiv.style.display = 'block';
@@ -14561,6 +14702,109 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 		return $access;
+	}
+
+	/**
+	 * Build the jetengine_cct_access map from the submitted form data.
+	 *
+	 * Each JetEngine CCT has four checkbox fields:
+	 * je_{slug}_read, je_{slug}_create, je_{slug}_update, je_{slug}_delete.
+	 * CCT slugs are discovered from the form field names (je_*_read).
+	 *
+	 * Note: nonce verification is performed by the calling method
+	 * handle_actions() before this helper is invoked.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return array Sanitized jetengine_cct_access map, e.g.
+	 *               array( 'attendees' => array( 'read', 'create' ), 'inventory' => array( 'read' ) ).
+	 *               Returns an empty array when JetEngine access controls are not configured.
+	 */
+	private function resolve_jetengine_cct_access() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		if ( empty( $_POST['enable_je_access_controls'] ) ) {
+			return array();
+		}
+
+		$valid_operations = array( 'read', 'create', 'update', 'delete' );
+		$access           = array();
+
+		// Discover CCT slugs from the form field names (je_{slug}_read).
+		foreach ( array_keys( $_POST ) as $field ) {
+			if ( ! preg_match( '/^je_(.+)_read$/', $field, $matches ) ) {
+				continue;
+			}
+
+			$cct_slug = sanitize_key( $matches[1] );
+			$ops      = array();
+
+			foreach ( $valid_operations as $op ) {
+				$op_field = 'je_' . $cct_slug . '_' . $op;
+				if ( ! empty( $_POST[ $op_field ] ) ) {
+					$ops[] = $op;
+				}
+			}
+
+			if ( ! empty( $ops ) ) {
+				$access[ $cct_slug ] = $ops;
+			}
+		}
+
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return $access;
+	}
+
+	/**
+	 * AJAX handler: Discover JetEngine CCTs on a remote connection.
+	 *
+	 * Calls the remote site's /wp-json/jet-cct/v1/ endpoint to enumerate
+	 * available CCTs with REST endpoints enabled.
+	 *
+	 * @since 1.2.0
+	 */
+	public function ajax_discover_jetengine_ccts() {
+		check_ajax_referer( 'discover_jetengine_ccts', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( null === $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$ccts = WP_MCP_AI_Pro_Remote_Site_Manager::discover_jetengine_ccts( $connection );
+
+		if ( is_wp_error( $ccts ) ) {
+			wp_send_json_error( $ccts->get_error_message() );
+			return;
+		}
+
+		if ( empty( $ccts ) ) {
+			wp_send_json_success( array( 'ccts' => array() ) );
+			return;
+		}
+
+		$result = array();
+		foreach ( $ccts as $slug => $cct ) {
+			$result[] = array(
+				'slug'  => $slug,
+				'label' => isset( $cct['label'] ) ? $cct['label'] : $slug,
+			);
+		}
+
+		wp_send_json_success( array( 'ccts' => $result ) );
 	}
 
 	/**
