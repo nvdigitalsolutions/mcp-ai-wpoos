@@ -594,10 +594,15 @@ class WP_MCP_AI_Place_Helper {
 		if ( ! empty( $source_url ) ) {
 			$existing = self::find_service_by_source_url( $source_url );
 			if ( $existing ) {
-				// Retroactively link the existing service to this place.
-				update_post_meta( $existing, '_service_place_id', $place_id );
-				update_post_meta( $place_id, '_place_service_id', $existing );
-				return $existing;
+				// Only reuse the existing service if it is already linked to THIS
+				// place (true re-import scenario).  If it is linked to a different
+				// place (broken/shared source URLs in HTTrack flat files), create a
+				// new service so each place gets its own.
+				$existing_place = absint( get_post_meta( $existing, '_service_place_id', true ) );
+				if ( $existing_place === $place_id ) {
+					return $existing;
+				}
+				// Different place — fall through to create a new service.
 			}
 		}
 
