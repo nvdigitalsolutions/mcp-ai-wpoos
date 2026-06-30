@@ -81,6 +81,18 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		protected $client = null;
 
 		/**
+		 * Remote Sites connection ID.
+		 *
+		 * When set, option keys are suffixed with this ID
+		 * for per-connection isolation.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @var string|null
+		 */
+		protected $connection_id = null;
+
+		/**
 		 * Column definitions for the CCT.
 		 *
 		 * Keys are column names, values are JetEngine field types.
@@ -124,12 +136,35 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 * Constructor.
 		 *
 		 * @since 1.2.0
+		 * @since 1.6.0 Added $connection_id parameter for per-connection isolation.
 		 *
-		 * @param WP_MCP_AI_FlowHub_Client|null $client Optional. FlowHub API client for sync operations.
+		 * @param WP_MCP_AI_FlowHub_Client|string|null $client_or_connection FlowHub API client for sync operations,
+		 *                                                                  or a Remote Sites connection ID string.
 		 */
-		public function __construct( $client = null ) {
-			$this->client   = $client;
+		public function __construct( $client_or_connection = null ) {
+			// Support both old API ($client) and new API ($connection_id).
+			if ( is_string( $client_or_connection ) && ! empty( $client_or_connection ) ) {
+				$this->connection_id = $client_or_connection;
+				$this->client        = null;
+			} elseif ( is_object( $client_or_connection ) && $client_or_connection instanceof WP_MCP_AI_FlowHub_Client ) {
+				$this->client        = $client_or_connection;
+				$this->connection_id = null;
+			} else {
+				$this->client        = null;
+				$this->connection_id = null;
+			}
 			$this->cct_slug = $this->get_configured_cct_slug();
+		}
+
+		/**
+		 * Get the connection ID.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @return string|null
+		 */
+		public function get_connection_id() {
+			return $this->connection_id;
 		}
 
 		// ------------------------------------------------------------------ //
@@ -260,6 +295,15 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			 * @return bool True if API keys are set.
 			 */
 		public function is_api_configured() {
+			// If we have a connection ID, check that the connection exists in Remote Sites.
+			if ( ! empty( $this->connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $this->connection_id );
+				if ( $connection && ! empty( $connection['enabled'] ) ) {
+					return true;
+				}
+			}
+
+			// Fall back to legacy global API credentials.
 			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
 			return ! empty( $settings['client_id'] ) && ! empty( $settings['api_key'] );
 		}
@@ -321,7 +365,11 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			do_action( 'wp_mcp_ai_flowhub_after_columns_ensure', $this->cct_slug, $created );
 
 			// Track schema version so columns are only auto-created once per version.
-			update_option( 'wp_mcp_ai_flowhub_sync_db_version', self::SCHEMA_VERSION );
+			$schema_key = 'wp_mcp_ai_flowhub_sync_db_version';
+			if ( ! empty( $this->connection_id ) ) {
+				$schema_key .= '_' . $this->connection_id;
+			}
+			update_option( $schema_key, self::SCHEMA_VERSION );
 
 			return $created;
 		}
@@ -621,7 +669,11 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 * @return bool True if fresh, false if stale.
 		 */
 		public function is_fresh( $max_age_seconds = 900 ) {
-			$last_sync = get_option( 'wp_mcp_ai_flowhub_last_sync', '' );
+			$option_key = 'wp_mcp_ai_flowhub_last_sync';
+			if ( ! empty( $this->connection_id ) ) {
+				$option_key .= '_' . $this->connection_id;
+			}
+			$last_sync = get_option( $option_key, '' );
 
 			if ( empty( $last_sync ) ) {
 				return false;
@@ -643,7 +695,11 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 * @return string ISO 8601 timestamp or empty string.
 		 */
 		public function get_last_sync_time() {
-			return get_option( 'wp_mcp_ai_flowhub_last_sync', '' );
+			$option_key = 'wp_mcp_ai_flowhub_last_sync';
+			if ( ! empty( $this->connection_id ) ) {
+				$option_key .= '_' . $this->connection_id;
+			}
+			return get_option( $option_key, '' );
 		}
 
 		// ------------------------------------------------------------------ //
@@ -808,9 +864,37 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 */
 		public function sync_from_api( $force = false, $progress = null, $dry_run = false ) {
 			if ( ! $this->client ) {
-				$this->client = WP_MCP_AI_FlowHub_Client::from_settings();
-				if ( is_wp_error( $this->client ) ) {
-					return $this->client;
+				// When a connection ID is set, load credentials from Remote Sites.
+				if ( ! empty( $this->connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $this->connection_id );
+					if ( $connection && ! empty( $connection['client_id'] ) && ! empty( $connection['api_key'] ) ) {
+						$client_id   = $connection['client_id'];
+						$api_key     = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+						$location_id = isset( $connection['location_id'] ) ? $connection['location_id'] : '';
+
+						$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+						$base_url = isset( $settings['api_base_url'] ) ? wp_unslash( $settings['api_base_url'] ) : '';
+
+						// Apply proxy settings from toolkit config.
+						$proxy_url  = '';
+						$proxy_auth = '';
+						if ( ! empty( $settings['proxy_enabled'] ) && ! empty( $settings['proxy_url'] ) ) {
+							$proxy_url  = wp_unslash( $settings['proxy_url'] );
+							$proxy_auth = ! empty( $settings['proxy_username'] )
+								? wp_unslash( $settings['proxy_username'] ) . ':' . wp_unslash( $settings['proxy_password'] )
+								: '';
+						}
+
+						$this->client = new WP_MCP_AI_FlowHub_Client( $client_id, $api_key, $base_url, null, $location_id, $proxy_url, $proxy_auth );
+					}
+				}
+
+				// Fall back to global settings if no connection-based client was created.
+				if ( ! $this->client ) {
+					$this->client = WP_MCP_AI_FlowHub_Client::from_settings();
+					if ( is_wp_error( $this->client ) ) {
+						return $this->client;
+					}
 				}
 			}
 
@@ -885,8 +969,14 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 			$duration = round( microtime( true ) - $start_time, 2 );
 
-			update_option( 'wp_mcp_ai_flowhub_last_sync', current_time( 'mysql' ) );
-			delete_option( 'wp_mcp_ai_flowhub_last_sync_error' );
+			$last_sync_key       = 'wp_mcp_ai_flowhub_last_sync';
+			$last_sync_error_key = 'wp_mcp_ai_flowhub_last_sync_error';
+			if ( ! empty( $this->connection_id ) ) {
+				$last_sync_key       .= '_' . $this->connection_id;
+				$last_sync_error_key .= '_' . $this->connection_id;
+			}
+			update_option( $last_sync_key, current_time( 'mysql' ) );
+			delete_option( $last_sync_error_key );
 
 			$result = array(
 				'item_count'     => $item_count,
@@ -911,9 +1001,37 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 */
 		public function sync_single_product( $product_id ) {
 			if ( ! $this->client ) {
-				$this->client = WP_MCP_AI_FlowHub_Client::from_settings();
-				if ( is_wp_error( $this->client ) ) {
-					return $this->client;
+				// When a connection ID is set, load credentials from Remote Sites.
+				if ( ! empty( $this->connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $this->connection_id );
+					if ( $connection && ! empty( $connection['client_id'] ) && ! empty( $connection['api_key'] ) ) {
+						$client_id   = $connection['client_id'];
+						$api_key     = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+						$location_id = isset( $connection['location_id'] ) ? $connection['location_id'] : '';
+
+						$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+						$base_url = isset( $settings['api_base_url'] ) ? wp_unslash( $settings['api_base_url'] ) : '';
+
+						// Apply proxy settings from toolkit config.
+						$proxy_url  = '';
+						$proxy_auth = '';
+						if ( ! empty( $settings['proxy_enabled'] ) && ! empty( $settings['proxy_url'] ) ) {
+							$proxy_url  = wp_unslash( $settings['proxy_url'] );
+							$proxy_auth = ! empty( $settings['proxy_username'] )
+								? wp_unslash( $settings['proxy_username'] ) . ':' . wp_unslash( $settings['proxy_password'] )
+								: '';
+						}
+
+						$this->client = new WP_MCP_AI_FlowHub_Client( $client_id, $api_key, $base_url, null, $location_id, $proxy_url, $proxy_auth );
+					}
+				}
+
+				// Fall back to global settings.
+				if ( ! $this->client ) {
+					$this->client = WP_MCP_AI_FlowHub_Client::from_settings();
+					if ( is_wp_error( $this->client ) ) {
+						return $this->client;
+					}
 				}
 			}
 

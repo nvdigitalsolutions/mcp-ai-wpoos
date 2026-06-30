@@ -121,22 +121,24 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 		 * Callback for HOOK_FULL_SYNC action.
 		 *
 		 * @since 1.2.0
+		 * @since 1.6.0 Added $connection_id for per-connection sync.
 		 *
-		 * @param bool $dry_run If true, validate everything but skip
-		 *                      CCT writes and option updates. Runs
-		 *                      the API query to verify connectivity.
-		 *                      Default false.
+		 * @param bool        $dry_run       If true, validate everything but skip
+		 *                                   CCT writes and option updates. Runs
+		 *                                   the API query to verify connectivity.
+		 *                                   Default false.
+		 * @param string|null $connection_id Optional Remote Sites connection ID.
 		 * @return array|WP_Error Dry-run report when $dry_run is true,
 		 *                        otherwise void (side-effect based).
 		 */
-		public static function run_full_sync( $dry_run = false ) {
+		public static function run_full_sync( $dry_run = false, $connection_id = null ) {
 			if ( $dry_run ) {
 				wp_mcp_ai_log( 'FlowHub DRY RUN started.', 'info' );
 			} else {
 				wp_mcp_ai_log( 'FlowHub full sync started.', 'info' );
 			}
 
-			$cct_manager = new WP_MCP_AI_FlowHub_CCT_Manager();
+			$cct_manager = new WP_MCP_AI_FlowHub_CCT_Manager( $connection_id );
 
 			// Ensure CCT exists (auto-create if missing).
 			$cct_ensured = $cct_manager->ensure_cct_exists();
@@ -144,7 +146,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 				if ( $dry_run ) {
 					return $cct_ensured;
 				}
-				self::handle_sync_error( $cct_ensured );
+				self::handle_sync_error( $cct_ensured, $connection_id );
 				return;
 			}
 
@@ -154,7 +156,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 				if ( $dry_run ) {
 					return $columns_result;
 				}
-				self::handle_sync_error( $columns_result );
+				self::handle_sync_error( $columns_result, $connection_id );
 				return;
 			}
 
@@ -164,7 +166,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 				if ( $dry_run ) {
 					return $result;
 				}
-				self::handle_sync_error( $result );
+				self::handle_sync_error( $result, $connection_id );
 				return;
 			}
 
@@ -200,8 +202,8 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 				return $dry_report;
 			}
 
-			update_option( 'wp_mcp_ai_flowhub_last_sync', current_time( 'mysql' ) );
-			delete_option( 'wp_mcp_ai_flowhub_last_sync_error' );
+			// Note: option updates (last_sync, last_sync_error) are handled
+			// inside $cct_manager->sync_from_api() with per-connection keys.
 
 			wp_mcp_ai_log(
 				sprintf(
@@ -338,16 +340,22 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 		 * Handle a sync error: log, notify admin, store for admin notice.
 		 *
 		 * @since 1.2.0
+		 * @since 1.6.0 Added $connection_id for per-connection error storage.
 		 *
-		 * @param WP_Error|string $error Error object or message string.
+		 * @param WP_Error|string $error         Error object or message string.
+		 * @param string|null     $connection_id Optional Remote Sites connection ID.
 		 */
-		public static function handle_sync_error( $error ) {
+		public static function handle_sync_error( $error, $connection_id = null ) {
 			$message = is_wp_error( $error )
 				? $error->get_error_message()
 				: (string) $error;
 
-			// Store for admin notice display.
-			update_option( 'wp_mcp_ai_flowhub_last_sync_error', $message );
+			// Store for admin notice display (per-connection when applicable).
+			$error_key = 'wp_mcp_ai_flowhub_last_sync_error';
+			if ( ! empty( $connection_id ) ) {
+				$error_key .= '_' . $connection_id;
+			}
+			update_option( $error_key, $message );
 
 			// Log to plugin logger.
 			if ( function_exists( 'wp_mcp_ai_log' ) ) {
