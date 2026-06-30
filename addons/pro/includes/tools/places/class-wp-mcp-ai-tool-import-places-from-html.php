@@ -315,9 +315,12 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			// Extract data from the HTML file.
 			$place_data = $this->extract_page_data( $file_path, $rules, $type_mapping, $default_type, $default_country );
 
-			// If canonical URL was missing, backfill from HTTrack cache map.
-			if ( empty( $place_data['source_url'] ) && isset( $this->httrack_url_map[ $file_path ] ) ) {
+			// If canonical URL was missing or relative (HTTrack rewrites), backfill from cache.
+			$is_relative = ! empty( $place_data['source_url'] ) && ! preg_match( '#^https?://#', $place_data['source_url'] );
+			if ( ( empty( $place_data['source_url'] ) || $is_relative ) && isset( $this->httrack_url_map[ $file_path ] ) ) {
 				$place_data['source_url'] = $this->httrack_url_map[ $file_path ];
+				// Re-classify with the resolved URL.
+				$place_data['place_type'] = $this->classify_page_type( $place_data['source_url'], $type_mapping, $default_type );
 			}
 
 			if ( empty( $place_data['name'] ) ) {
@@ -576,6 +579,9 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			$this->collect_httrack_flat_files( $dir, $max, $pattern, $files );
 		}
 
+		// Enrich the URL map from HTTrack comments in the flat files.
+		$this->enrich_url_map_from_comments( $files, $this->httrack_url_map );
+
 		return $files;
 	}
 
@@ -768,21 +774,30 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		}
 
 		if ( $is_tsv ) {
-			// Format: URL \t relative_path.
+			// HTTrack new.txt format: multi-column TSV.
+			// Columns: date, size, flags, statuscode, status, MIME, etag, URL, localfile, referrer.
+			// URL is column 7 (0-indexed), localfile is column 8.
+			// Skip header line (first line).
+			$is_header = true;
 			foreach ( $lines as $line ) {
-				$parts = explode( "\t", $line, 2 );
-				if ( 2 !== count( $parts ) ) {
+				if ( $is_header ) {
+					$is_header = false;
 					continue;
 				}
-				$url = trim( $parts[0] );
-				$rel = trim( $parts[1] );
-				if ( empty( $url ) || empty( $rel ) ) {
+				$parts = explode( "\t", $line );
+				if ( count( $parts ) < 9 ) {
 					continue;
 				}
-				// Resolve relative path against mirror root.
-				$local = $root_dir . DIRECTORY_SEPARATOR . ltrim( $rel, '/\\' );
-				if ( is_file( $local ) ) {
-					$map[ $local ] = $url;
+				$url       = trim( $parts[7] );
+				$local_raw = trim( $parts[8] );
+				if ( empty( $url ) || empty( $local_raw ) ) {
+					continue;
+				}
+				// localfile may be an absolute path from the original machine.
+				// Try to find it relative to the mirror root.
+				$local_file = $this->resolve_httrack_local_path( $local_raw, $root_dir );
+				if ( null !== $local_file && is_file( $local_file ) ) {
+					$map[ $local_file ] = $url;
 				}
 			}
 		} else {
@@ -810,6 +825,76 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		}
 
 		return $map;
+	}
+
+	/**
+	 * Resolve an HTTrack local path to a real filesystem path.
+	 *
+	 * HTTrack caches absolute paths from the original machine (e.g.
+	 * C:/My Web Sites/.../www.example.com/index.html).  This method
+	 * strips everything up to and including the mirror root directory
+	 * name and rebuilds the path relative to the current root_dir.
+	 *
+	 * @since  1.4.1
+	 *
+	 * @param  string $raw_path  Raw local path from new.txt (may be URL-encoded).
+	 * @param  string $root_dir  Current mirror root directory.
+	 * @return string|null       Resolved absolute path, or null if unresolvable.
+	 */
+	private function resolve_httrack_local_path( $raw_path, $root_dir ) {
+		$decoded = rawurldecode( $raw_path );
+		$decoded = str_replace( '\\', '/', $decoded );
+
+		// Find the mirror root directory name in the path and strip everything before it.
+		$root_name = basename( $root_dir );
+		$pos       = strrpos( $decoded, '/' . $root_name . '/' );
+		if ( false !== $pos ) {
+			$relative = substr( $decoded, $pos + strlen( $root_name ) + 1 );
+			return $root_dir . DIRECTORY_SEPARATOR . $relative;
+		}
+
+		// Fallback: try matching just by filename inside root_dir.
+		$filename  = basename( $decoded );
+		$candidate = $root_dir . DIRECTORY_SEPARATOR . $filename;
+		if ( is_file( $candidate ) ) {
+			return $candidate;
+		}
+
+		return null;
+	}
+
+	/**
+	 * For HTTrack mirrors: after discovering flat files, map each file to
+	 * its original URL by scanning the <!-- Mirrored from ... --> comment.
+	 *
+	 * Called from discover_httrack_files() after collect_httrack_flat_files().
+	 *
+	 * @since  1.4.1
+	 *
+	 * @param array $files    Flat file paths.
+	 * @param array $url_map  Existing URL map (populated from cache).
+	 * @return void           $url_map is modified in place.
+	 */
+	private function enrich_url_map_from_comments( array $files, array &$url_map ) {
+		foreach ( $files as $file_path ) {
+			if ( isset( $url_map[ $file_path ] ) ) {
+				continue;
+			}
+			// Read just the first 500 bytes to find the HTTrack comment.
+			$head = @file_get_contents( $file_path, false, null, 0, 500 );
+			if ( false === $head ) {
+				continue;
+			}
+			// <!-- Mirrored from www.talesofceylon.com/destinations/kandy/ by HTTrack ... -->
+			if ( preg_match( '#Mirrored from\s+(\S+)#i', $head, $m ) ) {
+				$mirror_url = rtrim( $m[1], '/' );
+				// Add https:// if no protocol.
+				if ( ! preg_match( '#^https?://#', $mirror_url ) ) {
+					$mirror_url = 'https://' . $mirror_url;
+				}
+				$url_map[ $file_path ] = $mirror_url . '/';
+			}
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -1086,23 +1171,21 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			return $default_type;
 		}
 
-		// Sort patterns by length descending so longer (more specific) patterns
-		// match first.  Prevents /destinations/ from shadowing
-		// /destinations/colombo/attractions-in-.
-		uksort(
-			$mapping,
-			function ( $a, $b ) {
-				return strlen( $b ) - strlen( $a );
-			}
-		);
+		// Score patterns by position in URL (later position = more specific).
+		// This ensures /hotels-in-kandy/ wins over /destinations/ when both match
+		// the URL /destinations/kandy/hotels-in-kandy/luxury-hotels/.
+		$best_type  = $default_type;
+		$best_score = -1;
 
 		foreach ( $mapping as $pattern => $type ) {
-			if ( false !== strpos( $url, $pattern ) ) {
-				return $type;
+			$pos = strpos( $url, $pattern );
+			if ( false !== $pos && $pos >= $best_score ) {
+				$best_score = $pos;
+				$best_type  = $type;
 			}
 		}
 
-		return $default_type;
+		return $best_type;
 	}
 
 	/**
