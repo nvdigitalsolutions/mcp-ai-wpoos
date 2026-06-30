@@ -133,8 +133,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 		 */
 		public static function run_full_sync( $dry_run = false, $connection_id = null ) {
 			if ( $dry_run ) {
-				wp_mcp_ai_log( 'FlowHub DRY RUN started.', 'info' );
-			} else {
+				if ( function_exists( 'wp_mcp_ai_log' ) ) {
+					wp_mcp_ai_log( 'FlowHub DRY RUN started.', 'info' );
+				}
+			} elseif ( function_exists( 'wp_mcp_ai_log' ) ) {
 				wp_mcp_ai_log( 'FlowHub full sync started.', 'info' );
 			}
 
@@ -190,14 +192,16 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 					'timestamp'    => current_time( 'mysql' ),
 				);
 
-				wp_mcp_ai_log(
-					sprintf(
-						'FlowHub DRY RUN completed: %d items across %d locations.',
-						$dry_report['data_summary']['items_would_sync'],
-						$dry_report['data_summary']['locations']
-					),
-					'info'
-				);
+				if ( function_exists( 'wp_mcp_ai_log' ) ) {
+					wp_mcp_ai_log(
+						sprintf(
+							'FlowHub DRY RUN completed: %d items across %d locations.',
+							$dry_report['data_summary']['items_would_sync'],
+							$dry_report['data_summary']['locations']
+						),
+						'info'
+					);
+				}
 
 				return $dry_report;
 			}
@@ -205,16 +209,18 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 			// Note: option updates (last_sync, last_sync_error) are handled
 			// inside $cct_manager->sync_from_api() with per-connection keys.
 
-			wp_mcp_ai_log(
-				sprintf(
-					'FlowHub sync completed: %d items, %d locations, %d errors, %ss.',
-					$result['item_count'],
-					$result['location_count'],
-					$result['error_count'],
-					$result['duration']
-				),
-				'info'
-			);
+			if ( function_exists( 'wp_mcp_ai_log' ) ) {
+				wp_mcp_ai_log(
+					sprintf(
+						'FlowHub sync completed: %d items, %d locations, %d errors, %ss.',
+						$result['item_count'],
+						$result['location_count'],
+						$result['error_count'],
+						$result['duration']
+					),
+					'info'
+				);
+			}
 		}
 
 		/**
@@ -233,7 +239,9 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 			}
 
 			if ( ! class_exists( 'WooCommerce' ) ) {
-				wp_mcp_ai_log( 'FlowHub WC sync skipped: WooCommerce not active.', 'info' );
+				if ( function_exists( 'wp_mcp_ai_log' ) ) {
+					wp_mcp_ai_log( 'FlowHub WC sync skipped: WooCommerce not active.', 'info' );
+				}
 				return;
 			}
 
@@ -242,24 +250,30 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 			switch ( $direction ) {
 				case 'flowhub_to_woo':
 					$count = self::sync_flowhub_to_woocommerce();
-					wp_mcp_ai_log(
-						sprintf( 'FlowHub→WC sync: %d products updated.', $count ),
-						'info'
-					);
+					if ( function_exists( 'wp_mcp_ai_log' ) ) {
+						wp_mcp_ai_log(
+							sprintf( 'FlowHub→WC sync: %d products updated.', $count ),
+							'info'
+						);
+					}
 					break;
 
 				case 'woo_to_flowhub':
 					// Placeholder for future bidirectional sync.
-					wp_mcp_ai_log( 'FlowHub WC sync: woo_to_flowhub direction not yet implemented.', 'info' );
+					if ( function_exists( 'wp_mcp_ai_log' ) ) {
+						wp_mcp_ai_log( 'FlowHub WC sync: woo_to_flowhub direction not yet implemented.', 'info' );
+					}
 					break;
 
 				case 'bidirectional':
 					// Run FlowHub→WC first, then placeholder for WC→FlowHub.
 					$count = self::sync_flowhub_to_woocommerce();
-					wp_mcp_ai_log(
-						sprintf( 'FlowHub→WC sync: %d products updated.', $count ),
-						'info'
-					);
+					if ( function_exists( 'wp_mcp_ai_log' ) ) {
+						wp_mcp_ai_log(
+							sprintf( 'FlowHub→WC sync: %d products updated.', $count ),
+							'info'
+						);
+					}
 					break;
 			}
 		}
