@@ -67,7 +67,6 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		'assets',
 		'wp-admin',
 		'wp-includes',
-		'wp-content',
 		'hts-cache',
 		'comments',
 		'feed',
@@ -506,9 +505,20 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	 * @return bool
 	 */
 	private function is_httrack_mirror( $dir ) {
-		$cache_dir = $dir . DIRECTORY_SEPARATOR . 'hts-cache';
-		if ( ! is_dir( $cache_dir ) ) {
+		// Check for hts-cache in the directory itself, or one level up.
+		$cache_dir  = $dir . DIRECTORY_SEPARATOR . 'hts-cache';
+		$parent_dir = $dir . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'hts-cache';
+		$parent_dir = realpath( $parent_dir );
+
+		if ( ! is_dir( $cache_dir ) && ( false === $parent_dir || ! is_dir( $parent_dir ) ) ) {
 			return false;
+		}
+
+		// If cache is in parent, use that path for URL map building.
+		if ( ! is_dir( $cache_dir ) && is_dir( $parent_dir ) ) {
+			$this->httrack_cache_dir = $parent_dir;
+		} else {
+			$this->httrack_cache_dir = $cache_dir;
 		}
 
 		// Look for at least one flat index*.html file at root level.
@@ -533,23 +543,96 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	 */
 	private function discover_httrack_files( $dir, $max, $pattern ) {
 		$files                 = array();
-		$cache_dir             = $dir . DIRECTORY_SEPARATOR . 'hts-cache';
+		$cache_dir             = isset( $this->httrack_cache_dir )
+			? $this->httrack_cache_dir
+			: $dir . DIRECTORY_SEPARATOR . 'hts-cache';
 		$this->httrack_url_map = $this->build_httrack_url_map( $cache_dir, $dir );
 
+		// Collect content from the directory tree first (these are the real pages).
+		$this->collect_httrack_tree_files( $dir, $max, $pattern, $files );
+
+		// Supplement with flat index*.html files from root (fallback).
+		if ( count( $files ) < $max ) {
+			$this->collect_httrack_flat_files( $dir, $max, $pattern, $files );
+		}
+
+		return $files;
+	}
+
+	/**
+	 * Collect flat index*.html files from the mirror root.
+	 *
+	 * @since  1.4.2
+	 *
+	 * @param string $dir     Mirror root directory.
+	 * @param int    $max     Max files to collect.
+	 * @param string $pattern Optional regex filter.
+	 * @param array  $files   File list (by reference).
+	 */
+	private function collect_httrack_flat_files( $dir, $max, $pattern, &$files ) {
 		try {
 			$iterator = new DirectoryIterator( $dir );
+			foreach ( $iterator as $item ) {
+				if ( count( $files ) >= $max ) {
+					break;
+				}
+				if ( $item->isDir() || in_array( $item->getFilename(), array( '.', '..' ), true ) ) {
+					continue;
+				}
+				$filename = $item->getFilename();
+				if ( ! preg_match( self::HTTRACK_INDEX_PATTERN, $filename ) ) {
+					continue;
+				}
+				$ext = strtolower( $item->getExtension() );
+				if ( ! in_array( $ext, self::CONTENT_EXTENSIONS, true ) ) {
+					continue;
+				}
+				$path = $item->getRealPath();
+				if ( false === $path ) {
+					continue;
+				}
+				if ( ! empty( $pattern ) ) {
+					$candidate = isset( $this->httrack_url_map[ $path ] ) ? $this->httrack_url_map[ $path ] : $path;
+					if ( ! preg_match( $pattern, $candidate ) ) {
+						continue;
+					}
+				}
+				$files[] = $path;
+			}
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- best-effort
+			// Flat files are supplementary; failures are non-fatal.
+		}
+	}
+
+	/**
+	 * Walk the directory tree for content pages (HTTrack mirrors may store
+	 * content in both flat files and subdirectory tree).
+	 *
+	 * @since  1.4.2
+	 *
+	 * @param string $dir     Mirror root directory.
+	 * @param int    $max     Max files to collect.
+	 * @param string $pattern Optional regex filter.
+	 * @param array  $files   File list (by reference).
+	 */
+	private function collect_httrack_tree_files( $dir, $max, $pattern, &$files ) {
+		try {
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $dir ),
+				RecursiveIteratorIterator::SELF_FIRST
+			);
 
 			foreach ( $iterator as $item ) {
 				if ( count( $files ) >= $max ) {
 					break;
 				}
 
-				if ( $item->isDir() ) {
+				// Skip dot files and directories.
+				if ( in_array( $item->getFilename(), array( '.', '..' ), true ) ) {
 					continue;
 				}
 
-				$filename = $item->getFilename();
-				if ( ! preg_match( self::HTTRACK_INDEX_PATTERN, $filename ) ) {
+				if ( $item->isDir() ) {
 					continue;
 				}
 
@@ -563,7 +646,20 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 					continue;
 				}
 
-				// Apply user pattern filter against the cached URL (if known).
+				// Skip known non-content directories using exact name match.
+				$path_parts = explode( DIRECTORY_SEPARATOR, $path );
+				$skip_found = false;
+				foreach ( self::SKIP_DIRS as $skip ) {
+					if ( in_array( $skip, $path_parts, true ) ) {
+						$skip_found = true;
+						break;
+					}
+				}
+				if ( $skip_found ) {
+					continue;
+				}
+
+				// Apply user pattern filter.
 				if ( ! empty( $pattern ) ) {
 					$candidate = isset( $this->httrack_url_map[ $path ] )
 						? $this->httrack_url_map[ $path ]
@@ -575,18 +671,9 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 
 				$files[] = $path;
 			}
-		} catch ( Exception $e ) {
-			return new WP_Error(
-				'wp_mcp_ai_directory_error',
-				sprintf(
-					/* translators: %s: error message */
-					__( 'Error reading HTTrack mirror: %s', 'mcp-ai-wpoos-pro' ),
-					$e->getMessage()
-				)
-			);
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- best-effort
+			// Tree scan failures are non-fatal.
 		}
-
-		return $files;
 	}
 
 	/**
