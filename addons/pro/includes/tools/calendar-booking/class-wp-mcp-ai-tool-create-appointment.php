@@ -167,6 +167,33 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'object',
 					'description' => __( 'Additional custom metadata', 'mcp-ai-wpoos-pro' ),
 				),
+				'target_system'     => array(
+					'type'        => 'string',
+					'description' => __( 'Which booking system to create the appointment in. Default: nvoos.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'nvoos', 'jetappointment', 'jetbooking' ),
+					'default'     => 'nvoos',
+				),
+				'provider_id'       => array(
+					'type'        => 'integer',
+					'description' => __( 'Provider ID (required when target_system is jetappointment).', 'mcp-ai-wpoos-pro' ),
+				),
+				'service_id'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Service ID (required when target_system is jetappointment).', 'mcp-ai-wpoos-pro' ),
+				),
+				'instance_id'       => array(
+					'type'        => 'integer',
+					'description' => __( 'Booking instance ID (required when target_system is jetbooking).', 'mcp-ai-wpoos-pro' ),
+				),
+				'unit_id'           => array(
+					'type'        => 'integer',
+					'description' => __( 'Unit ID for JetBooking.', 'mcp-ai-wpoos-pro' ),
+				),
+				'sync_to_external'  => array(
+					'type'        => 'boolean',
+					'description' => __( 'If creating in NV oOS, also sync to available external systems.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
+				),
 			),
 			'required'   => array( 'client_name', 'client_email', 'start_time' ),
 		);
@@ -202,6 +229,73 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 				__( 'You do not have permission to create appointments.', 'mcp-ai-wpoos-pro' )
 			);
 		}
+
+		// --- External system routing (v1.5.0) ---
+		$target_system = isset( $arguments['target_system'] ) ? sanitize_key( $arguments['target_system'] ) : 'nvoos';
+
+		if ( 'jetappointment' === $target_system && class_exists( 'WP_MCP_AI_Booking_Adapter_Factory' ) && WP_MCP_AI_Booking_Adapter_Factory::has_jetappointment() ) {
+			$adapter    = WP_MCP_AI_Booking_Adapter_Factory::get_jetappointment();
+			$start_time = sanitize_text_field( $arguments['start_time'] );
+			$end_time   = ! empty( $arguments['end_time'] ) ? sanitize_text_field( $arguments['end_time'] ) : '';
+			$start_ts   = strtotime( $start_time );
+			$end_ts     = $end_time ? strtotime( $end_time ) : ( $start_ts + 3600 );
+
+			$ja_data = array(
+				'service'            => absint( $arguments['service_id'] ?? 0 ),
+				'provider'           => absint( $arguments['provider_id'] ?? 0 ),
+				'date'               => $start_ts ? gmdate( 'd/m/Y', $start_ts ) : '',
+				'date_timestamp'     => (string) $start_ts,
+				'slot'               => $start_ts ? gmdate( 'H:i', $start_ts ) : '',
+				'slot_end'           => $end_ts ? gmdate( 'H:i', $end_ts ) : '',
+				'slot_timestamp'     => (string) $start_ts,
+				'slot_end_timestamp' => (string) $end_ts,
+				'status'             => 'pending',
+				'user_email'         => sanitize_email( $arguments['client_email'] ),
+			);
+
+			$result = $adapter->create_booking( $ja_data );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return array(
+				'success'        => true,
+				'message'        => __( 'Appointment created in JetAppointment.', 'mcp-ai-wpoos-pro' ),
+				'appointment_id' => $result['booking_id'],
+				'target_system'  => 'jetappointment',
+				'appointment'    => $result['booking'],
+			);
+		}
+
+		if ( 'jetbooking' === $target_system && class_exists( 'WP_MCP_AI_Booking_Adapter_Factory' ) && WP_MCP_AI_Booking_Adapter_Factory::has_jetbooking() ) {
+			$adapter    = WP_MCP_AI_Booking_Adapter_Factory::get_jetbooking();
+			$start_time = sanitize_text_field( $arguments['start_time'] );
+			$end_time   = ! empty( $arguments['end_time'] ) ? sanitize_text_field( $arguments['end_time'] ) : '';
+
+			$jb_data = array(
+				'instance_id'    => absint( $arguments['instance_id'] ?? 0 ),
+				'unit_id'        => absint( $arguments['unit_id'] ?? 0 ),
+				'check_in_date'  => gmdate( 'Y-m-d', strtotime( $start_time ) ),
+				'check_out_date' => $end_time ? gmdate( 'Y-m-d', strtotime( $end_time ) ) : gmdate( 'Y-m-d', strtotime( '+1 day', strtotime( $start_time ) ) ),
+				'status'         => 'on-hold',
+				'email'          => sanitize_email( $arguments['client_email'] ),
+			);
+
+			$result = $adapter->create_booking( $jb_data );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return array(
+				'success'        => true,
+				'message'        => __( 'Booking created in JetBooking.', 'mcp-ai-wpoos-pro' ),
+				'appointment_id' => $result['booking_id'],
+				'target_system'  => 'jetbooking',
+				'appointment'    => $result['booking'],
+			);
+		}
+
+		// Fall through to native NV oOS creation.
 
 		// Check if toolkit is available.
 		if ( ! self::is_available() ) {

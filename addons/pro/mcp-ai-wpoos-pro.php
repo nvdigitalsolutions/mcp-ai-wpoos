@@ -570,6 +570,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Calendar Booking Toolkit CPT registration (Pro feature - Phase 2.6).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/init.php';
 
+		// --- Booking Adapters (v1.5.0) — interface + factory always loaded; concrete adapters conditionally ---
+		$adapters_dir = WP_MCP_AI_PRO_PATH . 'includes/adapters/';
+		require_once $adapters_dir . 'interface-wp-mcp-ai-booking-adapter.php';
+		require_once $adapters_dir . 'class-wp-mcp-ai-booking-adapter-factory.php';
+
+		// JetAppointment adapter: only load if JetEngine is present.
+		if ( function_exists( 'jet_engine' ) ) {
+			require_once $adapters_dir . 'class-wp-mcp-ai-jetappointment-adapter.php';
+		}
+
+		// JetBooking adapter: only load if Jet_Booking class exists.
+		if ( class_exists( 'Jet_Booking' ) ) {
+			require_once $adapters_dir . 'class-wp-mcp-ai-jetbooking-adapter.php';
+		}
+
 		// ========================================================================
 		// NEW PRO TOOLKITS (Phase 1 - Foundation)
 		// ========================================================================
@@ -926,6 +941,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			// Calendar Booking Toolkit — bulk action tools (Pro feature - v2.9.0).
 			'WP_MCP_AI_Tool_Send_Booking_Confirmations'    => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-send-booking-confirmations.php',
 			'WP_MCP_AI_Tool_Send_Reschedule_Invitation'    => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-send-reschedule-invitation.php',
+			// Calendar Booking Toolkit — JetAppointment/JetBooking sync + query tools (Pro feature - v1.5.0).
+			'WP_MCP_AI_Tool_Sync_From_JetAppointment'      => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-sync-from-jetappointment.php',
+			'WP_MCP_AI_Tool_Sync_To_JetAppointment'        => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-sync-to-jetappointment.php',
+			'WP_MCP_AI_Tool_Sync_From_JetBooking'          => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-sync-from-jetbooking.php',
+			'WP_MCP_AI_Tool_Get_JetAppointment_Providers'  => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetappointment-providers.php',
+			'WP_MCP_AI_Tool_Get_JetAppointment_Services'   => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetappointment-services.php',
+			'WP_MCP_AI_Tool_Get_JetBooking_Units'          => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetbooking-units.php',
+			'WP_MCP_AI_Tool_Get_JetBooking_Instances'      => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetbooking-instances.php',
+			// Places Toolkit — find bookable places (Pro feature - v1.5.0).
+			'WP_MCP_AI_Tool_Find_Bookable_Places'          => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-find-bookable-places.php',
 			// PARA Methodology tools (Pro feature - v1.2.0).
 			'WP_MCP_AI_Tool_PARA_Classify_Item'            => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-classify-item.php',
 			'WP_MCP_AI_Tool_PARA_Move_To_Archives'         => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-move-to-archives.php',

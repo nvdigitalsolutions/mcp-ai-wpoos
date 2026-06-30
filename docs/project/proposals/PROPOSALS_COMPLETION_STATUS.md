@@ -1,9 +1,9 @@
 # Proposals Completion Status
 
-**Last Updated:** June 29, 2026
+**Last Updated:** June 30, 2026
 **Total Proposals:** 100+ files
 **Completed:** 30+ proposals
-**In Progress:** 3 proposals
+**In Progress:** 4 proposals
 **Pending:** ~30 proposals remaining (many stale/abandoned)
 
 > **Note (v1.1.35):** Per-file ground truth available in individual proposal status headers. This tracker reflects the consolidated view as of June 29, 2026.
@@ -159,7 +159,13 @@
 
 ---
 
-## 🚧 In Progress Proposals (3)
+## 🚧 In Progress Proposals (4)
+
+### JetBooking & JetAppointment — Calendar & Places Integration
+- **Status:** 📋 Proposed (June 30, 2026) — Awaiting Approval
+- **Files:** [`JETBOOKING-JETAPPOINTMENT-CALENDAR-PLACES-INTEGRATION.md`](./JETBOOKING-JETAPPOINTMENT-CALENDAR-PLACES-INTEGRATION.md), [`../plans/JETBOOKING-JETAPPOINTMENT-IMPLEMENTATION-PLAN.md`](../plans/JETBOOKING-JETAPPOINTMENT-IMPLEMENTATION-PLAN.md)
+- **Target:** NV oOS Pro v1.5.0 — 28 stories, ~40-54 hours
+- **Summary:** Adapter layer for Crocoblock JetAppointment + JetBooking to make Calendar Booking and Places toolkits Jet-aware. Adds bidirectional sync, geo-aware booking queries, and unified multi-system availability checks.
 
 ### WordPress Integration Enhancement
 - **Status:** 🚧 42-82% Complete (varies by component)

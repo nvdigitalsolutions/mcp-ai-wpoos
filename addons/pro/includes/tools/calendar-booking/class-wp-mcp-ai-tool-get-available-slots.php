@@ -110,6 +110,43 @@ class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP
 		}
 		$duration = ! empty( $arguments['duration_minutes'] ) ? absint( $arguments['duration_minutes'] ) : 60;
 		$slots    = $this->calculate_available_slots( $date, $duration );
+
+		// Tag native slots with source.
+		foreach ( $slots as &$slot ) {
+			$slot['source'] = 'nvoos';
+		}
+		unset( $slot );
+
+		// Merge external system slots (v1.5.0).
+		$check_external = ! isset( $arguments['check_external_systems'] ) || ! empty( $arguments['check_external_systems'] );
+		if ( $check_external && class_exists( 'WP_MCP_AI_Booking_Adapter_Factory' ) ) {
+			// JetAppointment slots.
+			if ( WP_MCP_AI_Booking_Adapter_Factory::has_jetappointment() ) {
+				$ja_context = array();
+				if ( ! empty( $arguments['provider_id'] ) ) {
+					$ja_context['provider_id'] = absint( $arguments['provider_id'] );
+				}
+				if ( ! empty( $arguments['service_id'] ) ) {
+					$ja_context['service_id'] = absint( $arguments['service_id'] );
+				}
+				$ja_adapter = WP_MCP_AI_Booking_Adapter_Factory::get_jetappointment();
+				$ja_result  = $ja_adapter->get_available_slots( $date, $duration, $ja_context );
+				if ( ! is_wp_error( $ja_result ) && ! empty( $ja_result['slots'] ) ) {
+					$slots = array_merge( $slots, $ja_result['slots'] );
+				}
+			}
+
+			// JetBooking slots.
+			if ( WP_MCP_AI_Booking_Adapter_Factory::has_jetbooking() && ! empty( $arguments['instance_id'] ) ) {
+				$jb_context = array( 'instance_id' => absint( $arguments['instance_id'] ) );
+				$jb_adapter = WP_MCP_AI_Booking_Adapter_Factory::get_jetbooking();
+				$jb_result  = $jb_adapter->get_available_slots( $date, $duration, $jb_context );
+				if ( ! is_wp_error( $jb_result ) && ! empty( $jb_result['slots'] ) ) {
+					$slots = array_merge( $slots, $jb_result['slots'] );
+				}
+			}
+		}
+
 		return array(
 			'success'          => true,
 			'date'             => $date,
