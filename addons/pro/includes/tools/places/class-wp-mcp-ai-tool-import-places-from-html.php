@@ -74,6 +74,22 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	);
 
 	/**
+	 * Regex for matching HTTrack flat index files (index.html, index-2.html, etc.).
+	 *
+	 * @var string
+	 */
+	const HTTRACK_INDEX_PATTERN = '/^index(-\d+)?\.html?$/i';
+
+	/**
+	 * HTTrack URL → local-path map built from hts-cache.
+	 *
+	 * Keys are resolved local file paths, values are original URLs.
+	 *
+	 * @var array<string,string>
+	 */
+	private $httrack_url_map = array();
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public static function is_available() {
@@ -285,6 +301,7 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			'failed'          => 0,
 			'ids'             => array(),
 			'errors'          => array(),
+			'discovered'      => array(),
 			'dry_run'         => $dry_run,
 			'parent_place_id' => $parent_place_id,
 		);
@@ -298,6 +315,11 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 
 			// Extract data from the HTML file.
 			$place_data = $this->extract_page_data( $file_path, $rules, $type_mapping, $default_type, $default_country );
+
+			// If canonical URL was missing, backfill from HTTrack cache map.
+			if ( empty( $place_data['source_url'] ) && isset( $this->httrack_url_map[ $file_path ] ) ) {
+				$place_data['source_url'] = $this->httrack_url_map[ $file_path ];
+			}
 
 			if ( empty( $place_data['name'] ) ) {
 				continue; // Skip pages without a meaningful title.
@@ -398,6 +420,11 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	 * @return array|WP_Error Array of file paths or error.
 	 */
 	private function discover_html_files( $dir, $recursive, $max, $pattern ) {
+		// Detect HTTrack mirrors: flat index*.html files + hts-cache/ directory.
+		if ( $this->is_httrack_mirror( $dir ) ) {
+			return $this->discover_httrack_files( $dir, $max, $pattern );
+		}
+
 		$files = array();
 
 		try {
@@ -454,6 +481,206 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	}
 
 	// -------------------------------------------------------------------------
+	// HTTrack mirror support
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Determine whether a directory is an HTTrack site mirror.
+	 *
+	 * Heuristic: the directory contains an hts-cache/ subdirectory and at
+	 * least one flat index*.html file at the top level.
+	 *
+	 * @since  1.4.1
+	 *
+	 * @param  string $dir Root directory.
+	 * @return bool
+	 */
+	private function is_httrack_mirror( $dir ) {
+		$cache_dir = $dir . DIRECTORY_SEPARATOR . 'hts-cache';
+		if ( ! is_dir( $cache_dir ) ) {
+			return false;
+		}
+
+		// Look for at least one flat index*.html file at root level.
+		$files = glob( $dir . DIRECTORY_SEPARATOR . 'index*.{html,htm}', GLOB_BRACE );
+		return ! empty( $files );
+	}
+
+	/**
+	 * Discover content files inside an HTTrack mirror.
+	 *
+	 * HTTrack stores pages as flat index*.html files at the mirror root while
+	 * subdirectories are empty placeholders.  This method collects only the
+	 * flat content files and builds a URL map from hts-cache so that
+	 * extract_page_data() can assign the correct source_url.
+	 *
+	 * @since  1.4.1
+	 *
+	 * @param  string $dir     Mirror root directory.
+	 * @param  int    $max     Maximum files to return.
+	 * @param  string $pattern Optional regex to filter paths.
+	 * @return array|WP_Error
+	 */
+	private function discover_httrack_files( $dir, $max, $pattern ) {
+		$files                 = array();
+		$cache_dir             = $dir . DIRECTORY_SEPARATOR . 'hts-cache';
+		$this->httrack_url_map = $this->build_httrack_url_map( $cache_dir, $dir );
+
+		try {
+			$iterator = new DirectoryIterator( $dir );
+
+			foreach ( $iterator as $item ) {
+				if ( count( $files ) >= $max ) {
+					break;
+				}
+
+				if ( $item->isDir() ) {
+					continue;
+				}
+
+				$filename = $item->getFilename();
+				if ( ! preg_match( self::HTTRACK_INDEX_PATTERN, $filename ) ) {
+					continue;
+				}
+
+				$ext = strtolower( $item->getExtension() );
+				if ( ! in_array( $ext, self::CONTENT_EXTENSIONS, true ) ) {
+					continue;
+				}
+
+				$path = $item->getRealPath();
+				if ( false === $path ) {
+					continue;
+				}
+
+				// Apply user pattern filter against the cached URL (if known).
+				if ( ! empty( $pattern ) ) {
+					$candidate = isset( $this->httrack_url_map[ $path ] )
+						? $this->httrack_url_map[ $path ]
+						: $path;
+					if ( ! preg_match( $pattern, $candidate ) ) {
+						continue;
+					}
+				}
+
+				$files[] = $path;
+			}
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'wp_mcp_ai_directory_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Error reading HTTrack mirror: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
+
+		return $files;
+	}
+
+	/**
+	 * Build a path → URL map from the HTTrack hts-cache directory.
+	 *
+	 * Tries multiple cache formats:
+	 *   1. Tab-separated new.txt  (URL \t relative_path)
+	 *   2. Plain one-URL-per-line new.txt (sequential → index.html, index-2.html, …)
+	 *
+	 * Falls back gracefully — pages whose URL cannot be resolved will still
+	 * be discovered and can fall back on in-page <link rel="canonical">.
+	 *
+	 * @since  1.4.1
+	 *
+	 * @param  string $cache_dir Path to hts-cache/.
+	 * @param  string $root_dir  Mirror root (parent of hts-cache/).
+	 * @return array<string,string>  local_path => original_url
+	 */
+	private function build_httrack_url_map( $cache_dir, $root_dir ) {
+		$map = array();
+
+		// Find a cache listing file.
+		$candidates = array(
+			'new.txt',
+			'new.dat',
+		);
+
+		$cache_file = '';
+		foreach ( $candidates as $name ) {
+			$candidate = $cache_dir . DIRECTORY_SEPARATOR . $name;
+			if ( is_file( $candidate ) && is_readable( $candidate ) ) {
+				$cache_file = $candidate;
+				break;
+			}
+		}
+
+		if ( empty( $cache_file ) ) {
+			return $map;
+		}
+
+		if ( is_readable( $cache_file ) ) {
+			$lines = file( $cache_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES );
+		} else {
+			$lines = false;
+		}
+		if ( false === $lines ) {
+			return $map;
+		}
+
+		// Detect format: if any line contains a tab, treat as key→value.
+		$is_tsv = false;
+		foreach ( $lines as $line ) {
+			if ( false !== strpos( $line, "\t" ) ) {
+				$is_tsv = true;
+				break;
+			}
+		}
+
+		if ( $is_tsv ) {
+			// Format: URL \t relative_path.
+			foreach ( $lines as $line ) {
+				$parts = explode( "\t", $line, 2 );
+				if ( 2 !== count( $parts ) ) {
+					continue;
+				}
+				$url = trim( $parts[0] );
+				$rel = trim( $parts[1] );
+				if ( empty( $url ) || empty( $rel ) ) {
+					continue;
+				}
+				// Resolve relative path against mirror root.
+				$local = $root_dir . DIRECTORY_SEPARATOR . ltrim( $rel, '/\\' );
+				if ( is_file( $local ) ) {
+					$map[ $local ] = $url;
+				}
+			}
+		} else {
+			// Format: one URL per line, sequential → index.html, index-2.html, ...
+			$counter = 0;
+			foreach ( $lines as $line ) {
+				$url = trim( $line );
+				if ( empty( $url ) || 0 === strpos( $url, '#' ) ) {
+					continue;
+				}
+				++$counter;
+				$filename = 1 === $counter ? 'index.html' : "index-{$counter}.html";
+				$local    = $root_dir . DIRECTORY_SEPARATOR . $filename;
+				// Also check .htm variant.
+				if ( ! is_file( $local ) ) {
+					$local = $root_dir . DIRECTORY_SEPARATOR . 'index-' . $counter . '.htm';
+				}
+				if ( ! is_file( $local ) && 1 === $counter ) {
+					$local = $root_dir . DIRECTORY_SEPARATOR . 'index.htm';
+				}
+				if ( is_file( $local ) ) {
+					$map[ $local ] = $url;
+				}
+			}
+		}
+
+		return $map;
+	}
+
+	// -------------------------------------------------------------------------
 	// HTML extraction
 	// -------------------------------------------------------------------------
 
@@ -485,14 +712,20 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		// Suppress DOM warnings for malformed HTML.
 		$libxml_use_internal = libxml_use_internal_errors( true );
 
-		$html = @file_get_contents( $file_path );
+		if ( ! is_readable( $file_path ) ) {
+			libxml_use_internal_errors( $libxml_use_internal );
+			return $data;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions -- local file read, not remote URL
+		$html = file_get_contents( $file_path );
 		if ( false === $html ) {
 			libxml_use_internal_errors( $libxml_use_internal );
 			return $data;
 		}
 
 		$doc = new DOMDocument();
-		@$doc->loadHTML( mb_convert_encoding( $html, 'HTML-ENTITIES', 'UTF-8' ) );
+		$doc->loadHTML( mb_convert_encoding( $html, 'HTML-ENTITIES', 'UTF-8' ) );
 		$xpath = new DOMXPath( $doc );
 
 		// --- Title ---
@@ -508,7 +741,7 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		if ( empty( $data['name'] ) && ! empty( $rules['h1_selector'] ) ) {
 			$h1_nodes = $xpath->query( $rules['h1_selector'] );
 			if ( $h1_nodes->length > 0 ) {
-				$h1_text     = trim( $h1_nodes->item( 0 )->textContent );
+				$h1_text      = trim( $h1_nodes->item( 0 )->textContent );
 				$data['name'] = sanitize_text_field( $h1_text );
 			}
 		}
@@ -519,7 +752,7 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			$desc_result = $xpath->query( $rules['description_selector'] );
 			if ( $desc_result->length > 0 ) {
 				$first               = $desc_result->item( 0 );
-				$desc_value           = $first instanceof DOMAttr ? $first->value : trim( $first->textContent ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+				$desc_value          = $first instanceof DOMAttr ? $first->value : trim( $first->textContent ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 				$data['description'] = sanitize_text_field( $desc_value );
 			}
 		}
@@ -663,7 +896,7 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	 * @return array|null {lat, lng} or null.
 	 */
 	private function extract_coords_from_maps_url( $url ) {
-		// New embed format: !3d{lat}!4d{lng}.
+		// Handle the newer embed format.
 		if ( preg_match( '/!3d([-\d.]+)!4d([-\d.]+)/', $url, $m ) ) {
 			return array(
 				'lat' => floatval( $m[1] ),
@@ -671,7 +904,7 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		// Old format: ll={lat},{lng}.
+		// Handle the older query-string format.
 		if ( preg_match( '/ll=([-\d.]+),([-\d.]+)/', $url, $m ) ) {
 			return array(
 				'lat' => floatval( $m[1] ),
@@ -679,7 +912,7 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		// Place URL: @{lat},{lng}.
+		// Handle place URLs with at-sign coordinates.
 		if ( preg_match( '/@([-\d.]+),([-\d.]+)/', $url, $m ) ) {
 			return array(
 				'lat' => floatval( $m[1] ),
