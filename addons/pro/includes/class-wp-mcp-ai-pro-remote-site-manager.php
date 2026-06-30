@@ -1078,10 +1078,27 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_shipstation_connection( $connection );
 		}
 
+		// Pre-flight DNS reachability check (non-blocking diagnostic).
+		$parsed_url = wp_parse_url( $connection['url'] );
+		$host       = isset( $parsed_url['host'] ) ? $parsed_url['host'] : '';
+
+		if ( '' !== $host ) {
+			$dns_check = self::check_host_reachability( $host );
+		}
+
 		// Test basic WordPress REST API access.
 		$response = self::make_request( $connection, 'wp/v2/types' );
 
 		if ( is_wp_error( $response ) ) {
+			// If we have a DNS warning and the request failed, prepend the DNS
+			// diagnostic so the user sees the likely root cause first.
+			if ( isset( $dns_check ) && ! $dns_check['reachable'] ) {
+				$dns_error = new WP_Error(
+					'wp_mcp_ai_pro_dns_unreachable',
+					$dns_check['message'] . ' ' . $response->get_error_message()
+				);
+				return $dns_error;
+			}
 			return $response;
 		}
 
@@ -1093,6 +1110,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'site_url'    => $connection['url'],
 			'message'     => __( 'Connection successful.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		// Surface DNS warnings for reachable hosts that resolve
+		// (the request succeeded despite the warning).
+		if ( isset( $dns_check ) && ! $dns_check['reachable'] ) {
+			$results['warning'] = $dns_check['message'];
+		}
 
 		// Test WooCommerce API access if enabled.
 		if ( ! empty( $connection['has_woocommerce'] ) ) {
@@ -2615,13 +2638,21 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$duration = microtime( true ) - $start_time;
 			self::record_health_metric( $connection_id, false, $duration );
 
+			$error_message = sprintf(
+				/* translators: %s: raw error message */
+				__( 'Request failed: %s', 'mcp-ai-wpoos-pro' ),
+				$response->get_error_message()
+			);
+
+			// Append actionable guidance for well-known cURL errors.
+			$guidance = self::get_curl_error_guidance( $response );
+			if ( null !== $guidance ) {
+				$error_message .= ' ' . $guidance;
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_pro_request_failed',
-				sprintf(
-					/* translators: %s: error message */
-					__( 'Request failed: %s', 'mcp-ai-wpoos-pro' ),
-					$response->get_error_message()
-				)
+				$error_message
 			);
 		}
 
@@ -2734,9 +2765,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// For WordPress/WooCommerce endpoints, use /wp-json/ prefix.
-		// Determine if this is a WooCommerce endpoint.
-		if ( 0 === strpos( $endpoint, 'wc/' ) ) {
-			$api_url = $base_url . '/wp-json/' . $endpoint;
+		// Avoid double-prefixing when users enter a URL that already includes /wp-json.
+		$parsed = wp_parse_url( $base_url );
+		$path   = isset( $parsed['path'] ) ? untrailingslashit( $parsed['path'] ) : '';
+
+		if ( '/wp-json' === $path || '/wp-json' === substr( $path, -strlen( '/wp-json' ) ) ) {
+			// Base URL already points to the REST root — don't duplicate the prefix.
+			$api_url = $base_url . '/' . $endpoint;
 		} else {
 			$api_url = $base_url . '/wp-json/' . $endpoint;
 		}
@@ -2841,7 +2876,34 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( ! filter_var( $connection['url'], FILTER_VALIDATE_URL ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_url',
-				__( 'Connection URL is not valid.', 'mcp-ai-wpoos-pro' )
+				__( 'Connection URL is not valid. URLs must include the protocol (e.g. https://example.com).', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Validate that the hostname portion looks well-formed.
+		$parsed = wp_parse_url( $connection['url'] );
+		$host   = isset( $parsed['host'] ) ? $parsed['host'] : '';
+
+		if ( '' === $host ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_url',
+				__( 'Connection URL does not contain a valid hostname.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Reject hostnames that point to reserved/private IP ranges when the
+		// connection type is expected to reach an external WordPress/WooCommerce
+		// site. This prevents accidental misconfiguration without blocking
+		// legitimate local-network setups.
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
+		if ( self::is_restricted_host( $host, $connection_type ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_restricted_host',
+				sprintf(
+					/* translators: %s: hostname */
+					__( 'The hostname "%s" points to a reserved or private IP range that is not reachable from this server. Use a publicly accessible domain or IP address.', 'mcp-ai-wpoos-pro' ),
+					$host
+				)
 			);
 		}
 
@@ -2880,8 +2942,6 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// Validate connection type specific requirements.
-		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
-
 		if ( 'ezuite_erp' === $connection_type ) {
 			if ( empty( $connection['api_key'] ) ) {
 				return new WP_Error(
@@ -3028,6 +3088,125 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Check whether a hostname is in a restricted range that should not
+	 * be used for remote connections of the given type.
+	 *
+	 * Blocks loopback (127.x.x.x), link-local (169.254.x.x), and private
+	 * ranges (10.x, 172.16-31.x, 192.168.x) when the connection type is
+	 * expected to reach an external service.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $host            Hostname to check.
+	 * @param string $connection_type Connection type for context.
+	 * @return bool True if the host is in a restricted range.
+	 */
+	protected static function is_restricted_host( $host, $connection_type ) {
+		// Only enforce for connection types that make outbound HTTP requests
+		// to user-configured URLs (WordPress, WooCommerce, generic, iSAMS, etc.).
+		$enforced_types = array(
+			'WordPress',
+			'wordpress',
+			'generic',
+			'isams',
+			'flowhub',
+			'payhere',
+			'quickbooks',
+			'quickbooks_desktop',
+			'ezuite_erp',
+			'shipengine',
+			'shipstation',
+		);
+
+		if ( ! in_array( $connection_type, $enforced_types, true ) ) {
+			return false;
+		}
+
+		// If the host is already an IP, check it directly.
+		$ip = $host;
+		if ( ! filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			// Attempt to resolve the hostname; skip the check if resolution fails
+			// (the real HTTP request will catch DNS issues with better messages).
+			$resolved = gethostbyname( $host );
+			if ( $resolved === $host ) {
+				// DNS resolution failed — let the HTTP layer diagnose this.
+				return false;
+			}
+			$ip = $resolved;
+		}
+
+		return ! filter_var(
+			$ip,
+			FILTER_VALIDATE_IP,
+			FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+		);
+	}
+
+	/**
+	 * Perform a lightweight DNS reachability check for a hostname.
+	 *
+	 * Uses PHP's native DNS functions when available. Returns diagnostic
+	 * information that can be surfaced to the user — never blocks the
+	 * connection test on DNS alone, since DNS may be temporarily unavailable.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $host Hostname extracted from the connection URL.
+	 * @return array{reachable: bool, message: string} Diagnostic result.
+	 */
+	protected static function check_host_reachability( $host ) {
+		if ( '' === $host || filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			return array(
+				'reachable' => true,
+				'message'   => '',
+			);
+		}
+
+		/**
+		 * Filter whether to perform DNS reachability pre-checks.
+		 *
+		 * Set to false on hosts where DNS functions are unreliable or
+		 * when every outbound request goes through a forward proxy.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param bool $perform_check Whether to perform the DNS check. Default true.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_pro_remote_dns_precheck', true ) ) {
+			return array(
+				'reachable' => true,
+				'message'   => '',
+			);
+		}
+
+		// Use checkdnsrr when available (PHP 5.3+); fall back to gethostbyname.
+		if ( function_exists( 'checkdnsrr' ) ) {
+			// Suppress warnings in case DNS functions are restricted.
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			$has_dns = @checkdnsrr( $host . '.', 'A' ) || @checkdnsrr( $host . '.', 'AAAA' ) || @checkdnsrr( $host . '.', 'CNAME' );
+		} else {
+			$resolved = gethostbyname( $host );
+			$has_dns  = ( $resolved !== $host );
+		}
+
+		if ( $has_dns ) {
+			return array(
+				'reachable' => true,
+				'message'   => '',
+			);
+		}
+
+		return array(
+			'reachable' => false,
+			'message'   => sprintf(
+				/* translators: %s: hostname */
+				__( 'DNS could not resolve "%s". The domain may not exist, may be misspelled, or DNS records may still be propagating.', 'mcp-ai-wpoos-pro' ),
+				$host
+			),
+		);
 	}
 
 	/**
@@ -3200,6 +3379,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Make HTTP request with retry logic and exponential backoff.
 	 *
+	 * Skips retries for fatal errors that cannot be resolved by retrying
+	 * (DNS resolution failure, connection refused, malformed URL).
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $url  Request URL.
@@ -3231,6 +3413,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				}
 			}
 
+			// Detect fatal errors that will never succeed on retry.
+			if ( is_wp_error( $response ) && self::is_fatal_curl_error( $response ) ) {
+				return $response;
+			}
+
 			// If this was the last attempt, return the error.
 			if ( $attempt >= $max_retries ) {
 				return $response;
@@ -3243,6 +3430,81 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Determine whether a cURL/WP_Error represents a fatal condition that
+	 * should not be retried.
+	 *
+	 * Retrying DNS failures (error 6), connection-refused (error 7), or
+	 * malformed-URL errors (error 3) is wasteful — these are configuration
+	 * problems that won't self-heal within a retry window.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_Error $error The error from wp_remote_request().
+	 * @return bool True if the error is fatal and should not be retried.
+	 */
+	protected static function is_fatal_curl_error( $error ) {
+		$message = $error->get_error_message();
+
+		// cURL error 6: Could not resolve host (DNS failure).
+		// cURL error 7: Failed to connect (connection refused / no route).
+		// cURL error 3: URL malformed.
+		// cURL error 5: Could not resolve proxy.
+		$fatal_patterns = array(
+			'/cURL error 6\b/',
+			'/cURL error 7\b/',
+			'/cURL error 3\b/',
+			'/cURL error 5\b/',
+			'/Could not resolve host/i',
+			'/Failed to connect/i',
+		);
+
+		foreach ( $fatal_patterns as $pattern ) {
+			if ( preg_match( $pattern, $message ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Translate a raw cURL/WP_Error message into a user-friendly diagnostic.
+	 *
+	 * Returns null when no specific guidance is available, so the caller
+	 * can fall back to the raw message.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_Error $error The error from wp_remote_request().
+	 * @return string|null Human-readable guidance, or null.
+	 */
+	protected static function get_curl_error_guidance( $error ) {
+		$message = $error->get_error_message();
+
+		if ( false !== strpos( $message, 'cURL error 6' ) || false !== stripos( $message, 'Could not resolve host' ) ) {
+			return __( 'The remote hostname could not be resolved by DNS. Verify the URL is correct and that the domain exists. If you recently changed DNS records, allow up to 48 hours for propagation.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 7' ) || false !== stripos( $message, 'Failed to connect' ) ) {
+			return __( 'Could not establish a connection to the remote server. The site may be down, behind a firewall, or blocking requests from this server.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 28' ) ) {
+			return __( 'The request timed out. The remote server may be slow, overloaded, or unreachable. Try increasing the timeout or check the remote site status.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 35' ) || false !== stripos( $message, 'SSL' ) ) {
+			return __( 'An SSL/TLS handshake error occurred. The remote server may have an invalid or expired SSL certificate, or may require a specific TLS version.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 3' ) ) {
+			return __( 'The request URL is malformed. Check that the connection URL is complete and includes the protocol (https://).', 'mcp-ai-wpoos-pro' );
+		}
+
+		return null;
 	}
 
 	/**
