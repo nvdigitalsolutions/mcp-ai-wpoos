@@ -353,9 +353,13 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			// Extract data from the HTML file.
 			$place_data = $this->extract_page_data( $file_path, $rules, $type_mapping, $default_type, $default_country );
 
-			// If canonical URL was missing or relative (HTTrack rewrites), backfill from cache.
+			// If canonical URL was missing, relative, or fake-absolute (HTTrack),
+			// backfill from the cache map.
 			$is_relative = ! empty( $place_data['source_url'] ) && ! preg_match( '#^https?://#', $place_data['source_url'] );
-			if ( ( empty( $place_data['source_url'] ) || $is_relative ) && isset( $this->httrack_url_map[ $file_path ] ) ) {
+			$host        = $is_relative ? '' : parse_url( $place_data['source_url'], PHP_URL_HOST );
+			$is_fake_abs = ! $is_relative && ! empty( $host )
+				&& preg_match( '/\.(html?|php\d*|asp|jsp|cfm|aspx)$/i', $host );
+			if ( ( empty( $place_data['source_url'] ) || $is_relative || $is_fake_abs ) && isset( $this->httrack_url_map[ $file_path ] ) ) {
 				$place_data['source_url'] = $this->httrack_url_map[ $file_path ];
 				// Re-classify with the resolved URL.
 				$place_data['place_type'] = $this->classify_page_type( $place_data['source_url'], $type_mapping, $default_type );
@@ -588,25 +592,28 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	 * @return bool
 	 */
 	private function is_httrack_mirror( $dir ) {
-		// Check for hts-cache in the directory itself, or one level up.
-		$cache_dir  = $dir . DIRECTORY_SEPARATOR . 'hts-cache';
-		$parent_dir = $dir . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'hts-cache';
-		$parent_dir = realpath( $parent_dir );
-
-		if ( ! is_dir( $cache_dir ) && ( false === $parent_dir || ! is_dir( $parent_dir ) ) ) {
+		// Flat index*.html files at root level are the primary signal.
+		$files = glob( $dir . DIRECTORY_SEPARATOR . 'index*.{html,htm}', GLOB_BRACE );
+		if ( empty( $files ) ) {
 			return false;
 		}
 
-		// If cache is in parent, use that path for URL map building.
-		if ( ! is_dir( $cache_dir ) && is_dir( $parent_dir ) ) {
-			$this->httrack_cache_dir = $parent_dir;
-		} else {
+		// Try to locate hts-cache for URL map building.
+		$cache_dir     = $dir . DIRECTORY_SEPARATOR . 'hts-cache';
+		$parent_cache  = $dir . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'hts-cache';
+		$parent_cache  = realpath( $parent_cache );
+
+		if ( is_dir( $cache_dir ) ) {
 			$this->httrack_cache_dir = $cache_dir;
+		} elseif ( is_dir( $parent_cache ) ) {
+			$this->httrack_cache_dir = $parent_cache;
+		} else {
+			// No cache file available; URL map will be populated from
+			// <!-- Mirrored from --> comments in the flat HTML files.
+			$this->httrack_cache_dir = '';
 		}
 
-		// Look for at least one flat index*.html file at root level.
-		$files = glob( $dir . DIRECTORY_SEPARATOR . 'index*.{html,htm}', GLOB_BRACE );
-		return ! empty( $files );
+		return true;
 	}
 
 	/**
