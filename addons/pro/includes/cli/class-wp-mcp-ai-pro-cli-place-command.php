@@ -752,13 +752,17 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 			$name       = get_the_title();
 			$source_url = get_post_meta( $post_id, '_place_source_url', true );
 
-			if ( empty( $source_url ) ) {
-				continue;
+			// Determine the city's subdirectory — prefer source URL
+			// extraction, but fall back to the city name when the
+			// source URL is empty or unparseable.
+			$city_slug = '';
+			if ( ! empty( $source_url ) ) {
+				// Source URL format: https://www.example.com/destinations/city-name/.
+				$city_slug = $this->extract_city_slug_from_url( $source_url );
 			}
-
-			// Determine the city's subdirectory from the source URL.
-			// Source URL format: https://www.example.com/destinations/city-name/.
-			$city_slug = $this->extract_city_slug_from_url( $source_url );
+			if ( empty( $city_slug ) && ! empty( $name ) ) {
+				$city_slug = sanitize_title( $name );
+			}
 			if ( empty( $city_slug ) ) {
 				continue;
 			}
