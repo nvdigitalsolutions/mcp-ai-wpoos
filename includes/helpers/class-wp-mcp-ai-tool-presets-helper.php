@@ -3797,11 +3797,24 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		if ( $args['include_script'] ) {
 			$auto_select_data = array();
 			if ( $args['show_auto_select'] ) {
-				$auto_select_data = self::compute_auto_select_data(
-					$args['system_prompt'],
-					$args['primary_role_ids'],
-					$args['available_tools']
-				);
+				// Wrap in try-catch to prevent compute errors from breaking the page.
+				try {
+					$auto_select_data = self::compute_auto_select_data(
+						$args['system_prompt'],
+						$args['primary_role_ids'],
+						$args['available_tools']
+					);
+				} catch ( \Throwable $e ) {
+					// Log the error and fall back to no auto-select data.
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						error_log( 'WP MCP AI auto-select compute error: ' . $e->getMessage() );
+					}
+					$auto_select_data = array(
+						'tools'  => array(),
+						'reason' => __( 'Auto-select is temporarily unavailable.', 'mcp-ai-wpoos' ),
+					);
+				}
 			}
 			self::render_preset_script( $args['checkbox_selector'], $args['show_selected_bar'], $args['show_auto_select'], $auto_select_data );
 		}
@@ -4084,6 +4097,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	 * @return array { tools: string[], reason: string }|array Empty array if no data.
 	 */
 	public static function compute_auto_select_data( $system_prompt, $primary_role_ids, $available_tools ) {
+		// Cap system prompt length to avoid excessive keyword extraction.
+		$max_prompt_chars = apply_filters( 'wp_mcp_ai_auto_select_max_prompt_chars', 5000 );
+		if ( is_string( $system_prompt ) && strlen( $system_prompt ) > $max_prompt_chars ) {
+			$system_prompt = substr( $system_prompt, 0, $max_prompt_chars );
+		}
+
 		$keywords = array();
 
 		// 1. Extract keywords from system prompt.
@@ -4155,6 +4174,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 		// Deduplicate and normalize keywords.
 		$keywords = array_unique( array_map( 'strtolower', $keywords ) );
+
+		// Cap keywords to avoid excessive scoring loops.
+		$max_keywords = apply_filters( 'wp_mcp_ai_auto_select_max_keywords', 300 );
+		if ( count( $keywords ) > $max_keywords ) {
+			$keywords = array_slice( $keywords, 0, $max_keywords );
+		}
 
 		// 3. Build tool index from registry.
 		$tool_index = self::build_tool_index( $available_tools );
@@ -4404,6 +4429,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			'during',
 		);
 
+		// Cap number of words processed to avoid excessive memory/time.
+		$max_words = apply_filters( 'wp_mcp_ai_auto_select_max_words', 1000 );
+		if ( count( $words ) > $max_words ) {
+			$words = array_slice( $words, 0, $max_words );
+		}
+
 		$keywords = array();
 		foreach ( $words as $word ) {
 			$word = trim( $word, "-_.\t\n\r" );
@@ -4421,7 +4452,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		}
 
 		// Also include bigrams (two-word phrases) for better matching.
-		$count = count( $words );
+		$count        = count( $words );
+		$max_bigrams  = apply_filters( 'wp_mcp_ai_auto_select_max_bigrams', 200 );
+		$bigram_count = 0;
 		for ( $i = 0; $i < $count - 1; $i++ ) {
 			$first  = trim( $words[ $i ], "-_.\t\n\r" );
 			$second = trim( $words[ $i + 1 ], "-_.\t\n\r" );
@@ -4435,6 +4468,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			// Only include if it looks like a meaningful phrase.
 			if ( strlen( $bigram ) >= 7 ) {
 				$keywords[] = $bigram;
+				++$bigram_count;
+				if ( $bigram_count >= $max_bigrams ) {
+					break;
+				}
 			}
 		}
 
