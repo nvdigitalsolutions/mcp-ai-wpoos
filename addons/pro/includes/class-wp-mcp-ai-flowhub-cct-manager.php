@@ -1351,7 +1351,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			);
 
 			return ! empty( $records );
-			}
+		}
 
 			/**
 			 * Look up a single CCT record by slug.
@@ -1364,54 +1364,54 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			 * @param string $slug CCT slug.
 			 * @return array|null The CCT record as an associative array, or null if not found.
 			 */
-			protected function get_cct_record_by_slug( $slug ) {
-				$module = self::get_cct_module();
+		protected function get_cct_record_by_slug( $slug ) {
+			$module = self::get_cct_module();
 
-				if ( ! $module ) {
-					return null;
-				}
-
-				$data = $module->manager->data;
-
-				if ( empty( $data->db ) ) {
-					return null;
-				}
-
-				$records = $data->db->query(
-					'post_types',
-					array(
-						'slug'   => $slug,
-						'status' => 'content-type',
-					),
-					null,
-					false
-				);
-
-				if ( empty( $records ) || ! is_array( $records ) ) {
-					return null;
-				}
-
-				$record = reset( $records );
-
-				if ( ! is_array( $record ) && ! is_object( $record ) ) {
-					return null;
-				}
-
-				// Normalise to associative array for consistent access.
-				if ( is_object( $record ) ) {
-					$record = get_object_vars( $record );
-				}
-
-				return $record;
+			if ( ! $module ) {
+				return null;
 			}
+
+			$data = $module->manager->data;
+
+			if ( empty( $data->db ) ) {
+				return null;
+			}
+
+			$records = $data->db->query(
+				'post_types',
+				array(
+					'slug'   => $slug,
+					'status' => 'content-type',
+				),
+				null,
+				false
+			);
+
+			if ( empty( $records ) || ! is_array( $records ) ) {
+				return null;
+			}
+
+			$record = reset( $records );
+
+			if ( ! is_array( $record ) && ! is_object( $record ) ) {
+				return null;
+			}
+
+			// Normalise to associative array for consistent access.
+			if ( is_object( $record ) ) {
+				$record = get_object_vars( $record );
+			}
+
+			return $record;
+		}
 
 			/**
 			 * Retrieve the JetEngine Custom Content Types module instance.
-		 *
-		 * @since 1.5.0
-		 *
-		 * @return \Jet_Engine\Modules\Custom_Content_Types\Module|null
-		 */
+			 *
+			 * @since 1.5.0
+			 *
+			 * @return \Jet_Engine\Modules\Custom_Content_Types\Module|null
+			 */
 		protected static function get_cct_module() {
 			if ( ! function_exists( 'jet_engine' ) ) {
 				return null;

@@ -211,24 +211,24 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 						/* translators: %s: CCT slug */
 						__( 'JetEngine CCT "%s" does not exist. Please create it or trigger a sync to auto-create it.', 'mcp-ai-wpoos-pro' ),
 						esc_html( $this->cct_slug )
-							)
-						);
-					}
+					)
+				);
+			}
 
 					return true;
-				}
+		}
 
 				/**
 				 * Ensure the JetEngine CCT exists, creating it if needed.
-		 *
-		 * Only creates the CCT shell (slug, title, capabilities).
-		 * Columns are added separately via ensure_columns().
-		 *
-		 * @since 1.3.0
-		 *
-		 * @return array|WP_Error Result array with 'created' (bool) and
-		 *                         'cct_id' (int|false), or WP_Error on failure.
-		 */
+				 *
+				 * Only creates the CCT shell (slug, title, capabilities).
+				 * Columns are added separately via ensure_columns().
+				 *
+				 * @since 1.3.0
+				 *
+				 * @return array|WP_Error Result array with 'created' (bool) and
+				 *                         'cct_id' (int|false), or WP_Error on failure.
+				 */
 		public function ensure_cct_exists() {
 			if ( ! function_exists( 'jet_engine' ) ) {
 				return new WP_Error(
@@ -1606,54 +1606,54 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			 * @param string $slug CCT slug.
 			 * @return array|null The CCT record as an associative array, or null if not found.
 			 */
-			protected function get_cct_record_by_slug( $slug ) {
-				$module = self::get_cct_module();
+		protected function get_cct_record_by_slug( $slug ) {
+			$module = self::get_cct_module();
 
-				if ( ! $module ) {
-					return null;
-				}
-
-				$data = $module->manager->data;
-
-				if ( empty( $data->db ) ) {
-					return null;
-				}
-
-				$records = $data->db->query(
-					'post_types',
-					array(
-						'slug'   => $slug,
-						'status' => 'content-type',
-					),
-					null,
-					false
-				);
-
-				if ( empty( $records ) || ! is_array( $records ) ) {
-					return null;
-				}
-
-				$record = reset( $records );
-
-				if ( ! is_array( $record ) && ! is_object( $record ) ) {
-					return null;
-				}
-
-				// Normalise to associative array for consistent access.
-				if ( is_object( $record ) ) {
-					$record = get_object_vars( $record );
-				}
-
-				return $record;
+			if ( ! $module ) {
+				return null;
 			}
+
+			$data = $module->manager->data;
+
+			if ( empty( $data->db ) ) {
+				return null;
+			}
+
+			$records = $data->db->query(
+				'post_types',
+				array(
+					'slug'   => $slug,
+					'status' => 'content-type',
+				),
+				null,
+				false
+			);
+
+			if ( empty( $records ) || ! is_array( $records ) ) {
+				return null;
+			}
+
+			$record = reset( $records );
+
+			if ( ! is_array( $record ) && ! is_object( $record ) ) {
+				return null;
+			}
+
+			// Normalise to associative array for consistent access.
+			if ( is_object( $record ) ) {
+				$record = get_object_vars( $record );
+			}
+
+			return $record;
+		}
 
 			/**
 			 * Bootstrap the CCT manager.
-		 *
-		 * Hooks module auto-activation and CCT registration on init.
-		 *
-		 * @since 1.7.0
-		 */
+			 *
+			 * Hooks module auto-activation and CCT registration on init.
+			 *
+			 * @since 1.7.0
+			 */
 		public static function bootstrap() {
 			add_action( 'init', array( __CLASS__, 'maybe_enable_cct_module' ), 10 );
 			add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
