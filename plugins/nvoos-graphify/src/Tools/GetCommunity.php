@@ -98,9 +98,9 @@ class GetCommunity extends AbstractTool {
 		}
 
 		if ( ! $community_id ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Community not found. Provide a valid community_id, node_id, or label.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'get_community_not_found',
+				__( 'Community not found. Provide a valid community_id, node_id, or label.', 'nvoos-graphify' )
 			);
 		}
 

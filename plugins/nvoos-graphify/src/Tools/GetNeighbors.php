@@ -94,9 +94,9 @@ class GetNeighbors extends AbstractTool {
 		}
 
 		if ( ! $node ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Node not found.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'get_neighbors_node_not_found',
+				__( 'Node not found.', 'nvoos-graphify' )
 			);
 		}
 

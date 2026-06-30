@@ -97,9 +97,9 @@ class RetrieveContext extends AbstractTool {
 		$include_edges = isset( $arguments['include_edges'] ) ? (bool) $arguments['include_edges'] : true;
 
 		if ( empty( $question ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Question is required.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'retrieve_context_question_required',
+				__( 'Question is required.', 'nvoos-graphify' )
 			);
 		}
 
