@@ -7,10 +7,7 @@ use NvoosGraphify\Contracts\RemoteSource;
 use WP_Error;
 use function absint;
 use function array_slice;
-use function fclose;
-use function fgetcsv;
 use function file_exists;
-use function fopen;
 use function get_attached_file;
 use function is_array;
 use function is_wp_error;
@@ -217,24 +214,49 @@ class Csv implements RemoteSource {
 	/**
 	 * Read and parse the CSV file into associative rows.
 	 *
+	 * Uses WP_Filesystem for safe, WordPress-compliant file reading.
+	 *
 	 * @param string $path Absolute file path.
 	 * @return array<int,array<string,string>>
 	 */
 	private function readCsv( string $path ): array {
+		global $wp_filesystem;
+
+		// Initialise WP_Filesystem if not already available.
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+
+		if ( empty( $wp_filesystem ) || ! $wp_filesystem->exists( $path ) || ! $wp_filesystem->is_readable( $path ) ) {
+			return array();
+		}
+
 		$delimiter    = $this->resolveDelimiter();
 		$hasHeaderRow = ! empty( $this->config['has_header_row'] );
 
-		$handle = fopen( $path, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-		if ( false === $handle ) {
+		$contents = $wp_filesystem->get_contents( $path );
+		if ( false === $contents || '' === $contents ) {
 			return array();
 		}
+
+		// Normalise line endings to LF.
+		$contents = str_replace( "\r\n", "\n", $contents );
+		$contents = str_replace( "\r", "\n", $contents );
+		$lines    = explode( "\n", $contents );
 
 		$rows    = array();
 		$headers = array();
 		$first   = true;
 
-		// phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.Found, Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
-		while ( ( $row = fgetcsv( $handle, 0, $delimiter ) ) !== false ) {
+		foreach ( $lines as $line ) {
+			// Skip completely empty lines (e.g. trailing newline).
+			if ( '' === $line ) {
+				continue;
+			}
+
+			$row = str_getcsv( $line, $delimiter );
+
 			if ( $first ) {
 				$first = false;
 				if ( $hasHeaderRow ) {
@@ -256,8 +278,6 @@ class Csv implements RemoteSource {
 				$rows[] = $assoc;
 			}
 		}
-
-		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
 		return $rows;
 	}

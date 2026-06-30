@@ -3,7 +3,7 @@
 Contributors: nvdigitalsolutions
 Tags: knowledge graph, content visualization, cytoscape, content strategy, semantic web
 Requires at least: 6.5
-Tested up to: 7.0
+Tested up to: 6.7
 Requires PHP: 8.1
 Stable tag: 1.0.0
 License: GPL-3.0-or-later
@@ -50,7 +50,6 @@ Full programmatic access with 14 endpoints. Read endpoints require the `read` ca
 - **nvoos-graphify-ai-chat** — AI chat assistant with OpenAI, Gemini, Ollama
 - **nvoos-graphify-ai-tools** — AI content generation, image creation, SEO analysis
 - **nvoos-graphify-embeddings** — Vector embeddings, semantic search, RAG
-- **nvoos-graphify-remote** — External data connectors (Wikidata, REST APIs, RSS)
 - **nvoos-graphify-pro** — Enterprise SaaS drivers (Jira, Slack, M365, etc.)
 
 == Installation ==

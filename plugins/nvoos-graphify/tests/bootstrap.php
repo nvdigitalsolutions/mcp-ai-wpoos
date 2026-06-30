@@ -29,7 +29,7 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 		fwrite(
 			STDERR,
 			sprintf(
-				"WordPress test suite not found at %s. Set WP_TESTS_DIR or run `composer run test:install`.\n",
+				"WordPress test suite not found at %s. Set WP_TESTS_DIR environment variable or install the test suite (see https://make.wordpress.org/cli/handbook/misc/plugin-unit-tests/).\n",
 				$_tests_dir
 			)
 		);

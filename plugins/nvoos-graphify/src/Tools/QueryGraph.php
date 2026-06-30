@@ -97,19 +97,18 @@ class QueryGraph extends AbstractTool {
 		$max_nodes = isset( $arguments['max_nodes'] ) ? max( 1, min( 200, absint( $arguments['max_nodes'] ) ) ) : 50;
 
 		if ( ! $question ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'A question or search keyword is required.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'query_graph_question_required',
+				__( 'A question or search keyword is required.', 'nvoos-graphify' )
 			);
 		}
 
 		// Find seed nodes via label search.
 		$seeds = \NvoosGraphify\Graph\Db::searchNodes( $question, '', 5 );
 		if ( empty( $seeds ) ) {
-			return array(
-				'success'  => false,
-				'error'    => __( 'No nodes found matching that query. Try building the graph first with graphify_build_graph.', 'nvoos-graphify' ),
-				'question' => $question,
+			return new \WP_Error(
+				'query_graph_no_nodes',
+				__( 'No nodes found matching that query. Try building the graph first with graphify_build_graph.', 'nvoos-graphify' )
 			);
 		}
 
