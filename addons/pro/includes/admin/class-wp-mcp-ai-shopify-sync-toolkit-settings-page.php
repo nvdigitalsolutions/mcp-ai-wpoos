@@ -290,8 +290,8 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 
 		<script>
 		( function() {
-			var syncNowUrl = '<?php echo esc_url( admin_url( 'admin-post.php?action=wp_mcp_ai_shopify_sync_now&connection_id=' ) ); ?>';
-			var dryRunUrl = '<?php echo esc_url( admin_url( 'admin-post.php?action=wp_mcp_ai_shopify_sync_dry_run&connection_id=' ) ); ?>';
+			var syncNowUrl = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_shopify_sync_now' ) ); ?> + '&connection_id=';
+			var dryRunUrl  = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_shopify_sync_dry_run' ) ); ?> + '&connection_id=';
 
 			document.querySelectorAll( '.wp-mcp-ai-sync-now' ).forEach( function( btn ) {
 				btn.addEventListener( 'click', function() {

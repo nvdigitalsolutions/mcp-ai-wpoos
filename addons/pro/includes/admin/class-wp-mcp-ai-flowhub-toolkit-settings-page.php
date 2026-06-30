@@ -170,15 +170,10 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 	 * {@inheritdoc}
 	 */
 	protected function render_overview_tab() {
-		$cct_manager           = new WP_MCP_AI_FlowHub_CCT_Manager();
-		$last_sync             = $cct_manager->get_last_sync_time();
-		$row_count             = $cct_manager->get_row_count();
-		$is_fresh              = $cct_manager->is_fresh();
-		$last_error            = get_option( 'wp_mcp_ai_flowhub_last_sync_error', '' );
-		$settings              = get_option( $this->option_name, array() );
-				$is_configured = ( ! empty( $settings['client_id'] ) && ! empty( $settings['api_key'] ) )
-						|| ( ! empty( $settings['sync_connections'] ) && is_array( $settings['sync_connections'] ) );
-		$wc_active             = class_exists( 'WooCommerce' );
+		$settings         = get_option( $this->option_name, array() );
+		$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
+		$wc_active        = class_exists( 'WooCommerce' );
+		$client_active    = class_exists( 'WP_MCP_AI_FlowHub_Client' );
 		?>
 		<div class="toolkit-overview">
 			<?php
@@ -201,13 +196,17 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 				?>
 				<div class="notice notice-success is-dismissible">
 					<p><strong><?php esc_html_e( 'Dry Run Complete', 'mcp-ai-wpoos-pro' ); ?></strong></p>
-											/* translators: 1: item count, 2: location count, 3: duration in seconds */
-											printf(
-												esc_html__( '%1$d items across %2$d locations (in %3$ss). No data was modified.', 'mcp-ai-wpoos-pro' ),
-												absint( $dr_items ),
-												absint( $dr_locs ),
-												esc_html( (string) $dr_dur )
-											);
+					<p>
+						<?php
+						/* translators: 1: item count, 2: location count, 3: duration in seconds */
+						printf(
+							esc_html__( '%1$d items across %2$d locations (in %3$ss). No data was modified.', 'mcp-ai-wpoos-pro' ),
+							absint( $dr_items ),
+							absint( $dr_locs ),
+							esc_html( (string) $dr_dur )
+						);
+						?>
+					</p>
 				</div>
 				<?php
 			elseif ( isset( $_GET['dry_run_error'] ) ) :
@@ -222,24 +221,14 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 			<h2><?php esc_html_e( 'FlowHub Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
 
 			<div class="toolkit-description">
-				<p><?php esc_html_e( 'Synchronize FlowHub dispensary inventory with WooCommerce. The toolkit maintains a local CCT cache so AI assistants can query inventory instantly without hitting the FlowHub API.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'Synchronize FlowHub dispensary inventory with WooCommerce using a CCT-based cache layer. AI assistants query locally cached data with zero FlowHub API cost. Background sync via Action Scheduler keeps data fresh.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
 
-			<h3><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></h3>
-			<table class="widefat fixed striped" style="max-width: 600px;">
+			<h3><?php esc_html_e( 'System Status', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<table class="widefat fixed striped" style="max-width: 700px;">
 				<tbody>
 					<tr>
-						<th style="width: 200px;"><?php esc_html_e( 'Connection Status', 'mcp-ai-wpoos-pro' ); ?></th>
-						<td>
-							<?php if ( $is_configured ) : ?>
-								<span style="color: green;">&#10004; <?php esc_html_e( 'Configured', 'mcp-ai-wpoos-pro' ); ?></span>
-							<?php else : ?>
-								<span style="color: red;">&#10008; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos-pro' ); ?></span>
-							<?php endif; ?>
-						</td>
-					</tr>
-					<tr>
-						<th><?php esc_html_e( 'WooCommerce', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th style="width: 250px;"><?php esc_html_e( 'WooCommerce', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
 							<?php if ( $wc_active ) : ?>
 								<span style="color: green;">&#10004; <?php esc_html_e( 'Active', 'mcp-ai-wpoos-pro' ); ?></span>
@@ -249,79 +238,130 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 						</td>
 					</tr>
 					<tr>
-						<th><?php esc_html_e( 'Last Sync', 'mcp-ai-wpoos-pro' ); ?></th>
-						<td><?php echo esc_html( ! empty( $last_sync ) ? $last_sync : __( 'Never', 'mcp-ai-wpoos-pro' ) ); ?></td>
-					</tr>
-					<tr>
-						<th><?php esc_html_e( 'Cached Items', 'mcp-ai-wpoos-pro' ); ?></th>
-						<td><?php echo esc_html( $row_count ); ?></td>
-					</tr>
-					<tr>
-						<th><?php esc_html_e( 'Cache Freshness', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'FlowHub API Client', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
-							<?php if ( $is_fresh ) : ?>
-								<span style="color: green;">&#10004; <?php esc_html_e( 'Fresh', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php if ( $client_active ) : ?>
+								<span style="color: green;">&#10004; <?php esc_html_e( 'Available', 'mcp-ai-wpoos-pro' ); ?></span>
 							<?php else : ?>
-								<span style="color: orange;">&#9888; <?php esc_html_e( 'Stale', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span style="color: red;">&#10008; <?php esc_html_e( 'Not Available', 'mcp-ai-wpoos-pro' ); ?></span>
 							<?php endif; ?>
 						</td>
 					</tr>
-					<?php if ( ! empty( $last_error ) ) : ?>
 					<tr>
-						<th><?php esc_html_e( 'Last Error', 'mcp-ai-wpoos-pro' ); ?></th>
-						<td style="color: red;"><?php echo esc_html( $last_error ); ?></td>
+						<th><?php esc_html_e( 'JetEngine', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<?php if ( function_exists( 'jet_engine' ) ) : ?>
+								<span style="color: green;">&#10004; <?php esc_html_e( 'Active', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php else : ?>
+								<span style="color: orange;">&#9888; <?php esc_html_e( 'Not Installed — CCT cache requires JetEngine for storage.', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php endif; ?>
+						</td>
 					</tr>
-					<?php endif; ?>
+					<tr>
+						<th><?php esc_html_e( 'Action Scheduler', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<?php if ( function_exists( 'as_has_scheduled_action' ) ) : ?>
+								<span style="color: green;">&#10004; <?php esc_html_e( 'Available', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php else : ?>
+								<span style="color: red;">&#10008; <?php esc_html_e( 'Not Available', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php endif; ?>
+						</td>
+					</tr>
 				</tbody>
 			</table>
 
-			<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
-			<p>
-				<button type="button" id="wp-mcp-ai-flowhub-sync-now" class="button button-primary">
-					<?php esc_html_e( 'Sync Now', 'mcp-ai-wpoos-pro' ); ?>
-				</button>
-				<button type="button" id="wp-mcp-ai-flowhub-sync-dry-run" class="button" style="margin-left: 6px;">
-					<?php esc_html_e( 'Dry Run', 'mcp-ai-wpoos-pro' ); ?>
-				</button>
-				<span id="wp-mcp-ai-flowhub-sync-status" style="margin-left: 10px; display: none;">
-					<?php esc_html_e( 'Syncing...', 'mcp-ai-wpoos-pro' ); ?>
-				</span>
-			</p>
+			<?php if ( ! empty( $sync_connections ) ) : ?>
+			<h3><?php esc_html_e( 'Sync Connections', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<table class="widefat fixed striped" style="max-width: 900px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Last Sync', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'CCT Rows', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Freshness', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+					foreach ( $sync_connections as $conn_id ) :
+						$cct_manager = new WP_MCP_AI_FlowHub_CCT_Manager( $conn_id );
+						$last_sync   = $cct_manager->get_last_sync_time();
+						$row_count   = $cct_manager->get_row_count();
+						$is_fresh    = $cct_manager->is_fresh();
+
+						// Get connection name from Remote Sites.
+						$conn_name = $conn_id;
+						if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+							$conn_data = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $conn_id );
+							if ( $conn_data && ! empty( $conn_data['name'] ) ) {
+								$conn_name = $conn_data['name'];
+							}
+						}
+						?>
+						<tr>
+							<td><strong><?php echo esc_html( $conn_name ); ?></strong><br><small><?php echo esc_html( $conn_id ); ?></small></td>
+							<td><?php echo esc_html( ! empty( $last_sync ) ? $last_sync : __( 'Never', 'mcp-ai-wpoos-pro' ) ); ?></td>
+							<td><?php echo esc_html( $row_count ); ?></td>
+							<td>
+								<?php if ( $is_fresh ) : ?>
+									<span style="color: green;">&#10004; <?php esc_html_e( 'Fresh', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php else : ?>
+									<span style="color: orange;">&#9888; <?php esc_html_e( 'Stale', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php endif; ?>
+							</td>
+							<td style="white-space: nowrap;">
+								<button type="button" class="button button-small wp-mcp-ai-sync-now" data-connection="<?php echo esc_attr( $conn_id ); ?>">
+									<?php esc_html_e( 'Sync Now', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+								<button type="button" class="button button-small wp-mcp-ai-sync-dry-run" data-connection="<?php echo esc_attr( $conn_id ); ?>" style="margin-left: 4px;">
+									<?php esc_html_e( 'Dry Run', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<?php else : ?>
+				<div class="notice notice-warning inline">
+					<p><?php esc_html_e( 'No FlowHub connections are configured for sync. Go to the Configuration tab to select which connections to synchronize.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+			<?php endif; ?>
 
 			<h3><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<ul>
-				<li><strong><?php esc_html_e( 'flowhub_inventory', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Search and filter inventory items', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'flowhub_inventory', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Search and filter inventory items from CCT cache (zero API cost)', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><strong><?php esc_html_e( 'flowhub_products', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Browse product catalog and categories', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><strong><?php esc_html_e( 'flowhub_locations', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'List dispensary locations with stock counts', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><strong><?php esc_html_e( 'flowhub_sync', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Trigger sync and check status', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><strong><?php esc_html_e( 'flowhub_settings', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Manage toolkit configuration', 'mcp-ai-wpoos-pro' ); ?></li>
 			</ul>
+
+			<p class="description"><?php esc_html_e( 'Note: These tools query the local CCT cache. Use the FlowHub live-API tools (flowhub_products_live, etc.) for real-time operations and mutations.', 'mcp-ai-wpoos-pro' ); ?></p>
 		</div>
 
 		<script>
 		( function() {
-			var syncBtn = document.getElementById( 'wp-mcp-ai-flowhub-sync-now' );
-			var dryBtn  = document.getElementById( 'wp-mcp-ai-flowhub-sync-dry-run' );
-			var status  = document.getElementById( 'wp-mcp-ai-flowhub-sync-status' );
+			var syncNowUrl = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_flowhub_sync_now' ) ); ?> + '&connection_id=';
+			var dryRunUrl  = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_flowhub_sync_dry_run' ) ); ?> + '&connection_id=';
 
-			if ( syncBtn ) {
-				syncBtn.addEventListener( 'click', function() {
-					syncBtn.disabled = true;
-					if ( dryBtn ) dryBtn.disabled = true;
-					status.style.display = 'inline';
-					location.href = '<?php echo esc_url( admin_url( 'admin-post.php?action=wp_mcp_ai_flowhub_sync_now' ) ); ?>';
+			document.querySelectorAll( '.wp-mcp-ai-sync-now' ).forEach( function( btn ) {
+				btn.addEventListener( 'click', function() {
+					var connId = this.getAttribute( 'data-connection' );
+					btn.disabled = true;
+					btn.textContent = '<?php echo esc_js( __( 'Syncing...', 'mcp-ai-wpoos-pro' ) ); ?>';
+					location.href = syncNowUrl + encodeURIComponent( connId );
 				});
-			}
+			});
 
-			if ( dryBtn ) {
-				dryBtn.addEventListener( 'click', function() {
-					if ( syncBtn ) syncBtn.disabled = true;
-					dryBtn.disabled = true;
-					status.style.display = 'inline';
-					status.textContent = '<?php echo esc_js( __( 'Running dry run...', 'mcp-ai-wpoos-pro' ) ); ?>';
-					location.href = '<?php echo esc_url( admin_url( 'admin-post.php?action=wp_mcp_ai_flowhub_sync_dry_run' ) ); ?>';
+			document.querySelectorAll( '.wp-mcp-ai-sync-dry-run' ).forEach( function( btn ) {
+				btn.addEventListener( 'click', function() {
+					var connId = this.getAttribute( 'data-connection' );
+					btn.disabled = true;
+					btn.textContent = '<?php echo esc_js( __( 'Running...', 'mcp-ai-wpoos-pro' ) ); ?>';
+					location.href = dryRunUrl + encodeURIComponent( connId );
 				});
-			}
+			});
 		} )();
 		</script>
 		<?php
@@ -609,31 +649,46 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 	 * @param bool $dry_run Whether this is a dry-run.
 	 */
 	private function handle_sync_action( $dry_run ) {
+		// Capability check.
 		if ( ! current_user_can( 'manage_woocommerce' ) ) { // phpcs:ignore WordPress.WP.Capabilities.Unknown
-			wp_die(
-				esc_html__( 'You do not have sufficient permissions to perform this action.', 'mcp-ai-wpoos-pro' ),
-				403
-			);
+					wp_die(
+						esc_html__( 'You do not have sufficient permissions to perform this action.', 'mcp-ai-wpoos-pro' ),
+						403
+					);
 		}
 
-		// Verify API is configured.
-		$settings = get_option( $this->option_name, array() );
-		if ( empty( $settings['client_id'] ) || empty( $settings['api_key'] ) ) {
+				// Validate connection ID.
+		$connection_id = isset( $_GET['connection_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+			: '';
+
+		if ( empty( $connection_id ) ) {
 			wp_die(
-				esc_html__( 'FlowHub API is not configured. Please set your Client ID and API Key in the Configuration tab.', 'mcp-ai-wpoos-pro' ),
+				esc_html__( 'Missing connection ID.', 'mcp-ai-wpoos-pro' ),
 				400
 			);
 		}
 
-		// Load sync engine.
+		// Verify the connection is in the configured sync list.
+		$settings         = get_option( $this->option_name, array() );
+		$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
+
+		if ( ! in_array( $connection_id, $sync_connections, true ) ) {
+			wp_die(
+				esc_html__( 'This connection is not configured for sync.', 'mcp-ai-wpoos-pro' ),
+				400
+			);
+		}
+
+		// Load sync engine if needed.
 		if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-sync-engine.php';
 		}
 
-		// Run the sync (or dry-run).
-		$result = WP_MCP_AI_FlowHub_Sync_Engine::run_full_sync( $dry_run );
+		// Run the sync (or dry-run) for this connection.
+		$result = WP_MCP_AI_FlowHub_Sync_Engine::run_full_sync( $dry_run, $connection_id );
 
-		// Build redirect URL.
+		// Build redirect URL with result query args.
 		$redirect_url = add_query_arg(
 			array(
 				'page' => $this->page_slug,
@@ -678,8 +733,8 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 			);
 		}
 
-			wp_safe_redirect( $redirect_url );
-			exit;
+		wp_safe_redirect( $redirect_url );
+		exit;
 	}
 
 		/**
