@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access and manage remote WordPress and WooCommerce sites. Supports reading posts, pages, media, products, orders, and other data, plus creating, updating, and deleting content when the connection allows it. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections. NOTE: Write operations (create/update/delete) require the connection to have those operations explicitly enabled by the site administrator.', 'mcp-ai-wpoos-pro' );
+		return __( 'Access and manage remote WordPress, WooCommerce, and JetEngine Custom Content Type (CCT) sites. Supports reading posts, pages, media, products, orders, JetEngine CCT records, and other data, plus creating, updating, and deleting content when the connection allows it. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections. NOTE: Write operations (create/update/delete) require the connection to have those operations explicitly enabled by the site administrator.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -152,6 +152,12 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 						'update_wc_product',
 						'delete_wc_product',
 						'update_wc_order',
+						'list_jetengine_ccts',
+						'get_jetengine_cct_items',
+						'get_jetengine_cct_item',
+						'create_jetengine_cct_item',
+						'update_jetengine_cct_item',
+						'delete_jetengine_cct_item',
 					),
 					'default'     => 'list_connections',
 				),
@@ -232,8 +238,25 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				),
 				'force'              => array(
 					'type'        => 'boolean',
-					'description' => __( 'When true, permanently deletes the item instead of moving it to trash (delete_post, delete_wc_product). Default: false (moves to trash).', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'When true, permanently deletes the item instead of moving it to trash (delete_post, delete_wc_product, delete_jetengine_cct_item). Default: false (moves to trash).', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
+				),
+				'cct_slug'           => array(
+					'type'        => 'string',
+					'description' => __( 'JetEngine CCT slug (e.g. "attendees", "inventory"). Required for JetEngine CCT actions. Use list_jetengine_ccts to discover available CCTs and their schemas.', 'mcp-ai-wpoos-pro' ),
+				),
+				'item_id'            => array(
+					'type'        => 'integer',
+					'description' => __( 'JetEngine CCT item ID for get_jetengine_cct_item, update_jetengine_cct_item, or delete_jetengine_cct_item actions.', 'mcp-ai-wpoos-pro' ),
+				),
+				'orderby'            => array(
+					'type'        => 'string',
+					'description' => __( 'Field to order JetEngine CCT results by (default: _ID).', 'mcp-ai-wpoos-pro' ),
+				),
+				'order'              => array(
+					'type'        => 'string',
+					'description' => __( 'Sort direction for JetEngine CCT queries: ASC or DESC (default: DESC).', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'ASC', 'DESC' ),
 				),
 			),
 			'required'             => array( 'action' ),
@@ -446,6 +469,24 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 			case 'update_wc_order':
 				return $this->update_wc_order( $connection, $arguments );
+
+			case 'list_jetengine_ccts':
+				return $this->list_jetengine_ccts( $connection );
+
+			case 'get_jetengine_cct_items':
+				return $this->get_jetengine_cct_items( $connection, $arguments );
+
+			case 'get_jetengine_cct_item':
+				return $this->get_jetengine_cct_item( $connection, $arguments );
+
+			case 'create_jetengine_cct_item':
+				return $this->create_jetengine_cct_item( $connection, $arguments );
+
+			case 'update_jetengine_cct_item':
+				return $this->update_jetengine_cct_item( $connection, $arguments );
+
+			case 'delete_jetengine_cct_item':
+				return $this->delete_jetengine_cct_item( $connection, $arguments );
 
 			default:
 				return new WP_Error(
@@ -2127,6 +2168,375 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'summary' => __( 'WooCommerce order updated successfully', 'mcp-ai-wpoos-pro' ),
 			'order'   => $result,
+		);
+	}
+
+	// ──────────────────────────────────────────────
+	// JetEngine Custom Content Type (CCT) handlers.
+	// ──────────────────────────────────────────────
+
+	/**
+	 * List available JetEngine CCTs on the remote site.
+	 *
+	 * Discovers CCTs via the JetEngine REST API and filters by the
+	 * connection's jetengine_cct_access controls.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error CCT listing or error.
+	 */
+	protected function list_jetengine_ccts( $connection ) {
+		$ccts = WP_MCP_AI_Pro_Remote_Site_Manager::discover_jetengine_ccts( $connection );
+
+		if ( is_wp_error( $ccts ) ) {
+			return $ccts;
+		}
+
+		if ( empty( $ccts ) ) {
+			return array(
+				'summary' => __( 'No JetEngine CCTs found on the remote site. JetEngine may not be installed, or no CCTs have REST endpoints enabled (JetEngine → Custom Content Types → Edit CCT → enable "Register get items/item REST API Endpoint").', 'mcp-ai-wpoos-pro' ),
+				'ccts'    => array(),
+				'count'   => 0,
+			);
+		}
+
+		$result = array();
+		$access = isset( $connection['jetengine_cct_access'] ) ? $connection['jetengine_cct_access'] : array();
+
+		foreach ( $ccts as $slug => $cct ) {
+			// When access controls are configured, only list allowed CCTs.
+			if ( ! empty( $access ) && ! isset( $access[ $slug ] ) ) {
+				continue;
+			}
+
+			$allowed_ops = isset( $access[ $slug ] ) ? $access[ $slug ] : array( 'read' );
+
+			$result[] = array(
+				'slug'            => $slug,
+				'label'           => $cct['label'],
+				'allowed_actions' => $allowed_ops,
+				'fields'          => $cct['fields'],
+			);
+		}
+
+		return array(
+			'summary' => sprintf(
+				/* translators: %d: number of CCTs */
+				__( 'Found %d JetEngine CCT(s) on the remote site', 'mcp-ai-wpoos-pro' ),
+				count( $result )
+			),
+			'ccts'    => $result,
+			'count'   => count( $result ),
+		);
+	}
+
+	/**
+	 * Get items from a JetEngine CCT on the remote site.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Query arguments: cct_slug, per_page, page, search, orderby, order.
+	 * @return array|WP_Error Items or error.
+	 */
+	protected function get_jetengine_cct_items( $connection, $arguments ) {
+		if ( empty( $arguments['cct_slug'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_cct_slug',
+				__( 'cct_slug is required. Use list_jetengine_ccts to discover available CCTs.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$cct_slug = sanitize_key( $arguments['cct_slug'] );
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_jetengine_cct_operation_allowed( $connection, $cct_slug, 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				sprintf(
+					/* translators: %s: CCT slug */
+					__( 'Read access to JetEngine CCT "%s" is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' ),
+					$cct_slug
+				)
+			);
+		}
+
+		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
+		$per_page = min( max( $per_page, 1 ), 100 );
+		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+
+		$params = array(
+			'per_page' => $per_page,
+			'page'     => $page,
+		);
+
+		if ( ! empty( $arguments['search'] ) ) {
+			$params['search'] = sanitize_text_field( $arguments['search'] );
+		}
+
+		if ( ! empty( $arguments['orderby'] ) ) {
+			$params['orderby'] = sanitize_key( $arguments['orderby'] );
+		}
+
+		if ( ! empty( $arguments['order'] ) && in_array( strtoupper( $arguments['order'] ), array( 'ASC', 'DESC' ), true ) ) {
+			$params['order'] = strtoupper( $arguments['order'] );
+		}
+
+		$endpoint = 'jet-cct/v1/' . $cct_slug;
+		$endpoint = add_query_arg( $params, $endpoint );
+
+		$items = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
+
+		if ( is_wp_error( $items ) ) {
+			return $items;
+		}
+
+		// Normalise response: JetEngine may wrap in a 'data' key or return flat array.
+		$items_list = isset( $items['data'] ) ? $items['data'] : $items;
+		if ( ! is_array( $items_list ) ) {
+			$items_list = array();
+		}
+
+		return array(
+			'summary' => sprintf(
+				/* translators: 1: count, 2: CCT slug */
+				__( 'Retrieved %1$d item(s) from JetEngine CCT "%2$s"', 'mcp-ai-wpoos-pro' ),
+				count( $items_list ),
+				$cct_slug
+			),
+			'items'   => $items_list,
+			'count'   => count( $items_list ),
+		);
+	}
+
+	/**
+	 * Get a single JetEngine CCT item by ID.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Must include cct_slug and item_id.
+	 * @return array|WP_Error Single item or error.
+	 */
+	protected function get_jetengine_cct_item( $connection, $arguments ) {
+		if ( empty( $arguments['cct_slug'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_cct_slug',
+				__( 'cct_slug is required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $arguments['item_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_item_id',
+				__( 'item_id is required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$cct_slug = sanitize_key( $arguments['cct_slug'] );
+		$item_id  = absint( $arguments['item_id'] );
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_jetengine_cct_operation_allowed( $connection, $cct_slug, 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				sprintf(
+					/* translators: %s: CCT slug */
+					__( 'Read access to JetEngine CCT "%s" is not permitted.', 'mcp-ai-wpoos-pro' ),
+					$cct_slug
+				)
+			);
+		}
+
+		$endpoint = 'jet-cct/v1/' . $cct_slug . '/' . $item_id;
+		$item     = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
+
+		if ( is_wp_error( $item ) ) {
+			return $item;
+		}
+
+		return array(
+			'summary' => sprintf(
+				/* translators: 1: item ID, 2: CCT slug */
+				__( 'Retrieved item #%1$d from JetEngine CCT "%2$s"', 'mcp-ai-wpoos-pro' ),
+				$item_id,
+				$cct_slug
+			),
+			'item'    => $item,
+		);
+	}
+
+	/**
+	 * Create a new item in a JetEngine CCT on the remote site.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Must include cct_slug and fields (key→value map).
+	 * @return array|WP_Error Created item or error.
+	 */
+	protected function create_jetengine_cct_item( $connection, $arguments ) {
+		if ( empty( $arguments['cct_slug'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_cct_slug',
+				__( 'cct_slug is required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$cct_slug = sanitize_key( $arguments['cct_slug'] );
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_jetengine_cct_operation_allowed( $connection, $cct_slug, 'create' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				sprintf(
+					/* translators: %s: CCT slug */
+					__( 'Create access to JetEngine CCT "%s" is not permitted.', 'mcp-ai-wpoos-pro' ),
+					$cct_slug
+				)
+			);
+		}
+
+		$fields = isset( $arguments['fields'] ) && is_array( $arguments['fields'] ) ? $arguments['fields'] : array();
+
+		if ( empty( $fields ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_fields',
+				__( 'fields is required and must be a non-empty key→value object. Use list_jetengine_ccts to see available field names for each CCT.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Sanitize field values.
+		$sanitized_fields = array();
+		foreach ( $fields as $key => $value ) {
+			$sanitized_fields[ sanitize_key( $key ) ] = is_string( $value ) ? sanitize_text_field( $value ) : $value;
+		}
+
+		$endpoint = 'jet-cct/v1/' . $cct_slug;
+		$result   = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'POST', $sanitized_fields );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'summary' => sprintf(
+				/* translators: %s: CCT slug */
+				__( 'Created new item in JetEngine CCT "%s"', 'mcp-ai-wpoos-pro' ),
+				$cct_slug
+			),
+			'item'    => $result,
+		);
+	}
+
+	/**
+	 * Update an existing JetEngine CCT item on the remote site.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Must include cct_slug, item_id, and fields.
+	 * @return array|WP_Error Updated item or error.
+	 */
+	protected function update_jetengine_cct_item( $connection, $arguments ) {
+		if ( empty( $arguments['cct_slug'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_pro_missing_cct_slug', __( 'cct_slug is required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( empty( $arguments['item_id'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_pro_missing_item_id', __( 'item_id is required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$cct_slug = sanitize_key( $arguments['cct_slug'] );
+		$item_id  = absint( $arguments['item_id'] );
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_jetengine_cct_operation_allowed( $connection, $cct_slug, 'update' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				sprintf(
+					/* translators: %s: CCT slug */
+					__( 'Update access to JetEngine CCT "%s" is not permitted.', 'mcp-ai-wpoos-pro' ),
+					$cct_slug
+				)
+			);
+		}
+
+		$fields = isset( $arguments['fields'] ) && is_array( $arguments['fields'] ) ? $arguments['fields'] : array();
+
+		if ( empty( $fields ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_fields',
+				__( 'fields is required and must be a non-empty key→value object.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$sanitized_fields = array();
+		foreach ( $fields as $key => $value ) {
+			$sanitized_fields[ sanitize_key( $key ) ] = is_string( $value ) ? sanitize_text_field( $value ) : $value;
+		}
+
+		$endpoint = 'jet-cct/v1/' . $cct_slug . '/' . $item_id;
+		$result   = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'POST', $sanitized_fields );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'summary' => sprintf(
+				/* translators: 1: item ID, 2: CCT slug */
+				__( 'Updated item #%1$d in JetEngine CCT "%2$s"', 'mcp-ai-wpoos-pro' ),
+				$item_id,
+				$cct_slug
+			),
+			'item'    => $result,
+		);
+	}
+
+	/**
+	 * Delete a JetEngine CCT item on the remote site.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Must include cct_slug and item_id.
+	 * @return array|WP_Error Deletion result or error.
+	 */
+	protected function delete_jetengine_cct_item( $connection, $arguments ) {
+		if ( empty( $arguments['cct_slug'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_pro_missing_cct_slug', __( 'cct_slug is required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( empty( $arguments['item_id'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_pro_missing_item_id', __( 'item_id is required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$cct_slug = sanitize_key( $arguments['cct_slug'] );
+		$item_id  = absint( $arguments['item_id'] );
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_jetengine_cct_operation_allowed( $connection, $cct_slug, 'delete' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				sprintf(
+					/* translators: %s: CCT slug */
+					__( 'Delete access to JetEngine CCT "%s" is not permitted.', 'mcp-ai-wpoos-pro' ),
+					$cct_slug
+				)
+			);
+		}
+
+		$endpoint = 'jet-cct/v1/' . $cct_slug . '/' . $item_id;
+		$result   = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'DELETE' );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'summary' => sprintf(
+				/* translators: 1: item ID, 2: CCT slug */
+				__( 'Deleted item #%1$d from JetEngine CCT "%2$s"', 'mcp-ai-wpoos-pro' ),
+				$item_id,
+				$cct_slug
+			),
 		);
 	}
 }
