@@ -128,7 +128,13 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 			$sanitized['location_id'] = sanitize_text_field( wp_unslash( $_POST['flowhub_location_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		}
 
-		// Sync settings.
+		// Sync connections (checkboxes from Remote Sites).
+			$sanitized['sync_connections'] = array();
+		if ( isset( $_POST['flowhub_sync_connections'] ) && is_array( $_POST['flowhub_sync_connections'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['sync_connections'] = array_map( 'sanitize_key', wp_unslash( $_POST['flowhub_sync_connections'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+		}
+
+			// Sync settings.
 		if ( isset( $_POST['flowhub_sync_interval'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$sanitized['sync_interval'] = absint( $_POST['flowhub_sync_interval'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		}
@@ -164,14 +170,15 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 	 * {@inheritdoc}
 	 */
 	protected function render_overview_tab() {
-		$cct_manager   = new WP_MCP_AI_FlowHub_CCT_Manager();
-		$last_sync     = $cct_manager->get_last_sync_time();
-		$row_count     = $cct_manager->get_row_count();
-		$is_fresh      = $cct_manager->is_fresh();
-		$last_error    = get_option( 'wp_mcp_ai_flowhub_last_sync_error', '' );
-		$settings      = get_option( $this->option_name, array() );
-		$is_configured = ! empty( $settings['client_id'] ) && ! empty( $settings['api_key'] );
-		$wc_active     = class_exists( 'WooCommerce' );
+		$cct_manager           = new WP_MCP_AI_FlowHub_CCT_Manager();
+		$last_sync             = $cct_manager->get_last_sync_time();
+		$row_count             = $cct_manager->get_row_count();
+		$is_fresh              = $cct_manager->is_fresh();
+		$last_error            = get_option( 'wp_mcp_ai_flowhub_last_sync_error', '' );
+		$settings              = get_option( $this->option_name, array() );
+				$is_configured = ( ! empty( $settings['client_id'] ) && ! empty( $settings['api_key'] ) )
+						|| ( ! empty( $settings['sync_connections'] ) && is_array( $settings['sync_connections'] ) );
+		$wc_active             = class_exists( 'WooCommerce' );
 		?>
 		<div class="toolkit-overview">
 			<?php
@@ -324,9 +331,63 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 	 * {@inheritdoc}
 	 */
 	protected function render_configuration_tab() {
-		$settings = get_option( $this->option_name, array() );
+		$settings         = get_option( $this->option_name, array() );
+		$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
+
+		// Gather all available FlowHub connections from Remote Sites.
+		$available_connections = array();
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $conn ) {
+				if ( isset( $conn['connection_type'] ) && 'flowhub' === $conn['connection_type'] && ! empty( $conn['enabled'] ) ) {
+					$available_connections[] = $conn;
+				}
+			}
+		}
 		?>
 		<div class="toolkit-configuration">
+			<h2><?php esc_html_e( 'FlowHub Sync Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
+
+			<?php if ( empty( $available_connections ) ) : ?>
+				<div class="notice notice-warning inline">
+					<p><?php esc_html_e( 'No FlowHub remote connections found. Please configure a FlowHub connection in NV oOS → Remote Sites first, or use the direct API credentials below.', 'mcp-ai-wpoos-pro' ); ?></p>
+					<p><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' ) ); ?>" class="button"><?php esc_html_e( 'Go to Remote Sites', 'mcp-ai-wpoos-pro' ); ?></a></p>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $available_connections ) ) : ?>
+				<h3><?php esc_html_e( 'Connections to Sync', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Select which FlowHub connections to synchronize. Each connection will have its own CCT cache and sync schedule.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<table class="form-table">
+					<?php foreach ( $available_connections as $conn ) : ?>
+					<tr>
+						<th scope="row">
+							<label for="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>">
+								<?php echo esc_html( isset( $conn['name'] ) ? $conn['name'] : $conn['id'] ); ?>
+							</label>
+						</th>
+						<td>
+							<input type="checkbox" name="flowhub_sync_connections[]"
+								id="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>"
+								value="<?php echo esc_attr( $conn['id'] ); ?>"
+								<?php checked( in_array( $conn['id'], $sync_connections, true ) ); ?> />
+							<label for="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>">
+								<?php esc_html_e( 'Enable sync for this connection', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: store/URL identifier */
+									esc_html__( 'Connection ID: %s', 'mcp-ai-wpoos-pro' ),
+									esc_html( $conn['id'] )
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<?php endforeach; ?>
+				</table>
+			<?php endif; ?>
+
 			<h2><?php esc_html_e( 'FlowHub API Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
 
 			<table class="form-table">
