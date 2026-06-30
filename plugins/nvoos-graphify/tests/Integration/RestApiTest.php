@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace NvoosGraphify\Tests\Integration;
 
-use PHPUnit\Framework\TestCase;
+use WP_UnitTestCase;
 
 /**
  * Integration tests for the REST API.
@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @since 1.0.0
  */
-class RestApiTest extends TestCase {
+class RestApiTest extends WP_UnitTestCase {
 
 	/**
 	 * Set up the test environment.
@@ -42,27 +42,31 @@ class RestApiTest extends TestCase {
 	}
 
 	/**
-	 * Anonymous requests to write endpoints should return 401.
+	 * Anonymous requests to write endpoints should return 403.
+	 *
+	 * Write endpoints require manage_options, not read.
 	 *
 	 * @return void
 	 */
-	public function testUnauthenticatedWriteReturns401(): void {
+	public function testUnauthenticatedWriteReturns403(): void {
 		$request  = new \WP_REST_Request( 'POST', '/' . \NvoosGraphify\Schema::REST_NAMESPACE . '/build' );
 		$response = rest_do_request( $request );
 
-		$this->assertEquals( 401, $response->get_status() );
+		$this->assertEquals( 403, $response->get_status() );
 	}
 
 	/**
-	 * Anonymous DELETE requests should return 401.
+	 * Anonymous DELETE requests should return 403.
+	 *
+	 * Delete endpoints require manage_options.
 	 *
 	 * @return void
 	 */
-	public function testUnauthenticatedDeleteReturns401(): void {
+	public function testUnauthenticatedDeleteReturns403(): void {
 		$request  = new \WP_REST_Request( 'DELETE', '/' . \NvoosGraphify\Schema::REST_NAMESPACE . '/sources/test-source' );
 		$response = rest_do_request( $request );
 
-		$this->assertEquals( 401, $response->get_status() );
+		$this->assertEquals( 403, $response->get_status() );
 	}
 
 	/**

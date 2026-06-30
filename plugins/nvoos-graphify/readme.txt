@@ -50,7 +50,6 @@ Full programmatic access with 14 endpoints. Read endpoints require the `read` ca
 - **nvoos-graphify-ai-chat** — AI chat assistant with OpenAI, Gemini, Ollama
 - **nvoos-graphify-ai-tools** — AI content generation, image creation, SEO analysis
 - **nvoos-graphify-embeddings** — Vector embeddings, semantic search, RAG
-- **nvoos-graphify-remote** — External data connectors (Wikidata, REST APIs, RSS)
 - **nvoos-graphify-pro** — Enterprise SaaS drivers (Jira, Slack, M365, etc.)
 
 == Installation ==

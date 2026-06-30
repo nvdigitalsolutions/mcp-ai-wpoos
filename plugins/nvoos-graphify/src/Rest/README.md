@@ -39,7 +39,7 @@ Exposes the knowledge graph via WordPress REST API under the `nvoos-graphify/v1`
 | `POST` | `/build` | Trigger a graph build | `manage_options` |
 | `GET` | `/search` | Search nodes by label | `read` + guest token |
 | `GET` | `/export` | Export graph (all formats) | `manage_options` |
-| `GET` | `/context` | Retrieve RAG context for a post | `read` + guest token |
+| `POST` | `/retrieve` | Retrieve RAG context for a post | `read` + guest token |
 | `GET` | `/resolve` | Resolve external entity | `read` + guest token |
 | `GET` | `/sources` | List remote sources | `manage_options` |
 | `POST` | `/sources` | Create remote source | `manage_options` |
@@ -61,12 +61,6 @@ Exposes the knowledge graph via WordPress REST API under the `nvoos-graphify/v1`
 ```bash
 vendor/bin/phpunit --filter '/REST|RestController/'
 ```
-
-## Also Load
-
-- [`../../../.context/conventions.md`](../../../.context/conventions.md) — naming + style
-- [`../../../.context/security-checklist.md`](../../../.context/security-checklist.md) — nonces, caps, escaping
-- [`../../../.context/rest-api.md`](../../../.context/rest-api.md) — REST patterns
 
 ## See Also
 

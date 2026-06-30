@@ -784,12 +784,7 @@ class Controller {
 			return new WP_Error( 'webhook_bad_signature', __( 'Invalid or missing signature.', 'nvoos-graphify' ), array( 'status' => 401 ) );
 		}
 
-		$payload = json_decode( $rawBody, true );
-		if ( ! is_array( $payload ) ) {
-			return new WP_Error( 'webhook_invalid_json', __( 'Body must be valid JSON.', 'nvoos-graphify' ), array( 'status' => 400 ) );
-		}
-
-		$nodes    = $driver->payloadToNodes( $payload );
+		$nodes    = $driver->ingestPayload( $rawBody );
 		$ingested = 0;
 		$resolved = 0;
 		foreach ( $nodes as $node ) {

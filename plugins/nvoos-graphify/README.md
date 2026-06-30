@@ -53,9 +53,6 @@ vendor/bin/phpunit tests/
 
 ## Also Load
 
-- [`../.context/conventions.md`](../../.context/conventions.md) — naming + style
-- [`../.context/security-checklist.md`](../../.context/security-checklist.md) — security
-- [`../CLAUDE.md`](../../CLAUDE.md) — PHP compat + tool patterns
 - [`readme.txt`](readme.txt) — WordPress.org plugin readme
 
 ## See Also

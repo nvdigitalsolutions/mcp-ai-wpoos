@@ -6,7 +6,7 @@ namespace NvoosGraphify\Tests\Integration;
 use NvoosGraphify\Graph\Db;
 use NvoosGraphify\Remote\Enricher;
 use NvoosGraphify\Schema;
-use PHPUnit\Framework\TestCase;
+use WP_UnitTestCase;
 
 /**
  * Integration tests for {@see Enricher::syncSource()} — specifically
@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @since 1.0.0
  */
-class EnricherTest extends TestCase {
+class EnricherTest extends WP_UnitTestCase {
 
 	/**
 	 * Set up — seed a remote source row so syncSource() passes the
