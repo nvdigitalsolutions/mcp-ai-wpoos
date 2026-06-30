@@ -32,7 +32,9 @@ class NV_oOS_Graphify_Remote_Admin {
 		add_action( 'wp_ajax_nvoos_graphify_sync_remote_source', array( __CLASS__, 'ajax_sync_source' ) );
 		add_action( 'wp_ajax_nvoos_graphify_reindex_embeddings', array( __CLASS__, 'ajax_reindex_embeddings' ) );
 		add_action( 'wp_ajax_nvoos_graphify_validate_field_map', array( __CLASS__, 'ajax_validate_field_map' ) );
-		add_action( 'nvoos_graphify_cron_reindex_embeddings', array( 'NV_oOS_Graphify_Embeddings', 'reindex_all' ) );
+		if ( class_exists( 'NV_oOS_Graphify_Embeddings' ) ) {
+			add_action( 'nvoos_graphify_cron_reindex_embeddings', array( 'NV_oOS_Graphify_Embeddings', 'reindex_all' ) );
+		}
 	}
 
 	/**

@@ -67,7 +67,7 @@ class NV_oOS_Comic_Reader_REST {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( __CLASS__, 'list_comics' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( __CLASS__, 'read_permission' ),
 				'args'                => array(
 					'page'     => array(
 						'type'              => 'integer',
@@ -93,7 +93,7 @@ class NV_oOS_Comic_Reader_REST {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( __CLASS__, 'get_comic' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( __CLASS__, 'read_permission' ),
 				'args'                => array(
 					'id' => array(
 						'type'              => 'integer',
@@ -109,7 +109,7 @@ class NV_oOS_Comic_Reader_REST {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( __CLASS__, 'get_comic_file' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( __CLASS__, 'read_permission' ),
 				'args'                => array(
 					'id' => array(
 						'type'              => 'integer',
@@ -125,7 +125,7 @@ class NV_oOS_Comic_Reader_REST {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( __CLASS__, 'get_comic_cover' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( __CLASS__, 'read_permission' ),
 				'args'                => array(
 					'id' => array(
 						'type'              => 'integer',
@@ -642,6 +642,18 @@ class NV_oOS_Comic_Reader_REST {
 			self::format_comic_item( $post ),
 			201
 		);
+	}
+
+	/**
+	 * Read permission — user must be logged in with the read capability.
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function read_permission() {
+		if ( is_user_logged_in() && current_user_can( 'read' ) ) {
+			return true;
+		}
+		return new WP_Error( 'forbidden', __( 'You must be logged in to access comics.', 'nvoos-comic-reader' ), array( 'status' => 401 ) );
 	}
 
 	/**
