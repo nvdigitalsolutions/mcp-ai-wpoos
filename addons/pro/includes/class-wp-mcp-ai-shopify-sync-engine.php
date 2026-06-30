@@ -190,8 +190,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 			}
 
 			if ( $dry_run ) {
-				wp_mcp_ai_log( sprintf( 'Shopify DRY RUN started for connection %s.', $connection_id ), 'info' );
-			} else {
+				if ( function_exists( 'wp_mcp_ai_log' ) ) {
+					wp_mcp_ai_log( sprintf( 'Shopify DRY RUN started for connection %s.', $connection_id ), 'info' );
+				}
+			} elseif ( function_exists( 'wp_mcp_ai_log' ) ) {
 				wp_mcp_ai_log( sprintf( 'Shopify full sync started for connection %s.', $connection_id ), 'info' );
 			}
 
@@ -199,10 +201,12 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 
 			// Check cost budget before syncing (skip in dry-run, but report it).
 			if ( ! $dry_run && $engine->should_skip_sync_due_to_cost() ) {
-				wp_mcp_ai_log(
-					sprintf( 'Shopify sync skipped for %s: GraphQL cost budget too low.', $connection_id ),
-					'warning'
-				);
+				if ( function_exists( 'wp_mcp_ai_log' ) ) {
+					wp_mcp_ai_log(
+						sprintf( 'Shopify sync skipped for %s: GraphQL cost budget too low.', $connection_id ),
+						'warning'
+					);
+				}
 				return;
 			}
 
@@ -271,16 +275,18 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 					'timestamp'     => current_time( 'mysql' ),
 				);
 
-				wp_mcp_ai_log(
-					sprintf(
-						'Shopify DRY RUN completed for %s: %d items would be inserted, %d updated, %d skipped.',
-						$connection_id,
-						$dry_report['data_summary']['items_would_insert'],
-						$dry_report['data_summary']['items_would_update'],
-						$dry_report['data_summary']['items_would_skip']
-					),
-					'info'
-				);
+				if ( function_exists( 'wp_mcp_ai_log' ) ) {
+					wp_mcp_ai_log(
+						sprintf(
+							'Shopify DRY RUN completed for %s: %d items would be inserted, %d updated, %d skipped.',
+							$connection_id,
+							$dry_report['data_summary']['items_would_insert'],
+							$dry_report['data_summary']['items_would_update'],
+							$dry_report['data_summary']['items_would_skip']
+						),
+						'info'
+					);
+				}
 
 				return $dry_report;
 			}
@@ -291,18 +297,20 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 			update_option( 'wp_mcp_ai_shopify_last_sync_' . $connection_id, current_time( 'mysql' ) );
 			delete_option( 'wp_mcp_ai_shopify_last_sync_error_' . $connection_id );
 
-			wp_mcp_ai_log(
-				sprintf(
-					'Shopify sync completed for %s: %d inserted, %d updated, %d skipped, %d errors, %ss.',
-					$connection_id,
-					isset( $result['inserted'] ) ? $result['inserted'] : 0,
-					isset( $result['updated'] ) ? $result['updated'] : 0,
-					isset( $result['skipped'] ) ? $result['skipped'] : 0,
-					isset( $result['errors'] ) ? $result['errors'] : 0,
-					isset( $result['duration'] ) ? $result['duration'] : 0
-				),
-				'info'
-			);
+			if ( function_exists( 'wp_mcp_ai_log' ) ) {
+				wp_mcp_ai_log(
+					sprintf(
+						'Shopify sync completed for %s: %d inserted, %d updated, %d skipped, %d errors, %ss.',
+						$connection_id,
+						isset( $result['inserted'] ) ? $result['inserted'] : 0,
+						isset( $result['updated'] ) ? $result['updated'] : 0,
+						isset( $result['skipped'] ) ? $result['skipped'] : 0,
+						isset( $result['errors'] ) ? $result['errors'] : 0,
+						isset( $result['duration'] ) ? $result['duration'] : 0
+					),
+					'info'
+				);
+			}
 		}
 
 		/**

@@ -810,3 +810,43 @@ if ( ! function_exists( 'wp_mcp_ai_tempnam' ) ) {
 		return $full_path;
 	}
 }
+
+if ( ! function_exists( 'wp_mcp_ai_log' ) ) :
+	/**
+	 * Convenience wrapper around WP_MCP_AI_Logger for recording log entries.
+	 *
+	 * Accepts a message string and an optional severity level so callers do not
+	 * need to reach for the class directly.  Missing-function guards in callers
+	 * mean this helper is optional, but defining it here ensures it exists early
+	 * in the request lifecycle.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $message Human-readable log message.
+	 * @param string $level   Severity / event type.  One of 'info', 'error',
+	 *                        'warning', 'critical', 'debug', or an arbitrary
+	 *                        event-type string.  Default 'info'.
+	 */
+	function wp_mcp_ai_log( $message, $level = 'info' ) {
+		if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+			return;
+		}
+
+		$level = strtolower( (string) $level );
+
+		switch ( $level ) {
+			case WP_MCP_AI_Logger::LEVEL_ERROR:
+			case WP_MCP_AI_Logger::LEVEL_CRITICAL:
+				WP_MCP_AI_Logger::log_error( $message );
+				break;
+
+			case WP_MCP_AI_Logger::LEVEL_WARNING:
+				WP_MCP_AI_Logger::log_warning( $message );
+				break;
+
+			default:
+				WP_MCP_AI_Logger::log_event( $level, $message );
+				break;
+		}
+	}
+endif;
