@@ -444,6 +444,23 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 					continue;
 				}
 
+				// Defensive: also skip when any parent path segment is a dot directory.
+				// Some filesystems expose '..' via RecursiveDirectoryIterator even
+				// with SKIP_DOTS.
+				if ( $recursive ) {
+					$path_segments = explode( DIRECTORY_SEPARATOR, $item->getPath() );
+					$has_dot_seg   = false;
+					foreach ( $path_segments as $seg ) {
+						if ( '.' === $seg || '..' === $seg ) {
+							$has_dot_seg = true;
+							break;
+						}
+					}
+					if ( $has_dot_seg ) {
+						continue;
+					}
+				}
+
 				if ( $item->isDir() ) {
 					continue;
 				}
@@ -552,7 +569,10 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		$this->collect_httrack_tree_files( $dir, $max, $pattern, $files );
 
 		// Supplement with flat index*.html files from root (fallback).
-		if ( count( $files ) < $max ) {
+		// When the tree scan already found most of what we need, skip flat
+		// scan entirely — flat index*.html files at root are mostly
+		// redirect pages and rarely contain real content.
+		if ( count( $files ) < $max * 0.8 ) {
 			$this->collect_httrack_flat_files( $dir, $max, $pattern, $files );
 		}
 
@@ -599,8 +619,9 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 				}
 				$files[] = $path;
 			}
-		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- best-effort
+		} catch ( Exception $e ) {
 			// Flat files are supplementary; failures are non-fatal.
+			error_log( 'WP MCP AI: HTTrack flat file scan failed: ' . $e->getMessage() );
 		}
 	}
 
@@ -627,8 +648,21 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 					break;
 				}
 
-				// Skip dot files and directories.
+				// Skip dot files and directories (SKIP_DOTS can be unreliable).
 				if ( in_array( $item->getFilename(), array( '.', '..' ), true ) ) {
+					continue;
+				}
+
+				// Defensive: also scan parent path segments for stray dots.
+				$tree_segments = explode( DIRECTORY_SEPARATOR, $item->getPath() );
+				$tree_dot_seg  = false;
+				foreach ( $tree_segments as $seg ) {
+					if ( '.' === $seg || '..' === $seg ) {
+						$tree_dot_seg = true;
+						break;
+					}
+				}
+				if ( $tree_dot_seg ) {
 					continue;
 				}
 
@@ -671,8 +705,9 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 
 				$files[] = $path;
 			}
-		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- best-effort
+		} catch ( Exception $e ) {
 			// Tree scan failures are non-fatal.
+			error_log( 'WP MCP AI: HTTrack tree file scan failed: ' . $e->getMessage() );
 		}
 	}
 
@@ -834,6 +869,15 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			$data['name'] = sanitize_text_field( $title );
 		}
 
+		// --- Skip HTTrack redirect pages ---
+		// HTTrack stores WordPress redirect pages with title "Page has moved".
+		// These are empty pages that should be skipped entirely.
+		if ( 'Page has moved' === $data['name'] ) {
+			$data['name'] = '';
+			libxml_use_internal_errors( $libxml_use_internal );
+			return $data;
+		}
+
 		// Fall back to H1 if title not useful.
 		if ( empty( $data['name'] ) && ! empty( $rules['h1_selector'] ) ) {
 			$h1_nodes = $xpath->query( $rules['h1_selector'] );
@@ -903,6 +947,15 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		$canonical_nodes = $xpath->query( '//link[@rel="canonical"]/@href' );
 		if ( $canonical_nodes->length > 0 ) {
 			$data['source_url'] = trim( $canonical_nodes->item( 0 )->value );
+		}
+
+		// --- HTTrack mirrored-from comment fallback ---
+		// HTTrack stores the original URL inside an HTML comment:
+		// <!-- Mirrored from https://www.example.com/page/ by HTTrack ... -->
+		if ( empty( $data['source_url'] ) ) {
+			if ( preg_match( '/Mirrored from (https?:\/\/\S+)/', $html, $m ) ) {
+				$data['source_url'] = trim( $m[1] );
+			}
 		}
 
 		// --- Google Maps iframe → coordinates ---
@@ -1033,6 +1086,16 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			return $default_type;
 		}
 
+		// Sort patterns by length descending so longer (more specific) patterns
+		// match first.  Prevents /destinations/ from shadowing
+		// /destinations/colombo/attractions-in-.
+		uksort(
+			$mapping,
+			function ( $a, $b ) {
+				return strlen( $b ) - strlen( $a );
+			}
+		);
+
 		foreach ( $mapping as $pattern => $type ) {
 			if ( false !== strpos( $url, $pattern ) ) {
 				return $type;
@@ -1061,13 +1124,27 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 
 		// Relative to source URL.
 		if ( ! empty( $source_url ) ) {
-			$base = dirname( $source_url );
-			// Normalize: if src starts with ../, walk up.
-			while ( strpos( $src, '../' ) === 0 ) {
-				$src  = substr( $src, 3 );
-				$base = dirname( $base );
+			$parts = wp_parse_url( $source_url );
+			if ( ! $parts || empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+				return $src;
 			}
-			return rtrim( $base, '/' ) . '/' . ltrim( $src, '/' );
+
+			$base_path = isset( $parts['path'] ) ? dirname( $parts['path'] ) : '/';
+			$base_path = rtrim( $base_path, '/' );
+
+			// Handle leading ../ by walking up the base path.
+			while ( strpos( $src, '../' ) === 0 ) {
+				$src       = substr( $src, 3 );
+				$base_path = dirname( $base_path );
+			}
+
+			// Handle leading ./ or just path.
+			if ( strpos( $src, './' ) === 0 ) {
+				$src = substr( $src, 2 );
+			}
+
+			return $parts['scheme'] . '://' . $parts['host']
+				. $base_path . '/' . ltrim( $src, '/' );
 		}
 
 		return $src;
