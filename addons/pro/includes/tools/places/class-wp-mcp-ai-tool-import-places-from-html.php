@@ -74,14 +74,11 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	);
 
 	/**
-	 * Regex for matching HTTrack flat index files.
-	 *
-	 * Covers decimal (index-2.html), hex (index004c.html), and bare (index.html)
-	 * naming schemes used by different HTTrack configurations.
+	 * Regex for matching HTTrack flat index files (index.html, index-2.html, etc.).
 	 *
 	 * @var string
 	 */
-	const HTTRACK_INDEX_PATTERN = '/^index(?:[-0-9a-f]+)?\.html?$/i';
+	const HTTRACK_INDEX_PATTERN = '/^index[0-9a-f]*\.html?$/i';
 
 	/**
 	 * HTTrack URL → local-path map built from hts-cache.
@@ -433,7 +430,7 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		try {
 			$iterator = $recursive
 				? new RecursiveIteratorIterator(
-					new RecursiveDirectoryIterator( $dir, RecursiveDirectoryIterator::SKIP_DOTS ),
+					new RecursiveDirectoryIterator( $dir ),
 					RecursiveIteratorIterator::SELF_FIRST
 				)
 				: new DirectoryIterator( $dir );
@@ -441,6 +438,11 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			foreach ( $iterator as $item ) {
 				if ( count( $files ) >= $max ) {
 					break;
+				}
+
+				// Skip dot files and directories (SKIP_DOTS can be unreliable on some filesystems).
+				if ( in_array( $item->getFilename(), array( '.', '..' ), true ) ) {
+					continue;
 				}
 
 				if ( $item->isDir() ) {
@@ -455,11 +457,16 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 				$path = $item->getRealPath();
 
 				// Skip known non-content directories.
+				$path_parts = explode( DIRECTORY_SEPARATOR, $path );
+				$skip_found = false;
 				foreach ( self::SKIP_DIRS as $skip ) {
-					if ( strpos( $path, DIRECTORY_SEPARATOR . $skip . DIRECTORY_SEPARATOR ) !== false
-						|| strpos( $path, '/' . $skip . '/' ) !== false ) {
-						continue 2;
+					if ( in_array( $skip, $path_parts, true ) ) {
+						$skip_found = true;
+						break;
 					}
+				}
+				if ( $skip_found ) {
+					continue;
 				}
 
 				// Apply user pattern filter.
@@ -504,72 +511,9 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			return false;
 		}
 
-		// Flat index files may be at the mirror root or inside a domain-named
-		// subdirectory created by HTTrack (e.g. www.example.com/).
-		return null !== $this->find_httrack_content_dir( $dir );
-	}
-
-	/**
-	 * Check whether a directory contains flat HTTrack index files.
-	 *
-	 * Avoids GLOB_BRACE — it is not available on non-GNU systems (Alpine,
-	 * BSD, Solaris) where glob() returns false instead of an empty array,
-	 * causing false positives.
-	 *
-	 * @since  1.4.1
-	 *
-	 * @param  string $dir Directory to check.
-	 * @return bool
-	 */
-	private function has_flat_index_files( $dir ) {
-		$html  = glob( $dir . DIRECTORY_SEPARATOR . 'index*.html' );
-		$htm   = glob( $dir . DIRECTORY_SEPARATOR . 'index*.htm' );
-		$files = array_merge(
-			is_array( $html ) ? $html : array(),
-			is_array( $htm ) ? $htm : array()
-		);
+		// Look for at least one flat index*.html file at root level.
+		$files = glob( $dir . DIRECTORY_SEPARATOR . 'index*.{html,htm}', GLOB_BRACE );
 		return ! empty( $files );
-	}
-
-	/**
-	 * Find the content directory inside an HTTrack mirror.
-	 *
-	 * HTTrack may place flat index*.html files directly in the mirror root,
-	 * or inside a domain-named subdirectory (e.g. www.example.com/).
-	 *
-	 * @since  1.4.1
-	 *
-	 * @param  string $root_dir Mirror root (parent of hts-cache/).
-	 * @return string|null Content directory path, or null if not found.
-	 */
-	private function find_httrack_content_dir( $root_dir ) {
-		if ( $this->has_flat_index_files( $root_dir ) ) {
-			return $root_dir;
-		}
-
-		// Scan immediate subdirectories.
-		try {
-			$iterator = new DirectoryIterator( $root_dir );
-			foreach ( $iterator as $item ) {
-				if ( $item->isDot() || ! $item->isDir() ) {
-					continue;
-				}
-				if ( 'hts-cache' === $item->getFilename() ) {
-					continue;
-				}
-				$path = $item->getRealPath();
-				if ( false === $path ) {
-					continue;
-				}
-				if ( $this->has_flat_index_files( $path ) ) {
-					return $path;
-				}
-			}
-		} catch ( Exception $e ) {
-			return null;
-		}
-
-		return null;
 	}
 
 	/**
@@ -588,19 +532,12 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	 * @return array|WP_Error
 	 */
 	private function discover_httrack_files( $dir, $max, $pattern ) {
-		$files = array();
-
-		// Find the actual content directory (may be root or a subdirectory).
-		$content_dir = $this->find_httrack_content_dir( $dir );
-		if ( null === $content_dir ) {
-			return $files;
-		}
-
+		$files                 = array();
 		$cache_dir             = $dir . DIRECTORY_SEPARATOR . 'hts-cache';
 		$this->httrack_url_map = $this->build_httrack_url_map( $cache_dir, $dir );
 
 		try {
-			$iterator = new DirectoryIterator( $content_dir );
+			$iterator = new DirectoryIterator( $dir );
 
 			foreach ( $iterator as $item ) {
 				if ( count( $files ) >= $max ) {

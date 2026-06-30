@@ -830,7 +830,7 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 
 		$iterator = new DirectoryIterator( $city_dir );
 		foreach ( $iterator as $item ) {
-			if ( ! $item->isDir() || $item->isDot() ) {
+			if ( ! $item->isDir() || in_array( $item->getFilename(), array( '.', '..' ), true ) ) {
 				continue;
 			}
 
