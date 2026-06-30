@@ -380,7 +380,11 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 					'repeater'    => false,
 				);
 
-				$result = jet_engine()->cct->add_field( $this->cct_slug, $field_data );
+				$module = self::get_cct_module();
+				if ( ! $module ) {
+					continue;
+				}
+				$result = $module->add_field( $this->cct_slug, $field_data );
 
 				if ( ! is_wp_error( $result ) ) {
 					++$created;
@@ -583,7 +587,11 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				$query_args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 			}
 
-			$items = jet_engine()->cct->data->get_items( $this->cct_slug, $query_args );
+			$module = self::get_cct_module();
+			if ( ! $module ) {
+				return array();
+			}
+			$items = $module->data->get_items( $this->cct_slug, $query_args );
 
 			return is_array( $items ) ? $items : array();
 		}
@@ -607,7 +615,11 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			$by         = sanitize_key( $by );
 
 			if ( 'cct_id' === $by ) {
-				return jet_engine()->cct->data->get_item( absint( $identifier ), $this->cct_slug );
+				$module = self::get_cct_module();
+				if ( ! $module ) {
+					return null;
+				}
+				return $module->data->get_item( absint( $identifier ), $this->cct_slug );
 			}
 
 			$filters = array(
@@ -776,7 +788,14 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			if ( $existing ) {
 				// Update existing item.
 				$mapped['_ID'] = $existing['_ID'];
-				$result        = jet_engine()->cct->data->update_item( $mapped, $this->cct_slug );
+				$module        = self::get_cct_module();
+				if ( ! $module ) {
+					return new WP_Error(
+						'wp_mcp_ai_flowhub_jetengine_not_ready',
+						__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				$result = $module->data->update_item( $mapped, $this->cct_slug );
 
 				if ( is_wp_error( $result ) ) {
 					return $result;
@@ -787,7 +806,14 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 			// Create new item.
 			$mapped['cct_status'] = 'publish';
-			$result               = jet_engine()->cct->data->create_item( $mapped, $this->cct_slug );
+			$module               = self::get_cct_module();
+			if ( ! $module ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			$result = $module->data->create_item( $mapped, $this->cct_slug );
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -814,7 +840,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			while ( ! empty( $items ) ) {
 				foreach ( $items as $item ) {
 					if ( ! empty( $item['_ID'] ) ) {
-						jet_engine()->cct->data->delete_item( absint( $item['_ID'] ), $this->cct_slug );
+						$module = self::get_cct_module();
+						if ( $module ) {
+							$module->data->delete_item( absint( $item['_ID'] ), $this->cct_slug );
+						}
 					}
 				}
 				// Fetch next batch.
@@ -854,7 +883,14 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				return $available;
 			}
 
-			return jet_engine()->cct->data->delete_item( absint( $cct_item_id ), $this->cct_slug );
+			$module = self::get_cct_module();
+			if ( ! $module ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			return $module->data->delete_item( absint( $cct_item_id ), $this->cct_slug );
 		}
 
 		/**
@@ -878,7 +914,14 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			$item['woo_product_id'] = absint( $woo_product_id );
 			$item['_ID']            = absint( $cct_item_id );
 
-			return jet_engine()->cct->data->update_item( $item, $this->cct_slug );
+			$module = self::get_cct_module();
+			if ( ! $module ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			return $module->data->update_item( $item, $this->cct_slug );
 		}
 
 		// ------------------------------------------------------------------ //
