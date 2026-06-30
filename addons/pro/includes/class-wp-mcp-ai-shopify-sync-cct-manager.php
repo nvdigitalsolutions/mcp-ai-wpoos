@@ -183,6 +183,116 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			return true;
 		}
 
+		/**
+		 * Ensure the JetEngine CCT exists, creating it if needed.
+		 *
+		 * Only creates the CCT shell (slug, title, capabilities).
+		 * Columns are added separately via ensure_columns().
+		 *
+		 * @since 1.3.0
+		 *
+		 * @return array|WP_Error Result array with 'created' (bool) and
+		 *                         'cct_id' (int|false), or WP_Error on failure.
+		 */
+		public function ensure_cct_exists() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_jetengine_missing',
+					__( 'JetEngine plugin is required for Shopify Sync storage. Please install and activate JetEngine.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$existing = jet_engine()->cct->data->get_item_by_slug( $this->cct_slug );
+
+			if ( $existing ) {
+				return array(
+					'created' => false,
+					'cct_id'  => isset( $existing['id'] ) ? absint( $existing['id'] ) : 0,
+					'slug'    => $this->cct_slug,
+				);
+			}
+
+			$cct_data = array(
+				'slug'        => $this->cct_slug,
+				'labels'      => array(
+					'name'          => __( 'Shopify Inventory Sync', 'mcp-ai-wpoos-pro' ),
+					'singular_name' => __( 'Inventory Item', 'mcp-ai-wpoos-pro' ),
+					'add_new'       => __( 'Add Inventory Item', 'mcp-ai-wpoos-pro' ),
+					'add_new_item'  => __( 'Add New Inventory Item', 'mcp-ai-wpoos-pro' ),
+					'edit_item'     => __( 'Edit Inventory Item', 'mcp-ai-wpoos-pro' ),
+					'view_item'     => __( 'View Inventory Item', 'mcp-ai-wpoos-pro' ),
+					'search_items'  => __( 'Search Inventory Items', 'mcp-ai-wpoos-pro' ),
+					'not_found'     => __( 'No inventory items found.', 'mcp-ai-wpoos-pro' ),
+				),
+				'args'        => array(
+					'public'            => false,
+					'has_single'        => false,
+					'has_archive'       => false,
+					'show_in_menu'      => false,
+					'show_in_rest'      => false,
+					'show_in_nav_menus' => false,
+					'capability'        => 'manage_options',
+					'supports'          => array( 'title' ),
+					'admin_columns'     => array(),
+					'admin_filters'     => array(),
+				),
+				'meta_fields' => array(), // Columns are added via ensure_columns().
+			);
+
+			/**
+			 * Filter the CCT data before creation.
+			 *
+			 * @since 1.3.0
+			 *
+			 * @param array  $cct_data      The CCT registration data.
+			 * @param string $connection_id  The Shopify connection ID.
+			 */
+			$cct_data = apply_filters( 'wp_mcp_ai_shopify_sync_cct_data', $cct_data, $this->connection_id );
+
+			$cct_id = jet_engine()->cct->data->create_item( $cct_data, 'jet_cct' );
+
+			if ( ! $cct_id || is_wp_error( $cct_id ) ) {
+				return is_wp_error( $cct_id )
+					? $cct_id
+					: new WP_Error(
+						'wp_mcp_ai_shopify_sync_cct_create_failed',
+						sprintf(
+							/* translators: %s: CCT slug */
+							__( 'Failed to create JetEngine CCT "%s".', 'mcp-ai-wpoos-pro' ),
+							esc_html( $this->cct_slug )
+						)
+					);
+			}
+
+			if ( function_exists( 'wp_mcp_ai_log' ) ) {
+				wp_mcp_ai_log(
+					sprintf(
+						'Shopify Sync CCT auto-created: slug=%s, id=%d.',
+						$this->cct_slug,
+						$cct_id
+					),
+					'info'
+				);
+			}
+
+			/**
+			 * Fires after the Shopify Sync CCT is auto-created.
+			 *
+			 * @since 1.3.0
+			 *
+			 * @param int    $cct_id         The newly created CCT ID.
+			 * @param string $cct_slug       The CCT slug.
+			 * @param string $connection_id  The Shopify connection ID.
+			 */
+			do_action( 'wp_mcp_ai_shopify_sync_cct_created', $cct_id, $this->cct_slug, $this->connection_id );
+
+			return array(
+				'created' => true,
+				'cct_id'  => absint( $cct_id ),
+				'slug'    => $this->cct_slug,
+			);
+		}
+
 		// ------------------------------------------------------------------ //
 		// Column Management                                                   //
 		// ------------------------------------------------------------------ //
@@ -541,14 +651,21 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @return int
 		 */
 		public function get_row_count() {
-			global $wpdb;
-			$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+					global $wpdb;
+					$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
 
-			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$count = $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
-			// phpcs:enable
+					// Bail gracefully if the table doesn't exist (CCT not created yet).
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( ! $table_exists ) {
+				return 0;
+			}
 
-			return absint( $count );
+					// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$count = $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
+					// phpcs:enable
+
+					return absint( $count );
 		}
 
 		/**
@@ -961,9 +1078,12 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @since 1.3.0
 		 *
 		 * @param callable|null $progress Optional progress callback.
+		 * @param bool          $dry_run  If true, skip CCT writes and only
+		 *                                validate the GraphQL query + count
+		 *                                items. Default false.
 		 * @return array|WP_Error Sync result or WP_Error.
 		 */
-		public function sync_from_bulk_operation( $progress = null ) {
+		public function sync_from_bulk_operation( $progress = null, $dry_run = false ) {
 			if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_no_client',
@@ -971,57 +1091,61 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				);
 			}
 
-			$start_time = microtime( true );
+				$start_time = microtime( true );
 
-			// Ensure CCT columns exist.
-			$columns_result = $this->ensure_columns();
-			if ( is_wp_error( $columns_result ) ) {
-				return $columns_result;
+				// Ensure CCT columns exist (skip in dry-run, already handled upstream).
+			if ( ! $dry_run ) {
+				$columns_result = $this->ensure_columns();
+				if ( is_wp_error( $columns_result ) ) {
+					return $columns_result;
+				}
 			}
 
-			$client = new WP_MCP_AI_Shopify_Client( $this->connection_id );
+				$client = new WP_MCP_AI_Shopify_Client( $this->connection_id );
 
-			// Shopify Bulk Operation query — export all products with variants and inventory.
-			$bulk_query = '{
-				products {
-					edges {
-						node {
-							id
-							title
-							handle
-							status
-							vendor
-							productType
-							tags
-							updatedAt
-							images(first: 1) {
-								edges {
-									node {
-										url
-									}
-								}
-							}
-							variants {
-								edges {
-									node {
-										id
-										title
-										sku
-										price
-										compareAtPrice
-										inventoryItem {
-											id
+				// Shopify Bulk Operation query — export all products with variants and inventory.
+				$bulk_query = '{
+						products {
+							edges {
+								node {
+									id
+									title
+									handle
+									status
+									vendor
+									productType
+									tags
+									updatedAt
+									images(first: 1) {
+										edges {
+											node {
+												url
+											}
 										}
-										inventoryLevels {
-											edges {
-												node {
-													quantities(names: ["available", "on_hand", "incoming", "reserved"]) {
-														name
-														quantity
-													}
-													location {
-														id
-														name
+									}
+									variants {
+										edges {
+											node {
+												id
+												title
+												sku
+												price
+												compareAtPrice
+												inventoryItem {
+													id
+												}
+												inventoryLevels {
+													edges {
+														node {
+															quantities(names: ["available", "on_hand", "incoming", "reserved"]) {
+																name
+																quantity
+															}
+															location {
+																id
+																name
+															}
+														}
 													}
 												}
 											}
@@ -1030,51 +1154,97 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 								}
 							}
 						}
-					}
-				}
-			}';
+					}';
 
-			$bulk_result = $client->bulk_query( $bulk_query, true );
+				$bulk_result = $client->bulk_query( $bulk_query, true );
 
 			if ( is_wp_error( $bulk_result ) ) {
 				return $bulk_result;
 			}
 
-			$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
-			$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
+				$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
+				$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
 
-			$sync_result = $this->bulk_upsert_from_jsonl(
-				isset( $bulk_result['items'] ) ? $bulk_result['items'] : array(),
-				$mapping,
-				$progress
-			);
+				$items = isset( $bulk_result['items'] ) ? $bulk_result['items'] : array();
 
-			$duration = round( microtime( true ) - $start_time, 2 );
+			if ( $dry_run ) {
+				// In dry-run mode, count items but skip the actual CCT write.
+				$duration = round( microtime( true ) - $start_time, 2 );
 
-			update_option( 'wp_mcp_ai_shopify_last_sync_' . $this->connection_id, current_time( 'mysql' ) );
-			delete_option( 'wp_mcp_ai_shopify_last_sync_error_' . $this->connection_id );
+				// Count how many CCT rows the items would produce.
+				$would_insert = 0;
+				$would_update = 0;
+				$would_skip   = 0;
+				$item_count   = count( $items );
 
-			$result = array_merge(
-				$sync_result,
-				array(
+				foreach ( $items as $jsonl_item ) {
+					$rows = $this->map_bulk_item_to_cct_rows( $jsonl_item, $mapping );
+					foreach ( $rows as $row ) {
+						// Check if this row already exists in CCT.
+						$existing = $this->get_cached_item_by_variant_id(
+							$row['shopify_variant_id'],
+							isset( $row['location_id'] ) ? $row['location_id'] : ''
+						);
+						if ( $existing ) {
+							$new_hash = isset( $row['sync_hash'] ) ? $row['sync_hash'] : '';
+							$old_hash = isset( $existing['sync_hash'] ) ? $existing['sync_hash'] : '';
+							if ( $new_hash === $old_hash ) {
+								++$would_skip;
+							} else {
+								++$would_update;
+							}
+						} else {
+							++$would_insert;
+						}
+					}
+				}
+
+				return array(
+					'inserted'      => $would_insert,
+					'updated'       => $would_update,
+					'skipped'       => $would_skip,
+					'errors'        => 0,
+					'total'         => $item_count,
 					'duration'      => $duration,
 					'timestamp'     => current_time( 'mysql' ),
 					'connection_id' => $this->connection_id,
 					'bulk_op_id'    => isset( $bulk_result['bulk_operation_id'] ) ? $bulk_result['bulk_operation_id'] : '',
-				)
-			);
+					'dry_run'       => true,
+				);
+			}
 
-			/**
-			 * Fires after a Shopify sync operation completes.
-			 *
-			 * @since 1.3.0
-			 *
-			 * @param array  $result        Sync result data.
-			 * @param string $connection_id The Shopify connection ID.
-			 */
-			do_action( 'wp_mcp_ai_shopify_sync_after_sync', $result, $this->connection_id );
+				$sync_result = $this->bulk_upsert_from_jsonl(
+					$items,
+					$mapping,
+					$progress
+				);
 
-			return $result;
+				$duration = round( microtime( true ) - $start_time, 2 );
+
+				update_option( 'wp_mcp_ai_shopify_last_sync_' . $this->connection_id, current_time( 'mysql' ) );
+				delete_option( 'wp_mcp_ai_shopify_last_sync_error_' . $this->connection_id );
+
+				$result = array_merge(
+					$sync_result,
+					array(
+						'duration'      => $duration,
+						'timestamp'     => current_time( 'mysql' ),
+						'connection_id' => $this->connection_id,
+						'bulk_op_id'    => isset( $bulk_result['bulk_operation_id'] ) ? $bulk_result['bulk_operation_id'] : '',
+					)
+				);
+
+				/**
+				 * Fires after a Shopify sync operation completes.
+				 *
+				 * @since 1.3.0
+				 *
+				 * @param array  $result        Sync result data.
+				 * @param string $connection_id The Shopify connection ID.
+				 */
+				do_action( 'wp_mcp_ai_shopify_sync_after_sync', $result, $this->connection_id );
+
+				return $result;
 		}
 
 		/**

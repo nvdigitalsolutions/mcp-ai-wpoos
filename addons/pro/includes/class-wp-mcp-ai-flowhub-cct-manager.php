@@ -210,7 +210,58 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				);
 			}
 
-			return true;
+				return true;
+		}
+
+			/**
+			 * Ensure the JetEngine CCT exists, creating it if needed.
+			 *
+			 * Uses the existing maybe_register_cct() logic that
+			 * creates the CCT via JetEngine's module system.
+			 * Only creates the CCT shell; columns are added
+			 * separately via ensure_columns().
+			 *
+			 * @since 1.5.0
+			 *
+			 * @return array|WP_Error Result array or WP_Error.
+			 */
+		public function ensure_cct_exists() {
+			// First try the static bootstrap path (handles JetEngine init timing).
+			if ( method_exists( __CLASS__, 'maybe_register_cct' ) ) {
+				self::maybe_register_cct();
+			}
+
+			// Now check if it exists.
+			$available = $this->is_cct_available();
+
+			if ( is_wp_error( $available ) ) {
+				// If the error is "JetEngine not ready", surface it.
+				if ( 'wp_mcp_ai_flowhub_jetengine_not_ready' === $available->get_error_code() ) {
+					return $available;
+				}
+				// If CCT still missing after bootstrap attempt, surface the error.
+				if ( 'wp_mcp_ai_flowhub_cct_missing' === $available->get_error_code() ) {
+					return $available;
+				}
+				return $available;
+			}
+
+			return array(
+				'created' => false,
+				'slug'    => $this->cct_slug,
+			);
+		}
+
+			/**
+			 * Check if the FlowHub API is configured with credentials.
+			 *
+			 * @since 1.5.0
+			 *
+			 * @return bool True if API keys are set.
+			 */
+		public function is_api_configured() {
+			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			return ! empty( $settings['client_id'] ) && ! empty( $settings['api_key'] );
 		}
 
 		// ------------------------------------------------------------------ //
@@ -543,18 +594,22 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 * @return int
 		 */
 		public function get_row_count() {
-			$items = $this->get_cached_items( array( 'per_page' => 1 ) );
-			// JetEngine CCT query doesn't easily expose total count.
-			// Use a direct count query.
-			global $wpdb;
-			$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+						global $wpdb;
+						$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
 
-			// Table name is constructed from a sanitized CCT slug.
-			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$count = $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
-			// phpcs:enable
+						// Bail gracefully if the table doesn't exist (CCT not created yet).
+						// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+						$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( ! $table_exists ) {
+				return 0;
+			}
 
-			return absint( $count );
+						// Table name is constructed from a sanitized CCT slug.
+						// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+						$count = $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
+						// phpcs:enable
+
+						return absint( $count );
 		}
 
 		/**
@@ -747,9 +802,11 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 *
 		 * @param bool          $force    Force full sync even if data is fresh.
 		 * @param callable|null $progress Optional progress callback.
+		 * @param bool          $dry_run  If true, skip CCT writes and only validate
+		 *                                the API query + count items. Default false.
 		 * @return array|WP_Error Sync result with item_count, location_count, duration.
 		 */
-		public function sync_from_api( $force = false, $progress = null ) {
+		public function sync_from_api( $force = false, $progress = null, $dry_run = false ) {
 			if ( ! $this->client ) {
 				$this->client = WP_MCP_AI_FlowHub_Client::from_settings();
 				if ( is_wp_error( $this->client ) ) {
@@ -759,14 +816,16 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 			$start_time = microtime( true );
 
-			// Ensure CCT columns exist.
-			$columns_result = $this->ensure_columns();
-			if ( is_wp_error( $columns_result ) ) {
-				return $columns_result;
-			}
+			// Ensure CCT columns exist (skip in dry-run, handled upstream).
+			if ( ! $dry_run ) {
+				$columns_result = $this->ensure_columns();
+				if ( is_wp_error( $columns_result ) ) {
+					return $columns_result;
+				}
 
-			if ( $force ) {
-				$this->truncate();
+				if ( $force ) {
+					$this->truncate();
+				}
 			}
 
 			$location_count = 0;
@@ -782,6 +841,30 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
 			$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
+
+			if ( $dry_run ) {
+				// In dry-run mode, count items but skip CCT writes.
+				foreach ( $all_items as $item ) {
+					++$item_count;
+
+					$loc_id = isset( $item['locationId'] ) ? $item['locationId'] : '';
+					if ( ! empty( $loc_id ) && ! isset( $locations[ $loc_id ] ) ) {
+						$locations[ $loc_id ] = true;
+						++$location_count;
+					}
+				}
+
+				$duration = round( microtime( true ) - $start_time, 2 );
+
+				return array(
+					'item_count'     => $item_count,
+					'location_count' => $location_count,
+					'error_count'    => 0,
+					'duration'       => $duration,
+					'timestamp'      => current_time( 'mysql' ),
+					'dry_run'        => true,
+				);
+			}
 
 			foreach ( $all_items as $item ) {
 				$result = $this->upsert( $item, $mapping );
