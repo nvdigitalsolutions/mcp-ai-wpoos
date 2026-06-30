@@ -70,71 +70,101 @@ class WP_MCP_AI_Tool_Import_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'source'          => array(
+				'source'               => array(
 					'type'        => 'string',
 					'enum'        => array( 'json', 'json_array', 'csv' ),
 					'default'     => 'json_array',
 					'description' => __( 'Data source format. json_array: pass items directly. json: pass JSON string. csv: pass CSV string.', 'mcp-ai-wpoos-pro' ),
 				),
-				'data'            => array(
+				'data'                 => array(
 					'type'        => 'array',
 					'description' => __( 'Array of place data objects (used when source is json_array). Each item matches create_place parameters.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'object' ),
 				),
-				'json_string'     => array(
+				'json_string'          => array(
 					'type'        => 'string',
 					'description' => __( 'Raw JSON string containing array of place objects (used when source is json).', 'mcp-ai-wpoos-pro' ),
 				),
-				'csv_string'      => array(
+				'csv_string'           => array(
 					'type'        => 'string',
 					'description' => __( 'Raw CSV string with header row (used when source is csv).', 'mcp-ai-wpoos-pro' ),
 				),
-				'skip_existing'   => array(
+				'skip_existing'        => array(
 					'type'        => 'boolean',
 					'default'     => true,
 					'description' => __( 'Skip places that already exist in the database.', 'mcp-ai-wpoos-pro' ),
 				),
-				'update_existing' => array(
+				'update_existing'      => array(
 					'type'        => 'boolean',
 					'default'     => false,
 					'description' => __( 'Update existing places with fresh data instead of skipping.', 'mcp-ai-wpoos-pro' ),
 				),
-				'dedup_strategy'  => array(
+				'dedup_strategy'       => array(
 					'type'        => 'string',
 					'enum'        => array( 'name', 'google_place_id', 'source_url', 'name_and_city', 'name_and_lat_lng' ),
 					'default'     => 'name_and_city',
 					'description' => __( 'How to determine if a place already exists.', 'mcp-ai-wpoos-pro' ),
 				),
-				'dry_run'         => array(
+				'dry_run'              => array(
 					'type'        => 'boolean',
 					'default'     => false,
 					'description' => __( 'Preview the import without creating or updating anything.', 'mcp-ai-wpoos-pro' ),
 				),
-				'batch_size'      => array(
+				'batch_size'           => array(
 					'type'        => 'integer',
 					'default'     => 50,
 					'minimum'     => 1,
 					'maximum'     => 200,
 					'description' => __( 'Number of items to process per batch.', 'mcp-ai-wpoos-pro' ),
 				),
-				'auto_geocode'    => array(
+				'auto_geocode'         => array(
 					'type'        => 'boolean',
 					'default'     => true,
 					'description' => __( 'Automatically geocode addresses that lack coordinates.', 'mcp-ai-wpoos-pro' ),
 				),
-				'parent_place_id' => array(
+				'parent_place_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Default parent place ID for all imported items.', 'mcp-ai-wpoos-pro' ),
 				),
-				'image_sideload'  => array(
+				'image_sideload'       => array(
 					'type'        => 'boolean',
 					'default'     => true,
 					'description' => __( 'Download and attach images from URLs in the data.', 'mcp-ai-wpoos-pro' ),
 				),
-				'image_url_field' => array(
+				'image_url_field'      => array(
 					'type'        => 'string',
 					'default'     => 'image_url',
 					'description' => __( 'Field name containing the image URL(s). Can be a single URL string or an array of URLs.', 'mcp-ai-wpoos-pro' ),
+				),
+				'auto_create_services' => array(
+					'type'        => 'boolean',
+					'default'     => false,
+					'description' => __( 'Automatically create bookable services (mcp_service) for imported places whose place_type matches service_place_types.', 'mcp-ai-wpoos-pro' ),
+				),
+				'service_place_types'  => array(
+					'type'        => 'array',
+					'default'     => array( 'experience' ),
+					'description' => __( 'Which place types should trigger auto service creation (requires auto_create_services: true).', 'mcp-ai-wpoos-pro' ),
+					'items'       => array( 'type' => 'string' ),
+				),
+				'service_defaults'     => array(
+					'type'        => 'object',
+					'description' => __( 'Default values for auto-created services: duration_minutes (default 180), price (default 0), buffer_time_minutes (default 30), category.', 'mcp-ai-wpoos-pro' ),
+					'properties'  => array(
+						'duration_minutes'    => array(
+							'type'    => 'integer',
+							'minimum' => 1,
+						),
+						'price'               => array(
+							'type'    => 'number',
+							'minimum' => 0,
+						),
+						'buffer_time_minutes' => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+						'category'            => array( 'type' => 'string' ),
+					),
 				),
 			),
 			'additionalProperties' => false,
@@ -213,19 +243,27 @@ class WP_MCP_AI_Tool_Import_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$image_url_field = isset( $arguments['image_url_field'] ) ? $arguments['image_url_field'] : 'image_url';
 		$batch_size      = isset( $arguments['batch_size'] ) ? absint( $arguments['batch_size'] ) : 50;
 
+		// Place→Service bridge settings.
+		$auto_create_services = isset( $arguments['auto_create_services'] ) && $arguments['auto_create_services'];
+		$service_place_types  = isset( $arguments['service_place_types'] ) ? (array) $arguments['service_place_types'] : array( 'experience' );
+		$service_defaults     = isset( $arguments['service_defaults'] ) ? (array) $arguments['service_defaults'] : array();
+
 		// Default parent.
 		$default_parent = isset( $arguments['parent_place_id'] ) ? absint( $arguments['parent_place_id'] ) : 0;
 
 		$results = array(
-			'success' => true,
-			'total'   => count( $items ),
-			'created' => 0,
-			'updated' => 0,
-			'skipped' => 0,
-			'failed'  => 0,
-			'ids'     => array(),
-			'errors'  => array(),
-			'dry_run' => $dry_run,
+			'success'          => true,
+			'total'            => count( $items ),
+			'created'          => 0,
+			'updated'          => 0,
+			'skipped'          => 0,
+			'failed'           => 0,
+			'services_created' => 0,
+			'service_errors'   => 0,
+			'ids'              => array(),
+			'errors'           => array(),
+			'service_failures' => array(),
+			'dry_run'          => $dry_run,
 		);
 
 		$processed = 0;
@@ -295,6 +333,25 @@ class WP_MCP_AI_Tool_Import_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					if ( ! empty( $image_urls ) ) {
 						WP_MCP_AI_Place_Helper::sideload_images( $existing_id, $image_urls );
 					}
+
+					// ── Auto-create bookable service (place→service bridge).
+					if ( $auto_create_services && ! empty( $item['place_type'] ) && in_array( $item['place_type'], $service_place_types, true ) ) {
+						$svc_defaults = $service_defaults;
+						if ( empty( $svc_defaults['category'] ) && ! empty( $item['city'] ) ) {
+							$svc_defaults['category'] = $item['city'];
+						}
+						$service_id = WP_MCP_AI_Place_Helper::create_service_from_place( $existing_id, $svc_defaults );
+						if ( is_wp_error( $service_id ) ) {
+							++$results['service_errors'];
+							$results['service_failures'][] = array(
+								'place_id' => $existing_id,
+								'place'    => $item['name'],
+								'error'    => $service_id->get_error_message(),
+							);
+						} else {
+							++$results['services_created'];
+						}
+					}
 				}
 			} else {
 				$place_id = WP_MCP_AI_Place_Helper::create_place( $item, $current_user_id );
@@ -312,6 +369,25 @@ class WP_MCP_AI_Tool_Import_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					// Sideload images.
 					if ( ! empty( $image_urls ) ) {
 						WP_MCP_AI_Place_Helper::sideload_images( $place_id, $image_urls );
+					}
+
+					// ── Auto-create bookable service (place→service bridge).
+					if ( $auto_create_services && ! empty( $item['place_type'] ) && in_array( $item['place_type'], $service_place_types, true ) ) {
+						$svc_defaults = $service_defaults;
+						if ( empty( $svc_defaults['category'] ) && ! empty( $item['city'] ) ) {
+							$svc_defaults['category'] = $item['city'];
+						}
+						$service_id = WP_MCP_AI_Place_Helper::create_service_from_place( $place_id, $svc_defaults );
+						if ( is_wp_error( $service_id ) ) {
+							++$results['service_errors'];
+							$results['service_failures'][] = array(
+								'place_id' => $place_id,
+								'place'    => $item['name'],
+								'error'    => $service_id->get_error_message(),
+							);
+						} else {
+							++$results['services_created'];
+						}
 					}
 				}
 			}
@@ -334,12 +410,14 @@ class WP_MCP_AI_Tool_Import_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$results['created']
 			)
 			: sprintf(
-				/* translators: 1: created, 2: updated, 3: failed, 4: skipped */
-				__( 'Import complete: %1$d created, %2$d updated, %3$d failed, %4$d skipped.', 'mcp-ai-wpoos-pro' ),
+				/* translators: 1: created, 2: updated, 3: failed, 4: skipped, 5: services created, 6: service errors */
+				__( 'Import complete: %1$d created, %2$d updated, %3$d failed, %4$d skipped, %5$d services created, %6$d service errors.', 'mcp-ai-wpoos-pro' ),
 				$results['created'],
 				$results['updated'],
 				$results['failed'],
-				$results['skipped']
+				$results['skipped'],
+				$results['services_created'],
+				$results['service_errors']
 			);
 
 		return $results;

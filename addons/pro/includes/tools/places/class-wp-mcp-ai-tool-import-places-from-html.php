@@ -134,63 +134,93 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'source_directory'   => array(
+				'source_directory'     => array(
 					'type'        => 'string',
 					'description' => __( 'Server path to the directory containing HTML files.', 'mcp-ai-wpoos-pro' ),
 				),
-				'recursive'          => array(
+				'recursive'            => array(
 					'type'        => 'boolean',
 					'default'     => true,
 					'description' => __( 'Recurse into subdirectories.', 'mcp-ai-wpoos-pro' ),
 				),
-				'url_pattern'        => array(
+				'url_pattern'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional regex pattern to filter which pages to process (matched against the file path).', 'mcp-ai-wpoos-pro' ),
 				),
-				'max_pages'          => array(
+				'max_pages'            => array(
 					'type'        => 'integer',
 					'default'     => 500,
 					'minimum'     => 1,
 					'maximum'     => 5000,
 					'description' => __( 'Maximum number of HTML pages to process.', 'mcp-ai-wpoos-pro' ),
 				),
-				'extraction_rules'   => array(
+				'extraction_rules'     => array(
 					'type'        => 'object',
 					'description' => __( 'Custom XPath selectors for data extraction. Keys: title_selector, description_selector, image_selector, h1_selector, main_content_selector, hero_image_selector, maps_iframe_selector, json_ld_selector, breadcrumb_selector, tips_selector.', 'mcp-ai-wpoos-pro' ),
 				),
-				'place_type_mapping' => array(
+				'place_type_mapping'   => array(
 					'type'        => 'object',
 					'description' => __( 'Map URL path patterns to place types. Example: {"/destinations/": "city", "/attractions/": "attraction", "/hotels/": "hotel"}', 'mcp-ai-wpoos-pro' ),
 				),
-				'default_place_type' => array(
+				'default_place_type'   => array(
 					'type'        => 'string',
 					'default'     => 'attraction',
 					'description' => __( 'Default place type when no mapping matches.', 'mcp-ai-wpoos-pro' ),
 				),
-				'default_country'    => array(
+				'default_country'      => array(
 					'type'        => 'string',
 					'description' => __( 'Default country for all imported places.', 'mcp-ai-wpoos-pro' ),
 				),
-				'parent_page_path'   => array(
+				'parent_page_path'     => array(
 					'type'        => 'string',
 					'description' => __( 'Path to a specific HTML page whose URL should be set as parent for all imported places (matched via canonical URL).', 'mcp-ai-wpoos-pro' ),
 				),
-				'skip_existing'      => array(
+				'skip_existing'        => array(
 					'type'        => 'boolean',
 					'default'     => true,
 					'description' => __( 'Skip places that already exist (matched by source URL).', 'mcp-ai-wpoos-pro' ),
 				),
-				'dry_run'            => array(
+				'dry_run'              => array(
 					'type'        => 'boolean',
 					'default'     => false,
 					'description' => __( 'Preview discovered pages without importing.', 'mcp-ai-wpoos-pro' ),
 				),
-				'batch_size'         => array(
+				'batch_size'           => array(
 					'type'        => 'integer',
 					'default'     => 20,
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'description' => __( 'Pages to process per batch.', 'mcp-ai-wpoos-pro' ),
+				),
+				'auto_create_services' => array(
+					'type'        => 'boolean',
+					'default'     => false,
+					'description' => __( 'Automatically create bookable services (mcp_service) for imported places whose place_type matches service_place_types.', 'mcp-ai-wpoos-pro' ),
+				),
+				'service_place_types'  => array(
+					'type'        => 'array',
+					'default'     => array( 'experience' ),
+					'description' => __( 'Which place types should trigger auto service creation (requires auto_create_services: true).', 'mcp-ai-wpoos-pro' ),
+					'items'       => array( 'type' => 'string' ),
+				),
+				'service_defaults'     => array(
+					'type'        => 'object',
+					'description' => __( 'Default values for auto-created services: duration_minutes (default 180), price (default 0), buffer_time_minutes (default 30), category.', 'mcp-ai-wpoos-pro' ),
+					'properties'  => array(
+						'duration_minutes'    => array(
+							'type'    => 'integer',
+							'minimum' => 1,
+						),
+						'price'               => array(
+							'type'    => 'number',
+							'minimum' => 0,
+						),
+						'buffer_time_minutes' => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+						'category'            => array( 'type' => 'string' ),
+					),
 				),
 			),
 			'required'             => array( 'source_directory' ),
@@ -262,6 +292,11 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		$skip_existing = isset( $arguments['skip_existing'] ) ? (bool) $arguments['skip_existing'] : true;
 		$batch_size    = isset( $arguments['batch_size'] ) ? absint( $arguments['batch_size'] ) : 20;
 
+		// Place→Service bridge settings.
+		$auto_create_services = isset( $arguments['auto_create_services'] ) && $arguments['auto_create_services'];
+		$service_place_types  = isset( $arguments['service_place_types'] ) ? (array) $arguments['service_place_types'] : array( 'experience' );
+		$service_defaults     = isset( $arguments['service_defaults'] ) ? (array) $arguments['service_defaults'] : array();
+
 		// Extraction rules: merge defaults with any overrides.
 		$rules = self::DEFAULT_RULES;
 		if ( isset( $arguments['extraction_rules'] ) && is_array( $arguments['extraction_rules'] ) ) {
@@ -293,16 +328,19 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		}
 
 		$results = array(
-			'success'         => true,
-			'files_found'     => count( $files ),
-			'created'         => 0,
-			'skipped'         => 0,
-			'failed'          => 0,
-			'ids'             => array(),
-			'errors'          => array(),
-			'discovered'      => array(),
-			'dry_run'         => $dry_run,
-			'parent_place_id' => $parent_place_id,
+			'success'          => true,
+			'files_found'      => count( $files ),
+			'created'          => 0,
+			'skipped'          => 0,
+			'failed'           => 0,
+			'services_created' => 0,
+			'service_errors'   => 0,
+			'ids'              => array(),
+			'errors'           => array(),
+			'service_failures' => array(),
+			'discovered'       => array(),
+			'dry_run'          => $dry_run,
+			'parent_place_id'  => $parent_place_id,
 		);
 
 		$processed = 0;
@@ -376,6 +414,29 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 				if ( ! empty( $image_urls ) ) {
 					WP_MCP_AI_Place_Helper::sideload_images( $place_id, $image_urls );
 				}
+
+				// ── Auto-create bookable service (place→service bridge).
+				if ( $auto_create_services && ! empty( $place_data['place_type'] ) ) {
+					$place_type = $place_data['place_type'];
+					if ( in_array( $place_type, $service_place_types, true ) ) {
+						$svc_defaults = $service_defaults;
+						// Default category from city if not provided.
+						if ( empty( $svc_defaults['category'] ) && ! empty( $place_data['city'] ) ) {
+							$svc_defaults['category'] = $place_data['city'];
+						}
+						$service_id = WP_MCP_AI_Place_Helper::create_service_from_place( $place_id, $svc_defaults );
+						if ( is_wp_error( $service_id ) ) {
+							++$results['service_errors'];
+							$results['service_failures'][] = array(
+								'place_id' => $place_id,
+								'place'    => $place_data['name'],
+								'error'    => $service_id->get_error_message(),
+							);
+						} else {
+							++$results['services_created'];
+						}
+					}
+				}
 			}
 
 			++$processed;
@@ -398,11 +459,13 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 				count( $results['discovered'] )
 			)
 			: sprintf(
-				/* translators: 1: created, 2: skipped, 3: failed */
-				__( 'HTML import complete: %1$d created, %2$d skipped, %3$d failed.', 'mcp-ai-wpoos-pro' ),
+							/* translators: 1: created, 2: skipped, 3: failed, 4: services created, 5: service errors */
+				__( 'HTML import complete: %1$d created, %2$d skipped, %3$d failed, %4$d services created, %5$d service errors.', 'mcp-ai-wpoos-pro' ),
 				$results['created'],
 				$results['skipped'],
-				$results['failed']
+				$results['failed'],
+				$results['services_created'],
+				$results['service_errors']
 			);
 
 		return $results;

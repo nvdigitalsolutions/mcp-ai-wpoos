@@ -456,6 +456,21 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 * [--import-experiences]
 	 * : Also import the experiences subdirectory (phase 3).
 	 *
+	 * [--create-services]
+	 * : Automatically create bookable services (mcp_service) for experience-type places.
+	 *
+	 * [--service-duration=<minutes>]
+	 * : Default duration in minutes for auto-created services.
+	 * ---
+	 * default: 180
+	 * ---
+	 *
+	 * [--service-price=<price>]
+	 * : Default price for auto-created services.
+	 * ---
+	 * default: 0
+	 * ---
+	 *
 	 * [--max-pages=<n>]
 	 * : Maximum pages per phase.
 	 * ---
@@ -492,6 +507,9 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		$city_subdir         = WP_CLI\Utils\get_flag_value( $assoc_args, 'city-subdir', 'destinations' );
 		$experience_subdir   = WP_CLI\Utils\get_flag_value( $assoc_args, 'experience-subdir', 'experiences' );
 		$import_experiences  = WP_CLI\Utils\get_flag_value( $assoc_args, 'import-experiences', false );
+		$create_services     = WP_CLI\Utils\get_flag_value( $assoc_args, 'create-services', false );
+		$service_duration    = absint( WP_CLI\Utils\get_flag_value( $assoc_args, 'service-duration', 180 ) );
+		$service_price       = floatval( WP_CLI\Utils\get_flag_value( $assoc_args, 'service-price', 0 ) );
 		$max_pages           = absint( WP_CLI\Utils\get_flag_value( $assoc_args, 'max-pages', 2000 ) );
 
 		// Default type mappings.
@@ -520,9 +538,11 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		}
 
 		$grand_total = array(
-			'created' => 0,
-			'skipped' => 0,
-			'failed'  => 0,
+			'created'          => 0,
+			'skipped'          => 0,
+			'failed'           => 0,
+			'services_created' => 0,
+			'service_errors'   => 0,
 		);
 
 		$this->start_timer();
@@ -625,6 +645,12 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 				/* translators: %s: directory path */
 				WP_CLI::warning( sprintf( __( 'Experiences subdirectory not found: %s', 'mcp-ai-wpoos-pro' ), $exp_dir ) );
 			} else {
+				$svc_defaults = $create_services ? array(
+					'duration_minutes'    => $service_duration,
+					'price'               => $service_price,
+					'buffer_time_minutes' => 30,
+					'category'            => $country ? $country : '',
+				) : array();
 				$exp_result = $this->run_html_import(
 					$exp_dir,
 					$country,
@@ -633,7 +659,9 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 					'',
 					true,
 					$max_pages,
-					$is_dry_run
+					$is_dry_run,
+					$create_services,
+					$svc_defaults
 				);
 
 				$this->add_to_totals( $grand_total, $exp_result );
@@ -653,6 +681,12 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		WP_CLI::log( sprintf( __( '  Skipped: %d', 'mcp-ai-wpoos-pro' ), $grand_total['skipped'] ) );
 		/* translators: %d: number of places */
 		WP_CLI::log( sprintf( __( '  Failed: %d', 'mcp-ai-wpoos-pro' ), $grand_total['failed'] ) );
+		if ( $create_services ) {
+			/* translators: %d: number of services */
+			WP_CLI::log( sprintf( __( '  Services created: %d', 'mcp-ai-wpoos-pro' ), $grand_total['services_created'] ) );
+			/* translators: %d: number of errors */
+			WP_CLI::log( sprintf( __( '  Service errors: %d', 'mcp-ai-wpoos-pro' ), $grand_total['service_errors'] ) );
+		}
 
 		$elapsed = $this->get_elapsed_time();
 		/* translators: %s: elapsed time */
@@ -680,20 +714,24 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 * @param string $parent_page  Parent page path (empty for none).
 	 * @param bool   $recursive    Whether to recurse.
 	 * @param int    $max_pages    Max pages.
-	 * @param bool   $dry_run      Dry run mode.
-	 * @return array{created:int, skipped:int, failed:int}
+	 * @param bool   $dry_run           Dry run mode.
+	 * @param bool   $create_services   Whether to auto-create bookable services.
+	 * @param array  $service_defaults  Default values for auto-created services.
+	 * @return array{created:int, skipped:int, failed:int, services_created:int, service_errors:int}
 	 */
-	private function run_html_import( $dir, $country, $type_mapping, $default_type, $parent_page, $recursive, $max_pages, $dry_run ) {
+	private function run_html_import( $dir, $country, $type_mapping, $default_type, $parent_page, $recursive, $max_pages, $dry_run, $create_services = false, $service_defaults = array() ) {
 		$tool_args = array(
-			'source_directory'   => $dir,
-			'recursive'          => $recursive,
-			'max_pages'          => $max_pages,
-			'default_country'    => $country,
-			'default_place_type' => $default_type,
-			'parent_page_path'   => $parent_page,
-			'place_type_mapping' => $type_mapping,
-			'dry_run'            => $dry_run,
-			'skip_existing'      => true,
+			'source_directory'    => $dir,
+			'recursive'           => $recursive,
+			'max_pages'           => $max_pages,
+			'default_country'     => $country,
+			'default_place_type'  => $default_type,
+			'parent_page_path'    => $parent_page,
+			'place_type_mapping'  => $type_mapping,
+			'dry_run'             => $dry_run,
+			'skip_existing'       => true,
+			'auto_create_services' => $create_services,
+			'service_defaults'    => $service_defaults,
 		);
 
 		$tool   = new WP_MCP_AI_Tool_Import_Places_From_Html();
@@ -702,16 +740,20 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		if ( is_wp_error( $result ) ) {
 			WP_CLI::warning( $result->get_error_message() );
 			return array(
-				'created' => 0,
-				'skipped' => 0,
-				'failed'  => 0,
+				'created'          => 0,
+				'skipped'          => 0,
+				'failed'           => 0,
+				'services_created' => 0,
+				'service_errors'   => 0,
 			);
 		}
 
 		return array(
-			'created' => $result['created'],
-			'skipped' => $result['skipped'],
-			'failed'  => $result['failed'],
+			'created'          => $result['created'],
+			'skipped'          => $result['skipped'],
+			'failed'           => $result['failed'],
+			'services_created' => isset( $result['services_created'] ) ? $result['services_created'] : 0,
+			'service_errors'   => isset( $result['service_errors'] ) ? $result['service_errors'] : 0,
 		);
 	}
 
