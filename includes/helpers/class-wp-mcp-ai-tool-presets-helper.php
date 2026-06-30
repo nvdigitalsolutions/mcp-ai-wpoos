@@ -42,25 +42,33 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  * @updated 1.9.0 - Added agent coordination tools and profession-specific presets
+ * @updated 2.0.0 - Added selected tools chips bar, auto-select from instructions/professions
  */
 class WP_MCP_AI_Tool_Presets_Helper {
 
-	/**
-	 * Get the tool presets configuration.
-	 *
-	 * Updated 2026-04-11 to include all 870+ current tools organized by:
-	 * - Core functionality (AI/ML, Media, Content, etc.)
-	 * - Profession categories (Healthcare, Legal, Education, etc.)
-	 * - Specialized workflows (Quiz Management, Media Templates, Music Production)
-	 * - Advanced tools (Math/Science, Research, Project Management)
-	 * - Agentic workflows (including agent coordination tools)
-	 * - Registration & Compliance Management
-	 * - CRE Debt & Securitization (CMBS, underwriting, originations, fund management)
-	 * - Full cross-platform messaging (Discord, Slack, Teams, Apple Messages, etc.)
-	 * - Shopify e-commerce, cloud storage, tool scaffolding, and more
-	 *
-	 * @return array Array of presets with name, description, and tools.
-	 */
+		/**
+		 * Cached tool keyword index for auto-select matching.
+		 *
+		 * @var array|null
+		 */
+	protected static $tool_index = null;
+
+		/**
+		 * Get the tool presets configuration.
+		 *
+		 * Updated 2026-04-11 to include all 870+ current tools organized by:
+		 * - Core functionality (AI/ML, Media, Content, etc.)
+		 * - Profession categories (Healthcare, Legal, Education, etc.)
+		 * - Specialized workflows (Quiz Management, Media Templates, Music Production)
+		 * - Advanced tools (Math/Science, Research, Project Management)
+		 * - Agentic workflows (including agent coordination tools)
+		 * - Registration & Compliance Management
+		 * - CRE Debt & Securitization (CMBS, underwriting, originations, fund management)
+		 * - Full cross-platform messaging (Discord, Slack, Teams, Apple Messages, etc.)
+		 * - Shopify e-commerce, cloud storage, tool scaffolding, and more
+		 *
+		 * @return array Array of presets with name, description, and tools.
+		 */
 	public static function get_presets() {
 		$presets = array(
 			// =================================================================.
@@ -3670,6 +3678,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		 *     @type bool   $include_script  Whether to include JavaScript. Default true.
 		 *     @type string $checkbox_selector CSS selector for tool checkboxes. Default 'input[name="wp_mcp_ai_tools[]"]'.
 		 *     @type bool   $show_utility_buttons Whether to show Clear All and Select All buttons. Default true.
+		 *     @type string $system_prompt   The assistant's system prompt for auto-select. Default ''.
+		 *     @type array  $primary_role_ids Array of profession post IDs for auto-select. Default array().
+		 *     @type bool   $show_auto_select Whether to show the Auto-Select button. Default true.
+		 *     @type bool   $show_selected_bar Whether to show the selected tools chips bar. Default true.
 		 * }
 		 */
 	public static function render_presets( $args = array() ) {
@@ -3682,6 +3694,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			'include_script'       => true,
 			'checkbox_selector'    => 'input[name="wp_mcp_ai_tools[]"]',
 			'show_utility_buttons' => true,
+			'system_prompt'        => '',
+			'primary_role_ids'     => array(),
+			'show_auto_select'     => true,
+			'show_selected_bar'    => true,
 		);
 
 		$args    = wp_parse_args( $args, $defaults );
@@ -3702,6 +3718,17 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		echo '<div class="' . esc_attr( $args['container_class'] ) . '" style="' . esc_attr( $container_style ) . '">';
 		echo '<h3 class="' . esc_attr( $args['container_class'] ) . '__title" style="' . esc_attr( $title_style ) . '">' . esc_html( $args['title'] ) . '</h3>';
 		echo '<p class="' . esc_attr( $args['container_class'] ) . '__description description" style="' . esc_attr( $desc_style ) . '">' . esc_html( $args['description'] ) . '</p>';
+
+		// Selected tools chips bar.
+		if ( $args['show_selected_bar'] ) {
+			echo '<div class="wp-mcp-ai-selected-tools-bar" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; min-height: 28px; align-items: center;">';
+			echo '<span class="wp-mcp-ai-selected-tools-count" style="font-weight: 600; font-size: 13px; margin-right: 6px; white-space: nowrap;">';
+			echo esc_html__( 'Selected:', 'mcp-ai-wpoos' ) . ' <span id="wp-mcp-ai-selected-count">0</span>';
+			echo '</span>';
+			echo '<span id="wp-mcp-ai-selected-chips"></span>';
+			echo '</div>';
+		}
+
 		echo '<div class="' . esc_attr( $args['container_class'] ) . '__buttons" style="' . esc_attr( $buttons_style ) . '">';
 
 		// Add utility buttons first.
@@ -3716,6 +3743,18 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				esc_attr( $args['button_class'] ),
 				esc_html__( '✗ Clear All', 'mcp-ai-wpoos' )
 			);
+
+			// Auto-Select button.
+			if ( $args['show_auto_select'] ) {
+				echo '<span style="width: 10px;"></span>';
+				printf(
+					'<button type="button" class="%1$s wp-mcp-ai-auto-select-tools" style="background: #6c3cb8; border-color: #6c3cb8; color: #fff;" title="%2$s">%3$s</button>',
+					esc_attr( $args['button_class'] ),
+					esc_attr__( 'Analyze the assistant\'s instructions and selected professions to automatically choose the most relevant tools.', 'mcp-ai-wpoos' ),
+					esc_html__( '🤖 Auto-Select', 'mcp-ai-wpoos' )
+				);
+			}
+
 			echo '<span style="width: 20px; height: 1px; background: #dcdcde; margin: 0 10px;"></span>';
 		}
 
@@ -3756,18 +3795,29 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 		// Include JavaScript if requested.
 		if ( $args['include_script'] ) {
-			self::render_preset_script( $args['checkbox_selector'] );
+			$auto_select_data = array();
+			if ( $args['show_auto_select'] ) {
+				$auto_select_data = self::compute_auto_select_data(
+					$args['system_prompt'],
+					$args['primary_role_ids'],
+					$args['available_tools']
+				);
+			}
+			self::render_preset_script( $args['checkbox_selector'], $args['show_selected_bar'], $args['show_auto_select'], $auto_select_data );
 		}
 	}
 
 	/**
 	 * Render the JavaScript for preset functionality.
 	 *
-	 * Includes Clear All and Select All functionality.
+	 * Includes Clear All, Select All, Auto-Select, and selected tools chips bar.
 	 *
 	 * @param string $checkbox_selector CSS selector for tool checkboxes.
+	 * @param bool   $show_selected_bar Whether to render the selected tools chips bar.
+	 * @param bool   $show_auto_select  Whether the auto-select button is present.
+	 * @param array  $auto_select_data  Data for auto-select (scored tools list).
 	 */
-	protected static function render_preset_script( $checkbox_selector ) {
+	protected static function render_preset_script( $checkbox_selector, $show_selected_bar = true, $show_auto_select = false, $auto_select_data = array() ) {
 		static $preset_script_printed = false;
 
 		if ( $preset_script_printed ) {
@@ -3776,7 +3826,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 		$preset_script_printed  = true;
 		$checkbox_selector_json = wp_json_encode( $checkbox_selector );
-		$script                 = "( function() {
+		$auto_select_data_json  = wp_json_encode( $auto_select_data );
+		$show_selected_bar_json = wp_json_encode( $show_selected_bar );
+		$show_auto_select_json  = wp_json_encode( $show_auto_select );
+
+		$script = "( function() {
 			'use strict';
 
 			document.addEventListener( 'DOMContentLoaded', function() {
@@ -3784,6 +3838,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				var checkboxSelector = {$checkbox_selector_json};
 				var selectAllBtn = document.querySelector( '.wp-mcp-ai-select-all-tools' );
 				var clearAllBtn = document.querySelector( '.wp-mcp-ai-clear-all-tools' );
+				var autoSelectBtn = document.querySelector( '.wp-mcp-ai-auto-select-tools' );
+				var showSelectedBar = {$show_selected_bar_json};
+				var showAutoSelect = {$show_auto_select_json};
+				var autoSelectData = {$auto_select_data_json};
 
 				// Helper function to toggle checkboxes.
 				function toggleCheckboxes( toolSlugs, checked ) {
@@ -3795,6 +3853,135 @@ class WP_MCP_AI_Tool_Presets_Helper {
 							checkbox.dispatchEvent( event );
 						}
 					} );
+				}
+
+				// Helper function to get all checked tool slugs.
+				function getCheckedSlugs() {
+					var checked = [];
+					var all = document.querySelectorAll( checkboxSelector );
+					all.forEach( function( cb ) {
+						if ( cb.checked ) {
+							checked.push( cb.value );
+						}
+					} );
+					return checked;
+				}
+
+				// Refresh the selected tools chips bar.
+				function refreshSelectedChips() {
+					if ( ! showSelectedBar ) {
+						return;
+					}
+					var countEl = document.getElementById( 'wp-mcp-ai-selected-count' );
+					var chipsEl = document.getElementById( 'wp-mcp-ai-selected-chips' );
+					if ( ! countEl || ! chipsEl ) {
+						return;
+					}
+					var checked = getCheckedSlugs();
+					countEl.textContent = checked.length;
+
+					var html = '';
+					var maxShow = 20;
+					var shown = 0;
+					checked.forEach( function( slug ) {
+						if ( shown >= maxShow ) {
+							return;
+						}
+						var labelEl = document.querySelector( checkboxSelector + '[value=\"' + slug + '\"]' );
+						var label = slug;
+						if ( labelEl ) {
+							// Try to get the human-readable label from the nearby label element.
+							var parentLabel = labelEl.closest( 'label' );
+							if ( parentLabel ) {
+								var text = parentLabel.textContent || '';
+								// Remove the checkbox text content to get just the label.
+								var clean = text.replace( /^\\s*/, '' ).replace( /\\s*$/, '' );
+								if ( clean.length > 0 && clean.length < 80 ) {
+									label = clean;
+								}
+							}
+						}
+						html += '<span class=\"wp-mcp-ai-tool-chip\" data-slug=\"' + slug + '\" style=\"display: inline-flex; align-items: center; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; font-size: 12px; border: 1px solid #c7d2fe; cursor: default;\">';
+						html += '<span class=\"wp-mcp-ai-tool-chip-label\" style=\"max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\">' + label + '</span>';
+						html += '<button type=\"button\" class=\"wp-mcp-ai-tool-chip-remove\" data-slug=\"' + slug + '\" style=\"margin-left: 4px; border: none; background: none; color: #6366f1; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;\" title=\"Remove \"' + slug + '\"\">&times;</button>';
+						html += '</span>';
+						shown++;
+					} );
+					if ( checked.length > maxShow ) {
+						html += '<span style=\"font-size: 12px; color: #6b7280;\">+ ' + ( checked.length - maxShow ) + ' more</span>';
+					}
+					chipsEl.innerHTML = html;
+
+					// Bind chip removal clicks.
+					chipsEl.querySelectorAll( '.wp-mcp-ai-tool-chip-remove' ).forEach( function( btn ) {
+						btn.addEventListener( 'click', function( e ) {
+							e.preventDefault();
+							e.stopPropagation();
+							var slug = btn.getAttribute( 'data-slug' );
+							var cb = document.querySelector( checkboxSelector + '[value=\"' + slug + '\"]' );
+							if ( cb ) {
+								cb.checked = false;
+								cb.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+							}
+						} );
+					} );
+				}
+
+				// Listen for checkbox changes to refresh chips.
+				if ( showSelectedBar ) {
+					document.addEventListener( 'change', function( e ) {
+						if ( e.target.matches && e.target.matches( checkboxSelector ) ) {
+							refreshSelectedChips();
+						}
+					} );
+					// Initial refresh.
+					refreshSelectedChips();
+				}
+
+				// Auto-Select button handler.
+				if ( showAutoSelect && autoSelectBtn && autoSelectData && autoSelectData.tools && autoSelectData.tools.length > 0 ) {
+					autoSelectBtn.addEventListener( 'click', function( e ) {
+						e.preventDefault();
+
+						// Visual feedback: disable button during processing.
+						autoSelectBtn.disabled = true;
+						autoSelectBtn.textContent = '...';
+
+						// Clear current selection first.
+						if ( clearAllBtn ) {
+							clearAllBtn.click();
+						}
+
+						// Small delay for visual feedback, then select.
+						setTimeout( function() {
+							autoSelectData.tools.forEach( function( toolSlug ) {
+								var checkbox = document.querySelector( checkboxSelector + '[value=\"' + toolSlug + '\"]' );
+								if ( checkbox && ! checkbox.checked ) {
+									checkbox.checked = true;
+									checkbox.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+								}
+							} );
+							autoSelectBtn.disabled = false;
+							autoSelectBtn.textContent = '\u{1F916} Auto-Select';
+
+							// Show notification.
+							var notice = document.createElement( 'div' );
+							notice.className = 'notice notice-success is-dismissible';
+							notice.style.margin = '10px 0';
+							notice.innerHTML = '<p><strong>Auto-Select complete:</strong> ' + autoSelectData.tools.length + ' tools selected based on instructions and professions. ' + ( autoSelectData.reason || '' ) + '</p>';
+							autoSelectBtn.parentNode.parentNode.insertBefore( notice, autoSelectBtn.parentNode );
+							setTimeout( function() {
+								if ( notice.parentNode ) {
+									notice.parentNode.removeChild( notice );
+								}
+							}, 8000 );
+						}, 150 );
+					} );
+				} else if ( showAutoSelect && autoSelectBtn ) {
+					// No auto-select data available — disable the button.
+					autoSelectBtn.disabled = true;
+					autoSelectBtn.style.opacity = '0.6';
+					autoSelectBtn.title = 'Set system instructions or select professions to enable auto-select.';
 				}
 
 				// Select All button handler.
@@ -3883,5 +4070,445 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			} );
 		} )();";
 		wp_print_inline_script_tag( $script );
+	}
+
+	/**
+	 * Compute auto-select tool recommendations based on system prompt and professions.
+	 *
+	 * Uses deterministic keyword matching against tool definitions (name, description,
+	 * profession_tags, toolkit) to score each tool. Returns the top-scoring tools.
+	 *
+	 * @param string $system_prompt   The assistant's system instructions.
+	 * @param array  $primary_role_ids Array of profession post IDs.
+	 * @param array  $available_tools  Array of available tool slugs to consider.
+	 * @return array { tools: string[], reason: string }|array Empty array if no data.
+	 */
+	public static function compute_auto_select_data( $system_prompt, $primary_role_ids, $available_tools ) {
+		$keywords = array();
+
+		// 1. Extract keywords from system prompt.
+		if ( ! empty( $system_prompt ) && is_string( $system_prompt ) ) {
+			$prompt_keywords = self::extract_keywords_from_text( $system_prompt );
+			$keywords        = array_merge( $keywords, $prompt_keywords );
+		}
+
+		// 2. Extract keywords from profession data.
+		$profession_tags = array();
+		if ( ! empty( $primary_role_ids ) && is_array( $primary_role_ids ) ) {
+			foreach ( $primary_role_ids as $role_id ) {
+				$role_id = absint( $role_id );
+				if ( $role_id <= 0 ) {
+					continue;
+				}
+
+				$profession_post = get_post( $role_id );
+				if ( ! $profession_post || 'mcp_ai_profession' !== $profession_post->post_type ) {
+					continue;
+				}
+
+				// Collect profession title as tag.
+				$title_lower       = strtolower( trim( $profession_post->post_title ) );
+				$profession_tags[] = sanitize_title( $title_lower );
+				$keywords[]        = $title_lower;
+
+				// Collect role description.
+				$role_description = get_post_meta( $role_id, '_wp_mcp_ai_profession_role_description', true );
+				if ( ! empty( $role_description ) ) {
+					$keywords = array_merge( $keywords, self::extract_keywords_from_text( $role_description ) );
+				}
+
+				// Collect knowledge base.
+				$knowledge_base = get_post_meta( $role_id, '_wp_mcp_ai_profession_knowledge_base', true );
+				if ( ! empty( $knowledge_base ) ) {
+					$keywords = array_merge( $keywords, self::extract_keywords_from_text( $knowledge_base ) );
+				}
+
+				// Collect expertise areas.
+				$expertise = get_post_meta( $role_id, '_wp_mcp_ai_profession_expertise', true );
+				if ( is_array( $expertise ) ) {
+					foreach ( $expertise as $exp ) {
+						if ( is_string( $exp ) ) {
+							$keywords[] = strtolower( trim( $exp ) );
+						}
+					}
+				}
+
+				// Collect default tools (these are directly relevant).
+				$default_tools = get_post_meta( $role_id, '_wp_mcp_ai_profession_default_tools', true );
+				if ( is_array( $default_tools ) ) {
+					foreach ( $default_tools as $tool ) {
+						if ( is_string( $tool ) ) {
+							$keywords[] = strtolower( trim( $tool ) );
+						}
+					}
+				}
+			}
+		}
+
+		// If no keywords, return empty.
+		if ( empty( $keywords ) ) {
+			return array(
+				'tools'  => array(),
+				'reason' => __( 'No instructions or professions found to analyze.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Deduplicate and normalize keywords.
+		$keywords = array_unique( array_map( 'strtolower', $keywords ) );
+
+		// 3. Build tool index from registry.
+		$tool_index = self::build_tool_index( $available_tools );
+
+		if ( empty( $tool_index ) ) {
+			return array(
+				'tools'  => array(),
+				'reason' => __( 'No tool definitions available to match against.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// 4. Score each tool against keywords.
+		$scored = array();
+		foreach ( $tool_index as $slug => $tool_data ) {
+			$score = 0;
+
+			// Direct profession tag match (highest weight).
+			if ( ! empty( $tool_data['profession_tags'] ) ) {
+				foreach ( $tool_data['profession_tags'] as $ptag ) {
+					$ptag_lower = strtolower( trim( $ptag ) );
+					if ( in_array( $ptag_lower, $profession_tags, true ) ) {
+						$score += 15;
+					}
+					// Also check if profession tag appears in keywords.
+					foreach ( $keywords as $kw ) {
+						if ( false !== strpos( $ptag_lower, $kw ) || false !== strpos( $kw, $ptag_lower ) ) {
+							$score += 8;
+						}
+					}
+				}
+			}
+
+			// Tool name matches keywords.
+			$tool_name_lower = strtolower( $tool_data['name'] );
+			foreach ( $keywords as $kw ) {
+				if ( strlen( $kw ) < 3 ) {
+					continue;
+				}
+				if ( false !== strpos( $tool_name_lower, $kw ) ) {
+					$score += 5;
+				}
+			}
+
+			// Tool slug matches keywords.
+			$slug_lower = strtolower( str_replace( '_', ' ', $slug ) );
+			foreach ( $keywords as $kw ) {
+				if ( strlen( $kw ) < 3 ) {
+					continue;
+				}
+				if ( false !== strpos( $slug_lower, $kw ) ) {
+					$score += 4;
+				}
+			}
+
+			// Tool description matches keywords.
+			if ( ! empty( $tool_data['description'] ) ) {
+				$desc_lower = strtolower( $tool_data['description'] );
+				foreach ( $keywords as $kw ) {
+					if ( strlen( $kw ) < 3 ) {
+						continue;
+					}
+					if ( false !== strpos( $desc_lower, $kw ) ) {
+						$score += 2;
+					}
+				}
+			}
+
+			// Toolkit/category matches keywords.
+			if ( ! empty( $tool_data['toolkit'] ) ) {
+				$toolkit_lower = strtolower( str_replace( '_', ' ', $tool_data['toolkit'] ) );
+				foreach ( $keywords as $kw ) {
+					if ( strlen( $kw ) < 3 ) {
+						continue;
+					}
+					if ( false !== strpos( $toolkit_lower, $kw ) ) {
+						$score += 3;
+					}
+				}
+			}
+
+			if ( $score > 0 ) {
+				$scored[ $slug ] = $score;
+			}
+		}
+
+		// Sort by score descending.
+		arsort( $scored, SORT_NUMERIC );
+
+		// Take top-scoring tools (up to configurable max, default 60).
+		$max_tools = apply_filters( 'wp_mcp_ai_auto_select_max_tools', 60 );
+		$min_score = apply_filters( 'wp_mcp_ai_auto_select_min_score', 3 );
+
+		$selected = array();
+		foreach ( $scored as $slug => $score ) {
+			if ( count( $selected ) >= $max_tools ) {
+				break;
+			}
+			if ( $score < $min_score ) {
+				break;
+			}
+			$selected[] = $slug;
+		}
+
+		$reason = sprintf(
+			/* translators: 1: number of keywords analyzed, 2: number of professions */
+			__( 'Analyzed %1$d keywords from instructions and %2$d profession(s).', 'mcp-ai-wpoos' ),
+			count( $keywords ),
+			count( $primary_role_ids )
+		);
+
+		return array(
+			'tools'  => array_values( $selected ),
+			'reason' => $reason,
+		);
+	}
+
+	/**
+	 * Extract meaningful keywords from a text string.
+	 *
+	 * Removes common stop words and short tokens.
+	 *
+	 * @param string $text Text to analyze.
+	 * @return string[] Array of lowercase keywords.
+	 */
+	protected static function extract_keywords_from_text( $text ) {
+		if ( ! is_string( $text ) || '' === trim( $text ) ) {
+			return array();
+		}
+
+		// Convert to lowercase and split into tokens.
+		$text = strtolower( $text );
+
+		// Replace common punctuation with spaces.
+		$text = preg_replace( '/[^\w\s-]/', ' ', $text );
+		$text = preg_replace( '/\s+/', ' ', $text );
+
+		// Split into words.
+		$words = explode( ' ', trim( $text ) );
+
+		// Common English stop words to filter out.
+		$stop_words = array(
+			'the',
+			'a',
+			'an',
+			'is',
+			'are',
+			'was',
+			'were',
+			'be',
+			'been',
+			'being',
+			'have',
+			'has',
+			'had',
+			'do',
+			'does',
+			'did',
+			'will',
+			'would',
+			'shall',
+			'should',
+			'may',
+			'might',
+			'must',
+			'can',
+			'could',
+			'i',
+			'me',
+			'my',
+			'we',
+			'our',
+			'us',
+			'you',
+			'your',
+			'he',
+			'she',
+			'it',
+			'they',
+			'them',
+			'their',
+			'its',
+			'and',
+			'or',
+			'but',
+			'not',
+			'no',
+			'if',
+			'then',
+			'else',
+			'when',
+			'where',
+			'how',
+			'what',
+			'which',
+			'who',
+			'whom',
+			'this',
+			'that',
+			'these',
+			'those',
+			'to',
+			'of',
+			'in',
+			'for',
+			'on',
+			'with',
+			'at',
+			'by',
+			'from',
+			'as',
+			'into',
+			'about',
+			'above',
+			'after',
+			'before',
+			'between',
+			'under',
+			'over',
+			'again',
+			'further',
+			'each',
+			'both',
+			'few',
+			'more',
+			'most',
+			'other',
+			'some',
+			'such',
+			'only',
+			'own',
+			'same',
+			'so',
+			'than',
+			'too',
+			'very',
+			'just',
+			'also',
+			'now',
+			'there',
+			'here',
+			'all',
+			'any',
+			'up',
+			'down',
+			'out',
+			'off',
+			'during',
+		);
+
+		$keywords = array();
+		foreach ( $words as $word ) {
+			$word = trim( $word, "-_.\t\n\r" );
+			if ( strlen( $word ) < 3 ) {
+				continue;
+			}
+			if ( in_array( $word, $stop_words, true ) ) {
+				continue;
+			}
+			// Skip pure numbers.
+			if ( is_numeric( $word ) ) {
+				continue;
+			}
+			$keywords[] = $word;
+		}
+
+		// Also include bigrams (two-word phrases) for better matching.
+		$count = count( $words );
+		for ( $i = 0; $i < $count - 1; $i++ ) {
+			$first  = trim( $words[ $i ], "-_.\t\n\r" );
+			$second = trim( $words[ $i + 1 ], "-_.\t\n\r" );
+			if ( strlen( $first ) < 3 || strlen( $second ) < 3 ) {
+				continue;
+			}
+			if ( in_array( $first, $stop_words, true ) || in_array( $second, $stop_words, true ) ) {
+				continue;
+			}
+			$bigram = strtolower( $first . ' ' . $second );
+			// Only include if it looks like a meaningful phrase.
+			if ( strlen( $bigram ) >= 7 ) {
+				$keywords[] = $bigram;
+			}
+		}
+
+		return array_unique( $keywords );
+	}
+
+	/**
+	 * Build a searchable index of tool definitions from the registry.
+	 *
+	 * Caches the result in a static property for performance.
+	 *
+	 * @param array $available_tools Optional array of tool slugs to limit the index.
+	 * @return array<string, array> Mapping of tool slug => definition metadata.
+	 */
+	protected static function build_tool_index( $available_tools = array() ) {
+		if ( null !== self::$tool_index ) {
+			if ( empty( $available_tools ) ) {
+				return self::$tool_index;
+			}
+			// Filter cached index to only available tools.
+			$filtered = array();
+			foreach ( $available_tools as $slug ) {
+				if ( isset( self::$tool_index[ $slug ] ) ) {
+					$filtered[ $slug ] = self::$tool_index[ $slug ];
+				}
+			}
+			return $filtered;
+		}
+
+		$index = array();
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			return $index;
+		}
+
+		$registry = WP_MCP_AI_Tool_Registry::instance();
+		$tools    = $registry->get_tools();
+
+		foreach ( $tools as $tool ) {
+			if ( ! $tool instanceof \WP_MCP_AI_Tool_Interface ) {
+				continue;
+			}
+
+			$slug = $tool->get_slug();
+			if ( '' === $slug ) {
+				continue;
+			}
+
+			// If available_tools is specified, skip tools not in that list.
+			if ( ! empty( $available_tools ) && ! in_array( $slug, $available_tools, true ) ) {
+				continue;
+			}
+
+			try {
+				$definition = $tool->get_definition();
+			} catch ( \Exception $e ) {
+				continue;
+			}
+
+			if ( ! is_array( $definition ) ) {
+				continue;
+			}
+
+			$index[ $slug ] = array(
+				'name'            => isset( $definition['name'] ) ? (string) $definition['name'] : $slug,
+				'description'     => isset( $definition['description'] ) ? (string) $definition['description'] : '',
+				'profession_tags' => isset( $definition['profession_tags'] ) ? (array) $definition['profession_tags'] : array(),
+				'toolkit'         => isset( $definition['toolkit'] ) ? (string) $definition['toolkit'] : '',
+				'risk_level'      => isset( $definition['risk_level'] ) ? (string) $definition['risk_level'] : '',
+			);
+		}
+
+		self::$tool_index = $index;
+
+		return $index;
 	}
 }

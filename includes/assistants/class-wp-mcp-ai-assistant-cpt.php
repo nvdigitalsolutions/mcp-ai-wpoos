@@ -135,12 +135,34 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 			}
 
+			// Get the current post ID for retrieving post meta.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Post ID from WordPress admin context.
+			$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+			if ( 0 === $post_id && isset( $GLOBALS['post'] ) ) {
+				$post_id = $GLOBALS['post']->ID;
+			}
+
+			$system_prompt    = '';
+			$primary_role_ids = array();
+
+			if ( $post_id > 0 ) {
+				$system_prompt    = (string) get_post_meta( $post_id, self::META_SYSTEM_PROMPT, true );
+				$primary_role_ids = get_post_meta( $post_id, self::META_PRIMARY_ROLES, true );
+				if ( ! is_array( $primary_role_ids ) ) {
+					$primary_role_ids = array();
+				}
+			}
+
 			// Use the helper class to render presets.
 			WP_MCP_AI_Tool_Presets_Helper::render_presets(
 				array(
 					'available_tools'   => $available_tools,
 					'container_class'   => 'wp-mcp-ai-tool-presets',
 					'checkbox_selector' => 'input[name="wp_mcp_ai_tools[]"]',
+					'system_prompt'     => $system_prompt,
+					'primary_role_ids'  => $primary_role_ids,
+					'show_auto_select'  => true,
+					'show_selected_bar' => true,
 				)
 			);
 		}
