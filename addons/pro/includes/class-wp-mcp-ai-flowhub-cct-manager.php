@@ -222,17 +222,25 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				);
 			}
 
-			// JetEngine's cct property is initialised on after_setup_theme (priority 0).
-			// If called before that hook fires, jet_engine()->cct will be null.
-			$jet_engine = jet_engine();
-			if ( ! isset( $jet_engine->cct ) || null === $jet_engine->cct ) {
+			// Use the module system instead of jet_engine()->cct directly.
+			// The ->cct shorthand can be null when the CCT module is inactive,
+			// even on a fully-loaded request. get_cct_module() properly checks
+			// is_module_active() and returns the instance via modules API.
+			$cct_module = self::get_cct_module();
+			if ( ! $cct_module ) {
+				// Try a one-shot activation in case it wasn't enabled yet.
+				self::maybe_enable_cct_module();
+				$cct_module = self::get_cct_module();
+			}
+
+			if ( ! $cct_module ) {
 				return new WP_Error(
 					'wp_mcp_ai_flowhub_jetengine_not_ready',
-					__( 'JetEngine is not fully initialised yet. Please try again.', 'mcp-ai-wpoos-pro' )
+					__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
-			$cct = $jet_engine->cct->data->get_item_by_slug( $this->cct_slug );
+			$cct = $cct_module->manager->data->get_item_by_slug( $this->cct_slug );
 
 			if ( ! $cct ) {
 				return new WP_Error(
@@ -1224,6 +1232,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 */
 		public static function bootstrap() {
 			add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 11 );
+			add_action( 'init', array( __CLASS__, 'maybe_enable_cct_module' ), 10 );
 			add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
 		}
 
@@ -1347,6 +1356,48 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			}
 
 			return $module_wrapper->instance;
+		}
+
+		/**
+		 * Automatically enable the JetEngine CCT module if it's not already active.
+		 *
+		 * FlowHub (and other toolkit storage features) depend on the Custom Content
+		 * Types module. This runs on init priority 10 so the module is ready before
+		 * CCT registration at priority 11.
+		 *
+		 * @since 1.7.0
+		 */
+		public static function maybe_enable_cct_module() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return;
+			}
+
+			$engine = jet_engine();
+
+			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
+				return;
+			}
+
+			// Already active — nothing to do.
+			if ( $engine->modules->is_module_active( 'custom-content-types' ) ) {
+				return;
+			}
+
+			// Check if the module exists before activating.
+			if ( ! method_exists( $engine->modules, 'get_module' ) ) {
+				return;
+			}
+
+			$module = $engine->modules->get_module( 'custom-content-types' );
+
+			if ( ! $module ) {
+				return;
+			}
+
+			// Activate the CCT module.
+			if ( method_exists( $engine->modules, 'activate_module' ) ) {
+				$engine->modules->activate_module( 'custom-content-types' );
+			}
 		}
 
 		/**

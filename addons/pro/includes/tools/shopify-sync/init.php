@@ -47,6 +47,9 @@ if ( wp_mcp_ai_is_shopify_sync_toolkit_enabled()
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-sync-engine.php';
 	}
 
+	// Bootstrap CCT auto-registration and module activation on init.
+	WP_MCP_AI_Shopify_Sync_CCT_Manager::bootstrap();
+
 	// Initialize sync engine (schedules Action Scheduler hooks).
 	WP_MCP_AI_Shopify_Sync_Engine::init();
 

@@ -167,7 +167,25 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				);
 			}
 
-			$cct = jet_engine()->cct->data->get_item_by_slug( $this->cct_slug );
+			// Use the module system instead of jet_engine()->cct directly.
+			// The ->cct shorthand can be null when the CCT module is inactive,
+			// even on a fully-loaded request. get_cct_module() properly checks
+			// is_module_active() and returns the instance via modules API.
+			$cct_module = self::get_cct_module();
+			if ( ! $cct_module ) {
+				// Try a one-shot activation in case it wasn't enabled yet.
+				self::maybe_enable_cct_module();
+				$cct_module = self::get_cct_module();
+			}
+
+			if ( ! $cct_module ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_jetengine_not_ready',
+					__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$cct = $cct_module->manager->data->get_item_by_slug( $this->cct_slug );
 
 			if ( ! $cct ) {
 				return new WP_Error(
@@ -202,7 +220,21 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				);
 			}
 
-			$existing = jet_engine()->cct->data->get_item_by_slug( $this->cct_slug );
+			// Use the safe module path instead of jet_engine()->cct directly.
+			$cct_module = self::get_cct_module();
+			if ( ! $cct_module ) {
+				self::maybe_enable_cct_module();
+				$cct_module = self::get_cct_module();
+			}
+
+			if ( ! $cct_module ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_jetengine_not_ready',
+					__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$existing = $cct_module->manager->data->get_item_by_slug( $this->cct_slug );
 
 			if ( $existing ) {
 				return array(
@@ -249,7 +281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			 */
 			$cct_data = apply_filters( 'wp_mcp_ai_shopify_sync_cct_data', $cct_data, $this->connection_id );
 
-			$cct_id = jet_engine()->cct->data->create_item( $cct_data, 'jet_cct' );
+			$cct_id = $cct_module->manager->data->create_item( $cct_data, 'jet_cct' );
 
 			if ( ! $cct_id || is_wp_error( $cct_id ) ) {
 				return is_wp_error( $cct_id )
@@ -1531,6 +1563,136 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			$orderby = sanitize_key( $orderby );
 
 			return isset( $map[ $orderby ] ) ? $map[ $orderby ] : 'last_synced_at';
+		}
+
+		// ------------------------------------------------------------------ //
+		// Module Bootstrap & Safe Access                                        //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Bootstrap the CCT manager.
+		 *
+		 * Hooks module auto-activation and CCT registration on init.
+		 *
+		 * @since 1.7.0
+		 */
+		public static function bootstrap() {
+			add_action( 'init', array( __CLASS__, 'maybe_enable_cct_module' ), 10 );
+			add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
+		}
+
+		/**
+		 * Retrieve the JetEngine Custom Content Types module instance safely.
+		 *
+		 * Goes through JetEngine's modules API rather than relying on the
+		 * fragile jet_engine()->cct shorthand, which can be null even on a
+		 * fully-loaded request when the CCT module is inactive.
+		 *
+		 * @since 1.7.0
+		 *
+		 * @return \Jet_Engine\Modules\Custom_Content_Types\Module|null
+		 */
+		protected static function get_cct_module() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return null;
+			}
+
+			$engine = jet_engine();
+
+			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
+				return null;
+			}
+
+			if ( ! $engine->modules->is_module_active( 'custom-content-types' ) ) {
+				return null;
+			}
+
+			$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
+
+			if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+				return null;
+			}
+
+			return $module_wrapper->instance;
+		}
+
+		/**
+		 * Automatically enable the JetEngine CCT module if it's not already active.
+		 *
+		 * Shopify Sync depends on the Custom Content Types module. This runs on
+		 * init priority 10 so the module is ready before CCT interactions.
+		 *
+		 * @since 1.7.0
+		 */
+		public static function maybe_enable_cct_module() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return;
+			}
+
+			$engine = jet_engine();
+
+			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
+				return;
+			}
+
+			// Already active — nothing to do.
+			if ( $engine->modules->is_module_active( 'custom-content-types' ) ) {
+				return;
+			}
+
+			// Check if the module exists before activating.
+			if ( ! method_exists( $engine->modules, 'get_module' ) ) {
+				return;
+			}
+
+			$module = $engine->modules->get_module( 'custom-content-types' );
+
+			if ( ! $module ) {
+				return;
+			}
+
+			// Activate the CCT module.
+			if ( method_exists( $engine->modules, 'activate_module' ) ) {
+				$engine->modules->activate_module( 'custom-content-types' );
+			}
+		}
+
+		/**
+		 * Automatically enable the JetEngine data stores module if it's not already active.
+		 *
+		 * @since 1.7.0
+		 */
+		public static function maybe_enable_data_stores() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return;
+			}
+
+			$engine = jet_engine();
+
+			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
+				return;
+			}
+
+			// Check if data stores module is already active.
+			if ( $engine->modules->is_module_active( 'data-stores' ) ) {
+				return;
+			}
+
+			// Check if the module exists.
+			if ( ! method_exists( $engine->modules, 'get_module' ) ) {
+				return;
+			}
+
+			$module = $engine->modules->get_module( 'data-stores' );
+
+			if ( ! $module ) {
+				return;
+			}
+
+			// Activate the data stores module.
+			if ( method_exists( $engine->modules, 'activate_module' ) ) {
+				$engine->modules->activate_module( 'data-stores' );
+			}
 		}
 	}
 }
