@@ -173,18 +173,32 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 		 * @since 1.3.0
 		 *
 		 * @param string $connection_id Remote Sites connection ID.
+		 * @param bool   $dry_run       If true, validate everything but skip
+		 *                              CCT writes, cost tracking, and option
+		 *                              updates. Runs the GraphQL query to
+		 *                              verify connectivity and data shape.
+		 *                              Default false.
+		 * @return array|WP_Error Dry-run report when $dry_run is true,
+		 *                        otherwise void (side-effect based).
 		 */
-		public static function run_full_sync( $connection_id ) {
+		public static function run_full_sync( $connection_id, $dry_run = false ) {
 			if ( ! function_exists( 'wp_mcp_ai_log' ) ) {
-				return;
+				return $dry_run ? new WP_Error(
+					'wp_mcp_ai_shopify_sync_no_logger',
+					__( 'Plugin logger is not available.', 'mcp-ai-wpoos-pro' )
+				) : null;
 			}
 
-			wp_mcp_ai_log( sprintf( 'Shopify full sync started for connection %s.', $connection_id ), 'info' );
+			if ( $dry_run ) {
+				wp_mcp_ai_log( sprintf( 'Shopify DRY RUN started for connection %s.', $connection_id ), 'info' );
+			} else {
+				wp_mcp_ai_log( sprintf( 'Shopify full sync started for connection %s.', $connection_id ), 'info' );
+			}
 
 			$engine = new self( $connection_id );
 
-			// Check cost budget before syncing.
-			if ( $engine->should_skip_sync_due_to_cost() ) {
+			// Check cost budget before syncing (skip in dry-run, but report it).
+			if ( ! $dry_run && $engine->should_skip_sync_due_to_cost() ) {
 				wp_mcp_ai_log(
 					sprintf( 'Shopify sync skipped for %s: GraphQL cost budget too low.', $connection_id ),
 					'warning'
@@ -192,20 +206,83 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 				return;
 			}
 
+			$cost_report = $engine->get_cost_report();
+
 			$cct_manager = new WP_MCP_AI_Shopify_Sync_CCT_Manager( $connection_id );
 
-			// Ensure CCT is available.
-			$available = $cct_manager->is_cct_available();
-			if ( is_wp_error( $available ) ) {
-				self::handle_sync_error( $available, $connection_id );
+			// Ensure CCT exists (auto-create if missing).
+			$cct_ensured = $cct_manager->ensure_cct_exists();
+			if ( is_wp_error( $cct_ensured ) ) {
+				if ( $dry_run ) {
+					return $cct_ensured;
+				}
+				self::handle_sync_error( $cct_ensured, $connection_id );
 				return;
 			}
 
-			$result = $cct_manager->sync_from_bulk_operation();
+			// Ensure CCT columns.
+			$columns_ensured = $cct_manager->ensure_columns();
+			if ( is_wp_error( $columns_ensured ) ) {
+				if ( $dry_run ) {
+					return $columns_ensured;
+				}
+				self::handle_sync_error( $columns_ensured, $connection_id );
+				return;
+			}
+
+			// Run the sync (GraphQL bulk operation + JSONL upsert).
+			$result = $cct_manager->sync_from_bulk_operation( null, $dry_run );
 
 			if ( is_wp_error( $result ) ) {
+				if ( $dry_run ) {
+					return $result;
+				}
 				self::handle_sync_error( $result, $connection_id );
 				return;
+			}
+
+			if ( $dry_run ) {
+				// Build a comprehensive dry-run report.
+				$item_count = isset( $result['total'] ) ? absint( $result['total'] ) : 0;
+				$dry_report = array(
+					'success'       => true,
+					'dry_run'       => true,
+					'connection_id' => $connection_id,
+					'status'        => array(
+						'cct_slug'           => $cct_manager->get_cct_slug(),
+						'cct_exists'         => $cct_manager->is_cct_available() === true,
+						'cct_created'        => ! empty( $cct_ensured['created'] ),
+						'columns_created'    => $columns_ensured,
+						'client_available'   => class_exists( 'WP_MCP_AI_Shopify_Client' ),
+						'cost_budget_pct'    => round( $cost_report['pct_remaining'], 1 ),
+						'cost_would_consume' => 10,
+					),
+					'data_summary'  => array(
+						'items_would_insert' => isset( $result['inserted'] ) ? $result['inserted'] : 0,
+						'items_would_update' => isset( $result['updated'] ) ? $result['updated'] : 0,
+						'items_would_skip'   => isset( $result['skipped'] ) ? $result['skipped'] : 0,
+						'total_items'        => $item_count,
+						'duration'           => isset( $result['duration'] ) ? $result['duration'] : 0,
+					),
+					'validation'    => array(
+						'shopify_connected' => ! is_wp_error( $result ),
+						'warnings'          => isset( $result['warnings'] ) ? $result['warnings'] : array(),
+					),
+					'timestamp'     => current_time( 'mysql' ),
+				);
+
+				wp_mcp_ai_log(
+					sprintf(
+						'Shopify DRY RUN completed for %s: %d items would be inserted, %d updated, %d skipped.',
+						$connection_id,
+						$dry_report['data_summary']['items_would_insert'],
+						$dry_report['data_summary']['items_would_update'],
+						$dry_report['data_summary']['items_would_skip']
+					),
+					'info'
+				);
+
+				return $dry_report;
 			}
 
 			// Track GraphQL cost (bulk operation = 10 points).

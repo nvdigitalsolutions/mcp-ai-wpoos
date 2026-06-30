@@ -121,24 +121,83 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 		 * Callback for HOOK_FULL_SYNC action.
 		 *
 		 * @since 1.2.0
+		 *
+		 * @param bool $dry_run If true, validate everything but skip
+		 *                      CCT writes and option updates. Runs
+		 *                      the API query to verify connectivity.
+		 *                      Default false.
+		 * @return array|WP_Error Dry-run report when $dry_run is true,
+		 *                        otherwise void (side-effect based).
 		 */
-		public static function run_full_sync() {
-			wp_mcp_ai_log( 'FlowHub full sync started.', 'info' );
+		public static function run_full_sync( $dry_run = false ) {
+			if ( $dry_run ) {
+				wp_mcp_ai_log( 'FlowHub DRY RUN started.', 'info' );
+			} else {
+				wp_mcp_ai_log( 'FlowHub full sync started.', 'info' );
+			}
 
 			$cct_manager = new WP_MCP_AI_FlowHub_CCT_Manager();
 
-			// Ensure CCT is available.
-			$available = $cct_manager->is_cct_available();
-			if ( is_wp_error( $available ) ) {
-				self::handle_sync_error( $available );
+			// Ensure CCT exists (auto-create if missing).
+			$cct_ensured = $cct_manager->ensure_cct_exists();
+			if ( is_wp_error( $cct_ensured ) ) {
+				if ( $dry_run ) {
+					return $cct_ensured;
+				}
+				self::handle_sync_error( $cct_ensured );
 				return;
 			}
 
-			$result = $cct_manager->sync_from_api();
+			// Ensure CCT columns.
+			$columns_result = $cct_manager->ensure_columns();
+			if ( is_wp_error( $columns_result ) ) {
+				if ( $dry_run ) {
+					return $columns_result;
+				}
+				self::handle_sync_error( $columns_result );
+				return;
+			}
+
+			$result = $cct_manager->sync_from_api( true, null, $dry_run );
 
 			if ( is_wp_error( $result ) ) {
+				if ( $dry_run ) {
+					return $result;
+				}
 				self::handle_sync_error( $result );
 				return;
+			}
+
+			if ( $dry_run ) {
+				$dry_report = array(
+					'success'      => true,
+					'dry_run'      => true,
+					'status'       => array(
+						'cct_slug'        => $cct_manager->get_cct_slug(),
+						'cct_exists'      => $cct_manager->is_cct_available() === true,
+						'cct_created'     => ! empty( $cct_ensured['created'] ),
+						'columns_created' => $columns_result,
+						'is_configured'   => $cct_manager->is_api_configured(),
+					),
+					'data_summary' => array(
+						'items_would_sync' => isset( $result['item_count'] ) ? $result['item_count'] : 0,
+						'locations'        => isset( $result['location_count'] ) ? $result['location_count'] : 0,
+						'errors'           => isset( $result['error_count'] ) ? $result['error_count'] : 0,
+						'duration'         => isset( $result['duration'] ) ? $result['duration'] : 0,
+					),
+					'timestamp'    => current_time( 'mysql' ),
+				);
+
+				wp_mcp_ai_log(
+					sprintf(
+						'FlowHub DRY RUN completed: %d items across %d locations.',
+						$dry_report['data_summary']['items_would_sync'],
+						$dry_report['data_summary']['locations']
+					),
+					'info'
+				);
+
+				return $dry_report;
 			}
 
 			update_option( 'wp_mcp_ai_flowhub_last_sync', current_time( 'mysql' ) );
