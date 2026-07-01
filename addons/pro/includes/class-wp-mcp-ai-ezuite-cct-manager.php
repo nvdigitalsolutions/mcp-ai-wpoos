@@ -1070,7 +1070,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		 * @since 1.9.0
 		 */
 		public static function maybe_register_cct() {
-			$settings = get_option( 'wp_mcp_ai_ezuite_toolkit_settings', array() );
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
 			if ( empty( $settings['enable_ezuite_toolkit'] ) ) {
 				return;
 			}
