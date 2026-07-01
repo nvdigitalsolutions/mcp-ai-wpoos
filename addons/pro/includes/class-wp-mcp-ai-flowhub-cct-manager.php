@@ -230,11 +230,16 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			}
 
 			if ( ! $cct_module || empty( $cct_module->data ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_flowhub_jetengine_not_ready',
-					__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
-				);
-			}
+					// Table-exists fallback (follows the vitals-log CCT pattern).
+					if ( $this->table_exists() ) {
+						return true;
+					}
+
+					return new WP_Error(
+						'wp_mcp_ai_flowhub_jetengine_not_ready',
+						__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
+					);
+				}
 
 			$data = $cct_module->data;
 
@@ -267,6 +272,25 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Check whether the CCT database table physically exists.
+		 *
+		 * Follows the vitals-log CCT pattern: a direct SHOW TABLES query
+		 * that bypasses JetEngine's module system entirely.  Used as a
+		 * lightweight fallback when get_cct_module() can't obtain a handle
+		 * but the table was already created by a prior sync.
+		 *
+		 * @since 1.5.1
+		 *
+		 * @return bool
+		 */
+		protected function table_exists() {
+			global $wpdb;
+			$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
 		}
 
 			/**

@@ -184,6 +184,16 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			}
 
 			if ( ! $cct_module ) {
+				// Table-exists fallback (follows the vitals-log CCT pattern).
+				// When JetEngine's module system can't provide a handle but
+				// the physical table was already created by a prior sync,
+				// treat the CCT as available so dry runs and status checks
+				// still work. Write operations will surface a clear error if
+				// they can't obtain a module instance later.
+				if ( $this->table_exists() ) {
+					return true;
+				}
+
 				return new WP_Error(
 					'wp_mcp_ai_ezuite_jetengine_not_ready',
 					__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
@@ -221,6 +231,25 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Check whether the CCT database table physically exists.
+		 *
+		 * Follows the vitals-log CCT pattern: a direct SHOW TABLES query
+		 * that bypasses JetEngine's module system entirely.  Used as a
+		 * lightweight fallback when get_cct_module() can't obtain a handle
+		 * but the table was already created by a prior sync.
+		 *
+		 * @since 1.9.1
+		 *
+		 * @return bool
+		 */
+		protected function table_exists() {
+			global $wpdb;
+			$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
 		}
 
 		/**
