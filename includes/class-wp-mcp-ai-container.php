@@ -340,6 +340,13 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'client.baseten',
+			function () {
+				return new WP_MCP_AI_Baseten_Client();
+			}
+		);
+
+		$this->singleton(
 			'client.kimi',
 			function () {
 				return new WP_MCP_AI_Kimi_Client();
