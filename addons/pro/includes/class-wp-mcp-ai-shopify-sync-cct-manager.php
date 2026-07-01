@@ -1640,11 +1640,27 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
 
-			if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+			if ( empty( $module_wrapper ) ) {
 				return null;
 			}
 
-			return $module_wrapper->instance;
+			// Use the pre-built instance when available.
+			if ( ! empty( $module_wrapper->instance ) && ! empty( $module_wrapper->instance->data ) ) {
+				return $module_wrapper->instance;
+			}
+
+			// Last-resort: call get_module() to force lazy-init (the same method
+			// JetEngine itself uses to populate ->instance internally). This
+			// covers edge cases where the module is active but ->instance was
+			// never materialised (e.g. activation mid-request).
+			if ( method_exists( $module_wrapper, 'get_module' ) ) {
+				$instance = $module_wrapper->get_module();
+				if ( ! empty( $instance ) && ! empty( $instance->data ) ) {
+					return $instance;
+				}
+			}
+
+			return null;
 		}
 
 		/**
