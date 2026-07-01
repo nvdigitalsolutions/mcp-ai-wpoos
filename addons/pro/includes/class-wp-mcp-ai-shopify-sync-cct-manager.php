@@ -186,6 +186,11 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			}
 
 			if ( ! $cct_module ) {
+				// Table-exists fallback (follows the vitals-log CCT pattern).
+				if ( $this->table_exists() ) {
+					return true;
+				}
+
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_jetengine_not_ready',
 					__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
@@ -223,7 +228,26 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			}
 
 					return true;
-		}
+			}
+
+			/**
+			 * Check whether the CCT database table physically exists.
+			 *
+			 * Follows the vitals-log CCT pattern: a direct SHOW TABLES query
+			 * that bypasses JetEngine's module system entirely.  Used as a
+			 * lightweight fallback when get_cct_module() can't obtain a handle
+			 * but the table was already created by a prior sync.
+			 *
+			 * @since 1.7.1
+			 *
+			 * @return bool
+			 */
+			protected function table_exists() {
+				global $wpdb;
+				$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
+			}
 
 				/**
 				 * Ensure the JetEngine CCT exists, creating it if needed.
@@ -1640,11 +1664,27 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
 
-			if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+			if ( empty( $module_wrapper ) ) {
 				return null;
 			}
 
-			return $module_wrapper->instance;
+			// Use the pre-built instance when available.
+			if ( ! empty( $module_wrapper->instance ) && ! empty( $module_wrapper->instance->data ) ) {
+				return $module_wrapper->instance;
+			}
+
+			// Last-resort: call get_module() to force lazy-init (the same method
+			// JetEngine itself uses to populate ->instance internally). This
+			// covers edge cases where the module is active but ->instance was
+			// never materialised (e.g. activation mid-request).
+			if ( method_exists( $module_wrapper, 'get_module' ) ) {
+				$instance = $module_wrapper->get_module();
+				if ( ! empty( $instance ) && ! empty( $instance->data ) ) {
+					return $instance;
+				}
+			}
+
+			return null;
 		}
 
 		/**
