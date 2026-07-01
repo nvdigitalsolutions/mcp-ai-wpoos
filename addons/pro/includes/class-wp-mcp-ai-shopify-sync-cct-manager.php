@@ -1660,8 +1660,9 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		/**
 		 * Register the Shopify Sync CCT in JetEngine if it is missing.
 		 *
-		 * Uses the set_request() / create_item(false) pipeline proven by the
-		 * Vitals Log CCT and FlowHub CCT managers.
+		 * Uses the explicit sanitize-update lifecycle pipeline proven by the
+		 * FlowHub CCT manager, which is more reliable across JetEngine
+		 * versions than the simplified create_item(false) two-liner.
 		 *
 		 * @since 1.8.0
 		 */
@@ -1680,8 +1681,36 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return;
 			}
 
-			$module->manager->data->set_request( self::get_registration_request() );
-			$module->manager->data->create_item( false );
+			$data    = $module->manager->data;
+			$request = self::get_registration_request();
+
+			$data->set_request( $request );
+
+			if ( method_exists( $data, 'sanitize_item_request' ) && ! $data->sanitize_item_request() ) {
+				return;
+			}
+
+			$item = $data->sanitize_item_from_request();
+
+			if ( empty( $item ) || ! is_array( $item ) ) {
+				return;
+			}
+
+			$data->before_item_update( $item, true );
+
+			$item_id = $data->update_item_in_db( $item );
+
+			if ( ! $item_id ) {
+				return;
+			}
+
+			$item['id'] = $item_id;
+
+			$data->after_item_update( $item, true );
+
+			if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
+				$data->db->query_raw( 'post_types' );
+			}
 		}
 
 		/**
