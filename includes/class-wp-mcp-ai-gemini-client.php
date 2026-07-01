@@ -27,21 +27,50 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		const API_BASE_URL            = 'https://generativelanguage.googleapis.com/v1beta/';
 		const DEFAULT_BASE_URL        = 'https://generativelanguage.googleapis.com/v1beta';
 
-		/**
-		 * Retrieve the configured API key.
-		 *
-		 * @return string
-		 */
-		public function get_api_key() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$key      = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+		    /**
+		     * In-memory API key override. Set via set_api_key().
+		     *
+		     * @since 2026.07
+		     * @var string|null
+		     */
+		    private $api_key_override = null;
 
-			if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
-				$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'gemini' ) ?? '';
-			}
+		    /**
+		     * Retrieve the configured API key.
+		     *
+		     * @return string
+		     */
+		    public function get_api_key() {
+		        // If a transient API key was set via set_api_key(), use it instead
+		        // of the persisted setting. This prevents TOCTOU race conditions
+		        // when testing a key before saving it.
+		        if ( isset( $this->api_key_override ) && is_string( $this->api_key_override ) ) {
+		            return $this->api_key_override;
+		        }
 
-			return $key;
-		}
+		        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+		        $key      = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+
+		        if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+		            $key = WP_MCP_AI_Credential_Resolver::get_api_key( 'gemini' ) ?? '';
+		        }
+
+		        return $key;
+		    }
+
+		    /**
+		     * Override the API key for the lifetime of this instance only.
+		     *
+		     * Use this when testing a key before persisting it, instead of
+		     * temporarily writing it to wp_options (which creates a TOCTOU
+		     * race condition).
+		     *
+		     * @since 2026.07
+		     * @param string $api_key The API key to use for this instance.
+		     */
+		    public function set_api_key( $api_key ) {
+		        $this->api_key_override = $api_key;
+		    }
 
 		/**
 		 * Retrieve the configured base URL for the Gemini API.
@@ -1715,9 +1744,14 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$usage['completion_tokens'] = (int) $accumulated['usage']['candidatesTokenCount'];
 				}
 
-				if ( isset( $accumulated['usage']['totalTokenCount'] ) ) {
-					$usage['total_tokens'] = (int) $accumulated['usage']['totalTokenCount'];
-				}
+				            if ( isset( $accumulated['usage']['totalTokenCount'] ) ) {
+				                $usage['total_tokens'] = (int) $accumulated['usage']['totalTokenCount'];
+				            }
+
+				            // Extract cached tokens from Gemini's usageMetadata (streaming).
+				            if ( isset( $accumulated['usage']['cachedContentTokenCount'] ) ) {
+				                $usage['cached_tokens'] = (int) $accumulated['usage']['cachedContentTokenCount'];
+				            }
 
 				if ( ! empty( $usage ) ) {
 					$normalized['usage'] = $usage;
@@ -1966,19 +2000,29 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						),
 					)
 				);
-			}
+			            }
 
-			$contents               = array();
-			$system_fragments       = array();
-			$pending_tool_calls     = array();
-			$latest_assistant_index = null;
+			            // Filter orphaned tool messages before building the Gemini payload.
+			            // Gemini's API requires every functionCall to be immediately followed
+			            // by a matching functionResponse in the next user turn.
+			            $messages = $this->filter_tool_messages_for_payload( $messages );
 
-			foreach ( $messages as $message ) {
-				if ( ! is_array( $message ) ) {
-					continue;
-				}
+			            // Normalise content arrays into strings for compatibility.
+			            // The REST layer represents text-only messages as arrays of
+			            // segments; collapse them back to strings that Gemini expects.
+			            $messages = $this->normalise_messages_for_payload( $messages );
 
-				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
+			            $contents               = array();
+			            $system_fragments       = array();
+			            $pending_tool_calls     = array();
+			            $latest_assistant_index = null;
+
+			            foreach ( $messages as $message ) {
+			                if ( ! is_array( $message ) ) {
+			                    continue;
+			                }
+
+			                $role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
 				$content = isset( $message['content'] ) ? $message['content'] : array();
 
 				if ( 'system' === $role ) {
@@ -2139,27 +2183,31 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$payload['generationConfig']['temperature'] = (float) $options['temperature'];
 			}
 
-			// Apply resource-aware max_output_tokens if not explicitly set.
-			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_output_tokens'] ) ) {
-				$resource_mgr      = WP_MCP_AI_Resource_Manager::instance();
-				$max_output_tokens = $resource_mgr->get_max_tokens();
+			        // Apply resource-aware max_output_tokens if not explicitly set.
+			        // Supports max_completion_tokens (OpenAI-compatible), max_tokens, and
+			        // max_output_tokens (Gemini-native) naming conventions.
+			        if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_completion_tokens'] ) && ! isset( $options['max_output_tokens'] ) ) {
+			            $resource_mgr      = WP_MCP_AI_Resource_Manager::instance();
+			            $max_output_tokens = $resource_mgr->get_max_tokens();
 
-				/**
-				 * Filter the maximum output tokens for Gemini requests.
-				 *
-				 * @param int   $max_output_tokens The maximum output tokens to use.
-				 * @param array $options           Request options.
-				 */
-				$max_output_tokens = apply_filters( 'wp_mcp_ai_gemini_max_output_tokens', $max_output_tokens, $options );
+			            /**
+			             * Filter the maximum output tokens for Gemini requests.
+			             *
+			             * @param int   $max_output_tokens The maximum output tokens to use.
+			             * @param array $options           Request options.
+			             */
+			            $max_output_tokens = apply_filters( 'wp_mcp_ai_gemini_max_output_tokens', $max_output_tokens, $options );
 
-				if ( $max_output_tokens > 0 ) {
-					$payload['generationConfig']['maxOutputTokens'] = $max_output_tokens;
-				}
-			} elseif ( isset( $options['max_tokens'] ) ) {
-				$payload['generationConfig']['maxOutputTokens'] = absint( $options['max_tokens'] );
-			} elseif ( isset( $options['max_output_tokens'] ) ) {
-				$payload['generationConfig']['maxOutputTokens'] = absint( $options['max_output_tokens'] );
-			}
+			            if ( $max_output_tokens > 0 ) {
+			                $payload['generationConfig']['maxOutputTokens'] = $max_output_tokens;
+			            }
+			        } elseif ( isset( $options['max_completion_tokens'] ) ) {
+			            $payload['generationConfig']['maxOutputTokens'] = absint( $options['max_completion_tokens'] );
+			        } elseif ( isset( $options['max_tokens'] ) ) {
+			            $payload['generationConfig']['maxOutputTokens'] = absint( $options['max_tokens'] );
+			        } elseif ( isset( $options['max_output_tokens'] ) ) {
+			            $payload['generationConfig']['maxOutputTokens'] = absint( $options['max_output_tokens'] );
+			        }
 
 			// Add support for JSON schema responses.
 			if ( isset( $options['response_mime_type'] ) && '' !== $options['response_mime_type'] ) {
@@ -2395,6 +2443,222 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			return $payload;
+		}
+
+		/**
+		 * Drop tool role messages that are not associated with the most recent
+		 * assistant tool call.
+		 *
+		 * Gemini's API requires every functionCall to be immediately followed
+		 * by a matching functionResponse in the next user turn. When intervening
+		 * messages appear between those entries the request may be rejected.
+		 * This normaliser filters out any tool messages that no longer have a
+		 * matching pending call so the payload remains valid.
+		 *
+		 * Logic mirrors WP_MCP_AI_OpenAI_Client::filter_tool_messages_for_payload().
+		 *
+		 * @since 2026.07
+		 *
+		 * @param array $messages Chat history supplied by the caller.
+		 * @return array
+		 */
+		protected function filter_tool_messages_for_payload( array $messages ) {
+			if ( empty( $messages ) ) {
+				return $messages;
+			}
+
+			$filtered                = array();
+			$pending_calls           = array();
+			$awaiting_tool_responses = false;
+			$incomplete_group_start  = null;
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+				if ( '' === $role ) {
+					continue;
+				}
+
+				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					// If the previous assistant message had tool_calls that were never
+					// fully answered, drop the entire incomplete group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'gemini_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before user/system message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+					$filtered[]              = $message;
+					continue;
+				}
+
+				if ( 'assistant' === $role ) {
+					// If the PREVIOUS assistant had unresolved tool_calls, drop that group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'gemini_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before next assistant message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						foreach ( $message['tool_calls'] as $tool_call ) {
+							if ( ! is_array( $tool_call ) ) {
+								continue;
+							}
+
+							$call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
+							if ( '' === $call_id ) {
+								continue;
+							}
+
+							$pending_calls[ $call_id ] = true;
+						}
+					}
+
+					if ( ! empty( $pending_calls ) ) {
+						$awaiting_tool_responses = true;
+						$incomplete_group_start  = count( $filtered );
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				if ( 'tool' === $role ) {
+					$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
+
+					if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'gemini_dropped_orphan_tool_message',
+								'Dropping tool message without matching tool call before Gemini request.',
+								array(
+									'tool_call_id' => $tool_call_id,
+									'reason'       => '' === $tool_call_id
+										? 'missing_tool_call_id'
+										: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+								)
+							);
+						}
+
+						continue;
+					}
+
+					unset( $pending_calls[ $tool_call_id ] );
+
+					if ( empty( $pending_calls ) ) {
+						$awaiting_tool_responses = false;
+						$incomplete_group_start  = null;
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				$pending_calls           = array();
+				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
+				$filtered[]              = $message;
+			}
+
+			return array_values( $filtered );
+		}
+
+		/**
+		 * Prepare chat messages for the Gemini payload.
+		 *
+		 * The REST layer represents text-only messages as arrays of segments so
+		 * attachments and tool calls can be normalised consistently. Older
+		 * Gemini models may only accept plain strings for the text parts.
+		 * To remain compatible we collapse text-only segment arrays back into
+		 * strings while preserving multimodal payloads that rely on structured
+		 * segments.
+		 *
+		 * Logic mirrors WP_MCP_AI_OpenAI_Client::normalise_messages_for_payload().
+		 *
+		 * @since 2026.07
+		 *
+		 * @param array $messages Sanitised chat messages.
+		 * @return array
+		 */
+		protected function normalise_messages_for_payload( array $messages ) {
+			$normalised = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					$normalised[] = $message;
+					continue;
+				}
+
+				$segments = array_values( $message['content'] );
+
+				if ( empty( $segments ) ) {
+					$message['content'] = '';
+					$normalised[]       = $message;
+					continue;
+				}
+
+				$all_text   = true;
+				$text_parts = array();
+
+				foreach ( $segments as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$all_text = false;
+						break;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'text' !== $type ) {
+						$all_text = false;
+						break;
+					}
+
+					$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+				}
+
+				if ( $all_text ) {
+					$text_parts         = array_filter(
+						$text_parts,
+						static function ( $part ) {
+							return '' !== trim( $part );
+						}
+					);
+					$message['content'] = implode( "\n\n", $text_parts );
+				} else {
+					$message['content'] = $segments;
+				}
+
+				$normalised[] = $message;
+			}
+
+			return $normalised;
 		}
 
 		/**

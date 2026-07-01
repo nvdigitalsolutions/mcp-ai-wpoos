@@ -20,11 +20,35 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 	class WP_MCP_AI_Huggingface_Client {
 
 		/**
+		 * TOCTOU-safe API key override set via set_api_key().
+		 *
+		 * When non-null, get_api_key() returns this value instead of
+		 * reading the stored setting, avoiding time-of-check-to-time-of-use
+		 * races during multi-step credential workflows.
+		 *
+		 * @var string|null
+		 */
+		private $api_key_override = null;
+
+		/**
+		 * Override the API key for the lifetime of this instance.
+		 *
+		 * @param string|null $key The API key to use, or null to clear the override.
+		 */
+		public function set_api_key( $key ) {
+			$this->api_key_override = is_string( $key ) && '' !== $key ? $key : null;
+		}
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
 		 */
 		public function get_api_key() {
+			if ( null !== $this->api_key_override ) {
+				return $this->api_key_override;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$key      = isset( $settings['huggingface_api_key'] ) ? $settings['huggingface_api_key'] : '';
 
@@ -776,15 +800,25 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			}
 
 			// Prepend system messages to the formatted messages.
-			if ( ! empty( $system_messages ) ) {
-				$formatted_messages = array_merge( $system_messages, $formatted_messages );
-			}
+				if ( ! empty( $system_messages ) ) {
+					$formatted_messages = array_merge( $system_messages, $formatted_messages );
+				}
 
-			$payload = array(
-				'model'    => $model,
-				'messages' => $formatted_messages,
-				'stream'   => isset( $options['stream'] ) ? (bool) $options['stream'] : false, // Explicitly disable streaming to prevent chunked responses.
-			);
+				$formatted_messages = $this->filter_tool_messages_for_payload( $formatted_messages );
+				$formatted_messages = $this->normalise_messages_for_payload( $formatted_messages );
+
+				$is_streaming = isset( $options['stream'] ) ? (bool) $options['stream'] : false;
+
+				$payload = array(
+					'model'    => $model,
+					'messages' => $formatted_messages,
+					'stream'   => $is_streaming,
+				);
+
+				// Include stream_options when streaming is enabled to receive usage data.
+				if ( $is_streaming ) {
+					$payload['stream_options'] = array( 'include_usage' => true );
+				}
 
 			// Add tools if provided (OpenAI-compatible function calling).
 			if ( ! empty( $options['tools'] ) ) {
@@ -958,28 +992,33 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			}
 
 			// Ensure usage data is present and includes provider/model information.
-			// Hugging Face returns OpenAI-compatible usage with prompt_tokens, completion_tokens, total_tokens.
-			if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
-				// Add provider and model to usage for frontend display.
-				$response['usage']['provider'] = 'huggingface';
-				$response['usage']['model']    = $model;
-			} elseif ( ! isset( $response['usage'] ) ) {
-				// If usage is missing, create a minimal structure.
-				// This should not happen with proper Hugging Face responses, but provides fallback.
-				$response['usage'] = array(
-					'prompt_tokens'     => 0,
-					'completion_tokens' => 0,
-					'total_tokens'      => 0,
-					'provider'          => 'huggingface',
-					'model'             => $model,
-				);
+				// Hugging Face returns OpenAI-compatible usage with prompt_tokens, completion_tokens, total_tokens.
+				if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
+					// Add provider and model to usage for frontend display.
+					$response['usage']['provider'] = 'huggingface';
+					$response['usage']['model']    = $model;
 
-				WP_MCP_AI_Logger::log_event(
-					'huggingface_missing_usage',
-					'Hugging Face response missing usage data.',
-					array( 'model' => $model )
-				);
-			}
+					// Extract cached tokens from prompt_tokens_details (OpenAI-compatible).
+					if ( isset( $response['usage']['prompt_tokens_details']['cached_tokens'] ) ) {
+						$response['usage']['cached_tokens'] = (int) $response['usage']['prompt_tokens_details']['cached_tokens'];
+					}
+				} elseif ( ! isset( $response['usage'] ) ) {
+					// If usage is missing, create a minimal structure.
+					// This should not happen with proper Hugging Face responses, but provides fallback.
+					$response['usage'] = array(
+						'prompt_tokens'     => 0,
+						'completion_tokens' => 0,
+						'total_tokens'      => 0,
+						'provider'          => 'huggingface',
+						'model'             => $model,
+					);
+
+					WP_MCP_AI_Logger::log_event(
+						'huggingface_missing_usage',
+						'Hugging Face response missing usage data.',
+						array( 'model' => $model )
+					);
+				}
 
 			return $response;
 		}
@@ -1030,6 +1069,70 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			);
 
 			return new WP_Error( $error_code, $error_message, $error_data );
+		}
+
+		/**
+		 * Normalise message content arrays before sending to the Hugging Face API.
+		 *
+		 * When all content segments are text-only, flattens the array to a
+		 * plain string, which is what Hugging Face models expect. Mixed
+		 * content (images + text) is left as-is.
+		 *
+		 * @param array $messages Chat history.
+		 * @return array
+		 */
+		protected function normalise_messages_for_payload( array $messages ) {
+			$normalised = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					$normalised[] = $message;
+					continue;
+				}
+
+				$segments = array_values( $message['content'] );
+
+				if ( empty( $segments ) ) {
+					$message['content'] = '';
+					$normalised[]       = $message;
+					continue;
+				}
+
+				$all_text   = true;
+				$text_parts = array();
+
+				foreach ( $segments as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$all_text = false;
+						break;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'text' !== $type ) {
+						$all_text = false;
+						break;
+					}
+
+					$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+				}
+
+				if ( $all_text ) {
+					$text_parts         = array_filter(
+						$text_parts,
+						static function ( $part ) {
+							return '' !== trim( $part );
+						}
+					);
+					$message['content'] = implode( "\n\n", $text_parts );
+				} else {
+					$message['content'] = $segments;
+				}
+
+				$normalised[] = $message;
+			}
+
+			return $normalised;
 		}
 
 		/**

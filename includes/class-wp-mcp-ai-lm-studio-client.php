@@ -68,7 +68,40 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 		 *
 		 * @return string Empty string when no key is configured.
 		 */
+		/**
+		 * TOCTOU-safe API key override set via set_api_key().
+		 *
+		 * When non-null, get_api_key() returns this value instead of
+		 * reading the stored setting, avoiding time-of-check-to-time-of-use
+		 * races during multi-step credential workflows.
+		 *
+		 * @var string|null
+		 */
+		private $api_key_override = null;
+
+		/**
+		 * Override the API key for the lifetime of this instance.
+		 *
+		 * @param string|null $key The API key to use, or null to clear the override.
+		 */
+		public function set_api_key( $key ) {
+			$this->api_key_override = is_string( $key ) && '' !== $key ? $key : null;
+		}
+
+		/**
+		 * Retrieve the optional LM Studio API key.
+		 *
+		 * LM Studio 0.3.6+ supports optional bearer-token authentication.
+		 * When a key is set in Settings → NV oOS → Providers → LM Studio, it is
+		 * sent as `Authorization: Bearer <key>` on every request.
+		 *
+		 * @return string Empty string when no key is configured.
+		 */
 		public function get_api_key() {
+			if ( null !== $this->api_key_override ) {
+				return $this->api_key_override;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$key      = isset( $settings['lm_studio_api_key'] ) ? (string) $settings['lm_studio_api_key'] : '';
 
@@ -758,6 +791,10 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$formatted_messages = array_merge( $system_messages, $formatted_messages );
 			}
 
+			// Normalise and filter messages after system prompt injection.
+			$formatted_messages = $this->normalise_messages_for_payload( $formatted_messages );
+			$formatted_messages = $this->filter_tool_messages_for_payload( $formatted_messages );
+
 			$payload = array(
 				'model'    => $model,
 				'messages' => $formatted_messages,
@@ -765,6 +802,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			// Honour streaming flag — default false for backwards compatibility.
 			$payload['stream'] = isset( $options['stream'] ) && $options['stream'];
+
+			// Include stream_options when streaming is enabled to receive usage data.
+			if ( $payload['stream'] ) {
+				$payload['stream_options'] = array( 'include_usage' => true );
+			}
 
 			// JIT auto-unload: pass through ttl (seconds) when provided so LM Studio
 			// automatically unloads the model after the specified idle period.
@@ -828,7 +870,8 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			// Apply resource-aware max_tokens if not explicitly set.
-			if ( ! isset( $options['max_tokens'] ) ) {
+			// Support both max_tokens and max_completion_tokens naming conventions.
+			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_completion_tokens'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$max_tokens   = $resource_mgr->get_max_tokens();
 
@@ -843,6 +886,8 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				if ( $max_tokens > 0 ) {
 					$payload['max_tokens'] = $max_tokens;
 				}
+			} elseif ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$payload['max_tokens'] = absint( $options['max_completion_tokens'] );
 			} else {
 				$payload['max_tokens'] = absint( $options['max_tokens'] );
 			}
@@ -933,6 +978,14 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					 */
 					do_action( 'wp_mcp_ai_lm_studio_provider_stats', $usage_stats, $model, $response );
 				}
+			}
+
+			// Extract cached tokens from prompt_tokens_details (OpenAI-compatible).
+			if ( isset( $response['usage']['prompt_tokens_details']['cached_tokens'] ) ) {
+				if ( ! isset( $response['usage'] ) ) {
+					$response['usage'] = array();
+				}
+				$response['usage']['cached_tokens'] = (int) $response['usage']['prompt_tokens_details']['cached_tokens'];
 			}
 
 			// Phase 5: Normalize choices — content, reasoning, and tool-call repairs.
@@ -1235,10 +1288,80 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			return array_values( $filtered );
-		}
+			}
 
-		/**
-		 * Parse an SSE (Server-Sent Events) response body from LM Studio and
+			/**
+			 * Prepare chat messages for the LM Studio Chat Completions payload.
+			 *
+			 * The REST layer represents text-only messages as arrays of segments so
+			 * attachments and tool calls can be normalised consistently. LM Studio
+			 * models expect plain strings for the `content` field. To remain
+			 * compatible we collapse text-only segment arrays back into strings
+			 * while preserving multimodal payloads that rely on structured segments.
+			 *
+			 * Logic mirrors WP_MCP_AI_DeepSeek_Client::normalise_messages_for_payload().
+			 *
+			 * @since 2026.07
+			 *
+			 * @param array $messages Sanitised chat messages.
+			 * @return array
+			 */
+			protected function normalise_messages_for_payload( array $messages ) {
+				$normalised = array();
+
+				foreach ( $messages as $message ) {
+					if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+						$normalised[] = $message;
+						continue;
+					}
+
+					$segments = array_values( $message['content'] );
+
+					if ( empty( $segments ) ) {
+						$message['content'] = '';
+						$normalised[]       = $message;
+						continue;
+					}
+
+					$all_text   = true;
+					$text_parts = array();
+
+					foreach ( $segments as $segment ) {
+						if ( ! is_array( $segment ) ) {
+							$all_text = false;
+							break;
+						}
+
+						$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+						if ( 'text' !== $type ) {
+							$all_text = false;
+							break;
+						}
+
+						$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+					}
+
+					if ( $all_text ) {
+						$text_parts         = array_filter(
+							$text_parts,
+							static function ( $part ) {
+								return '' !== trim( $part );
+							}
+						);
+						$message['content'] = implode( "\n\n", $text_parts );
+					} else {
+						$message['content'] = $segments;
+					}
+
+					$normalised[] = $message;
+				}
+
+				return $normalised;
+			}
+
+			/**
+			 * Parse an SSE (Server-Sent Events) response body from LM Studio and
 		 * assemble it into a single OpenAI-compatible chat completion object.
 		 *
 		 * LM Studio's OpenAI-compatible streaming endpoint emits lines of the

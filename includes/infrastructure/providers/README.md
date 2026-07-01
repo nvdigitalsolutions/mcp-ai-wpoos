@@ -23,6 +23,7 @@ Contains the 10 concrete AI provider client classes â€” one file per provider â€
 | `WP_MCP_AI_DeepSeek_Provider_Client` | `class-wp-mcp-ai-deepseek-provider-client.php` | same |
 | `WP_MCP_AI_DigitalOcean_Provider_Client` | `class-wp-mcp-ai-digitalocean-provider-client.php` | same |
 | `WP_MCP_AI_Gemini_Provider_Client` | `class-wp-mcp-ai-gemini-provider-client.php` | same |
+| `WP_MCP_AI_HuggingFace_Provider_Client` | `class-wp-mcp-ai-huggingface-provider-client.php` | same |
 | `WP_MCP_AI_Kimi_Provider_Client` | `class-wp-mcp-ai-kimi-provider-client.php` | same |
 | `WP_MCP_AI_LM_Studio_Provider_Client` | `class-wp-mcp-ai-lm-studio-provider-client.php` | same |
 | `WP_MCP_AI_NVIDIA_Provider_Client` | `class-wp-mcp-ai-nvidia-provider-client.php` | same |
