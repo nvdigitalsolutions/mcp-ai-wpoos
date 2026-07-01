@@ -8136,7 +8136,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				 *
 				 * @param int $max_tools Maximum number of tools to include (default 50).
 				 */
-				$max_tools = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 50 );
+				$max_tools = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 100 );
 				$max_tools = max( 1, min( 128, $max_tools ) ); // Clamp to 1-128.
 
 				/**
