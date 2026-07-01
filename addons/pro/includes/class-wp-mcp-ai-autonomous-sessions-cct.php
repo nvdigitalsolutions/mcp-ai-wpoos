@@ -102,6 +102,281 @@ class WP_MCP_AI_Autonomous_Sessions_CCT {
 	}
 
 	/**
+	 * Check whether the autonomous sessions CCT is available for read/write.
+	 *
+	 * @return bool
+	 */
+	public static function is_available() {
+		return null !== self::get_item_handler();
+	}
+
+	/**
+	 * Retrieve a single session by its session_id field.
+	 *
+	 * @param string $session_id Unique session identifier.
+	 * @return array|null Session data array or null if not found.
+	 */
+	public static function get_session_by_id( $session_id ) {
+		$handler = self::get_item_handler();
+
+		if ( ! $handler ) {
+			return null;
+		}
+
+		$factory = $handler->get_factory();
+
+		if ( ! $factory || empty( $factory->db ) ) {
+			return null;
+		}
+
+		$items = $factory->db->query(
+			array(
+				'session_id' => sanitize_text_field( $session_id ),
+				'limit'      => 1,
+			)
+		);
+
+		if ( ! is_array( $items ) || empty( $items ) ) {
+			return null;
+		}
+
+		return reset( $items );
+	}
+
+	/**
+	 * Count sessions by status.
+	 *
+	 * @param string $status Session status to count (default: 'active').
+	 * @return int Number of matching sessions.
+	 */
+	public static function count_by_status( $status = 'active' ) {
+		$handler = self::get_item_handler();
+
+		if ( ! $handler ) {
+			return 0;
+		}
+
+		$factory = $handler->get_factory();
+
+		if ( ! $factory || empty( $factory->db ) ) {
+			return 0;
+		}
+
+		$items = $factory->db->query(
+			array(
+				'status' => sanitize_key( $status ),
+			)
+		);
+
+		return is_array( $items ) ? count( $items ) : 0;
+	}
+
+	/**
+	 * Create a new session record in the CCT.
+	 *
+	 * @param array $data Session field data (must include session_id).
+	 * @return int|false CCT item _ID on success, false on failure.
+	 */
+	public static function create_session( array $data ) {
+		$handler = self::get_item_handler();
+
+		if ( ! $handler ) {
+			return false;
+		}
+
+		$item_data = self::map_transient_to_cct( $data );
+
+		$item_id = $handler->add_item( $item_data );
+
+		return is_numeric( $item_id ) && $item_id > 0 ? (int) $item_id : false;
+	}
+
+	/**
+	 * Update an existing session record. Finds by session_id field,
+	 * then updates the CCT record.
+	 *
+	 * @param string $session_id Unique session identifier.
+	 * @param array  $data       Field data to merge and update.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function update_session( $session_id, array $data ) {
+		// Find the existing CCT record.
+		$existing = self::get_session_by_id( $session_id );
+
+		if ( ! $existing || empty( $existing['_ID'] ) ) {
+			return false;
+		}
+
+		$handler = self::get_item_handler();
+
+		if ( ! $handler ) {
+			return false;
+		}
+
+		// Merge existing data with updates, then map to CCT field names.
+		$merged      = array_merge( $existing, $data );
+		$item_data   = self::map_transient_to_cct( $merged );
+		$cct_item_id = (int) $existing['_ID'];
+
+		$result = $handler->update_item( $cct_item_id, $item_data );
+
+		return false !== $result;
+	}
+
+	/**
+	 * Upsert a session: create if not found, update if exists.
+	 *
+	 * @param array $data Session field data (must include session_id).
+	 * @return int|false CCT item _ID on success, false on failure.
+	 */
+	public static function upsert_session( array $data ) {
+		if ( empty( $data['session_id'] ) ) {
+			return false;
+		}
+
+		$existing = self::get_session_by_id( $data['session_id'] );
+
+		if ( $existing ) {
+			$updated = self::update_session( $data['session_id'], $data );
+			return $updated ? (int) $existing['_ID'] : false;
+		}
+
+		return self::create_session( $data );
+	}
+
+	/**
+	 * Delete sessions whose expires_at has passed.
+	 *
+	 * @return int Number of sessions deleted.
+	 */
+	public static function cleanup_expired() {
+		$handler = self::get_item_handler();
+
+		if ( ! $handler ) {
+			return 0;
+		}
+
+		$factory = $handler->get_factory();
+
+		if ( ! $factory || empty( $factory->db ) ) {
+			return 0;
+		}
+
+		// Query sessions where expires_at < now.
+		$expired = $factory->db->query(
+			array(
+				'expires_at__lt' => current_time( 'mysql' ),
+				'status'         => 'active',
+			)
+		);
+
+		if ( ! is_array( $expired ) || empty( $expired ) ) {
+			return 0;
+		}
+
+		$deleted = 0;
+		foreach ( $expired as $item ) {
+			if ( ! empty( $item['_ID'] ) ) {
+				$result = $handler->delete_item( (int) $item['_ID'] );
+				if ( $result ) {
+					++$deleted;
+				}
+			}
+		}
+
+		return $deleted;
+	}
+
+	/**
+	 * Map transient-style session data keys to CCT-compatible field names.
+	 *
+	 * The transient stores keys like 'health_status', 'iteration_count',
+	 * 'started_at', 'token_usage', 'circuit_breaker', etc. The CCT uses
+	 * different field names. This method normalises the keys and converts
+	 * types where needed (e.g., 'circuit_breaker' string → boolean switcher).
+	 *
+	 * @param array $data Raw session data with transient-style keys.
+	 * @return array Data mapped to CCT field names.
+	 */
+	private static function map_transient_to_cct( array $data ) {
+		$mapped = array();
+
+		// Direct 1:1 mappings.
+		$direct = array(
+			'session_id'       => 'session_id',
+			'plan_id'          => 'plan_id',
+			'status'           => 'status',
+			'assistant_id'     => 'assistant_id',
+			'max_iterations'   => 'max_iterations',
+			'token_budget'     => 'token_budget',
+			'completion_score' => 'completion_score',
+			'last_activity'    => 'last_activity',
+			'expires_at'       => 'expires_at',
+			'stop_reason'      => 'stop_reason',
+		);
+
+		foreach ( $direct as $from => $to ) {
+			if ( array_key_exists( $from, $data ) ) {
+				$mapped[ $to ] = $data[ $from ];
+			}
+		}
+
+		// Renamed keys.
+		if ( array_key_exists( 'health_status', $data ) ) {
+			$mapped['health'] = sanitize_key( $data['health_status'] );
+		}
+		if ( array_key_exists( 'iteration_count', $data ) ) {
+			$mapped['iterations'] = absint( $data['iteration_count'] );
+		}
+		if ( array_key_exists( 'token_usage', $data ) ) {
+			$mapped['tokens_used'] = absint( $data['token_usage'] );
+		}
+		if ( array_key_exists( 'started_at', $data ) ) {
+			$mapped['start_time'] = sanitize_text_field( $data['started_at'] );
+		}
+
+		// Type conversion: transient stores 'open'/'closed' strings,
+		// CCT uses a boolean switcher field.
+		if ( array_key_exists( 'circuit_breaker', $data ) ) {
+			$mapped['circuit_breaker_open'] = 'open' === $data['circuit_breaker'];
+		}
+
+		// Boolean exit_signal stays boolean.
+		if ( array_key_exists( 'exit_signal', $data ) ) {
+			$mapped['exit_signal'] = (bool) $data['exit_signal'];
+		}
+
+		// Store extra fields (user_id, error_count, success_rate, last_tool,
+		// last_error, completed_at, etc.) as JSON in the metadata field.
+		$extra_fields = array(
+			'user_id',
+			'error_count',
+			'success_rate',
+			'last_tool',
+			'last_error',
+			'completed_at',
+		);
+
+		$meta = array();
+		foreach ( $extra_fields as $field ) {
+			if ( array_key_exists( $field, $data ) ) {
+				$meta[ $field ] = $data[ $field ];
+			}
+		}
+
+		// Preserve existing metadata if present in the input.
+		if ( ! empty( $data['metadata'] ) && is_array( $data['metadata'] ) ) {
+			$meta = array_merge( $meta, $data['metadata'] );
+		}
+
+		if ( ! empty( $meta ) ) {
+			$mapped['metadata'] = wp_json_encode( $meta, JSON_UNESCAPED_SLASHES );
+		}
+
+		return $mapped;
+	}
+
+	/**
 	 * Automatically enable the JetEngine data stores module if it's not already active.
 	 */
 	public static function maybe_enable_data_stores() {

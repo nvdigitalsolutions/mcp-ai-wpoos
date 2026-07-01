@@ -120,30 +120,42 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$action = $arguments['action'];
+		$action     = $arguments['action'];
+		$start_time = microtime( true );
 
 		switch ( $action ) {
 			case 'start':
-				return $this->start_session( $arguments, $context );
+				$result = $this->start_session( $arguments, $context );
+				break;
 
 			case 'pause':
-				return $this->pause_session( $arguments );
+				$result = $this->pause_session( $arguments );
+				break;
 
 			case 'resume':
-				return $this->resume_session( $arguments );
+				$result = $this->resume_session( $arguments );
+				break;
 
 			case 'stop':
-				return $this->stop_session( $arguments );
+				$result = $this->stop_session( $arguments );
+				break;
 
 			case 'update':
-				return $this->update_session( $arguments );
+				$result = $this->update_session( $arguments );
+				break;
 
 			default:
-				return array(
+				$result = array(
 					'success' => false,
 					'error'   => sprintf( 'Unknown action: %s', $action ),
 				);
+				break;
 		}
+
+		// Log tool execution to history CCT.
+		$this->log_execution( $arguments, $result, $start_time );
+
+		return $result;
 	}
 
 	/**
@@ -155,9 +167,9 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	 */
 	private function start_session( $arguments, $context ) {
 		if ( empty( $arguments['plan_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: plan_id',
+			return new \WP_Error(
+				'missing_plan_id',
+				__( 'Missing required argument: plan_id', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -198,9 +210,9 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 		$stored = $this->store_session( $session_data );
 
 		if ( ! $stored ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to create session',
+			return new \WP_Error(
+				'session_store_failed',
+				__( 'Failed to create session', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -228,9 +240,9 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	 */
 	private function pause_session( $arguments ) {
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
+			return new \WP_Error(
+				'missing_session_id',
+				__( 'Missing required argument: session_id', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -238,9 +250,13 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 		$session    = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
+			return new \WP_Error(
+				'session_not_found',
+				sprintf(
+					/* translators: %s: session ID */
+					__( 'Session %s not found', 'mcp-ai-wpoos' ),
+					$session_id
+				)
 			);
 		}
 
@@ -253,9 +269,9 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 		);
 
 		if ( ! $updated ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to pause session',
+			return new \WP_Error(
+				'session_pause_failed',
+				__( 'Failed to pause session', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -271,13 +287,13 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	 * Resume session
 	 *
 	 * @param array $arguments Tool arguments.
-	 * @return array
+	 * @return array|\WP_Error
 	 */
 	private function resume_session( $arguments ) {
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
+			return new \WP_Error(
+				'missing_session_id',
+				__( 'Missing required argument: session_id', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -285,17 +301,21 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 		$session    = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
+			return new \WP_Error(
+				'session_not_found',
+				sprintf(
+					/* translators: %s: session ID */
+					__( 'Session %s not found', 'mcp-ai-wpoos' ),
+					$session_id
+				)
 			);
 		}
 
 		// Check if expired.
 		if ( ! empty( $session['expires_at'] ) && strtotime( $session['expires_at'] ) < time() ) {
-			return array(
-				'success' => false,
-				'error'   => 'Session has expired',
+			return new \WP_Error(
+				'session_expired',
+				__( 'Session has expired', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -308,9 +328,9 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 		);
 
 		if ( ! $updated ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to resume session',
+			return new \WP_Error(
+				'session_resume_failed',
+				__( 'Failed to resume session', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -326,13 +346,13 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	 * Stop session
 	 *
 	 * @param array $arguments Tool arguments.
-	 * @return array
+	 * @return array|\WP_Error
 	 */
 	private function stop_session( $arguments ) {
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
+			return new \WP_Error(
+				'missing_session_id',
+				__( 'Missing required argument: session_id', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -340,9 +360,13 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 		$session    = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
+			return new \WP_Error(
+				'session_not_found',
+				sprintf(
+					/* translators: %s: session ID */
+					__( 'Session %s not found', 'mcp-ai-wpoos' ),
+					$session_id
+				)
 			);
 		}
 
@@ -356,9 +380,9 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 		);
 
 		if ( ! $updated ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to stop session',
+			return new \WP_Error(
+				'session_stop_failed',
+				__( 'Failed to stop session', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -374,20 +398,20 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	 * Update session metrics
 	 *
 	 * @param array $arguments Tool arguments.
-	 * @return array
+	 * @return array|\WP_Error
 	 */
 	private function update_session( $arguments ) {
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
+			return new \WP_Error(
+				'missing_session_id',
+				__( 'Missing required argument: session_id', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( empty( $arguments['metrics'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: metrics',
+			return new \WP_Error(
+				'missing_metrics',
+				__( 'Missing required argument: metrics', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -397,9 +421,13 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 		$session = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
+			return new \WP_Error(
+				'session_not_found',
+				sprintf(
+					/* translators: %s: session ID */
+					__( 'Session %s not found', 'mcp-ai-wpoos' ),
+					$session_id
+				)
 			);
 		}
 
@@ -428,9 +456,9 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 		$updated = $this->update_session_storage( $session_id, $update_data );
 
 		if ( ! $updated ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to update session',
+			return new \WP_Error(
+				'session_update_failed',
+				__( 'Failed to update session', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -443,44 +471,185 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	}
 
 	/**
-	 * Store session
+	 * Store session — CCT-first with transient fallback.
 	 *
 	 * @param array $session_data Session data.
 	 * @return bool
 	 */
 	private function store_session( $session_data ) {
-		// For now, store in transients (24h TTL).
-		// In Phase 2, we'll use CCT or custom table.
+		// Always write to transient as a fast hot-read cache.
 		$transient_key = 'mcp_ai_session_' . $session_data['session_id'];
-		return set_transient( $transient_key, $session_data, 86400 );
+		$transient_ok  = set_transient( $transient_key, $session_data, 86400 );
+
+		// Write to CCT for durable storage if available.
+		if ( $this->is_cct_available() ) {
+			WP_MCP_AI_Autonomous_Sessions_CCT::upsert_session( $session_data );
+		}
+
+		return $transient_ok;
 	}
 
 	/**
-	 * Get session
+	 * Get session — CCT-first with transient fallback.
 	 *
 	 * @param string $session_id Session ID.
 	 * @return array|null
 	 */
 	private function get_session( $session_id ) {
+		// Try durable CCT first.
+		if ( $this->is_cct_available() ) {
+			$cct_session = WP_MCP_AI_Autonomous_Sessions_CCT::get_session_by_id( $session_id );
+			if ( $cct_session ) {
+				return self::map_cct_to_session_array( $cct_session );
+			}
+		}
+
+		// Fallback to transient.
 		$transient_key = 'mcp_ai_session_' . $session_id;
 		$session       = get_transient( $transient_key );
 		return $session ? $session : null;
 	}
 
 	/**
-	 * Update session storage
+	 * Update session storage — CCT-first with transient fallback.
 	 *
 	 * @param string $session_id Session ID.
 	 * @param array  $data       Data to update.
 	 * @return bool
 	 */
 	private function update_session_storage( $session_id, $data ) {
+		// Update transient (always).
 		$session = $this->get_session( $session_id );
 		if ( ! $session ) {
 			return false;
 		}
 
-		$session = array_merge( $session, $data );
-		return $this->store_session( $session );
+		$session       = array_merge( $session, $data );
+		$transient_key = 'mcp_ai_session_' . $session_id;
+		$transient_ok  = set_transient( $transient_key, $session, 86400 );
+
+		// Update CCT if available.
+		if ( $this->is_cct_available() ) {
+			WP_MCP_AI_Autonomous_Sessions_CCT::update_session( $session_id, $data );
+		}
+
+		return $transient_ok;
+	}
+
+	/**
+	 * Check if the autonomous sessions CCT is available for read/write.
+	 *
+	 * @return bool
+	 */
+	private function is_cct_available() {
+		return class_exists( 'WP_MCP_AI_Autonomous_Sessions_CCT' )
+			&& WP_MCP_AI_Autonomous_Sessions_CCT::is_available();
+	}
+
+	/**
+	 * Map a CCT flat record back to the transient-style session array
+	 * expected by the rest of the tool code.
+	 *
+	 * @param array $cct_row Raw CCT row from get_session_by_id().
+	 * @return array Session data with transient-compatible keys.
+	 */
+	private static function map_cct_to_session_array( array $cct_row ) {
+		$session = array();
+
+		// Direct 1:1 mappings.
+		$direct = array(
+			'session_id'   => 'session_id',
+			'plan_id'      => 'plan_id',
+			'status'       => 'status',
+			'assistant_id' => 'assistant_id',
+		);
+		foreach ( $direct as $cct_key => $session_key ) {
+			if ( isset( $cct_row[ $cct_key ] ) ) {
+				$session[ $session_key ] = $cct_row[ $cct_key ];
+			}
+		}
+
+		// Renamed keys.
+		if ( isset( $cct_row['health'] ) ) {
+			$session['health_status'] = $cct_row['health'];
+		}
+		if ( isset( $cct_row['iterations'] ) ) {
+			$session['iteration_count'] = (int) $cct_row['iterations'];
+		}
+		if ( isset( $cct_row['tokens_used'] ) ) {
+			$session['token_usage'] = (int) $cct_row['tokens_used'];
+		}
+		if ( isset( $cct_row['start_time'] ) ) {
+			$session['started_at'] = $cct_row['start_time'];
+		}
+		if ( isset( $cct_row['max_iterations'] ) ) {
+			$session['max_iterations'] = (int) $cct_row['max_iterations'];
+		}
+		if ( isset( $cct_row['token_budget'] ) ) {
+			$session['token_budget'] = (int) $cct_row['token_budget'];
+		}
+		if ( isset( $cct_row['completion_score'] ) ) {
+			$session['completion_score'] = (int) $cct_row['completion_score'];
+		}
+		if ( isset( $cct_row['circuit_breaker_open'] ) ) {
+			$session['circuit_breaker'] = $cct_row['circuit_breaker_open'] ? 'open' : 'closed';
+		}
+		if ( isset( $cct_row['exit_signal'] ) ) {
+			$session['exit_signal'] = (bool) $cct_row['exit_signal'];
+		}
+		if ( isset( $cct_row['last_activity'] ) ) {
+			$session['last_activity'] = $cct_row['last_activity'];
+		}
+		if ( isset( $cct_row['expires_at'] ) ) {
+			$session['expires_at'] = $cct_row['expires_at'];
+		}
+		if ( isset( $cct_row['stop_reason'] ) ) {
+			$session['stop_reason'] = $cct_row['stop_reason'];
+		}
+
+		// Hydrate extra fields from the JSON metadata column.
+		if ( ! empty( $cct_row['metadata'] ) ) {
+			$meta = json_decode( $cct_row['metadata'], true );
+			if ( is_array( $meta ) ) {
+				$meta_keys = array( 'user_id', 'error_count', 'success_rate', 'last_tool', 'last_error', 'completed_at' );
+				foreach ( $meta_keys as $key ) {
+					if ( isset( $meta[ $key ] ) ) {
+						$session[ $key ] = $meta[ $key ];
+					}
+				}
+			}
+		}
+
+		return $session;
+	}
+
+	/**
+	 * Log tool execution to the execution history CCT.
+	 *
+	 * @param array $arguments  Tool arguments.
+	 * @param array $result     Execution result.
+	 * @param float $start_time Microtime when execution began.
+	 */
+	private function log_execution( array $arguments, array $result, $start_time ) {
+		if ( ! class_exists( 'WP_MCP_AI_Execution_Logger' ) ) {
+			return;
+		}
+
+		$session_id = ! empty( $arguments['session_id'] ) ? $arguments['session_id'] : '';
+		$success    = ! empty( $result['success'] );
+		$duration   = (int) round( ( microtime( true ) - $start_time ) * 1000 );
+
+		WP_MCP_AI_Execution_Logger::log_tool_call(
+			array(
+				'session_id'     => $session_id,
+				'iteration'      => 0,
+				'tool_name'      => 'manage_autonomous_session',
+				'success'        => $success,
+				'duration_ms'    => $duration,
+				'input_summary'  => ! empty( $arguments['action'] ) ? 'Action: ' . sanitize_text_field( $arguments['action'] ) : '',
+				'output_summary' => ! empty( $result['message'] ) ? sanitize_text_field( $result['message'] ) : '',
+				'error_message'  => ! $success && ! empty( $result['error'] ) ? sanitize_text_field( $result['error'] ) : '',
+			)
+		);
 	}
 }
