@@ -27,9 +27,12 @@ function wp_mcp_ai_is_ezuite_toolkit_enabled() {
 }
 
 // Load EZuite sync engine and related classes when toolkit is enabled.
+$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+
 if ( wp_mcp_ai_is_ezuite_toolkit_enabled()
 	&& class_exists( 'WooCommerce' )
-	&& ! ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() )
+	&& ( ! $is_base || $is_pro_active )
 ) {
 	// Load core classes.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-ezuite-cct-manager.php';
