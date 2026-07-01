@@ -39,6 +39,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		const CCT_SLUG_DEFAULT = 'shopify_inventory_sync';
 
 		/**
+		 * Base ID for meta field identifiers (41000 range).
+		 *
+		 * @var int
+		 */
+		const FIELD_ID_BASE = 41000;
+
+		/**
 		 * Current CCT slug.
 		 *
 		 * @var string
@@ -1754,7 +1761,81 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 						),
 					),
 				),
-				'meta_fields' => array(),
+				'meta_fields' => self::get_meta_fields(),
+			);
+		}
+
+		/**
+		 * Build meta field definitions from column definitions.
+		 *
+		 * Mirrors the pattern used by FlowHub CCT manager.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array
+		 */
+		protected static function get_meta_fields() {
+			$instance = new self();
+			$columns  = $instance->get_column_definitions();
+			$fields   = array();
+			$field_id = self::FIELD_ID_BASE;
+
+			foreach ( $columns as $column_name => $column_type ) {
+				$args = array();
+
+				// Map internal type names to JetEngine field types.
+				switch ( $column_type ) {
+					case 'number':
+						$jet_type           = 'number';
+						$args['is_numeric'] = true;
+						break;
+					case 'textarea':
+						$jet_type = 'textarea';
+						break;
+					case 'datetime-local':
+						$jet_type = 'datetime-local';
+						break;
+					default:
+						$jet_type = 'text';
+						break;
+				}
+
+				$fields[] = self::build_field(
+					$field_id,
+					$column_name,
+					$instance->get_column_label( $column_name ),
+					$jet_type,
+					$args
+				);
+
+				++$field_id;
+			}
+
+			return $fields;
+		}
+
+		/**
+		 * Build a field definition for JetEngine.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param int    $id    Field ID.
+		 * @param string $name  Field name.
+		 * @param string $label Field label.
+		 * @param string $type  Field type.
+		 * @param array  $args  Additional arguments.
+		 * @return array
+		 */
+		protected static function build_field( $id, $name, $label, $type, $args = array() ) {
+			return array_merge(
+				array(
+					'id'          => (string) $id,
+					'name'        => $name,
+					'title'       => $label,
+					'type'        => $type,
+					'object_type' => 'field',
+				),
+				$args
 			);
 		}
 
