@@ -222,6 +222,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_crm_toolkit'                     => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
 				'enable_ecommerce_toolkit'               => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
 				'enable_flowhub_toolkit'                 => __( 'FlowHub Toolkit', 'mcp-ai-wpoos' ),
+				'enable_ezuite_toolkit'                  => __( 'EZuite Toolkit', 'mcp-ai-wpoos' ),
 				'enable_shopify_sync_toolkit'            => __( 'Shopify Sync Toolkit', 'mcp-ai-wpoos' ),
 				'enable_social_media_toolkit'            => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
 				'enable_analytics_toolkit'               => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
@@ -604,6 +605,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'flowhub_locations tool', 'mcp-ai-wpoos' ),
 						__( 'flowhub_sync tool', 'mcp-ai-wpoos' ),
 						__( 'flowhub_settings tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'ezuite_toolkit'                  => array(
+					'name'          => __( 'EZuite Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Synchronize EZuite ERP inventory with WooCommerce. AI assistants can query inventory instantly through a local CCT cache.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_ezuite_toolkit'] ),
+					'category'      => 'specialized',
+					'php_functions' => array(),
+					'npm_packages'  => array(),
+					'tools_count'   => 3,
+					'tools'         => array(
+						__( 'ezuite_inventory tool', 'mcp-ai-wpoos' ),
+						__( 'ezuite_sync tool', 'mcp-ai-wpoos' ),
+						__( 'ezuite_settings tool', 'mcp-ai-wpoos' ),
 					),
 				),
 				'shopify_sync_toolkit'            => array(

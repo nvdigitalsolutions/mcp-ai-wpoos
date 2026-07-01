@@ -599,6 +599,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/init.php';
 		}
 
+		// Load EZuite Inventory Sync Toolkit if enabled (Pro feature — EZuite ERP inventory sync).
+		if ( ! empty( $settings['enable_ezuite_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/init.php';
+		}
+
 		// Load Shopify Sync Toolkit if enabled (Pro feature — Shopify↔WooCommerce inventory sync).
 		if ( ! empty( $settings['enable_shopify_sync_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/init.php';
@@ -933,8 +938,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'           => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-export-calendar-ics.php',
 			// Calendar Booking Toolkit — service CRUD + bulk import (Pro feature - v1.4.0).
-			'WP_MCP_AI_Tool_Create_Service'              => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-create-service.php',
-			'WP_MCP_AI_Tool_Import_Services'             => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-import-services.php',
+			'WP_MCP_AI_Tool_Create_Service'                => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-create-service.php',
+			'WP_MCP_AI_Tool_Import_Services'               => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-import-services.php',
 			// Calendar Booking Toolkit — no-show / unconfirmed query tools (Pro feature - v2.9.0).
 			'WP_MCP_AI_Tool_Get_No_Show_Appointments'      => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-no-show-appointments.php',
 			'WP_MCP_AI_Tool_Get_Unconfirmed_Bookings'      => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-unconfirmed-bookings.php',
@@ -1637,13 +1642,23 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools             = array_merge( $pro_tools, $flowhub_toolkit_tools );
 		}
 
+		// Add EZuite Inventory Sync Pro Toolkit tools if enabled (Pro feature — EZuite ERP integration).
+		if ( ! empty( $settings['enable_ezuite_toolkit'] ) && class_exists( 'WooCommerce' ) ) {
+			$ezuite_toolkit_tools = array(
+				'WP_MCP_AI_Pro_Tool_EZuite_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/class-wp-mcp-ai-pro-tool-ezuite-inventory.php',
+				'WP_MCP_AI_Pro_Tool_EZuite_Sync'      => WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/class-wp-mcp-ai-pro-tool-ezuite-sync.php',
+				'WP_MCP_AI_Pro_Tool_EZuite_Settings'  => WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/class-wp-mcp-ai-pro-tool-ezuite-settings.php',
+			);
+			$pro_tools            = array_merge( $pro_tools, $ezuite_toolkit_tools );
+		}
+
 		// Add Shopify Sync Toolkit tools if enabled (Pro feature — Shopify↔WooCommerce sync with CCT cache).
 		if ( ! empty( $settings['enable_shopify_sync_toolkit'] ) && class_exists( 'WooCommerce' ) && class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 			$shopify_sync_toolkit_tools = array(
 				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-inventory.php',
-				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Products'  => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-products.php',
-				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-orders.php',
-				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Settings'  => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-settings.php',
+				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Products' => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-products.php',
+				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Orders'   => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-orders.php',
+				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Settings' => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-settings.php',
 				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Analytics' => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-analytics.php',
 			);
 			$pro_tools                  = array_merge( $pro_tools, $shopify_sync_toolkit_tools );
