@@ -3897,10 +3897,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					var maxShow = 20;
 					var shown = 0;
 					checked.forEach( function( slug ) {
-						if ( shown >= maxShow ) {
-							return;
-						}
-						var labelEl = document.querySelector( checkboxSelector + '[value=\"' + slug + '\"]' );
+						var isOverflow = shown >= maxShow;
+						var labelEl = document.querySelector( checkboxSelector + '[value="' + slug + '"]' );
 						var label = slug;
 						if ( labelEl ) {
 							// Try to get the human-readable label from the nearby label element.
@@ -3914,14 +3912,14 @@ class WP_MCP_AI_Tool_Presets_Helper {
 								}
 							}
 						}
-						html += '<span class=\"wp-mcp-ai-tool-chip\" data-slug=\"' + slug + '\" style=\"display: inline-flex; align-items: center; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; font-size: 12px; border: 1px solid #c7d2fe; cursor: default;\">';
-						html += '<span class=\"wp-mcp-ai-tool-chip-label\" style=\"max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\">' + label + '</span>';
-						html += '<button type=\"button\" class=\"wp-mcp-ai-tool-chip-remove\" data-slug=\"' + slug + '\" style=\"margin-left: 4px; border: none; background: none; color: #6366f1; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;\" title=\"Remove \"' + slug + '\"\">&times;</button>';
+						html += '<span class="wp-mcp-ai-tool-chip' + ( isOverflow ? ' wp-mcp-ai-tool-chip--overflow' : '' ) + '" data-slug="' + slug + '" style="display: ' + ( isOverflow ? 'none' : 'inline-flex' ) + '; align-items: center; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; font-size: 12px; border: 1px solid #c7d2fe; cursor: default; margin: 4px;">';
+						html += '<span class="wp-mcp-ai-tool-chip-label" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + label + '</span>';
+						html += '<button type="button" class="wp-mcp-ai-tool-chip-remove" data-slug="' + slug + '" style="margin-left: 4px; border: none; background: none; color: #6366f1; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;" title="Remove "' + slug + '"">&times;</button>';
 						html += '</span>';
 						shown++;
 					} );
 					if ( checked.length > maxShow ) {
-						html += '<span style=\"font-size: 12px; color: #6b7280;\">+ ' + ( checked.length - maxShow ) + ' more</span>';
+						html += '<button type="button" class="wp-mcp-ai-tool-chip-more" style="font-size: 12px; color: #6b7280; margin: 4px; border: 1px dashed #c7d2fe; border-radius: 12px; padding: 2px 8px; background: none; cursor: pointer;">+ ' + ( checked.length - maxShow ) + ' more</button>';
 					}
 					chipsEl.innerHTML = html;
 
@@ -3931,13 +3929,27 @@ class WP_MCP_AI_Tool_Presets_Helper {
 							e.preventDefault();
 							e.stopPropagation();
 							var slug = btn.getAttribute( 'data-slug' );
-							var cb = document.querySelector( checkboxSelector + '[value=\"' + slug + '\"]' );
+							var cb = document.querySelector( checkboxSelector + '[value="' + slug + '"]' );
 							if ( cb ) {
 								cb.checked = false;
 								cb.dispatchEvent( new Event( 'change', { bubbles: true } ) );
 							}
 						} );
 					} );
+
+					// Bind "+ N more" toggle.
+					var moreBtn = chipsEl.querySelector( '.wp-mcp-ai-tool-chip-more' );
+					if ( moreBtn ) {
+						moreBtn.addEventListener( 'click', function( e ) {
+							e.preventDefault();
+							var overflowChips = chipsEl.querySelectorAll( '.wp-mcp-ai-tool-chip--overflow' );
+							var isShowing = overflowChips.length > 0 && overflowChips[0].style.display === 'inline-flex';
+							overflowChips.forEach( function( chip ) {
+								chip.style.display = isShowing ? 'none' : 'inline-flex';
+							} );
+							moreBtn.textContent = isShowing ? '+ ' + overflowChips.length + ' more' : '- Show less';
+						} );
+					}
 				}
 
 				// Listen for checkbox changes to refresh chips.
