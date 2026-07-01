@@ -221,6 +221,9 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 					'info'
 				);
 			}
+
+			// Return the result so the caller can inspect item/error counts.
+			return $result;
 		}
 
 		/**
