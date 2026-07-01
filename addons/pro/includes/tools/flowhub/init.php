@@ -29,9 +29,12 @@ function wp_mcp_ai_is_flowhub_toolkit_enabled() {
 }
 
 // Load FlowHub admin page and sync engine when toolkit is enabled.
+$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+
 if ( wp_mcp_ai_is_flowhub_toolkit_enabled()
 	&& class_exists( 'WooCommerce' )
-	&& ! ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() )
+	&& ( ! $is_base || $is_pro_active )
 ) {
 	// Load core classes.
 	// NOTE: The PRO FlowHub client (WP_MCP_AI_FlowHub_Client, uppercase H)
