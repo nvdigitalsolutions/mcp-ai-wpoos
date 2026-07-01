@@ -221,126 +221,40 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				/**
 				 * Ensure the JetEngine CCT exists, creating it if needed.
 				 *
-				 * Only creates the CCT shell (slug, title, capabilities).
-				 * Columns are added separately via ensure_columns().
+				 * Uses JetEngine's set_request() / create_item(false) pipeline
+				 * (same pattern used by Vitals Log CCT and FlowHub CCT) instead
+				 * of calling create_item() directly with raw data, which fails
+				 * because the data format mismatches JetEngine's expected shape.
 				 *
 				 * @since 1.3.0
 				 *
 				 * @return array|WP_Error Result array with 'created' (bool) and
 				 *                         'cct_id' (int|false), or WP_Error on failure.
 				 */
-		public function ensure_cct_exists() {
-			if ( ! function_exists( 'jet_engine' ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_shopify_sync_jetengine_missing',
-					__( 'JetEngine plugin is required for Shopify Sync storage. Please install and activate JetEngine.', 'mcp-ai-wpoos-pro' )
-				);
-			}
+			public function ensure_cct_exists() {
+				// First try the static bootstrap path.
+				if ( method_exists( __CLASS__, 'maybe_register_cct' ) ) {
+					self::maybe_register_cct();
+				}
 
-			// Use the safe module path instead of jet_engine()->cct directly.
-			$cct_module = self::get_cct_module();
-			if ( ! $cct_module ) {
-				self::maybe_enable_cct_module();
-				$cct_module = self::get_cct_module();
-			}
+				// Then check if it exists.
+				$available = $this->is_cct_available();
 
-			if ( ! $cct_module ) {
-				return new WP_Error(
-					'wp_mcp_ai_shopify_sync_jetengine_not_ready',
-					__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
-				);
-			}
+				if ( is_wp_error( $available ) ) {
+					if ( 'wp_mcp_ai_shopify_sync_jetengine_not_ready' === $available->get_error_code() ) {
+						return $available;
+					}
+					if ( 'wp_mcp_ai_shopify_sync_cct_missing' === $available->get_error_code() ) {
+						return $available;
+					}
+					return $available;
+				}
 
-			$existing = $this->get_cct_record_by_slug( $this->cct_slug );
-
-			if ( $existing ) {
 				return array(
 					'created' => false,
-					'cct_id'  => isset( $existing['id'] ) ? absint( $existing['id'] ) : 0,
 					'slug'    => $this->cct_slug,
 				);
 			}
-
-			$cct_data = array(
-				'slug'        => $this->cct_slug,
-				'labels'      => array(
-					'name'          => __( 'Shopify Inventory Sync', 'mcp-ai-wpoos-pro' ),
-					'singular_name' => __( 'Inventory Item', 'mcp-ai-wpoos-pro' ),
-					'add_new'       => __( 'Add Inventory Item', 'mcp-ai-wpoos-pro' ),
-					'add_new_item'  => __( 'Add New Inventory Item', 'mcp-ai-wpoos-pro' ),
-					'edit_item'     => __( 'Edit Inventory Item', 'mcp-ai-wpoos-pro' ),
-					'view_item'     => __( 'View Inventory Item', 'mcp-ai-wpoos-pro' ),
-					'search_items'  => __( 'Search Inventory Items', 'mcp-ai-wpoos-pro' ),
-					'not_found'     => __( 'No inventory items found.', 'mcp-ai-wpoos-pro' ),
-				),
-				'args'        => array(
-					'public'            => false,
-					'has_single'        => false,
-					'has_archive'       => false,
-					'show_in_menu'      => false,
-					'show_in_rest'      => false,
-					'show_in_nav_menus' => false,
-					'capability'        => 'manage_options',
-					'supports'          => array( 'title' ),
-					'admin_columns'     => array(),
-					'admin_filters'     => array(),
-				),
-				'meta_fields' => array(), // Columns are added via ensure_columns().
-			);
-
-			/**
-			 * Filter the CCT data before creation.
-			 *
-			 * @since 1.3.0
-			 *
-			 * @param array  $cct_data      The CCT registration data.
-			 * @param string $connection_id  The Shopify connection ID.
-			 */
-			$cct_data = apply_filters( 'wp_mcp_ai_shopify_sync_cct_data', $cct_data, $this->connection_id );
-
-			$cct_id = $cct_module->manager->data->create_item( $cct_data, 'jet_cct' );
-
-			if ( ! $cct_id || is_wp_error( $cct_id ) ) {
-				return is_wp_error( $cct_id )
-					? $cct_id
-					: new WP_Error(
-						'wp_mcp_ai_shopify_sync_cct_create_failed',
-						sprintf(
-							/* translators: %s: CCT slug */
-							__( 'Failed to create JetEngine CCT "%s".', 'mcp-ai-wpoos-pro' ),
-							esc_html( $this->cct_slug )
-						)
-					);
-			}
-
-			if ( function_exists( 'wp_mcp_ai_log' ) ) {
-				wp_mcp_ai_log(
-					sprintf(
-						'Shopify Sync CCT auto-created: slug=%s, id=%d.',
-						$this->cct_slug,
-						$cct_id
-					),
-					'info'
-				);
-			}
-
-			/**
-			 * Fires after the Shopify Sync CCT is auto-created.
-			 *
-			 * @since 1.3.0
-			 *
-			 * @param int    $cct_id         The newly created CCT ID.
-			 * @param string $cct_slug       The CCT slug.
-			 * @param string $connection_id  The Shopify connection ID.
-			 */
-			do_action( 'wp_mcp_ai_shopify_sync_cct_created', $cct_id, $this->cct_slug, $this->connection_id );
-
-			return array(
-				'created' => true,
-				'cct_id'  => absint( $cct_id ),
-				'slug'    => $this->cct_slug,
-			);
-		}
 
 		// ------------------------------------------------------------------ //
 		// Column Management                                                   //
@@ -1657,6 +1571,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		public static function bootstrap() {
 			add_action( 'init', array( __CLASS__, 'maybe_enable_cct_module' ), 10 );
 			add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
+			add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
 		}
 
 		/**
@@ -1733,6 +1648,114 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			if ( method_exists( $engine->modules, 'activate_module' ) ) {
 				$engine->modules->activate_module( 'custom-content-types' );
 			}
+		}
+
+		/**
+		 * Register the Shopify Sync CCT in JetEngine if it is missing.
+		 *
+		 * Uses the set_request() / create_item(false) pipeline proven by the
+		 * Vitals Log CCT and FlowHub CCT managers.
+		 *
+		 * @since 1.8.0
+		 */
+		public static function maybe_register_cct() {
+			$module = self::get_cct_module();
+
+			if ( ! $module ) {
+				return;
+			}
+
+			if ( self::cct_exists( $module ) ) {
+				return;
+			}
+
+			if ( empty( $module->manager ) || empty( $module->manager->data ) ) {
+				return;
+			}
+
+			$module->manager->data->set_request( self::get_registration_request() );
+			$module->manager->data->create_item( false );
+		}
+
+		/**
+		 * Check whether the Shopify Sync CCT already exists in JetEngine.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param \Jet_Engine\Modules\Custom_Content_Types\Module $module CCT module instance.
+		 * @return bool
+		 */
+		protected static function cct_exists( $module ) {
+			if ( empty( $module->manager ) || empty( $module->manager->data ) || empty( $module->manager->data->db ) ) {
+				return false;
+			}
+
+			$slug     = self::CCT_SLUG_DEFAULT;
+			$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
+			if ( ! empty( $settings['cct_slug'] ) ) {
+				$slug = sanitize_key( $settings['cct_slug'] );
+			}
+
+			$records = $module->manager->data->db->query(
+				'post_types',
+				array(
+					'slug'   => $slug,
+					'status' => 'content-type',
+				),
+				null,
+				false
+			);
+
+			return ! empty( $records );
+		}
+
+		/**
+		 * Build the JetEngine registration request payload.
+		 *
+		 * Mirrors the pattern used by Vitals Log CCT and FlowHub CCT.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array
+		 */
+		protected static function get_registration_request() {
+			$label = __( 'Shopify Inventory Sync', 'mcp-ai-wpoos-pro' );
+
+			return array(
+				'name'        => $label,
+				'slug'        => self::CCT_SLUG_DEFAULT,
+				'args'        => array(
+					'name'                => $label,
+					'slug'                => self::CCT_SLUG_DEFAULT,
+					'position'            => '-1',
+					'icon'                => 'dashicons-update',
+					'capability'          => 'manage_woocommerce',
+					'has_single'          => false,
+					'create_index'        => true,
+					'hide_field_names'    => false,
+					'rest_get_enabled'    => false,
+					'rest_put_enabled'    => false,
+					'rest_post_enabled'   => false,
+					'rest_delete_enabled' => false,
+					'admin_columns'       => array(
+						'_ID'    => array(
+							'enabled'     => true,
+							'prefix'      => '#',
+							'is_sortable' => true,
+							'is_num'      => true,
+						),
+						'sku'    => array(
+							'enabled'     => true,
+							'is_sortable' => true,
+						),
+						'status' => array(
+							'enabled'     => true,
+							'is_sortable' => true,
+						),
+					),
+				),
+				'meta_fields' => array(),
+			);
 		}
 
 		/**

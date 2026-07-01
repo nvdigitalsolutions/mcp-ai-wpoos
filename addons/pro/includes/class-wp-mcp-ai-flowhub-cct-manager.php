@@ -380,11 +380,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 					'repeater'    => false,
 				);
 
-				$module = self::get_cct_module();
-				if ( ! $module ) {
-					continue;
-				}
-				$result = $module->add_field( $this->cct_slug, $field_data );
+				$result = jet_engine()->cct->add_field( $this->cct_slug, $field_data );
 
 				if ( ! is_wp_error( $result ) ) {
 					++$created;
