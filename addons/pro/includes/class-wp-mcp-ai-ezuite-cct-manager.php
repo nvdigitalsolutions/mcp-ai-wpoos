@@ -777,7 +777,8 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				);
 			}
 
-			if ( empty( $connection['connection_type'] ) || 'ezuite_erp' !== $connection['connection_type'] ) {
+			$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+			if ( 'ezuite_erp' !== $conn_type && 'ezuite' !== $conn_type ) {
 				return new WP_Error(
 					'wp_mcp_ai_ezuite_wrong_connection_type',
 					sprintf(

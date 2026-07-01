@@ -354,7 +354,8 @@ class WP_MCP_AI_Pro_Tool_EZuite_Settings implements WP_MCP_AI_Tool_Interface, WP
 		$ezuite_connections = array();
 
 		foreach ( $all_connections as $connection ) {
-			if ( ! empty( $connection['connection_type'] ) && 'ezuite_erp' === $connection['connection_type'] ) {
+			$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+			if ( 'ezuite_erp' === $conn_type || 'ezuite' === $conn_type ) {
 				$ezuite_connections[] = array(
 					'id'      => esc_html( isset( $connection['id'] ) ? $connection['id'] : '' ),
 					'name'    => esc_html( isset( $connection['name'] ) ? $connection['name'] : '' ),

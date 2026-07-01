@@ -368,9 +368,32 @@ class WP_MCP_AI_EZuite_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_
 
 		// Gather all available EZuite connections from Remote Sites.
 		$available_connections = array();
-		foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $conn ) {
-			if ( isset( $conn['connection_type'] ) && 'ezuite_erp' === $conn['connection_type'] ) {
-				$available_connections[] = $conn;
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+			// Log diagnostic if connections exist but none match EZuite filter.
+			$has_ezuite = false;
+			$total      = is_array( $all_connections ) ? count( $all_connections ) : 0;
+
+			foreach ( $all_connections as $conn_id => $conn ) {
+				$conn_type = isset( $conn['connection_type'] ) ? sanitize_key( $conn['connection_type'] ) : '';
+				if ( 'ezuite_erp' === $conn_type || 'ezuite' === $conn_type ) {
+					$available_connections[ $conn_id ] = $conn;
+					$has_ezuite                       = true;
+				}
+			}
+
+			if ( $total > 0 && ! $has_ezuite && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log(
+					sprintf(
+						'[EZuite Toolkit] %d Remote Sites connection(s) exist but none matched ezuite_erp type. Connection types found: %s',
+						$total,
+						wp_json_encode( array_unique( array_map( function ( $c ) {
+							return isset( $c['connection_type'] ) ? $c['connection_type'] : '(none)';
+						}, $all_connections ) ) )
+					)
+				);
 			}
 		}
 		?>

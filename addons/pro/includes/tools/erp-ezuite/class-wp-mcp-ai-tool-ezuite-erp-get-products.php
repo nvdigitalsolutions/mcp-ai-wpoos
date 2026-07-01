@@ -193,7 +193,8 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Validate connection type.
-		if ( empty( $connection['connection_type'] ) || 'ezuite_erp' !== $connection['connection_type'] ) {
+		$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+		if ( 'ezuite_erp' !== $conn_type && 'ezuite' !== $conn_type ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_wrong_connection_type',
 				__( 'This connection is not an EZuite ERP connection.', 'mcp-ai-wpoos-pro' )
