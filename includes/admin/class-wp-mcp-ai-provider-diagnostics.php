@@ -1770,14 +1770,14 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					break;
 
 				case 'baseten':
-				self::test_baseten( $settings );
-				break;
+					self::test_baseten( $settings );
+					break;
 
 				case 'zai':
-				self::test_zai( $settings );
-				break;
+					self::test_zai( $settings );
+					break;
 
-			case 'embedded':
+				case 'embedded':
 					self::test_embedded( $settings );
 					break;
 

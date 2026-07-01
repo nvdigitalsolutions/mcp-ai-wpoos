@@ -86,9 +86,9 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		 * @var array
 		 */
 		const MODEL_CONTEXT_WINDOWS = array(
-			'deepseek-v4'    => 131072,
-			'deepseek-v3'    => 131072,
-			'deepseek-chat'  => 131072,
+			'deepseek-v4'       => 131072,
+			'deepseek-v3'       => 131072,
+			'deepseek-chat'     => 131072,
 			'deepseek-reasoner' => 65536,
 		);
 

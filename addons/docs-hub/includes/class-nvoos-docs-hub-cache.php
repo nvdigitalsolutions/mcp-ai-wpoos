@@ -247,8 +247,8 @@ class NV_oOS_Docs_Hub_Cache {
 
 		// Delete remote content cache files (individual .md files fetched from
 		// GitHub). The next rebuild will re-fetch them.
-		$remote_dir  = $dir . '/remote';
-		$remote_mds  = is_dir( $remote_dir ) ? glob( $remote_dir . '/*.md' ) : array();
+		$remote_dir = $dir . '/remote';
+		$remote_mds = is_dir( $remote_dir ) ? glob( $remote_dir . '/*.md' ) : array();
 		if ( ! empty( $remote_mds ) ) {
 			foreach ( $remote_mds as $file ) {
 				wp_delete_file( $file );

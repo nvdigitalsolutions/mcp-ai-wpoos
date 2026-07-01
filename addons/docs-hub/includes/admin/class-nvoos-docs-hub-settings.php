@@ -391,10 +391,10 @@ class NV_oOS_Docs_Hub_Settings {
 		$sanitized = self::sanitize_settings( $imported );
 
 		// Preserve existing tokens for repos that match by owner/repo.
-		$existing         = NV_oOS_Docs_Hub_Plugin::get_settings();
-		$existing_repos   = isset( $existing['remote_repos'] ) ? (array) $existing['remote_repos'] : array();
-		$sanitized_repos  = isset( $sanitized['remote_repos'] ) ? (array) $sanitized['remote_repos'] : array();
-		$new_repos        = array();
+		$existing        = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$existing_repos  = isset( $existing['remote_repos'] ) ? (array) $existing['remote_repos'] : array();
+		$sanitized_repos = isset( $sanitized['remote_repos'] ) ? (array) $sanitized['remote_repos'] : array();
+		$new_repos       = array();
 		foreach ( $sanitized_repos as $sr ) {
 			if ( ! is_array( $sr ) || empty( $sr['owner'] ) || empty( $sr['repo'] ) ) {
 				$new_repos[] = $sr;
@@ -517,9 +517,9 @@ class NV_oOS_Docs_Hub_Settings {
 		// Build a lookup map of existing tokens keyed by owner|repo so token
 		// preservation survives row reordering (add/remove) that would otherwise
 		// cause tokens to silently transfer between repos when matched by index.
-		$existing_settings    = NV_oOS_Docs_Hub_Plugin::get_settings();
-		$existing_repos       = isset( $existing_settings['remote_repos'] ) ? (array) $existing_settings['remote_repos'] : array();
-		$existing_token_map   = array();
+		$existing_settings  = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$existing_repos     = isset( $existing_settings['remote_repos'] ) ? (array) $existing_settings['remote_repos'] : array();
+		$existing_token_map = array();
 		foreach ( $existing_repos as $er ) {
 			if ( ! is_array( $er ) || empty( $er['owner'] ) || empty( $er['repo'] ) ) {
 				continue;
@@ -538,18 +538,18 @@ class NV_oOS_Docs_Hub_Settings {
 
 		foreach ( $raw_repos as $i => $repo ) {
 			if ( ! is_array( $repo ) ) {
-				$dropped_empty++;
+				++$dropped_empty;
 				continue;
 			}
 			$owner     = sanitize_text_field( $repo['owner'] ?? '' );
 			$repo_name = sanitize_text_field( $repo['repo'] ?? '' );
 			if ( '' === $owner || '' === $repo_name ) {
-				$dropped_empty++;
+				++$dropped_empty;
 				continue;
 			}
 			// Enforce safe characters: letters, digits, hyphens, underscores, dots only.
 			if ( ! preg_match( '/^[a-zA-Z0-9_.\-]+$/', $owner ) || ! preg_match( '/^[a-zA-Z0-9_.\-]+$/', $repo_name ) ) {
-				$dropped_invalid_chars++;
+				++$dropped_invalid_chars;
 				if ( '' === $dropped_invalid_chars_label ) {
 					$dropped_invalid_chars_label = $owner . '/' . $repo_name;
 				}
@@ -1068,7 +1068,8 @@ class NV_oOS_Docs_Hub_Settings {
 				<p class="description">
 					<?php
 					esc_html_e( 'Note: Exported files do NOT include Personal Access Tokens. After importing, re-enter your tokens and save. If your server runs Nginx, add a location rule to deny direct access to the cache directory:', 'nvoos-docs-hub' );
-					?><br />
+					?>
+					<br />
 					<code style="display:inline-block; margin-top:4px; background:#f0f0f1; padding:4px 8px;">
 						location /wp-content/uploads/nvoos-docs-hub/ { deny all; return 403; }
 					</code>
@@ -1076,16 +1077,16 @@ class NV_oOS_Docs_Hub_Settings {
 
 			</div>
 			<?php
-		}
+	}
 
 		/**
 		 * Render a checkbox field.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param array $args Field arguments.
-	 * @return void
-	 */
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $args Field arguments.
+		 * @return void
+		 */
 	public static function render_checkbox( $args ) {
 		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
 		$value    = ! empty( $settings[ $args['id'] ] );

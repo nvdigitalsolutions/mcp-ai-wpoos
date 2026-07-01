@@ -283,12 +283,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to curated list when catalog is not available.
 			if ( empty( $zai_models ) ) {
 				$zai_models = array(
-					'glm-5.2'       => 'GLM-5.2 (Latest, 1M Context, Recommended)',
-					'glm-5'         => 'GLM-5 (1M Context, tool calling)',
-					'glm-5-turbo'   => 'GLM-5 Turbo (256K, fast)',
-					'glm-4.7'       => 'GLM-4.7 (256K)',
-					'glm-4-flash'   => 'GLM-4 Flash (128K, fast)',
-					'glm-4'         => 'GLM-4 (128K)',
+					'glm-5.2'     => 'GLM-5.2 (Latest, 1M Context, Recommended)',
+					'glm-5'       => 'GLM-5 (1M Context, tool calling)',
+					'glm-5-turbo' => 'GLM-5 Turbo (256K, fast)',
+					'glm-4.7'     => 'GLM-4.7 (256K)',
+					'glm-4-flash' => 'GLM-4 Flash (128K, fast)',
+					'glm-4'       => 'GLM-4 (128K)',
 				);
 			}
 

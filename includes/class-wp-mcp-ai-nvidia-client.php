@@ -999,52 +999,52 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			// Apply resource-aware max_tokens if not explicitly set.
 				// NVIDIA NIM supports both max_tokens and max_completion_tokens (OpenAI v2).
 				// Reuse $model_config fetched earlier for tool support check.
-				if ( ! $model_config ) {
-					$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
-				}
+			if ( ! $model_config ) {
+				$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
+			}
 
 				// Support both max_tokens and max_completion_tokens in options.
 				$explicit_max = null;
-				if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
-					$explicit_max = absint( $options['max_completion_tokens'] );
-				} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
-					$explicit_max = absint( $options['max_tokens'] );
+			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$explicit_max = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
+				$explicit_max = absint( $options['max_tokens'] );
+			}
+
+			if ( null === $explicit_max ) {
+				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+				$max_tokens   = $resource_mgr->get_max_tokens();
+
+				/**
+				 * Filter the maximum tokens for NVIDIA NIM requests.
+				 *
+				 * @param int   $max_tokens The maximum tokens to use.
+				 * @param array $options    Request options.
+				 */
+				$max_tokens = apply_filters( 'wp_mcp_ai_nvidia_max_tokens', $max_tokens, $options );
+
+				// Get model-specific limit from model config.
+				if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
+					$model_limit = absint( $model_config['max_completion_tokens'] );
+					// Respect model limit.
+					$max_tokens = min( $max_tokens, $model_limit );
 				}
 
-				if ( null === $explicit_max ) {
-					$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-					$max_tokens   = $resource_mgr->get_max_tokens();
-
-					/**
-					 * Filter the maximum tokens for NVIDIA NIM requests.
-					 *
-					 * @param int   $max_tokens The maximum tokens to use.
-					 * @param array $options    Request options.
-					 */
-					$max_tokens = apply_filters( 'wp_mcp_ai_nvidia_max_tokens', $max_tokens, $options );
-
-					// Get model-specific limit from model config.
-					if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
-						$model_limit = absint( $model_config['max_completion_tokens'] );
-						// Respect model limit.
-						$max_tokens = min( $max_tokens, $model_limit );
-					}
-
-					if ( $max_tokens > 0 ) {
-						$payload['max_completion_tokens'] = $max_tokens;
-					}
-				} else {
-					$max_tokens = $explicit_max;
-
-					// Get model-specific limit from model config.
-					if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
-						$model_limit = absint( $model_config['max_completion_tokens'] );
-						// Respect model limit.
-						$max_tokens = min( $max_tokens, $model_limit );
-					}
-
+				if ( $max_tokens > 0 ) {
 					$payload['max_completion_tokens'] = $max_tokens;
 				}
+			} else {
+				$max_tokens = $explicit_max;
+
+				// Get model-specific limit from model config.
+				if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
+					$model_limit = absint( $model_config['max_completion_tokens'] );
+					// Respect model limit.
+					$max_tokens = min( $max_tokens, $model_limit );
+				}
+
+				$payload['max_completion_tokens'] = $max_tokens;
+			}
 
 				return $payload;
 		}
@@ -1109,32 +1109,32 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 
 			// Ensure usage data is present and includes provider/model information.
 				// NVIDIA NIM returns OpenAI-compatible usage with prompt_tokens, completion_tokens, total_tokens.
-				if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
-					// Add provider and model to usage for frontend display.
-					$response['usage']['provider'] = 'nvidia';
-					$response['usage']['model']    = $model;
+			if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
+				// Add provider and model to usage for frontend display.
+				$response['usage']['provider'] = 'nvidia';
+				$response['usage']['model']    = $model;
 
-					// Extract cached tokens from prompt_tokens_details (OpenAI-compatible).
-					if ( isset( $response['usage']['prompt_tokens_details']['cached_tokens'] ) ) {
-						$response['usage']['cached_tokens'] = (int) $response['usage']['prompt_tokens_details']['cached_tokens'];
-					}
-				} elseif ( ! isset( $response['usage'] ) ) {
-					// If usage is missing, create a minimal structure.
-					// This should not happen with proper NVIDIA NIM responses, but provides fallback.
-					$response['usage'] = array(
-						'prompt_tokens'     => 0,
-						'completion_tokens' => 0,
-						'total_tokens'      => 0,
-						'provider'          => 'nvidia',
-						'model'             => $model,
-					);
-
-					WP_MCP_AI_Logger::log_event(
-						'nvidia_missing_usage',
-						'NVIDIA NIM response missing usage data.',
-						array( 'model' => $model )
-					);
+				// Extract cached tokens from prompt_tokens_details (OpenAI-compatible).
+				if ( isset( $response['usage']['prompt_tokens_details']['cached_tokens'] ) ) {
+					$response['usage']['cached_tokens'] = (int) $response['usage']['prompt_tokens_details']['cached_tokens'];
 				}
+			} elseif ( ! isset( $response['usage'] ) ) {
+				// If usage is missing, create a minimal structure.
+				// This should not happen with proper NVIDIA NIM responses, but provides fallback.
+				$response['usage'] = array(
+					'prompt_tokens'     => 0,
+					'completion_tokens' => 0,
+					'total_tokens'      => 0,
+					'provider'          => 'nvidia',
+					'model'             => $model,
+				);
+
+				WP_MCP_AI_Logger::log_event(
+					'nvidia_missing_usage',
+					'NVIDIA NIM response missing usage data.',
+					array( 'model' => $model )
+				);
+			}
 
 				return $response;
 		}

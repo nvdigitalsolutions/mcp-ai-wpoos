@@ -507,38 +507,38 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				// This follows the same pattern as Ollama, Gemini, LM Studio, etc.
 				// Supports both max_tokens and max_completion_tokens in options.
 				$explicit_max = null;
-				if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
-					$explicit_max = absint( $options['max_completion_tokens'] );
-				} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
-					$explicit_max = absint( $options['max_tokens'] );
-				}
+			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$explicit_max = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
+				$explicit_max = absint( $options['max_tokens'] );
+			}
 
-				if ( null === $explicit_max ) {
-					$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-					$max_tokens   = $resource_mgr->get_max_tokens();
+			if ( null === $explicit_max ) {
+				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+				$max_tokens   = $resource_mgr->get_max_tokens();
 
-					WP_MCP_AI_Logger::log_event(
-						'cloudflare_default_max_tokens',
-						'Using Resource Manager max_tokens for Cloudflare',
-						array(
-							'max_tokens' => $max_tokens,
-							'tier'       => $resource_mgr->get_workload_tier(),
-							'reason'     => 'Cloudflare defaults to only 256 tokens which is too low',
-						)
-					);
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_default_max_tokens',
+					'Using Resource Manager max_tokens for Cloudflare',
+					array(
+						'max_tokens' => $max_tokens,
+						'tier'       => $resource_mgr->get_workload_tier(),
+						'reason'     => 'Cloudflare defaults to only 256 tokens which is too low',
+					)
+				);
 
-					$payload['max_completion_tokens'] = $max_tokens;
-				} else {
-					$payload['max_completion_tokens'] = $explicit_max;
-				}
+				$payload['max_completion_tokens'] = $max_tokens;
+			} else {
+				$payload['max_completion_tokens'] = $explicit_max;
+			}
 
-				$is_streaming = isset( $options['stream'] ) ? (bool) $options['stream'] : false;
+				$is_streaming      = isset( $options['stream'] ) ? (bool) $options['stream'] : false;
 				$payload['stream'] = $is_streaming;
 
 				// Include stream_options when streaming is enabled to receive usage data.
-				if ( $is_streaming ) {
-					$payload['stream_options'] = array( 'include_usage' => true );
-				}
+			if ( $is_streaming ) {
+				$payload['stream_options'] = array( 'include_usage' => true );
+			}
 
 			// Add response_format for JSON mode (OpenAI-compatible).
 			// Supported values: {"type": "json_object"} or {"type": "json_schema", "json_schema": {...}}.
@@ -988,9 +988,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			}
 
 			// If no usage data was provided by Cloudflare, estimate based on content length.
-				if ( 0 === $usage['prompt_tokens'] && 0 === $usage['completion_tokens'] && 0 === $usage['total_tokens'] ) {
-					$usage = $this->estimate_token_usage( $content );
-				}
+			if ( 0 === $usage['prompt_tokens'] && 0 === $usage['completion_tokens'] && 0 === $usage['total_tokens'] ) {
+				$usage = $this->estimate_token_usage( $content );
+			}
 
 				// Add provider and model to usage for tracking.
 				$usage['provider'] = 'cloudflare';
@@ -1000,9 +1000,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				$raw_usage = isset( $decoded['usage'] ) && is_array( $decoded['usage'] )
 					? $decoded['usage']
 					: ( isset( $result['usage'] ) && is_array( $result['usage'] ) ? $result['usage'] : array() );
-				if ( isset( $raw_usage['prompt_tokens_details']['cached_tokens'] ) ) {
-					$usage['cached_tokens'] = (int) $raw_usage['prompt_tokens_details']['cached_tokens'];
-				}
+			if ( isset( $raw_usage['prompt_tokens_details']['cached_tokens'] ) ) {
+				$usage['cached_tokens'] = (int) $raw_usage['prompt_tokens_details']['cached_tokens'];
+			}
 
 			// Determine finish_reason based on whether tool_calls are present.
 			// Note: Cloudflare may return finish_reason as 'stop' even with tool_calls,

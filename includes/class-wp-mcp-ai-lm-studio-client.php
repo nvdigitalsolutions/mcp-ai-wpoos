@@ -1288,7 +1288,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			return array_values( $filtered );
-			}
+		}
 
 			/**
 			 * Prepare chat messages for the LM Studio Chat Completions payload.
@@ -1306,78 +1306,78 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			 * @param array $messages Sanitised chat messages.
 			 * @return array
 			 */
-			protected function normalise_messages_for_payload( array $messages ) {
-				$normalised = array();
+		protected function normalise_messages_for_payload( array $messages ) {
+			$normalised = array();
 
-				foreach ( $messages as $message ) {
-					if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
-						$normalised[] = $message;
-						continue;
-					}
-
-					$segments = array_values( $message['content'] );
-
-					if ( empty( $segments ) ) {
-						$message['content'] = '';
-						$normalised[]       = $message;
-						continue;
-					}
-
-					$all_text   = true;
-					$text_parts = array();
-
-					foreach ( $segments as $segment ) {
-						if ( ! is_array( $segment ) ) {
-							$all_text = false;
-							break;
-						}
-
-						$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
-
-						if ( 'text' !== $type ) {
-							$all_text = false;
-							break;
-						}
-
-						$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
-					}
-
-					if ( $all_text ) {
-						$text_parts         = array_filter(
-							$text_parts,
-							static function ( $part ) {
-								return '' !== trim( $part );
-							}
-						);
-						$message['content'] = implode( "\n\n", $text_parts );
-					} else {
-						$message['content'] = $segments;
-					}
-
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
 					$normalised[] = $message;
+					continue;
 				}
 
-				return $normalised;
+				$segments = array_values( $message['content'] );
+
+				if ( empty( $segments ) ) {
+					$message['content'] = '';
+					$normalised[]       = $message;
+					continue;
+				}
+
+				$all_text   = true;
+				$text_parts = array();
+
+				foreach ( $segments as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$all_text = false;
+						break;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'text' !== $type ) {
+						$all_text = false;
+						break;
+					}
+
+					$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+				}
+
+				if ( $all_text ) {
+					$text_parts         = array_filter(
+						$text_parts,
+						static function ( $part ) {
+							return '' !== trim( $part );
+						}
+					);
+					$message['content'] = implode( "\n\n", $text_parts );
+				} else {
+					$message['content'] = $segments;
+				}
+
+				$normalised[] = $message;
 			}
+
+			return $normalised;
+		}
 
 			/**
 			 * Parse an SSE (Server-Sent Events) response body from LM Studio and
-		 * assemble it into a single OpenAI-compatible chat completion object.
-		 *
-		 * LM Studio's OpenAI-compatible streaming endpoint emits lines of the
-		 * form `data: {JSON}` followed by a terminal `data: [DONE]` line.
-		 * Each JSON chunk carries a `choices[0].delta` with incremental
-		 * `content` and/or `tool_calls` fragments.
-		 *
-		 * The `$stream_callback` receives each raw chunk array as it is parsed,
-		 * which lets the SSE handler forward tokens to the browser immediately.
-		 *
-		 * @param string        $body            Raw SSE response body.
-		 * @param string        $model           Model identifier.
-		 * @param int           $http_code       HTTP status code from wp_remote_post.
-		 * @param callable|null $stream_callback Optional per-chunk callback.
-		 * @return array|WP_Error Assembled and normalized response, or WP_Error on failure.
-		 */
+			 * assemble it into a single OpenAI-compatible chat completion object.
+			 *
+			 * LM Studio's OpenAI-compatible streaming endpoint emits lines of the
+			 * form `data: {JSON}` followed by a terminal `data: [DONE]` line.
+			 * Each JSON chunk carries a `choices[0].delta` with incremental
+			 * `content` and/or `tool_calls` fragments.
+			 *
+			 * The `$stream_callback` receives each raw chunk array as it is parsed,
+			 * which lets the SSE handler forward tokens to the browser immediately.
+			 *
+			 * @param string        $body            Raw SSE response body.
+			 * @param string        $model           Model identifier.
+			 * @param int           $http_code       HTTP status code from wp_remote_post.
+			 * @param callable|null $stream_callback Optional per-chunk callback.
+			 * @return array|WP_Error Assembled and normalized response, or WP_Error on failure.
+			 */
 		protected function handle_sse_streaming_response( $body, $model, $http_code, $stream_callback = null ) {
 			if ( empty( $body ) ) {
 				WP_MCP_AI_Logger::log_error( 'Empty SSE response from LM Studio.', array( 'model' => $model ) );

@@ -139,13 +139,13 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 	 */
 	public function test_kimi_settings_save_correctly() {
 		$settings = array(
-			'enable_kimi'       => true,
-			'kimi_api_key'      => 'sk-test123',
-			'kimi_model'        => 'kimi-k2.6',
-			'kimi_base_url'     => 'https://custom.kimi.com/v1',
-			'kimi_timeout'      => 120,
-			'kimi_temperature'  => 0.8,
-			'kimi_max_tokens'   => 2048,
+			'enable_kimi'      => true,
+			'kimi_api_key'     => 'sk-test123',
+			'kimi_model'       => 'kimi-k2.6',
+			'kimi_base_url'    => 'https://custom.kimi.com/v1',
+			'kimi_timeout'     => 120,
+			'kimi_temperature' => 0.8,
+			'kimi_max_tokens'  => 2048,
 		);
 
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -415,18 +415,21 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$messages = array(
-			array( 'role' => 'user', 'content' => 'Hello' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
 		);
 
 		$options = array(
-			'temperature'         => 0.8,
+			'temperature'           => 0.8,
 			'max_completion_tokens' => 100,
-			'top_p'               => 0.9,
-			'stop'                => array( 'STOP' ),
-			'response_format'     => array( 'type' => 'json_object' ),
-			'stream'              => true,
-			'prompt_cache_key'    => 'test-cache-key',
-			'safety_identifier'   => 'user-123',
+			'top_p'                 => 0.9,
+			'stop'                  => array( 'STOP' ),
+			'response_format'       => array( 'type' => 'json_object' ),
+			'stream'                => true,
+			'prompt_cache_key'      => 'test-cache-key',
+			'safety_identifier'     => 'user-123',
 		);
 
 		$payload = $method->invoke( $this->client, $messages, $options, 'kimi-k2.6' );
@@ -452,7 +455,10 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$messages = array(
-			array( 'role' => 'user', 'content' => 'Hello' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
 		);
 
 		$options = array(

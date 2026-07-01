@@ -27,50 +27,50 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		const API_BASE_URL            = 'https://generativelanguage.googleapis.com/v1beta/';
 		const DEFAULT_BASE_URL        = 'https://generativelanguage.googleapis.com/v1beta';
 
-		    /**
-		     * In-memory API key override. Set via set_api_key().
-		     *
-		     * @since 2026.07
-		     * @var string|null
-		     */
-		    private $api_key_override = null;
+			/**
+			 * In-memory API key override. Set via set_api_key().
+			 *
+			 * @since 2026.07
+			 * @var string|null
+			 */
+			private $api_key_override = null;
 
-		    /**
-		     * Retrieve the configured API key.
-		     *
-		     * @return string
-		     */
-		    public function get_api_key() {
-		        // If a transient API key was set via set_api_key(), use it instead
-		        // of the persisted setting. This prevents TOCTOU race conditions
-		        // when testing a key before saving it.
-		        if ( isset( $this->api_key_override ) && is_string( $this->api_key_override ) ) {
-		            return $this->api_key_override;
-		        }
+			/**
+			 * Retrieve the configured API key.
+			 *
+			 * @return string
+			 */
+		public function get_api_key() {
+			// If a transient API key was set via set_api_key(), use it instead
+			// of the persisted setting. This prevents TOCTOU race conditions
+			// when testing a key before saving it.
+			if ( isset( $this->api_key_override ) && is_string( $this->api_key_override ) ) {
+				return $this->api_key_override;
+			}
 
-		        $settings = WP_MCP_AI_Admin_Settings::get_settings();
-		        $key      = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$key      = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
-		        if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
-		            $key = WP_MCP_AI_Credential_Resolver::get_api_key( 'gemini' ) ?? '';
-		        }
+			if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'gemini' ) ?? '';
+			}
 
-		        return $key;
-		    }
+			return $key;
+		}
 
-		    /**
-		     * Override the API key for the lifetime of this instance only.
-		     *
-		     * Use this when testing a key before persisting it, instead of
-		     * temporarily writing it to wp_options (which creates a TOCTOU
-		     * race condition).
-		     *
-		     * @since 2026.07
-		     * @param string $api_key The API key to use for this instance.
-		     */
-		    public function set_api_key( $api_key ) {
-		        $this->api_key_override = $api_key;
-		    }
+			/**
+			 * Override the API key for the lifetime of this instance only.
+			 *
+			 * Use this when testing a key before persisting it, instead of
+			 * temporarily writing it to wp_options (which creates a TOCTOU
+			 * race condition).
+			 *
+			 * @since 2026.07
+			 * @param string $api_key The API key to use for this instance.
+			 */
+		public function set_api_key( $api_key ) {
+			$this->api_key_override = $api_key;
+		}
 
 		/**
 		 * Retrieve the configured base URL for the Gemini API.
@@ -1744,14 +1744,14 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$usage['completion_tokens'] = (int) $accumulated['usage']['candidatesTokenCount'];
 				}
 
-				            if ( isset( $accumulated['usage']['totalTokenCount'] ) ) {
-				                $usage['total_tokens'] = (int) $accumulated['usage']['totalTokenCount'];
-				            }
+				if ( isset( $accumulated['usage']['totalTokenCount'] ) ) {
+					$usage['total_tokens'] = (int) $accumulated['usage']['totalTokenCount'];
+				}
 
-				            // Extract cached tokens from Gemini's usageMetadata (streaming).
-				            if ( isset( $accumulated['usage']['cachedContentTokenCount'] ) ) {
-				                $usage['cached_tokens'] = (int) $accumulated['usage']['cachedContentTokenCount'];
-				            }
+							// Extract cached tokens from Gemini's usageMetadata (streaming).
+				if ( isset( $accumulated['usage']['cachedContentTokenCount'] ) ) {
+					$usage['cached_tokens'] = (int) $accumulated['usage']['cachedContentTokenCount'];
+				}
 
 				if ( ! empty( $usage ) ) {
 					$normalized['usage'] = $usage;
@@ -2000,29 +2000,29 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						),
 					)
 				);
-			            }
+			}
 
-			            // Filter orphaned tool messages before building the Gemini payload.
-			            // Gemini's API requires every functionCall to be immediately followed
-			            // by a matching functionResponse in the next user turn.
-			            $messages = $this->filter_tool_messages_for_payload( $messages );
+						// Filter orphaned tool messages before building the Gemini payload.
+						// Gemini's API requires every functionCall to be immediately followed
+						// by a matching functionResponse in the next user turn.
+						$messages = $this->filter_tool_messages_for_payload( $messages );
 
-			            // Normalise content arrays into strings for compatibility.
-			            // The REST layer represents text-only messages as arrays of
-			            // segments; collapse them back to strings that Gemini expects.
-			            $messages = $this->normalise_messages_for_payload( $messages );
+						// Normalise content arrays into strings for compatibility.
+						// The REST layer represents text-only messages as arrays of
+						// segments; collapse them back to strings that Gemini expects.
+						$messages = $this->normalise_messages_for_payload( $messages );
 
-			            $contents               = array();
-			            $system_fragments       = array();
-			            $pending_tool_calls     = array();
-			            $latest_assistant_index = null;
+						$contents               = array();
+						$system_fragments       = array();
+						$pending_tool_calls     = array();
+						$latest_assistant_index = null;
 
-			            foreach ( $messages as $message ) {
-			                if ( ! is_array( $message ) ) {
-			                    continue;
-			                }
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
 
-			                $role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
+				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
 				$content = isset( $message['content'] ) ? $message['content'] : array();
 
 				if ( 'system' === $role ) {
@@ -2183,31 +2183,31 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$payload['generationConfig']['temperature'] = (float) $options['temperature'];
 			}
 
-			        // Apply resource-aware max_output_tokens if not explicitly set.
-			        // Supports max_completion_tokens (OpenAI-compatible), max_tokens, and
-			        // max_output_tokens (Gemini-native) naming conventions.
-			        if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_completion_tokens'] ) && ! isset( $options['max_output_tokens'] ) ) {
-			            $resource_mgr      = WP_MCP_AI_Resource_Manager::instance();
-			            $max_output_tokens = $resource_mgr->get_max_tokens();
+					// Apply resource-aware max_output_tokens if not explicitly set.
+					// Supports max_completion_tokens (OpenAI-compatible), max_tokens, and
+					// max_output_tokens (Gemini-native) naming conventions.
+			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_completion_tokens'] ) && ! isset( $options['max_output_tokens'] ) ) {
+				$resource_mgr      = WP_MCP_AI_Resource_Manager::instance();
+				$max_output_tokens = $resource_mgr->get_max_tokens();
 
-			            /**
-			             * Filter the maximum output tokens for Gemini requests.
-			             *
-			             * @param int   $max_output_tokens The maximum output tokens to use.
-			             * @param array $options           Request options.
-			             */
-			            $max_output_tokens = apply_filters( 'wp_mcp_ai_gemini_max_output_tokens', $max_output_tokens, $options );
+				/**
+				 * Filter the maximum output tokens for Gemini requests.
+				 *
+				 * @param int   $max_output_tokens The maximum output tokens to use.
+				 * @param array $options           Request options.
+				 */
+				$max_output_tokens = apply_filters( 'wp_mcp_ai_gemini_max_output_tokens', $max_output_tokens, $options );
 
-			            if ( $max_output_tokens > 0 ) {
-			                $payload['generationConfig']['maxOutputTokens'] = $max_output_tokens;
-			            }
-			        } elseif ( isset( $options['max_completion_tokens'] ) ) {
-			            $payload['generationConfig']['maxOutputTokens'] = absint( $options['max_completion_tokens'] );
-			        } elseif ( isset( $options['max_tokens'] ) ) {
-			            $payload['generationConfig']['maxOutputTokens'] = absint( $options['max_tokens'] );
-			        } elseif ( isset( $options['max_output_tokens'] ) ) {
-			            $payload['generationConfig']['maxOutputTokens'] = absint( $options['max_output_tokens'] );
-			        }
+				if ( $max_output_tokens > 0 ) {
+					$payload['generationConfig']['maxOutputTokens'] = $max_output_tokens;
+				}
+			} elseif ( isset( $options['max_completion_tokens'] ) ) {
+				$payload['generationConfig']['maxOutputTokens'] = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) ) {
+				$payload['generationConfig']['maxOutputTokens'] = absint( $options['max_tokens'] );
+			} elseif ( isset( $options['max_output_tokens'] ) ) {
+				$payload['generationConfig']['maxOutputTokens'] = absint( $options['max_output_tokens'] );
+			}
 
 			// Add support for JSON schema responses.
 			if ( isset( $options['response_mime_type'] ) && '' !== $options['response_mime_type'] ) {

@@ -800,9 +800,9 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			}
 
 			// Prepend system messages to the formatted messages.
-				if ( ! empty( $system_messages ) ) {
-					$formatted_messages = array_merge( $system_messages, $formatted_messages );
-				}
+			if ( ! empty( $system_messages ) ) {
+				$formatted_messages = array_merge( $system_messages, $formatted_messages );
+			}
 
 				$formatted_messages = $this->filter_tool_messages_for_payload( $formatted_messages );
 				$formatted_messages = $this->normalise_messages_for_payload( $formatted_messages );
@@ -820,117 +820,117 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 					$payload['stream_options'] = array( 'include_usage' => true );
 				}
 
-			// Add tools if provided (OpenAI-compatible function calling).
-			if ( ! empty( $options['tools'] ) ) {
-				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
-			}
-
-			// Add temperature if specified.
-			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
-				$payload['temperature'] = (float) $options['temperature'];
-			}
-
-			// Additional sampling parameters supported by Hugging Face Inference API.
-			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
-				$payload['top_p'] = (float) $options['top_p'];
-			}
-
-			if ( isset( $options['top_k'] ) && is_numeric( $options['top_k'] ) ) {
-				$payload['top_k'] = (int) $options['top_k'];
-			}
-
-			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
-				$payload['seed'] = (int) $options['seed'];
-			}
-
-			if ( ! empty( $options['stop'] ) ) {
-				$payload['stop'] = is_array( $options['stop'] ) ? array_values( array_map( 'sanitize_text_field', $options['stop'] ) ) : array( sanitize_text_field( $options['stop'] ) );
-			}
-
-			if ( isset( $options['repetition_penalty'] ) && is_numeric( $options['repetition_penalty'] ) ) {
-				$payload['repetition_penalty'] = (float) $options['repetition_penalty'];
-			}
-
-			if ( isset( $options['frequency_penalty'] ) && is_numeric( $options['frequency_penalty'] ) ) {
-				$payload['frequency_penalty'] = (float) $options['frequency_penalty'];
-			}
-
-			if ( isset( $options['presence_penalty'] ) && is_numeric( $options['presence_penalty'] ) ) {
-				$payload['presence_penalty'] = (float) $options['presence_penalty'];
-			}
-
-			// Reasoning effort for reasoning-capable models (e.g., DeepSeek-R1, Qwen3).
-			$allowed_efforts = array( 'none', 'minimal', 'low', 'medium', 'high', 'xhigh' );
-			if ( isset( $options['reasoning_effort'] ) && in_array( $options['reasoning_effort'], $allowed_efforts, true ) ) {
-				$payload['reasoning_effort'] = $options['reasoning_effort'];
-			}
-
-			// Structured output / JSON mode (OpenAI-compatible format).
-			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) && ! empty( $options['response_format'] ) ) {
-				$payload['response_format'] = $options['response_format'];
-			}
-
-			// Tool choice to control which tool is invoked.
-			if ( isset( $options['tool_choice'] ) ) {
-				$payload['tool_choice'] = $options['tool_choice'];
-			}
-
-			// Tool prompt: a text prefix prepended before the tool definitions (HuggingFace TGI extension).
-			if ( ! empty( $options['tool_prompt'] ) ) {
-				$payload['tool_prompt'] = sanitize_text_field( $options['tool_prompt'] );
-			}
-
-			// Logprobs: return log probabilities of output tokens.
-			if ( isset( $options['logprobs'] ) ) {
-				$payload['logprobs'] = (bool) $options['logprobs'];
-			}
-
-			if ( isset( $options['top_logprobs'] ) && is_numeric( $options['top_logprobs'] ) ) {
-				$payload['top_logprobs'] = max( 0, min( 5, (int) $options['top_logprobs'] ) );
-			}
-
-			// Apply resource-aware max_tokens if not explicitly set.
-			// Hugging Face uses max_completion_tokens (OpenAI-compatible) for output token limit.
-			if ( ! isset( $options['max_tokens'] ) ) {
-				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-				$max_tokens   = $resource_mgr->get_max_tokens();
-
-				/**
-				 * Filter the maximum tokens for Hugging Face requests.
-				 *
-				 * @param int   $max_tokens The maximum tokens to use.
-				 * @param array $options    Request options.
-				 */
-				$max_tokens = apply_filters( 'wp_mcp_ai_huggingface_max_tokens', $max_tokens, $options );
-
-				// Get model-specific limit from model config.
-				$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
-				if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
-					$model_limit = absint( $model_config['max_completion_tokens'] );
-					// Respect model limit.
-					$max_tokens = min( $max_tokens, $model_limit );
+				// Add tools if provided (OpenAI-compatible function calling).
+				if ( ! empty( $options['tools'] ) ) {
+					$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
 				}
 
-				if ( $max_tokens > 0 ) {
+				// Add temperature if specified.
+				if ( isset( $options['temperature'] ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
+					$payload['temperature'] = (float) $options['temperature'];
+				}
+
+				// Additional sampling parameters supported by Hugging Face Inference API.
+				if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
+					$payload['top_p'] = (float) $options['top_p'];
+				}
+
+				if ( isset( $options['top_k'] ) && is_numeric( $options['top_k'] ) ) {
+					$payload['top_k'] = (int) $options['top_k'];
+				}
+
+				if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+					$payload['seed'] = (int) $options['seed'];
+				}
+
+				if ( ! empty( $options['stop'] ) ) {
+					$payload['stop'] = is_array( $options['stop'] ) ? array_values( array_map( 'sanitize_text_field', $options['stop'] ) ) : array( sanitize_text_field( $options['stop'] ) );
+				}
+
+				if ( isset( $options['repetition_penalty'] ) && is_numeric( $options['repetition_penalty'] ) ) {
+					$payload['repetition_penalty'] = (float) $options['repetition_penalty'];
+				}
+
+				if ( isset( $options['frequency_penalty'] ) && is_numeric( $options['frequency_penalty'] ) ) {
+					$payload['frequency_penalty'] = (float) $options['frequency_penalty'];
+				}
+
+				if ( isset( $options['presence_penalty'] ) && is_numeric( $options['presence_penalty'] ) ) {
+					$payload['presence_penalty'] = (float) $options['presence_penalty'];
+				}
+
+				// Reasoning effort for reasoning-capable models (e.g., DeepSeek-R1, Qwen3).
+				$allowed_efforts = array( 'none', 'minimal', 'low', 'medium', 'high', 'xhigh' );
+				if ( isset( $options['reasoning_effort'] ) && in_array( $options['reasoning_effort'], $allowed_efforts, true ) ) {
+					$payload['reasoning_effort'] = $options['reasoning_effort'];
+				}
+
+				// Structured output / JSON mode (OpenAI-compatible format).
+				if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) && ! empty( $options['response_format'] ) ) {
+					$payload['response_format'] = $options['response_format'];
+				}
+
+				// Tool choice to control which tool is invoked.
+				if ( isset( $options['tool_choice'] ) ) {
+					$payload['tool_choice'] = $options['tool_choice'];
+				}
+
+				// Tool prompt: a text prefix prepended before the tool definitions (HuggingFace TGI extension).
+				if ( ! empty( $options['tool_prompt'] ) ) {
+					$payload['tool_prompt'] = sanitize_text_field( $options['tool_prompt'] );
+				}
+
+				// Logprobs: return log probabilities of output tokens.
+				if ( isset( $options['logprobs'] ) ) {
+					$payload['logprobs'] = (bool) $options['logprobs'];
+				}
+
+				if ( isset( $options['top_logprobs'] ) && is_numeric( $options['top_logprobs'] ) ) {
+					$payload['top_logprobs'] = max( 0, min( 5, (int) $options['top_logprobs'] ) );
+				}
+
+				// Apply resource-aware max_tokens if not explicitly set.
+				// Hugging Face uses max_completion_tokens (OpenAI-compatible) for output token limit.
+				if ( ! isset( $options['max_tokens'] ) ) {
+					$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+					$max_tokens   = $resource_mgr->get_max_tokens();
+
+					/**
+					 * Filter the maximum tokens for Hugging Face requests.
+					 *
+					 * @param int   $max_tokens The maximum tokens to use.
+					 * @param array $options    Request options.
+					 */
+					$max_tokens = apply_filters( 'wp_mcp_ai_huggingface_max_tokens', $max_tokens, $options );
+
+					// Get model-specific limit from model config.
+					$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
+					if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
+						$model_limit = absint( $model_config['max_completion_tokens'] );
+						// Respect model limit.
+						$max_tokens = min( $max_tokens, $model_limit );
+					}
+
+					if ( $max_tokens > 0 ) {
+						// Hugging Face Inference API uses max_completion_tokens (OpenAI-compatible).
+						$payload['max_completion_tokens'] = $max_tokens;
+					}
+				} else {
+					$max_tokens = absint( $options['max_tokens'] );
+
+					// Get model-specific limit from model config.
+					$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
+					if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
+						$model_limit = absint( $model_config['max_completion_tokens'] );
+						// Respect model limit.
+						$max_tokens = min( $max_tokens, $model_limit );
+					}
+
 					// Hugging Face Inference API uses max_completion_tokens (OpenAI-compatible).
 					$payload['max_completion_tokens'] = $max_tokens;
 				}
-			} else {
-				$max_tokens = absint( $options['max_tokens'] );
 
-				// Get model-specific limit from model config.
-				$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
-				if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
-					$model_limit = absint( $model_config['max_completion_tokens'] );
-					// Respect model limit.
-					$max_tokens = min( $max_tokens, $model_limit );
-				}
-
-				// Hugging Face Inference API uses max_completion_tokens (OpenAI-compatible).
-				$payload['max_completion_tokens'] = $max_tokens;
-			}
-
-			return $payload;
+				return $payload;
 		}
 
 		/**
@@ -993,32 +993,32 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 
 			// Ensure usage data is present and includes provider/model information.
 				// Hugging Face returns OpenAI-compatible usage with prompt_tokens, completion_tokens, total_tokens.
-				if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
-					// Add provider and model to usage for frontend display.
-					$response['usage']['provider'] = 'huggingface';
-					$response['usage']['model']    = $model;
+			if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
+				// Add provider and model to usage for frontend display.
+				$response['usage']['provider'] = 'huggingface';
+				$response['usage']['model']    = $model;
 
-					// Extract cached tokens from prompt_tokens_details (OpenAI-compatible).
-					if ( isset( $response['usage']['prompt_tokens_details']['cached_tokens'] ) ) {
-						$response['usage']['cached_tokens'] = (int) $response['usage']['prompt_tokens_details']['cached_tokens'];
-					}
-				} elseif ( ! isset( $response['usage'] ) ) {
-					// If usage is missing, create a minimal structure.
-					// This should not happen with proper Hugging Face responses, but provides fallback.
-					$response['usage'] = array(
-						'prompt_tokens'     => 0,
-						'completion_tokens' => 0,
-						'total_tokens'      => 0,
-						'provider'          => 'huggingface',
-						'model'             => $model,
-					);
-
-					WP_MCP_AI_Logger::log_event(
-						'huggingface_missing_usage',
-						'Hugging Face response missing usage data.',
-						array( 'model' => $model )
-					);
+				// Extract cached tokens from prompt_tokens_details (OpenAI-compatible).
+				if ( isset( $response['usage']['prompt_tokens_details']['cached_tokens'] ) ) {
+					$response['usage']['cached_tokens'] = (int) $response['usage']['prompt_tokens_details']['cached_tokens'];
 				}
+			} elseif ( ! isset( $response['usage'] ) ) {
+				// If usage is missing, create a minimal structure.
+				// This should not happen with proper Hugging Face responses, but provides fallback.
+				$response['usage'] = array(
+					'prompt_tokens'     => 0,
+					'completion_tokens' => 0,
+					'total_tokens'      => 0,
+					'provider'          => 'huggingface',
+					'model'             => $model,
+				);
+
+				WP_MCP_AI_Logger::log_event(
+					'huggingface_missing_usage',
+					'Hugging Face response missing usage data.',
+					array( 'model' => $model )
+				);
+			}
 
 			return $response;
 		}

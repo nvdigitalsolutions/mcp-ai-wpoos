@@ -137,8 +137,8 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 			'wp_mcp_ai_settings',
 			array(
 				'kimi_base_url' => 'https://api.moonshot.ai/v1/',
-				)
-			);
+			)
+		);
 
 			$base_url = $this->client->get_base_url();
 

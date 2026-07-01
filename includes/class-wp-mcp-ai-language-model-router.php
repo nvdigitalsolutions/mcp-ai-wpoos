@@ -160,7 +160,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$this->kimi_client         = $kimi_client ? $kimi_client : ( class_exists( 'WP_MCP_AI_Kimi_Client' ) ? new WP_MCP_AI_Kimi_Client() : null );
 			$this->baseten_client      = $baseten_client ? $baseten_client : new WP_MCP_AI_Baseten_Client();
 			$this->zai_client          = $zai_client ? $zai_client : ( class_exists( 'WP_MCP_AI_ZAI_Client' ) ? new WP_MCP_AI_ZAI_Client() : null );
-		// Embedded client is Pro-only; only instantiate when the class is available.
+			// Embedded client is Pro-only; only instantiate when the class is available.
 			$this->embedded_client = $embedded_client ?? ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null );
 		}
 

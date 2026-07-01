@@ -378,8 +378,8 @@ class WP_MCP_AI_Container {
 					$container->get( 'client.openrouter' ),
 					$container->get( 'client.digitalocean' ),
 					$container->get( 'client.kimi' ),
-				$container->get( 'client.baseten' ),
-				$container->get( 'client.zai' )
+					$container->get( 'client.baseten' ),
+					$container->get( 'client.zai' )
 				);
 			}
 		);

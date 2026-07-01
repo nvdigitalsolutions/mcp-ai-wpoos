@@ -81,7 +81,7 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 		 * @var array
 		 */
 		const MODEL_CONTEXT_WINDOWS = array(
-			'zai-org/GLM-4'          => 128000,
+			'zai-org/GLM-4'           => 128000,
 			'deepseek-ai/DeepSeek-V3' => 128000,
 			'deepseek-ai/DeepSeek-R1' => 128000,
 			'moonshotai/Kimi-K2'      => 256000,

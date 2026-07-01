@@ -191,9 +191,9 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 			)
 		);
 
-		$hard           = \WP_CLI\Utils\get_flag_value( $assoc_args, 'hard', false );
-		$clear_staging  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'staging', true );
-		$keep_staging   = \WP_CLI\Utils\get_flag_value( $assoc_args, 'no-staging', false );
+		$hard          = \WP_CLI\Utils\get_flag_value( $assoc_args, 'hard', false );
+		$clear_staging = \WP_CLI\Utils\get_flag_value( $assoc_args, 'staging', true );
+		$keep_staging  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'no-staging', false );
 
 		if ( $keep_staging ) {
 			$clear_staging = false;
