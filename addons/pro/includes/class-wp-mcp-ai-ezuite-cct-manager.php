@@ -544,7 +544,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			}
 
 			$module = self::get_cct_module();
-			if ( ! $module ) {
+			if ( ! $module || empty( $module->data ) ) {
 				return array();
 			}
 			$items = $module->data->get_items( $this->cct_slug, $query_args );
@@ -654,7 +654,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				// Update existing item.
 				$ezuite_item['_ID'] = $existing['_ID'];
 				$module             = self::get_cct_module();
-				if ( ! $module ) {
+				if ( ! $module || empty( $module->data ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_ezuite_jetengine_not_ready',
 						__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
@@ -672,7 +672,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			// Create new item.
 			$ezuite_item['cct_status'] = 'publish';
 			$module                    = self::get_cct_module();
-			if ( ! $module ) {
+			if ( ! $module || empty( $module->data ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_ezuite_jetengine_not_ready',
 					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
@@ -701,7 +701,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			$woo_product_id = absint( $woo_product_id );
 
 			$module = self::get_cct_module();
-			if ( ! $module ) {
+			if ( ! $module || empty( $module->data ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_ezuite_jetengine_not_ready',
 					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
@@ -1246,6 +1246,15 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 
 			$engine = jet_engine();
 
+			// Preferred path: the ->cct shorthand is the canonical accessor
+			// on all modern JetEngine versions and guarantees the data handler
+			// is fully initialised.
+			if ( ! empty( $engine->cct ) && ! empty( $engine->cct->data ) ) {
+				return $engine->cct;
+			}
+
+			// Fallback: walk the modules registry when ->cct is unavailable
+			// (e.g. the CCT module was registered but hasn't set the shorthand).
 			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
 				return null;
 			}
