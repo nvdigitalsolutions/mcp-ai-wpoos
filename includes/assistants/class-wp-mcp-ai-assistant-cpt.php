@@ -2322,8 +2322,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			<?php elseif ( 'warning' === $severity ) : ?>
 				<div style="padding: 0.75rem; background: #fff; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 1rem;">
 					<strong><?php esc_html_e( 'Warning: You may experience issues with this configuration.', 'mcp-ai-wpoos' ); ?></strong>
-					<?php if ( $tool_count > 50 ) : ?>
-						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'More than 50 tools are selected. The server caps tool payloads at 50 by default, so tools beyond that limit will be silently dropped. Consider reducing to 50 or fewer tools for reliable operation.', 'mcp-ai-wpoos' ); ?></p>
+					<?php if ( $tool_count > 100 ) : ?>
+						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'More than 100 tools are selected. The server caps tool payloads at 100 by default, so tools beyond that limit will be silently dropped. Consider reducing to 100 or fewer tools for reliable operation.', 'mcp-ai-wpoos' ); ?></p>
 					<?php endif; ?>
 					<?php if ( $usage_pct > 80 ) : ?>
 						<p style="margin: 0.5rem 0 0 0;"><?php esc_html_e( 'The estimated prompt uses over 80% of the context window. Long conversations may exceed the limit and cause errors.', 'mcp-ai-wpoos' ); ?></p>
@@ -2351,11 +2351,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				</div>
 				<div style="flex: 1; min-width: 200px;">
 					<strong><?php esc_html_e( 'Tools Selected:', 'mcp-ai-wpoos' ); ?></strong>
-					<strong style="color: <?php echo $tool_count > 50 ? '#721c24' : ( $tool_count > 30 ? '#856404' : '#155724' ); ?>;">
+					<strong style="color: <?php echo $tool_count > 100 ? '#721c24' : ( $tool_count > 60 ? '#856404' : '#155724' ); ?>;">
 						<?php echo esc_html( number_format_i18n( $tool_count ) ); ?>
 					</strong>
-					<?php if ( $tool_count > 50 ) : ?>
-						<span style="color: #721c24;">⚠️ <?php esc_html_e( '(capped at 50)', 'mcp-ai-wpoos' ); ?></span>
+					<?php if ( $tool_count > 100 ) : ?>
+						<span style="color: #721c24;">⚠️ <?php esc_html_e( '(capped at 100)', 'mcp-ai-wpoos' ); ?></span>
 					<?php endif; ?>
 				</div>
 			</div>

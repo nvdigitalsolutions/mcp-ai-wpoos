@@ -4268,8 +4268,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		// Sort by score descending.
 		arsort( $scored, SORT_NUMERIC );
 
-		// Take top-scoring tools (up to configurable max, default 60).
-		$max_tools = apply_filters( 'wp_mcp_ai_auto_select_max_tools', 60 );
+		// Take top-scoring tools (up to configurable max, default 100).
+		$max_tools = apply_filters( 'wp_mcp_ai_auto_select_max_tools', 100 );
 		$min_score = apply_filters( 'wp_mcp_ai_auto_select_min_score', 3 );
 
 		$selected = array();
