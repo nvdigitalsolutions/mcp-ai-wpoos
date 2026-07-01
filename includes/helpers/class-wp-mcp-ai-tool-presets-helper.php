@@ -4525,23 +4525,35 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				continue;
 			}
 
-			try {
-				$definition = $tool->get_definition();
-			} catch ( \Exception $e ) {
-				continue;
+			// get_definition() is not part of the interface; fall back to
+			// interface methods when a tool doesn't provide its own.
+			if ( method_exists( $tool, 'get_definition' ) ) {
+				try {
+					$definition = $tool->get_definition();
+				} catch ( \Throwable $e ) {
+					$definition = null;
+				}
+			} else {
+				$definition = null;
 			}
 
-			if ( ! is_array( $definition ) ) {
-				continue;
+			if ( is_array( $definition ) ) {
+				$index[ $slug ] = array(
+					'name'            => isset( $definition['name'] ) ? (string) $definition['name'] : $slug,
+					'description'     => isset( $definition['description'] ) ? (string) $definition['description'] : '',
+					'profession_tags' => isset( $definition['profession_tags'] ) ? (array) $definition['profession_tags'] : array(),
+					'toolkit'         => isset( $definition['toolkit'] ) ? (string) $definition['toolkit'] : '',
+					'risk_level'      => isset( $definition['risk_level'] ) ? (string) $definition['risk_level'] : '',
+				);
+			} else {
+				$index[ $slug ] = array(
+					'name'            => $tool->get_name(),
+					'description'     => $tool->get_description(),
+					'profession_tags' => array(),
+					'toolkit'         => '',
+					'risk_level'      => '',
+				);
 			}
-
-			$index[ $slug ] = array(
-				'name'            => isset( $definition['name'] ) ? (string) $definition['name'] : $slug,
-				'description'     => isset( $definition['description'] ) ? (string) $definition['description'] : '',
-				'profession_tags' => isset( $definition['profession_tags'] ) ? (array) $definition['profession_tags'] : array(),
-				'toolkit'         => isset( $definition['toolkit'] ) ? (string) $definition['toolkit'] : '',
-				'risk_level'      => isset( $definition['risk_level'] ) ? (string) $definition['risk_level'] : '',
-			);
 		}
 
 		self::$tool_index = $index;
