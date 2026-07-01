@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settings-base.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-ezuite-cct-manager.php';
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-ezuite-sync-engine.php';
 
@@ -367,11 +368,9 @@ class WP_MCP_AI_EZuite_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_
 
 		// Gather all available EZuite connections from Remote Sites.
 		$available_connections = array();
-		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $conn ) {
-				if ( isset( $conn['connection_type'] ) && 'ezuite_erp' === $conn['connection_type'] && ! empty( $conn['enabled'] ) ) {
-					$available_connections[] = $conn;
-				}
+		foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $conn ) {
+			if ( isset( $conn['connection_type'] ) && 'ezuite_erp' === $conn['connection_type'] ) {
+				$available_connections[] = $conn;
 			}
 		}
 		?>
@@ -385,38 +384,45 @@ class WP_MCP_AI_EZuite_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_
 				</div>
 			<?php endif; ?>
 
+			<h3><?php esc_html_e( 'Connections to Sync', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Select which EZuite connections to synchronize. Each connection will have its own CCT cache and sync schedule.', 'mcp-ai-wpoos-pro' ); ?></p>
 			<?php if ( ! empty( $available_connections ) ) : ?>
-				<h3><?php esc_html_e( 'Connections to Sync', 'mcp-ai-wpoos-pro' ); ?></h3>
-				<p class="description"><?php esc_html_e( 'Select which EZuite connections to synchronize. Each connection will have its own CCT cache and sync schedule.', 'mcp-ai-wpoos-pro' ); ?></p>
 				<table class="form-table">
 					<?php foreach ( $available_connections as $conn ) : ?>
-					<tr>
-						<th scope="row">
-							<label for="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>">
-								<?php echo esc_html( isset( $conn['name'] ) ? $conn['name'] : $conn['id'] ); ?>
-							</label>
-						</th>
-						<td>
-							<input type="checkbox" name="ezuite_sync_connections[]"
-								id="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>"
-								value="<?php echo esc_attr( $conn['id'] ); ?>"
-								<?php checked( in_array( $conn['id'], $sync_connections, true ) ); ?> />
-							<label for="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>">
-								<?php esc_html_e( 'Enable sync for this connection', 'mcp-ai-wpoos-pro' ); ?>
-							</label>
-							<p class="description">
-								<?php
-								printf(
-									/* translators: %s: connection ID */
-									esc_html__( 'Connection ID: %s', 'mcp-ai-wpoos-pro' ),
-									esc_html( $conn['id'] )
-								);
-								?>
-							</p>
-						</td>
-					</tr>
+						<tr>
+							<th scope="row">
+								<label for="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>">
+									<?php echo esc_html( isset( $conn['name'] ) ? $conn['name'] : $conn['id'] ); ?>
+									<?php if ( empty( $conn['enabled'] ) ) : ?>
+										<span style="color: #999;">— <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</label>
+							</th>
+							<td>
+								<input type="checkbox" name="ezuite_sync_connections[]"
+									id="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>"
+									value="<?php echo esc_attr( $conn['id'] ); ?>"
+									<?php checked( in_array( $conn['id'], $sync_connections, true ) ); ?> />
+								<label for="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>">
+									<?php esc_html_e( 'Enable sync for this connection', 'mcp-ai-wpoos-pro' ); ?>
+								</label>
+								<p class="description">
+									<?php
+									printf(
+										/* translators: %s: connection ID */
+										esc_html__( 'Connection ID: %s', 'mcp-ai-wpoos-pro' ),
+										esc_html( $conn['id'] )
+									);
+									?>
+								</p>
+							</td>
+						</tr>
 					<?php endforeach; ?>
 				</table>
+			<?php else : ?>
+				<div class="notice notice-warning inline">
+					<p><?php esc_html_e( 'No EZuite connections are available for sync. Configure an EZuite ERP connection in NV oOS → Remote Sites, then return here to enable sync.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
 			<?php endif; ?>
 
 			<h3><?php esc_html_e( 'Sync Settings', 'mcp-ai-wpoos-pro' ); ?></h3>
