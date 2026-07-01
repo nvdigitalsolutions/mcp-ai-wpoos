@@ -599,7 +599,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			}
 
 			$module = self::get_cct_module();
-			if ( ! $module ) {
+			if ( ! $module || empty( $module->data ) ) {
 				return array();
 			}
 			$items = $module->data->get_items( $this->cct_slug, $query_args );
@@ -627,7 +627,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 			if ( 'cct_id' === $by ) {
 				$module = self::get_cct_module();
-				if ( ! $module ) {
+				if ( ! $module || empty( $module->data ) ) {
 					return null;
 				}
 				return $module->data->get_item( absint( $identifier ), $this->cct_slug );
@@ -800,7 +800,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				// Update existing item.
 				$mapped['_ID'] = $existing['_ID'];
 				$module        = self::get_cct_module();
-				if ( ! $module ) {
+				if ( ! $module || empty( $module->data ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_flowhub_jetengine_not_ready',
 						__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
@@ -818,7 +818,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			// Create new item.
 			$mapped['cct_status'] = 'publish';
 			$module               = self::get_cct_module();
-			if ( ! $module ) {
+			if ( ! $module || empty( $module->data ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_flowhub_jetengine_not_ready',
 					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
@@ -852,7 +852,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				foreach ( $items as $item ) {
 					if ( ! empty( $item['_ID'] ) ) {
 						$module = self::get_cct_module();
-						if ( $module ) {
+						if ( $module && ! empty( $module->data ) ) {
 							$module->data->delete_item( absint( $item['_ID'] ), $this->cct_slug );
 						}
 					}
@@ -895,7 +895,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			}
 
 			$module = self::get_cct_module();
-			if ( ! $module ) {
+			if ( ! $module || empty( $module->data ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_flowhub_jetengine_not_ready',
 					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
@@ -926,7 +926,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			$item['_ID']            = absint( $cct_item_id );
 
 			$module = self::get_cct_module();
-			if ( ! $module ) {
+			if ( ! $module || empty( $module->data ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_flowhub_jetengine_not_ready',
 					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
@@ -1007,16 +1007,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 			$start_time = microtime( true );
 
-			// Ensure CCT columns exist (skip in dry-run, handled upstream).
-			if ( ! $dry_run ) {
-				$columns_result = $this->ensure_columns();
-				if ( is_wp_error( $columns_result ) ) {
-					return $columns_result;
-				}
-
-				if ( $force ) {
-					$this->truncate();
-				}
+			// Skip CCT column creation in non-dry-run mode — upstream caller
+			// (run_full_sync) already called ensure_columns() above.
+			if ( ! $dry_run && $force ) {
+				$this->truncate();
 			}
 
 			$location_count = 0;
@@ -1506,6 +1500,15 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 			$engine = jet_engine();
 
+			// Preferred path: the ->cct shorthand is the canonical accessor
+			// on all modern JetEngine versions and guarantees the data handler
+			// is fully initialised.
+			if ( ! empty( $engine->cct ) && ! empty( $engine->cct->data ) ) {
+				return $engine->cct;
+			}
+
+			// Fallback: walk the modules registry when ->cct is unavailable
+			// (e.g. the CCT module was registered but hasn't set the shorthand).
 			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
 				return null;
 			}
