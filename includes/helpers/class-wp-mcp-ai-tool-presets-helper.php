@@ -4507,7 +4507,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			return $index;
 		}
 
-		$registry = WP_MCP_AI_Tool_Registry::instance();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$tools    = $registry->get_tools();
 
 		foreach ( $tools as $tool ) {
