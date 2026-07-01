@@ -1,15 +1,17 @@
 # Cross-Platform Extraction — Implementation Status & Gap Analysis
 
-**Date:** 2026-06-03 (original), refreshed 2026-06-29 (v1.1.35)
-**Status:** Live assessment — the extraction is operational behind a feature flag. Phases 0-2 complete, Phase 3 (tool migration) at ~22% (43/195 base tools). Pro tool migration not yet started (0/~810).
+**Date:** 2026-06-03 (original), refreshed 2026-07-01 (v1.1.35 multi-agent review)
+**Status:** Live assessment — the extraction is operational behind a feature flag. Phases 0-2 complete, Phase 3 (tool migration) at ~22% (43/195 base tools). Pro tool migration not yet started (0/~810). **New:** Laravel-scale deployment architecture proposed with 4 new domain contracts, Graphify ecosystem integration.
 **Feature Flag:** `?engine=oos`, `X-WP-MCP-AI-Engine: oos` header, `WP_MCP_AI_OOS_ENGINE` constant, or admin setting `enable_oos_engine`
 
 **Key Files:**
-- [`lib/`](../../lib/) — extracted core + WordPress adapter packages
+- [`lib/`](../../lib/) — extracted core + platform adapter packages
 - [`lib/core/`](../../lib/core/) — `nvoos/core` Composer package (PHP 8.1+, MIT)
 - [`lib/wordpress-adapter/`](../../lib/wordpress-adapter/) — `nvoos/wordpress-adapter` (PHP 7.4+, GPL-3.0)
+- [`lib/laravel-adapter/`](../../lib/laravel-adapter/) — `nvoos/laravel-adapter` (PHP 8.1+, MIT) — **complete, needs deployment wiring**
 - [`includes/bootstrap/oos-bridge.php`](../../includes/bootstrap/oos-bridge.php) — WordPress DI wiring + feature flag
 - [`cross-platform-extraction-architecture.md`](./cross-platform-extraction-architecture.md) — the vision proposal (2026-05-31)
+- [`laravel-scale-deployment-architecture.md`](./laravel-scale-deployment-architecture.md) — Laravel Octane orchestrator deployment plan (2026-07-01)
 
 ---
 
@@ -183,8 +185,9 @@ The existing `handle_chat_request()` in `class-wp-mcp-ai-rest.php` checks `wp_mc
 | Gap | Impact | Effort |
 |---|---|---|
 | **Pro addon tools (~810+)** | All ~810+ Pro tools not migrated. Many are external API tools (easy to migrate — FlowHub, Shopify, Cloudways), some are plugin-specific (WooCommerce, JetEngine — harder). This is the largest migration block. | High (ongoing — 16+ weeks) |
-| **Laravel adapter** | 0% — not started. The 8 domain contracts are ready; adapters need Eloquent/Sanctum/Storage/Queue implementations. | Medium (4–6 weeks) |
-| **Craft adapter** | 0% — not started. Craft Commerce and element-type expertise needed. | Medium (4–6 weeks) |
+| **Laravel adapter deployment wiring** | The 8 adapters are **implemented** (ContentStore via Eloquent, AuthProvider via Sanctum/Gates, CacheStore via Redis, QueueClient via Redis/SQS/Database, etc.) but no Laravel application scaffold, Octane config, or Horizon setup exists yet. See [`laravel-scale-deployment-architecture.md`](./laravel-scale-deployment-architecture.md). | Medium (16 weeks for full deployment) |
+| **New domain contracts for Laravel orchestrator** | 4 new interfaces needed for the scale deployment: `VectorStoreInterface` (pgvector adapter), `FederationClientInterface` (peer querying), `MeshRouterInterface` (intelligent peer selection), `StreamingInterface` (Reverb WebSocket adapter). These are framework-agnostic domain contracts in `lib/core/`. | Medium (2 weeks for contracts + Laravel adapters) |
+| **Craft adapter** | 0% — implementations written but untested. Craft Commerce and element-type expertise needed. | Medium (4–6 weeks) |
 | **Monorepo tooling** | `lib/` lives inside the WP plugin repo. Not yet a standalone monorepo with CI/CD across packages. | Low (1–2 weeks) |
 | **Composer package publishing** | Neither `nvoos/core` nor `nvoos/wordpress-adapter` are published to Packagist. | Low (setup + docs) |
 | **PHPStan/static analysis** | No PHPStan config for `lib/core` or `lib/wordpress-adapter`. | Low (1 week) |
@@ -197,6 +200,42 @@ The existing `handle_chat_request()` in `class-wp-mcp-ai-rest.php` checks `wp_mc
 | **WordPress.org base build exclusion** | Already handled — `lib/` is absent from base builds, guarded in `oos-bridge.php`. |
 | **Async tool execution** | Action Scheduler adapter exists (`QueueClient`). Need to verify async tool flow works through the OOS engine. |
 | **Voice/realtime providers** | Not yet extracted. OpenAI Realtime and Gemini Live currently live in the WP plugin classes. |
+
+---
+
+## Graphify Ecosystem & Laravel Orchestrator Integration (2026-07-01)
+
+The extraction is the foundation for a federated deployment architecture where:
+
+1. **WordPress/Graphify nodes** serve as content + knowledge graph sources
+2. **A central Laravel Octane orchestrator** handles all AI orchestration (chat, tool execution, streaming, vector search)
+3. **Federation** routes queries intelligently across all nodes
+
+### Graphify Standalone Plugins
+
+| Plugin | Role | Status |
+|---|---|---|
+| `nvoos-graphify` | Knowledge graph core (14 tools, Cytoscape.js, 18 remote drivers, REST, Memory Bridge) | v1.0.0 |
+| `nvoos-graphify-ai` | AI addon (13 providers, streaming chat, RAG, embeddings) | v1.0.0-dev |
+| `nvoos-graphify-ai-platform` | Platform addon (Agents, A2A, ACP, Blueprints, Federation, Harness, Skills) | v1.0.0-dev |
+
+### New Domain Contracts Required
+
+For the Laravel orchestrator to fully integrate with the Graphify ecosystem, 4 new domain contracts are needed in `lib/core/src/Domain/Contract/`:
+
+| Contract | Purpose | Priority |
+|---|---|---|
+| `VectorStoreInterface` | Abstract vector storage (pgvector in Laravel, MySQL float32 in WordPress) | High |
+| `FederationClientInterface` | Peer discovery, querying, health checks, entity reconciliation | High |
+| `MeshRouterInterface` | Intelligent peer selection with 6 routing strategies | Medium |
+| `StreamingInterface` | Abstract streaming (Reverb WebSocket in Laravel, SSE in WordPress) | Medium |
+
+All four mirror existing WordPress implementations (`WP_MCP_AI_Mesh_Router`, `NV_oOS_Graphify_Remote_OOS_Federation`) that are already production-grade.
+
+### Key Documents
+
+- [`laravel-scale-deployment-architecture.md`](./laravel-scale-deployment-architecture.md) — Full deployment plan
+- [`nvoos-base-restructuring-roadmap.md`](./nvoos-base-restructuring-roadmap.md) — Graphify ecosystem architecture
 
 ---
 

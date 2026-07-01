@@ -1,8 +1,8 @@
 # NV oOS Proposals Directory
 
-**Last Updated:** June 29, 2026
-**Total Proposals:** 100+ files
-**Completed:** 30+ | **In Progress:** 3 | **Pending:** ~30 (many stale)
+**Last Updated:** July 1, 2026
+**Total Proposals:** 100+ files (see [RELATED_PROPOSALS_INDEX.md](./RELATED_PROPOSALS_INDEX.md) for cross-reference map)
+**Completed:** 30+ | **In Progress:** 4 | **Pending:** ~30 (many stale)
 
 📊 **[View Complete Status Tracking →](PROPOSALS_COMPLETION_STATUS.md)**  ·  📋 **[Retirement Log →](proposals-retirement-log.md)**
 
@@ -12,7 +12,11 @@ This directory contains proposals, research, and implementation status for major
 
 ## 🎯 Quick Status Overview
 
-### ✅ Recently Completed (June 2026 — v1.1.32–v1.1.35)
+### ✅ Recently Completed (June-July 2026)
+- **NV oOS Graphify v1.0.0** — Standalone knowledge graph plugin (14 tools, Cytoscape.js, 18 remote drivers)
+- **NV oOS Graphify AI v1.0.0-dev** — 13-provider AI addon with RAG and embeddings
+- **NV oOS Graphify AI Platform v1.0.0-dev** — Agents, A2A, ACP, Federation, Harness, Skills
+- **Graphify Core Buildout (9 Phases)** — PSR-4 standalone plugin (see [`nvoos-graphify-core-buildout-plan.md`](./nvoos-graphify-core-buildout-plan.md))
 - **FlowHub Inventory Sync Pro Toolkit** — 6-tool cannabis dispensary management (v1.1.35, Jun 29)
 - **Shopify Sync Pro Toolkit** — 5-tool bi-directional e-commerce sync (v1.1.35, Jun 29)
 - **Necessity Gate Layer J** — Irreversibility-weighted safety profiles (v1.1.35, Jun 29)
@@ -27,6 +31,8 @@ This directory contains proposals, research, and implementation status for major
 
 ### 🚧 Currently In Progress
 - **Cross-Platform Extraction Phase 3** — ~22% tool migration (43/195 base); Pro tools pending
+- **Laravel-Scale Deployment Architecture** — Central Octane orchestrator proposal under review (see [`laravel-scale-deployment-architecture.md`](./laravel-scale-deployment-architecture.md))
+- **Graphify Release Readiness** — Plugin Check compliance audit in progress (see [`nvoos-graphify-release-readiness.md`](./nvoos-graphify-release-readiness.md))
 - **WordPress Integration Enhancement** — 42-82% complete
 - **Ralph Wiggum CCT Orchestration** — Awaiting implementation resources
 
