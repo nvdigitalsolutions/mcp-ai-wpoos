@@ -238,30 +238,30 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				 * @return array|WP_Error Result array with 'created' (bool) and
 				 *                         'cct_id' (int|false), or WP_Error on failure.
 				 */
-			public function ensure_cct_exists() {
-				// First try the static bootstrap path.
-				if ( method_exists( __CLASS__, 'maybe_register_cct' ) ) {
-					self::maybe_register_cct();
-				}
+		public function ensure_cct_exists() {
+			// First try the static bootstrap path.
+			if ( method_exists( __CLASS__, 'maybe_register_cct' ) ) {
+				self::maybe_register_cct();
+			}
 
-				// Then check if it exists.
-				$available = $this->is_cct_available();
+			// Then check if it exists.
+			$available = $this->is_cct_available();
 
-				if ( is_wp_error( $available ) ) {
-					if ( 'wp_mcp_ai_shopify_sync_jetengine_not_ready' === $available->get_error_code() ) {
-						return $available;
-					}
-					if ( 'wp_mcp_ai_shopify_sync_cct_missing' === $available->get_error_code() ) {
-						return $available;
-					}
+			if ( is_wp_error( $available ) ) {
+				if ( 'wp_mcp_ai_shopify_sync_jetengine_not_ready' === $available->get_error_code() ) {
 					return $available;
 				}
-
-				return array(
-					'created' => false,
-					'slug'    => $this->cct_slug,
-				);
+				if ( 'wp_mcp_ai_shopify_sync_cct_missing' === $available->get_error_code() ) {
+					return $available;
+				}
+				return $available;
 			}
+
+			return array(
+				'created' => false,
+				'slug'    => $this->cct_slug,
+			);
+		}
 
 		// ------------------------------------------------------------------ //
 		// Column Management                                                   //
@@ -297,9 +297,9 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			$existing_fields = $this->get_existing_cct_fields();
 
 			foreach ( $this->columns as $column_name => $column_type ) {
-					if ( in_array( $column_name, $existing_fields, true ) ) {
-						continue;
-					}
+				if ( in_array( $column_name, $existing_fields, true ) ) {
+					continue;
+				}
 
 					$sql_type = self::map_jet_type_to_sql( $column_type );
 					global $wpdb;
@@ -308,7 +308,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
 					++$created;
-				}
+			}
 
 			/**
 			 * Fires after CCT columns are ensured for Shopify Sync.
@@ -1099,12 +1099,12 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 				// Catalog API connections cannot run inventory syncs -
 				// they only support product search, not Admin GraphQL.
-				if ( 'catalog_api' === $client->get_api_mode() ) {
-					return new WP_Error(
-						'wp_mcp_ai_shopify_sync_catalog_only',
-						__( 'This connection is configured for Shopify Catalog API only. Inventory sync requires Shopify Admin API. Please switch the connection mode to Admin API in Remote Sites settings and provide a store URL and Admin API access token.', 'mcp-ai-wpoos-pro' )
-					);
-				}
+			if ( 'catalog_api' === $client->get_api_mode() ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_catalog_only',
+					__( 'This connection is configured for Shopify Catalog API only. Inventory sync requires Shopify Admin API. Please switch the connection mode to Admin API in Remote Sites settings and provide a store URL and Admin API access token.', 'mcp-ai-wpoos-pro' )
+				);
+			}
 
 				// Shopify Bulk Operation query — export all products with variants and inventory.
 				$bulk_query = '{

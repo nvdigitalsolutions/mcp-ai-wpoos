@@ -367,9 +367,9 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			$existing_fields = $this->get_existing_cct_fields();
 
 			foreach ( $this->columns as $column_name => $column_type ) {
-					if ( in_array( $column_name, $existing_fields, true ) ) {
-						continue;
-					}
+				if ( in_array( $column_name, $existing_fields, true ) ) {
+					continue;
+				}
 
 					$sql_type = self::map_jet_type_to_sql( $column_type );
 					global $wpdb;
@@ -378,7 +378,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
 					++$created;
-				}
+			}
 
 				do_action( 'wp_mcp_ai_flowhub_after_columns_ensure', $this->cct_slug, $created );
 
@@ -418,30 +418,30 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			return wp_list_pluck( $meta_fields, 'name' );
 		}
 
-	/**
-	 * Map a JetEngine field type to a MySQL column type.
-	 *
-	 * Used by ensure_columns() for direct ALTER TABLE statements
-	 * when the jet_engine()->cct API is unavailable.
-	 *
-	 * @since 1.8.0
-	 *
-	 * @param string $jet_type JetEngine field type.
-	 * @return string MySQL column type.
-	 */
-	protected static function map_jet_type_to_sql( $jet_type ) {
-		$map = array(
-			'text'           => 'TEXT',
-			'textarea'       => 'LONGTEXT',
-			'number'         => 'BIGINT(20)',
-			'datetime-local' => 'DATETIME',
-			'datetime'       => 'DATETIME',
-		);
-		return isset( $map[ $jet_type ] ) ? $map[ $jet_type ] : 'TEXT';
-	}
+		/**
+		 * Map a JetEngine field type to a MySQL column type.
+		 *
+		 * Used by ensure_columns() for direct ALTER TABLE statements
+		 * when the jet_engine()->cct API is unavailable.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $jet_type JetEngine field type.
+		 * @return string MySQL column type.
+		 */
+		protected static function map_jet_type_to_sql( $jet_type ) {
+			$map = array(
+				'text'           => 'TEXT',
+				'textarea'       => 'LONGTEXT',
+				'number'         => 'BIGINT(20)',
+				'datetime-local' => 'DATETIME',
+				'datetime'       => 'DATETIME',
+			);
+			return isset( $map[ $jet_type ] ) ? $map[ $jet_type ] : 'TEXT';
+		}
 
-	/**
-	 * Get a human-readable label for a CCT column.
+		/**
+		 * Get a human-readable label for a CCT column.
 		 *
 		 * @since 1.2.0
 		 *
