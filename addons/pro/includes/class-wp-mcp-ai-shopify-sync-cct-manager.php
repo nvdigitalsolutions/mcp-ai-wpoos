@@ -39,6 +39,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		const CCT_SLUG_DEFAULT = 'shopify_inventory_sync';
 
 		/**
+		 * Base ID for meta field identifiers (41000 range).
+		 *
+		 * @var int
+		 */
+		const FIELD_ID_BASE = 41000;
+
+		/**
 		 * Current CCT slug.
 		 *
 		 * @var string
@@ -221,8 +228,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				/**
 				 * Ensure the JetEngine CCT exists, creating it if needed.
 				 *
-				 * Only creates the CCT shell (slug, title, capabilities).
-				 * Columns are added separately via ensure_columns().
+				 * Uses JetEngine's set_request() / create_item(false) pipeline
+				 * (same pattern used by Vitals Log CCT and FlowHub CCT) instead
+				 * of calling create_item() directly with raw data, which fails
+				 * because the data format mismatches JetEngine's expected shape.
 				 *
 				 * @since 1.3.0
 				 *
@@ -230,114 +239,26 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				 *                         'cct_id' (int|false), or WP_Error on failure.
 				 */
 		public function ensure_cct_exists() {
-			if ( ! function_exists( 'jet_engine' ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_shopify_sync_jetengine_missing',
-					__( 'JetEngine plugin is required for Shopify Sync storage. Please install and activate JetEngine.', 'mcp-ai-wpoos-pro' )
-				);
+			// First try the static bootstrap path.
+			if ( method_exists( __CLASS__, 'maybe_register_cct' ) ) {
+				self::maybe_register_cct();
 			}
 
-			// Use the safe module path instead of jet_engine()->cct directly.
-			$cct_module = self::get_cct_module();
-			if ( ! $cct_module ) {
-				self::maybe_enable_cct_module();
-				$cct_module = self::get_cct_module();
+			// Then check if it exists.
+			$available = $this->is_cct_available();
+
+			if ( is_wp_error( $available ) ) {
+				if ( 'wp_mcp_ai_shopify_sync_jetengine_not_ready' === $available->get_error_code() ) {
+					return $available;
+				}
+				if ( 'wp_mcp_ai_shopify_sync_cct_missing' === $available->get_error_code() ) {
+					return $available;
+				}
+				return $available;
 			}
-
-			if ( ! $cct_module ) {
-				return new WP_Error(
-					'wp_mcp_ai_shopify_sync_jetengine_not_ready',
-					__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
-				);
-			}
-
-			$existing = $this->get_cct_record_by_slug( $this->cct_slug );
-
-			if ( $existing ) {
-				return array(
-					'created' => false,
-					'cct_id'  => isset( $existing['id'] ) ? absint( $existing['id'] ) : 0,
-					'slug'    => $this->cct_slug,
-				);
-			}
-
-			$cct_data = array(
-				'slug'        => $this->cct_slug,
-				'labels'      => array(
-					'name'          => __( 'Shopify Inventory Sync', 'mcp-ai-wpoos-pro' ),
-					'singular_name' => __( 'Inventory Item', 'mcp-ai-wpoos-pro' ),
-					'add_new'       => __( 'Add Inventory Item', 'mcp-ai-wpoos-pro' ),
-					'add_new_item'  => __( 'Add New Inventory Item', 'mcp-ai-wpoos-pro' ),
-					'edit_item'     => __( 'Edit Inventory Item', 'mcp-ai-wpoos-pro' ),
-					'view_item'     => __( 'View Inventory Item', 'mcp-ai-wpoos-pro' ),
-					'search_items'  => __( 'Search Inventory Items', 'mcp-ai-wpoos-pro' ),
-					'not_found'     => __( 'No inventory items found.', 'mcp-ai-wpoos-pro' ),
-				),
-				'args'        => array(
-					'public'            => false,
-					'has_single'        => false,
-					'has_archive'       => false,
-					'show_in_menu'      => false,
-					'show_in_rest'      => false,
-					'show_in_nav_menus' => false,
-					'capability'        => 'manage_options',
-					'supports'          => array( 'title' ),
-					'admin_columns'     => array(),
-					'admin_filters'     => array(),
-				),
-				'meta_fields' => array(), // Columns are added via ensure_columns().
-			);
-
-			/**
-			 * Filter the CCT data before creation.
-			 *
-			 * @since 1.3.0
-			 *
-			 * @param array  $cct_data      The CCT registration data.
-			 * @param string $connection_id  The Shopify connection ID.
-			 */
-			$cct_data = apply_filters( 'wp_mcp_ai_shopify_sync_cct_data', $cct_data, $this->connection_id );
-
-			$cct_id = $cct_module->manager->data->create_item( $cct_data, 'jet_cct' );
-
-			if ( ! $cct_id || is_wp_error( $cct_id ) ) {
-				return is_wp_error( $cct_id )
-					? $cct_id
-					: new WP_Error(
-						'wp_mcp_ai_shopify_sync_cct_create_failed',
-						sprintf(
-							/* translators: %s: CCT slug */
-							__( 'Failed to create JetEngine CCT "%s".', 'mcp-ai-wpoos-pro' ),
-							esc_html( $this->cct_slug )
-						)
-					);
-			}
-
-			if ( function_exists( 'wp_mcp_ai_log' ) ) {
-				wp_mcp_ai_log(
-					sprintf(
-						'Shopify Sync CCT auto-created: slug=%s, id=%d.',
-						$this->cct_slug,
-						$cct_id
-					),
-					'info'
-				);
-			}
-
-			/**
-			 * Fires after the Shopify Sync CCT is auto-created.
-			 *
-			 * @since 1.3.0
-			 *
-			 * @param int    $cct_id         The newly created CCT ID.
-			 * @param string $cct_slug       The CCT slug.
-			 * @param string $connection_id  The Shopify connection ID.
-			 */
-			do_action( 'wp_mcp_ai_shopify_sync_cct_created', $cct_id, $this->cct_slug, $this->connection_id );
 
 			return array(
-				'created' => true,
-				'cct_id'  => absint( $cct_id ),
+				'created' => false,
 				'slug'    => $this->cct_slug,
 			);
 		}
@@ -380,20 +301,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 					continue;
 				}
 
-				$field_data = array(
-					'title'       => $this->get_column_label( $column_name ),
-					'name'        => $column_name,
-					'object_type' => 'field',
-					'type'        => $column_type,
-					'is_required' => false,
-					'repeater'    => false,
-				);
+					$sql_type = self::map_jet_type_to_sql( $column_type );
+					global $wpdb;
+					$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
 
-				$result = jet_engine()->cct->add_field( $this->cct_slug, $field_data );
-
-				if ( ! is_wp_error( $result ) ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
 					++$created;
-				}
 			}
 
 			/**
@@ -434,6 +348,28 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			}
 
 			return wp_list_pluck( $meta_fields, 'name' );
+		}
+
+		/**
+		 * Map a JetEngine field type to a MySQL column type.
+		 *
+		 * Used by ensure_columns() for direct ALTER TABLE statements
+		 * when the jet_engine()->cct API is unavailable.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $jet_type JetEngine field type.
+		 * @return string MySQL column type.
+		 */
+		protected static function map_jet_type_to_sql( $jet_type ) {
+			$map = array(
+				'text'           => 'TEXT',
+				'textarea'       => 'LONGTEXT',
+				'number'         => 'BIGINT(20)',
+				'datetime-local' => 'DATETIME',
+				'datetime'       => 'DATETIME',
+			);
+			return isset( $map[ $jet_type ] ) ? $map[ $jet_type ] : 'TEXT';
 		}
 
 		/**
@@ -1161,6 +1097,15 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 				$client = new WP_MCP_AI_Shopify_Client( $this->connection_id );
 
+				// Catalog API connections cannot run inventory syncs -
+				// they only support product search, not Admin GraphQL.
+			if ( 'catalog_api' === $client->get_api_mode() ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_catalog_only',
+					__( 'This connection is configured for Shopify Catalog API only. Inventory sync requires Shopify Admin API. Please switch the connection mode to Admin API in Remote Sites settings and provide a store URL and Admin API access token.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
 				// Shopify Bulk Operation query — export all products with variants and inventory.
 				$bulk_query = '{
 						products {
@@ -1324,6 +1269,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			}
 
 			$client = new WP_MCP_AI_Shopify_Client( $this->connection_id );
+
+			if ( 'catalog_api' === $client->get_api_mode() ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_catalog_only',
+					__( 'This connection is configured for Shopify Catalog API only. Inventory sync requires Shopify Admin API.', 'mcp-ai-wpoos-pro' )
+				);
+			}
 
 			$product_result = $client->get_product( $product_gid );
 
@@ -1657,6 +1609,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		public static function bootstrap() {
 			add_action( 'init', array( __CLASS__, 'maybe_enable_cct_module' ), 10 );
 			add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
+			add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
 		}
 
 		/**
@@ -1733,6 +1686,217 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			if ( method_exists( $engine->modules, 'activate_module' ) ) {
 				$engine->modules->activate_module( 'custom-content-types' );
 			}
+		}
+
+		/**
+		 * Register the Shopify Sync CCT in JetEngine if it is missing.
+		 *
+		 * Uses the explicit sanitize-update lifecycle pipeline proven by the
+		 * FlowHub CCT manager, which is more reliable across JetEngine
+		 * versions than the simplified create_item(false) two-liner.
+		 *
+		 * @since 1.8.0
+		 */
+		public static function maybe_register_cct() {
+			$module = self::get_cct_module();
+
+			if ( ! $module ) {
+				return;
+			}
+
+			if ( self::cct_exists( $module ) ) {
+				return;
+			}
+
+			if ( empty( $module->manager ) || empty( $module->manager->data ) ) {
+				return;
+			}
+
+			$data    = $module->manager->data;
+			$request = self::get_registration_request();
+
+			$data->set_request( $request );
+
+			if ( method_exists( $data, 'sanitize_item_request' ) && ! $data->sanitize_item_request() ) {
+				return;
+			}
+
+			$item = $data->sanitize_item_from_request();
+
+			if ( empty( $item ) || ! is_array( $item ) ) {
+				return;
+			}
+
+			$data->before_item_update( $item, true );
+
+			$item_id = $data->update_item_in_db( $item );
+
+			if ( ! $item_id ) {
+				return;
+			}
+
+			$item['id'] = $item_id;
+
+			$data->after_item_update( $item, true );
+
+			if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
+				$data->db->query_raw( 'post_types' );
+			}
+		}
+
+		/**
+		 * Check whether the Shopify Sync CCT already exists in JetEngine.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param \Jet_Engine\Modules\Custom_Content_Types\Module $module CCT module instance.
+		 * @return bool
+		 */
+		protected static function cct_exists( $module ) {
+			if ( empty( $module->manager ) || empty( $module->manager->data ) || empty( $module->manager->data->db ) ) {
+				return false;
+			}
+
+			$slug     = self::CCT_SLUG_DEFAULT;
+			$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
+			if ( ! empty( $settings['cct_slug'] ) ) {
+				$slug = sanitize_key( $settings['cct_slug'] );
+			}
+
+			$records = $module->manager->data->db->query(
+				'post_types',
+				array(
+					'slug'   => $slug,
+					'status' => 'content-type',
+				),
+				null,
+				false
+			);
+
+			return ! empty( $records );
+		}
+
+		/**
+		 * Build the JetEngine registration request payload.
+		 *
+		 * Mirrors the pattern used by Vitals Log CCT and FlowHub CCT.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array
+		 */
+		protected static function get_registration_request() {
+			$label = __( 'Shopify Inventory Sync', 'mcp-ai-wpoos-pro' );
+
+			return array(
+				'name'        => $label,
+				'slug'        => self::CCT_SLUG_DEFAULT,
+				'args'        => array(
+					'name'                => $label,
+					'slug'                => self::CCT_SLUG_DEFAULT,
+					'position'            => '-1',
+					'icon'                => 'dashicons-update',
+					'capability'          => 'manage_woocommerce',
+					'has_single'          => false,
+					'create_index'        => true,
+					'hide_field_names'    => false,
+					'rest_get_enabled'    => false,
+					'rest_put_enabled'    => false,
+					'rest_post_enabled'   => false,
+					'rest_delete_enabled' => false,
+					'admin_columns'       => array(
+						'_ID'    => array(
+							'enabled'     => true,
+							'prefix'      => '#',
+							'is_sortable' => true,
+							'is_num'      => true,
+						),
+						'sku'    => array(
+							'enabled'     => true,
+							'is_sortable' => true,
+						),
+						'status' => array(
+							'enabled'     => true,
+							'is_sortable' => true,
+						),
+					),
+				),
+				'meta_fields' => self::get_meta_fields(),
+			);
+		}
+
+		/**
+		 * Build meta field definitions from column definitions.
+		 *
+		 * Mirrors the pattern used by FlowHub CCT manager.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array
+		 */
+		protected static function get_meta_fields() {
+			$instance = new self();
+			$columns  = $instance->get_column_definitions();
+			$fields   = array();
+			$field_id = self::FIELD_ID_BASE;
+
+			foreach ( $columns as $column_name => $column_type ) {
+				$args = array();
+
+				// Map internal type names to JetEngine field types.
+				switch ( $column_type ) {
+					case 'number':
+						$jet_type           = 'number';
+						$args['is_numeric'] = true;
+						break;
+					case 'textarea':
+						$jet_type = 'textarea';
+						break;
+					case 'datetime-local':
+						$jet_type = 'datetime-local';
+						break;
+					default:
+						$jet_type = 'text';
+						break;
+				}
+
+				$fields[] = self::build_field(
+					$field_id,
+					$column_name,
+					$instance->get_column_label( $column_name ),
+					$jet_type,
+					$args
+				);
+
+				++$field_id;
+			}
+
+			return $fields;
+		}
+
+		/**
+		 * Build a field definition for JetEngine.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param int    $id    Field ID.
+		 * @param string $name  Field name.
+		 * @param string $label Field label.
+		 * @param string $type  Field type.
+		 * @param array  $args  Additional arguments.
+		 * @return array
+		 */
+		protected static function build_field( $id, $name, $label, $type, $args = array() ) {
+			return array_merge(
+				array(
+					'id'          => (string) $id,
+					'name'        => $name,
+					'title'       => $label,
+					'type'        => $type,
+					'object_type' => 'field',
+				),
+				$args
+			);
 		}
 
 		/**

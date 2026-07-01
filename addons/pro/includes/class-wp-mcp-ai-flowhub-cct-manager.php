@@ -371,27 +371,16 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 					continue;
 				}
 
-				$field_data = array(
-					'title'       => $this->get_column_label( $column_name ),
-					'name'        => $column_name,
-					'object_type' => 'field',
-					'type'        => $column_type,
-					'is_required' => false,
-					'repeater'    => false,
-				);
+					$sql_type = self::map_jet_type_to_sql( $column_type );
+					global $wpdb;
+					$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
 
-				$module = self::get_cct_module();
-				if ( ! $module ) {
-					continue;
-				}
-				$result = $module->add_field( $this->cct_slug, $field_data );
-
-				if ( ! is_wp_error( $result ) ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
 					++$created;
-				}
 			}
 
-			do_action( 'wp_mcp_ai_flowhub_after_columns_ensure', $this->cct_slug, $created );
+				do_action( 'wp_mcp_ai_flowhub_after_columns_ensure', $this->cct_slug, $created );
 
 			// Track schema version so columns are only auto-created once per version.
 			$schema_key = 'wp_mcp_ai_flowhub_sync_db_version';
@@ -427,6 +416,28 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			}
 
 			return wp_list_pluck( $meta_fields, 'name' );
+		}
+
+		/**
+		 * Map a JetEngine field type to a MySQL column type.
+		 *
+		 * Used by ensure_columns() for direct ALTER TABLE statements
+		 * when the jet_engine()->cct API is unavailable.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $jet_type JetEngine field type.
+		 * @return string MySQL column type.
+		 */
+		protected static function map_jet_type_to_sql( $jet_type ) {
+			$map = array(
+				'text'           => 'TEXT',
+				'textarea'       => 'LONGTEXT',
+				'number'         => 'BIGINT(20)',
+				'datetime-local' => 'DATETIME',
+				'datetime'       => 'DATETIME',
+			);
+			return isset( $map[ $jet_type ] ) ? $map[ $jet_type ] : 'TEXT';
 		}
 
 		/**
@@ -952,14 +963,33 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 						$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
 						$base_url = isset( $settings['api_base_url'] ) ? wp_unslash( $settings['api_base_url'] ) : '';
 
-						// Apply proxy settings from toolkit config.
-						$proxy_url  = '';
+						// Resolve proxy from the connection first (matching
+						// test_flowhub_connection), then fall back to toolkit
+						// settings. The connection test reads proxy from the
+						// connection record; the sync must do the same.
+						$proxy_enabled  = ! empty( $connection['proxy_enabled'] );
+						$proxy_url      = isset( $connection['proxy_url'] ) ? $connection['proxy_url'] : '';
+						$proxy_username = isset( $connection['proxy_username'] ) ? $connection['proxy_username'] : '';
+						$proxy_password = isset( $connection['proxy_password'] )
+							? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['proxy_password'] )
+							: '';
+
+						// Fall back to toolkit settings when the connection doesn't
+						// carry proxy config.
+						if ( ! $proxy_enabled || empty( $proxy_url ) ) {
+							$proxy_enabled  = ! empty( $settings['proxy_enabled'] );
+							$proxy_url      = isset( $settings['proxy_url'] ) ? wp_unslash( $settings['proxy_url'] ) : '';
+							$proxy_username = isset( $settings['proxy_username'] ) ? wp_unslash( $settings['proxy_username'] ) : '';
+							$proxy_password = isset( $settings['proxy_password'] ) ? wp_unslash( $settings['proxy_password'] ) : '';
+						}
+
 						$proxy_auth = '';
-						if ( ! empty( $settings['proxy_enabled'] ) && ! empty( $settings['proxy_url'] ) ) {
-							$proxy_url  = wp_unslash( $settings['proxy_url'] );
-							$proxy_auth = ! empty( $settings['proxy_username'] )
-								? wp_unslash( $settings['proxy_username'] ) . ':' . wp_unslash( $settings['proxy_password'] )
+						if ( $proxy_enabled && ! empty( $proxy_url ) ) {
+							$proxy_auth = ( ! empty( $proxy_username ) || ! empty( $proxy_password ) )
+								? $proxy_username . ':' . $proxy_password
 								: '';
+						} else {
+							$proxy_url = '';
 						}
 
 						$this->client = new WP_MCP_AI_FlowHub_Client( $client_id, $api_key, $base_url, null, $location_id, $proxy_url, $proxy_auth );
@@ -1089,14 +1119,28 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 						$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
 						$base_url = isset( $settings['api_base_url'] ) ? wp_unslash( $settings['api_base_url'] ) : '';
 
-						// Apply proxy settings from toolkit config.
-						$proxy_url  = '';
+						// Resolve proxy from connection first, fall back to toolkit.
+						$proxy_enabled  = ! empty( $connection['proxy_enabled'] );
+						$proxy_url      = isset( $connection['proxy_url'] ) ? $connection['proxy_url'] : '';
+						$proxy_username = isset( $connection['proxy_username'] ) ? $connection['proxy_username'] : '';
+						$proxy_password = isset( $connection['proxy_password'] )
+							? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['proxy_password'] )
+							: '';
+
+						if ( ! $proxy_enabled || empty( $proxy_url ) ) {
+							$proxy_enabled  = ! empty( $settings['proxy_enabled'] );
+							$proxy_url      = isset( $settings['proxy_url'] ) ? wp_unslash( $settings['proxy_url'] ) : '';
+							$proxy_username = isset( $settings['proxy_username'] ) ? wp_unslash( $settings['proxy_username'] ) : '';
+							$proxy_password = isset( $settings['proxy_password'] ) ? wp_unslash( $settings['proxy_password'] ) : '';
+						}
+
 						$proxy_auth = '';
-						if ( ! empty( $settings['proxy_enabled'] ) && ! empty( $settings['proxy_url'] ) ) {
-							$proxy_url  = wp_unslash( $settings['proxy_url'] );
-							$proxy_auth = ! empty( $settings['proxy_username'] )
-								? wp_unslash( $settings['proxy_username'] ) . ':' . wp_unslash( $settings['proxy_password'] )
+						if ( $proxy_enabled && ! empty( $proxy_url ) ) {
+							$proxy_auth = ( ! empty( $proxy_username ) || ! empty( $proxy_password ) )
+								? $proxy_username . ':' . $proxy_password
 								: '';
+						} else {
+							$proxy_url = '';
 						}
 
 						$this->client = new WP_MCP_AI_FlowHub_Client( $client_id, $api_key, $base_url, null, $location_id, $proxy_url, $proxy_auth );
