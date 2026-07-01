@@ -297,29 +297,18 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			$existing_fields = $this->get_existing_cct_fields();
 
 			foreach ( $this->columns as $column_name => $column_type ) {
-				if ( in_array( $column_name, $existing_fields, true ) ) {
-					continue;
-				}
+					if ( in_array( $column_name, $existing_fields, true ) ) {
+						continue;
+					}
 
-				$field_data = array(
-					'title'       => $this->get_column_label( $column_name ),
-					'name'        => $column_name,
-					'object_type' => 'field',
-					'type'        => $column_type,
-					'is_required' => false,
-					'repeater'    => false,
-				);
+					$sql_type = self::map_jet_type_to_sql( $column_type );
+					global $wpdb;
+					$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
 
-				$module = self::get_cct_module();
-				if ( ! $module || empty( $module->manager ) ) {
-					continue;
-				}
-				$result = $module->manager->add_field( $this->cct_slug, $field_data );
-
-				if ( ! is_wp_error( $result ) ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
 					++$created;
 				}
-			}
 
 			/**
 			 * Fires after CCT columns are ensured for Shopify Sync.
@@ -359,6 +348,28 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			}
 
 			return wp_list_pluck( $meta_fields, 'name' );
+		}
+
+		/**
+		 * Map a JetEngine field type to a MySQL column type.
+		 *
+		 * Used by ensure_columns() for direct ALTER TABLE statements
+		 * when the jet_engine()->cct API is unavailable.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $jet_type JetEngine field type.
+		 * @return string MySQL column type.
+		 */
+		protected static function map_jet_type_to_sql( $jet_type ) {
+			$map = array(
+				'text'           => 'TEXT',
+				'textarea'       => 'LONGTEXT',
+				'number'         => 'BIGINT(20)',
+				'datetime-local' => 'DATETIME',
+				'datetime'       => 'DATETIME',
+			);
+			return isset( $map[ $jet_type ] ) ? $map[ $jet_type ] : 'TEXT';
 		}
 
 		/**
