@@ -106,6 +106,35 @@ class WP_MCP_AI_Execution_History_CCT {
 	}
 
 	/**
+	 * Count total execution records, optionally filtered by success.
+	 *
+	 * @param bool|null $success Optional. Filter by success (true/false) or null for all.
+	 * @return int
+	 */
+	public static function count_total( $success = null ) {
+		$handler = self::get_item_handler();
+
+		if ( ! $handler ) {
+			return 0;
+		}
+
+		$factory = $handler->get_factory();
+
+		if ( ! $factory || empty( $factory->db ) ) {
+			return 0;
+		}
+
+		$query = array();
+		if ( null !== $success ) {
+			$query['success'] = (bool) $success;
+		}
+
+		$items = $factory->db->query( $query );
+
+		return is_array( $items ) ? count( $items ) : 0;
+	}
+
+	/**
 	 * Automatically enable the JetEngine data stores module if it's not already active.
 	 */
 	public static function maybe_enable_data_stores() {
