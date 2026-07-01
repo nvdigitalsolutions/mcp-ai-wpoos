@@ -548,4 +548,202 @@ class WP_MCP_AI_Place_Helper {
 
 		return $result;
 	}
+
+	// -------------------------------------------------------------------------
+	// Place-to-Service bridge
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Create a bookable service (mcp_service) from a Place record.
+	 *
+	 * Maps Place fields to service fields for seamless place→service import
+	 * pipelines.  When importing "experience" or "tour" places, call this to
+	 * auto-create corresponding bookable services with sensible defaults.
+	 *
+	 * Deduplicates by place_id and source_url — returns existing service if
+	 * one is already linked.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param int   $place_id Place post ID.
+	 * @param array $defaults Optional. Default values for service fields:
+	 *                        name, description, duration_minutes, price,
+	 *                        buffer_time_minutes, category.
+	 * @return int|WP_Error Service post ID on success, WP_Error on failure.
+	 */
+	public static function create_service_from_place( $place_id, array $defaults = array() ) {
+		if ( ! post_type_exists( 'mcp_service' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_service_cpt',
+				__( 'mcp_service post type not registered. Enable the Calendar Booking Toolkit.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$place = get_post( $place_id );
+		if ( ! $place || self::POST_TYPE !== $place->post_type ) {
+			return new WP_Error( 'wp_mcp_ai_place_not_found', __( 'Place not found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// ── Deduplication: check if a service already links to this place.
+		$existing = self::find_service_by_place_id( $place_id );
+		if ( $existing ) {
+			return $existing;
+		}
+
+		$source_url = get_post_meta( $place_id, '_place_source_url', true );
+		if ( ! empty( $source_url ) ) {
+			$existing = self::find_service_by_source_url( $source_url );
+			if ( $existing ) {
+				// Only reuse the existing service if it is already linked to THIS
+				// place (true re-import scenario).  If it is linked to a different
+				// place (broken/shared source URLs in HTTrack flat files), create a
+				// new service so each place gets its own.
+				$existing_place = absint( get_post_meta( $existing, '_service_place_id', true ) );
+				if ( $existing_place === $place_id ) {
+					return $existing;
+				}
+				// Different place — fall through to create a new service.
+			}
+		}
+
+		// ── Map place fields → service fields.
+		$name        = ! empty( $defaults['name'] )
+			? sanitize_text_field( $defaults['name'] )
+			: $place->post_title;
+		$description = ! empty( $defaults['description'] )
+			? wp_kses_post( $defaults['description'] )
+			: $place->post_content;
+
+		$duration = isset( $defaults['duration_minutes'] )
+			? absint( $defaults['duration_minutes'] )
+			: 180;
+		$price    = isset( $defaults['price'] )
+			? floatval( $defaults['price'] )
+			: 0.0;
+		$buffer   = isset( $defaults['buffer_time_minutes'] )
+			? absint( $defaults['buffer_time_minutes'] )
+			: 30;
+
+		// Category: explicit default → place type taxonomy → city meta.
+		$category = '';
+		if ( ! empty( $defaults['category'] ) ) {
+			$category = sanitize_text_field( $defaults['category'] );
+		}
+		if ( empty( $category ) ) {
+			$place_types = wp_get_object_terms( $place_id, 'mcp_ai_place_type', array( 'fields' => 'names' ) );
+			if ( ! empty( $place_types ) && ! is_wp_error( $place_types ) ) {
+				$category = $place_types[0];
+			}
+		}
+		if ( empty( $category ) ) {
+			$city = get_post_meta( $place_id, '_place_city', true );
+			if ( ! empty( $city ) ) {
+				$category = $city;
+			}
+		}
+
+		// ── Create the service post.
+		$post_data = array(
+			'post_type'    => 'mcp_service',
+			'post_title'   => $name,
+			'post_content' => $description,
+			'post_status'  => 'publish',
+		);
+
+		$service_id = wp_insert_post( $post_data, true );
+
+		if ( is_wp_error( $service_id ) ) {
+			return $service_id;
+		}
+
+		// ── Save service meta.
+		update_post_meta( $service_id, '_service_duration', $duration );
+		update_post_meta( $service_id, '_service_price', $price );
+		update_post_meta( $service_id, '_service_buffer_time', $buffer );
+		update_post_meta( $service_id, '_service_place_id', $place_id );
+
+		if ( ! empty( $source_url ) ) {
+			update_post_meta( $service_id, '_service_source_url', esc_url_raw( $source_url ) );
+		}
+
+		if ( ! empty( $category ) ) {
+			if ( ! term_exists( $category, 'mcp_service_category' ) ) {
+				wp_insert_term( $category, 'mcp_service_category' );
+			}
+			wp_set_object_terms( $service_id, $category, 'mcp_service_category', false );
+		}
+
+		// ── Copy featured image from place.
+		$thumbnail_id = get_post_thumbnail_id( $place_id );
+		if ( $thumbnail_id ) {
+			set_post_thumbnail( $service_id, $thumbnail_id );
+		}
+
+		// ── Store bidirectional link.
+		update_post_meta( $place_id, '_place_service_id', $service_id );
+
+		return $service_id;
+	}
+
+	/**
+	 * Find an existing mcp_service linked to a place.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param int $place_id Place post ID.
+	 * @return int|null Service post ID or null.
+	 */
+	private static function find_service_by_place_id( $place_id ) {
+		if ( ! post_type_exists( 'mcp_service' ) ) {
+			return null;
+		}
+
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_service',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+				'meta_query'     => array(
+					array(
+						'key'   => '_service_place_id',
+						'value' => $place_id,
+					),
+				),
+			)
+		);
+
+		return ! empty( $query->posts ) ? $query->posts[0] : null;
+	}
+
+	/**
+	 * Find an existing mcp_service by source URL.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $source_url Source URL.
+	 * @return int|null Service post ID or null.
+	 */
+	private static function find_service_by_source_url( $source_url ) {
+		if ( empty( $source_url ) || ! post_type_exists( 'mcp_service' ) ) {
+			return null;
+		}
+
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_service',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+				'meta_query'     => array(
+					array(
+						'key'   => '_service_source_url',
+						'value' => $source_url,
+					),
+				),
+			)
+		);
+
+		return ! empty( $query->posts ) ? $query->posts[0] : null;
+	}
 }
