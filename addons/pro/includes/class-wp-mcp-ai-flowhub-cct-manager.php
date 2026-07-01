@@ -222,25 +222,21 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				);
 			}
 
-			// Use the module system instead of jet_engine()->cct directly.
-			// The ->cct shorthand can be null when the CCT module is inactive,
-			// even on a fully-loaded request. get_cct_module() properly checks
-			// is_module_active() and returns the instance via modules API.
 			$cct_module = self::get_cct_module();
-			if ( ! $cct_module ) {
+			if ( ! $cct_module || empty( $cct_module->data ) ) {
 				// Try a one-shot activation in case it wasn't enabled yet.
 				self::maybe_enable_cct_module();
 				$cct_module = self::get_cct_module();
 			}
 
-			if ( ! $cct_module ) {
+			if ( ! $cct_module || empty( $cct_module->data ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_flowhub_jetengine_not_ready',
 					__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
-			$data = $cct_module->manager->data;
+			$data = $cct_module->data;
 
 			if ( empty( $data->db ) ) {
 				return new WP_Error(
@@ -1360,15 +1356,15 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				return;
 			}
 
-			if ( empty( $module->manager ) || empty( $module->manager->data ) ) {
-				return;
-			}
+			if ( empty( $module->data ) ) {
+					return;
+				}
 
-			if ( self::cct_exists( $module ) ) {
-				return;
-			}
+				if ( self::cct_exists( $module ) ) {
+					return;
+				}
 
-			$data    = $module->manager->data;
+				$data = $module->data;
 			$request = self::get_registration_request();
 
 			$data->set_request( $request );
@@ -1409,7 +1405,11 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 * @return bool
 		 */
 		protected static function cct_exists( $module ) {
-			$data = $module->manager->data;
+			if ( empty( $module->data ) ) {
+				return false;
+			}
+
+			$data = $module->data;
 
 			if ( empty( $data->db ) ) {
 				return false;

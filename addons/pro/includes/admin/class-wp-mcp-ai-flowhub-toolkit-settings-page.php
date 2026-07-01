@@ -181,8 +181,37 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 			// Sync / dry-run result notices (set via redirect from admin-post handlers).
 			// phpcs:disable WordPress.Security.NonceVerification.Recommended
 			if ( isset( $_GET['sync_ok'] ) ) :
+				$sync_items = isset( $_GET['sync_items'] ) ? absint( $_GET['sync_items'] ) : null;
+				$sync_errs  = isset( $_GET['sync_errs'] ) ? absint( $_GET['sync_errs'] ) : null;
+				$sync_locs  = isset( $_GET['sync_locs'] ) ? absint( $_GET['sync_locs'] ) : null;
 				?>
-				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Sync completed successfully.', 'mcp-ai-wpoos-pro' ); ?></p></div>
+				<div class="notice notice-success is-dismissible">
+					<p><strong><?php esc_html_e( 'Sync completed.', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+					<?php if ( null !== $sync_items ) : ?>
+					<p>
+						<?php
+						/* translators: 1: synced count, 2: error count, 3: location count */
+						printf(
+							esc_html__( '%1$d items synced across %3$d locations.', 'mcp-ai-wpoos-pro' ),
+							$sync_items,
+							$sync_errs,
+							$sync_locs
+						);
+						if ( $sync_errs > 0 ) {
+							echo ' ';
+							printf(
+								/* translators: %d: error count */
+								esc_html__( '%d items had errors (check logs for details).', 'mcp-ai-wpoos-pro' ),
+								$sync_errs
+							);
+						}
+						if ( 0 === $sync_items && $sync_errs > 0 ) {
+							echo '<br><strong>' . esc_html__( 'No items were stored in the CCT cache. Check the Sync Log tab for error details.', 'mcp-ai-wpoos-pro' ) . '</strong>';
+						}
+						?>
+					</p>
+					<?php endif; ?>
+				</div>
 				<?php
 			elseif ( isset( $_GET['sync_error'] ) ) :
 				$sync_msg = isset( $_GET['sync_msg'] ) ? sanitize_text_field( wp_unslash( $_GET['sync_msg'] ) ) : __( 'Unknown error.', 'mcp-ai-wpoos-pro' );
@@ -727,6 +756,19 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 					),
 					$redirect_url
 				);
+		} elseif ( is_array( $result ) ) {
+			$items  = isset( $result['item_count'] ) ? absint( $result['item_count'] ) : 0;
+			$errors = isset( $result['error_count'] ) ? absint( $result['error_count'] ) : 0;
+			$locs   = isset( $result['location_count'] ) ? absint( $result['location_count'] ) : 0;
+			$redirect_url = add_query_arg(
+				array(
+					'sync_ok'    => 1,
+					'sync_items' => $items,
+					'sync_errs'  => $errors,
+					'sync_locs'  => $locs,
+				),
+				$redirect_url
+			);
 		} else {
 			$redirect_url = add_query_arg(
 				array( 'sync_ok' => 1 ),
