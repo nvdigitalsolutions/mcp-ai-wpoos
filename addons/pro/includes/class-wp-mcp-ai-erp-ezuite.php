@@ -57,17 +57,20 @@ class WP_MCP_AI_ERP_EZuite implements WP_MCP_AI_ERP_Connector_Interface {
 	/**
 	 * Field mapping between WooCommerce and EZuite.
 	 *
+	 * Maps CCT / internal column names to canonical EZuite LX_ItemPull
+	 * API response field names.
+	 *
 	 * @var array
 	 */
 	protected $field_mapping = array(
-		'sku'           => 'product_code',
-		'name'          => 'product_name',
-		'quantity'      => 'available_quantity',
-		'warehouse'     => 'location_code',
-		'reorder_point' => 'min_quantity',
-		'supplier'      => 'vendor_id',
-		'cost_price'    => 'unit_cost',
-		'last_updated'  => 'last_sync_date',
+		'sku'           => 'Item_Code',
+		'name'          => 'Item_Name',
+		'quantity'      => 'Qty',
+		'warehouse'     => 'Location_Code',
+		'reorder_point' => 'Min_Quantity',
+		'supplier'      => 'Supplier_Name',
+		'cost_price'    => 'Selling_Price',
+		'last_updated'  => 'Last_Sync_Date',
 	);
 
 	/**

@@ -727,16 +727,20 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		// ------------------------------------------------------------------ //
 
 		/**
-		 * Sync inventory from EZuite API into the CCT.
+		 * Sync inventory from the EZuite ERP API into the local CCT cache.
 		 *
-		 * Paginates through the EZuite API using the existing
-		 * WP_MCP_AI_ERP_EZuite connector, maps fields using the
-		 * field mapping from settings, and upserts into the CCT.
+		 * Calls the EZuite LX_ItemPull API action (POST with API_Key /
+		 * API_Action / API_Body envelope) and maps every returned item to a
+		 * CCT row via map_ezuite_item_to_cct_row().
+		 *
+		 * When $dry_run is true the method validates the API query and counts
+		 * how many items would be written without touching the CCT.
 		 *
 		 * @since 1.9.0
 		 *
-		 * @param bool        $full          Whether to do a full sync. Default true.
-		 * @param string|null $connection_id Optional Remote Sites connection ID.
+		 * @param bool        $full          True for full sync; reserved for future
+		 *                                   differential sync support.
+		 * @param string|null $connection_id Remote Sites connection ID.
 		 * @param bool        $dry_run       If true, skip CCT writes and only validate
 		 *                                   the API query + count items. Default false.
 		 * @return array|WP_Error Sync result with item_count, error_count, duration.
@@ -773,7 +777,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				);
 			}
 
-			if ( 'ezuite_erp' !== $connection['type'] ) {
+			if ( empty( $connection['connection_type'] ) || 'ezuite_erp' !== $connection['connection_type'] ) {
 				return new WP_Error(
 					'wp_mcp_ai_ezuite_wrong_connection_type',
 					sprintf(
@@ -784,21 +788,24 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				);
 			}
 
-			// Build EZuite ERP connector config from connection.
-			$ezuite_client = new WP_MCP_AI_ERP_EZuite();
-			$ezuite_config = array(
-				'api_url'    => isset( $connection['url'] ) ? $connection['url'] : '',
-				'api_key'    => isset( $connection['api_key'] ) ? $connection['api_key'] : '',
-				'api_secret' => isset( $connection['api_secret'] ) ? $connection['api_secret'] : '',
-			);
+			// Decrypt API key.
+			$api_key = isset( $connection['api_key'] )
+				? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] )
+				: '';
 
-			if ( isset( $connection['api_secret'] ) && method_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager', 'decrypt_value' ) ) {
-				$ezuite_config['api_secret'] = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] );
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_missing_api_key',
+					__( 'API key is not configured for this connection.', 'mcp-ai-wpoos-pro' )
+				);
 			}
 
-			$connect_result = $ezuite_client->connect( $ezuite_config );
-			if ( is_wp_error( $connect_result ) ) {
-				return $connect_result;
+			$api_url = isset( $connection['url'] ) ? trailingslashit( $connection['url'] ) : '';
+			if ( empty( $api_url ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_missing_url',
+					__( 'API URL is not configured for this connection.', 'mcp-ai-wpoos-pro' )
+				);
 			}
 
 			$start_time = microtime( true );
@@ -815,82 +822,100 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			$settings = get_option( 'wp_mcp_ai_ezuite_toolkit_settings', array() );
 			$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : $this->get_default_field_mapping();
 
-			$item_count  = 0;
-			$error_count = 0;
-			$page        = 1;
-
-			// Paginate through EZuite API.
-			do {
-				$api_items = $ezuite_client->sync_products(
+			// Call EZuite LX_ItemPull API directly (canonical POST envelope).
+			$request_body = array(
+				'API_Key'    => $api_key,
+				'API_Action' => 'LX_ItemPull',
+				'API_Body'   => array(
 					array(
-						'page'     => $page,
-						'per_page' => 100,
+						'Location_Code' => 'ALL',
+					),
+				),
+			);
+
+			$args = array(
+				'method'  => 'POST',
+				'timeout' => 60,
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'body'    => wp_json_encode( $request_body ),
+			);
+
+			$response = wp_remote_post( $api_url, $args );
+
+			if ( is_wp_error( $response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_api_request_failed',
+					sprintf(
+						/* translators: %s: error message */
+						__( 'EZuite API request failed: %s', 'mcp-ai-wpoos-pro' ),
+						$response->get_error_message()
 					)
 				);
+			}
 
-				if ( is_wp_error( $api_items ) ) {
-					return $api_items;
+			$status_code = wp_remote_retrieve_response_code( $response );
+			$body        = wp_remote_retrieve_body( $response );
+
+			if ( $status_code >= 400 ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_api_http_error',
+					sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'EZuite API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+						$status_code
+					)
+				);
+			}
+
+			$decoded = json_decode( $body, true );
+
+			if ( null === $decoded ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_invalid_json',
+					__( 'Invalid JSON response from EZuite API.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Check EZuite Status_Code.
+			if ( isset( $decoded['Status_Code'] ) && 200 !== absint( $decoded['Status_Code'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_api_error',
+					isset( $decoded['Message'] ) ? $decoded['Message'] : __( 'Unknown EZuite API error.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Extract items from the canonical Response_Body (with legacy Data fallback).
+			$items = array();
+			if ( ! empty( $decoded['Response_Body'] ) && is_array( $decoded['Response_Body'] ) ) {
+				$items = $decoded['Response_Body'];
+			} elseif ( ! empty( $decoded['Data'] ) && is_array( $decoded['Data'] ) ) {
+				$items = $decoded['Data'];
+			}
+
+			$item_count  = 0;
+			$error_count = 0;
+
+			foreach ( $items as $item ) {
+				if ( ! is_array( $item ) ) {
+					continue;
 				}
 
-				// sync_products returns array with 'synced' and 'errors' keys.
-				// We need the raw product list. Try get_product for each item
-				// via get_inventory as a fallback approach.
-				$products = isset( $api_items['products'] ) ? $api_items['products'] : array();
+				$mapped = $this->map_ezuite_item_to_cct_row( $item, $mapping, $effective_connection_id );
 
-				if ( empty( $products ) ) {
-					// Fall back to using raw API response.
-					// The sync_products method may include product data directly.
-					$raw_products = isset( $api_items['synced'] ) ? null : $api_items;
+				if ( $dry_run ) {
+					++$item_count;
+					continue;
+				}
 
-					if ( is_array( $raw_products ) && ! isset( $raw_products['synced'] ) ) {
-						foreach ( $raw_products as $product ) {
-							if ( ! is_array( $product ) ) {
-								continue;
-							}
-
-							$mapped = $this->map_ezuite_item_to_cct_row( $product, $mapping, $effective_connection_id );
-
-							if ( $dry_run ) {
-								++$item_count;
-								continue;
-							}
-
-							$result = $this->upsert( $mapped );
-							if ( is_wp_error( $result ) ) {
-								++$error_count;
-							} else {
-								++$item_count;
-							}
-						}
-					} else {
-						// No more items.
-						break;
-					}
+				$result = $this->upsert( $mapped );
+				if ( is_wp_error( $result ) ) {
+					++$error_count;
 				} else {
-					foreach ( $products as $product ) {
-						$mapped = $this->map_ezuite_item_to_cct_row( $product, $mapping, $effective_connection_id );
-
-						if ( $dry_run ) {
-							++$item_count;
-							continue;
-						}
-
-						$result = $this->upsert( $mapped );
-						if ( is_wp_error( $result ) ) {
-							++$error_count;
-						} else {
-							++$item_count;
-						}
-					}
+					++$item_count;
 				}
-
-				++$page;
-
-				// Safety limit: stop after 100 pages (10,000 items).
-				if ( $page > 100 ) {
-					break;
-				}
-			} while ( ! empty( $products ) );
+			}
 
 			$duration = round( microtime( true ) - $start_time, 2 );
 
@@ -932,8 +957,8 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		/**
 		 * Get the default field mapping from EZuite API fields to CCT columns.
 		 *
-		 * Maps the EZuite ERP Connector's internal field names (as used by
-		 * WP_MCP_AI_ERP_EZuite::field_mapping) to CCT columns.
+		 * Maps the canonical EZuite LX_ItemPull API response field names
+		 * (as returned in the Response_Body array) to CCT columns.
 		 *
 		 * @since 1.9.0
 		 *
@@ -941,13 +966,13 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		 */
 		public function get_default_field_mapping() {
 			return array(
-				'sku'           => 'product_code',
-				'name'          => 'product_name',
-				'quantity'      => 'available_quantity',
-				'warehouse'     => 'location_code',
-				'reorder_point' => 'min_quantity',
-				'supplier'      => 'vendor_id',
-				'cost_price'    => 'unit_cost',
+				'sku'           => 'Item_Code',
+				'name'          => 'Item_Name',
+				'quantity'      => 'Qty',
+				'warehouse'     => 'Location_Code',
+				'supplier'      => 'Supplier_Name',
+				'cost_price'    => 'Selling_Price',
+				'reorder_point' => '', // Not present in LX_ItemPull; set per-deployment.
 			);
 		}
 
