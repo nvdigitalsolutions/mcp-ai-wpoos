@@ -15,6 +15,8 @@ Context file for AI agents working on or near the framework-agnostic extraction 
 | `includes/bootstrap/oos-bridge.php` | WordPress DI wiring — factory function `wp_mcp_ai_oos_orchestrator()`, PSR-4 autoloader, feature flag detection |
 | `includes/class-wp-mcp-ai-rest.php` | Chat REST controller — checks `wp_mcp_ai_oos_engine_enabled()` and delegates to `handle_chat_request_oos()` |
 | `.github/workflows/sync-nvoos-*.yml` | Monorepo sync workflows — `git subtree split` each `lib/*` package to its standalone GitHub repo on push |
+| `docs/project/proposals/laravel-scale-deployment-architecture.md` | Laravel Octane orchestrator deployment plan — Redis Queue, Horizon, Reverb, pgvector, federation (2026-07-01) |
+| `docs/project/proposals/nvoos-base-restructuring-roadmap.md` | Graphify ecosystem architecture — `nvoos-graphify` core + `nvoos-graphify-ai` + `nvoos-graphify-ai-platform` |
 
 ## Architecture (Hexagonal)
 
@@ -93,7 +95,7 @@ When the flag is off, the legacy `handle_chat_request()` path is completely unch
 - **`lib/wordpress-adapter/`** targets **PHP 7.4+** (uses traditional getters/setters, no readonly)
 - **`includes/bootstrap/oos-bridge.php`** returns early on PHP < 8.1
 
-## Current State (2026-06-03)
+## Current State (2026-07-01)
 
 - **9/9 contracts** — complete
 - **10/10 entities** — complete
@@ -105,7 +107,8 @@ When the flag is off, the legacy `handle_chat_request()` path is completely unch
 - **8/8 Laravel adapters** — complete
 - **8/8 Craft CMS adapters** — complete
 - **43/~195 tools migrated** — 22% (Tier 1 + select Tier 2)
-- **Tests for lib/core** — 0% (not yet started)
+- **Tests for lib/core** — in progress
+- **4 new domain contracts** proposed for Laravel orchestrator: VectorStoreInterface, FederationClientInterface, MeshRouterInterface, StreamingInterface
 - **Monorepo sync workflows** — all 4 packages synced (core + 3 adapters)
 
 ## Monorepo Sync
@@ -142,3 +145,5 @@ Each `lib/` package is synced to its own standalone GitHub repo via `git subtree
 - [`.context/conventions.md`](conventions.md) — naming, style
 - [`.context/security-checklist.md`](security-checklist.md) — security rules
 - [`.context/tool-registry.md`](tool-registry.md) — tool authoring rules
+- [`docs/project/proposals/laravel-scale-deployment-architecture.md`](../docs/project/proposals/laravel-scale-deployment-architecture.md) — Laravel Octane orchestrator deployment plan
+- [`docs/project/proposals/RELATED_PROPOSALS_INDEX.md`](../docs/project/proposals/RELATED_PROPOSALS_INDEX.md) — unified index of 20+ connected proposals
