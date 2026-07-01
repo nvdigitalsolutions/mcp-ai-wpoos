@@ -20,13 +20,17 @@ Contains the 10 concrete AI provider client classes â€” one file per provider â€
 | `WP_MCP_AI_Anthropic_Provider_Client` | `class-wp-mcp-ai-anthropic-provider-client.php` | language-model router, chat service |
 | `WP_MCP_AI_Baseten_Provider_Client` | `class-wp-mcp-ai-baseten-provider-client.php` | same |
 | `WP_MCP_AI_Cloudflare_Provider_Client` | `class-wp-mcp-ai-cloudflare-provider-client.php` | same |
+| `WP_MCP_AI_DeepSeek_Provider_Client` | `class-wp-mcp-ai-deepseek-provider-client.php` | same |
 | `WP_MCP_AI_DigitalOcean_Provider_Client` | `class-wp-mcp-ai-digitalocean-provider-client.php` | same |
 | `WP_MCP_AI_Gemini_Provider_Client` | `class-wp-mcp-ai-gemini-provider-client.php` | same |
+| `WP_MCP_AI_HuggingFace_Provider_Client` | `class-wp-mcp-ai-huggingface-provider-client.php` | same |
+| `WP_MCP_AI_Kimi_Provider_Client` | `class-wp-mcp-ai-kimi-provider-client.php` | same |
 | `WP_MCP_AI_LM_Studio_Provider_Client` | `class-wp-mcp-ai-lm-studio-provider-client.php` | same |
 | `WP_MCP_AI_NVIDIA_Provider_Client` | `class-wp-mcp-ai-nvidia-provider-client.php` | same |
 | `WP_MCP_AI_Ollama_Provider_Client` | `class-wp-mcp-ai-ollama-provider-client.php` | same |
 | `WP_MCP_AI_OpenAI_Provider_Client` | `class-wp-mcp-ai-openai-provider-client.php` | same |
 | `WP_MCP_AI_OpenRouter_Provider_Client` | `class-wp-mcp-ai-openrouter-provider-client.php` | same |
+| `WP_MCP_AI_ZAI_Provider_Client` | `class-wp-mcp-ai-zai-provider-client.php` | same |
 
 ## Inputs / Outputs / Neighbors
 

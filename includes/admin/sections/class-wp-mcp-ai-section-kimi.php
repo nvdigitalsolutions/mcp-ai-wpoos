@@ -47,7 +47,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 		 * @return string Section description.
 		 */
 		public function get_description() {
-			return __( 'Configure Kimi AI provider settings. Kimi offers powerful models like K2.5 and K2.6 with 256K context windows and multimodal capabilities.', 'mcp-ai-wpoos' );
+			return __( 'Configure Kimi AI provider settings. Kimi offers powerful models like K2.7 Code and K2.6 with 256K context windows and multimodal capabilities.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -67,7 +67,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 				'kimi_api_key'     => array(
 					'type'        => 'password',
 					'label'       => __( 'API Key', 'mcp-ai-wpoos' ),
-					'description' => __( 'Your Moonshot AI API key from platform.moonshot.cn', 'mcp-ai-wpoos' ),
+					'description' => __( 'Your Moonshot AI API key from platform.moonshot.ai', 'mcp-ai-wpoos' ),
 					'placeholder' => __( 'Enter your Kimi API key', 'mcp-ai-wpoos' ),
 				),
 				'kimi_model'       => array(
@@ -75,18 +75,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 					'label'       => __( 'Default Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Select the default Kimi model to use.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'kimi-k2.6'        => __( 'Kimi K2.6 (Latest, Multimodal, 256K)', 'mcp-ai-wpoos' ),
+						'kimi-k2.7-code'   => __( 'Kimi K2.7 Code (Latest, Multimodal, 256K)', 'mcp-ai-wpoos' ),
+						'kimi-k2.6'        => __( 'Kimi K2.6 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
 						'kimi-k2.5'        => __( 'Kimi K2.5 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
 						'kimi-k2'          => __( 'Kimi K2 (Base, 256K)', 'mcp-ai-wpoos' ),
 						'kimi-k2-thinking' => __( 'Kimi K2 Thinking (Chain-of-thought, 256K)', 'mcp-ai-wpoos' ),
 					),
-					'default'     => 'kimi-k2.6',
+					'default'     => 'kimi-k2.7-code',
 				),
 				'kimi_base_url'    => array(
 					'type'        => 'text',
 					'label'       => __( 'Custom Base URL', 'mcp-ai-wpoos' ),
 					'description' => __( 'Optional. Use a custom base URL for Kimi API (e.g., for proxies). Leave empty to use the default.', 'mcp-ai-wpoos' ),
-					'placeholder' => 'https://api.moonshot.cn/v1',
+					'placeholder' => 'https://api.moonshot.ai/v1',
 					'default'     => '',
 				),
 				'kimi_timeout'     => array(

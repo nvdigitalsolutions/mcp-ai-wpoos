@@ -1,20 +1,14 @@
 <?php
 /**
- * OpenRouter API client wrapper.
+ * Z.AI (Zhipu AI / GLM) API client wrapper.
  *
- * OpenRouter exposes an OpenAI-compatible REST API at
- * https://openrouter.ai/api/v1.  It acts as a unified gateway in front of many
- * upstream providers (OpenAI, Anthropic, Meta, Google, Mistral, etc.) and is
- * accessed through a single API key.
+ * Z.AI exposes an OpenAI-compatible REST API at https://api.z.ai/api/paas/v4.
+ * This client handles chat completions, model listing, and connection testing
+ * without vendoring any third-party SDK.
  *
- * Best-practice headers per the OpenRouter documentation:
- *  - `HTTP-Referer`: identifies the calling application on the OpenRouter
- *    leaderboard / dashboard. Defaults to `home_url()`.
- *  - `X-Title`: human-readable application name shown alongside the referer.
- *
- * @link    https://openrouter.ai/docs/api-reference/overview
- * @link    https://openrouter.ai/docs/quickstart
+ * @link    https://docs.z.ai/guides/overview/quick-start
  * @package WP_MCP_AI
+ * @since   2026.07
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
@@ -24,28 +18,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
+if ( ! class_exists( 'WP_MCP_AI_ZAI_Client' ) ) {
 	/**
-	 * Provides a wrapper around the OpenRouter API (OpenAI-compatible).
+	 * Provides a wrapper around the Z.AI (GLM) API (OpenAI-compatible).
 	 *
-	 * Supports chat completions, tool/function calling, JSON mode, streaming
-	 * (SSE identical to OpenAI), and live model listing.
+	 * Supports chat completions, tool/function calling, streaming (SSE identical
+	 * to OpenAI), JSON mode, live model listing, and token counting.
 	 *
-	 * Note on embeddings: OpenRouter does not currently expose a public
-	 * embeddings endpoint.  No `WP_MCP_AI_Embedding_Provider_OpenRouter` is
-	 * registered.
+	 * GLM-5.x models offer up to 1M context windows, tool calling, and
+	 * thinking/chain-of-thought reasoning. Z.AI also supports an Anthropic
+	 * Messages-compatible endpoint for coding agents.
+	 *
+	 * Note on pricing: GLM-5.2 is $1.40/$4.40 per 1M input/output tokens.
+	 *
+	 * @since 2026.07
 	 */
-	class WP_MCP_AI_OpenRouter_Client {
+	class WP_MCP_AI_ZAI_Client {
 
 		/**
-		 * Default base URL for the OpenRouter API (no trailing slash).
+		 * Default base URL for the Z.AI API (no trailing slash, no path).
 		 *
-		 * The base URL already includes `/api/v1` so endpoint constants below
-		 * are appended directly.
+		 * Z.AI uses the /api/paas/v4 path prefix rather than the standard
+		 * OpenAI /v1 prefix.
 		 *
 		 * @var string
 		 */
-		const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
+		const DEFAULT_BASE_URL = 'https://api.z.ai/api/paas/v4';
 
 		/**
 		 * Chat completions path relative to the base URL.
@@ -66,50 +64,64 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		 *
 		 * @var string
 		 */
-		const USER_AGENT = 'WP-MCP-AI-OpenRouter-Client/1.0';
+		const USER_AGENT = 'WP-MCP-AI-ZAI-Client/1.0';
 
 		/**
 		 * Default chat model when none is configured.
 		 *
-		 * `openrouter/auto` lets OpenRouter pick a recommended model — this is
-		 * the safest default because OpenRouter rotates which providers are
-		 * available behind it.  Operators are encouraged to choose an explicit
-		 * model in the settings screen for predictable cost / behaviour.
+		 * GLM-5.2 is the current flagship with 1M context and tool calling.
 		 *
 		 * @var string
 		 */
-		const DEFAULT_MODEL = 'openrouter/auto';
+		const DEFAULT_MODEL = 'glm-5.2';
 
 		/**
-		 * In-memory API key override. Set via set_api_key().
+		 * Models that do not support tool/function calling.
 		 *
-		 * @since 2026.07
-		 * @var string|null
+		 * All current GLM-5.x models support tools. Add specific models
+		 * here if any future GLM variants lack tool support.
+		 *
+		 * @var array
 		 */
-		private $api_key_override = null;
+		const MODELS_WITHOUT_TOOL_CALLING = array();
+
+		/**
+		 * Maximum context window sizes by model family prefix.
+		 *
+		 * @var array
+		 */
+		const MODEL_CONTEXT_WINDOWS = array(
+			'glm-5.2'     => 1000000,
+			'glm-5'       => 1000000,
+			'glm-5-turbo' => 256000,
+			'glm-4.7'     => 256000,
+			'glm-4-flash' => 128000,
+			'glm-4'       => 128000,
+			'chatglm'     => 32768,
+		);
 
 		// -------------------------------------------------------------------------
 		// Accessors.
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Retrieve the configured OpenRouter API key.
+		 * Retrieve the configured Z.AI API key.
 		 *
+		 * @since 2026.07
 		 * @return string Empty string when not configured.
 		 */
 		public function get_api_key() {
 			// If a transient API key was set via set_api_key(), use it instead
-			// of the persisted setting. This prevents TOCTOU race conditions
-			// when testing a key before saving it.
+			// of the persisted setting.
 			if ( isset( $this->api_key_override ) && is_string( $this->api_key_override ) ) {
 				return $this->api_key_override;
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$key      = isset( $settings['openrouter_api_key'] ) ? $settings['openrouter_api_key'] : '';
+			$key      = isset( $settings['zai_api_key'] ) ? $settings['zai_api_key'] : '';
 
 			if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
-				$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'openrouter' ) ?? '';
+				$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'zai' ) ?? '';
 			}
 
 			return $key;
@@ -130,27 +142,37 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		}
 
 		/**
+		 * In-memory API key override. Set via set_api_key().
+		 *
+		 * @since 2026.07
+		 * @var string|null
+		 */
+		private $api_key_override = null;
+
+		/**
 		 * Retrieve the configured default model.
 		 *
+		 * @since 2026.07
 		 * @return string Empty string when not configured.
 		 */
 		public function get_model() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			return isset( $settings['openrouter_model'] ) ? $settings['openrouter_model'] : '';
+			return isset( $settings['zai_model'] ) ? $settings['zai_model'] : '';
 		}
 
 		/**
 		 * Retrieve the configured base URL.
 		 *
-		 * Supports custom proxies via the `openrouter_base_url` setting.
+		 * Supports custom proxy endpoints via the zai_base_url setting.
 		 * Falls back to {@see DEFAULT_BASE_URL}.
 		 *
+		 * @since 2026.07
 		 * @return string Base URL without trailing slash.
 		 */
 		public function get_base_url() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$base_url = isset( $settings['openrouter_base_url'] ) ? trim( $settings['openrouter_base_url'] ) : '';
+			$base_url = isset( $settings['zai_base_url'] ) ? trim( $settings['zai_base_url'] ) : '';
 
 			if ( '' === $base_url ) {
 				$base_url = self::DEFAULT_BASE_URL;
@@ -160,45 +182,63 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		}
 
 		/**
-		 * Retrieve the value sent in the `HTTP-Referer` header.
+		 * Get the context window size for a given model.
 		 *
-		 * Defaults to the WordPress site's `home_url()` when no override is
-		 * configured.  OpenRouter uses this string to identify which
-		 * application made the request on its leaderboard / dashboard.
-		 *
-		 * @return string
+		 * @since 2026.07
+		 * @param string $model Model identifier.
+		 * @return int Context window size in tokens.
 		 */
-		public function get_site_url() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$site_url = isset( $settings['openrouter_site_url'] ) ? trim( $settings['openrouter_site_url'] ) : '';
+		public function get_context_window( $model ) {
+			$model = sanitize_text_field( $model );
 
-			if ( '' === $site_url && function_exists( 'home_url' ) ) {
-				$site_url = home_url( '/' );
+			// Exact match first.
+			if ( isset( self::MODEL_CONTEXT_WINDOWS[ $model ] ) ) {
+				return self::MODEL_CONTEXT_WINDOWS[ $model ];
 			}
 
-			return esc_url_raw( $site_url );
+			// Prefix match for model families.
+			foreach ( self::MODEL_CONTEXT_WINDOWS as $prefix => $window ) {
+				if ( 0 === strpos( $model, $prefix ) ) {
+					return $window;
+				}
+			}
+
+			// Default to 128K for unknown GLM models.
+			return 128000;
 		}
 
 		/**
-		 * Retrieve the value sent in the `X-Title` header.
+		 * Return true when the model supports tool/function calling.
 		 *
-		 * Defaults to the WordPress site name (`get_bloginfo( 'name' )`).
-		 *
-		 * @return string
+		 * @since 2026.07
+		 * @param string $model Model identifier.
+		 * @return bool
 		 */
-		public function get_app_title() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$title    = isset( $settings['openrouter_app_title'] ) ? trim( $settings['openrouter_app_title'] ) : '';
+		public function model_supports_tools( $model ) {
+			$model = sanitize_text_field( $model );
 
-			if ( '' === $title && function_exists( 'get_bloginfo' ) ) {
-				$title = get_bloginfo( 'name' );
+			// Explicit denylist takes precedence.
+			foreach ( self::MODELS_WITHOUT_TOOL_CALLING as $no_tools ) {
+				if ( $model === $no_tools || 0 === strpos( $model, $no_tools ) ) {
+					return false;
+				}
 			}
 
-			if ( '' === $title ) {
-				$title = 'NV oOS';
-			}
+			// Default: tools are supported for all GLM models.
+			return true;
+		}
 
-			return sanitize_text_field( $title );
+		/**
+		 * Return true when the model does not support tool/function calling.
+		 *
+		 * Thin inverse wrapper for backward compatibility.
+		 *
+		 * @since 2026.07
+		 * @param string $model Model identifier.
+		 * @return bool
+		 */
+		protected function model_lacks_tool_calling( $model ) {
+			return ! $this->model_supports_tools( $model );
 		}
 
 		// -------------------------------------------------------------------------
@@ -206,8 +246,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Build standard HTTP request headers for OpenRouter API calls.
+		 * Build standard HTTP request headers for Z.AI API calls.
 		 *
+		 * @since 2026.07
 		 * @param string $api_key API key to authorise the request.
 		 * @return array Associative array of HTTP headers.
 		 */
@@ -216,41 +257,46 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				'Content-Type'  => 'application/json',
 				'Authorization' => 'Bearer ' . $api_key,
 				'User-Agent'    => self::USER_AGENT,
-				'HTTP-Referer'  => $this->get_site_url(),
-				'X-Title'       => $this->get_app_title(),
 			);
 
 			/**
-			 * Filter the OpenRouter request headers before sending.
+			 * Filter the Z.AI request headers before sending.
 			 *
-			 * @since 2026.05
+			 * @since 2026.07
 			 *
 			 * @param array  $headers Associative array of HTTP headers.
 			 * @param string $api_key The API key being used.
 			 */
-			return apply_filters( 'wp_mcp_ai_openrouter_request_headers', $headers, $api_key );
+			return apply_filters( 'wp_mcp_ai_zai_request_headers', $headers, $api_key );
 		}
 
 		/**
 		 * Resolve the request timeout in seconds.
 		 *
-		 * Reads the global 'request_timeout' admin setting (Settings → NV oOS → General →
-		 * Behavior), falling back to the Resource Manager's workload-tier recommendation
-		 * when no explicit timeout has been saved.  A per-request `timeout` option still
-		 * takes precedence when provided by the caller.
+		 * Priority order:
+		 * 1. Per-request `timeout` option.
+		 * 2. Provider-specific `zai_timeout` setting (if configured).
+		 * 3. Global `request_timeout` admin setting.
+		 * 4. Resource Manager's workload-tier recommendation.
 		 *
+		 * @since 2026.07
 		 * @param array $options Request options may carry a 'timeout' key.
 		 * @return int
 		 */
-		protected function resolve_timeout( array $options ) {
+		protected function resolve_timeout( array $options = array() ) {
+			if ( ! empty( $options['timeout'] ) && is_numeric( $options['timeout'] ) ) {
+				return max( 10, absint( $options['timeout'] ) );
+			}
+
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 
-			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-
-			if ( ! empty( $options['timeout'] ) && is_numeric( $options['timeout'] ) ) {
-				$timeout = max( 10, absint( $options['timeout'] ) );
+			// Provider-specific override (for backward compatibility).
+			if ( ! empty( $settings['zai_timeout'] ) ) {
+				return max( 10, absint( $settings['zai_timeout'] ) );
 			}
+
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 
 			return max( 10, $timeout );
 		}
@@ -258,10 +304,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		/**
 		 * Resolve the model from $options, falling back to the configured default.
 		 *
+		 * @since 2026.07
 		 * @param array $options Request options.
 		 * @return string
 		 */
-		protected function resolve_model( array $options ) {
+		protected function resolve_model( array $options = array() ) {
 			if ( ! empty( $options['model'] ) ) {
 				return sanitize_text_field( $options['model'] );
 			}
@@ -276,33 +323,28 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Perform a chat completion request against the OpenRouter API.
+		 * Perform a chat completion request against the Z.AI API.
 		 *
-		 * The OpenRouter API is OpenAI-compatible: messages, tools,
+		 * The Z.AI API is OpenAI-compatible: messages, tools,
 		 * response_format, and streaming options are passed through unchanged.
 		 *
-		 * Tool/function calling support varies per upstream model — OpenRouter
-		 * silently ignores unsupported parameters rather than erroring, so the
-		 * client passes them through verbatim.
-		 *
+		 * @since 2026.07
 		 * @param array $messages Message payload (OpenAI-compatible format).
 		 * @param array $options  Additional options:
-		 *                        - model (string): Override the model
-		 *                          (e.g. "openai/gpt-4o-mini",
-		 *                          "anthropic/claude-3.5-sonnet").
+		 *                        - model (string): Override the model.
 		 *                        - temperature (float): Sampling temperature.
 		 *                        - top_p (float): Nucleus sampling.
 		 *                        - max_tokens (int): Maximum output tokens.
-		 *                        - tools (array): OpenAI-compatible tool defs.
+		 *                        - tools (array): OpenAI-compatible tool definitions.
 		 *                        - tool_choice (string|array): Tool selection.
-		 *                        - response_format (array): JSON-mode hint.
+		 *                        - response_format (array): e.g. ['type' => 'json_object'].
 		 *                        - stream (bool): Enable SSE streaming.
+		 *                        - stream_options (array): SSE stream options.
 		 *                        - timeout (int): HTTP timeout in seconds.
 		 *                        - system_prompt (string): System instruction.
-		 *                        - provider (array): OpenRouter routing
-		 *                          preferences (e.g. ["order" => [...]]).
-		 *                        - models (array): Fallback model list for
-		 *                          OpenRouter's automatic routing.
+		 *                        - prompt_cache_key (string): Cache key for similar requests.
+		 *                        - thinking (array): Thinking-mode configuration for GLM-5.x.
+		 *                        - stop (string|array): Stop sequences.
 		 * @return array|WP_Error Normalised completion response or WP_Error on failure.
 		 */
 		public function create_chat_completion( array $messages, array $options = array() ) {
@@ -310,12 +352,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
-					'wp_mcp_ai_missing_openrouter_api_key',
-					__( 'No OpenRouter API key has been configured.', 'mcp-ai-wpoos' ),
+					'wp_mcp_ai_missing_zai_api_key',
+					__( 'No Z.AI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openrouter_api_key' => __( 'Add an OpenRouter API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+							'configure_zai_api_key' => __( 'Add a Z.AI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -325,38 +367,33 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			if ( empty( $model ) ) {
 				return new WP_Error(
-					'wp_mcp_ai_missing_openrouter_model',
-					__( 'No OpenRouter model has been configured.', 'mcp-ai-wpoos' ),
+					'wp_mcp_ai_missing_zai_model',
+					__( 'No Z.AI model has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openrouter_model' => __( 'Choose an OpenRouter model in the NV oOS settings.', 'mcp-ai-wpoos' ),
+							'configure_zai_model' => __( 'Choose a Z.AI model in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
 			}
 
-				// Filter orphaned tool messages before building the payload.
-				// OpenRouter forwards to upstream providers that may reject
-				// orphan tool messages in the conversation.
-				$messages = $this->filter_tool_messages_for_payload( $messages );
-
-				$payload = $this->build_payload( $messages, $options, $model );
+			$payload = $this->build_payload( $messages, $options, $model );
 
 			if ( is_wp_error( $payload ) ) {
 				return $payload;
 			}
 
-				// Pre-flight context-window validation (shared with all providers).
+			// Pre-flight context-window validation (shared with all providers).
 			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
-				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'openrouter', $options, $messages );
+				$preflight = WP_MCP_AI_Token_Budget_Manager::validate_context_window( $payload, $model, 'zai', $options, $messages );
 				if ( is_wp_error( $preflight ) ) {
 					return $preflight;
 				}
 			}
 
-				$url = $this->get_base_url() . self::API_ENDPOINT;
-			$timeout = max( 60, $this->resolve_timeout( $options ) );
+			$url     = $this->get_base_url() . self::API_ENDPOINT;
+			$timeout = $this->resolve_timeout( $options );
 
 			$request_args = array(
 				'headers' => $this->build_request_headers( $api_key ),
@@ -366,8 +403,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
-					'openrouter_request',
-					'Sending request to OpenRouter.',
+					'zai_request',
+					'Sending request to Z.AI.',
 					array(
 						'model'         => $model,
 						'message_count' => count( $messages ),
@@ -381,6 +418,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			if ( $is_streaming && function_exists( 'curl_init' ) ) {
 				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
 				if ( null !== $realtime_cb ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'zai_request',
+							'Sending real-time streaming request to Z.AI via cURL.',
+							array(
+								'model'    => $model,
+								'realtime' => true,
+							)
+						);
+					}
 					return $this->do_realtime_curl_stream( $url, $payload, $model, $timeout, $realtime_cb );
 				}
 			}
@@ -389,15 +436,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			if ( is_wp_error( $response ) ) {
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-					WP_MCP_AI_Logger::log_error( 'OpenRouter request failed.', array( 'error' => $response->get_error_message() ) );
+					WP_MCP_AI_Logger::log_error( 'Z.AI request failed.', array( 'error' => $response->get_error_message() ) );
 				}
 
 				if ( class_exists( 'WP_MCP_AI_HTTP' ) ) {
 					return WP_MCP_AI_HTTP::prepare_transport_error(
 						$response,
 						'wp_mcp_ai_http_error',
-						__( 'The OpenRouter API request failed to complete.', 'mcp-ai-wpoos' ),
-						__( 'OpenRouter', 'mcp-ai-wpoos' )
+						__( 'The Z.AI API request failed to complete.', 'mcp-ai-wpoos' ),
+						__( 'Z.AI', 'mcp-ai-wpoos' )
 					);
 				}
 
@@ -411,40 +458,47 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			if ( JSON_ERROR_NONE !== $json_err ) {
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-					WP_MCP_AI_Logger::log_error( 'Failed to decode OpenRouter response.', array( 'body' => $body ) );
+					WP_MCP_AI_Logger::log_error( 'Failed to decode Z.AI response.', array( 'body' => $body ) );
 				}
 
-				return new WP_Error( 'wp_mcp_ai_openrouter_invalid_response', __( 'The OpenRouter API returned malformed JSON.', 'mcp-ai-wpoos' ) );
+				return new WP_Error( 'wp_mcp_ai_zai_invalid_response', __( 'The Z.AI API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				return $this->handle_api_error( $code, is_array( $decoded ) ? $decoded : array(), $response );
+				return $this->handle_api_error( $code, $decoded, $response );
 			}
 
-			$normalized = $this->normalize_response( is_array( $decoded ) ? $decoded : array() );
+			$normalized = $this->normalize_response( $decoded );
 
 			if ( ! isset( $normalized['model'] ) && ! empty( $model ) ) {
 				$normalized['model'] = $model;
 			}
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_event( 'openrouter_response', 'OpenRouter request completed.', array( 'model' => $model ) );
+				WP_MCP_AI_Logger::log_event( 'zai_response', 'Z.AI request completed.', array( 'model' => $model ) );
 			}
 
 			return $normalized;
 		}
 
 		/**
-		 * Perform a real-time SSE stream request to OpenRouter using direct cURL.
+		 * Perform a real-time SSE stream request to Z.AI using direct cURL.
 		 *
-		 * Uses CURLOPT_WRITEFUNCTION to process each network chunk as it arrives.
+		 * Uses CURLOPT_WRITEFUNCTION to process each network chunk as it arrives
+		 * from Z.AI. Every delta.content or delta.reasoning_content token is
+		 * forwarded to $stream_callback immediately.
 		 *
-		 * @param string   $url      Full endpoint URL.
-		 * @param array    $payload  Request payload (stream: true already set).
-		 * @param string   $model    Resolved model identifier.
-		 * @param int      $timeout  Request timeout in seconds.
-		 * @param callable $stream_callback Invoked with each content chunk array.
-		 * @return array|WP_Error
+		 * Z.AI's streaming format is identical to OpenAI's: SSE lines with
+		 * `data: {JSON}` payloads terminated by `data: [DONE]`.
+		 *
+		 * @since 2026.07
+		 *
+		 * @param string   $url             Full chat/completions endpoint URL.
+		 * @param array    $payload         Request payload (`stream: true` already set).
+		 * @param string   $model           Resolved model identifier.
+		 * @param int      $timeout         Request timeout in seconds.
+		 * @param callable $stream_callback Invoked with each content/reasoning chunk array.
+		 * @return array|WP_Error Normalized response on success, WP_Error on failure.
 		 */
 		protected function do_realtime_curl_stream( $url, array $payload, $model, $timeout, $stream_callback ) {
 			$api_key      = $this->get_api_key();
@@ -465,7 +519,24 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			$found_done          = false;
 
 			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_setopt_array
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_exec
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_errno
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_error
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_close
+
+			/*
+			 * Direct cURL is required here for real-time Z.AI streaming.
+			 *
+			 * wp_remote_post() buffers the entire response body in memory and
+			 * only returns it after the connection closes. It cannot forward
+			 * individual tokens to the browser as they arrive from the API.
+			 *
+			 * CURLOPT_WRITEFUNCTION with a streaming callback is the only way
+			 * to deliver Server-Sent Events token-by-token in real time.
+			 */
 			$ch = curl_init();
+
 			curl_setopt_array(
 				$ch,
 				array(
@@ -477,55 +548,76 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 					CURLOPT_RETURNTRANSFER => false,
 					CURLOPT_SSL_VERIFYPEER => true,
 					CURLOPT_SSL_VERIFYHOST => 2,
-					CURLOPT_HEADERFUNCTION => function ( $_ch, $header ) use ( &$http_status ) {
-						if ( preg_match( '/^HTTP\/[\d.]+ (\d+)/', $header, $m ) ) {
-							$http_status = (int) $m[1];
+
+					CURLOPT_HEADERFUNCTION => function ( $_curl_handle, $header ) use ( &$http_status ) {
+						if ( preg_match( '/^HTTP\/[\d.]+ (\d+)/', $header, $matches ) ) {
+							$http_status = (int) $matches[1];
 						}
 						return strlen( $header );
 					},
-					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+
+					CURLOPT_WRITEFUNCTION  => function ( $_curl_handle, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
 						$sse_buffer .= $data;
-						while ( false !== ( $pos = strpos(
-							$sse_buffer,
-							'
-'
-						) ) ) {
-							$line = trim( substr( $sse_buffer, 0, $pos ) );
-							$sse_buffer = substr( $sse_buffer, $pos + 1 );
+
+						while ( false !== ( $newline_pos = strpos( $sse_buffer, "\n" ) ) ) {
+							$line       = trim( substr( $sse_buffer, 0, $newline_pos ) );
+							$sse_buffer = substr( $sse_buffer, $newline_pos + 1 );
+
 							if ( '' === $line || ':' === $line[0] ) {
 								continue;
 							}
+
 							if ( 'data: [DONE]' === $line ) {
 								$found_done = true;
-								continue; }
+								continue;
+							}
+
 							if ( 0 !== strpos( $line, 'data: ' ) ) {
 								continue;
 							}
+
 							$chunk = json_decode( substr( $line, 6 ), true );
 							if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
 								continue;
 							}
+
 							if ( '' === $response_id && isset( $chunk['id'] ) ) {
 								$response_id = (string) $chunk['id'];
 							}
+
 							$choice = isset( $chunk['choices'][0] ) ? $chunk['choices'][0] : array();
-							$delta = isset( $choice['delta'] ) ? $choice['delta'] : array();
-							if ( ! empty( $delta['content'] ) ) {
+							$delta  = isset( $choice['delta'] ) ? $choice['delta'] : array();
+
+							if ( isset( $delta['content'] ) && is_string( $delta['content'] ) && '' !== $delta['content'] ) {
 								$accumulated_content .= $delta['content'];
-								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'content' => $delta['content'] ) ) ) ) );
+								call_user_func(
+									$stream_callback,
+									array(
+										'choices' => array(
+											array( 'delta' => array( 'content' => $delta['content'] ) ),
+										),
+									)
+								);
 							}
 
-							// Handle reasoning/thinking content from reasoning models (e.g. DeepSeek-R1, Qwen3).
-							if ( ! empty( $delta['reasoning_content'] ) ) {
+							if ( isset( $delta['reasoning_content'] ) && is_string( $delta['reasoning_content'] ) && '' !== $delta['reasoning_content'] ) {
 								$accumulated_reason .= $delta['reasoning_content'];
-								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'reasoning_content' => $delta['reasoning_content'] ) ) ) ) );
+								call_user_func(
+									$stream_callback,
+									array(
+										'choices' => array(
+											array( 'delta' => array( 'reasoning_content' => $delta['reasoning_content'] ) ),
+										),
+									)
+								);
 							}
-							if ( ! empty( $delta['tool_calls'] ) ) {
-								foreach ( $delta['tool_calls'] as $tc ) {
-									if ( ! isset( $tc['index'] ) ) {
+
+							if ( isset( $delta['tool_calls'] ) && is_array( $delta['tool_calls'] ) ) {
+								foreach ( $delta['tool_calls'] as $tc_delta ) {
+									if ( ! is_array( $tc_delta ) || ! isset( $tc_delta['index'] ) ) {
 										continue;
 									}
-									$idx = (int) $tc['index'];
+									$idx = (int) $tc_delta['index'];
 									if ( ! isset( $tool_calls_by_idx[ $idx ] ) ) {
 										$tool_calls_by_idx[ $idx ] = array(
 											'index'    => $idx,
@@ -537,28 +629,34 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 											),
 										);
 									}
-									if ( isset( $tc['id'] ) ) {
-										$tool_calls_by_idx[ $idx ]['id'] .= $tc['id'];
+									if ( isset( $tc_delta['id'] ) ) {
+										$tool_calls_by_idx[ $idx ]['id'] = (string) $tc_delta['id'];
 									}
-									if ( isset( $tc['function']['name'] ) ) {
-										$tool_calls_by_idx[ $idx ]['function']['name'] .= $tc['function']['name'];
+									if ( isset( $tc_delta['type'] ) ) {
+										$tool_calls_by_idx[ $idx ]['type'] = (string) $tc_delta['type'];
 									}
-									if ( isset( $tc['function']['arguments'] ) ) {
-										$tool_calls_by_idx[ $idx ]['function']['arguments'] .= $tc['function']['arguments'];
+									if ( isset( $tc_delta['function']['name'] ) ) {
+										$tool_calls_by_idx[ $idx ]['function']['name'] .= (string) $tc_delta['function']['name'];
+									}
+									if ( isset( $tc_delta['function']['arguments'] ) ) {
+										$tool_calls_by_idx[ $idx ]['function']['arguments'] .= (string) $tc_delta['function']['arguments'];
 									}
 								}
 							}
+
 							if ( isset( $choice['finish_reason'] ) && null !== $choice['finish_reason'] ) {
 								$finish_reason = $choice['finish_reason'];
 							}
-							if ( ! empty( $chunk['usage'] ) ) {
+							if ( isset( $chunk['usage'] ) && is_array( $chunk['usage'] ) ) {
 								$usage = $chunk['usage'];
 							}
 						}
+
 						return strlen( $data );
 					},
 				)
 			);
+
 			curl_exec( $ch );
 			$curl_errno = curl_errno( $ch );
 			$curl_error = curl_error( $ch );
@@ -566,12 +664,46 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			// phpcs:enable
 
 			if ( $curl_errno ) {
-				return new WP_Error( 'wp_mcp_ai_http_error', $curl_error ? $curl_error : __( 'cURL streaming request failed.', 'mcp-ai-wpoos' ) );
-			}
-			if ( $http_status >= 400 ) {
-				return new WP_Error( 'wp_mcp_ai_api_error', __( 'OpenRouter returned an error during streaming.', 'mcp-ai-wpoos' ), array( 'status' => $http_status ) );
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Z.AI real-time streaming failed.',
+						array(
+							'error' => $curl_error,
+							'errno' => $curl_errno,
+						)
+					);
+				}
+				return new WP_Error(
+					'wp_mcp_ai_http_error',
+					$curl_error ? $curl_error : __( 'cURL streaming request failed.', 'mcp-ai-wpoos' )
+				);
 			}
 
+			if ( $http_status >= 400 ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Z.AI real-time streaming returned HTTP error.',
+						array( 'code' => $http_status )
+					);
+				}
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					__( 'Z.AI returned an error during streaming.', 'mcp-ai-wpoos' ),
+					array( 'status' => $http_status )
+				);
+			}
+
+			if ( ! $found_done ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'zai_realtime_stream',
+						'Real-time SSE stream ended without [DONE] sentinel (model may have been interrupted).',
+						array( 'model' => $model )
+					);
+				}
+			}
+
+			// Assemble the chat.completion-shaped response from accumulated streaming data.
 			$message = array(
 				'role'    => 'assistant',
 				'content' => $accumulated_content,
@@ -602,22 +734,20 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				$assembled['usage'] = $usage;
 			}
 
-			if ( ! empty( $model ) ) {
-				$assembled['model'] = $model;
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'zai_realtime_stream', 'Real-time streaming response assembled.', array( 'model' => $model ) );
 			}
 
 			return $this->normalize_response( $assembled );
 		}
 
-
 		/**
-		 * List available models from the OpenRouter API.
+		 * List available models from the Z.AI API.
 		 *
-		 * The /models endpoint returns an OpenAI-shaped JSON object with a
-		 * `data` array of model objects.  Each entry includes the namespaced
-		 * `id` (e.g. "openai/gpt-4o"), context length, pricing, and the
-		 * upstream provider that serves it.
+		 * The /models endpoint returns an OpenAI-shaped JSON object with a `data`
+		 * array of model objects each containing an `id` field.
 		 *
+		 * @since 2026.07
 		 * @return array|WP_Error Array of model objects or WP_Error on failure.
 		 */
 		public function list_models() {
@@ -625,8 +755,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
-					'wp_mcp_ai_missing_openrouter_api_key',
-					__( 'No OpenRouter API key has been configured.', 'mcp-ai-wpoos' ),
+					'wp_mcp_ai_missing_zai_api_key',
+					__( 'No Z.AI API key has been configured.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -639,14 +769,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			);
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_event( 'openrouter_list_models', 'Fetching models from OpenRouter.', array( 'url' => $url ) );
+				WP_MCP_AI_Logger::log_event( 'zai_list_models', 'Fetching models from Z.AI.', array( 'url' => $url ) );
 			}
 
 			$response = wp_remote_get( $url, $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-					WP_MCP_AI_Logger::log_error( 'OpenRouter model listing failed.', array( 'error' => $response->get_error_message() ) );
+					WP_MCP_AI_Logger::log_error( 'Z.AI model listing failed.', array( 'error' => $response->get_error_message() ) );
 				}
 
 				return $response;
@@ -657,14 +787,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
-				return new WP_Error( 'wp_mcp_ai_openrouter_invalid_response', __( 'The OpenRouter API returned malformed JSON.', 'mcp-ai-wpoos' ) );
+				return new WP_Error( 'wp_mcp_ai_zai_invalid_response', __( 'The Z.AI API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected error from OpenRouter models endpoint.', 'mcp-ai-wpoos' );
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected error from Z.AI models endpoint.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
-					'wp_mcp_ai_openrouter_api_error',
+					'wp_mcp_ai_zai_api_error',
 					$error_message,
 					array( 'status' => $code )
 				);
@@ -674,86 +804,60 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			if ( isset( $decoded['data'] ) && is_array( $decoded['data'] ) ) {
 				foreach ( $decoded['data'] as $model ) {
-					if ( ! is_array( $model ) || empty( $model['id'] ) ) {
-						continue;
-					}
-
-					$entry = array(
-						'id'             => sanitize_text_field( $model['id'] ),
-						'name'           => isset( $model['name'] ) ? sanitize_text_field( $model['name'] ) : '',
-						'context_length' => isset( $model['context_length'] ) ? absint( $model['context_length'] ) : 0,
-					);
-
-					if ( isset( $model['pricing'] ) && is_array( $model['pricing'] ) ) {
-						// Pricing is reported as USD-per-token strings.
-						$entry['pricing'] = array(
-							'prompt'     => isset( $model['pricing']['prompt'] ) ? (string) $model['pricing']['prompt'] : '',
-							'completion' => isset( $model['pricing']['completion'] ) ? (string) $model['pricing']['completion'] : '',
+					if ( isset( $model['id'] ) ) {
+						$models[] = array(
+							'id'       => sanitize_text_field( $model['id'] ),
+							'owned_by' => isset( $model['owned_by'] ) ? sanitize_text_field( $model['owned_by'] ) : '',
+							'created'  => isset( $model['created'] ) ? absint( $model['created'] ) : 0,
 						);
 					}
-
-					$models[] = $entry;
 				}
 			}
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_event( 'openrouter_list_models', 'OpenRouter models retrieved.', array( 'count' => count( $models ) ) );
+				WP_MCP_AI_Logger::log_event( 'zai_list_models', 'Z.AI models retrieved.', array( 'count' => count( $models ) ) );
 			}
 
 			return $models;
 		}
 
 		/**
-		 * Test the connection to the OpenRouter API.
+		 * Test the connection to the Z.AI API.
 		 *
-		 * Sends a 1-token chat completion to verify API key and network access.
+		 * Lists available models to verify the API key and network connectivity.
+		 * Using the models endpoint avoids consuming chat tokens during the test.
 		 *
+		 * @since 2026.07
 		 * @return array|WP_Error Success array or WP_Error on failure.
 		 */
 		public function test_connection() {
-			$api_key = $this->get_api_key();
+			$models = $this->list_models();
 
-			if ( empty( $api_key ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_openrouter_api_key',
-					__( 'No OpenRouter API key has been configured.', 'mcp-ai-wpoos' ),
-					array( 'status' => 400 )
-				);
+			if ( is_wp_error( $models ) ) {
+				return $models;
 			}
 
-			$test_model = $this->get_model() ? $this->get_model() : self::DEFAULT_MODEL;
-
-			$result = $this->create_chat_completion(
-				array(
-					array(
-						'role'    => 'user',
-						'content' => 'Hi',
-					),
-				),
-				array(
-					'model'      => $test_model,
-					'max_tokens' => 5,
-				)
-			);
-
-			if ( is_wp_error( $result ) ) {
-				return $result;
-			}
+			$model_count = count( $models );
 
 			return array(
-				'success' => true,
-				'message' => __( 'Successfully connected to OpenRouter.', 'mcp-ai-wpoos' ),
-				'model'   => $test_model,
+				'success'     => true,
+				'message'     => sprintf(
+					/* translators: %d: number of models */
+					__( 'Successfully connected to Z.AI. Found %d models.', 'mcp-ai-wpoos' ),
+					$model_count
+				),
+				'model'       => $this->get_model() ? $this->get_model() : self::DEFAULT_MODEL,
+				'model_count' => $model_count,
 			);
 		}
 
 		/**
-		 * Count tokens using a heuristic estimator.
+		 * Count tokens for the given messages.
 		 *
-		 * OpenRouter does not expose a public token-count endpoint and the
-		 * accurate tokenizer varies per upstream model.  The same chars/4
-		 * heuristic used by other non-OpenAI providers is applied here.
+		 * Uses a heuristic chars/4 estimator since Z.AI does not currently
+		 * expose a public token-count endpoint.
 		 *
+		 * @since 2026.07
 		 * @param array $messages Chat messages in OpenAI-compatible format.
 		 * @param array $options  Optional parameters (model, system_prompt, timeout).
 		 * @return int Estimated input token count.
@@ -771,7 +875,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				$char_count += strlen( (string) $options['system_prompt'] );
 			}
 
-			// Heuristic: ~4 chars per token (same approximation used across the codebase).
+			// Heuristic: ~4 chars per token.
 			return max( 1, (int) ceil( $char_count / 4 ) );
 		}
 
@@ -780,8 +884,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Build the JSON payload sent to OpenRouter.
+		 * Build the JSON payload sent to Z.AI.
 		 *
+		 * @since 2026.07
 		 * @param array  $messages Chat messages.
 		 * @param array  $options  Request options.
 		 * @param string $model    Resolved model identifier.
@@ -791,7 +896,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			if ( empty( $messages ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_messages',
-					__( 'No chat messages were provided for the OpenRouter request.', 'mcp-ai-wpoos' ),
+					__( 'No chat messages were provided for the Z.AI request.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -809,9 +914,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				);
 			}
 
+			// Filter orphaned tool messages before sending to Z.AI.
+			$messages = $this->filter_tool_messages_for_payload( $messages );
+
 			// Normalise content arrays into strings for compatibility.
-			// The REST layer represents text-only messages as arrays of
-			// segments; collapse them back to strings that OpenRouter expects.
 			$messages = $this->normalise_messages_for_payload( $messages );
 
 			// Pass through messages unchanged (OpenAI-compatible format).
@@ -822,149 +928,102 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				$payload['messages'][] = $message;
 			}
 
-			// Optional parameters.
+			// Temperature (0–2).
 			if ( isset( $options['temperature'] ) && is_numeric( $options['temperature'] ) ) {
-				$payload['temperature'] = (float) $options['temperature'];
+				$payload['temperature'] = max( 0.0, min( 2.0, (float) $options['temperature'] ) );
 			}
 
+			// Nucleus sampling.
 			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
-				$payload['top_p'] = (float) $options['top_p'];
+				$payload['top_p'] = max( 0.0, min( 1.0, (float) $options['top_p'] ) );
 			}
 
-			if ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
-				$payload['max_tokens'] = absint( $options['max_tokens'] );
-			} elseif ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
-				$payload['max_tokens'] = absint( $options['max_completion_tokens'] );
+			// Max tokens — support both naming conventions.
+			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$payload['max_completion_tokens'] = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
+				$payload['max_completion_tokens'] = absint( $options['max_tokens'] );
 			}
 
-			// JSON mode.
+			// Stop sequences.
+			if ( isset( $options['stop'] ) ) {
+				$payload['stop'] = $options['stop'];
+			}
+
+			// JSON / structured output mode.
 			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
 				$payload['response_format'] = $options['response_format'];
 			}
 
-			// Streaming flag.
+			// Streaming.
 			if ( ! empty( $options['stream'] ) ) {
 				$payload['stream'] = true;
 
 				// Include stream_options so the final chunk carries usage data.
-				// Use caller-provided options when present; otherwise default
-				// to include_usage=true for cost/usage badge display.
 				$payload['stream_options'] = isset( $options['stream_options'] ) && is_array( $options['stream_options'] )
 					? $options['stream_options']
 					: array( 'include_usage' => true );
 			}
 
-			// Tool/function calling — pass through verbatim. OpenRouter
-			// silently ignores tools for upstream models that do not support
-			// them rather than rejecting the request.
+			// Tool/function calling — only for models that support it.
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
-				$payload['tools'] = $options['tools'];
+				if ( $this->model_lacks_tool_calling( $model ) ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'zai_tools_skipped',
+							sprintf(
+								/* translators: %s: model name */
+								'Tools stripped for Z.AI model %s (does not support function calling).',
+								$model
+							),
+							array( 'model' => $model )
+						);
+					}
+				} else {
+					$payload['tools'] = $options['tools'];
 
-				if ( isset( $options['tool_choice'] ) ) {
-					$payload['tool_choice'] = $options['tool_choice'];
+					if ( isset( $options['tool_choice'] ) ) {
+						$payload['tool_choice'] = $options['tool_choice'];
+					}
 				}
 			}
 
-			// OpenRouter-specific routing options.
-			if ( isset( $options['provider'] ) && is_array( $options['provider'] ) ) {
-				$payload['provider'] = $options['provider'];
-			}
-
-			if ( isset( $options['models'] ) && is_array( $options['models'] ) ) {
-				$payload['models'] = array_values( array_filter( array_map( 'sanitize_text_field', $options['models'] ) ) );
-			}
-
-			if ( isset( $options['transforms'] ) && is_array( $options['transforms'] ) ) {
-				$payload['transforms'] = array_values( array_map( 'sanitize_text_field', $options['transforms'] ) );
-			}
-
-			// Prompt caching: pass through to upstream providers via OpenRouter.
+			// Prompt cache key for cost optimisation.
 			if ( ! empty( $options['prompt_cache_key'] ) ) {
 				$payload['prompt_cache_key'] = sanitize_text_field( $options['prompt_cache_key'] );
 			}
 
-			// Prompt cache retention for providers that support it.
-			if ( ! empty( $options['prompt_cache_retention'] ) && in_array( $options['prompt_cache_retention'], array( 'in_memory', '24h' ), true ) ) {
-				$payload['prompt_cache_retention'] = $options['prompt_cache_retention'];
+			// GLM thinking mode configuration.
+			if ( isset( $options['thinking'] ) && is_array( $options['thinking'] ) ) {
+				$payload['thinking'] = $options['thinking'];
 			}
 
 			/**
-			 * Filter the OpenRouter request payload before it is sent.
+			 * Filter the Z.AI request payload before it is sent.
 			 *
-			 * @since 2026.05
+			 * @since 2026.07
 			 *
 			 * @param array  $payload  Request payload.
 			 * @param array  $messages Original messages.
 			 * @param array  $options  Request options.
 			 * @param string $model    Resolved model identifier.
 			 */
-			return apply_filters( 'wp_mcp_ai_openrouter_request_payload', $payload, $messages, $options, $model );
-		}
-
-		/**
-		 * Handle a non-2xx API response and return an appropriate WP_Error.
-		 *
-		 * @param int          $code     HTTP status code.
-		 * @param array        $decoded  Decoded JSON response body.
-		 * @param array|object $response Full WP HTTP response.
-		 * @return WP_Error
-		 */
-		protected function handle_api_error( $code, array $decoded, $response ) {
-			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from OpenRouter.', 'mcp-ai-wpoos' );
-			$error_data    = array(
-				'status' => $code,
-				'body'   => $decoded,
-			);
-
-			$error_code = 'wp_mcp_ai_openrouter_api_error';
-
-			if ( 401 === $code || 403 === $code ) {
-				$error_code            = 'wp_mcp_ai_openrouter_auth_error';
-				$error_data['actions'] = array(
-					'auth_info' => __( 'Verify your OpenRouter API key in NV oOS → Providers → OpenRouter.', 'mcp-ai-wpoos' ),
-				);
-			} elseif ( 402 === $code ) {
-				// OpenRouter returns 402 when the account is out of credits.
-				$error_code            = 'wp_mcp_ai_openrouter_insufficient_credits';
-				$error_data['actions'] = array(
-					'credits_info' => __( 'Your OpenRouter account has insufficient credits. Top up at https://openrouter.ai/credits.', 'mcp-ai-wpoos' ),
-				);
-			} elseif ( 429 === $code ) {
-				$error_code  = 'wp_mcp_ai_rate_limit_exceeded';
-				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
-				if ( ! empty( $retry_after ) ) {
-					$error_data['retry_after'] = absint( $retry_after );
-				}
-				$error_data['actions'] = array(
-					'rate_limit_info' => __( 'The OpenRouter API rate limit has been exceeded. Try again in a few moments.', 'mcp-ai-wpoos' ),
-				);
-			}
-
-			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_error(
-					'OpenRouter returned an error response.',
-					array(
-						'code' => $code,
-						'body' => $decoded,
-					)
-				);
-			}
-
-			return new WP_Error( $error_code, $error_message, $error_data );
+			return apply_filters( 'wp_mcp_ai_zai_request_payload', $payload, $messages, $options, $model );
 		}
 
 		/**
 		 * Drop tool role messages that are not associated with the most recent
 		 * assistant tool call.
 		 *
-		 * OpenRouter forwards requests to upstream providers that require
-		 * tool responses to immediately follow the assistant message that
-		 * emitted the corresponding tool call. When intervening messages
-		 * appear between those entries the request may be rejected by the
-		 * upstream provider. This normaliser filters out any tool messages
-		 * that no longer have a matching pending call.
+		 * Z.AI's API is OpenAI-compatible and requires tool responses to
+		 * immediately follow the assistant message that emitted the corresponding
+		 * tool call.
 		 *
-		 * @param array $messages Messages to sanitize.
+		 * Logic mirrors WP_MCP_AI_DeepSeek_Client::filter_tool_messages_for_payload().
+		 *
+		 * @since 2026.07
+		 *
+		 * @param array $messages Chat history supplied by the caller.
 		 * @return array
 		 */
 		protected function filter_tool_messages_for_payload( array $messages ) {
@@ -991,13 +1050,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
 					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
 						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
-						WP_MCP_AI_Logger::log_event(
-							'openrouter_dropped_incomplete_tool_group',
-							'Dropped assistant message with unresolved tool_calls before user/system message.',
-							array(
-								'pending_call_ids' => array_keys( $pending_calls ),
-							)
-						);
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'zai_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before user/system message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
 					}
 
 					$pending_calls           = array();
@@ -1010,13 +1071,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				if ( 'assistant' === $role ) {
 					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
 						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
-						WP_MCP_AI_Logger::log_event(
-							'openrouter_dropped_incomplete_tool_group',
-							'Dropped assistant message with unresolved tool_calls before next assistant message.',
-							array(
-								'pending_call_ids' => array_keys( $pending_calls ),
-							)
-						);
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'zai_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before next assistant message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
 					}
 
 					$pending_calls           = array();
@@ -1028,10 +1091,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 							if ( ! is_array( $tool_call ) ) {
 								continue;
 							}
+
 							$call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
 							if ( '' === $call_id ) {
 								continue;
 							}
+
 							$pending_calls[ $call_id ] = true;
 						}
 					}
@@ -1049,16 +1115,19 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 					$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
 
 					if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
-						WP_MCP_AI_Logger::log_event(
-							'openrouter_dropped_orphan_tool_message',
-							'Dropping tool message without matching tool call before OpenRouter request.',
-							array(
-								'tool_call_id' => $tool_call_id,
-								'reason'       => '' === $tool_call_id
-									? 'missing_tool_call_id'
-									: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
-							)
-						);
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'zai_dropped_orphan_tool_message',
+								'Dropping tool message without matching tool call before Z.AI request.',
+								array(
+									'tool_call_id' => $tool_call_id,
+									'reason'       => '' === $tool_call_id
+										? 'missing_tool_call_id'
+										: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+								)
+							);
+						}
+
 						continue;
 					}
 
@@ -1083,14 +1152,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		}
 
 		/**
-		 * Prepare chat messages for the OpenRouter Chat Completions payload.
+		 * Prepare chat messages for the Z.AI Chat Completions payload.
 		 *
 		 * The REST layer represents text-only messages as arrays of segments so
-		 * attachments and tool calls can be normalised consistently. Older
-		 * upstream models may only accept plain strings for the `content` field.
-		 * To remain compatible we collapse text-only segment arrays back into
-		 * strings while preserving multimodal payloads that rely on structured
-		 * segments.
+		 * attachments and tool calls can be normalised consistently. Z.AI may
+		 * expect plain strings for the `content` field.
 		 *
 		 * Logic mirrors WP_MCP_AI_DeepSeek_Client::normalise_messages_for_payload().
 		 *
@@ -1154,23 +1220,69 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		}
 
 		/**
-		 * Normalise an OpenRouter response to the plugin's internal format.
+		 * Handle a non-2xx API response and return an appropriate WP_Error.
 		 *
-		 * The response format is OpenAI-compatible, so only light
-		 * normalisation is required to satisfy the internal contract expected
-		 * by the REST layer.
+		 * @since 2026.07
+		 * @param int          $code     HTTP status code.
+		 * @param array        $decoded  Decoded JSON response body.
+		 * @param array|object $response Full WP HTTP response.
+		 * @return WP_Error
+		 */
+		protected function handle_api_error( $code, array $decoded, $response ) {
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Z.AI.', 'mcp-ai-wpoos' );
+			$error_data    = array(
+				'status' => $code,
+				'body'   => $decoded,
+			);
+
+			$error_code = 'wp_mcp_ai_zai_api_error';
+
+			if ( 401 === $code ) {
+				$error_code            = 'wp_mcp_ai_zai_auth_error';
+				$error_data['actions'] = array(
+					'auth_info' => __( 'Verify your Z.AI API key in NV oOS → Providers → Z.AI.', 'mcp-ai-wpoos' ),
+				);
+			} elseif ( 429 === $code ) {
+				$error_code  = 'wp_mcp_ai_rate_limit_exceeded';
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				if ( ! empty( $retry_after ) ) {
+					$error_data['retry_after'] = absint( $retry_after );
+				}
+				$error_data['actions'] = array(
+					'rate_limit_info' => __( 'The Z.AI API rate limit has been exceeded. Try again in a few moments.', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Z.AI returned an error response.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+			}
+
+			return new WP_Error( $error_code, $error_message, $error_data );
+		}
+
+		/**
+		 * Normalise a Z.AI response to the plugin's internal format.
 		 *
+		 * The response format is OpenAI-compatible, so only light normalisation
+		 * is required to satisfy the internal contract expected by the REST layer.
+		 *
+		 * @since 2026.07
 		 * @param array $decoded Decoded JSON response.
 		 * @return array Normalised response.
 		 */
 		protected function normalize_response( array $decoded ) {
-			// Extract the primary choice.
 			$choice  = isset( $decoded['choices'][0] ) ? $decoded['choices'][0] : array();
 			$message = isset( $choice['message'] ) ? $choice['message'] : array();
 			$content = isset( $message['content'] ) ? $message['content'] : '';
 
 			$raw_usage = isset( $decoded['usage'] ) ? $decoded['usage'] : array();
-			// Extract prompt cache metrics from upstream providers.
+			// Extract prompt cache metrics when available.
 			if ( isset( $raw_usage['prompt_cache_hit_tokens'] ) ) {
 				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_cache_hit_tokens'];
 			} elseif ( isset( $raw_usage['prompt_tokens_details']['cached_tokens'] ) ) {
@@ -1187,7 +1299,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				'content'       => $content,
 				'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
 				'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',
-				'provider'      => 'openrouter',
+				'provider'      => 'zai',
 				'usage'         => $raw_usage,
 				'raw'           => $decoded,
 			);
@@ -1197,10 +1309,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				$normalized['tool_calls'] = $message['tool_calls'];
 			}
 
-			// Pass through reasoning_content for reasoning models routed via OpenRouter.
-			if ( ! empty( $message['reasoning'] ) ) {
-				$normalized['reasoning_content'] = $message['reasoning'];
-			} elseif ( ! empty( $message['reasoning_content'] ) ) {
+			// Pass through reasoning_content for thinking models.
+			if ( ! empty( $message['reasoning_content'] ) ) {
 				$normalized['reasoning_content'] = $message['reasoning_content'];
 			}
 

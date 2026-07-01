@@ -47,7 +47,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 * [NVIDIA Terms](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/) | [NIM Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/)
 * [DeepSeek Terms](https://platform.deepseek.com/terms) | [Privacy](https://platform.deepseek.com/privacy)
 * [OpenRouter Terms](https://openrouter.ai/terms) | [Privacy](https://openrouter.ai/privacy)
-* [Kimi (Moonshot AI) Terms](https://platform.moonshot.cn/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.cn/docs/policy/privacy-policy)
+* [Kimi (Moonshot AI) Terms](https://platform.moonshot.ai/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.ai/docs/policy/privacy-policy)
 * [DigitalOcean Terms](https://www.digitalocean.com/legal/terms-of-service-agreement) | [Privacy](https://www.digitalocean.com/legal/privacy-policy)
 * [Baseten Terms](https://www.baseten.co/terms-and-conditions/) | [Privacy](https://www.baseten.co/privacy-policy/)
 * Ollama (self-hosted, no external data transmission)
@@ -86,7 +86,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **LM Studio** - Local AI with function calling (self-hosted, no external data)
 * **DeepSeek** - deepseek-chat, deepseek-reasoner, deepseek-coder ([Terms](https://platform.deepseek.com/terms) | [Privacy](https://platform.deepseek.com/privacy))
 * **OpenRouter** - Unified gateway to 200+ models (OpenAI, Anthropic, Meta, Mistral and more) via one API key ([Terms](https://openrouter.ai/terms) | [Privacy](https://openrouter.ai/privacy))
-* **Kimi (Moonshot AI)** - Kimi K2.6, K2.5, K2 with 256K context and tool calling ([Terms](https://platform.moonshot.cn/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.cn/docs/policy/privacy-policy))
+* **Kimi (Moonshot AI)** - Kimi K2.7 Code, K2.6, K2.5, K2 with 256K context and tool calling ([Terms](https://platform.moonshot.ai/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.ai/docs/policy/privacy-policy))
 * **DigitalOcean Serverless Inference** - Llama, DeepSeek-R1, and more via DigitalOcean's OpenAI-compatible cloud inference API ([Terms](https://www.digitalocean.com/legal/terms-of-service-agreement) | [Privacy](https://www.digitalocean.com/legal/privacy-policy))
 * Automatic provider fallback for maximum uptime
 

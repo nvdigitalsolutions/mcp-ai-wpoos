@@ -247,7 +247,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to curated list when catalog is not available.
 			if ( empty( $kimi_models ) ) {
 				$kimi_models = array(
-					'kimi-k2.6'        => 'Kimi K2.6 (Latest, 256K, Recommended)',
+					'kimi-k2.7-code'   => 'Kimi K2.7 Code (Latest, 256K, Recommended)',
+					'kimi-k2.6'        => 'Kimi K2.6 (256K, tool calling)',
 					'kimi-k2.5'        => 'Kimi K2.5 (256K, tool calling)',
 					'kimi-k2'          => 'Kimi K2 (256K, tool calling)',
 					'kimi-k2-thinking' => 'Kimi K2 Thinking (256K, no tools)',
@@ -273,8 +274,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get Z.AI (GLM) models from Model Config.
+			$zai_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$zai_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'zai' );
+			}
+
+			// Fallback to curated list when catalog is not available.
+			if ( empty( $zai_models ) ) {
+				$zai_models = array(
+					'glm-5.2'     => 'GLM-5.2 (Latest, 1M Context, Recommended)',
+					'glm-5'       => 'GLM-5 (1M Context, tool calling)',
+					'glm-5-turbo' => 'GLM-5 Turbo (256K, fast)',
+					'glm-4.7'     => 'GLM-4.7 (256K)',
+					'glm-4-flash' => 'GLM-4 Flash (128K, fast)',
+					'glm-4'       => 'GLM-4 (128K)',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'baseten', 'digitalocean', 'kimi', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'baseten', 'digitalocean', 'kimi', 'zai', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -1354,7 +1373,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description'  => sprintf(
 						/* translators: %1$s: Moonshot AI Platform URL, %2$s: env var name */
 						__( 'Your Moonshot AI (Kimi) API key. Get one from <a href="%1$s" target="_blank">Moonshot AI Platform</a>. The same key works for all Kimi / Moonshot models. You can also set the %2$s environment variable.', 'mcp-ai-wpoos' ),
-						'https://platform.moonshot.cn/console/api-keys',
+						'https://platform.moonshot.ai/console/api-keys',
 						'<code>KIMI_API_KEY</code>'
 					),
 					'placeholder'  => 'sk-...',
@@ -1370,8 +1389,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'kimi_base_url'                      => array(
 					'type'        => 'url',
 					'label'       => __( 'Kimi API Base URL (Optional)', 'mcp-ai-wpoos' ),
-					'description' => __( 'Custom base URL for Kimi API requests. Leave empty to use the default (https://api.moonshot.cn/v1). Useful for regional proxies or Kimi-compatible endpoints.', 'mcp-ai-wpoos' ),
-					'placeholder' => 'https://api.moonshot.cn/v1',
+					'description' => __( 'Custom base URL for Kimi API requests. Leave empty to use the default (https://api.moonshot.ai/v1). Useful for regional proxies or Kimi-compatible endpoints.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.moonshot.ai/v1',
 				),
 
 				// Baseten Provider Settings.
@@ -1406,6 +1425,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Baseten API Base URL (Optional)', 'mcp-ai-wpoos' ),
 					'description' => __( 'Custom base URL for Baseten API requests. Leave empty to use the default (https://inference.baseten.co/v1). Useful when proxying through your own gateway.', 'mcp-ai-wpoos' ),
 					'placeholder' => 'https://inference.baseten.co/v1',
+				),
+
+				// Z.AI (GLM) Provider Settings.
+				'enable_zai'                         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Z.AI Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Z.AI (GLM) as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Z.AI is Zhipu AI\'s OpenAI-compatible GLM large language model family. GLM-5.2 features a 1M context window, tool calling, and thinking mode. GLM-5 Turbo is optimized for speed and coding tasks.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'zai_api_key'                        => array(
+					'type'         => 'password',
+					'label'        => __( 'Z.AI API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %1$s: Z.AI Platform URL, %2$s: env var name */
+						__( 'Your Z.AI API key. Get one from <a href="%1$s" target="_blank">Z.AI Platform</a>. You can also set the %2$s environment variable.', 'mcp-ai-wpoos' ),
+						'https://z.ai/subscribe',
+						'<code>ZAI_API_KEY</code>'
+					),
+					'placeholder'  => 'Enter your Z.AI API key',
+					'autocomplete' => 'new-password',
+				),
+				'zai_model'                          => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Z.AI Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default Z.AI (GLM) model to use. GLM-5.2 is the latest with 1M context and tool calling (recommended). GLM-5 Turbo is optimized for speed and agentic coding tasks.', 'mcp-ai-wpoos' ),
+					'options'     => $zai_models,
+					'default'     => 'glm-5.2',
+				),
+				'zai_base_url'                       => array(
+					'type'        => 'url',
+					'label'       => __( 'Z.AI API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for Z.AI API requests. Leave empty to use the default (https://api.z.ai/api/paas/v4). Useful for regional proxies or Z.AI-compatible endpoints.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.z.ai/api/paas/v4',
 				),
 
 				// Google Maps Settings.
@@ -1519,6 +1572,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'Baseten', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'enable_baseten', 'baseten_api_key', 'baseten_model', 'baseten_base_url' ),
+				),
+				'zai'                  => array(
+					'id'     => 'zai',
+					'label'  => __( 'Z.AI (GLM)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'enable_zai', 'zai_api_key', 'zai_model', 'zai_base_url' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',

@@ -214,7 +214,7 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 							'count'   => 0,
 						);
 					}
-					$fetch_errors[ $code ]['count']++;
+					++$fetch_errors[ $code ]['count'];
 					continue;
 				}
 

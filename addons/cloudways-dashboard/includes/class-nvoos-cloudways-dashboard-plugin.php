@@ -68,7 +68,7 @@ class NV_oOS_CloudwaysDashboard_Plugin {
 	 * @return void
 	 */
 	public static function render_admin_page() {
-		echo sprintf(
+		printf(
 			'<div class="nvoos-cloudways-dashboard-root" role="application" aria-label="%s" data-config="%s"></div>',
 			esc_attr( __( 'Cloudways Dashboard', 'nvoos-cloudways-dashboard' ) ),
 			esc_attr( wp_json_encode( array( 'isAdmin' => true ) ) )

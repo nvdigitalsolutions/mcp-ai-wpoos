@@ -676,11 +676,12 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			// Apply resource-aware num_predict if not explicitly set.
-			// Priority order:
-			// 1. options['max_tokens'] (if set, converted to num_predict for Ollama compatibility)
-			// 2. options['num_predict'] (if set, Ollama native parameter)
-			// 3. Resource manager tier-based limits (2000/8000/32000 based on workload tier).
-			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['num_predict'] ) ) {
+					// Priority order:
+					// 1. options['max_completion_tokens'] (if set, converted to num_predict for Ollama compatibility)
+					// 2. options['max_tokens'] (if set, converted to num_predict for Ollama compatibility)
+					// 3. options['num_predict'] (if set, Ollama native parameter)
+					// 4. Resource manager tier-based limits (2000/8000/32000 based on workload tier).
+			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['num_predict'] ) && ! isset( $options['max_completion_tokens'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$num_predict  = $resource_mgr->get_max_tokens();
 
@@ -697,6 +698,9 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				$num_predict = max( 512, absint( $num_predict ) );
 
 				$payload['options']['num_predict'] = $num_predict;
+			} elseif ( isset( $options['max_completion_tokens'] ) ) {
+				// Support max_completion_tokens (OpenAI-compatible naming).
+				$payload['options']['num_predict'] = max( 512, absint( $options['max_completion_tokens'] ) );
 			} elseif ( isset( $options['max_tokens'] ) ) {
 				// Use max_tokens with minimum enforcement.
 				$payload['options']['num_predict'] = max( 512, absint( $options['max_tokens'] ) );
@@ -842,14 +846,88 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 						array_column( $memory_messages, 'content' )
 					);
 					if ( ! empty( $payload['system'] ) ) {
-						$payload['system'] .= "\n\n" . $memory_text;
+							$payload['system'] .= "\n\n" . $memory_text;
 					} else {
 						$payload['system'] = $memory_text;
 					}
 				}
 			}
 
-			return $payload;
+				// Normalise and filter messages after system prompt injection.
+				$payload['messages'] = $this->normalise_messages_for_payload( $payload['messages'] );
+				$payload['messages'] = $this->filter_tool_messages_for_payload( $payload['messages'] );
+
+				return $payload;
+		}
+
+		/**
+		 * Prepare chat messages for the Ollama Chat payload.
+		 *
+		 * The REST layer represents text-only messages as arrays of segments so
+		 * attachments and tool calls can be normalised consistently. Ollama
+		 * models expect plain strings for the `content` field. To remain
+		 * compatible we collapse text-only segment arrays back into strings
+		 * while preserving multimodal payloads that rely on structured segments.
+		 *
+		 * Logic mirrors WP_MCP_AI_DeepSeek_Client::normalise_messages_for_payload().
+		 *
+		 * @since 2026.07
+		 *
+		 * @param array $messages Sanitised chat messages.
+		 * @return array
+		 */
+		protected function normalise_messages_for_payload( array $messages ) {
+			$normalised = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					$normalised[] = $message;
+					continue;
+				}
+
+				$segments = array_values( $message['content'] );
+
+				if ( empty( $segments ) ) {
+					$message['content'] = '';
+					$normalised[]       = $message;
+					continue;
+				}
+
+				$all_text   = true;
+				$text_parts = array();
+
+				foreach ( $segments as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$all_text = false;
+						break;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'text' !== $type ) {
+						$all_text = false;
+						break;
+					}
+
+					$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+				}
+
+				if ( $all_text ) {
+					$text_parts         = array_filter(
+						$text_parts,
+						static function ( $part ) {
+							return '' !== trim( $part );
+						}
+					);
+					$message['content'] = implode( "\n\n", $text_parts );
+				} else {
+					$message['content'] = $segments;
+				}
+
+				$normalised[] = $message;
+			}
+
+			return $normalised;
 		}
 
 		/**
@@ -1053,6 +1131,11 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					'completion_tokens' => $completion_tokens,
 					'total_tokens'      => $prompt_tokens + $completion_tokens,
 				);
+
+				// Extract cached tokens from prompt_tokens_details if available (OpenAI-compatible).
+				if ( isset( $response['prompt_tokens_details']['cached_tokens'] ) ) {
+					$normalized['usage']['cached_tokens'] = (int) $response['prompt_tokens_details']['cached_tokens'];
+				}
 			}
 
 			return $normalized;
@@ -1825,14 +1908,28 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-			$max_tokens   = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : $resource_mgr->get_max_tokens();
+			// Support both max_tokens and max_completion_tokens naming conventions.
+			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$max_tokens = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
+				$max_tokens = absint( $options['max_tokens'] );
+			} else {
+				$max_tokens = $resource_mgr->get_max_tokens();
+			}
+
+			$is_streaming = isset( $options['stream'] ) && $options['stream'];
 
 			$payload = array(
 				'model'      => $model,
 				'messages'   => $formatted,
-				'stream'     => false,
+				'stream'     => $is_streaming,
 				'max_tokens' => max( 512, $max_tokens ),
 			);
+
+			// Include stream_options when streaming is enabled to receive usage data.
+			if ( $is_streaming ) {
+				$payload['stream_options'] = array( 'include_usage' => true );
+			}
 
 			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] ) {
 				$payload['temperature'] = (float) $options['temperature'];
