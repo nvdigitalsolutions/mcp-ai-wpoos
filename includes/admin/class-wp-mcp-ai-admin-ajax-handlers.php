@@ -65,7 +65,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_anthropic_connection' => 'handle_test_anthropic_connection',
 				'wp_ajax_wp_mcp_ai_test_kimi_connection'   => 'handle_test_kimi_connection',
 				'wp_ajax_wp_mcp_ai_fetch_kimi_models'      => 'handle_fetch_kimi_models',
-				'wp_ajax_wp_mcp_ai_test_exa_connection'    => 'handle_test_exa_connection',
+				'wp_ajax_wp_mcp_ai_test_zai_connection'    => 'handle_test_zai_connection',
+			'wp_ajax_wp_mcp_ai_fetch_zai_models'       => 'handle_fetch_zai_models',
+			'wp_ajax_wp_mcp_ai_test_exa_connection'    => 'handle_test_exa_connection',
 				'wp_ajax_wp_mcp_ai_test_perplexity_connection' => 'handle_test_perplexity_connection',
 				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
 				'wp_ajax_wp_mcp_ai_test_plaid_connection'  => 'handle_test_plaid_connection',
@@ -1103,16 +1105,116 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			wp_send_json_success(
-				array(
-					'models' => $formatted_models,
-				)
+			array(
+			'models' => $formatted_models,
+			)
 			);
+			}
+
+			/**
+			* Handle AJAX request to test Z.AI API connection.
+			*/
+			public function handle_test_zai_connection() {
+		check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+			return;
 		}
 
-		/**
-		 * Handle AJAX request to test Exa AI search connection.
-		 */
-		public function handle_test_exa_connection() {
+		$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+		if ( empty( $api_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide a Z.AI API key.', 'mcp-ai-wpoos' ) ) );
+			return;
+		}
+
+		// Pass the API key directly to the client instead of temporarily
+		// writing it to wp_options, which creates a TOCTOU race condition.
+		$client = new WP_MCP_AI_ZAI_Client();
+		$client->set_api_key( $api_key );
+		$result = $client->test_connection();
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+						$result->get_error_message()
+					),
+				)
+			);
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'message'     => $result['message'],
+				'model_count' => isset( $result['model_count'] ) ? $result['model_count'] : 0,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX request to fetch Z.AI models.
+	 */
+	public function handle_fetch_zai_models() {
+		check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+			return;
+		}
+
+		$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+		if ( empty( $api_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide a Z.AI API key.', 'mcp-ai-wpoos' ) ) );
+			return;
+		}
+
+		// Pass the API key directly to the client instead of temporarily
+		// writing it to wp_options, which creates a TOCTOU race condition.
+		$client = new WP_MCP_AI_ZAI_Client();
+		$client->set_api_key( $api_key );
+		$models = $client->list_models();
+
+		if ( is_wp_error( $models ) ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Failed to fetch models: %s', 'mcp-ai-wpoos' ),
+						$models->get_error_message()
+					),
+				)
+			);
+			return;
+		}
+
+		// Format models for dropdown.
+		$formatted_models = array();
+		foreach ( $models as $model ) {
+			$model_id   = isset( $model['id'] ) ? $model['id'] : '';
+			$model_name = isset( $model['name'] ) ? $model['name'] : $model_id;
+
+			if ( ! empty( $model_id ) ) {
+				$formatted_models[ $model_id ] = $model_name;
+			}
+		}
+
+		wp_send_json_success(
+			array(
+				'models' => $formatted_models,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX request to test Exa AI search connection.
+	 */
+	public function handle_test_exa_connection() {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {

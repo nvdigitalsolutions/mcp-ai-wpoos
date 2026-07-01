@@ -958,7 +958,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 										<code><?php echo esc_html( $settings['kimi_base_url'] ); ?></code>
 									<?php else : ?>
 										<span style="color: orange;">&#x26a0; <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
-										<code>https://api.moonshot.cn/v1</code>
+										<code>https://api.moonshot.ai/v1</code>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -1073,9 +1073,95 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 								<?php esc_html_e( 'Baseten Model APIs offer managed access to open-source LLMs (DeepSeek, GLM, Kimi) through an OpenAI-compatible endpoint with optimized serving. All supported models implement tool calling, and most support structured outputs.', 'mcp-ai-wpoos' ); ?>
 							</p>
 						<?php endif; ?>
-					</div>
+						</div>
 
-					<!-- Embedded LLM (Pro) -->
+						<!-- Z.AI (GLM) -->
+				<div class="card">
+					<h2><?php esc_html_e( '14. Z.AI (GLM)', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_zai'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<?php $zai_has_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::has_credentials( 'zai' ) : ! empty( $settings['zai_api_key'] ); ?>
+							<tr>
+								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $zai_has_key ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<?php
+										$zai_key = $has_resolver ? WP_MCP_AI_Credential_Resolver::get_api_key( 'zai' ) : ( $settings['zai_api_key'] ?? '' );
+										if ( $zai_key ) {
+											echo '<code>' . esc_html( substr( $zai_key, 0, 12 ) . '...' ) . '</code>';
+										}
+										?>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Key Source', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $has_resolver ) : ?>
+										<code><?php echo esc_html( WP_MCP_AI_Credential_Resolver::get_key_source_label( WP_MCP_AI_Credential_Resolver::get_key_source( 'zai' ) ) ); ?></code>
+									<?php else : ?>
+										<code><?php esc_html_e( 'NV oOS Settings (Legacy)', 'mcp-ai-wpoos' ); ?></code>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<code><?php echo esc_html( isset( $settings['zai_model'] ) && '' !== $settings['zai_model'] ? $settings['zai_model'] : 'glm-5.2' ); ?></code>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'API Base URL', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['zai_base_url'] ) ) : ?>
+										<code><?php echo esc_html( $settings['zai_base_url'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">&#x26a0; <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
+										<code>https://api.z.ai/api/paas/v4</code>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="zai-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="zai"
+						<?php echo esc_attr( empty( $settings['enable_zai'] ) || ! $zai_has_key ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test Z.AI Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_zai'] ) || ! $zai_has_key ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your Z.AI settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=zai' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Z.AI (Zhipu AI) provides the GLM model family with up to 1M context windows. GLM-5.2 features tool calling, thinking mode, and day-one coding agent compatibility via OpenAI-compatible and Anthropic Messages endpoints.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
+				<!-- Embedded LLM (Pro) -->
 				<?php
 				// Only show Embedded LLM section if Pro version is active.
 				if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) :
@@ -1684,10 +1770,14 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					break;
 
 				case 'baseten':
-					self::test_baseten( $settings );
-					break;
+				self::test_baseten( $settings );
+				break;
 
-				case 'embedded':
+				case 'zai':
+				self::test_zai( $settings );
+				break;
+
+			case 'embedded':
 					self::test_embedded( $settings );
 					break;
 
@@ -2652,7 +2742,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				$base_url = isset( $settings['kimi_base_url'] ) && '' !== trim( $settings['kimi_base_url'] )
 					? untrailingslashit( esc_url_raw( $settings['kimi_base_url'] ) )
-					: 'https://api.moonshot.cn/v1';
+					: 'https://api.moonshot.ai/v1';
 
 				$start = microtime( true );
 

@@ -218,7 +218,7 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 
 		$base_url = $this->client->get_base_url();
 
-		$this->assertEquals( 'https://api.moonshot.cn/v1', $base_url );
+		$this->assertEquals( 'https://api.moonshot.ai/v1', $base_url );
 	}
 
 	/**

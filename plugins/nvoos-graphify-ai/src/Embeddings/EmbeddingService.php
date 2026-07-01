@@ -201,7 +201,7 @@ class EmbeddingService {
 			'deepseek'     => 'https://api.deepseek.com/v1',
 			'openrouter'   => 'https://openrouter.ai/api/v1',
 			'digitalocean' => 'https://inference.do-ai.run/v1',
-			'kimi'         => 'https://api.moonshot.cn/v1',
+			'kimi'         => 'https://api.moonshot.ai/v1',
 			'baseten'      => 'https://api.baseten.co/v1',
 		);
 

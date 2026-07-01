@@ -65,6 +65,28 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 		 */
 		const DEFAULT_MODEL = 'deepseek-ai/DeepSeek-V3';
 
+		/**
+		 * Models that do not support tool/function calling.
+		 *
+		 * Some GLM and other models served via Baseten may not support tools.
+		 * Tools are stripped automatically when these models are selected.
+		 *
+		 * @var array
+		 */
+		const MODELS_WITHOUT_TOOL_CALLING = array();
+
+		/**
+		 * Maximum context window sizes by model family prefix.
+		 *
+		 * @var array
+		 */
+		const MODEL_CONTEXT_WINDOWS = array(
+			'zai-org/GLM-4'          => 128000,
+			'deepseek-ai/DeepSeek-V3' => 128000,
+			'deepseek-ai/DeepSeek-R1' => 128000,
+			'moonshotai/Kimi-K2'      => 256000,
+		);
+
 		// -------------------------------------------------------------------------
 		// Accessors.
 		// -------------------------------------------------------------------------
@@ -75,6 +97,13 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 		 * @return string Empty string when not configured.
 		 */
 		public function get_api_key() {
+			// If a transient API key was set via set_api_key(), use it instead
+			// of the persisted setting. This prevents TOCTOU race conditions
+			// when testing a key before saving it.
+			if ( isset( $this->api_key_override ) && is_string( $this->api_key_override ) ) {
+				return $this->api_key_override;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$key      = isset( $settings['enable_baseten'] ) && ! empty( $settings['baseten_api_key'] )
 				? $settings['baseten_api_key']
@@ -86,6 +115,28 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 
 			return $key;
 		}
+
+		/**
+		 * Override the API key for the lifetime of this instance only.
+		 *
+		 * Use this when testing a key before persisting it, instead of
+		 * temporarily writing it to wp_options (which creates a TOCTOU
+		 * race condition).
+		 *
+		 * @since 2026.07
+		 * @param string $api_key The API key to use for this instance.
+		 */
+		public function set_api_key( $api_key ) {
+			$this->api_key_override = $api_key;
+		}
+
+		/**
+		 * In-memory API key override. Set via set_api_key().
+		 *
+		 * @since 2026.07
+		 * @var string|null
+		 */
+		private $api_key_override = null;
 
 		/**
 		 * Retrieve the configured default model.
@@ -115,6 +166,49 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 			}
 
 			return untrailingslashit( $base_url );
+		}
+
+		/**
+		 * Return true when the model does not support tool/function calling.
+		 *
+		 * @since 2026.07
+		 * @param string $model Model identifier.
+		 * @return bool
+		 */
+		protected function model_lacks_tool_calling( $model ) {
+			foreach ( self::MODELS_WITHOUT_TOOL_CALLING as $no_tools ) {
+				if ( $model === $no_tools || 0 === strpos( $model, $no_tools ) ) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * Get the context window size for a given model.
+		 *
+		 * @since 2026.07
+		 * @param string $model Model identifier.
+		 * @return int Context window size in tokens.
+		 */
+		public function get_context_window( $model ) {
+			$model = sanitize_text_field( $model );
+
+			// Exact match first.
+			if ( isset( self::MODEL_CONTEXT_WINDOWS[ $model ] ) ) {
+				return self::MODEL_CONTEXT_WINDOWS[ $model ];
+			}
+
+			// Prefix match for model families.
+			foreach ( self::MODEL_CONTEXT_WINDOWS as $prefix => $window ) {
+				if ( 0 === strpos( $model, $prefix ) ) {
+					return $window;
+				}
+			}
+
+			// Default to 128K for unknown Baseten models.
+			return 128000;
 		}
 
 		// -------------------------------------------------------------------------
@@ -255,12 +349,13 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 				}
 			}
 
-			$url = $this->get_base_url() . self::API_ENDPOINT;
+			$url     = $this->get_base_url() . self::API_ENDPOINT;
+			$timeout = $this->resolve_timeout( $options );
 
 			$request_args = array(
 				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
-				'timeout' => max( 60, $this->resolve_timeout( $options ) ),
+				'timeout' => max( 60, $timeout ),
 			);
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -280,6 +375,16 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 			if ( $is_streaming && function_exists( 'curl_init' ) ) {
 				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
 				if ( null !== $realtime_cb ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'baseten_request',
+							'Sending real-time streaming request to Baseten via cURL.',
+							array(
+								'model'    => $model,
+								'realtime' => true,
+							)
+						);
+					}
 					return $this->do_realtime_curl_stream( $url, $payload, $model, $timeout, $realtime_cb );
 				}
 			}
@@ -356,6 +461,7 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 			$sse_buffer          = '';
 			$http_status         = 0;
 			$accumulated_content = '';
+			$accumulated_reason  = '';
 			$tool_calls_by_idx   = array();
 			$response_id         = '';
 			$finish_reason       = null;
@@ -381,7 +487,7 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 						}
 						return strlen( $header );
 					},
-					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
 						$sse_buffer .= $data;
 						while ( false !== ( $pos = strpos(
 							$sse_buffer,
@@ -408,9 +514,13 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 							}
 							$choice = isset( $chunk['choices'][0] ) ? $chunk['choices'][0] : array();
 							$delta = isset( $choice['delta'] ) ? $choice['delta'] : array();
-							if ( ! empty( $delta['content'] ) ) {
+							if ( isset( $delta['content'] ) && is_string( $delta['content'] ) && '' !== $delta['content'] ) {
 								$accumulated_content .= $delta['content'];
 								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'content' => $delta['content'] ) ) ) ) );
+							}
+							if ( isset( $delta['reasoning_content'] ) && is_string( $delta['reasoning_content'] ) && '' !== $delta['reasoning_content'] ) {
+								$accumulated_reason .= $delta['reasoning_content'];
+								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'reasoning_content' => $delta['reasoning_content'] ) ) ) ) );
 							}
 							if ( ! empty( $delta['tool_calls'] ) ) {
 								foreach ( $delta['tool_calls'] as $tc ) {
@@ -458,16 +568,44 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 			// phpcs:enable
 
 			if ( $curl_errno ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Baseten real-time streaming failed.',
+						array(
+							'error' => $curl_error,
+							'errno' => $curl_errno,
+						)
+					);
+				}
 				return new WP_Error( 'wp_mcp_ai_http_error', $curl_error ? $curl_error : __( 'cURL streaming request failed.', 'mcp-ai-wpoos' ) );
 			}
 			if ( $http_status >= 400 ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Baseten real-time streaming returned HTTP error.',
+						array( 'code' => $http_status )
+					);
+				}
 				return new WP_Error( 'wp_mcp_ai_api_error', __( 'Baseten returned an error during streaming.', 'mcp-ai-wpoos' ), array( 'status' => $http_status ) );
+			}
+
+			if ( ! $found_done ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'baseten_realtime_stream',
+						'Real-time SSE stream ended without [DONE] sentinel (model may have been interrupted).',
+						array( 'model' => $model )
+					);
+				}
 			}
 
 			$message = array(
 				'role'    => 'assistant',
 				'content' => $accumulated_content,
 			);
+			if ( '' !== $accumulated_reason ) {
+				$message['reasoning_content'] = $accumulated_reason;
+			}
 			if ( ! empty( $tool_calls_by_idx ) ) {
 				ksort( $tool_calls_by_idx );
 				$message['tool_calls'] = array_values( $tool_calls_by_idx );
@@ -489,7 +627,12 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 			if ( ! empty( $model ) ) {
 				$assembled['model'] = $model;
 			}
-			return $assembled;
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'baseten_realtime_stream', 'Real-time streaming response assembled.', array( 'model' => $model ) );
+			}
+
+			return $this->normalize_response( $assembled );
 		}
 
 
@@ -678,6 +821,18 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 				);
 			}
 
+			// Filter orphaned tool messages before sending to Baseten.
+			// Baseten's API is OpenAI-compatible and will reject or silently
+			// mishandle messages where tool messages lack a matching assistant
+			// tool_call. This mirrors the same filtering performed by the
+			// OpenAI, DeepSeek, and Anthropic clients.
+			$messages = $this->filter_tool_messages_for_payload( $messages );
+
+			// Normalise content arrays into strings for compatibility.
+			// The REST layer represents text-only messages as arrays of
+			// segments; collapse them back to strings that Baseten expects.
+			$messages = $this->normalise_messages_for_payload( $messages );
+
 			// Pass through messages unchanged (OpenAI-compatible format).
 			foreach ( $messages as $message ) {
 				if ( ! is_array( $message ) ) {
@@ -695,7 +850,10 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 				$payload['top_p'] = (float) $options['top_p'];
 			}
 
-			if ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
+			// Max tokens — support both naming conventions.
+			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$payload['max_completion_tokens'] = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
 				$payload['max_tokens'] = absint( $options['max_tokens'] );
 			}
 
@@ -707,17 +865,41 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 			// Streaming flag.
 			if ( ! empty( $options['stream'] ) ) {
 				$payload['stream'] = true;
+
+				// Include stream_options so the final chunk carries usage data.
+				// Use caller-provided options when present; otherwise default
+				// to include_usage=true for cost/usage badge display.
+				$payload['stream_options'] = isset( $options['stream_options'] ) && is_array( $options['stream_options'] )
+					? $options['stream_options']
+					: array( 'include_usage' => true );
 			}
 
-			// Tool/function calling — pass through verbatim.
-			// Baseten Model APIs silently ignore tools for models that do not
-			// support them rather than rejecting the request.
+			// Tool/function calling — only for models that support it.
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
-				$payload['tools'] = $options['tools'];
+				if ( $this->model_lacks_tool_calling( $model ) ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'baseten_tools_skipped',
+							sprintf(
+								/* translators: %s: model name */
+								'Tools stripped for Baseten model %s (does not support function calling).',
+								$model
+							),
+							array( 'model' => $model )
+						);
+					}
+				} else {
+					$payload['tools'] = $options['tools'];
 
-				if ( isset( $options['tool_choice'] ) ) {
-					$payload['tool_choice'] = $options['tool_choice'];
+					if ( isset( $options['tool_choice'] ) ) {
+						$payload['tool_choice'] = $options['tool_choice'];
+					}
 				}
+			}
+
+			// Baseten prompt caching: route similar requests to the same server for disk KV cache hits.
+			if ( ! empty( $options['prompt_cache_key'] ) ) {
+				$payload['prompt_cache_key'] = sanitize_text_field( $options['prompt_cache_key'] );
 			}
 
 			/**
@@ -731,6 +913,218 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 			 * @param string $model    Resolved model identifier.
 			 */
 			return apply_filters( 'wp_mcp_ai_baseten_request_payload', $payload, $messages, $options, $model );
+		}
+
+		/**
+		 * Drop tool role messages that are not associated with the most recent
+		 * assistant tool call.
+		 *
+		 * Baseten's API is OpenAI-compatible and requires tool responses to
+		 * immediately follow the assistant message that emitted the corresponding
+		 * tool call. This normaliser filters out any tool messages that no longer
+		 * have a matching pending call so the payload remains valid.
+		 *
+		 * Logic mirrors WP_MCP_AI_DeepSeek_Client::filter_tool_messages_for_payload().
+		 *
+		 * @since 2026.07
+		 *
+		 * @param array $messages Chat history supplied by the caller.
+		 * @return array
+		 */
+		protected function filter_tool_messages_for_payload( array $messages ) {
+			if ( empty( $messages ) ) {
+				return $messages;
+			}
+
+			$filtered                = array();
+			$pending_calls           = array();
+			$awaiting_tool_responses = false;
+			$incomplete_group_start  = null;
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+				if ( '' === $role ) {
+					continue;
+				}
+
+				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'baseten_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before user/system message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+					$filtered[]              = $message;
+					continue;
+				}
+
+				if ( 'assistant' === $role ) {
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'baseten_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before next assistant message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						foreach ( $message['tool_calls'] as $tool_call ) {
+							if ( ! is_array( $tool_call ) ) {
+								continue;
+							}
+
+							$call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
+							if ( '' === $call_id ) {
+								continue;
+							}
+
+							$pending_calls[ $call_id ] = true;
+						}
+					}
+
+					if ( ! empty( $pending_calls ) ) {
+						$awaiting_tool_responses = true;
+						$incomplete_group_start  = count( $filtered );
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				if ( 'tool' === $role ) {
+					$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
+
+					if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'baseten_dropped_orphan_tool_message',
+								'Dropping tool message without matching tool call before Baseten request.',
+								array(
+									'tool_call_id' => $tool_call_id,
+									'reason'       => '' === $tool_call_id
+										? 'missing_tool_call_id'
+										: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+								)
+							);
+						}
+
+						continue;
+					}
+
+					unset( $pending_calls[ $tool_call_id ] );
+
+					if ( empty( $pending_calls ) ) {
+						$awaiting_tool_responses = false;
+						$incomplete_group_start  = null;
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				$pending_calls           = array();
+				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
+				$filtered[]              = $message;
+			}
+
+			return array_values( $filtered );
+		}
+
+		/**
+		 * Prepare chat messages for the Baseten Chat Completions payload.
+		 *
+		 * The REST layer represents text-only messages as arrays of segments so
+		 * attachments and tool calls can be normalised consistently. Some Baseten
+		 * models may only accept plain strings for the `content` field.
+		 * To remain compatible we collapse text-only segment arrays back into
+		 * strings while preserving multimodal payloads that rely on structured
+		 * segments.
+		 *
+		 * Logic mirrors WP_MCP_AI_DeepSeek_Client::normalise_messages_for_payload().
+		 *
+		 * @since 2026.07
+		 *
+		 * @param array $messages Sanitised chat messages.
+		 * @return array
+		 */
+		protected function normalise_messages_for_payload( array $messages ) {
+			$normalised = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					$normalised[] = $message;
+					continue;
+				}
+
+				$segments = array_values( $message['content'] );
+
+				if ( empty( $segments ) ) {
+					$message['content'] = '';
+					$normalised[]       = $message;
+					continue;
+				}
+
+				$all_text   = true;
+				$text_parts = array();
+
+				foreach ( $segments as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$all_text = false;
+						break;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'text' !== $type ) {
+						$all_text = false;
+						break;
+					}
+
+					$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+				}
+
+				if ( $all_text ) {
+					$text_parts         = array_filter(
+						$text_parts,
+						static function ( $part ) {
+							return '' !== trim( $part );
+						}
+					);
+					$message['content'] = implode( "\n\n", $text_parts );
+				} else {
+					$message['content'] = $segments;
+				}
+
+				$normalised[] = $message;
+			}
+
+			return $normalised;
 		}
 
 		/**
@@ -799,11 +1193,26 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 			$message = isset( $choice['message'] ) ? $choice['message'] : array();
 			$content = isset( $message['content'] ) ? $message['content'] : '';
 
+			$raw_usage = isset( $decoded['usage'] ) ? $decoded['usage'] : array();
+			// Extract prompt cache metrics when available.
+			if ( isset( $raw_usage['prompt_cache_hit_tokens'] ) ) {
+				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_cache_hit_tokens'];
+			} elseif ( isset( $raw_usage['prompt_tokens_details']['cached_tokens'] ) ) {
+				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_tokens_details']['cached_tokens'];
+			}
+
 			$normalized = array(
+				'choices'       => array(
+					array(
+						'message'       => $message,
+						'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
+					),
+				),
 				'content'       => $content,
 				'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
 				'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',
-				'usage'         => isset( $decoded['usage'] ) ? $decoded['usage'] : array(),
+				'provider'      => 'baseten',
+				'usage'         => $raw_usage,
 				'raw'           => $decoded,
 			);
 

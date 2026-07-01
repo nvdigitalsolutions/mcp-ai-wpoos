@@ -346,6 +346,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'client.zai',
+			function () {
+				return new WP_MCP_AI_ZAI_Client();
+			}
+		);
+
 		// Core managers.
 		$this->singleton(
 			'router',
@@ -363,7 +370,9 @@ class WP_MCP_AI_Container {
 					$container->get( 'client.deepseek' ),
 					$container->get( 'client.openrouter' ),
 					$container->get( 'client.digitalocean' ),
-					$container->get( 'client.kimi' )
+					$container->get( 'client.kimi' ),
+				$container->get( 'client.baseten' ),
+				$container->get( 'client.zai' )
 				);
 			}
 		);

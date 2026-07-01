@@ -226,9 +226,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'fields'           => array(
 						'kimi_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Provides access to Kimi K2.5/K2.6 models with 256K context windows and multimodal capabilities.', 'mcp-ai-wpoos' ),
+					'description'      => __( 'Provides access to Kimi K2.6/K2.7 Code models with 256K context windows, tool calling, and multimodal capabilities.', 'mcp-ai-wpoos' ),
 					'usage'            => __( 'Add your Moonshot AI API key to use Kimi as a provider.', 'mcp-ai-wpoos' ),
-					'docs_url'         => 'https://platform.moonshot.cn/',
+					'docs_url'         => 'https://platform.moonshot.ai/',
+				),
+				'zai'              => array(
+					'label'            => __( 'Z.AI (GLM)', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'zai_api_key' ),
+					'fields'           => array(
+						'zai_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Provides access to GLM-5.2/GLM-5 models with up to 1M context windows, tool calling, thinking mode, and coding agent capabilities.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Add your Z.AI API key to use GLM models as a provider.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://docs.z.ai/',
 				),
 				'ollama'           => array(
 					'label'            => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
@@ -1153,6 +1163,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'cloudflare'   => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
 				'huggingface'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 				'baseten'      => __( 'Baseten', 'mcp-ai-wpoos' ),
+				'zai'          => __( 'Z.AI (GLM)', 'mcp-ai-wpoos' ),
 				'embedded'     => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
 			);
 		}
