@@ -1097,6 +1097,15 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 				$client = new WP_MCP_AI_Shopify_Client( $this->connection_id );
 
+				// Catalog API connections cannot run inventory syncs -
+				// they only support product search, not Admin GraphQL.
+				if ( 'catalog_api' === $client->get_api_mode() ) {
+					return new WP_Error(
+						'wp_mcp_ai_shopify_sync_catalog_only',
+						__( 'This connection is configured for Shopify Catalog API only. Inventory sync requires Shopify Admin API. Please switch the connection mode to Admin API in Remote Sites settings and provide a store URL and Admin API access token.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+
 				// Shopify Bulk Operation query — export all products with variants and inventory.
 				$bulk_query = '{
 						products {
@@ -1260,6 +1269,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			}
 
 			$client = new WP_MCP_AI_Shopify_Client( $this->connection_id );
+
+			if ( 'catalog_api' === $client->get_api_mode() ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_catalog_only',
+					__( 'This connection is configured for Shopify Catalog API only. Inventory sync requires Shopify Admin API.', 'mcp-ai-wpoos-pro' )
+				);
+			}
 
 			$product_result = $client->get_product( $product_gid );
 
