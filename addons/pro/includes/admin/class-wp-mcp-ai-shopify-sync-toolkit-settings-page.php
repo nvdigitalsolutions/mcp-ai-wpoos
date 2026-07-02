@@ -326,9 +326,10 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 		// Gather all available Shopify connections from Remote Sites.
 		$available_connections = array();
 		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $conn ) {
-				if ( isset( $conn['connection_type'] ) && 'shopify' === $conn['connection_type'] && ! empty( $conn['enabled'] ) ) {
-					$available_connections[] = $conn;
+			foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $conn_id => $conn ) {
+				$conn_type = isset( $conn['connection_type'] ) ? sanitize_key( $conn['connection_type'] ) : '';
+				if ( 'shopify' === $conn_type || 'shopify_catalog' === $conn_type ) {
+					$available_connections[ $conn_id ] = $conn;
 				}
 			}
 		}
@@ -345,12 +346,16 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 
 			<h3><?php esc_html_e( 'Connections to Sync', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<p class="description"><?php esc_html_e( 'Select which Shopify connections to synchronize. Each connection will have its own CCT cache and sync schedule.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php if ( ! empty( $available_connections ) ) : ?>
 			<table class="form-table">
 				<?php foreach ( $available_connections as $conn ) : ?>
 				<tr>
 					<th scope="row">
 						<label for="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>">
 							<?php echo esc_html( isset( $conn['name'] ) ? $conn['name'] : $conn['id'] ); ?>
+							<?php if ( empty( $conn['enabled'] ) ) : ?>
+							<span style="color: #999;">— <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php endif; ?>
 						</label>
 					</th>
 					<td>
@@ -374,6 +379,11 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				</tr>
 				<?php endforeach; ?>
 			</table>
+			<?php else : ?>
+				<div class="notice notice-warning inline">
+					<p><?php esc_html_e( 'No Shopify connections are available for sync. Configure a Shopify connection in NV oOS → Remote Sites, then return here to enable sync.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+			<?php endif; ?>
 
 			<h3><?php esc_html_e( 'Sync Settings', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<table class="form-table">

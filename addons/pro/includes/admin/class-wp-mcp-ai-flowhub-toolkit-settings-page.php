@@ -407,9 +407,10 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 		// Gather all available FlowHub connections from Remote Sites.
 		$available_connections = array();
 		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $conn ) {
-				if ( isset( $conn['connection_type'] ) && 'flowhub' === $conn['connection_type'] && ! empty( $conn['enabled'] ) ) {
-					$available_connections[] = $conn;
+			foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $conn_id => $conn ) {
+				$conn_type = isset( $conn['connection_type'] ) ? sanitize_key( $conn['connection_type'] ) : '';
+				if ( 'flowhub' === $conn_type || 'flowhub_pos' === $conn_type ) {
+					$available_connections[ $conn_id ] = $conn;
 				}
 			}
 		}
@@ -424,15 +425,18 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 				</div>
 			<?php endif; ?>
 
+			<h3><?php esc_html_e( 'Connections to Sync', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Select which FlowHub connections to synchronize. Each connection will have its own CCT cache and sync schedule.', 'mcp-ai-wpoos-pro' ); ?></p>
 			<?php if ( ! empty( $available_connections ) ) : ?>
-				<h3><?php esc_html_e( 'Connections to Sync', 'mcp-ai-wpoos-pro' ); ?></h3>
-				<p class="description"><?php esc_html_e( 'Select which FlowHub connections to synchronize. Each connection will have its own CCT cache and sync schedule.', 'mcp-ai-wpoos-pro' ); ?></p>
 				<table class="form-table">
 					<?php foreach ( $available_connections as $conn ) : ?>
 					<tr>
 						<th scope="row">
 							<label for="sync_conn_<?php echo esc_attr( $conn['id'] ); ?>">
 								<?php echo esc_html( isset( $conn['name'] ) ? $conn['name'] : $conn['id'] ); ?>
+								<?php if ( empty( $conn['enabled'] ) ) : ?>
+								<span style="color: #999;">— <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php endif; ?>
 							</label>
 						</th>
 						<td>
@@ -456,6 +460,10 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 					</tr>
 					<?php endforeach; ?>
 				</table>
+			<?php else : ?>
+				<div class="notice notice-warning inline">
+					<p><?php esc_html_e( 'No FlowHub connections are available for sync. Configure a FlowHub connection in NV oOS → Remote Sites, then return here to enable sync.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
 			<?php endif; ?>
 
 			<h2><?php esc_html_e( 'FlowHub API Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
