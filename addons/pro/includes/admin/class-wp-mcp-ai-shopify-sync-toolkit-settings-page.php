@@ -413,8 +413,33 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 							?>
 						</select>
 						<p class="description"><?php esc_html_e( 'How often to run the full sync from Shopify (uses Bulk Operations at 10 GraphQL pts each). Webhooks provide real-time updates between syncs at zero cost.', 'mcp-ai-wpoos-pro' ); ?></p>
-					</td>
-				</tr>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="shopify_sync_mode"><?php esc_html_e( 'Sync Mode', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<select name="shopify_sync_mode" id="shopify_sync_mode">
+									<?php
+									$current_mode = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
+									$modes = array(
+										'full'    => __( 'Full — all product data (images, prices, tags, vendor, all inventory levels)', 'mcp-ai-wpoos-pro' ),
+										'minimal' => __( 'Minimal — title, SKU, and stock levels only (faster sync, lower cost)', 'mcp-ai-wpoos-pro' ),
+									);
+									foreach ( $modes as $value => $label ) {
+										printf(
+											'<option value="%s" %s>%s</option>',
+											esc_attr( $value ),
+											selected( $current_mode, $value, false ),
+											esc_html( $label )
+										);
+									}
+									?>
+								</select>
+								<p class="description"><?php esc_html_e( 'Full sync pulls all product fields and variant data. Minimal sync only pulls title, SKU, and available stock quantities — ideal for inventory-only use cases with lower GraphQL cost and faster sync times.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
 				<tr>
 					<th scope="row">
 						<label for="shopify_sync_direction"><?php esc_html_e( 'Sync Direction', 'mcp-ai-wpoos-pro' ); ?></label>
@@ -537,6 +562,12 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 		// Sync direction.
 		if ( isset( $_POST['shopify_sync_direction'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$sanitized['sync_direction'] = sanitize_key( wp_unslash( $_POST['shopify_sync_direction'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+
+		// Sync mode (full or minimal).
+		if ( isset( $_POST['shopify_sync_mode'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$mode = sanitize_key( wp_unslash( $_POST['shopify_sync_mode'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['sync_mode'] = in_array( $mode, array( 'full', 'minimal' ), true ) ? $mode : 'full';
 		}
 
 		// WooCommerce sync toggle.

@@ -1575,57 +1575,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			}
 
 				// Shopify Bulk Operation query — export all products with variants and inventory.
-				$bulk_query = '{
-						products {
-							edges {
-								node {
-									id
-									title
-									handle
-									status
-									vendor
-									productType
-									tags
-									updatedAt
-									images(first: 1) {
-										edges {
-											node {
-												url
-											}
-										}
-									}
-									variants {
-										edges {
-											node {
-												id
-												title
-												sku
-												price
-												compareAtPrice
-												inventoryItem {
-													id
-												}
-												inventoryLevels {
-													edges {
-														node {
-															quantities(names: ["available", "on_hand", "incoming", "reserved"]) {
-																name
-																quantity
-															}
-															location {
-																id
-																name
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}';
+				// When sync_mode is 'minimal', only requests title, SKU, and stock levels.
+				$settings   = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
+				$sync_mode  = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
+				$bulk_query = $this->build_bulk_query( $sync_mode );
 
 				$bulk_result = $client->bulk_query( $bulk_query, true );
 
@@ -1635,6 +1588,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 				$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
 				$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
+				if ( empty( $mapping ) ) {
+					$sync_mode = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
+					$mapping   = $this->get_default_field_mapping( $sync_mode );
+				}
 
 				$items = isset( $bulk_result['items'] ) ? $bulk_result['items'] : array();
 
@@ -1809,6 +1766,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
 			$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
+			if ( empty( $mapping ) ) {
+				$sync_mode = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
+				$mapping   = $this->get_default_field_mapping( $sync_mode );
+			}
 
 			// Map the single product to CCT rows (one per variant per location).
 			$rows   = $this->map_graphql_product_to_cct_rows( $product_data, $mapping );
@@ -1833,14 +1794,123 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		// ------------------------------------------------------------------ //
 
 		/**
+		 * Build the Shopify Bulk Operation GraphQL query.
+		 *
+		 * When sync_mode is 'minimal', only requests title, SKU, and
+		 * available stock levels — dramatically reducing the data payload
+		 * and GraphQL processing time.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param string $sync_mode 'full' or 'minimal'.
+		 * @return string GraphQL query.
+		 */
+		protected function build_bulk_query( $sync_mode = 'full' ) {
+			if ( 'minimal' === $sync_mode ) {
+				return '{
+					products {
+						edges {
+							node {
+								id
+								title
+								updatedAt
+								variants {
+									edges {
+										node {
+											id
+											sku
+											inventoryItem {
+												id
+											}
+											inventoryLevels {
+												edges {
+													node {
+														quantities(names: ["available", "on_hand"]) {
+															name
+															quantity
+														}
+														location {
+															id
+															name
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}';
+			}
+
+			// Full sync: all product and variant fields.
+			return '{
+				products {
+					edges {
+						node {
+							id
+							title
+							handle
+							status
+							vendor
+							productType
+							tags
+							updatedAt
+							images(first: 1) {
+								edges {
+									node {
+										url
+									}
+								}
+							}
+							variants {
+								edges {
+									node {
+										id
+										title
+										sku
+										price
+										compareAtPrice
+										inventoryItem {
+											id
+										}
+										inventoryLevels {
+											edges {
+												node {
+													quantities(names: ["available", "on_hand", "incoming", "reserved"]) {
+														name
+														quantity
+													}
+													location {
+														id
+														name
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}';
+		}
+
+		/**
 		 * Get the default field mapping from Shopify GraphQL fields to CCT columns.
+		 *
+		 * When sync_mode is 'minimal', only maps title, SKU, and stock fields.
 		 *
 		 * @since 1.3.0
 		 *
+		 * @param string $sync_mode Optional. 'full' or 'minimal'.
 		 * @return array
 		 */
-		public function get_default_field_mapping() {
-			return array(
+		public function get_default_field_mapping( $sync_mode = 'full' ) {
+			$full_mapping = array(
 				'shopify_product_id' => 'id',
 				'shopify_variant_id' => 'variant_id',
 				'inventory_item_id'  => 'inventory_item_id',
@@ -1863,6 +1933,23 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				'handle'             => 'handle',
 				'shopify_updated_at' => 'updatedAt',
 			);
+
+			if ( 'minimal' === $sync_mode ) {
+				return array(
+					'shopify_product_id' => 'id',
+					'shopify_variant_id' => 'variant_id',
+					'inventory_item_id'  => 'inventory_item_id',
+					'sku'                => 'sku',
+					'product_title'      => 'title',
+					'location_id'        => 'location_id',
+					'location_name'      => 'location_name',
+					'available_qty'      => 'available_qty',
+					'on_hand_qty'        => 'on_hand_qty',
+					'shopify_updated_at' => 'updatedAt',
+				);
+			}
+
+			return $full_mapping;
 		}
 
 		/**
