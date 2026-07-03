@@ -572,6 +572,125 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 	}
 
 	/**
+	 * Render the Sync Log tab.
+	 *
+	 * @since 1.9.1
+	 */
+	protected function render_sync_log_tab() {
+		$settings         = get_option( $this->option_name, array() );
+		$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
+
+		?>
+		<div class="toolkit-sync-log">
+			<h2><?php esc_html_e( 'Sync Log & Diagnostics', 'mcp-ai-wpoos-pro' ); ?></h2>
+
+			<?php if ( ! empty( $sync_connections ) ) : ?>
+				<h3><?php esc_html_e( 'Connection Status', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<table class="widefat fixed striped" style="max-width: 900px;">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Last Sync', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'CCT Rows', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Fresh', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Last Error', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php
+						foreach ( $sync_connections as $conn_id ) {
+							if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
+								require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-sync-cct-manager.php';
+							}
+							$cct_manager = new WP_MCP_AI_Shopify_Sync_CCT_Manager( $conn_id );
+							$last_sync   = $cct_manager->get_last_sync_time();
+							$row_count   = $cct_manager->get_row_count();
+							$is_fresh    = $cct_manager->is_fresh();
+							$last_error  = get_option( 'wp_mcp_ai_shopify_last_sync_error_' . $conn_id, '' );
+
+							$conn_name = $conn_id;
+							if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+								$conn_data = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $conn_id );
+								if ( $conn_data && ! empty( $conn_data['name'] ) ) {
+									$conn_name = $conn_data['name'];
+								}
+							}
+							?>
+							<tr>
+								<td><?php echo esc_html( $conn_name ); ?></td>
+								<td><?php echo esc_html( ! empty( $last_sync ) ? $last_sync : __( 'Never', 'mcp-ai-wpoos-pro' ) ); ?></td>
+								<td><?php echo esc_html( (string) $row_count ); ?></td>
+								<td><?php echo $is_fresh ? '<span style="color:green;">&#10004; ' . esc_html__( 'Fresh', 'mcp-ai-wpoos-pro' ) . '</span>' : '<span style="color:orange;">&#9888; ' . esc_html__( 'Stale', 'mcp-ai-wpoos-pro' ) . '</span>'; ?></td>
+								<td><?php echo esc_html( ! empty( $last_error ) ? $last_error : __( 'None', 'mcp-ai-wpoos-pro' ) ); ?></td>
+							</tr>
+							<?php
+						}
+						?>
+					</tbody>
+				</table>
+			<?php else : ?>
+				<p><?php esc_html_e( 'No connections configured for sync.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php endif; ?>
+
+			<?php
+			// Sync Run History from Sync Log Manager — merge shopify_sync and shopify_wc runs.
+			$sync_runs = array();
+			if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+				$sync_runs = WP_MCP_AI_Sync_Log_Manager::get_runs( 'shopify_sync', 10 );
+				$wc_runs   = WP_MCP_AI_Sync_Log_Manager::get_runs( 'shopify_wc', 10 );
+				$sync_runs = array_merge( $sync_runs, $wc_runs );
+
+				// Sort by started_at descending.
+				usort(
+					$sync_runs,
+					function ( $a, $b ) {
+						return strcmp(
+							isset( $b['started_at'] ) ? $b['started_at'] : '',
+							isset( $a['started_at'] ) ? $a['started_at'] : ''
+						);
+					}
+				);
+				$sync_runs = array_slice( $sync_runs, 0, 10 );
+			}
+			?>
+
+			<?php if ( ! empty( $sync_runs ) ) : ?>
+				<h3><?php esc_html_e( 'Recent Sync Runs', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<table class="widefat fixed striped" style="max-width: 900px;">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Started', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Duration', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Items', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Errors', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Dry Run', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $sync_runs as $run ) : ?>
+							<?php
+							$status_class = 'completed' === $run['status'] ? 'color:green;' : ( 'failed' === $run['status'] ? 'color:red;' : '' );
+							?>
+							<tr>
+								<td><?php echo esc_html( isset( $run['started_at'] ) ? $run['started_at'] : '' ); ?></td>
+								<td style="<?php echo esc_attr( $status_class ); ?>"><?php echo esc_html( ucfirst( $run['status'] ) ); ?></td>
+								<td><?php echo esc_html( isset( $run['duration_secs'] ) ? $run['duration_secs'] . 's' : '' ); ?></td>
+								<td><?php echo esc_html( isset( $run['items_total'] ) ? $run['items_total'] : 0 ); ?></td>
+								<td><?php echo esc_html( isset( $run['items_errored'] ) ? $run['items_errored'] : 0 ); ?></td>
+								<td><?php echo ! empty( $run['dry_run'] ) ? '&#10004;' : '&#10008;'; ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php else : ?>
+				<p><?php esc_html_e( 'No sync runs recorded yet.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Handle the "Sync Now" admin-post action.
 	 *
 	 * Runs a full Shopify sync for the given connection and

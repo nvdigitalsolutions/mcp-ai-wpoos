@@ -994,9 +994,10 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		 * @param string|null $connection_id Remote Sites connection ID.
 		 * @param bool        $dry_run       If true, skip CCT writes and only validate
 		 *                                   the API query + count items. Default false.
+		 * @param string      $run_id        Optional sync log run ID for per-item logging.
 		 * @return array|WP_Error Sync result with item_count, error_count, duration.
 		 */
-		public function sync_from_api( $full = true, $connection_id = null, $dry_run = false ) {
+		public function sync_from_api( $full = true, $connection_id = null, $dry_run = false, $run_id = '' ) {
 			unset( $full ); // Reserved for future differential sync support.
 
 			// Resolve connection ID: parameter takes precedence over instance property.
@@ -1148,6 +1149,8 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 
 			$item_count  = 0;
 			$error_count = 0;
+			$inserted    = 0;
+			$updated     = 0;
 
 			foreach ( $items as $item ) {
 				if ( ! is_array( $item ) ) {
@@ -1158,14 +1161,66 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 
 				if ( $dry_run ) {
 					++$item_count;
+
+					// Log each item in dry-run mode.
+					if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						$item_sku  = isset( $mapped['sku'] ) ? $mapped['sku'] : '';
+						$item_name = isset( $mapped['name'] ) ? $mapped['name'] : '';
+						$existing  = $this->get_cached_item_by_sku(
+							$item_sku,
+							isset( $mapped['warehouse'] ) ? $mapped['warehouse'] : ''
+						);
+						$operation = ! empty( $existing ) ? 'would_update' : 'would_insert';
+						WP_MCP_AI_Sync_Log_Manager::log_item(
+							'ezuite',
+							$run_id,
+							$operation,
+							$item_sku,
+							array(
+								'name'      => $item_name,
+								'quantity'  => isset( $mapped['quantity'] ) ? $mapped['quantity'] : '',
+								'warehouse' => isset( $mapped['warehouse'] ) ? $mapped['warehouse'] : '',
+							)
+						);
+					}
 					continue;
 				}
 
 				$result = $this->upsert( $mapped );
 				if ( is_wp_error( $result ) ) {
 					++$error_count;
+
+					// Log error item.
+					if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						WP_MCP_AI_Sync_Log_Manager::log_item(
+							'ezuite',
+							$run_id,
+							'error',
+							isset( $mapped['sku'] ) ? $mapped['sku'] : '',
+							array(
+								'name'  => isset( $mapped['name'] ) ? $mapped['name'] : '',
+								'error' => $result->get_error_message(),
+							)
+						);
+					}
 				} else {
 					++$item_count;
+
+					// Upsert returns the CCT item ID. Since we can't retroactively
+					// determine insert vs update from an integer, log as 'upsert'.
+					if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						WP_MCP_AI_Sync_Log_Manager::log_item(
+							'ezuite',
+							$run_id,
+							'upsert',
+							isset( $mapped['sku'] ) ? $mapped['sku'] : '',
+							array(
+								'name'      => isset( $mapped['name'] ) ? $mapped['name'] : '',
+								'quantity'  => isset( $mapped['quantity'] ) ? $mapped['quantity'] : '',
+								'warehouse' => isset( $mapped['warehouse'] ) ? $mapped['warehouse'] : '',
+							)
+						);
+					}
 				}
 			}
 

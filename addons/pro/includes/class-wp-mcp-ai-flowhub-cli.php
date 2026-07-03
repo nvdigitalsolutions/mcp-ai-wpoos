@@ -434,6 +434,76 @@ class WP_MCP_AI_FlowHub_CLI {
 
 		WP_CLI::log( sprintf( 'Total: %d out of stock, %d low stock, %d total items analyzed.', count( $out_items ), count( $low_items ), count( $items ) ) );
 	}
+
+	/**
+	 * Display recent sync runs from the Sync Log Manager.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--limit=<n>]
+	 * : Number of runs to show. Default: 10.
+	 *
+	 * [--format=<format>]
+	 * : Output format: table, json, csv. Default: table.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp flowhub sync-log
+	 *     wp flowhub sync-log --limit=5 --format=json
+	 *
+	 * @subcommand sync-log
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 */
+	public function sync_log( $args, $assoc_args ) {
+		$limit  = isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 10;
+		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
+
+		if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+			WP_CLI::error( 'Sync Log Manager is not available.' );
+			return;
+		}
+
+		// Merge runs from both flowhub and flowhub_wc.
+		$runs    = WP_MCP_AI_Sync_Log_Manager::get_runs( 'flowhub', $limit );
+		$wc_runs = WP_MCP_AI_Sync_Log_Manager::get_runs( 'flowhub_wc', $limit );
+		$runs    = array_merge( $runs, $wc_runs );
+
+		// Sort by started_at descending.
+		usort(
+			$runs,
+			function ( $a, $b ) {
+				return strcmp(
+					isset( $b['started_at'] ) ? $b['started_at'] : '',
+					isset( $a['started_at'] ) ? $a['started_at'] : ''
+				);
+			}
+		);
+		$runs = array_slice( $runs, 0, $limit );
+
+		if ( empty( $runs ) ) {
+			WP_CLI::success( 'No sync runs recorded yet.' );
+			return;
+		}
+
+		$items = array();
+		foreach ( $runs as $run ) {
+			$items[] = array(
+				'Run ID'   => isset( $run['run_id'] ) ? $run['run_id'] : '',
+				'Started'  => isset( $run['started_at'] ) ? $run['started_at'] : '',
+				'Status'   => isset( $run['status'] ) ? $run['status'] : '',
+				'Duration' => isset( $run['duration_secs'] ) ? $run['duration_secs'] . 's' : '',
+				'Items'    => isset( $run['items_total'] ) ? $run['items_total'] : 0,
+				'Inserted' => isset( $run['items_inserted'] ) ? $run['items_inserted'] : 0,
+				'Updated'  => isset( $run['items_updated'] ) ? $run['items_updated'] : 0,
+				'Skipped'  => isset( $run['items_skipped'] ) ? $run['items_skipped'] : 0,
+				'Errors'   => isset( $run['items_errored'] ) ? $run['items_errored'] : 0,
+				'Dry Run'  => ! empty( $run['dry_run'] ) ? 'Yes' : 'No',
+			);
+		}
+
+		\WP_CLI\Utils\format_items( $format, $items, array( 'Run ID', 'Started', 'Status', 'Duration', 'Items', 'Inserted', 'Updated', 'Skipped', 'Errors', 'Dry Run' ) );
+	}
 }
 
 // Register commands.
@@ -444,4 +514,5 @@ if ( class_exists( 'WP_CLI' ) ) {
 	WP_CLI::add_command( 'flowhub test-connection', array( 'WP_MCP_AI_FlowHub_CLI', 'test_connection' ) );
 	WP_CLI::add_command( 'flowhub compliance-report', array( 'WP_MCP_AI_FlowHub_CLI', 'compliance_report' ) );
 	WP_CLI::add_command( 'flowhub low-stock-report', array( 'WP_MCP_AI_FlowHub_CLI', 'low_stock_report' ) );
+	WP_CLI::add_command( 'flowhub sync-log', array( 'WP_MCP_AI_FlowHub_CLI', 'sync_log' ) );
 }

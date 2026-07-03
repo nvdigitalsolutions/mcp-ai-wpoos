@@ -38,6 +38,12 @@ if ( wp_mcp_ai_is_ezuite_toolkit_enabled()
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-ezuite-cct-manager.php';
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-ezuite-sync-engine.php';
 
+	// Load shared Sync Log Manager (provides persistent audit trail for all toolkits).
+	if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-sync-log-manager.php';
+	}
+	WP_MCP_AI_Sync_Log_Manager::init();
+
 	// Bootstrap CCT auto-registration on init.
 	WP_MCP_AI_EZuite_CCT_Manager::bootstrap();
 

@@ -721,15 +721,56 @@ class WP_MCP_AI_EZuite_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_
 						<td><?php echo esc_html( sprintf( '%d low, %d out of stock', $low_count, $out_count ) ); ?></td>
 					</tr>
 					<?php if ( ! empty( $last_error ) ) : ?>
-					<tr>
-						<th><?php esc_html_e( 'Last Error', 'mcp-ai-wpoos-pro' ); ?></th>
-						<td style="color:red;"><?php echo esc_html( $last_error ); ?></td>
-					</tr>
+						<tr>
+							<th><?php esc_html_e( 'Last Error', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td style="color:red;"><?php echo esc_html( $last_error ); ?></td>
+						</tr>
 					<?php endif; ?>
-				</tbody>
-			</table>
+					</tbody>
+				</table>
 
-			<?php if ( ! empty( $recent_activity ) ) : ?>
+				<?php
+				// Sync Run History from Sync Log Manager.
+				$sync_runs = array();
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+					$sync_runs = WP_MCP_AI_Sync_Log_Manager::get_runs( 'ezuite', 10 );
+				}
+				?>
+
+				<?php if ( ! empty( $sync_runs ) ) : ?>
+					<h3><?php esc_html_e( 'Recent Sync Runs', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<table class="widefat fixed striped" style="max-width: 900px;">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Started', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Duration', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Items', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Errors', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Dry Run', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $sync_runs as $run ) : ?>
+								<?php
+								$status_class = 'completed' === $run['status'] ? 'color:green;' : ( 'failed' === $run['status'] ? 'color:red;' : '' );
+								?>
+								<tr>
+									<td><?php echo esc_html( isset( $run['started_at'] ) ? $run['started_at'] : '' ); ?></td>
+									<td style="<?php echo esc_attr( $status_class ); ?>"><?php echo esc_html( ucfirst( $run['status'] ) ); ?></td>
+									<td><?php echo esc_html( isset( $run['duration_secs'] ) ? $run['duration_secs'] . 's' : '' ); ?></td>
+									<td><?php echo esc_html( isset( $run['items_total'] ) ? $run['items_total'] : 0 ); ?></td>
+									<td><?php echo esc_html( isset( $run['items_errored'] ) ? $run['items_errored'] : 0 ); ?></td>
+									<td><?php echo ! empty( $run['dry_run'] ) ? '&#10004;' : '&#10008;'; ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php else : ?>
+					<p><?php esc_html_e( 'No sync runs recorded yet.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<?php endif; ?>
+
+				<?php if ( ! empty( $recent_activity ) ) : ?>
 				<h3><?php esc_html_e( 'Recent Activity', 'mcp-ai-wpoos-pro' ); ?></h3>
 				<table class="widefat fixed striped" style="max-width: 800px;">
 					<thead>

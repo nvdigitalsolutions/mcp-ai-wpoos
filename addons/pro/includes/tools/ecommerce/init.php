@@ -16,6 +16,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load shared Sync Log Manager (provides persistent audit trail for all toolkits).
+if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-sync-log-manager.php';
+}
+WP_MCP_AI_Sync_Log_Manager::init();
+
 /**
  * Check if e-commerce toolkit is enabled.
  *
