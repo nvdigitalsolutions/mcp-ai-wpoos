@@ -1819,6 +1819,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 										node {
 											id
 											sku
+											price
 											inventoryItem {
 												id
 											}
@@ -1941,6 +1942,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 					'inventory_item_id'  => 'inventory_item_id',
 					'sku'                => 'sku',
 					'product_title'      => 'title',
+					'price'              => 'price',
 					'location_id'        => 'location_id',
 					'location_name'      => 'location_name',
 					'available_qty'      => 'available_qty',
