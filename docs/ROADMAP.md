@@ -1,20 +1,20 @@
 # NV oOS Roadmap
 
-**Last Updated:** June 29, 2026
-**Version:** 1.1.35
+**Last Updated:** July 4, 2026
+**Version:** 1.1.36
 
 ---
 
-## Current Capability Snapshot (v1.1.35)
+## Current Capability Snapshot (v1.1.36)
 
 | Dimension | Count |
 |-----------|-------|
 | **Base tools** | ~195 (live registry authoritative) |
-| **Pro tools** | ~810+ (live registry authoritative) |
-| **Total tools** | ~1,005+ |
-| **AI providers** | 13 (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama) |
+| **Pro tools** | ~830+ (live registry authoritative) |
+| **Total tools** | ~1,025+ |
+| **AI providers** | 15 (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Moonshot/Kimi parity, Z.AI/GLM parity) |
 | **Voice/realtime providers** | 2 (OpenAI Realtime, Gemini Live) |
-| **Active Pro toolkits** | 21+ |
+| **Active Pro toolkits** | 22+ |
 | **Addons** | 23 |
 | **OOS cross-platform extraction** | Phase 3 at ~22% (43/195 base tools migrated; Pro tools pending) |
 | **OOS platform adapters** | WordPress ✅, Laravel (planned), Craft CMS (planned) |
@@ -36,6 +36,30 @@
 3. **Open Standards** — MCP protocol compliance, extensible architecture
 4. **Community Driven** — Open source with transparent development
 5. **Production Ready** — Enterprise reliability with community accessibility
+
+---
+
+## Released: v1.1.36 — July 2026 ✅
+
+**Release Date:** July 4, 2026
+
+### What was delivered in v1.1.36
+
+- ✅ **EZuite Inventory Sync Pro Toolkit.** ERP-integrated inventory sync toolkit: product pull, inventory query, item create/update, ERP settings, CLI sync commands. Admin UI with connection selector on Features tab.
+- ✅ **Ralph Loop CCT Migration & Orchestration.** Circuit breaker pattern, execution logger, and CCT migration tools for safe cross-environment data operations.
+- ✅ **JetBooking/JetAppointment Integration (8 tools).** Adapter layer for Crocoblock booking/appointment plugins. 8 new tools + 4 enhanced calendar tools.
+- ✅ **Moonshot AI (Kimi) & Z.AI (GLM) Provider Parity.** Both providers brought to DeepSeek-level chat client capabilities. ZAI client + baseten service registered in DI container. Class loader updated.
+- ✅ **Unified Sync Log Manager.** Per-item audit trail with sync history, error tracking, and status dashboards across EZuite, FlowHub, and Shopify toolkits.
+- ✅ **Tool Presets Auto-Select & Chips Bar.** Selected tools display as clickable chips with +N overflow toggle. Tool payload cap raised from 50 to 100.
+- ✅ **HTTrack Cache Support & Place-to-Service Bridge.** HTML mirror import now supports HTTrack cache directories. Place-to-Service bridge auto-creates bookable services during batch import. URL backfill for mirrors without hts-cache.
+- ✅ **FlowHub Per-Connection Overview.** Remote Sites connection selector, per-connection sync controls, proxy support via http_api_curl hook.
+- ✅ **Generate Default Mapping + Read-Only Sync.** One-click default mapping buttons and read-only sync direction for EZuite & FlowHub toolkits.
+- ✅ **Web Search 429 Retry.** Exponential backoff for rate-limited search requests.
+- ✅ **wp_mcp_ai_log Global Helper.** Centralized logging function available globally.
+- ✅ **JetEngine CCT Support for Remote WP Connections.** Remote WordPress connections can now query and manage JetEngine CCT records.
+- ✅ **45+ Bug Fixes.** CCT module API mismatches (canonical Module.instance/Factory/ItemHandler across all toolkits). EZuite sync (missing return, field mapping, connections, CCT registration). FlowHub sync (silent failure, proxy persistence, auth headers, null cct module, dry-run). Shopify sync (Catalog API guard, CCT registration lifecycle, meta_fields). Duplicate column errors in ensure_columns. SQLite meta cache explosion. masterminds/html5 case collision. Base-version guard blocking toolkits. Tool registry fatal guards. HTTrack import (URL resolution, hex filenames, subdirectory content, mirror detection). Necessity Gate request context crash. Auto-select compute timeout. Place-to-Service bridge collision.
+- ✅ **Documentation.** Abilities registration plan (~1,000 tools as WordPress Abilities). Laravel-scale deployment architecture proposal. WP.org submission prep. Agent context sync.
+- 📦 **Versioning** — bumped to **1.1.36** across all version-bearing files. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live registry authoritative). Provider count: 15 first-class (added Moonshot/Kimi & Z.AI/GLM at parity).
 
 ---
 

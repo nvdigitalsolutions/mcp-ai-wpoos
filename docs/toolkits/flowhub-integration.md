@@ -12,7 +12,7 @@ FlowHub is the leading cannabis dispensary POS in the US, serving 1,000+ dispens
 |---|---|
 | **WordPress** | 6.0+ |
 | **WooCommerce** | Active and configured |
-| **NV oOS Pro** | v1.2.0+ |
+| **NV oOS Pro** | v1.1.36+ |
 | **FlowHub Account** | API credentials (Client ID + API Key) from FlowHub |
 | **JetEngine** | Required for CCT cache storage |
 | **Action Scheduler** | Bundled with WooCommerce |
@@ -28,21 +28,29 @@ FlowHub is the leading cannabis dispensary POS in the US, serving 1,000+ dispens
 
 ### Step 2: Configure the Toolkit
 
-1. Go to **FlowHub Toolkit** (new admin menu, position 57)
-2. Under **Configuration**, enter your Client ID and API Key
-3. Set the sync interval (1–60 minutes)
-4. Choose sync direction:
+1. Go to **FlowHub Toolkit** (NV oOS → Toolkits → FlowHub)
+2. Under **Configuration**, select your FlowHub connection from the **Remote Sites connection selector**
+3. Enter your Client ID and API Key (or configure via Remote Sites for centralized credential management)
+4. Set the sync interval (1–60 minutes)
+5. Configure field mapping:
+   - Click **Generate Default Mapping** to auto-populate common FlowHub→WooCommerce field mappings
+   - Adjust individual field mappings as needed
+6. Choose sync direction:
    - **FlowHub → WooCommerce only** (default) — FlowHub is the source of truth
-   - **Bidirectional** — Stock changes sync both ways (Phase 2)
-5. Optionally enable WooCommerce stock writeback
-6. Set your low-stock threshold (items below this count will be flagged)
-7. Save settings
+   - **Read-only** — pull data without pushing changes back
+   - **Bidirectional** — Stock changes sync both ways
+7. Optionally enable WooCommerce stock writeback
+8. Set your low-stock threshold (items below this count will be flagged)
+9. If behind a forward proxy, enable **proxy support** (uses `http_api_curl` hook — proxy settings resolved from the Remote Sites connection first, then toolkit config)
+10. Save settings
 
 ### Step 3: Run Initial Sync
 
 1. Go to the **Overview** tab
-2. Click **Sync Now** to pull inventory from FlowHub
-3. Verify the CCT row count and freshness indicator
+2. Use the **per-connection sync controls** to sync individual connections or all at once
+3. Click **Sync Now** to pull inventory from FlowHub
+4. Verify the CCT row count and freshness indicator
+5. Check the **Sync Log** tab for per-item audit trail
 
 ### Step 4: Enable the Toolkit Toggle
 
@@ -126,7 +134,8 @@ wp flowhub low-stock-report --threshold=10
 1. Verify Client ID and API Key are correct
 2. Run `wp flowhub test-connection` for diagnostics
 3. Check that your server can reach `api.flowhub.co` (firewall/DNS)
-4. FlowHub API rate limit is ~5 req/s — the toolkit enforces this automatically
+4. If behind a proxy, enable proxy support in Configuration and verify proxy settings in Remote Sites
+5. FlowHub API rate limit is ~5 req/s — the toolkit enforces this automatically
 
 ### Products not matching WooCommerce
 
@@ -162,11 +171,24 @@ The FlowHub Toolkit does **not** directly integrate with state track-and-trace s
 
 Purchase limit enforcement is handled by FlowHub's POS, not by the WooCommerce sync. The toolkit surfaces inventory for AI queries and WooCommerce product listings but does not enforce regulatory purchase limits.
 
+## Sync Log Manager
+
+Every sync operation is logged with per-item audit trail via the unified **Sync Log Manager** (`WP_MCP_AI_Sync_Log_Manager`):
+
+- **Per-item tracking** — Each synced record logged individually with timestamps and status
+- **Error details** — Specific error messages for failed items (API_TIMEOUT, API_AUTH, FIELD_MAPPING, etc.)
+- **Status dashboards** — Visual sync history on the Sync Log tab
+- **WP-CLI access** — `wp flowhub sync-log --days=7` or `--format=json`
+- **Configurable retention** — Default 30 days, adjustable via `WP_MCP_AI_SYNC_LOG_RETENTION_DAYS`
+
+See [Sync Log Manager](../features/sync-log-manager.md) for full documentation.
+
 ## See Also
 
 - [FlowHub Integration Proposal](../project/proposals/FLOWHUB-INVENTORY-SYNC-INTEGRATION-PROPOSAL.md)
 - [FlowHub Implementation Plan](../project/proposals/FLOWHUB-INVENTORY-SYNC-IMPLEMENTATION-PLAN.md)
 - [FlowHub Enhancement Plan](../project/proposals/FLOWHUB-TOOLKIT-ENHANCEMENT-PLAN.md)
 - [FlowHub Toolkit README](../../addons/pro/includes/tools/flowhub/README.md)
+- [Sync Log Manager](../features/sync-log-manager.md)
 - [FlowHub API Documentation](https://www.flowhub.com/)
 - [JetEngine CCT Documentation](https://crocoblock.com/knowledge-base/features/custom-content-type/)
