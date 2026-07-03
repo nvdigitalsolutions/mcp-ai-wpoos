@@ -123,7 +123,7 @@
 
 | Directory | Purpose |
 |-----------|---------|
-| `includes/` | Core plugin classes — admin, assistants, tools, services, REST, security, providers (~13 AI backends), harness, data, markup, measurement, skills, professions, teams, slash-commands, A2A/ACP protocols, federation, elementor, blocks, crawler, integrations |
+| `includes/` | Core plugin classes — admin, assistants, tools, services, REST, security, providers (~15 AI backends), harness, data, markup, measurement, skills, professions, teams, slash-commands, A2A/ACP protocols, federation, elementor, blocks, crawler, integrations |
 | `addons/` | 23 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Graphify, Comic Reader, Funiq Bridge, AI Platform, Algorave, Cornerstone3D, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router) |
 | `assets/` | Frontend JS/CSS, images, CSV templates, examples |
 | `lib/` | Framework-agnostic core library + WordPress/Laravel/Craft CMS adapters |
@@ -146,7 +146,21 @@
 
 ## 🧩 Overview
 
-Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 13 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.36)
+
+- 🏭 **EZuite Inventory Sync Pro Toolkit.** ERP-integrated inventory sync bridging EZuite ERP with WooCommerce/WordPress. Pull products, query inventory, create/update items, manage orders, and configure API credentials — all via AI tools. Admin UI with connection selector, field mapping, and sync direction controls. CLI sync commands for batch operations.
+- 🔄 **Ralph Loop CCT Migration & Orchestration.** Circuit breaker pattern with configurable failure thresholds. Execution logger with step-by-step tracking. CCT migration tools for safe cross-environment JetEngine data operations. Orchestration tools for multi-step workflows.
+- 📅 **JetBooking/JetAppointment Integration (8 tools).** Adapter layer for Crocoblock booking and appointment plugins. 8 new tools + 4 enhanced calendar tools with booking/appointment awareness.
+- 🧠 **Moonshot AI (Kimi) & Z.AI (GLM) Provider Parity.** Both providers upgraded to full DeepSeek-level chat client capabilities — streaming, tool use, token tracking. ZAI client + baseten service in DI container. Provider count now **15** first-class.
+- 📋 **Unified Sync Log Manager.** Per-item audit trail across EZuite, FlowHub, and Shopify sync toolkits. Sync history with timestamps, status, and error tracking. Status dashboards on admin pages.
+- 🎛️ **Tool Presets Auto-Select & Chips Bar.** Selected tools display as clickable chips with +N overflow toggle. Tool payload cap raised from 50 to 100 tools per assistant.
+- 🌐 **HTTrack Cache & Place-to-Service Bridge.** HTML mirror import now supports HTTrack cache directories. Auto-creates bookable services during batch place import. URL backfill for mirrors without hts-cache.
+- 🔌 **FlowHub Per-Connection Overview.** Remote Sites connection selector on FlowHub config tab. Per-connection sync controls. Proxy support via http_api_curl hook.
+- 🔍 **Web Search 429 Retry.** Exponential backoff for rate-limited search requests.
+- 🐛 **45+ Bug Fixes.** CCT module API mismatches across EZuite/FlowHub/Shopify (canonical Module.instance/Factory/ItemHandler). EZuite sync (missing return, field mapping, connections, CCT registration). FlowHub sync (silent failure, proxy persistence, auth headers, null cct, dry-run). Shopify sync (Catalog API guard, CCT registration lifecycle). Duplicate column errors in ensure_columns. SQLite meta cache explosion. masterminds/html5 case collision. Base-version guard blocking toolkits. Tool registry fatal guards. HTTrack import (URL resolution, hex filenames, subdirectory content, mirror detection). Necessity Gate request context crash. Auto-select compute timeout. Place-to-Service bridge collision.
+- 📖 **Documentation.** Abilities registration plan (~1,000 tools as WordPress Abilities). Laravel-scale deployment architecture proposal. WP.org submission prep. Agent context sync.
 
 ### ✨ What's New at a Glance (v1.1.35)
 
@@ -486,7 +500,39 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.35 — June 2026)
+## 🆕 Latest Updates (v1.1.36 — July 2026)
+
+### June 29 – July 4, 2026 — EZuite Inventory Sync, Ralph Loop Orchestration, JetBooking/JetAppointment, Moonshot/Z.AI Parity, 45+ Bug Fixes 🏭🔄📅🧠🐛
+
+- ✅ **EZuite Inventory Sync Pro Toolkit.** ERP-integrated inventory sync bridging EZuite ERP with WordPress/WooCommerce. Product pull, inventory query, item create/update, ERP settings, and CLI sync commands. Admin UI with connection selector, field mapping, and sync direction controls. Toolkit registered in Pro addon with auto-discovery.
+- ✅ **Ralph Loop CCT Migration & Orchestration.** Circuit breaker pattern with configurable failure thresholds prevents cascading failures during cross-environment operations. Execution logger with step-by-step tracking and error reporting. CCT migration tools for safe JetEngine data transfers. Orchestration tools for coordinating multi-step workflows.
+- ✅ **JetBooking/JetAppointment Integration (8 Tools).** Adapter layer for Crocoblock JetBooking and JetAppointment plugins. 8 new AI tools added to the Calendar Booking toolkit. 4 existing calendar tools enhanced with booking/appointment awareness. Full CRUD for appointments, bookings, and availability queries.
+- ✅ **Moonshot AI (Kimi) & Z.AI (GLM) Provider Parity.** Both providers upgraded to full DeepSeek-level chat client capabilities — streaming, tool use, token tracking, and error handling. ZAI client service registered in DI container alongside `client.baseten`. Class loader updated for new provider adapters. WPCS formatting auto-fixed across all provider client files. Provider count now **15** first-class.
+- ✅ **Unified Sync Log Manager.** Per-item audit trail across EZuite, FlowHub, and Shopify sync toolkits. Sync history with timestamps, status codes, and detailed error tracking. Status dashboards on toolkit settings pages. WP-CLI integration for log querying and export.
+- ✅ **Tool Presets Auto-Select & Chips Bar.** Selected tools display as clickable chips below the tool selector with proper spacing. +N overflow toggle when too many chips are selected. Tool payload cap raised from 50 to 100 tools per assistant. Method-existence guard against tools lacking `get_definition()`.
+- ✅ **HTTrack Cache Support & Place-to-Service Bridge.** HTML place import tool now supports HTTrack cache directories for proper mirror parsing. URL backfill for mirrors without `hts-cache` directory. Place-to-Service bridge auto-creates bookable services during batch place import. Service sharing prevented when source URLs collide.
+- ✅ **FlowHub Per-Connection Overview.** Remote Sites connection selector added to FlowHub config tab. Per-connection sync controls — run sync for individual connections instead of all-at-once. Proxy support via `http_api_curl` hook with connection-level proxy resolution.
+- ✅ **Generate Default Mapping + Read-Only Sync.** One-click default mapping buttons for EZuite and FlowHub field mapping. Read-only sync direction option — pull data without pushing changes back to source.
+- ✅ **Web Search 429 Retry.** Exponential backoff for rate-limited (HTTP 429) web search requests with configurable retry count and base delay.
+- ✅ **wp_mcp_ai_log Global Helper.** Centralized logging function available globally, defined in `includes/bootstrap/` for availability before class autoloading.
+- ✅ **JetEngine CCT Support for Remote WP Connections.** Remote WordPress connections can now query and manage JetEngine CCT records — full CRUD support for remote CCTs via the `remote_wp_connection` tool.
+- ✅ **CCT Module API & CRUD Fixes (Cross-Toolkit).** Replaced fragile `jet_engine()->cct` shorthand with canonical `Module::instance()` across EZuite, FlowHub, and Shopify CCT managers. Standardized CRUD using `Factory/ItemHandler` APIs. Added `table_exists()` fallback to `is_cct_available()` for lazy-init environments. Fixed `get_cct_module` false negatives when CCT module is active but not yet loaded.
+- ✅ **EZuite Sync Fixes.** Missing return value with error diagnostics. API field mapping response key mismatch. Remote Sites connections not showing in toolkit settings (2 rounds). CCT auto-registration reading from wrong option key.
+- ✅ **FlowHub Sync Fixes.** Silent success with 0 records now reports actual counts and errors. Proxy settings now correctly persist in Remote Sites connections. API auth header names corrected. Null CCT module guarded. Dry-run mode uses modules API instead of fragile shorthand. Location ID made optional with primary fallback.
+- ✅ **Shopify Sync Fixes.** Catalog API-only connections blocked with clear error. CCT registration lifecycle uses explicit sanitize-update cycle. Meta fields populated in CCT registration. Column add_field routed through `module->manager` instead of raw `jet_engine()->cct`.
+- ✅ **CCT Infrastructure Fixes.** Duplicate column errors prevented in `ensure_columns` across all three toolkits. `add_field` API replaced with direct SQL ALTER TABLE. Nonexistent `get_item_by_slug()` replaced with DB query. JetEngine CCT field definitions synchronized when columns missing.
+- ✅ **SQLite Meta Cache Explosion Fix.** Unbounded meta cache growth on SQLite-backed sites resolved.
+- ✅ **masterminds/html5 Case Collision Fix.** Class file collision on case-insensitive filesystems (Windows/macOS) resolved.
+- ✅ **Base-Version Guard Fix.** Guard no longer incorrectly blocks toolkit admin pages in base+pro mode.
+- ✅ **HTTrack Import Robustness.** URL resolution, redirect filtering, and type classification. File discovery bugs (SKIP_DOTS, isDot, substring skip-dir matching). Hex-encoded filename support. Non-GNU glob compatibility for subdirectory content. Improved mirror root detection.
+- ✅ **Necessity Gate & Safety Profile Fixes.** Request context crash guarded against missing `get_instance()`. Safety profile trait autoload fixed — required from interface.
+- ✅ **Auto-Select Compute Fix.** O(n*m) timeout on assistant edit page resolved.
+- ✅ **Tool Chip UI Fixes.** PHP parse errors from unescaped double-quotes in inline JavaScript fixed.
+- ✅ **Documentation.** Comprehensive abilities registration plan (~1,000 tools as WordPress Abilities). Laravel-scale deployment architecture proposal with Graphify ecosystem cross-references. WP.org submission prep (readme, index.php, canonical envelopes, READMEs). Agent context sweep — `AGENTS.md`, `CLAUDE.md`, `.context/pro-vs-base.md` updated. CHANGELOG v1.1.36 section.
+- ✅ **Housekeeping.** Stale build artifacts and toolkit-addons directory cleaned.
+- 📦 **Versioning** — bumped to **1.1.36** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers (added Moonshot Kimi & Z.AI GLM at DeepSeek parity).
+
+## 🆕 Previous Updates (v1.1.35 — June 2026)
 
 ### June 27–29, 2026 — FlowHub + Shopify Sync Pro Toolkits, Necessity Gate Layer J, Local Voice STT, Remote Site Admin Blueprint, Bulk Import, Fixes 🏪🛒🛡️🎙️🌐
 
@@ -509,7 +555,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - ✅ **Housekeeping.** Stale 1.1.34 build zips removed (6 files).
 - 📦 **Versioning** — bumped to **1.1.35** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~810+ Pro (~1,005+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **13** first-class language-model providers (unchanged).
 
-## 🆕 Latest Updates (v1.1.33 — June 2026)
+## 🆕 Previous Updates (v1.1.33 — June 2026)
 
 ### June 20–24, 2026 — WP 7.0 Connectors Credential Integration, nvoos-graphify v1.0.0, Security Fixes 🔌🧩🛡️🔒
 
@@ -3102,7 +3148,7 @@ Manage the NV oOS environment from the command line when WP-CLI is available.
 | `wp mcp-ai chat <message>` | Sends a one-shot chat message to an assistant via the language model router. Accepts `--assistant`, `--model`, `--provider`, `--temperature`, `--max-tokens`, `--stream`, and `--format` flags. |
 | `wp mcp-ai memory recall` | Recalls agent memory entries. Use `--assistant` to scope operations. |
 | `wp mcp-ai thread list` | Lists chat threads. Use `--assistant` to filter. Also supports `get` and `delete` subcommands with `--thread-id`. |
-| `wp mcp-ai provider list` | Lists all 13 AI providers with enabled/disabled status. Also supports `test <slug>` and `models <slug>` subcommands. |
+| `wp mcp-ai provider list` | Lists all 15 AI providers with enabled/disabled status. Also supports `test <slug>` and `models <slug>` subcommands. |
 | `wp mcp-ai cron list` | Lists scheduled cron jobs tracked by NV oOS. Also supports `run <job-id>` and `delete <job-id>` subcommands. |
 | `wp mcp-ai transcript list` | Lists transcripts eligible for mining. Use `--assistant` to filter. Also supports `mine` subcommand for batch mining. |
 | `wp mcp-ai approval list` | Lists pending human-in-the-loop approval items. Accepts `--format` flag. Also supports `approve` and `reject` subcommands with `--item-id`. |

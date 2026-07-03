@@ -1,12 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.35  
-**Last Updated:** June 29, 2026
+**Version:** 1.1.36  
+**Last Updated:** July 4, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
-## Recent Updates (June 2026)
+## Recent Updates (July 2026)
 
+- **v1.1.36** (July 4): EZuite Inventory Sync Pro Toolkit, Ralph Loop CCT migration + circuit breaker, JetBooking/JetAppointment (8 tools), Moonshot AI (Kimi) & Z.AI (GLM) → DeepSeek parity, unified sync log manager, tool presets auto-select + chips bar, HTTrack cache + Place-to-Service bridge, Generate Default Mapping + read-only sync, 429 web search retry, 45+ bug fixes across CCT/sync/tools/infrastructure.
 - **v1.1.35** (June 29): FlowHub Inventory Sync Pro Toolkit (6 tools), Shopify Sync Pro Toolkit (5 tools), Necessity Gate Layer J (irreversibility-weighted safety), Local Voice Embedded STT (3 backends, offline-first), Remote Site Administrator blueprint (22 tools), Places & Calendar bulk import, CLI site-import subcommand, voice realtime auto-detect, 7 bug fixes.
 - **v1.1.34** (June 27): GPT-Realtime-2 voice models with WebRTC transport + Translate/Whisper clients + reasoning. Multi-channel result delivery UI (Telegram, Discord, WhatsApp, Google Chat). Pro scheduler AI/workflow response delivery. Graphify ecosystem: remote drivers, WP 7.0 Connectors, wp.org compliance. 3 reasoning-tool fatal bugs fixed. CRM deal import, multi-source auto-import, Upwork/LinkedIn toggle. Docs Hub REST + settings sync fixes. CVE-2026-55602, Gemini cache fix, GPT image routing fix. FastAPI porting plan.
 - **v1.1.29**
