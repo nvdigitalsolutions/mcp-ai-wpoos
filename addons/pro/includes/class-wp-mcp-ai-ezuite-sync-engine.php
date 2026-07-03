@@ -268,6 +268,21 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 						);
 					}
 					break;
+
+				case 'read_only':
+					if ( function_exists( 'wp_mcp_ai_log' ) ) {
+						wp_mcp_ai_log( 'EZuite WC sync: read-only mode — cache populated, no WC writes.', 'info' );
+					}
+					break;
+
+				default:
+					if ( function_exists( 'wp_mcp_ai_log' ) ) {
+						wp_mcp_ai_log(
+							sprintf( 'EZuite WC sync: unknown direction "%s", skipping.', $direction ),
+							'warning'
+						);
+					}
+					break;
 			}
 		}
 

@@ -231,15 +231,15 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 			if ( ! $cct_module || empty( $cct_module->data ) ) {
 					// Table-exists fallback (follows the vitals-log CCT pattern).
-					if ( $this->table_exists() ) {
-						return true;
-					}
+				if ( $this->table_exists() ) {
+					return true;
+				}
 
 					return new WP_Error(
 						'wp_mcp_ai_flowhub_jetengine_not_ready',
 						__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
 					);
-				}
+			}
 
 			$data = $cct_module->data;
 
@@ -395,7 +395,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 					global $wpdb;
 					$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
 
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
 					++$created;
 			}
@@ -1194,9 +1194,23 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 *
 		 * @since 1.2.0
 		 *
-		 * @return array
+		 * @return array<string,string> CCT column => FlowHub field.
 		 */
 		public function get_default_field_mapping() {
+			return self::get_default_field_mapping_static();
+		}
+
+		/**
+		 * Static accessor for the default field mapping.
+		 *
+		 * Used by the settings page JavaScript to pre-fill the field mapping
+		 * table without needing a class instance.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @return array<string,string> CCT column => FlowHub field.
+		 */
+		public static function get_default_field_mapping_static() {
 			return array(
 				'product_id'           => 'productId',
 				'variant_id'           => 'variantId',
@@ -1382,14 +1396,14 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 			if ( empty( $module->data ) ) {
 					return;
-				}
+			}
 
-				if ( self::cct_exists( $module ) ) {
-					return;
-				}
+			if ( self::cct_exists( $module ) ) {
+				return;
+			}
 
 				$data = $module->data;
-			$request = self::get_registration_request();
+			$request  = self::get_registration_request();
 
 			$data->set_request( $request );
 

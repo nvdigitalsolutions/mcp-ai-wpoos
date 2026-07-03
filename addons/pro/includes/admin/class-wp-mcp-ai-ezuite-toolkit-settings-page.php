@@ -379,7 +379,7 @@ class WP_MCP_AI_EZuite_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_
 				$conn_type = isset( $conn['connection_type'] ) ? sanitize_key( $conn['connection_type'] ) : '';
 				if ( 'ezuite_erp' === $conn_type || 'ezuite' === $conn_type ) {
 					$available_connections[ $conn_id ] = $conn;
-					$has_ezuite                       = true;
+					$has_ezuite                        = true;
 				}
 			}
 
@@ -389,9 +389,16 @@ class WP_MCP_AI_EZuite_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_
 					sprintf(
 						'[EZuite Toolkit] %d Remote Sites connection(s) exist but none matched ezuite_erp type. Connection types found: %s',
 						$total,
-						wp_json_encode( array_unique( array_map( function ( $c ) {
-							return isset( $c['connection_type'] ) ? $c['connection_type'] : '(none)';
-						}, $all_connections ) ) )
+						wp_json_encode(
+							array_unique(
+								array_map(
+									function ( $c ) {
+										return isset( $c['connection_type'] ) ? $c['connection_type'] : '(none)';
+									},
+									$all_connections
+								)
+							)
+						)
 					)
 				);
 			}
@@ -575,19 +582,48 @@ class WP_MCP_AI_EZuite_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_
 			</table>
 			<p>
 				<button type="button" class="button" id="ezuite-add-mapping-row"><?php esc_html_e( 'Add Field Mapping', 'mcp-ai-wpoos-pro' ); ?></button>
+				<button type="button" class="button button-primary" id="ezuite-generate-default-mapping"><?php esc_html_e( 'Generate Default Mapping', 'mcp-ai-wpoos-pro' ); ?></button>
 			</p>
 
 			<script>
 			( function() {
 				var table = document.getElementById( 'ezuite-field-mapping-table' );
 
-				document.getElementById( 'ezuite-add-mapping-row' ).addEventListener( 'click', function() {
+				function makeRow( key, value ) {
 					var row = document.createElement( 'tr' );
 					row.className = 'ezuite-field-mapping-row';
-					row.innerHTML = '<td><input type="text" name="ezuite_field_mapping_keys[]" value="" placeholder="<?php echo esc_js( __( 'EZuite field name', 'mcp-ai-wpoos-pro' ) ); ?>" class="regular-text" /></td>' +
-						'<td><input type="text" name="ezuite_field_mapping_values[]" value="" placeholder="<?php echo esc_js( __( 'CCT column name', 'mcp-ai-wpoos-pro' ) ); ?>" class="regular-text" /></td>' +
+					row.innerHTML = '<td><input type="text" name="ezuite_field_mapping_keys[]" value="' + key + '" placeholder="<?php echo esc_js( __( 'EZuite field name', 'mcp-ai-wpoos-pro' ) ); ?>" class="regular-text" /></td>' +
+						'<td><input type="text" name="ezuite_field_mapping_values[]" value="' + value + '" placeholder="<?php echo esc_js( __( 'CCT column name', 'mcp-ai-wpoos-pro' ) ); ?>" class="regular-text" /></td>' +
 						'<td><button type="button" class="button ezuite-remove-mapping-row"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos-pro' ) ); ?></button></td>';
-					table.appendChild( row );
+					return row;
+				}
+
+				document.getElementById( 'ezuite-add-mapping-row' ).addEventListener( 'click', function() {
+					table.appendChild( makeRow( '', '' ) );
+				});
+
+				// Generate Default Mapping button: pre-fills with inverse of the
+				// CCT manager's get_default_field_mapping() (EZuite field → CCT column).
+				document.getElementById( 'ezuite-generate-default-mapping' ).addEventListener( 'click', function() {
+					var defaults = <?php echo wp_json_encode( WP_MCP_AI_EZuite_CCT_Manager::get_default_field_mapping_static() ); ?>;
+
+					// Clear existing rows.
+					table.innerHTML = '';
+
+					// defaults is { cct_column: erp_field }, invert it.
+					for ( var cctCol in defaults ) {
+						if ( ! Object.prototype.hasOwnProperty.call( defaults, cctCol ) ) {
+							continue;
+						}
+						var erpField = defaults[ cctCol ];
+						if ( ! erpField ) {
+							continue; // skip entries with empty EZuite field.
+						}
+						table.appendChild( makeRow( erpField, cctCol ) );
+					}
+
+					// Always leave one empty row for custom additions.
+					table.appendChild( makeRow( '', '' ) );
 				});
 
 				table.addEventListener( 'click', function( e ) {
