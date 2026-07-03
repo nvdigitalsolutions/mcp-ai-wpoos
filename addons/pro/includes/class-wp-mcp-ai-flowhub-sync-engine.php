@@ -128,8 +128,8 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 		 *                                   the API query to verify connectivity.
 		 *                                   Default false.
 		 * @param string|null $connection_id Optional Remote Sites connection ID.
-		 * @return array|WP_Error Dry-run report when $dry_run is true,
-		 *                        otherwise void (side-effect based).
+		 * @return array|WP_Error Dry-run report when $dry_run is true, the sync
+		 *                        result array on success, or WP_Error on failure.
 		 */
 		public static function run_full_sync( $dry_run = false, $connection_id = null ) {
 				$toolkit_slug = 'flowhub';
@@ -179,7 +179,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 						)
 					);
 				}
-				return;
+				return $cct_ensured;
 			}
 
 			// Ensure CCT columns.
@@ -209,7 +209,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 						)
 					);
 				}
-				return;
+				return $columns_result;
 			}
 
 				$result = $cct_manager->sync_from_api( true, null, $dry_run, $run_id );
@@ -239,7 +239,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 						)
 					);
 				}
-					return;
+					return $result;
 			}
 
 			if ( $dry_run ) {

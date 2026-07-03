@@ -97,6 +97,15 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		);
 
 		/**
+		 * Cached CCT Factory instance for the configured slug.
+		 *
+		 * @since 1.9.2
+		 *
+		 * @var \Jet_Engine\Modules\Custom_Content_Types\Factory|null
+		 */
+		protected $factory = null;
+
+		/**
 		 * Constructor.
 		 *
 		 * @since 1.3.0
@@ -197,9 +206,9 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				);
 			}
 
-			$data = $cct_module->manager->data;
+			$data = ! empty( $cct_module->manager ) ? $cct_module->manager->data : null;
 
-			if ( empty( $data->db ) ) {
+			if ( empty( $data ) || empty( $data->db ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_cct_not_ready',
 					__( 'JetEngine CCT database is not available.', 'mcp-ai-wpoos-pro' )
@@ -247,6 +256,121 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
+		}
+
+		/**
+		 * Retrieve the JetEngine Factory (type object) for the configured CCT.
+		 *
+		 * The Factory is the canonical PHP handle for CCT item CRUD: item
+		 * queries go through $factory->db and writes go through the
+		 * Item_Handler returned by $factory->get_item_handler().
+		 *
+		 * When the CCT was just registered in the current request the
+		 * Manager's content-types registry (hydrated on init) won't contain
+		 * it yet, so this method falls back to constructing a Factory
+		 * directly from the stored CCT record.
+		 *
+		 * @since 1.9.2
+		 *
+		 * @return \Jet_Engine\Modules\Custom_Content_Types\Factory|null
+		 */
+		protected function get_cct_factory() {
+			if ( null !== $this->factory ) {
+				return $this->factory;
+			}
+
+			$module = self::get_cct_module();
+
+			if ( ! $module || empty( $module->manager ) || ! method_exists( $module->manager, 'get_content_types' ) ) {
+				return null;
+			}
+
+			$factory = $module->manager->get_content_types( $this->cct_slug );
+
+			if ( ! empty( $factory ) && ! is_array( $factory ) ) {
+				$this->factory = $factory;
+				return $this->factory;
+			}
+
+			// Same-request fallback: the CCT record exists in the DB but the
+			// runtime registry was hydrated before it was created. Build the
+			// Factory manually from the stored record so a sync can proceed
+			// immediately after auto-registration.
+			$record = $this->get_cct_record_by_slug( $this->cct_slug );
+
+			if ( ! $record ) {
+				return null;
+			}
+
+			$args   = self::decode_maybe_serialized( isset( $record['args'] ) ? $record['args'] : array() );
+			$fields = self::decode_maybe_serialized( isset( $record['meta_fields'] ) ? $record['meta_fields'] : array() );
+
+			if ( ! is_array( $args ) ) {
+				$args = array();
+			}
+			if ( ! is_array( $fields ) ) {
+				$fields = array();
+			}
+
+			$args['slug'] = $this->cct_slug;
+
+			if ( ! class_exists( '\Jet_Engine\Modules\Custom_Content_Types\Factory' ) && method_exists( $module, 'module_path' ) ) {
+				$factory_path = $module->module_path( 'factory.php' );
+				if ( $factory_path && file_exists( $factory_path ) ) {
+					require_once $factory_path;
+				}
+			}
+
+			if ( ! class_exists( '\Jet_Engine\Modules\Custom_Content_Types\Factory' ) ) {
+				return null;
+			}
+
+			$type_id       = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
+			$this->factory = new \Jet_Engine\Modules\Custom_Content_Types\Factory( $args, $fields, $type_id );
+
+			return $this->factory;
+		}
+
+		/**
+		 * Retrieve the JetEngine Item_Handler for the configured CCT.
+		 *
+		 * @since 1.9.2
+		 *
+		 * @return \Jet_Engine\Modules\Custom_Content_Types\Item_Handler|null
+		 */
+		protected function get_item_handler() {
+			$factory = $this->get_cct_factory();
+
+			if ( ! $factory || ! method_exists( $factory, 'get_item_handler' ) ) {
+				return null;
+			}
+
+			return $factory->get_item_handler();
+		}
+
+		/**
+		 * Decode a value stored by JetEngine that may be PHP-serialized
+		 * (the native storage format for post_types rows) or JSON-encoded.
+		 *
+		 * @since 1.9.2
+		 *
+		 * @param mixed $value Raw value.
+		 * @return mixed Decoded value (arrays pass through unchanged).
+		 */
+		protected static function decode_maybe_serialized( $value ) {
+			if ( ! is_string( $value ) || '' === $value ) {
+				return $value;
+			}
+
+			$decoded = maybe_unserialize( $value );
+
+			if ( is_array( $decoded ) ) {
+				return $decoded;
+			}
+
+			$json = json_decode( $value, true );
+
+			return is_array( $json ) ? $json : $value;
 		}
 
 		/**
@@ -393,10 +517,9 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return array();
 			}
 
-			$meta_fields = $cct['meta_fields'];
-			if ( is_string( $meta_fields ) ) {
-				$meta_fields = json_decode( $meta_fields, true );
-			}
+			// JetEngine stores meta_fields PHP-serialized in the post_types
+			// table (with JSON as a defensive fallback).
+			$meta_fields = self::decode_maybe_serialized( $cct['meta_fields'] );
 
 			if ( ! is_array( $meta_fields ) ) {
 				return array();
@@ -489,11 +612,11 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$cct_id = absint( $cct_record['id'] );
 
-			// Decode existing meta_fields (may be a JSON string).
-			$existing_meta = isset( $cct_record['meta_fields'] ) ? $cct_record['meta_fields'] : array();
-			if ( is_string( $existing_meta ) ) {
-				$existing_meta = json_decode( $existing_meta, true );
-			}
+			// Decode existing meta_fields (PHP-serialized by JetEngine,
+			// with JSON as a defensive fallback).
+			$existing_meta = self::decode_maybe_serialized(
+				isset( $cct_record['meta_fields'] ) ? $cct_record['meta_fields'] : array()
+			);
 			if ( ! is_array( $existing_meta ) ) {
 				$existing_meta = array();
 			}
@@ -558,12 +681,24 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			// Build an update request from the existing CCT record,
 			// preserving all existing values and only replacing meta_fields.
 			// Use the real CCT slug (not the constant) in case the admin
-			// configured a custom slug via toolkit settings.
-			$request = $cct_record;
-			unset( $request['id'] ); // JetEngine uses 'id' from set_request, not the record key.
+			// configured a custom slug via toolkit settings. The stored args
+			// blob is PHP-serialized and must be decoded before JetEngine's
+			// sanitizers read individual keys from it.
+			$existing_args = self::decode_maybe_serialized(
+				isset( $cct_record['args'] ) ? $cct_record['args'] : array()
+			);
+			if ( ! is_array( $existing_args ) ) {
+				$existing_args = array();
+			}
+
+			$request                = $cct_record;
+			$request['args']        = $existing_args;
 			$request['meta_fields'] = $merged_meta;
 			$request['slug']        = $this->cct_slug;
 			$request['id']          = $cct_id;
+			$request['name']        = ! empty( $existing_args['name'] )
+				? $existing_args['name']
+				: __( 'Shopify Inventory Sync', 'mcp-ai-wpoos-pro' );
 
 			$data->set_request( $request );
 
@@ -677,86 +812,54 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return array();
 			}
 
+			$factory = $this->get_cct_factory();
+			if ( ! $factory || empty( $factory->db ) ) {
+				return array();
+			}
+
 			$per_page = isset( $filters['per_page'] ) ? min( absint( $filters['per_page'] ), 100 ) : 50;
 			$page     = isset( $filters['page'] ) ? max( 1, absint( $filters['page'] ) ) : 1;
+			$offset   = ( $page - 1 ) * $per_page;
 
+			// Build query args in the Jet_Engine_Base_DB where format
+			// (field / operator / value clauses; plain key => value works too).
 			$query_args = array(
-				'number'  => $per_page,
-				'offset'  => ( $page - 1 ) * $per_page,
-				'order'   => isset( $filters['order'] ) && 'asc' === $filters['order'] ? 'ASC' : 'DESC',
-				'orderby' => $this->get_orderby_field( isset( $filters['orderby'] ) ? $filters['orderby'] : 'last_synced_at' ),
-				'status'  => 'publish',
+				'cct_status' => 'publish',
 			);
 
-			// Full-text search across product_title and sku.
-			if ( ! empty( $filters['search'] ) ) {
-				$query_args['s'] = sanitize_text_field( $filters['search'] );
-			}
+			$exact_fields = array(
+				'vendor'       => 'vendor',
+				'product_type' => 'product_type',
+				'location_id'  => 'location_id',
+				'sku'          => 'sku',
+				'variant_id'   => 'shopify_variant_id',
+				'product_id'   => 'shopify_product_id',
+				'status'       => 'status',
+			);
 
-			// Meta queries for structured filters.
-			$meta_query = array();
-
-			if ( ! empty( $filters['vendor'] ) ) {
-				$meta_query[] = array(
-					'key'     => 'vendor',
-					'value'   => sanitize_text_field( $filters['vendor'] ),
-					'compare' => '=',
-				);
-			}
-
-			if ( ! empty( $filters['product_type'] ) ) {
-				$meta_query[] = array(
-					'key'     => 'product_type',
-					'value'   => sanitize_text_field( $filters['product_type'] ),
-					'compare' => '=',
-				);
-			}
-
-			if ( ! empty( $filters['location_id'] ) ) {
-				$meta_query[] = array(
-					'key'     => 'location_id',
-					'value'   => sanitize_text_field( $filters['location_id'] ),
-					'compare' => '=',
-				);
+			foreach ( $exact_fields as $filter_key => $cct_field ) {
+				if ( ! empty( $filters[ $filter_key ] ) ) {
+					$query_args[] = array(
+						'field'    => $cct_field,
+						'operator' => '=',
+						'value'    => sanitize_text_field( $filters[ $filter_key ] ),
+					);
+				}
 			}
 
 			if ( ! empty( $filters['location_name'] ) ) {
-				$meta_query[] = array(
-					'key'     => 'location_name',
-					'value'   => sanitize_text_field( $filters['location_name'] ),
-					'compare' => 'LIKE',
+				$query_args[] = array(
+					'field'    => 'location_name',
+					'operator' => 'LIKE',
+					'value'    => sanitize_text_field( $filters['location_name'] ),
 				);
 			}
 
-			if ( ! empty( $filters['sku'] ) ) {
-				$meta_query[] = array(
-					'key'     => 'sku',
-					'value'   => sanitize_text_field( $filters['sku'] ),
-					'compare' => '=',
-				);
-			}
-
-			if ( ! empty( $filters['variant_id'] ) ) {
-				$meta_query[] = array(
-					'key'     => 'shopify_variant_id',
-					'value'   => sanitize_text_field( $filters['variant_id'] ),
-					'compare' => '=',
-				);
-			}
-
-			if ( ! empty( $filters['product_id'] ) ) {
-				$meta_query[] = array(
-					'key'     => 'shopify_product_id',
-					'value'   => sanitize_text_field( $filters['product_id'] ),
-					'compare' => '=',
-				);
-			}
-
-			if ( ! empty( $filters['status'] ) ) {
-				$meta_query[] = array(
-					'key'     => 'status',
-					'value'   => sanitize_text_field( $filters['status'] ),
-					'compare' => '=',
+			// Full-text search across product_title and sku.
+			if ( ! empty( $filters['search'] ) ) {
+				$query_args['_cct_search'] = array(
+					'keyword' => esc_sql( sanitize_text_field( $filters['search'] ) ),
+					'fields'  => array( 'product_title', 'sku' ),
 				);
 			}
 
@@ -767,37 +870,46 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 				switch ( $filters['stock_status'] ) {
 					case 'in_stock':
-						$meta_query[] = array(
-							'key'     => 'available_qty',
-							'value'   => $low_threshold,
-							'compare' => '>=',
-							'type'    => 'NUMERIC',
+						$query_args[] = array(
+							'field'    => 'available_qty',
+							'operator' => '>=',
+							'value'    => $low_threshold,
+							'type'     => 'integer',
 						);
 						break;
 					case 'low_stock':
-						$meta_query[] = array(
-							'key'     => 'available_qty',
-							'value'   => array( 1, $low_threshold - 1 ),
-							'compare' => 'BETWEEN',
-							'type'    => 'NUMERIC',
+						$query_args[] = array(
+							'field'    => 'available_qty',
+							'operator' => 'BETWEEN',
+							'value'    => array( 1, max( 1, $low_threshold - 1 ) ),
+							'type'     => 'integer',
 						);
 						break;
 					case 'out_of_stock':
-						$meta_query[] = array(
-							'key'     => 'available_qty',
-							'value'   => 0,
-							'compare' => '<=',
-							'type'    => 'NUMERIC',
+						$query_args[] = array(
+							'field'    => 'available_qty',
+							'operator' => '<=',
+							'value'    => 0,
+							'type'     => 'integer',
 						);
 						break;
 				}
 			}
 
-			if ( ! empty( $meta_query ) ) {
-				$query_args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-			}
+			$orderby_field = $this->get_orderby_field( isset( $filters['orderby'] ) ? $filters['orderby'] : 'last_synced_at' );
+			$numeric_order = array( 'available_qty', 'price' );
 
-			$items = jet_engine()->cct->data->get_items( $this->cct_slug, $query_args );
+			$order = array(
+				array(
+					'orderby' => $orderby_field,
+					'order'   => ( isset( $filters['order'] ) && 'asc' === $filters['order'] ) ? 'asc' : 'desc',
+					'type'    => in_array( $orderby_field, $numeric_order, true ) ? 'integer' : false,
+				),
+			);
+
+			$factory->db->set_format_flag( ARRAY_A );
+
+			$items = $factory->db->query( $query_args, $per_page, $offset, $order );
 
 			return is_array( $items ) ? $items : array();
 		}
@@ -821,7 +933,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			$by         = sanitize_key( $by );
 
 			if ( 'cct_id' === $by ) {
-				return jet_engine()->cct->data->get_item( absint( $identifier ), $this->cct_slug );
+				$factory = $this->get_cct_factory();
+				if ( ! $factory || empty( $factory->db ) ) {
+					return null;
+				}
+				$factory->db->set_format_flag( ARRAY_A );
+				$item = $factory->db->get_item( absint( $identifier ) );
+				return $item ? $item : null;
 			}
 
 			$filters = array(
@@ -1024,6 +1142,14 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$location_id = isset( $shopify_row['location_id'] ) ? $shopify_row['location_id'] : '';
 
+			$handler = $this->get_item_handler();
+			if ( ! $handler ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
 			// Check for existing row (compound key: variant_id + location_id).
 			$existing = $this->get_cached_item_by_variant_id(
 				$shopify_row['shopify_variant_id'],
@@ -1038,9 +1164,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 					return absint( $existing['_ID'] );
 				}
 
-				// Update existing item.
-				$shopify_row['_ID'] = $existing['_ID'];
-				$result             = jet_engine()->cct->data->update_item( $shopify_row, $this->cct_slug );
+				// Update existing item. Item_Handler::update_item() updates
+				// when _ID is present and returns the item ID.
+				$shopify_row['_ID'] = absint( $existing['_ID'] );
+				$result             = $handler->update_item( $shopify_row );
 
 				if ( is_wp_error( $result ) ) {
 					return $result;
@@ -1060,12 +1187,19 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return absint( $existing['_ID'] );
 			}
 
-			// Create new item.
+			// Create new item (no _ID passed, so update_item() inserts).
 			$shopify_row['cct_status'] = 'publish';
-			$result                    = jet_engine()->cct->data->create_item( $shopify_row, $this->cct_slug );
+			$result                    = $handler->update_item( $shopify_row );
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
+			}
+
+			if ( ! $result ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_upsert_failed',
+					__( 'Failed to write Shopify row to the CCT cache.', 'mcp-ai-wpoos-pro' )
+				);
 			}
 
 			/**
@@ -1216,12 +1350,23 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return $available;
 			}
 
+			$factory = $this->get_cct_factory();
+			if ( ! $factory || empty( $factory->db ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Delete rows directly via the CCT DB layer. The Item_Handler
+			// delete path enforces an interactive capability check and calls
+			// wp_die() on failure, which would kill background sync requests.
 			$items = $this->get_cached_items( array( 'per_page' => 100 ) );
 
 			while ( ! empty( $items ) ) {
 				foreach ( $items as $item ) {
 					if ( ! empty( $item['_ID'] ) ) {
-						jet_engine()->cct->data->delete_item( absint( $item['_ID'] ), $this->cct_slug );
+						$factory->db->delete( array( '_ID' => absint( $item['_ID'] ) ) );
 					}
 				}
 				$items = $this->get_cached_items( array( 'per_page' => 100 ) );
@@ -1286,17 +1431,19 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$updated = false;
 
+			$handler = $this->get_item_handler();
+
 			foreach ( $items as $item ) {
 				$item_inventory_id = isset( $item['inventory_item_id'] ) ? $item['inventory_item_id'] : '';
-				if ( $item_inventory_id === $inventory_item_id ) {
+				if ( $handler && $item_inventory_id === $inventory_item_id ) {
 					$item['available_qty']  = absint( $available );
 					$item['sync_hash']      = md5( wp_json_encode( $item ) );
 					$item['sync_status']    = 'synced';
 					$item['last_synced_at'] = current_time( 'mysql' );
 					$item['_ID']            = absint( $item['_ID'] );
 
-					$result = jet_engine()->cct->data->update_item( $item, $this->cct_slug );
-					if ( ! is_wp_error( $result ) ) {
+					$result = $handler->update_item( $item );
+					if ( $result && ! is_wp_error( $result ) ) {
 						$updated = true;
 					}
 					break;
@@ -1323,7 +1470,20 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return $available;
 			}
 
-			return jet_engine()->cct->data->delete_item( absint( $cct_item_id ), $this->cct_slug );
+			$factory = $this->get_cct_factory();
+			if ( ! $factory || empty( $factory->db ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Direct DB delete: the Item_Handler delete path enforces an
+			// interactive capability check and calls wp_die() on failure,
+			// which would kill background sync requests.
+			$factory->db->delete( array( '_ID' => absint( $cct_item_id ) ) );
+
+			return true;
 		}
 
 		/**
@@ -1344,10 +1504,26 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				);
 			}
 
-			$item['woo_product_id'] = absint( $woo_product_id );
-			$item['_ID']            = absint( $cct_item_id );
+			$handler = $this->get_item_handler();
+			if ( ! $handler ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
 
-			return jet_engine()->cct->data->update_item( $item, $this->cct_slug );
+			$result = $handler->update_item(
+				array(
+					'_ID'            => absint( $cct_item_id ),
+					'woo_product_id' => absint( $woo_product_id ),
+				)
+			);
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return (bool) $result;
 		}
 
 		// ------------------------------------------------------------------ //
@@ -1896,13 +2072,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		protected function get_cct_record_by_slug( $slug ) {
 			$module = self::get_cct_module();
 
-			if ( ! $module ) {
+			if ( ! $module || empty( $module->manager ) ) {
 				return null;
 			}
 
 			$data = $module->manager->data;
 
-			if ( empty( $data->db ) ) {
+			if ( empty( $data ) || empty( $data->db ) ) {
 				return null;
 			}
 
@@ -1963,6 +2139,20 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return null;
 			}
 
+			// Canonical accessor: the CCT module singleton. Its class is only
+			// loaded when the module is active, and Module::instance() is the
+			// path documented by Crocoblock for PHP-side CCT access. The
+			// Module class exposes ->manager (with ->manager->data as the
+			// post_types data handler); it has NO ->data property itself.
+			if ( class_exists( '\Jet_Engine\Modules\Custom_Content_Types\Module' ) ) {
+				$module = \Jet_Engine\Modules\Custom_Content_Types\Module::instance();
+				if ( ! empty( $module->manager ) ) {
+					return $module;
+				}
+			}
+
+			// Fallback: walk the modules registry (covers timing edge cases
+			// where the singleton exists but init -1 hasn't populated it yet).
 			$engine = jet_engine();
 
 			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
@@ -1973,29 +2163,19 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return null;
 			}
 
-			$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
-
-			if ( empty( $module_wrapper ) ) {
+			if ( ! method_exists( $engine->modules, 'get_module' ) ) {
 				return null;
 			}
 
-			// Use the pre-built instance when available.
-			if ( ! empty( $module_wrapper->instance ) && ! empty( $module_wrapper->instance->data ) ) {
-				return $module_wrapper->instance;
+			$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
+
+			if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+				return null;
 			}
 
-			// Last-resort: call get_module() to force lazy-init (the same method
-			// JetEngine itself uses to populate ->instance internally). This
-			// covers edge cases where the module is active but ->instance was
-			// never materialised (e.g. activation mid-request).
-			if ( method_exists( $module_wrapper, 'get_module' ) ) {
-				$instance = $module_wrapper->get_module();
-				if ( ! empty( $instance ) && ! empty( $instance->data ) ) {
-					return $instance;
-				}
-			}
+			$instance = $module_wrapper->instance;
 
-			return null;
+			return ! empty( $instance->manager ) ? $instance : null;
 		}
 
 		/**
@@ -2139,12 +2319,20 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		protected static function get_registration_request() {
 			$label = __( 'Shopify Inventory Sync', 'mcp-ai-wpoos-pro' );
 
+			// Honour a custom slug configured in the toolkit settings so the
+			// auto-created CCT matches what the rest of the toolkit queries.
+			$slug     = self::CCT_SLUG_DEFAULT;
+			$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
+			if ( ! empty( $settings['cct_slug'] ) ) {
+				$slug = sanitize_key( $settings['cct_slug'] );
+			}
+
 			return array(
 				'name'        => $label,
-				'slug'        => self::CCT_SLUG_DEFAULT,
+				'slug'        => $slug,
 				'args'        => array(
 					'name'                => $label,
-					'slug'                => self::CCT_SLUG_DEFAULT,
+					'slug'                => $slug,
 					'position'            => '-1',
 					'icon'                => 'dashicons-update',
 					'capability'          => 'manage_woocommerce',
