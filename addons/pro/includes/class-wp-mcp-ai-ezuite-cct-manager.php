@@ -368,11 +368,18 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 
 			$existing_fields = $this->get_existing_cct_fields();
 
+			// Track fields missing from JetEngine's meta_fields definition —
+			// these need the DB column AND the JetEngine definition synced.
+			$missing_from_meta = array();
+
 			foreach ( $this->columns as $column_name => $column_type ) {
 				// Check JetEngine CCT field definitions first (fast path).
 				if ( in_array( $column_name, $existing_fields, true ) ) {
 					continue;
 				}
+
+				// Track that JetEngine doesn't know about this field.
+				$missing_from_meta[] = $column_name;
 
 				// Fallback: check MySQL directly — the column may exist in the DB
 				// even though JetEngine's meta_fields config doesn't list it.
@@ -385,6 +392,15 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
 				++$created;
+			}
+
+			// Sync JetEngine's CCT field definitions so create_item / update_item
+			// recognise these columns and don't reject the data.
+			if ( ! empty( $missing_from_meta ) ) {
+				$sync_result = $this->sync_jetengine_field_definitions( $missing_from_meta );
+				if ( is_wp_error( $sync_result ) ) {
+					return $sync_result;
+				}
 			}
 
 			/**
@@ -482,6 +498,169 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				'datetime'       => 'DATETIME',
 			);
 			return isset( $map[ $jet_type ] ) ? $map[ $jet_type ] : 'TEXT';
+		}
+
+		/**
+		 * Sync JetEngine's CCT field definitions for missing columns.
+		 *
+		 * When the CCT already exists but its meta_fields definition is empty
+		 * or incomplete (e.g. the CCT was created manually in JetEngine without
+		 * the expected field definitions), create_item / update_item will reject
+		 * unknown field keys.  This method updates the CCT's meta_fields record
+		 * in JetEngine's post_types table so that every declared column has a
+		 * matching field definition.
+		 *
+		 * @since 1.9.1
+		 *
+		 * @param string[] $missing_columns Column names that are missing from JetEngine's definition.
+		 * @return bool|WP_Error True on success, WP_Error on failure.
+		 */
+		protected function sync_jetengine_field_definitions( $missing_columns ) {
+			$module = self::get_cct_module();
+			if ( ! $module || empty( $module->manager ) || empty( $module->manager->data ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available for field sync.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Get the existing CCT record so we can update it.
+			$cct_record = $this->get_cct_record_by_slug( $this->cct_slug );
+			if ( ! $cct_record || empty( $cct_record['id'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_cct_record_missing',
+					__( 'Cannot sync fields: CCT record not found.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$cct_id = absint( $cct_record['id'] );
+
+			// Decode existing meta_fields (may be a JSON string).
+			$existing_meta = isset( $cct_record['meta_fields'] ) ? $cct_record['meta_fields'] : array();
+			if ( is_string( $existing_meta ) ) {
+				$existing_meta = json_decode( $existing_meta, true );
+			}
+			if ( ! is_array( $existing_meta ) ) {
+				$existing_meta = array();
+			}
+
+			// Determine the next available field ID (max existing + 1).
+			$max_id = self::FIELD_ID_BASE - 1;
+			foreach ( $existing_meta as $field ) {
+				if ( ! empty( $field['id'] ) && absint( $field['id'] ) > $max_id ) {
+					$max_id = absint( $field['id'] );
+				}
+			}
+
+			// Build field definitions for missing columns.
+			$columns       = $this->get_column_definitions();
+			$new_fields    = array();
+			$next_field_id = $max_id + 1;
+
+			foreach ( $missing_columns as $column_name ) {
+				if ( ! isset( $columns[ $column_name ] ) ) {
+					continue;
+				}
+
+				$column_type = $columns[ $column_name ];
+				$args        = array();
+
+				switch ( $column_type ) {
+					case 'number':
+						$jet_type           = 'number';
+						$args['is_numeric'] = true;
+						break;
+					case 'textarea':
+						$jet_type = 'textarea';
+						break;
+					case 'datetime':
+						$jet_type = 'datetime-local';
+						break;
+					default:
+						$jet_type = 'text';
+						break;
+				}
+
+				$new_fields[] = self::build_field(
+					$next_field_id,
+					$column_name,
+					$this->get_column_label( $column_name ),
+					$jet_type,
+					$args
+				);
+
+				++$next_field_id;
+			}
+
+			if ( empty( $new_fields ) ) {
+				return true;
+			}
+
+			// Merge and update via JetEngine's API.
+			$merged_meta = array_merge( $existing_meta, $new_fields );
+
+			$data = $module->manager->data;
+
+			// Build an update request from the existing CCT record,
+			// preserving all existing values and only replacing meta_fields.
+			// Use the real CCT slug (not the constant) in case the admin
+			// configured a custom slug via toolkit settings.
+			$request = $cct_record;
+			unset( $request['id'] ); // JetEngine uses 'id' from set_request, not the record key.
+			$request['meta_fields'] = $merged_meta;
+			$request['slug']        = $this->cct_slug;
+			$request['id']          = $cct_id;
+
+			$data->set_request( $request );
+
+			if ( method_exists( $data, 'sanitize_item_request' ) && ! $data->sanitize_item_request() ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_field_sync_sanitize_failed',
+					__( 'Field definition sync failed during sanitization.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$item = $data->sanitize_item_from_request();
+
+			if ( empty( $item ) || ! is_array( $item ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_field_sync_invalid',
+					__( 'Field definition sync produced invalid item.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$data->before_item_update( $item, false );
+
+			$updated_id = $data->update_item_in_db( $item );
+
+			if ( ! $updated_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_field_sync_update_failed',
+					__( 'Failed to update CCT field definitions in database.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$item['id'] = $updated_id;
+
+			$data->after_item_update( $item, false );
+
+			if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
+				$data->db->query_raw( 'post_types' );
+			}
+
+			if ( function_exists( 'wp_mcp_ai_log' ) ) {
+				wp_mcp_ai_log(
+					sprintf(
+						/* translators: 1: CCT slug, 2: comma-separated field names */
+						__( 'EZuite CCT field definitions synced for "%1$s": %2$s', 'mcp-ai-wpoos-pro' ),
+						$this->cct_slug,
+						implode( ', ', $missing_columns )
+					),
+					'info'
+				);
+			}
+
+			return true;
 		}
 
 		/**
