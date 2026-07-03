@@ -227,41 +227,41 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				);
 			}
 
-					return true;
-			}
+			return true;
+		}
 
-			/**
-			 * Check whether the CCT database table physically exists.
-			 *
-			 * Follows the vitals-log CCT pattern: a direct SHOW TABLES query
-			 * that bypasses JetEngine's module system entirely.  Used as a
-			 * lightweight fallback when get_cct_module() can't obtain a handle
-			 * but the table was already created by a prior sync.
-			 *
-			 * @since 1.7.1
-			 *
-			 * @return bool
-			 */
-			protected function table_exists() {
-				global $wpdb;
-				$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
-			}
+		/**
+		 * Check whether the CCT database table physically exists.
+		 *
+		 * Follows the vitals-log CCT pattern: a direct SHOW TABLES query
+		 * that bypasses JetEngine's module system entirely.  Used as a
+		 * lightweight fallback when get_cct_module() can't obtain a handle
+		 * but the table was already created by a prior sync.
+		 *
+		 * @since 1.7.1
+		 *
+		 * @return bool
+		 */
+		protected function table_exists() {
+			global $wpdb;
+			$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
+		}
 
-				/**
-				 * Ensure the JetEngine CCT exists, creating it if needed.
-				 *
-				 * Uses JetEngine's set_request() / create_item(false) pipeline
-				 * (same pattern used by Vitals Log CCT and FlowHub CCT) instead
-				 * of calling create_item() directly with raw data, which fails
-				 * because the data format mismatches JetEngine's expected shape.
-				 *
-				 * @since 1.3.0
-				 *
-				 * @return array|WP_Error Result array with 'created' (bool) and
-				 *                         'cct_id' (int|false), or WP_Error on failure.
-				 */
+		/**
+		 * Ensure the JetEngine CCT exists, creating it if needed.
+		 *
+		 * Uses JetEngine's set_request() / create_item(false) pipeline
+		 * (same pattern used by Vitals Log CCT and FlowHub CCT) instead
+		 * of calling create_item() directly with raw data, which fails
+		 * because the data format mismatches JetEngine's expected shape.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @return array|WP_Error Result array with 'created' (bool) and
+		 *                         'cct_id' (int|false), or WP_Error on failure.
+		 */
 		public function ensure_cct_exists() {
 			// First try the static bootstrap path.
 			if ( method_exists( __CLASS__, 'maybe_register_cct' ) ) {
@@ -317,21 +317,36 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return $available;
 			}
 
-			$created         = 0;
+			global $wpdb;
+			$table   = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+			$created = 0;
+
+			// Guard: table must exist before we query its columns.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( ! $table_exists ) {
+				return 0;
+			}
+
 			$existing_fields = $this->get_existing_cct_fields();
 
 			foreach ( $this->columns as $column_name => $column_type ) {
+				// Check JetEngine CCT field definitions first (fast path).
 				if ( in_array( $column_name, $existing_fields, true ) ) {
 					continue;
 				}
 
-					$sql_type = self::map_jet_type_to_sql( $column_type );
-					global $wpdb;
-					$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+				// Fallback: check MySQL directly — the column may exist in the DB
+				// even though JetEngine's meta_fields config doesn't list it.
+				if ( $this->column_exists_in_table( $table, $column_name ) ) {
+					continue;
+				}
 
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
-					++$created;
+				$sql_type = self::map_jet_type_to_sql( $column_type );
+
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
+				++$created;
 			}
 
 			/**
@@ -375,12 +390,40 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		}
 
 		/**
+		 * Check whether a column already exists in a given MySQL table.
+		 *
+		 * Used as a safety net when JetEngine's CCT meta_fields config
+		 * may be out of sync with the actual table schema.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param string $table       MySQL table name.
+		 * @param string $column_name Column name to check.
+		 * @return bool True if the column exists.
+		 */
+		protected function column_exists_in_table( $table, $column_name ) {
+			global $wpdb;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$result = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+					DB_NAME,
+					$table,
+					$column_name
+				)
+			);
+
+			return ! empty( $result );
+		}
+
+		/**
 		 * Map a JetEngine field type to a MySQL column type.
 		 *
 		 * Used by ensure_columns() for direct ALTER TABLE statements
 		 * when the jet_engine()->cct API is unavailable.
 		 *
-		 * @since 1.8.0
+		 * @since 1.3.0
 		 *
 		 * @param string $jet_type JetEngine field type.
 		 * @return string MySQL column type.

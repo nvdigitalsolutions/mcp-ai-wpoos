@@ -355,17 +355,32 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				return $available;
 			}
 
-			$created         = 0;
+			global $wpdb;
+			$table   = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+			$created = 0;
+
+			// Guard: table must exist before we query its columns.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( ! $table_exists ) {
+				return 0;
+			}
+
 			$existing_fields = $this->get_existing_cct_fields();
 
 			foreach ( $this->columns as $column_name => $column_type ) {
+				// Check JetEngine CCT field definitions first (fast path).
 				if ( in_array( $column_name, $existing_fields, true ) ) {
 					continue;
 				}
 
+				// Fallback: check MySQL directly — the column may exist in the DB
+				// even though JetEngine's meta_fields config doesn't list it.
+				if ( $this->column_exists_in_table( $table, $column_name ) ) {
+					continue;
+				}
+
 				$sql_type = self::map_jet_type_to_sql( $column_type );
-				global $wpdb;
-				$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
 
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
@@ -417,6 +432,34 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			}
 
 			return wp_list_pluck( $meta_fields, 'name' );
+		}
+
+		/**
+		 * Check whether a column already exists in a given MySQL table.
+		 *
+		 * Used as a safety net when JetEngine's CCT meta_fields config
+		 * may be out of sync with the actual table schema.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param string $table       MySQL table name.
+		 * @param string $column_name Column name to check.
+		 * @return bool True if the column exists.
+		 */
+		protected function column_exists_in_table( $table, $column_name ) {
+			global $wpdb;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$result = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+					DB_NAME,
+					$table,
+					$column_name
+				)
+			);
+
+			return ! empty( $result );
 		}
 
 		/**
