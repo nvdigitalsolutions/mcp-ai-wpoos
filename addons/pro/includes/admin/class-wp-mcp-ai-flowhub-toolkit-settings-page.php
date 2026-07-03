@@ -164,6 +164,22 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 			$sanitized['proxy_password'] = wp_unslash( $_POST['flowhub_proxy_password'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password; stored as-is.
 		}
 
+		// Field mapping (associative array of source → target).
+		$sanitized['field_mapping'] = isset( $sanitized['field_mapping'] ) ? $sanitized['field_mapping'] : array();
+		if ( isset( $_POST['flowhub_field_mapping_keys'] ) && is_array( $_POST['flowhub_field_mapping_keys'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			&& isset( $_POST['flowhub_field_mapping_values'] ) && is_array( $_POST['flowhub_field_mapping_values'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$keys    = array_map( 'sanitize_text_field', wp_unslash( $_POST['flowhub_field_mapping_keys'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+			$values  = array_map( 'sanitize_text_field', wp_unslash( $_POST['flowhub_field_mapping_values'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+			$mapping = array();
+			foreach ( $keys as $i => $key ) {
+				$key = trim( $key );
+				if ( '' !== $key && isset( $values[ $i ] ) ) {
+					$mapping[ $key ] = trim( $values[ $i ] );
+				}
+			}
+			$sanitized['field_mapping'] = $mapping;
+		}
+
 		return $sanitized;
 	}
 
@@ -191,18 +207,21 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 					<p>
 						<?php
 						/* translators: 1: synced count, 2: error count, 3: location count */
-						printf(
-							esc_html__( '%1$d items synced across %3$d locations.', 'mcp-ai-wpoos-pro' ),
-							$sync_items,
-							$sync_errs,
-							$sync_locs
+						echo esc_html(
+							sprintf(
+								__( '%1$d items synced across %3$d locations.', 'mcp-ai-wpoos-pro' ),
+								$sync_items,
+								$sync_errs,
+								$sync_locs
+							)
 						);
 						if ( $sync_errs > 0 ) {
-							echo ' ';
-							printf(
-								/* translators: %d: error count */
-								esc_html__( '%d items had errors (check logs for details).', 'mcp-ai-wpoos-pro' ),
-								$sync_errs
+							echo ' ' . esc_html(
+								sprintf(
+									/* translators: %d: error count */
+									__( '%d items had errors (check logs for details).', 'mcp-ai-wpoos-pro' ),
+									$sync_errs
+								)
 							);
 						}
 						if ( 0 === $sync_items && $sync_errs > 0 ) {
@@ -599,10 +618,11 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 					<td>
 						<select name="flowhub_sync_direction" id="flowhub_sync_direction">
 							<?php
-							$current_direction = isset( $settings['sync_direction'] ) ? $settings['sync_direction'] : 'flowhub_to_woo';
+							$current_direction = isset( $settings['sync_direction'] ) ? $settings['sync_direction'] : 'read_only';
 							$directions        = array(
 								'flowhub_to_woo' => __( 'FlowHub → WooCommerce only', 'mcp-ai-wpoos-pro' ),
 								'bidirectional'  => __( 'Bidirectional', 'mcp-ai-wpoos-pro' ),
+								'read_only'      => __( 'Read-Only (cache only, no WC writes)', 'mcp-ai-wpoos-pro' ),
 							);
 							foreach ( $directions as $value => $label ) {
 								printf(
@@ -643,6 +663,94 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 					</td>
 				</tr>
 			</table>
+
+			<h3><?php esc_html_e( 'Field Mapping', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Map FlowHub API field names to CCT column names. Use the FlowHub field name as the key and the CCT column as the value.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<table class="form-table" id="flowhub-field-mapping-table">
+				<?php
+				$field_mapping = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
+				if ( empty( $field_mapping ) ) {
+					$field_mapping = array( '' => '' );
+				}
+				foreach ( $field_mapping as $source => $target ) :
+					?>
+					<tr class="flowhub-field-mapping-row">
+						<td>
+							<input type="text" name="flowhub_field_mapping_keys[]"
+								value="<?php echo esc_attr( $source ); ?>"
+								placeholder="<?php esc_attr_e( 'FlowHub field name', 'mcp-ai-wpoos-pro' ); ?>"
+								class="regular-text" />
+						</td>
+						<td>
+							<input type="text" name="flowhub_field_mapping_values[]"
+								value="<?php echo esc_attr( $target ); ?>"
+								placeholder="<?php esc_attr_e( 'CCT column name', 'mcp-ai-wpoos-pro' ); ?>"
+								class="regular-text" />
+						</td>
+						<td>
+							<button type="button" class="button flowhub-remove-mapping-row"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos-pro' ); ?></button>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</table>
+			<p>
+				<button type="button" class="button" id="flowhub-add-mapping-row"><?php esc_html_e( 'Add Field Mapping', 'mcp-ai-wpoos-pro' ); ?></button>
+				<button type="button" class="button button-primary" id="flowhub-generate-default-mapping"><?php esc_html_e( 'Generate Default Mapping', 'mcp-ai-wpoos-pro' ); ?></button>
+			</p>
+
+			<script>
+			( function() {
+				var table = document.getElementById( 'flowhub-field-mapping-table' );
+
+				function makeRow( key, value ) {
+					var row = document.createElement( 'tr' );
+					row.className = 'flowhub-field-mapping-row';
+					row.innerHTML = '<td><input type="text" name="flowhub_field_mapping_keys[]" value="' + key + '" placeholder="<?php echo esc_js( __( 'FlowHub field name', 'mcp-ai-wpoos-pro' ) ); ?>" class="regular-text" /></td>' +
+						'<td><input type="text" name="flowhub_field_mapping_values[]" value="' + value + '" placeholder="<?php echo esc_js( __( 'CCT column name', 'mcp-ai-wpoos-pro' ) ); ?>" class="regular-text" /></td>' +
+						'<td><button type="button" class="button flowhub-remove-mapping-row"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos-pro' ) ); ?></button></td>';
+					return row;
+				}
+
+				document.getElementById( 'flowhub-add-mapping-row' ).addEventListener( 'click', function() {
+					table.appendChild( makeRow( '', '' ) );
+				});
+
+				// Generate Default Mapping button: pre-fills with inverse of the
+				// CCT manager's get_default_field_mapping() (FlowHub field → CCT column).
+				document.getElementById( 'flowhub-generate-default-mapping' ).addEventListener( 'click', function() {
+					var defaults = <?php echo wp_json_encode( WP_MCP_AI_FlowHub_CCT_Manager::get_default_field_mapping_static() ); ?>;
+
+					// Clear existing rows.
+					table.innerHTML = '';
+
+					// defaults is { cct_column: fh_field }, invert it.
+					// Skip special extractor entries (prefixed with _extracted.)
+					// since they aren't direct FlowHub API field names.
+					for ( var cctCol in defaults ) {
+						if ( ! Object.prototype.hasOwnProperty.call( defaults, cctCol ) ) {
+							continue;
+						}
+						var fhField = defaults[ cctCol ];
+						if ( ! fhField || fhField.indexOf( '_extracted.' ) === 0 ) {
+							continue;
+						}
+						table.appendChild( makeRow( fhField, cctCol ) );
+					}
+
+					// Always leave one empty row for custom additions.
+					table.appendChild( makeRow( '', '' ) );
+				});
+
+				table.addEventListener( 'click', function( e ) {
+					if ( e.target && e.target.classList.contains( 'flowhub-remove-mapping-row' ) ) {
+						var row = e.target.closest( 'tr' );
+						if ( row && table.querySelectorAll( '.flowhub-field-mapping-row' ).length > 1 ) {
+							row.remove();
+						}
+					}
+				});
+			} )();
+			</script>
 		</div>
 		<?php
 	}
@@ -765,9 +873,9 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 					$redirect_url
 				);
 		} elseif ( is_array( $result ) ) {
-			$items  = isset( $result['item_count'] ) ? absint( $result['item_count'] ) : 0;
-			$errors = isset( $result['error_count'] ) ? absint( $result['error_count'] ) : 0;
-			$locs   = isset( $result['location_count'] ) ? absint( $result['location_count'] ) : 0;
+			$items        = isset( $result['item_count'] ) ? absint( $result['item_count'] ) : 0;
+			$errors       = isset( $result['error_count'] ) ? absint( $result['error_count'] ) : 0;
+			$locs         = isset( $result['location_count'] ) ? absint( $result['location_count'] ) : 0;
 			$redirect_url = add_query_arg(
 				array(
 					'sync_ok'    => 1,

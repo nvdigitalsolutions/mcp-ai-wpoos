@@ -992,9 +992,23 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		 *
 		 * @since 1.9.0
 		 *
-		 * @return array
+		 * @return array<string,string> CCT column => EZuite field.
 		 */
 		public function get_default_field_mapping() {
+			return self::get_default_field_mapping_static();
+		}
+
+		/**
+		 * Static accessor for the default field mapping.
+		 *
+		 * Used by the settings page JavaScript to pre-fill the field mapping
+		 * table without needing a class instance.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @return array<string,string> CCT column => EZuite field.
+		 */
+		public static function get_default_field_mapping_static() {
 			return array(
 				'sku'           => 'Item_Code',
 				'name'          => 'Item_Name',

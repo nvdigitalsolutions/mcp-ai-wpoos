@@ -278,6 +278,21 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 						);
 					}
 					break;
+
+				case 'read_only':
+					if ( function_exists( 'wp_mcp_ai_log' ) ) {
+						wp_mcp_ai_log( 'FlowHub WC sync: read-only mode — cache populated, no WC writes.', 'info' );
+					}
+					break;
+
+				default:
+					if ( function_exists( 'wp_mcp_ai_log' ) ) {
+						wp_mcp_ai_log(
+							sprintf( 'FlowHub WC sync: unknown direction "%s", skipping.', $direction ),
+							'warning'
+						);
+					}
+					break;
 			}
 		}
 
