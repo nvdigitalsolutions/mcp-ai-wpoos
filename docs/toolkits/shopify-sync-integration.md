@@ -14,8 +14,8 @@ The Shopify Sync Pro Toolkit adds a **local cache layer** between your Shopify s
 |---|---|
 | **WordPress** | 6.0+ |
 | **WooCommerce** | Active and configured |
-| **NV oOS Pro** | v1.3.0+ |
-| **Shopify Store** | Admin API access token (shpat_… or shpca_…) configured in Remote Sites |
+| **NV oOS Pro** | v1.1.36+ |
+| **Shopify Store** | Admin API access token (shpat_… or shpca_…) configured in Remote Sites. **Note:** Catalog API-only connections are blocked with a clear error — Admin API access is required for sync operations. |
 | **JetEngine** | Required for CCT cache storage (optional but strongly recommended — tools return clear error if missing) |
 | **Action Scheduler** | Bundled with WooCommerce — no separate install needed |
 
@@ -40,20 +40,22 @@ The Shopify Sync Pro Toolkit adds a **local cache layer** between your Shopify s
 
 ### Step 3: Configure Sync
 
-1. Go to the new **Shopify Sync** menu (position 58 in admin)
+1. Go to the new **Shopify Sync** menu (NV oOS → Toolkits → Shopify Sync)
 2. Under **Configuration**, select which Shopify connections to synchronize
 3. Set the sync interval (5/15/30/60 minutes)
 4. Choose sync direction:
    - **Shopify → WooCommerce only** (default) — Shopify is the source of truth
    - **Read-Only** — Cache only, no WC stock changes
-5. Optionally enable webhooks for real-time updates at zero API cost
-6. Save settings
+5. Configure field mapping for CCT registration (meta_fields are auto-populated; uses explicit sanitize-update lifecycle)
+6. Optionally enable webhooks for real-time updates at zero API cost
+7. Save settings
 
 ### Step 4: Verify
 
 1. Go to the **Overview** tab
 2. Click **Sync Now** on a connection to run the initial sync
 3. Check the CCT row count and freshness indicators
+4. Review the **Sync Log** tab for per-item audit trail
 
 ## Understanding GraphQL Costs
 
@@ -221,5 +223,6 @@ wp shopify-sync list-connections
 - [Shopify Sync Proposal](../project/proposals/SHOPIFY-SYNC-PRO-TOOLKIT-PROPOSAL.md)
 - [Shopify Sync Implementation Plan](../project/proposals/SHOPIFY-SYNC-IMPLEMENTATION-PLAN.md)
 - [Shopify Sync Toolkit README](../../addons/pro/includes/tools/shopify-sync/README.md)
+- [Sync Log Manager](../features/sync-log-manager.md)
 - [Shopify Admin GraphQL API Documentation](https://shopify.dev/docs/api/admin-graphql)
 - [Shopify Webhooks Documentation](https://shopify.dev/docs/apps/build/webhooks)
