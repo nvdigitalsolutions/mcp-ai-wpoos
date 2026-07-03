@@ -200,7 +200,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				);
 			}
 
-			$data = $cct_module->manager->data;
+			$data = $cct_module->data;
 
 			if ( empty( $data->db ) ) {
 				return new WP_Error(
@@ -895,6 +895,19 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				);
 			}
 
+			// Resolve the CCT module once, retrying via lazy-enable if needed.
+			$module = self::get_cct_module();
+			if ( ! $module || empty( $module->data ) ) {
+				self::maybe_enable_cct_module();
+				$module = self::get_cct_module();
+			}
+			if ( ! $module || empty( $module->data ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_ezuite_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
 			// Check for existing row (compound key: sku + warehouse).
 			$existing = $this->get_cached_item_by_sku(
 				$ezuite_item['sku'],
@@ -904,13 +917,6 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			if ( $existing ) {
 				// Update existing item.
 				$ezuite_item['_ID'] = $existing['_ID'];
-				$module             = self::get_cct_module();
-				if ( ! $module || empty( $module->data ) ) {
-					return new WP_Error(
-						'wp_mcp_ai_ezuite_jetengine_not_ready',
-						__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
-					);
-				}
 				$result = $module->data->update_item( $ezuite_item, $this->cct_slug );
 
 				if ( is_wp_error( $result ) ) {
@@ -922,13 +928,6 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 
 			// Create new item.
 			$ezuite_item['cct_status'] = 'publish';
-			$module                    = self::get_cct_module();
-			if ( ! $module || empty( $module->data ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_ezuite_jetengine_not_ready',
-					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
-				);
-			}
 			$result = $module->data->create_item( $ezuite_item, $this->cct_slug );
 
 			if ( is_wp_error( $result ) ) {
@@ -1152,6 +1151,10 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			$inserted    = 0;
 			$updated     = 0;
 
+			// Sample first few distinct errors for diagnostic logging.
+			$error_sample     = array();
+			$error_sample_max = 3;
+
 			foreach ( $items as $item ) {
 				if ( ! is_array( $item ) ) {
 					continue;
@@ -1189,6 +1192,12 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				$result = $this->upsert( $mapped );
 				if ( is_wp_error( $result ) ) {
 					++$error_count;
+
+					// Sample first few distinct errors for diagnostic logging.
+					$err_code = $result->get_error_code();
+					if ( count( $error_sample ) < $error_sample_max && ! isset( $error_sample[ $err_code ] ) ) {
+						$error_sample[ $err_code ] = $result->get_error_message();
+					}
 
 					// Log error item.
 					if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
@@ -1235,6 +1244,23 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				}
 				update_option( $last_sync_key, current_time( 'mysql' ) );
 				delete_option( $last_sync_error_key );
+			}
+
+			// Log sampled errors for diagnosis.
+			if ( ! $dry_run && $error_count > 0 && ! empty( $error_sample ) && function_exists( 'wp_mcp_ai_log' ) ) {
+				$sample_msgs = array();
+				foreach ( $error_sample as $code => $msg ) {
+					$sample_msgs[] = $code . ': ' . $msg;
+				}
+				wp_mcp_ai_log(
+					sprintf(
+						/* translators: 1: error count, 2: sampled error details */
+						__( 'EZuite sync errors (%1$d total). Sample: %2$s', 'mcp-ai-wpoos-pro' ),
+						$error_count,
+						implode( ' | ', $sample_msgs )
+					),
+					'error'
+				);
 			}
 
 			$result = array(
