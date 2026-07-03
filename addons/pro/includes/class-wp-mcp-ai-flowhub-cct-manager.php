@@ -1011,9 +1011,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 * @param callable|null $progress Optional progress callback.
 		 * @param bool          $dry_run  If true, skip CCT writes and only validate
 		 *                                the API query + count items. Default false.
+		 * @param string        $run_id   Optional sync log run ID for per-item logging.
 		 * @return array|WP_Error Sync result with item_count, location_count, duration.
 		 */
-		public function sync_from_api( $force = false, $progress = null, $dry_run = false ) {
+		public function sync_from_api( $force = false, $progress = null, $dry_run = false, $run_id = '' ) {
 			if ( ! $this->client ) {
 				// When a connection ID is set, load credentials from Remote Sites.
 				if ( ! empty( $this->connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -1093,9 +1094,25 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			if ( $dry_run ) {
 				// In dry-run mode, count items but skip CCT writes.
 				foreach ( $all_items as $item ) {
-					++$item_count;
+						++$item_count;
 
-					$loc_id = isset( $item['locationId'] ) ? $item['locationId'] : '';
+						// Per-item logging for dry-run.
+					if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						$item_sku  = isset( $item['sku'] ) ? $item['sku'] : '';
+						$item_name = isset( $item['productName'] ) ? $item['productName'] : '';
+						WP_MCP_AI_Sync_Log_Manager::log_item(
+							'flowhub',
+							$run_id,
+							'would_upsert',
+							$item_sku,
+							array(
+								'name'        => $item_name,
+								'location_id' => isset( $item['locationId'] ) ? $item['locationId'] : '',
+							)
+						);
+					}
+
+						$loc_id = isset( $item['locationId'] ) ? $item['locationId'] : '';
 					if ( ! empty( $loc_id ) && ! isset( $locations[ $loc_id ] ) ) {
 						$locations[ $loc_id ] = true;
 						++$location_count;
@@ -1115,16 +1132,45 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			}
 
 			foreach ( $all_items as $item ) {
-				$result = $this->upsert( $item, $mapping );
+					$result = $this->upsert( $item, $mapping );
 
 				if ( is_wp_error( $result ) ) {
 					++$error_count;
+
+					// Log error item.
+					if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						WP_MCP_AI_Sync_Log_Manager::log_item(
+							'flowhub',
+							$run_id,
+							'error',
+							isset( $item['sku'] ) ? $item['sku'] : '',
+							array(
+								'name'  => isset( $item['productName'] ) ? $item['productName'] : '',
+								'error' => $result->get_error_message(),
+							)
+						);
+					}
 				} else {
 					++$item_count;
+
+					// Log successful upsert.
+					if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						WP_MCP_AI_Sync_Log_Manager::log_item(
+							'flowhub',
+							$run_id,
+							'upsert',
+							isset( $item['sku'] ) ? $item['sku'] : '',
+							array(
+								'name'        => isset( $item['productName'] ) ? $item['productName'] : '',
+								'quantity'    => isset( $item['quantity'] ) ? $item['quantity'] : '',
+								'location_id' => isset( $item['locationId'] ) ? $item['locationId'] : '',
+							)
+						);
+					}
 				}
 
-				// Track unique locations.
-				$loc_id = isset( $item['locationId'] ) ? $item['locationId'] : '';
+					// Track unique locations.
+					$loc_id = isset( $item['locationId'] ) ? $item['locationId'] : '';
 				if ( ! empty( $loc_id ) && ! isset( $locations[ $loc_id ] ) ) {
 					$locations[ $loc_id ] = true;
 					++$location_count;

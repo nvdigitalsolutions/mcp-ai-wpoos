@@ -197,6 +197,12 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 				wp_mcp_ai_log( sprintf( 'Shopify full sync started for connection %s.', $connection_id ), 'info' );
 			}
 
+			// Start sync log run.
+			$run_id = '';
+			if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+				$run_id = WP_MCP_AI_Sync_Log_Manager::start_run( 'shopify_sync', $connection_id, $dry_run );
+			}
+
 			$engine = new self( $connection_id );
 
 			// Check cost budget before syncing (skip in dry-run, but report it).
@@ -205,6 +211,16 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 					wp_mcp_ai_log(
 						sprintf( 'Shopify sync skipped for %s: GraphQL cost budget too low.', $connection_id ),
 						'warning'
+					);
+				}
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						'shopify_sync',
+						$run_id,
+						array(
+							'status'        => 'skipped',
+							'error_message' => sprintf( 'GraphQL cost budget too low for connection %s.', $connection_id ),
+						)
 					);
 				}
 				return;
@@ -218,7 +234,27 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 			$cct_ensured = $cct_manager->ensure_cct_exists();
 			if ( is_wp_error( $cct_ensured ) ) {
 				if ( $dry_run ) {
+					if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+						WP_MCP_AI_Sync_Log_Manager::end_run(
+							'shopify_sync',
+							$run_id,
+							array(
+								'status'        => 'failed',
+								'error_message' => $cct_ensured->get_error_message(),
+							)
+						);
+					}
 					return $cct_ensured;
+				}
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						'shopify_sync',
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => $cct_ensured->get_error_message(),
+						)
+					);
 				}
 				self::handle_sync_error( $cct_ensured, $connection_id );
 				return;
@@ -228,18 +264,58 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 			$columns_ensured = $cct_manager->ensure_columns();
 			if ( is_wp_error( $columns_ensured ) ) {
 				if ( $dry_run ) {
+					if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+						WP_MCP_AI_Sync_Log_Manager::end_run(
+							'shopify_sync',
+							$run_id,
+							array(
+								'status'        => 'failed',
+								'error_message' => $columns_ensured->get_error_message(),
+							)
+						);
+					}
 					return $columns_ensured;
+				}
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						'shopify_sync',
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => $columns_ensured->get_error_message(),
+						)
+					);
 				}
 				self::handle_sync_error( $columns_ensured, $connection_id );
 				return;
 			}
 
 			// Run the sync (GraphQL bulk operation + JSONL upsert).
-			$result = $cct_manager->sync_from_bulk_operation( null, $dry_run );
+			$result = $cct_manager->sync_from_bulk_operation( null, $dry_run, $run_id );
 
 			if ( is_wp_error( $result ) ) {
 				if ( $dry_run ) {
+					if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+						WP_MCP_AI_Sync_Log_Manager::end_run(
+							'shopify_sync',
+							$run_id,
+							array(
+								'status'        => 'failed',
+								'error_message' => $result->get_error_message(),
+							)
+						);
+					}
 					return $result;
+				}
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						'shopify_sync',
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => $result->get_error_message(),
+						)
+					);
 				}
 				self::handle_sync_error( $result, $connection_id );
 				return;
@@ -288,6 +364,20 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 					);
 				}
 
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						'shopify_sync',
+						$run_id,
+						array(
+							'status'         => 'completed',
+							'items_total'    => $dry_report['data_summary']['total_items'],
+							'items_inserted' => $dry_report['data_summary']['items_would_insert'],
+							'items_updated'  => $dry_report['data_summary']['items_would_update'],
+							'items_skipped'  => $dry_report['data_summary']['items_would_skip'],
+						)
+					);
+				}
+
 				return $dry_report;
 			}
 
@@ -311,6 +401,21 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 					'info'
 				);
 			}
+
+			if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+				WP_MCP_AI_Sync_Log_Manager::end_run(
+					'shopify_sync',
+					$run_id,
+					array(
+						'status'         => 'completed',
+						'items_total'    => isset( $result['total'] ) ? $result['total'] : 0,
+						'items_inserted' => isset( $result['inserted'] ) ? $result['inserted'] : 0,
+						'items_updated'  => isset( $result['updated'] ) ? $result['updated'] : 0,
+						'items_skipped'  => isset( $result['skipped'] ) ? $result['skipped'] : 0,
+						'items_errored'  => isset( $result['errors'] ) ? $result['errors'] : 0,
+					)
+				);
+			}
 		}
 
 		/**
@@ -325,13 +430,39 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 		public static function run_wc_sync( $connection_id ) {
 			$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
 
+			// Start sync log run.
+			$run_id = '';
+			if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+				$run_id = WP_MCP_AI_Sync_Log_Manager::start_run( 'shopify_wc', $connection_id, false );
+			}
+
 			if ( empty( $settings['enable_wc_sync'] ) ) {
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						'shopify_wc',
+						$run_id,
+						array(
+							'status'        => 'skipped',
+							'error_message' => 'WC sync not enabled in toolkit settings.',
+						)
+					);
+				}
 				return;
 			}
 
 			if ( ! class_exists( 'WooCommerce' ) ) {
 				if ( function_exists( 'wp_mcp_ai_log' ) ) {
 					wp_mcp_ai_log( 'Shopify WC sync skipped: WooCommerce not active.', 'info' );
+				}
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						'shopify_wc',
+						$run_id,
+						array(
+							'status'        => 'skipped',
+							'error_message' => 'WooCommerce not active.',
+						)
+					);
 				}
 				return;
 			}
@@ -348,6 +479,20 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 							'info'
 						);
 					}
+					if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+						WP_MCP_AI_Sync_Log_Manager::end_run(
+							'shopify_wc',
+							$run_id,
+							array(
+								'status'        => 'completed',
+								'items_total'   => $count,
+								'summary_extra' => array(
+									'wc_updated' => $count,
+									'direction'  => 'shopify_to_woo',
+								),
+							)
+						);
+					}
 					break;
 
 				case 'bidirectional':
@@ -358,6 +503,20 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 							'info'
 						);
 					}
+					if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+						WP_MCP_AI_Sync_Log_Manager::end_run(
+							'shopify_wc',
+							$run_id,
+							array(
+								'status'        => 'completed',
+								'items_total'   => $count,
+								'summary_extra' => array(
+									'wc_updated' => $count,
+									'direction'  => 'bidirectional',
+								),
+							)
+						);
+					}
 					// Phase 2: WC→Shopify writeback placeholder.
 					break;
 
@@ -365,6 +524,16 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 					// Phase 2: Push WC stock back to Shopify.
 					if ( function_exists( 'wp_mcp_ai_log' ) ) {
 						wp_mcp_ai_log( 'WC→Shopify direction not yet implemented.', 'info' );
+					}
+					if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+						WP_MCP_AI_Sync_Log_Manager::end_run(
+							'shopify_wc',
+							$run_id,
+							array(
+								'status'        => 'skipped',
+								'error_message' => 'WC→Shopify direction not yet implemented.',
+							)
+						);
 					}
 					break;
 			}

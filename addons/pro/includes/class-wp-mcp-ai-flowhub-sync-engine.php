@@ -132,6 +132,16 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 		 *                        otherwise void (side-effect based).
 		 */
 		public static function run_full_sync( $dry_run = false, $connection_id = null ) {
+				$toolkit_slug = 'flowhub';
+				$run_id       = '';
+			if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+				$run_id = WP_MCP_AI_Sync_Log_Manager::start_run(
+					$toolkit_slug,
+					$connection_id,
+					$dry_run
+				);
+			}
+
 			if ( $dry_run ) {
 				if ( function_exists( 'wp_mcp_ai_log' ) ) {
 					wp_mcp_ai_log( 'FlowHub DRY RUN started.', 'info' );
@@ -140,36 +150,96 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 				wp_mcp_ai_log( 'FlowHub full sync started.', 'info' );
 			}
 
-			$cct_manager = new WP_MCP_AI_FlowHub_CCT_Manager( $connection_id );
+				$cct_manager = new WP_MCP_AI_FlowHub_CCT_Manager( $connection_id );
 
 			// Ensure CCT exists (auto-create if missing).
-			$cct_ensured = $cct_manager->ensure_cct_exists();
+				$cct_ensured = $cct_manager->ensure_cct_exists();
 			if ( is_wp_error( $cct_ensured ) ) {
 				if ( $dry_run ) {
+					if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						WP_MCP_AI_Sync_Log_Manager::end_run(
+							$toolkit_slug,
+							$run_id,
+							array(
+								'status'        => 'failed',
+								'error_message' => $cct_ensured->get_error_message(),
+							)
+						);
+					}
 					return $cct_ensured;
 				}
 				self::handle_sync_error( $cct_ensured, $connection_id );
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						$toolkit_slug,
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => $cct_ensured->get_error_message(),
+						)
+					);
+				}
 				return;
 			}
 
 			// Ensure CCT columns.
-			$columns_result = $cct_manager->ensure_columns();
+				$columns_result = $cct_manager->ensure_columns();
 			if ( is_wp_error( $columns_result ) ) {
 				if ( $dry_run ) {
+					if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						WP_MCP_AI_Sync_Log_Manager::end_run(
+							$toolkit_slug,
+							$run_id,
+							array(
+								'status'        => 'failed',
+								'error_message' => $columns_result->get_error_message(),
+							)
+						);
+					}
 					return $columns_result;
 				}
 				self::handle_sync_error( $columns_result, $connection_id );
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						$toolkit_slug,
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => $columns_result->get_error_message(),
+						)
+					);
+				}
 				return;
 			}
 
-			$result = $cct_manager->sync_from_api( true, null, $dry_run );
+				$result = $cct_manager->sync_from_api( true, null, $dry_run, $run_id );
 
 			if ( is_wp_error( $result ) ) {
 				if ( $dry_run ) {
+					if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						WP_MCP_AI_Sync_Log_Manager::end_run(
+							$toolkit_slug,
+							$run_id,
+							array(
+								'status'        => 'failed',
+								'error_message' => $result->get_error_message(),
+							)
+						);
+					}
 					return $result;
 				}
-				self::handle_sync_error( $result, $connection_id );
-				return;
+					self::handle_sync_error( $result, $connection_id );
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						$toolkit_slug,
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => $result->get_error_message(),
+						)
+					);
+				}
+					return;
 			}
 
 			if ( $dry_run ) {
@@ -192,6 +262,22 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 					'timestamp'    => current_time( 'mysql' ),
 				);
 
+				// Log sync run completion for dry-run.
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						$toolkit_slug,
+						$run_id,
+						array(
+							'status'        => 'completed',
+							'items_total'   => isset( $result['item_count'] ) ? $result['item_count'] : 0,
+							'items_errored' => isset( $result['error_count'] ) ? $result['error_count'] : 0,
+							'summary_extra' => array(
+								'location_count' => isset( $result['location_count'] ) ? $result['location_count'] : 0,
+							),
+						)
+					);
+				}
+
 				if ( function_exists( 'wp_mcp_ai_log' ) ) {
 					wp_mcp_ai_log(
 						sprintf(
@@ -208,6 +294,22 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 
 			// Note: option updates (last_sync, last_sync_error) are handled
 			// inside $cct_manager->sync_from_api() with per-connection keys.
+
+			// Log sync run completion.
+			if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+				WP_MCP_AI_Sync_Log_Manager::end_run(
+					$toolkit_slug,
+					$run_id,
+					array(
+						'status'        => 'completed',
+						'items_total'   => $result['item_count'],
+						'items_errored' => $result['error_count'],
+						'summary_extra' => array(
+							'location_count' => $result['location_count'],
+						),
+					)
+				);
+			}
 
 			if ( function_exists( 'wp_mcp_ai_log' ) ) {
 				wp_mcp_ai_log(
@@ -235,27 +337,45 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 		 * @since 1.2.0
 		 */
 		public static function run_wc_sync() {
-			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+				$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
 
 			if ( empty( $settings['enable_wc_sync'] ) ) {
 				return;
+			}
+
+				// Start sync log run.
+				$toolkit_slug = 'flowhub_wc';
+				$run_id       = '';
+			if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+				$run_id = WP_MCP_AI_Sync_Log_Manager::start_run( $toolkit_slug, null, false );
 			}
 
 			if ( ! class_exists( 'WooCommerce' ) ) {
 				if ( function_exists( 'wp_mcp_ai_log' ) ) {
 					wp_mcp_ai_log( 'FlowHub WC sync skipped: WooCommerce not active.', 'info' );
 				}
+				if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						$toolkit_slug,
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => 'WooCommerce not active.',
+						)
+					);
+				}
 				return;
 			}
 
-			$direction = isset( $settings['sync_direction'] ) ? $settings['sync_direction'] : 'flowhub_to_woo';
+				$direction = isset( $settings['sync_direction'] ) ? $settings['sync_direction'] : 'flowhub_to_woo';
+				$wc_count  = 0;
 
 			switch ( $direction ) {
 				case 'flowhub_to_woo':
-					$count = self::sync_flowhub_to_woocommerce();
+					$wc_count = self::sync_flowhub_to_woocommerce();
 					if ( function_exists( 'wp_mcp_ai_log' ) ) {
 						wp_mcp_ai_log(
-							sprintf( 'FlowHub→WC sync: %d products updated.', $count ),
+							sprintf( 'FlowHub→WC sync: %d products updated.', $wc_count ),
 							'info'
 						);
 					}
@@ -270,10 +390,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 
 				case 'bidirectional':
 					// Run FlowHub→WC first, then placeholder for WC→FlowHub.
-					$count = self::sync_flowhub_to_woocommerce();
+					$wc_count = self::sync_flowhub_to_woocommerce();
 					if ( function_exists( 'wp_mcp_ai_log' ) ) {
 						wp_mcp_ai_log(
-							sprintf( 'FlowHub→WC sync: %d products updated.', $count ),
+							sprintf( 'FlowHub→WC sync: %d products updated.', $wc_count ),
 							'info'
 						);
 					}
@@ -293,6 +413,35 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 						);
 					}
 					break;
+			}
+
+				// Log WC writeback summary.
+			if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+				WP_MCP_AI_Sync_Log_Manager::log_item(
+					$toolkit_slug,
+					$run_id,
+					'wc_writeback',
+					'bulk',
+					array(
+						'count'     => $wc_count,
+						'direction' => $direction,
+					)
+				);
+			}
+
+				// End sync log run.
+			if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+				WP_MCP_AI_Sync_Log_Manager::end_run(
+					$toolkit_slug,
+					$run_id,
+					array(
+						'status'        => 'completed',
+						'items_total'   => $wc_count,
+						'summary_extra' => array(
+							'direction' => $direction,
+						),
+					)
+				);
 			}
 		}
 

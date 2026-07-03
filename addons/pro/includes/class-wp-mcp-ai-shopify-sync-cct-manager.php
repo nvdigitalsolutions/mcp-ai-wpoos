@@ -915,9 +915,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @param array         $jsonl_items Array of parsed JSONL objects.
 		 * @param array         $mapping     Field mapping array.
 		 * @param callable|null $progress    Optional progress callback( $index, $total, $inserted, $updated, $skipped ).
+		 * @param string        $run_id      Optional sync log run ID for per-item logging.
 		 * @return array Sync result with counts.
 		 */
-		public function bulk_upsert_from_jsonl( $jsonl_items, $mapping = array(), $progress = null ) {
+		public function bulk_upsert_from_jsonl( $jsonl_items, $mapping = array(), $progress = null, $run_id = '' ) {
 			$available = $this->is_cct_available();
 			if ( is_wp_error( $available ) ) {
 				return array(
@@ -948,6 +949,21 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 					if ( is_wp_error( $result ) ) {
 						++$errors;
+						if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+							WP_MCP_AI_Sync_Log_Manager::log_item(
+								'shopify_sync',
+								$run_id,
+								'error',
+								$row['sku'],
+								array(
+									'sku'           => $row['sku'],
+									'title'         => isset( $row['product_title'] ) ? $row['product_title'] : '',
+									'variant_title' => isset( $row['variant_title'] ) ? $row['variant_title'] : '',
+									'available_qty' => isset( $row['available_qty'] ) ? $row['available_qty'] : 0,
+									'error_message' => $result->get_error_message(),
+								)
+							);
+						}
 					} else {
 						// Determine if inserted, updated, or skipped.
 						// upsert returns the existing ID for skips/updates.
@@ -959,8 +975,38 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 							++$skipped;
 						} elseif ( $result > 0 ) {
 							++$updated;
+							if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+								WP_MCP_AI_Sync_Log_Manager::log_item(
+									'shopify_sync',
+									$run_id,
+									'upsert',
+									$row['sku'],
+									array(
+										'sku'           => $row['sku'],
+										'title'         => isset( $row['product_title'] ) ? $row['product_title'] : '',
+										'variant_title' => isset( $row['variant_title'] ) ? $row['variant_title'] : '',
+										'available_qty' => isset( $row['available_qty'] ) ? $row['available_qty'] : 0,
+										'operation'     => 'updated',
+									)
+								);
+							}
 						} else {
 							++$inserted;
+							if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+								WP_MCP_AI_Sync_Log_Manager::log_item(
+									'shopify_sync',
+									$run_id,
+									'upsert',
+									$row['sku'],
+									array(
+										'sku'           => $row['sku'],
+										'title'         => isset( $row['product_title'] ) ? $row['product_title'] : '',
+										'variant_title' => isset( $row['variant_title'] ) ? $row['variant_title'] : '',
+										'available_qty' => isset( $row['available_qty'] ) ? $row['available_qty'] : 0,
+										'operation'     => 'inserted',
+									)
+								);
+							}
 						}
 					}
 				}
@@ -1142,9 +1188,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @param bool          $dry_run  If true, skip CCT writes and only
 		 *                                validate the GraphQL query + count
 		 *                                items. Default false.
+		 * @param string        $run_id   Optional sync log run ID for per-item logging.
 		 * @return array|WP_Error Sync result or WP_Error.
 		 */
-		public function sync_from_bulk_operation( $progress = null, $dry_run = false ) {
+		public function sync_from_bulk_operation( $progress = null, $dry_run = false, $run_id = '' ) {
 			if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_no_client',
@@ -1260,11 +1307,53 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 							$old_hash = isset( $existing['sync_hash'] ) ? $existing['sync_hash'] : '';
 							if ( $new_hash === $old_hash ) {
 								++$would_skip;
+								if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+									WP_MCP_AI_Sync_Log_Manager::log_item(
+										'shopify_sync',
+										$run_id,
+										'would_skip',
+										$row['sku'],
+										array(
+											'sku'   => $row['sku'],
+											'title' => isset( $row['product_title'] ) ? $row['product_title'] : '',
+											'variant_title' => isset( $row['variant_title'] ) ? $row['variant_title'] : '',
+											'available_qty' => isset( $row['available_qty'] ) ? $row['available_qty'] : 0,
+										)
+									);
+								}
 							} else {
 								++$would_update;
+								if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+									WP_MCP_AI_Sync_Log_Manager::log_item(
+										'shopify_sync',
+										$run_id,
+										'would_update',
+										$row['sku'],
+										array(
+											'sku'   => $row['sku'],
+											'title' => isset( $row['product_title'] ) ? $row['product_title'] : '',
+											'variant_title' => isset( $row['variant_title'] ) ? $row['variant_title'] : '',
+											'available_qty' => isset( $row['available_qty'] ) ? $row['available_qty'] : 0,
+										)
+									);
+								}
 							}
 						} else {
 							++$would_insert;
+							if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+								WP_MCP_AI_Sync_Log_Manager::log_item(
+									'shopify_sync',
+									$run_id,
+									'would_insert',
+									$row['sku'],
+									array(
+										'sku'           => $row['sku'],
+										'title'         => isset( $row['product_title'] ) ? $row['product_title'] : '',
+										'variant_title' => isset( $row['variant_title'] ) ? $row['variant_title'] : '',
+										'available_qty' => isset( $row['available_qty'] ) ? $row['available_qty'] : 0,
+									)
+								);
+							}
 						}
 					}
 				}
@@ -1286,7 +1375,8 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				$sync_result = $this->bulk_upsert_from_jsonl(
 					$items,
 					$mapping,
-					$progress
+					$progress,
+					$run_id
 				);
 
 				$duration = round( microtime( true ) - $start_time, 2 );

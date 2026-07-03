@@ -131,6 +131,13 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 		 *                        otherwise void (side-effect based).
 		 */
 		public static function run_full_sync( $dry_run = false, $connection_id = null ) {
+			$toolkit_slug = 'ezuite';
+			$run_id       = WP_MCP_AI_Sync_Log_Manager::start_run(
+				$toolkit_slug,
+				$connection_id,
+				$dry_run
+			);
+
 			if ( $dry_run ) {
 				if ( function_exists( 'wp_mcp_ai_log' ) ) {
 					wp_mcp_ai_log( 'EZuite DRY RUN started.', 'info' );
@@ -145,9 +152,25 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 			$cct_ensured = $cct_manager->ensure_cct_exists();
 			if ( is_wp_error( $cct_ensured ) ) {
 				if ( $dry_run ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						$toolkit_slug,
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => $cct_ensured->get_error_message(),
+						)
+					);
 					return $cct_ensured;
 				}
 				self::handle_sync_error( $cct_ensured, $connection_id );
+				WP_MCP_AI_Sync_Log_Manager::end_run(
+					$toolkit_slug,
+					$run_id,
+					array(
+						'status'        => 'failed',
+						'error_message' => $cct_ensured->get_error_message(),
+					)
+				);
 				return;
 			}
 
@@ -155,23 +178,60 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 			$columns_result = $cct_manager->ensure_columns();
 			if ( is_wp_error( $columns_result ) ) {
 				if ( $dry_run ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						$toolkit_slug,
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => $columns_result->get_error_message(),
+						)
+					);
 					return $columns_result;
 				}
 				self::handle_sync_error( $columns_result, $connection_id );
+				WP_MCP_AI_Sync_Log_Manager::end_run(
+					$toolkit_slug,
+					$run_id,
+					array(
+						'status'        => 'failed',
+						'error_message' => $columns_result->get_error_message(),
+					)
+				);
 				return;
 			}
 
-			$result = $cct_manager->sync_from_api( true, $connection_id, $dry_run );
+			// Pass run_id to CCT manager for per-item logging.
+			$result = $cct_manager->sync_from_api( true, $connection_id, $dry_run, $run_id );
 
 			if ( is_wp_error( $result ) ) {
 				if ( $dry_run ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						$toolkit_slug,
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => $result->get_error_message(),
+						)
+					);
 					return $result;
 				}
 				self::handle_sync_error( $result, $connection_id );
+				WP_MCP_AI_Sync_Log_Manager::end_run(
+					$toolkit_slug,
+					$run_id,
+					array(
+						'status'        => 'failed',
+						'error_message' => $result->get_error_message(),
+					)
+				);
 				return;
 			}
 
 			if ( $dry_run ) {
+				$item_count  = isset( $result['item_count'] ) ? $result['item_count'] : 0;
+				$error_count = isset( $result['error_count'] ) ? $result['error_count'] : 0;
+				$duration    = isset( $result['duration'] ) ? $result['duration'] : 0;
+
 				$dry_report = array(
 					'success'      => true,
 					'dry_run'      => true,
@@ -183,11 +243,21 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 						'is_configured' => $cct_manager->is_api_configured(),
 					),
 					'data_summary' => array(
-						'items_would_sync' => isset( $result['item_count'] ) ? $result['item_count'] : 0,
-						'errors'           => isset( $result['error_count'] ) ? $result['error_count'] : 0,
-						'duration'         => isset( $result['duration'] ) ? $result['duration'] : 0,
+						'items_would_sync' => $item_count,
+						'errors'           => $error_count,
+						'duration'         => $duration,
 					),
 					'timestamp'    => current_time( 'mysql' ),
+				);
+
+				WP_MCP_AI_Sync_Log_Manager::end_run(
+					$toolkit_slug,
+					$run_id,
+					array(
+						'status'        => 'completed',
+						'items_total'   => $item_count,
+						'items_errored' => $error_count,
+					)
 				);
 
 				if ( function_exists( 'wp_mcp_ai_log' ) ) {
@@ -203,13 +273,27 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 				return $dry_report;
 			}
 
+			$item_count  = isset( $result['item_count'] ) ? $result['item_count'] : 0;
+			$error_count = isset( $result['error_count'] ) ? $result['error_count'] : 0;
+			$duration    = isset( $result['duration'] ) ? $result['duration'] : 0;
+
+			WP_MCP_AI_Sync_Log_Manager::end_run(
+				$toolkit_slug,
+				$run_id,
+				array(
+					'status'        => 'completed',
+					'items_total'   => $item_count,
+					'items_errored' => $error_count,
+				)
+			);
+
 			if ( function_exists( 'wp_mcp_ai_log' ) ) {
 				wp_mcp_ai_log(
 					sprintf(
 						'EZuite sync completed: %d items, %d errors, %ss.',
-						$result['item_count'],
-						$result['error_count'],
-						$result['duration']
+						$item_count,
+						$error_count,
+						$duration
 					),
 					'info'
 				);

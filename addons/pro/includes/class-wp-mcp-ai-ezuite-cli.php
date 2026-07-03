@@ -408,6 +408,61 @@ class WP_MCP_AI_EZuite_CLI {
 			)
 		);
 	}
+
+	/**
+	 * Display recent sync runs from the Sync Log Manager.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--limit=<n>]
+	 * : Number of runs to show. Default: 10.
+	 *
+	 * [--format=<format>]
+	 * : Output format: table, json, csv. Default: table.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp ezuite sync-log
+	 *     wp ezuite sync-log --limit=5 --format=json
+	 *
+	 * @subcommand sync-log
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 */
+	public function sync_log( $args, $assoc_args ) {
+		$limit  = isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 10;
+		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
+
+		if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+			WP_CLI::error( 'Sync Log Manager is not available.' );
+			return;
+		}
+
+		$runs = WP_MCP_AI_Sync_Log_Manager::get_runs( 'ezuite', $limit );
+
+		if ( empty( $runs ) ) {
+			WP_CLI::success( 'No sync runs recorded yet.' );
+			return;
+		}
+
+		$items = array();
+		foreach ( $runs as $run ) {
+			$items[] = array(
+				'Run ID'   => isset( $run['run_id'] ) ? $run['run_id'] : '',
+				'Started'  => isset( $run['started_at'] ) ? $run['started_at'] : '',
+				'Status'   => isset( $run['status'] ) ? $run['status'] : '',
+				'Duration' => isset( $run['duration_secs'] ) ? $run['duration_secs'] . 's' : '',
+				'Items'    => isset( $run['items_total'] ) ? $run['items_total'] : 0,
+				'Inserted' => isset( $run['items_inserted'] ) ? $run['items_inserted'] : 0,
+				'Updated'  => isset( $run['items_updated'] ) ? $run['items_updated'] : 0,
+				'Skipped'  => isset( $run['items_skipped'] ) ? $run['items_skipped'] : 0,
+				'Errors'   => isset( $run['items_errored'] ) ? $run['items_errored'] : 0,
+				'Dry Run'  => ! empty( $run['dry_run'] ) ? 'Yes' : 'No',
+			);
+		}
+
+		\WP_CLI\Utils\format_items( $format, $items, array( 'Run ID', 'Started', 'Status', 'Duration', 'Items', 'Inserted', 'Updated', 'Skipped', 'Errors', 'Dry Run' ) );
+	}
 }
 
 // Register commands.
@@ -417,4 +472,5 @@ if ( class_exists( 'WP_CLI' ) ) {
 	WP_CLI::add_command( 'ezuite clear-cache', array( 'WP_MCP_AI_EZuite_CLI', 'clear_cache' ) );
 	WP_CLI::add_command( 'ezuite test-connection', array( 'WP_MCP_AI_EZuite_CLI', 'test_connection' ) );
 	WP_CLI::add_command( 'ezuite low-stock-report', array( 'WP_MCP_AI_EZuite_CLI', 'low_stock_report' ) );
+	WP_CLI::add_command( 'ezuite sync-log', array( 'WP_MCP_AI_EZuite_CLI', 'sync_log' ) );
 }
