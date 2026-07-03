@@ -174,7 +174,24 @@ class WP_MCP_AI_EZuite_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_
 			<?php
 			// Sync / dry-run result notices (set via redirect from admin-post handlers).
 			// phpcs:disable WordPress.Security.NonceVerification.Recommended
-			if ( isset( $_GET['sync_ok'] ) ) :
+			if ( isset( $_GET['sync_ok'] ) && isset( $_GET['sync_warnings'] ) ) :
+				$sync_items = isset( $_GET['sync_items'] ) ? absint( $_GET['sync_items'] ) : 0;
+				$sync_errs  = isset( $_GET['sync_errs'] ) ? absint( $_GET['sync_errs'] ) : 0;
+				?>
+				<div class="notice notice-warning is-dismissible">
+					<p>
+						<?php
+						printf(
+							/* translators: 1: synced count, 2: error count */
+							esc_html__( 'Sync completed with warnings: %1$d items synced, %2$d errors. Check the Logs tab for details.', 'mcp-ai-wpoos-pro' ),
+							$sync_items,
+							$sync_errs
+						);
+						?>
+					</p>
+				</div>
+				<?php
+			elseif ( isset( $_GET['sync_ok'] ) ) :
 				?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Sync completed successfully.', 'mcp-ai-wpoos-pro' ); ?></p></div>
 				<?php
@@ -907,10 +924,41 @@ class WP_MCP_AI_EZuite_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_
 					$redirect_url
 				);
 		} else {
-			$redirect_url = add_query_arg(
-				array( 'sync_ok' => 1 ),
-				$redirect_url
-			);
+			$error_count = isset( $result['error_count'] ) ? absint( $result['error_count'] ) : 0;
+			$item_count  = isset( $result['item_count'] ) ? absint( $result['item_count'] ) : 0;
+
+			if ( $error_count > 0 && 0 === $item_count ) {
+				// All items failed — treat as an error.
+				$redirect_url = add_query_arg(
+					array(
+						'sync_error' => 1,
+						'sync_msg'   => rawurlencode(
+							sprintf(
+								/* translators: %d: number of errors */
+								__( 'All %d items failed to sync. Check the EZuite Toolkit logs for details.', 'mcp-ai-wpoos-pro' ),
+								$error_count
+							)
+						),
+					),
+					$redirect_url
+				);
+			} elseif ( $error_count > 0 ) {
+				// Partial failure — show a warning with counts.
+				$redirect_url = add_query_arg(
+					array(
+						'sync_ok'        => 1,
+						'sync_warnings'  => 1,
+						'sync_items'     => $item_count,
+						'sync_errs'      => $error_count,
+					),
+					$redirect_url
+				);
+			} else {
+				$redirect_url = add_query_arg(
+					array( 'sync_ok' => 1 ),
+					$redirect_url
+				);
+			}
 		}
 
 		wp_safe_redirect( $redirect_url );

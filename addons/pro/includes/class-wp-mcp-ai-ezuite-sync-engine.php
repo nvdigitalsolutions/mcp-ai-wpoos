@@ -297,6 +297,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 					),
 					'info'
 				);
+			return $result;
 			}
 		}
 
