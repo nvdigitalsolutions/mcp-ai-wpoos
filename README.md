@@ -1051,7 +1051,7 @@ See [docs/user-guides/chat/chat-history-persistence.md](docs/user-guides/chat/ch
 
 > **No live site. No API costs. No risk.** The fastest way to try NV oOS is on your own computer using a free local WordPress environment. Follow the full walkthrough on the NV Digital Solutions blog: **[How to Test NV oOS on Your Own PC Using Local + Downloading the Plugin →](https://nvdigitalsolutions.com/ai-llm/how-to-test-nv-oos-on-your-own-pc-using-local-downloading-plugin/)**
 
-1. **Install a local WordPress environment** — [Local by WP Engine](https://localwp.com/) is the easiest option (one-click install, no server config). Alternatives: [XAMPP](https://www.apachefriends.org/), [MAMP](https://www.mamp.info/), or [DevKinsta](https://kinsta.com/devkinsta/).
+1. **Install a local WordPress environment** — [Local by WP Engine](https://localwp.com/) or [WordPress Studio](https://developer.wordpress.com/studio/) is the easiest option (one-click install, no server config). Alternatives: [XAMPP](https://www.apachefriends.org/), [MAMP](https://www.mamp.info/), or [DevKinsta](https://kinsta.com/devkinsta/).
 
 2. **Download the NV oOS plugin zip** — grab the latest release from [GitHub Releases](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases) (look for `mcp-ai-wpoos-x.x.x.zip`), or use the **Code → Download ZIP** button for the current development snapshot.
 
