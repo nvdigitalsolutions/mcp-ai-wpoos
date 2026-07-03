@@ -1757,15 +1757,15 @@
             return 0;
         }
 
-        var totalChars = 0;
-        var charsPerToken = 4; // Standard heuristic: ~4 characters per token.
+        let totalChars = 0;
+        let charsPerToken = 4; // Standard heuristic: ~4 characters per token.
 
         messages.forEach(function(msg) {
             if (!msg || !msg.content) {
                 return;
             }
 
-            var content = msg.content;
+            let content = msg.content;
 
             if (typeof content === 'string') {
                 totalChars += content.length;
@@ -1803,7 +1803,7 @@
             return content;
         }
 
-        var threshold = (globalConfig.toolResultSummarizeThreshold > 0)
+        let threshold = (globalConfig.toolResultSummarizeThreshold > 0)
             ? globalConfig.toolResultSummarizeThreshold
             : 2000;
 
@@ -1813,23 +1813,23 @@
                 return content;
             }
 
-            var truncated = content.substring(0, threshold);
-            var summaryNote = '\n\n[... Content truncated: ' + content.length + ' chars total, showing first ' + threshold + ' chars ...]';
+            let truncated = content.substring(0, threshold);
+            let summaryNote = '\n\n[... Content truncated: ' + content.length + ' chars total, showing first ' + threshold + ' chars ...]';
             return truncated + summaryNote;
         }
 
         // Handle object content (JSON tool results).
         if (typeof content === 'object') {
             try {
-                var jsonStr = JSON.stringify(content);
+                let jsonStr = JSON.stringify(content);
                 if (jsonStr.length <= threshold) {
                     return content;
                 }
 
                 // For objects, truncate the JSON string representation.
-                var truncatedJson = jsonStr.substring(0, threshold);
+                let truncatedJson = jsonStr.substring(0, threshold);
                 // Try to parse back — if it fails, return as string with note.
-                var summaryNote = '[... Object truncated: ' + jsonStr.length + ' chars total ...]';
+                let summaryNote = '[... Object truncated: ' + jsonStr.length + ' chars total ...]';
                 return truncatedJson + summaryNote;
             } catch (e) {
                 // If JSON stringify fails, return the object as-is.
@@ -14215,14 +14215,14 @@
             const maxHistoryMessages = (state.config && state.config.maxHistoryMessages)
                 || globalConfig.maxHistoryMessages
                 || 8;
-            var embeddedMessages = (maxHistoryMessages > 0 && cleanMessages.length > maxHistoryMessages)
+            let embeddedMessages = (maxHistoryMessages > 0 && cleanMessages.length > maxHistoryMessages)
                 ? cleanMessages.slice(-maxHistoryMessages)
                 : cleanMessages;
 
             // Additional token-aware trimming for embedded models.
             // Estimates ~4 chars per token and targets 75% of a 4096-token window.
-            var estimatedTokens = estimateMessageTokensBME(embeddedMessages);
-            var maxEmbeddedTokens = 3000; // 75% of 4096 for headroom.
+            let estimatedTokens = estimateMessageTokensBME(embeddedMessages);
+            let maxEmbeddedTokens = 3000; // 75% of 4096 for headroom.
             if (estimatedTokens > maxEmbeddedTokens && embeddedMessages.length > 6) {
                 // Trim from the top (oldest non-system messages) until under budget.
                 while (embeddedMessages.length > 4 && estimateMessageTokensBME(embeddedMessages) > maxEmbeddedTokens) {
