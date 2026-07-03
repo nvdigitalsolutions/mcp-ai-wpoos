@@ -127,8 +127,8 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 		 *                                   the API query to verify connectivity.
 		 *                                   Default false.
 		 * @param string|null $connection_id Optional Remote Sites connection ID.
-		 * @return array|WP_Error Dry-run report when $dry_run is true,
-		 *                        otherwise void (side-effect based).
+		 * @return array|WP_Error Dry-run report when $dry_run is true, the sync
+		 *                        result array on success, or WP_Error on failure.
 		 */
 		public static function run_full_sync( $dry_run = false, $connection_id = null ) {
 			$toolkit_slug = 'ezuite';
@@ -171,7 +171,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 						'error_message' => $cct_ensured->get_error_message(),
 					)
 				);
-				return;
+				return $cct_ensured;
 			}
 
 			// Ensure CCT columns.
@@ -197,7 +197,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 						'error_message' => $columns_result->get_error_message(),
 					)
 				);
-				return;
+				return $columns_result;
 			}
 
 			// Pass run_id to CCT manager for per-item logging.
@@ -224,7 +224,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 						'error_message' => $result->get_error_message(),
 					)
 				);
-				return;
+				return $result;
 			}
 
 			if ( $dry_run ) {
@@ -297,8 +297,9 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Sync_Engine' ) ) {
 					),
 					'info'
 				);
-			return $result;
 			}
+
+			return $result;
 		}
 
 		/**

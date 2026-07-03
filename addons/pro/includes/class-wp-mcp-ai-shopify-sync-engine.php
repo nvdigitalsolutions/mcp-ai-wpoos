@@ -178,8 +178,8 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 		 *                              updates. Runs the GraphQL query to
 		 *                              verify connectivity and data shape.
 		 *                              Default false.
-		 * @return array|WP_Error Dry-run report when $dry_run is true,
-		 *                        otherwise void (side-effect based).
+		 * @return array|WP_Error Dry-run report when $dry_run is true, the sync
+		 *                        result array on success, or WP_Error on failure.
 		 */
 		public static function run_full_sync( $connection_id, $dry_run = false ) {
 			if ( ! function_exists( 'wp_mcp_ai_log' ) ) {
@@ -257,7 +257,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 					);
 				}
 				self::handle_sync_error( $cct_ensured, $connection_id );
-				return;
+				return $cct_ensured;
 			}
 
 			// Ensure CCT columns.
@@ -287,7 +287,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 					);
 				}
 				self::handle_sync_error( $columns_ensured, $connection_id );
-				return;
+				return $columns_ensured;
 			}
 
 			// Run the sync (GraphQL bulk operation + JSONL upsert).
@@ -318,7 +318,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 					);
 				}
 				self::handle_sync_error( $result, $connection_id );
-				return;
+				return $result;
 			}
 
 			if ( $dry_run ) {
@@ -416,6 +416,8 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 					)
 				);
 			}
+
+			return $result;
 		}
 
 		/**

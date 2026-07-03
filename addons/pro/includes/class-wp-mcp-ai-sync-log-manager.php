@@ -123,6 +123,7 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 				'dry_run'        => (bool) $dry_run,
 				'status'         => 'in_progress',
 				'started_at'     => current_time( 'mysql' ),
+				'started_at_ts'  => microtime( true ),
 				'ended_at'       => '',
 				'duration_secs'  => 0,
 				'items_total'    => 0,
@@ -238,11 +239,22 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 				return;
 			}
 
-			$entry['ended_at']      = current_time( 'mysql' );
-			$start_timestamp        = strtotime( $entry['started_at'] );
-			$entry['duration_secs'] = $start_timestamp
-				? round( microtime( true ) - $start_timestamp, 2 )
-				: 0;
+			$entry['ended_at'] = current_time( 'mysql' );
+
+			if ( ! empty( $entry['started_at_ts'] ) ) {
+				// Preferred: monotonic UTC epoch captured in start_run().
+				$entry['duration_secs'] = max( 0, round( microtime( true ) - (float) $entry['started_at_ts'], 2 ) );
+			} else {
+				// Legacy entries only have the site-local started_at string, so
+				// compare against the same local-time basis. Mixing it with
+				// microtime( true ) (UTC) skews the result by the site's UTC
+				// offset and can produce negative durations.
+				$start_timestamp        = strtotime( $entry['started_at'] );
+				$end_timestamp          = strtotime( $entry['ended_at'] );
+				$entry['duration_secs'] = ( $start_timestamp && $end_timestamp && $end_timestamp >= $start_timestamp )
+					? round( $end_timestamp - $start_timestamp, 2 )
+					: 0;
+			}
 
 			$entry['status'] = isset( $summary['status'] )
 				? sanitize_key( $summary['status'] )
