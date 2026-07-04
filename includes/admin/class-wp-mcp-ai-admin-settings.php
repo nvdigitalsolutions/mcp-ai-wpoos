@@ -1598,62 +1598,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_mcp_ai_openai_section'
 			);
 
-			add_settings_field(
-				'context_strategy',
-				__( 'Context Strategy', 'mcp-ai-wpoos' ),
-				array( $this, 'render_context_strategy_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_openai_section'
-			);
-
-			add_settings_field(
-				'end_window_size',
-				__( 'End Window Size', 'mcp-ai-wpoos' ),
-				array( $this, 'render_end_window_size_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_openai_section'
-			);
-
-			add_settings_field(
-				'summary_trigger_count',
-				__( 'Summary Trigger Count', 'mcp-ai-wpoos' ),
-				array( $this, 'render_summary_trigger_count_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_openai_section'
-			);
-
-			add_settings_field(
-				'summary_max_tokens',
-				__( 'Summary Max Tokens', 'mcp-ai-wpoos' ),
-				array( $this, 'render_summary_max_tokens_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_openai_section'
-			);
-
-			add_settings_field(
-				'summary_trigger_tokens',
-				__( 'Summary Trigger Tokens', 'mcp-ai-wpoos' ),
-				array( $this, 'render_summary_trigger_tokens_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_openai_section'
-			);
-
-			add_settings_field(
-				'summary_model',
-				__( 'Summary Model', 'mcp-ai-wpoos' ),
-				array( $this, 'render_summary_model_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_openai_section'
-			);
-
-			add_settings_field(
-				'tool_result_summarize_threshold',
-				__( 'Tool Result Summarize Threshold', 'mcp-ai-wpoos' ),
-				array( $this, 'render_tool_result_summarize_threshold_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_openai_section'
-			);
-
 			add_settings_section(
 				'wp_mcp_ai_gemini_section',
 				__( 'Gemini Configuration', 'mcp-ai-wpoos' ),
