@@ -84,34 +84,97 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 				return;
 			}
 
-			$interval_seconds = ! empty( $settings['sync_interval'] )
-				? absint( $settings['sync_interval'] ) * MINUTE_IN_SECONDS
-				: 15 * MINUTE_IN_SECONDS;
+			$interval_minutes = ! empty( $settings['sync_interval'] )
+				? absint( $settings['sync_interval'] )
+				: 15;
+			$interval_seconds = $interval_minutes * MINUTE_IN_SECONDS;
 
-			// Full inventory sync.
-			if ( ! as_has_scheduled_action( self::HOOK_FULL_SYNC ) ) {
-				as_schedule_recurring_action(
-					time() + 60, // Start 1 minute from now.
-					$interval_seconds,
-					self::HOOK_FULL_SYNC,
-					array(),
-					self::GROUP,
-					true // Unique.
+			// Detect interval changes so we reschedule when the admin changes
+			// the sync interval setting (the old recurring action would otherwise
+			// keep running at the old interval forever).
+			$last_stored_interval = (int) get_option( 'wp_mcp_ai_flowhub_sync_scheduled_interval', 0 );
+			$needs_reschedule     = ( $last_stored_interval !== $interval_seconds );
+
+			$sync_connections = isset( $settings['sync_connections'] )
+				? $settings['sync_connections']
+				: array();
+
+			// If no sync connections are configured, clear any lingering
+			// recurring actions in our groups and bail.
+			if ( empty( $sync_connections ) ) {
+				if ( $needs_reschedule || as_has_scheduled_action( self::HOOK_FULL_SYNC, array(), self::GROUP ) ) {
+					as_unschedule_all_actions( '', array(), self::GROUP );
+				}
+				if ( $needs_reschedule || as_has_scheduled_action( self::HOOK_WC_SYNC, array(), self::GROUP_WC ) ) {
+					as_unschedule_all_actions( '', array(), self::GROUP_WC );
+				}
+				if ( $needs_reschedule ) {
+					update_option( 'wp_mcp_ai_flowhub_sync_scheduled_interval', $interval_seconds );
+				}
+				return;
+			}
+
+			// Interval changed — nuke all existing recurring actions in our
+			// groups and rebuild from scratch with the new interval.
+			if ( $needs_reschedule ) {
+				as_unschedule_all_actions( '', array(), self::GROUP );
+				as_unschedule_all_actions( '', array(), self::GROUP_WC );
+			}
+
+			// Full inventory sync — one recurring action per connection.
+			// Each connection needs its own action because the FlowHub API
+			// call is per-connection (different credentials per connection).
+			foreach ( $sync_connections as $conn_id ) {
+				$conn_id = sanitize_key( $conn_id );
+				if ( empty( $conn_id ) ) {
+					continue;
+				}
+
+				$args = array(
+					'dry_run'       => false,
+					'connection_id' => $conn_id,
 				);
+
+				if ( $needs_reschedule || ! as_has_scheduled_action( self::HOOK_FULL_SYNC, $args, self::GROUP ) ) {
+					if ( ! $needs_reschedule ) {
+						as_unschedule_all_actions( self::HOOK_FULL_SYNC, $args, self::GROUP );
+					}
+					as_schedule_recurring_action(
+						time() + 60, // Start 1 minute from now.
+						$interval_seconds,
+						self::HOOK_FULL_SYNC,
+						$args,
+						self::GROUP
+						// No $unique — same hook+group, different args per connection.
+					);
+				}
 			}
 
 			// WooCommerce sync (only if enabled).
-			if ( ! empty( $settings['enable_wc_sync'] )
-				&& ! as_has_scheduled_action( self::HOOK_WC_SYNC )
-			) {
-				as_schedule_recurring_action(
-					time() + 120, // Start 2 minutes from now.
-					$interval_seconds,
-					self::HOOK_WC_SYNC,
-					array(),
-					self::GROUP_WC,
-					true
-				);
+			// WC sync iterates all CCT items regardless of connection,
+			// so one action covers all connections.
+			if ( ! empty( $settings['enable_wc_sync'] ) ) {
+				if ( $needs_reschedule || ! as_has_scheduled_action( self::HOOK_WC_SYNC, array(), self::GROUP_WC ) ) {
+					if ( ! $needs_reschedule ) {
+						as_unschedule_all_actions( self::HOOK_WC_SYNC, array(), self::GROUP_WC );
+					}
+					as_schedule_recurring_action(
+						time() + 120, // Start 2 minutes from now.
+						$interval_seconds,
+						self::HOOK_WC_SYNC,
+						array(),
+						self::GROUP_WC,
+						true
+					);
+				}
+			} elseif ( $needs_reschedule || as_has_scheduled_action( self::HOOK_WC_SYNC, array(), self::GROUP_WC ) ) {
+				// WC sync was disabled — clear any existing WC sync actions.
+				as_unschedule_all_actions( self::HOOK_WC_SYNC, array(), self::GROUP_WC );
+			}
+
+			// Persist the current interval so we can detect future changes.
+			if ( $needs_reschedule ) {
+				update_option( 'wp_mcp_ai_flowhub_sync_scheduled_interval', $interval_seconds );
 			}
 		}
 
@@ -641,8 +704,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Sync_Engine' ) ) {
 				return;
 			}
 
-			as_unschedule_all_actions( self::HOOK_FULL_SYNC, array(), self::GROUP );
-			as_unschedule_all_actions( self::HOOK_WC_SYNC, array(), self::GROUP_WC );
+			// Clear all pending actions in our groups — matches any hook+args
+			// combination within the group, including per-connection actions.
+			as_unschedule_all_actions( '', array(), self::GROUP );
+			as_unschedule_all_actions( '', array(), self::GROUP_WC );
 		}
 	}
 }
