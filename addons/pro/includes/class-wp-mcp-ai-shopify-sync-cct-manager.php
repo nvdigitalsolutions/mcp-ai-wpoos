@@ -1817,9 +1817,15 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			$sync_mode = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
 
 			// Get search terms from settings, or use a default broad search.
-			$search_terms = isset( $settings['catalog_search_terms'] ) && is_array( $settings['catalog_search_terms'] )
-				? array_filter( array_map( 'sanitize_text_field', $settings['catalog_search_terms'] ) )
-				: array( '' ); // Empty string = broad match.
+			$configured_terms = isset( $settings['catalog_search_terms'] ) && is_array( $settings['catalog_search_terms'] )
+				? array_values( array_filter( array_map( 'sanitize_text_field', $settings['catalog_search_terms'] ) ) )
+				: array();
+
+			$has_configured_terms = ! empty( $configured_terms );
+
+			// Fall back to a broad match when no terms are configured (or the
+			// saved list is empty) so the sync loop always runs at least once.
+			$search_terms = $has_configured_terms ? $configured_terms : array( '' );
 
 			// Build Catalog API query filters.
 			$filters = array();
@@ -1833,6 +1839,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			$would_insert   = 0;
 			$would_update   = 0;
 			$would_skip     = 0;
+			$request_errors = array();
 
 			foreach ( $search_terms as $term ) {
 				$page = 1;
@@ -1855,6 +1862,11 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 					$result = $client->catalog_request( 'global/v2/search', $query_args );
 
 					if ( is_wp_error( $result ) ) {
+						$request_errors[] = sprintf(
+							'%s: %s',
+							'' === $term ? __( '(broad match)', 'mcp-ai-wpoos-pro' ) : $term,
+							$result->get_error_message()
+						);
 						WP_MCP_AI_Logger::log_event(
 							'shopify_catalog_sync_error',
 							'Catalog API search failed.',
@@ -1916,15 +1928,50 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$duration = round( microtime( true ) - $start_time, 2 );
 
+			// Every request failed and nothing was found — surface a real error
+			// instead of reporting a successful sync of 0 items.
+			if ( 0 === $total_searched && ! empty( $request_errors ) ) {
+				$message = sprintf(
+					/* translators: %s: error details */
+					__( 'Shopify Catalog API sync failed: %s', 'mcp-ai-wpoos-pro' ),
+					implode( ' | ', array_unique( $request_errors ) )
+				);
+				if ( ! $has_configured_terms ) {
+					$message .= ' ' . __( 'The Catalog API cannot list a full catalog — add one or more search terms under Shopify Sync → Configuration → Catalog API Search Terms.', 'mcp-ai-wpoos-pro' );
+				}
+				return new WP_Error( 'wp_mcp_ai_shopify_catalog_sync_failed', $message );
+			}
+
+			// Build actionable warnings when the sync technically succeeded
+			// but found nothing (or some requests failed).
+			$warnings = array();
+			if ( ! empty( $request_errors ) ) {
+				$warnings[] = sprintf(
+					/* translators: %s: error details */
+					__( 'Some Catalog API requests failed: %s', 'mcp-ai-wpoos-pro' ),
+					implode( ' | ', array_unique( $request_errors ) )
+				);
+			}
+			if ( 0 === $total_searched ) {
+				if ( ! $has_configured_terms ) {
+					$warnings[] = __( 'The Catalog API returned no products for the broad match search. Add search terms that describe your products under Shopify Sync → Configuration → Catalog API Search Terms.', 'mcp-ai-wpoos-pro' );
+				} elseif ( empty( $shop_id ) ) {
+					$warnings[] = __( 'No products matched the configured search terms. Set the Shop ID on the Shopify connection to limit results to your store, and verify your products are published to the Shopify global catalog.', 'mcp-ai-wpoos-pro' );
+				} else {
+					$warnings[] = __( 'No products matched the configured search terms for the configured Shop ID. Verify the Shop ID is correct and that your products are published and discoverable in the Shopify global catalog.', 'mcp-ai-wpoos-pro' );
+				}
+			}
+
 			if ( $dry_run ) {
 				return array(
 					'inserted'  => $would_insert,
 					'updated'   => $would_update,
 					'skipped'   => $would_skip,
-					'errors'    => 0,
+					'errors'    => count( $request_errors ),
 					'total'     => $total_searched,
 					'duration'  => $duration,
 					'sync_type' => 'catalog_api',
+					'warnings'  => $warnings,
 					'dry_run'   => true,
 				);
 			}
@@ -1934,10 +1981,11 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				'inserted'  => $total_synced,
 				'updated'   => 0,
 				'skipped'   => 0,
-				'errors'    => 0,
+				'errors'    => count( $request_errors ),
 				'total'     => $total_searched,
 				'duration'  => $duration,
 				'sync_type' => 'catalog_api',
+				'warnings'  => $warnings,
 			);
 		}
 
