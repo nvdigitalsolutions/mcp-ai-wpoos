@@ -122,12 +122,24 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 			$settings         = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
 			$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
 
-			if ( ! is_array( $sync_connections ) || empty( $sync_connections ) ) {
-				return;
-			}
-
 			$interval_minutes = isset( $settings['sync_interval'] ) ? absint( $settings['sync_interval'] ) : 15;
 			$interval_seconds = $interval_minutes * MINUTE_IN_SECONDS;
+
+			// Detect interval changes so we reschedule when the admin changes
+			// the sync interval setting (the old recurring action would otherwise
+			// keep running at the old interval forever).
+			$last_stored_interval = (int) get_option( 'wp_mcp_ai_shopify_sync_scheduled_interval', 0 );
+			$needs_reschedule     = ( $last_stored_interval !== $interval_seconds );
+
+			if ( ! is_array( $sync_connections ) || empty( $sync_connections ) ) {
+				// No connections configured — clear any lingering recurring actions.
+				if ( $needs_reschedule ) {
+					as_unschedule_all_actions( '', array(), self::GROUP );
+					as_unschedule_all_actions( '', array(), self::GROUP_WC );
+					update_option( 'wp_mcp_ai_shopify_sync_scheduled_interval', $interval_seconds );
+				}
+				return;
+			}
 
 			foreach ( $sync_connections as $conn_id ) {
 				$conn_id = sanitize_key( $conn_id );
@@ -137,7 +149,8 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 
 				$hook = self::HOOK_FULL_SYNC . '_' . $conn_id;
 
-				if ( ! as_has_scheduled_action( $hook ) ) {
+				if ( $needs_reschedule || ! as_has_scheduled_action( $hook ) ) {
+					as_unschedule_all_actions( $hook, array( 'connection_id' => $conn_id ), self::GROUP );
 					as_schedule_recurring_action(
 						time() + 60, // Start 1 minute from now.
 						$interval_seconds,
@@ -149,9 +162,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 				}
 
 				// WC sync (only if enabled).
+				$wc_hook = self::HOOK_WC_SYNC . '_' . $conn_id;
 				if ( ! empty( $settings['enable_wc_sync'] ) ) {
-					$wc_hook = self::HOOK_WC_SYNC . '_' . $conn_id;
-					if ( ! as_has_scheduled_action( $wc_hook ) ) {
+					if ( $needs_reschedule || ! as_has_scheduled_action( $wc_hook ) ) {
+						as_unschedule_all_actions( $wc_hook, array( 'connection_id' => $conn_id ), self::GROUP_WC );
 						as_schedule_recurring_action(
 							time() + 120, // Start 2 minutes from now.
 							$interval_seconds,
@@ -161,7 +175,15 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 							true
 						);
 					}
+				} elseif ( $needs_reschedule || as_has_scheduled_action( $wc_hook ) ) {
+					// WC sync was disabled — clear any existing WC sync actions.
+					as_unschedule_all_actions( $wc_hook, array( 'connection_id' => $conn_id ), self::GROUP_WC );
 				}
+			}
+
+			// Persist the current interval so we can detect future changes.
+			if ( $needs_reschedule ) {
+				update_option( 'wp_mcp_ai_shopify_sync_scheduled_interval', $interval_seconds );
 			}
 		}
 
