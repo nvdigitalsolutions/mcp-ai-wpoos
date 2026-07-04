@@ -1,0 +1,26 @@
+{
+    "_description": "Brave Search API — successful web search response (reduced).",
+    "status": 200,
+    "body": {
+        "web": {
+            "type": "search",
+            "results": [
+                {
+                    "title": "WordPress Plugins Directory",
+                    "url": "https://wordpress.org/plugins/",
+                    "description": "Browse thousands of free WordPress plugins."
+                },
+                {
+                    "title": "Plugin Handbook | Developer.WordPress.org",
+                    "url": "https://developer.wordpress.org/plugins/",
+                    "description": "Everything you need to know about WordPress plugin development."
+                },
+                {
+                    "title": "Best WordPress Plugins 2026",
+                    "url": "https://example.com/best-wp-plugins",
+                    "description": "A curated list of the most popular WordPress plugins."
+                }
+            ]
+        }
+    }
+}

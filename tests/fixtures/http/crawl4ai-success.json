@@ -1,0 +1,16 @@
+{
+    "_description": "Crawl4AI — successful crawl job submission and result.",
+    "status": 200,
+    "body": {
+        "task_id": "task-abc123",
+        "status": "completed",
+        "results": [
+            {
+                "url": "https://example.com",
+                "title": "Example Domain",
+                "markdown": "# Example Domain\n\nThis domain is for use in illustrative examples.",
+                "html": "<h1>Example Domain</h1><p>This domain is for use in illustrative examples.</p>"
+            }
+        ]
+    }
+}
