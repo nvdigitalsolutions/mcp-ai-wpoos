@@ -1,0 +1,15 @@
+{
+    "_description": "Generic API rate-limit response (429).",
+    "status": 429,
+    "body": {
+        "error": {
+            "code": "rate_limit_exceeded",
+            "message": "Rate limit exceeded. Retry after 60 seconds.",
+            "retry_after": 60
+        }
+    },
+    "headers": {
+        "content-type": "application/json",
+        "retry-after": "60"
+    }
+}

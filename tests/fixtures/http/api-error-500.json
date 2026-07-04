@@ -1,0 +1,13 @@
+{
+    "_description": "Generic API error response (500).",
+    "status": 500,
+    "body": {
+        "error": {
+            "code": "internal_error",
+            "message": "An internal server error occurred."
+        }
+    },
+    "headers": {
+        "content-type": "application/json"
+    }
+}

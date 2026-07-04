@@ -35,7 +35,7 @@ if ( ! $_wp_db_host ) {
 	if ( $studio_config && file_exists( $studio_config ) && ! getenv( 'WP_DB_HOST' ) ) {
 		$config_contents = file_get_contents( $studio_config );
 		if ( $config_contents && preg_match( "/define\s*\(\s*'DB_HOST'\s*,\s*'([^']+)'\s*\)/", $config_contents, $m ) ) {
-			$_wp_db_host = $m[1];
+			$_wp_db_host  = $m[1];
 			$_studio_mode = true;
 		}
 	}
@@ -43,23 +43,26 @@ if ( ! $_wp_db_host ) {
 
 if ( ! defined( 'DB_NAME' ) ) {
 	$studio_test_db = $_studio_mode ? 'wordpress_test' : null;
-	define( 'DB_NAME', getenv( 'WP_DB_NAME' ) ?: $studio_test_db ?: 'wordpress_test' );
+	$db_name        = getenv( 'WP_DB_NAME' ) ? getenv( 'WP_DB_NAME' ) : ( $studio_test_db ? $studio_test_db : 'wordpress_test' );
+	define( 'DB_NAME', $db_name );
 }
 
 if ( ! defined( 'DB_USER' ) ) {
 	$studio_db_user = $_studio_mode ? 'root' : null;
-	define( 'DB_USER', getenv( 'WP_DB_USER' ) ?: $studio_db_user ?: 'wordpress' );
+	$db_user        = getenv( 'WP_DB_USER' ) ? getenv( 'WP_DB_USER' ) : ( $studio_db_user ? $studio_db_user : 'WordPress' );
+	define( 'DB_USER', $db_user );
 }
 
 if ( ! defined( 'DB_PASSWORD' ) ) {
 	$studio_db_pass = $_studio_mode ? 'root' : null;
-	define( 'DB_PASSWORD', getenv( 'WP_DB_PASSWORD' ) ?: $studio_db_pass ?: 'wordpress' );
+	$db_password    = getenv( 'WP_DB_PASSWORD' ) ? getenv( 'WP_DB_PASSWORD' ) : ( $studio_db_pass ? $studio_db_pass : 'WordPress' );
+	define( 'DB_PASSWORD', $db_password );
 }
 
 if ( ! defined( 'DB_HOST' ) ) {
 	// Use 127.0.0.1 (TCP) when a host env var is provided; avoids Unix-socket
 	// "No such file or directory" errors in GitHub Actions MySQL service containers.
-	define( 'DB_HOST', $_wp_db_host ?: 'localhost' );
+	define( 'DB_HOST', $_wp_db_host ? $_wp_db_host : 'localhost' );
 }
 
 if ( ! defined( 'DB_CHARSET' ) ) {
@@ -72,8 +75,9 @@ if ( ! defined( 'DB_COLLATE' ) ) {
 
 // Use SQLite only in local / Codex / Studio environments (no WP_DB_HOST env var).
 // In CI the MySQL service container is used instead.
-// Studio sites use their own MySQL; tests create a separate test database.
-if ( ! $_wp_db_host ) {
+// Studio sites use their own MySQL; tests create a separate test database
+// using SQLite for isolation regardless of the production DB type.
+if ( ! $_wp_db_host || $_studio_mode ) {
 	if ( ! defined( 'DB_TYPE' ) ) {
 		define( 'DB_TYPE', 'sqlite' );
 	}

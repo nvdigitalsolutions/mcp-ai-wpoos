@@ -109,6 +109,8 @@ class Test_WP_MCP_AI_Http_Client_Service extends WP_UnitTestCase {
 	 *
 	 * Uses httpbin.org which is a public testing API for HTTP requests.
 	 * Skipped when network access is not available.
+	 *
+	 * @group external-http
 	 */
 	public function test_get_request() {
 		// Skip if running in offline environment.
@@ -129,6 +131,8 @@ class Test_WP_MCP_AI_Http_Client_Service extends WP_UnitTestCase {
 	 * Test POST request to a public endpoint.
 	 *
 	 * Skipped when network access is not available.
+	 *
+	 * @group external-http
 	 */
 	public function test_post_request() {
 		// Skip if running in offline environment.
@@ -170,6 +174,8 @@ class Test_WP_MCP_AI_Http_Client_Service extends WP_UnitTestCase {
 	 * Test the request() method directly.
 	 *
 	 * Skipped when network access is not available.
+	 *
+	 * @group external-http
 	 */
 	public function test_request_method() {
 		// Skip if running in offline environment.
