@@ -205,10 +205,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 		 */
 		public static function run_full_sync( $connection_id, $dry_run = false ) {
 			if ( ! function_exists( 'wp_mcp_ai_log' ) ) {
-				return $dry_run ? new WP_Error(
+				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_no_logger',
 					__( 'Plugin logger is not available.', 'mcp-ai-wpoos-pro' )
-				) : null;
+				);
 			}
 
 			if ( $dry_run ) {
@@ -245,7 +245,14 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
 						)
 					);
 				}
-				return;
+				return new WP_Error(
+					'wp_mcp_ai_shopify_sync_cost_limit',
+					sprintf(
+						/* translators: %s: connection ID */
+						__( 'GraphQL cost budget too low for connection %s. Wait for the budget to refill or try again later.', 'mcp-ai-wpoos-pro' ),
+						$connection_id
+					)
+				);
 			}
 
 			$cost_report = $engine->get_cost_report();

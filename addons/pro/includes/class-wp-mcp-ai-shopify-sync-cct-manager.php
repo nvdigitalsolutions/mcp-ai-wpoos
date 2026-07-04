@@ -1830,6 +1830,9 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$total_synced   = 0;
 			$total_searched = 0;
+			$would_insert   = 0;
+			$would_update   = 0;
+			$would_skip     = 0;
 
 			foreach ( $search_terms as $term ) {
 				$page = 1;
@@ -1874,7 +1877,22 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 						foreach ( $rows as $row ) {
 							if ( $dry_run ) {
-								++$total_synced;
+								// Check if this row already exists in CCT for dry-run hash comparison.
+								$existing = $this->get_cached_item_by_variant_id(
+									$row['shopify_variant_id'],
+									isset( $row['location_id'] ) ? $row['location_id'] : ''
+								);
+								if ( $existing ) {
+									$new_hash = isset( $row['sync_hash'] ) ? $row['sync_hash'] : '';
+									$old_hash = isset( $existing['sync_hash'] ) ? $existing['sync_hash'] : '';
+									if ( $new_hash === $old_hash ) {
+										++$would_skip;
+									} else {
+										++$would_update;
+									}
+								} else {
+									++$would_insert;
+								}
 								continue;
 							}
 
@@ -1898,12 +1916,28 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$duration = round( microtime( true ) - $start_time, 2 );
 
+			if ( $dry_run ) {
+				return array(
+					'inserted'  => $would_insert,
+					'updated'   => $would_update,
+					'skipped'   => $would_skip,
+					'errors'    => 0,
+					'total'     => $total_searched,
+					'duration'  => $duration,
+					'sync_type' => 'catalog_api',
+					'dry_run'   => true,
+				);
+			}
+
 			return array(
-				'status'         => 'success',
-				'products_found' => $total_searched,
-				'rows_synced'    => $total_synced,
-				'duration_secs'  => $duration,
-				'sync_type'      => 'catalog_api',
+				'status'    => 'success',
+				'inserted'  => $total_synced,
+				'updated'   => 0,
+				'skipped'   => 0,
+				'errors'    => 0,
+				'total'     => $total_searched,
+				'duration'  => $duration,
+				'sync_type' => 'catalog_api',
 			);
 		}
 
