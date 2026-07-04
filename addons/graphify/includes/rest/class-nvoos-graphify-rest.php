@@ -705,7 +705,8 @@ class NV_oOS_Graphify_REST {
 		if ( ! $driver ) {
 			return new WP_Error( 'no_driver', __( 'Driver not found.', 'nvoos-graphify' ), array( 'status' => 500 ) );
 		}
-		$result = $driver->test_connection( $source );
+		$driver->set_config( $source );
+		$result = $driver->test_connection();
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
@@ -762,6 +763,10 @@ class NV_oOS_Graphify_REST {
 			}
 		}
 		$config['_slug'] = $slug;
+
+		if ( ! class_exists( 'NV_oOS_Graphify_Remote_Webhook' ) ) {
+			return new WP_Error( 'webhook_driver_missing', __( 'Webhook driver is not installed.', 'nvoos-graphify' ), array( 'status' => 501 ) );
+		}
 
 		$driver = new NV_oOS_Graphify_Remote_Webhook();
 		$driver->set_config( $config );

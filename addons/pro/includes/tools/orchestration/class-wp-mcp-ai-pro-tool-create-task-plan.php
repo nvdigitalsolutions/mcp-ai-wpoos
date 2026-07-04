@@ -98,9 +98,9 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate arguments.
 		if ( empty( $arguments['plan_name'] ) || empty( $arguments['goal'] ) || empty( $arguments['tasks'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required arguments: plan_name, goal, and tasks are required',
+			return new \WP_Error(
+				'missing_required_args',
+				__( 'Missing required arguments: plan_name, goal, and tasks are required', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -113,9 +113,9 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 			$existing_task_plan = get_post( $task_plan_id );
 
 			if ( ! $existing_task_plan || 'mcp_task_plan' !== $existing_task_plan->post_type ) {
-				return array(
-					'success' => false,
-					'error'   => 'Task plan not found.',
+				return new \WP_Error(
+					'plan_not_found',
+					__( 'Task plan not found.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -125,9 +125,9 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {
-				return array(
-					'success' => false,
-					'error'   => 'You do not have permission to update this task plan.',
+				return new \WP_Error(
+					'permission_denied',
+					__( 'You do not have permission to update this task plan.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -144,10 +144,7 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 		$plan_id = $this->create_plan_storage( $arguments, $markdown, $task_count, $task_plan_id, $is_update );
 
 		if ( is_wp_error( $plan_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $plan_id->get_error_message(),
-			);
+			return $plan_id;
 		}
 
 		return array(
@@ -176,8 +173,11 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 	 * @return string
 	 */
 	private function generate_markdown( $arguments ) {
-		$markdown  = "# {$arguments['plan_name']}\n\n";
-		$markdown .= "## Goal\n{$arguments['goal']}\n\n";
+		$plan_name = isset( $arguments['plan_name'] ) ? sanitize_text_field( $arguments['plan_name'] ) : '';
+		$goal      = isset( $arguments['goal'] ) ? sanitize_textarea_field( $arguments['goal'] ) : '';
+
+		$markdown  = '# ' . $plan_name . "\n\n";
+		$markdown .= '## Goal' . "\n" . $goal . "\n\n";
 		$markdown .= "## Tasks\n";
 
 		foreach ( $arguments['tasks'] as $task ) {

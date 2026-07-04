@@ -2,8 +2,8 @@
 /**
  * Kimi (Moonshot AI) provider client.
  *
- * OpenAI-compatible API at https://api.moonshot.cn/v1.
- * Supports kimi-k2.6 (256K context), kimi-k2-thinking (CoT).
+ * OpenAI-compatible API at https://api.moonshot.ai/v1.
+ * Supports kimi-k2.7-code, kimi-k2.6 (256K context), kimi-k2-thinking (CoT).
  *
  * @package Nvoos\Core
  * @since   1.0.0
@@ -30,6 +30,6 @@ class KimiClient extends OpenAiCompatibleClient {
 	}
 
 	protected function getDefaultBaseUrl(): string {
-		return 'https://api.moonshot.cn/v1';
+		return 'https://api.moonshot.ai/v1';
 	}
 }

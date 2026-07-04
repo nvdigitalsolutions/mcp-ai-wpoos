@@ -214,14 +214,40 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 
 		$sync_type = isset( $arguments['sync_type'] ) ? sanitize_text_field( $arguments['sync_type'] ) : 'single';
 
+		// Start sync log run (reconcile handles its own run tracking).
+		$run_id = '';
+		if ( 'reconcile' !== $sync_type && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+			$run_id = WP_MCP_AI_Sync_Log_Manager::start_run( 'woocommerce', null, false );
+		}
+
 		switch ( $sync_type ) {
 			case 'single':
-				return $this->sync_single_product( $arguments );
+				$result = $this->sync_single_product( $arguments, $run_id );
+				if ( $run_id && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+					$summary = array( 'status' => is_wp_error( $result ) ? 'failed' : 'completed' );
+					if ( is_wp_error( $result ) ) {
+						$summary['error_message'] = $result->get_error_message();
+					} elseif ( isset( $result['product_id'] ) ) {
+						$summary['items_total'] = 1;
+					}
+					WP_MCP_AI_Sync_Log_Manager::end_run( 'woocommerce', $run_id, $summary );
+				}
+				return $result;
 			case 'bulk':
-				return $this->sync_bulk_products( $arguments );
+				return $this->sync_bulk_products( $arguments, $run_id );
 			case 'reconcile':
 				return $this->reconcile_inventory( $arguments );
 			default:
+				if ( $run_id && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+					WP_MCP_AI_Sync_Log_Manager::end_run(
+						'woocommerce',
+						$run_id,
+						array(
+							'status'        => 'failed',
+							'error_message' => __( 'Invalid sync type specified.', 'mcp-ai-wpoos-pro' ),
+						)
+					);
+				}
 				return new WP_Error(
 					'invalid_sync_type',
 					__( 'Invalid sync type specified.', 'mcp-ai-wpoos-pro' )
@@ -232,10 +258,11 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 	/**
 	 * Sync single product inventory.
 	 *
-	 * @param array $arguments Tool arguments.
-	 * @return array Result.
+	 * @param array  $arguments Tool arguments.
+	 * @param string $run_id    Optional sync log run ID for audit trail.
+	 * @return array|WP_Error Result.
 	 */
-	protected function sync_single_product( $arguments ) {
+	protected function sync_single_product( $arguments, $run_id = '' ) {
 		$product_id = isset( $arguments['product_id'] ) ? absint( $arguments['product_id'] ) : 0;
 
 		if ( ! $product_id ) {
@@ -289,6 +316,20 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 			$this->log_inventory_change( $product_id, $old_stock, $new_stock, 'sync_single', $inventory_data );
 		}
 
+		// Also log to the shared Sync Log Manager for persistent audit trail.
+		if ( $run_id && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+			WP_MCP_AI_Sync_Log_Manager::log_item(
+				'woocommerce',
+				$run_id,
+				'wc_writeback',
+				(string) $product_id,
+				array(
+					'old_stock' => $old_stock,
+					'new_stock' => $new_stock,
+				)
+			);
+		}
+
 		return array(
 			'success'    => true,
 			'sync_type'  => 'single',
@@ -309,10 +350,11 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 	/**
 	 * Sync bulk products inventory.
 	 *
-	 * @param array $arguments Tool arguments.
-	 * @return array Result.
+	 * @param array  $arguments Tool arguments.
+	 * @param string $run_id    Optional sync log run ID for audit trail.
+	 * @return array|WP_Error Result.
 	 */
-	protected function sync_bulk_products( $arguments ) {
+	protected function sync_bulk_products( $arguments, $run_id = '' ) {
 		$product_ids    = isset( $arguments['product_ids'] ) && is_array( $arguments['product_ids'] ) ? array_map( 'absint', $arguments['product_ids'] ) : array();
 		$inventory_data = isset( $arguments['inventory_data'] ) && is_array( $arguments['inventory_data'] ) ? $arguments['inventory_data'] : array();
 
@@ -344,7 +386,8 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 					array(
 						'product_id' => $product_id,
 					)
-				)
+				),
+				$run_id
 			);
 
 			if ( is_wp_error( $result ) ) {
@@ -357,6 +400,20 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 					'new_stock'  => $result['new_stock'],
 				);
 			}
+		}
+
+		// Record bulk sync completion in the Sync Log Manager.
+		if ( $run_id && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+			WP_MCP_AI_Sync_Log_Manager::end_run(
+				'woocommerce',
+				$run_id,
+				array(
+					'status'        => 'completed',
+					'items_total'   => count( $product_ids ),
+					'items_updated' => $synced_count,
+					'items_errored' => $failed_count,
+				)
+			);
 		}
 
 		return array(
@@ -385,7 +442,23 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 		$inventory_data   = isset( $arguments['inventory_data'] ) && is_array( $arguments['inventory_data'] ) ? $arguments['inventory_data'] : array();
 		$reconcile_method = isset( $arguments['reconcile_method'] ) ? sanitize_text_field( $arguments['reconcile_method'] ) : 'sum';
 
+		// Start a sync log run for this reconcile operation.
+		$run_id = '';
+		if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+			$run_id = WP_MCP_AI_Sync_Log_Manager::start_run( 'woocommerce', null, false );
+		}
+
 		if ( empty( $inventory_data ) ) {
+			if ( $run_id && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+				WP_MCP_AI_Sync_Log_Manager::end_run(
+					'woocommerce',
+					$run_id,
+					array(
+						'status'        => 'failed',
+						'error_message' => __( 'Inventory data is required for reconciliation.', 'mcp-ai-wpoos-pro' ),
+					)
+				);
+			}
 			return new WP_Error(
 				'missing_inventory_data',
 				__( 'Inventory data is required for reconciliation.', 'mcp-ai-wpoos-pro' )
@@ -436,6 +509,22 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 				$this->log_inventory_change( $product_id, $old_stock, $new_stock, 'reconcile', $locations );
 			}
 
+			// Also log to the shared Sync Log Manager for persistent audit trail.
+			if ( $run_id && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+				WP_MCP_AI_Sync_Log_Manager::log_item(
+					'woocommerce',
+					$run_id,
+					'reconcile',
+					(string) $product_id,
+					array(
+						'old_stock' => $old_stock,
+						'new_stock' => $new_stock,
+						'method'    => $reconcile_method,
+						'locations' => $locations,
+					)
+				);
+			}
+
 			$reconciled[] = array(
 				'product_id'       => $product_id,
 				'product_name'     => $product->get_name(),
@@ -443,6 +532,19 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 				'new_stock'        => $new_stock,
 				'locations'        => $locations,
 				'reconcile_method' => $reconcile_method,
+			);
+		}
+
+		// Record reconcile completion in the Sync Log Manager.
+		if ( $run_id && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+			WP_MCP_AI_Sync_Log_Manager::end_run(
+				'woocommerce',
+				$run_id,
+				array(
+					'status'        => 'completed',
+					'items_total'   => count( $reconciled ),
+					'items_updated' => count( $reconciled ),
+				)
 			);
 		}
 

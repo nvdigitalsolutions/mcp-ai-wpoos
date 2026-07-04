@@ -75,7 +75,9 @@ class NV_oOS_Graphify_Builder {
 		// 3. Semantic extraction (optional).
 		$semantic_nodes = 0;
 		$semantic_edges = 0;
-		if ( $semantic && ! empty( $detected['posts'] ) ) {
+		$has_semantic   = class_exists( 'NV_oOS_Graphify_Semantic_Extractor' );
+
+		if ( $semantic && $has_semantic && ! empty( $detected['posts'] ) ) {
 			$sem_result = NV_oOS_Graphify_Semantic_Extractor::extract( $detected['posts'], $async_semantic );
 			if ( ! $async_semantic ) {
 				$semantic_nodes = NV_oOS_Graphify_DB::batch_upsert_nodes( $sem_result['nodes'] );
@@ -84,7 +86,7 @@ class NV_oOS_Graphify_Builder {
 		}
 
 		// 3b. Semantic extraction for JetEngine CCT items (same gating).
-		if ( $semantic && ! empty( $detected['ccts'] ) ) {
+		if ( $semantic && $has_semantic && ! empty( $detected['ccts'] ) ) {
 			$sem_cct_result = NV_oOS_Graphify_Semantic_Extractor::extract_ccts( $detected['ccts'], $async_semantic );
 			if ( ! $async_semantic ) {
 				$semantic_nodes += NV_oOS_Graphify_DB::batch_upsert_nodes( $sem_cct_result['nodes'] );
@@ -93,7 +95,7 @@ class NV_oOS_Graphify_Builder {
 		}
 
 		// 3c. Semantic extraction for external $wpdb table rows.
-		if ( $semantic && ! empty( $detected['external'] )
+		if ( $semantic && $has_semantic && ! empty( $detected['external'] )
 			&& method_exists( 'NV_oOS_Graphify_Semantic_Extractor', 'extract_external' )
 		) {
 			$sem_ext_result = NV_oOS_Graphify_Semantic_Extractor::extract_external( $detected['external'], $async_semantic );

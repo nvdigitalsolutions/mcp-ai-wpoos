@@ -83,6 +83,12 @@ class WP_MCP_AI_Harness_Profile {
 				'mode'           => 'warn',
 				'allowed_topics' => array(),
 			),
+			'necessity_gate'   => array(
+				'enabled'         => false,
+				'strictness'      => 'medium',
+				'auto_skip'       => true,
+				'require_approval_for_irreversible' => true,
+			),
 			'evals_enabled'    => array(),
 			'verifiers'        => array(),
 			'cost_ceiling_usd' => self::DEFAULT_COST_CEILING_USD,

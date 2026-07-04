@@ -41,17 +41,32 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		 */
 		const MAX_DATA_URL_LENGTH = 14369951; // MAX_IMAGE_SIZE_BYTES * BASE64_OVERHEAD_MULTIPLIER.
 
-		/**
-		 * Allowed image media types for Anthropic vision API.
-		 */
-		const ALLOWED_IMAGE_TYPES = array( 'jpeg', 'jpg', 'png', 'gif', 'webp' );
+				/**
+				 * Allowed image media types for Anthropic vision API.
+				 */
+				const ALLOWED_IMAGE_TYPES = array( 'jpeg', 'jpg', 'png', 'gif', 'webp' );
 
-		/**
-		 * Retrieve the configured API key.
-		 *
-		 * @return string
-		 */
+				/**
+				 * In-memory API key override. Set via set_api_key().
+				 *
+				 * @since 2026.07
+				 * @var string|null
+				 */
+				private $api_key_override = null;
+
+				/**
+				 * Retrieve the configured API key.
+				 *
+				 * @return string
+				 */
 		public function get_api_key() {
+			// If a transient API key was set via set_api_key(), use it instead
+			// of the persisted setting. This prevents TOCTOU race conditions
+			// when testing a key before saving it.
+			if ( isset( $this->api_key_override ) && is_string( $this->api_key_override ) ) {
+				return $this->api_key_override;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$key      = isset( $settings['anthropic_api_key'] ) ? $settings['anthropic_api_key'] : '';
 
@@ -60,6 +75,20 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			}
 
 			return $key;
+		}
+
+				/**
+				 * Override the API key for the lifetime of this instance only.
+				 *
+				 * Use this when testing a key before persisting it, instead of
+				 * temporarily writing it to wp_options (which creates a TOCTOU
+				 * race condition).
+				 *
+				 * @since 2026.07
+				 * @param string $api_key The API key to use for this instance.
+				 */
+		public function set_api_key( $api_key ) {
+			$this->api_key_override = $api_key;
 		}
 
 		/**
@@ -955,12 +984,15 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				}
 			}
 
-			// Set max_tokens (required by Anthropic).
-			// Anthropic's max_tokens refers to the maximum output tokens the model should
-			// generate. We cap this against the model's known output limit and, when a
-			// TPM budget is active, ensure it does not consume the entire per-minute
-			// allowance — leaving room for input tokens.
-			if ( isset( $options['max_tokens'] ) && $options['max_tokens'] > 0 ) {
+						// Set max_tokens (required by Anthropic).
+						// Anthropic's max_tokens refers to the maximum output tokens the model should
+						// generate. We cap this against the model's known output limit and, when a
+						// TPM budget is active, ensure it does not consume the entire per-minute
+						// allowance — leaving room for input tokens.
+						// Supports both max_completion_tokens (OpenAI-compatible) and max_tokens.
+			if ( isset( $options['max_completion_tokens'] ) && $options['max_completion_tokens'] > 0 ) {
+				$max_tokens = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) && $options['max_tokens'] > 0 ) {
 				$max_tokens = absint( $options['max_tokens'] );
 			} else {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();

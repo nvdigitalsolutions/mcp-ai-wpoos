@@ -45,12 +45,13 @@ class WP_MCP_AI_Profession_Repository {
 		}
 
 		$defaults = array(
-			'post_type'      => WP_MCP_AI_Profession_CPT::POST_TYPE,
-			'post_status'    => 'publish',
-			'posts_per_page' => -1,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
-			'no_found_rows'  => true,
+			'post_type'               => WP_MCP_AI_Profession_CPT::POST_TYPE,
+			'post_status'             => 'publish',
+			'posts_per_page'          => -1,
+			'orderby'                 => 'title',
+			'order'                   => 'ASC',
+			'no_found_rows'           => true,
+			'update_post_meta_cache'  => false,
 		);
 
 		$query_args  = wp_parse_args( $args, $defaults );
@@ -77,19 +78,20 @@ class WP_MCP_AI_Profession_Repository {
 		}
 
 		$args = array(
-			'post_type'      => WP_MCP_AI_Profession_CPT::POST_TYPE,
-			'post_status'    => 'publish',
-			'posts_per_page' => -1,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
-			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter profession CPT by configuration meta; no alternative index-based query available.
+			'post_type'              => WP_MCP_AI_Profession_CPT::POST_TYPE,
+			'post_status'            => 'publish',
+			'posts_per_page'         => -1,
+			'orderby'                => 'title',
+			'order'                  => 'ASC',
+			'meta_query'             => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter profession CPT by configuration meta; no alternative index-based query available.
 				array(
 					'key'     => WP_MCP_AI_Profession_CPT::META_CATEGORY,
 					'value'   => sanitize_key( $category ),
 					'compare' => '=',
 				),
 			),
-			'no_found_rows'  => true,
+			'no_found_rows'          => true,
+			'update_post_meta_cache' => false,
 		);
 
 		$query       = new WP_Query( $args );
@@ -170,11 +172,12 @@ class WP_MCP_AI_Profession_Repository {
 		// Get by IDs if any.
 		if ( ! empty( $numeric_ids ) ) {
 			$args = array(
-				'post_type'      => WP_MCP_AI_Profession_CPT::POST_TYPE,
-				'post_status'    => 'publish',
-				'post__in'       => $numeric_ids,
-				'posts_per_page' => -1,
-				'no_found_rows'  => true,
+				'post_type'              => WP_MCP_AI_Profession_CPT::POST_TYPE,
+				'post_status'            => 'publish',
+				'post__in'               => $numeric_ids,
+				'posts_per_page'         => -1,
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
 			);
 
 			$query = new WP_Query( $args );

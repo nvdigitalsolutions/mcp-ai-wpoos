@@ -549,6 +549,47 @@ class WP_MCP_AI_PM_Command_Center_Page {
 				<?php endif; ?>
 			</div>
 		</div>
+
+		<?php
+		// Autonomous orchestration section.
+		$autonomous_sessions = 0;
+		$task_plans_count    = 0;
+		$orchestration_url   = admin_url( 'admin.php?page=mcp-ai-orchestration-pro' );
+
+		if ( class_exists( 'WP_MCP_AI_Autonomous_Sessions_CCT' ) && WP_MCP_AI_Autonomous_Sessions_CCT::is_available() ) {
+			$autonomous_sessions = WP_MCP_AI_Autonomous_Sessions_CCT::count_by_status( 'active' );
+		}
+
+		$plan_posts       = wp_count_posts( 'mcp_task_plan' );
+		$task_plans_count = isset( $plan_posts->publish ) ? (int) $plan_posts->publish : 0;
+		?>
+
+		<div class="pm-cc-section">
+			<h2>
+				<span class="dashicons dashicons-update"></span>
+				<?php esc_html_e( 'Autonomous Orchestration', 'mcp-ai-wpoos-pro' ); ?>
+			</h2>
+			<div class="pm-cc-inline-cards">
+				<div class="pm-cc-kpi">
+					<div class="pm-cc-kpi-label"><?php esc_html_e( 'Active Sessions', 'mcp-ai-wpoos-pro' ); ?></div>
+					<div class="pm-cc-kpi-value"><?php echo esc_html( $autonomous_sessions ); ?></div>
+					<div class="pm-cc-kpi-sub">
+						<a href="<?php echo esc_url( $orchestration_url ); ?>">
+							<?php esc_html_e( 'View Orchestration Monitor →', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</div>
+				</div>
+				<div class="pm-cc-kpi">
+					<div class="pm-cc-kpi-label"><?php esc_html_e( 'Task Plans', 'mcp-ai-wpoos-pro' ); ?></div>
+					<div class="pm-cc-kpi-value"><?php echo esc_html( $task_plans_count ); ?></div>
+					<div class="pm-cc-kpi-sub">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-agent-command-center&tab=tasks' ) ); ?>">
+							<?php esc_html_e( 'View in Agent Command Center →', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
 		<?php
 	}
 

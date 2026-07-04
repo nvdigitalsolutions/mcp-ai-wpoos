@@ -570,6 +570,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Calendar Booking Toolkit CPT registration (Pro feature - Phase 2.6).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/init.php';
 
+		// --- Booking Adapters (v1.5.0) — interface + factory always loaded; concrete adapters conditionally ---
+		$adapters_dir = WP_MCP_AI_PRO_PATH . 'includes/adapters/';
+		require_once $adapters_dir . 'interface-wp-mcp-ai-booking-adapter.php';
+		require_once $adapters_dir . 'class-wp-mcp-ai-booking-adapter-factory.php';
+
+		// JetAppointment adapter: only load if JetEngine is present.
+		if ( function_exists( 'jet_engine' ) ) {
+			require_once $adapters_dir . 'class-wp-mcp-ai-jetappointment-adapter.php';
+		}
+
+		// JetBooking adapter: only load if Jet_Booking class exists.
+		if ( class_exists( 'Jet_Booking' ) ) {
+			require_once $adapters_dir . 'class-wp-mcp-ai-jetbooking-adapter.php';
+		}
+
 		// ========================================================================
 		// NEW PRO TOOLKITS (Phase 1 - Foundation)
 		// ========================================================================
@@ -577,6 +592,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load E-commerce Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_ecommerce_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/init.php';
+		}
+
+		// Load FlowHub Toolkit if enabled (Pro feature — FlowHub POS inventory sync).
+		if ( ! empty( $settings['enable_flowhub_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/init.php';
+		}
+
+		// Load EZuite Inventory Sync Toolkit if enabled (Pro feature — EZuite ERP inventory sync).
+		if ( ! empty( $settings['enable_ezuite_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/init.php';
+		}
+
+		// Load Shopify Sync Toolkit if enabled (Pro feature — Shopify↔WooCommerce inventory sync).
+		if ( ! empty( $settings['enable_shopify_sync_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/init.php';
 		}
 
 		// Load Social Media Management Toolkit if enabled (Pro feature).
@@ -851,6 +881,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Evaluate_Eml'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-evaluate-eml.php',
 			// Remote WordPress/WooCommerce Connection tool.
 			'WP_MCP_AI_Tool_Remote_WP_Connection'          => WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-wp-connection.php',
+			// Printful Print-on-Demand tool.
+			'WP_MCP_AI_Pro_Tool_Printful'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-printful.php',
 			// Generic REST API Connection tool.
 			'WP_MCP_AI_Tool_Generic_REST_API'              => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-generic-rest-api.php',
 			// NPM Package Enhanced Tools (new in 1.1.0).
@@ -905,12 +937,25 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Seed_Template_Library'     => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php',
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'           => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-export-calendar-ics.php',
+			// Calendar Booking Toolkit — service CRUD + bulk import (Pro feature - v1.4.0).
+			'WP_MCP_AI_Tool_Create_Service'                => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-create-service.php',
+			'WP_MCP_AI_Tool_Import_Services'               => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-import-services.php',
 			// Calendar Booking Toolkit — no-show / unconfirmed query tools (Pro feature - v2.9.0).
 			'WP_MCP_AI_Tool_Get_No_Show_Appointments'      => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-no-show-appointments.php',
 			'WP_MCP_AI_Tool_Get_Unconfirmed_Bookings'      => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-unconfirmed-bookings.php',
 			// Calendar Booking Toolkit — bulk action tools (Pro feature - v2.9.0).
 			'WP_MCP_AI_Tool_Send_Booking_Confirmations'    => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-send-booking-confirmations.php',
 			'WP_MCP_AI_Tool_Send_Reschedule_Invitation'    => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-send-reschedule-invitation.php',
+			// Calendar Booking Toolkit — JetAppointment/JetBooking sync + query tools (Pro feature - v1.5.0).
+			'WP_MCP_AI_Tool_Sync_From_JetAppointment'      => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-sync-from-jetappointment.php',
+			'WP_MCP_AI_Tool_Sync_To_JetAppointment'        => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-sync-to-jetappointment.php',
+			'WP_MCP_AI_Tool_Sync_From_JetBooking'          => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-sync-from-jetbooking.php',
+			'WP_MCP_AI_Tool_Get_JetAppointment_Providers'  => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetappointment-providers.php',
+			'WP_MCP_AI_Tool_Get_JetAppointment_Services'   => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetappointment-services.php',
+			'WP_MCP_AI_Tool_Get_JetBooking_Units'          => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetbooking-units.php',
+			'WP_MCP_AI_Tool_Get_JetBooking_Instances'      => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-jetbooking-instances.php',
+			// Places Toolkit — find bookable places (Pro feature - v1.5.0).
+			'WP_MCP_AI_Tool_Find_Bookable_Places'          => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-find-bookable-places.php',
 			// PARA Methodology tools (Pro feature - v1.2.0).
 			'WP_MCP_AI_Tool_PARA_Classify_Item'            => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-classify-item.php',
 			'WP_MCP_AI_Tool_PARA_Move_To_Archives'         => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-move-to-archives.php',
@@ -1284,15 +1329,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add places management tools if enabled.
 		if ( ! empty( $settings['enable_places_management'] ) ) {
 			$places_tools = array(
-				'WP_MCP_AI_Tool_Create_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-create-place.php',
-				'WP_MCP_AI_Tool_List_Places'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-list-places.php',
-				'WP_MCP_AI_Tool_Update_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-update-place.php',
-				'WP_MCP_AI_Tool_Delete_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-delete-place.php',
-				'WP_MCP_AI_Tool_Get_Place'              => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-get-place.php',
-				'WP_MCP_AI_Tool_Search_And_Save_Places' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-search-and-save-places.php',
-				'WP_MCP_AI_Tool_Research_Place'         => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-research-place.php',
+				'WP_MCP_AI_Tool_Create_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-create-place.php',
+				'WP_MCP_AI_Tool_List_Places'             => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-list-places.php',
+				'WP_MCP_AI_Tool_Update_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-update-place.php',
+				'WP_MCP_AI_Tool_Delete_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-delete-place.php',
+				'WP_MCP_AI_Tool_Get_Place'               => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-get-place.php',
+				'WP_MCP_AI_Tool_Search_And_Save_Places'  => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-search-and-save-places.php',
+				'WP_MCP_AI_Tool_Research_Place'          => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-research-place.php',
 				// Turf.js geospatial analysis tool (enhanced with NPM package).
-				'WP_MCP_AI_Tool_Analyze_Geospatial'     => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-analyze-geospatial.php',
+				'WP_MCP_AI_Tool_Analyze_Geospatial'      => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-analyze-geospatial.php',
+				// Bulk import tools (v1.4.0).
+				'WP_MCP_AI_Tool_Import_Places'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places.php',
+				'WP_MCP_AI_Tool_Import_Places_From_Html' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places-from-html.php',
 			);
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
 		}
@@ -1579,6 +1627,41 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Shipping_Rate_Estimator'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-shipping-rate-estimator.php',
 			);
 			$pro_tools               = array_merge( $pro_tools, $ecommerce_toolkit_tools );
+		}
+
+		// Add FlowHub Inventory Sync Toolkit tools if enabled (Pro feature — FlowHub POS integration).
+		if ( ! empty( $settings['enable_flowhub_toolkit'] ) && class_exists( 'WooCommerce' ) ) {
+			$flowhub_toolkit_tools = array(
+				'WP_MCP_AI_Pro_Tool_FlowHub_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-inventory.php',
+				'WP_MCP_AI_Pro_Tool_FlowHub_Products'  => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-products.php',
+				'WP_MCP_AI_Pro_Tool_FlowHub_Locations' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-locations.php',
+				'WP_MCP_AI_Pro_Tool_FlowHub_Sync'      => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-sync.php',
+				'WP_MCP_AI_Pro_Tool_FlowHub_Settings'  => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-settings.php',
+				'WP_MCP_AI_Pro_Tool_FlowHub_Analytics' => WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-analytics.php',
+			);
+			$pro_tools             = array_merge( $pro_tools, $flowhub_toolkit_tools );
+		}
+
+		// Add EZuite Inventory Sync Pro Toolkit tools if enabled (Pro feature — EZuite ERP integration).
+		if ( ! empty( $settings['enable_ezuite_toolkit'] ) && class_exists( 'WooCommerce' ) ) {
+			$ezuite_toolkit_tools = array(
+				'WP_MCP_AI_Pro_Tool_EZuite_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/class-wp-mcp-ai-pro-tool-ezuite-inventory.php',
+				'WP_MCP_AI_Pro_Tool_EZuite_Sync'      => WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/class-wp-mcp-ai-pro-tool-ezuite-sync.php',
+				'WP_MCP_AI_Pro_Tool_EZuite_Settings'  => WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/class-wp-mcp-ai-pro-tool-ezuite-settings.php',
+			);
+			$pro_tools            = array_merge( $pro_tools, $ezuite_toolkit_tools );
+		}
+
+		// Add Shopify Sync Toolkit tools if enabled (Pro feature — Shopify↔WooCommerce sync with CCT cache).
+		if ( ! empty( $settings['enable_shopify_sync_toolkit'] ) && class_exists( 'WooCommerce' ) && class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			$shopify_sync_toolkit_tools = array(
+				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-inventory.php',
+				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Products' => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-products.php',
+				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Orders'   => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-orders.php',
+				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Settings' => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-settings.php',
+				'WP_MCP_AI_Pro_Tool_Shopify_Sync_Analytics' => WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-analytics.php',
+			);
+			$pro_tools                  = array_merge( $pro_tools, $shopify_sync_toolkit_tools );
 		}
 
 			// Add Cloudways Pro Toolkit tools if enabled (Phase 1-4 — server/application management).
@@ -2321,6 +2404,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		$pro_tools = array(
 			// Remote WordPress/WooCommerce Connection - Requires external API access.
 			'remote_wp_connection'            => 'external-tools',
+			// Printful Print-on-Demand - Requires external API access.
+			'printful'                        => 'external-tools',
 			// Exec service tools (video, audio, CLI) - Pro features.
 			'check_wp_cli'                    => 'wordpress-core',
 			'extract_video_frames'            => 'wordpress-core',
@@ -2732,6 +2817,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_unconfirmed_bookings']   = 'wordpress-core';
 			$pro_tools['send_booking_confirmations'] = 'wordpress-core';
 			$pro_tools['send_reschedule_invitation'] = 'wordpress-core';
+			$pro_tools['create_service']             = 'wordpress-core';
+			$pro_tools['import_services']            = 'wordpress-core';
 		}
 
 		// Pro Schedule Manager tools — always available (no toolkit gate).
@@ -2880,6 +2967,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		'class-wp-mcp-ai-pro-cli-project-command.php',
 		'class-wp-mcp-ai-pro-cli-task-command.php',
 		'class-wp-mcp-ai-pro-cli-mcp-server-command.php',
+		'class-wp-mcp-ai-pro-cli-place-command.php',
+		'class-wp-mcp-ai-pro-cli-calendar-command.php',
 	);
 
 	foreach ( $wp_mcp_ai_pro_cli_files as $wp_mcp_ai_pro_cli_file ) {

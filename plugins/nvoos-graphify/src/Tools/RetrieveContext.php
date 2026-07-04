@@ -97,9 +97,9 @@ class RetrieveContext extends AbstractTool {
 		$include_edges = isset( $arguments['include_edges'] ) ? (bool) $arguments['include_edges'] : true;
 
 		if ( empty( $question ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Question is required.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'retrieve_context_question_required',
+				__( 'Question is required.', 'nvoos-graphify' )
 			);
 		}
 
@@ -276,15 +276,26 @@ class RetrieveContext extends AbstractTool {
 	 * @param object|array $node Node.
 	 * @return array<string,mixed>
 	 */
+	/**
+	 * Format a node object for the response.
+	 *
+	 * Note: Values are NOT HTML-escaped here because this output is
+	 * serialised to JSON by the REST API, not rendered as HTML.
+	 * Sanitisation is performed on DB insertion; output escaping for
+	 * HTML consumers happens in {@see buildContextText()}.
+	 *
+	 * @param object|array $node Node.
+	 * @return array<string,mixed>
+	 */
 	private function formatNode( $node ) {
 		if ( is_object( $node ) ) {
 			return array(
-				'node_id'    => esc_html( $node->node_id ),
-				'label'      => esc_html( $node->label ),
-				'type'       => esc_html( $node->type ),
-				'url'        => esc_url( $node->url ),
+				'node_id'    => $node->node_id,
+				'label'      => $node->label,
+				'type'       => $node->type,
+				'url'        => $node->url,
 				'degree'     => absint( $node->degree ),
-				'community'  => esc_html( $node->community_id ),
+				'community'  => $node->community_id,
 				'properties' => is_string( $node->properties ) ? json_decode( $node->properties, true ) : $node->properties,
 			);
 		}
@@ -294,17 +305,20 @@ class RetrieveContext extends AbstractTool {
 	/**
 	 * Format an edge object for the response.
 	 *
+	 * Note: Same escaping policy as {@see formatNode()} — no HTML
+	 * escaping here because output is JSON-serialised.
+	 *
 	 * @param object|array $edge Edge.
 	 * @return array<string,mixed>
 	 */
 	private function formatEdge( $edge ) {
 		if ( is_object( $edge ) ) {
 			return array(
-				'source'     => esc_html( $edge->source_node_id ),
-				'target'     => esc_html( $edge->target_node_id ),
-				'relation'   => esc_html( $edge->relation ),
+				'source'     => $edge->source_node_id,
+				'target'     => $edge->target_node_id,
+				'relation'   => $edge->relation,
 				'confidence' => (float) $edge->confidence,
-				'provenance' => esc_html( $edge->provenance ),
+				'provenance' => $edge->provenance,
 			);
 		}
 		return (array) $edge;

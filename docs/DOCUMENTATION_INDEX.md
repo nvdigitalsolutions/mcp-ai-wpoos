@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** June 27, 2026  
-**Plugin Version:** 1.1.34  
+**Last Updated:** July 4, 2026  
+**Plugin Version:** 1.1.36  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,22 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **JULY 4, 2026 UPDATE (v1.1.36):** EZUITE INVENTORY SYNC, RALPH LOOP ORCHESTRATION, JETBOOKING/JETAPPOINTMENT, MOONSHOT/Z.AI PARITY, SYNC LOG MANAGER, TOOL PRESETS AUTO-SELECT, HTTRACK CACHE, 45+ BUG FIXES
+>
+> **JUNE 29, 2026 UPDATE (v1.1.35):** FLOWHUB INVENTORY SYNC, SHOPIFY SYNC, NECESSITY GATE LAYER J, LOCAL VOICE STT, REMOTE SITE ADMINISTRATOR BLUEPRINT, BULK IMPORT TOOLS, FIXES
+> - **FlowHub Inventory Sync Pro Toolkit (PR #5501)** — 6-tool cannabis dispensary management: products, inventory, locations, sync, analytics, alerts. P1 proxy support + P2 CCT auto-registration (PR #5502). Auth, decryption, location_id, null-guard fixes (PRs #5500, #5503, #5507, #5510).
+> - **Shopify Sync Pro Toolkit (PR #5502)** — 5-tool bi-directional sync: products, orders, inventory, analytics, settings. Dashboard widget. Tool reference docs.
+> - **Necessity Gate Layer J** — irreversibility-weighted safety profiles scoring tool calls by risk before execution. Request context crash fix.
+> - **Local Voice Embedded STT (PR #5498)** — three pluggable browser-side STT backends (Web Speech, Whisper.cpp WASM, Vosk WASM). Offline-first.
+> - **Remote Site Administrator Blueprint** — 22-tool assistant blueprint for full remote/local WP/WooCommerce site management with JetEngine, JetFormBuilder, and REST API control.
+> - **Places & Calendar Bulk Import (PR #5509)** — batch import tools for Places and Calendar Booking toolkits.
+> - **CLI site-import** — multi-phase HTML mirror import subcommand for migrating static sites.
+> - **Voice Realtime Auto-Detect (PR #5508)** — WebRTC/WebSocket auto-selection, duplicate message fix, VAD improvements.
+> - **Remote Connections Fixes (PR #5499)** — WordPress case handling, FlowHub/Printful credential storage, Printful connection type.
+> - **Bug Fixes** — token-scoped assistant resolution (PR #5497), user_id empty fallback (PR #5495), credential token mapping (PR #5493), post type name lengths (PR #5484), OpenAI image cleanup (PRs #5489–#5491).
+> - **Agent Context Sync** — AGENTS.md, CLAUDE.md, .context/pro-vs-base.md updated for v1.1.35.
+> - **Versioning** — bumped to 1.1.35 placeholder.
+>
 > **JUNE 27, 2026 UPDATE (v1.1.34):** GPT-REALTIME-2 VOICE MODELS, MULTI-CHANNEL RESULT DELIVERY UI, GRAPHIFY ECOSYSTEM, BUG FIXES
 > - **GPT-Realtime-2 Voice Models (PR #5479)** - GA Realtime API, WebRTC transport, Translate + Whisper models, 128K context, reasoning effort. wait_for_user tool.
 > - **Multi-Channel Result Delivery UI (PR #5465)** - Telegram, Discord, WhatsApp, Google Chat in schedule modal.
@@ -1388,6 +1404,12 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [telegram-mini-app-templates.md](features/telegram-mini-app-templates.md) | **NEW:** Health & Wellness and Medical Vitals Telegram Mini App templates — member selection, auth flow, role-based access, offline-first sync, custom template API | Developers/Users |
 | **[features/media-command-center.md](features/media-command-center.md)** ⭐ **NEW (Jun 2026)** | **Media Command Center** — Top-level NV Media admin menu, templates, presets, blueprints, scheduler. Manages media generation workflows. | Admins/Users |
 | **[features/pro-spa-v2.md](features/pro-spa-v2.md)** ⭐ **NEW (Jun 2026)** | **Pro SPA v2** — Next-gen React chat UI with rich markdown rendering, assistant scoping, agent selector. Conversations primary, threads read-only. v2.0.1. | Developers/Admins |
+| **[toolkits/ezuite-inventory-sync.md](toolkits/ezuite-inventory-sync.md)** ⭐ **NEW (Jul 2026)** | **EZuite Inventory Sync Pro Toolkit** — ERP-integrated inventory sync: product pull, inventory query, item CRUD, ERP API, CLI commands, field mapping, sync log. | Admins/Devs |
+| **[toolkits/flowhub-integration.md](toolkits/flowhub-integration.md)** ⭐ **UPDATED (Jul 2026)** | **FlowHub Integration** — Updated with Remote Sites connection selector, per-connection sync, proxy support, sync log manager. | Admins/Devs |
+| **[toolkits/shopify-sync-integration.md](toolkits/shopify-sync-integration.md)** ⭐ **UPDATED (Jul 2026)** | **Shopify Sync Integration** — Updated with Catalog API guard, CCT registration lifecycle, sync log manager. | Admins/Devs |
+| **[features/sync-log-manager.md](features/sync-log-manager.md)** ⭐ **NEW (Jul 2026)** | **Sync Log Manager** — Unified per-item audit trail across EZuite, FlowHub, and Shopify sync toolkits. Status dashboards, WP-CLI, configurable retention. | Admins/Devs |
+| **[features/ralph-loop-orchestration.md](features/ralph-loop-orchestration.md)** ⭐ **NEW (Jul 2026)** | **Ralph Loop CCT Migration & Orchestration** — Circuit breaker pattern, execution logger, CCT migration tools, multi-step workflow orchestration. | Developers |
+| **[features/jetbooking-jetappointment.md](features/jetbooking-jetappointment.md)** ⭐ **NEW (Jul 2026)** | **JetBooking/JetAppointment Integration** — 8 new AI tools + 4 enhanced calendar tools for Crocoblock booking/appointment plugins. | Admins/Devs |
 
 **Pro Custom Post Types:**
 - **Customers** (5 tools) — Customer CPT with full CRUD, Customer 360 dashboard, lead-to-customer conversion
@@ -1395,6 +1417,12 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 - **Events** (5 tools) - Calendar management, Google Calendar integration
 - **Quizzes** (9 tools) - Assessments, grading, analytics, JetEngine CCT
 - **Places** (7 tools) - Location management, Google Places API integration
+
+**New Addons (July 2026):**
+- **EZuite Inventory Sync** (`addons/pro/includes/tools/erp-ezuite/`) — ERP-integrated inventory sync toolkit bridging EZuite ERP with WooCommerce/WP
+- **Ralph Loop Orchestration** — Circuit breaker, execution logger, and CCT migration tools for cross-environment data operations
+- **JetBooking/JetAppointment** (`addons/pro/includes/tools/calendar-booking/`) — 8 new AI tools + 4 enhanced calendar tools for Crocoblock plug-ins
+- **Sync Log Manager** — Unified per-item audit trail across EZuite, FlowHub, and Shopify sync toolkits
 
 **New Addons (June 2026):**
 - **Media Command Center** (`admin.php?page=nv-media`) — Top-level NV Media admin menu with templates, presets, blueprints, and scheduler

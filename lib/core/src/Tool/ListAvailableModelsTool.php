@@ -71,7 +71,7 @@ class ListAvailableModelsTool extends AbstractTool {
 			'gemini'     => 'https://generativelanguage.googleapis.com/v1beta',
 			'openrouter' => 'https://openrouter.ai/api/v1',
 			'deepseek'   => 'https://api.deepseek.com/v1',
-			'kimi'       => 'https://api.moonshot.cn/v1',
+			'kimi'       => 'https://api.moonshot.ai/v1',
 		);
 
 		$baseUrl = $baseUrl ?? ( $defaults[ $provider ] ?? '' );

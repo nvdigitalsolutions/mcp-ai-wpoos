@@ -94,6 +94,12 @@ class WP_MCP_AI_Healthcare_Optimization {
 	 * @return mixed Unmodified value.
 	 */
 	public static function intercept_per_member_options( $value, $old_value, $option ) {
+		// $option should always be a string (the option name), but guard
+		// against unexpected callers that may pass non-string values.
+		if ( ! is_string( $option ) ) {
+			return $value;
+		}
+
 		static $per_member_prefixes = array(
 			'wp_mcp_ai_vital_signs_',
 			'wp_mcp_ai_health_metrics_',

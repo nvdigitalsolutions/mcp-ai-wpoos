@@ -1,0 +1,202 @@
+/**
+ * Embedded Voice Mode Styles
+ *
+ * Provides visual styling for the push-to-talk button, waveform,
+ * transcription overlay, and status bar used by the embedded
+ * voice mode (voice-mode-embedded.js).
+ *
+ * Mirrors the cloud voice UI styling from PR #5479 for consistency.
+ *
+ * @package NV_oOS_Embedded
+ * @since   1.2.0
+ */
+
+/* ── Voice Controls Container ─────────────────────────────────── */
+
+.nvoos-embedded-voice-controls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 0;
+	gap: 8px;
+}
+
+/* ── Push-to-Talk Button ──────────────────────────────────────── */
+
+.nvoos-embedded-ptt-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	border: 2px solid #c3c4c7;
+	border-radius: 50%;
+	background: #f0f0f1;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	outline: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.nvoos-embedded-ptt-button:hover {
+	border-color: #2271b1;
+	background: #f6f7f7;
+}
+
+.nvoos-embedded-ptt-button:focus-visible {
+	box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2271b1;
+}
+
+/* Active (recording) state */
+.nvoos-embedded-ptt-button.active {
+	border-color: #d63638;
+	background: #fcf0f1;
+	animation: nvoos-ptt-pulse 1.5s ease-in-out infinite;
+}
+
+/* Processing state */
+.nvoos-embedded-ptt-button.processing {
+	border-color: #f0c33c;
+	background: #fcf9e8;
+	animation: nvoos-ptt-processing 1s ease-in-out infinite;
+}
+
+.nvoos-embedded-ptt-icon {
+	font-size: 20px;
+	line-height: 1;
+	pointer-events: none;
+}
+
+@keyframes nvoos-ptt-pulse {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(214, 54, 56, 0.4);
+	}
+	50% {
+		box-shadow: 0 0 0 8px rgba(214, 54, 56, 0);
+	}
+}
+
+@keyframes nvoos-ptt-processing {
+	0%, 100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.05);
+	}
+}
+
+/* ── Status Bar ────────────────────────────────────────────────── */
+
+.nvoos-embedded-voice-status {
+	padding: 4px 12px;
+	font-size: 12px;
+	color: #646970;
+	text-align: center;
+	min-height: 20px;
+	line-height: 20px;
+	transition: color 0.3s ease;
+}
+
+.nvoos-embedded-voice-status.error {
+	color: #d63638;
+}
+
+/* ── Waveform Canvas ────────────────────────────────────────────── */
+
+.nvoos-embedded-voice-waveform {
+	display: block;
+	width: 100%;
+	max-width: 200px;
+	height: 40px;
+	margin: 0 auto;
+	border-radius: 4px;
+	background: #f6f7f7;
+}
+
+/* ── Transcription Overlay ──────────────────────────────────────── */
+
+.nvoos-embedded-voice-transcription {
+	padding: 8px 12px;
+	margin: 4px 0;
+	font-size: 14px;
+	color: #1d2327;
+	background: #f0f6fc;
+	border: 1px solid #c5d9ed;
+	border-radius: 6px;
+	text-align: center;
+	word-break: break-word;
+	animation: nvoos-transcription-fade-in 0.2s ease;
+}
+
+@keyframes nvoos-transcription-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ── Voice Chat Button (extends chat.js voice button) ──────────── */
+
+.wp-mcp-ai-chat-voice-button.embedded {
+	background: #f0f6fc;
+	border-color: #c5d9ed;
+}
+
+.wp-mcp-ai-chat-voice-button.embedded:hover {
+	background: #e5f0fa;
+}
+
+/* ── Dark Mode Support ─────────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+	.nvoos-embedded-voice-status {
+		color: #a7aaad;
+	}
+
+	.nvoos-embedded-ptt-button {
+		background: #2c3338;
+		border-color: #50575e;
+	}
+
+	.nvoos-embedded-ptt-button:hover {
+		border-color: #72aee6;
+		background: #3c434a;
+	}
+
+	.nvoos-embedded-ptt-button.active {
+		border-color: #d63638;
+		background: #3c1e1f;
+	}
+
+	.nvoos-embedded-ptt-button.processing {
+		border-color: #bd8600;
+		background: #332d1a;
+	}
+
+	.nvoos-embedded-voice-waveform {
+		background: #2c3338;
+	}
+
+	.nvoos-embedded-voice-transcription {
+		background: #1d2b3a;
+		border-color: #3c5a7d;
+		color: #e2e8f0;
+	}
+}
+
+/* ── Responsive / Mobile ───────────────────────────────────────── */
+
+@media (max-width: 480px) {
+	.nvoos-embedded-ptt-button {
+		width: 56px;
+		height: 56px;
+	}
+
+	.nvoos-embedded-ptt-icon {
+		font-size: 24px;
+	}
+}

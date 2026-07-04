@@ -164,7 +164,7 @@ class HttpClient {
 		$requestArgs = array_merge(
 			array(
 				'timeout'    => 15,
-				'user-agent' => 'NV-oOS-Graphify/' . NVOOS_GRAPHIFY_VERSION . ' WordPress/' . get_bloginfo( 'version' ),
+				'user-agent' => 'NV-oOS-Graphify/' . NVOOS_GRAPHIFY_VERSION,
 			),
 			$args
 		);

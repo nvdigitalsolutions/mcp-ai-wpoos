@@ -1,7 +1,27 @@
 # NV oOS Roadmap
 
-**Last Updated:** June 27, 2026  
-**Version:** 1.1.34
+**Last Updated:** July 4, 2026
+**Version:** 1.1.36
+
+---
+
+## Current Capability Snapshot (v1.1.36)
+
+| Dimension | Count |
+|-----------|-------|
+| **Base tools** | ~195 (live registry authoritative) |
+| **Pro tools** | ~830+ (live registry authoritative) |
+| **Total tools** | ~1,025+ |
+| **AI providers** | 15 (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Moonshot/Kimi parity, Z.AI/GLM parity) |
+| **Voice/realtime providers** | 2 (OpenAI Realtime, Gemini Live) |
+| **Active Pro toolkits** | 22+ |
+| **Addons** | 23 |
+| **OOS cross-platform extraction** | Phase 3 at ~22% (43/195 base tools migrated; Pro tools pending) |
+| **OOS platform adapters** | WordPress ✅, Laravel (planned), Craft CMS (planned) |
+| **Test coverage** | ~500+ test files, CI-gated |
+| **PHP compatibility** | Base: PHP 7.4+ · Pro: PHP 8.1+ · OOS Core: PHP 8.1+ |
+
+> ℹ️ **Tool count note:** The live registry (`WP_MCP_AI_Tool_Registry::get_tools()`) is the authoritative source. Different documents may cite snapshot counts from different releases; when in doubt, query the registry.
 
 ---
 
@@ -11,11 +31,56 @@
 
 ### Core Principles
 
-1. **Security First** - Active monitoring and prevention of nefarious usage
-2. **WordPress Native** - Leverages WordPress core capabilities, no reinventing wheels
-3. **Open Standards** - MCP protocol compliance, extensible architecture
-4. **Community Driven** - Open source with transparent development
-5. **Production Ready** - Enterprise reliability with community accessibility
+1. **Security First** — Active monitoring and prevention of nefarious usage
+2. **WordPress Native** — Leverages WordPress core capabilities, no reinventing wheels
+3. **Open Standards** — MCP protocol compliance, extensible architecture
+4. **Community Driven** — Open source with transparent development
+5. **Production Ready** — Enterprise reliability with community accessibility
+
+---
+
+## Released: v1.1.36 — July 2026 ✅
+
+**Release Date:** July 4, 2026
+
+### What was delivered in v1.1.36
+
+- ✅ **EZuite Inventory Sync Pro Toolkit.** ERP-integrated inventory sync toolkit: product pull, inventory query, item create/update, ERP settings, CLI sync commands. Admin UI with connection selector on Features tab.
+- ✅ **Ralph Loop CCT Migration & Orchestration.** Circuit breaker pattern, execution logger, and CCT migration tools for safe cross-environment data operations.
+- ✅ **JetBooking/JetAppointment Integration (8 tools).** Adapter layer for Crocoblock booking/appointment plugins. 8 new tools + 4 enhanced calendar tools.
+- ✅ **Moonshot AI (Kimi) & Z.AI (GLM) Provider Parity.** Both providers brought to DeepSeek-level chat client capabilities. ZAI client + baseten service registered in DI container. Class loader updated.
+- ✅ **Unified Sync Log Manager.** Per-item audit trail with sync history, error tracking, and status dashboards across EZuite, FlowHub, and Shopify toolkits.
+- ✅ **Tool Presets Auto-Select & Chips Bar.** Selected tools display as clickable chips with +N overflow toggle. Tool payload cap raised from 50 to 100.
+- ✅ **HTTrack Cache Support & Place-to-Service Bridge.** HTML mirror import now supports HTTrack cache directories. Place-to-Service bridge auto-creates bookable services during batch import. URL backfill for mirrors without hts-cache.
+- ✅ **FlowHub Per-Connection Overview.** Remote Sites connection selector, per-connection sync controls, proxy support via http_api_curl hook.
+- ✅ **Generate Default Mapping + Read-Only Sync.** One-click default mapping buttons and read-only sync direction for EZuite & FlowHub toolkits.
+- ✅ **Web Search 429 Retry.** Exponential backoff for rate-limited search requests.
+- ✅ **wp_mcp_ai_log Global Helper.** Centralized logging function available globally.
+- ✅ **JetEngine CCT Support for Remote WP Connections.** Remote WordPress connections can now query and manage JetEngine CCT records.
+- ✅ **45+ Bug Fixes.** CCT module API mismatches (canonical Module.instance/Factory/ItemHandler across all toolkits). EZuite sync (missing return, field mapping, connections, CCT registration). FlowHub sync (silent failure, proxy persistence, auth headers, null cct module, dry-run). Shopify sync (Catalog API guard, CCT registration lifecycle, meta_fields). Duplicate column errors in ensure_columns. SQLite meta cache explosion. masterminds/html5 case collision. Base-version guard blocking toolkits. Tool registry fatal guards. HTTrack import (URL resolution, hex filenames, subdirectory content, mirror detection). Necessity Gate request context crash. Auto-select compute timeout. Place-to-Service bridge collision.
+- ✅ **Documentation.** Abilities registration plan (~1,000 tools as WordPress Abilities). Laravel-scale deployment architecture proposal. WP.org submission prep. Agent context sync.
+- 📦 **Versioning** — bumped to **1.1.36** across all version-bearing files. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live registry authoritative). Provider count: 15 first-class (added Moonshot/Kimi & Z.AI/GLM at parity).
+
+---
+
+## Released: v1.1.35 — June 2026 ✅
+
+**Release Date:** June 29, 2026
+
+### What was delivered in v1.1.35
+
+- ✅ **FlowHub Inventory Sync Pro Toolkit (PR #5501).** 6-tool cannabis dispensary management: products, inventory, locations, sync, analytics, alerts. P1 proxy support + P2 CCT auto-registration (PR #5502). Auth, decryption, location_id, null-guard fixes (PRs #5500, #5503, #5507, #5510).
+- ✅ **Shopify Sync Pro Toolkit (PR #5502).** 5-tool bi-directional e-commerce sync: products, orders, inventory, analytics, settings. Dashboard widget. Tool reference docs.
+- ✅ **Necessity Gate Layer J.** Irreversibility-weighted safety profiles scoring tool calls by risk before execution. Request context crash fix.
+- ✅ **Local Voice Embedded STT (PR #5498).** Three pluggable browser-side STT backends (Web Speech, Whisper.cpp WASM, Vosk WASM). Offline-first architecture.
+- ✅ **Remote Site Administrator Blueprint.** 22-tool assistant blueprint for full remote/local WP/WooCommerce site management with JetEngine, JetFormBuilder, and REST API control.
+- ✅ **Places & Calendar Bulk Import (PR #5509).** Batch import tools for Places and Calendar Booking toolkits.
+- ✅ **CLI site-import Subcommand.** Multi-phase HTML mirror import for migrating static sites into WordPress.
+- ✅ **Voice Realtime Auto-Detect (PR #5508).** WebRTC/WebSocket auto-selection, duplicate message fix, VAD threshold improvements.
+- ✅ **Remote Connections Fixes (PR #5499).** WordPress case handling, FlowHub/Printful credential storage, Printful connection type.
+- ✅ **7 Bug Fixes.** Token-scoped assistant resolution (PR #5497), user_id empty fallback (PR #5495), credential token mapping (PR #5493), post type name lengths (PR #5484), OpenAI image deprecation cleanup (PRs #5489–#5491).
+- ✅ **Documentation.** Agent context sync — AGENTS.md, CLAUDE.md, .context/pro-vs-base.md updated.
+- 📦 **Versioning** — bumped to **1.1.35** placeholder across all manifests. Tool count: ~195 base + ~810+ Pro (~1,005+ total; live registry authoritative).
 
 ---
 
@@ -25,10 +90,10 @@
 
 ### What was delivered in v1.1.34
 
-- ✅ **GPT-Realtime-2 Voice Models Upgrade (PR #5479).** GA Realtime API migration with WebRTC transport (WebSocket fallback). GPT-Realtime-2 with 128K context + reasoning. 2 new models: Translate (70+ in -> 13 out) and Whisper (streaming STT). 12-section prompt template. Parallel tool calling. wait_for_user tool. 7 new admin settings.
+- ✅ **GPT-Realtime-2 Voice Models Upgrade (PR #5479).** GA Realtime API migration with WebRTC transport (WebSocket fallback). GPT-Realtime-2 with 128K context + reasoning. 2 new models: Translate (70+ in → 13 out) and Whisper (streaming STT). 12-section prompt template. Parallel tool calling. wait_for_user tool. 7 new admin settings.
 - ✅ **Multi-Channel Result Delivery UI (PR #5465).** Telegram, Discord, WhatsApp, Google Chat channels in schedule modal. 11 channels now exposed in admin UI.
 - ✅ **Pro Scheduler AI/Workflow Response Delivery (PR #5466).** AI responses routed through scheduler delivery pipeline.
-- ✅ **Graphify Ecosystem (PRs #5475-#5480).** Remote source drivers with Bridge class. WP 7.0 Connectors credential resolution. wp.org compliance sweep. Plugin Sources tab and Remote UI fixes.
+- ✅ **Graphify Ecosystem (PRs #5475–#5480).** Remote source drivers with Bridge class. WP 7.0 Connectors credential resolution. wp.org compliance sweep. Plugin Sources tab and Remote UI fixes.
 - ✅ **3 Reasoning-Tool Fatal Bugs Fixed.** enable_reasoning_mode, analyze_code_sequence, validate_reasoning_chain called non-existent success() method; replaced with format_chat_response(). Plus trim() on array fix and count() on null guard.
 - ✅ **CRM Pipeline Fixes (PRs #5469, #5474, #5473).** Deal import + Gmail fix. Multi-source auto-import. Upwork/LinkedIn API/web_search mode toggle.
 - ✅ **Docs Hub Fixes (PRs #5472, #5468).** REST fatal error + plain-permalink URL bug. Settings sync reliability + rebuild reliability + repo lookup.
@@ -39,7 +104,81 @@
 - ✅ **WP-CLI Smart Tool Test.** 409 tools tested; 28 confirmed working; 3 fatal bugs fixed.
 - ✅ **Housekeeping.** Stale build artifacts and toolkit-addons directory removed.
 
+> 💡 **This release completed the full v1.3.0 scope** (OpenAI Realtime GA, WebRTC transport, GPT-Realtime-2 reasoning, new voice models, voice tooling) — delivered early in the v1.1.x line.
+
 See [CHANGELOG.md](../CHANGELOG.md) for complete details.
+
+---
+
+## Released: v1.1.33 — June 2026 ✅
+
+**Release Date:** June 24, 2026
+
+### What was delivered in v1.1.33
+
+- ✅ **WP 7.0 Connectors Credential Integration (PR #5458).** Credential_Resolver integrated into all 17 AI client get_api_key() methods. Fallback chain: WP 7.0 Connectors → plugin settings → env vars → PHP constants. Credential source badges and hints in admin UI. All 13 provider API key descriptions updated. Provider diagnostics show key source column.
+- ✅ **nvoos-graphify v1.0.0 Release (PR #5456).** Standalone plugin at v1.0.0 (Plugin Check compliant). nvoos-graphify-ai at v1.0.0-dev. Fixed 8 escaping errors, critical prepare() spread-operator bug, vector column rename.
+- ✅ **Security Dependencies (PR #5457).** guzzlehttp/guzzle 7.10.0→7.12.1 (CVE-2026-55568, CVE-2026-55767). guzzlehttp/psr7 2.11.0→2.12.1 (CVE-2026-55766). undici npm override ≥8.5.0.
+- ✅ **npm Security (PR #5438).** 29 alerts resolved across 14 packages. Fixed critical duplicate overrides key.
+- ✅ **Bug Fixes.** WP All Import/Export Pro tool paths fixed. Tool status label loader hardened against leaked warnings.
+- ✅ **Dependencies.** 15 Dependabot bumps across Composer, npm, and GitHub Actions.
+- ✅ **Versioning.** Tool count: ~195 base + ~795 Pro (~990 total; live registry authoritative).
+
+---
+
+## Released: v1.1.32 — June 2026 ✅
+
+**Release Date:** June 19, 2026
+
+### What was delivered in v1.1.32
+
+- ✅ **Content Format Templates & Featured Image Generation (PR #5433).** Content Format Template CPT. AI-powered template engine. Featured image service with 3-provider fallback (DALL-E/Gemini/Cloudflare) and 5 image styles. 5 default templates seeded on activation.
+- ✅ **Result Delivery Pipeline (PR #5425).** Routes schedule results to 8 channels (email, Slack, Discord, Telegram, SMS, Paper Store, WordPress post, webhook). Both success and failure paths deliver.
+- ✅ **ECA Document Generation (PR #5423).** ECA Consolidate & Add page with document generation tools.
+- ✅ **Duplicate Posts & Provider Image Fixes (PR #5434).** WordPress delivery removed from blog presets to prevent duplicates. Systemic guard skips WordPress delivery when AI tool calls include create_post/save_post.
+- ✅ **6 Provider Clients Timeout Fix (PR #5431).** DeepSeek, Baseten, DigitalOcean, OpenRouter, Kimi, Cloudflare now respect global request_timeout setting.
+- ✅ **Schedule Trigger Stability (PRs #5429, #5430).** Trigger crash fixed. Save persistence restored.
+- ✅ **npm CI & Jest Resilience (PR #5428).** Babel ESM override for Node 18/20. Jest graceful fallback.
+- ✅ **Dependencies.** 14 safe Dependabot bumps. 8 npm audit CVEs. phpspreadsheet 5.7.0→5.8.0.
+- ✅ **Versioning.** Tool count: ~195 base + ~795 Pro (~990 total; live registry authoritative).
+
+---
+
+## Released: v1.1.29 — June 2026 ✅
+
+**Release Date:** June 12, 2026
+
+### What was delivered in v1.1.29
+
+- ✅ **Pro Toolkit Optimizations Phase 1–3.** Autoload control, query caching, and lazy loading across 6 Pro toolkits.
+- ✅ **Chat Transcript & Memory Retention.** Configurable TTL-based cleanup (Base 437 lines + Pro 358 lines).
+- ✅ **DietPi Pro Toolkit Phases 0–3.** 19+ tools for DietPi server management (system info, backup, provisioning, SSH proxy). MCP server integration.
+- ✅ **Layer I Guardrails — Jailbreak Prevention.** Pre-provider jailbreak detection and capability boundary enforcement.
+- ✅ **Context Window Management.** Pre-flight validation across all 13 providers via shared validate_context_window() helper with tiktoken integration.
+- ✅ **LibreChat Addon.** Code interpreter, speech services, and web search reranker.
+- ✅ **Schedule Anything SaaS Platform.** Full SaaS booking platform with Stripe integration.
+- ✅ **Vector Search Enhancements.** HNSW index, content/context embedding stores, hybrid semantic search.
+- ✅ **CRM Enhancements.** Email import with scheduled polling, lead pruning, inline tag editing, email priority/exclude actions.
+- ✅ **Real-Time SSE Streaming.** Enabled for OpenAI, DeepSeek, and all OpenAI-compatible providers.
+- ✅ **35 New OOS Core Tools.** Data, format, infrastructure, and cache tools.
+- ✅ **Bug Fixes.** 25+ fixes across CPT slugs, agentic loop persistence, rendering, well-known endpoints, and more.
+- ✅ **Security.** guzzlehttp/psr7 CVE-2026-49214, shell-quote CVE-2026-9277.
+- ✅ **Versioning.** Tool count: ~195 base + ~795 Pro (~990 total; live registry authoritative).
+
+---
+
+## Released: v1.1.25 — May 2026 ✅
+
+**Release Date:** May 31, 2026
+
+### What was delivered in v1.1.25
+
+- ✅ **Unified Blueprint System.** 55 pre-built AI assistants across 25 toolkits with one-click import. JSON Schema validation. Healthcare and Aerlinn blueprints.
+- ✅ **Cloudways Pro Toolkit.** 60 AI tools for server/app management via Cloudways API v2. OAuth singleton.
+- ✅ **CRM Toolkit Phases A–E Complete.** 70+ tools: Lead Management, Multi-channel Triage, Integration Hooks, Extensibility Hooks, Compliance.
+- ✅ **Chat UI Enhancements.** 7 features: profile card, stop generation, feedback widget, code copy, dark mode, saved prompts, prompt search.
+- ✅ **Unix-Theory Reorg Phase 4–5.** Pro tools reorganised into modular Unix-theory folders.
+- ✅ **Versioning.** Tool count: ~195 base + ~765 Pro (~960 total; live registry authoritative).
 
 ---
 
@@ -49,17 +188,14 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ### What was delivered in v1.1.24
 
-- ✅ **Bug-Fix & Stabilisation Sweep.** Paper Store Pro interface load order fix (deferred to `wp_mcp_ai_bootstrapped`). Chat SPA duplicate-message and SSE protocol-mismatch fixes. Markdown rendering enabled in Chat SPA responses via `marked`.
-- ✅ **Skill Manager Canonical Return Envelope — Unix Theory P0/P1.** Skill manager fixed to return canonical envelope (`WP_Error` on failure) instead of legacy `array('success' => false, ...)`. Skills sync endpoint added. YAML frontmatter parsing hardened against colons.
-- ✅ **Assistant Tool Presets — 24 Missing Tools Added.** Tool coverage gap filled in assistant creation presets. Out-of-date tests fixed.
-- ✅ **CVE Patches.** `tmp` >=0.2.6, `symfony/cache` ^6.4.40. Composer vendor state committed. All release ZIPs rebuilt.
-- ✅ **Paper Store Admin CRUD.** Full CRUD admin UI under Assistants menu, matching Skills admin convention.
+- ✅ **Bug-Fix & Stabilisation Sweep.** Paper Store Pro interface load order fix. Chat SPA duplicate-message and SSE protocol-mismatch fixes. Markdown rendering enabled in Chat SPA.
+- ✅ **Skill Manager Canonical Return Envelope — Unix Theory P0/P1.** Skills sync endpoint added. YAML frontmatter parsing hardened.
+- ✅ **Assistant Tool Presets — 24 Missing Tools Added.**
+- ✅ **CVE Patches.** tmp ≥0.2.6, symfony/cache ^6.4.40.
+- ✅ **Paper Store Admin CRUD.** Full CRUD admin UI under Assistants menu.
 - ✅ **CLI Coverage Enhancements.** Comprehensive WP-CLI command coverage improvements.
-- ✅ **Folder README Convention — Unix Theory P7 Complete.** Every `includes/` and `addons/pro/includes/` PHP subdirectory now ships a `README.md`. CI enforcement via `composer run docs:check-folder-readmes`.
-- ✅ **Agent Context Docs Synced.** `CLAUDE.md`, `AGENTS.md`, and `.github/agents/` synced with recent features (v2.4/v1.4).
-- ✅ **Build & CI.** `build-spa-addons` workflow added. Missing SPA addon ZIPs restored. All SPA bundles rebuilt.
-
-See [CHANGELOG.md](../CHANGELOG.md) for complete details.
+- ✅ **Folder README Convention — Unix Theory P7 Complete.** Every PHP subdirectory ships a README.md. CI enforcement via `composer run docs:check-folder-readmes`.
+- ✅ **Agent Context Docs Synced.** CLAUDE.md, AGENTS.md, and .github/agents/ synced.
 
 ---
 
@@ -69,17 +205,14 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ### What was delivered in v1.1.23
 
-- ✅ **Zed-Inspired SPA Architecture (Pro + Base).** 9-phase React SPA admin interface: Threads Sidebar, Agent Panel, Command Palette (Cmd+K), Agent Profiles (Write/Ask/Minimal/Custom), @-mention Context (8 entity types), Checkpoints & Diff Review, Inline Assistant (Gutenberg), Multi-Model Comparison, Collaborative Presence (Heartbeat API). ~75 files, ~10,800 lines. Base: 6 PHP manager classes + 5 REST controllers + 4 DB tables (PHP 7.4).
-- ✅ **Antigravity Interactions API Rewrite.** Gemini Managed Agent service rewritten for real Antigravity API (`POST /v1beta/interactions`) with code execution, Google Search grounding, and sandbox environments. `enable_managed_agents` toggle in Orchestration settings.
-- ✅ **TypeScript Upgrade + Orchestration Toggles.** Shared TS types, services, admin screens, chat drawer, React SPA builds. "Use TypeScript-Compiled Assets" checkbox in Settings → Orchestration.
-- ✅ **Comic Reader Addon (`addons/comic-reader/`).** React-based CBR/CBZ/CB7/CBT reader with dual-page modes, zoom, keyboard nav, touch, fullscreen, shortcode + Gutenberg block.
-- ✅ **Media Studio v0.3.0.** Zoom/pan, drawing tools (Konva canvas), save-to-WP-Media-Library. Image editor now feature-complete.
-- ✅ **SPA Blueprint v3.0.** External React template ingestion & gap analysis pipeline. Adapter automation (API, i18n, CSS scope, bundle optimizer).
-- ✅ **LLM Prompt Cache Optimization v1.5.1.**
-- ✅ **30+ Reliability Fixes.** Cron status diagnostics (HTTP status + body), PHP 8.2+ compatibility ($namespace/$rest_base), PHPUnit 11 (6 batches across base+pro+addons), WP.org compliance re-audit & findings (section 14), May 2026 audit findings (F-AUTHZ-05/06, F-AGENT-01), PHPCS 353→0 errors across 18 files, Docs Hub fixes (browse-repo, folder tree picker, DNS, autocomplete), qs CVE-2026-8723, DeepSeek fallback, test suite stability (wp_die handler, AJAX fixes), net worth calculator parse error.
-- ✅ **Dev Dependencies.** `wp-phpunit/wp-phpunit` 6.9.4→7.0.0, `php-stubs/wordpress-stubs` 6.9.1→7.0.0.
-
-See [CHANGELOG.md](../CHANGELOG.md) for complete details.
+- ✅ **Zed-Inspired SPA Architecture (Pro + Base).** 9-phase React SPA admin interface with Threads Sidebar, Agent Panel, Command Palette, Agent Profiles, @-mention Context, Checkpoints & Diff Review, Inline Assistant, Multi-Model Comparison, Collaborative Presence. ~75 files, ~10,800 lines.
+- ✅ **Antigravity Interactions API Rewrite.** Gemini Managed Agent service rewritten for real Antigravity API.
+- ✅ **TypeScript Upgrade + Orchestration Toggles.** Shared TS types, services, admin screens, chat drawer, React SPA builds.
+- ✅ **Comic Reader Addon.** React-based CBR/CBZ/CB7/CBT reader with dual-page modes, zoom, keyboard nav.
+- ✅ **Media Studio v0.3.0.** Zoom/pan, drawing tools (Konva canvas), save-to-WP-Media-Library.
+- ✅ **SPA Blueprint v3.0.** External React template ingestion & gap analysis pipeline.
+- ✅ **30+ Reliability Fixes.** Cron status diagnostics, PHP 8.2+ compatibility, PHPUnit 11, WP.org compliance re-audit, DeepSeek fallback, test suite stability.
+- ✅ **Dev Dependencies.** wp-phpunit 7.0.0, wordpress-stubs 7.0.0.
 
 ---
 
@@ -89,40 +222,35 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ### What was delivered across these five releases
 
-- ✅ **Baseten AI — 11th first-class provider.** OpenAI-compatible chat/tools/streaming/reasoning at `api.baseten.co/v1`. Settings → Providers → Baseten subtab. Service doc in `docs/EXTERNAL_SERVICES.md`.
-- ✅ **CoSAI Secure-by-Design Agentic System.** Four new `includes/agents/` classes: capability boundary + per-session tool allow-lists, cryptographic audit trail (CPT + options, immutable events), risk-tiered approval gate (low/medium/high/critical), isolated code sandbox (Python/Node.js/Bash/PHP). All provider-agnostic.
-- ✅ **Gemini I/O 2026 Model Refresh.** Gemini 3.5 Flash as recommended model (4x faster, dynamic thinking, $1.50/M input). Gemini Omni Flash as video default (10s, native audio, AI avatars). 3.1 Flash deprecated.
-- ✅ **Continual Harness P5.** Self-improving agent system with execution history learning and tool selection feedback loops.
+- ✅ **Baseten AI — 11th first-class provider.** OpenAI-compatible chat/tools/streaming/reasoning.
+- ✅ **CoSAI Secure-by-Design Agentic System.** Capability boundary, cryptographic audit trail, risk-tiered approval gate, isolated code sandbox (Python/Node.js/Bash/PHP).
+- ✅ **Gemini I/O 2026 Model Refresh.** Gemini 3.5 Flash as recommended model. Gemini Omni Flash as video default.
+- ✅ **Continual Harness P5.** Self-improving agent system with execution history learning.
 - ✅ **SaaS Controller Phase 2 & 4.** Stripe + OpenRouter deployment editors from WP-Admin.
-- ✅ **npm packages — nvoos-vad, nvoos-chat-bubble, nvoos-chat-memory-ui.** VAD, chat bubble widget, memory drawer component with TypeScript declarations.
+- ✅ **npm packages — nvoos-vad, nvoos-chat-bubble, nvoos-chat-memory-ui.**
 - ✅ **WordPress Studio Test Environment.** Auto-detect Studio DB/ABSPATH/site URL in test bootstrap.
-- ✅ **Security fixes.** UUID buffer bounds (saas-controller). `map_meta_cap=false` for audit trail CPT (WP 6.1+). AV false positives in test suite.
+- ✅ **Security fixes.** UUID buffer bounds. map_meta_cap=false for audit trail CPT. AV false positives in test suite.
 - ✅ **Allowed providers expanded.** DeepSeek, OpenRouter, DigitalOcean, Kimi, Baseten added to validation gate.
-- ✅ **LM Studio URLs fixed.** All `lmstudio.ai` → GitHub org after upstream 500 errors.
-- ✅ **Addons PHPCS — 93% reduction (1,143 → 82).** Two-batch cleanup with 12 new `bin/` helper scripts.
-- ✅ **v1.1.21/v1.1.20/v1.1.19/v1.1.18 — WordPress.org Compliance Complete (F1–F10).** All inline JS/CSS removed from 53 files and converted to WP enqueue APIs. 11 PHP parse errors fixed. All 10 reviewer findings resolved + re-audit verified. Build pipeline hardened. Zero bare `phpcs:ignore` comments. ⭐ **READY FOR RE-SUBMISSION**
-- ✅ **Canonical Return Envelope — Unix Theory P0/P1 Complete.** 191 non-canonical `array('success' => false, ...)` returns converted to `new WP_Error()` across 105 files. `WPMCPAI.Tools.CanonicalReturnEnvelope` + `SanitizeAtEntry` PHPCS sniffs clean. Caller sites hardened.
-- ✅ **Capability Fence P2b — Full Rollout.** `get_required_capability()` deployed to all ~830 tool classes (base + Pro + all addons) via `WP_MCP_AI_Tool_Interface`. Central `WP_MCP_AI_Tool_Capability_Map`. New `WPMCPAI.Tools.RequiredCapabilityDeclared` sniff.
-- ✅ **Security Center.** 5-tab admin page: Posture (live security scoring), Compliance Report, OTel Telemetry, Deprecated-Alias Tracking, MCP Token Inventory.
-- ✅ **Semantic Caveman Compression.** New `WP_MCP_AI_Semantic_Compressor` service (1,988 lines + 1,156 test lines). Opt-in prompt token optimization preserving facts/numbers/terms.
-- ✅ **AI Prompt Caching — All Providers.** `WP_MCP_AI_Chat_Response_Cache` + `WP_MCP_AI_Prompt_Optimizer` across all 5 AI providers. Cache Performance dashboard.
-- ✅ **Memory Layer 2026 — Phases 3–8 Merged.** Auto-capture with SHA-256 dedup (P3), RRF fusion retrieval — BM25 + vector + graph (P4), confidence decay + contradiction detection (P5), provenance tracer tool (P6), Memory Health + Retrieval Waterfall + Session Replay (P7), documentation + v1.1.20 bump (P8). CCT migrator disabled by default.
-- ✅ **Kimi (Moonshot AI) provider — 10th first-class provider.** `WP_MCP_AI_Kimi_Client` at `api.moonshot.cn/v1` with kimi-k2.6 (256K, default), kimi-k2-thinking (CoT), moonshot-v1-*.
-- ✅ **ACP Server** — Full Agent Client Protocol implementation (JSON-RPC 2.0 over HTTP/SSE). `/.well-known/ai-peer` extended.
-- ✅ **MCP Bridge** — `bin/mcp-bridge.js` stdio-to-HTTP relay for Claude Desktop, Cursor, Zed.
-- ✅ **Unix Theory P0–P6** — canonical return envelope (P0/P1), capability-fence audit (P2), data-contract metadata (P3), tool-lifecycle descriptor (P4), back-compat alias infrastructure (P5), sanitize-at-entry sniff (P6).
-- ✅ **DigitalOcean Serverless Inference provider** (9th provider) — OpenAI-compatible chat/tools/streaming/embeddings.
+- ✅ **v1.1.21/v1.1.20/v1.1.19/v1.1.18 — WordPress.org Compliance Complete (F1–F10).** All inline JS/CSS removed from 53 files. 11 PHP parse errors fixed. All 10 reviewer findings resolved. ⭐ **READY FOR RE-SUBMISSION**
+- ✅ **Canonical Return Envelope — Unix Theory P0/P1 Complete.** 191 non-canonical returns → WP_Error across 105 files.
+- ✅ **Capability Fence P2b — Full Rollout.** get_required_capability() deployed to all ~830 tool classes.
+- ✅ **Security Center.** 5-tab admin page with live security scoring, compliance report, OTel telemetry.
+- ✅ **Semantic Caveman Compression.** 1,988 lines + 1,156 test lines. Opt-in prompt token optimization.
+- ✅ **AI Prompt Caching — All Providers.** Chat response cache + prompt optimizer across all 5 AI providers.
+- ✅ **Memory Layer 2026 — Phases 3–8 Merged.** Auto-capture (P3), RRF fusion retrieval (P4), confidence decay + contradiction detection (P5), provenance tracer (P6), Memory Health + Retrieval Waterfall + Session Replay (P7), documentation (P8).
+- ✅ **Kimi (Moonshot AI) provider — 10th first-class provider.** kimi-k2.6 (256K, default), kimi-k2-thinking (CoT).
+- ✅ **ACP Server** — Full Agent Client Protocol implementation (JSON-RPC 2.0 over HTTP/SSE).
+- ✅ **MCP Bridge** — bin/mcp-bridge.js stdio-to-HTTP relay for Claude Desktop, Cursor, Zed.
+- ✅ **Unix Theory P0–P6** — canonical return envelope, capability-fence audit, data-contract metadata, tool-lifecycle descriptor, back-compat alias infrastructure, sanitize-at-entry sniff.
+- ✅ **DigitalOcean Serverless Inference provider** (9th provider).
 - ✅ **Async Chat Continuation** (slices 1–6) — durable store, dispatcher, LLM re-entry, SSE frame buffer.
-- ✅ **Jobs/Tasks Drawer + Cron-Status** — inline job-progress cards, cancel/retry routes, Tasks Drawer + toasts.
-- ✅ **Model Catalog May 2026 Refresh.** DeepSeek V4 model family added. Gemini entries consolidated. All pricing refreshed.
+- ✅ **Jobs/Tasks Drawer + Cron-Status** — inline job-progress cards, cancel/retry routes.
+- ✅ **Model Catalog May 2026 Refresh.** DeepSeek V4 model family added.
 - ✅ **GDPR — JetEngine Privacy Exporters.** CCT data exporters for transcripts, memory, and approvals.
-- ✅ **Security Hardening (5 patches).** Settings-key encryption, webhook secret enforcement, SSRF via `wp_safe_remote_get`, attachment URL allowlist, client-log debug-gate.
-- ✅ **Folder README Convention Phase P7.** Every `includes/` and `addons/pro/includes/` PHP subdirectory ships a `README.md` — completing Unix Theory P0–P7.
-- ✅ **@wordpress/env Dev Dependency.** Zero-config local WP environments via `wp-env`.
-- ✅ **Domain Migration.** All `nvoos.com` references → `nvoos.pro` / `nvoos.cloud`.
-- ✅ **Addons/pro Security Scan Fixes.** Remote-sites pagination, uninstall.php, stale tag removal.
-
-See [CHANGELOG.md](../CHANGELOG.md) for complete details.
+- ✅ **Security Hardening (5 patches).** Settings-key encryption, webhook secret enforcement, SSRF via wp_safe_remote_get.
+- ✅ **Folder README Convention Phase P7.** Every PHP subdirectory ships a README.md — completing Unix Theory P0–P7.
+- ✅ **@wordpress/env Dev Dependency.** Zero-config local WP environments via wp-env.
+- ✅ **Domain Migration.** All nvoos.com references → nvoos.pro / nvoos.cloud.
 
 ---
 
@@ -134,169 +262,101 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 - ✅ **Orchestration Phases 1–7** — HITL approval queue, prompt-injection detector, structured output + OTel span exporter, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store adapter, Pro team budget manager
 - ✅ **LLM Harnessing Subsystem (Layers A–H)** — seven opt-in per-assistant epistemic layers (prompt cues, reasoning/self-consistency, tool router, retrieval+citation, self-refine, memory scoping+PII, eval scheduler) + Pro Layer H fine-tune curriculum export
-- ✅ **Toolkit MCP Servers — all 7 phases complete** — 26 toolkits (19 Tier-1 + 7 Tier-2) exposed as per-toolkit MCP servers; `/.well-known/mcp` discovery endpoint; toolkit-scoped credentials; cross-mount audit trail; `/mcp-server` slash command; WP-CLI token management
-- ✅ **New AI providers** — OpenRouter (unified gateway for 100+ models), DeepSeek (reasoning_content passthrough), LM Studio native cURL SSE streaming + full May 2026 parity, Kimi K2.6 + Qwen 3.6 in catalog
-- ✅ **Chat SPA addon (v0.6.0, Phases 1–7)** — React replacement for legacy chat shortcode (Vercel AI SDK UI, SSE adapter, tool-call cards, memory drawer, HITL bar, attachments, branching, legacy opt-out constant)
-- ✅ **SaaS Controller addon (v0.1.0, 11 phases)** + **Cloud Worker (Phase 3)** — full NV oOS Cloud control plane management from WP-Admin
+- ✅ **Toolkit MCP Servers — all 7 phases complete** — 26 toolkits (19 Tier-1 + 7 Tier-2) exposed as per-toolkit MCP servers; `/.well-known/mcp` discovery endpoint
+- ✅ **New AI providers** — OpenRouter, DeepSeek, LM Studio native cURL SSE streaming, Kimi K2.6 + Qwen 3.6 in catalog
+- ✅ **Chat SPA addon (v0.6.0, Phases 1–7)** — React replacement for legacy chat shortcode
+- ✅ **SaaS Controller addon (v0.1.0, 11 phases)** + **Cloud Worker (Phase 3)**
 - ✅ **Docs Hub addon (v0.1.0 → v0.3.8)** — remote-first React SPA documentation portal
-- ✅ **Toolkit SPA Blueprint Phases 5–12** — a11y, i18n, PHPUnit tests, bundle-size CI guardrail, scaffolder auto-patch; 10 Tier-A manifests; canvas-toolkit v0.2.0; document-editor v0.2.0; media-studio Phase 4
-- ✅ **Inline-async-tick pattern** — 8 Tier-1 consumers (transcript mining, async tool executor, SaaS Apply, Crawl4AI, Docs Hub rebuild, Graphify reindex, Harness eval, Gemini Veo polling)
-- ✅ **WordPress.org Compliance Hardening (B1–B13)** — all reviewer findings resolved; build-pipeline split (--wp-org flag)
-- ✅ **PHPUnit + Vitest coverage campaign** (PRs #1–#11) — 271 AJAX handlers covered; non-regression CI gate; Vitest for all 6 SPA addons
-- ✅ **Dependabot security sweep** — 33 alerts resolved across all manifests
-- ✅ **Agent Skills Phases 1–4** — 28+ bundled Pro WP-developer skills, remote catalogues, progressive disclosure, skill packs
+- ✅ **Toolkit SPA Blueprint Phases 5–12** — a11y, i18n, PHPUnit tests, bundle-size CI guardrail
+- ✅ **Inline-async-tick pattern** — 8 Tier-1 consumers
+- ✅ **WordPress.org Compliance Hardening (B1–B13)** — all reviewer findings resolved
+- ✅ **PHPUnit + Vitest coverage campaign** — 271 AJAX handlers covered
+- ✅ **Dependabot security sweep** — 33 alerts resolved
+- ✅ **Agent Skills Phases 1–4** — 28+ bundled Pro WP-developer skills
 - ✅ **Markup Subsystem (Base)** — in-loop Konva canvas widget for image annotation
 - ✅ **MemPalace Capture Framework Phases A + B1** — five capture tools onto the durable memory bridge
 
-See [CHANGELOG.md](../CHANGELOG.md) for complete details.
-
 ---
 
----
+## Released: v1.1.3 — March 2026 ✅
 
-## Next Minor (v1.3.0) - Q2 2026 ⚡
-
-**Target:** June 2026  
-**Focus:** GPT-Realtime-2 voice models upgrade, WebRTC transport, translation & transcription
-
-### Major Features
-
-#### 1. OpenAI Realtime API GA Migration ✅
-- Migrated from deprecated beta endpoints to GA Realtime API
-- Nested session format: `session.type`, `audio.input/output` structure
-- Removed deprecated `OpenAI-Beta` header; added `OpenAI-Safety-Identifier`
-- Updated default model: `gpt-realtime` → `gpt-realtime-2`
-- Updated voice list: added `cedar`, removed deprecated `fable`/`nova`/`onyx`
-
-#### 2. WebRTC Transport ✅
-- New `chat-webrtc-service.js` — browser WebRTC peer connection manager
-- Ephemeral token flow: `POST /v1/realtime/client_secrets` → browser RTCPeerConnection
-- Unified interface flow: SDP relay via `POST /v1/realtime/calls`
-- New REST endpoints: `POST /mcp-ai/v1/realtime/token`, `POST /mcp-ai/v1/realtime/session`
-- WebSocket fallback preserved in updated `chat-voice-realtime-service.js`
-
-#### 3. GPT-Realtime-2 Reasoning ✅
-- Configurable reasoning effort: `minimal` / `low` / `medium` / `high` / `xhigh`
-- 12-section structured prompt template (role, tone, reasoning, preambles, tools, etc.)
-- Per-section filter hooks for prompt customization
-- Parallel tool calling enabled by default
-
-#### 4. New Models ✅
-- **GPT-Realtime-Translate**: 70+ input → 13 output languages; dedicated translation endpoint
-- **GPT-Realtime-Whisper**: Streaming speech-to-text with configurable latency
-- Translation + transcription JS services with WebRTC transport
-- Provider registration with voice controller
-
-#### 5. Voice Tooling ✅
-- `wait_for_user` no-op tool for silence/background noise handling
-- PTT (Push-to-Talk) mode support for WebRTC connections
-- Commentary phase display (preambles / tool progress) in chat UI
-- WebRTC-specific state classes and CSS
-
----
-
-## Next Minor (v1.2.0) - Q2 2026 ⚡
-
----
-
-## Released: v1.1.3 - March 2026 ✅
-
-**Release Date:** March 3, 2026  
+**Release Date:** March 3, 2026
 **Focus:** WordPress.org compliance final audit, Telegram Mini App media tab, Office 365 & iCloud Drive, Gemini Corpus RAG, Tavily web search
 
 ### What Was Delivered in v1.1.3
 
-**Core Features:**
-- ✅ 165 built-in tools (base version) - up from 127 in v1.1.0
-- ✅ 354 Pro tools (full version) = 519 total tools - up from 197 in v1.1.0
-- ✅ WordPress.org compliance 100% complete (output escaping, ABSPATH guards, menu positions)
-- ✅ **Gemini Corpus Native RAG** – Semantic Retrieval API integration for grounded Gemini responses
-- ✅ **Web Search: Tavily provider** – AI-first search with geo/freshness parameters and snippet grounding
-- ✅ **Office 365 & iCloud Drive** – 8 new Chat Channels Toolkit tools (Outlook, OneDrive, iCloud Drive)
-- ✅ **Telegram Mini App Media Badges** – File-type extension badges with WCAG-compliant styling
-- ✅ **Chat Channels Toolkit** – Now 47 tools across 11 platforms (was 39 at v1.1.1 launch)
-
-**See** [CHANGELOG.md](../CHANGELOG.md) for the complete v1.1.3 change log.
+- ✅ 165 built-in tools (base version) — up from 127 in v1.1.0
+- ✅ 354 Pro tools (full version) = 519 total tools — up from 197 in v1.1.0
+- ✅ WordPress.org compliance 100% complete
+- ✅ **Gemini Corpus Native RAG** — Semantic Retrieval API integration
+- ✅ **Web Search: Tavily provider** — AI-first search with geo/freshness parameters
+- ✅ **Office 365 & iCloud Drive** — 8 new Chat Channels Toolkit tools
+- ✅ **Telegram Mini App Media Badges** — File-type extension badges with WCAG-compliant styling
+- ✅ **Chat Channels Toolkit** — Now 47 tools across 11 platforms
 
 ---
 
-## Released: v1.1.2 - February 2026 ✅
+## Released: v1.1.2 — February 2026 ✅
 
-**Release Date:** February 16, 2026  
+**Release Date:** February 16, 2026
 **Focus:** WordPress.org compliance, Pro integration settings architecture
 
 ### What Was Delivered
 
-- ✅ **Hardcoded Menu Position Fix** – Removed hardcoded positions from 5 CPT/menu registrations
-- ✅ **Pro Settings Architecture** – Moved Mailjet, Google Analytics, Yahoo Fantasy, ESPN Fantasy settings to pro addon; base plugin now only contains settings for base tools
-- ✅ **JetEngine CPT/Taxonomy AI Integration** – AI assistant metaboxes and Research & Add pages for all JetEngine CPTs (Feb 12)
-- ✅ **Package Pre-Bundling** – pdf-lib, pdfkit, docx, exceljs, qrcode, cheerio pre-bundled in vendor; no `npm install` required in production
-- ✅ **TMA CMS Overhaul** – Telegram Mini App transformed into a full WordPress CMS interface (CPTs, tools, media)
-- ✅ **Discord/Telegram Reactions** – `add_discord_message_reaction`, `add_telegram_message_reaction`, `get_discord_voice_channel_members`
-- ✅ **WhatsApp & Messenger Fixes** – Group routing, auto-reply error #133010, webhook processing, Messenger test connection
-- ✅ **Google Chat Fixes** – HTTP 404 fix, OAuth UX, thread routing, OAuth welcome message
-- ✅ **OAuth Improvements** – Google OAuth approval prompt, Yahoo redirect URL, Mailjet credential handling
-- ✅ **Pro Workflow Builder Stability** – React asset loading, double instantiation, initialization timing, empty page display
+- ✅ Hardcoded Menu Position Fix — Removed hardcoded positions from 5 CPT/menu registrations
+- ✅ Pro Settings Architecture — Moved Mailjet, Google Analytics, Yahoo Fantasy, ESPN Fantasy settings to pro addon
+- ✅ JetEngine CPT/Taxonomy AI Integration — AI assistant metaboxes for all JetEngine CPTs
+- ✅ Package Pre-Bundling — pdf-lib, pdfkit, docx, exceljs, qrcode, cheerio pre-bundled
+- ✅ TMA CMS Overhaul — Telegram Mini App transformed into full WordPress CMS interface
+- ✅ Discord/Telegram Reactions
+- ✅ WhatsApp & Messenger Fixes — Group routing, auto-reply, webhook processing
+- ✅ Google Chat Fixes — HTTP 404 fix, OAuth UX, thread routing
+- ✅ OAuth Improvements — Google, Yahoo, Mailjet credential handling
+- ✅ Pro Workflow Builder Stability — React asset loading, initialization timing
 
 ---
 
-## Released: v1.1.1 - February 2026 ✅
+## Released: v1.1.1 — February 2026 ✅
 
-**Release Date:** February 6, 2026  
+**Release Date:** February 6, 2026
 **Focus:** Security fixes, Chat Channels Toolkit, Slash Commands, WebChat Rooms
 
 ### What Was Delivered
 
-**Security (all critical/high resolved):**
-- ✅ **SSRF Protection** – Webhook registration blocks private IPs and internal networks
-- ✅ **CSRF Protection** – Cron job deletion secured with nonce after AJAX refresh
-- ✅ **XSS Prevention** – Error messages double-escaped (input + output) for defense in depth
-- ✅ **Authorization System** – Comprehensive multi-entity job access control
-
-**New Features:**
-- ✅ **Chat Channels Toolkit** – 21 tools across 6 platforms (Telegram, WhatsApp, Slack, Discord, Teams, Messenger) + Unified Hub broadcast
-- ✅ **Slash Commands System** – Phase 1 (8 core commands) + Phase 2 (21 Pro toolkit commands); 7 automated workflow templates; REST API + WP-CLI integration
-- ✅ **WebChat Rooms** – Real-time collaborative rooms (`mcp_ai_webchat` CPT), JetEngine CCT message persistence, WebRTC support
-- ✅ **E-commerce Toolkit** – Now enabled by default for new installations
+- ✅ **SSRF Protection** — Webhook registration blocks private IPs and internal networks
+- ✅ **CSRF Protection** — Cron job deletion secured with nonce
+- ✅ **XSS Prevention** — Error messages double-escaped
+- ✅ **Authorization System** — Comprehensive multi-entity job access control
+- ✅ **Chat Channels Toolkit** — 21 tools across 6 platforms (Telegram, WhatsApp, Slack, Discord, Teams, Messenger)
+- ✅ **Slash Commands System** — Phase 1 (8 core commands) + Phase 2 (21 Pro toolkit commands); 7 automated workflow templates
+- ✅ **WebChat Rooms** — Real-time collaborative rooms, JetEngine CCT message persistence, WebRTC support
+- ✅ **E-commerce Toolkit** — Now enabled by default for new installations
 
 ---
 
-## Released: v1.1.0 - January 2026 ✅
+## Released: v1.1.0 — January 2026 ✅
 
-**Release Date:** January 28, 2026  
+**Release Date:** January 28, 2026
 **Focus:** Multi-agent orchestration, social media analytics expansion, stability improvements
 
 ### What's Included
 
 **Core Features:**
-- ✅ 127 built-in tools (base version) - up from 95
-- ✅ 70 Pro tools (full version) = 197 total tools - up from 133
-- ✅ OpenAI GPT integration (GPT-4, GPT-4 Turbo, GPT-4o, GPT-4o-mini, GPT-Image-1.5)
-- ✅ Google Gemini integration (Gemini 1.5 Pro/Flash, Gemini 2.0 Flash, Imagen 3)
-- ✅ Ollama integration (local AI models)
+- ✅ 127 built-in tools (base version) — up from 95
+- ✅ 70 Pro tools (full version) = 197 total tools — up from 133
+- ✅ OpenAI GPT integration, Google Gemini integration, Ollama integration
 - ✅ MCP protocol implementation (2024-11-05 spec)
 - ✅ Server-Sent Events (SSE) streaming
 - ✅ Assistant management (CPT + optional CCT)
 - ✅ REST API with authentication (Bearer tokens, Auth0)
-- ✅ Project management system (Pro - Projects, Tasks, Events, Calendar)
+- ✅ Project management system (Pro)
 - ✅ Comprehensive documentation (659 files, 100% feature coverage)
 
-**NEW in v1.1.0 (January 2026):**
-- ✅ **DeepSeek V4 Multi-Agent Orchestration** - Comprehensive multi-agent coordination framework
-  - 4 specialized agent roles (Planner, Executor, Critic, Specialist)
-  - Agent Team Orchestrator with 5 aggregation strategies
-  - 3 new MCP-compliant agent coordination tools
-  - 200+ profession orchestration with intelligent role assignment
-  - Multi-agent workflow templates (research, content, e-commerce, development)
-- ✅ **Social Media Analytics Toolkit Expansion** - 4 new analytics tools (15 → 19 tools total)
-  - Cross-platform analytics dashboard
-  - Hashtag performance tracking
-  - Competitor analysis
-  - Influencer identification
-- ✅ **Pro Toolkit Memory-Based Tracking** - Replaced hard 5-toolkit limit with transparent memory usage display
-- ✅ **Cloudflare Workers AI provider work** - historical roadmap item; current catalog-backed docs list active Cloudflare LLM rows rather than fabricated image-model prices
-- ✅ **7 Critical Bug Fixes** - Settings persistence, API keys, transcripts, OAuth, model dropdowns
-- ✅ **Compliance posture documentation** - historical framework work; current public docs avoid unbacked percentage claims and point operators to posture references
+**NEW in v1.1.0:**
+- ✅ **DeepSeek V4 Multi-Agent Orchestration** — 4 specialized agent roles, 5 aggregation strategies, 200+ profession orchestration
+- ✅ **Social Media Analytics Toolkit Expansion** — 4 new analytics tools (15→19 total)
+- ✅ **Pro Toolkit Memory-Based Tracking** — Replaced hard 5-toolkit limit
+- ✅ **7 Critical Bug Fixes**
 
 **AI Integrations:**
 - ✅ OpenAI Batch API (50% cost savings)
@@ -306,234 +366,76 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 - ✅ Cloudflare Workers AI (image generation)
 - ✅ Crawl4AI integration (web scraping)
 
-**Third-Party Integrations (Optional):**
-- ✅ JetEngine (CCT storage, 5 additional tools)
-- ✅ WooCommerce (e-commerce tools)
-- ✅ Elementor (widgets and integrations)
-- ✅ Rank Math (SEO analysis)
-- ✅ WPCode (code snippet management)
-
-**Pro Toolkits (13 Active - ALL IMPLEMENTED):**
-- ✅ E-commerce (20 tools)
-- ✅ Social Media (19 tools)
-- ✅ Analytics (12 tools)
-- ✅ Multilingual (10 tools)
-- ✅ Video Production (12 tools)
-- ✅ Financial Planner (24 tools)
-- ✅ Document Generation (3 tools)
-- ✅ Calendar Booking (15 tools) ⭐ Previously listed as "planned"
-- ✅ DJ Management (18 tools) ⭐ Previously listed as "planned"
-- ✅ Image Production (15 tools) ⭐ Previously listed as "planned"
-- ✅ AI Tool Builder (10 tools) ⭐ Previously listed as "planned"
-- ✅ Architectural Design (16 tools)
-- ✅ CRM (1 tool)
-- **Total: 175 Pro toolkit tools**
-
-**Quality & Testing:**
-- ✅ 500+ test files
-- ✅ ~70% code coverage
-- ✅ CI/CD pipeline (PHPUnit, PHPCS, ESLint, CodeQL)
-- ✅ Security score: 100/100
-- ✅ Code quality: 98/100
-
 ---
 
-## Next Minor (v1.2.0) - Q2 2026 ⚡
+## ✅ Previously Planned v1.3.0 & v1.2.0 Scope — Delivered Early
 
-**Release Date:** May 31, 2026  
-**Focus:** Enhanced project management, security enhancements, testing, and GitHub infrastructure
-**Note:** Originally planned as v1.1.0 for February 2026, moved to accommodate v1.1.0 early delivery with multi-agent features
+The following features were originally planned for v1.2.0 (Q2 2026) and v1.3.0 (Q2 2026). **All items below are now delivered** across the v1.1.x release line (v1.1.1 through v1.1.35).
 
-### Major Features
+### v1.3.0 Scope — Delivered in v1.1.34 (June 27, 2026) ✅
 
-#### 1. Security Enhancements (NEW)
+| Feature | Status | Delivered In |
+|---------|--------|-------------|
+| OpenAI Realtime API GA Migration | ✅ | v1.1.34 |
+| WebRTC Transport (WebSocket fallback) | ✅ | v1.1.34 |
+| GPT-Realtime-2 Reasoning (128K context) | ✅ | v1.1.34 |
+| GPT-Realtime-Translate (70+ in → 13 out) | ✅ | v1.1.34 |
+| GPT-Realtime-Whisper (streaming STT) | ✅ | v1.1.34 |
+| Voice Tooling (wait_for_user, PTT, commentary display) | ✅ | v1.1.34 |
 
-**Federation Directory Rate Limiting:**
-- [ ] Add per-IP rate limiting to `/ai-dir/v1/peers` endpoint (60 req/min)
-- [ ] Add per-IP rate limiting to `/ai-dir/v1/peers/{id}` endpoint
-- [ ] Add per-IP rate limiting to `/ai-dir/v1/search` endpoint
-- [ ] Use WordPress transients for rate limit counters
-- [ ] Return HTTP 429 with human-readable message when limit exceeded
+### v1.2.0 Scope — Delivered across v1.1.1–v1.1.35 ✅
 
-**Estimated Effort:** 4-6 hours  
-**Priority:** High  
-**Rationale:** Public peer discovery endpoints currently have no rate limiting, allowing unlimited enumeration attacks
-
-**SSE Rate Limiting:**
-- [ ] Implement per-user connection limits (3-5 concurrent)
-- [ ] Add global SSE connection limit (50-100 total)
-- [ ] Use WordPress transients for connection tracking
-- [ ] Return HTTP 429 when limits exceeded
-- [ ] Admin override for manage_options capability
-
-**Estimated Effort:** 4-6 hours  
-**Priority:** Medium  
-**Rationale:** Prevents resource exhaustion from excessive SSE connections
-
-**CORS Origin Allowlist:**
-- [ ] Add settings page option for allowed origins
-- [ ] Support wildcard subdomains (*.example.com)
-- [ ] Default to current site URL if unconfigured
-- [ ] Allow localhost in WP_DEBUG mode
-- [ ] Graceful fallback for backwards compatibility
-
-**Estimated Effort:** 4-6 hours  
-**Priority:** Low  
-**Rationale:** Enhanced security while maintaining authentication requirements
-
-**Security Testing:**
-- [ ] Automated SSRF testing
-- [ ] Automated authorization testing
-- [ ] Automated XSS testing
-- [ ] Automated CSRF testing
-- [ ] Integration with CI/CD pipeline
-
-**Estimated Effort:** 6-8 hours  
-**Priority:** Medium
-
-#### 2. Task Dependencies and Subtasks
-- [ ] Add parent-child task relationships
-- [ ] Implement dependency tracking (blocks/blocked by)
-- [ ] Add dependency validation (prevent circular)
-- [ ] Create `get_task_dependencies` tool
-- [ ] Update UI to show task hierarchy
-
-**Estimated Effort:** 12-16 hours  
-**Priority:** Medium
-
-#### 2. Notification System
-- [ ] Email notifications for task assignments
-- [ ] Event reminders (1 day, 1 hour before)
-- [ ] Deadline approaching warnings
-- [ ] Project status change notifications
-- [ ] User notification preferences
-- [ ] WordPress cron integration
-- [ ] Create `get_notifications` tool
-
-**Estimated Effort:** 20-24 hours  
-**Priority:** High
-
-#### 3. Enhanced PM Testing
-- [ ] Create task tool tests
-- [ ] Create event tool tests
-- [ ] Create calendar view tests
-- [ ] Integration test suite
-- [ ] Tool execution tests
-- [ ] Performance tests (large datasets)
-
-**Estimated Effort:** 8-12 hours  
-**Priority:** High
-
-#### 4. GitHub Project Management
-- [ ] GitHub Projects (v2) configuration
-- [ ] Project automation workflows
-- [ ] Label strategy implementation (50 labels)
-- [ ] Milestone strategy documentation
-- [ ] Stale issue automation
-- [ ] Auto-label workflows
-- [ ] PR review assignment
-
-**Estimated Effort:** 10-12 hours  
-**Priority:** High
-
-#### 5. REST API Documentation
-- [ ] PM tools REST API documentation
-- [ ] Code examples (cURL, JavaScript)
-- [ ] Postman/Insomnia collection
-- [ ] Integration guide
-
-**Estimated Effort:** 4-6 hours  
-**Priority:** Medium
-
-### Additional Improvements
-
-**Documentation:**
-- [ ] PM best practices guide
-- [ ] Troubleshooting guide for PM features
-- [ ] Workflow examples
-- [ ] Team collaboration patterns
-
-**AI Provider Enhancements:**
-- [ ] Anthropic Claude integration (Claude 3 Haiku/Sonnet, Claude 4 Sonnet — community demand confirmed)
-- [ ] Gemini context caching (68% cost savings)
-- [ ] Gemini thinking mode support
-- [ ] OpenAI batch embeddings
-- [x] Transformer-inspired attention routing — semantic tool selection via QKV embedding similarity, 5-head multi-head scoring, pre-computed tool embedding KV cache, sliding-window conversation compression, Reciprocal Rank Fusion (RRF) into harness Layer C (delivered June 2026, PR #5290)
-
-**Developer Experience:**
-- [ ] Improved error messages
-- [ ] Better debugging tools
-- [ ] Enhanced logging options
-
-**Timeline:**
-- Feature freeze: May 15, 2026
-- Beta: May 22, 2026
-- Release: May 31, 2026
-- Testing period: 2 weeks
-
-**Success Metrics:**
-- 80%+ PM test coverage
-- GitHub Projects active with 20+ issues
-- 50+ labels in use
-- REST API documentation complete
-- Zero critical bugs
+| Feature | Status | Delivered In |
+|---------|--------|-------------|
+| Federation Directory Rate Limiting (60 req/min) | ✅ | v1.1.1 (Feb 2026) |
+| SSE Connection Rate Limiting (per-user + global) | ✅ | v1.1.x (Mar 2026) |
+| CORS Origin Allowlist (configurable) | ✅ | v1.1.x (Mar 2026) |
+| Automated Security Tests (SSRF/XSS/CSRF/auth) | ✅ | v1.1.x (Mar 2026) |
+| Task Dependencies (parent-child, cycle detection) | ✅ | v1.1.x (Mar 2026) |
+| PM Notification System (email + cron) | ✅ | v1.1.x (Mar 2026) |
+| Anthropic Claude Integration (Claude 3/4, streaming, tools, vision) | ✅ | v1.1.3 (Mar 2026) |
+| Gemini Context Caching / RAG | ✅ | v1.1.3 (Mar 2026) |
+| Transformer-Inspired Attention Routing (QKV semantic tool selection) | ✅ | v1.1.x (Jun 2026) |
+| GitHub Project Management (labels, milestones, automation) | ✅ | v1.1.x |
+| Threat Model in SECURITY.md | ✅ | v1.1.x |
 
 ---
 
 ## Pro Toolkits Roadmap 🎨
 
-### Active Toolkits (17) ✅ **ALL IMPLEMENTED**
+### Active Toolkits (21+) ✅ **ALL IMPLEMENTED**
 
 **Core Business Toolkits (7):**
-1. ✅ E-commerce (20 tools) - Phase 1 Complete
-2. ✅ Social Media (19 tools) - Phase 1 & 2 Complete (expanded January 2026 with 4 analytics tools)
-3. ✅ Analytics (12 tools) - Phase 1 Complete
-4. ✅ Multilingual (10 tools) - Phase 1 Complete
-5. ✅ Video Production (12 tools) - Phase 1 Complete
-6. ✅ Financial Planner (24 tools) - Phase 1 Complete
-7. ✅ Document Generation (3 tools) - Phase 1 Complete (PDF, Word, Excel)
+1. ✅ **E-commerce** (20+ tools) — Product management, orders, cart recovery, WooCommerce integration
+2. ✅ **Social Media** (19+ tools) — Cross-platform analytics, hashtag tracking, competitor analysis
+3. ✅ **Analytics** (12+ tools) — Reporting, dashboards, data insights
+4. ✅ **Multilingual** (10+ tools) — Translation, localization, multi-language content
+5. ✅ **Video Production** (12+ tools) — Video generation, transcription, editing
+6. ✅ **Financial Planner** (24+ tools) — Budgeting, forecasting, financial analysis
+7. ✅ **Document Generation** (3+ tools) — PDF, Word, Excel generation
 
 **Advanced Professional Toolkits (6):**
-8. ✅ **Calendar Booking** (15 tools) - Phase 2.6 Complete ⭐
-   - Appointment management, availability scheduling, calendar sync (Google, Outlook)
-   - Previously listed as "planned", actually fully implemented
-9. ✅ **DJ Management** (18 tools) - Phase 2.7 Complete ⭐
-   - Music library, playlist generation, event booking, equipment tracking
-   - Previously listed as "planned", actually fully implemented
-10. ✅ **Image Production** (15 tools) - Phase 2.8 Complete ⭐
-    - AI image generation, editing, optimization, batch processing
-    - Previously listed as "planned", actually fully implemented
-11. ✅ **AI Tool Builder** (10 tools) - Phase 2.9 Complete ⭐
-    - Meta-toolkit for creating custom tools, testing, documentation
-    - Previously listed as "planned", actually fully implemented
-12. ✅ **Architectural Design** (16 tools) - Phase 2.5 Complete
-    - Floor plans, 3D models, construction drawings, building code compliance
-13. ✅ **CRM** (1 tool) - Phase 2.4 Complete
-    - Contact management integration
+8. ✅ **Calendar Booking** (15+ tools) — Appointments, availability, calendar sync (Google, Outlook)
+9. ✅ **DJ Management** (18+ tools) — Music library, playlist generation, event booking
+10. ✅ **Image Production** (15+ tools) — AI image generation, editing, optimization, batch processing
+11. ✅ **AI Tool Builder** (10+ tools) — Meta-toolkit for creating custom tools
+12. ✅ **Architectural Design** (16+ tools) — Floor plans, 3D models, construction drawings
+13. ✅ **CRM** (70+ tools) — Lead management, multi-channel triage, compliance, analytics dashboard
 
-**Added Since v1.1.0 (4 new toolkits):**
-14. ✅ **Chat Channels** (47 tools, 11 platforms) - Added February 2026 ⭐
-    - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Google Chat, Instagram, YouTube, Office 365 / OneDrive, iCloud Drive
-    - WebChat Rooms with JetEngine CCT persistence
-15. ✅ **Regulatory Registration** (59 tools) - Added early 2026 ⭐
-    - Multi-country product registration management, MOHAP & NMRA sync, compliance certificates, dossier generation, workflow automation
-16. ✅ **Site Creator** (27 tools) - Added early 2026 ⭐
-    - Landing pages, hero/CTA/testimonial/footer sections, blog layouts, theme scaffolding, template kit export
-17. ✅ **Vector Storage** - Added early 2026
-    - Prepare files for OpenAI vector stores; supports file_search RAG workflows
+**Added Since v1.1.0 (8+ toolkits):**
+14. ✅ **Chat Channels** (47+ tools, 11 platforms) — Telegram, WhatsApp, Slack, Discord, Teams, Messenger, Google Chat, Instagram, YouTube, Office 365/OneDrive, iCloud Drive
+15. ✅ **Regulatory Registration** (59 tools) — Multi-country product registration, MOHAP & NMRA sync, compliance certificates
+16. ✅ **Site Creator** (27 tools) — Landing pages, hero/CTA sections, theme scaffolding, template kit export
+17. ✅ **Vector Storage** — Prepare files for OpenAI vector stores; file_search RAG workflows
+18. ✅ **DietPi Pro** (19+ tools) — Server management, backup, provisioning, SSH proxy
+19. ✅ **Cloudways** (60+ tools) — Server/app management via Cloudways API v2, DNS, security, backups
+20. ✅ **FlowHub Inventory Sync** (6 tools) — Cannabis dispensary management: products, inventory, locations, analytics
+21. ✅ **Shopify Sync** (5 tools) — Bi-directional e-commerce sync: products, orders, inventory, analytics
 
-### Total Tool Count by Category
-- **Core Business:** 100 tools (7 toolkits)
-- **Advanced Professional:** 75 tools (6 toolkits)
-- **New (v1.1.1+):** ~134 tools (Chat Channels 47 + Regulatory 59 + Site Creator 27 + Vector Storage 1)
-- **Grand Total:** ~354 Pro toolkit tools across 17+ specialized domains (519 total including 165 base tools)
-
-### Planned Toolkits (0) ⏳
-**Status:** All previously planned toolkits have been implemented! 
-
-The 4 toolkits that were marked as "planned" in earlier documentation (Calendar Booking, DJ Management, Image Production, AI Tool Builder) are **actually fully implemented** and have been for some time. Documentation has been updated to reflect reality.
+> ℹ️ **Tool counts are approximate.** The live tool registry (`WP_MCP_AI_Tool_Registry::get_tools()`) is the authoritative source. Total Pro tools: ~810+ across 21+ toolkits. Combined with ~195 base tools = ~1,005+ total.
 
 ### Future Expansion Opportunities 💡
+
 Potential future toolkits based on community demand:
 - Healthcare Management (appointment scheduling, patient records, HIPAA compliance)
 - Legal Practice Management (case tracking, document automation, billing)
@@ -541,34 +443,72 @@ Potential future toolkits based on community demand:
 - Real Estate (property listings, showings, client management)
 - Hospitality & Events (venue management, catering, RSVPs)
 
-*These are conceptual only - no active development planned.*
+*These are conceptual only — no active development planned.*
 
 ---
 
-## Next Major (v2.0.0) - Q4 2026 🚀
+## Next Minor (v1.4.0) — Q3 2026 ⚡
 
-**Release Date:** December 31, 2026  
-**Focus:** Enterprise features, advanced workflows, team collaboration
-**Note:** Multi-agent workflows delivered early in v1.1.0 (January 2026)
+**Target:** July–August 2026
+**Focus:** Cross-platform extraction progress, tool migration acceleration, Pro toolkit hardening
 
 ### Major Features
 
-#### 1. Cross-Platform Extraction (🟡 In Progress)
-- [x] Domain contracts (9 interfaces) — `lib/core/src/Domain/Contract/`
-- [x] Domain entities (10 value objects) — `lib/core/src/Domain/Entity/`
-- [x] Domain errors (5 typed exceptions) — `lib/core/src/Domain/Error/`
-- [x] Domain events (8 events) — `lib/core/src/Domain/Event/`
-- [x] Application services (ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry)
-- [x] 12 provider clients (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, Ollama, LM Studio, DigitalOcean, Nvidia Nim, Cloudflare, HuggingFace)
-- [x] SSE streaming handler + cost calculator
-- [x] 8 WordPress adapter implementations
-- [x] Feature flag activation (`?engine=oos`)
-- [x] 43 migrated tools (Tier 1 + select Tier 2)
-- [ ] ~152 remaining tool migrations
-- [ ] Test suite for extracted packages
-- [ ] Laravel adapter
+#### 1. Cross-Platform Extraction — Phase 3 Acceleration
+- [ ] Migrate remaining ~152 base tools to OOS engine (currently 43/195 — 22%)
+- [ ] Begin Pro tool OOS migration (0/~810)
+- [ ] Establish `lib/core` test suite (currently 0%)
+- [ ] Monorepo CI/CD pipeline for lib/ packages
+- [ ] Publish `nvoos/core` and `nvoos/wordpress-adapter` to Packagist
+
+**Estimated Effort:** 8–16 weeks
+**Priority:** High
+**Rationale:** The OOS extraction is operational behind a feature flag but cannot be activated in production without tool parity and test coverage. Closing the gap unlocks cross-platform deployment (Laravel, Craft CMS, standalone PHP).
+
+#### 2. Laravel Adapter Spike
+- [ ] Implement Eloquent-based ContentStore adapter
+- [ ] Implement Sanctum-based AuthProvider adapter
+- [ ] Implement Laravel Storage-based FileStore adapter
+- [ ] Proof-of-concept: run OOS engine inside a Laravel application
+
+**Estimated Effort:** 4–6 weeks
+**Priority:** Medium
+
+#### 3. Pro Toolkit Performance Hardening
+- [ ] Extend autoload control to remaining Pro toolkits
+- [ ] Query caching for frequently-accessed toolkit data
+- [ ] Lazy-loading for large toolkit dependency trees
+- [ ] Admin performance dashboard for toolkit load times
+
+**Estimated Effort:** 3–4 weeks
+**Priority:** Medium
+
+#### 4. Documentation & Developer Experience
+- [ ] PM REST API documentation (cURL/JS examples, Postman collection)
+- [ ] SDK guide for third-party tool development
+- [ ] Interactive API playground
+- [ ] Tool reference docs for new toolkits (DietPi, Cloudways, FlowHub, Shopify)
+
+**Estimated Effort:** 2–3 weeks
+**Priority:** Medium
+
+---
+
+## Next Major (v2.0.0) — Q4 2026 🚀
+
+**Release Date:** December 2026 (revised from September 2026)
+**Focus:** Enterprise features, cross-platform maturity, advanced workflow automation
+
+### Major Features
+
+#### 1. Cross-Platform Extraction — Production Release 🟡
+- [ ] Complete all ~195 base tool migrations
+- [ ] Pro tool migration at ≥50%
+- [ ] Full test suite for extracted packages
+- [ ] Laravel adapter production-ready
 - [ ] Craft CMS adapter
 - [ ] Monorepo CI/CD + Packagist publishing
+- [ ] Deprecation plan for WordPress-only tool paths
 
 See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](project/proposals/cross-platform-extraction-gap-analysis.md) for detailed status.
 
@@ -580,10 +520,10 @@ See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](project
 - [ ] Workflow templates library
 - [ ] Visual workflow editor
 
-**Estimated Effort:** 60-80 hours  
-**Value:** High - Enables no-code automation
+**Estimated Effort:** 60–80 hours
+**Value:** High — Enables no-code automation
 
-#### 2. Team Collaboration Features
+#### 3. Team Collaboration Features
 - [ ] Team workspaces
 - [ ] Shared assistants and tools
 - [ ] Team chat and comments
@@ -591,10 +531,10 @@ See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](project
 - [ ] Activity feeds
 - [ ] Team analytics dashboard
 
-**Estimated Effort:** 40-50 hours  
-**Value:** High - Enables team adoption
+**Estimated Effort:** 40–50 hours
+**Value:** High — Enables team adoption
 
-#### 3. Custom Role-Based Permissions
+#### 4. Custom Role-Based Permissions
 - [ ] Granular capability system
 - [ ] Custom roles (beyond WordPress defaults)
 - [ ] Per-assistant permissions
@@ -602,41 +542,28 @@ See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](project
 - [ ] Permission inheritance
 - [ ] Audit logs for permission changes
 
-**Estimated Effort:** 30-40 hours  
-**Value:** High - Enterprise security
+**Estimated Effort:** 30–40 hours
+**Value:** High — Enterprise security
 
-#### 4. Time Tracking and Reporting
+#### 5. Time Tracking and Reporting
 - [ ] Log time on tasks
 - [ ] Estimated vs actual hours
 - [ ] Time reports by project/user
 - [ ] Billable hours tracking
-- [ ] Time analytics dashboard
 - [ ] Export to CSV/PDF
 
-**Estimated Effort:** 16-20 hours  
-**Value:** Medium - Professional PM feature
-
-#### 5. Gantt Chart Visualization
-- [ ] Gantt chart UI (D3.js or library)
-- [ ] Timeline view for projects
-- [ ] Critical path highlighting
-- [ ] Dependency visualization
-- [ ] Drag-and-drop rescheduling
-- [ ] Export to image/PDF
-
-**Estimated Effort:** 30-40 hours  
-**Value:** Medium - Visual project planning
+**Estimated Effort:** 16–20 hours
+**Value:** Medium — Professional PM feature
 
 #### 6. Advanced Analytics Dashboard
 - [ ] AI usage analytics
 - [ ] Cost tracking and forecasting
 - [ ] Performance metrics
 - [ ] Custom report builder
-- [ ] Data export options
 - [ ] Scheduled reports (email)
 
-**Estimated Effort:** 40-50 hours  
-**Value:** High - Data-driven decisions
+**Estimated Effort:** 40–50 hours
+**Value:** High — Data-driven decisions
 
 ### Breaking Changes
 
@@ -650,7 +577,6 @@ See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](project
 - **Current:** Flat options array
 - **New:** Hierarchical settings API
 - **Migration:** Automatic migration on upgrade
-- **Impact:** Custom code reading settings directly
 
 #### REST API v2
 - **Current:** `/wp-json/mcp-ai/v1/`
@@ -661,7 +587,6 @@ See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](project
 ### Additional Features
 
 **AI Provider Enhancements:**
-- [ ] Claude 3 Opus integration
 - [ ] Advanced streaming controls
 - [ ] Multi-provider fallback
 - [ ] Cost optimization engine
@@ -674,23 +599,15 @@ See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](project
 
 **Developer Tools:**
 - [ ] Plugin API documentation site
-- [ ] Interactive API playground
 - [ ] SDK for third-party integrations
 - [ ] Webhook system
 
-**Timeline:**
-- Alpha: July 2026
-- Beta: August 2026
-- RC: September 15, 2026
-- Release: September 30, 2026
-- Migration period: 6 months (v1 API support until March 2027)
-
-**Success Metrics:**
-- 10,000+ active installations
-- 50+ custom integrations built
-- 90%+ user satisfaction
-- Zero critical security issues
-- <1% support ticket rate
+**Timeline (revised):**
+- Alpha: September 2026
+- Beta: October 2026
+- RC: November 2026
+- Release: December 2026
+- Migration period: 6 months (v1 API support until June 2027)
 
 ---
 
@@ -698,49 +615,33 @@ See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](project
 
 ### Under Evaluation
 
-These features are being considered but not yet scheduled:
-
 #### Mobile App Integration
 - Native iOS/Android apps
 - Progressive Web App (PWA)
 - Mobile-optimized chat UI
 - Push notifications
 
-**Rationale:** Depends on community demand and resource availability
-
 #### Third-Party PM Tool Integrations
-- Jira integration
-- Asana integration
-- Trello integration
-- Linear integration
-- Sync tasks bidirectionally
-
-**Rationale:** Niche need, complex implementation, maintenance burden
+- Jira, Asana, Trello, Linear integration
+- Bidirectional task sync
 
 #### Advanced AI Features
-- ✅ Multi-agent workflows - **DELIVERED in v1.1.0 (January 2026)** 🎉
+- ✅ Multi-agent workflows — **DELIVERED in v1.1.0 (January 2026)** 🎉
 - [ ] AI-powered project insights
 - [ ] Predictive analytics
 - [ ] Automated task assignment
 - [ ] Smart scheduling
 
-**Rationale:** Multi-agent workflows delivered 11 months ahead of schedule. Remaining features require additional AI research and may be computationally expensive.
-
 #### Multi-Language Support Expansion
 - RTL language support
 - Professional translations (10+ languages)
-- Locale-specific features
 - Regional AI provider support
-
-**Rationale:** Community-driven, depends on international adoption
 
 #### Visual Builder
 - Drag-and-drop assistant builder
 - No-code tool creation
 - Visual workflow designer
 - Template marketplace
-
-**Rationale:** Significant UI work, competes with core value prop
 
 #### Enterprise Features
 - SAML/SSO authentication
@@ -749,103 +650,48 @@ These features are being considered but not yet scheduled:
 - SLA monitoring
 - White-label options
 
-**Rationale:** Enterprise segment, may require licensing changes
-
 ---
 
 ## Community Priorities
 
 ### Top Community Requests
 
-Based on GitHub issues and community feedback (as of December 2025):
+Based on GitHub issues and community feedback (as of June 2026):
 
-1. **Task Dependencies** - 15 votes → Planned for v1.2.0
-2. **Notification System** - 12 votes → Planned for v1.2.0
-3. **Time Tracking** - 10 votes → Planned for v2.0.0 ✅
-4. **Gantt Charts** - 8 votes → Planned for v2.0.0 ✅
-5. **Claude Integration** - 7 votes → Planned for v2.0.0 ✅
-6. **Mobile App** - 6 votes → Under evaluation
-7. **Jira Integration** - 5 votes → Under evaluation
-8. **Multi-language UI** - 4 votes → Future consideration
-
-**How to Vote:**
-- Add 👍 reaction to feature request issues
-- Comment with your use case
-- Contribute to discussions
-
----
-
-## Development Philosophy
-
-### Release Principles
-
-1. **Ship Early, Iterate Fast** - Release MVPs, gather feedback, improve
-2. **Backward Compatibility** - Breaking changes only in majors, with migration tools
-3. **Community First** - Prioritize community requests over internal ideas
-4. **Quality Over Speed** - No releases until tests pass and docs are ready
-5. **Transparent Progress** - Public roadmap, weekly updates, open development
-
-### Feature Prioritization Framework
-
-We evaluate features using these criteria:
-
-| Criteria | Weight | Description |
-|----------|--------|-------------|
-| User Impact | 40% | How many users benefit? |
-| Strategic Alignment | 25% | Fits vision and mission? |
-| Implementation Effort | 20% | Time and complexity? |
-| Community Demand | 10% | How many requests/votes? |
-| Technical Debt | 5% | Does it reduce or increase debt? |
-
-**Scoring:**
-- 90-100: High priority, schedule ASAP
-- 70-89: Medium priority, schedule in next minor/major
-- 50-69: Low priority, add to backlog
-- <50: Decline or defer to future
-
----
-
-## How to Contribute to the Roadmap
-
-### Suggest a Feature
-
-1. Check if feature already exists in [Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
-2. If not, create a [Feature Request](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/new?template=feature_request.md)
-3. Provide detailed use case and requirements
-4. Community votes with 👍 reactions
-
-### Vote on Features
-
-- Add 👍 to issues you want
-- Comment with your specific use case
-- Help refine requirements through discussion
-
-### Implement a Feature
-
-1. Comment on issue expressing interest
-2. Wait for approval from maintainers
-3. Follow [CONTRIBUTING.md](../CONTRIBUTING.md) guidelines
-4. Submit PR with tests and documentation
+1. **Task Dependencies** — ✅ **DELIVERED** in v1.1.x (Mar 2026)
+2. **Notification System** — ✅ **DELIVERED** in v1.1.x (Mar 2026)
+3. **Time Tracking** — 📋 Planned for v2.0.0
+4. **Claude Integration** — ✅ **DELIVERED** in v1.1.3 (Mar 2026)
+5. **Gantt Charts** — 📋 Planned for v2.0.0
+6. **Mobile App** — 🔮 Under evaluation
+7. **Jira Integration** — 🔮 Under evaluation
+8. **Multi-language UI** — 🔮 Future consideration
 
 ---
 
 ## Release Calendar
 
-### 2026 Release Schedule
+### 2026 Release Schedule (Actual + Projected)
 
 | Version | Type | Release Date | Focus |
-|---------|------|--------------|-------|
+|---------|------|-------------|-------|
 | v1.0.1 | Patch | Jan 15, 2026 | Stability |
 | v1.1.0 | Minor | Jan 28, 2026 | Multi-Agent Orchestration |
 | v1.1.1 | Patch | Feb 6, 2026 | Security + Chat Channels |
 | v1.1.2 | Patch | Feb 16, 2026 | WP.org Compliance |
 | v1.1.3 | Patch | Mar 3, 2026 | Gemini RAG + Media Tab |
-| v1.1.4 | Patch | Mar 15, 2026 | Security Hardening |
 | v1.1.14–v1.1.17 | Minor | May 1–10, 2026 | Providers + Orchestration + Coverage |
-| v1.1.18–v1.1.21 | Minor | May 14–21, 2026 | WP.org Compliance Final + P0/P1 + Compression |
-| v1.2.0 | Minor | Jun 2026 | AI Provider Enhancements |
-| v1.3.0 | Minor | Aug 2026 | Developer Experience |
-| v2.0.0 | Major | Q4 2026 | Enterprise Features |
+| v1.1.18–v1.1.22 | Minor | May 14–23, 2026 | WP.org Compliance Final + Compression + Memory |
+| v1.1.23 | Minor | May 25–26, 2026 | SPA Architecture + Antigravity API |
+| v1.1.24 | Patch | May 27–28, 2026 | Stabilisation + CVE Patches |
+| v1.1.25 | Minor | May 31, 2026 | Blueprints + Cloudways + CRM Phases A–E |
+| v1.1.29 | Minor | Jun 12, 2026 | Pro Toolkit Optimizations + DietPi + Layer I + Retention |
+| v1.1.32 | Minor | Jun 19, 2026 | Content Templates + Result Delivery Pipeline |
+| v1.1.33 | Patch | Jun 24, 2026 | WP 7.0 Connectors + Graphify v1.0 + Security |
+| v1.1.34 | Minor | Jun 27, 2026 | GPT-Realtime-2 + Graphify Ecosystem |
+| v1.1.35 | Patch | Jun 29, 2026 | FlowHub + Shopify + Necessity Gate + Local Voice STT |
+| v1.4.0 | Minor | Jul–Aug 2026 | OOS Extraction Acceleration + Laravel Adapter |
+| v2.0.0 | Major | Q4 2026 | Enterprise Features + Cross-Platform GA |
 
 **Note:** Dates are targets and may shift based on development progress and community feedback.
 
@@ -853,26 +699,17 @@ We evaluate features using these criteria:
 
 ## FAQ
 
-**Q: How do I request a feature?**  
+**Q: How do I request a feature?**
 A: Create a [Feature Request](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/new?template=feature_request.md) issue.
 
-**Q: Will my feature be included?**  
-A: Features are evaluated using our prioritization framework. Community demand is a factor.
-
-**Q: When will feature X ship?**  
+**Q: When will feature X ship?**
 A: Check this roadmap and linked GitHub milestones. Dates are estimates and may change.
 
-**Q: Can I implement a feature myself?**  
+**Q: Can I implement a feature myself?**
 A: Yes! Comment on the issue first, then submit a PR following our contributing guidelines.
 
-**Q: Is the roadmap binding?**  
-A: No, it's a plan. Priorities may shift based on community feedback, security issues, or business needs.
-
-**Q: How often is the roadmap updated?**  
+**Q: How often is the roadmap updated?**
 A: Monthly, or more frequently if major changes occur.
-
-**Q: What happens to features not on the roadmap?**  
-A: They may be in the [Backlog](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/milestone/X) or [Future](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/milestone/Y) milestones.
 
 ---
 
@@ -880,15 +717,16 @@ A: They may be in the [Backlog](https://github.com/nvdigitalsolutions/mcp-ai-wpo
 
 | Date | Version | Changes |
 |------|---------|---------|
-| 2026-05-21 | 1.1.21 | Added v1.1.18–v1.1.21 releases; updated release calendar with actual dates; removed stale v1.1.4 "current release" section |
+| 2026-06-29 | 2.0 | Major rewrite: added Current Capability Snapshot; merged v1.2.0 & v1.3.0 into "Delivered Early" section; updated Pro Toolkit counts to ~810+/21+ toolkits; added v1.1.25–v1.1.35 releases; extended release calendar; refreshed community priorities; updated v2.0.0 timeline; restructured for clarity |
+| 2026-05-21 | 1.1.21 | Added v1.1.18–v1.1.21 releases; updated release calendar |
 | 2025-12-24 | 1.0 | Initial roadmap published |
 
 ---
 
 ## See Also
 
-- [PROJECT_MANAGEMENT_GAP_ANALYSIS.md](PROJECT_MANAGEMENT_GAP_ANALYSIS.md) - Detailed gap analysis
-- [MILESTONE_STRATEGY.md](MILESTONE_STRATEGY.md) - Milestone management
-- [LABEL_STRATEGY.md](LABEL_STRATEGY.md) - Issue labeling
-- [CHANGELOG.md](../CHANGELOG.md) - Past changes
-- [CONTRIBUTING.md](../CONTRIBUTING.md) - How to contribute
+- [CHANGELOG.md](../CHANGELOG.md) — Complete release-by-release change log
+- [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) — Full documentation map
+- [project/proposals/](project/proposals/) — Feature proposals and status tracking
+- [project/proposals/cross-platform-extraction-gap-analysis.md](project/proposals/cross-platform-extraction-gap-analysis.md) — OOS extraction status
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — How to contribute

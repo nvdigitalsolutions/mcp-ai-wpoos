@@ -80,6 +80,18 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		 */
 		const MODELS_WITHOUT_TOOL_CALLING = array( 'deepseek-reasoner' );
 
+		/**
+		 * Maximum context window sizes by model family prefix.
+		 *
+		 * @var array
+		 */
+		const MODEL_CONTEXT_WINDOWS = array(
+			'deepseek-v4'       => 131072,
+			'deepseek-v3'       => 131072,
+			'deepseek-chat'     => 131072,
+			'deepseek-reasoner' => 65536,
+		);
+
 		// -------------------------------------------------------------------------
 		// Accessors.
 		// -------------------------------------------------------------------------
@@ -128,6 +140,43 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			}
 
 			return untrailingslashit( $base_url );
+		}
+
+		/**
+		 * Get the context window size for a given model.
+		 *
+		 * @since 2026.07
+		 * @param string $model Model identifier.
+		 * @return int Context window size in tokens.
+		 */
+		public function get_context_window( $model ) {
+			$model = sanitize_text_field( $model );
+
+			// Exact match first.
+			if ( isset( self::MODEL_CONTEXT_WINDOWS[ $model ] ) ) {
+				return self::MODEL_CONTEXT_WINDOWS[ $model ];
+			}
+
+			// Prefix match for model families.
+			foreach ( self::MODEL_CONTEXT_WINDOWS as $prefix => $window ) {
+				if ( 0 === strpos( $model, $prefix ) ) {
+					return $window;
+				}
+			}
+
+			// Default to 128K for unknown models.
+			return 131072;
+		}
+
+		/**
+		 * Return true when the model supports tool/function calling.
+		 *
+		 * @since 2026.07
+		 * @param string $model Model identifier.
+		 * @return bool
+		 */
+		public function model_supports_tools( $model ) {
+			return ! $this->model_lacks_tool_calling( $model );
 		}
 
 		// -------------------------------------------------------------------------

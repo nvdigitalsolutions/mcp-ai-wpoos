@@ -340,9 +340,23 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'client.baseten',
+			function () {
+				return new WP_MCP_AI_Baseten_Client();
+			}
+		);
+
+		$this->singleton(
 			'client.kimi',
 			function () {
 				return new WP_MCP_AI_Kimi_Client();
+			}
+		);
+
+		$this->singleton(
+			'client.zai',
+			function () {
+				return new WP_MCP_AI_ZAI_Client();
 			}
 		);
 
@@ -363,7 +377,9 @@ class WP_MCP_AI_Container {
 					$container->get( 'client.deepseek' ),
 					$container->get( 'client.openrouter' ),
 					$container->get( 'client.digitalocean' ),
-					$container->get( 'client.kimi' )
+					$container->get( 'client.kimi' ),
+					$container->get( 'client.baseten' ),
+					$container->get( 'client.zai' )
 				);
 			}
 		);

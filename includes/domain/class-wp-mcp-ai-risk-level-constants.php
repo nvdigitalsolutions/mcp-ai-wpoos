@@ -30,6 +30,8 @@ class WP_MCP_AI_Risk_Level_Constants {
 	 *
 	 * Read-only operations that cannot modify data.
 	 * Safe for unrestricted use.
+	 *
+	 * @since 1.1.0
 	 */
 	const RISK_INFO = 'info';
 
@@ -38,6 +40,8 @@ class WP_MCP_AI_Risk_Level_Constants {
 	 *
 	 * Normal CRUD operations that modify data.
 	 * Requires standard permissions.
+	 *
+	 * @since 1.1.0
 	 */
 	const RISK_STANDARD = 'standard';
 
@@ -46,8 +50,24 @@ class WP_MCP_AI_Risk_Level_Constants {
 	 *
 	 * Operations that delete or permanently modify data.
 	 * Requires elevated permissions and confirmation.
+	 *
+	 * @since 1.1.0
 	 */
 	const RISK_DESTRUCTIVE = 'destructive';
+
+	/**
+	 * Irreversible risk level.
+	 *
+	 * Operations that CANNOT be undone once executed: sending emails
+	 * to customers, processing payments, permanently deleting data,
+	 * revoking access, or taking legal actions.
+	 *
+	 * Requires the highest level of gating — human-in-the-loop
+	 * approval is mandatory by default.
+	 *
+	 * @since 1.9.0
+	 */
+	const RISK_IRREVERSIBLE = 'irreversible';
 
 	/**
 	 * Get all risk level constants
@@ -59,6 +79,7 @@ class WP_MCP_AI_Risk_Level_Constants {
 			self::RISK_INFO,
 			self::RISK_STANDARD,
 			self::RISK_DESTRUCTIVE,
+			self::RISK_IRREVERSIBLE,
 		);
 	}
 
@@ -83,6 +104,7 @@ class WP_MCP_AI_Risk_Level_Constants {
 			self::RISK_INFO        => __( 'Read-only, no modifications', 'mcp-ai-wpoos' ),
 			self::RISK_STANDARD    => __( 'Normal CRUD operations', 'mcp-ai-wpoos' ),
 			self::RISK_DESTRUCTIVE => __( 'Destructive operations, use with caution', 'mcp-ai-wpoos' ),
+			self::RISK_IRREVERSIBLE => __( 'Irreversible — cannot be undone, requires human approval', 'mcp-ai-wpoos' ),
 		);
 
 		return isset( $descriptions[ $level ] ) ? $descriptions[ $level ] : null;
@@ -99,6 +121,7 @@ class WP_MCP_AI_Risk_Level_Constants {
 			self::RISK_INFO        => '#28a745', // Green.
 			self::RISK_STANDARD    => '#ffc107', // Yellow.
 			self::RISK_DESTRUCTIVE => '#dc3545', // Red.
+			self::RISK_IRREVERSIBLE => '#6f42c1', // Purple — most severe.
 		);
 
 		return isset( $colors[ $level ] ) ? $colors[ $level ] : null;

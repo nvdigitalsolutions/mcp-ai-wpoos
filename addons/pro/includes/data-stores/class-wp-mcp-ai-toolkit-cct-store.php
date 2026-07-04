@@ -59,6 +59,15 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 	private $cct_module;
 
 	/**
+	 * Cached CCT Factory instance for the configured slug.
+	 *
+	 * @since 1.9.3
+	 *
+	 * @var \Jet_Engine\Modules\Custom_Content_Types\Factory|null
+	 */
+	private $factory = null;
+
+	/**
 	 * Field ID base for this toolkit (allocated ranges).
 	 *
 	 * @var int
@@ -147,6 +156,11 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 	/**
 	 * Get JetEngine CCT module.
 	 *
+	 * Uses the canonical Module::instance() singleton — the path
+	 * documented by Crocoblock for PHP-side CCT access. The Module
+	 * class exposes ->manager (with ->manager->data for post_types
+	 * registration records); it has NO ->data property itself.
+	 *
 	 * @return object|false JetEngine CCT module or false.
 	 */
 	private function get_cct_module() {
@@ -154,22 +168,151 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 			return false;
 		}
 
-		$jet_engine = jet_engine();
-		if ( ! isset( $jet_engine->modules ) ) {
+		// Canonical accessor: the CCT module singleton. Its class is only
+		// loaded when the module is active.
+		if ( class_exists( '\Jet_Engine\Modules\Custom_Content_Types\Module' ) ) {
+			$module = \Jet_Engine\Modules\Custom_Content_Types\Module::instance();
+			if ( ! empty( $module->manager ) ) {
+				return $module;
+			}
+		}
+
+		// Fallback: walk the modules registry.
+		$engine = jet_engine();
+
+		if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
 			return false;
 		}
 
-		$modules = $jet_engine->modules;
-		if ( ! isset( $modules->modules_manager ) ) {
+		if ( ! $engine->modules->is_module_active( 'custom-content-types' ) ) {
 			return false;
 		}
 
-		$module = $modules->modules_manager->get_module( 'custom-content-types' );
-		if ( ! $module || ! $module->instance ) {
+		if ( ! method_exists( $engine->modules, 'get_module' ) ) {
 			return false;
 		}
 
-		return $module->instance;
+		$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
+
+		if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+			return false;
+		}
+
+		$instance = $module_wrapper->instance;
+
+		return ! empty( $instance->manager ) ? $instance : false;
+	}
+
+	/**
+	 * Retrieve the JetEngine Factory (type object) for the configured CCT.
+	 *
+	 * The Factory is the canonical PHP handle for CCT item CRUD: item
+	 * queries go through $factory->db and writes go through the
+	 * Item_Handler returned by $factory->get_item_handler().
+	 *
+	 * When the CCT was just registered in the current request the
+	 * Manager's content-types registry (hydrated on init) won't contain
+	 * it yet, so this method falls back to constructing a Factory
+	 * directly from the stored CCT record.
+	 *
+	 * @since 1.9.3
+	 *
+	 * @return \Jet_Engine\Modules\Custom_Content_Types\Factory|null
+	 */
+	private function get_cct_factory() {
+		if ( null !== $this->factory ) {
+			return $this->factory;
+		}
+
+		$module = $this->cct_module;
+
+		if ( ! $module || empty( $module->manager ) || ! method_exists( $module->manager, 'get_content_types' ) ) {
+			return null;
+		}
+
+		$factory = $module->manager->get_content_types( $this->cct_slug );
+
+		if ( ! empty( $factory ) && ! is_array( $factory ) ) {
+			$this->factory = $factory;
+			return $this->factory;
+		}
+
+		// Same-request fallback: the CCT record exists in the DB but the
+		// runtime registry was hydrated before it was created. Build the
+		// Factory manually from the stored record so writes work
+		// immediately after auto-registration.
+		if ( empty( $module->manager->data ) || empty( $module->manager->data->db ) ) {
+			return null;
+		}
+
+		$records = $module->manager->data->db->query(
+			'post_types',
+			array(
+				'slug'   => $this->cct_slug,
+				'status' => 'content-type',
+			),
+			null,
+			false
+		);
+
+		if ( empty( $records ) || ! is_array( $records ) ) {
+			return null;
+		}
+
+		$record = reset( $records );
+
+		if ( ! is_array( $record ) && ! is_object( $record ) ) {
+			return null;
+		}
+
+		if ( is_object( $record ) ) {
+			$record = get_object_vars( $record );
+		}
+
+		$args   = isset( $record['args'] ) ? maybe_unserialize( $record['args'] ) : array();
+		$fields = isset( $record['meta_fields'] ) ? maybe_unserialize( $record['meta_fields'] ) : array();
+
+		if ( ! is_array( $args ) ) {
+			$args = array();
+		}
+		if ( ! is_array( $fields ) ) {
+			$fields = array();
+		}
+
+		$args['slug'] = $this->cct_slug;
+
+		if ( ! class_exists( '\Jet_Engine\Modules\Custom_Content_Types\Factory' ) && method_exists( $module, 'module_path' ) ) {
+			$factory_path = $module->module_path( 'factory.php' );
+			if ( $factory_path && file_exists( $factory_path ) ) {
+				require_once $factory_path;
+			}
+		}
+
+		if ( ! class_exists( '\Jet_Engine\Modules\Custom_Content_Types\Factory' ) ) {
+			return null;
+		}
+
+		$type_id      = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
+		$this->factory = new \Jet_Engine\Modules\Custom_Content_Types\Factory( $args, $fields, $type_id );
+
+		return $this->factory;
+	}
+
+	/**
+	 * Retrieve the JetEngine Item_Handler for the configured CCT.
+	 *
+	 * @since 1.9.3
+	 *
+	 * @return \Jet_Engine\Modules\Custom_Content_Types\Item_Handler|null
+	 */
+	private function get_item_handler() {
+		$factory = $this->get_cct_factory();
+
+		if ( ! $factory || ! method_exists( $factory, 'get_item_handler' ) ) {
+			return null;
+		}
+
+		return $factory->get_item_handler();
 	}
 
 	/**
@@ -199,9 +342,17 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 			'fields'           => $fields,
 		);
 
-		// Register the CCT.
-		$this->cct_module->data->set_request( $args );
-		$this->cct_module->data->edit_item( false );
+		// Register the CCT via Manager (edit_item with slug + fields).
+		// Manager::edit_item() is the public registration API that handles
+		// the full Data sanitize-create lifecycle. The previous code called
+		// Data::edit_item() directly, but Data exposes edit_item() on
+		// Jet_Engine_Base_Data which requires a capability check and expects
+		// the request to already be set — it is not a direct CCT-registration
+		// API and silently fails when the fields array doesn't match the
+		// meta_fields shape the Data layer expects.
+		if ( method_exists( $this->cct_module->manager, 'edit_item' ) ) {
+			$this->cct_module->manager->edit_item( false, $args );
+		}
 	}
 
 	/**
@@ -247,24 +398,22 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Prepare item for JetEngine.
-		$item_data = array(
-			'cct_slug' => $this->cct_slug,
-		);
-
-		// Add fields from data.
-		foreach ( $data as $key => $value ) {
-			$item_data[ $key ] = $value;
+		$handler = $this->get_item_handler();
+		if ( ! $handler ) {
+			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Insert item using JetEngine.
-		$item_id = $this->cct_module->manager->insert_item( $item_data );
+		$item_data           = $data;
+		$item_data['cct_status'] = 'publish';
 
-		if ( ! $item_id ) {
-			return new WP_Error( 'create_failed', __( 'Failed to create item', 'mcp-ai-wpoos-pro' ) );
+		// Item_Handler::update_item() creates when no _ID is passed.
+		$item_id = $handler->update_item( $item_data );
+
+		if ( ! $item_id || is_wp_error( $item_id ) ) {
+			return is_wp_error( $item_id ) ? $item_id : new WP_Error( 'create_failed', __( 'Failed to create item', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		return $item_id;
+		return absint( $item_id );
 	}
 
 	/**
@@ -278,7 +427,13 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$item = $this->cct_module->manager->get_item( $item_id, $this->cct_slug );
+		$factory = $this->get_cct_factory();
+		if ( ! $factory || empty( $factory->db ) ) {
+			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$factory->db->set_format_flag( ARRAY_A );
+		$item = $factory->db->get_item( absint( $item_id ) );
 
 		if ( ! $item ) {
 			return new WP_Error( 'item_not_found', __( 'Item not found', 'mcp-ai-wpoos-pro' ) );
@@ -299,19 +454,18 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Prepare update data.
-		$update_data = array_merge(
-			array(
-				'_ID'      => $item_id,
-				'cct_slug' => $this->cct_slug,
-			),
-			$data
-		);
+		$handler = $this->get_item_handler();
+		if ( ! $handler ) {
+			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
+		}
 
-		$result = $this->cct_module->manager->update_item( $update_data );
+		$update_data       = $data;
+		$update_data['_ID'] = absint( $item_id );
 
-		if ( ! $result ) {
-			return new WP_Error( 'update_failed', __( 'Failed to update item', 'mcp-ai-wpoos-pro' ) );
+		$result = $handler->update_item( $update_data );
+
+		if ( ! $result || is_wp_error( $result ) ) {
+			return is_wp_error( $result ) ? $result : new WP_Error( 'update_failed', __( 'Failed to update item', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return true;
@@ -319,6 +473,10 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 
 	/**
 	 * Delete an item.
+	 *
+	 * Uses the CCT DB layer directly. The Item_Handler delete path
+	 * enforces an interactive capability check and calls wp_die() on
+	 * failure, which would kill background/cron requests.
 	 *
 	 * @param int $item_id Item ID.
 	 * @return bool|WP_Error True on success, WP_Error on failure.
@@ -328,11 +486,12 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$result = $this->cct_module->manager->delete_item( $item_id, $this->cct_slug );
-
-		if ( ! $result ) {
-			return new WP_Error( 'delete_failed', __( 'Failed to delete item', 'mcp-ai-wpoos-pro' ) );
+		$factory = $this->get_cct_factory();
+		if ( ! $factory || empty( $factory->db ) ) {
+			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
 		}
+
+		$factory->db->delete( array( '_ID' => absint( $item_id ) ) );
 
 		return true;
 	}
@@ -348,15 +507,25 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 			return array();
 		}
 
-		$defaults = array(
-			'cct_slug' => $this->cct_slug,
-			'per_page' => 20,
-			'orderby'  => 'date',
-			'order'    => 'DESC',
+		$factory = $this->get_cct_factory();
+		if ( ! $factory || empty( $factory->db ) ) {
+			return array();
+		}
+
+		$per_page = isset( $args['per_page'] ) ? absint( $args['per_page'] ) : 20;
+		$page     = isset( $args['page'] ) ? max( 1, absint( $args['page'] ) ) : 1;
+		$offset   = ( $page - 1 ) * $per_page;
+
+		$order = array(
+			array(
+				'orderby' => isset( $args['orderby'] ) ? sanitize_key( $args['orderby'] ) : '_ID',
+				'order'   => isset( $args['order'] ) && 'asc' === strtolower( $args['order'] ) ? 'asc' : 'desc',
+			),
 		);
 
-		$query_args = wp_parse_args( $args, $defaults );
-		$items      = $this->cct_module->manager->get_items( $query_args );
+		$factory->db->set_format_flag( ARRAY_A );
+
+		$items = $factory->db->query( array( 'cct_status' => 'publish' ), $per_page, $offset, $order );
 
 		return is_array( $items ) ? $items : array();
 	}

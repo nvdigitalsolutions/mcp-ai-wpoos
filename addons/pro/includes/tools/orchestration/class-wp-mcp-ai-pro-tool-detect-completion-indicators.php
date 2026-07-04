@@ -88,11 +88,9 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- Required by tool interface.
 		if ( empty( $arguments['text'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: text',
-			);
+			return new \WP_Error( 'missing_text', __( 'Missing required argument: text', 'mcp-ai-wpoos' ) );
 		}
 
 		$text      = $arguments['text'];
@@ -156,12 +154,12 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 	/**
 	 * Extract context around match
 	 *
-	 * @param string $text  Full text.
-	 * @param string $match Match string.
+	 * @param string $text    Full text.
+	 * @param string $matched Match string.
 	 * @return string
 	 */
-	private function extract_context( $text, $match ) {
-		$pos = strpos( $text, $match );
+	private function extract_context( $text, $matched ) {
+		$pos = strpos( $text, $matched );
 		if ( false === $pos ) {
 			return '';
 		}

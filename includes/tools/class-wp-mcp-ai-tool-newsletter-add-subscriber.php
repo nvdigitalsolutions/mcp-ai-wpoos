@@ -15,8 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides functionality to add/subscribe email addresses to Newsletter plugin.
  */
-class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	/**
 	 * Determine whether Newsletter plugin is available.
@@ -273,9 +274,12 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_capability_flags() {
 		return array(
-			'requires-capability',  // Requires user capabilities.
-			'modifies-data',        // Modifies subscriber data.
-			'local-only',           // No external API calls.
+			'write',                    // Adds real subscribers to mailing lists.
+			'state-changing',           // Modifies newsletter subscriber data.
+			'local-only',               // No external API calls.
+			'requires-capability',      // Requires user capabilities.
+			'irreversible',             // Subscriber additions cannot be automatically undone (since 1.9.0).
+			'external-communication',   // Adds recipients to mailing lists (since 1.9.0).
 		);
 	}
 }

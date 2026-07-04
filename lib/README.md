@@ -43,10 +43,32 @@ lib/
 - **Infrastructure:** 12 provider clients, SSE handler, cost calculator ✅
 - **Tools:** 43 migrated (Tier 1 + select Tier 2) ✅
 - **WordPress adapters:** All 8 implemented ✅
-- **Laravel adapters:** All 8 implemented ✅
+- **Laravel adapters:** All 8 implemented ✅ — awaiting Octane/Horizon/Reverb deployment wiring (see [`docs/project/proposals/laravel-scale-deployment-architecture.md`](../docs/project/proposals/laravel-scale-deployment-architecture.md))
 - **Craft adapters:** All 8 implemented ✅
 - **Feature flag:** `?engine=oos` activates the extracted engine ✅
-- **Remaining:** ~152 tools
+- **Remaining:** ~152 base tools, ~810+ Pro tools, 4 new domain contracts for Laravel orchestrator integration
+
+### New: Laravel-Scale Deployment (2026-07-01)
+
+The Laravel adapter is the foundation for a **central Laravel Octane orchestrator** that handles all AI orchestration while WordPress/Graphify nodes serve as federated content + knowledge graph peers. This enables:
+
+- **3-10x throughput** via Octane (FrankenPHP) vs PHP-FPM
+- **Guaranteed async execution** via Redis Queue + Horizon
+- **Bidirectional streaming** via Laravel Reverb WebSockets
+- **Production-grade vector search** via PostgreSQL + pgvector with HNSW indexes
+- **Intelligent federation routing** across all WordPress/Graphify nodes
+
+For the full deployment architecture and 16-week migration plan, see [`docs/project/proposals/laravel-scale-deployment-architecture.md`](../docs/project/proposals/laravel-scale-deployment-architecture.md).
+
+### Graphify Ecosystem Integration
+
+The extraction enables a federated knowledge-graph architecture where the oOS Core queries multiple `nvoos-graphify` WordPress instances:
+
+- **`nvoos-graphify`** (v1.0.0) — Standalone knowledge graph plugin with 14 tools, Cytoscape.js explorer, 18 remote-source drivers, REST API, and Memory Bridge
+- **`nvoos-graphify-ai`** (v1.0.0-dev) — AI addon with 13 providers, streaming chat, RAG, and embeddings
+- **`nvoos-graphify-ai-platform`** (v1.0.0-dev) — Platform addon with Agents, A2A, ACP, Blueprints, Federation, Harness, Measurement, Professions, Skills, and Slash Commands
+
+See [`docs/project/proposals/nvoos-base-restructuring-roadmap.md`](../docs/project/proposals/nvoos-base-restructuring-roadmap.md) for the full ecosystem architecture.
 
 ## Monorepo Sync Workflows
 

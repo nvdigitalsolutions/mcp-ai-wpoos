@@ -27,11 +27,35 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 		const DEFAULT_ENDPOINT_URL = 'https://integrate.api.nvidia.com/v1';
 
 		/**
+		 * TOCTOU-safe API key override set via set_api_key().
+		 *
+		 * When non-null, get_api_key() returns this value instead of
+		 * reading the stored setting, avoiding time-of-check-to-time-of-use
+		 * races during multi-step credential workflows.
+		 *
+		 * @var string|null
+		 */
+		private $api_key_override = null;
+
+		/**
+		 * Override the API key for the lifetime of this instance.
+		 *
+		 * @param string|null $key The API key to use, or null to clear the override.
+		 */
+		public function set_api_key( $key ) {
+			$this->api_key_override = is_string( $key ) && '' !== $key ? $key : null;
+		}
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
 		 */
 		public function get_api_key() {
+			if ( null !== $this->api_key_override ) {
+				return $this->api_key_override;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$key      = isset( $settings['nvidia_api_key'] ) ? $settings['nvidia_api_key'] : '';
 
@@ -910,11 +934,20 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 				$formatted_messages = array_merge( $system_messages, $formatted_messages );
 			}
 
+			$formatted_messages = $this->normalise_messages_for_payload( $formatted_messages );
+
+			$is_streaming = isset( $options['stream'] ) ? (bool) $options['stream'] : false;
+
 			$payload = array(
 				'model'    => $model,
 				'messages' => $formatted_messages,
-				'stream'   => isset( $options['stream'] ) ? (bool) $options['stream'] : false, // Explicitly disable streaming to prevent chunked responses.
+				'stream'   => $is_streaming,
 			);
+
+			// Include stream_options when streaming is enabled to receive usage data.
+			if ( $is_streaming ) {
+				$payload['stream_options'] = array( 'include_usage' => true );
+			}
 
 			// Add tools if provided (OpenAI-compatible function calling).
 			if ( ! empty( $options['tools'] ) ) {
@@ -964,13 +997,21 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			}
 
 			// Apply resource-aware max_tokens if not explicitly set.
-			// NVIDIA NIM uses the standard max_tokens parameter.
-			// Reuse $model_config fetched earlier for tool support check.
+				// NVIDIA NIM supports both max_tokens and max_completion_tokens (OpenAI v2).
+				// Reuse $model_config fetched earlier for tool support check.
 			if ( ! $model_config ) {
 				$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
 			}
 
-			if ( ! isset( $options['max_tokens'] ) ) {
+				// Support both max_tokens and max_completion_tokens in options.
+				$explicit_max = null;
+			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$explicit_max = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
+				$explicit_max = absint( $options['max_tokens'] );
+			}
+
+			if ( null === $explicit_max ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$max_tokens   = $resource_mgr->get_max_tokens();
 
@@ -990,10 +1031,10 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 				}
 
 				if ( $max_tokens > 0 ) {
-					$payload['max_tokens'] = $max_tokens;
+					$payload['max_completion_tokens'] = $max_tokens;
 				}
 			} else {
-				$max_tokens = absint( $options['max_tokens'] );
+				$max_tokens = $explicit_max;
 
 				// Get model-specific limit from model config.
 				if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
@@ -1002,10 +1043,10 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 					$max_tokens = min( $max_tokens, $model_limit );
 				}
 
-				$payload['max_tokens'] = $max_tokens;
+				$payload['max_completion_tokens'] = $max_tokens;
 			}
 
-			return $payload;
+				return $payload;
 		}
 
 		/**
@@ -1067,11 +1108,16 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			}
 
 			// Ensure usage data is present and includes provider/model information.
-			// NVIDIA NIM returns OpenAI-compatible usage with prompt_tokens, completion_tokens, total_tokens.
+				// NVIDIA NIM returns OpenAI-compatible usage with prompt_tokens, completion_tokens, total_tokens.
 			if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
 				// Add provider and model to usage for frontend display.
 				$response['usage']['provider'] = 'nvidia';
 				$response['usage']['model']    = $model;
+
+				// Extract cached tokens from prompt_tokens_details (OpenAI-compatible).
+				if ( isset( $response['usage']['prompt_tokens_details']['cached_tokens'] ) ) {
+					$response['usage']['cached_tokens'] = (int) $response['usage']['prompt_tokens_details']['cached_tokens'];
+				}
 			} elseif ( ! isset( $response['usage'] ) ) {
 				// If usage is missing, create a minimal structure.
 				// This should not happen with proper NVIDIA NIM responses, but provides fallback.
@@ -1090,7 +1136,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 				);
 			}
 
-			return $response;
+				return $response;
 		}
 
 		/**
@@ -1286,6 +1332,70 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			}
 
 			return array_values( $filtered );
+		}
+
+		/**
+		 * Normalise message content arrays before sending to the NVIDIA NIM API.
+		 *
+		 * When all content segments are text-only, flattens the array to a
+		 * plain string, which is what most NVIDIA NIM models expect. Mixed
+		 * content (images + text) is left as-is.
+		 *
+		 * @param array $messages Chat history.
+		 * @return array
+		 */
+		protected function normalise_messages_for_payload( array $messages ) {
+			$normalised = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					$normalised[] = $message;
+					continue;
+				}
+
+				$segments = array_values( $message['content'] );
+
+				if ( empty( $segments ) ) {
+					$message['content'] = '';
+					$normalised[]       = $message;
+					continue;
+				}
+
+				$all_text   = true;
+				$text_parts = array();
+
+				foreach ( $segments as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$all_text = false;
+						break;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'text' !== $type ) {
+						$all_text = false;
+						break;
+					}
+
+					$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+				}
+
+				if ( $all_text ) {
+					$text_parts         = array_filter(
+						$text_parts,
+						static function ( $part ) {
+							return '' !== trim( $part );
+						}
+					);
+					$message['content'] = implode( "\n\n", $text_parts );
+				} else {
+					$message['content'] = $segments;
+				}
+
+				$normalised[] = $message;
+			}
+
+			return $normalised;
 		}
 
 		/**

@@ -16,6 +16,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load shared Sync Log Manager (provides persistent audit trail for all toolkits).
+if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-sync-log-manager.php';
+}
+WP_MCP_AI_Sync_Log_Manager::init();
+
 /**
  * Check if e-commerce toolkit is enabled.
  *
@@ -100,7 +106,9 @@ add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_ecommerce_toolkit_admin_
 
 // --- Performance optimization (inventory autoload, temp file cleanup, post-meta prune) ---
 // Must load even when not in admin so its daily cron runs.
-if ( wp_mcp_ai_is_ecommerce_toolkit_enabled() && ! ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) ) {
+$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+if ( wp_mcp_ai_is_ecommerce_toolkit_enabled() && ( ! $is_base || $is_pro_active ) ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-ecommerce-optimization.php';
 	WP_MCP_AI_Ecommerce_Optimization::init();
 }

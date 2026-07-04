@@ -34,7 +34,8 @@
         "lint": "phpcs",
         "lint:wpcs": "phpcs --standard=WordPress",
         "format": "phpcbf",
-        "format:wpcs": "phpcbf --standard=WordPress"
+        "format:wpcs": "phpcbf --standard=WordPress",
+        "build:vendor": "npm install --production && node scripts/copy-vendor.js"
     },
     "config": {
         "allow-plugins": {

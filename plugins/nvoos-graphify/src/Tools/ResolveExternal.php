@@ -80,9 +80,9 @@ class ResolveExternal extends AbstractTool {
 		$auto_ingest = isset( $arguments['auto_ingest'] ) ? (bool) $arguments['auto_ingest'] : true;
 
 		if ( empty( $ref ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'ref is required.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'resolve_external_ref_required',
+				__( 'ref is required.', 'nvoos-graphify' )
 			);
 		}
 

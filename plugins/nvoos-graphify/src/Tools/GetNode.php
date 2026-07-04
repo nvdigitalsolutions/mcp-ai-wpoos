@@ -90,9 +90,9 @@ class GetNode extends AbstractTool {
 		}
 
 		if ( ! $node ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Node not found. Build the graph first with graphify_build_graph.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'get_node_not_found',
+				__( 'Node not found. Build the graph first with graphify_build_graph.', 'nvoos-graphify' )
 			);
 		}
 

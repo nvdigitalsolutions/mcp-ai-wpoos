@@ -139,12 +139,33 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		}
 
 		/**
-		 * Get the API endpoint URL.
+		 * Get the API endpoint URL, respecting sandbox mode.
+		 *
+		 * When sandbox_mode is enabled on the connection, requests are
+		 * routed to the Flowhub sandbox environment instead of production.
 		 *
 		 * @return string
 		 */
 		protected function get_api_endpoint() {
+			if ( $this->is_sandbox() ) {
+				return 'https://api.sandbox.flowhub.co';
+			}
 			return self::API_ENDPOINT;
+		}
+
+		/**
+		 * Determine whether sandbox mode is active for this connection.
+		 *
+		 * @return bool
+		 */
+		protected function is_sandbox() {
+			if ( ! empty( $this->connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $this->connection_id );
+				if ( $connection && ! empty( $connection['sandbox_mode'] ) ) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		/**
@@ -189,6 +210,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		public function make_request( $endpoint, $method = 'GET', $data = array(), $options = array() ) {
 			$client_id = $this->get_client_id();
 			$key       = $this->get_key();
+			$start_time = microtime( true );
 
 			if ( empty( $client_id ) || empty( $key ) ) {
 				WP_MCP_AI_Logger::log_error(
@@ -200,6 +222,9 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 						'using_connection' => ! empty( $this->connection_id ),
 					)
 				);
+
+				// Record failed health metric.
+				$this->record_health( false, microtime( true ) - $start_time );
 
 				return new WP_Error(
 					'wp_mcp_ai_missing_flowhub_config',
@@ -232,6 +257,21 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 				$url = add_query_arg( $options['query'], $url );
 			}
 
+			// ── Cache lookup for GET requests ────────────────────────────
+			$cache_key = '';
+			if ( 'GET' === strtoupper( $method ) && empty( $data ) ) {
+				$cache_key = $this->get_cache_key( $url );
+				$cached    = get_transient( $cache_key );
+				if ( false !== $cached && is_array( $cached ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'flowhub_cache_hit',
+						'Flowhub API request served from cache.',
+						array( 'endpoint' => $endpoint )
+					);
+					return $cached;
+				}
+			}
+
 			$request_args = array(
 				'timeout' => isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 30,
 				'method'  => strtoupper( $method ),
@@ -261,6 +301,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'Flowhub API request failed.', array( 'error' => $response->get_error_message() ) );
+				$this->record_health( false, microtime( true ) - $start_time );
 
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
@@ -277,6 +318,8 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 			// This ensures we properly report HTTP errors (403, 500, etc.) even when
 			// the response body is HTML or other non-JSON content (e.g., nginx error pages).
 			if ( $code < 200 || $code >= 300 ) {
+				$this->record_health( false, microtime( true ) - $start_time );
+
 				// Try to decode JSON for error details, but don't fail if it's not JSON.
 				$decoded = json_decode( $body, true );
 
@@ -366,19 +409,60 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode Flowhub API response.', array( 'body' => $body ) );
+				$this->record_health( false, microtime( true ) - $start_time );
 
 				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Flowhub returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
+			$this->record_health( true, microtime( true ) - $start_time );
 			WP_MCP_AI_Logger::log_event( 'flowhub_api_response', 'Flowhub API request completed successfully.' );
 
 			// Flowhub API wraps responses in { "status": 200, "data": [...] } format.
 			// Unwrap the data if present, otherwise return decoded response as-is.
-			if ( array_key_exists( 'data', $decoded ) ) {
-				return $decoded['data'];
+			$result = array_key_exists( 'data', $decoded ) ? $decoded['data'] : $decoded;
+
+			// ── Cache successful GET responses ────────────────────────────
+			if ( '' !== $cache_key ) {
+				// Default cache TTL: 60 seconds for inventory, 30 seconds for others.
+				$cache_ttl = ( false !== strpos( $endpoint, 'inventory' ) ) ? 60 : 30;
+				set_transient( $cache_key, $result, $cache_ttl );
 			}
 
-			return $decoded;
+			return $result;
+		}
+
+		/**
+		 * Generate a cache key for a Flowhub API GET request URL.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $url Full request URL.
+		 * @return string Cache-transient key.
+		 */
+		protected function get_cache_key( $url ) {
+			return 'wp_mcp_ai_fl_' . md5( $url );
+		}
+
+		/**
+		 * Record a health metric for this connection in the Remote Site Manager.
+		 *
+		 * Health metrics feed the connection dashboard and alerting systems.
+		 * Skipping this integration (as the previous code did) means Flowhub
+		 * connection failures are invisible to site administrators.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool  $success  Whether the request succeeded.
+		 * @param float $duration Request duration in seconds.
+		 */
+		protected function record_health( $success, $duration ) {
+			if ( ! empty( $this->connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				WP_MCP_AI_Pro_Remote_Site_Manager::record_health_metric(
+					$this->connection_id,
+					$success,
+					$duration
+				);
+			}
 		}
 
 		/**
@@ -400,23 +484,14 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 				$query_params['room_id'] = sanitize_text_field( $options['room_id'] );
 			}
 
-			// Build the endpoint with location_id in the path.
-			// Flowhub API format: /v0/locations/{location_id}/inventoryNonZero.
+			// Build the endpoint. When location_id is available, scope to that
+			// location. Otherwise use the root inventoryNonZero endpoint (no location required).
 			$location_id = $this->get_location_id();
-			if ( empty( $location_id ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_location_id',
-					__( 'Flowhub Location ID is required for inventory requests.', 'mcp-ai-wpoos' ),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'configure_location_id' => __( 'Add Flowhub Location ID in the NV oOS settings or Remote Sites.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
+			if ( ! empty( $location_id ) ) {
+				$endpoint = sprintf( '/v0/locations/%s/inventoryNonZero', rawurlencode( sanitize_text_field( $location_id ) ) );
+			} else {
+				$endpoint = '/v0/inventoryNonZero';
 			}
-
-			$endpoint = sprintf( '/v0/locations/%s/inventoryNonZero', rawurlencode( sanitize_text_field( $location_id ) ) );
 
 			// Use the location-specific non-zero inventory endpoint as per Flowhub API docs.
 			return $this->make_request(
@@ -430,7 +505,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		/**
 		 * Retrieve orders/transactions.
 		 *
-		 * @param array $options Request options (limit, offset, status).
+		 * @param array $options Request options (limit, offset, status, after cursor).
 		 * @return array|WP_Error Orders data or error.
 		 */
 		public function get_orders( $options = array() ) {
@@ -444,6 +519,9 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 			}
 			if ( isset( $options['status'] ) ) {
 				$query_params['status'] = sanitize_text_field( $options['status'] );
+			}
+			if ( isset( $options['after'] ) ) {
+				$query_params['after'] = sanitize_text_field( $options['after'] );
 			}
 
 			return $this->make_request(
@@ -468,7 +546,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		/**
 		 * Retrieve customers.
 		 *
-		 * @param array $options Request options (limit, offset, search).
+		 * @param array $options Request options (limit, offset, search, after cursor).
 		 * @return array|WP_Error Customers data or error.
 		 */
 		public function get_customers( $options = array() ) {
@@ -482,6 +560,9 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 			}
 			if ( isset( $options['search'] ) ) {
 				$query_params['search'] = sanitize_text_field( $options['search'] );
+			}
+			if ( isset( $options['after'] ) ) {
+				$query_params['after'] = sanitize_text_field( $options['after'] );
 			}
 
 			return $this->make_request(
@@ -518,7 +599,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		/**
 		 * Retrieve products.
 		 *
-		 * @param array $options Request options (limit, offset, category).
+		 * @param array $options Request options (limit, offset, category, after cursor).
 		 * @return array|WP_Error Products data or error.
 		 */
 		public function get_products( $options = array() ) {
@@ -532,6 +613,9 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 			}
 			if ( isset( $options['category'] ) ) {
 				$query_params['category'] = sanitize_text_field( $options['category'] );
+			}
+			if ( isset( $options['after'] ) ) {
+				$query_params['after'] = sanitize_text_field( $options['after'] );
 			}
 
 			return $this->make_request(

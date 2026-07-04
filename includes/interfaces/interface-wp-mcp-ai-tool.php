@@ -132,6 +132,7 @@ interface WP_MCP_AI_Tool_Capability_Flags_Interface {
 	 * - 'write': Tool creates or modifies data
 	 * - 'state-changing': Tool modifies database or site state
 	 * - 'reversible': Changes can be undone (e.g., via revisions)
+	 * - 'irreversible': Action CANNOT be undone once executed (since 1.9.0)
 	 * - 'idempotent': Tool can be called multiple times safely with same result
 	 * - 'performance-impact': Tool may temporarily affect site performance
 	 * - 'consumes-tokens': Tool uses AI model tokens/credits
@@ -159,6 +160,12 @@ interface WP_MCP_AI_Tool_Capability_Flags_Interface {
 	 * - 'large-response': May return large data sets (>1MB)
 	 * - 'paginated': Supports pagination to manage response size
 	 * - 'supports-compression': Can compress output to reduce size
+	 *
+	 * Standard flags (Safety & Impact — since 1.9.0):
+	 * - 'financial-impact': Involves monetary transactions or financial data
+	 * - 'external-communication': Sends messages to recipients outside the system
+	 * - 'data-destruction': Permanently removes data beyond recovery
+	 * - 'access-control-change': Modifies user permissions or access rights
 	 *
 	 * @return array<string> Array of capability flag strings.
 	 */
@@ -358,3 +365,9 @@ interface WP_MCP_AI_Tool_Context_Restrictions_Interface {
 
 // Load the default capability trait so it is available wherever this interface file is included.
 require_once dirname( __DIR__ ) . '/tools/trait-wp-mcp-ai-tool-default-capability.php';
+
+// Load the safety profile interface so tool classes can reference it.
+// Guarded behind interface_exists to avoid double-declaration when loaded from other entry points.
+if ( ! interface_exists( 'WP_MCP_AI_Tool_Safety_Profile_Interface' ) ) {
+	require_once __DIR__ . '/interface-wp-mcp-ai-tool-safety-profile.php';
+}

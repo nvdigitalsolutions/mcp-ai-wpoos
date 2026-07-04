@@ -35,6 +35,8 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	const TOOLKITS = array(
 		'enable_crm_toolkit'                     => 'CRM Toolkit',
 		'enable_ecommerce_toolkit'               => 'E-commerce Toolkit',
+		'enable_flowhub_toolkit'                 => 'FlowHub Toolkit',
+		'enable_shopify_sync_toolkit'            => 'Shopify Sync Toolkit',
 		'enable_social_media_toolkit'            => 'Social Media Toolkit',
 		'enable_analytics_toolkit'               => 'Analytics Toolkit',
 		'enable_multilingual_toolkit'            => 'Multilingual Toolkit',

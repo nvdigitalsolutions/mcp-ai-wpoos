@@ -90,6 +90,14 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 		 */
 		const DEFAULT_EMBEDDING_MODEL = 'gte-large-en-v1.5';
 
+		/**
+		 * In-memory API key override. Set via set_api_key().
+		 *
+		 * @since 2026.07
+		 * @var string|null
+		 */
+		private $api_key_override = null;
+
 		// -------------------------------------------------------------------------
 		// Accessors.
 		// -------------------------------------------------------------------------
@@ -100,6 +108,13 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 		 * @return string Empty string when not configured.
 		 */
 		public function get_api_key() {
+			// If a transient API key was set via set_api_key(), use it instead
+			// of the persisted setting. This prevents TOCTOU race conditions
+			// when testing a key before saving it.
+			if ( isset( $this->api_key_override ) && is_string( $this->api_key_override ) ) {
+				return $this->api_key_override;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$key      = isset( $settings['digitalocean_api_key'] ) ? $settings['digitalocean_api_key'] : '';
 
@@ -108,6 +123,20 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 			}
 
 			return $key;
+		}
+
+		/**
+		 * Override the API key for the lifetime of this instance only.
+		 *
+		 * Use this when testing a key before persisting it, instead of
+		 * temporarily writing it to wp_options (which creates a TOCTOU
+		 * race condition).
+		 *
+		 * @since 2026.07
+		 * @param string $api_key The API key to use for this instance.
+		 */
+		public function set_api_key( $api_key ) {
+			$this->api_key_override = $api_key;
 		}
 
 		/**
@@ -300,6 +329,7 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 			}
 
 			// Real-time SSE: bypass wp_remote_post when streaming with a callback.
+			$timeout      = $this->resolve_timeout( $options );
 			$is_streaming = ! empty( $payload['stream'] );
 			if ( $is_streaming && function_exists( 'curl_init' ) ) {
 				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
@@ -380,6 +410,7 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 			$sse_buffer          = '';
 			$http_status         = 0;
 			$accumulated_content = '';
+			$accumulated_reason  = '';
 			$tool_calls_by_idx   = array();
 			$response_id         = '';
 			$finish_reason       = null;
@@ -405,7 +436,7 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 						}
 						return strlen( $header );
 					},
-					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
 						$sse_buffer .= $data;
 						while ( false !== ( $pos = strpos(
 							$sse_buffer,
@@ -435,6 +466,17 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 							if ( ! empty( $delta['content'] ) ) {
 								$accumulated_content .= $delta['content'];
 								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'content' => $delta['content'] ) ) ) ) );
+							}
+							if ( ! empty( $delta['reasoning_content'] ) ) {
+								$accumulated_reason .= $delta['reasoning_content'];
+								call_user_func(
+									$stream_callback,
+									array(
+										'choices' => array(
+											array( 'delta' => array( 'reasoning_content' => $delta['reasoning_content'] ) ),
+										),
+									)
+								);
 							}
 							if ( ! empty( $delta['tool_calls'] ) ) {
 								foreach ( $delta['tool_calls'] as $tc ) {
@@ -495,6 +537,9 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 			if ( ! empty( $tool_calls_by_idx ) ) {
 				ksort( $tool_calls_by_idx );
 				$message['tool_calls'] = array_values( $tool_calls_by_idx );
+			}
+			if ( '' !== $accumulated_reason ) {
+				$message['reasoning_content'] = $accumulated_reason;
 			}
 			$assembled = array(
 				'id'      => $response_id,
@@ -791,6 +836,14 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 				);
 			}
 
+			// Filter orphaned tool messages before sending to DigitalOcean.
+			// DigitalOcean's API is OpenAI-compatible and will reject messages
+			// where tool messages lack a matching assistant tool_call.
+			$messages = $this->filter_tool_messages_for_payload( $messages );
+
+			// Normalise content arrays into strings for compatibility.
+			$messages = $this->normalise_messages_for_payload( $messages );
+
 			foreach ( $messages as $message ) {
 				if ( ! is_array( $message ) ) {
 					continue;
@@ -806,8 +859,11 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 				$payload['top_p'] = (float) $options['top_p'];
 			}
 
-			if ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
-				$payload['max_tokens'] = absint( $options['max_tokens'] );
+			// Max tokens — support both naming conventions.
+			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$payload['max_completion_tokens'] = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
+				$payload['max_completion_tokens'] = absint( $options['max_tokens'] );
 			}
 
 			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
@@ -816,6 +872,13 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 
 			if ( ! empty( $options['stream'] ) ) {
 				$payload['stream'] = true;
+
+				// Include stream_options so the final chunk carries usage data.
+				// Use caller-provided options when present; otherwise default
+				// to include_usage=true for cost/usage badge display.
+				$payload['stream_options'] = isset( $options['stream_options'] ) && is_array( $options['stream_options'] )
+					? $options['stream_options']
+					: array( 'include_usage' => true );
 			}
 
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
@@ -837,6 +900,222 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 			 * @param string $model    Resolved model identifier.
 			 */
 			return apply_filters( 'wp_mcp_ai_digitalocean_request_payload', $payload, $messages, $options, $model );
+		}
+
+		/**
+		 * Drop tool role messages that are not associated with the most recent
+		 * assistant tool call.
+		 *
+		 * DigitalOcean's API is OpenAI-compatible and requires tool responses to
+		 * immediately follow the assistant message that emitted the corresponding
+		 * tool call. When intervening messages appear between those entries the
+		 * request may be rejected. This normaliser filters out any tool messages
+		 * that no longer have a matching pending call so the payload remains valid.
+		 *
+		 * Logic mirrors WP_MCP_AI_DeepSeek_Client::filter_tool_messages_for_payload().
+		 *
+		 * @since 2026.07
+		 *
+		 * @param array $messages Chat history supplied by the caller.
+		 * @return array
+		 */
+		protected function filter_tool_messages_for_payload( array $messages ) {
+			if ( empty( $messages ) ) {
+				return $messages;
+			}
+
+			$filtered                = array();
+			$pending_calls           = array();
+			$awaiting_tool_responses = false;
+			$incomplete_group_start  = null;
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+				if ( '' === $role ) {
+					continue;
+				}
+
+				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					// If the previous assistant message had tool_calls that were never
+					// fully answered, drop the entire incomplete group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'digitalocean_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before user/system message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+					$filtered[]              = $message;
+					continue;
+				}
+
+				if ( 'assistant' === $role ) {
+					// If the PREVIOUS assistant had unresolved tool_calls, drop that group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'digitalocean_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before next assistant message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						foreach ( $message['tool_calls'] as $tool_call ) {
+							if ( ! is_array( $tool_call ) ) {
+								continue;
+							}
+
+							$call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
+							if ( '' === $call_id ) {
+								continue;
+							}
+
+							$pending_calls[ $call_id ] = true;
+						}
+					}
+
+					if ( ! empty( $pending_calls ) ) {
+						$awaiting_tool_responses = true;
+						$incomplete_group_start  = count( $filtered );
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				if ( 'tool' === $role ) {
+					$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
+
+					if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'digitalocean_dropped_orphan_tool_message',
+								'Dropping tool message without matching tool call before DigitalOcean request.',
+								array(
+									'tool_call_id' => $tool_call_id,
+									'reason'       => '' === $tool_call_id
+										? 'missing_tool_call_id'
+										: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+								)
+							);
+						}
+
+						continue;
+					}
+
+					unset( $pending_calls[ $tool_call_id ] );
+
+					if ( empty( $pending_calls ) ) {
+						$awaiting_tool_responses = false;
+						$incomplete_group_start  = null;
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				$pending_calls           = array();
+				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
+				$filtered[]              = $message;
+			}
+
+			return array_values( $filtered );
+		}
+
+		/**
+		 * Prepare chat messages for the DigitalOcean Chat Completions payload.
+		 *
+		 * The REST layer represents text-only messages as arrays of segments so
+		 * attachments and tool calls can be normalised consistently. Older
+		 * DigitalOcean models may only accept plain strings for the `content` field.
+		 * To remain compatible we collapse text-only segment arrays back into
+		 * strings while preserving multimodal payloads that rely on structured
+		 * segments.
+		 *
+		 * Logic mirrors WP_MCP_AI_DeepSeek_Client::normalise_messages_for_payload().
+		 *
+		 * @since 2026.07
+		 *
+		 * @param array $messages Sanitised chat messages.
+		 * @return array
+		 */
+		protected function normalise_messages_for_payload( array $messages ) {
+			$normalised = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					$normalised[] = $message;
+					continue;
+				}
+
+				$segments = array_values( $message['content'] );
+
+				if ( empty( $segments ) ) {
+					$message['content'] = '';
+					$normalised[]       = $message;
+					continue;
+				}
+
+				$all_text   = true;
+				$text_parts = array();
+
+				foreach ( $segments as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$all_text = false;
+						break;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'text' !== $type ) {
+						$all_text = false;
+						break;
+					}
+
+					$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+				}
+
+				if ( $all_text ) {
+					$text_parts         = array_filter(
+						$text_parts,
+						static function ( $part ) {
+							return '' !== trim( $part );
+						}
+					);
+					$message['content'] = implode( "\n\n", $text_parts );
+				} else {
+					$message['content'] = $segments;
+				}
+
+				$normalised[] = $message;
+			}
+
+			return $normalised;
 		}
 
 		/**
@@ -896,18 +1175,36 @@ if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 		 * @return array Normalised response.
 		 */
 		protected function normalize_response( array $decoded ) {
+			// Extract the primary choice.
 			$choice  = isset( $decoded['choices'][0] ) ? $decoded['choices'][0] : array();
 			$message = isset( $choice['message'] ) ? $choice['message'] : array();
 			$content = isset( $message['content'] ) ? $message['content'] : '';
 
+			$raw_usage = isset( $decoded['usage'] ) ? $decoded['usage'] : array();
+
+			// Extract prompt cache metrics when present.
+			if ( isset( $raw_usage['prompt_cache_hit_tokens'] ) ) {
+				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_cache_hit_tokens'];
+			} elseif ( isset( $raw_usage['prompt_tokens_details']['cached_tokens'] ) ) {
+				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_tokens_details']['cached_tokens'];
+			}
+
 			$normalized = array(
+				'choices'       => array(
+					array(
+						'message'       => $message,
+						'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
+					),
+				),
 				'content'       => $content,
 				'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
 				'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',
-				'usage'         => isset( $decoded['usage'] ) ? $decoded['usage'] : array(),
+				'provider'      => 'digitalocean',
+				'usage'         => $raw_usage,
 				'raw'           => $decoded,
 			);
 
+			// Pass through tool_calls when present (function calling).
 			if ( ! empty( $message['tool_calls'] ) ) {
 				$normalized['tool_calls'] = $message['tool_calls'];
 			}

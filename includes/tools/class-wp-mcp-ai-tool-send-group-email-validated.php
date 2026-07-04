@@ -24,8 +24,9 @@ require_once __DIR__ . '/class-wp-mcp-ai-tool-send-group-email.php';
  * This class extends the original send_group_email tool to use
  * Symfony Validator for argument validation.
  */
-class WP_MCP_AI_Tool_Send_Group_Email_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Send_Group_Email_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	/**
 	 * The original send_group_email tool instance for delegation.

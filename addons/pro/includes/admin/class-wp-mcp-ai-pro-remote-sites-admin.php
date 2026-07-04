@@ -38,6 +38,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_live', array( $this, 'ajax_test_messenger_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_auto_reply', array( $this, 'ajax_test_messenger_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_discover_jetengine_ccts', array( $this, 'ajax_discover_jetengine_ccts' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_whatsapp_phone_numbers', array( $this, 'ajax_fetch_whatsapp_phone_numbers' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_register_whatsapp_phone_number', array( $this, 'ajax_register_whatsapp_phone_number' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_whatsapp_group', array( $this, 'ajax_create_whatsapp_group' ) );
@@ -281,9 +282,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			// Get connection type first to determine which fields to use.
-			$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'WordPress';
+				$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'WordPress';
 
-			// Map connection-type-specific fields to generic field names.
+				// Normalise canonical casing. The select element sends lowercase values
+					// (e.g., the lowercased form of the WordPress string), but downstream
+					// code and existing stored data use the canonical capital-W form
+					// 'WordPress'. Without this normalisation, saved connections would
+					// have the wrong case and the edit-form JavaScript toggle plus other
+					// type-guards would fail to match.
+					// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- intentional lowercase comparison
+			if ( 'wordpress' === $connection_type ) {
+				$connection_type = 'WordPress';
+			}
+
+				// Map connection-type-specific fields to generic field names.
 			$api_key        = '';
 			$api_secret     = '';
 			$client_id      = '';
@@ -416,6 +428,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						$api_secret = isset( $_POST['shopify_storefront_token'] ) ? wp_unslash( $_POST['shopify_storefront_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- storefront token must not be sanitized.
 					}
 					break;
+				case 'printful':
+					$api_key = isset( $_POST['printful_api_key'] ) ? wp_unslash( $_POST['printful_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
 				case 'shipengine':
 					$api_key = isset( $_POST['shipengine_api_key'] ) ? wp_unslash( $_POST['shipengine_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized.
 					break;
@@ -430,7 +445,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$auth_type = isset( $_POST['auth_type'] ) ? sanitize_key( wp_unslash( $_POST['auth_type'] ) ) : 'none';
 
 			if ( 'flowhub' === $connection_type ) {
-				$url       = 'https://api.flowhub.co';
+				$sandbox   = ! empty( $_POST['sandbox_mode'] );
+				$url       = $sandbox ? 'https://api.sandbox.flowhub.co' : 'https://api.flowhub.co';
 				$auth_type = 'custom_header';
 			}
 
@@ -569,6 +585,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				}
 			}
 
+			// For Printful connections, always use the fixed API URL.
+			if ( 'printful' === $connection_type ) {
+				$url       = 'https://api.printful.com';
+				$auth_type = 'none'; // Bearer token auth is handled directly in get_auth_headers().
+			}
+
 			// For mesh peer connections, use custom_header auth with mesh API key.
 			if ( 'mesh_peer' === $connection_type ) {
 				$auth_type = 'custom_header';
@@ -629,8 +651,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'app_secret'                     => isset( $_POST['app_secret'] ) ? wp_unslash( $_POST['app_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'location_id'                    => isset( $_POST['location_id'] ) ? sanitize_text_field( wp_unslash( $_POST['location_id'] ) ) : '',
 				'company_id'                     => isset( $_POST['company_id'] ) ? sanitize_text_field( wp_unslash( $_POST['company_id'] ) ) : '',
+				'store_id'                       => isset( $_POST['printful_store_id'] ) ? sanitize_text_field( wp_unslash( $_POST['printful_store_id'] ) ) : '',
 				'sandbox_mode'                   => ! empty( $_POST['sandbox_mode'] ),
 				'has_woocommerce'                => ! empty( $_POST['has_woocommerce'] ),
+				// FlowHub proxy fields.
+				'proxy_enabled'                  => ! empty( $_POST['flowhub_proxy_enabled'] ),
+				'proxy_url'                      => isset( $_POST['flowhub_proxy_url'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_proxy_url'] ) ) : '',
+				'proxy_username'                 => isset( $_POST['flowhub_proxy_username'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_proxy_username'] ) ) : '',
+				'proxy_password'                 => isset( $_POST['flowhub_proxy_password'] ) ? wp_unslash( $_POST['flowhub_proxy_password'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password; stored as-is for encryption.
 				'enabled'                        => ! empty( $_POST['enabled'] ),
 				'cache_ttl'                      => isset( $_POST['cache_ttl'] ) ? max( 0, min( 3600, absint( $_POST['cache_ttl'] ) ) ) : 300,
 				'test_endpoint'                  => isset( $_POST['test_endpoint'] ) ? sanitize_text_field( wp_unslash( $_POST['test_endpoint'] ) ) : '',
@@ -781,6 +809,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'post_type_access'               => $this->resolve_post_type_access(),
 				'wc_resource_access'             => $this->resolve_wc_resource_access(),
 				'custom_post_types'              => isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '',
+				// JetEngine CCT access controls.
+				'jetengine_cct_access'           => $this->resolve_jetengine_cct_access(),
 			);
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -1041,7 +1071,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'office365'          => __( 'Office 365', 'mcp-ai-wpoos-pro' ),
 									'icloud'             => __( 'iCloud Drive', 'mcp-ai-wpoos-pro' ),
 									'shopify'            => __( 'Shopify', 'mcp-ai-wpoos-pro' ),
-									'shipengine'         => __( 'ShipStation API', 'mcp-ai-wpoos-pro' ),
+									'printful'           => __( 'Printful', 'mcp-ai-wpoos-pro' ),
+									'shipengine'         => __( 'ShipEngine', 'mcp-ai-wpoos-pro' ),
 									'shipstation'        => __( 'ShipStation V1', 'mcp-ai-wpoos-pro' ),
 								);
 
@@ -1071,6 +1102,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'office365'          => '#d83b01', // Microsoft Office orange.
 									'icloud'             => '#3693f5', // iCloud blue.
 									'shopify'            => '#96bf48', // Shopify green.
+									'printful'           => '#e5675b', // Printful coral.
 									'shipengine'         => '#0072ce', // ShipStation API blue.
 									'shipstation'        => '#f26522', // ShipStation V1 orange.
 								);
@@ -1081,41 +1113,41 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<span style="display: inline-block; padding: 2px 8px; background: <?php echo esc_attr( $type_badge_color ); ?>; color: white; border-radius: 3px; font-size: 11px;">
 									<?php echo esc_html( $type_label ); ?>
 								</span>
-								<?php if ( 'WordPress' === $connection_type && ! empty( $connection['has_woocommerce'] ) ) : ?>
+								<?php if ( in_array( $connection_type, array( 'wordpress', 'WordPress' ), true ) && ! empty( $connection['has_woocommerce'] ) ) : ?>
 									<span style="display: inline-block; padding: 2px 8px; background: #96588a; color: white; border-radius: 3px; font-size: 11px; margin-left: 4px;">WC</span>
 								<?php endif; ?>
-							</td>
-								<td>
-								<?php
-								// For WhatsApp channels, show phone number link, channel description, and unique channel link.
-								if ( 'whatsapp' === $connection_type ) {
-									$wa_display = array();
-									if ( ! empty( $connection['channel_url'] ) ) {
-										// Prefer a custom channel URL (e.g. WhatsApp Group invite link) when set.
-										$wa_display[] = '<a href="' . esc_url( $connection['channel_url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $connection['channel_url'] ) . '</a>';
-									} elseif ( ! empty( $connection['display_phone_number'] ) ) {
-										$wa_phone_digits = preg_replace( '/[^0-9]/', '', $connection['display_phone_number'] );
-										if ( ! empty( $wa_phone_digits ) ) {
-											$wa_phone_link = 'https://wa.me/' . $wa_phone_digits;
-											$wa_display[]  = '<a href="' . esc_url( $wa_phone_link ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $connection['display_phone_number'] ) . '</a>';
-										} else {
-											$wa_display[] = esc_html( $connection['display_phone_number'] );
-										}
-									} elseif ( ! empty( $connection['phone_number_id'] ) ) {
-										$wa_display[] = esc_html__( 'Phone ID:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( substr( $connection['phone_number_id'], 0, 8 ) . '…' );
-									}
-									if ( ! empty( $connection['channel_description'] ) ) {
-										$wa_display[] = '<em>' . esc_html( $connection['channel_description'] ) . '</em>';
-									}
-									if ( ! empty( $connection_id ) ) {
-										$channel_webhook = home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp/' . $connection_id );
-										$wa_display[]    = '<small><a href="' . esc_url( $channel_webhook ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Channel Webhook', 'mcp-ai-wpoos-pro' ) . '</a></small>';
-									}
-									echo ! empty( $wa_display ) ? implode( '<br>', $wa_display ) : esc_html( $connection['url'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-								} else {
-									echo esc_html( $connection['url'] );
-								}
-								?>
+											</td>
+												<td>
+												<?php
+												// For WhatsApp channels, show phone number link, channel description, and unique channel link.
+												if ( 'whatsapp' === $connection_type ) {
+													$wa_display = array();
+													if ( ! empty( $connection['channel_url'] ) ) {
+														// Prefer a custom channel URL (e.g. WhatsApp Group invite link) when set.
+														$wa_display[] = '<a href="' . esc_url( $connection['channel_url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $connection['channel_url'] ) . '</a>';
+													} elseif ( ! empty( $connection['display_phone_number'] ) ) {
+														$wa_phone_digits = preg_replace( '/[^0-9]/', '', $connection['display_phone_number'] );
+														if ( ! empty( $wa_phone_digits ) ) {
+															$wa_phone_link = 'https://wa.me/' . $wa_phone_digits;
+															$wa_display[]  = '<a href="' . esc_url( $wa_phone_link ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $connection['display_phone_number'] ) . '</a>';
+														} else {
+															$wa_display[] = esc_html( $connection['display_phone_number'] );
+														}
+													} elseif ( ! empty( $connection['phone_number_id'] ) ) {
+														$wa_display[] = esc_html__( 'Phone ID:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( substr( $connection['phone_number_id'], 0, 8 ) . '…' );
+													}
+													if ( ! empty( $connection['channel_description'] ) ) {
+														$wa_display[] = '<em>' . esc_html( $connection['channel_description'] ) . '</em>';
+													}
+													if ( ! empty( $connection_id ) ) {
+														$channel_webhook = home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp/' . $connection_id );
+														$wa_display[]    = '<small><a href="' . esc_url( $channel_webhook ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Channel Webhook', 'mcp-ai-wpoos-pro' ) . '</a></small>';
+													}
+													echo ! empty( $wa_display ) ? implode( '<br>', $wa_display ) : esc_html( $connection['url'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+												} else {
+													echo esc_html( $connection['url'] );
+												}
+												?>
 							</td>
 							<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $connection['auth_type'] ) ) ); ?></td>
 							<td>
@@ -1348,7 +1380,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						$connection_type = $is_edit && isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
 						?>
 						<select name="connection_type" id="connection_type" class="regular-text" required>
-							<option value="wordpress" <?php selected( $connection_type, 'WordPress' ); ?>>
+							<option value="wordpress" <?php selected( strtolower( (string) $connection_type ), 'WordPress' ); ?>>
 								<?php esc_html_e( 'WordPress / WooCommerce', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="mesh_peer" <?php selected( $connection_type, 'mesh_peer' ); ?>>
@@ -1428,6 +1460,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="shopify" <?php selected( $connection_type, 'shopify' ); ?>>
 								<?php esc_html_e( 'Shopify (E-Commerce Platform)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="printful" <?php selected( $connection_type, 'printful' ); ?>>
+								<?php esc_html_e( 'Printful (Print-on-Demand)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="shipengine" <?php selected( $connection_type, 'shipengine' ); ?>>
 								<?php esc_html_e( 'ShipStation API (Recommended)', 'mcp-ai-wpoos-pro' ); ?>
@@ -1616,6 +1651,32 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							value="<?php echo $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['shopify_api_version'] ) ? esc_attr( $connection['shopify_api_version'] ) : '2025-01'; ?>"
 							autocomplete="off" placeholder="2025-01">
 						<p class="description"><?php esc_html_e( 'Shopify Admin GraphQL API version in YYYY-MM format (e.g. 2025-01). Defaults to 2025-01. See Shopify API versioning docs for available versions.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php
+						// Show deprecation warning when the configured version is older than the latest known stable.
+						$saved_version = $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['shopify_api_version'] )
+							? $connection['shopify_api_version']
+							: '2025-01';
+						if ( class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+							$latest = defined( 'WP_MCP_AI_Shopify_Client::LATEST_KNOWN_VERSION' )
+								? WP_MCP_AI_Shopify_Client::LATEST_KNOWN_VERSION
+								: '2025-04';
+							if ( version_compare( $saved_version, $latest, '<' ) ) :
+								?>
+								<p style="color: #d63638; font-weight: 500; margin-top: 6px;">
+									<span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
+									<?php
+									printf(
+										/* translators: 1: current version, 2: latest version */
+										esc_html__( 'Your API version (%1$s) is older than the latest stable release (%2$s). Shopify deprecates API versions after 12 months. Consider updating to avoid disruptions.', 'mcp-ai-wpoos-pro' ),
+										esc_html( $saved_version ),
+										esc_html( $latest )
+									);
+									?>
+								</p>
+								<?php
+							endif;
+						}
+						?>
 					</td>
 				</tr>
 
@@ -1686,6 +1747,53 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								</ol>
 							</div>
 						</div>
+					</td>
+				</tr>
+
+				<tr class="shopify-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Sandbox / Development Mode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="sandbox_mode" value="1" <?php checked( $is_edit && ! empty( $connection['sandbox_mode'] ) ); ?>>
+							<?php esc_html_e( 'This is a Shopify development / test store', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Development stores are created from the Shopify Partners dashboard. Enabling this flag helps differentiate test environments from production stores in logs and alerts.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for Printful -->
+				<tr class="printful-only-field" style="display: none;">
+					<th scope="row">
+						<label for="printful_api_key"><?php esc_html_e( 'API Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="printful_api_key" id="printful_api_key" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API token.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your Printful API token from the Developer Portal. Private tokens do not expire until manually deleted. Stored encrypted.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="printful-only-field" style="display: none;">
+					<th scope="row">
+						<label for="printful_store_id"><?php esc_html_e( 'Store ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="printful_store_id" id="printful_store_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['store_id'] ) ? esc_attr( $connection['store_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Required only for account-level tokens. Sent as the X-PF-Store-Id header. Leave empty for store-level tokens.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="printful-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Sandbox / Development Mode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="sandbox_mode" value="1" <?php checked( $is_edit && ! empty( $connection['sandbox_mode'] ) ); ?>>
+							<?php esc_html_e( 'This is a Printful development / test store', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Printful does not have a separate sandbox API. This flag marks the connection as a development store for logging and alerting purposes.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -1859,6 +1967,68 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" name="location_id" id="location_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['location_id'] ) ? esc_attr( $connection['location_id'] ) : ''; ?>" autocomplete="off">
 						<p class="description"><?php esc_html_e( 'Optional: The Flowhub location/dispensary ID for filtering requests.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Sandbox / Development Mode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="sandbox_mode" value="1" <?php checked( $is_edit && ! empty( $connection['sandbox_mode'] ) ); ?>>
+							<?php esc_html_e( 'Use Flowhub Sandbox environment (api.sandbox.flowhub.co)', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Enable when testing against Flowhub\'s sandbox API instead of production. Uses separate credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="flowhub_proxy_enabled"><?php esc_html_e( 'Enable Proxy', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<label>
+							<input type="checkbox" name="flowhub_proxy_enabled" id="flowhub_proxy_enabled" value="1"
+								<?php checked( $is_edit && ! empty( $connection['proxy_enabled'] ) ); ?> />
+							<?php esc_html_e( 'Route FlowHub API requests through a proxy server', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Use when FlowHub blocks requests from your server location. Services like Webshare offer free/cheap HTTP proxies.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="flowhub_proxy_url"><?php esc_html_e( 'Proxy URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="flowhub_proxy_url" id="flowhub_proxy_url"
+							value="<?php echo $is_edit && isset( $connection['proxy_url'] ) ? esc_attr( $connection['proxy_url'] ) : ''; ?>"
+							class="regular-text" placeholder="proxy.example.com:8080" autocomplete="off" />
+						<p class="description"><?php esc_html_e( 'Proxy hostname and port (e.g., p.webshare.io:80). Supports HTTP proxies.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="flowhub_proxy_username"><?php esc_html_e( 'Proxy Username', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="flowhub_proxy_username" id="flowhub_proxy_username"
+							value="<?php echo $is_edit && isset( $connection['proxy_username'] ) ? esc_attr( $connection['proxy_username'] ) : ''; ?>"
+							class="regular-text" autocomplete="off" />
+						<p class="description"><?php esc_html_e( 'Optional — only needed if your proxy requires authentication.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="flowhub_proxy_password"><?php esc_html_e( 'Proxy Password', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="password" name="flowhub_proxy_password" id="flowhub_proxy_password"
+							value="" class="regular-text" autocomplete="off" />
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing proxy password.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 
@@ -3177,7 +3347,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$_woo_remote_connections = array();
 				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 					foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $_rc ) {
-						if ( isset( $_rc['connection_type'] ) && 'WordPress' === $_rc['connection_type'] && ! empty( $_rc['enabled'] ) ) {
+						if ( isset( $_rc['connection_type'] ) && in_array( $_rc['connection_type'], array( 'wordpress', 'WordPress' ), true ) && ! empty( $_rc['enabled'] ) ) {
 							$_woo_remote_connections[] = $_rc;
 						}
 					}
@@ -5814,7 +5984,60 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
-				<tr class="generic-only-field" style="display:none;">
+			<tr class="wordpress-only-field">
+				<th scope="row"><?php esc_html_e( 'JetEngine CCT Access Controls', 'mcp-ai-wpoos-pro' ); ?></th>
+				<td>
+					<?php
+					$je_access_enabled = $is_edit && ! empty( $connection['jetengine_cct_access'] );
+					$je_access         = $is_edit && isset( $connection['jetengine_cct_access'] ) ? $connection['jetengine_cct_access'] : array();
+					?>
+					<label style="display:block; margin-bottom:8px;">
+						<input type="checkbox" name="enable_je_access_controls" id="enable_je_access_controls" value="1"
+							<?php checked( $je_access_enabled ); ?>
+							onchange="document.getElementById('je_access_controls_section').style.display=this.checked?'block':'none';">
+						<strong><?php esc_html_e( 'Restrict JetEngine CCT access (leave unchecked to auto-discover and allow all CCTs with read access)', 'mcp-ai-wpoos-pro' ); ?></strong>
+					</label>
+					<div id="je_access_controls_section" style="<?php echo $je_access_enabled ? '' : 'display:none;'; ?> margin-left:24px;">
+						<p class="description" style="margin-bottom:8px;"><?php esc_html_e( 'Select which JetEngine CCTs can be accessed and which CRUD operations are permitted. Use the Discover button to fetch available CCTs from the remote site after saving the connection.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php if ( $is_edit && $editing ) : ?>
+							<p>
+								<button type="button" id="je_discover_ccts_btn" class="button"
+									data-connection-id="<?php echo esc_attr( $editing ); ?>"
+									data-nonce="<?php echo esc_attr( wp_create_nonce( 'discover_jetengine_ccts' ) ); ?>">
+									<?php esc_html_e( 'Discover CCTs from Remote', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+								<span id="je_discover_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+							</p>
+							<div id="je_discover_result" style="display: none; margin: 10px 0;"></div>
+						<?php endif; ?>
+						<table class="widefat striped" style="max-width:560px;" id="je_access_table">
+							<thead>
+								<tr>
+									<th><?php esc_html_e( 'CCT', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Read', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Create', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Update', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></th>
+								</tr>
+							</thead>
+							<tbody id="je_access_tbody">
+								<?php foreach ( $je_access as $cct_slug => $cct_ops ) : ?>
+									<?php $cct_ops = (array) $cct_ops; ?>
+									<tr>
+										<td><strong><?php echo esc_html( $cct_slug ); ?></strong></td>
+										<td><input type="checkbox" name="je_<?php echo esc_attr( $cct_slug ); ?>_read" value="1" <?php checked( in_array( 'read', $cct_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="je_<?php echo esc_attr( $cct_slug ); ?>_create" value="1" <?php checked( in_array( 'create', $cct_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="je_<?php echo esc_attr( $cct_slug ); ?>_update" value="1" <?php checked( in_array( 'update', $cct_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="je_<?php echo esc_attr( $cct_slug ); ?>_delete" value="1" <?php checked( in_array( 'delete', $cct_ops, true ) ); ?>></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				</td>
+			</tr>
+
+			<tr class="generic-only-field" style="display:none;">
 					<th scope="row">
 						<label for="test_endpoint"><?php esc_html_e( 'Test Endpoint', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -5919,6 +6142,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var office365Fields = document.querySelectorAll('.office365-only-field');
 			var icloudFields = document.querySelectorAll('.icloud-only-field');
 			var shopifyFields = document.querySelectorAll('.shopify-only-field');
+			var printfulFields = document.querySelectorAll('.printful-only-field');
 			var shipengineFields = document.querySelectorAll('.shipengine-only-field');
 			var shipstationFields = document.querySelectorAll('.shipstation-only-field');
 			var upworkFields = document.querySelectorAll('.upwork-only-field');
@@ -6002,6 +6226,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			shopifyFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
+			printfulFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
 			shipengineFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
@@ -6022,19 +6249,34 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			urlDescriptionFlowhub.style.display = 'none';
 
 			// Show/hide auth_type field based on connection type
-			// Only show for WordPress and Generic API connections
-			if (connectionType === 'WordPress' || connectionType === 'generic') {
-				authTypeRow.style.display = 'table-row';
+				// Only show for WordPress and Generic API connections.
+					// The select element sends lowercase values;
+					// toLowerCase() normalises both old and new casing.
+				var ctLower = (connectionType || '').toLowerCase();
+				
+				if (ctLower === <?php echo wp_json_encode( strtolower( 'WordPress' ) ); // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText ?> || ctLower === 'generic') {
+					authTypeRow.style.display = 'table-row';
+				// Sync the credential fields (username/password/token/consumer keys)
+				// with the current auth_type dropdown value so the correct fields
+				// are visible — previously they could stay hidden in an inconsistent
+				// state left over from a previously selected connection type.
+				if (typeof toggleAuthFields === 'function' && authTypeSelect) {
+					toggleAuthFields(authTypeSelect.value);
+				}
 			} else {
 				authTypeRow.style.display = 'none';
+				// Hide all auth credential fields when switching away from WordPress/Generic.
+				if (typeof toggleAuthFields === 'function') {
+					toggleAuthFields('none');
+				}
 			}
 
 			// Show fields for selected connection type
-			if (connectionType === 'WordPress') {
-				wordpressFields.forEach(function(field) {
-					field.style.display = 'table-row';
-				});
-			} else if (connectionType === 'generic') {
+				if (ctLower === <?php echo wp_json_encode( strtolower( 'WordPress' ) ); // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText ?>) {
+					wordpressFields.forEach(function(field) {
+						field.style.display = 'table-row';
+					});
+				} else if (ctLower === 'generic') {
 				genericFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
@@ -6287,6 +6529,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				var shopifyModeSelect = document.getElementById('shopify_api_mode');
 				var currentMode = shopifyModeSelect ? shopifyModeSelect.value : 'admin_api';
 				toggleShopifyApiMode(currentMode);
+			} else if (connectionType === 'printful') {
+				printfulFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Printful uses a fixed API URL and Bearer token auth.
+				urlField.value = 'https://api.printful.com';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
 			} else if (connectionType === 'shipengine') {
 				shipengineFields.forEach(function(field) {
 					field.style.display = 'table-row';
@@ -8893,6 +9145,91 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						})
 						.catch(function() {
 							testBtn.disabled = false;
+							if (spinner) { spinner.style.display = 'none'; }
+							if (resultDiv) {
+								resultDiv.style.display = 'block';
+								resultDiv.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// JetEngine CCT discovery button.
+			var jeDiscoverBtn = document.getElementById('je_discover_ccts_btn');
+			if (jeDiscoverBtn) {
+				jeDiscoverBtn.addEventListener('click', function() {
+					var connectionId = jeDiscoverBtn.getAttribute('data-connection-id');
+					var nonce        = jeDiscoverBtn.getAttribute('data-nonce');
+					var spinner      = document.getElementById('je_discover_spinner');
+					var resultDiv    = document.getElementById('je_discover_result');
+
+					jeDiscoverBtn.disabled = true;
+					if (spinner) { spinner.style.display = 'inline-block'; }
+					if (resultDiv) { resultDiv.style.display = 'none'; resultDiv.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_discover_jetengine_ccts');
+					data.append('nonce', nonce);
+					data.append('connection_id', connectionId);
+
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							jeDiscoverBtn.disabled = false;
+							if (spinner) { spinner.style.display = 'none'; }
+							if (!resultDiv) { return; }
+							resultDiv.style.display = 'block';
+
+							if (result.success && result.data && result.data.ccts && result.data.ccts.length > 0) {
+								var tbody = document.getElementById('je_access_tbody');
+								var existingRows = {};
+								// Preserve existing row selections.
+								if (tbody) {
+									var rows = tbody.querySelectorAll('tr');
+									rows.forEach(function(row) {
+										var nameCell = row.querySelector('td:first-child strong');
+										if (nameCell) {
+											var slug = nameCell.textContent.trim();
+											var checks = row.querySelectorAll('input[type=checkbox]');
+											existingRows[slug] = [];
+											checks.forEach(function(cb, i) {
+												existingRows[slug].push(cb.checked);
+											});
+										}
+									});
+								}
+
+								if (tbody) {
+									tbody.innerHTML = '';
+									result.data.ccts.forEach(function(cct) {
+										var prev = existingRows[cct.slug] || [true, false, false, false];
+										var tr = document.createElement('tr');
+										tr.innerHTML =
+											'<td><strong>' + cct.slug + '</strong>' + (cct.label && cct.label !== cct.slug ? ' <small>(' + cct.label + ')</small>' : '') + '</td>' +
+											'<td><input type="checkbox" name="je_' + cct.slug + '_read" value="1"' + (prev[0] ? ' checked' : '') + '></td>' +
+											'<td><input type="checkbox" name="je_' + cct.slug + '_create" value="1"' + (prev[1] ? ' checked' : '') + '></td>' +
+											'<td><input type="checkbox" name="je_' + cct.slug + '_update" value="1"' + (prev[2] ? ' checked' : '') + '></td>' +
+											'<td><input type="checkbox" name="je_' + cct.slug + '_delete" value="1"' + (prev[3] ? ' checked' : '') + '></td>';
+										tbody.appendChild(tr);
+									});
+								}
+
+								resultDiv.innerHTML = '<div class="notice notice-success inline" style="margin:0;"><p>' +
+									<?php echo wp_json_encode( __( 'Discovered CCTs from remote site. Check the operations you want to allow, then save the connection.', 'mcp-ai-wpoos-pro' ) ); ?> +
+									'</p></div>';
+							} else if (result.success) {
+								resultDiv.innerHTML = '<div class="notice notice-warning inline" style="margin:0;"><p>' +
+									<?php echo wp_json_encode( __( 'No JetEngine CCTs found on the remote site. Ensure JetEngine is installed and at least one CCT has REST endpoints enabled (JetEngine → Custom Content Types → Edit CCT → enable "Register get items/item REST API Endpoint").', 'mcp-ai-wpoos-pro' ) ); ?> +
+									'</p></div>';
+							} else {
+								resultDiv.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Discovery failed. The remote site may not have JetEngine REST endpoints enabled.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							jeDiscoverBtn.disabled = false;
 							if (spinner) { spinner.style.display = 'none'; }
 							if (resultDiv) {
 								resultDiv.style.display = 'block';
@@ -14365,6 +14702,109 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 		return $access;
+	}
+
+	/**
+	 * Build the jetengine_cct_access map from the submitted form data.
+	 *
+	 * Each JetEngine CCT has four checkbox fields:
+	 * je_{slug}_read, je_{slug}_create, je_{slug}_update, je_{slug}_delete.
+	 * CCT slugs are discovered from the form field names (je_*_read).
+	 *
+	 * Note: nonce verification is performed by the calling method
+	 * handle_actions() before this helper is invoked.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return array Sanitized jetengine_cct_access map, e.g.
+	 *               array( 'attendees' => array( 'read', 'create' ), 'inventory' => array( 'read' ) ).
+	 *               Returns an empty array when JetEngine access controls are not configured.
+	 */
+	private function resolve_jetengine_cct_access() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		if ( empty( $_POST['enable_je_access_controls'] ) ) {
+			return array();
+		}
+
+		$valid_operations = array( 'read', 'create', 'update', 'delete' );
+		$access           = array();
+
+		// Discover CCT slugs from the form field names (je_{slug}_read).
+		foreach ( array_keys( $_POST ) as $field ) {
+			if ( ! preg_match( '/^je_(.+)_read$/', $field, $matches ) ) {
+				continue;
+			}
+
+			$cct_slug = sanitize_key( $matches[1] );
+			$ops      = array();
+
+			foreach ( $valid_operations as $op ) {
+				$op_field = 'je_' . $cct_slug . '_' . $op;
+				if ( ! empty( $_POST[ $op_field ] ) ) {
+					$ops[] = $op;
+				}
+			}
+
+			if ( ! empty( $ops ) ) {
+				$access[ $cct_slug ] = $ops;
+			}
+		}
+
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return $access;
+	}
+
+	/**
+	 * AJAX handler: Discover JetEngine CCTs on a remote connection.
+	 *
+	 * Calls the remote site's /wp-json/jet-cct/v1/ endpoint to enumerate
+	 * available CCTs with REST endpoints enabled.
+	 *
+	 * @since 1.2.0
+	 */
+	public function ajax_discover_jetengine_ccts() {
+		check_ajax_referer( 'discover_jetengine_ccts', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( null === $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$ccts = WP_MCP_AI_Pro_Remote_Site_Manager::discover_jetengine_ccts( $connection );
+
+		if ( is_wp_error( $ccts ) ) {
+			wp_send_json_error( $ccts->get_error_message() );
+			return;
+		}
+
+		if ( empty( $ccts ) ) {
+			wp_send_json_success( array( 'ccts' => array() ) );
+			return;
+		}
+
+		$result = array();
+		foreach ( $ccts as $slug => $cct ) {
+			$result[] = array(
+				'slug'  => $slug,
+				'label' => isset( $cct['label'] ) ? $cct['label'] : $slug,
+			);
+		}
+
+		wp_send_json_success( array( 'ccts' => $result ) );
 	}
 
 	/**

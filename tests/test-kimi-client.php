@@ -108,7 +108,7 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 	public function test_get_base_url_returns_default_when_not_configured() {
 		$base_url = $this->client->get_base_url();
 
-		$this->assertEquals( 'https://api.moonshot.cn/v1', $base_url );
+		$this->assertEquals( 'https://api.moonshot.ai/v1', $base_url );
 	}
 
 	/**
@@ -136,13 +136,13 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'kimi_base_url' => 'https://api.moonshot.cn/v1/',
+				'kimi_base_url' => 'https://api.moonshot.ai/v1/',
 			)
 		);
 
-		$base_url = $this->client->get_base_url();
+			$base_url = $this->client->get_base_url();
 
-		$this->assertEquals( 'https://api.moonshot.cn/v1', $base_url );
+			$this->assertEquals( 'https://api.moonshot.ai/v1', $base_url );
 	}
 
 	/**
@@ -263,7 +263,7 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 	 * Test constants are defined correctly.
 	 */
 	public function test_constants_defined() {
-		$this->assertEquals( 'https://api.moonshot.cn/v1', WP_MCP_AI_Kimi_Client::DEFAULT_BASE_URL );
+		$this->assertEquals( 'https://api.moonshot.ai/v1', WP_MCP_AI_Kimi_Client::DEFAULT_BASE_URL );
 		$this->assertEquals( '/chat/completions', WP_MCP_AI_Kimi_Client::API_ENDPOINT );
 		$this->assertEquals( '/models', WP_MCP_AI_Kimi_Client::API_MODELS );
 		$this->assertEquals( 'kimi-k2.6', WP_MCP_AI_Kimi_Client::DEFAULT_MODEL );

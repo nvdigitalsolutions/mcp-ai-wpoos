@@ -184,19 +184,43 @@ class NV_oOS_Graphify_Remote_CSV extends NV_oOS_Graphify_Remote_Source_Base {
 	 * @return array<int,array<string,string>>
 	 */
 	private function read_csv( $path ) {
+		global $wp_filesystem;
+
+		// Initialise WP_Filesystem if not already available.
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+
+		if ( empty( $wp_filesystem ) || ! $wp_filesystem->exists( $path ) || ! $wp_filesystem->is_readable( $path ) ) {
+			return array();
+		}
+
 		$delimiter      = $this->resolve_delimiter();
 		$has_header_row = ! empty( $this->config['has_header_row'] );
 
-		$handle = fopen( $path, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-		if ( false === $handle ) {
+		$contents = $wp_filesystem->get_contents( $path );
+		if ( false === $contents || '' === $contents ) {
 			return array();
 		}
+
+		// Normalise line endings to LF.
+		$contents = str_replace( "\r\n", "\n", $contents );
+		$contents = str_replace( "\r", "\n", $contents );
+		$lines    = explode( "\n", $contents );
 
 		$rows    = array();
 		$headers = array();
 		$first   = true;
 
-		while ( ( $row = fgetcsv( $handle, 0, $delimiter ) ) !== false ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.Found
+		foreach ( $lines as $line ) {
+			// Skip completely empty lines (e.g. trailing newline).
+			if ( '' === $line ) {
+				continue;
+			}
+
+			$row = str_getcsv( $line, $delimiter );
+
 			if ( $first ) {
 				$first = false;
 				if ( $has_header_row ) {
@@ -218,8 +242,6 @@ class NV_oOS_Graphify_Remote_CSV extends NV_oOS_Graphify_Remote_Source_Base {
 				$rows[] = $assoc;
 			}
 		}
-
-		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
 		return $rows;
 	}

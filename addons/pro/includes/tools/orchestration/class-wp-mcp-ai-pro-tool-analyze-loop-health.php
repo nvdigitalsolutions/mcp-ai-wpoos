@@ -86,10 +86,11 @@ class WP_MCP_AI_Pro_Tool_Analyze_Loop_Health {
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- Required by tool interface.
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
+			return new \WP_Error(
+				'missing_session_id',
+				__( 'Missing required argument: session_id', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -101,10 +102,44 @@ class WP_MCP_AI_Pro_Tool_Analyze_Loop_Health {
 		$session = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
+			return new \WP_Error(
+				'session_not_found',
+				sprintf(
+					/* translators: %s: session ID */
+					__( 'Session %s not found', 'mcp-ai-wpoos' ),
+					$session_id
+				)
 			);
+		}
+
+		// Instantiate circuit breaker for enforcement.
+		$breaker = new \WP_MCP_AI_Circuit_Breaker( $session_id );
+
+		// If circuit is already open and reset timeout hasn't elapsed, block early.
+		if ( ! $breaker->allow_execution() ) {
+			return array(
+				'success'         => true,
+				'session_id'      => $session_id,
+				'health_status'   => 'critical',
+				'circuit_breaker' => 'open',
+				'analysis'        => array(
+					'circuit_blocked' => true,
+					'message'         => __( 'Circuit breaker is open. Execution blocked to prevent runaway loops.', 'mcp-ai-wpoos' ),
+				),
+				'warnings'        => array( __( 'Circuit breaker is open — session execution blocked.', 'mcp-ai-wpoos' ) ),
+				'recommendations' => array( __( 'Review recent errors and manually reset the circuit breaker if the issue has been resolved.', 'mcp-ai-wpoos' ) ),
+				'should_pause'    => true,
+			);
+		}
+
+		// Collect recent output summaries for no-progress detection.
+		$recent_outputs = array();
+		foreach ( $last_actions as $action ) {
+			if ( ! empty( $action['output_summary'] ) ) {
+				$recent_outputs[] = $action['output_summary'];
+			} elseif ( ! empty( $action['error'] ) ) {
+				$recent_outputs[] = 'error: ' . $action['error'];
+			}
 		}
 
 		// Analyze various health indicators.
@@ -115,6 +150,7 @@ class WP_MCP_AI_Pro_Tool_Analyze_Loop_Health {
 			'error_severity'    => $this->analyze_error_severity( $current_error ),
 			'resource_pressure' => $this->check_resource_pressure( $session ),
 			'velocity'          => $this->calculate_velocity( $session, $last_actions ),
+			'no_progress'       => $breaker->detect_no_progress( $recent_outputs ),
 		);
 
 		// Determine health status.
@@ -122,6 +158,13 @@ class WP_MCP_AI_Pro_Tool_Analyze_Loop_Health {
 
 		// Check if circuit breaker should open.
 		$circuit_breaker_action = $this->check_circuit_breaker( $analysis, $session );
+
+		// Enforce the breaker decision.
+		if ( $circuit_breaker_action['should_open'] ) {
+			$breaker->record_failure();
+		} else {
+			$breaker->record_success();
+		}
 
 		// Update session health if needed.
 		if ( $health_status !== $session['health_status'] || $circuit_breaker_action['should_open'] ) {
@@ -413,17 +456,28 @@ class WP_MCP_AI_Pro_Tool_Analyze_Loop_Health {
 	}
 
 	/**
-	 * Update session health
+	 * Update session health — CCT-first with transient fallback.
 	 *
-	 * @param string $session_id          Session ID.
-	 * @param string $health_status       Health status.
-	 * @param array  $circuit_breaker_action Circuit breaker action.
+	 * @param string $session_id              Session ID.
+	 * @param string $health_status           Health status.
+	 * @param array  $circuit_breaker_action  Circuit breaker action.
 	 */
 	private function update_session_health( $session_id, $health_status, $circuit_breaker_action ) {
+		$data = array(
+			'health_status'   => $health_status,
+			'circuit_breaker' => $circuit_breaker_action['status'],
+		);
+
+		// Try CCT first.
+		if ( $this->is_cct_available() ) {
+			WP_MCP_AI_Autonomous_Sessions_CCT::update_session( $session_id, $data );
+		}
+
+		// Always update transient as hot cache.
 		$transient_key = 'mcp_ai_session_' . $session_id;
 		$session       = get_transient( $transient_key );
 
-		if ( $session ) {
+		if ( $session && is_array( $session ) ) {
 			$session['health_status']   = $health_status;
 			$session['circuit_breaker'] = $circuit_breaker_action['status'];
 			set_transient( $transient_key, $session, 86400 );
@@ -431,15 +485,51 @@ class WP_MCP_AI_Pro_Tool_Analyze_Loop_Health {
 	}
 
 	/**
-	 * Get session
+	 * Get session — CCT-first with transient fallback.
 	 *
 	 * @param string $session_id Session ID.
 	 * @return array|null
 	 */
 	private function get_session( $session_id ) {
+		// Try CCT first.
+		if ( $this->is_cct_available() ) {
+			$cct_session = WP_MCP_AI_Autonomous_Sessions_CCT::get_session_by_id( $session_id );
+			if ( $cct_session ) {
+				$mapped = array();
+				foreach ( $cct_session as $key => $value ) {
+					$mapped[ $key ] = $value;
+				}
+				// Ensure transient-style key compatibility.
+				if ( isset( $mapped['health'] ) ) {
+					$mapped['health_status'] = $mapped['health'];
+				}
+				if ( isset( $mapped['iterations'] ) ) {
+					$mapped['iteration_count'] = (int) $mapped['iterations'];
+				}
+				if ( isset( $mapped['tokens_used'] ) ) {
+					$mapped['token_usage'] = (int) $mapped['tokens_used'];
+				}
+				if ( isset( $mapped['start_time'] ) ) {
+					$mapped['started_at'] = $mapped['start_time'];
+				}
+				return $mapped;
+			}
+		}
+
+		// Fallback to transient.
 		$transient_key = 'mcp_ai_session_' . $session_id;
 		$session       = get_transient( $transient_key );
 		return $session ? $session : null;
+	}
+
+	/**
+	 * Check if CCT is available.
+	 *
+	 * @return bool
+	 */
+	private function is_cct_available() {
+		return class_exists( 'WP_MCP_AI_Autonomous_Sessions_CCT' )
+			&& WP_MCP_AI_Autonomous_Sessions_CCT::is_available();
 	}
 
 	/**
