@@ -1124,10 +1124,8 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		$max_history = (int) apply_filters( 'wp_mcp_ai_whatsapp_max_history_messages', $max_history, $args );
 		$max_history = max( 1, $max_history );
 
-		// Trim stored history to leave room for the new user message being added now.
-		if ( count( $history ) >= $max_history ) {
-			$history = array_slice( $history, -( $max_history - 1 ) );
-		}
+		// Trim stored history using BME-aware context strategy.
+		$history = WP_MCP_AI_Webhook_Context_Manager::trim_history( $history, $max_history, 'whatsapp', 1 );
 
 		// Normalize history entries: providers like Gemini and Ollama store
 		// message.content as an array of typed segments rather than a plain
@@ -1437,9 +1435,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			'role'    => 'assistant',
 			'content' => $content,
 		);
-		if ( count( $history ) > $max_history ) {
-			$history = array_slice( $history, -$max_history );
-		}
+		$history = WP_MCP_AI_Webhook_Context_Manager::trim_history_after_response( $history, $max_history, 'whatsapp' );
 		set_transient( $history_key, $history, self::CONVERSATION_HISTORY_TTL );
 	}
 
