@@ -475,9 +475,7 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
-		if ( count( $history ) >= $max_history ) {
-			$history = array_slice( $history, -( $max_history - 1 ) );
-		}
+		$history = WP_MCP_AI_Webhook_Context_Manager::trim_history( $history, $max_history, 'outlook', 1 );
 
 		$messages = array_merge(
 			$history,
@@ -550,9 +548,7 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 				'role'    => 'assistant',
 				'content' => $content,
 			);
-			if ( count( $history ) > $max_history ) {
-				$history = array_slice( $history, -$max_history );
-			}
+			$history = WP_MCP_AI_Webhook_Context_Manager::trim_history_after_response( $history, $max_history, 'outlook' );
 			set_transient( $history_key, $history, self::CONVERSATION_HISTORY_TTL );
 
 			WP_MCP_AI_Logger::log_event(

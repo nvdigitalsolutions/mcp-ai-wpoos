@@ -466,9 +466,7 @@ class WP_MCP_AI_ICloud_Webhook_Controller extends WP_REST_Controller {
 		$settings             = get_option( 'wp_mcp_ai_settings', array() );
 		$max_history_messages = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 20;
 
-		if ( count( $history ) > $max_history_messages * 2 ) {
-			$history = array_slice( $history, -( $max_history_messages * 2 ) );
-		}
+		$history = WP_MCP_AI_Webhook_Context_Manager::trim_history( $history, $max_history_messages * 2, 'icloud', 1 );
 
 		set_transient( $history_key, $history, self::CONVERSATION_HISTORY_TTL );
 
