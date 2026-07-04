@@ -53,7 +53,7 @@ class NV_oOS_CloudwaysDashboard_Toolkit_Manager {
 	 * @return array Results per toolkit slug.
 	 */
 	public static function apply_toolkits( $app_id, $toolkit_slugs, $options = array() ) {
-		$state = self::get_site_toolkits( $app_id );
+		$state   = self::get_site_toolkits( $app_id );
 		$results = array();
 
 		foreach ( $toolkit_slugs as $slug ) {
@@ -105,7 +105,7 @@ class NV_oOS_CloudwaysDashboard_Toolkit_Manager {
 	 * @return array Results per toolkit slug.
 	 */
 	public static function remove_toolkits( $app_id, $toolkit_slugs ) {
-		$state = self::get_site_toolkits( $app_id );
+		$state   = self::get_site_toolkits( $app_id );
 		$results = array();
 
 		foreach ( $toolkit_slugs as $slug ) {
@@ -157,15 +157,15 @@ class NV_oOS_CloudwaysDashboard_Toolkit_Manager {
 			)
 		);
 
-		$sites = array();
-		$counts = array();
+		$sites    = array();
+		$counts   = array();
 		$total_tk = 0;
 
 		if ( is_array( $keys ) ) {
 			foreach ( $keys as $key ) {
-				$app_id = (int) str_replace( 'nvoos_cw_site_toolkits_', '', $key );
+				$app_id   = (int) str_replace( 'nvoos_cw_site_toolkits_', '', $key );
 				$toolkits = get_option( $key, array() );
-				$active = array_filter(
+				$active   = array_filter(
 					$toolkits,
 					function ( $t ) {
 						return 'active' === $t['status'];

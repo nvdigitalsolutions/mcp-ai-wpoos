@@ -917,9 +917,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
-		if ( count( $history_for_chat ) >= $max_history ) {
-			$history_for_chat = array_slice( $history_for_chat, -( $max_history - 1 ) );
-		}
+		$history_for_chat = WP_MCP_AI_Webhook_Context_Manager::trim_history( $history_for_chat, $max_history, 'telegram', 1 );
 
 		// When a sideloaded WordPress attachment is available, build a multipart
 		// message content array so the AI can see/process the actual file:
@@ -1292,9 +1290,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 		$history[] = $assistant_history_entry;
 
-		if ( count( $history ) > $max_history ) {
-			$history = array_slice( $history, -$max_history );
-		}
+		$history = WP_MCP_AI_Webhook_Context_Manager::trim_history_after_response( $history, $max_history, 'telegram' );
 		set_transient( $history_key, $history, self::CONVERSATION_HISTORY_TTL );
 
 		WP_MCP_AI_Logger::log_event(

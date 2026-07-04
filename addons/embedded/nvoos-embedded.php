@@ -52,6 +52,9 @@ require_once NVOOS_EMBEDDED_PATH . 'includes/class-nvoos-embedded.php';
 require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/class-wp-mcp-ai-embedded-client.php';
 require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/class-nvoos-embedded-webllm-enqueue.php';
 
+// Load embedded transcribe (Gemma 4 audio STT).
+require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/class-wp-mcp-ai-embedded-transcribe.php';
+
 // Load admin classes.
 if ( is_admin() ) {
 	require_once NVOOS_EMBEDDED_PATH . 'includes/admin/class-wp-mcp-ai-webllm-settings-page.php';

@@ -15,8 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides functionality to unsubscribe or remove Newsletter plugin subscribers.
  */
-class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	/**
 	 * Determine whether Newsletter plugin is available.
@@ -224,9 +225,12 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_capability_flags() {
 		return array(
-			'requires-capability',  // Requires user capabilities.
-			'modifies-data',        // Modifies subscriber data.
-			'local-only',           // No external API calls.
+			'write',                    // Removes subscribers from mailing lists.
+			'state-changing',           // Modifies subscriber data.
+			'local-only',               // No external API calls.
+			'requires-capability',      // Requires user capabilities.
+			'irreversible',             // Unsubscription affects real people (since 1.9.0).
+			'data-destruction',         // Permanently removes subscriber data (since 1.9.0).
 		);
 	}
 }

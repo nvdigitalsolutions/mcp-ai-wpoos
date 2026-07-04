@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.34
+Stable tag: 1.1.36
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -47,7 +47,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 * [NVIDIA Terms](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/) | [NIM Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/)
 * [DeepSeek Terms](https://platform.deepseek.com/terms) | [Privacy](https://platform.deepseek.com/privacy)
 * [OpenRouter Terms](https://openrouter.ai/terms) | [Privacy](https://openrouter.ai/privacy)
-* [Kimi (Moonshot AI) Terms](https://platform.moonshot.cn/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.cn/docs/policy/privacy-policy)
+* [Kimi (Moonshot AI) Terms](https://platform.moonshot.ai/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.ai/docs/policy/privacy-policy)
 * [DigitalOcean Terms](https://www.digitalocean.com/legal/terms-of-service-agreement) | [Privacy](https://www.digitalocean.com/legal/privacy-policy)
 * [Baseten Terms](https://www.baseten.co/terms-and-conditions/) | [Privacy](https://www.baseten.co/privacy-policy/)
 * Ollama (self-hosted, no external data transmission)
@@ -86,7 +86,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **LM Studio** - Local AI with function calling (self-hosted, no external data)
 * **DeepSeek** - deepseek-chat, deepseek-reasoner, deepseek-coder ([Terms](https://platform.deepseek.com/terms) | [Privacy](https://platform.deepseek.com/privacy))
 * **OpenRouter** - Unified gateway to 200+ models (OpenAI, Anthropic, Meta, Mistral and more) via one API key ([Terms](https://openrouter.ai/terms) | [Privacy](https://openrouter.ai/privacy))
-* **Kimi (Moonshot AI)** - Kimi K2.6, K2.5, K2 with 256K context and tool calling ([Terms](https://platform.moonshot.cn/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.cn/docs/policy/privacy-policy))
+* **Kimi (Moonshot AI)** - Kimi K2.7 Code, K2.6, K2.5, K2 with 256K context and tool calling ([Terms](https://platform.moonshot.ai/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.ai/docs/policy/privacy-policy))
 * **DigitalOcean Serverless Inference** - Llama, DeepSeek-R1, and more via DigitalOcean's OpenAI-compatible cloud inference API ([Terms](https://www.digitalocean.com/legal/terms-of-service-agreement) | [Privacy](https://www.digitalocean.com/legal/privacy-policy))
 * Automatic provider fallback for maximum uptime
 
@@ -296,6 +296,29 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.35 - June 29, 2026 =
+
+Bumped to 1.1.35 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~810+ Pro (~1,005+ total; live registry via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+
+**FlowHub Inventory Sync, Shopify Sync, Necessity Gate Layer J, Local Voice STT, Remote Site Admin Blueprint, Bulk Import, Fixes**
+
+* **FlowHub Inventory Sync Pro Toolkit (PR #5501).** 6-tool cannabis dispensary management: products, inventory, locations, sync, analytics, alerts. P1 proxy support via `http_api_curl` hook + P2 CCT auto-registration (PR #5502). Auth, decryption, location_id, null-guard fixes (PRs #5500, #5503, #5507, #5510).
+* **Shopify Sync Pro Toolkit (PR #5502).** 5-tool bi-directional e-commerce sync: products, orders, inventory, analytics, settings. Dashboard widget. Tool reference docs.
+* **Necessity Gate Layer J.** Irreversibility-weighted safety profiles scoring tool calls by risk before execution. Safety profile trait. Request context crash fix.
+* **Local Voice Embedded STT (PR #5498).** Three pluggable browser-side STT backends (Web Speech, Whisper.cpp WASM, Vosk WASM). Offline-first architecture.
+* **Remote Site Administrator Blueprint.** 22-tool assistant blueprint for full remote/local WP/WooCommerce management with JetEngine, JetFormBuilder, and REST API control.
+* **Places & Calendar Bulk Import (PR #5509).** Batch import tools for Places and Calendar Booking toolkits.
+* **CLI site-import Subcommand.** Multi-phase HTML mirror import for migrating static sites into WordPress.
+* **Voice Realtime Auto-Detect (PR #5508).** WebRTC/WebSocket auto-selection, duplicate message fix, VAD improvements.
+* **Remote Connections Fixes (PR #5499).** WordPress case handling, FlowHub/Printful storage, Printful connection type.
+* **Bug Fix — Token-Scoped Assistant Resolution (PR #5497).** Token-scoped assistant preferred over site default.
+* **Bug Fix — User ID Empty Fallback (PR #5495).** `user_id` fallback uses `empty()` instead of `isset()`.
+* **Bug Fix — Local Credential Token Mapping (PR #5493).** Identity resolution consistency fix.
+* **Bug Fix — Post Type Name Lengths (PR #5484).** Exceeding 20-char limit now truncated with warnings.
+* **Bug Fix — OpenAI Image Deprecation Cleanup (PRs #5489–#5491).** Removed deprecated DALL-E models, applied chat model fallback, fixed defaults.
+* **Documentation.** Agent context sync — AGENTS.md, CLAUDE.md, .context/pro-vs-base.md updated.
+* **Housekeeping.** Stale 1.1.34 build zips removed (6 files).
 
 = 1.1.34 - June 27, 2026 =
 

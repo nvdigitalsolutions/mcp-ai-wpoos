@@ -1,0 +1,2230 @@
+<?php
+/**
+ * FlowHub CCT Manager.
+ *
+ * Manages the JetEngine Custom Content Type (CCT) that serves as the local
+ * cache for FlowHub inventory data. Handles column auto-creation, upsert
+ * operations, and cached read queries — so tools never hit the FlowHub API
+ * for reads.
+ *
+ * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// Load the PRO FlowHub client on-demand.
+// NOTE: The PRO client (WP_MCP_AI_FlowHub_Client, uppercase H) shares the same
+// case-insensitive class name as the base client (WP_MCP_AI_Flowhub_Client).
+// The init.php no longer loads it early to avoid collisions with base tools.
+// Load it here so that sync_from_api() and sync_single_product() have access
+// to from_settings().
+if ( ! class_exists( 'WP_MCP_AI_FlowHub_Client' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+}
+
+if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
+
+	/**
+	 * FlowHub CCT Manager.
+	 *
+	 * Provides read/write access to the FlowHub inventory CCT.
+	 * All public methods return canonical shapes ready for tool envelopes.
+	 *
+	 * @since 1.2.0
+	 */
+	class WP_MCP_AI_FlowHub_CCT_Manager {
+
+		/**
+		 * Default CCT slug.
+		 *
+		 * @var string
+		 */
+		const CCT_SLUG_DEFAULT = 'flowhub_inventory';
+
+		/**
+		 * Schema version for auto-discovery of new columns on update.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @var string
+		 */
+		const SCHEMA_VERSION = '1.4.0';
+
+		/**
+		 * Base ID for meta field identifiers.
+		 *
+		 * Using 40000 range to avoid conflicts with other CCT fields.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @var int
+		 */
+		const FIELD_ID_BASE = 40000;
+
+		/**
+		 * Current CCT slug.
+		 *
+		 * @var string
+		 */
+		protected $cct_slug = '';
+
+		/**
+		 * FlowHub API client instance.
+		 *
+		 * @var WP_MCP_AI_FlowHub_Client|null
+		 */
+		protected $client = null;
+
+		/**
+		 * Remote Sites connection ID.
+		 *
+		 * When set, option keys are suffixed with this ID
+		 * for per-connection isolation.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @var string|null
+		 */
+		protected $connection_id = null;
+
+		/**
+		 * Column definitions for the CCT.
+		 *
+		 * Keys are column names, values are JetEngine field types.
+		 *
+		 * @var array
+		 */
+		protected $columns = array(
+			'product_id'             => 'text',
+			'variant_id'             => 'text',
+			'parent_product_id'      => 'text',
+			'sku'                    => 'text',
+			'product_name'           => 'text',
+			'variant_name'           => 'text',
+			'category'               => 'text',
+			'custom_category_name'   => 'text',
+			'purchase_category'      => 'text',
+			'product_description'    => 'textarea',
+			'quantity'               => 'number',
+			'location_id'            => 'text',
+			'location_name'          => 'text',
+			'unit_of_measure'        => 'text',
+			'image_url'              => 'text',
+			'price'                  => 'number',
+			'woo_product_id'         => 'number',
+			'last_updated'           => 'datetime',
+			'item_data'              => 'textarea',
+			'sync_status'            => 'text',
+			'sync_hash'              => 'text',
+			// Compliance fields (v1.4.0).
+			'strain_name'            => 'text',
+			'thc_percentage'         => 'number',
+			'cbd_percentage'         => 'number',
+			'lab_test_id'            => 'text',
+			'compliance_status'      => 'text',
+			'metrc_uid'              => 'text',
+			'previous_quantity'      => 'number',
+			'quantity_change_reason' => 'text',
+		);
+
+		/**
+		 * Cached CCT Factory instance for the configured slug.
+		 *
+		 * @since 1.9.2
+		 *
+		 * @var \Jet_Engine\Modules\Custom_Content_Types\Factory|null
+		 */
+		protected $factory = null;
+
+		/**
+		 * Constructor.
+		 *
+		 * @since 1.2.0
+		 * @since 1.6.0 Added $connection_id parameter for per-connection isolation.
+		 *
+		 * @param WP_MCP_AI_FlowHub_Client|string|null $client_or_connection FlowHub API client for sync operations,
+		 *                                                                  or a Remote Sites connection ID string.
+		 */
+		public function __construct( $client_or_connection = null ) {
+			// Support both old API ($client) and new API ($connection_id).
+			if ( is_string( $client_or_connection ) && ! empty( $client_or_connection ) ) {
+				$this->connection_id = $client_or_connection;
+				$this->client        = null;
+			} elseif ( is_object( $client_or_connection ) && $client_or_connection instanceof WP_MCP_AI_FlowHub_Client ) {
+				$this->client        = $client_or_connection;
+				$this->connection_id = null;
+			} else {
+				$this->client        = null;
+				$this->connection_id = null;
+			}
+			$this->cct_slug = $this->get_configured_cct_slug();
+		}
+
+		/**
+		 * Get the connection ID.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @return string|null
+		 */
+		public function get_connection_id() {
+			return $this->connection_id;
+		}
+
+		// ------------------------------------------------------------------ //
+		// Configuration                                                       //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Get the configured CCT slug from toolkit settings.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return string
+		 */
+		public function get_configured_cct_slug() {
+			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			return ! empty( $settings['cct_slug'] )
+				? sanitize_key( $settings['cct_slug'] )
+				: self::CCT_SLUG_DEFAULT;
+		}
+
+		/**
+		 * Get the current CCT slug.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return string
+		 */
+		public function get_cct_slug() {
+			return $this->cct_slug;
+		}
+
+		/**
+		 * Set the CCT slug.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $slug CCT slug.
+		 */
+		public function set_cct_slug( $slug ) {
+			$this->cct_slug = sanitize_key( $slug );
+		}
+
+		/**
+		 * Check if JetEngine and the CCT are available.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return bool|WP_Error True if available, WP_Error otherwise.
+		 */
+		public function is_cct_available() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_jetengine_missing',
+					__( 'JetEngine plugin is required for FlowHub inventory storage. Please install and activate JetEngine.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$cct_module = self::get_cct_module();
+			if ( ! $cct_module ) {
+				// Try a one-shot activation in case it wasn't enabled yet.
+				self::maybe_enable_cct_module();
+				$cct_module = self::get_cct_module();
+			}
+
+			if ( ! $cct_module ) {
+					// Table-exists fallback (follows the vitals-log CCT pattern).
+				if ( $this->table_exists() ) {
+					return true;
+				}
+
+					return new WP_Error(
+						'wp_mcp_ai_flowhub_jetengine_not_ready',
+						__( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine → JetEngine Settings → Modules.', 'mcp-ai-wpoos-pro' )
+					);
+			}
+
+			// The post_types data handler lives on the module's Manager
+			// (Module has no ->data property of its own).
+			$data = ! empty( $cct_module->manager ) ? $cct_module->manager->data : null;
+
+			if ( empty( $data ) || empty( $data->db ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_cct_not_ready',
+					__( 'JetEngine CCT database is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$records = $data->db->query(
+				'post_types',
+				array(
+					'slug'   => $this->cct_slug,
+					'status' => 'content-type',
+				),
+				null,
+				false
+			);
+
+			if ( empty( $records ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_cct_missing',
+					sprintf(
+						/* translators: %s: CCT slug */
+						__( 'JetEngine CCT "%s" does not exist. Please create it or trigger a sync to auto-create it.', 'mcp-ai-wpoos-pro' ),
+						esc_html( $this->cct_slug )
+					)
+				);
+			}
+
+			return true;
+		}
+
+		/**
+		 * Check whether the CCT database table physically exists.
+		 *
+		 * Follows the vitals-log CCT pattern: a direct SHOW TABLES query
+		 * that bypasses JetEngine's module system entirely.  Used as a
+		 * lightweight fallback when get_cct_module() can't obtain a handle
+		 * but the table was already created by a prior sync.
+		 *
+		 * @since 1.5.1
+		 *
+		 * @return bool
+		 */
+		protected function table_exists() {
+			global $wpdb;
+			$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
+		}
+
+		/**
+		 * Retrieve the JetEngine Factory (type object) for the configured CCT.
+		 *
+		 * The Factory is the canonical PHP handle for CCT item CRUD: item
+		 * queries go through $factory->db and writes go through the
+		 * Item_Handler returned by $factory->get_item_handler().
+		 *
+		 * When the CCT was just registered in the current request the
+		 * Manager's content-types registry (hydrated on init) won't contain
+		 * it yet, so this method falls back to constructing a Factory
+		 * directly from the stored CCT record.
+		 *
+		 * @since 1.9.2
+		 *
+		 * @return \Jet_Engine\Modules\Custom_Content_Types\Factory|null
+		 */
+		protected function get_cct_factory() {
+			if ( null !== $this->factory ) {
+				return $this->factory;
+			}
+
+			$module = self::get_cct_module();
+
+			if ( ! $module || empty( $module->manager ) || ! method_exists( $module->manager, 'get_content_types' ) ) {
+				return null;
+			}
+
+			$factory = $module->manager->get_content_types( $this->cct_slug );
+
+			if ( ! empty( $factory ) && ! is_array( $factory ) ) {
+				$this->factory = $factory;
+				return $this->factory;
+			}
+
+			// Same-request fallback: the CCT record exists in the DB but the
+			// runtime registry was hydrated before it was created. Build the
+			// Factory manually from the stored record so a sync can proceed
+			// immediately after auto-registration.
+			$record = $this->get_cct_record_by_slug( $this->cct_slug );
+
+			if ( ! $record ) {
+				return null;
+			}
+
+			$args   = self::decode_maybe_serialized( isset( $record['args'] ) ? $record['args'] : array() );
+			$fields = self::decode_maybe_serialized( isset( $record['meta_fields'] ) ? $record['meta_fields'] : array() );
+
+			if ( ! is_array( $args ) ) {
+				$args = array();
+			}
+			if ( ! is_array( $fields ) ) {
+				$fields = array();
+			}
+
+			$args['slug'] = $this->cct_slug;
+
+			if ( ! class_exists( '\Jet_Engine\Modules\Custom_Content_Types\Factory' ) && method_exists( $module, 'module_path' ) ) {
+				$factory_path = $module->module_path( 'factory.php' );
+				if ( $factory_path && file_exists( $factory_path ) ) {
+					require_once $factory_path;
+				}
+			}
+
+			if ( ! class_exists( '\Jet_Engine\Modules\Custom_Content_Types\Factory' ) ) {
+				return null;
+			}
+
+			$type_id       = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
+			$this->factory = new \Jet_Engine\Modules\Custom_Content_Types\Factory( $args, $fields, $type_id );
+
+			return $this->factory;
+		}
+
+		/**
+		 * Retrieve the JetEngine Item_Handler for the configured CCT.
+		 *
+		 * @since 1.9.2
+		 *
+		 * @return \Jet_Engine\Modules\Custom_Content_Types\Item_Handler|null
+		 */
+		protected function get_item_handler() {
+			$factory = $this->get_cct_factory();
+
+			if ( ! $factory || ! method_exists( $factory, 'get_item_handler' ) ) {
+				return null;
+			}
+
+			return $factory->get_item_handler();
+		}
+
+		/**
+		 * Decode a value stored by JetEngine that may be PHP-serialized
+		 * (the native storage format for post_types rows) or JSON-encoded.
+		 *
+		 * @since 1.9.2
+		 *
+		 * @param mixed $value Raw value.
+		 * @return mixed Decoded value (arrays pass through unchanged).
+		 */
+		protected static function decode_maybe_serialized( $value ) {
+			if ( ! is_string( $value ) || '' === $value ) {
+				return $value;
+			}
+
+			$decoded = maybe_unserialize( $value );
+
+			if ( is_array( $decoded ) ) {
+				return $decoded;
+			}
+
+			$json = json_decode( $value, true );
+
+			return is_array( $json ) ? $json : $value;
+		}
+
+			/**
+			 * Ensure the JetEngine CCT exists, creating it if needed.
+			 *
+			 * Uses the existing maybe_register_cct() logic that
+			 * creates the CCT via JetEngine's module system.
+			 * Only creates the CCT shell; columns are added
+			 * separately via ensure_columns().
+			 *
+			 * @since 1.5.0
+			 *
+			 * @return array|WP_Error Result array or WP_Error.
+			 */
+		public function ensure_cct_exists() {
+			// First try the static bootstrap path (handles JetEngine init timing).
+			if ( method_exists( __CLASS__, 'maybe_register_cct' ) ) {
+				self::maybe_register_cct();
+			}
+
+			// Now check if it exists.
+			$available = $this->is_cct_available();
+
+			if ( is_wp_error( $available ) ) {
+				// If the error is "JetEngine not ready", surface it.
+				if ( 'wp_mcp_ai_flowhub_jetengine_not_ready' === $available->get_error_code() ) {
+					return $available;
+				}
+				// If CCT still missing after bootstrap attempt, surface the error.
+				if ( 'wp_mcp_ai_flowhub_cct_missing' === $available->get_error_code() ) {
+					return $available;
+				}
+				return $available;
+			}
+
+			return array(
+				'created' => false,
+				'slug'    => $this->cct_slug,
+			);
+		}
+
+			/**
+			 * Check if the FlowHub API is configured with credentials.
+			 *
+			 * @since 1.5.0
+			 *
+			 * @return bool True if API keys are set.
+			 */
+		public function is_api_configured() {
+			// If we have a connection ID, check that the connection exists in Remote Sites.
+			if ( ! empty( $this->connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $this->connection_id );
+				if ( $connection && ! empty( $connection['enabled'] ) ) {
+					return true;
+				}
+			}
+
+			// Fall back to legacy global API credentials.
+			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			return ! empty( $settings['client_id'] ) && ! empty( $settings['api_key'] );
+		}
+
+		// ------------------------------------------------------------------ //
+		// Column Management                                                   //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Get the column definitions.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return array
+		 */
+		public function get_column_definitions() {
+			return $this->columns;
+		}
+
+		/**
+		 * Ensure all required columns exist in the CCT.
+		 *
+		 * Auto-creates any missing columns via JetEngine API.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return int|WP_Error Number of columns created or WP_Error.
+		 */
+		public function ensure_columns() {
+			$available = $this->is_cct_available();
+			if ( is_wp_error( $available ) ) {
+				return $available;
+			}
+
+			global $wpdb;
+			$table   = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+			$created = 0;
+
+			// Guard: table must exist before we query its columns.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( ! $table_exists ) {
+				return 0;
+			}
+
+			$existing_fields = $this->get_existing_cct_fields();
+
+			// Track fields missing from JetEngine's meta_fields definition —
+			// these need the DB column AND the JetEngine definition synced.
+			$missing_from_meta = array();
+
+			foreach ( $this->columns as $column_name => $column_type ) {
+				// Check JetEngine CCT field definitions first (fast path).
+				if ( in_array( $column_name, $existing_fields, true ) ) {
+					continue;
+				}
+
+				// Track that JetEngine doesn't know about this field.
+				$missing_from_meta[] = $column_name;
+
+				// Fallback: check MySQL directly — the column may exist in the DB
+				// even though JetEngine's meta_fields config doesn't list it.
+				if ( $this->column_exists_in_table( $table, $column_name ) ) {
+					continue;
+				}
+
+				$sql_type = self::map_jet_type_to_sql( $column_type );
+
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$column_name}` {$sql_type} NULL DEFAULT NULL" );
+				++$created;
+			}
+
+			// Sync JetEngine's CCT field definitions so create_item / update_item
+			// recognise these columns and don't reject the data.
+			if ( ! empty( $missing_from_meta ) ) {
+				$sync_result = $this->sync_jetengine_field_definitions( $missing_from_meta );
+				if ( is_wp_error( $sync_result ) ) {
+					return $sync_result;
+				}
+			}
+
+				do_action( 'wp_mcp_ai_flowhub_after_columns_ensure', $this->cct_slug, $created );
+
+			// Track schema version so columns are only auto-created once per version.
+			$schema_key = 'wp_mcp_ai_flowhub_sync_db_version';
+			if ( ! empty( $this->connection_id ) ) {
+				$schema_key .= '_' . $this->connection_id;
+			}
+			update_option( $schema_key, self::SCHEMA_VERSION );
+
+			return $created;
+		}
+
+		/**
+		 * Get existing CCT field names.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return array Array of field name strings.
+		 */
+		protected function get_existing_cct_fields() {
+			$cct = $this->get_cct_record_by_slug( $this->cct_slug );
+
+			if ( ! $cct || empty( $cct['meta_fields'] ) ) {
+				return array();
+			}
+
+			// JetEngine stores meta_fields PHP-serialized in the post_types
+			// table (with JSON as a defensive fallback).
+			$meta_fields = self::decode_maybe_serialized( $cct['meta_fields'] );
+
+			if ( ! is_array( $meta_fields ) ) {
+				return array();
+			}
+
+			return wp_list_pluck( $meta_fields, 'name' );
+		}
+
+		/**
+		 * Check whether a column already exists in a given MySQL table.
+		 *
+		 * Used as a safety net when JetEngine's CCT meta_fields config
+		 * may be out of sync with the actual table schema.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $table       MySQL table name.
+		 * @param string $column_name Column name to check.
+		 * @return bool True if the column exists.
+		 */
+		protected function column_exists_in_table( $table, $column_name ) {
+			global $wpdb;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$result = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+					DB_NAME,
+					$table,
+					$column_name
+				)
+			);
+
+			return ! empty( $result );
+		}
+
+		/**
+		 * Map a JetEngine field type to a MySQL column type.
+		 *
+		 * Used by ensure_columns() for direct ALTER TABLE statements
+		 * when the jet_engine()->cct API is unavailable.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $jet_type JetEngine field type.
+		 * @return string MySQL column type.
+		 */
+		protected static function map_jet_type_to_sql( $jet_type ) {
+			$map = array(
+				'text'           => 'TEXT',
+				'textarea'       => 'LONGTEXT',
+				'number'         => 'BIGINT(20)',
+				'datetime-local' => 'DATETIME',
+				'datetime'       => 'DATETIME',
+			);
+			return isset( $map[ $jet_type ] ) ? $map[ $jet_type ] : 'TEXT';
+		}
+
+		/**
+		 * Sync JetEngine's CCT field definitions for missing columns.
+		 *
+		 * When the CCT already exists but its meta_fields definition is empty
+		 * or incomplete, create_item / update_item will reject unknown field
+		 * keys.  This method updates the CCT's meta_fields record in JetEngine's
+		 * post_types table so that every declared column has a matching field
+		 * definition.
+		 *
+		 * @since 1.9.1
+		 *
+		 * @param string[] $missing_columns Column names that are missing from JetEngine's definition.
+		 * @return bool|WP_Error True on success, WP_Error on failure.
+		 */
+		protected function sync_jetengine_field_definitions( $missing_columns ) {
+			$module = self::get_cct_module();
+			if ( ! $module || empty( $module->manager ) || empty( $module->manager->data ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available for field sync.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Get the existing CCT record so we can update it.
+			$cct_record = $this->get_cct_record_by_slug( $this->cct_slug );
+			if ( ! $cct_record || empty( $cct_record['id'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_cct_record_missing',
+					__( 'Cannot sync fields: CCT record not found.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$cct_id = absint( $cct_record['id'] );
+
+			// Decode existing meta_fields (PHP-serialized by JetEngine,
+			// with JSON as a defensive fallback).
+			$existing_meta = self::decode_maybe_serialized(
+				isset( $cct_record['meta_fields'] ) ? $cct_record['meta_fields'] : array()
+			);
+			if ( ! is_array( $existing_meta ) ) {
+				$existing_meta = array();
+			}
+
+			// Determine the next available field ID (max existing + 1).
+			$max_id = self::FIELD_ID_BASE - 1;
+			foreach ( $existing_meta as $field ) {
+				if ( ! empty( $field['id'] ) && absint( $field['id'] ) > $max_id ) {
+					$max_id = absint( $field['id'] );
+				}
+			}
+
+			// Build field definitions for missing columns.
+			$columns       = $this->get_column_definitions();
+			$new_fields    = array();
+			$next_field_id = $max_id + 1;
+
+			foreach ( $missing_columns as $column_name ) {
+				if ( ! isset( $columns[ $column_name ] ) ) {
+					continue;
+				}
+
+				$column_type = $columns[ $column_name ];
+				$args        = array();
+
+				switch ( $column_type ) {
+					case 'number':
+						$jet_type           = 'number';
+						$args['is_numeric'] = true;
+						break;
+					case 'textarea':
+						$jet_type = 'textarea';
+						break;
+					case 'datetime':
+						$jet_type = 'datetime-local';
+						break;
+					default:
+						$jet_type = 'text';
+						break;
+				}
+
+				$new_fields[] = self::build_field(
+					$next_field_id,
+					$column_name,
+					$this->get_column_label( $column_name ),
+					$jet_type,
+					$args
+				);
+
+				++$next_field_id;
+			}
+
+			if ( empty( $new_fields ) ) {
+				return true;
+			}
+
+			// Merge and update via JetEngine's API.
+			$merged_meta = array_merge( $existing_meta, $new_fields );
+
+			$data = $module->manager->data;
+
+			// Build an update request from the existing CCT record,
+			// preserving all existing values and only replacing meta_fields.
+			// Use the real CCT slug (not the constant) in case the admin
+			// configured a custom slug via toolkit settings. The stored args
+			// blob is PHP-serialized and must be decoded before JetEngine's
+			// sanitizers read individual keys from it.
+			$existing_args = self::decode_maybe_serialized(
+				isset( $cct_record['args'] ) ? $cct_record['args'] : array()
+			);
+			if ( ! is_array( $existing_args ) ) {
+				$existing_args = array();
+			}
+
+			$request                = $cct_record;
+			$request['args']        = $existing_args;
+			$request['meta_fields'] = $merged_meta;
+			$request['slug']        = $this->cct_slug;
+			$request['id']          = $cct_id;
+			$request['name']        = ! empty( $existing_args['name'] )
+				? $existing_args['name']
+				: __( 'FlowHub Inventory', 'mcp-ai-wpoos-pro' );
+
+			$data->set_request( $request );
+
+			if ( method_exists( $data, 'sanitize_item_request' ) && ! $data->sanitize_item_request() ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_field_sync_sanitize_failed',
+					__( 'Field definition sync failed during sanitization.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$item = $data->sanitize_item_from_request();
+
+			if ( empty( $item ) || ! is_array( $item ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_field_sync_invalid',
+					__( 'Field definition sync produced invalid item.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$data->before_item_update( $item, false );
+
+			$updated_id = $data->update_item_in_db( $item );
+
+			if ( ! $updated_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_field_sync_update_failed',
+					__( 'Failed to update CCT field definitions in database.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$item['id'] = $updated_id;
+
+			$data->after_item_update( $item, false );
+
+			if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
+				$data->db->query_raw( 'post_types' );
+			}
+
+			if ( function_exists( 'wp_mcp_ai_log' ) ) {
+				wp_mcp_ai_log(
+					sprintf(
+						/* translators: 1: CCT slug, 2: comma-separated field names */
+						__( 'FlowHub CCT field definitions synced for "%1$s": %2$s', 'mcp-ai-wpoos-pro' ),
+						$this->cct_slug,
+						implode( ', ', $missing_columns )
+					),
+					'info'
+				);
+			}
+
+			return true;
+		}
+
+		/**
+		 * Get a human-readable label for a CCT column.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $column_name Column name.
+		 * @return string
+		 */
+		protected function get_column_label( $column_name ) {
+			$labels = array(
+				'product_id'             => __( 'Product ID', 'mcp-ai-wpoos-pro' ),
+				'variant_id'             => __( 'Variant ID', 'mcp-ai-wpoos-pro' ),
+				'parent_product_id'      => __( 'Parent Product ID', 'mcp-ai-wpoos-pro' ),
+				'sku'                    => __( 'SKU', 'mcp-ai-wpoos-pro' ),
+				'product_name'           => __( 'Product Name', 'mcp-ai-wpoos-pro' ),
+				'variant_name'           => __( 'Variant Name', 'mcp-ai-wpoos-pro' ),
+				'category'               => __( 'Category', 'mcp-ai-wpoos-pro' ),
+				'custom_category_name'   => __( 'Custom Category', 'mcp-ai-wpoos-pro' ),
+				'purchase_category'      => __( 'Purchase Category', 'mcp-ai-wpoos-pro' ),
+				'product_description'    => __( 'Description', 'mcp-ai-wpoos-pro' ),
+				'quantity'               => __( 'Quantity', 'mcp-ai-wpoos-pro' ),
+				'location_id'            => __( 'Location ID', 'mcp-ai-wpoos-pro' ),
+				'location_name'          => __( 'Location Name', 'mcp-ai-wpoos-pro' ),
+				'unit_of_measure'        => __( 'Unit of Measure', 'mcp-ai-wpoos-pro' ),
+				'image_url'              => __( 'Image URL', 'mcp-ai-wpoos-pro' ),
+				'price'                  => __( 'Price', 'mcp-ai-wpoos-pro' ),
+				'woo_product_id'         => __( 'WooCommerce Product ID', 'mcp-ai-wpoos-pro' ),
+				'last_updated'           => __( 'Last Updated', 'mcp-ai-wpoos-pro' ),
+				'item_data'              => __( 'Raw API Data', 'mcp-ai-wpoos-pro' ),
+				'sync_status'            => __( 'Sync Status', 'mcp-ai-wpoos-pro' ),
+				'sync_hash'              => __( 'Sync Hash', 'mcp-ai-wpoos-pro' ),
+				'strain_name'            => __( 'Strain Name', 'mcp-ai-wpoos-pro' ),
+				'thc_percentage'         => __( 'THC %', 'mcp-ai-wpoos-pro' ),
+				'cbd_percentage'         => __( 'CBD %', 'mcp-ai-wpoos-pro' ),
+				'lab_test_id'            => __( 'Lab Test ID', 'mcp-ai-wpoos-pro' ),
+				'compliance_status'      => __( 'Compliance Status', 'mcp-ai-wpoos-pro' ),
+				'metrc_uid'              => __( 'Metrc UID', 'mcp-ai-wpoos-pro' ),
+				'previous_quantity'      => __( 'Previous Quantity', 'mcp-ai-wpoos-pro' ),
+				'quantity_change_reason' => __( 'Change Reason', 'mcp-ai-wpoos-pro' ),
+			);
+
+			return isset( $labels[ $column_name ] ) ? $labels[ $column_name ] : ucwords( str_replace( '_', ' ', $column_name ) );
+		}
+
+		// ------------------------------------------------------------------ //
+		// Read Operations (CCT queries, no API calls)                         //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Get cached inventory items with filtering, sorting, and pagination.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array $filters Optional. Filter parameters.
+		 * @return array Array of CCT items.
+		 */
+		public function get_cached_items( $filters = array() ) {
+			$available = $this->is_cct_available();
+			if ( is_wp_error( $available ) ) {
+				return array();
+			}
+
+			$factory = $this->get_cct_factory();
+			if ( ! $factory || empty( $factory->db ) ) {
+				return array();
+			}
+
+			$per_page = isset( $filters['per_page'] ) ? min( absint( $filters['per_page'] ), 100 ) : 50;
+			$page     = isset( $filters['page'] ) ? max( 1, absint( $filters['page'] ) ) : 1;
+			$offset   = ( $page - 1 ) * $per_page;
+
+			// Build query args in the Jet_Engine_Base_DB where format
+			// (field / operator / value clauses; plain key => value works too).
+			$query_args = array(
+				'cct_status' => 'publish',
+			);
+
+			foreach ( array( 'category', 'location_id', 'sku', 'product_id' ) as $exact_field ) {
+				if ( ! empty( $filters[ $exact_field ] ) ) {
+					$query_args[] = array(
+						'field'    => $exact_field,
+						'operator' => '=',
+						'value'    => sanitize_text_field( $filters[ $exact_field ] ),
+					);
+				}
+			}
+
+			if ( ! empty( $filters['location'] ) ) {
+				$query_args[] = array(
+					'field'    => 'location_name',
+					'operator' => 'LIKE',
+					'value'    => sanitize_text_field( $filters['location'] ),
+				);
+			}
+
+			// Full-text search across product_name and sku.
+			if ( ! empty( $filters['search'] ) ) {
+				$query_args['_cct_search'] = array(
+					'keyword' => esc_sql( sanitize_text_field( $filters['search'] ) ),
+					'fields'  => array( 'product_name', 'sku' ),
+				);
+			}
+
+			// Stock status filter.
+			if ( ! empty( $filters['stock_status'] ) ) {
+				$settings      = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+				$low_threshold = isset( $settings['low_stock_threshold'] ) ? absint( $settings['low_stock_threshold'] ) : 5;
+
+				switch ( $filters['stock_status'] ) {
+					case 'in_stock':
+						$query_args[] = array(
+							'field'    => 'quantity',
+							'operator' => '>=',
+							'value'    => $low_threshold,
+							'type'     => 'integer',
+						);
+						break;
+					case 'low_stock':
+						$query_args[] = array(
+							'field'    => 'quantity',
+							'operator' => 'BETWEEN',
+							'value'    => array( 1, max( 1, $low_threshold - 1 ) ),
+							'type'     => 'integer',
+						);
+						break;
+					case 'out_of_stock':
+						$query_args[] = array(
+							'field'    => 'quantity',
+							'operator' => '<=',
+							'value'    => 0,
+							'type'     => 'integer',
+						);
+						break;
+				}
+			}
+
+			$orderby_field = $this->get_orderby_field( isset( $filters['orderby'] ) ? $filters['orderby'] : 'last_updated' );
+			$numeric_order = array( 'quantity', 'price', 'woo_product_id', 'previous_quantity' );
+
+			$order = array(
+				array(
+					'orderby' => $orderby_field,
+					'order'   => ( isset( $filters['order'] ) && 'asc' === $filters['order'] ) ? 'asc' : 'desc',
+					'type'    => in_array( $orderby_field, $numeric_order, true ) ? 'integer' : false,
+				),
+			);
+
+			$factory->db->set_format_flag( ARRAY_A );
+
+			$items = $factory->db->query( $query_args, $per_page, $offset, $order );
+
+			return is_array( $items ) ? $items : array();
+		}
+
+		/**
+		 * Get a single cached item by identifier.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $identifier The lookup value.
+		 * @param string $by         Lookup field: 'sku', 'product_id', or 'cct_id'.
+		 * @return array|null Item array or null if not found.
+		 */
+		public function get_cached_item( $identifier, $by = 'sku' ) {
+			$available = $this->is_cct_available();
+			if ( is_wp_error( $available ) ) {
+				return null;
+			}
+
+			$identifier = sanitize_text_field( $identifier );
+			$by         = sanitize_key( $by );
+
+			if ( 'cct_id' === $by ) {
+				$factory = $this->get_cct_factory();
+				if ( ! $factory || empty( $factory->db ) ) {
+					return null;
+				}
+				$factory->db->set_format_flag( ARRAY_A );
+				$item = $factory->db->get_item( absint( $identifier ) );
+				return $item ? $item : null;
+			}
+
+			$filters = array(
+				$by        => $identifier,
+				'per_page' => 1,
+			);
+
+			$items = $this->get_cached_items( $filters );
+
+			return ! empty( $items ) ? $items[0] : null;
+		}
+
+		/**
+		 * Get a cached item by FlowHub product_id and optional location.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string      $product_id  FlowHub product ID.
+		 * @param string|null $location_id Optional location ID for disambiguation.
+		 * @return array|null Item array or null if not found.
+		 */
+		public function get_cached_item_by_product_id( $product_id, $location_id = null ) {
+			$filters = array(
+				'product_id' => sanitize_text_field( $product_id ),
+				'per_page'   => 1,
+			);
+
+			if ( null !== $location_id ) {
+				$filters['location_id'] = sanitize_text_field( $location_id );
+			}
+
+			$items = $this->get_cached_items( $filters );
+
+			return ! empty( $items ) ? $items[0] : null;
+		}
+
+		/**
+		 * Get distinct values for a CCT column (for filter dropdowns).
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $column Column name.
+		 * @return array Array of distinct values.
+		 */
+		public function get_distinct_values( $column ) {
+			global $wpdb;
+
+			$column = sanitize_key( $column );
+			$table  = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+
+			// Column and table names are sanitized with sanitize_key() above.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$results = $wpdb->get_col(
+				"SELECT DISTINCT `{$column}` FROM `{$table}` WHERE `{$column}` != '' ORDER BY `{$column}` ASC LIMIT 100"
+			);
+			// phpcs:enable
+
+			return is_array( $results ) ? $results : array();
+		}
+
+		/**
+		 * Get the total row count.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return int
+		 */
+		public function get_row_count() {
+						global $wpdb;
+						$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+
+						// Bail gracefully if the table doesn't exist (CCT not created yet).
+						// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+						$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( ! $table_exists ) {
+				return 0;
+			}
+
+						// Table name is constructed from a sanitized CCT slug.
+						// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+						$count = $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
+						// phpcs:enable
+
+						return absint( $count );
+		}
+
+		/**
+		 * Check if the cached data is fresh.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $max_age_seconds Maximum age in seconds (default 15 minutes).
+		 * @return bool True if fresh, false if stale.
+		 */
+		public function is_fresh( $max_age_seconds = 900 ) {
+			$option_key = 'wp_mcp_ai_flowhub_last_sync';
+			if ( ! empty( $this->connection_id ) ) {
+				$option_key .= '_' . $this->connection_id;
+			}
+			$last_sync = get_option( $option_key, '' );
+
+			if ( empty( $last_sync ) ) {
+				return false;
+			}
+
+			$last_sync_time = strtotime( $last_sync );
+			if ( false === $last_sync_time ) {
+				return false;
+			}
+
+			return ( time() - $last_sync_time ) < absint( $max_age_seconds );
+		}
+
+		/**
+		 * Get the last sync timestamp.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return string ISO 8601 timestamp or empty string.
+		 */
+		public function get_last_sync_time() {
+			$option_key = 'wp_mcp_ai_flowhub_last_sync';
+			if ( ! empty( $this->connection_id ) ) {
+				$option_key .= '_' . $this->connection_id;
+			}
+			return get_option( $option_key, '' );
+		}
+
+		// ------------------------------------------------------------------ //
+		// Write Operations                                                    //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Upsert a FlowHub item into the CCT.
+		 *
+		 * Matches on product_id + location_id compound key. If a matching
+		 * row exists, it is updated; otherwise a new row is created.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array $flowhub_item Raw FlowHub API item.
+		 * @param array $mapping      Optional. Custom field mapping overrides.
+		 * @return int|WP_Error CCT item ID or WP_Error.
+		 */
+		public function upsert( $flowhub_item, $mapping = array() ) {
+			$available = $this->is_cct_available();
+			if ( is_wp_error( $available ) ) {
+				return $available;
+			}
+
+			$mapped = $this->map_flowhub_item_to_cct_row( $flowhub_item, $mapping );
+
+			if ( empty( $mapped['product_id'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_missing_product_id',
+					__( 'FlowHub item is missing required product_id.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Resolve the item handler once, retrying via lazy-enable if needed.
+			$handler = $this->get_item_handler();
+			if ( ! $handler ) {
+				self::maybe_enable_cct_module();
+				$handler = $this->get_item_handler();
+			}
+			if ( ! $handler ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Check for existing row (compound key: product_id + location_id).
+			$existing = $this->get_cached_item_by_product_id(
+				$mapped['product_id'],
+				$mapped['location_id']
+			);
+
+			if ( $existing && ! empty( $existing['_ID'] ) ) {
+				$mapped['_ID'] = absint( $existing['_ID'] );
+			}
+
+			$mapped['cct_status'] = 'publish';
+
+			// Item_Handler::update_item() creates when no _ID is passed and
+			// updates otherwise; it returns the item ID in both cases.
+			$result = $handler->update_item( $mapped );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			if ( ! $result ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_upsert_failed',
+					__( 'Failed to write FlowHub item to the CCT cache.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			return absint( $result );
+		}
+
+		/**
+		 * Truncate all items from the CCT.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return bool|WP_Error True on success, WP_Error on failure.
+		 */
+		public function truncate() {
+			$available = $this->is_cct_available();
+			if ( is_wp_error( $available ) ) {
+				return $available;
+			}
+
+			$factory = $this->get_cct_factory();
+			if ( ! $factory || empty( $factory->db ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Delete rows directly via the CCT DB layer. The Item_Handler
+			// delete path enforces an interactive capability check and calls
+			// wp_die() on failure, which would kill background sync requests.
+			$items = $this->get_cached_items( array( 'per_page' => 100 ) );
+
+			while ( ! empty( $items ) ) {
+				foreach ( $items as $item ) {
+					if ( ! empty( $item['_ID'] ) ) {
+						$factory->db->delete( array( '_ID' => absint( $item['_ID'] ) ) );
+					}
+				}
+				// Fetch next batch.
+				$items = $this->get_cached_items( array( 'per_page' => 100 ) );
+			}
+
+			return true;
+		}
+
+		/**
+		 * Mark all items as stale.
+		 *
+		 * @since 1.2.0
+		 */
+		public function mark_stale() {
+			global $wpdb;
+			$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->update(
+				$table,
+				array( 'sync_status' => 'stale' ),
+				array( 'sync_status' => 'synced' )
+			);
+		}
+
+		/**
+		 * Delete a single item from the CCT.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $cct_item_id CCT item ID.
+		 * @return bool|WP_Error True on success, WP_Error on failure.
+		 */
+		public function delete_item( $cct_item_id ) {
+			$available = $this->is_cct_available();
+			if ( is_wp_error( $available ) ) {
+				return $available;
+			}
+
+			$factory = $this->get_cct_factory();
+			if ( ! $factory || empty( $factory->db ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Direct DB delete: the Item_Handler delete path enforces an
+			// interactive capability check and calls wp_die() on failure,
+			// which would kill background sync requests.
+			$factory->db->delete( array( '_ID' => absint( $cct_item_id ) ) );
+
+			return true;
+		}
+
+		/**
+		 * Update the woo_product_id for a CCT item.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $cct_item_id     CCT item ID.
+		 * @param int $woo_product_id  WooCommerce product ID.
+		 * @return bool|WP_Error
+		 */
+		public function update_woo_product_id( $cct_item_id, $woo_product_id ) {
+			$item = $this->get_cached_item( $cct_item_id, 'cct_id' );
+			if ( ! $item ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_item_not_found',
+					__( 'CCT item not found.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$handler = $this->get_item_handler();
+			if ( ! $handler ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_jetengine_not_ready',
+					__( 'JetEngine CCT module is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$result = $handler->update_item(
+				array(
+					'_ID'            => absint( $cct_item_id ),
+					'woo_product_id' => absint( $woo_product_id ),
+				)
+			);
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return (bool) $result;
+		}
+
+		// ------------------------------------------------------------------ //
+		// Sync Operations                                                     //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Sync inventory from FlowHub API into the CCT.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param bool          $force    Force full sync even if data is fresh.
+		 * @param callable|null $progress Optional progress callback.
+		 * @param bool          $dry_run  If true, skip CCT writes and only validate
+		 *                                the API query + count items. Default false.
+		 * @param string        $run_id   Optional sync log run ID for per-item logging.
+		 * @return array|WP_Error Sync result with item_count, location_count, duration.
+		 */
+		public function sync_from_api( $force = false, $progress = null, $dry_run = false, $run_id = '' ) {
+			if ( ! $this->client ) {
+				// When a connection ID is set, load credentials from Remote Sites.
+				if ( ! empty( $this->connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $this->connection_id );
+					if ( $connection && ! empty( $connection['client_id'] ) && ! empty( $connection['api_key'] ) ) {
+						$client_id   = $connection['client_id'];
+						$api_key     = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+						$location_id = isset( $connection['location_id'] ) ? $connection['location_id'] : '';
+
+						$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+						$base_url = isset( $settings['api_base_url'] ) ? wp_unslash( $settings['api_base_url'] ) : '';
+
+						// Resolve proxy from the connection first (matching
+						// test_flowhub_connection), then fall back to toolkit
+						// settings. The connection test reads proxy from the
+						// connection record; the sync must do the same.
+						$proxy_enabled  = ! empty( $connection['proxy_enabled'] );
+						$proxy_url      = isset( $connection['proxy_url'] ) ? $connection['proxy_url'] : '';
+						$proxy_username = isset( $connection['proxy_username'] ) ? $connection['proxy_username'] : '';
+						$proxy_password = isset( $connection['proxy_password'] )
+							? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['proxy_password'] )
+							: '';
+
+						// Fall back to toolkit settings when the connection doesn't
+						// carry proxy config.
+						if ( ! $proxy_enabled || empty( $proxy_url ) ) {
+							$proxy_enabled  = ! empty( $settings['proxy_enabled'] );
+							$proxy_url      = isset( $settings['proxy_url'] ) ? wp_unslash( $settings['proxy_url'] ) : '';
+							$proxy_username = isset( $settings['proxy_username'] ) ? wp_unslash( $settings['proxy_username'] ) : '';
+							$proxy_password = isset( $settings['proxy_password'] ) ? wp_unslash( $settings['proxy_password'] ) : '';
+						}
+
+						$proxy_auth = '';
+						if ( $proxy_enabled && ! empty( $proxy_url ) ) {
+							$proxy_auth = ( ! empty( $proxy_username ) || ! empty( $proxy_password ) )
+								? $proxy_username . ':' . $proxy_password
+								: '';
+						} else {
+							$proxy_url = '';
+						}
+
+						$this->client = new WP_MCP_AI_FlowHub_Client( $client_id, $api_key, $base_url, null, $location_id, $proxy_url, $proxy_auth );
+					}
+				}
+
+				// Fall back to global settings if no connection-based client was created.
+				if ( ! $this->client ) {
+					$this->client = WP_MCP_AI_FlowHub_Client::from_settings();
+					if ( is_wp_error( $this->client ) ) {
+						return $this->client;
+					}
+				}
+			}
+
+			$start_time = microtime( true );
+
+			// Skip CCT column creation in non-dry-run mode — upstream caller
+			// (run_full_sync) already called ensure_columns() above.
+			if ( ! $dry_run && $force ) {
+				$this->truncate();
+			}
+
+			$location_count = 0;
+			$item_count     = 0;
+			$error_count    = 0;
+			$locations      = array();
+
+			$all_items = $this->client->get_all_inventory( $progress );
+
+			if ( is_wp_error( $all_items ) ) {
+				return $all_items;
+			}
+
+			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
+
+			if ( $dry_run ) {
+				// In dry-run mode, count items but skip CCT writes.
+				foreach ( $all_items as $item ) {
+						++$item_count;
+
+						// Per-item logging for dry-run.
+					if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						$item_sku  = isset( $item['sku'] ) ? $item['sku'] : '';
+						$item_name = isset( $item['productName'] ) ? $item['productName'] : '';
+						WP_MCP_AI_Sync_Log_Manager::log_item(
+							'flowhub',
+							$run_id,
+							'would_upsert',
+							$item_sku,
+							array(
+								'name'        => $item_name,
+								'location_id' => isset( $item['locationId'] ) ? $item['locationId'] : '',
+							)
+						);
+					}
+
+						$loc_id = isset( $item['locationId'] ) ? $item['locationId'] : '';
+					if ( ! empty( $loc_id ) && ! isset( $locations[ $loc_id ] ) ) {
+						$locations[ $loc_id ] = true;
+						++$location_count;
+					}
+				}
+
+				$duration = round( microtime( true ) - $start_time, 2 );
+
+				return array(
+					'item_count'     => $item_count,
+					'location_count' => $location_count,
+					'error_count'    => 0,
+					'duration'       => $duration,
+					'timestamp'      => current_time( 'mysql' ),
+					'dry_run'        => true,
+				);
+			}
+
+			foreach ( $all_items as $item ) {
+					$result = $this->upsert( $item, $mapping );
+
+				if ( is_wp_error( $result ) ) {
+					++$error_count;
+
+					// Log error item.
+					if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						WP_MCP_AI_Sync_Log_Manager::log_item(
+							'flowhub',
+							$run_id,
+							'error',
+							isset( $item['sku'] ) ? $item['sku'] : '',
+							array(
+								'name'  => isset( $item['productName'] ) ? $item['productName'] : '',
+								'error' => $result->get_error_message(),
+							)
+						);
+					}
+				} else {
+					++$item_count;
+
+					// Log successful upsert.
+					if ( ! empty( $run_id ) && class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
+						WP_MCP_AI_Sync_Log_Manager::log_item(
+							'flowhub',
+							$run_id,
+							'upsert',
+							isset( $item['sku'] ) ? $item['sku'] : '',
+							array(
+								'name'        => isset( $item['productName'] ) ? $item['productName'] : '',
+								'quantity'    => isset( $item['quantity'] ) ? $item['quantity'] : '',
+								'location_id' => isset( $item['locationId'] ) ? $item['locationId'] : '',
+							)
+						);
+					}
+				}
+
+					// Track unique locations.
+					$loc_id = isset( $item['locationId'] ) ? $item['locationId'] : '';
+				if ( ! empty( $loc_id ) && ! isset( $locations[ $loc_id ] ) ) {
+					$locations[ $loc_id ] = true;
+					++$location_count;
+				}
+			}
+
+			$duration = round( microtime( true ) - $start_time, 2 );
+
+			$last_sync_key       = 'wp_mcp_ai_flowhub_last_sync';
+			$last_sync_error_key = 'wp_mcp_ai_flowhub_last_sync_error';
+			if ( ! empty( $this->connection_id ) ) {
+				$last_sync_key       .= '_' . $this->connection_id;
+				$last_sync_error_key .= '_' . $this->connection_id;
+			}
+			update_option( $last_sync_key, current_time( 'mysql' ) );
+			delete_option( $last_sync_error_key );
+
+			$result = array(
+				'item_count'     => $item_count,
+				'location_count' => $location_count,
+				'error_count'    => $error_count,
+				'duration'       => $duration,
+				'timestamp'      => current_time( 'mysql' ),
+			);
+
+			do_action( 'wp_mcp_ai_flowhub_after_sync', $result );
+
+			return $result;
+		}
+
+		/**
+		 * Sync a single product from FlowHub API into the CCT.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $product_id FlowHub product ID.
+		 * @return array|WP_Error Sync result or WP_Error.
+		 */
+		public function sync_single_product( $product_id ) {
+			if ( ! $this->client ) {
+				// When a connection ID is set, load credentials from Remote Sites.
+				if ( ! empty( $this->connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $this->connection_id );
+					if ( $connection && ! empty( $connection['client_id'] ) && ! empty( $connection['api_key'] ) ) {
+						$client_id   = $connection['client_id'];
+						$api_key     = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+						$location_id = isset( $connection['location_id'] ) ? $connection['location_id'] : '';
+
+						$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+						$base_url = isset( $settings['api_base_url'] ) ? wp_unslash( $settings['api_base_url'] ) : '';
+
+						// Resolve proxy from connection first, fall back to toolkit.
+						$proxy_enabled  = ! empty( $connection['proxy_enabled'] );
+						$proxy_url      = isset( $connection['proxy_url'] ) ? $connection['proxy_url'] : '';
+						$proxy_username = isset( $connection['proxy_username'] ) ? $connection['proxy_username'] : '';
+						$proxy_password = isset( $connection['proxy_password'] )
+							? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['proxy_password'] )
+							: '';
+
+						if ( ! $proxy_enabled || empty( $proxy_url ) ) {
+							$proxy_enabled  = ! empty( $settings['proxy_enabled'] );
+							$proxy_url      = isset( $settings['proxy_url'] ) ? wp_unslash( $settings['proxy_url'] ) : '';
+							$proxy_username = isset( $settings['proxy_username'] ) ? wp_unslash( $settings['proxy_username'] ) : '';
+							$proxy_password = isset( $settings['proxy_password'] ) ? wp_unslash( $settings['proxy_password'] ) : '';
+						}
+
+						$proxy_auth = '';
+						if ( $proxy_enabled && ! empty( $proxy_url ) ) {
+							$proxy_auth = ( ! empty( $proxy_username ) || ! empty( $proxy_password ) )
+								? $proxy_username . ':' . $proxy_password
+								: '';
+						} else {
+							$proxy_url = '';
+						}
+
+						$this->client = new WP_MCP_AI_FlowHub_Client( $client_id, $api_key, $base_url, null, $location_id, $proxy_url, $proxy_auth );
+					}
+				}
+
+				// Fall back to global settings.
+				if ( ! $this->client ) {
+					$this->client = WP_MCP_AI_FlowHub_Client::from_settings();
+					if ( is_wp_error( $this->client ) ) {
+						return $this->client;
+					}
+				}
+			}
+
+			$item = $this->client->get_product( $product_id );
+
+			if ( is_wp_error( $item ) ) {
+				return $item;
+			}
+
+			$result = $this->upsert( $item );
+
+			return array(
+				'product_id'  => $product_id,
+				'cct_item_id' => is_wp_error( $result ) ? 0 : $result,
+				'success'     => ! is_wp_error( $result ),
+			);
+		}
+
+		// ------------------------------------------------------------------ //
+		// Field Mapping                                                       //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Get the default field mapping from FlowHub API fields to CCT columns.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return array<string,string> CCT column => FlowHub field.
+		 */
+		public function get_default_field_mapping() {
+			return self::get_default_field_mapping_static();
+		}
+
+		/**
+		 * Static accessor for the default field mapping.
+		 *
+		 * Used by the settings page JavaScript to pre-fill the field mapping
+		 * table without needing a class instance.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @return array<string,string> CCT column => FlowHub field.
+		 */
+		public static function get_default_field_mapping_static() {
+			return array(
+				'product_id'           => 'productId',
+				'variant_id'           => 'variantId',
+				'parent_product_id'    => 'parentProductId',
+				'sku'                  => 'sku',
+				'product_name'         => 'productName',
+				'variant_name'         => 'variantName',
+				'category'             => 'category',
+				'custom_category_name' => 'customCategoryName',
+				'purchase_category'    => 'purchaseCategory',
+				'product_description'  => 'productDescription',
+				'quantity'             => 'quantity',
+				'location_id'          => 'locationId',
+				'location_name'        => 'locationName',
+				'unit_of_measure'      => 'inventoryUnitOfMeasure',
+				// Special extractors (parsed from item_data JSON).
+				'image_url'            => '_extracted.image_url',
+				'price'                => '_extracted.price',
+			);
+		}
+
+		/**
+		 * Map a FlowHub API item to a CCT row using field mapping.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array $flowhub_item Raw FlowHub API item.
+		 * @param array $mapping      Optional. Custom field mapping overrides.
+		 * @return array CCT row data.
+		 */
+		protected function map_flowhub_item_to_cct_row( $flowhub_item, $mapping = array() ) {
+			$effective_mapping = ! empty( $mapping )
+				? array_merge( $this->get_default_field_mapping(), $mapping )
+				: $this->get_default_field_mapping();
+
+			$row = array();
+
+			foreach ( $effective_mapping as $cct_column => $fh_field ) {
+				if ( 0 === strpos( $fh_field, '_extracted.' ) ) {
+					// Special extractor — parse from item_data JSON.
+					$extracted_key      = substr( $fh_field, 11 );
+					$row[ $cct_column ] = $this->extract_from_item_data( $flowhub_item, $extracted_key );
+				} elseif ( isset( $flowhub_item[ $fh_field ] ) ) {
+					$row[ $cct_column ] = $flowhub_item[ $fh_field ];
+				} else {
+					$row[ $cct_column ] = '';
+				}
+			}
+
+			// Always set computed fields.
+			$row['item_data']    = wp_json_encode( $flowhub_item );
+			$row['sync_hash']    = md5( wp_json_encode( $flowhub_item ) );
+			$row['sync_status']  = 'synced';
+			$row['last_updated'] = current_time( 'mysql' );
+
+			return $row;
+		}
+
+		/**
+		 * Extract a value from the item_data JSON in a FlowHub item.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array  $item FlowHub item.
+		 * @param string $key  Key to extract (e.g. 'image_url', 'price').
+		 * @return string Extracted value or empty string.
+		 */
+		protected function extract_from_item_data( $item, $key ) {
+			// Some FlowHub items nest extra data inside a JSON string in item_data.
+			$raw_data = isset( $item['itemData'] ) ? $item['itemData'] : '';
+
+			if ( empty( $raw_data ) ) {
+				return '';
+			}
+
+			if ( is_string( $raw_data ) ) {
+				$parsed = json_decode( $raw_data, true );
+				if ( is_array( $parsed ) ) {
+					$raw_data = $parsed;
+				}
+			}
+
+			if ( ! is_array( $raw_data ) ) {
+				return '';
+			}
+
+			switch ( $key ) {
+				case 'image_url':
+					// Try common image field names.
+					foreach ( array( 'imageUrl', 'image_url', 'image', 'thumbnailUrl', 'thumbnail' ) as $field ) {
+						if ( ! empty( $raw_data[ $field ] ) ) {
+							return esc_url_raw( $raw_data[ $field ] );
+						}
+					}
+					// Check nested images array.
+					if ( ! empty( $raw_data['images'] ) && is_array( $raw_data['images'] ) ) {
+						$first = reset( $raw_data['images'] );
+						if ( is_array( $first ) && ! empty( $first['url'] ) ) {
+							return esc_url_raw( $first['url'] );
+						}
+						if ( is_string( $first ) ) {
+							return esc_url_raw( $first );
+						}
+					}
+					return '';
+
+				case 'price':
+					foreach ( array( 'price', 'unitPrice', 'retailPrice', 'sellingPrice' ) as $field ) {
+						if ( isset( $raw_data[ $field ] ) && is_numeric( $raw_data[ $field ] ) ) {
+							return number_format( floatval( $raw_data[ $field ] ), 2, '.', '' );
+						}
+					}
+					return '0.00';
+
+				default:
+					return isset( $raw_data[ $key ] ) ? sanitize_text_field( (string) $raw_data[ $key ] ) : '';
+			}
+		}
+
+		// ------------------------------------------------------------------ //
+		// Helpers                                                             //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Map a user-facing orderby value to a CCT field name.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $orderby User-facing orderby value.
+		 * @return string CCT field name.
+		 */
+		protected function get_orderby_field( $orderby ) {
+			$map = array(
+				'product_name' => 'product_name',
+				'quantity'     => 'quantity',
+				'last_updated' => 'last_updated',
+				'sku'          => 'sku',
+				'category'     => 'category',
+				'location'     => 'location_name',
+				'price'        => 'price',
+			);
+
+			$orderby = sanitize_key( $orderby );
+
+			return isset( $map[ $orderby ] ) ? $map[ $orderby ] : 'last_updated';
+		}
+
+		// ------------------------------------------------------------------ //
+		// CCT Auto-Registration                                               //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Hook into JetEngine to auto-create the FlowHub inventory CCT on init.
+		 *
+		 * JetEngine's CCT module hydrates its table cache on `init` at priorities
+		 * 1-10; registering inside that window races with it and stomps
+		 * JetEngine's CCT state. Priority 11 is the documented safe window.
+		 *
+		 * @since 1.5.0
+		 */
+		public static function bootstrap() {
+			add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 11 );
+			add_action( 'init', array( __CLASS__, 'maybe_enable_cct_module' ), 10 );
+			add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
+		}
+
+		/**
+		 * Register the FlowHub inventory CCT if it is missing.
+		 *
+		 * @since 1.5.0
+		 */
+		public static function maybe_register_cct() {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( empty( $settings['enable_flowhub_toolkit'] ) ) {
+				return;
+			}
+
+			$module = self::get_cct_module();
+
+			if ( ! $module ) {
+				return;
+			}
+
+			if ( empty( $module->manager ) || empty( $module->manager->data ) ) {
+					return;
+			}
+
+			if ( self::cct_exists( $module ) ) {
+				return;
+			}
+
+			$data    = $module->manager->data;
+			$request = self::get_registration_request();
+
+			$data->set_request( $request );
+
+			if ( method_exists( $data, 'sanitize_item_request' ) && ! $data->sanitize_item_request() ) {
+				return;
+			}
+
+			$item = $data->sanitize_item_from_request();
+
+			if ( empty( $item ) || ! is_array( $item ) ) {
+				return;
+			}
+
+			$data->before_item_update( $item, true );
+
+			$item_id = $data->update_item_in_db( $item );
+
+			if ( ! $item_id ) {
+				return;
+			}
+
+			$item['id'] = $item_id;
+
+			$data->after_item_update( $item, true );
+
+			if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
+				$data->db->query_raw( 'post_types' );
+			}
+		}
+
+		/**
+		 * Determine whether the FlowHub inventory CCT already exists.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param \Jet_Engine\Modules\Custom_Content_Types\Module $module Module instance.
+		 * @return bool
+		 */
+		protected static function cct_exists( $module ) {
+			if ( empty( $module->manager ) || empty( $module->manager->data ) ) {
+				return false;
+			}
+
+			$data = $module->manager->data;
+
+			if ( empty( $data->db ) ) {
+				return false;
+			}
+
+			$slug     = self::CCT_SLUG_DEFAULT;
+			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			if ( ! empty( $settings['cct_slug'] ) ) {
+				$slug = sanitize_key( $settings['cct_slug'] );
+			}
+
+			$records = $data->db->query(
+				'post_types',
+				array(
+					'slug'   => $slug,
+					'status' => 'content-type',
+				),
+				null,
+				false
+			);
+
+			return ! empty( $records );
+		}
+
+			/**
+			 * Look up a single CCT record by slug.
+			 *
+			 * Uses JetEngine's DB query layer instead of the non-existent
+			 * get_item_by_slug() method on the Data class.
+			 *
+			 * @since 1.5.0
+			 *
+			 * @param string $slug CCT slug.
+			 * @return array|null The CCT record as an associative array, or null if not found.
+			 */
+		protected function get_cct_record_by_slug( $slug ) {
+			$module = self::get_cct_module();
+
+			if ( ! $module || empty( $module->manager ) ) {
+				return null;
+			}
+
+			$data = $module->manager->data;
+
+			if ( empty( $data ) || empty( $data->db ) ) {
+				return null;
+			}
+
+			$records = $data->db->query(
+				'post_types',
+				array(
+					'slug'   => $slug,
+					'status' => 'content-type',
+				),
+				null,
+				false
+			);
+
+			if ( empty( $records ) || ! is_array( $records ) ) {
+				return null;
+			}
+
+			$record = reset( $records );
+
+			if ( ! is_array( $record ) && ! is_object( $record ) ) {
+				return null;
+			}
+
+			// Normalise to associative array for consistent access.
+			if ( is_object( $record ) ) {
+				$record = get_object_vars( $record );
+			}
+
+			return $record;
+		}
+
+			/**
+			 * Retrieve the JetEngine Custom Content Types module instance.
+			 *
+			 * @since 1.5.0
+			 *
+			 * @return \Jet_Engine\Modules\Custom_Content_Types\Module|null
+			 */
+		protected static function get_cct_module() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return null;
+			}
+
+			// Canonical accessor: the CCT module singleton. Its class is only
+			// loaded when the module is active, and Module::instance() is the
+			// path documented by Crocoblock for PHP-side CCT access. The
+			// Module class exposes ->manager (with ->manager->data as the
+			// post_types data handler); it has NO ->data property itself.
+			if ( class_exists( '\Jet_Engine\Modules\Custom_Content_Types\Module' ) ) {
+				$module = \Jet_Engine\Modules\Custom_Content_Types\Module::instance();
+				if ( ! empty( $module->manager ) ) {
+					return $module;
+				}
+			}
+
+			// Fallback: walk the modules registry (covers timing edge cases
+			// where the singleton exists but init -1 hasn't populated it yet).
+			$engine = jet_engine();
+
+			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
+				return null;
+			}
+
+			if ( ! $engine->modules->is_module_active( 'custom-content-types' ) ) {
+				return null;
+			}
+
+			if ( ! method_exists( $engine->modules, 'get_module' ) ) {
+				return null;
+			}
+
+			$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
+
+			if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+				return null;
+			}
+
+			$instance = $module_wrapper->instance;
+
+			return ! empty( $instance->manager ) ? $instance : null;
+		}
+
+		/**
+		 * Automatically enable the JetEngine CCT module if it's not already active.
+		 *
+		 * FlowHub (and other toolkit storage features) depend on the Custom Content
+		 * Types module. This runs on init priority 10 so the module is ready before
+		 * CCT registration at priority 11.
+		 *
+		 * @since 1.7.0
+		 */
+		public static function maybe_enable_cct_module() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return;
+			}
+
+			$engine = jet_engine();
+
+			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
+				return;
+			}
+
+			// Already active — nothing to do.
+			if ( $engine->modules->is_module_active( 'custom-content-types' ) ) {
+				return;
+			}
+
+			// Check if the module exists before activating.
+			if ( ! method_exists( $engine->modules, 'get_module' ) ) {
+				return;
+			}
+
+			$module = $engine->modules->get_module( 'custom-content-types' );
+
+			if ( ! $module ) {
+				return;
+			}
+
+			// Activate the CCT module.
+			if ( method_exists( $engine->modules, 'activate_module' ) ) {
+				$engine->modules->activate_module( 'custom-content-types' );
+			}
+		}
+
+		/**
+		 * Automatically enable the JetEngine data stores module if it's not already active.
+		 *
+		 * @since 1.5.0
+		 */
+		public static function maybe_enable_data_stores() {
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return;
+			}
+
+			$engine = jet_engine();
+
+			if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
+				return;
+			}
+
+			// Check if data stores module is already active.
+			if ( $engine->modules->is_module_active( 'data-stores' ) ) {
+				return;
+			}
+
+			// Check if the module exists.
+			if ( ! method_exists( $engine->modules, 'get_module' ) ) {
+				return;
+			}
+
+			$module = $engine->modules->get_module( 'data-stores' );
+
+			if ( ! $module ) {
+				return;
+			}
+
+			// Activate the data stores module.
+			if ( method_exists( $engine->modules, 'activate_module' ) ) {
+				$engine->modules->activate_module( 'data-stores' );
+			}
+		}
+
+		/**
+		 * Build the request payload used to register the content type.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @return array
+		 */
+		protected static function get_registration_request() {
+			$label = __( 'FlowHub Inventory', 'mcp-ai-wpoos-pro' );
+
+			// Honour a custom slug configured in the toolkit settings so the
+			// auto-created CCT matches what the rest of the toolkit queries.
+			$slug     = self::CCT_SLUG_DEFAULT;
+			$settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			if ( ! empty( $settings['cct_slug'] ) ) {
+				$slug = sanitize_key( $settings['cct_slug'] );
+			}
+
+			return array(
+				'name'        => $label,
+				'slug'        => $slug,
+				'args'        => self::get_cct_args( $label, $slug ),
+				'meta_fields' => self::get_meta_fields(),
+			);
+		}
+
+		/**
+		 * Assemble the JetEngine arguments for the FlowHub inventory CCT.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string $label Human-readable label for the content type.
+		 * @param string $slug  CCT slug to register. Defaults to CCT_SLUG_DEFAULT.
+		 * @return array
+		 */
+		protected static function get_cct_args( $label, $slug = self::CCT_SLUG_DEFAULT ) {
+			return array(
+				'name'                => $label,
+				'slug'                => $slug,
+				'position'            => '-1',
+				'icon'                => 'dashicons-store',
+				'capability'          => 'manage_woocommerce',
+				'has_single'          => false,
+				'create_index'        => true,
+				'hide_field_names'    => false,
+				'rest_get_enabled'    => false,
+				'rest_put_enabled'    => false,
+				'rest_post_enabled'   => false,
+				'rest_delete_enabled' => false,
+				'admin_columns'       => array(
+					'_ID'           => array(
+						'enabled'     => true,
+						'prefix'      => '#',
+						'is_sortable' => true,
+						'is_num'      => true,
+					),
+					'product_name'  => array(
+						'enabled'     => true,
+						'is_sortable' => true,
+					),
+					'sku'           => array(
+						'enabled'     => true,
+						'is_sortable' => true,
+					),
+					'quantity'      => array(
+						'enabled'     => true,
+						'is_sortable' => true,
+						'is_num'      => true,
+					),
+					'location_name' => array(
+						'enabled'     => true,
+						'is_sortable' => true,
+					),
+					'sync_status'   => array(
+						'enabled'     => true,
+						'is_sortable' => true,
+					),
+				),
+			);
+		}
+
+		/**
+		 * Define the meta fields for the FlowHub inventory CCT.
+		 *
+		 * Uses the column definitions from {@see $columns} and labels from
+		 * {@see get_column_label()} to stay in sync with the runtime schema.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @return array
+		 */
+		protected static function get_meta_fields() {
+			$instance = new self();
+			$columns  = $instance->get_column_definitions();
+			$fields   = array();
+			$field_id = self::FIELD_ID_BASE;
+
+			foreach ( $columns as $column_name => $column_type ) {
+				$args = array();
+
+				// Map internal type names to JetEngine field types.
+				switch ( $column_type ) {
+					case 'number':
+						$jet_type           = 'number';
+						$args['is_numeric'] = true;
+						break;
+					case 'textarea':
+						$jet_type = 'textarea';
+						break;
+					case 'datetime':
+						$jet_type = 'datetime-local';
+						break;
+					default:
+						$jet_type = 'text';
+						break;
+				}
+
+				$fields[] = self::build_field(
+					$field_id,
+					$column_name,
+					$instance->get_column_label( $column_name ),
+					$jet_type,
+					$args
+				);
+
+				++$field_id;
+			}
+
+			return $fields;
+		}
+
+		/**
+		 * Build a field definition for JetEngine.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param int    $id    Field ID.
+		 * @param string $name  Field name.
+		 * @param string $label Field label.
+		 * @param string $type  Field type.
+		 * @param array  $args  Additional arguments.
+		 * @return array
+		 */
+		protected static function build_field( $id, $name, $label, $type, $args = array() ) {
+			return array_merge(
+				array(
+					'id'          => (string) $id,
+					'name'        => $name,
+					'title'       => $label,
+					'type'        => $type,
+					'object_type' => 'field',
+				),
+				$args
+			);
+		}
+	}
+}

@@ -46,6 +46,38 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	const ENCRYPT_V2_PREFIX = 'v2.';
 
 	/**
+	 * Determine whether a stored value is already encrypted.
+	 *
+	 * A value is considered encrypted if it carries the V2 prefix (AES-256-CBC)
+	 * or is a valid base64 string (legacy XOR cipher). Plaintext values return
+	 * false so they will be encrypted on the next save.
+	 *
+	 * @since 1.1.35
+	 *
+	 * @param string $value Stored credential value.
+	 * @return bool True if the value appears already encrypted.
+	 */
+	private static function is_value_encrypted( $value ) {
+		if ( '' === $value ) {
+			return false;
+		}
+
+		// V2 AES-256-CBC: starts with the version prefix.
+		if ( str_starts_with( $value, self::ENCRYPT_V2_PREFIX ) ) {
+			return true;
+		}
+
+		// Legacy XOR cipher: valid base64.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Used for format detection only.
+		if ( false !== base64_decode( $value, true ) ) {
+			return true;
+		}
+
+		// Plaintext — re-encrypt on next save.
+		return false;
+	}
+
+	/**
 	 * Get all configured remote site connections.
 	 *
 	 * @since 1.0.0
@@ -111,39 +143,39 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing password if not provided.
 			if ( empty( $connection_data['password'] ) && ! empty( $existing_connection['password'] ) ) {
 				$connection_data['password'] = $existing_connection['password'];
-				// Mark as already encrypted.
-				$connection_data['_password_encrypted'] = true;
+				// Mark as already encrypted only if it actually is.
+				$connection_data['_password_encrypted'] = self::is_value_encrypted( $existing_connection['password'] );
 			}
 
 			// Preserve existing token if not provided.
 			if ( empty( $connection_data['token'] ) && ! empty( $existing_connection['token'] ) ) {
 				$connection_data['token'] = $existing_connection['token'];
-				// Mark as already encrypted.
-				$connection_data['_token_encrypted'] = true;
+				// Mark as already encrypted only if it actually is.
+				$connection_data['_token_encrypted'] = self::is_value_encrypted( $existing_connection['token'] );
 			}
 
 			// Preserve existing consumer_key if not provided.
 			if ( empty( $connection_data['consumer_key'] ) && ! empty( $existing_connection['consumer_key'] ) ) {
 				$connection_data['consumer_key']            = $existing_connection['consumer_key'];
-				$connection_data['_consumer_key_encrypted'] = true;
+				$connection_data['_consumer_key_encrypted'] = self::is_value_encrypted( $existing_connection['consumer_key'] );
 			}
 
 			// Preserve existing consumer_secret if not provided.
 			if ( empty( $connection_data['consumer_secret'] ) && ! empty( $existing_connection['consumer_secret'] ) ) {
 				$connection_data['consumer_secret']            = $existing_connection['consumer_secret'];
-				$connection_data['_consumer_secret_encrypted'] = true;
+				$connection_data['_consumer_secret_encrypted'] = self::is_value_encrypted( $existing_connection['consumer_secret'] );
 			}
 
 			// Preserve existing api_key if not provided.
 			if ( empty( $connection_data['api_key'] ) && ! empty( $existing_connection['api_key'] ) ) {
 				$connection_data['api_key']            = $existing_connection['api_key'];
-				$connection_data['_api_key_encrypted'] = true;
+				$connection_data['_api_key_encrypted'] = self::is_value_encrypted( $existing_connection['api_key'] );
 			}
 
 			// Preserve existing api_secret if not provided.
 			if ( empty( $connection_data['api_secret'] ) && ! empty( $existing_connection['api_secret'] ) ) {
 				$connection_data['api_secret']            = $existing_connection['api_secret'];
-				$connection_data['_api_secret_encrypted'] = true;
+				$connection_data['_api_secret_encrypted'] = self::is_value_encrypted( $existing_connection['api_secret'] );
 			}
 
 			// Preserve existing client_id if not provided.
@@ -154,7 +186,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing client_secret if not provided.
 			if ( empty( $connection_data['client_secret'] ) && ! empty( $existing_connection['client_secret'] ) ) {
 				$connection_data['client_secret']            = $existing_connection['client_secret'];
-				$connection_data['_client_secret_encrypted'] = true;
+				$connection_data['_client_secret_encrypted'] = self::is_value_encrypted( $existing_connection['client_secret'] );
 			}
 
 			// Preserve existing app_id if not provided.
@@ -165,13 +197,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing app_secret if not provided.
 			if ( empty( $connection_data['app_secret'] ) && ! empty( $existing_connection['app_secret'] ) ) {
 				$connection_data['app_secret']            = $existing_connection['app_secret'];
-				$connection_data['_app_secret_encrypted'] = true;
+				$connection_data['_app_secret_encrypted'] = self::is_value_encrypted( $existing_connection['app_secret'] );
 			}
 
 			// Preserve existing refresh_token (Gmail) if not provided.
 			if ( empty( $connection_data['refresh_token'] ) && ! empty( $existing_connection['refresh_token'] ) ) {
 				$connection_data['refresh_token']            = $existing_connection['refresh_token'];
-				$connection_data['_refresh_token_encrypted'] = true;
+				$connection_data['_refresh_token_encrypted'] = self::is_value_encrypted( $existing_connection['refresh_token'] );
 			}
 
 			// Preserve existing user_email (Gmail) if not provided.
@@ -182,6 +214,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing folder_id (Google Drive) if not provided.
 			if ( empty( $connection_data['folder_id'] ) && ! empty( $existing_connection['folder_id'] ) ) {
 				$connection_data['folder_id'] = $existing_connection['folder_id'];
+			}
+
+			// Preserve existing proxy_password if not provided.
+			if ( empty( $connection_data['proxy_password'] ) && ! empty( $existing_connection['proxy_password'] ) ) {
+				$connection_data['proxy_password']            = $existing_connection['proxy_password'];
+				$connection_data['_proxy_password_encrypted'] = self::is_value_encrypted( $existing_connection['proxy_password'] );
 			}
 
 			// Preserve existing upwork_username (Upwork) if not provided.
@@ -333,13 +371,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing signing_secret (Slack / Teams outgoing webhook) if not provided.
 			if ( empty( $connection_data['signing_secret'] ) && ! empty( $existing_connection['signing_secret'] ) ) {
 				$connection_data['signing_secret']            = $existing_connection['signing_secret'];
-				$connection_data['_signing_secret_encrypted'] = true;
+				$connection_data['_signing_secret_encrypted'] = self::is_value_encrypted( $existing_connection['signing_secret'] );
 			}
 
 			// Preserve existing secret_token (Telegram webhook) if not provided.
 			if ( empty( $connection_data['secret_token'] ) && ! empty( $existing_connection['secret_token'] ) ) {
 				$connection_data['secret_token']            = $existing_connection['secret_token'];
-				$connection_data['_secret_token_encrypted'] = true;
+				$connection_data['_secret_token_encrypted'] = self::is_value_encrypted( $existing_connection['secret_token'] );
 			}
 
 			// Preserve existing page_id (Facebook Messenger) if not provided.
@@ -391,17 +429,26 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['cache_ttl'] = $existing_connection['cache_ttl'];
 			}
 
-			// Preserve existing location_id if not provided.
-			if ( empty( $connection_data['location_id'] ) && ! empty( $existing_connection['location_id'] ) ) {
+			// Preserve existing location_id only when the key is absent from submission
+			// (use array_key_exists so an explicit empty string — user cleared the field —
+			// is honoured instead of being overwritten by the stored value).
+			if ( ! array_key_exists( 'location_id', $connection_data ) && ! empty( $existing_connection['location_id'] ) ) {
 				$connection_data['location_id'] = $existing_connection['location_id'];
 			}
 
-			// Preserve existing company_id if not provided.
-			if ( empty( $connection_data['company_id'] ) && ! empty( $existing_connection['company_id'] ) ) {
+			// Preserve existing company_id only when the key is absent from submission.
+			if ( ! array_key_exists( 'company_id', $connection_data ) && ! empty( $existing_connection['company_id'] ) ) {
 				$connection_data['company_id'] = $existing_connection['company_id'];
 			}
 
-			// Preserve existing sandbox_mode if not provided.
+				// Preserve existing store_id only when the key is absent from submission
+					// (use array_key_exists so an explicit empty string — user cleared the
+					// field — is honoured instead of being overwritten by the stored value).
+			if ( ! array_key_exists( 'store_id', $connection_data ) && ! empty( $existing_connection['store_id'] ) ) {
+				$connection_data['store_id'] = $existing_connection['store_id'];
+			}
+
+				// Preserve existing sandbox_mode if not provided.
 			if ( ! isset( $connection_data['sandbox_mode'] ) && isset( $existing_connection['sandbox_mode'] ) ) {
 				$connection_data['sandbox_mode'] = $existing_connection['sandbox_mode'];
 			}
@@ -419,6 +466,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing custom_post_types if not provided.
 			if ( ! isset( $connection_data['custom_post_types'] ) && isset( $existing_connection['custom_post_types'] ) ) {
 				$connection_data['custom_post_types'] = $existing_connection['custom_post_types'];
+			}
+
+			// Preserve existing jetengine_cct_access if not provided.
+			if ( ! isset( $connection_data['jetengine_cct_access'] ) && isset( $existing_connection['jetengine_cct_access'] ) ) {
+				$connection_data['jetengine_cct_access'] = $existing_connection['jetengine_cct_access'];
 			}
 
 			// Preserve Upwork/LinkedIn mode and search criteria when updating.
@@ -476,7 +528,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'app_secret'                     => isset( $connection_data['app_secret'] ) ? $connection_data['app_secret'] : '',
 			'location_id'                    => isset( $connection_data['location_id'] ) ? sanitize_text_field( $connection_data['location_id'] ) : '',
 			'company_id'                     => isset( $connection_data['company_id'] ) ? sanitize_text_field( $connection_data['company_id'] ) : '',
+			'store_id'                       => isset( $connection_data['store_id'] ) ? sanitize_text_field( $connection_data['store_id'] ) : '',
 			'sandbox_mode'                   => ! empty( $connection_data['sandbox_mode'] ),
+			// FlowHub proxy fields.
+			'proxy_enabled'                  => ! empty( $connection_data['proxy_enabled'] ),
+			'proxy_url'                      => isset( $connection_data['proxy_url'] ) ? sanitize_text_field( $connection_data['proxy_url'] ) : '',
+			'proxy_username'                 => isset( $connection_data['proxy_username'] ) ? sanitize_text_field( $connection_data['proxy_username'] ) : '',
+			'proxy_password'                 => isset( $connection_data['proxy_password'] ) ? $connection_data['proxy_password'] : '',
 			'has_woocommerce'                => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'                        => ! empty( $connection_data['enabled'] ),
 			'created'                        => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
@@ -601,6 +659,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'post_type_access'               => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
 			'wc_resource_access'             => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
 			'custom_post_types'              => isset( $connection_data['custom_post_types'] ) ? sanitize_text_field( $connection_data['custom_post_types'] ) : '',
+			// JetEngine CCT granular access controls.
+			'jetengine_cct_access'           => self::sanitize_access_controls( isset( $connection_data['jetengine_cct_access'] ) ? $connection_data['jetengine_cct_access'] : array() ),
 		);
 
 		// Encrypt sensitive data (only if not already encrypted).
@@ -646,6 +706,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( ! empty( $connection['secret_token'] ) && empty( $connection_data['_secret_token_encrypted'] ) ) {
 			$connection['secret_token'] = self::encrypt_value( $connection['secret_token'] );
+		}
+
+		if ( ! empty( $connection['proxy_password'] ) && empty( $connection_data['_proxy_password_encrypted'] ) ) {
+			$connection['proxy_password'] = self::encrypt_value( $connection['proxy_password'] );
 		}
 
 		$connections[ $connection_id ] = $connection;
@@ -955,6 +1019,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_shopify_connection( $connection );
 		}
 
+		// Handle Printful connections separately.
+		if ( 'printful' === $connection_type ) {
+			return self::test_printful_connection( $connection );
+		}
+
 		// Handle EZuite ERP connections separately.
 		if ( 'ezuite_erp' === $connection_type ) {
 			return self::test_ezuite_connection( $connection );
@@ -1016,10 +1085,27 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_shipstation_connection( $connection );
 		}
 
+		// Pre-flight DNS reachability check (non-blocking diagnostic).
+		$parsed_url = wp_parse_url( $connection['url'] );
+		$host       = isset( $parsed_url['host'] ) ? $parsed_url['host'] : '';
+
+		if ( '' !== $host ) {
+			$dns_check = self::check_host_reachability( $host );
+		}
+
 		// Test basic WordPress REST API access.
 		$response = self::make_request( $connection, 'wp/v2/types' );
 
 		if ( is_wp_error( $response ) ) {
+			// If we have a DNS warning and the request failed, prepend the DNS
+			// diagnostic so the user sees the likely root cause first.
+			if ( isset( $dns_check ) && ! $dns_check['reachable'] ) {
+				$dns_error = new WP_Error(
+					'wp_mcp_ai_pro_dns_unreachable',
+					$dns_check['message'] . ' ' . $response->get_error_message()
+				);
+				return $dns_error;
+			}
 			return $response;
 		}
 
@@ -1031,6 +1117,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'site_url'    => $connection['url'],
 			'message'     => __( 'Connection successful.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		// Surface DNS warnings for reachable hosts that resolve
+		// (the request succeeded despite the warning).
+		if ( isset( $dns_check ) && ! $dns_check['reachable'] ) {
+			$results['warning'] = $dns_check['message'];
+		}
 
 		// Test WooCommerce API access if enabled.
 		if ( ! empty( $connection['has_woocommerce'] ) ) {
@@ -1461,31 +1553,176 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array|WP_Error Connection test results or error.
 	 */
 	protected static function test_flowhub_connection( $connection ) {
-		if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+		$client_id   = isset( $connection['client_id'] ) ? $connection['client_id'] : '';
+		$api_key     = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+		$location_id = isset( $connection['location_id'] ) ? $connection['location_id'] : '';
+		$sandbox     = ! empty( $connection['sandbox_mode'] );
+
+		if ( empty( $client_id ) || empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_flowhub_credentials',
+				__( 'API key and client ID are required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Determine base URL — respect sandbox mode.
+		$base_url = $sandbox ? 'https://api.sandbox.flowhub.co' : 'https://api.flowhub.co';
+
+		// Build the inventory endpoint. When location_id is available, scope to that
+		// location. Otherwise use the root inventoryNonZero endpoint (no location required).
+		if ( ! empty( $location_id ) ) {
+			$url = $base_url . '/v0/locations/' . rawurlencode( $location_id ) . '/inventoryNonZero?limit=1';
+		} else {
+			$url = $base_url . '/v0/inventoryNonZero?limit=1';
+		}
+
+		// Attach proxy via http_api_curl when configured.
+		$proxy_enabled  = ! empty( $connection['proxy_enabled'] );
+		$proxy_url      = isset( $connection['proxy_url'] ) ? $connection['proxy_url'] : '';
+		$proxy_username = isset( $connection['proxy_username'] ) ? $connection['proxy_username'] : '';
+		$proxy_password = isset( $connection['proxy_password'] ) ? self::decrypt_value( $connection['proxy_password'] ) : '';
+
+		$curl_proxy = null;
+		if ( $proxy_enabled && ! empty( $proxy_url ) ) {
+			$proxy_auth = ( ! empty( $proxy_username ) || ! empty( $proxy_password ) )
+				? $proxy_username . ':' . $proxy_password
+				: '';
+			$curl_proxy = function ( $handle ) use ( $proxy_url, $proxy_auth ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- Proxy support requires cURL-level configuration.
+				curl_setopt( $handle, CURLOPT_PROXY, $proxy_url );
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+				curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+				if ( ! empty( $proxy_auth ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+					curl_setopt( $handle, CURLOPT_PROXYUSERPWD, $proxy_auth );
+				}
+			};
+			add_action( 'http_api_curl', $curl_proxy, 10, 1 );
+		}
+
+		try {
+			$response = wp_remote_get(
+				$url,
+				array(
+					'timeout' => 15,
+					'headers' => array(
+						'clientId' => $client_id,
+						'key'      => $api_key,
+						'Accept'   => 'application/json',
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_flowhub_connection_failed',
+					sprintf(
+						/* translators: %s: error message */
+						__( 'Flowhub connection failed: %s', 'mcp-ai-wpoos-pro' ),
+						$response->get_error_message()
+					)
+				);
+			}
+
+			$code = (int) wp_remote_retrieve_response_code( $response );
+
+			if ( 401 === $code || 403 === $code ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_flowhub_auth_failed',
+					__( 'Flowhub API authentication failed. Check your client ID and API key.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_flowhub_api_error',
+					sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'Flowhub API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+						$code
+					)
+				);
+			}
+
+			$body            = json_decode( wp_remote_retrieve_body( $response ), true );
+			$inventory_count = isset( $body['data'] ) && is_array( $body['data'] ) ? count( $body['data'] ) : 0;
+
+			$results = array(
+				'success' => true,
+				'flowhub' => true,
+				'message' => __( 'Flowhub connection successful. API credentials verified.', 'mcp-ai-wpoos-pro' ),
+			);
+
+			if ( $inventory_count > 0 ) {
+				$results['inventory_count'] = $inventory_count;
+				/* translators: %d: number of inventory items */
+				$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'mcp-ai-wpoos-pro' ), $inventory_count );
+			}
+
+			return $results;
+		} finally {
+			if ( null !== $curl_proxy ) {
+				remove_action( 'http_api_curl', $curl_proxy, 10 );
+			}
+		}
+	}
+
+	/**
+	 * Test Printful API connection.
+	 *
+	 * Verifies the Bearer token by fetching the authorized stores list.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_printful_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Printful_Client' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-printful-client.php';
 		}
 
 		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
-		$client        = new WP_MCP_AI_Flowhub_Client( $connection_id );
+		$client        = new WP_MCP_AI_Printful_Client( $connection_id );
 
-		// Test with a simple inventory request.
-		$response = $client->get_inventory( array( 'limit' => 1 ) );
+		$response = $client->get_stores();
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
+		$store_count = is_array( $response ) ? count( $response ) : 0;
+
 		$results = array(
-			'success' => true,
-			'flowhub' => true,
-			'message' => __( 'Flowhub connection successful. API credentials verified.', 'mcp-ai-wpoos-pro' ),
+			'success'     => true,
+			'printful'    => true,
+			'store_count' => $store_count,
 		);
 
-		// Add inventory count if available.
-		if ( isset( $response['total'] ) ) {
-			$results['inventory_count'] = absint( $response['total'] );
-			/* translators: %d: number of inventory items */
-			$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'mcp-ai-wpoos-pro' ), $results['inventory_count'] );
+		if ( $store_count > 0 ) {
+			$results['message'] = sprintf(
+				/* translators: %d: number of authorized stores */
+				_n(
+					'Printful connection successful. %d store authorized.',
+					'Printful connection successful. %d stores authorized.',
+					$store_count,
+					'mcp-ai-wpoos-pro'
+				),
+				$store_count
+			);
+
+			// Collect store names for the test result display.
+			$store_names = array();
+			foreach ( $response as $store ) {
+				if ( ! empty( $store['name'] ) ) {
+					$store_names[] = $store['name'] . ' (ID: ' . ( isset( $store['id'] ) ? $store['id'] : '?' ) . ')';
+				}
+			}
+			if ( ! empty( $store_names ) ) {
+				$results['stores'] = $store_names;
+			}
+		} else {
+			$results['message'] = __( 'Printful connection successful, but no stores found. Create a store in your Printful dashboard.', 'mcp-ai-wpoos-pro' );
 		}
 
 		return $results;
@@ -2408,13 +2645,21 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$duration = microtime( true ) - $start_time;
 			self::record_health_metric( $connection_id, false, $duration );
 
+			$error_message = sprintf(
+				/* translators: %s: raw error message */
+				__( 'Request failed: %s', 'mcp-ai-wpoos-pro' ),
+				$response->get_error_message()
+			);
+
+			// Append actionable guidance for well-known cURL errors.
+			$guidance = self::get_curl_error_guidance( $response );
+			if ( null !== $guidance ) {
+				$error_message .= ' ' . $guidance;
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_pro_request_failed',
-				sprintf(
-					/* translators: %s: error message */
-					__( 'Request failed: %s', 'mcp-ai-wpoos-pro' ),
-					$response->get_error_message()
-				)
+				$error_message
 			);
 		}
 
@@ -2527,9 +2772,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// For WordPress/WooCommerce endpoints, use /wp-json/ prefix.
-		// Determine if this is a WooCommerce endpoint.
-		if ( 0 === strpos( $endpoint, 'wc/' ) ) {
-			$api_url = $base_url . '/wp-json/' . $endpoint;
+		// Avoid double-prefixing when users enter a URL that already includes /wp-json.
+		$parsed = wp_parse_url( $base_url );
+		$path   = isset( $parsed['path'] ) ? untrailingslashit( $parsed['path'] ) : '';
+
+		if ( '/wp-json' === $path || '/wp-json' === substr( $path, -strlen( '/wp-json' ) ) ) {
+			// Base URL already points to the REST root — don't duplicate the prefix.
+			$api_url = $base_url . '/' . $endpoint;
 		} else {
 			$api_url = $base_url . '/wp-json/' . $endpoint;
 		}
@@ -2566,6 +2815,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				}
 				$headers['Content-Type'] = 'application/json';
 			}
+			return $headers;
+		}
+
+		// For Printful connections, use Bearer token + optional Store ID header.
+		if ( ! empty( $connection['connection_type'] ) && 'printful' === $connection['connection_type'] ) {
+			$token = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+			if ( ! empty( $token ) ) {
+				$headers['Authorization'] = 'Bearer ' . $token;
+			}
+			if ( ! empty( $connection['store_id'] ) ) {
+				$headers['X-PF-Store-Id'] = $connection['store_id'];
+			}
+			$headers['Accept']       = 'application/json';
+			$headers['Content-Type'] = 'application/json';
 			return $headers;
 		}
 
@@ -2620,7 +2883,34 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( ! filter_var( $connection['url'], FILTER_VALIDATE_URL ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_url',
-				__( 'Connection URL is not valid.', 'mcp-ai-wpoos-pro' )
+				__( 'Connection URL is not valid. URLs must include the protocol (e.g. https://example.com).', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Validate that the hostname portion looks well-formed.
+		$parsed = wp_parse_url( $connection['url'] );
+		$host   = isset( $parsed['host'] ) ? $parsed['host'] : '';
+
+		if ( '' === $host ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_url',
+				__( 'Connection URL does not contain a valid hostname.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Reject hostnames that point to reserved/private IP ranges when the
+		// connection type is expected to reach an external WordPress/WooCommerce
+		// site. This prevents accidental misconfiguration without blocking
+		// legitimate local-network setups.
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
+		if ( self::is_restricted_host( $host, $connection_type ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_restricted_host',
+				sprintf(
+					/* translators: %s: hostname */
+					__( 'The hostname "%s" points to a reserved or private IP range that is not reachable from this server. Use a publicly accessible domain or IP address.', 'mcp-ai-wpoos-pro' ),
+					$host
+				)
 			);
 		}
 
@@ -2659,8 +2949,6 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// Validate connection type specific requirements.
-		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
-
 		if ( 'ezuite_erp' === $connection_type ) {
 			if ( empty( $connection['api_key'] ) ) {
 				return new WP_Error(
@@ -2684,6 +2972,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_flowhub_credentials',
 					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			// Location ID is optional: the root /inventoryNonZero endpoint works without it.
+		}
+
+		if ( 'printful' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_printful_token',
+					__( 'API token is required for Printful connections. Generate one in the Printful Developer Portal.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -2800,6 +3098,125 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Check whether a hostname is in a restricted range that should not
+	 * be used for remote connections of the given type.
+	 *
+	 * Blocks loopback (127.x.x.x), link-local (169.254.x.x), and private
+	 * ranges (10.x, 172.16-31.x, 192.168.x) when the connection type is
+	 * expected to reach an external service.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $host            Hostname to check.
+	 * @param string $connection_type Connection type for context.
+	 * @return bool True if the host is in a restricted range.
+	 */
+	protected static function is_restricted_host( $host, $connection_type ) {
+		// Only enforce for connection types that make outbound HTTP requests
+		// to user-configured URLs (WordPress, WooCommerce, generic, iSAMS, etc.).
+		$enforced_types = array(
+			'WordPress',
+			'wordpress',
+			'generic',
+			'isams',
+			'flowhub',
+			'payhere',
+			'quickbooks',
+			'quickbooks_desktop',
+			'ezuite_erp',
+			'shipengine',
+			'shipstation',
+		);
+
+		if ( ! in_array( $connection_type, $enforced_types, true ) ) {
+			return false;
+		}
+
+		// If the host is already an IP, check it directly.
+		$ip = $host;
+		if ( ! filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			// Attempt to resolve the hostname; skip the check if resolution fails
+			// (the real HTTP request will catch DNS issues with better messages).
+			$resolved = gethostbyname( $host );
+			if ( $resolved === $host ) {
+				// DNS resolution failed — let the HTTP layer diagnose this.
+				return false;
+			}
+			$ip = $resolved;
+		}
+
+		return ! filter_var(
+			$ip,
+			FILTER_VALIDATE_IP,
+			FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+		);
+	}
+
+	/**
+	 * Perform a lightweight DNS reachability check for a hostname.
+	 *
+	 * Uses PHP's native DNS functions when available. Returns diagnostic
+	 * information that can be surfaced to the user — never blocks the
+	 * connection test on DNS alone, since DNS may be temporarily unavailable.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $host Hostname extracted from the connection URL.
+	 * @return array{reachable: bool, message: string} Diagnostic result.
+	 */
+	protected static function check_host_reachability( $host ) {
+		if ( '' === $host || filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			return array(
+				'reachable' => true,
+				'message'   => '',
+			);
+		}
+
+		/**
+		 * Filter whether to perform DNS reachability pre-checks.
+		 *
+		 * Set to false on hosts where DNS functions are unreliable or
+		 * when every outbound request goes through a forward proxy.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param bool $perform_check Whether to perform the DNS check. Default true.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_pro_remote_dns_precheck', true ) ) {
+			return array(
+				'reachable' => true,
+				'message'   => '',
+			);
+		}
+
+		// Use checkdnsrr when available (PHP 5.3+); fall back to gethostbyname.
+		if ( function_exists( 'checkdnsrr' ) ) {
+			// Suppress warnings in case DNS functions are restricted.
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			$has_dns = @checkdnsrr( $host . '.', 'A' ) || @checkdnsrr( $host . '.', 'AAAA' ) || @checkdnsrr( $host . '.', 'CNAME' );
+		} else {
+			$resolved = gethostbyname( $host );
+			$has_dns  = ( $resolved !== $host );
+		}
+
+		if ( $has_dns ) {
+			return array(
+				'reachable' => true,
+				'message'   => '',
+			);
+		}
+
+		return array(
+			'reachable' => false,
+			'message'   => sprintf(
+				/* translators: %s: hostname */
+				__( 'DNS could not resolve "%s". The domain may not exist, may be misspelled, or DNS records may still be propagating.', 'mcp-ai-wpoos-pro' ),
+				$host
+			),
+		);
+	}
+
+	/**
 	 * Generate a unique connection ID.
 	 *
 	 * @since 1.0.0
@@ -2909,26 +3326,32 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$decrypted = WP_MCP_AI_Encryption::decrypt( substr( $encrypted, strlen( self::ENCRYPT_V2_PREFIX ) ) );
 				return ( false !== $decrypted ) ? $decrypted : '';
 			}
+			// WP_MCP_AI_Encryption not available — the encrypted value cannot be
+			// decrypted. Return empty so callers can detect the failure.
 			return '';
 		}
 
-		// Legacy XOR format (no prefix).
-		$key = wp_salt( 'auth' );
+		// Legacy XOR format (no prefix) — valid base64.
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Used for credential decryption.
 		$data = base64_decode( $encrypted, true ); // Strict mode: reject malformed base64.
-		if ( false === $data ) {
-			return '';
+		if ( false !== $data ) {
+			$key = wp_salt( 'auth' );
+
+			$decrypted   = '';
+			$key_length  = strlen( $key );
+			$data_length = strlen( $data );
+
+			for ( $i = 0; $i < $data_length; $i++ ) {
+				$decrypted .= chr( ord( $data[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
+			}
+
+			return $decrypted;
 		}
 
-		$decrypted   = '';
-		$key_length  = strlen( $key );
-		$data_length = strlen( $data );
-
-		for ( $i = 0; $i < $data_length; $i++ ) {
-			$decrypted .= chr( ord( $data[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
-		}
-
-		return $decrypted;
+		// Not base64 and not V2-prefixed — value was stored as plaintext.
+		// Return as-is so callers get the original credential rather than
+		// an empty string (which would cause a confusing auth failure).
+		return $encrypted;
 	}
 
 	/**
@@ -2963,6 +3386,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Make HTTP request with retry logic and exponential backoff.
 	 *
+	 * Skips retries for fatal errors that cannot be resolved by retrying
+	 * (DNS resolution failure, connection refused, malformed URL).
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $url  Request URL.
@@ -2994,6 +3420,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				}
 			}
 
+			// Detect fatal errors that will never succeed on retry.
+			if ( is_wp_error( $response ) && self::is_fatal_curl_error( $response ) ) {
+				return $response;
+			}
+
 			// If this was the last attempt, return the error.
 			if ( $attempt >= $max_retries ) {
 				return $response;
@@ -3006,6 +3437,81 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Determine whether a cURL/WP_Error represents a fatal condition that
+	 * should not be retried.
+	 *
+	 * Retrying DNS failures (error 6), connection-refused (error 7), or
+	 * malformed-URL errors (error 3) is wasteful — these are configuration
+	 * problems that won't self-heal within a retry window.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_Error $error The error from wp_remote_request().
+	 * @return bool True if the error is fatal and should not be retried.
+	 */
+	protected static function is_fatal_curl_error( $error ) {
+		$message = $error->get_error_message();
+
+		// cURL error 6: Could not resolve host (DNS failure).
+		// cURL error 7: Failed to connect (connection refused / no route).
+		// cURL error 3: URL malformed.
+		// cURL error 5: Could not resolve proxy.
+		$fatal_patterns = array(
+			'/cURL error 6\b/',
+			'/cURL error 7\b/',
+			'/cURL error 3\b/',
+			'/cURL error 5\b/',
+			'/Could not resolve host/i',
+			'/Failed to connect/i',
+		);
+
+		foreach ( $fatal_patterns as $pattern ) {
+			if ( preg_match( $pattern, $message ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Translate a raw cURL/WP_Error message into a user-friendly diagnostic.
+	 *
+	 * Returns null when no specific guidance is available, so the caller
+	 * can fall back to the raw message.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_Error $error The error from wp_remote_request().
+	 * @return string|null Human-readable guidance, or null.
+	 */
+	protected static function get_curl_error_guidance( $error ) {
+		$message = $error->get_error_message();
+
+		if ( false !== strpos( $message, 'cURL error 6' ) || false !== stripos( $message, 'Could not resolve host' ) ) {
+			return __( 'The remote hostname could not be resolved by DNS. Verify the URL is correct and that the domain exists. If you recently changed DNS records, allow up to 48 hours for propagation.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 7' ) || false !== stripos( $message, 'Failed to connect' ) ) {
+			return __( 'Could not establish a connection to the remote server. The site may be down, behind a firewall, or blocking requests from this server.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 28' ) ) {
+			return __( 'The request timed out. The remote server may be slow, overloaded, or unreachable. Try increasing the timeout or check the remote site status.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 35' ) || false !== stripos( $message, 'SSL' ) ) {
+			return __( 'An SSL/TLS handshake error occurred. The remote server may have an invalid or expired SSL certificate, or may require a specific TLS version.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( false !== strpos( $message, 'cURL error 3' ) ) {
+			return __( 'The request URL is malformed. Check that the connection URL is complete and includes the protocol (https://).', 'mcp-ai-wpoos-pro' );
+		}
+
+		return null;
 	}
 
 	/**
@@ -3229,6 +3735,82 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		$allowed_ops = $access[ $resource ];
+
+		return is_array( $allowed_ops ) && in_array( $operation, $allowed_ops, true );
+	}
+
+	/**
+	 * Discover JetEngine Custom Content Types (CCTs) available on the remote site.
+	 *
+	 * Hits GET /wp-json/jet-cct/v1/ to enumerate CCTs that have at least one
+	 * REST endpoint enabled in JetEngine settings. Falls back gracefully when
+	 * JetEngine is not installed or no CCTs are exposed.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Array of CCT descriptors, or WP_Error on failure.
+	 */
+	public static function discover_jetengine_ccts( $connection ) {
+		$response = self::make_request( $connection, 'jet-cct/v1' );
+
+		if ( is_wp_error( $response ) ) {
+			// Graceful fallback: JetEngine not installed or REST disabled.
+			return array();
+		}
+
+		if ( ! is_array( $response ) ) {
+			return array();
+		}
+
+		$ccts = array();
+
+		foreach ( $response as $cct_slug => $cct_data ) {
+			if ( ! is_array( $cct_data ) ) {
+				continue;
+			}
+
+			$ccts[ $cct_slug ] = array(
+				'slug'   => $cct_slug,
+				'label'  => isset( $cct_data['label'] ) ? $cct_data['label'] : $cct_slug,
+				'args'   => isset( $cct_data['args'] ) ? $cct_data['args'] : array(),
+				'fields' => isset( $cct_data['fields'] ) ? $cct_data['fields'] : array(),
+			);
+		}
+
+		return $ccts;
+	}
+
+	/**
+	 * Check whether a CRUD operation is permitted for a JetEngine CCT on a connection.
+	 *
+	 * When jetengine_cct_access is not configured (empty array or missing key),
+	 * backward-compatible behaviour applies: only read operations are allowed
+	 * for all CCTs; write operations are denied unless explicitly enabled.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array  $connection Connection data array.
+	 * @param string $cct_slug   JetEngine CCT slug (e.g. 'attendees', 'inventory').
+	 * @param string $operation  CRUD operation: 'read', 'create', 'update', or 'delete'.
+	 * @return bool True if the operation is allowed; false otherwise.
+	 */
+	public static function is_jetengine_cct_operation_allowed( $connection, $cct_slug, $operation = 'read' ) {
+		$cct_slug  = sanitize_key( $cct_slug );
+		$operation = sanitize_key( $operation );
+
+		// When no JetEngine access controls are configured, only permit reads (backward compatible).
+		if ( empty( $connection['jetengine_cct_access'] ) ) {
+			return 'read' === $operation;
+		}
+
+		$access = $connection['jetengine_cct_access'];
+
+		if ( ! isset( $access[ $cct_slug ] ) ) {
+			return false; // CCT not in the allowlist.
+		}
+
+		$allowed_ops = $access[ $cct_slug ];
 
 		return is_array( $allowed_ops ) && in_array( $operation, $allowed_ops, true );
 	}

@@ -21,7 +21,7 @@ use function wp_list_pluck;
  *
  * Exports the knowledge graph in six formats:
  *   JSON     — NetworkX-compatible node-link format
- *   HTML     — standalone interactive Cytoscape.js page (CDN, dark theme)
+ *   HTML     — standalone interactive Cytoscape.js page (bundled vendor libs, dark theme)
  *   GraphML  — for Gephi / yEd import
  *   CSV      — separate nodes.csv + edges.csv (returned as two strings)
  *   Neo4j    — CREATE Cypher statements

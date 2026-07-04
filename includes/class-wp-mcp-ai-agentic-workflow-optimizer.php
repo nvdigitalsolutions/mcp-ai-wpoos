@@ -337,6 +337,66 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 	}
 
 	/**
+	 * Maximum number of consecutive low-necessity iterations before
+	 * the agent receives a nudge to re-evaluate its tool choices.
+	 *
+	 * @since 1.9.0
+	 * @var int
+	 */
+	const MAX_LOW_NECESSITY_ITERATIONS = 5;
+
+	/**
+	 * Tracks the count of low-necessity iterations per session.
+	 *
+	 * @since 1.9.0
+	 * @var array<string,int>
+	 */
+	private static $low_necessity_count = array();
+
+	/**
+	 * Record a low-necessity iteration and return whether a nudge is needed.
+	 *
+	 * Called after each agentic iteration where all tool calls were read-only
+	 * and didn't make meaningful progress toward the goal. After
+	 * MAX_LOW_NECESSITY_ITERATIONS consecutive such iterations, returns true
+	 * to signal that the agent should re-evaluate necessity.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $session_id Chat session ID.
+	 * @return bool True if the agent should be nudged.
+	 */
+	public static function track_low_necessity_iteration( $session_id ) {
+		$session_id = sanitize_key( (string) $session_id );
+		if ( '' === $session_id ) {
+			$session_id = 'default';
+		}
+
+		if ( ! isset( self::$low_necessity_count[ $session_id ] ) ) {
+			self::$low_necessity_count[ $session_id ] = 0;
+		}
+
+		self::$low_necessity_count[ $session_id ]++;
+
+		return self::$low_necessity_count[ $session_id ] >= self::MAX_LOW_NECESSITY_ITERATIONS;
+	}
+
+	/**
+	 * Reset the low-necessity counter when a meaningful tool call is made.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $session_id Chat session ID.
+	 */
+	public static function reset_low_necessity_count( $session_id ) {
+		$session_id = sanitize_key( (string) $session_id );
+		if ( '' === $session_id ) {
+			$session_id = 'default';
+		}
+		self::$low_necessity_count[ $session_id ] = 0;
+	}
+
+	/**
 	 * Predict optimal max iterations for assistant based on history.
 	 *
 	 * Analyzes past conversations to suggest optimal iteration limits.

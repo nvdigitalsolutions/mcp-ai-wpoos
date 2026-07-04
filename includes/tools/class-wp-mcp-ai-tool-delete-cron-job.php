@@ -19,8 +19,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows users to delete scheduled WordPress cron jobs.
  */
-class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	/**
 	 * {@inheritdoc}
@@ -153,9 +154,12 @@ class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
+			'write',                // Deletes scheduled cron jobs.
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
+			'state-changing',       // Modifies WordPress cron schedule.
+			'data-destruction',     // Permanently removes scheduled tasks (since 1.9.0).
+			'irreversible',         // Cron job deletion cannot be undone (since 1.9.0).
 		);
 	}
 }

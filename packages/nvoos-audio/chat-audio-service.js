@@ -21,7 +21,7 @@
 	const SPEECH_SPINNER_ICON = '<span class="wp-mcp-ai-speech-spinner" aria-hidden="true"></span>';
 
 	// Audio transcription constants
-	const TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
+	const _TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
 	const TRANSCRIBE_RECORDING_CLASS = 'wp-mcp-ai-chat__transcribe--recording';
 	const MAX_TRANSCRIBE_BYTES = 26214400; // 25MB
 
@@ -34,9 +34,20 @@
 	const VOICE_CHAT_LISTENING_CLASS = 'wp-mcp-ai-chat__voice-chat--listening';
 
 	// VAD (Voice Activity Detection) default constants
-	// These can be overridden by WordPress settings passed via config
-	const VAD_DEFAULT_SILENCE_THRESHOLD_MS = 700;      // Industry standard: 700ms
-	const VAD_DEFAULT_MIN_SPEECH_DURATION_MS = 300;    // Minimum speech duration
+	// These can be overridden by WordPress settings passed via config.
+	//
+	// Thresholds are calibrated for local/browser VAD which lacks linguistic context.
+	// Server-side VAD (OpenAI Realtime server_vad / semantic_vad) can use shorter
+	// timeouts because it understands speech patterns. Local energy-threshold VAD
+	// needs a longer hang-out to avoid clipping mid-thought pauses.
+	//
+	// Industry references:
+	//   - OpenAI server_vad default: 500ms silence_duration_ms
+	//   - VAD best practices: 500-1500ms hang-out for local detectors
+	//   - Push-to-talk chained mode: 1000-1500ms recommended
+	const VAD_DEFAULT_SILENCE_THRESHOLD_MS = 1200;     // Silence before auto-stop (was 700ms)
+	const VAD_DEFAULT_MIN_SPEECH_DURATION_MS = 400;    // Minimum speech before VAD activates (was 300ms)
+	const VAD_DEFAULT_MIN_RECORDING_MS = 500;          // Minimum total recording before auto-stop can fire
 	const VAD_DEFAULT_AUDIO_LEVEL_THRESHOLD = -50;     // dB threshold for speech
 	const VAD_CHECK_INTERVAL_MS = 100;                 // Check audio levels every 100ms
 
@@ -1462,7 +1473,7 @@
 	 * @param {string} text - Translated text
 	 * @param {Object} helpers - Helper functions
 	 */
-	function insertTranslatedText(state, text, helpers) {
+	function insertTranslatedText(state, text, _helpers) {
 		if (!state || !state.textarea || !text) {
 			return;
 		}
@@ -1523,6 +1534,10 @@
 			? state.config.vadMinSpeech 
 			: VAD_DEFAULT_MIN_SPEECH_DURATION_MS;
 		
+		const minRecordingMs = state.config && state.config.vadMinRecordingMs
+			? state.config.vadMinRecordingMs
+			: VAD_DEFAULT_MIN_RECORDING_MS;
+		
 		const audioThreshold = state.config && typeof state.config.vadAudioThreshold !== 'undefined'
 			? state.config.vadAudioThreshold 
 			: VAD_DEFAULT_AUDIO_LEVEL_THRESHOLD;
@@ -1550,6 +1565,7 @@
 			state.vadEnabled = true;
 			state.vadSilenceThreshold = silenceThreshold;
 			state.vadMinSpeechDuration = minSpeechDuration;
+			state.vadMinRecordingMs = minRecordingMs;
 			state.vadAudioThreshold = audioThreshold;
 
 			// Start monitoring audio levels
@@ -1606,8 +1622,16 @@
 			const audioThreshold = state.vadAudioThreshold || VAD_DEFAULT_AUDIO_LEVEL_THRESHOLD;
 			const silenceThreshold = state.vadSilenceThreshold || VAD_DEFAULT_SILENCE_THRESHOLD_MS;
 			const minSpeechDuration = state.vadMinSpeechDuration || VAD_DEFAULT_MIN_SPEECH_DURATION_MS;
+			const minRecordingMs = state.vadMinRecordingMs || VAD_DEFAULT_MIN_RECORDING_MS;
 			
 			const isSpeech = dB > audioThreshold;
+
+			// Minimum recording duration guard: prevent auto-stop from firing on
+			// clips shorter than minRecordingMs. This avoids processing near-empty
+			// recordings caused by transient noises or accidental mic activation.
+			if (speechDuration < minRecordingMs) {
+				return;
+			}
 
 			if (isSpeech) {
 				// Speech detected
@@ -1793,7 +1817,7 @@
 				// Initialize Voice Activity Detection for hands-free auto-stop
 				initVoiceActivityDetection(state, stream, helpers);
 			})
-			.catch(function (error) {
+			.catch(function (_error) {
 				if (helpers && helpers.setStatus && helpers.getString) {
 					helpers.setStatus(
 						state.container,
@@ -1960,8 +1984,6 @@
 			lastModified: Date.now(),
 		});
 
-		let uploadedRecord = null;
-
 		if (!helpers || !helpers.uploadAudioForTranscription || !helpers.requestTranscription) {
 			state.voiceChatProcessing = false;
 			updateVoiceChatButtonState(state);
@@ -1973,7 +1995,6 @@
 
 		helpers.uploadAudioForTranscription(state, file)
 			.then(function (record) {
-				uploadedRecord = record;
 				if (!record || typeof record.id === 'undefined') {
 					throw new Error('Upload failed');
 				}

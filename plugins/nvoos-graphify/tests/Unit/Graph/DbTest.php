@@ -19,6 +19,9 @@ class DbTest extends TestCase {
 	/** @var \wpdb&\PHPUnit\Framework\MockObject\MockObject */
 	private $mockWpdb;
 
+	/** @var \wpdb|null Saved original $wpdb for restoration. */
+	private $originalWpdb;
+
 	/**
 	 * Set up test fixtures.
 	 *
@@ -26,6 +29,9 @@ class DbTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
+
+		// Save the original $wpdb so we can restore it in tearDown.
+		$this->originalWpdb = $GLOBALS['wpdb'] ?? null;
 
 		// Mock global $wpdb.
 		$this->mockWpdb         = $this->createMock( \wpdb::class );
@@ -39,7 +45,11 @@ class DbTest extends TestCase {
 	 * @return void
 	 */
 	protected function tearDown(): void {
-		unset( $GLOBALS['wpdb'] );
+		if ( null !== $this->originalWpdb ) {
+			$GLOBALS['wpdb'] = $this->originalWpdb;
+		} else {
+			unset( $GLOBALS['wpdb'] );
+		}
 		parent::tearDown();
 	}
 

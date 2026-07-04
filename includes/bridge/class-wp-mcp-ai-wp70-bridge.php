@@ -89,7 +89,7 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 				'description'    => 'Moonshot AI inference (NV oOS).',
 				'authentication' => array(
 					'method'          => 'api_key',
-					'credentials_url' => 'https://platform.moonshot.cn/console/api-keys',
+					'credentials_url' => 'https://platform.moonshot.ai/console/api-keys',
 				),
 			),
 			'baseten'      => array(

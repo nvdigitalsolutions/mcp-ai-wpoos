@@ -2919,7 +2919,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$options = $this->validator->sanitize_options( $request->get_param( 'options' ), $assistant_config );
 
-			$limit_context = $this->build_chat_limit_context( $assistant_id, $options );
+			$limit_context = $this->build_chat_limit_context( $assistant_id, $options, $request );
 			$enforced      = $this->enforce_chat_request_limits( $messages, $attachments, $limit_context );
 
 			if ( is_wp_error( $enforced ) ) {
@@ -3324,6 +3324,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 					break;
 				}
+
+				// Phase 4: Proactive agentic-loop context compaction.
+				// Industry standard (LangChain Deep Agents, Vercel AI SDK):
+				// compact context BEFORE hitting the TPM limit, not after.
+				// At 70% capacity: offload old tool results.
+				// At 85% capacity: summarize middle iterations.
+				$messages = $this->maybe_compact_agentic_context( $messages, $iteration, $options, $assistant_id );
 
 				// Validate token budget before next iteration to prevent TPM limit errors.
 				$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
@@ -6177,6 +6184,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $assistant_id;
 			}
 
+			// When a token is authenticated, prefer its scoped assistant over the
+			// site default. This prevents scope-mismatch errors in downstream
+			// callers like mcp_tools_list when the client doesn't send an explicit
+			// assistant_id but the site default differs from the token's assistant.
+			$auth_context = $this->get_auth_context();
+			if ( ! empty( $auth_context['token_authenticated'] ) && 'local_token' === $auth_context['token_type'] ) {
+				$token_assistant = isset( $auth_context['assistant_id'] ) ? absint( $auth_context['assistant_id'] ) : 0;
+				if ( ! $token_assistant && isset( $auth_context['token_context']['credential']['assistant_id'] ) ) {
+					$token_assistant = absint( $auth_context['token_context']['credential']['assistant_id'] );
+				}
+				if ( $token_assistant ) {
+					return $token_assistant;
+				}
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$default  = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 
@@ -6950,16 +6972,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Build the context array used when enforcing chat request limits.
 		 *
-		 * @param int   $assistant_id Assistant identifier.
-		 * @param array $options      Prepared chat options.
+		 * @param int             $assistant_id Assistant identifier.
+		 * @param array           $options      Prepared chat options.
+		 * @param WP_REST_Request $request      Optional. REST request for client-sent BME overrides.
 		 * @return array
 		 */
-		protected function build_chat_limit_context( $assistant_id, array $options ) {
-			return array(
+		protected function build_chat_limit_context( $assistant_id, array $options, $request = null ) {
+			$context = array(
 				'assistant_id' => absint( $assistant_id ),
 				'provider'     => isset( $options['provider'] ) ? sanitize_key( $options['provider'] ) : '',
 				'model'        => isset( $options['model'] ) ? sanitize_text_field( $options['model'] ) : '',
 			);
+
+			// Include client-sent BME overrides if available.
+			if ( null !== $request && $request instanceof WP_REST_Request ) {
+				$end_window_size = $request->get_param( 'end_window_size' );
+				if ( null !== $end_window_size ) {
+					$context['end_window_size'] = absint( $end_window_size );
+				}
+
+				$client_strategy = $request->get_param( 'context_strategy' );
+				if ( null !== $client_strategy && is_string( $client_strategy ) ) {
+					$context['client_context_strategy'] = sanitize_key( $client_strategy );
+				}
+			}
+
+			return $context;
 		}
 
 		/**
@@ -7244,6 +7282,473 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Apply Beginning-Middle-End (BME) strategy to message list.
+		 *
+		 * Separates messages into:
+		 * - Beginning: system prompts + auto-generated summary.
+		 * - End: last N full-fidelity non-system messages (verbatim).
+		 * - Middle: summarized older messages.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param array $messages Full message array.
+		 * @param array $settings Plugin settings.
+		 * @param array $context  Request context.
+		 * @return array Reordered/trimmed messages.
+		 */
+		protected function trim_messages_bme( array $messages, array $settings, array $context ) {
+			// Separate system messages from conversation messages.
+			$system_messages = array();
+			$conv_messages   = array();
+
+			foreach ( $messages as $message ) {
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+				if ( 'system' === $role ) {
+					$system_messages[] = $message;
+				} else {
+					$conv_messages[] = $message;
+				}
+			}
+
+			$end_window_size    = isset( $context['end_window_size'] ) && $context['end_window_size'] > 0
+				? absint( $context['end_window_size'] )
+				: ( isset( $settings['end_window_size'] ) ? absint( $settings['end_window_size'] ) : 10 );
+			$end_window_size    = max( 2, $end_window_size );
+			$summary_trigger    = isset( $settings['summary_trigger_count'] ) ? absint( $settings['summary_trigger_count'] ) : 30;
+			$trigger_tokens     = isset( $settings['summary_trigger_tokens'] ) ? absint( $settings['summary_trigger_tokens'] ) : 0;
+			$summary_max_tokens = isset( $settings['summary_max_tokens'] ) ? absint( $settings['summary_max_tokens'] ) : 500;
+			$summary_model      = isset( $settings['summary_model'] ) ? sanitize_text_field( $settings['summary_model'] ) : '';
+
+			// Determine if summarization should trigger.
+			$should_summarize = false;
+
+			if ( $trigger_tokens > 0 ) {
+				// Token-aware triggering: ~80% of trigger_tokens for headroom (industry std: 70-80%).
+				$effective_threshold = (int) ( $trigger_tokens * 0.8 );
+				$estimated_tokens    = $this->estimate_messages_tokens( $conv_messages );
+				$should_summarize    = $estimated_tokens > $effective_threshold;
+
+				WP_MCP_AI_Logger::log_event(
+					'bme_token_check',
+					'Token-aware summarization check.',
+					array(
+						'estimated_tokens'    => $estimated_tokens,
+						'effective_threshold' => $effective_threshold,
+						'configured_trigger'  => $trigger_tokens,
+						'should_summarize'    => $should_summarize,
+					)
+				);
+			} else {
+				// Count-based triggering (original behavior).
+				$should_summarize = count( $conv_messages ) > $summary_trigger;
+			}
+			$summary_max_tokens = isset( $settings['summary_max_tokens'] ) ? absint( $settings['summary_max_tokens'] ) : 500;
+
+			// If conversation is short enough, no summarization needed.
+			if ( ! $should_summarize ) {
+				return array_merge( $system_messages, $conv_messages );
+			}
+
+			// Split: end (most recent) vs middle (older, to summarize).
+			$end_messages    = array_slice( $conv_messages, -$end_window_size );
+			$middle_messages = array_slice( $conv_messages, 0, -$end_window_size );
+
+			if ( empty( $middle_messages ) ) {
+				return array_merge( $system_messages, $end_messages );
+			}
+
+			// Generate summary of middle messages.
+			$summary = $this->generate_conversation_summary( $middle_messages, $context, $summary_max_tokens, $summary_model );
+
+			if ( is_wp_error( $summary ) || '' === $summary ) {
+				// Fallback: just use sliding window if summarization fails.
+				WP_MCP_AI_Logger::log_event(
+					'bme_summary_failed_fallback',
+					'BME summarization failed, falling back to sliding window.',
+					array(
+						'error'        => is_wp_error( $summary ) ? $summary->get_error_message() : 'empty_summary',
+						'middle_count' => count( $middle_messages ),
+						'end_count'    => count( $end_messages ),
+					)
+				);
+
+				// Fall back to just keeping recent messages.
+				$max_history  = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8;
+				$end_messages = array_slice( $conv_messages, -$max_history );
+				return array_merge( $system_messages, $end_messages );
+			}
+
+			// Build the summary message (inserted as a user-role context message).
+			$summary_message = array(
+				'role'    => 'user',
+				'content' => '[Earlier conversation summary: ' . $summary . ']',
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'bme_summary_applied',
+				'BME summary applied to chat request.',
+				array(
+					'middle_summarized' => count( $middle_messages ),
+					'end_kept'         => count( $end_messages ),
+					'summary_length'   => strlen( $summary ),
+				)
+			);
+
+			// Recombine: system + summary + end.
+			return array_merge( $system_messages, array( $summary_message ), $end_messages );
+		}
+
+		/**
+		 * Generate a conversation summary using the language model.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param array  $middle_messages Messages to summarize.
+		 * @param array  $context         Request context.
+		 * @param int    $max_tokens      Max tokens for the summary.
+		 * @param string $summary_model   Optional. Dedicated model for summarization.
+		 * @return string|WP_Error Summary text or error.
+		 */
+		protected function generate_conversation_summary( array $middle_messages, array $context, $max_tokens, $summary_model = '' ) {
+			try {
+				$summarizer = new WP_MCP_AI_Conversation_Summarizer( $this->client );
+
+				$options = array(
+					'max_tokens' => $max_tokens,
+				);
+
+				// Use dedicated summary model if configured, otherwise fall back to assistant model.
+				if ( ! empty( $summary_model ) ) {
+					$options['model'] = $summary_model;
+				} elseif ( ! empty( $context['model'] ) ) {
+					$options['model'] = $context['model'];
+				}
+
+				// Pass provider from context if available.
+				if ( ! empty( $context['provider'] ) ) {
+					$options['provider'] = $context['provider'];
+				}
+
+				return $summarizer->summarize( $middle_messages, $options );
+			} catch ( \Exception $e ) {
+				return new WP_Error(
+					'wp_mcp_ai_summary_error',
+					$e->getMessage()
+				);
+			}
+		}
+
+		/**
+		 * Proactive agentic-loop context compaction.
+		 *
+		 * Industry standard (LangChain Deep Agents, Vercel AI SDK prepareStep):
+		 * compact context BEFORE hitting the TPM limit, not after.
+		 *
+		 * Strategy:
+		 * - At 70% capacity: offload/trim old tool results from prior iterations.
+		 * - At 85% capacity: summarize middle iterations into a running summary,
+		 *   preserving system prompt + current iteration's messages verbatim.
+		 *
+		 * Always preserves:
+		 * - System messages (persona, constraints, tool definitions).
+		 * - The most recent assistant + tool_calls + tool results (current iteration).
+		 * - At least 2 prior user/assistant turns for conversation continuity.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param array $messages     Current message array.
+		 * @param int   $iteration    Current iteration number (0-based).
+		 * @param array $options      Chat completion options (contains model).
+		 * @param int   $assistant_id Assistant ID for logging.
+		 * @return array Possibly compacted messages.
+		 */
+		protected function maybe_compact_agentic_context( array $messages, $iteration, array $options, $assistant_id ) {
+			// Only compact after iteration 2+ (earliest that compaction matters).
+			if ( $iteration < 2 ) {
+				return $messages;
+			}
+
+			$model = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
+
+			// Get the model's context window limit.
+			$max_tokens = WP_MCP_AI_Token_Budget_Manager::get_model_limit( $model );
+			if ( $max_tokens <= 0 ) {
+				$max_tokens = 128000; // Sensible fallback for unknown models.
+			}
+
+			// Estimate current token usage.
+			$estimated = $this->estimate_messages_tokens( $messages );
+			$pct_used  = $max_tokens > 0 ? ( $estimated / $max_tokens ) * 100 : 0;
+
+			// Below 70%: no compaction needed.
+			if ( $pct_used < 70 ) {
+				return $messages;
+			}
+
+			// Separate system messages (always preserved).
+			$system_msgs = array();
+			$other_msgs  = array();
+			foreach ( $messages as $msg ) {
+				if ( isset( $msg['role'] ) && 'system' === $msg['role'] ) {
+					$system_msgs[] = $msg;
+				} else {
+					$other_msgs[] = $msg;
+				}
+			}
+
+			// Split: keep the last 4 non-system messages (current iteration + prior turn).
+			$keep_count = min( 4, count( $other_msgs ) );
+			$keep_msgs  = array_slice( $other_msgs, -$keep_count );
+			$old_msgs   = array_slice( $other_msgs, 0, -$keep_count );
+
+			if ( empty( $old_msgs ) ) {
+				return $messages;
+			}
+
+			// Phase 1 (70-84%): Trim old tool results — keep structure, drop large content.
+			if ( $pct_used < 85 ) {
+				$trimmed = $this->trim_old_tool_results( $old_msgs );
+
+				WP_MCP_AI_Logger::log_event(
+					'agentic_context_trimmed',
+					'Agentic loop: trimmed old tool results to free context.',
+					array(
+						'iteration'    => $iteration,
+						'assistant_id' => $assistant_id,
+						'pct_used'     => round( $pct_used, 1 ),
+						'phase'        => 'trim_tool_results',
+						'old_count'    => count( $old_msgs ),
+					)
+				);
+
+				return array_merge( $system_msgs, $trimmed, $keep_msgs );
+			}
+
+			// Phase 2 (85%+): Summarize old iterations into running context.
+			$summary = $this->generate_running_agentic_summary( $old_msgs, $options );
+
+			if ( is_wp_error( $summary ) || '' === $summary ) {
+				// Fallback: trim old tool results instead.
+				$trimmed = $this->trim_old_tool_results( $old_msgs );
+				return array_merge( $system_msgs, $trimmed, $keep_msgs );
+			}
+
+			$summary_msg = array(
+				'role'    => 'user',
+				'content' => '[Agentic loop progress: ' . $summary . ']',
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'agentic_context_summarized',
+				'Agentic loop: summarized middle iterations into running context.',
+				array(
+					'iteration'      => $iteration,
+					'assistant_id'   => $assistant_id,
+					'pct_used'       => round( $pct_used, 1 ),
+					'phase'          => 'summarize',
+					'old_count'      => count( $old_msgs ),
+					'summary_length' => strlen( $summary ),
+				)
+			);
+
+			return array_merge( $system_msgs, array( $summary_msg ), $keep_msgs );
+		}
+
+		/**
+		 * Trim large content from old tool results while preserving structure.
+		 *
+		 * Tool messages from prior iterations are replaced with a compact note
+		 * showing the tool name and call ID. This preserves the message structure
+		 * the LLM expects (assistant with tool_calls → tool responses) while
+		 * freeing context space.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param array $old_msgs Old non-system messages.
+		 * @return array Trimmed messages.
+		 */
+		protected function trim_old_tool_results( array $old_msgs ) {
+			$trimmed = array();
+
+			foreach ( $old_msgs as $msg ) {
+				if ( isset( $msg['role'] ) && 'tool' === $msg['role'] ) {
+					// Replace tool result content with a compact note.
+					$tool_name = isset( $msg['name'] ) ? $msg['name'] : 'unknown';
+					$call_id   = isset( $msg['tool_call_id'] ) ? substr( $msg['tool_call_id'], 0, 12 ) : '';
+
+					$msg['content'] = sprintf(
+						'[%s result — compacted to free context%s]',
+						$tool_name,
+						$call_id ? ' #' . $call_id : ''
+					);
+				}
+
+				$trimmed[] = $msg;
+			}
+
+			return $trimmed;
+		}
+
+		/**
+		 * Generate a running summary of older agentic-loop iterations.
+		 *
+		 * Uses the same ConversationSummarizer to compress middle iterations
+		 * into a brief progress report that preserves key decisions and outcomes.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param array $old_msgs Older non-system messages to summarize.
+		 * @param array $options  Chat completion options.
+		 * @return string|WP_Error Summary text or error.
+		 */
+		protected function generate_running_agentic_summary( array $old_msgs, array $options ) {
+			try {
+				$summarizer = new WP_MCP_AI_Conversation_Summarizer( $this->client );
+
+				$summary_options = array(
+					'max_tokens' => 300, // Short summary — just key decisions/outcomes.
+				);
+
+				if ( ! empty( $options['provider'] ) ) {
+					$summary_options['provider'] = $options['provider'];
+				}
+				if ( ! empty( $options['model'] ) ) {
+					$summary_options['model'] = $options['model'];
+				}
+
+				return $summarizer->summarize( $old_msgs, $summary_options );
+			} catch ( \Exception $e ) {
+				return new WP_Error(
+					'wp_mcp_ai_agentic_summary_error',
+					$e->getMessage()
+				);
+			}
+		}
+
+		/**
+		 * Inject RAG-retrieved memories into the message list for BME+RAG strategy.
+		 *
+		 * Queries the memory ecosystem (Paper Store + MemPalace/Chat Memory) for
+		 * relevant context and inserts it as a context message after system prompts.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param array $messages Current messages (after BME trimming).
+		 * @param array $context  Request context.
+		 * @return array Messages with injected RAG context.
+		 */
+		protected function inject_rag_context( array $messages, array $context ) {
+			if ( ! class_exists( 'WP_MCP_AI_Conversation_RAG_Bridge' ) ) {
+				return $messages;
+			}
+
+			try {
+				$rag_bridge = new WP_MCP_AI_Conversation_RAG_Bridge();
+
+				// Extract the last user message as the retrieval query.
+				$last_user_message = '';
+				for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
+					if ( isset( $messages[ $i ]['role'] ) && 'user' === $messages[ $i ]['role'] ) {
+						$content = $messages[ $i ]['content'];
+						if ( is_string( $content ) ) {
+							$last_user_message = $content;
+						} elseif ( is_array( $content ) ) {
+							// Multi-modal: extract text parts.
+							$text_parts = array();
+							foreach ( $content as $segment ) {
+								if ( is_string( $segment ) ) {
+									$text_parts[] = $segment;
+								} elseif ( isset( $segment['text'] ) ) {
+									$text_parts[] = $segment['text'];
+								}
+							}
+							$last_user_message = implode( ' ', $text_parts );
+						}
+						break;
+					}
+				}
+
+				if ( '' === $last_user_message ) {
+					return $messages;
+				}
+
+				// Retrieve relevant memories.
+				$memories = $rag_bridge->retrieve_relevant_memories( $last_user_message, $context );
+
+				if ( empty( $memories ) ) {
+					return $messages;
+				}
+
+				// Build RAG context message.
+				$rag_message = $rag_bridge->build_rag_context_message( $memories );
+
+				if ( empty( $rag_message ) ) {
+					return $messages;
+				}
+
+				// Insert after any system messages (before conversation turns).
+				$insert_pos = 0;
+				foreach ( $messages as $i => $msg ) {
+					if ( isset( $msg['role'] ) && 'system' === $msg['role'] ) {
+						$insert_pos = $i + 1;
+					} else {
+						break;
+					}
+				}
+
+				array_splice( $messages, $insert_pos, 0, array( $rag_message ) );
+
+				WP_MCP_AI_Logger::log_event(
+					'bme_rag_context_injected',
+					'RAG memories injected into message context.',
+					array(
+						'memory_count' => count( $memories ),
+						'insert_pos'   => $insert_pos,
+					)
+				);
+
+				return $messages;
+			} catch ( \Exception $e ) {
+				WP_MCP_AI_Logger::log_event(
+					'bme_rag_injection_error',
+					'RAG context injection failed.',
+					array( 'error' => $e->getMessage() )
+				);
+				return $messages;
+			}
+		}
+
+		/**
+		 * Estimate token count for a list of messages using the text chunker heuristic.
+		 *
+		 * Used for token-aware BME summarization triggering.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param array $messages Array of message arrays.
+		 * @return int Estimated token count.
+		 */
+		protected function estimate_messages_tokens( array $messages ) {
+			$total = 0;
+			foreach ( $messages as $message ) {
+				if ( isset( $message['content'] ) ) {
+					if ( is_string( $message['content'] ) ) {
+						$total += WP_MCP_AI_Text_Chunker::estimate_tokens( $message['content'] );
+					} elseif ( is_array( $message['content'] ) ) {
+						foreach ( $message['content'] as $segment ) {
+							if ( is_string( $segment ) ) {
+								$total += WP_MCP_AI_Text_Chunker::estimate_tokens( $segment );
+							} elseif ( isset( $segment['text'] ) ) {
+								$total += WP_MCP_AI_Text_Chunker::estimate_tokens( $segment['text'] );
+							}
+						}
+					}
+				}
+			}
+			return $total;
+		}
+
+		/**
 		 * Ensure chat requests stay within approximate token limits before dispatching to the model.
 		 *
 		 * @param array $messages    Sanitized chat messages.
@@ -7342,7 +7847,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$max_message_count = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8;
 			$max_message_count = (int) apply_filters( 'wp_mcp_ai_max_history_messages', $max_message_count, $context );
 
-			if ( $max_message_count > 0 && count( $messages ) > $max_message_count ) {
+			// Determine context strategy, defaulting to sliding_window for backward compat.
+			// Client-sent override takes precedence over global setting.
+			$context_strategy = isset( $settings['context_strategy'] ) ? sanitize_key( $settings['context_strategy'] ) : 'sliding_window';
+			if ( ! empty( $context['client_context_strategy'] ) ) {
+				$context_strategy = $context['client_context_strategy'];
+			}
+
+			/**
+			 * Filters the context strategy used for chat history management.
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string $context_strategy Strategy slug: 'sliding_window' or 'bme'.
+			 * @param array  $messages         Current messages array.
+			 * @param array  $context          Request context (assistant_id, provider, model).
+			 */
+			$context_strategy = (string) apply_filters( 'wp_mcp_ai_context_strategy', $context_strategy, $messages, $context );
+
+			if ( 'bme' === $context_strategy || 'bme_rag' === $context_strategy ) {
+				$messages = $this->trim_messages_bme( $messages, $settings, $context );
+
+				// RAG extension: inject retrieved memories from the memory ecosystem.
+				if ( 'bme_rag' === $context_strategy ) {
+					$messages = $this->inject_rag_context( $messages, $context );
+				}
+			} elseif ( $max_message_count > 0 && count( $messages ) > $max_message_count ) {
+				// Legacy sliding window path — unchanged from original.
 				// Separate system messages from other messages.
 				$system_messages = array();
 				$other_messages  = array();
@@ -8121,7 +8652,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				 *
 				 * @param int $max_tools Maximum number of tools to include (default 50).
 				 */
-				$max_tools = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 50 );
+				$max_tools = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 100 );
 				$max_tools = max( 1, min( 128, $max_tools ) ); // Clamp to 1-128.
 
 				/**

@@ -79,11 +79,9 @@ class WP_MCP_AI_Pro_Tool_Check_Exit_Conditions {
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- Required by tool interface.
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
-			);
+			return new \WP_Error( 'missing_session_id', __( 'Missing required argument: session_id', 'mcp-ai-wpoos' ) );
 		}
 
 		$session_id       = $arguments['session_id'];
@@ -96,9 +94,13 @@ class WP_MCP_AI_Pro_Tool_Check_Exit_Conditions {
 		$session = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
+			return new \WP_Error(
+				'session_not_found',
+				sprintf(
+					/* translators: %s: session ID */
+					__( 'Session %s not found', 'mcp-ai-wpoos' ),
+					$session_id
+				)
 			);
 		}
 

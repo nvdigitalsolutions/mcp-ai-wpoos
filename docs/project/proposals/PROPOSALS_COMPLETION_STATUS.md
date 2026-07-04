@@ -1,16 +1,16 @@
 # Proposals Completion Status
 
-**Last Updated:** June 11, 2026
-**Total Proposals:** 64 files  
-**Completed:** 26 proposals  
-**In Progress:** 4 proposals  
-**Pending:** 34 proposals
+**Last Updated:** June 30, 2026
+**Total Proposals:** 100+ files
+**Completed:** 30+ proposals
+**In Progress:** 4 proposals
+**Pending:** ~30 proposals remaining (many stale/abandoned)
 
-> **Note (v1.1.29):** Per-file ground truth available in individual proposal status headers. This tracker may not reflect latest counts.
+> **Note (v1.1.35):** Per-file ground truth available in individual proposal status headers. This tracker reflects the consolidated view as of June 29, 2026.
 
 ---
 
-## ✅ Completed Proposals (26)
+## ✅ Completed Proposals (30+)
 
 ### DeepSeek V4 Multi-Agent Orchestration
 - **Status:** ✅ 100% Complete (All Phases 1-5)
@@ -21,319 +21,219 @@
   - `PHASE-5-COMPLETION-REPORT.md` - Phase 5 complete
   - `PHASE-5-INTEGRATION-TESTING.md` - Testing complete
 - **Implementation:** January 2026
-- **Documentation:** Multiple summary and usage guides in docs/
 
 ### Web Browser Pro Tool
 - **Status:** ✅ Implemented & Complete
-- **Files:**
-  - `WEB_BROWSER_IMPLEMENTATION_COMPLETE.md`
-  - `WEB_BROWSER_PRO_TOOL_SUMMARY.md`
-  - `PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md` - Production ready
-  - `PLAYWRIGHT_SERVICE_IMPLEMENTATION.md` - Service complete
-  - `PLAYWRIGHT_INTEGRATION_EVALUATION.md` - Approved as Pro tool
+- **Files:** WEB_BROWSER_IMPLEMENTATION_COMPLETE.md, WEB_BROWSER_PRO_TOOL_SUMMARY.md, PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md, PLAYWRIGHT_SERVICE_IMPLEMENTATION.md, PLAYWRIGHT_INTEGRATION_EVALUATION.md
 - **Implementation:** January 2026
 
 ### WebLLM Enhancement (Phases 1-3)
 - **Status:** ✅ Phase 1-3 Complete
-- **Files:**
-  - `WEBLLM-IMPLEMENTATION-STATUS.md` - Phases 1-3 complete
-  - `WEBLLM-ROADMAP-AND-STATUS.md` - Current status tracking
-  - `WEB-LLM-IMPLEMENTATION-PHASE-1.md` - Phase 1 complete
-  - `WEB-LLM-ENHANCEMENT-EXECUTIVE-SUMMARY.md`
-- **Implementation:** January 2026
-- **Features:** Tool calling, Transformers.js, LangChain integration
-
-### Phase 5 Completion
-- **Status:** ✅ 100% Complete
-- **Files:**
-  - `PHASE-5-COMPLETION-REPORT.md`
-  - `PHASE-5-INTEGRATION-TESTING.md`
-  - `PHASE-5-QUICK-REFERENCE.md`
 - **Implementation:** January 2026
 
 ### Toolkit Enhancement System
 - **Status:** ✅ Implementation Complete
-- **File:** `IMPLEMENTATION_COMPLETE.md` (moved to docs/implementation-history/2026/january/)
-- **Deliverables:**
-  - 12 toolkits with 207 tools categorized
-  - Pattern registry with 8 multi-agent patterns
-  - Workflow templates
-  - Integration layer
-  - 8 high-priority professional playbooks
 - **Implementation:** January 2026
 
----
-
-### Chat Channels Toolkit (47 tools)
+### Chat Channels Toolkit (47+ tools)
 - **Status:** ✅ Implemented & Complete
-- **Description:** Multi-platform messaging toolkit supporting 11 platforms (Discord, Telegram,
-  WhatsApp, Slack, Google Chat, Teams, iMessage, Signal, SMS, Email, Webchat).
 - **Implementation:** v1.1.1–v1.1.3 (January–March 2026)
 
 ### Slash Commands (29 commands)
 - **Status:** ✅ Implemented & Complete
-- **Description:** 29 built-in slash commands with 7 workflow templates for rapid AI interactions.
 - **Implementation:** v1.1.1 (February 2026)
 
 ### Regulatory Registration Toolkit (59 tools)
 - **Status:** ✅ Implemented & Complete
-- **Description:** End-to-end pharmaceutical/cosmetics product registration management, including
-  MOHAP/NMRA sync, multi-country tracking, compliance workflows, and automated reporting.
-- **Location:** `addons/pro/includes/tools/regulatory-registration/`
-- **Documentation:** `docs/regulatory-registration-tool-reference.md`
 - **Implementation:** Early 2026
 
 ### Site Creator Toolkit (27 tools)
 - **Status:** ✅ Implemented & Complete
-- **Description:** AI-powered WordPress site building toolkit with page/section generators,
-  navigation builders, template management, competitor analysis, and architect integration.
-- **Location:** `addons/pro/includes/tools/site-creator-toolkit/`
-- **Documentation:** `docs/site-creator-theme-json-guide.md`
 - **Implementation:** Early 2026
 
 ### Telegram Mini App (TMA) CMS Interface
 - **Status:** ✅ Implemented & Complete
-- **Description:** Full CMS interface inside Telegram Mini App with AI Chat, eCommerce, and CRM
-  templates. Includes session token fallback for Telegram WebView cookie restrictions.
 - **Implementation:** v1.1.2–v1.1.3 (February 2026)
 
 ### Anthropic Claude Provider
 - **Status:** ✅ Implemented & Complete
-- **Description:** Full Anthropic Claude integration (Claude 3 Haiku/Sonnet/Opus, Claude 4 Sonnet/Opus)
-  with streaming, tool calling, vision, token counting, and admin test connection.
 - **Files:** `includes/class-wp-mcp-ai-anthropic-client.php`
 - **Implementation:** v1.1.3 (March 2026)
 
 ### Federation Directory Rate Limiting
 - **Status:** ✅ Implemented & Complete
-- **Description:** IP-based rate limiting (60 req/min) on all public federation peer-discovery
-  endpoints. `manage_options` bypass. Standard `X-RateLimit-*` response headers.
-- **Files:** `includes/class-wp-mcp-ai-federation-rate-limiter.php`
 - **Implementation:** v1.1.1 (February 2026)
 
 ### SSE Connection Rate Limiting
-- **Status:** ✅ Implemented & Complete (v1.2.0)
-- **Description:** Per-user (5 connections, filter: `wp_mcp_ai_sse_per_user_limit`) and global
-  (100 connections, filter: `wp_mcp_ai_sse_global_limit`) SSE connection limits using WordPress
-  transients. `manage_options` bypass. HTTP 429 + `Retry-After` header on exceeded limit.
-- **Files:** `includes/class-wp-mcp-ai-sse-rate-limiter.php`
-- **Implementation:** v1.2.0 (March 2026)
+- **Status:** ✅ Implemented & Complete
+- **Implementation:** v1.1.x (March 2026)
 
 ### PM Task Dependencies
-- **Status:** ✅ Implemented & Complete (v1.2.0)
-- **Description:** Three new Pro PM tools — `add_task_dependency`, `remove_task_dependency`,
-  `get_task_dependencies` — with cycle detection and enriched dependency graph output.
-  Meta keys: `_task_depends_on`, `_task_blocks`.
-- **Files:** `addons/pro/includes/tools/class-wp-mcp-ai-tool-{add,remove,get}-task-dependency.php`
-- **Implementation:** v1.2.0 (March 2026)
+- **Status:** ✅ Implemented & Complete
+- **Implementation:** v1.1.x (March 2026)
 
 ### PM Task Notifications
-- **Status:** ✅ Implemented & Complete (v1.2.0)
-- **Description:** Email notifications for task assignment, status changes, and due-date reminders
-  (daily cron digest). Configurable via `wp_mcp_ai_settings` (`pm_disable_assignment_emails`,
-  `pm_disable_status_emails`, `pm_disable_due_date_emails`, `pm_reminder_days`).
-- **Files:** `addons/pro/includes/class-wp-mcp-ai-pm-notification-manager.php`
-- **Implementation:** v1.2.0 (March 2026)
+- **Status:** ✅ Implemented & Complete
+- **Implementation:** v1.1.x (March 2026)
+
+### Phase 5 Completion
+- **Status:** ✅ 100% Complete
+- **Implementation:** January 2026
+
+### CORS Origin Allowlist
+- **Status:** ✅ Implemented & Complete
+- **Implementation:** v1.1.x (March 2026)
+
+### Automated Security Tests (SSRF/XSS/CSRF/Auth)
+- **Status:** ✅ Implemented & Complete
+- **Implementation:** v1.1.x (March 2026)
+
+### Threat Model in SECURITY.md
+- **Status:** ✅ Delivered
+- **Implementation:** v1.1.x
+
+### Transformer-Inspired Attention Routing
+- **Status:** ✅ Delivered (PR #5290)
+- **Implementation:** June 2026
+
+---
+
+### v1.1.25 Completions (May 31, 2026)
+
+| Proposal | Status | Detail |
+|----------|--------|--------|
+| Unified Blueprint System | ✅ Complete | 55 pre-built AI assistants, JSON Schema validation, Healthcare + Aerlinn blueprints |
+| Cloudways Pro Toolkit | ✅ Complete | 60 AI tools for server/app management via Cloudways API v2 |
+| CRM Toolkit Phases A–E | ✅ Complete | 70+ tools: Lead Management, Multi-channel Triage, Integration, Extensibility, Compliance |
+| Chat UI Enhancements | ✅ Complete | 7 features: profile card, stop generation, feedback, code copy, dark mode, saved prompts |
+
+### v1.1.29 Completions (June 12, 2026)
+
+| Proposal | Status | Detail |
+|----------|--------|--------|
+| Pro Toolkit Optimizations Phase 1–3 | ✅ Complete | Autoload control, query caching, lazy loading across 6 Pro toolkits |
+| Chat Transcript & Memory Retention | ✅ Complete | Configurable TTL-based cleanup (Base 437 lines + Pro 358 lines) |
+| DietPi Pro Toolkit | ✅ Complete | 19+ tools for DietPi server management |
+| Layer I Guardrails — Jailbreak Prevention | ✅ Complete | Pre-provider jailbreak detection + capability boundary enforcement |
+| Context Window Management | ✅ Complete | Pre-flight validation across all 13 providers |
+| LibreChat Addon | ✅ Complete | Code interpreter, speech services, web search reranker |
+| Schedule Anything SaaS Platform | ✅ Complete | Full SaaS booking platform with Stripe integration |
+
+### v1.1.32 Completions (June 19, 2026)
+
+| Proposal | Status | Detail |
+|----------|--------|--------|
+| Content Format Templates | ✅ Complete | CPT, AI-powered template engine, 5 default templates |
+| Featured Image Generation Service | ✅ Complete | 3-provider fallback (DALL-E/Gemini/Cloudflare), 5 image styles |
+| Result Delivery Pipeline | ✅ Complete | Routes schedule results to 8 channels; success + failure paths |
+| ECA Document Generation | ✅ Complete | ECA Consolidate & Add page with document generation tools |
+| Provider Client Timeout Fixes | ✅ Complete | 6 provider clients now respect global request_timeout setting |
+
+### v1.1.33 Completions (June 24, 2026)
+
+| Proposal | Status | Detail |
+|----------|--------|--------|
+| WP 7.0 Connectors Credential Integration | ✅ Complete | Credential_Resolver across all 17 AI clients; fallback chain |
+| nvoos-graphify v1.0.0 Release | ✅ Complete | Standalone plugin, Plugin Check compliant |
+| Graphify Ecosystem | ✅ Complete | Remote source drivers, WP 7.0 Connectors, wp.org compliance |
+
+### v1.1.34 Completions (June 27, 2026)
+
+| Proposal | Status | Detail |
+|----------|--------|--------|
+| GPT-Realtime-2 Voice Models Upgrade | ✅ Complete | GA Realtime API, WebRTC transport, Translate + Whisper models, 128K context + reasoning |
+| Multi-Channel Result Delivery UI | ✅ Complete | Telegram, Discord, WhatsApp, Google Chat in schedule modal |
+| Pro Scheduler AI/Workflow Response Delivery | ✅ Complete | AI responses routed through scheduler delivery pipeline |
+
+### v1.1.35 Completions (June 29, 2026)
+
+| Proposal | Status | Detail |
+|----------|--------|--------|
+| FlowHub Inventory Sync Pro Toolkit | ✅ Complete | 6-tool cannabis dispensary management; P1 proxy + P2 CCT auto-registration |
+| Shopify Sync Pro Toolkit | ✅ Complete | 5-tool bi-directional e-commerce sync; dashboard widget |
+| Necessity Gate Layer J | ✅ Complete | Irreversibility-weighted safety profiles scoring tool calls by risk |
+| Local Voice Embedded STT | ✅ Complete | Three pluggable browser-side STT backends; offline-first |
+| Remote Site Administrator Blueprint | ✅ Complete | 22-tool blueprint for full remote/local WP/WooCommerce management |
+| Places & Calendar Bulk Import | ✅ Complete | Batch import tools for Places and Calendar Booking toolkits |
+| CLI site-import Subcommand | ✅ Complete | Multi-phase HTML mirror import for static site migration |
 
 ---
 
 ## 🚧 In Progress Proposals (4)
 
+### JetBooking & JetAppointment — Calendar & Places Integration
+- **Status:** 📋 Proposed (June 30, 2026) — Awaiting Approval
+- **Files:** [`JETBOOKING-JETAPPOINTMENT-CALENDAR-PLACES-INTEGRATION.md`](./JETBOOKING-JETAPPOINTMENT-CALENDAR-PLACES-INTEGRATION.md), [`../plans/JETBOOKING-JETAPPOINTMENT-IMPLEMENTATION-PLAN.md`](../plans/JETBOOKING-JETAPPOINTMENT-IMPLEMENTATION-PLAN.md)
+- **Target:** NV oOS Pro v1.5.0 — 28 stories, ~40-54 hours
+- **Summary:** Adapter layer for Crocoblock JetAppointment + JetBooking to make Calendar Booking and Places toolkits Jet-aware. Adds bidirectional sync, geo-aware booking queries, and unified multi-system availability checks.
+
 ### WordPress Integration Enhancement
-- **Status:** ⚠️ 42-82% Complete (varies by component)
-- **Files:**
-  - `WORDPRESS_INTEGRATION_ENHANCEMENT_STATUS.md` - 50% complete
-  - `WORDPRESS_INTEGRATION_IMPLEMENTATION_PLAN.md` - 42% complete
-  - `WORDPRESS_INTEGRATION_CHECKLIST.md` - 32% complete (8 of 24 items)
-  - `WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md` - 82% target
-- **Next Steps:** Continue implementation of remaining WordPress core integrations
+- **Status:** 🚧 42-82% Complete (varies by component)
+- **Files:** WORDPRESS_INTEGRATION_ENHANCEMENT_STATUS.md, WORDPRESS_INTEGRATION_IMPLEMENTATION_PLAN.md, WORDPRESS_INTEGRATION_CHECKLIST.md, WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md
 
-### Bitwarden/Vaultwarden Integration
-- **Status:** 🚧 In Progress (Pro Feature)
-- **Files:**
-  - `BITWARDEN-INTEGRATION-PRO-FEATURE.md` - In progress
-  - `BITWARDEN-SERVER-WORDPRESS-IMPLEMENTATION.md` - Research phase
-  - `BITWARDEN-EXECUTIVE-SUMMARY.md` - Awaiting decision
-  - `BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md` - Pending stakeholder decision
-
-### DeepSeek V4 Implementation (Refinement)
-- **Status:** 🚧 85-90% Complete
-- **Files:**
-  - `DEEPSEEK-V4-ACTUAL-STATUS.md` - Phase 1 is 85-90% complete (not 60%)
-  - `DEEPSEEK-V4-IMPLEMENTATION-STATUS.md` - Partially implemented, ~60% complete
-  - `DEEPSEEK-V4-EXECUTIVE-SUMMARY.md` - Phase 1 60% complete estimate
-- **Note:** Discrepancy in completion percentage - needs reconciliation
-- **Next Steps:** Finalize executor agent completion
+### Cross-Platform Extraction — Phase 3
+- **Status:** 🟡 ~22% Complete (43/195 base tools migrated)
+- **File:** [`cross-platform-extraction-gap-analysis.md`](./cross-platform-extraction-gap-analysis.md)
+- **Next:** Pro tool migration, lib/core test suite, Laravel adapter
 
 ### Ralph Wiggum CCT Orchestration
-- **Status:** ⏳ Active Proposal - Awaiting Implementation Resources
-- **Files:**
-  - `RALPH-WIGGUM-CCT-ORCHESTRATION.md`
-  - `RALPH-WIGGUM-TASK-ORCHESTRATION-IMPLEMENTATION.md`
-  - `RALPH-RESEARCH-AND-DATA-COMPILATION.md`
-- **Next Steps:** Allocate implementation resources
-
-### Phase 1 Integration
-- **Status:** 🚧 70% Complete
-- **File:** `PHASE-1-AND-5-INTEGRATION-PLAN.md`
-- **Note:** Phase 5 complete (100%), Phase 1 pending integration
-
-### CLI Integration Strategy
-- **Status:** 🚧 Revised Proposal
-- **File:** `CLI-INTEGRATION-STRATEGY.md`
+- **Status:** ⏳ Active Proposal — Awaiting Implementation Resources
+- **Next Steps:** Allocate implementation resources or merge into workflow automation roadmap
 
 ---
 
-## ⏳ Pending Proposals (40)
+## ⏳ Pending Proposals (~30)
 
-### High Priority Pending
+> Many of the proposals below have been pending since early 2026 without active development. See [`proposals-retirement-log.md`](./proposals-retirement-log.md) for retirement decisions on superseded documents.
 
-#### Toolkit Enhancement (Extended Features)
-- **Status:** 📋 Proposal - Awaiting Decision
-- **Files:**
-  - `TOOLKIT_ENHANCEMENT_PROPOSAL.md`
-  - `TOOLKIT_ENHANCEMENT_EXECUTIVE_SUMMARY.md`
-  - `TOOLKIT_ENHANCEMENT_VISUAL_GUIDE.md`
-  - `TOOLKIT_QUICK_REFERENCE.md`
-- **Investment:** 12 weeks or 1-week MVP
-- **Impact:** Tool discovery 30% → 80%, profession coverage 12% → 40%
+### Stale / Deferred
 
-#### Firefly III Integration
-- **Status:** 📋 Proposal - Awaiting Review and Approval
-- **Files:**
-  - `FIREFLY-III-INTEGRATION-PROPOSAL.md`
-  - `FIREFLY-III-EXECUTIVE-SUMMARY.md`
+| Proposal | Status | Recommendation |
+|----------|--------|----------------|
+| Firefly III Integration | 📋 Proposed | Defer to post-v2.0.0 — no active demand |
+| Bitwarden/Vaultwarden Integration | 🚧 Research phase | Defer — no active demand since original proposal |
+| WP Native Password Manager | 📋 Detailed Plan | Defer — low priority |
+| WebLLM Phases 4-8 | 📋 Proposed | Park as "Future Research" |
+| Toolkit Enhancement (Extended Features) | 📋 Proposed | Park — core toolkit work complete |
+| WordPress Core Integration Enhancement | 🟢 Proposed | Merge into v1.4.0 planning |
+| NPM Package Integration | 📋 Planning | Ongoing maintenance activity |
+| Chat Preload Connections Enhancement | 📋 Proposed | Low priority |
+| CCT Integration Enhancement | 📋 Proposed | Low priority |
+| Future Service Worker Support | 📋 Proposed | Defer — no active demand |
+| Plugin Size Reduction Research | 📋 Research | Ongoing — addressed incrementally |
+| Project Management Upgrade Analysis | 📋 Analysis | Superseded by PM feature delivery |
+| DeepSeek V4 Load Balancer | 📋 Proposal | Park — phase 1-5 complete |
+| DeepSeek V4 Orchestration Enhancements | 📋 Proposal | Park — phase 1-5 complete |
+| CLI Integration Strategy | 🚧 Revised | Merge into v1.4.0 CLI planning |
 
-#### WordPress Core Integration Enhancement
-- **Status:** 🟢 Proposed
-- **Files:**
-  - `WORDPRESS_CORE_INTEGRATION_ENHANCEMENT_PROPOSAL.md`
-  - `WORDPRESS_CORE_INTEGRATION_IMPLEMENTATION_CHECKLIST.md` - 0% complete (Planning phase)
-  - `WORDPRESS_CORE_INTEGRATION_VISUAL_ROADMAP.md`
-  - `WORDPRESS_INTEGRATION_EXECUTIVE_SUMMARY.md` - Ready for review
-- **Note:** This is separate from the in-progress WordPress Integration Enhancement
+### Research / Reference Documents (No Action Required)
 
-#### WP Native Password Manager
-- **Status:** 📋 Detailed Plan
-- **File:** `WP-NATIVE-PASSWORD-MANAGER-PLAN.md`
-
-### Research & Planning Documents
-
-#### NPM Package Integration
-- **Status:** Package Selection & Integration Plan
-- **File:** `NPM-PACKAGES-NATIVE-IMPLEMENTATION.md`
-
-#### Chat Preload Connections Enhancement
-- **File:** `CHAT_PRELOAD_CONNECTIONS_ENHANCEMENT.md`
-
-#### CCT Integration Enhancement
-- **Status:** Enhancement Recommendation
-- **File:** `CCT-INTEGRATION-RALPH-ENHANCEMENT.md`
-
-#### Future Service Worker Support
-- **File:** `FUTURE_SERVICE_WORKER_SUPPORT.md`
-
-#### Plugin Size Reduction Research
-- **File:** `PLUGIN_SIZE_REDUCTION_RESEARCH.md`
-
-#### Project Management Upgrade Analysis
-- **Status:** Analysis
-- **File:** `PROJECT-MANAGEMENT-UPGRADE-VS-NEW-TOOLKIT.md`
-
-### WebLLM (Future Phases)
-- **Status:** Phase 1-3 Complete ✅ | Phases 4-8 Proposal ⏳
-- **Files:**
-  - `WEB-LLM-NPM-ENHANCEMENT-PROPOSAL.md` - Phases 4-8 proposal
-  - `WEB-LLM-ENHANCEMENT-ROADMAP-VISUAL.md`
-  - `WEB-LLM-README.md` - Phases 2-8 awaiting approval
-
-### DeepSeek V4 (Extended Research)
-- **Files (Research/Documentation):**
-  - `DEEPSEEK-V4-COMPARISON.md`
-  - `DEEPSEEK-V4-IMPLEMENTATION-BEST-PRACTICES.md`
-  - `DEEPSEEK-V4-INTEGRATION-DIAGRAM.md`
-  - `DEEPSEEK-V4-LOAD-BALANCER-LITTLES-LAW.md` - Proposal
-  - `DEEPSEEK-V4-ORCHESTRATION-ENHANCEMENTS.md` - Proposal
-  - `DEEPSEEK-V4-PHASE-1B-RESEARCH.md`
-  - `DEEPSEEK-V4-QUICK-REFERENCE.md`
-
-### Ralph Wiggum (Additional Research)
-- **Files:**
-  - `RALPH-REQUIREMENTS-CLARIFICATION.md`
-  - `RALPH-WIGGUM-QUICK-REFERENCE.md`
-
-### WordPress Integration (Additional Docs)
-- **Files:**
-  - `WORDPRESS_BEST_PRACTICES_INTEGRATION.md` - Research & standards
-  - `WORDPRESS_INTEGRATION_IMPLEMENTATION_PLAN.md`
-
-### Templates
-- **File:** `PLAYBOOK_TEMPLATE.md` - Template for creating new playbooks
+- DEEPSEEK-V4-COMPARISON.md, DEEPSEEK-V4-IMPLEMENTATION-BEST-PRACTICES.md, DEEPSEEK-V4-INTEGRATION-DIAGRAM.md, DEEPSEEK-V4-QUICK-REFERENCE.md — Reference docs for completed implementation
+- PLAYBOOK_TEMPLATE.md — Template document
+- WORDPRESS_BEST_PRACTICES_INTEGRATION.md — Standards reference
 
 ---
 
 ## 📊 Summary Statistics
 
 ### By Status
-- ✅ **Complete:** 18 proposals (28%)
-- 🚧 **In Progress:** 6 proposals (9%)
-- ⏳ **Pending:** 40 proposals (63%)
-
-### By Category
-- **DeepSeek V4:** 13 files (1 complete system, research docs, enhancements proposed)
-- **WebLLM:** 7 files (Phases 1-3 complete, 4-8 proposed)
-- **Toolkit Enhancement:** 6 files (Core complete, extended features proposed)
-- **WordPress Integration:** 10 files (42-82% in progress, additional proposals)
-- **Bitwarden/Vaultwarden:** 4 files (In progress, research phase)
-- **Playwright/Web Browser:** 5 files (Complete)
-- **Firefly III:** 2 files (Proposed)
-- **Ralph Wiggum:** 5 files (Proposal, awaiting resources)
-- **Phase 1 & 5:** 3 files (Phase 5 complete, Phase 1 70% complete)
-- **CLI Integration:** 1 file (Revised proposal)
-- **Other:** 8 files (Research, templates, planning)
+- ✅ **Complete:** 30+ proposals
+- 🚧 **In Progress:** 3 proposals
+- ⏳ **Pending:** ~30 proposals (many stale)
 
 ### Implementation Timeline
-- **January 2026 Completions:**
-  - DeepSeek V4 Multi-Agent Orchestration (All Phases)
-  - Web Browser Pro Tool
-  - WebLLM Enhancement (Phases 1-3)
-  - Toolkit Enhancement System
-  - Phase 5
-  - Multiple bug fixes and enhancements
 
-- **February–March 2026 Completions (v1.1.1–v1.1.3):**
-  - Chat Channels Toolkit (47 tools, 11 platforms)
-  - Slash Commands (29 commands)
-  - Regulatory Registration Toolkit (59 tools)
-  - Site Creator Toolkit (27 tools)
-  - Telegram Mini App full CMS interface
-  - Anthropic Claude provider
-  - Federation Directory Rate Limiting
-
-- **March 2026 (v1.2.0):**
-  - SSE Connection Rate Limiting
-  - PM Task Dependencies (3 new tools)
-  - PM Task Notifications (email + cron)
+- **January 2026:** DeepSeek V4, Web Browser, WebLLM Phases 1-3, Phase 5, Toolkit Enhancement
+- **February–March 2026:** Chat Channels, Slash Commands, Regulatory Registration, Site Creator, TMA, Anthropic, Rate Limiting, PM Features
+- **May 2026 (v1.1.14–v1.1.25):** Providers, Orchestration, WP.org Compliance, Memory Layer, Blueprints, Cloudways, CRM
+- **June 2026 (v1.1.29–v1.1.35):** Pro Toolkit Optimizations, DietPi, Layer I, Retention, Content Templates, Result Delivery, WP 7.0 Connectors, Graphify, GPT-Realtime-2, FlowHub, Shopify, Necessity Gate, Local Voice STT
 
 ### Next Priority Actions
-1. **Reconcile DeepSeek V4 completion status** - Documents show 60%, 85-90%, and 100% complete
-2. **Complete WordPress Integration Enhancement** - Currently 42-82% depending on component
-3. **Decide on Toolkit Enhancement extended features** - High ROI proposal ready for approval
-4. **Approve/Reject Firefly III Integration** - Comprehensive proposal ready
-5. **Allocate resources for Ralph Wiggum CCT Orchestration**
-6. **Review Bitwarden integration progress** - Currently in research phase
-
----
-
-## 📁 File Organization
-
-All proposal files are located in: `docs/proposals/`
-
-Related implementation documentation moved to:
-- `docs/implementation-history/2026/january/` - Recent implementation summaries
-- `docs/deployment/` - Production/deployment documentation
-- `tests/manual/` - Manual test scripts
-- `examples/` - Example code and snippets
+1. Accelerate Cross-Platform Extraction Phase 3 — tool migration + test suite
+2. Laravel adapter spike for v1.4.0
+3. Pro tool OOS migration kickoff
+4. Resolve Ralph Wiggum CCT Orchestration (implement or defer)
+5. Clean up stale pending proposals per retirement log
 
 ---
 
@@ -344,4 +244,4 @@ This status document should be updated:
 - **Monthly:** During maintenance periods
 - **Immediately:** When proposal status changes (approved, completed, rejected)
 
-Last comprehensive review: March 9, 2026
+**Last comprehensive review:** June 29, 2026

@@ -80,6 +80,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		 */
 		const DEFAULT_MODEL = 'openrouter/auto';
 
+		/**
+		 * In-memory API key override. Set via set_api_key().
+		 *
+		 * @since 2026.07
+		 * @var string|null
+		 */
+		private $api_key_override = null;
+
 		// -------------------------------------------------------------------------
 		// Accessors.
 		// -------------------------------------------------------------------------
@@ -90,6 +98,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		 * @return string Empty string when not configured.
 		 */
 		public function get_api_key() {
+			// If a transient API key was set via set_api_key(), use it instead
+			// of the persisted setting. This prevents TOCTOU race conditions
+			// when testing a key before saving it.
+			if ( isset( $this->api_key_override ) && is_string( $this->api_key_override ) ) {
+				return $this->api_key_override;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$key      = isset( $settings['openrouter_api_key'] ) ? $settings['openrouter_api_key'] : '';
 
@@ -98,6 +113,20 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			}
 
 			return $key;
+		}
+
+		/**
+		 * Override the API key for the lifetime of this instance only.
+		 *
+		 * Use this when testing a key before persisting it, instead of
+		 * temporarily writing it to wp_options (which creates a TOCTOU
+		 * race condition).
+		 *
+		 * @since 2026.07
+		 * @param string $api_key The API key to use for this instance.
+		 */
+		public function set_api_key( $api_key ) {
+			$this->api_key_override = $api_key;
 		}
 
 		/**
@@ -780,6 +809,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				);
 			}
 
+			// Normalise content arrays into strings for compatibility.
+			// The REST layer represents text-only messages as arrays of
+			// segments; collapse them back to strings that OpenRouter expects.
+			$messages = $this->normalise_messages_for_payload( $messages );
+
 			// Pass through messages unchanged (OpenAI-compatible format).
 			foreach ( $messages as $message ) {
 				if ( ! is_array( $message ) ) {
@@ -799,6 +833,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			if ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
 				$payload['max_tokens'] = absint( $options['max_tokens'] );
+			} elseif ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$payload['max_tokens'] = absint( $options['max_completion_tokens'] );
 			}
 
 			// JSON mode.
@@ -809,6 +845,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			// Streaming flag.
 			if ( ! empty( $options['stream'] ) ) {
 				$payload['stream'] = true;
+
+				// Include stream_options so the final chunk carries usage data.
+				// Use caller-provided options when present; otherwise default
+				// to include_usage=true for cost/usage badge display.
+				$payload['stream_options'] = isset( $options['stream_options'] ) && is_array( $options['stream_options'] )
+					? $options['stream_options']
+					: array( 'include_usage' => true );
 			}
 
 			// Tool/function calling — pass through verbatim. OpenRouter
@@ -1040,6 +1083,77 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 		}
 
 		/**
+		 * Prepare chat messages for the OpenRouter Chat Completions payload.
+		 *
+		 * The REST layer represents text-only messages as arrays of segments so
+		 * attachments and tool calls can be normalised consistently. Older
+		 * upstream models may only accept plain strings for the `content` field.
+		 * To remain compatible we collapse text-only segment arrays back into
+		 * strings while preserving multimodal payloads that rely on structured
+		 * segments.
+		 *
+		 * Logic mirrors WP_MCP_AI_DeepSeek_Client::normalise_messages_for_payload().
+		 *
+		 * @since 2026.07
+		 *
+		 * @param array $messages Sanitised chat messages.
+		 * @return array
+		 */
+		protected function normalise_messages_for_payload( array $messages ) {
+			$normalised = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					$normalised[] = $message;
+					continue;
+				}
+
+				$segments = array_values( $message['content'] );
+
+				if ( empty( $segments ) ) {
+					$message['content'] = '';
+					$normalised[]       = $message;
+					continue;
+				}
+
+				$all_text   = true;
+				$text_parts = array();
+
+				foreach ( $segments as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$all_text = false;
+						break;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'text' !== $type ) {
+						$all_text = false;
+						break;
+					}
+
+					$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+				}
+
+				if ( $all_text ) {
+					$text_parts         = array_filter(
+						$text_parts,
+						static function ( $part ) {
+							return '' !== trim( $part );
+						}
+					);
+					$message['content'] = implode( "\n\n", $text_parts );
+				} else {
+					$message['content'] = $segments;
+				}
+
+				$normalised[] = $message;
+			}
+
+			return $normalised;
+		}
+
+		/**
 		 * Normalise an OpenRouter response to the plugin's internal format.
 		 *
 		 * The response format is OpenAI-compatible, so only light
@@ -1055,11 +1169,26 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			$message = isset( $choice['message'] ) ? $choice['message'] : array();
 			$content = isset( $message['content'] ) ? $message['content'] : '';
 
+			$raw_usage = isset( $decoded['usage'] ) ? $decoded['usage'] : array();
+			// Extract prompt cache metrics from upstream providers.
+			if ( isset( $raw_usage['prompt_cache_hit_tokens'] ) ) {
+				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_cache_hit_tokens'];
+			} elseif ( isset( $raw_usage['prompt_tokens_details']['cached_tokens'] ) ) {
+				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_tokens_details']['cached_tokens'];
+			}
+
 			$normalized = array(
+				'choices'       => array(
+					array(
+						'message'       => $message,
+						'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
+					),
+				),
 				'content'       => $content,
 				'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
 				'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',
-				'usage'         => isset( $decoded['usage'] ) ? $decoded['usage'] : array(),
+				'provider'      => 'openrouter',
+				'usage'         => $raw_usage,
 				'raw'           => $decoded,
 			);
 

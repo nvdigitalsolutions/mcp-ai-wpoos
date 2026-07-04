@@ -413,6 +413,10 @@ class RemoteAdmin {
 			wp_send_json_error( __( 'Permission denied.', 'nvoos-graphify' ) );
 		}
 
+		if ( ! class_exists( '\NV_oOS_Graphify_Embeddings' ) ) {
+			wp_send_json_error( __( 'The embeddings addon is not installed. Install the nvoos-graphify-embeddings addon to enable this feature.', 'nvoos-graphify' ) );
+		}
+
 		delete_option( 'nvoos_graphify_reindex_offset' );
 		$result = \NV_oOS_Graphify_Embeddings::reindex_all();
 		wp_send_json_success( $result );

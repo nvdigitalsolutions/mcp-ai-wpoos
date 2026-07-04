@@ -136,7 +136,7 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 			return;
 		}
 
-		$app = isset( $result['app'] ) ? $result['app'] : $result;
+		$app    = isset( $result['app'] ) ? $result['app'] : $result;
 		$status = isset( $app['status'] ) ? strtolower( $app['status'] ) : 'unknown';
 
 		self::log_info( $app_id, "App status: {$status} (attempt {$attempt})" );
@@ -176,8 +176,8 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 	 * @return void
 	 */
 	private static function on_running( $app_id, $app, $toolkit_ids, $assistant_ids ) {
-		$app_url = isset( $app['app_fqdn'] ) ? $app['app_fqdn'] : '';
-		$cname = isset( $app['cname'] ) ? $app['cname'] : $app_url;
+		$app_url  = isset( $app['app_fqdn'] ) ? $app['app_fqdn'] : '';
+		$cname    = isset( $app['cname'] ) ? $app['cname'] : $app_url;
 		$username = isset( $app['username'] ) ? $app['username'] : '';
 		$password = isset( $app['password'] ) ? $app['password'] : '';
 
@@ -191,7 +191,7 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 		);
 
 		// Attempt to install the nvOS base plugin on the target site.
-		$plugin_result = self::install_nvos_plugin( $app_id, $cname, $username, $password );
+		$plugin_result             = self::install_nvos_plugin( $app_id, $cname, $username, $password );
 		$results['plugin_install'] = $plugin_result;
 
 		// Apply toolkits via the toolkit-shell manifest system.
@@ -242,7 +242,13 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 		$rest_url = $site_url . '/wp-json/wp/v2/plugins';
 
 		// First, check if the site is reachable.
-		$health = wp_remote_get( $site_url, array( 'timeout' => 10, 'sslverify' => false ) );
+		$health = wp_remote_get(
+			$site_url,
+			array(
+				'timeout'   => 10,
+				'sslverify' => false,
+			)
+		);
 		if ( is_wp_error( $health ) ) {
 			self::log_info( $app_id, "Site not yet reachable at {$cname}" );
 			return 'unreachable';
@@ -271,7 +277,7 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 	 * @return string Status.
 	 */
 	private static function apply_toolkit( $app_id, $tk_slug ) {
-		$intents = get_option( "nvoos_cw_toolkit_intents_{$app_id}", array() );
+		$intents             = get_option( "nvoos_cw_toolkit_intents_{$app_id}", array() );
 		$intents[ $tk_slug ] = array(
 			'slug'       => $tk_slug,
 			'applied_at' => time(),
@@ -329,7 +335,7 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 		if ( null !== $attempt ) {
 			$current['attempt'] = $attempt;
 		}
-		$current['status'] = $status;
+		$current['status']       = $status;
 		$current['last_poll_at'] = time();
 		if ( null !== $error ) {
 			$current['error'] = $error;
@@ -354,7 +360,7 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 	/**
 	 * Log an info-level message about this app.
 	 *
-	 * @param int $app_id Cloudways app ID.
+	 * @param int    $app_id Cloudways app ID.
 	 * @param string $message Log message.
 	 * @return void
 	 */
@@ -367,7 +373,7 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 	/**
 	 * Log an error-level message about this app.
 	 *
-	 * @param int $app_id Cloudways app ID.
+	 * @param int    $app_id Cloudways app ID.
 	 * @param string $message Error message.
 	 * @return void
 	 */

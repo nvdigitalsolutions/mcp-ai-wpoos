@@ -399,7 +399,37 @@ A composable set of 14 tools that decompose `product_actualization` into reusabl
 
 ### Product Price Discovery (Pro)
 
-- **Lookup Product Price** (`lookup_product_price`) provides multi-source product price discovery and comparison. Works like Google Lens Shopping, Amazon Visual Search, and browser price comparison extensions. Accepts product images via Google Cloud Vision identification. Processes documents (invoices/quotes) in PDF, Word, Excel, TXT, CSV formats with LLM-powered line item extraction. Supports single URLs or batch URLs for multi-retailer price comparison. Extracts pricing from Schema.org structured data, CSS selectors, or regex patterns. Supports multiple retailers (Amazon, Walmart, eBay, Target) with extensible filter system. Returns normalized pricing data including currency, availability, and timestamps. Requires Crawl4AI integration. Optional Google Cloud Vision for image recognition. See comprehensive guide: [Product Price Lookup Guide](../../guides/user/assistants/PRODUCT-PRICE-LOOKUP-GUIDE.md).【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-lookup-product-price.php†L17-L400】
+- **Lookup Product Price** (`lookup_product_price`) provides multi-source product price discovery and comparison. ... Requires Crawl4AI integration. Optional Google Cloud Vision for image recognition. See comprehensive guide: [Product Price Lookup Guide](../../guides/user/assistants/PRODUCT-PRICE-LOOKUP-GUIDE.md).【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-lookup-product-price.php†L17-L400】
+
+### Shopify Sync Pro Toolkit (Pro)
+
+Cache-first Shopify↔WooCommerce synchronization with JetEngine CCT caching. All read tools query local cache with zero GraphQL API cost. Background sync via Action Scheduler + Shopify webhooks. Requires WooCommerce, JetEngine, WP_MCP_AI_Shopify_Client, and a Shopify Admin API connection in Remote Sites. See [Shopify Sync Integration Guide](../../toolkits/shopify-sync-integration.md).
+
+- **Shopify Sync Inventory** (`shopify_sync_inventory`) searches and retrieves Shopify inventory levels from the local CCT cache with zero GraphQL cost. Supports filtering by vendor, product type, location, and stock status (in_stock/low_stock/out_of_stock). Actions: `search`, `get_item`, `get_levels`, `list_locations`, `list_low_stock`, `refresh`. Capability: `manage_woocommerce`. CCT-first: all reads < 50ms, refresh triggers Bulk Operation sync (10 pts).【F:addons/pro/includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-inventory.php†L1-L416】
+
+- **Shopify Sync Products** (`shopify_sync_products`) browses the Shopify product catalog from CCT cache. List by type, vendor, or status. Search by SKU or variant GID. All reads zero GraphQL cost. Actions: `search`, `get_product`, `get_by_sku`, `list_by_type`, `list_by_vendor`, `list_by_status`. Capability: `manage_woocommerce`.【F:addons/pro/includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-products.php†L1-L333】
+
+- **Shopify Sync Orders** (`shopify_sync_orders`) lists recent orders with header-only caching for zero-cost listing. Full order detail requires a live API call (~15 GraphQL pts) and includes line items, fulfillments, and transactions. Actions: `list_recent`, `get_order`, `search`, `get_order_analytics`. Capability: `manage_woocommerce`.【F:addons/pro/includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-orders.php†L1-L334】
+
+- **Shopify Sync Settings** (`shopify_sync_settings`) manages toolkit configuration including sync interval, direction, WC sync toggle, and connections. Views GraphQL cost reports and triggers manual syncs. Actions: `get_settings`, `update_settings`, `get_sync_status`, `get_cost_report`, `sync_now`. Capability: `manage_options`.【F:addons/pro/includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-settings.php†L1-L335】
+
+- **Shopify Sync Analytics** (`shopify_sync_analytics`) computes aggregated analytics from CCT data with zero GraphQL cost. Inventory summaries, stock velocity (fast/slow movers), product performance rankings, and vendor breakdowns. Actions: `inventory_summary`, `stock_velocity`, `product_performance`, `vendor_breakdown`. Capability: `manage_woocommerce`.【F:addons/pro/includes/tools/shopify-sync/class-wp-mcp-ai-pro-tool-shopify-sync-analytics.php†L1-L435】
+
+### FlowHub Inventory Sync Pro Toolkit (Pro)
+
+FlowHub POS dispensary inventory → WooCommerce synchronization with JetEngine CCT caching. Cannabis-industry-specific compliance fields, low-stock alerts, and dispensary location tracking. Requires WooCommerce, JetEngine, and FlowHub API credentials. See [FlowHub Integration Guide](../../toolkits/flowhub-integration.md).
+
+- **FlowHub Inventory** (`flowhub_inventory`) searches and retrieves FlowHub dispensary inventory from CCT cache. Filters by category, location, stock status. Actions: `search`, `get_item`, `get_levels`, `refresh`. Capability: `manage_woocommerce`.【F:addons/pro/includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-inventory.php†L1-L392】
+
+- **FlowHub Products** (`flowhub_products`) browses FlowHub product catalog from CCT cache. Search by SKU, list categories. Actions: `search`, `get_product`, `get_by_sku`, `list_categories`. Capability: `manage_woocommerce`.【F:addons/pro/includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-products.php†L1-L245】
+
+- **FlowHub Locations** (`flowhub_locations`) lists dispensary locations with stock counts from CCT cache. Actions: `list`, `get_location`. Capability: `manage_woocommerce`.【F:addons/pro/includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-locations.php†L1-L246】
+
+- **FlowHub Analytics** (`flowhub_analytics`) computes aggregated analytics including inventory summaries, stock velocity, category breakdowns, compliance summaries, and location comparisons. All from CCT with zero API cost. Actions: `inventory_summary`, `stock_velocity`, `category_breakdown`, `compliance_summary`, `location_comparison`. Capability: `manage_woocommerce`.【F:addons/pro/includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-analytics.php†L1-L383】
+
+- **FlowHub Sync** (`flowhub_sync`) triggers sync operations and checks status. Actions: `sync_now`, `sync_status`, `clear_cache`. Capability: `manage_options`.【F:addons/pro/includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-sync.php†L1-L220】
+
+- **FlowHub Settings** (`flowhub_settings`) manages toolkit configuration including credentials, sync interval, direction, and field mapping. Actions: `get_settings`, `update_settings`, `test_connection`, `get_field_mapping`. Capability: `manage_options`.【F:addons/pro/includes/tools/flowhub/class-wp-mcp-ai-pro-tool-flowhub-settings.php†L1-L293】
 
 
 Each tool automatically inherits the assistant context and authentication details passed through the REST layer, allowing developers to compose complex workflows or replace default behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】

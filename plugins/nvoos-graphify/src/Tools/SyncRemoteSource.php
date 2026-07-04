@@ -74,9 +74,9 @@ class SyncRemoteSource extends AbstractTool {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Permission denied.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'sync_remote_permission_denied',
+				__( 'Permission denied.', 'nvoos-graphify' )
 			);
 		}
 
@@ -84,30 +84,30 @@ class SyncRemoteSource extends AbstractTool {
 		$async = isset( $arguments['async'] ) ? (bool) $arguments['async'] : true;
 
 		if ( empty( $slug ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'slug is required.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'sync_remote_slug_required',
+				__( 'slug is required.', 'nvoos-graphify' )
 			);
 		}
 
 		// Validate source exists.
 		$source = \NvoosGraphify\Graph\Db::getRemoteSource( $slug );
 		if ( ! $source ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new \WP_Error(
+				'sync_remote_source_not_found',
+				sprintf(
 					/* translators: %s source slug */
 					__( 'Remote source not found: %s', 'nvoos-graphify' ),
 					esc_html( $slug )
-				),
+				)
 			);
 		}
 
 		// Remote enrichment requires the Enricher class (Phase 7 feature).
 		if ( ! class_exists( \NvoosGraphify\Remote\Enricher::class ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Remote enrichment is not available.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'sync_remote_enricher_unavailable',
+				__( 'Remote enrichment is not available.', 'nvoos-graphify' )
 			);
 		}
 
@@ -115,9 +115,9 @@ class SyncRemoteSource extends AbstractTool {
 		$summary  = $enricher->syncSource( $slug, $async );
 
 		if ( is_wp_error( $summary ) ) {
-			return array(
-				'success' => false,
-				'error'   => $summary->get_error_message(),
+			return new \WP_Error(
+				'sync_remote_sync_failed',
+				$summary->get_error_message()
 			);
 		}
 

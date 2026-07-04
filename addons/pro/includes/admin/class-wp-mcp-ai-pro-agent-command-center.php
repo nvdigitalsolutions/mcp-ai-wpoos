@@ -1629,18 +1629,39 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	}
 
 	/**
-	 * Get active sessions data.
+	 * Get active sessions data — CCT-first with transient fallback.
 	 *
 	 * @since 2.1.0
 	 *
 	 * @return array Array of active session data.
 	 */
 	private function get_active_sessions() {
+		// Try CCT first for durable, correctly-keyed session data.
+		if ( class_exists( 'WP_MCP_AI_Autonomous_Sessions_CCT' ) && WP_MCP_AI_Autonomous_Sessions_CCT::is_available() ) {
+			$cct_sessions = WP_MCP_AI_Autonomous_Sessions_CCT::get_active_sessions(
+				array(
+					'limit'   => 50,
+					'orderby' => 'cct_created',
+					'order'   => 'DESC',
+				)
+			);
+
+			$sessions = array();
+			foreach ( $cct_sessions as $row ) {
+				// The CCT returns flat records with field-name keys
+				// (iterations, max_iterations, tokens_used, health, etc.)
+				// which is what the render methods expect.
+				$sessions[] = $row;
+			}
+			return $sessions;
+		}
+
+		// Fallback: transient-based retrieval.
 		global $wpdb;
 
 		$sessions = array();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transient query for real-time data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transient query for real-time data; fallback path when CCT unavailable.
 		$rows = $wpdb->get_results(
 			"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE '_transient_mcp_ai_session_%' AND option_name NOT LIKE '_transient_timeout_%'"
 		);

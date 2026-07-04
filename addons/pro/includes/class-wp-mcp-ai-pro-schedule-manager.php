@@ -2653,27 +2653,28 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				return;
 			}
 
-			// Rely on the JetEngine CCT module being available.
-			if ( ! function_exists( 'jet_engine' ) ) {
-				return;
-			}
-
-			$engine = jet_engine();
-			if ( empty( $engine->cct ) || empty( $engine->cct->manager ) ) {
+			// Use the Execution History CCT's own Item_Handler, which follows
+			// the canonical Factory pattern (Module::instance() -> manager ->
+			// get_content_types() -> get_item_handler()). This replaces the
+			// previous guard that checked jet_engine()->cct, a property
+			// JetEngine never populates (always null, unreachable guard), and
+			// the Manager::insert_item() call which doesn't exist.
+			$handler = WP_MCP_AI_Execution_History_CCT::get_item_handler();
+			if ( ! $handler ) {
 				return;
 			}
 
 			$item_data = array(
-				'cct_slug'      => WP_MCP_AI_Execution_History_CCT::SLUG,
 				'session_id'    => $schedule_id,
 				'tool_name'     => 'pro_schedule_manager',
 				'success'       => $success ? '1' : '0',
 				'error_message' => (string) $error_msg,
 				'duration_ms'   => (int) round( $duration * 1000 ),
 				'executed_at'   => current_time( 'mysql' ),
+				'cct_status'    => 'publish',
 			);
 
-			$engine->cct->manager->insert_item( $item_data );
+			$handler->update_item( $item_data );
 		}
 
 		/**

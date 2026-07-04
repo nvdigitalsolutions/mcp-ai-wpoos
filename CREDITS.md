@@ -626,7 +626,7 @@ Headline providers acknowledged here for completeness:
 * **LM Studio** (local) — <https://lmstudio.ai/>
 * **OpenRouter** (unified gateway) — <https://openrouter.ai/>
 * **DeepSeek** — <https://www.deepseek.com/>
-* **Kimi (Moonshot AI)** — <https://platform.moonshot.cn/> (OpenAI-compatible API at `https://api.moonshot.cn/v1`; Kimi K2.6, K2.5, K2 with 256K context, tool calling, and thinking mode).
+* **Kimi (Moonshot AI)** — <https://platform.moonshot.ai/> (OpenAI-compatible API at `https://api.moonshot.ai/v1`; Kimi K2.7 Code, K2.6, K2.5, K2 with 256K context, tool calling, and thinking mode).
 * **DigitalOcean Serverless Inference** — <https://www.digitalocean.com/products/ai> (OpenAI-compatible API at `https://inference.do-ai.run/v1`; Llama 3.3, DeepSeek-R1 distill, gpt-oss, plus native `/embeddings`).
 * **Crawl4AI** — <https://github.com/unclecode/crawl4ai>
 

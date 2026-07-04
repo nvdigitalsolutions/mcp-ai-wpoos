@@ -73,15 +73,84 @@
 			this.container = container;
 			this.config = (state && state.config) || {};
 
-			// Set initial mode from config.
-			const configMode = this.config.voiceMode || MODE_CHAINED;
-			this.setMode(configMode, true);
+			// Set initial mode. Prefer explicit config, then auto-detect the best
+			// available transport, falling back to chained mode as a last resort.
+			// Industry recommendation (OpenAI Voice Agents guide): WebRTC is the
+			// default transport for browser-based voice agents.
+			const configuredMode = this.config.voiceMode;
+			const detectedMode = configuredMode || this.detectBestMode();
+			this.setMode(detectedMode, true);
 
 			// Build UI elements.
 			this.buildVoiceUI(container, options);
 
+			// Update the existing voice chat button with mode indicator.
+			this.updateVoiceButtonIndicator();
+
 			// Listen for mode changes from the toggle.
 			this.bindEvents();
+		},
+
+		/**
+		 * Auto-detect the best voice mode available.
+		 *
+		 * Prefers WebRTC (lowest latency, browser-native), then WebSocket
+		 * realtime, falling back to the chained record-transcribe pipeline.
+		 *
+		 * @return {string} Best available mode constant.
+		 */
+		detectBestMode: function () {
+			// Tier 1: WebRTC realtime (preferred transport per OpenAI Voice Agents guide).
+			if (webrtcVoice && webrtcVoice.isSupported && webrtcVoice.isSupported()) {
+				return MODE_REALTIME;
+			}
+
+			// Tier 2: WebSocket realtime (fallback for non-WebRTC browsers).
+			if (realtimeVoice && realtimeVoice.isSupported && realtimeVoice.isSupported()) {
+				return MODE_REALTIME;
+			}
+
+			// Tier 3: Browser Web Speech API (always-available fallback).
+			if (browserVoice && browserVoice.isSTTSupported && browserVoice.isSTTSupported()) {
+				return MODE_BROWSER;
+			}
+
+			// Tier 4: Chained record-upload-transcribe pipeline.
+			return MODE_CHAINED;
+		},
+
+		/**
+		 * Update the existing voice chat microphone button to reflect the
+		 * current voice mode and available capabilities.
+		 *
+		 * Adds CSS classes and aria labels so users can discover realtime
+		 * mode without hunting for the separate mode toggle.
+		 */
+		updateVoiceButtonIndicator: function () {
+			const button = this.container
+				? this.container.querySelector('.wp-mcp-ai-chat__voice-chat')
+				: null;
+
+			if (!button) {
+				return;
+			}
+
+			// Store reference for later updates.
+			this.elements.voiceChatButton = button;
+
+			// Mark whether realtime is available (for CSS pulsing indicator).
+			const realtimeAvailable =
+				(webrtcVoice && webrtcVoice.isSupported && webrtcVoice.isSupported()) ||
+				(realtimeVoice && realtimeVoice.isSupported && realtimeVoice.isSupported());
+
+			if (realtimeAvailable) {
+				button.classList.add('wp-mcp-ai-chat__voice-chat--realtime-available');
+			} else {
+				button.classList.remove('wp-mcp-ai-chat__voice-chat--realtime-available');
+			}
+
+			// Update tooltip and aria-label based on current mode.
+			this._updateVoiceButtonLabel(button);
 		},
 
 		/**
@@ -271,8 +340,55 @@
 				this.startRealtimeSession();
 			}
 
+			// Update the microphone button indicator.
+			this.updateVoiceButtonIndicator();
+
 			if (!silent) {
 				this.announceModeChange(mode, previousMode);
+			}
+		},
+
+		/**
+		 * Update the microphone button's label, tooltip, and CSS based on
+		 * the current voice mode.
+		 *
+		 * @param {HTMLElement} button - The voice chat button element.
+		 * @private
+		 */
+		_updateVoiceButtonLabel: function (button) {
+			if (!button) {
+				return;
+			}
+
+			const mode = this.currentMode;
+
+			// Remove all mode-related classes from the button first.
+			button.classList.remove(
+				'wp-mcp-ai-chat__voice-chat--mode-realtime',
+				'wp-mcp-ai-chat__voice-chat--mode-chained',
+				'wp-mcp-ai-chat__voice-chat--mode-browser',
+				'wp-mcp-ai-chat__voice-chat--mode-off'
+			);
+
+			// Add class for current mode.
+			button.classList.add('wp-mcp-ai-chat__voice-chat--mode-' + mode);
+
+			// Update accessible labels.
+			const labels = {
+				realtime: 'Voice chat (realtime — speak naturally)',
+				chained: 'Voice chat (tap to speak)',
+				browser: 'Voice chat (browser — hold to talk)',
+				off: 'Voice chat (text mode — voice disabled)',
+			};
+
+			const label = labels[mode] || labels.chained;
+			button.setAttribute('aria-label', label);
+			button.setAttribute('title', label);
+
+			// Update screen-reader text inside the button.
+			const srText = button.querySelector('.screen-reader-text');
+			if (srText) {
+				srText.textContent = label;
 			}
 		},
 
@@ -284,6 +400,12 @@
 			 * Falls back to chained mode if neither works.
 			 */
 		startRealtimeSession: function () {
+			// Disable local browser VAD — OpenAI server-side VAD (server_vad
+			// or semantic_vad) handles turn detection for realtime sessions.
+			// Running two VAD systems simultaneously causes conflicts and
+			// premature turn cutoffs.
+			this._disableLocalVAD();
+
 			// Prefer WebRTC if available.
 			if (webrtcVoice && webrtcVoice.isSupported()) {
 				this.startWebRTCSession();
@@ -671,6 +793,59 @@
 				this.elements.pttButton.classList.remove('wp-mcp-ai-chat__voice-ptt--active');
 				this.elements.pttButton.textContent = 'Hold to Talk';
 			}
+
+			// Restore local browser VAD that was disabled during realtime mode.
+			this._restoreLocalVAD();
+		},
+
+		/**
+		 * Disable the local browser VAD when switching to realtime mode.
+		 *
+		 * OpenAI's server-side VAD (server_vad or semantic_vad) handles turn
+		 * detection for realtime sessions. Running both the local energy-threshold
+		 * VAD and the server VAD simultaneously causes conflicts: the local VAD
+		 * may auto-stop the recording while the server is still processing.
+		 *
+		 * @private
+		 */
+		_disableLocalVAD: function () {
+			const state = this.state;
+			if (!state) {
+				return;
+			}
+
+			// Save the previous VAD state for restoration.
+			this._previousVadState = {
+				enabled: state.vadEnabled,
+				monitorInterval: state.vadMonitorInterval,
+			};
+
+			state.vadEnabled = false;
+			if (state.vadMonitorInterval) {
+				clearInterval(state.vadMonitorInterval);
+				state.vadMonitorInterval = null;
+			}
+		},
+
+		/**
+		 * Restore the local browser VAD when leaving realtime mode.
+		 *
+		 * @private
+		 */
+		_restoreLocalVAD: function () {
+			const state = this.state;
+			const prev = this._previousVadState;
+
+			if (!state || !prev) {
+				return;
+			}
+
+			// Only restore if VAD was previously enabled.
+			if (prev.enabled) {
+				state.vadEnabled = true;
+			}
+
+			this._previousVadState = null;
 		},
 
 		/**

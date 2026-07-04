@@ -92,6 +92,18 @@ class WP_MCP_AI_Model_Selector {
 		// Determine complexity based on various factors.
 		$is_complex = self::is_complex_task( $messages, $options );
 
+		// Irreversibility-aware escalation: if the assistant has access to
+		// high-irreversibility tools, escalate to the advanced model for
+		// better judgment even if the task appears simple.
+		if ( ! $is_complex && self::should_escalate_for_irreversibility( $options ) ) {
+			$is_complex = true;
+			WP_MCP_AI_Logger::log_event(
+				'model_routing_irreversibility',
+				'Escalating to advanced model due to high-irreversibility tool access.',
+				array( 'reason' => 'irreversible_tools_available' )
+			);
+		}
+
 		if ( $is_complex ) {
 			$model = 'gpt-4o';
 
@@ -556,6 +568,67 @@ class WP_MCP_AI_Model_Selector {
 		}
 
 		return 'unknown';
+	}
+
+	/**
+	 * Check if the available toolset includes high-irreversibility tools
+	 * that warrant escalating to the advanced model for better judgment.
+	 *
+	 * When the assistant has access to tools that can cause permanent
+	 * damage (financial, destructive, irreversible), we should use the
+	 * more capable model even for apparently simple tasks because the
+	 * cost of a mistake is too high.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param array $options Request options, may contain 'tools' key.
+	 * @return bool True if escalation is recommended.
+	 */
+	protected static function should_escalate_for_irreversibility( array $options ) {
+		if ( empty( $options['tools'] ) || ! is_array( $options['tools'] ) ) {
+			return false;
+		}
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+		foreach ( $options['tools'] as $tool_def ) {
+			$slug = isset( $tool_def['function']['name'] )
+				? sanitize_key( (string) $tool_def['function']['name'] )
+				: '';
+			if ( '' === $slug ) {
+				continue;
+			}
+
+			$tool = $registry->get_tool( $slug );
+			if ( ! $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+				continue;
+			}
+
+			$flags = (array) $tool->get_capability_flags();
+
+			$high_risk_flags = array(
+				'irreversible',
+				'financial-impact',
+				'external-communication',
+				'data-destruction',
+				'access-control-change',
+			);
+
+			foreach ( $high_risk_flags as $flag ) {
+				if ( in_array( $flag, $flags, true ) ) {
+					return true;
+				}
+			}
+
+			// Also escalate if the tool has a high irreversibility score.
+			if ( $tool instanceof WP_MCP_AI_Tool_Safety_Profile_Interface ) {
+				if ( $tool->get_irreversibility_score() >= 0.5 ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**

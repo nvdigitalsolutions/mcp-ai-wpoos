@@ -111,7 +111,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				),
 				'api_body'      => array(
 					'type'        => 'array',
-					'description' => __( 'Request body array for the EZuite API action. Example: [{"Location_Code": "ALL"}] for LX_ItemPull.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Request body array for the EZuite API action. LX_ItemPull examples: [{"Location_Code": "ALL"}] to pull all items, or [{"Location_Code": "ALL", "Item_Code": "C316/L16/ITM-10"}] to pull a specific item by code. Use Item_Code to avoid large responses.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'object',
 					),
@@ -202,7 +202,8 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Only allow ezuite_erp connections for this tool.
-		if ( empty( $connection['connection_type'] ) || 'ezuite_erp' !== $connection['connection_type'] ) {
+		$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+		if ( 'ezuite_erp' !== $conn_type && 'ezuite' !== $conn_type ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_wrong_connection_type',
 				__( 'This connection is not an EZuite ERP connection. Use the ezuite_erp connection type.', 'mcp-ai-wpoos-pro' )
@@ -285,7 +286,8 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			}
 
 			// Only include EZuite ERP connections.
-			if ( empty( $connection['connection_type'] ) || 'ezuite_erp' !== $connection['connection_type'] ) {
+			$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+			if ( 'ezuite_erp' !== $conn_type && 'ezuite' !== $conn_type ) {
 				continue;
 			}
 
@@ -343,13 +345,13 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$result = $this->make_erp_request( $connection, 'LX_ItemPull', $test_body );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => sprintf(
+			return new WP_Error(
+				'wp_mcp_ai_pro_connection_test_failed',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Connection test failed: %s', 'mcp-ai-wpoos-pro' ),
 					$result->get_error_message()
-				),
+				)
 			);
 		}
 
@@ -433,10 +435,33 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			return $result;
 		}
 
+		// Guard against response truncation for large result sets.
+		// EZuite returns items in Response_Body; if the array is huge,
+		// cap it and warn so the assistant knows results are incomplete.
+		$max_items     = 50;
+		$response_body = isset( $result['Response_Body'] ) ? $result['Response_Body'] : ( isset( $result['Data'] ) ? $result['Data'] : array() );
+		$total_items   = is_array( $response_body ) ? count( $response_body ) : 0;
+		$truncated     = $total_items > $max_items;
+
+		if ( $truncated ) {
+			$result['Response_Body'] = array_slice( (array) $response_body, 0, $max_items );
+			$result['_truncated']    = true;
+			$result['_total_items']  = $total_items;
+			$result['_warning']      = sprintf(
+				/* translators: 1: number of items returned, 2: total items available */
+				__( 'Response truncated: showing %1$d of %2$d total items. To get a specific item, include "Item_Code" in api_body, or use the ezuite_erp_get_products tool.', 'mcp-ai-wpoos-pro' ),
+				$max_items,
+				$total_items
+			);
+		}
+
 		return array(
-			'success'    => true,
-			'api_action' => $api_action,
-			'data'       => $result,
+			'success'         => true,
+			'api_action'      => $api_action,
+			'data'            => $result,
+			'truncated'       => $truncated,
+			'items_returned'  => $truncated ? $max_items : $total_items,
+			'items_available' => $total_items,
 		);
 	}
 

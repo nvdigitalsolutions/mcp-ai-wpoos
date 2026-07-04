@@ -125,6 +125,23 @@ class WP_MCP_AI_Tool_Check_Availability implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Check for blocked time slots', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
+				'provider_id'          => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional provider ID for JetAppointment availability check.', 'mcp-ai-wpoos-pro' ),
+				),
+				'service_id'           => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional service ID for JetAppointment availability check.', 'mcp-ai-wpoos-pro' ),
+				),
+				'instance_id'          => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional JetBooking instance ID for availability check.', 'mcp-ai-wpoos-pro' ),
+				),
+				'check_external_systems' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Also check JetAppointment and JetBooking availability (default: true when adapters available).', 'mcp-ai-wpoos-pro' ),
+					'default'     => true,
+				),
 			),
 			'required'   => array( 'start_time', 'end_time' ),
 		);
@@ -179,6 +196,7 @@ class WP_MCP_AI_Tool_Check_Availability implements WP_MCP_AI_Tool_Interface, WP_
 
 		$is_available = true;
 		$reasons      = array();
+		$per_system    = array();
 
 		// Check for conflicts.
 		$conflicts = $this->check_conflicts( $start_time, $end_time );
@@ -190,6 +208,10 @@ class WP_MCP_AI_Tool_Check_Availability implements WP_MCP_AI_Tool_Interface, WP_
 				count( $conflicts )
 			);
 		}
+		$per_system['nvoos'] = array(
+			'available' => empty( $conflicts ),
+			'conflicts' => $conflicts,
+		);
 
 		// Check business hours if requested.
 		if ( ! empty( $arguments['check_business_hours'] ) ) {
@@ -209,11 +231,78 @@ class WP_MCP_AI_Tool_Check_Availability implements WP_MCP_AI_Tool_Interface, WP_
 			}
 		}
 
+		// --- External system checks (v1.5.0) ---
+		$check_external = ! isset( $arguments['check_external_systems'] ) || ! empty( $arguments['check_external_systems'] );
+
+		if ( $check_external && class_exists( 'WP_MCP_AI_Booking_Adapter_Factory' ) ) {
+			// JetAppointment check.
+			if ( WP_MCP_AI_Booking_Adapter_Factory::has_jetappointment() ) {
+				$ja_adapter = WP_MCP_AI_Booking_Adapter_Factory::get_jetappointment();
+				$ja_context = array();
+				if ( ! empty( $arguments['provider_id'] ) ) {
+					$ja_context['provider_id'] = absint( $arguments['provider_id'] );
+				}
+				if ( ! empty( $arguments['service_id'] ) ) {
+					$ja_context['service_id'] = absint( $arguments['service_id'] );
+				}
+				$ja_result = $ja_adapter->check_availability( $start_time, $end_time, $ja_context );
+				if ( is_wp_error( $ja_result ) ) {
+					$per_system['jetappointment'] = array(
+						'available' => null,
+						'error'     => $ja_result->get_error_message(),
+					);
+				} else {
+					$per_system['jetappointment'] = array(
+						'available' => $ja_result['available'],
+						'conflicts' => isset( $ja_result['conflicts'] ) ? $ja_result['conflicts'] : array(),
+					);
+					if ( ! $ja_result['available'] ) {
+						$is_available = false;
+						if ( ! empty( $ja_result['reasons'] ) ) {
+							foreach ( $ja_result['reasons'] as $ja_reason ) {
+								$reasons[] = '[JetAppointment] ' . $ja_reason;
+							}
+						}
+					}
+				}
+			}
+
+			// JetBooking check.
+			if ( WP_MCP_AI_Booking_Adapter_Factory::has_jetbooking() ) {
+				$jb_adapter = WP_MCP_AI_Booking_Adapter_Factory::get_jetbooking();
+				$jb_context = array();
+				if ( ! empty( $arguments['instance_id'] ) ) {
+					$jb_context['instance_id'] = absint( $arguments['instance_id'] );
+				}
+				$jb_result = $jb_adapter->check_availability( $start_time, $end_time, $jb_context );
+				if ( is_wp_error( $jb_result ) ) {
+					$per_system['jetbooking'] = array(
+						'available' => null,
+						'error'     => $jb_result->get_error_message(),
+					);
+				} else {
+					$per_system['jetbooking'] = array(
+						'available' => $jb_result['available'],
+						'conflicts' => isset( $jb_result['conflicts'] ) ? $jb_result['conflicts'] : array(),
+					);
+					if ( ! $jb_result['available'] ) {
+						$is_available = false;
+						if ( ! empty( $jb_result['reasons'] ) ) {
+							foreach ( $jb_result['reasons'] as $jb_reason ) {
+								$reasons[] = '[JetBooking] ' . $jb_reason;
+							}
+						}
+					}
+				}
+			}
+		}
+
 		return array(
 			'success'    => true,
 			'available'  => $is_available,
 			'start_time' => $start_time,
 			'end_time'   => $end_time,
+			'per_system' => $per_system,
 			'conflicts'  => $conflicts,
 			'reasons'    => $reasons,
 			'message'    => $is_available

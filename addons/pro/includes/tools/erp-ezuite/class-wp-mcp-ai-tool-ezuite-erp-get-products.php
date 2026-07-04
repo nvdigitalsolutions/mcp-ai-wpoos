@@ -193,7 +193,8 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Validate connection type.
-		if ( empty( $connection['connection_type'] ) || 'ezuite_erp' !== $connection['connection_type'] ) {
+		$conn_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+		if ( 'ezuite_erp' !== $conn_type && 'ezuite' !== $conn_type ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_wrong_connection_type',
 				__( 'This connection is not an EZuite ERP connection.', 'mcp-ai-wpoos-pro' )
@@ -369,6 +370,10 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 	/**
 	 * Format raw ERP product data into standardized array structure.
 	 *
+	 * Supports the EZuite API envelope shape:
+	 *   { Status_Code, Message, Response_Body: [...] }
+	 * with a fallback to the legacy { Data: [...] } key.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param array $raw_data Raw API response data.
@@ -378,33 +383,66 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 	protected function format_products( $raw_data, $limit ) {
 		$products = array();
 
-		// Check if we have data in the response.
-		if ( empty( $raw_data['Data'] ) || ! is_array( $raw_data['Data'] ) ) {
+		// Determine the items container — prefer Response_Body (canonical EZuite
+		// envelope) with a fallback to the legacy Data key.
+		$items = array();
+		if ( ! empty( $raw_data['Response_Body'] ) && is_array( $raw_data['Response_Body'] ) ) {
+			$items = $raw_data['Response_Body'];
+		} elseif ( ! empty( $raw_data['Data'] ) && is_array( $raw_data['Data'] ) ) {
+			$items = $raw_data['Data'];
+		}
+
+		if ( empty( $items ) ) {
 			return $products;
 		}
 
 		$count = 0;
-		foreach ( $raw_data['Data'] as $item ) {
+		foreach ( $items as $item ) {
 			if ( $count >= $limit ) {
 				break;
 			}
 
-			// Format product data.
+			// Format product data using canonical EZuite LX_ItemPull field names.
+			// Fields present in the API response are mapped directly; optional
+			// fields that may not be returned are checked individually.
 			$product = array(
-				'item_code'        => isset( $item['Item_Code'] ) ? $item['Item_Code'] : '',
-				'description'      => isset( $item['Description'] ) ? $item['Description'] : '',
-				'location_code'    => isset( $item['Location_Code'] ) ? $item['Location_Code'] : '',
-				'quantity_on_hand' => isset( $item['Quantity_On_Hand'] ) ? floatval( $item['Quantity_On_Hand'] ) : 0,
-				'unit_price'       => isset( $item['Unit_Price'] ) ? floatval( $item['Unit_Price'] ) : 0,
-				'unit_cost'        => isset( $item['Unit_Cost'] ) ? floatval( $item['Unit_Cost'] ) : 0,
-				'category'         => isset( $item['Category'] ) ? $item['Category'] : '',
-				'uom'              => isset( $item['UOM'] ) ? $item['UOM'] : '',
-				'status'           => isset( $item['Status'] ) ? $item['Status'] : '',
+				'item_code'     => isset( $item['Item_Code'] ) ? $item['Item_Code'] : '',
+				'item_name'     => isset( $item['Item_Name'] ) ? $item['Item_Name'] : '',
+				'description'   => isset( $item['Item_Name'] ) ? $item['Item_Name'] : ( isset( $item['Description'] ) ? $item['Description'] : '' ),
+				'quantity'      => isset( $item['Qty'] ) ? floatval( $item['Qty'] ) : ( isset( $item['Quantity_On_Hand'] ) ? floatval( $item['Quantity_On_Hand'] ) : 0 ),
+				'selling_price' => isset( $item['Selling_Price'] ) ? floatval( $item['Selling_Price'] ) : ( isset( $item['Unit_Price'] ) ? floatval( $item['Unit_Price'] ) : 0 ),
+				'group_name'    => isset( $item['Group_Name'] ) ? $item['Group_Name'] : ( isset( $item['Category'] ) ? $item['Category'] : '' ),
+				'supplier_name' => isset( $item['Supplier_Name'] ) ? $item['Supplier_Name'] : ( isset( $item['Vendor_Code'] ) ? $item['Vendor_Code'] : '' ),
 			);
 
-			// Add optional fields if present.
+			// Optional fields — add only when present.
 			if ( isset( $item['Barcode'] ) ) {
 				$product['barcode'] = $item['Barcode'];
+			}
+
+			if ( isset( $item['Printing_Name'] ) ) {
+				$product['printing_name'] = $item['Printing_Name'];
+			}
+
+			if ( isset( $item['Remark'] ) ) {
+				$product['remark'] = $item['Remark'];
+			}
+
+			// Legacy/alternate API shapes.
+			if ( isset( $item['Location_Code'] ) ) {
+				$product['location_code'] = $item['Location_Code'];
+			}
+
+			if ( isset( $item['Unit_Cost'] ) ) {
+				$product['unit_cost'] = floatval( $item['Unit_Cost'] );
+			}
+
+			if ( isset( $item['UOM'] ) ) {
+				$product['uom'] = $item['UOM'];
+			}
+
+			if ( isset( $item['Status'] ) ) {
+				$product['status'] = $item['Status'];
 			}
 
 			if ( isset( $item['Vendor_Code'] ) ) {

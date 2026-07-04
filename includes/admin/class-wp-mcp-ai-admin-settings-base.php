@@ -561,6 +561,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'gemini_image_aspect_ratio'             => '1:1',
 				'gemini_image_mime_type'                => 'image/png',
 				'max_history_messages'                  => 8,
+				'context_strategy'                      => 'sliding_window', // 'sliding_window' | 'bme' | 'bme_rag'
+				'end_window_size'                       => 10,
+				'summary_trigger_count'                 => 30,
+				'summary_trigger_tokens'                => 0, // 0 = use count-based trigger; >0 = use token-based trigger
+				'summary_model'                         => '', // Empty = use assistant model; otherwise model slug
+				'summary_max_tokens'                    => 500,
+				'tool_result_summarize_threshold'       => 2000,
 				'chat_colors'                           => self::get_default_chat_colors(),
 				'allowed_image_mimes'                   => array(),
 				'allowed_file_mimes'                    => array(),
@@ -681,6 +688,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'gemini_live_model'                     => 'gemini-2.5-flash-live',
 				'gemini_live_voice'                     => 'Puck',
 				'chat_enable_voice_chat_button'         => true,
+
+				// ── Embedded Voice & STT Settings ─────────────────────────
+				'embedded_stt_backend'                  => 'whisper_cpp_wasm',
+				'embedded_stt_model'                    => 'tiny.en',
 			);
 		}
 

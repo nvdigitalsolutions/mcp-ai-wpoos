@@ -273,13 +273,14 @@ class WP_MCP_AI_Orchestration_Dashboard {
 								<th><?php esc_html_e( 'Progress', 'mcp-ai-wpoos-pro' ); ?></th>
 								<th><?php esc_html_e( 'Iterations', 'mcp-ai-wpoos-pro' ); ?></th>
 								<th><?php esc_html_e( 'Tokens', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Breaker', 'mcp-ai-wpoos-pro' ); ?></th>
 								<th><?php esc_html_e( 'Elapsed', 'mcp-ai-wpoos-pro' ); ?></th>
 								<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
 							</tr>
 						</thead>
 						<tbody id="sessions-table-body">
 							<tr class="no-items">
-								<td colspan="9"><?php esc_html_e( 'Loading sessions...', 'mcp-ai-wpoos-pro' ); ?></td>
+								<td colspan="10"><?php esc_html_e( 'Loading sessions...', 'mcp-ai-wpoos-pro' ); ?></td>
 							</tr>
 						</tbody>
 					</table>
@@ -493,31 +494,35 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	}
 
 	/**
-	 * Get overview metrics
+	 * Get overview metrics — CCT-first with transient fallback.
 	 *
 	 * @return array
 	 */
 	private function get_overview_metrics() {
-		global $wpdb;
-
-		// Count active sessions (from transients for now).
+		// Count active sessions from CCT if available.
 		$active_sessions = 0;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$transients = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT option_name, option_value FROM {$wpdb->options}
-				WHERE option_name LIKE %s",
-				$wpdb->esc_like( '_transient_mcp_ai_session_' ) . '%'
-			)
-		);
+		if ( class_exists( 'WP_MCP_AI_Autonomous_Sessions_CCT' ) && WP_MCP_AI_Autonomous_Sessions_CCT::is_available() ) {
+			$active_sessions = WP_MCP_AI_Autonomous_Sessions_CCT::count_by_status( 'active' );
+		} else {
+			// Fallback to transient-based counting.
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$transients = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT option_name, option_value FROM {$wpdb->options}
+					WHERE option_name LIKE %s",
+					$wpdb->esc_like( '_transient_mcp_ai_session_' ) . '%'
+				)
+			);
 
-		foreach ( $transients as $transient ) {
-			$session_data = json_decode( $transient->option_value, true );
-			if ( ! is_array( $session_data ) ) {
-				continue;
-			}
-			if ( isset( $session_data['status'] ) && 'active' === $session_data['status'] ) {
-				++$active_sessions;
+			foreach ( $transients as $transient ) {
+				$session_data = json_decode( $transient->option_value, true );
+				if ( ! is_array( $session_data ) ) {
+					continue;
+				}
+				if ( isset( $session_data['status'] ) && 'active' === $session_data['status'] ) {
+					++$active_sessions;
+				}
 			}
 		}
 
@@ -525,10 +530,13 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		$total_plans = wp_count_posts( 'mcp_task_plan' );
 		$plan_count  = isset( $total_plans->publish ) ? $total_plans->publish : 0;
 
-		// Estimate executions (placeholder).
-		$total_executions = $active_sessions * 5; // Rough estimate.
+		// Count executions from execution history CCT if available, else placeholder.
+		$total_executions = $active_sessions * 5;
+		if ( class_exists( 'WP_MCP_AI_Execution_History_CCT' ) && WP_MCP_AI_Execution_History_CCT::get_item_handler() ) {
+			$total_executions = WP_MCP_AI_Execution_History_CCT::count_total();
+		}
 
-		// System health (placeholder).
+		// System health.
 		$system_health = $active_sessions < 5 ? 'Healthy' : ( $active_sessions < 10 ? 'Good' : 'Busy' );
 
 		return array(
@@ -575,11 +583,68 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	}
 
 	/**
-	 * Get active sessions
+	 * Get active sessions — CCT-first with transient fallback.
 	 *
 	 * @return array
 	 */
 	private function get_active_sessions() {
+		// Try CCT first.
+		if ( class_exists( 'WP_MCP_AI_Autonomous_Sessions_CCT' ) && WP_MCP_AI_Autonomous_Sessions_CCT::is_available() ) {
+			return $this->get_active_sessions_from_cct();
+		}
+
+		// Fallback to transients.
+		return $this->get_active_sessions_from_transients();
+	}
+
+	/**
+	 * Get active sessions from the autonomous sessions CCT.
+	 *
+	 * @return array
+	 */
+	private function get_active_sessions_from_cct() {
+		$sessions = array();
+
+		$cct_sessions = WP_MCP_AI_Autonomous_Sessions_CCT::get_active_sessions(
+			array(
+				'limit'   => 50,
+				'orderby' => 'cct_created',
+				'order'   => 'DESC',
+			)
+		);
+
+		foreach ( $cct_sessions as $row ) {
+			$plan_title = 'Unknown';
+			if ( ! empty( $row['plan_id'] ) ) {
+				$plan = get_post( (int) $row['plan_id'] );
+				if ( $plan ) {
+					$plan_title = $plan->post_title;
+				}
+			}
+
+			$sessions[] = array(
+				'session_id'           => isset( $row['session_id'] ) ? substr( $row['session_id'], 0, 8 ) : '',
+				'plan_title'           => $plan_title,
+				'status'               => isset( $row['status'] ) ? $row['status'] : 'unknown',
+				'health'               => isset( $row['health'] ) ? $row['health'] : 'unknown',
+				'iterations'           => isset( $row['iterations'] ) ? (int) $row['iterations'] : 0,
+				'max_iterations'       => isset( $row['max_iterations'] ) ? (int) $row['max_iterations'] : 25,
+				'tokens_used'          => isset( $row['tokens_used'] ) ? (int) $row['tokens_used'] : 0,
+				'token_budget'         => isset( $row['token_budget'] ) ? (int) $row['token_budget'] : 10000,
+				'start_time'           => isset( $row['start_time'] ) ? $row['start_time'] : '',
+				'circuit_breaker_open' => isset( $row['circuit_breaker_open'] ) ? (bool) $row['circuit_breaker_open'] : false,
+			);
+		}
+
+		return $sessions;
+	}
+
+	/**
+	 * Get active sessions from WordPress transients (legacy fallback).
+	 *
+	 * @return array
+	 */
+	private function get_active_sessions_from_transients() {
 		global $wpdb;
 
 		$sessions = array();
@@ -603,22 +668,23 @@ class WP_MCP_AI_Orchestration_Dashboard {
 
 			$plan_title = 'Unknown';
 			if ( ! empty( $session_data['plan_id'] ) ) {
-				$plan = get_post( $session_data['plan_id'] );
+				$plan = get_post( (int) $session_data['plan_id'] );
 				if ( $plan ) {
 					$plan_title = $plan->post_title;
 				}
 			}
 
 			$sessions[] = array(
-				'session_id'     => substr( $session_id, 0, 8 ),
-				'plan_title'     => $plan_title,
-				'status'         => isset( $session_data['status'] ) ? $session_data['status'] : 'unknown',
-				'health'         => isset( $session_data['health'] ) ? $session_data['health'] : 'unknown',
-				'iterations'     => isset( $session_data['iterations'] ) ? $session_data['iterations'] : 0,
-				'max_iterations' => isset( $session_data['max_iterations'] ) ? $session_data['max_iterations'] : 25,
-				'tokens_used'    => isset( $session_data['tokens_used'] ) ? $session_data['tokens_used'] : 0,
-				'token_budget'   => isset( $session_data['token_budget'] ) ? $session_data['token_budget'] : 10000,
-				'start_time'     => isset( $session_data['start_time'] ) ? $session_data['start_time'] : time(),
+				'session_id'           => substr( $session_id, 0, 8 ),
+				'plan_title'           => $plan_title,
+				'status'               => isset( $session_data['status'] ) ? $session_data['status'] : 'unknown',
+				'health'               => isset( $session_data['health_status'] ) ? $session_data['health_status'] : ( isset( $session_data['health'] ) ? $session_data['health'] : 'unknown' ),
+				'iterations'           => isset( $session_data['iteration_count'] ) ? (int) $session_data['iteration_count'] : ( isset( $session_data['iterations'] ) ? (int) $session_data['iterations'] : 0 ),
+				'max_iterations'       => isset( $session_data['max_iterations'] ) ? (int) $session_data['max_iterations'] : 25,
+				'tokens_used'          => isset( $session_data['token_usage'] ) ? (int) $session_data['token_usage'] : ( isset( $session_data['tokens_used'] ) ? (int) $session_data['tokens_used'] : 0 ),
+				'token_budget'         => isset( $session_data['token_budget'] ) ? (int) $session_data['token_budget'] : 10000,
+				'start_time'           => isset( $session_data['started_at'] ) ? $session_data['started_at'] : ( isset( $session_data['start_time'] ) ? $session_data['start_time'] : '' ),
+				'circuit_breaker_open' => isset( $session_data['circuit_breaker'] ) ? 'open' === $session_data['circuit_breaker'] : false,
 			);
 		}
 

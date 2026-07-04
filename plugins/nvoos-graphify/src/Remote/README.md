@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Manages external data-source integration — a driver registry, HTTP client stub, enrichment orchestrator stub, state store, and crypto utilities for remote-source credentials. Full implementations ship in the `nvoos-graphify-remote` addon.
+Manages external data-source integration — a driver registry, HTTP client, enrichment orchestrator, state store, and crypto utilities for remote-source credentials. Core ships seven drivers (CSV, Webhook, Wikidata, Generic REST, RSS/Sitemap, SPARQL, WooCommerce); additional enterprise drivers ship in `nvoos-graphify-pro`.
 
 ## Tier
 
@@ -36,20 +36,15 @@ Manages external data-source integration — a driver registry, HTTP client stub
 ## Conventions
 
 - Drivers implement `NvoosGraphify\Contracts\RemoteSource` and are registered via `Registry::registerDriver()`.
-- **No drivers ship in the core plugin.** Driver implementations (Wikidata, GenericRest, RssSitemap, Sparql, WooCommerce, Csv, Webhook) are provided by the `nvoos-graphify-remote` addon.
-- `HttpClient` is a stub that delegates to `wp_remote_get`/`wp_remote_post`. SSRF-safe URL validation is deferred to the remote addon.
-- `Crypto` is a stub (encrypt/decrypt are pass-through). Credential encryption is deferred to the remote addon. Core stores remote source configs as plain JSON.
+- **Core ships seven drivers:** Wikidata, GenericRest, RssSitemap, Sparql, WooCommerce, Csv, and Webhook. Additional enterprise drivers (Jira, Slack, M365, etc.) are provided by the `nvoos-graphify-pro` addon.
+- `HttpClient` delegates to `wp_remote_get`/`wp_remote_post` with URL validation. Advanced SSRF-safe validation is available in the pro addon.
+- `Crypto` provides pass-through encrypt/decrypt. Credential encryption with a site-specific key is available in the pro addon. Core stores remote source configs as plain JSON.
 
 ## Tests
 
 ```bash
 vendor/bin/phpunit --filter '/Remote|Registry|HttpClient|Enricher|Driver/'
 ```
-
-## Also Load
-
-- [`../../../.context/conventions.md`](../../../.context/conventions.md) — naming + style
-- [`../../../.context/security-checklist.md`](../../../.context/security-checklist.md) — SSRF, encryption
 
 ## See Also
 

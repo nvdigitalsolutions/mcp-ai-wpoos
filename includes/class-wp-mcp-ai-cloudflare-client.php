@@ -19,11 +19,35 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 	class WP_MCP_AI_Cloudflare_Client {
 
 		/**
+		 * TOCTOU-safe API token override set via set_api_token().
+		 *
+		 * When non-null, get_api_token() returns this value instead of
+		 * reading the stored setting, avoiding time-of-check-to-time-of-use
+		 * races during multi-step credential workflows.
+		 *
+		 * @var string|null
+		 */
+		private $api_token_override = null;
+
+		/**
+		 * Override the API token for the lifetime of this instance.
+		 *
+		 * @param string|null $token The API token to use, or null to clear the override.
+		 */
+		public function set_api_token( $token ) {
+			$this->api_token_override = is_string( $token ) && '' !== $token ? $token : null;
+		}
+
+		/**
 		 * Retrieve the configured API token.
 		 *
 		 * @return string
 		 */
 		public function get_api_token() {
+			if ( null !== $this->api_token_override ) {
+				return $this->api_token_override;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['cloudflare_api_token'] ) ? $settings['cloudflare_api_token'] : '';
@@ -414,6 +438,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Normalize messages to ensure content is in the correct format.
 			// Cloudflare Workers AI expects content to be a string for text-only messages.
 			$messages            = $this->filter_tool_messages_for_payload( $messages );
+			$messages            = $this->normalise_messages_for_payload( $messages );
 			$normalized_messages = $this->normalize_messages( $messages );
 
 			// CRITICAL: Cloudflare Workers AI follows OpenAI's chat completions format.
@@ -478,9 +503,17 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			}
 
 			// Set max_tokens using Resource Manager if not explicitly provided.
-			// Cloudflare defaults to only 256 tokens which is extremely low.
-			// This follows the same pattern as Ollama, Gemini, LM Studio, etc.
-			if ( ! isset( $options['max_tokens'] ) ) {
+				// Cloudflare defaults to only 256 tokens which is extremely low.
+				// This follows the same pattern as Ollama, Gemini, LM Studio, etc.
+				// Supports both max_tokens and max_completion_tokens in options.
+				$explicit_max = null;
+			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$explicit_max = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
+				$explicit_max = absint( $options['max_tokens'] );
+			}
+
+			if ( null === $explicit_max ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$max_tokens   = $resource_mgr->get_max_tokens();
 
@@ -494,13 +527,17 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 					)
 				);
 
-				$payload['max_tokens'] = $max_tokens;
+				$payload['max_completion_tokens'] = $max_tokens;
 			} else {
-				$payload['max_tokens'] = (int) $options['max_tokens'];
+				$payload['max_completion_tokens'] = $explicit_max;
 			}
 
-			if ( isset( $options['stream'] ) ) {
-				$payload['stream'] = (bool) $options['stream'];
+				$is_streaming      = isset( $options['stream'] ) ? (bool) $options['stream'] : false;
+				$payload['stream'] = $is_streaming;
+
+				// Include stream_options when streaming is enabled to receive usage data.
+			if ( $is_streaming ) {
+				$payload['stream_options'] = array( 'include_usage' => true );
 			}
 
 			// Add response_format for JSON mode (OpenAI-compatible).
@@ -605,6 +642,70 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			}
 
 			return array_values( $normalised );
+		}
+
+		/**
+		 * Normalise message content arrays before sending to the Cloudflare API.
+		 *
+		 * When all content segments are text-only, flattens the array to a
+		 * plain string, which is what Cloudflare Workers AI models expect.
+		 * Mixed content (images + text) is left as-is.
+		 *
+		 * @param array $messages Chat history.
+		 * @return array
+		 */
+		protected function normalise_messages_for_payload( array $messages ) {
+			$normalised = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					$normalised[] = $message;
+					continue;
+				}
+
+				$segments = array_values( $message['content'] );
+
+				if ( empty( $segments ) ) {
+					$message['content'] = '';
+					$normalised[]       = $message;
+					continue;
+				}
+
+				$all_text   = true;
+				$text_parts = array();
+
+				foreach ( $segments as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$all_text = false;
+						break;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'text' !== $type ) {
+						$all_text = false;
+						break;
+					}
+
+					$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+				}
+
+				if ( $all_text ) {
+					$text_parts         = array_filter(
+						$text_parts,
+						static function ( $part ) {
+							return '' !== trim( $part );
+						}
+					);
+					$message['content'] = implode( "\n\n", $text_parts );
+				} else {
+					$message['content'] = $segments;
+				}
+
+				$normalised[] = $message;
+			}
+
+			return $normalised;
 		}
 
 		/**
@@ -891,9 +992,17 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				$usage = $this->estimate_token_usage( $content );
 			}
 
-			// Add provider and model to usage for tracking.
-			$usage['provider'] = 'cloudflare';
-			$usage['model']    = $model;
+				// Add provider and model to usage for tracking.
+				$usage['provider'] = 'cloudflare';
+				$usage['model']    = $model;
+
+				// Extract cached tokens from prompt_tokens_details (OpenAI-compatible).
+				$raw_usage = isset( $decoded['usage'] ) && is_array( $decoded['usage'] )
+					? $decoded['usage']
+					: ( isset( $result['usage'] ) && is_array( $result['usage'] ) ? $result['usage'] : array() );
+			if ( isset( $raw_usage['prompt_tokens_details']['cached_tokens'] ) ) {
+				$usage['cached_tokens'] = (int) $raw_usage['prompt_tokens_details']['cached_tokens'];
+			}
 
 			// Determine finish_reason based on whether tool_calls are present.
 			// Note: Cloudflare may return finish_reason as 'stop' even with tool_calls,

@@ -15,8 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides functionality to create newsletter emails in the Newsletter plugin.
  */
-class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	/**
 	 * Determine whether Newsletter plugin is available.
@@ -330,9 +331,12 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_capability_flags() {
 		return array(
-			'requires-capability',  // Requires user capabilities.
-			'modifies-data',        // Creates new data.
-			'local-only',           // No external API calls.
+			'write',                    // Creates newsletter emails.
+			'state-changing',           // Modifies newsletter data.
+			'local-only',               // No external API calls.
+			'requires-capability',      // Requires user capabilities.
+			'irreversible',             // Newsletters are sent to real subscribers (since 1.9.0).
+			'external-communication',   // Sends content to mailing lists (since 1.9.0).
 		);
 	}
 }

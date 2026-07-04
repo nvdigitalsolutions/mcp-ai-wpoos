@@ -22,8 +22,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 /**
  * Provides a master tool for purging all configured cache layers.
  */
-class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	const DEFAULT_TIMEOUT = 30;
 
@@ -308,6 +309,7 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'requires-capability',  // Requires 'manage_options' capability.
 			'performance-impact',   // May affect site performance temporarily.
 			'idempotent',           // Can be called multiple times safely.
+			'reversible',           // Cache will automatically rebuild (since 1.9.0).
 		);
 	}
 }

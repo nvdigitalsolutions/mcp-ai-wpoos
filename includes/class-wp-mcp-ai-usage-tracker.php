@@ -822,6 +822,23 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K.
 				'output_cost_per_1k' => 0.0022, // $2.20 per 1M tokens = $0.0022 per 1K.
 			),
+			// Z.AI GLM-5.x direct models (as of June 2026).
+			'glm-5.2'                                      => array(
+				'input_cost_per_1k'  => 0.0014, // $1.40 per 1M tokens.
+				'output_cost_per_1k' => 0.0044, // $4.40 per 1M tokens.
+			),
+			'glm-5'                                        => array(
+				'input_cost_per_1k'  => 0.0014, // $1.40 per 1M tokens.
+				'output_cost_per_1k' => 0.0044, // $4.40 per 1M tokens.
+			),
+			'glm-5-turbo'                                  => array(
+				'input_cost_per_1k'  => 0.0007, // Estimated ~50% of GLM-5.2.
+				'output_cost_per_1k' => 0.0022, // Estimated ~50% of GLM-5.2.
+			),
+			'glm-4.7'                                      => array(
+				'input_cost_per_1k'  => 0.0006,
+				'output_cost_per_1k' => 0.0022,
+			),
 			'moonshotai/kimi-k2'                           => array(
 				'input_cost_per_1k'  => 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K.
 				'output_cost_per_1k' => 0.0025, // $2.50 per 1M tokens = $0.0025 per 1K.

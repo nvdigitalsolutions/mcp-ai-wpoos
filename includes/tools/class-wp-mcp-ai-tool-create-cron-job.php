@@ -19,8 +19,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows privileged users to create WP-Cron jobs.
  */
-class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Safety_Profile_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Safety_Profile;
 
 	/**
 	 * {@inheritdoc}
@@ -261,6 +262,7 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'requires-polling',     // May need to poll for completion status.
 			'may-timeout',          // Should not wait for cron execution in same request.
 			'background-only',      // Cron execution happens in background.
+			'reversible',           // Cron jobs can be unscheduled (since 1.9.0).
 		);
 	}
 }

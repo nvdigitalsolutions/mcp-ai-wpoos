@@ -623,6 +623,23 @@ if [ "$BUILD_PRO" = true ]; then
         echo "ℹ️  Note: Canvas requires system-level installation for PDF OCR; install via npm when needed"
         echo "ℹ️  Note: Sharp native binaries excluded (~16 MB); JS wrapper included — run npm install sharp for native acceleration"
         echo "ℹ️  Note: Other vendor packages (~40+ NPM packages including puppeteer-core) are included for immediate functionality"
+
+        # Fix masterminds/html5 case collision on case-insensitive filesystems (Windows/macOS).
+        # The package ships both src/HTML5.php (file) and src/HTML5/ (directory), which
+        # collide when the filesystem treats them as the same name.
+        # Rename HTML5.php → HTML5_main.php and add a classmap entry to resolve.
+        MASTERMINDS_SRC="build/${PRO_SLUG}/vendor/masterminds/html5/src"
+        if [ -f "${MASTERMINDS_SRC}/HTML5.php" ] && [ -d "${MASTERMINDS_SRC}/HTML5" ]; then
+            mv "${MASTERMINDS_SRC}/HTML5.php" "${MASTERMINDS_SRC}/HTML5_main.php"
+            MASTERMINDS_CLASSMAP="build/${PRO_SLUG}/vendor/composer/autoload_classmap.php"
+            if [ -f "${MASTERMINDS_CLASSMAP}" ]; then
+                # Remove closing ); and append new classmap entry + closing );
+                sed -i '$ d' "${MASTERMINDS_CLASSMAP}"
+                echo "    'Masterminds\\\\HTML5' => \$vendorDir . '/masterminds/html5/src/HTML5_main.php'," >> "${MASTERMINDS_CLASSMAP}"
+                echo ");" >> "${MASTERMINDS_CLASSMAP}"
+            fi
+            echo "✓ Fixed masterminds/html5 case collision (HTML5.php → HTML5_main.php)"
+        fi
         
         # Copy examples and CSV templates from root to Pro (excluded from base)
         if [ -d "examples" ]; then
@@ -880,6 +897,23 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-test-*.php' \
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-*.php'
     
+    # Fix masterminds/html5 case collision on case-insensitive filesystems (Windows/macOS).
+    # The package ships both src/HTML5.php (file) and src/HTML5/ (directory), which
+    # collide when the filesystem treats them as the same name.
+    # Rename HTML5.php → HTML5_main.php and add a classmap entry to resolve.
+    COMBINED_MASTERMINDS_SRC="build/${COMBINED_SLUG}/addons/pro/vendor/masterminds/html5/src"
+    if [ -f "${COMBINED_MASTERMINDS_SRC}/HTML5.php" ] && [ -d "${COMBINED_MASTERMINDS_SRC}/HTML5" ]; then
+        mv "${COMBINED_MASTERMINDS_SRC}/HTML5.php" "${COMBINED_MASTERMINDS_SRC}/HTML5_main.php"
+        COMBINED_CLASSMAP="build/${COMBINED_SLUG}/addons/pro/vendor/composer/autoload_classmap.php"
+        if [ -f "${COMBINED_CLASSMAP}" ]; then
+            # Remove closing ); and append new classmap entry + closing );
+            sed -i '$ d' "${COMBINED_CLASSMAP}"
+            echo "    'Masterminds\\\\HTML5' => \$vendorDir . '/masterminds/html5/src/HTML5_main.php'," >> "${COMBINED_CLASSMAP}"
+            echo ");" >> "${COMBINED_CLASSMAP}"
+        fi
+        echo "✓ Fixed masterminds/html5 case collision (HTML5.php → HTML5_main.php)"
+    fi
+
     # Keep both minified and unminified assets for flexibility
     # PHP code will automatically use minified versions in production (via get_asset_file() method)
     # and unminified versions when SCRIPT_DEBUG is enabled.

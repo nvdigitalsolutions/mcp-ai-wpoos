@@ -247,7 +247,7 @@ These are the core AI services that power the plugin's assistant functionality. 
 
 ### 6d. Kimi (Moonshot AI) API
 
-**Service URL:** `https://api.moonshot.cn/v1` (default; supports custom base URL for proxies)  
+**Service URL:** `https://api.moonshot.ai/v1` (default; supports custom base URL for proxies)  
 **Purpose:** Cloud AI inference via Moonshot AI's OpenAI-compatible API supporting Kimi K2.6, K2.5, K2, K2-Thinking (chain-of-thought), and legacy moonshot-v1 model families with up to 256K context windows  
 **Data Sent:**
 - Chat messages and conversation history
@@ -260,9 +260,9 @@ These are the core AI services that power the plugin's assistant functionality. 
 - Token estimation endpoint called before each request when configured
 
 **Legal & Privacy:**
-- **Terms of Service:** https://platform.moonshot.cn/docs/policy/service-agreement
-- **Privacy Policy:** https://platform.moonshot.cn/docs/policy/privacy-policy
-- **API Documentation:** https://platform.moonshot.cn/docs/api-reference
+- **Terms of Service:** https://platform.moonshot.ai/docs/policy/service-agreement
+- **Privacy Policy:** https://platform.moonshot.ai/docs/policy/privacy-policy
+- **API Documentation:** https://platform.moonshot.ai/docs/api-reference
 - **Data Usage:** See Moonshot AI's privacy policy for data handling details
 
 **Supported Models:**

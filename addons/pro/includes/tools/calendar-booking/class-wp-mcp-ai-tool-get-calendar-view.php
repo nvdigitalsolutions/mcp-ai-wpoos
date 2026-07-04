@@ -183,6 +183,70 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 			$calendar_items = array_merge( $calendar_items, $this->get_events_in_range( $start_date, $end_date, $project_id, $user_id ) );
 		}
 
+		// --- External system items (v1.5.0) ---
+		$include_external = ! isset( $arguments['include_external'] ) || ! empty( $arguments['include_external'] );
+		if ( $include_external && class_exists( 'WP_MCP_AI_Booking_Adapter_Factory' ) ) {
+			// JetAppointment appointments.
+			if ( WP_MCP_AI_Booking_Adapter_Factory::has_jetappointment() ) {
+				$adapter   = WP_MCP_AI_Booking_Adapter_Factory::get_jetappointment();
+				$ja_result = $adapter->get_bookings(
+					array(
+						'date_from' => $start_date,
+						'date_to'   => $end_date,
+					)
+				);
+				if ( ! is_wp_error( $ja_result ) && ! empty( $ja_result['items'] ) ) {
+					foreach ( $ja_result['items'] as $booking ) {
+						$calendar_items[] = array(
+							'type'        => 'appointment',
+							'source'      => 'jetappointment',
+							'id'          => $booking['id'],
+							'title'       => sprintf(
+								/* translators: %d: booking ID */
+								__( 'Appointment #%d', 'mcp-ai-wpoos-pro' ),
+								$booking['id']
+							),
+							'date'        => $booking['date'],
+							'time'        => '',
+							'status'      => $booking['status'],
+							'provider_id' => $booking['provider_id'],
+							'service_id'  => $booking['service_id'],
+						);
+					}
+				}
+			}
+
+			// JetBooking bookings.
+			if ( WP_MCP_AI_Booking_Adapter_Factory::has_jetbooking() ) {
+				$adapter   = WP_MCP_AI_Booking_Adapter_Factory::get_jetbooking();
+				$jb_result = $adapter->get_bookings(
+					array(
+						'date_from' => $start_date,
+						'date_to'   => $end_date,
+					)
+				);
+				if ( ! is_wp_error( $jb_result ) && ! empty( $jb_result['items'] ) ) {
+					foreach ( $jb_result['items'] as $booking ) {
+						$calendar_items[] = array(
+							'type'        => 'booking',
+							'source'      => 'jetbooking',
+							'id'          => $booking['id'],
+							'title'       => sprintf(
+								/* translators: %s: unit title or booking ID */
+								__( 'Booking: %s', 'mcp-ai-wpoos-pro' ),
+								! empty( $booking['unit_title'] ) ? $booking['unit_title'] : '#' . $booking['id']
+							),
+							'date'        => $booking['check_in_date'],
+							'end_date'    => $booking['check_out_date'],
+							'status'      => $booking['status'],
+							'instance_id' => $booking['instance_id'],
+							'unit_id'     => $booking['unit_id'],
+						);
+					}
+				}
+			}
+		}
+
 		// Sort by date.
 		usort(
 			$calendar_items,

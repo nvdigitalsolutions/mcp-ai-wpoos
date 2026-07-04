@@ -77,9 +77,9 @@ class ShortestPath extends AbstractTool {
 		$max_depth   = isset( $arguments['max_depth'] ) ? max( 2, min( 10, absint( $arguments['max_depth'] ) ) ) : 6;
 
 		if ( ! $start_label || ! $end_label ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Both start and end are required.', 'nvoos-graphify' ),
+			return new \WP_Error(
+				'shortest_path_both_required',
+				__( 'Both start and end are required.', 'nvoos-graphify' )
 			);
 		}
 
@@ -98,34 +98,32 @@ class ShortestPath extends AbstractTool {
 		}
 
 		if ( ! $start_node ) {
-			return array(
-				'success' => false,
+			return new \WP_Error(
+				'shortest_path_start_not_found',
 				/* translators: %s: node label that was not found */
-				'error'   => sprintf( __( 'Start node "%s" not found.', 'nvoos-graphify' ), $start_label ),
+				sprintf( __( 'Start node "%s" not found.', 'nvoos-graphify' ), $start_label )
 			);
 		}
 		if ( ! $end_node ) {
-			return array(
-				'success' => false,
+			return new \WP_Error(
+				'shortest_path_end_not_found',
 				/* translators: %s: node label that was not found */
-				'error'   => sprintf( __( 'End node "%s" not found.', 'nvoos-graphify' ), $end_label ),
+				sprintf( __( 'End node "%s" not found.', 'nvoos-graphify' ), $end_label )
 			);
 		}
 
 			$path_ids = Analyzer::shortestPath( $start_node->node_id, $end_node->node_id, $max_depth );
 
 		if ( null === $path_ids ) {
-			return array(
-				'success' => false,
-				'start'   => $start_node->label,
-				'end'     => $end_node->label,
-				'error'   => sprintf(
+			return new \WP_Error(
+				'shortest_path_no_path',
+				sprintf(
 					/* translators: 1: start label, 2: end label, 3: depth limit */
 					__( 'No path found between "%1$s" and "%2$s" within depth %3$d.', 'nvoos-graphify' ),
 					$start_node->label,
 					$end_node->label,
 					$max_depth
-				),
+				)
 			);
 		}
 

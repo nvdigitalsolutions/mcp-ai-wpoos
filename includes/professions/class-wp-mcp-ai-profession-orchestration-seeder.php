@@ -94,10 +94,11 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		// get_posts() with posts_per_page => -1 can be unreliable with 200+ posts.
 		$query = new WP_Query(
 			array(
-				'post_type'   => 'mcp_ai_profession',
-				'post_status' => 'publish',
-				'nopaging'    => true,
-				'fields'      => 'all',
+				'post_type'              => 'mcp_ai_profession',
+				'post_status'            => 'publish',
+				'nopaging'               => true,
+				'fields'                 => 'all',
+				'update_post_meta_cache' => false,
 			)
 		);
 
