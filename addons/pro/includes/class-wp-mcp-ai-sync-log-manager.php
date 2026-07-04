@@ -70,6 +70,17 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 		const PRUNE_GROUP = 'sync_log_maintenance';
 
 		/**
+		 * In-memory cache of loaded runs keyed by toolkit slug.
+		 *
+		 * Avoids repeated get_option() calls during a sync when log_item()
+		 * updates the same run entry for every item processed.
+		 *
+		 * @since 1.9.2
+		 * @var array<string, array>
+		 */
+		protected static $runs_cache = array();
+
+		/**
 		 * Initialize pruning schedule.
 		 *
 		 * Hooks into WordPress to schedule a daily log pruning job.
@@ -176,7 +187,8 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 
 			if ( count( $entry['items'] ) >= self::MAX_ITEMS_PER_RUN ) {
 				$entry['items_capped'] = true;
-				self::save_run_entry( $toolkit_slug, $entry );
+				// Defer — end_run() will persist the final capped state.
+				self::save_run_entry( $toolkit_slug, $entry, true );
 				return;
 			}
 
@@ -216,7 +228,8 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 					break;
 			}
 
-			self::save_run_entry( $toolkit_slug, $entry );
+			// Defer the write: end_run() will persist the final state once.
+			self::save_run_entry( $toolkit_slug, $entry, true );
 		}
 
 		/**
@@ -404,6 +417,9 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 			$toolkit_slug = sanitize_key( $toolkit_slug );
 			delete_option( self::get_option_key( $toolkit_slug ) );
 
+			// Invalidate in-memory cache so the next read re-hydrates from DB.
+			unset( self::$runs_cache[ $toolkit_slug ] );
+
 			if ( function_exists( 'wp_mcp_ai_log' ) ) {
 				wp_mcp_ai_log(
 					sprintf( '[Sync Log] Cleared all sync logs for %s.', $toolkit_slug ),
@@ -481,6 +497,9 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 				update_option( $option_key, $runs, false ); // Do not autoload.
 			}
 
+			// Invalidate in-memory cache so the next read re-hydrates from DB.
+			unset( self::$runs_cache[ $toolkit_slug ] );
+
 			return $pruned_count;
 		}
 
@@ -526,9 +545,17 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 		 * @return array<int,array> Array of run entries.
 		 */
 		protected static function load_all_runs( $toolkit_slug ) {
+			if ( isset( self::$runs_cache[ $toolkit_slug ] ) ) {
+				return self::$runs_cache[ $toolkit_slug ];
+			}
+
 			$option_key = self::get_option_key( $toolkit_slug );
 			$runs       = get_option( $option_key, array() );
-			return is_array( $runs ) ? $runs : array();
+			$runs       = is_array( $runs ) ? $runs : array();
+
+			self::$runs_cache[ $toolkit_slug ] = $runs;
+
+			return $runs;
 		}
 
 		/**
@@ -555,14 +582,25 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 		/**
 		 * Save a run entry (insert or update) for a toolkit.
 		 *
+		 * When $defer is true the entry is only written to the in-memory
+		 * cache.  Callers that invoke this method inside a tight loop
+		 * (e.g. log_item() for every synced item) should pass $defer = true
+		 * and let end_run() flush the final state to the database once.
+		 *
 		 * @since 1.9.1
+		 * @since 1.9.2 Added $defer parameter for batched writes.
 		 *
 		 * @param string $toolkit_slug Toolkit identifier.
 		 * @param array  $entry        Run entry.
+		 * @param bool   $defer        If true, only update in-memory cache.
 		 */
-		protected static function save_run_entry( $toolkit_slug, $entry ) {
-			$option_key = self::get_option_key( $toolkit_slug );
-			$runs       = self::load_all_runs( $toolkit_slug );
+		protected static function save_run_entry( $toolkit_slug, $entry, $defer = false ) {
+			// Ensure the cache is hydrated.
+			if ( ! isset( self::$runs_cache[ $toolkit_slug ] ) ) {
+				self::load_all_runs( $toolkit_slug );
+			}
+
+			$runs = &self::$runs_cache[ $toolkit_slug ];
 
 			// Find and replace existing entry, or append new one.
 			$found  = false;
@@ -595,6 +633,11 @@ if ( ! class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) ) {
 				$runs = array_slice( $runs, 0, self::MAX_RUNS );
 			}
 
+			if ( $defer ) {
+				return; // Batch with other log_item() calls — end_run() will flush.
+			}
+
+			$option_key = self::get_option_key( $toolkit_slug );
 			update_option( $option_key, $runs, false ); // Do not autoload.
 		}
 
