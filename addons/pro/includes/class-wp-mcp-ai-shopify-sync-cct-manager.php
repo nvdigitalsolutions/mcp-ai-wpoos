@@ -1565,67 +1565,18 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 				$client = new WP_MCP_AI_Shopify_Client( $this->connection_id );
 
-				// Catalog API connections cannot run inventory syncs -
-				// they only support product search, not Admin GraphQL.
+				// Catalog API connections use a different sync path —
+				// they can't run Admin GraphQL bulk operations, but can
+				// cache product data from search/lookup results.
 			if ( 'catalog_api' === $client->get_api_mode() ) {
-				return new WP_Error(
-					'wp_mcp_ai_shopify_sync_catalog_only',
-					__( 'This connection is configured for Shopify Catalog API only. Inventory sync requires Shopify Admin API. Please switch the connection mode to Admin API in Remote Sites settings and provide a store URL and Admin API access token.', 'mcp-ai-wpoos-pro' )
-				);
+				return $this->sync_from_catalog_api( $client, $dry_run, $run_id );
 			}
 
 				// Shopify Bulk Operation query — export all products with variants and inventory.
-				$bulk_query = '{
-						products {
-							edges {
-								node {
-									id
-									title
-									handle
-									status
-									vendor
-									productType
-									tags
-									updatedAt
-									images(first: 1) {
-										edges {
-											node {
-												url
-											}
-										}
-									}
-									variants {
-										edges {
-											node {
-												id
-												title
-												sku
-												price
-												compareAtPrice
-												inventoryItem {
-													id
-												}
-												inventoryLevels {
-													edges {
-														node {
-															quantities(names: ["available", "on_hand", "incoming", "reserved"]) {
-																name
-																quantity
-															}
-															location {
-																id
-																name
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}';
+				// When sync_mode is 'minimal', only requests title, SKU, and stock levels.
+				$settings   = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
+				$sync_mode  = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
+				$bulk_query = $this->build_bulk_query( $sync_mode );
 
 				$bulk_result = $client->bulk_query( $bulk_query, true );
 
@@ -1635,6 +1586,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 				$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
 				$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
+			if ( empty( $mapping ) ) {
+				$sync_mode = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
+				$mapping   = $this->get_default_field_mapping( $sync_mode );
+			}
 
 				$items = isset( $bulk_result['items'] ) ? $bulk_result['items'] : array();
 
@@ -1809,6 +1764,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
 			$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
+			if ( empty( $mapping ) ) {
+				$sync_mode = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
+				$mapping   = $this->get_default_field_mapping( $sync_mode );
+			}
 
 			// Map the single product to CCT rows (one per variant per location).
 			$rows   = $this->map_graphql_product_to_cct_rows( $product_data, $mapping );
@@ -1828,19 +1787,315 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			);
 		}
 
+		/**
+		 * Sync products from the Shopify Catalog API (discovery/search API).
+		 *
+		 * The Catalog API does not support bulk operations or full catalog
+		 * listing. Instead, this method runs configured search queries and
+		 * caches the results. It is designed for stores that want to cache
+		 * Catalog API search/lookup results locally for zero-cost AI tool access.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param WP_MCP_AI_Shopify_Client $client  Shopify client instance.
+		 * @param bool                     $dry_run If true, skip CCT writes.
+		 * @param string                   $run_id  Optional sync run ID for logging.
+		 * @return array|WP_Error Sync result or WP_Error.
+		 */
+		public function sync_from_catalog_api( $client, $dry_run = false, $run_id = '' ) {
+			$start_time = microtime( true );
+
+			// Ensure CCT columns exist.
+			if ( ! $dry_run ) {
+				$columns_result = $this->ensure_columns();
+				if ( is_wp_error( $columns_result ) ) {
+					return $columns_result;
+				}
+			}
+
+			$settings  = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
+			$sync_mode = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
+
+			// Get search terms from settings, or use a default broad search.
+			$search_terms = isset( $settings['catalog_search_terms'] ) && is_array( $settings['catalog_search_terms'] )
+				? array_filter( array_map( 'sanitize_text_field', $settings['catalog_search_terms'] ) )
+				: array( '' ); // Empty string = broad match.
+
+			// Build Catalog API query filters.
+			$filters = array();
+			$shop_id = $client->get_catalog_shop_id();
+			if ( ! empty( $shop_id ) ) {
+				$filters['shop_ids'] = $shop_id;
+			}
+
+			$total_synced   = 0;
+			$total_searched = 0;
+
+			foreach ( $search_terms as $term ) {
+				$page = 1;
+				$term = trim( $term );
+
+				// Paginate through search results (Catalog API returns max 10 per page).
+				while ( true ) {
+					$query_args = array_merge(
+						$filters,
+						array(
+							'limit' => 10,
+							'page'  => $page,
+						)
+					);
+
+					if ( '' !== $term ) {
+						$query_args['query'] = $term;
+					}
+
+					$result = $client->catalog_request( 'global/v2/search', $query_args );
+
+					if ( is_wp_error( $result ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'shopify_catalog_sync_error',
+							'Catalog API search failed.',
+							array(
+								'term'  => $term,
+								'page'  => $page,
+								'error' => $result->get_error_message(),
+							)
+						);
+						break; // Move to next search term on error.
+					}
+
+					$products = isset( $result['products'] ) ? $result['products'] : array();
+					if ( empty( $products ) ) {
+						break; // No more results for this term.
+					}
+
+					foreach ( $products as $product ) {
+						$rows = $this->map_catalog_product_to_cct_rows( $product, $sync_mode );
+
+						foreach ( $rows as $row ) {
+							if ( $dry_run ) {
+								++$total_synced;
+								continue;
+							}
+
+							$upsert_result = $this->upsert( $row );
+							if ( ! is_wp_error( $upsert_result ) ) {
+								++$total_synced;
+							}
+						}
+					}
+
+					$total_searched += count( $products );
+					++$page;
+
+					// Safety: max 5 pages per search term (50 products) to avoid
+					// excessive API calls. Catalog API is for discovery, not full sync.
+					if ( $page > 5 || count( $products ) < 10 ) {
+						break;
+					}
+				}
+			}
+
+			$duration = round( microtime( true ) - $start_time, 2 );
+
+			return array(
+				'status'         => 'success',
+				'products_found' => $total_searched,
+				'rows_synced'    => $total_synced,
+				'duration_secs'  => $duration,
+				'sync_type'      => 'catalog_api',
+			);
+		}
+
+		/**
+		 * Map a Catalog API product result to CCT rows.
+		 *
+		 * Catalog API returns products in a different format than Admin GraphQL.
+		 * This method normalizes the response into CCT row format.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param array  $product   Catalog API product data.
+		 * @param string $sync_mode 'full' or 'minimal'.
+		 * @return array Array of CCT row arrays.
+		 */
+		protected function map_catalog_product_to_cct_rows( $product, $sync_mode = 'full' ) {
+			$rows    = array();
+			$base_id = isset( $product['id'] ) ? sanitize_text_field( $product['id'] ) : '';
+
+			$product_data = array(
+				'shopify_product_id' => $base_id,
+				'product_title'      => isset( $product['title'] ) ? sanitize_text_field( $product['title'] ) : '',
+				'handle'             => isset( $product['handle'] ) ? sanitize_text_field( $product['handle'] ) : '',
+				'vendor'             => isset( $product['vendor'] ) ? sanitize_text_field( $product['vendor'] ) : '',
+				'product_type'       => isset( $product['product_type'] ) ? sanitize_text_field( $product['product_type'] ) : '',
+				'status'             => 'active',
+				'image_url'          => isset( $product['image_url'] ) ? esc_url_raw( $product['image_url'] ) : '',
+				'shopify_updated_at' => isset( $product['updated_at'] ) ? sanitize_text_field( $product['updated_at'] ) : '',
+			);
+
+			// Process variants.
+			$variants = isset( $product['variants'] ) ? $product['variants'] : array();
+			if ( empty( $variants ) && isset( $product['variant_id'] ) ) {
+				// Single variant product — wrap in array.
+				$variants = array( $product );
+			}
+
+			foreach ( $variants as $variant ) {
+				$variant_id = isset( $variant['id'] ) ? sanitize_text_field( $variant['id'] ) :
+					( isset( $variant['variant_id'] ) ? sanitize_text_field( $variant['variant_id'] ) : '' );
+
+				$row = array_merge(
+					$product_data,
+					array(
+						'shopify_variant_id' => $variant_id,
+						'variant_title'      => isset( $variant['title'] ) ? sanitize_text_field( $variant['title'] ) : '',
+						'sku'                => isset( $variant['sku'] ) ? sanitize_text_field( $variant['sku'] ) : '',
+						'price'              => isset( $variant['price'] ) ? number_format( floatval( $variant['price'] ), 2, '.', '' ) : '0.00',
+						'compare_at_price'   => isset( $variant['compare_at_price'] ) ? number_format( floatval( $variant['compare_at_price'] ), 2, '.', '' ) : '0.00',
+						// Catalog API doesn't provide inventory levels — set to 0.
+						'available_qty'      => 0,
+						'on_hand_qty'        => 0,
+						'incoming_qty'       => 0,
+						'reserved_qty'       => 0,
+						'location_id'        => 'catalog_api',
+						'location_name'      => 'Catalog API',
+					)
+				);
+
+				$row['sync_hash']      = md5( wp_json_encode( $row ) );
+				$row['sync_status']    = 'synced';
+				$row['last_synced_at'] = current_time( 'mysql' );
+
+				$rows[] = $row;
+			}
+
+			return $rows;
+		}
+
 		// ------------------------------------------------------------------ //
 		// Field Mapping                                                       //
 		// ------------------------------------------------------------------ //
 
 		/**
+		 * Build the Shopify Bulk Operation GraphQL query.
+		 *
+		 * When sync_mode is 'minimal', only requests title, SKU, and
+		 * available stock levels — dramatically reducing the data payload
+		 * and GraphQL processing time.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param string $sync_mode 'full' or 'minimal'.
+		 * @return string GraphQL query.
+		 */
+		protected function build_bulk_query( $sync_mode = 'full' ) {
+			if ( 'minimal' === $sync_mode ) {
+				return '{
+					products {
+						edges {
+							node {
+								id
+								title
+								updatedAt
+								variants {
+									edges {
+										node {
+											id
+											sku
+											price
+											inventoryItem {
+												id
+											}
+											inventoryLevels {
+												edges {
+													node {
+														quantities(names: ["available", "on_hand"]) {
+															name
+															quantity
+														}
+														location {
+															id
+															name
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}';
+			}
+
+			// Full sync: all product and variant fields.
+			return '{
+				products {
+					edges {
+						node {
+							id
+							title
+							handle
+							status
+							vendor
+							productType
+							tags
+							updatedAt
+							images(first: 1) {
+								edges {
+									node {
+										url
+									}
+								}
+							}
+							variants {
+								edges {
+									node {
+										id
+										title
+										sku
+										price
+										compareAtPrice
+										inventoryItem {
+											id
+										}
+										inventoryLevels {
+											edges {
+												node {
+													quantities(names: ["available", "on_hand", "incoming", "reserved"]) {
+														name
+														quantity
+													}
+													location {
+														id
+														name
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}';
+		}
+
+		/**
 		 * Get the default field mapping from Shopify GraphQL fields to CCT columns.
+		 *
+		 * When sync_mode is 'minimal', only maps title, SKU, and stock fields.
 		 *
 		 * @since 1.3.0
 		 *
+		 * @param string $sync_mode Optional. 'full' or 'minimal'.
 		 * @return array
 		 */
-		public function get_default_field_mapping() {
-			return array(
+		public function get_default_field_mapping( $sync_mode = 'full' ) {
+			$full_mapping = array(
 				'shopify_product_id' => 'id',
 				'shopify_variant_id' => 'variant_id',
 				'inventory_item_id'  => 'inventory_item_id',
@@ -1863,6 +2118,24 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				'handle'             => 'handle',
 				'shopify_updated_at' => 'updatedAt',
 			);
+
+			if ( 'minimal' === $sync_mode ) {
+				return array(
+					'shopify_product_id' => 'id',
+					'shopify_variant_id' => 'variant_id',
+					'inventory_item_id'  => 'inventory_item_id',
+					'sku'                => 'sku',
+					'product_title'      => 'title',
+					'price'              => 'price',
+					'location_id'        => 'location_id',
+					'location_name'      => 'location_name',
+					'available_qty'      => 'available_qty',
+					'on_hand_qty'        => 'on_hand_qty',
+					'shopify_updated_at' => 'updatedAt',
+				);
+			}
+
+			return $full_mapping;
 		}
 
 		/**

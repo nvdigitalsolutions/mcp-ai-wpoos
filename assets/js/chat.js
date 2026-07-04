@@ -17,6 +17,10 @@
         nonce: '',
         historyPerPage: 20,
         maxHistoryMessages: 8,
+        contextStrategy: 'sliding_window',
+        endWindowSize: 10,
+        summaryTriggerCount: 30,
+        toolResultSummarizeThreshold: 2000,
         asyncToolTimeout: 300000,
         strings: {},
     };
@@ -1002,24 +1006,27 @@
          * 
          * @return {Object} Result with success status
          */
-        function performSave() {
-            try {
-                const storageKey = getStorageKey(assistantId);
-                const data = {
-                    conversation: state.conversation || [],
-                    sessionKey: state.config.sessionKey || '',
-                    timestamp: Date.now(),
-                    assistantId: assistantId
-                };
-                
-                // Log save attempt
-                if (DEBUG_MODE && window.console && console.log) {
-                    console.log('[NV oOS] Saving conversation to localStorage:', {
-                        assistant_id: assistantId,
-                        message_count: (state.conversation || []).length,
-                        storage_key: storageKey,
-                    });
-                }
+	        function performSave() {
+	            try {
+	                const storageKey = getStorageKey(assistantId);
+	                const data = {
+	                    conversation: state.conversation || [],
+	                    sessionKey: sanitizeSessionKey(state.config.sessionKey || ''),
+	                    timestamp: Date.now(),
+	                    assistantId: assistantId,
+	                    summary: state.summary || '',
+	                    contextStrategy: state.config.contextStrategy || globalConfig.contextStrategy || 'sliding_window'
+	                };
+	                
+	                // Log save attempt
+	                if (DEBUG_MODE && window.console && console.log) {
+	                    console.log('[NV oOS] Saving conversation to localStorage:', {
+	                        assistant_id: assistantId,
+	                        message_count: (state.conversation || []).length,
+	                        storage_key: storageKey,
+	                        has_summary: !!(state.summary),
+	                    });
+	                }
                 
                 window.localStorage.setItem(storageKey, JSON.stringify(data));
                 
@@ -1045,9 +1052,11 @@
                             const storageKey = getStorageKey(assistantId);
                             const data = {
                                 conversation: state.conversation || [],
-                                sessionKey: state.config.sessionKey || '',
+                                sessionKey: sanitizeSessionKey(state.config.sessionKey || ''),
                                 timestamp: Date.now(),
-                                assistantId: assistantId
+                                assistantId: assistantId,
+                                summary: state.summary || '',
+                                contextStrategy: state.config.contextStrategy || globalConfig.contextStrategy || 'sliding_window'
                             };
                             
                             // Log retry attempt
@@ -1245,13 +1254,16 @@
                 console.log('[NV oOS] Conversation loaded successfully from localStorage:', {
                     message_count: Array.isArray(data.conversation) ? data.conversation.length : 0,
                     age_minutes: Math.floor(age / 1000 / 60),
+                    has_summary: !!(data.summary),
                 });
             }
 
             return {
                 conversation: Array.isArray(data.conversation) ? data.conversation : [],
                 sessionKey: data.sessionKey || '',
-                assistantId: data.assistantId || state.config.assistantId
+                assistantId: data.assistantId || state.config.assistantId,
+                summary: data.summary || '',
+                contextStrategy: data.contextStrategy || 'sliding_window'
             };
         } catch (error) {
             // Log parse errors
@@ -1731,6 +1743,104 @@
     }
 
     /**
+     * Estimate token count for a list of messages using ~4 chars per token heuristic.
+     *
+     * Used client-side for embedded provider context window management.
+     * This is a rough estimate; the server-side uses the tiktoken-php library
+     * for accurate counts.
+     *
+     * @param {Array} messages - Array of message objects with 'content' property.
+     * @return {number} Estimated token count.
+     */
+    function estimateMessageTokensBME(messages) {
+        if (!messages || !Array.isArray(messages)) {
+            return 0;
+        }
+
+        let totalChars = 0;
+        const charsPerToken = 4; // Standard heuristic: ~4 characters per token.
+
+        messages.forEach(function(msg) {
+            if (!msg || !msg.content) {
+                return;
+            }
+
+            const content = msg.content;
+
+            if (typeof content === 'string') {
+                totalChars += content.length;
+            } else if (Array.isArray(content)) {
+                // Multi-modal content: sum text parts only.
+                content.forEach(function(segment) {
+                    if (typeof segment === 'string') {
+                        totalChars += segment.length;
+                    } else if (segment && segment.text) {
+                        totalChars += segment.text.length;
+                    }
+                });
+            }
+
+            // Add ~4 tokens overhead per message (API framing).
+            totalChars += 16; // ~4 tokens * 4 chars/token
+        });
+
+        return Math.ceil(totalChars / charsPerToken);
+    }
+
+    /**
+     * Summarize/truncate a tool result if it exceeds the configured threshold.
+     *
+     * Large tool outputs (file reads, web crawls, database queries) can consume
+     * the entire context window. This function truncates them and appends a
+     * summary note so the model still knows the result existed but doesn't
+     * receive the full raw content.
+     *
+     * @param {*} content - Tool result content (string, object, or JSON string).
+     * @return {*} Summarized content matching the original type.
+     */
+    function summarizeToolResultIfNeeded(content) {
+        if (content === null || content === undefined) {
+            return content;
+        }
+
+        const threshold = (globalConfig.toolResultSummarizeThreshold > 0)
+            ? globalConfig.toolResultSummarizeThreshold
+            : 2000;
+
+        // Handle string content.
+        if (typeof content === 'string') {
+            if (content.length <= threshold) {
+                return content;
+            }
+
+            const truncated = content.substring(0, threshold);
+            const summaryNote = '\n\n[... Content truncated: ' + content.length + ' chars total, showing first ' + threshold + ' chars ...]';
+            return truncated + summaryNote;
+        }
+
+        // Handle object content (JSON tool results).
+        if (typeof content === 'object') {
+            try {
+                const jsonStr = JSON.stringify(content);
+                if (jsonStr.length <= threshold) {
+                    return content;
+                }
+
+                // For objects, truncate the JSON string representation.
+                const truncatedJson = jsonStr.substring(0, threshold);
+                // Try to parse back — if it fails, return as string with note.
+                const summaryNote = '[... Object truncated: ' + jsonStr.length + ' chars total ...]';
+                return truncatedJson + summaryNote;
+            } catch (e) {
+                // If JSON stringify fails, return the object as-is.
+                return content;
+            }
+        }
+
+        return content;
+    }
+
+    /**
      * Strip UI-only metadata from a message for API submission.
      * Preserves 'display' field for CCT persistence to ensure proper UI restoration.
      * Also strips display-only data (blob:/data: URLs) from attachment segments.
@@ -1761,6 +1871,9 @@
         let cleanedContent;
         if (message.role === 'tool') {
             cleanedContent = stripToolResultLargeContent(message.content);
+            // Apply tool result summarization for very large tool outputs.
+            // This prevents single tool results from consuming the entire context window.
+            cleanedContent = summarizeToolResultIfNeeded(cleanedContent);
         } else {
             cleanedContent = stripContentDisplayData(message.content);
         }
@@ -12450,6 +12563,16 @@
             state.config.sessionKey = saved.sessionKey;
         }
 
+        // Restore summary from localStorage if available (BME strategy context).
+        if (saved.summary) {
+            state.summary = saved.summary;
+        }
+
+        // Restore context strategy if available.
+        if (saved.contextStrategy && !state.config.contextStrategy) {
+            state.config.contextStrategy = saved.contextStrategy;
+        }
+
         // Note: We do NOT restore assistantId from localStorage.
         // localStorage is backup storage only. The widget's assistantId should remain
         // fixed to its original configuration (state.originalAssistantId).
@@ -14034,11 +14157,13 @@
             console.log('[NV oOS] Sending messages to API:', JSON.stringify(cleanMessages, null, 2));
         }
 
-        const payload = {
-            assistant_id: state.originalAssistantId || state.config.assistantId,
-            messages: cleanMessages,
-            save_transcript: state.config.saveTranscript !== false,
-        };
+	        const payload = {
+	            assistant_id: state.originalAssistantId || state.config.assistantId,
+	            messages: cleanMessages,
+	            save_transcript: state.config.saveTranscript !== false,
+	            context_strategy: state.config.contextStrategy || globalConfig.contextStrategy || 'sliding_window',
+	            end_window_size: state.config.endWindowSize || globalConfig.endWindowSize || 10,
+	        };
 
         if (state.config.sessionKey) {
             payload.session_key = state.config.sessionKey;
@@ -14080,16 +14205,38 @@
         const isEmbeddedProvider = state.config.provider === 'embedded' && !state.config.isEmbeddedServer;
         
         if (isEmbeddedProvider) {
-            // Apply max history messages limit for the embedded path.
+            // Apply message history limit for the embedded path.
             // Server-side providers have this enforced in enforce_chat_request_limits() on the server,
             // but the embedded provider runs client-side and requires the limit applied here to
             // maintain the agentic workflow without overflowing the local model's context window.
+            //
+            // Uses token-aware trimming: estimates tokens and trims to ~75% of typical
+            // embedded model context window (2048-4096 tokens) to leave headroom for responses.
             const maxHistoryMessages = (state.config && state.config.maxHistoryMessages)
                 || globalConfig.maxHistoryMessages
                 || 8;
-            const embeddedMessages = (maxHistoryMessages > 0 && cleanMessages.length > maxHistoryMessages)
+            let embeddedMessages = (maxHistoryMessages > 0 && cleanMessages.length > maxHistoryMessages)
                 ? cleanMessages.slice(-maxHistoryMessages)
                 : cleanMessages;
+
+            // Additional token-aware trimming for embedded models.
+            // Estimates ~4 chars per token and targets 75% of a 4096-token window.
+            const estimatedTokens = estimateMessageTokensBME(embeddedMessages);
+            const maxEmbeddedTokens = 3000; // 75% of 4096 for headroom.
+            if (estimatedTokens > maxEmbeddedTokens && embeddedMessages.length > 6) {
+                // Trim from the top (oldest non-system messages) until under budget.
+                while (embeddedMessages.length > 4 && estimateMessageTokensBME(embeddedMessages) > maxEmbeddedTokens) {
+                    embeddedMessages = embeddedMessages.slice(2); // Drop oldest user+assistant pair.
+                }
+                if (DEBUG_MODE && window.console && console.log) {
+                    console.log('[NV oOS] Embedded messages trimmed by token budget:', {
+                        original_tokens: estimatedTokens,
+                        final_tokens: estimateMessageTokensBME(embeddedMessages),
+                        final_count: embeddedMessages.length,
+                    });
+                }
+            }
+
             return sendChatEmbedded(state, embeddedMessages, finalize, submissionContext);
         }
 

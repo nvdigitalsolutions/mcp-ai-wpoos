@@ -1598,6 +1598,62 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_mcp_ai_openai_section'
 			);
 
+			add_settings_field(
+				'context_strategy',
+				__( 'Context Strategy', 'mcp-ai-wpoos' ),
+				array( $this, 'render_context_strategy_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_openai_section'
+			);
+
+			add_settings_field(
+				'end_window_size',
+				__( 'End Window Size', 'mcp-ai-wpoos' ),
+				array( $this, 'render_end_window_size_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_openai_section'
+			);
+
+			add_settings_field(
+				'summary_trigger_count',
+				__( 'Summary Trigger Count', 'mcp-ai-wpoos' ),
+				array( $this, 'render_summary_trigger_count_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_openai_section'
+			);
+
+			add_settings_field(
+				'summary_max_tokens',
+				__( 'Summary Max Tokens', 'mcp-ai-wpoos' ),
+				array( $this, 'render_summary_max_tokens_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_openai_section'
+			);
+
+			add_settings_field(
+				'summary_trigger_tokens',
+				__( 'Summary Trigger Tokens', 'mcp-ai-wpoos' ),
+				array( $this, 'render_summary_trigger_tokens_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_openai_section'
+			);
+
+			add_settings_field(
+				'summary_model',
+				__( 'Summary Model', 'mcp-ai-wpoos' ),
+				array( $this, 'render_summary_model_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_openai_section'
+			);
+
+			add_settings_field(
+				'tool_result_summarize_threshold',
+				__( 'Tool Result Summarize Threshold', 'mcp-ai-wpoos' ),
+				array( $this, 'render_tool_result_summarize_threshold_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_openai_section'
+			);
+
 			add_settings_section(
 				'wp_mcp_ai_gemini_section',
 				__( 'Gemini Configuration', 'mcp-ai-wpoos' ),
@@ -5782,6 +5838,98 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="number" min="1" max="50" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[max_history_messages]" value="<?php echo esc_attr( $current ); ?>" class="small-text" />
 		<p class="description"><?php esc_html_e( 'Maximum number of conversation messages to retain per chat. Recommended: 6-8 for optimal performance, higher values increase token usage. System messages are always preserved.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the context strategy field.
+		 */
+		public function render_context_strategy_field() {
+			$settings = self::get_settings();
+			$current  = isset( $settings['context_strategy'] ) ? $settings['context_strategy'] : 'sliding_window';
+			?>
+		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[context_strategy]">
+			<option value="sliding_window" <?php selected( $current, 'sliding_window' ); ?>><?php esc_html_e( 'Sliding Window (current default)', 'mcp-ai-wpoos' ); ?></option>
+			<option value="bme" <?php selected( $current, 'bme' ); ?>><?php esc_html_e( 'Beginning-Middle-End (BME)', 'mcp-ai-wpoos' ); ?></option>
+			<option value="bme_rag" <?php selected( $current, 'bme_rag' ); ?>><?php esc_html_e( 'BME + RAG Memory', 'mcp-ai-wpoos' ); ?></option>
+		</select>
+		<p class="description">
+			<?php
+			esc_html_e( 'Sliding Window: keeps only the most recent messages, dropping older context. BME: preserves system prompt, summarizes older messages, and keeps recent messages verbatim for better long-conversation memory.', 'mcp-ai-wpoos' );
+			?>
+		</p>
+			<?php
+		}
+
+		/**
+		 * Render the end window size field.
+		 */
+		public function render_end_window_size_field() {
+			$settings = self::get_settings();
+			$current  = isset( $settings['end_window_size'] ) ? absint( $settings['end_window_size'] ) : 10;
+			?>
+		<input type="number" min="2" max="50" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[end_window_size]" value="<?php echo esc_attr( $current ); ?>" class="small-text" />
+		<p class="description"><?php esc_html_e( 'Number of recent messages to keep verbatim in the End zone. Older messages will be summarized.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the summary trigger count field.
+		 */
+		public function render_summary_trigger_count_field() {
+			$settings = self::get_settings();
+			$current  = isset( $settings['summary_trigger_count'] ) ? absint( $settings['summary_trigger_count'] ) : 30;
+			?>
+		<input type="number" min="10" max="200" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[summary_trigger_count]" value="<?php echo esc_attr( $current ); ?>" class="small-text" />
+		<p class="description"><?php esc_html_e( 'When total non-system messages exceed this count, older messages are summarized. Only used with BME strategy.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the summary max tokens field.
+		 */
+		public function render_summary_max_tokens_field() {
+			$settings = self::get_settings();
+			$current  = isset( $settings['summary_max_tokens'] ) ? absint( $settings['summary_max_tokens'] ) : 500;
+			?>
+		<input type="number" min="100" max="4000" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[summary_max_tokens]" value="<?php echo esc_attr( $current ); ?>" class="small-text" />
+		<p class="description"><?php esc_html_e( 'Maximum tokens for the generated conversation summary. Higher values preserve more detail but use more tokens.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the tool result summarize threshold field.
+		 */
+		public function render_tool_result_summarize_threshold_field() {
+			$settings = self::get_settings();
+			$current  = isset( $settings['tool_result_summarize_threshold'] ) ? absint( $settings['tool_result_summarize_threshold'] ) : 2000;
+			?>
+		<input type="number" min="500" max="100000" step="100" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[tool_result_summarize_threshold]" value="<?php echo esc_attr( $current ); ?>" class="small-text" />
+		<p class="description"><?php esc_html_e( 'Tool results longer than this many characters will be summarized before storing in chat history. Set to 0 to disable.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the summary trigger tokens field.
+		 */
+		public function render_summary_trigger_tokens_field() {
+			$settings = self::get_settings();
+			$current  = isset( $settings['summary_trigger_tokens'] ) ? absint( $settings['summary_trigger_tokens'] ) : 0;
+			?>
+		<input type="number" min="0" max="200000" step="100" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[summary_trigger_tokens]" value="<?php echo esc_attr( $current ); ?>" class="small-text" />
+		<p class="description"><?php esc_html_e( 'Alternative token-based trigger for summarization. When set (>0), summarization triggers when estimated tokens exceed this value instead of using the count-based trigger. Recommended: 70-80% of your model\'s context window. Set to 0 to use count-based trigger.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the summary model field.
+		 */
+		public function render_summary_model_field() {
+			$settings = self::get_settings();
+			$current  = isset( $settings['summary_model'] ) ? $settings['summary_model'] : '';
+			?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[summary_model]" value="<?php echo esc_attr( $current ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Default: use assistant model', 'mcp-ai-wpoos' ); ?>" />
+		<p class="description"><?php esc_html_e( 'Model to use for conversation summarization. Leave blank to use the assistant\'s configured model. Use a faster/cheaper model (e.g., gpt-4.1-mini) for cost-efficient summaries.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 

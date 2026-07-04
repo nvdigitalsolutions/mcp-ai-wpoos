@@ -413,8 +413,33 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 							?>
 						</select>
 						<p class="description"><?php esc_html_e( 'How often to run the full sync from Shopify (uses Bulk Operations at 10 GraphQL pts each). Webhooks provide real-time updates between syncs at zero cost.', 'mcp-ai-wpoos-pro' ); ?></p>
-					</td>
-				</tr>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="shopify_sync_mode"><?php esc_html_e( 'Sync Mode', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<select name="shopify_sync_mode" id="shopify_sync_mode">
+									<?php
+									$current_mode = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
+									$modes        = array(
+										'full'    => __( 'Full — all product data (images, prices, tags, vendor, all inventory levels)', 'mcp-ai-wpoos-pro' ),
+										'minimal' => __( 'Minimal — title, SKU, and stock levels only (faster sync, lower cost)', 'mcp-ai-wpoos-pro' ),
+									);
+									foreach ( $modes as $value => $label ) {
+										printf(
+											'<option value="%s" %s>%s</option>',
+											esc_attr( $value ),
+											selected( $current_mode, $value, false ),
+											esc_html( $label )
+										);
+									}
+									?>
+								</select>
+								<p class="description"><?php esc_html_e( 'Full sync pulls all product fields and variant data. Minimal sync only pulls title, SKU, and available stock quantities — ideal for inventory-only use cases with lower GraphQL cost and faster sync times.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
 				<tr>
 					<th scope="row">
 						<label for="shopify_sync_direction"><?php esc_html_e( 'Sync Direction', 'mcp-ai-wpoos-pro' ); ?></label>
@@ -495,10 +520,29 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 							value="<?php echo esc_attr( isset( $settings['cct_slug'] ) ? $settings['cct_slug'] : WP_MCP_AI_Shopify_Sync_CCT_Manager::CCT_SLUG_DEFAULT ); ?>"
 							class="regular-text" />
 						<p class="description"><?php esc_html_e( 'JetEngine CCT slug for inventory storage. Must be unique.', 'mcp-ai-wpoos-pro' ); ?></p>
-					</td>
-				</tr>
-			</table>
-		</div>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="shopify_catalog_search_terms"><?php esc_html_e( 'Catalog API Search Terms', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<textarea name="shopify_catalog_search_terms" id="shopify_catalog_search_terms"
+								rows="4" cols="50" class="large-text code"
+								placeholder="<?php esc_attr_e( 'One search term per line', 'mcp-ai-wpoos-pro' ); ?>"
+							>
+							<?php
+							$terms = isset( $settings['catalog_search_terms'] ) ? $settings['catalog_search_terms'] : array();
+							echo esc_textarea( is_array( $terms ) ? implode( "\n", $terms ) : $terms );
+							?>
+							</textarea>
+							<p class="description">
+								<?php esc_html_e( 'For Catalog API connections only. Enter search terms (one per line) to query the Shopify Catalog. Each term is searched separately (max 50 results per term). Leave blank for a broad default search. Results are cached in the CCT for zero-cost AI tool access.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+				</table>
+			</div>
 		<?php
 	}
 
@@ -539,6 +583,12 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 			$sanitized['sync_direction'] = sanitize_key( wp_unslash( $_POST['shopify_sync_direction'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		}
 
+		// Sync mode (full or minimal).
+		if ( isset( $_POST['shopify_sync_mode'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$mode                   = sanitize_key( wp_unslash( $_POST['shopify_sync_mode'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$sanitized['sync_mode'] = in_array( $mode, array( 'full', 'minimal' ), true ) ? $mode : 'full';
+		}
+
 		// WooCommerce sync toggle.
 		$sanitized['enable_wc_sync'] = isset( $_POST['shopify_enable_wc_sync'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
@@ -553,6 +603,13 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 		// CCT slug.
 		if ( isset( $_POST['shopify_cct_slug'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$sanitized['cct_slug'] = sanitize_key( wp_unslash( $_POST['shopify_cct_slug'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+
+		// Catalog API search terms.
+		if ( isset( $_POST['shopify_catalog_search_terms'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$raw_terms                         = sanitize_textarea_field( wp_unslash( $_POST['shopify_catalog_search_terms'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$terms                             = array_filter( array_map( 'trim', explode( "\n", $raw_terms ) ) );
+			$sanitized['catalog_search_terms'] = array_slice( $terms, 0, 20 ); // Max 20 search terms.
 		}
 
 		return $sanitized;
