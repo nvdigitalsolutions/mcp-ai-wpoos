@@ -3325,6 +3325,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					break;
 				}
 
+				// Phase 4: Proactive agentic-loop context compaction.
+				// Industry standard (LangChain Deep Agents, Vercel AI SDK):
+				// compact context BEFORE hitting the TPM limit, not after.
+				// At 70% capacity: offload old tool results.
+				// At 85% capacity: summarize middle iterations.
+				$messages = $this->maybe_compact_agentic_context( $messages, $iteration, $options, $assistant_id );
+
 				// Validate token budget before next iteration to prevent TPM limit errors.
 				$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
 				$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
@@ -7426,6 +7433,193 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			} catch ( \Exception $e ) {
 				return new WP_Error(
 					'wp_mcp_ai_summary_error',
+					$e->getMessage()
+				);
+			}
+		}
+
+		/**
+		 * Proactive agentic-loop context compaction.
+		 *
+		 * Industry standard (LangChain Deep Agents, Vercel AI SDK prepareStep):
+		 * compact context BEFORE hitting the TPM limit, not after.
+		 *
+		 * Strategy:
+		 * - At 70% capacity: offload/trim old tool results from prior iterations.
+		 * - At 85% capacity: summarize middle iterations into a running summary,
+		 *   preserving system prompt + current iteration's messages verbatim.
+		 *
+		 * Always preserves:
+		 * - System messages (persona, constraints, tool definitions).
+		 * - The most recent assistant + tool_calls + tool results (current iteration).
+		 * - At least 2 prior user/assistant turns for conversation continuity.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param array $messages     Current message array.
+		 * @param int   $iteration    Current iteration number (0-based).
+		 * @param array $options      Chat completion options (contains model).
+		 * @param int   $assistant_id Assistant ID for logging.
+		 * @return array Possibly compacted messages.
+		 */
+		protected function maybe_compact_agentic_context( array $messages, $iteration, array $options, $assistant_id ) {
+			// Only compact after iteration 2+ (earliest that compaction matters).
+			if ( $iteration < 2 ) {
+				return $messages;
+			}
+
+			$model = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
+
+			// Get the model's context window limit.
+			$max_tokens = WP_MCP_AI_Token_Budget_Manager::get_model_limit( $model );
+			if ( $max_tokens <= 0 ) {
+				$max_tokens = 128000; // Sensible fallback for unknown models.
+			}
+
+			// Estimate current token usage.
+			$estimated = $this->estimate_messages_tokens( $messages );
+			$pct_used  = $max_tokens > 0 ? ( $estimated / $max_tokens ) * 100 : 0;
+
+			// Below 70%: no compaction needed.
+			if ( $pct_used < 70 ) {
+				return $messages;
+			}
+
+			// Separate system messages (always preserved).
+			$system_msgs = array();
+			$other_msgs  = array();
+			foreach ( $messages as $msg ) {
+				if ( isset( $msg['role'] ) && 'system' === $msg['role'] ) {
+					$system_msgs[] = $msg;
+				} else {
+					$other_msgs[] = $msg;
+				}
+			}
+
+			// Split: keep the last 4 non-system messages (current iteration + prior turn).
+			$keep_count = min( 4, count( $other_msgs ) );
+			$keep_msgs  = array_slice( $other_msgs, -$keep_count );
+			$old_msgs   = array_slice( $other_msgs, 0, -$keep_count );
+
+			if ( empty( $old_msgs ) ) {
+				return $messages;
+			}
+
+			// Phase 1 (70-84%): Trim old tool results — keep structure, drop large content.
+			if ( $pct_used < 85 ) {
+				$trimmed = $this->trim_old_tool_results( $old_msgs );
+
+				WP_MCP_AI_Logger::log_event(
+					'agentic_context_trimmed',
+					'Agentic loop: trimmed old tool results to free context.',
+					array(
+						'iteration'    => $iteration,
+						'assistant_id' => $assistant_id,
+						'pct_used'     => round( $pct_used, 1 ),
+						'phase'        => 'trim_tool_results',
+						'old_count'    => count( $old_msgs ),
+					)
+				);
+
+				return array_merge( $system_msgs, $trimmed, $keep_msgs );
+			}
+
+			// Phase 2 (85%+): Summarize old iterations into running context.
+			$summary = $this->generate_running_agentic_summary( $old_msgs, $options );
+
+			if ( is_wp_error( $summary ) || '' === $summary ) {
+				// Fallback: trim old tool results instead.
+				$trimmed = $this->trim_old_tool_results( $old_msgs );
+				return array_merge( $system_msgs, $trimmed, $keep_msgs );
+			}
+
+			$summary_msg = array(
+				'role'    => 'user',
+				'content' => '[Agentic loop progress: ' . $summary . ']',
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'agentic_context_summarized',
+				'Agentic loop: summarized middle iterations into running context.',
+				array(
+					'iteration'      => $iteration,
+					'assistant_id'   => $assistant_id,
+					'pct_used'       => round( $pct_used, 1 ),
+					'phase'          => 'summarize',
+					'old_count'      => count( $old_msgs ),
+					'summary_length' => strlen( $summary ),
+				)
+			);
+
+			return array_merge( $system_msgs, array( $summary_msg ), $keep_msgs );
+		}
+
+		/**
+		 * Trim large content from old tool results while preserving structure.
+		 *
+		 * Tool messages from prior iterations are replaced with a compact note
+		 * showing the tool name and call ID. This preserves the message structure
+		 * the LLM expects (assistant with tool_calls → tool responses) while
+		 * freeing context space.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param array $old_msgs Old non-system messages.
+		 * @return array Trimmed messages.
+		 */
+		protected function trim_old_tool_results( array $old_msgs ) {
+			$trimmed = array();
+
+			foreach ( $old_msgs as $msg ) {
+				if ( isset( $msg['role'] ) && 'tool' === $msg['role'] ) {
+					// Replace tool result content with a compact note.
+					$tool_name = isset( $msg['name'] ) ? $msg['name'] : 'unknown';
+					$call_id   = isset( $msg['tool_call_id'] ) ? substr( $msg['tool_call_id'], 0, 12 ) : '';
+
+					$msg['content'] = sprintf(
+						'[%s result — compacted to free context%s]',
+						$tool_name,
+						$call_id ? ' #' . $call_id : ''
+					);
+				}
+
+				$trimmed[] = $msg;
+			}
+
+			return $trimmed;
+		}
+
+		/**
+		 * Generate a running summary of older agentic-loop iterations.
+		 *
+		 * Uses the same ConversationSummarizer to compress middle iterations
+		 * into a brief progress report that preserves key decisions and outcomes.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param array $old_msgs Older non-system messages to summarize.
+		 * @param array $options  Chat completion options.
+		 * @return string|WP_Error Summary text or error.
+		 */
+		protected function generate_running_agentic_summary( array $old_msgs, array $options ) {
+			try {
+				$summarizer = new WP_MCP_AI_Conversation_Summarizer( $this->client );
+
+				$summary_options = array(
+					'max_tokens' => 300, // Short summary — just key decisions/outcomes.
+				);
+
+				if ( ! empty( $options['provider'] ) ) {
+					$summary_options['provider'] = $options['provider'];
+				}
+				if ( ! empty( $options['model'] ) ) {
+					$summary_options['model'] = $options['model'];
+				}
+
+				return $summarizer->summarize( $old_msgs, $summary_options );
+			} catch ( \Exception $e ) {
+				return new WP_Error(
+					'wp_mcp_ai_agentic_summary_error',
 					$e->getMessage()
 				);
 			}
