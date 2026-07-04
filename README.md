@@ -14,8 +14,6 @@
 **Version:** 1.1.35  
 **Release Date:** 2026-06-29
 
-**Latest Updates:** June 29, 2026 (v1.1.35) — See [§ Latest Updates (v1.1.35 — June 2026)](#-latest-updates-v1135--june-2026) (FlowHub Inventory Sync + Shopify Sync Pro Toolkits. Necessity Gate Layer J — irreversibility-weighted safety. Local Voice Embedded STT. Remote Site Administrator blueprint. Places & Calendar bulk import. CLI site-import. Voice realtime auto-detect. 7 bug fixes. Plus prior v1.1.34 items below).
-
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
 **MCP Specification:** 2024-11-05 (Full Compliance)  
