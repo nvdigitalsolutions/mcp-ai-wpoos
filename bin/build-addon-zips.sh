@@ -19,6 +19,7 @@
 #   build/nvoos-librechat-v<librechat-version>.zip
 #   build/nvoos-cloudways-dashboard-v<cloudways-dashboard-version>.zip
 #   build/nvoos-funiq-bridge-v<funiq-bridge-version>.zip
+#   build/nvoos-crocoblock-ds-v<crocoblock-ds-version>.zip
 #   build/nvoos-schedule-anything-platform-v<schedule-anything-platform-version>.zip
 #
 # Usage:
@@ -145,6 +146,9 @@ FUNIQ_BRIDGE_VERSION=${FUNIQ_BRIDGE_VERSION:-dev}
 SAP_VERSION=$(_read_addon_version "addons/schedule-anything-platform/schedule-anything-platform.php")
 SAP_VERSION=${SAP_VERSION:-dev}
 
+CDS_VERSION=$(_read_addon_version "addons/crocoblock-ds/nvoos-crocoblock-ds.php")
+CDS_VERSION=${CDS_VERSION:-dev}
+
 if ! command -v zip >/dev/null 2>&1; then
 echo "❌ Error: zip is required but not installed."
 exit 1
@@ -173,7 +177,7 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ]; then
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ] || [ ! -d "addons/crocoblock-ds" ]; then
 echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, and addons/schedule-anything-platform must exist."
 exit 1
 fi
@@ -203,6 +207,7 @@ LIBRECHAT_ZIP="${OUTPUT_DIR}/nvoos-librechat-v${LIBRECHAT_VERSION}.zip"
 CW_DASHBOARD_ZIP="${OUTPUT_DIR}/nvoos-cloudways-dashboard-v${CW_DASHBOARD_VERSION}.zip"
 FUNIQ_BRIDGE_ZIP="${OUTPUT_DIR}/nvoos-funiq-bridge-v${FUNIQ_BRIDGE_VERSION}.zip"
 SAP_ZIP="${OUTPUT_DIR}/nvoos-schedule-anything-platform-v${SAP_VERSION}.zip"
+CDS_ZIP="${OUTPUT_DIR}/nvoos-crocoblock-ds-v${CDS_VERSION}.zip"
 
 # Remove any previously built ZIPs for these slugs (they may carry a stale version stamp).
 rm -f "$OUTPUT_DIR"/nvoos-algorave-linux-x64-v*.zip
@@ -218,14 +223,15 @@ rm -f "$OUTPUT_DIR"/nvoos-librechat-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-cloudways-dashboard-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-funiq-bridge-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-schedule-anything-platform-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-crocoblock-ds-v*.zip
 if [ "$SKIP_CANVAS" = false ]; then
 rm -f "$OUTPUT_DIR"/nvoos-canvas-linux-x64-v*.zip
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=14
-else
 TOTAL_STEPS=15
+else
+TOTAL_STEPS=16
 fi
 
 echo "=========================================="
@@ -633,6 +639,24 @@ SAP_SIZE=$(du -h "$SAP_ZIP" | cut -f1)
 echo "✅ ${SAP_ZIP} (${SAP_SIZE})"
 echo ""
 
+echo "[15/${TOTAL_STEPS}] Building nvoos-crocoblock-ds-v${CDS_VERSION}.zip"
+# Pure PHP addon — no JS/npm build step required.
+mkdir -p "${TMP_DIR}/cds-stage/nvoos-crocoblock-ds"
+rsync -a "addons/crocoblock-ds/" "${TMP_DIR}/cds-stage/nvoos-crocoblock-ds/" \
+	--exclude 'node_modules/' \
+	--exclude '.git/' \
+	--exclude '.DS_Store' \
+	--exclude '.gitignore' \
+	--exclude 'tests/' \
+	--exclude 'package-lock.json'
+(
+	cd "${TMP_DIR}/cds-stage"
+	zip -r -q "${ROOT_DIR}/${CDS_ZIP}" nvoos-crocoblock-ds/
+)
+CDS_SIZE=$(du -h "$CDS_ZIP" | cut -f1)
+echo "✅ ${CDS_ZIP} (${CDS_SIZE})"
+echo ""
+
 # Canvas builds a native Linux binary (canvas.node) inside a Docker
 # container. This step is best-effort:
 #   - Canvas is platform-specific and is NOT part of the WordPress.org
@@ -655,7 +679,7 @@ echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavail
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[14/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
+echo "[16/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
 
 # Defensive re-check: in long-running pipelines the docker daemon may have
 # disappeared between the start-of-script check and now. Bail out softly
