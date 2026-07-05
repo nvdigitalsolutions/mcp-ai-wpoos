@@ -1,0 +1,217 @@
+/* ==========================================================================
+   Crocoblock Design System — Admin Styles
+   ========================================================================== */
+
+/* Layout */
+.nvoos-cds-layout {
+	display: grid;
+	grid-template-columns: 1fr 380px;
+	gap: 24px;
+	margin-top: 16px;
+	align-items: start;
+}
+
+@media (max-width: 1024px) {
+	.nvoos-cds-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Preset bar */
+.nvoos-cds-preset-bar {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin-bottom: 16px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.nvoos-cds-preset-bar label {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+/* Settings bar (@property toggle, DTCG export) */
+.nvoos-cds-settings-bar {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin-bottom: 24px;
+}
+
+.nvoos-cds-settings-row {
+	margin-bottom: 10px;
+}
+
+.nvoos-cds-settings-row:last-child {
+	margin-bottom: 0;
+}
+
+.nvoos-cds-settings-row .description {
+	margin-top: 4px;
+	margin-left: 24px;
+}
+
+/* Token groups */
+.nvoos-cds-group {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	margin-bottom: 20px;
+}
+
+.nvoos-cds-group-title {
+	margin: 0;
+	padding: 12px 16px;
+	font-size: 15px;
+	border-bottom: 1px solid #e5e5e5;
+	background: #f9f9f9;
+}
+
+.nvoos-cds-tokens-table {
+	margin: 0;
+}
+
+.nvoos-cds-tokens-table th {
+	padding: 14px 16px 14px 20px;
+	width: 220px;
+	vertical-align: middle;
+}
+
+.nvoos-cds-tokens-table td {
+	padding: 10px 16px;
+	vertical-align: middle;
+}
+
+.nvoos-cds-tokens-table .description {
+	margin-top: 4px;
+	font-weight: 400;
+}
+
+/* CSS variable badge */
+.nvoos-cds-css-var {
+	display: inline-block;
+	margin-left: 10px;
+	font-size: 12px;
+	color: #646970;
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+}
+
+/* Color picker */
+.nvoos-cds-color-picker {
+	width: 60px;
+	height: 32px;
+	padding: 2px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+	cursor: pointer;
+	vertical-align: middle;
+}
+
+/* Reset button */
+.nvoos-cds-reset-token {
+	margin-left: 8px;
+	vertical-align: middle;
+}
+
+/* Preview pane */
+.nvoos-cds-preview-pane {
+	margin-bottom: 20px;
+}
+
+.nvoos-cds-preview-sample {
+	padding: 16px;
+	background: var(--cds-color-surface, #1a1a1a);
+	border-radius: var(--cds-radius-md, 6px);
+	color: var(--cds-color-text-primary, #f5f0e8);
+	font-family: var(--cds-font-family, sans-serif);
+	margin-bottom: 16px;
+}
+
+.cds-preview-card {
+	border: 1px solid var(--cds-color-border, #333);
+	border-radius: var(--cds-radius-md, 6px);
+	overflow: hidden;
+	margin-bottom: 16px;
+	box-shadow: var(--cds-shadow-card, 0 2px 8px rgba(0,0,0,0.15));
+	background: var(--cds-color-surface, #1a1a1a);
+}
+
+.cds-preview-card-image {
+	height: var(--cds-card-image-height, 200px);
+	background: var(--cds-color-surface-hover, #2a2a2a);
+}
+
+.cds-preview-card-body {
+	padding: var(--cds-space-md, 16px);
+}
+
+.cds-preview-card-category {
+	font-size: var(--cds-font-size-sm, 14px);
+	color: var(--cds-color-text-secondary, #9a9488);
+}
+
+.cds-preview-card-title {
+	font-size: var(--cds-font-size-lg, 20px);
+	font-weight: var(--cds-font-weight-bold, 700);
+	margin: 4px 0;
+}
+
+.cds-preview-card-meta {
+	font-size: var(--cds-font-size-xs, 12px);
+	color: var(--cds-color-text-secondary, #9a9488);
+}
+
+.cds-preview-card-price {
+	font-size: var(--cds-font-size-base, 16px);
+	font-weight: var(--cds-font-weight-bold, 700);
+	margin-top: 8px;
+	color: var(--cds-color-accent, #8b9f48);
+}
+
+/* Preview filter bar */
+.cds-preview-filter-bar {
+	display: flex;
+	gap: var(--cds-gap-filter, 30px);
+	flex-wrap: wrap;
+}
+
+.cds-preview-filter-pill {
+	padding: 6px 14px;
+	border: 1px solid var(--cds-color-border, #333);
+	border-radius: var(--cds-radius-sm, 3px);
+	font-size: var(--cds-font-size-sm, 14px);
+	transition: background var(--cds-transition-fast, 150ms ease),
+	            color var(--cds-transition-fast, 150ms ease);
+	cursor: default;
+}
+
+.cds-preview-filter-pill.active {
+	background: var(--cds-color-accent, #8b9f48);
+	border-color: var(--cds-color-accent, #8b9f48);
+}
+
+/* CSS output */
+.nvoos-cds-css-output {
+	background: #f6f7f7;
+	padding: 12px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	overflow-x: auto;
+	max-height: 300px;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+/* Export section */
+.nvoos-cds-export textarea {
+	margin-bottom: 10px;
+	font-family: monospace;
+	font-size: 12px;
+}
