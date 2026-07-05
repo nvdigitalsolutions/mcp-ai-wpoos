@@ -728,3 +728,5 @@ class WP_MCP_AI_Apple_Messages_Webhook_Controller extends WP_REST_Controller {
 		return substr( $value, 0, 2 ) . str_repeat( '*', $length - 4 ) . substr( $value, -2 );
 	}
 }
+
+new WP_MCP_AI_Apple_Messages_Webhook_Controller();
