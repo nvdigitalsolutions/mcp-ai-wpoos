@@ -186,8 +186,8 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 				$phase,
 				(int) $state['cursor'],
 				(int) $state['total'],
-				$job_id ?: '—',
-				$state['last_error'] ?: '—'
+				$job_id ? $job_id : '—',
+				$state['last_error'] ? $state['last_error'] : '—'
 			)
 		);
 
@@ -217,6 +217,241 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 		}
 
 		WP_CLI::success( 'Reset complete. Run `wp nvoos-docs rebuild` to start a fresh rebuild.' );
+	}
+
+	/**
+	 * Scan for and fix broken internal Markdown links.
+	 *
+	 * Reads the current manifest for broken-link entries and (by default)
+	 * asks you to accept or reject each suggestion interactively.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--dry-run]
+	 * : Show what would be changed without writing anything.
+	 *
+	 * [--auto]
+	 * : Apply all suggestions automatically (non-interactive).
+	 *
+	 * [--confidence=<float>]
+	 * : Only apply suggestions with confidence ≥ this value (0.0–1.0).
+	 *   Default: 0.5.
+	 *
+	 * [--yes]
+	 * : Skip the confirmation prompt before applying (used with --auto).
+	 *
+	 * ## EXAMPLES
+	 *
+	 *   # Dry-run: see what would be fixed
+	 *   wp nvoos-docs fix-links --dry-run
+	 *
+	 *   # Apply all suggestions at 0.7+ confidence automatically
+	 *   wp nvoos-docs fix-links --auto --confidence=0.7 --yes
+	 *
+	 *   # Interactive mode (default)
+	 *   wp nvoos-docs fix-links
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Named arguments.
+	 * @return void
+	 */
+	public function fix_links( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		$cache    = new NV_oOS_Docs_Hub_Cache();
+		$manifest = $cache->get_manifest();
+
+		if ( ! is_array( $manifest ) || empty( $manifest['broken_links'] ) ) {
+			WP_CLI::success( 'No broken links found in the current manifest.' );
+			return;
+		}
+
+		$broken_links = (array) $manifest['broken_links'];
+		$slug_map     = isset( $manifest['slug_map'] ) ? (array) $manifest['slug_map'] : array();
+
+		$dry_run    = \WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', false );
+		$auto       = \WP_CLI\Utils\get_flag_value( $assoc_args, 'auto', false );
+		$yes        = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
+		$confidence = (float) \WP_CLI\Utils\get_flag_value( $assoc_args, 'confidence', 0.5 );
+
+		// Filter to only entries that have suggestions.
+		$fixable = array();
+		foreach ( $broken_links as $entry ) {
+			if ( empty( $entry['suggestions'] ) ) {
+				continue;
+			}
+
+			// Filter suggestions by confidence threshold.
+			$filtered = array();
+			foreach ( $entry['suggestions'] as $s ) {
+				if ( $s['confidence'] >= $confidence ) {
+					$filtered[] = $s;
+				}
+			}
+
+			if ( ! empty( $filtered ) ) {
+				$entry['suggestions'] = $filtered;
+				$fixable[]            = $entry;
+			}
+		}
+
+		if ( empty( $fixable ) ) {
+			WP_CLI::success( 'No broken links with suggestions meeting the confidence threshold.' );
+			return;
+		}
+
+		WP_CLI::log(
+			sprintf(
+				'%d broken link(s) with suggestions found (confidence ≥ %.2f).',
+				count( $fixable ),
+				$confidence
+			)
+		);
+		WP_CLI::log( '' );
+
+		$fixes_to_apply = array();
+
+		foreach ( $fixable as $entry ) {
+			$source = isset( $entry['source'] ) ? (string) $entry['source'] : '?';
+			$target = isset( $entry['target'] ) ? (string) $entry['target'] : '?';
+
+			WP_CLI::log( sprintf( 'In %s → %s', $source, $target ) );
+
+			foreach ( $entry['suggestions'] as $idx => $s ) {
+				$method     = isset( $s['method'] ) ? (string) $s['method'] : '?';
+				$conf       = isset( $s['confidence'] ) ? (float) $s['confidence'] : 0;
+				$sug_target = isset( $s['target'] ) ? (string) $s['target'] : '?';
+
+				WP_CLI::log(
+					sprintf(
+						'  [%d] %s → %s  (confidence: %.0f%%, method: %s)',
+						$idx + 1,
+						$target,
+						$sug_target,
+						$conf * 100,
+						$method
+					)
+				);
+			}
+
+			WP_CLI::log( '' );
+
+			if ( $auto ) {
+				// Auto mode: pick the highest-confidence suggestion.
+				$best             = $entry['suggestions'][0];
+				$fixes_to_apply[] = array(
+					'source'     => $source,
+					'old_target' => $target,
+					'new_target' => $best['target'],
+				);
+				WP_CLI::log(
+					sprintf(
+						'  → Auto-selected: %s → %s',
+						$target,
+						$best['target']
+					)
+				);
+			} elseif ( $dry_run ) {
+				WP_CLI::log( '  (dry-run — no changes will be written)' );
+			} else {
+				// Interactive mode.
+				$response = \cli\prompt(
+					'Accept suggestion? [y/N/a(ll)/s(kip)]',
+					false,
+					':' // phpcs:ignore Generic.Files.LineLength.TooLong
+				);
+
+				$response = strtolower( trim( (string) $response ) );
+
+				if ( 'a' === $response ) {
+					// Accept all remaining suggestions automatically.
+					$auto             = true;
+					$best             = $entry['suggestions'][0];
+					$fixes_to_apply[] = array(
+						'source'     => $source,
+						'old_target' => $target,
+						'new_target' => $best['target'],
+					);
+					WP_CLI::log( '  → Accepted. Accepting all remaining suggestions automatically.' );
+				} elseif ( 'y' === $response || 'yes' === $response ) {
+					$best             = $entry['suggestions'][0];
+					$fixes_to_apply[] = array(
+						'source'     => $source,
+						'old_target' => $target,
+						'new_target' => $best['target'],
+					);
+					WP_CLI::log( '  → Accepted.' );
+				} else {
+					WP_CLI::log( '  → Skipped.' );
+				}
+			}
+
+			WP_CLI::log( str_repeat( '-', 40 ) );
+		}
+
+		if ( empty( $fixes_to_apply ) ) {
+			WP_CLI::success( 'No fixes selected.' );
+			return;
+		}
+
+		if ( $dry_run ) {
+			WP_CLI::success(
+				sprintf(
+					'Dry-run complete. %d fix(es) would be applied. Run without --dry-run to apply.',
+					count( $fixes_to_apply )
+				)
+			);
+			return;
+		}
+
+		// Confirm unless --yes was passed.
+		if ( ! $yes && ! $auto ) {
+			WP_CLI::log(
+				sprintf(
+					'About to apply %d fix(es).',
+					count( $fixes_to_apply )
+				)
+			);
+			$confirm = \cli\prompt(
+				'Proceed? [y/N]',
+				false,
+				':' // phpcs:ignore Generic.Files.LineLength.TooLong
+			);
+
+			if ( 'y' !== strtolower( trim( (string) $confirm ) ) ) {
+				WP_CLI::warning( 'Aborted.' );
+				return;
+			}
+		}
+
+		// Apply the fixes.
+		$link_fixer = new NV_oOS_Docs_Hub_Link_Fixer();
+		$results    = $link_fixer->apply_fixes( $fixes_to_apply, $slug_map, 'apply' );
+
+		WP_CLI::success(
+			sprintf(
+				'Fixed %d link(s). Skipped: %d. Errors: %d.',
+				$results['fixed'],
+				$results['skipped'],
+				count( $results['errors'] )
+			)
+		);
+
+		if ( ! empty( $results['errors'] ) ) {
+			foreach ( $results['errors'] as $error ) {
+				WP_CLI::warning(
+					sprintf(
+						'%s: %s',
+						$error['source'],
+						$error['message']
+					)
+				);
+			}
+		}
+
+		// Clear the cache so the next read picks up the fixed content.
+		$cache->clear();
+		WP_CLI::log( 'Documentation cache cleared. Run `wp nvoos-docs sync` to rebuild.' );
 	}
 
 	/**

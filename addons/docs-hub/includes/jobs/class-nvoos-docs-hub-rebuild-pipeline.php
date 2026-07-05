@@ -45,19 +45,19 @@ if ( defined( 'WP_MCP_AI_PATH' ) && ! trait_exists( 'WP_MCP_AI_Inline_Async_Tick
 if ( ! trait_exists( 'WP_MCP_AI_Inline_Async_Tick_Trait' ) ) {
 	// phpcs:ignore Generic.Files.OneClassPerFile.MultipleFound -- intentional stub trait.
 	trait WP_MCP_AI_Inline_Async_Tick_Trait {
-		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing,Universal.NamingConventions.NoReservedKeywordParameterNames,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		protected static function inline_async_kick_enabled( $job_id, $class ) {
 			return false;
 		}
 		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
 		protected static function inline_async_detach_worker_from_client() {}
-		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		protected static function inline_async_acquire_tick_lock( $lock_key, $cache_group, $ttl_seconds = 60 ) {
 			return true;
 		}
 		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
 		protected static function inline_async_release_tick_lock( $lock_key, $cache_group ) {}
-		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing,Universal.NamingConventions.NoReservedKeywordParameterNames,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		protected static function inline_async_run_kick( $class, $job_id, $callable ) {}
 	}
 }
@@ -195,6 +195,7 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 			&& ! empty( $current['started_at'] )
 			&& ( time() - (int) $current['started_at'] ) > $stale_timeout
 		) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- intentional diagnostic for stale-job auto-cancel
 			error_log(
 				sprintf(
 					'[NV oOS Docs Hub] Auto-cancelling stale rebuild job %s (stuck in phase %s since %s).',
@@ -849,6 +850,7 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 		if ( ! wp_next_scheduled( self::TICK_HOOK ) ) {
 			$scheduled = wp_schedule_single_event( time() + 1, self::TICK_HOOK );
 			if ( false === $scheduled ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- intentional diagnostic for failed tick scheduling
 				error_log(
 					'[NV oOS Docs Hub] Failed to schedule next async rebuild tick. ' .
 					'If WP-Cron is disabled (DISABLE_WP_CRON), the rebuild will stall. ' .
@@ -892,6 +894,7 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 	 * @return void
 	 */
 	private function fail( $message ) {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- intentional diagnostic for rebuild failure
 		error_log(
 			sprintf(
 				'[NV oOS Docs Hub] Rebuild failed (phase %s, cursor %d): %s',
@@ -938,6 +941,7 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 			$indexer->set_slug_map( isset( $manifest['slug_map'] ) ? (array) $manifest['slug_map'] : array() );
 			$indexer->set_tree( isset( $manifest['tree'] ) ? (array) $manifest['tree'] : array() );
 			$indexer->set_broken_links( isset( $manifest['broken_links'] ) ? (array) $manifest['broken_links'] : array() );
+			$indexer->set_content_hashes( isset( $manifest['content_hashes'] ) ? (array) $manifest['content_hashes'] : array() );
 		}
 		return $indexer;
 	}
