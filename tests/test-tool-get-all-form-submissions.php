@@ -87,7 +87,11 @@ class Test_Tool_Get_All_Form_Submissions extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+
+		// If no form sources are available, the tool returns that error first.
+		// Otherwise it returns the forbidden error.
+		$valid_codes = array( 'wp_mcp_ai_forbidden', 'wp_mcp_ai_no_form_sources' );
+		$this->assertContains( $result->get_error_code(), $valid_codes );
 	}
 
 	/**

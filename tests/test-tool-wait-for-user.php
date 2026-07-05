@@ -34,8 +34,14 @@ class Test_Tool_Wait_For_User extends WP_UnitTestCase {
 	 */
 	public function test_tool_metadata() {
 		$this->assertSame( 'wait_for_user', $this->tool->get_slug() );
-		$this->assertNotEmpty( $this->tool->get_name() );
-		$this->assertNotEmpty( $this->tool->get_description() );
+
+		// This tool uses get_definition() pattern, not get_name()/get_description().
+		$definition = $this->tool->get_definition();
+		$this->assertIsArray( $definition );
+		$this->assertArrayHasKey( 'name', $definition );
+		$this->assertNotEmpty( $definition['name'] );
+		$this->assertArrayHasKey( 'description', $definition );
+		$this->assertNotEmpty( $definition['description'] );
 	}
 
 	/**
