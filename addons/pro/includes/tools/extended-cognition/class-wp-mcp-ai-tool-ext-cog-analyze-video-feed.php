@@ -22,6 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/interface-wp-mcp-ai-ext-cog-tool.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-ext-cog-sensor-access.php';
 /**
  * Video feed analysis tool for the Extended Cognition toolkit.
  *
