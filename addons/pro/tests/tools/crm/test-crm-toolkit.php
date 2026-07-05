@@ -287,30 +287,22 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 	 * @return string|false
 	 */
 	protected function find_tool_file( $class_name ) {
-		$kebab   = strtolower( str_replace( '_', '-', $class_name ) );
-		$subdirs = array(
-			WP_MCP_AI_PRO_PATH . 'includes/tools/crm/',
-			WP_MCP_AI_PRO_PATH . 'includes/tools/',
-		);
-
-		foreach ( $subdirs as $dir ) {
-			$path = $dir . 'class-' . $kebab . '.php';
-			if ( file_exists( $path ) ) {
-				return $path;
+		$kebab = strtolower( str_replace( '_', '-', $class_name ) );
+		$filename = 'class-' . $kebab . '.php';
+		$root = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/';
+		if ( is_dir( $root ) ) {
+			$it = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $root, RecursiveDirectoryIterator::SKIP_DOTS ) );
+			foreach ( $it as $file ) {
+				if ( $file->isFile() && $file->getFilename() === $filename ) {
+					return $file->getPathname();
+				}
 			}
 		}
-
-		return false;
+		$alt = WP_MCP_AI_PRO_PATH . 'includes/tools/' . $filename;
+		return file_exists( $alt ) ? $alt : false;
 	}
 
-	/**
-	 * Get file path for a CRM tool class.
-	 *
-	 * @param string $class_name Tool class name.
-	 * @return string
-	 */
 	protected function get_tool_file_path( $class_name ) {
-		$kebab = strtolower( str_replace( '_', '-', $class_name ) );
-		return WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-' . $kebab . '.php';
+		return $this->find_tool_file( $class_name );
 	}
 }

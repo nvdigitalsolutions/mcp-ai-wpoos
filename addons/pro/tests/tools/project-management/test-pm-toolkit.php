@@ -151,15 +151,17 @@ class Test_WP_MCP_AI_PM_Toolkit extends WP_UnitTestCase {
 	}
 
 	protected function find_tool_file( $class_name ) {
-		$kebab   = strtolower( str_replace( '_', '-', $class_name ) );
-		$subdirs = array(
+		$kebab = strtolower( str_replace( '_', '-', $class_name ) );
+		$filename = 'class-' . $kebab . '.php';
+		$roots = array(
 			WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/',
 			WP_MCP_AI_PRO_PATH . 'includes/tools/',
 		);
-		foreach ( $subdirs as $dir ) {
-			$path = $dir . 'class-' . $kebab . '.php';
-			if ( file_exists( $path ) ) {
-				return $path;
+		foreach ( $roots as $root ) {
+			if ( ! is_dir( $root ) ) { continue; }
+			$it = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $root, RecursiveDirectoryIterator::SKIP_DOTS ) );
+			foreach ( $it as $file ) {
+				if ( $file->isFile() && $file->getFilename() === $filename ) { return $file->getPathname(); }
 			}
 		}
 		return false;
