@@ -20,7 +20,7 @@ class Test_WP_MCP_AI_Remaining_Pro_Tools extends WP_UnitTestCase {
 	 *
 	 * @var array<string>
 	 */
-	protected $tool_classes = array(
+	public static $tool_classes = array(
 		// CRM infrastructure classes.
 		'WP_MCP_AI_CRM_Email_Search_Cron',
 		'WP_MCP_AI_CRM_Gmail_Listener',
@@ -120,9 +120,9 @@ class Test_WP_MCP_AI_Remaining_Pro_Tools extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function provide_all_classes() {
+	public static function provide_all_classes() {
 		$data = array();
-		foreach ( $this->tool_classes as $class ) {
+		foreach ( self::$tool_classes as $class ) {
 			$data[ $class ] = array( $class );
 		}
 		return $data;

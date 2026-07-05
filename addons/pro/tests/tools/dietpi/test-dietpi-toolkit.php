@@ -30,7 +30,7 @@ class Test_WP_MCP_AI_DietPi_Toolkit extends WP_UnitTestCase {
 	 *
 	 * @var array<string, array<string>>
 	 */
-	protected $tool_groups = array(
+	public static $tool_groups = array(
 		'media'   => array(
 			'WP_MCP_AI_Tool_DietPi_Media_Center',
 			'WP_MCP_AI_Tool_DietPi_Media_Request_Flow',
@@ -103,9 +103,9 @@ class Test_WP_MCP_AI_DietPi_Toolkit extends WP_UnitTestCase {
 	 *
 	 * @return array
 	 */
-	public function provide_all_classes() {
+	public static function provide_all_classes() {
 		$data = array();
-		foreach ( $this->tool_groups as $group => $classes ) {
+		foreach ( self::$tool_groups as $group => $classes ) {
 			foreach ( $classes as $class ) {
 				$data[ $class ] = array( $class );
 			}

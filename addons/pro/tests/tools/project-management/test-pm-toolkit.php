@@ -18,7 +18,7 @@ class Test_WP_MCP_AI_PM_Toolkit extends WP_UnitTestCase {
 
 	protected $user_id;
 
-	protected $tool_groups = array(
+	public static $tool_groups = array(
 		'task'          => array(
 			'WP_MCP_AI_Tool_Create_Task',
 			'WP_MCP_AI_Tool_Delete_Task',
@@ -90,9 +90,9 @@ class Test_WP_MCP_AI_PM_Toolkit extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function provide_all_classes() {
+	public static function provide_all_classes() {
 		$data = array();
-		foreach ( $this->tool_groups as $group => $classes ) {
+		foreach ( self::$tool_groups as $group => $classes ) {
 			foreach ( $classes as $class ) {
 				$data[ $class ] = array( $class );
 			}

@@ -15,7 +15,7 @@ class Test_WP_MCP_AI_Import_Blueprint_Tools extends WP_UnitTestCase {
 
 	protected $user_id;
 
-	protected $tool_classes = array(
+	public static $tool_classes = array(
 		'WP_MCP_AI_Tool_Import_AI_Tool_Builder_Blueprint',
 		'WP_MCP_AI_Tool_Import_Analytics_Blueprint',
 		'WP_MCP_AI_Tool_Import_Architectural_Design_Blueprint',
@@ -57,9 +57,9 @@ class Test_WP_MCP_AI_Import_Blueprint_Tools extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function provide_all_classes() {
+	public static function provide_all_classes() {
 		$data = array();
-		foreach ( $this->tool_classes as $class ) {
+		foreach ( self::$tool_classes as $class ) {
 			$data[ $class ] = array( $class );
 		}
 		return $data;

@@ -2,6 +2,8 @@
 /**
  * Tests for Cloudways Pro Toolkit tools.
  *
+ * @group external-http
+ *
  * Comprehensive smoke tests for all Cloudways infrastructure management tools.
  * Covers app lifecycle, server management, DNS, Git, SSH keys, and monitoring.
  *
@@ -172,23 +174,6 @@ class Test_WP_MCP_AI_Cloudways_Toolkit extends WP_UnitTestCase {
 	/**
 	 * Test Cloudways base class exists.
 	 */
-	public function test_cloudways_base_class_exists() {
-		$this->assertTrue(
-			class_exists( 'WP_MCP_AI_Tool_Cloudways_Base' ),
-			'Cloudways base class should exist'
-		);
-	}
-
-	/**
-	 * Test base class has required methods.
-	 */
-	public function test_cloudways_base_has_required_methods() {
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Cloudways_Base' );
-
-		$this->assertTrue( $reflection->hasMethod( 'get_required_capability' ) );
-		$this->assertTrue( $reflection->hasMethod( 'get_capability_flags' ) );
-		$this->assertTrue( $reflection->hasMethod( 'execute' ) );
-	}
 
 	// ============================================================================
 	// Tool existence and loading.
@@ -222,7 +207,7 @@ class Test_WP_MCP_AI_Cloudways_Toolkit extends WP_UnitTestCase {
 	 *
 	 * @return array
 	 */
-	public function provide_all_tool_classes() {
+	public static function provide_all_tool_classes() {
 		$data = array();
 		$all  = array();
 

@@ -13,7 +13,7 @@ class Test_WP_MCP_AI_Comic_Creation_Toolkit extends WP_UnitTestCase {
 
 	protected $user_id;
 
-	protected $tool_classes = array(
+	public static $tool_classes = array(
 		'WP_MCP_AI_Tool_Create_Comic_Layout',
 		'WP_MCP_AI_Tool_Apply_Comic_Style',
 		'WP_MCP_AI_Tool_Generate_Comic_Panel',
@@ -42,9 +42,9 @@ class Test_WP_MCP_AI_Comic_Creation_Toolkit extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function provide_all_classes() {
+	public static function provide_all_classes() {
 		$data = array();
-		foreach ( $this->tool_classes as $class ) {
+		foreach ( self::$tool_classes as $class ) {
 			$data[ $class ] = array( $class );
 		}
 		return $data;

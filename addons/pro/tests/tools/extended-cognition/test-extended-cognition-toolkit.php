@@ -13,7 +13,7 @@ class Test_WP_MCP_AI_Extended_Cognition_Toolkit extends WP_UnitTestCase {
 
 	protected $user_id;
 
-	protected $tool_classes = array(
+	public static $tool_classes = array(
 		'WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed',
 		'WP_MCP_AI_Tool_Ext_Cog_Detect_Objects',
 		'WP_MCP_AI_Tool_Ext_Cog_Recognize_Products',
@@ -40,9 +40,9 @@ class Test_WP_MCP_AI_Extended_Cognition_Toolkit extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function provide_all_classes() {
+	public static function provide_all_classes() {
 		$data = array();
-		foreach ( $this->tool_classes as $class ) {
+		foreach ( self::$tool_classes as $class ) {
 			$data[ $class ] = array( $class );
 		}
 		return $data;
