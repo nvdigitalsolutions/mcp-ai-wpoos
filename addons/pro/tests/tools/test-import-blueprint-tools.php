@@ -107,7 +107,23 @@ class Test_WP_MCP_AI_Import_Blueprint_Tools extends WP_UnitTestCase {
 	}
 
 	protected function find_tool_file( $class_name ) {
-		$kebab   = strtolower( str_replace( '_', '-', $class_name ) );
-		return WP_MCP_AI_PRO_PATH . 'includes/tools/class-' . $kebab . '.php';
+		$kebab = strtolower( str_replace( '_', '-', $class_name ) );
+		$filename = 'class-' . $kebab . '.php';
+
+		// Recursive search across all pro tool subdirectories.
+		$iterator = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator(
+				WP_MCP_AI_PRO_PATH . 'includes/tools/',
+				RecursiveDirectoryIterator::SKIP_DOTS
+			)
+		);
+
+		foreach ( $iterator as $file ) {
+			if ( $file->isFile() && $file->getFilename() === $filename ) {
+				return $file->getPathname();
+			}
+		}
+
+		return false;
 	}
 }
