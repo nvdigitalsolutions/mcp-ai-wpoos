@@ -437,6 +437,13 @@ class NV_oOS_Docs_Hub_Settings {
 		);
 	}
 
+	/**
+	 * Handle the synchronous rebuild form submission.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
 	public static function handle_rebuild_action() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -754,6 +761,9 @@ class NV_oOS_Docs_Hub_Settings {
 				<p>
 					<strong><?php esc_html_e( 'Broken Links:', 'nvoos-docs-hub' ); ?></strong>
 					<?php echo esc_html( $broken_links ); ?>
+					<?php if ( $broken_links > 0 && is_array( $manifest ) && ! empty( $manifest['broken_links'] ) ) : ?>
+						<a href="#nvoos-docs-hub-broken-links-table" style="margin-left: 8px;"><?php esc_html_e( 'View details &amp; fix', 'nvoos-docs-hub' ); ?> ↓</a>
+					<?php endif; ?>
 				</p>
 
 				<div id="nvoos-docs-hub-rebuild-panel" data-rest-base="<?php echo esc_attr( $rest_base ); ?>" data-rest-nonce="<?php echo esc_attr( $rest_nonce ); ?>" data-initial-state="<?php echo esc_attr( wp_json_encode( $rebuild_state ) ); ?>">
@@ -801,6 +811,80 @@ class NV_oOS_Docs_Hub_Settings {
 						value="<?php esc_attr_e( 'Rebuild now (synchronous)', 'nvoos-docs-hub' ); ?>" />
 				</form>
 			</div>
+
+		<?php
+		// Broken links detail table.
+		$broken_list = is_array( $manifest ) && ! empty( $manifest['broken_links'] ) ? (array) $manifest['broken_links'] : array();
+		if ( ! empty( $broken_list ) ) :
+			?>
+		<div id="nvoos-docs-hub-broken-links-table" class="card" style="max-width: 960px; margin-bottom: 20px; padding: 15px;">
+			<h2 style="margin-top: 0;"><?php esc_html_e( 'Broken Link Details', 'nvoos-docs-hub' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'These internal documentation links could not be resolved. Accept a suggestion to fix the link in the source file, or run a rebuild to refresh the manifest.', 'nvoos-docs-hub' ); ?>
+			</p>
+
+			<table class="wp-list-table widefat fixed striped" style="margin-top: 12px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Source Page', 'nvoos-docs-hub' ); ?></th>
+						<th><?php esc_html_e( 'Broken Target', 'nvoos-docs-hub' ); ?></th>
+						<th><?php esc_html_e( 'Best Suggestion', 'nvoos-docs-hub' ); ?></th>
+						<th><?php esc_html_e( 'Confidence', 'nvoos-docs-hub' ); ?></th>
+						<th><?php esc_html_e( 'Method', 'nvoos-docs-hub' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+					foreach ( $broken_list as $link ) :
+						$src   = isset( $link['source'] ) ? (string) $link['source'] : '';
+						$tgt   = isset( $link['target'] ) ? (string) $link['target'] : '';
+						$suggs = isset( $link['suggestions'] ) ? (array) $link['suggestions'] : array();
+						$best  = ! empty( $suggs ) ? $suggs[0] : null;
+						?>
+						<tr>
+							<td><code><?php echo esc_html( $src ); ?></code></td>
+							<td><code style="color: #a00;"><?php echo esc_html( $tgt ); ?></code></td>
+							<td>
+								<?php if ( $best ) : ?>
+									<code style="color: #007017;"><?php echo esc_html( $best['target'] ); ?></code>
+								<?php else : ?>
+									<span style="color: #999;">—</span>
+								<?php endif; ?>
+							</td>
+							<td>
+								<?php if ( $best ) : ?>
+									<?php echo esc_html( (int) round( (float) $best['confidence'] * 100 ) . '%' ); ?>
+								<?php else : ?>
+									<span style="color: #999;">—</span>
+								<?php endif; ?>
+							</td>
+							<td>
+								<?php if ( $best ) : ?>
+									<code><?php echo esc_html( $best['method'] ); ?></code>
+								<?php else : ?>
+									<span style="color: #999;">—</span>
+								<?php endif; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+
+			<p style="margin-top: 12px;">
+				<em>
+					<?php
+					echo wp_kses_post(
+						sprintf(
+							/* translators: %s: CLI command */
+							__( 'To fix links interactively, run: %s', 'nvoos-docs-hub' ),
+							'<code>wp nvoos-docs fix-links</code>'
+						)
+					);
+					?>
+				</em>
+			</p>
+		</div>
+		<?php endif; ?>
 
 			<script>
 			(function () {
@@ -948,6 +1032,7 @@ class NV_oOS_Docs_Hub_Settings {
 						)
 					);
 					echo '</p></div>';
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- intentional diagnostic
 					error_log(
 						sprintf(
 							'[NV oOS Docs Hub] do_settings_sections fatal: %s in %s:%d',
@@ -1475,6 +1560,7 @@ class NV_oOS_Docs_Hub_Settings {
 				)
 			);
 			echo '</p></div>';
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- intentional diagnostic
 			error_log(
 				sprintf(
 					'[NV oOS Docs Hub] render_remote_repos fatal: %s in %s:%d',
