@@ -1,6 +1,6 @@
 {
   "_comment": "Baseline snapshot used by .github/workflows/phpunit.yml to gate non-regression. Update via bin/find-untested-classes.sh and the coverage dashboard whenever coverage materially increases. See PR #1 of the PHPUnit Test Coverage Gap-Filling Plan in CONTRIBUTING.md.",
-  "_generated_at": "2026-05-08",
+  "_generated_at": "2026-07-05",
   "thresholds": {
     "_comment": "Overall line/statement coverage floor reported by the phpunit clover output. Currently 0.0 because the meaningful gate in this repo is the per-subsystem covered-class floor in `subsystem_floors` below — that catches regression even when total line coverage looks flat. Once `composer run test:coverage-dashboard` produces a stable absolute number, ratchet these up to that value and use them as a secondary gate. Ratchet upward only — never lower without a recorded justification in the PR description.",
     "lines_min_pct": 0.0,
@@ -9,36 +9,36 @@
   "subsystem_floors": {
     "_comment": "Counts of source class files that have at least one dedicated test file referencing the class name. The CI gate compares current values to these floors and fails when any drops. Recompute via bin/find-untested-classes.sh.",
     "base_tools": {
-      "source_classes": 242,
-      "covered_classes_min": 242
-    },
+          "source_classes": 256,
+          "covered_classes_min": 256
+        },
     "pro_tools": {
-      "source_classes": 715,
-      "covered_classes_min": 715
-    },
+          "source_classes": 1173,
+          "covered_classes_min": 1173
+        },
     "rest_controllers": {
-      "source_classes": 67,
-      "covered_classes_min": 48
-    },
+          "source_classes": 85,
+          "covered_classes_min": 60
+        },
     "slash_commands": {
       "source_classes": 20,
       "covered_classes_min": 20
     },
     "services": {
-      "source_classes": 78,
-      "covered_classes_min": 58
-    },
+          "source_classes": 109,
+          "covered_classes_min": 80
+        },
     "harness": {
-      "source_classes": 10,
-      "covered_classes_min": 10
-    },
+          "source_classes": 12,
+          "covered_classes_min": 11
+        },
     "provider_clients": {
-      "source_classes": 16,
-      "covered_classes_min": 16
-    }
+          "source_classes": 25,
+          "covered_classes_min": 18
+        }
   },
   "test_file_floor": {
     "_comment": "Total number of test files across tests/ and addons/*/tests/. Must never decrease without justification.",
-    "min_count": 1100
+    "min_count": 1115
   }
 }
