@@ -746,6 +746,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/init.php';
 
+			// Load shared Webhook Context Manager (BME-aware history trimming) used by
+			// all webhook reply job handlers. Must load before any individual controller.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webhook-context-manager.php';
+
 			// Load WhatsApp Webhook Controller for real-time message handling.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
 
@@ -772,6 +776,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 			// Load Google Chat Webhook Controller for Google Chat bot events.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php';
+
+			// Load Outlook Webhook Controller for Microsoft 365 / Exchange Online email events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php';
+
+			// Load Twitter Webhook Controller for Twitter/X DM webhook events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php';
+
+			// Load Apple Messages Webhook Controller for iMessage Business Chat events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php';
+
+			// Load iCloud Webhook Controller for iCloud Drive file change events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php';
 		}
 
 		// Load DietPi Pro Toolkit if enabled (Pro feature — Raspberry Pi / DietPi server and media app management).
