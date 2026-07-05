@@ -4,10 +4,7 @@
  *
  * @package WP_MCP_AI_Pro
  * @subpackage Tests
- * @group tools
- * @group pro
- * @group cloudways
- * @group external-http
+ * @group tools @group pro @group cloudways @group external-http
  */
 
 class Test_WP_MCP_AI_Cloudways_Toolkit extends WP_UnitTestCase {
@@ -65,87 +62,74 @@ class Test_WP_MCP_AI_Cloudways_Toolkit extends WP_UnitTestCase {
 
 	/** @dataProvider provide_all_tool_classes */
 	public function test_tool_class_exists( $class_name ) {
-		$tool_file = $this->get_tool_file_path( $class_name );
-		if ( ! file_exists( $tool_file ) ) {
-			$this->markTestSkipped( $class_name . ' file not found.' );
-			return;
-		}
-		$this->assertFileExists( $tool_file );
-		require_once $tool_file;
+		$this->ensure_deps();
+		$f = $this->get_tool_file_path( $class_name );
+		if ( ! file_exists( $f ) ) { $this->markTestSkipped( $class_name . ' file not found.' ); return; }
+		require_once $f;
 		$this->assertTrue( class_exists( $class_name ), $class_name . ' should exist' );
 	}
 
 	/** @dataProvider provide_all_tool_classes */
 	public function test_tool_metadata( $class_name ) {
-		$tool = $this->safe_instantiate( $class_name );
-		if ( ! $tool ) { return; }
-		$this->assertNotEmpty( $tool->get_slug() );
-		$this->assertNotEmpty( $tool->get_name() );
-		$this->assertNotEmpty( $tool->get_description() );
-		$this->assertSame( 'manage_options', $tool->get_required_capability() );
+		$t = $this->safe_new( $class_name ); if ( ! $t ) { return; }
+		$this->assertNotEmpty( $t->get_slug() );
+		$this->assertNotEmpty( $t->get_name() );
+		$this->assertNotEmpty( $t->get_description() );
+		$this->assertSame( 'manage_options', $t->get_required_capability() );
 	}
 
 	/** @dataProvider provide_all_tool_classes */
 	public function test_tool_parameter_schema( $class_name ) {
-		$tool = $this->safe_instantiate( $class_name );
-		if ( ! $tool ) { return; }
-		$schema = $tool->get_parameters_schema();
-		$this->assertIsArray( $schema );
-		$this->assertArrayHasKey( 'type', $schema );
-		$this->assertArrayHasKey( 'properties', $schema );
+		$t = $this->safe_new( $class_name ); if ( ! $t ) { return; }
+		$s = $t->get_parameters_schema();
+		$this->assertIsArray( $s );
+		$this->assertArrayHasKey( 'type', $s );
+		$this->assertArrayHasKey( 'properties', $s );
 	}
 
 	/** @dataProvider provide_all_tool_classes */
 	public function test_tool_capability_flags( $class_name ) {
-		$tool = $this->safe_instantiate( $class_name );
-		if ( ! $tool ) { return; }
-		$flags = $tool->get_capability_flags();
-		$this->assertIsArray( $flags );
+		$t = $this->safe_new( $class_name ); if ( ! $t ) { return; }
+		$this->assertIsArray( $t->get_capability_flags() );
 	}
 
 	/** @dataProvider provide_all_tool_classes */
 	public function test_tool_is_available( $class_name ) {
 		if ( ! method_exists( $class_name, 'is_available' ) ) {
-			$this->markTestSkipped( $class_name . ' has no is_available.' );
-			return;
+			$this->markTestSkipped( $class_name . ' has no is_available.' ); return;
 		}
-		$available = $class_name::is_available();
-		$this->assertIsBool( $available );
+		$this->assertIsBool( $class_name::is_available() );
 	}
 
 	/** @dataProvider provide_all_tool_classes */
 	public function test_tool_execute_without_params_does_not_crash( $class_name ) {
-		$tool = $this->safe_instantiate( $class_name );
-		if ( ! $tool ) { return; }
-		if ( method_exists( $tool, 'is_available' ) && ! $tool->is_available() ) {
-			$this->markTestSkipped( $class_name . ' not available.' );
-			return;
+		$t = $this->safe_new( $class_name ); if ( ! $t ) { return; }
+		if ( method_exists( $t, 'is_available' ) && ! $t->is_available() ) {
+			$this->markTestSkipped( $class_name . ' not available.' ); return;
 		}
-		$result = $tool->execute( array(), array( 'user_id' => $this->user_id ) );
-		$this->assertTrue( is_array( $result ) || is_wp_error( $result ) );
+		$r = $t->execute( array(), array( 'user_id' => $this->user_id ) );
+		$this->assertTrue( is_array( $r ) || is_wp_error( $r ) );
 	}
 
-	protected function safe_instantiate( $class_name ) {
-		$tool_file = $this->get_tool_file_path( $class_name );
-		if ( ! file_exists( $tool_file ) ) {
-			$this->markTestSkipped( $class_name . ' file not found.' );
-			return null;
-		}
-		require_once $tool_file;
-		if ( ! class_exists( $class_name ) ) {
-			$this->markTestSkipped( $class_name . ' class not found.' );
-			return null;
-		}
+	protected function ensure_deps() {
+		$trait = WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-envelope.php';
+		$base  = $this->get_tool_file_path( 'WP_MCP_AI_Tool_Cloudways_Base' );
+		if ( file_exists( $trait ) ) { require_once $trait; }
+		if ( file_exists( $base ) )  { require_once $base; }
+	}
+
+	protected function safe_new( $class_name ) {
+		$this->ensure_deps();
+		$f = $this->get_tool_file_path( $class_name );
+		if ( ! file_exists( $f ) ) { $this->markTestSkipped( $class_name . ' file not found.' ); return null; }
+		require_once $f;
+		if ( ! class_exists( $class_name ) ) { $this->markTestSkipped( $class_name . ' class not found.' ); return null; }
 		try {
 			$r = new ReflectionClass( $class_name );
-			if ( $r->isAbstract() ) {
-				$this->markTestSkipped( $class_name . ' is abstract.' );
-				return null;
-			}
+			if ( $r->isAbstract() ) { $this->markTestSkipped( $class_name . ' is abstract.' ); return null; }
 			return $r->newInstance();
 		} catch ( \ReflectionException $e ) {
-			$this->markTestSkipped( $class_name . ' cannot instantiate.' );
-			return null;
+			$this->markTestSkipped( $class_name . ' cannot instantiate.' ); return null;
 		}
 	}
 
