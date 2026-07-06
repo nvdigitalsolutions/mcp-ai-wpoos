@@ -14,6 +14,24 @@
 class Test_Tool_Error_Chat_Integration extends WP_UnitTestCase {
 
 	/**
+	 * Mock WP_MCP_AI_REST instance (no constructor args needed for tested methods).
+	 *
+	 * @var WP_MCP_AI_REST
+	 */
+	protected $rest_controller;
+
+	/**
+	 * Set up test fixtures.
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		$this->rest_controller = $this->getMockBuilder( WP_MCP_AI_REST::class )
+			->disableOriginalConstructor()
+			->onlyMethods( array() )
+			->getMock();
+	}
+
+	/**
 	 * Test that rotate_image error is properly normalized in chat.
 	 */
 	public function test_rotate_image_error_normalization_in_chat() {
@@ -45,9 +63,8 @@ class Test_Tool_Error_Chat_Integration extends WP_UnitTestCase {
 		);
 
 		// Get REST controller and use reflection to access protected method.
-		$rest_controller = new WP_MCP_AI_REST();
-		$reflection      = new ReflectionClass( $rest_controller );
-		$method          = $reflection->getMethod( 'execute_tool_call_internal' );
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$method     = $reflection->getMethod( 'execute_tool_call_internal' );
 		$method->setAccessible( true );
 
 		// Execute the tool call with no authentication (user_id = 0, no token).
@@ -59,7 +76,7 @@ class Test_Tool_Error_Chat_Integration extends WP_UnitTestCase {
 		);
 
 		$result = $method->invoke(
-			$rest_controller,
+			$this->rest_controller,
 			$tool_call,
 			$assistant_id,
 			$assistant_config,
@@ -77,7 +94,7 @@ class Test_Tool_Error_Chat_Integration extends WP_UnitTestCase {
 		$normalize_method = $reflection->getMethod( 'normalize_tool_result' );
 		$normalize_method->setAccessible( true );
 
-		$normalized = $normalize_method->invoke( $rest_controller, $result );
+		$normalized = $normalize_method->invoke( $this->rest_controller, $result );
 
 		// After normalization, should be an array.
 		$this->assertIsArray( $normalized, 'Normalized result should be an array' );
@@ -106,12 +123,11 @@ class Test_Tool_Error_Chat_Integration extends WP_UnitTestCase {
 			'text'          => 'Successfully rotated image 90 degrees.',
 		);
 
-		$rest_controller  = new WP_MCP_AI_REST();
-		$reflection       = new ReflectionClass( $rest_controller );
+		$reflection       = new ReflectionClass( $this->rest_controller );
 		$normalize_method = $reflection->getMethod( 'normalize_tool_result' );
 		$normalize_method->setAccessible( true );
 
-		$normalized = $normalize_method->invoke( $rest_controller, $successful_result );
+		$normalized = $normalize_method->invoke( $this->rest_controller, $successful_result );
 
 		$this->assertEquals( $successful_result, $normalized, 'Successful result should be unchanged' );
 	}
@@ -128,12 +144,11 @@ class Test_Tool_Error_Chat_Integration extends WP_UnitTestCase {
 			array( 'status' => 401 )
 		);
 
-		$rest_controller  = new WP_MCP_AI_REST();
-		$reflection       = new ReflectionClass( $rest_controller );
+		$reflection       = new ReflectionClass( $this->rest_controller );
 		$normalize_method = $reflection->getMethod( 'normalize_tool_result' );
 		$normalize_method->setAccessible( true );
 
-		$normalized = $normalize_method->invoke( $rest_controller, $error );
+		$normalized = $normalize_method->invoke( $this->rest_controller, $error );
 
 		// Simulate frontend extractGenericToolResponse() behavior.
 		// The frontend checks for result.message.

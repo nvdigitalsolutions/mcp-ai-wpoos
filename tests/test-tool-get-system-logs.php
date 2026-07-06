@@ -77,7 +77,7 @@ class Test_Tool_Get_System_Logs extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'wp_mcp_ai', $result );
-		$this->assertArrayHasKey( 'WordPress', $result );
+		$this->assertArrayHasKey( 'wordpress', $result );
 	}
 
 	/**

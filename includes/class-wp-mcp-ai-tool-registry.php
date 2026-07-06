@@ -404,6 +404,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * List all registered tools.
+		 *
+		 * Alias for get_tools(). Returns an indexed array of tool instances
+		 * suitable for iteration in toolkit registry and other consumers.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @return WP_MCP_AI_Tool_Interface[] Array of registered tool instances.
+		 */
+		public function list_tools() {
+			return $this->get_tools();
+		}
+
+		/**
 		 * Retrieve all registered tools as an associative array keyed by slug.
 		 *
 		 * Use this method when you need to:
@@ -1004,7 +1018,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			// Check if tool implements capability flags interface.
 			if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
 				$flags = $tool->get_capability_flags();
-				return is_array( $flags ) ? $flags : array();
+				if ( ! is_array( $flags ) ) {
+					return array();
+				}
+
+				// Normalise associative arrays (key => bool) into a list of
+				// active flag names. List-format arrays pass through unchanged.
+				$first_key = array_key_first( $flags );
+				if ( null !== $first_key && is_string( $first_key ) ) {
+					return array_values( array_keys( array_filter( $flags ) ) );
+				}
+
+				return $flags;
 			}
 
 			return array();

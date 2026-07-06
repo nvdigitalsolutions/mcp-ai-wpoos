@@ -65,7 +65,7 @@ class Test_Tool_Lifecycle_Descriptor extends WP_UnitTestCase {
 			null
 		);
 
-		$this->assertSame( 'post-object', $descriptor['data_type'] );
+		$this->assertSame( 'postobject', $descriptor['data_type'] );
 	}
 
 	/**

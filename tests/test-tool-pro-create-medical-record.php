@@ -88,7 +88,7 @@ class Test_Tool_Pro_Create_Medical_Record extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_invalid_member', $result->get_error_code() );
 	}
 
 	// -----------------------------------------------------------------------

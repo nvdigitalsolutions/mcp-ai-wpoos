@@ -223,12 +223,6 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 	public function test_get_tools() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
-		// Reset tools using reflection.
-		$reflection = new ReflectionClass( $registry );
-		$property   = $reflection->getProperty( 'tools' );
-		$property->setAccessible( true );
-		$property->setValue( $registry, array() );
-
 		$tool1 = new WP_MCP_AI_Mock_Tool( 'tool_1', 'Tool 1' );
 		$tool2 = new WP_MCP_AI_Mock_Tool( 'tool_2', 'Tool 2' );
 
@@ -237,7 +231,9 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 
 		$tools = $registry->get_tools();
 
-		$this->assertCount( 2, $tools );
+		// Registry is shared with production tools; verify our tools exist.
+		$this->assertContains( $tool1, $tools );
+		$this->assertContains( $tool2, $tools );
 		$this->assertContainsOnlyInstancesOf( 'WP_MCP_AI_Tool_Interface', $tools );
 	}
 
@@ -380,20 +376,17 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 	public function test_get_tools_returns_values_only() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
-		// Reset tools.
-		$reflection = new ReflectionClass( $registry );
-		$property   = $reflection->getProperty( 'tools' );
-		$property->setAccessible( true );
-		$property->setValue( $registry, array() );
-
 		$tool = new WP_MCP_AI_Mock_Tool( 'test_tool' );
 		$registry->register_tool( $tool );
 
 		$tools = $registry->get_tools();
 		$keys  = array_keys( $tools );
 
-		// Should be numeric keys.
-		$this->assertEquals( array( 0 ), $keys );
+		// Keys should be sequential integers (0-based).
+		$this->assertNotEmpty( $keys );
+		foreach ( $keys as $i => $key ) {
+			$this->assertSame( $i, $key );
+		}
 	}
 
 	/**

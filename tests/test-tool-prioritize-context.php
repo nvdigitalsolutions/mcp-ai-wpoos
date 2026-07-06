@@ -46,9 +46,8 @@ class Test_Tool_Prioritize_Context extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Context items', $result['message'] );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertStringContainsString( 'Context items', $result->get_error_message() );
 	}
 
 	/**
@@ -67,9 +66,8 @@ class Test_Tool_Prioritize_Context extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Token budget', $result['message'] );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertStringContainsString( 'Token budget', $result->get_error_message() );
 	}
 
 	/**
@@ -146,8 +144,9 @@ class Test_Tool_Prioritize_Context extends WP_UnitTestCase {
 			array()
 		);
 
-		// Should not throw — either success=false or empty selected array.
-		$this->assertTrue( is_array( $result ), 'Should return an array.' );
+		// PHP empty([]) is true, so the tool returns WP_Error for an empty array.
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertStringContainsString( 'Context items', $result->get_error_message() );
 	}
 
 	/**

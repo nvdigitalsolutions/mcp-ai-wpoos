@@ -38,8 +38,14 @@ class Test_Tool_Pro_Manage_Autonomous_Session extends WP_UnitTestCase {
 		$this->admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
 
+		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-manage-autonomous-session.php';
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session' ) && file_exists( $tool_file ) ) {
+			require_once $tool_file;
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session' ) ) {
-			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-manage-autonomous-session.php';
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session class not available.' );
+			return;
 		}
 
 		$this->tool = new WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session();

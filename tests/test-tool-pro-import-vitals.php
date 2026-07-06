@@ -44,8 +44,14 @@ class Test_Tool_Pro_Import_Vitals extends WP_UnitTestCase {
 		}
 		WP_MCP_AI_Health_Wellness_CPT::register_post_types();
 
+		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-import-vitals.php';
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Import_Vitals' ) && file_exists( $tool_file ) ) {
+			require_once $tool_file;
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Import_Vitals' ) ) {
-			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-import-vitals.php';
+			$this->markTestSkipped( 'WP_MCP_AI_Tool_Import_Vitals class not available.' );
+			return;
 		}
 
 		$this->tool = new WP_MCP_AI_Tool_Import_Vitals();

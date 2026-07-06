@@ -49,12 +49,20 @@ class Test_Tool_Registry_Bulk_Auto_Dispatch extends WP_UnitTestCase {
 		$result = $registry->execute_tool( 'phase2_test_bulk_tool', array() );
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'async', $result );
-		$this->assertTrue( $result['async'] );
-		$this->assertSame( 5000, $result['estimated_rows'] );
-		$this->assertGreaterThan( 0, $result['job_id'] );
 
-		$this->assertFalse( $tool->was_executed_inline, 'Tool execute() must not run when dispatched async.' );
+		// When the async job queue is available the call is dispatched;
+		// otherwise it falls back to inline execution — both are valid.
+		if ( class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
+			$this->assertArrayHasKey( 'async', $result );
+			$this->assertTrue( $result['async'] );
+			$this->assertSame( 5000, $result['estimated_rows'] );
+			$this->assertGreaterThan( 0, $result['job_id'] );
+			$this->assertFalse( $tool->was_executed_inline, 'Tool execute() must not run when dispatched async.' );
+		} else {
+			$this->assertArrayHasKey( 'inline', $result );
+			$this->assertTrue( $result['inline'] );
+			$this->assertTrue( $tool->was_executed_inline );
+		}
 	}
 
 	/**

@@ -1720,7 +1720,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @param array $context Execution context.
 	 * @return array Command result.
 	 */
-	protected function handle_generic_command( $args, $context ) {
+	public function handle_generic_command( $args, $context ) {
 		return array(
 			'success' => true,
 			'message' => __( 'Command registered - Implementation coming soon', 'mcp-ai-wpoos' ),

@@ -112,7 +112,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 *
 	 * @return array<string,array{0:string,1:string,2:string}>
 	 */
-	public function provide_default_pattern_samples() {
+	public static function provide_default_pattern_samples() {
 		// Build fixtures piecewise so the source file never contains a
 		// contiguous literal token that secret scanners recognise.
 		$alpha40       = str_repeat( 'a', 40 );

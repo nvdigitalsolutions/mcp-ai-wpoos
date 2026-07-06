@@ -35,6 +35,15 @@ class WP_MCP_AI_Toolkit_CPT_Search_Prescriptions_Test extends WP_UnitTestCase {
 		parent::setUp();
 		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$this->registry->init();
+
+		// Create a user with 'read' capability so search_prescriptions
+		// execute() passes the user_can( $user_id, 'read' ) gate.
+		$this->user_id = $this->factory->user->create(
+			array(
+				'role' => 'editor',
+			)
+		);
+		wp_set_current_user( $this->user_id );
 	}
 
 	// -------------------------------------------------------------------------
