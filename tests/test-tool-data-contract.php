@@ -20,6 +20,7 @@
  */
 class WP_MCP_AI_Test_Tool_Data_Contract_Producer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	public function get_slug() {
 		return 'test_dc_producer';
 	}
@@ -54,6 +55,7 @@ class WP_MCP_AI_Test_Tool_Data_Contract_Producer implements WP_MCP_AI_Tool_Inter
  */
 class WP_MCP_AI_Test_Tool_Data_Contract_Consumer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	public function get_slug() {
 		return 'test_dc_consumer';
 	}
@@ -88,6 +90,7 @@ class WP_MCP_AI_Test_Tool_Data_Contract_Consumer implements WP_MCP_AI_Tool_Inter
  */
 class WP_MCP_AI_Test_Tool_Data_Contract_Malformed implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	public function get_slug() {
 		return 'test_dc_malformed';
 	}
@@ -123,6 +126,7 @@ class WP_MCP_AI_Test_Tool_Data_Contract_Malformed implements WP_MCP_AI_Tool_Inte
  */
 class WP_MCP_AI_Test_Tool_Data_Contract_NoContract implements WP_MCP_AI_Tool_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	public function get_slug() {
 		return 'test_dc_none';
 	}

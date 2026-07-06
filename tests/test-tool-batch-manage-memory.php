@@ -69,7 +69,10 @@ class Test_Tool_Batch_Manage_Memory extends WP_UnitTestCase {
 	 */
 	public function test_invalid_action_returns_error() {
 		$result = $this->tool->execute(
-			array( 'action' => 'nonexistent_action', 'agent_id' => 'agent-123' ),
+			array(
+				'action'   => 'nonexistent_action',
+				'agent_id' => 'agent-123',
+			),
 			array()
 		);
 

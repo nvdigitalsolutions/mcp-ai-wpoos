@@ -61,7 +61,7 @@ class Test_Tool_Registry_Coverage extends WP_UnitTestCase {
 
 		// Index by slug so per-tool failure messages are stable.
 		foreach ( $tools as $tool ) {
-			$slug = is_object( $tool ) && method_exists( $tool, 'get_slug' )
+			$slug                 = is_object( $tool ) && method_exists( $tool, 'get_slug' )
 				? (string) $tool->get_slug()
 				: 'unknown_' . spl_object_id( $tool );
 			self::$tools[ $slug ] = $tool;

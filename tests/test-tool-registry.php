@@ -13,6 +13,7 @@
  */
 class WP_MCP_AI_Mock_Tool implements WP_MCP_AI_Tool_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	protected $slug;
 	protected $name;
 

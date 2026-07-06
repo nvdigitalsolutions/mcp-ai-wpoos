@@ -79,7 +79,12 @@ class Test_Tool_Count_Tokens extends WP_UnitTestCase {
 		$result = $this->tool->execute(
 			array(
 				'text'     => 'some text',
-				'messages' => array( array( 'role' => 'user', 'content' => 'hi' ) ),
+				'messages' => array(
+					array(
+						'role'    => 'user',
+						'content' => 'hi',
+					),
+				),
 			),
 			array( 'user_id' => $this->subscriber_id )
 		);
@@ -93,7 +98,10 @@ class Test_Tool_Count_Tokens extends WP_UnitTestCase {
 	 */
 	public function test_count_tokens_for_text_returns_positive_count() {
 		$result = $this->tool->execute(
-			array( 'text' => 'The quick brown fox jumps over the lazy dog.', 'method' => 'heuristic' ),
+			array(
+				'text'   => 'The quick brown fox jumps over the lazy dog.',
+				'method' => 'heuristic',
+			),
 			array( 'user_id' => $this->subscriber_id )
 		);
 
@@ -109,8 +117,14 @@ class Test_Tool_Count_Tokens extends WP_UnitTestCase {
 		$result = $this->tool->execute(
 			array(
 				'messages' => array(
-					array( 'role' => 'user',      'content' => 'Hello there!' ),
-					array( 'role' => 'assistant', 'content' => 'Hi! How can I help you today?' ),
+					array(
+						'role'    => 'user',
+						'content' => 'Hello there!',
+					),
+					array(
+						'role'    => 'assistant',
+						'content' => 'Hi! How can I help you today?',
+					),
 				),
 				'method'   => 'heuristic',
 			),

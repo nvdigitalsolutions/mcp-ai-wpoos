@@ -95,7 +95,7 @@
             "php-http/discovery": true,
             "composer/installers": true
         },
-        "classmap-authoritative": true,
+        "classmap-authoritative": false,
         "platform": {
             "php": "8.3.0"
         },

@@ -81,7 +81,12 @@ class Test_Tool_Pro_Mark_ECA_Attendance extends WP_UnitTestCase {
 			array(
 				'eca_id'       => 1,
 				'session_date' => '2025-01-01',
-				'attendees'    => array( array( 'student_id' => 1, 'status' => 'present' ) ),
+				'attendees'    => array(
+					array(
+						'student_id' => 1,
+						'status'     => 'present',
+					),
+				),
 			),
 			array( 'user_id' => 0 )
 		);
@@ -101,7 +106,12 @@ class Test_Tool_Pro_Mark_ECA_Attendance extends WP_UnitTestCase {
 		$result = $this->tool->execute(
 			array(
 				'session_date' => '2025-01-01',
-				'attendees'    => array( array( 'student_id' => 1, 'status' => 'present' ) ),
+				'attendees'    => array(
+					array(
+						'student_id' => 1,
+						'status'     => 'present',
+					),
+				),
 			),
 			array( 'user_id' => $this->admin_id )
 		);
@@ -124,7 +134,12 @@ class Test_Tool_Pro_Mark_ECA_Attendance extends WP_UnitTestCase {
 			array(
 				'eca_id'       => $post_id,
 				'session_date' => '2025-01-01',
-				'attendees'    => array( array( 'student_id' => 1, 'status' => 'present' ) ),
+				'attendees'    => array(
+					array(
+						'student_id' => 1,
+						'status'     => 'present',
+					),
+				),
 			),
 			array( 'user_id' => $this->admin_id )
 		);
@@ -147,7 +162,12 @@ class Test_Tool_Pro_Mark_ECA_Attendance extends WP_UnitTestCase {
 			array(
 				'eca_id'       => $eca_id,
 				'session_date' => 'not-a-date',
-				'attendees'    => array( array( 'student_id' => 1, 'status' => 'present' ) ),
+				'attendees'    => array(
+					array(
+						'student_id' => 1,
+						'status'     => 'present',
+					),
+				),
 			),
 			array( 'user_id' => $this->admin_id )
 		);

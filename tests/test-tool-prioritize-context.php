@@ -58,7 +58,10 @@ class Test_Tool_Prioritize_Context extends WP_UnitTestCase {
 		$result = $this->tool->execute(
 			array(
 				'context_items' => array(
-					array( 'context_id' => 'ctx-1', 'content' => 'Some content' ),
+					array(
+						'context_id' => 'ctx-1',
+						'content'    => 'Some content',
+					),
 				),
 			),
 			array()
@@ -107,12 +110,18 @@ class Test_Tool_Prioritize_Context extends WP_UnitTestCase {
 	 * Token budget is respected — selected items do not exceed the budget.
 	 */
 	public function test_token_budget_is_respected() {
-		$budget  = 50;
-		$result  = $this->tool->execute(
+		$budget = 50;
+		$result = $this->tool->execute(
 			array(
 				'context_items' => array(
-					array( 'context_id' => 'ctx-a', 'content' => str_repeat( 'word ', 100 ) ),
-					array( 'context_id' => 'ctx-b', 'content' => str_repeat( 'word ', 100 ) ),
+					array(
+						'context_id' => 'ctx-a',
+						'content'    => str_repeat( 'word ', 100 ),
+					),
+					array(
+						'context_id' => 'ctx-b',
+						'content'    => str_repeat( 'word ', 100 ),
+					),
 				),
 				'token_budget'  => $budget,
 			),
@@ -149,7 +158,10 @@ class Test_Tool_Prioritize_Context extends WP_UnitTestCase {
 			$result = $this->tool->execute(
 				array(
 					'context_items' => array(
-						array( 'context_id' => 'ctx-1', 'content' => 'Some text.' ),
+						array(
+							'context_id' => 'ctx-1',
+							'content'    => 'Some text.',
+						),
 					),
 					'token_budget'  => 500,
 					'strategy'      => $strategy,
