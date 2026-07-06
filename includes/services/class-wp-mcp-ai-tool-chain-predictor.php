@@ -54,12 +54,21 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 	protected $registry;
 
 	/**
+	 * Acceptance tracker instance
+	 *
+	 * @var WP_MCP_AI_Tool_Chain_Acceptance_Tracker|null
+	 */
+	protected $acceptance_tracker = null;
+
+	/**
 	 * Constructor
 	 *
-	 * @param WP_MCP_AI_Tool_Registry|null $registry Tool registry.
+	 * @param WP_MCP_AI_Tool_Registry|null                $registry           Tool registry.
+	 * @param WP_MCP_AI_Tool_Chain_Acceptance_Tracker|null $acceptance_tracker Acceptance tracker.
 	 */
-	public function __construct( $registry = null ) {
-		$this->registry = $registry;
+	public function __construct( $registry = null, WP_MCP_AI_Tool_Chain_Acceptance_Tracker|null $acceptance_tracker = null ) {
+		$this->registry           = $registry;
+		$this->acceptance_tracker = $acceptance_tracker;
 	}
 
 	/**
@@ -100,6 +109,153 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 
 		// Fall back to heuristic prediction.
 		return $this->predict_heuristically( $task, $available_tools );
+	}
+
+	/**
+	 * Predict tool chain with confidence breakdown
+	 *
+	 * Enhances the base prediction with per-tool confidence scores
+	 * enriched by acceptance-tracker feedback when available.
+	 *
+	 * @since 1.1.1
+	 *
+	 * @param string $task            Task description.
+	 * @param array  $context         Task context.
+	 * @param array  $available_tools List of available tool slugs.
+	 * @return array Enhanced prediction array with per-tool confidence breakdowns.
+	 */
+	public function predict_with_confidence( $task, $context, $available_tools = array() ): array {
+		$base_prediction = $this->predict_tool_chain( $task, $context, $available_tools );
+		if ( empty( $base_prediction ) ) {
+			return $base_prediction;
+		}
+
+		// Determine task type for acceptance lookup.
+		$task_type = $this->analyze_task_type( $task, $context );
+
+		// Get acceptance stats if tracker is available.
+		$acceptance_stats = array();
+		$tracker          = $this->get_acceptance_tracker();
+		if ( $tracker ) {
+			$acceptance_stats = $tracker->get_recent_acceptance_stats( $task_type );
+		}
+
+		$enhanced = array();
+		foreach ( $base_prediction as $index => $prediction ) {
+			$tool_slug       = $prediction['tool_slug'] ?? 'unknown';
+			$base_confidence = $prediction['confidence'] ?? 0.5;
+
+			// Calculate historical confidence from acceptance tracker.
+			$historical_confidence = $base_confidence;
+			if ( ! empty( $acceptance_stats ) && isset( $acceptance_stats[ $tool_slug ] ) ) {
+				$historical_confidence = $acceptance_stats[ $tool_slug ]['acceptance_rate'] ?? $base_confidence;
+			}
+
+			// Calculate task-match confidence: earlier tools in pattern get higher weight.
+			$total_count           = count( $base_prediction );
+			$position_factor       = $total_count > 0
+				? ( 1.0 - ( $index / $total_count ) )
+				: 0.5;
+			$task_match_confidence = $base_confidence * $position_factor;
+
+			// Overall confidence: blend base, historical, and task-match.
+			$overall_confidence = ( $base_confidence * 0.3 )
+				+ ( $historical_confidence * 0.4 )
+				+ ( $task_match_confidence * 0.3 );
+
+			$enhanced[ $index ] = array_merge(
+				$prediction,
+				array(
+					'historical_confidence' => round( $historical_confidence, 4 ),
+					'task_match_confidence' => round( $task_match_confidence, 4 ),
+					'overall_confidence'    => round( $overall_confidence, 4 ),
+				)
+			);
+		}
+
+		return $enhanced;
+	}
+
+	/**
+	 * Boost pattern confidence from accepted chain feedback
+	 *
+	 * Extracts the task type from the executed chain and increments
+	 * matching pattern weights in stored history to improve future
+	 * predictions over time.
+	 *
+	 * @since 1.1.1
+	 *
+	 * @param array $accepted_chain The chain accepted by the user.
+	 * @param array $executed_chain The chain that was executed.
+	 * @return void
+	 */
+	public function boost_pattern_confidence( array $accepted_chain, array $executed_chain ): void {
+		if ( empty( $accepted_chain ) || empty( $executed_chain ) ) {
+			return;
+		}
+
+		// Generate chain keys for matching.
+		$accepted_key = $this->generate_chain_key( $accepted_chain );
+		$executed_key = $this->generate_chain_key( $executed_chain );
+
+		// Get current history.
+		$history = get_option( self::CHAIN_HISTORY_KEY, array() );
+		if ( ! is_array( $history ) ) {
+			$history = array();
+		}
+
+		// Extract task type from executed chain context if available.
+		$task_type = 'general';
+
+		// Increment weight of matching patterns.
+		$boosted = false;
+		foreach ( $history as &$entry ) {
+			if ( ! isset( $entry['tool_chain'] ) ) {
+				continue;
+			}
+
+			$entry_key = $this->generate_chain_key( $entry['tool_chain'] );
+
+			// Match accepted chain.
+			if ( $entry_key === $accepted_key ) {
+				// Ensure weight field exists.
+				if ( ! isset( $entry['weight'] ) ) {
+					$entry['weight'] = 1;
+				}
+				++$entry['weight'];
+				$entry['success'] = true;
+				$entry['boosted'] = time();
+
+				if ( isset( $entry['task_type'] ) ) {
+					$task_type = $entry['task_type'];
+				}
+
+				$boosted = true;
+			}
+		}
+		unset( $entry );
+
+		// If no matching pattern found, add the accepted chain as a new entry.
+		if ( ! $boosted ) {
+			$history[] = array(
+				'task_type'  => $task_type,
+				'tool_chain' => $accepted_chain,
+				'success'    => true,
+				'weight'     => 1,
+				'timestamp'  => time(),
+				'boosted'    => time(),
+			);
+		}
+
+		// Limit history size.
+		if ( count( $history ) > self::HISTORY_LIMIT ) {
+			$history = array_slice( $history, -self::HISTORY_LIMIT );
+		}
+
+		update_option( self::CHAIN_HISTORY_KEY, $history, false );
+
+		// Invalidate pattern cache.
+		wp_cache_delete( self::PATTERN_CACHE_KEY, 'mcp_ai_tool_chains' );
 	}
 
 	/**
@@ -629,6 +785,34 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 	}
 
 	/**
+	 * Get acceptance tracker instance
+	 *
+	 * Lazy-instantiates if null and class exists.
+	 *
+	 * @since 1.1.1
+	 *
+	 * @return WP_MCP_AI_Tool_Chain_Acceptance_Tracker|null Acceptance tracker.
+	 */
+	protected function get_acceptance_tracker() {
+		if ( ! $this->acceptance_tracker && class_exists( 'WP_MCP_AI_Tool_Chain_Acceptance_Tracker' ) ) {
+			$this->acceptance_tracker = new WP_MCP_AI_Tool_Chain_Acceptance_Tracker();
+		}
+		return $this->acceptance_tracker;
+	}
+
+	/**
+	 * Set acceptance tracker instance
+	 *
+	 * @since 1.1.1
+	 *
+	 * @param WP_MCP_AI_Tool_Chain_Acceptance_Tracker $tracker Acceptance tracker.
+	 * @return void
+	 */
+	public function set_acceptance_tracker( WP_MCP_AI_Tool_Chain_Acceptance_Tracker $tracker ): void {
+		$this->acceptance_tracker = $tracker;
+	}
+
+	/**
 	 * Clear chain history
 	 *
 	 * @return bool Success status.
@@ -637,5 +821,70 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 		delete_option( self::CHAIN_HISTORY_KEY );
 		wp_cache_delete( self::PATTERN_CACHE_KEY, 'mcp_ai_tool_chains' );
 		return true;
+	}
+
+	/**
+	 * Get prediction quality report
+	 *
+	 * Returns quality metrics including total predictions, average
+	 * acceptance rate, top-performing patterns, and weak patterns.
+	 *
+	 * @since 1.1.1
+	 *
+	 * @return array Quality report.
+	 */
+	public function get_prediction_quality_report(): array {
+		$tracker = $this->get_acceptance_tracker();
+
+		if ( ! $tracker ) {
+			return array(
+				'total_predictions'   => 0,
+				'avg_acceptance_rate' => 0,
+				'top_patterns'        => array(),
+				'weak_patterns'       => array(),
+			);
+		}
+
+		// Gather stats from acceptance tracker.
+		$all_stats     = $tracker->get_all_acceptance_stats();
+		$total         = 0;
+		$accepted_sum  = 0;
+		$pattern_rates = array();
+
+		foreach ( $all_stats as $stat ) {
+			$task_type = $stat['task_type'] ?? 'general';
+			$count     = $stat['total'] ?? 0;
+			$accepted  = $stat['accepted'] ?? 0;
+			$rate      = $count > 0 ? $accepted / $count : 0;
+
+			$total        += $count;
+			$accepted_sum += $accepted;
+
+			$pattern_rates[] = array(
+				'task_type'       => $task_type,
+				'total'           => $count,
+				'accepted'        => $accepted,
+				'acceptance_rate' => round( $rate, 4 ),
+			);
+		}
+
+		// Sort by acceptance rate descending for top patterns.
+		usort(
+			$pattern_rates,
+			function ( $a, $b ) {
+				return $b['acceptance_rate'] <=> $a['acceptance_rate'];
+			}
+		);
+
+		$top_patterns  = array_slice( $pattern_rates, 0, 5 );
+		$weak_patterns = array_slice( $pattern_rates, -5 );
+		$weak_patterns = array_reverse( $weak_patterns );
+
+		return array(
+			'total_predictions'   => $total,
+			'avg_acceptance_rate' => $total > 0 ? round( $accepted_sum / $total, 4 ) : 0,
+			'top_patterns'        => $top_patterns,
+			'weak_patterns'       => $weak_patterns,
+		);
 	}
 }

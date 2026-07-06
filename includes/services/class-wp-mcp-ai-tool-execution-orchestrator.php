@@ -59,6 +59,10 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	 */
 	protected $load_monitor = null;
 
+	protected $depth_scheduler = null;
+	protected $speculative_executor = null;
+	protected $acceptance_tracker = null;
+
 	/**
 	 * Capability flags that indicate a tool should be executed asynchronously
 	 *
@@ -83,11 +87,17 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	 * @param WP_MCP_AI_Tool_Registry|null       $registry Tool registry instance.
 	 * @param WP_MCP_AI_Tool_Async_Executor|null $async_executor Async executor instance.
 	 * @param WP_MCP_AI_Tool_Load_Monitor|null   $load_monitor Load monitor instance.
+	 * @param WP_MCP_AI_Orchestration_Depth_Scheduler|null $depth_scheduler Depth scheduler instance.
+	 * @param WP_MCP_AI_Speculative_Tool_Executor|null   $speculative_executor Speculative executor instance.
+	 * @param WP_MCP_AI_Tool_Chain_Acceptance_Tracker|null $acceptance_tracker Acceptance tracker instance.
 	 */
-	public function __construct( $registry = null, $async_executor = null, $load_monitor = null ) {
+	public function __construct( $registry = null, $async_executor = null, $load_monitor = null, $depth_scheduler = null, $speculative_executor = null, $acceptance_tracker = null ) {
 		$this->registry       = $registry;
 		$this->async_executor = $async_executor;
 		$this->load_monitor   = $load_monitor;
+		$this->depth_scheduler      = $depth_scheduler;
+		$this->speculative_executor = $speculative_executor;
+		$this->acceptance_tracker   = $acceptance_tracker;
 	}
 
 	/**
@@ -175,6 +185,109 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 			$duration = microtime( true ) - $start_time;
 			$success  = ! is_wp_error( $result );
 			$monitor->record_execution_complete( $tool_slug, $duration, $success, $context );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Execute a tool with orchestration depth scheduling
+	 *
+	 * Routes tool execution through the depth scheduler, optionally using
+	 * speculative execution when chain predictions are available and the
+	 * current tier supports verification.
+	 *
+	 * @param string $tool_slug Tool slug to execute.
+	 * @param array  $arguments Tool arguments.
+	 * @param array  $context   Execution context.
+	 * @return array|WP_Error Tool result enriched with orchestration metadata.
+	 */
+	public function execute_with_depth( $tool_slug, array $arguments = array(), array $context = array() ) {
+		$tool_slug = sanitize_key( $tool_slug );
+
+		// Get tool registry.
+		$registry = $this->get_registry();
+		if ( ! $registry ) {
+			return new WP_Error(
+				'wp_mcp_ai_registry_unavailable',
+				__( 'Tool registry is not available.', 'mcp-ai-wpoos' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// Check if tool exists.
+		if ( ! $registry->is_tool_registered( $tool_slug ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_tool_not_found',
+				sprintf(
+					/* translators: %s: tool slug */
+					__( 'Tool "%s" not found.', 'mcp-ai-wpoos' ),
+					$tool_slug
+				),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Get the depth scheduler (lazy-load if null).
+		$depth_scheduler = $this->get_depth_scheduler();
+		if ( ! $depth_scheduler ) {
+			// No depth scheduler available; fall through to standard execution.
+			return $this->execute_tool( $tool_slug, $arguments, $context );
+		}
+
+		// Determine orchestration tier based on capacity and confidence from context.
+		$capacity   = isset( $context['capacity'] ) ? (float) $context['capacity'] : 0.0;
+		$confidence = isset( $context['confidence'] ) ? (float) $context['confidence'] : 0.0;
+		$tier       = $depth_scheduler->determine_tier( $capacity, $confidence );
+
+		// Get tier configuration.
+		$tier_config = $depth_scheduler->get_tier_config( $tier );
+
+		// Check if speculative execution should be attempted.
+		$verification_enabled = isset( $tier_config['verification_enabled'] ) && $tier_config['verification_enabled'];
+		$chain_prediction     = isset( $context['chain_prediction'] ) ? $context['chain_prediction'] : null;
+
+		if ( $verification_enabled && null !== $chain_prediction ) {
+			$speculative_executor = $this->get_speculative_executor();
+
+			if ( $speculative_executor ) {
+				// Execute speculatively with the predicted chain.
+				$block_size = isset( $tier_config['block_size'] ) ? (int) $tier_config['block_size'] : 1;
+				$result     = $speculative_executor->execute_speculative_block(
+					$tool_slug,
+					$arguments,
+					$chain_prediction,
+					$block_size,
+					$context
+				);
+
+				// Record acceptance via acceptance tracker.
+				$acceptance_tracker = $this->get_acceptance_tracker();
+				if ( $acceptance_tracker && ! is_wp_error( $result ) ) {
+					$acceptance_tracker->record_acceptance(
+						$tool_slug,
+						$chain_prediction,
+						$result,
+						$tier,
+						$context
+					);
+				}
+
+				// Enrich result with orchestration metadata.
+				if ( is_array( $result ) ) {
+					$result['orchestration_tier'] = $tier;
+				}
+
+				return $result;
+			}
+		}
+
+		// Fall through to standard execution.
+		$result = $this->execute_tool( $tool_slug, $arguments, $context );
+
+		// Enrich result with orchestration metadata.
+		if ( is_array( $result ) ) {
+			$result['orchestration_tier'] = $tier;
 		}
 
 		return $result;
@@ -353,6 +466,51 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	}
 
 	/**
+	 * Get depth scheduler instance (lazy loaded)
+	 *
+	 * @return WP_MCP_AI_Orchestration_Depth_Scheduler|null
+	 */
+	protected function get_depth_scheduler() {
+		if ( null === $this->depth_scheduler ) {
+			if ( class_exists( 'WP_MCP_AI_Orchestration_Depth_Scheduler' ) ) {
+				$this->depth_scheduler = new WP_MCP_AI_Orchestration_Depth_Scheduler();
+			}
+		}
+
+		return $this->depth_scheduler;
+	}
+
+	/**
+	 * Get speculative executor instance (lazy loaded)
+	 *
+	 * @return WP_MCP_AI_Speculative_Tool_Executor|null
+	 */
+	protected function get_speculative_executor() {
+		if ( null === $this->speculative_executor ) {
+			if ( class_exists( 'WP_MCP_AI_Speculative_Tool_Executor' ) ) {
+				$this->speculative_executor = new WP_MCP_AI_Speculative_Tool_Executor();
+			}
+		}
+
+		return $this->speculative_executor;
+	}
+
+	/**
+	 * Get acceptance tracker instance (lazy loaded)
+	 *
+	 * @return WP_MCP_AI_Tool_Chain_Acceptance_Tracker|null
+	 */
+	protected function get_acceptance_tracker() {
+		if ( null === $this->acceptance_tracker ) {
+			if ( class_exists( 'WP_MCP_AI_Tool_Chain_Acceptance_Tracker' ) ) {
+				$this->acceptance_tracker = new WP_MCP_AI_Tool_Chain_Acceptance_Tracker();
+			}
+		}
+
+		return $this->acceptance_tracker;
+	}
+
+	/**
 	 * Execute a tool asynchronously
 	 *
 	 * Queues the tool for background execution via WordPress cron.
@@ -468,5 +626,16 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Set the depth scheduler instance
+	 *
+	 * Allows injecting a pre-configured depth scheduler after construction.
+	 *
+	 * @param WP_MCP_AI_Orchestration_Depth_Scheduler $scheduler Depth scheduler instance.
+	 */
+	public function set_depth_scheduler( $scheduler ) {
+		$this->depth_scheduler = $scheduler;
 	}
 }
