@@ -229,14 +229,12 @@ jobs:
       - name: ZAP API Scan
         id: zap
         if: steps.openapi.outputs.spec_exists == 'true'
-        uses: zaproxy/action-api-scan@v0.13.0
+        uses: zaproxy/action-api-scan@v0.10.0
         with:
           target: 'http://localhost:8000'
           format: 'openapi'
-          # Phase 4: advisory only. Phase 5 makes this FAIL.
-          fail_action: 'warn'
+          rules_file_name: '.zap-rules.tsv'
           cmd_options: >
-            -c .zap-rules.tsv
             -j -J zap-api-report.json
             -r zap-api-report.html
             --auto

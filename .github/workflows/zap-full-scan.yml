@@ -171,9 +171,9 @@ jobs:
           target: ${{ steps.target.outputs.url }}
           # Phase 3: warn on findings, don't fail the build. Phase 5 makes this FAIL.
           fail_action: 'warn'
+          rules_file_name: '.zap-rules.tsv'
           cmd_options: >
             -m ${{ github.event.inputs.spider_minutes || '5' }}
-            -c .zap-rules.tsv
             -j -J zap-full-report.json
             -r zap-full-report.html
             --auto

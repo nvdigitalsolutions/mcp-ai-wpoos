@@ -168,7 +168,8 @@ jobs:
         with:
           target: ${{ steps.target.outputs.url }}
           fail_action: 'warn'
-          cmd_options: '-m 1 -c .zap-rules.tsv -j -J zap-post-deploy-report.json -r zap-post-deploy-report.html'
+          rules_file_name: '.zap-rules.tsv'
+          cmd_options: '-m 1 -j -J zap-post-deploy-report.json -r zap-post-deploy-report.html'
         continue-on-error: true
 
       - name: Upload ZAP post-deploy report

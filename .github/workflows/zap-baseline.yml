@@ -147,6 +147,7 @@ jobs:
           target: ${{ steps.target.outputs.url }}
           # Phase 1: advisory only — warn on findings, never fail the build.
           fail_action: 'warn'
+          rules_file_name: '.zap-rules.tsv'
           # Increase spider duration for better coverage.
           cmd_options: >
             -m ${{ github.event.inputs.spider_minutes || '1' }}

@@ -609,7 +609,8 @@ jobs:
         with:
           target: ${{ steps.target.outputs.url }}
           fail_action: 'warn'
-          cmd_options: '-c .zap-rules.tsv -j -J zap-preflight-report.json -r zap-preflight-report.html --auto'
+          rules_file_name: '.zap-rules.tsv'
+          cmd_options: '-j -J zap-preflight-report.json -r zap-preflight-report.html --auto'
         continue-on-error: true
 
       - name: Upload ZAP pre-flight report
