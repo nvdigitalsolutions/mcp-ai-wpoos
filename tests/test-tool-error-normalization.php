@@ -14,6 +14,24 @@
 class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 
 	/**
+	 * Mock WP_MCP_AI_REST instance (no constructor args needed for tested methods).
+	 *
+	 * @var WP_MCP_AI_REST
+	 */
+	protected $rest_controller;
+
+	/**
+	 * Set up test fixtures.
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		$this->rest_controller = $this->getMockBuilder( WP_MCP_AI_REST::class )
+			->disableOriginalConstructor()
+			->onlyMethods( array() )
+			->getMock();
+	}
+
+	/**
 	 * Test normalize_tool_result with WP_Error.
 	 */
 	public function test_normalize_wp_error() {
@@ -25,13 +43,12 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		);
 
 		// Get REST controller instance using reflection to access protected method.
-		$rest_controller = new WP_MCP_AI_REST();
-		$reflection      = new ReflectionClass( $rest_controller );
-		$method          = $reflection->getMethod( 'normalize_tool_result' );
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$method     = $reflection->getMethod( 'normalize_tool_result' );
 		$method->setAccessible( true );
 
 		// Normalize the error.
-		$normalized = $method->invoke( $rest_controller, $error );
+		$normalized = $method->invoke( $this->rest_controller, $error );
 
 		// Assert it's converted to an array.
 		$this->assertIsArray( $normalized, 'WP_Error should be converted to array' );
@@ -53,13 +70,12 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		);
 
 		// Get REST controller instance using reflection.
-		$rest_controller = new WP_MCP_AI_REST();
-		$reflection      = new ReflectionClass( $rest_controller );
-		$method          = $reflection->getMethod( 'normalize_tool_result' );
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$method     = $reflection->getMethod( 'normalize_tool_result' );
 		$method->setAccessible( true );
 
 		// Normalize the result.
-		$normalized = $method->invoke( $rest_controller, $result );
+		$normalized = $method->invoke( $this->rest_controller, $result );
 
 		// Assert it's unchanged.
 		$this->assertEquals( $result, $normalized, 'Successful result should be unchanged' );
@@ -76,13 +92,12 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		);
 
 		// Get REST controller instance using reflection.
-		$rest_controller = new WP_MCP_AI_REST();
-		$reflection      = new ReflectionClass( $rest_controller );
-		$method          = $reflection->getMethod( 'normalize_tool_result' );
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$method     = $reflection->getMethod( 'normalize_tool_result' );
 		$method->setAccessible( true );
 
 		// Normalize the error.
-		$normalized = $method->invoke( $rest_controller, $error );
+		$normalized = $method->invoke( $this->rest_controller, $error );
 
 		// Try to JSON-encode.
 		$json = wp_json_encode( $normalized );
@@ -103,13 +118,12 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		);
 
 		// Get REST controller instance using reflection.
-		$rest_controller = new WP_MCP_AI_REST();
-		$reflection      = new ReflectionClass( $rest_controller );
-		$method          = $reflection->getMethod( 'normalize_tool_result' );
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$method     = $reflection->getMethod( 'normalize_tool_result' );
 		$method->setAccessible( true );
 
 		// Normalize the error.
-		$normalized = $method->invoke( $rest_controller, $error );
+		$normalized = $method->invoke( $this->rest_controller, $error );
 
 		// Assert it's converted to an array.
 		$this->assertIsArray( $normalized );
@@ -141,13 +155,12 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		);
 
 		// Get REST controller instance using reflection.
-		$rest_controller = new WP_MCP_AI_REST();
-		$reflection      = new ReflectionClass( $rest_controller );
-		$method          = $reflection->getMethod( 'normalize_data_recursive' );
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$method     = $reflection->getMethod( 'normalize_data_recursive' );
 		$method->setAccessible( true );
 
 		// Normalize the nested data.
-		$normalized = $method->invoke( $rest_controller, $nested_data );
+		$normalized = $method->invoke( $this->rest_controller, $nested_data );
 
 		// Assert the structure is preserved and WP_Error is converted.
 		$this->assertIsArray( $normalized );
@@ -190,13 +203,12 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		);
 
 		// Get REST controller instance using reflection.
-		$rest_controller = new WP_MCP_AI_REST();
-		$reflection      = new ReflectionClass( $rest_controller );
-		$method          = $reflection->getMethod( 'normalize_data_recursive' );
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$method     = $reflection->getMethod( 'normalize_data_recursive' );
 		$method->setAccessible( true );
 
 		// Normalize the deeply nested data.
-		$normalized = $method->invoke( $rest_controller, $deeply_nested );
+		$normalized = $method->invoke( $this->rest_controller, $deeply_nested );
 
 		// Navigate to the deeply nested error.
 		$deep_error = $normalized['level1']['level2']['level3']['error'];
@@ -242,13 +254,12 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		);
 
 		// Get REST controller instance using reflection.
-		$rest_controller = new WP_MCP_AI_REST();
-		$reflection      = new ReflectionClass( $rest_controller );
-		$method          = $reflection->getMethod( 'normalize_data_recursive' );
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$method     = $reflection->getMethod( 'normalize_data_recursive' );
 		$method->setAccessible( true );
 
 		// Normalize.
-		$normalized = $method->invoke( $rest_controller, $multiple_errors );
+		$normalized = $method->invoke( $this->rest_controller, $multiple_errors );
 
 		// Check first error.
 		$this->assertTrue( $normalized['results'][0]['result']['error'] );
@@ -273,26 +284,25 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 	 */
 	public function test_normalize_data_recursive_with_scalars() {
 		// Get REST controller instance using reflection.
-		$rest_controller = new WP_MCP_AI_REST();
-		$reflection      = new ReflectionClass( $rest_controller );
-		$method          = $reflection->getMethod( 'normalize_data_recursive' );
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$method     = $reflection->getMethod( 'normalize_data_recursive' );
 		$method->setAccessible( true );
 
 		// Test with string.
-		$this->assertEquals( 'test string', $method->invoke( $rest_controller, 'test string' ) );
+		$this->assertEquals( 'test string', $method->invoke( $this->rest_controller, 'test string' ) );
 
 		// Test with integer.
-		$this->assertEquals( 42, $method->invoke( $rest_controller, 42 ) );
+		$this->assertEquals( 42, $method->invoke( $this->rest_controller, 42 ) );
 
 		// Test with float.
-		$this->assertEquals( 3.14, $method->invoke( $rest_controller, 3.14 ) );
+		$this->assertEquals( 3.14, $method->invoke( $this->rest_controller, 3.14 ) );
 
 		// Test with boolean.
-		$this->assertTrue( $method->invoke( $rest_controller, true ) );
-		$this->assertFalse( $method->invoke( $rest_controller, false ) );
+		$this->assertTrue( $method->invoke( $this->rest_controller, true ) );
+		$this->assertFalse( $method->invoke( $this->rest_controller, false ) );
 
 		// Test with null.
-		$this->assertNull( $method->invoke( $rest_controller, null ) );
+		$this->assertNull( $method->invoke( $this->rest_controller, null ) );
 	}
 
 	/**

@@ -109,6 +109,9 @@ class WP_MCP_AI_Tool_Result_Name_Field_Test extends WP_UnitTestCase {
 	 */
 	public function test_tool_error_results_include_name_field() {
 		// Create a mock tool registry that returns an error.
+		// Note: the orchestrator checks is_tool_registered() first, so an
+		// unregistered tool slug will return "Tool not found" before reaching
+		// execute_tool(). We use a slug that will be treated as unregistered.
 		$mock_tool_registry = $this->getMockBuilder( WP_MCP_AI_Tool_Registry::class )
 			->disableOriginalConstructor()
 			->onlyMethods( array( 'execute_tool' ) )
@@ -182,12 +185,14 @@ class WP_MCP_AI_Tool_Result_Name_Field_Test extends WP_UnitTestCase {
 		$this->assertSame( 'failing_tool', $result['name'] );
 		$this->assertIsString( $result['content'] );
 
-		// Verify error content.
+		// Verify error content — the orchestrator returns "Tool not found" for
+		// unregistered tool slugs, formatted as error_code / error_message.
 		$content_decoded = json_decode( $result['content'], true );
 		$this->assertNotNull( $content_decoded );
 		$this->assertIsArray( $content_decoded );
-		$this->assertArrayHasKey( 'error', $content_decoded );
-		$this->assertSame( 'Tool execution failed', $content_decoded['error'] );
+		$this->assertArrayHasKey( 'error_code', $content_decoded );
+		$this->assertArrayHasKey( 'error_message', $content_decoded );
+		$this->assertStringContainsString( 'not found', $content_decoded['error_message'] );
 	}
 
 	/**

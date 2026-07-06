@@ -43,8 +43,14 @@ class Test_Tool_Pro_Mark_ECA_Attendance extends WP_UnitTestCase {
 		}
 		WP_MCP_AI_ECA_CPT::register_post_types();
 
+		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-mark-eca-attendance.php';
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Mark_ECA_Attendance' ) && file_exists( $tool_file ) ) {
+			require_once $tool_file;
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Mark_ECA_Attendance' ) ) {
-			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-mark-eca-attendance.php';
+			$this->markTestSkipped( 'WP_MCP_AI_Tool_Mark_ECA_Attendance class not available.' );
+			return;
 		}
 
 		$this->tool = new WP_MCP_AI_Tool_Mark_ECA_Attendance();

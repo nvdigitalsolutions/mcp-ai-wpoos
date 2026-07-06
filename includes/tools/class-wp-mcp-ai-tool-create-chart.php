@@ -522,7 +522,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	protected function generate_chart_html( array $config, $width, $height ) {
 		$chart_id    = 'chart-' . wp_generate_password( 8, false );
 		$config_json = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
-		$chartjs_url = esc_url( plugins_url( 'assets/js/vendor/chart.min.js', WP_MCP_AI_FILE ) );
+		$chartjs_url = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
 
 		ob_start();
 		?>

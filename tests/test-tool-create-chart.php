@@ -103,7 +103,7 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'chart_config', $result );
 		$this->assertArrayHasKey( 'output_format', $result );
 		$this->assertEquals( 'chart', $result['output_format'] );
-		$this->assertStringContainsString( 'Chart.js', $result['html'] );
+		$this->assertStringContainsString( 'chart.min.js', $result['html'] );
 		$this->assertStringContainsString( 'Monthly Sales', $result['html'] );
 		$this->assertFalse( $result['saved_as_file'] );
 	}
@@ -347,8 +347,8 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$html = $result['html'];
 
-		// Check for Chart.js CDN.
-		$this->assertStringContainsString( 'cdn.jsdelivr.net/npm/chart.js', $html );
+		// Check for Chart.js vendor script.
+		$this->assertStringContainsString( 'assets/js/vendor/chart.min.js', $html );
 		$this->assertStringContainsString( '<canvas', $html );
 		$this->assertStringContainsString( 'new Chart', $html );
 		$this->assertStringContainsString( '<!DOCTYPE html>', $html );

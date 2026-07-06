@@ -41,6 +41,15 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 
 		// Clean up disabled tools option.
 		delete_option( 'wp_mcp_ai_disabled_tools' );
+
+		// Remove plugin-bootstrap hooks that route through safe_ajax_handler,
+		// whose catch block catches WP test-framework die exceptions and
+		// destroys output buffers needed by WP_Ajax_UnitTestCase.
+		remove_all_actions( 'wp_ajax_wp_mcp_ai_toggle_tool' );
+
+		// Register the AJAX handler directly.
+		$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+		add_action( 'wp_ajax_wp_mcp_ai_toggle_tool', array( $ajax_handlers, 'handle_toggle_tool' ) );
 	}
 
 	/**

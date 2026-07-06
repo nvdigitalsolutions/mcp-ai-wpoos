@@ -342,6 +342,10 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 				$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
 				$result          = $context_manager->delete_context( $agent_id, $context_id );
 
+				if ( is_wp_error( $result ) ) {
+					continue;
+				}
+
 				if ( isset( $result['success'] ) && $result['success'] ) {
 					++$deleted_count;
 					$deleted_contexts[] = $context_id;
@@ -585,6 +589,10 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 		$filters         = isset( $arguments['filters'] ) ? $arguments['filters'] : array();
 		$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
 		$contexts        = $context_manager->search_contexts( $agent_id, $filters, 1000, false );
+
+		if ( is_wp_error( $contexts ) ) {
+			return array();
+		}
 
 		return array_map(
 			function ( $context ) {

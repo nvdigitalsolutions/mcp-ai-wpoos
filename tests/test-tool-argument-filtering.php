@@ -18,6 +18,24 @@
 class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 
 	/**
+	 * Mock WP_MCP_AI_REST instance (no constructor args needed for tested methods).
+	 *
+	 * @var WP_MCP_AI_REST
+	 */
+	protected $rest_controller;
+
+	/**
+	 * Set up test fixtures.
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		$this->rest_controller = $this->getMockBuilder( WP_MCP_AI_REST::class )
+			->disableOriginalConstructor()
+			->onlyMethods( array() )
+			->getMock();
+	}
+
+	/**
 	 * Test that extra parameters are filtered out when additionalProperties is false.
 	 *
 	 * The count_tokens tool has additionalProperties => false, so extra parameters
@@ -27,8 +45,6 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
-
-		$rest_controller = new WP_MCP_AI_REST();
 
 		// Get the count_tokens tool which has additionalProperties => false.
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
@@ -53,12 +69,12 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		);
 
 		// Use reflection to access the protected filter_tool_arguments_by_schema method.
-		$reflection = new ReflectionClass( $rest_controller );
+		$reflection = new ReflectionClass( $this->rest_controller );
 		$method     = $reflection->getMethod( 'filter_tool_arguments_by_schema' );
 		$method->setAccessible( true );
 
 		// Filter the arguments.
-		$filtered = $method->invoke( $rest_controller, $tool, $arguments );
+		$filtered = $method->invoke( $this->rest_controller, $tool, $arguments );
 
 		// Verify that only schema-defined parameters remain.
 		$this->assertIsArray( $filtered, 'Filtered result should be an array' );
@@ -82,8 +98,6 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 
-		$rest_controller = new WP_MCP_AI_REST();
-
 		// Get the get_user_info tool which does NOT have additionalProperties => false.
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
@@ -106,12 +120,12 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		);
 
 		// Use reflection to access the protected filter_tool_arguments_by_schema method.
-		$reflection = new ReflectionClass( $rest_controller );
+		$reflection = new ReflectionClass( $this->rest_controller );
 		$method     = $reflection->getMethod( 'filter_tool_arguments_by_schema' );
 		$method->setAccessible( true );
 
 		// Filter the arguments.
-		$filtered = $method->invoke( $rest_controller, $tool, $arguments );
+		$filtered = $method->invoke( $this->rest_controller, $tool, $arguments );
 
 		// Verify that ALL parameters remain (no filtering).
 		$this->assertIsArray( $filtered, 'Filtered result should be an array' );
@@ -130,20 +144,18 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 
-		$rest_controller = new WP_MCP_AI_REST();
-
 		// Get a tool with additionalProperties => false.
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 		$tool = $registry->get_tool( 'count_tokens' );
 
 		// Use reflection to access the protected filter_tool_arguments_by_schema method.
-		$reflection = new ReflectionClass( $rest_controller );
+		$reflection = new ReflectionClass( $this->rest_controller );
 		$method     = $reflection->getMethod( 'filter_tool_arguments_by_schema' );
 		$method->setAccessible( true );
 
 		// Filter empty arguments.
-		$filtered = $method->invoke( $rest_controller, $tool, array() );
+		$filtered = $method->invoke( $this->rest_controller, $tool, array() );
 
 		// Verify empty array is returned.
 		$this->assertIsArray( $filtered, 'Filtered result should be an array' );
@@ -161,8 +173,6 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
-
-		$rest_controller = new WP_MCP_AI_REST();
 
 		// Get the check_wp_cli tool which uses stdClass for properties.
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
@@ -186,12 +196,12 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		);
 
 		// Use reflection to access the protected filter_tool_arguments_by_schema method.
-		$reflection = new ReflectionClass( $rest_controller );
+		$reflection = new ReflectionClass( $this->rest_controller );
 		$method     = $reflection->getMethod( 'filter_tool_arguments_by_schema' );
 		$method->setAccessible( true );
 
 		// Filter the arguments.
-		$filtered = $method->invoke( $rest_controller, $tool, $arguments );
+		$filtered = $method->invoke( $this->rest_controller, $tool, $arguments );
 
 		// Verify that all extra parameters are filtered out (tool expects no arguments).
 		$this->assertIsArray( $filtered, 'Filtered result should be an array' );
@@ -208,8 +218,6 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
-
-		$rest_controller = new WP_MCP_AI_REST();
 
 		// Create a mock tool with stdClass properties containing defined properties.
 		$mock_tool = $this->createMock( WP_MCP_AI_Tool_Interface::class );
@@ -236,12 +244,12 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		);
 
 		// Use reflection to access the protected filter_tool_arguments_by_schema method.
-		$reflection = new ReflectionClass( $rest_controller );
+		$reflection = new ReflectionClass( $this->rest_controller );
 		$method     = $reflection->getMethod( 'filter_tool_arguments_by_schema' );
 		$method->setAccessible( true );
 
 		// Filter the arguments.
-		$filtered = $method->invoke( $rest_controller, $mock_tool, $arguments );
+		$filtered = $method->invoke( $this->rest_controller, $mock_tool, $arguments );
 
 		// Verify that only defined properties are kept.
 		$this->assertIsArray( $filtered, 'Filtered result should be an array' );
@@ -264,8 +272,6 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 
-		$rest_controller = new WP_MCP_AI_REST();
-
 		// Create a mock tool with unexpected properties type (string instead of array/object).
 		$mock_tool = $this->createMock( WP_MCP_AI_Tool_Interface::class );
 
@@ -285,12 +291,12 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		);
 
 		// Use reflection to access the protected filter_tool_arguments_by_schema method.
-		$reflection = new ReflectionClass( $rest_controller );
+		$reflection = new ReflectionClass( $this->rest_controller );
 		$method     = $reflection->getMethod( 'filter_tool_arguments_by_schema' );
 		$method->setAccessible( true );
 
 		// Filter the arguments.
-		$filtered = $method->invoke( $rest_controller, $mock_tool, $arguments );
+		$filtered = $method->invoke( $this->rest_controller, $mock_tool, $arguments );
 
 		// Verify that all arguments are preserved (no filtering applied due to malformed schema).
 		$this->assertIsArray( $filtered, 'Filtered result should be an array' );

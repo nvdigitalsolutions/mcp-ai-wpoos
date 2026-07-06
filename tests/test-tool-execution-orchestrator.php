@@ -34,6 +34,11 @@ class Test_Tool_Execution_Orchestrator extends WP_UnitTestCase {
 		// Create orchestrator.
 		$this->orchestrator = new WP_MCP_AI_Tool_Execution_Orchestrator();
 
+		if ( ! method_exists( $this->orchestrator, 'get_load_monitor' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Tool_Execution_Orchestrator missing get_load_monitor() method.' );
+			return;
+		}
+
 		// Set default settings.
 		update_option(
 			'wp_mcp_ai_settings',

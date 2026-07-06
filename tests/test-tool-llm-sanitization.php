@@ -66,10 +66,9 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 		// HTML field should be stripped (redundant and large).
 		$this->assertArrayNotHasKey( 'html', $sanitized['results'][0] );
 
-		// Verbose metadata should be stripped.
-		$this->assertArrayNotHasKey( 'headers', $sanitized['results'][0]['metadata'] );
-		$this->assertArrayNotHasKey( 'retrieved_at', $sanitized['results'][0]['metadata'] );
-		$this->assertArrayNotHasKey( 'user_agent', $sanitized['metadata'] );
+		// Verbose metadata should be stripped (entire metadata array removed when all keys are stripped).
+		$this->assertArrayNotHasKey( 'metadata', $sanitized['results'][0] );
+		$this->assertArrayNotHasKey( 'metadata', $sanitized );
 
 		// Essential metadata should be kept.
 		$this->assertEquals( 'completed', $sanitized['status'] );
@@ -150,20 +149,14 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that REST controller uses custom sanitization when tool implements interface.
+	 * Test that REST validator delegates to tool sanitization when tool implements the interface.
 	 */
 	public function test_rest_controller_delegates_to_tool_sanitization() {
 		$assistant_id = $this->create_assistant();
 		$user_id      = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		// Create a mock tool that implements the sanitizer interface.
-		$mock_tool = $this->getMockBuilder( WP_MCP_AI_Tool_Interface::class )
-			->getMock();
-
-		$mock_tool->method( 'get_slug' )->willReturn( 'test_tool' );
-
-		// Make the mock also implement the sanitizer interface.
+		// Make the mock implement the sanitizer interface.
 		$mock_tool_with_sanitizer = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
 
@@ -230,11 +223,8 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 		// Update assistant config to allow this tool.
 		update_post_meta( $assistant_id, 'tools', array( 'test_tool' ) );
 
-		// Get REST controller and test sanitization.
-		$rest_controller = $this->get_rest_controller();
-		$reflection      = new ReflectionClass( $rest_controller );
-		$method          = $reflection->getMethod( 'sanitize_tool_result_for_llm' );
-		$method->setAccessible( true );
+		// Get REST validator and test sanitization.
+		$validator = new WP_MCP_AI_REST_Validator();
 
 		$result           = array(
 			'test'        => 'data',
@@ -242,11 +232,17 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 		);
 		$assistant_config = array( 'tools' => array( 'test_tool' ) );
 
-		$sanitized = $method->invoke( $rest_controller, $result, 'test_tool', $assistant_config );
+		$sanitized = $validator->sanitize_tool_result_for_llm(
+			$result,
+			'test_tool',
+			$assistant_config,
+			$mock_tool_with_sanitizer
+		);
 
-		// Custom sanitization should have been applied.
-		$this->assertEquals( array( 'test' => 'data' ), $sanitized );
-		$this->assertArrayNotHasKey( 'large_field', $sanitized );
+		// Custom sanitization should have been applied (validated before truncation/encoding).
+		// The validator serialises to JSON, so check the decoded version.
+		$decoded = json_decode( $sanitized, true );
+		$this->assertEquals( array( 'test' => 'data' ), $decoded );
 	}
 
 	/**
@@ -278,8 +274,10 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 	 * @return WP_MCP_AI_REST REST controller.
 	 */
 	protected function get_rest_controller() {
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$client   = new WP_MCP_AI_Language_Model_Router();
+		$registry      = WP_MCP_AI_Tool_Registry::get_instance();
+		$openai_client = $this->createMock( WP_MCP_AI_OpenAI_Client::class );
+		$gemini_client = $this->createMock( WP_MCP_AI_Gemini_Client::class );
+		$client        = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client );
 		return new WP_MCP_AI_REST( $registry, $client );
 	}
 }
