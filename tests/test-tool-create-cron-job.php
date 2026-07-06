@@ -63,7 +63,10 @@ class Test_Tool_Create_Cron_Job extends WP_UnitTestCase {
 	 */
 	public function test_empty_hook_returns_error() {
 		$result = $this->tool->execute(
-			array( 'hook' => '', 'timestamp' => time() + 3600 ),
+			array(
+				'hook'      => '',
+				'timestamp' => time() + 3600,
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 

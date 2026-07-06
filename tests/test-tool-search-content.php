@@ -76,11 +76,13 @@ class Test_Tool_Search_Content extends WP_UnitTestCase {
 	 */
 	public function test_keyword_search_returns_results() {
 		$unique = 'phpunit-unique-keyword-' . uniqid();
-		$this->factory->post->create( array(
-			'post_title'   => $unique,
-			'post_content' => $unique,
-			'post_status'  => 'publish',
-		) );
+		$this->factory->post->create(
+			array(
+				'post_title'   => $unique,
+				'post_content' => $unique,
+				'post_status'  => 'publish',
+			)
+		);
 
 		$result = $this->tool->execute(
 			array( 'search_term' => $unique ),
@@ -112,14 +114,19 @@ class Test_Tool_Search_Content extends WP_UnitTestCase {
 	public function test_limit_caps_results() {
 		$prefix = 'limit-test-' . uniqid();
 		for ( $i = 0; $i < 5; $i++ ) {
-			$this->factory->post->create( array(
-				'post_title'  => $prefix . '-' . $i,
-				'post_status' => 'publish',
-			) );
+			$this->factory->post->create(
+				array(
+					'post_title'  => $prefix . '-' . $i,
+					'post_status' => 'publish',
+				)
+			);
 		}
 
 		$result = $this->tool->execute(
-			array( 'search_term' => $prefix, 'limit' => 2 ),
+			array(
+				'search_term' => $prefix,
+				'limit'       => 2,
+			),
 			array( 'user_id' => $this->editor_id )
 		);
 

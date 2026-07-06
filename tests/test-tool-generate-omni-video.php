@@ -113,8 +113,8 @@ class Test_Tool_Generate_Omni_Video extends WP_UnitTestCase {
 	public function test_1080p_without_16_9_returns_error() {
 		$result = $this->tool->execute(
 			array(
-				'prompt'      => 'A sunset beach video.',
-				'resolution'  => '1080p',
+				'prompt'       => 'A sunset beach video.',
+				'resolution'   => '1080p',
 				'aspect_ratio' => '1:1',
 			),
 			array( 'user_id' => $this->admin_id )

@@ -107,7 +107,7 @@ class Test_WP_MCP_AI_Import_Blueprint_Tools extends WP_UnitTestCase {
 	}
 
 	protected function find_tool_file( $class_name ) {
-		$kebab = strtolower( str_replace( '_', '-', $class_name ) );
+		$kebab    = strtolower( str_replace( '_', '-', $class_name ) );
 		$filename = 'class-' . $kebab . '.php';
 
 		// Recursive search across all pro tool subdirectories.

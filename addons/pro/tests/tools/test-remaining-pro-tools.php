@@ -160,20 +160,20 @@ class Test_WP_MCP_AI_Remaining_Pro_Tools extends WP_UnitTestCase {
 
 		try {
 						$reflection = new ReflectionClass( $class_name );
-						if ( $reflection->isAbstract() || $reflection->isInterface() ) {
-							return; // Skip abstract classes and interfaces.
-						}
+			if ( $reflection->isAbstract() || $reflection->isInterface() ) {
+				return; // Skip abstract classes and interfaces.
+			}
 						$constructor = $reflection->getConstructor();
-						if ( $constructor && $constructor->getNumberOfRequiredParameters() > 0 ) {
-							return; // Skip classes that require constructor args.
-						}
+			if ( $constructor && $constructor->getNumberOfRequiredParameters() > 0 ) {
+				return; // Skip classes that require constructor args.
+			}
 						$instance = $reflection->newInstance();
-					} catch ( \ReflectionException $e ) {
-						return; // Can't reflect — skip.
-					}
+		} catch ( \ReflectionException $e ) {
+			return; // Can't reflect — skip.
+		}
 
 					// If it implements the tool interface, validate metadata.
-					if ( $instance instanceof WP_MCP_AI_Tool_Interface ) {
+		if ( $instance instanceof WP_MCP_AI_Tool_Interface ) {
 			$this->assertNotEmpty( $instance->get_slug() );
 			$this->assertNotEmpty( $instance->get_name() );
 			$this->assertNotEmpty( $instance->get_description() );

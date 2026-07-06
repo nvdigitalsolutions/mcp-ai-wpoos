@@ -31,7 +31,7 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 	 * @var array<string, array<string>>
 	 */
 	public static $tool_groups = array(
-		'lead'        => array(
+		'lead'         => array(
 			'WP_MCP_AI_Tool_Create_Lead',
 			'WP_MCP_AI_Tool_Get_Lead',
 			'WP_MCP_AI_Tool_Update_Lead',
@@ -50,7 +50,7 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 			'WP_MCP_AI_Tool_Send_Lead_DM',
 			'WP_MCP_AI_Tool_Send_Lead_WhatsApp',
 		),
-		'deal'        => array(
+		'deal'         => array(
 			'WP_MCP_AI_Tool_Create_Deal',
 			'WP_MCP_AI_Tool_Get_Deal',
 			'WP_MCP_AI_Tool_Update_Deal',
@@ -58,14 +58,14 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 			'WP_MCP_AI_Tool_Delete_Deal',
 			'WP_MCP_AI_Tool_Move_Deal_Stage',
 		),
-		'customer'    => array(
+		'customer'     => array(
 			'WP_MCP_AI_Tool_Create_Customer',
 			'WP_MCP_AI_Tool_Get_Customer',
 			'WP_MCP_AI_Tool_Update_Customer',
 			'WP_MCP_AI_Tool_List_Customers',
 			'WP_MCP_AI_Tool_Delete_Customer',
 		),
-		'activity'    => array(
+		'activity'     => array(
 			'WP_MCP_AI_Tool_Create_CRM_Activity',
 			'WP_MCP_AI_Tool_Get_CRM_Activity',
 			'WP_MCP_AI_Tool_List_CRM_Activities',
@@ -73,7 +73,7 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 			'WM_MCP_AI_Tool_Snooze_CRM_Activity',
 			'WP_MCP_AI_Tool_Log_Call_Outcome',
 		),
-		'support'     => array(
+		'support'      => array(
 			'WP_MCP_AI_Tool_Create_Support_Ticket',
 			'WP_MCP_AI_Tool_Get_Support_Ticket',
 			'WP_MCP_AI_Tool_List_Support_Tickets',
@@ -84,7 +84,7 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 			'WP_MCP_AI_Tool_Merge_Support_Tickets',
 			'WP_MCP_AI_Tool_Classify_Support_Ticket',
 		),
-		'outreach'    => array(
+		'outreach'     => array(
 			'WP_MCP_AI_Tool_Create_Outreach_Sequence',
 			'WP_MCP_AI_Tool_List_Outreach_Sequences',
 			'WP_MCP_AI_Tool_Update_Outreach_Sequence',
@@ -93,13 +93,13 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 			'WP_MCP_AI_Tool_Manage_Sequence_State',
 			'WP_MCP_AI_Tool_Get_Sequence_Performance',
 		),
-		'comm'        => array(
+		'comm'         => array(
 			'WP_MCP_AI_Tool_Auto_Reply_Inbound',
 			'WP_MCP_AI_Tool_Auto_Route_Inbound_Message',
 			'WP_MCP_AI_Tool_Classify_Message_Intent',
 			'WP_MCP_AI_Tool_Schedule_Follow_Up',
 		),
-		'analytics'   => array(
+		'analytics'    => array(
 			'WP_MCP_AI_Tool_Forecast_Pipeline_Revenue',
 			'WP_MCP_AI_Tool_Get_Conversion_Funnel',
 			'WP_MCP_AI_Tool_Get_Owner_Workload',
@@ -108,7 +108,7 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 			'WP_MCP_AI_Tool_Identify_Top_Customers',
 			'WP_MCP_AI_Tool_Identify_Top_Clients',
 		),
-		'data'        => array(
+		'data'         => array(
 			'WP_MCP_AI_Tool_Detect_Duplicates',
 			'WP_MCP_AI_Tool_Merge_Duplicates',
 			'WP_MCP_AI_Tool_Check_DNC_Status',
@@ -127,7 +127,7 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 			'WP_MCP_AI_Tool_Import_CRM_CSV',
 			'WP_MCP_AI_Tool_Import_LinkedIn_Profile',
 		),
-		'upwork'      => array(
+		'upwork'       => array(
 			'WP_MCP_AI_Tool_Search_LinkedIn_Jobs',
 			'WP_MCP_AI_Tool_Score_LinkedIn_Job',
 			'WP_MCP_AI_Tool_Save_LinkedIn_Job',
@@ -287,9 +287,9 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 	 * @return string|false
 	 */
 	protected function find_tool_file( $class_name ) {
-		$kebab = strtolower( str_replace( '_', '-', $class_name ) );
+		$kebab    = strtolower( str_replace( '_', '-', $class_name ) );
 		$filename = 'class-' . $kebab . '.php';
-		$root = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/';
+		$root     = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/';
 		if ( is_dir( $root ) ) {
 			$it = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $root, RecursiveDirectoryIterator::SKIP_DOTS ) );
 			foreach ( $it as $file ) {

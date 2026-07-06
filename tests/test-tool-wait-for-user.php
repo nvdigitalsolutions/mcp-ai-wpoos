@@ -79,7 +79,10 @@ class Test_Tool_Wait_For_User extends WP_UnitTestCase {
 	public function test_execute_ignores_arguments() {
 		$result = $this->tool->execute(
 			array( 'unexpected' => 'value' ),
-			array( 'user_id' => 1, 'assistant_id' => 42 )
+			array(
+				'user_id'      => 1,
+				'assistant_id' => 42,
+			)
 		);
 
 		$this->assertIsArray( $result );

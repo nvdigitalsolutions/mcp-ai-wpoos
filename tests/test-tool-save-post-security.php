@@ -89,7 +89,10 @@ class Test_Tool_Save_Post_Security extends WP_UnitTestCase {
 	 */
 	public function test_nonexistent_post_id_returns_error() {
 		$result = $this->tool->execute(
-			array( 'post_id' => 999999, 'content' => 'Content' ),
+			array(
+				'post_id' => 999999,
+				'content' => 'Content',
+			),
 			array( 'user_id' => $this->editor_id )
 		);
 
@@ -104,7 +107,10 @@ class Test_Tool_Save_Post_Security extends WP_UnitTestCase {
 		$post_id = $this->factory->post->create( array( 'post_author' => $this->editor_id ) );
 
 		$result = $this->tool->execute(
-			array( 'post_id' => $post_id, 'content' => 'Hostile update' ),
+			array(
+				'post_id' => $post_id,
+				'content' => 'Hostile update',
+			),
 			array( 'user_id' => $this->subscriber_id )
 		);
 
@@ -117,11 +123,18 @@ class Test_Tool_Save_Post_Security extends WP_UnitTestCase {
 	 */
 	public function test_post_type_mismatch_returns_error() {
 		$post_id = $this->factory->post->create(
-			array( 'post_type' => 'post', 'post_author' => $this->editor_id )
+			array(
+				'post_type'   => 'post',
+				'post_author' => $this->editor_id,
+			)
 		);
 
 		$result = $this->tool->execute(
-			array( 'post_id' => $post_id, 'post_type' => 'page', 'content' => 'Mismatch' ),
+			array(
+				'post_id'   => $post_id,
+				'post_type' => 'page',
+				'content'   => 'Mismatch',
+			),
 			array( 'user_id' => $this->editor_id )
 		);
 
@@ -136,7 +149,10 @@ class Test_Tool_Save_Post_Security extends WP_UnitTestCase {
 		$post_id = $this->factory->post->create( array( 'post_author' => $this->editor_id ) );
 
 		$result = $this->tool->execute(
-			array( 'post_id' => $post_id, 'content' => 'Updated content.' ),
+			array(
+				'post_id' => $post_id,
+				'content' => 'Updated content.',
+			),
 			array( 'user_id' => $this->editor_id )
 		);
 

@@ -166,6 +166,7 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 		// Make the mock also implement the sanitizer interface.
 		$mock_tool_with_sanitizer = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *

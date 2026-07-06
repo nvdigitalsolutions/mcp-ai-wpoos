@@ -60,7 +60,10 @@ class Test_Tool_Create_Term extends WP_UnitTestCase {
 	 */
 	public function test_unauthenticated_returns_forbidden() {
 		$result = $this->tool->execute(
-			array( 'name' => 'Test Category', 'taxonomy' => 'category' ),
+			array(
+				'name'     => 'Test Category',
+				'taxonomy' => 'category',
+			),
 			array( 'user_id' => 0 )
 		);
 
@@ -73,7 +76,10 @@ class Test_Tool_Create_Term extends WP_UnitTestCase {
 	 */
 	public function test_missing_name_returns_error() {
 		$result = $this->tool->execute(
-			array( 'name' => '', 'taxonomy' => 'category' ),
+			array(
+				'name'     => '',
+				'taxonomy' => 'category',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 
@@ -86,7 +92,10 @@ class Test_Tool_Create_Term extends WP_UnitTestCase {
 	 */
 	public function test_invalid_taxonomy_returns_error() {
 		$result = $this->tool->execute(
-			array( 'name' => 'Test', 'taxonomy' => 'nonexistent_taxonomy_xyz' ),
+			array(
+				'name'     => 'Test',
+				'taxonomy' => 'nonexistent_taxonomy_xyz',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 
@@ -99,7 +108,10 @@ class Test_Tool_Create_Term extends WP_UnitTestCase {
 	 */
 	public function test_subscriber_cannot_create_term() {
 		$result = $this->tool->execute(
-			array( 'name' => 'Subscriber Term', 'taxonomy' => 'category' ),
+			array(
+				'name'     => 'Subscriber Term',
+				'taxonomy' => 'category',
+			),
 			array( 'user_id' => $this->subscriber_id )
 		);
 
@@ -112,7 +124,10 @@ class Test_Tool_Create_Term extends WP_UnitTestCase {
 	 */
 	public function test_admin_creates_category_successfully() {
 		$result = $this->tool->execute(
-			array( 'name' => 'PHPUnit Test Category ' . uniqid(), 'taxonomy' => 'category' ),
+			array(
+				'name'     => 'PHPUnit Test Category ' . uniqid(),
+				'taxonomy' => 'category',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 
@@ -131,14 +146,20 @@ class Test_Tool_Create_Term extends WP_UnitTestCase {
 		$name = 'Duplicate Term ' . uniqid();
 		// First call should succeed.
 		$first = $this->tool->execute(
-			array( 'name' => $name, 'taxonomy' => 'category' ),
+			array(
+				'name'     => $name,
+				'taxonomy' => 'category',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 		$this->assertIsArray( $first );
 
 		// Second call with same name should fail.
 		$second = $this->tool->execute(
-			array( 'name' => $name, 'taxonomy' => 'category' ),
+			array(
+				'name'     => $name,
+				'taxonomy' => 'category',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 		$this->assertWPError( $second );
@@ -149,7 +170,7 @@ class Test_Tool_Create_Term extends WP_UnitTestCase {
 	 * Creating term with valid slug uses that slug.
 	 */
 	public function test_custom_slug_is_applied() {
-		$slug = 'custom-slug-' . uniqid();
+		$slug   = 'custom-slug-' . uniqid();
 		$result = $this->tool->execute(
 			array(
 				'name'     => 'Term With Slug ' . uniqid(),

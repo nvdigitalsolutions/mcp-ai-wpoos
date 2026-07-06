@@ -99,7 +99,10 @@ class Test_Tool_Store_Agent_Context extends WP_UnitTestCase {
 				'context_type' => 'conversation',
 				'context_data' => array(
 					'messages' => array(
-						array( 'role' => 'user', 'content' => 'Hello' ),
+						array(
+							'role'    => 'user',
+							'content' => 'Hello',
+						),
 					),
 				),
 			),

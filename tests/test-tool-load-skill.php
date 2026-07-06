@@ -89,10 +89,12 @@ class Test_Tool_Load_Skill extends WP_UnitTestCase {
 	 * returns wp_mcp_ai_load_skill_not_assigned.
 	 */
 	public function test_skill_not_in_assistant_allow_list() {
-		$assistant_id = $this->factory->post->create( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_status' => 'publish',
-		) );
+		$assistant_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+			)
+		);
 
 		$result = $this->tool->execute(
 			array( 'name' => 'some-valid-looking-skill' ),
@@ -109,7 +111,10 @@ class Test_Tool_Load_Skill extends WP_UnitTestCase {
 	public function test_no_user_and_no_assistant_returns_forbidden() {
 		$result = $this->tool->execute(
 			array( 'name' => 'some-skill' ),
-			array( 'user_id' => 0, 'assistant_id' => 0 )
+			array(
+				'user_id'      => 0,
+				'assistant_id' => 0,
+			)
 		);
 
 		$this->assertWPError( $result );
