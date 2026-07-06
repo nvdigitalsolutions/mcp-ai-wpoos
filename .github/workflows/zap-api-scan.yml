@@ -1,0 +1,397 @@
+# ==============================================================================
+# NV oOS — OWASP ZAP API Scan (Phase 4)
+# ==============================================================================
+#
+# Runs a targeted ZAP API scan against the plugin's REST API endpoints,
+# driven by an auto-generated OpenAPI 3.0 specification.
+#
+# SCAN TYPE: API scan (OpenAPI/Swagger-driven)
+#   • Generates OpenAPI spec from WordPress registered REST routes
+#   • Targets only the plugin's REST API surface (not the full site)
+#   • Active scanning with attack payloads focused on API parameters
+#   • More efficient than full scan for REST-heavy plugins
+#
+# TRIGGERS:
+#   • Every PR that touches REST controller files
+#   • Manual dispatch from GitHub Actions UI
+#
+# ARTIFACTS:
+#   • OpenAPI specification (openapi.json)
+#   • ZAP HTML report (zap-api-report.html)
+#   • ZAP JSON report (zap-api-report.json)
+#   • PR comment with alert severity summary
+#
+# PHASES (see docs/project/proposals/OWASP-ZAP-DAST-INTEGRATION-PROPOSAL.md):
+#   Phase 4 (current): Advisory mode on PRs touching REST code.
+#   Phase 5:           FAIL on Critical/High, block PR merge.
+#
+# ==============================================================================
+
+name: DAST — OWASP ZAP API Scan
+
+on:
+  pull_request:
+    paths:
+      - 'includes/rest/**'
+      - 'addons/*/includes/rest/**'
+      - 'includes/class-wp-mcp-ai-rest*.php'
+      - 'includes/class-rest-endpoints.php'
+      - '.github/workflows/zap-api-scan.yml'
+      - '.zap-rules.tsv'
+      - 'bin/generate-openapi-spec.php'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  zap-api:
+    name: ZAP API Scan — REST Endpoints
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # ------------------------------------------------------------------
+      # 1. Checkout
+      # ------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------
+      # 2. Free disk space + pull Docker images
+      # ------------------------------------------------------------------
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          df -h
+
+      - name: Pull Docker images
+        run: |
+          docker pull wordpress:6.9-php8.2-apache
+          docker pull mysql:8.0
+          docker pull wordpress:cli-php8.2
+
+      # ------------------------------------------------------------------
+      # 3. Start WordPress + MySQL
+      # ------------------------------------------------------------------
+      - name: Start QA Docker stack
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml up -d wordpress db
+          echo "Waiting for WordPress to be healthy..."
+          timeout 120 bash -c '
+            while ! docker compose -f tests/qa/docker/docker-compose.qa.yml ps wordpress | grep -q "healthy"; do
+              echo "  ... waiting for WordPress ..."
+              sleep 5
+            done
+          '
+          echo "WordPress is healthy."
+
+      # ------------------------------------------------------------------
+      # 4. Run WordPress setup
+      # ------------------------------------------------------------------
+      - name: Run WordPress setup
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml run --rm setup
+          echo "WordPress setup complete."
+
+      # ------------------------------------------------------------------
+      # 5. Generate OpenAPI specification from REST routes
+      # ------------------------------------------------------------------
+      - name: Generate OpenAPI spec
+        id: openapi
+        run: |
+          echo "Generating OpenAPI specification from registered REST routes..."
+
+          # Run a WP-CLI eval that dumps all REST routes as OpenAPI 3.0 JSON
+          docker compose -f tests/qa/docker/docker-compose.qa.yml run --rm \
+            -v $(pwd):/plugin \
+            --entrypoint sh \
+            setup \
+            -c '
+              wp eval-file /plugin/bin/generate-openapi-spec.php --allow-root > /plugin/openapi.json 2>/dev/null
+            ' || true
+
+          # If the PHP script doesn't exist yet or fails, fall back to inline generation
+          if [ ! -s openapi.json ]; then
+            echo "PHP generator not available — falling back to inline WP-CLI generation."
+            docker compose -f tests/qa/docker/docker-compose.qa.yml run --rm \
+              --entrypoint sh \
+              setup \
+              -c '
+                wp eval "
+                  \$server = rest_get_server();
+                  \$routes = \$server->get_routes();
+                  \$paths = [];
+
+                  foreach ( \$routes as \$route => \$handlers ) {
+                    // Only include plugin routes (mcp-ai namespace + addon namespaces)
+                    if ( ! preg_match( \"#^/?(mcp-ai|nvoos|nv-oos)/#\", ltrim( \$route, \"/\" ) ) ) {
+                      continue;
+                    }
+
+                    \$path_item = [];
+                    foreach ( \$handlers as \$handler ) {
+                      \$methods = isset( \$handler[\"methods\"] )
+                        ? ( is_array( \$handler[\"methods\"] ) ? \$handler[\"methods\"] : [ \$handler[\"methods\"] ] )
+                        : [ \"GET\" ];
+
+                      foreach ( \$methods as \$method ) {
+                        if ( \$method === \"GET\" || \$method === \"POST\" || \$method === \"PUT\" ||
+                             \$method === \"PATCH\" || \$method === \"DELETE\" || \$method === \"OPTIONS\" ) {
+                          // Skip OPTIONS and HEAD for scanning purposes
+                          if ( \$method === \"OPTIONS\" || \$method === \"HEAD\" ) {
+                            continue;
+                          }
+
+                          \$op = [
+                            \"operationId\" => sanitize_title( \$route . \"-\" . strtolower( \$method ) ),
+                            \"responses\" => [
+                              \"200\" => [ \"description\" => \"Successful response\" ],
+                              \"400\" => [ \"description\" => \"Bad request\" ],
+                              \"401\" => [ \"description\" => \"Unauthorized\" ],
+                              \"403\" => [ \"description\" => \"Forbidden\" ],
+                            ],
+                          ];
+
+                          // Include documented args as parameters
+                          if ( ! empty( \$handler[\"args\"] ) ) {
+                            \$op[\"parameters\"] = [];
+                            foreach ( \$handler[\"args\"] as \$arg_name => \$arg_def ) {
+                              \$op[\"parameters\"][] = [
+                                \"name\" => \$arg_name,
+                                \"in\"   => ( \$method === \"GET\" ) ? \"query\" : \"body\",
+                                \"required\" => ! empty( \$arg_def[\"required\"] ),
+                                \"schema\" => [
+                                  \"type\" => isset( \$arg_def[\"type\"] ) ? \$arg_def[\"type\"] : \"string\"
+                                ],
+                                \"description\" => \$arg_def[\"description\"] ?? \"\",
+                              ];
+                            }
+                          }
+
+                          \$path_item[ strtolower( \$method ) ] = \$op;
+                        }
+                      }
+                    }
+
+                    if ( ! empty( \$path_item ) ) {
+                      \$paths[ \"/\" . ltrim( \$route, \"/\" ) ] = \$path_item;
+                    }
+                  }
+
+                  \$spec = [
+                    \"openapi\" => \"3.0.3\",
+                    \"info\" => [
+                      \"title\" => \"NV oOS REST API\",
+                      \"version\" => \"1.0.0\",
+                      \"description\" => \"Auto-generated OpenAPI spec from WordPress REST routes for NV oOS plugin. Used by OWASP ZAP API security scanning.\",
+                    ],
+                    \"servers\" => [
+                      [ \"url\" => \"http://localhost:8000\" ],
+                    ],
+                    \"paths\" => \$paths,
+                  ];
+
+                  echo json_encode( \$spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+                " --allow-root > /tmp/openapi.json 2>/dev/null
+                cat /tmp/openapi.json
+              ' > openapi.json 2>/dev/null || true
+          fi
+
+          # Verify the spec was generated
+          if [ -s openapi.json ]; then
+            ROUTE_COUNT=$(jq '.paths | length' openapi.json 2>/dev/null || echo "0")
+            echo "Generated OpenAPI spec with ${ROUTE_COUNT} route(s)."
+            echo "route_count=${ROUTE_COUNT}" >> $GITHUB_OUTPUT
+            echo "spec_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::Failed to generate OpenAPI spec. ZAP API scan will be skipped."
+            echo "spec_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ------------------------------------------------------------------
+      # 6. Upload OpenAPI spec as artifact
+      # ------------------------------------------------------------------
+      - name: Upload OpenAPI spec
+        if: steps.openapi.outputs.spec_exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec
+          path: openapi.json
+          retention-days: 30
+
+      # ------------------------------------------------------------------
+      # 7. Run ZAP API Scan
+      # ------------------------------------------------------------------
+      - name: ZAP API Scan
+        id: zap
+        if: steps.openapi.outputs.spec_exists == 'true'
+        uses: zaproxy/action-api-scan@v0.10.0
+        with:
+          target: 'http://localhost:8000'
+          format: 'openapi'
+          rules_file_name: '.zap-rules.tsv'
+          cmd_options: >
+            -j -J zap-api-report.json
+            -r zap-api-report.html
+            --auto
+        continue-on-error: true
+
+      # ------------------------------------------------------------------
+      # 8. Upload ZAP reports
+      # ------------------------------------------------------------------
+      - name: Gather ZAP reports
+        if: always() && steps.openapi.outputs.spec_exists == 'true'
+        run: |
+          mkdir -p zap-artifacts
+          for f in zap-api-report.json zap-api-report.html report.html report.json; do
+            if [ -f "$f" ]; then cp "$f" zap-artifacts/; fi
+          done
+          if [ -f ".zap-rules.tsv" ]; then cp .zap-rules.tsv zap-artifacts/; fi
+
+      - name: Upload ZAP API Scan Report
+        if: always() && steps.openapi.outputs.spec_exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-api-scan-report
+          path: zap-artifacts/
+          retention-days: 30
+
+      # ------------------------------------------------------------------
+      # 9. Parse findings and post PR comment
+      # ------------------------------------------------------------------
+      - name: Parse ZAP API findings
+        id: parse
+        if: always() && steps.openapi.outputs.spec_exists == 'true'
+        run: |
+          REPORT_FILE="zap-artifacts/zap-api-report.json"
+          if [ ! -f "$REPORT_FILE" ]; then
+            REPORT_FILE="zap-artifacts/report.json"
+          fi
+
+          if [ -f "$REPORT_FILE" ]; then
+            HIGH=$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            MEDIUM=$(jq '[.site[]?.alerts[]? | select(.riskcode == "2")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            LOW=$(jq '[.site[]?.alerts[]? | select(.riskcode == "1")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            INFO=$(jq '[.site[]?.alerts[]? | select(.riskcode == "0")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            TOTAL=$((HIGH + MEDIUM + LOW + INFO))
+
+            echo "high=${HIGH}" >> $GITHUB_OUTPUT
+            echo "medium=${MEDIUM}" >> $GITHUB_OUTPUT
+            echo "low=${LOW}" >> $GITHUB_OUTPUT
+            echo "info=${INFO}" >> $GITHUB_OUTPUT
+            echo "total=${TOTAL}" >> $GITHUB_OUTPUT
+            echo "report_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "report_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post PR comment with API scan results
+        if: always() && github.event_name == 'pull_request' && steps.parse.outputs.report_exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const high   = '${{ steps.parse.outputs.high }}';
+            const medium = '${{ steps.parse.outputs.medium }}';
+            const low    = '${{ steps.parse.outputs.low }}';
+            const info   = '${{ steps.parse.outputs.info }}';
+            const total  = '${{ steps.parse.outputs.total }}';
+            const routeCount = '${{ steps.openapi.outputs.route_count }}';
+            const totalNum = parseInt(total) || 0;
+
+            const statusIcon = totalNum === 0 ? '✅' : (parseInt(high) > 0 ? '🔴' : (parseInt(medium) > 0 ? '🟡' : '🟢'));
+            const reportUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const summary = `## ${statusIcon} OWASP ZAP API Scan — REST Endpoints
+
+            Scanned **${routeCount}** registered REST routes against the auto-generated OpenAPI specification.
+
+            | Risk Level | Count |
+            |------------|-------|
+            | 🔴 High    | ${high} |
+            | 🟡 Medium  | ${medium} |
+            | 🟢 Low     | ${low} |
+            | 🔵 Info    | ${info} |
+            | **Total**  | **${total}** |
+
+            📊 [View Full Report](${reportUrl}) — download the **zap-api-scan-report** artifact.
+            📋 [OpenAPI Spec](${reportUrl}) — download the **openapi-spec** artifact.
+
+            > ⚠️ **Phase 4 — Advisory Mode:** Findings are reported but do not block the build.
+            `;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('OWASP ZAP API Scan')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: summary,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: summary,
+              });
+            }
+
+      - name: Post PR comment (no spec generated)
+        if: always() && github.event_name == 'pull_request' && steps.openapi.outputs.spec_exists != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const summary = `## ⚠️ OWASP ZAP API Scan — Skipped
+
+            The OpenAPI specification could not be generated from the registered REST routes.
+            This may indicate that the plugin is not fully activated or the REST API is not initialized.
+
+            Check the [workflow logs](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for details.
+            `;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('OWASP ZAP API Scan')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: summary,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: summary,
+              });
+            }
+
+      # ------------------------------------------------------------------
+      # 10. Tear down Docker stack
+      # ------------------------------------------------------------------
+      - name: Tear down QA stack
+        if: always()
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml down -v --remove-orphans || true
