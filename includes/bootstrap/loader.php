@@ -767,3 +767,8 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 		WP_MCP_AI_Comments::get_instance();
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Multi-Tenant Isolation Subsystem
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/tenant/init.php';
