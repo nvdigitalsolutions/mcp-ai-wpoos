@@ -144,7 +144,6 @@ services:
         # Install integration test plugins (free, from wp.org).
         # This enables broader tool coverage during E2E QA runs.
         echo "Installing integration test plugins..."
-        chmod +x /var/www/html/wp-content/plugins/mcp-ai-wpoos/bin/install-test-plugins.sh
         /var/www/html/wp-content/plugins/mcp-ai-wpoos/bin/install-test-plugins.sh --all || true
 
         echo "=== QA Environment Ready ==="
