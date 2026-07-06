@@ -3,6 +3,7 @@
 # ───────────────────────────────────────────────────────────
 #
 # Start:    docker compose up -d
+# Testing:  docker compose --profile testing up -d
 # Stop:     docker compose down
 # Reset:    docker compose down -v && docker compose up -d
 # WP-CLI:   docker compose run --rm wp-cli plugin list
@@ -10,10 +11,56 @@
 #
 # Access:   http://localhost:8000
 #           http://localhost:8000/wp-admin  (setup on first visit)
+#
+# Profiles:
+#   default  — WordPress + MySQL only (lean dev env)
+#   testing  — also installs WooCommerce, Elementor, Rank Math,
+#              WPCode, JWT Login, JetFormBuilder, Newsletter,
+#              and WP All Import via wp.org for integration tests
+#   tools    — on-demand WP-CLI container
 
 name: oos-wp
 
 services:
+
+  # ── Plugin Seed (profile: testing, installs integration plugins) ─
+  wp-plugin-seed:
+    image: wordpress:cli-php8.2
+    container_name: oos-wp-plugin-seed
+    profiles:
+      - testing
+    depends_on:
+      wordpress:
+        condition: service_started
+    volumes:
+      - wp_core:/var/www/html
+      - .:/var/www/html/wp-content/plugins/mcp-ai-wpoos
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    # Run the install script inside the mounted plugin directory.
+    # Override entrypoint so we don't conflict with the image's wp shim.
+    entrypoint:
+      - sh
+      - -c
+    command:
+      - |
+        echo "=== oOS: Installing test plugins ==="
+        # Wait for WordPress to finish initializing its DB tables.
+        # The WP-CLI image shares the core volume, but WordPress
+        # (the main container) must have completed its first-run
+        # setup before we can talk to the database reliably.
+        until wp core is-installed --allow-root --path=/var/www/html 2>/dev/null; do
+          echo "  Waiting for WordPress to be installed..."
+          sleep 3
+        done
+        # Run the canonical install script (core tier).
+        # Use --all in CI; omit for local dev unless explicitly wanted.
+        chmod +x /var/www/html/wp-content/plugins/mcp-ai-wpoos/bin/install-test-plugins.sh
+        /var/www/html/wp-content/plugins/mcp-ai-wpoos/bin/install-test-plugins.sh --all
+        echo "=== Plugin seed complete ==="
 
   # ── WordPress Application Server ─────────────────────────
   wordpress:

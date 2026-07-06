@@ -309,6 +309,27 @@ function wp_mcp_ai_load_optional_test_plugins() {
 		define( 'WP_MCP_AI_TEST_SIMPLE_JWT_LOGIN_ACTIVE', true );
 	}
 
+	// Load JetFormBuilder if available.
+	if ( file_exists( $plugins_dir . '/jetformbuilder/jet-form-builder.php' ) ) {
+		require_once $plugins_dir . '/jetformbuilder/jet-form-builder.php';
+		$loaded_plugins[] = 'jetformbuilder';
+		define( 'WP_MCP_AI_TEST_JETFORMBUILDER_ACTIVE', true );
+	}
+
+	// Load Newsletter if available.
+	if ( file_exists( $plugins_dir . '/newsletter/plugin.php' ) ) {
+		require_once $plugins_dir . '/newsletter/plugin.php';
+		$loaded_plugins[] = 'newsletter';
+		define( 'WP_MCP_AI_TEST_NEWSLETTER_ACTIVE', true );
+	}
+
+	// Load WP All Import (lite) if available.
+	if ( file_exists( $plugins_dir . '/wp-all-import/plugin.php' ) ) {
+		require_once $plugins_dir . '/wp-all-import/plugin.php';
+		$loaded_plugins[] = 'wp-all-import';
+		define( 'WP_MCP_AI_TEST_WPALLIMPORT_ACTIVE', true );
+	}
+
 	if ( ! empty( $loaded_plugins ) ) {
 		fwrite( STDOUT, "\nLoaded optional test plugins: " . implode( ', ', $loaded_plugins ) . "\n\n" );
 	}

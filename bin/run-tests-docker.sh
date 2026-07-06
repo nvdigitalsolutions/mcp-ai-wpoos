@@ -66,6 +66,20 @@ if [ -f vendor/autoload.php ]; then
   composer dump-autoload --no-interaction --quiet 2>/dev/null || true
 fi
 
+# ── Test plugin status check ─────────────────────────────
+echo "Checking integration test plugins..."
+for plugin in woocommerce elementor seo-by-rank-math insert-headers-and-footers simple-jwt-login jetformbuilder newsletter; do
+  if docker exec "$CONTAINER" sh -c "wp plugin is-installed $plugin --allow-root 2>/dev/null"; then
+    echo "  ✓ $plugin"
+  else
+    echo "  ✗ $plugin (not installed — integration tests will skip it)"
+  fi
+done
+echo ""
+echo "  To install plugins: docker compose --profile testing up -d wp-plugin-seed"
+echo "  or run: docker exec $CONTAINER sh -c 'bash /var/www/html/wp-content/plugins/mcp-ai-wpoos/bin/install-test-plugins.sh --all'"
+echo ""
+
 # ── Run PHPUnit ───────────────────────────────────────────
 echo "═══════════════════════════════════════════════════════════"
 echo "Running: vendor/bin/phpunit $*"
