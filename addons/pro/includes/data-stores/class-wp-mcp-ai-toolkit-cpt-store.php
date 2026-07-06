@@ -18,10 +18,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PRO_PATH . 'includes/interfaces/interface-wp-mcp-ai-toolkit-data-store.php';
 
+// Load tenant infrastructure when available.
+$_cpt_tenant_repo_path = WP_MCP_AI_PATH . 'includes/tenant/class-wp-mcp-ai-tenant-repository.php';
+if ( file_exists( $_cpt_tenant_repo_path ) ) {
+	require_once $_cpt_tenant_repo_path;
+}
+unset( $_cpt_tenant_repo_path );
+
 /**
  * CPT-based data store for toolkit entities.
+ *
+ * @since 2.0.0
+ * @since 3.1.0 Extended WP_MCP_AI_Tenant_Repository for multi-tenant isolation.
  */
-class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
+class WP_MCP_AI_Toolkit_CPT_Store extends WP_MCP_AI_Tenant_Repository implements WP_MCP_AI_Toolkit_Data_Store {
 
 	/**
 	 * Toolkit slug.
@@ -54,14 +64,24 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 	/**
 	 * Constructor.
 	 *
+	 * @since 2.0.0
+	 * @since 3.1.0 Added $tenant_type and $tenant_id parameters.
+	 *
 	 * @param string $toolkit_slug Toolkit identifier.
 	 * @param string $entity_type  Entity type.
+	 * @param string $tenant_type  Optional tenant type (default '' = bypass).
+	 * @param int    $tenant_id    Optional tenant ID (default 0 = bypass).
 	 */
-	public function __construct( $toolkit_slug, $entity_type ) {
+	public function __construct( $toolkit_slug, $entity_type, $tenant_type = '', $tenant_id = 0 ) {
 		$this->toolkit_slug = $toolkit_slug;
 		$this->entity_type  = $entity_type;
 		$this->post_type    = $this->generate_post_type_slug();
 		$this->field_schema = $this->load_field_schema();
+
+		// Set tenant context when provided.
+		if ( ! empty( $tenant_type ) || $tenant_id > 0 ) {
+			$this->set_tenant_context( $tenant_type, $tenant_id );
+		}
 
 		// Register the custom post type.
 		add_action( 'init', array( $this, 'register_post_type' ) );
@@ -211,6 +231,9 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 		update_post_meta( $post_id, '_toolkit_slug', $this->toolkit_slug );
 		update_post_meta( $post_id, '_entity_type', $this->entity_type );
 
+		// Stamp tenant ownership when tenant context is active.
+		$this->save_tenant_meta( $post_id );
+
 		return $post_id;
 	}
 
@@ -224,6 +247,11 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 		$post = get_post( $item_id );
 
 		if ( ! $post || $post->post_type !== $this->post_type ) {
+			return new WP_Error( 'item_not_found', __( 'Item not found', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Enforce tenant isolation when context is active.
+		if ( ! $this->validate_tenant_ownership( $item_id ) ) {
 			return new WP_Error( 'item_not_found', __( 'Item not found', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -260,6 +288,11 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 			return new WP_Error( 'item_not_found', __( 'Item not found', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Enforce tenant isolation when context is active.
+		if ( ! $this->validate_tenant_ownership( $item_id ) ) {
+			return new WP_Error( 'item_not_found', __( 'Item not found', 'mcp-ai-wpoos-pro' ) );
+		}
+
 		$post_data = array( 'ID' => $item_id );
 
 		// Update title if provided.
@@ -288,6 +321,9 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 			update_post_meta( $item_id, $meta_key, $value );
 		}
 
+		// Re-stamp tenant ownership (ensures tenant fields stay current).
+		$this->save_tenant_meta( $item_id );
+
 		return true;
 	}
 
@@ -301,6 +337,11 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 		$post = get_post( $item_id );
 
 		if ( ! $post || $post->post_type !== $this->post_type ) {
+			return new WP_Error( 'item_not_found', __( 'Item not found', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Enforce tenant isolation when context is active.
+		if ( ! $this->validate_tenant_ownership( $item_id ) ) {
 			return new WP_Error( 'item_not_found', __( 'Item not found', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -330,6 +371,20 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 		if ( isset( $args['per_page'] ) && ! isset( $args['posts_per_page'] ) ) {
 			$args['posts_per_page'] = $args['per_page'];
 			unset( $args['per_page'] );
+		}
+
+		// Inject tenant meta query for multi-tenant isolation.
+		$tenant_meta_query = $this->tenant_meta_query();
+		if ( ! empty( $tenant_meta_query ) ) {
+			if ( isset( $args['meta_query'] ) && is_array( $args['meta_query'] ) ) {
+				$args['meta_query'] = array(
+					'relation' => 'AND',
+					$tenant_meta_query,
+					$args['meta_query'],
+				);
+			} else {
+				$args['meta_query'] = $tenant_meta_query;
+			}
 		}
 
 		$defaults = array(
@@ -392,5 +447,44 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 	 */
 	public function get_field_schema() {
 		return $this->field_schema;
+	}
+
+	/**
+	 * Set the tenant context for this store instance.
+	 *
+	 * Delegates to the parent repository's set_tenant_context() so that
+	 * all CRUD operations are automatically scoped to the given tenant.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string $type Tenant type (e.g. 'school', 'company').
+	 * @param int    $id   Tenant ID. Use 0 to bypass (backward-compat).
+	 * @return void
+	 */
+	public function set_tenant_context( string $type, int $id ): void {
+		parent::set_tenant_context( $type, $id );
+	}
+
+	/**
+	 * Validate that a post belongs to the current tenant context.
+	 *
+	 * In bypass mode (tenant_id = 0) this always returns true so existing
+	 * code without tenant context continues to work.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param int $post_id Post ID to validate.
+	 * @return bool True when the post belongs to the current tenant or bypass is active.
+	 */
+	private function validate_tenant_ownership( $post_id ) {
+		// Bypass mode — no tenant scoping active.
+		if ( 0 === $this->tenant_id && ! $this->strict ) {
+			return true;
+		}
+
+		$post_tenant_id   = (int) get_post_meta( $post_id, '_tenant_id', true );
+		$post_tenant_type = get_post_meta( $post_id, '_tenant_type', true );
+
+		return ( $post_tenant_id === $this->tenant_id && $post_tenant_type === $this->tenant_type );
 	}
 }

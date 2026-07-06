@@ -18,10 +18,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PRO_PATH . 'includes/interfaces/interface-wp-mcp-ai-toolkit-data-store.php';
 
+// Load tenant infrastructure when available.
+$_cct_tenant_repo_path = WP_MCP_AI_PATH . 'includes/tenant/class-wp-mcp-ai-tenant-repository.php';
+if ( file_exists( $_cct_tenant_repo_path ) ) {
+	require_once $_cct_tenant_repo_path;
+}
+unset( $_cct_tenant_repo_path );
+
 /**
  * CCT-based data store for toolkit entities.
+ *
+ * @since 2.0.0
+ * @since 3.1.0 Extended WP_MCP_AI_Tenant_Repository for multi-tenant isolation.
  */
-class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
+class WP_MCP_AI_Toolkit_CCT_Store extends WP_MCP_AI_Tenant_Repository implements WP_MCP_AI_Toolkit_Data_Store {
 
 	/**
 	 * Toolkit slug.
@@ -77,16 +87,26 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 	/**
 	 * Constructor.
 	 *
+	 * @since 2.0.0
+	 * @since 3.1.0 Added $tenant_type and $tenant_id parameters.
+	 *
 	 * @param string $toolkit_slug Toolkit identifier.
 	 * @param string $entity_type  Entity type.
+	 * @param string $tenant_type  Optional tenant type (default '' = bypass).
+	 * @param int    $tenant_id    Optional tenant ID (default 0 = bypass).
 	 */
-	public function __construct( $toolkit_slug, $entity_type ) {
+	public function __construct( $toolkit_slug, $entity_type, $tenant_type = '', $tenant_id = 0 ) {
 		$this->toolkit_slug  = $toolkit_slug;
 		$this->entity_type   = $entity_type;
 		$this->cct_slug      = $this->generate_cct_slug();
 		$this->field_schema  = $this->load_field_schema();
 		$this->cct_module    = $this->get_cct_module();
 		$this->field_id_base = $this->get_field_id_base();
+
+		// Set tenant context when provided.
+		if ( ! empty( $tenant_type ) || $tenant_id > 0 ) {
+			$this->set_tenant_context( $tenant_type, $tenant_id );
+		}
 
 		// Register the CCT if JetEngine is available. JetEngine's CCT module
 		// hydrates its table cache on `init` at priorities 1-10; priority 11
@@ -406,6 +426,12 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 		$item_data           = $data;
 		$item_data['cct_status'] = 'publish';
 
+		// Stamp tenant ownership when tenant context is active.
+		if ( ! empty( $this->tenant_type ) && $this->tenant_id > 0 ) {
+			$item_data['_tenant_type'] = $this->tenant_type;
+			$item_data['_tenant_id']   = $this->tenant_id;
+		}
+
 		// Item_Handler::update_item() creates when no _ID is passed.
 		$item_id = $handler->update_item( $item_data );
 
@@ -439,6 +465,11 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 			return new WP_Error( 'item_not_found', __( 'Item not found', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Enforce tenant isolation when context is active.
+		if ( ! $this->validate_cct_tenant_ownership( $item ) ) {
+			return new WP_Error( 'item_not_found', __( 'Item not found', 'mcp-ai-wpoos-pro' ) );
+		}
+
 		return $item;
 	}
 
@@ -452,6 +483,12 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 	public function update_item( $item_id, $data ) {
 		if ( ! $this->is_available() ) {
 			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Enforce tenant isolation when context is active.
+		$existing = $this->get_item( $item_id );
+		if ( is_wp_error( $existing ) ) {
+			return $existing;
 		}
 
 		$handler = $this->get_item_handler();
@@ -484,6 +521,12 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 	public function delete_item( $item_id ) {
 		if ( ! $this->is_available() ) {
 			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Enforce tenant isolation when context is active.
+		$existing = $this->get_item( $item_id );
+		if ( is_wp_error( $existing ) ) {
+			return $existing;
 		}
 
 		$factory = $this->get_cct_factory();
@@ -525,7 +568,14 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 
 		$factory->db->set_format_flag( ARRAY_A );
 
-		$items = $factory->db->query( array( 'cct_status' => 'publish' ), $per_page, $offset, $order );
+		// Build query conditions, injecting tenant filter when active.
+		$conditions = array( 'cct_status' => 'publish' );
+		if ( ! empty( $this->tenant_type ) && $this->tenant_id > 0 ) {
+			$conditions['_tenant_type'] = $this->tenant_type;
+			$conditions['_tenant_id']   = $this->tenant_id;
+		}
+
+		$items = $factory->db->query( $conditions, $per_page, $offset, $order );
 
 		return is_array( $items ) ? $items : array();
 	}
@@ -564,5 +614,44 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 	 */
 	public function get_field_schema() {
 		return $this->field_schema;
+	}
+
+	/**
+	 * Set the tenant context for this store instance.
+	 *
+	 * Delegates to the parent repository's set_tenant_context() so that
+	 * all CRUD operations are automatically scoped to the given tenant.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string $type Tenant type (e.g. 'school', 'company').
+	 * @param int    $id   Tenant ID. Use 0 to bypass (backward-compat).
+	 * @return void
+	 */
+	public function set_tenant_context( string $type, int $id ): void {
+		parent::set_tenant_context( $type, $id );
+	}
+
+	/**
+	 * Validate that a CCT item belongs to the current tenant context.
+	 *
+	 * In bypass mode (tenant_id = 0) this always returns true so existing
+	 * code without tenant context continues to work.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param array $item CCT item data (associative array).
+	 * @return bool True when the item belongs to the current tenant or bypass is active.
+	 */
+	private function validate_cct_tenant_ownership( $item ) {
+		// Bypass mode — no tenant scoping active.
+		if ( 0 === $this->tenant_id && ! $this->strict ) {
+			return true;
+		}
+
+		$item_tenant_id   = isset( $item['_tenant_id'] ) ? (int) $item['_tenant_id'] : 0;
+		$item_tenant_type = isset( $item['_tenant_type'] ) ? $item['_tenant_type'] : '';
+
+		return ( $item_tenant_id === $this->tenant_id && $item_tenant_type === $this->tenant_type );
 	}
 }
