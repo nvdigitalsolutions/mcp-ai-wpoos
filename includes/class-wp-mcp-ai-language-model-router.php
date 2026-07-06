@@ -127,6 +127,34 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		protected $embedded_client;
 
 		/**
+		 * Tier constant: draft tier uses fast/cheap models.
+		 *
+		 * @var string
+		 */
+		const TIER_DRAFT = 'draft';
+
+		/**
+		 * Tier constant: verification tier uses capable/thorough models.
+		 *
+		 * @var string
+		 */
+		const TIER_VERIFICATION = 'verification';
+
+		/**
+		 * Tier constant: auto selection based on depth scheduler or fallback.
+		 *
+		 * @var string
+		 */
+		const TIER_AUTO = 'auto';
+
+		/**
+		 * Depth scheduler instance for tiered routing decisions.
+		 *
+		 * @var WP_MCP_AI_Orchestration_Depth_Scheduler|null
+		 */
+		protected $depth_scheduler = null;
+
+		/**
 		 * Constructor.
 		 *
 		 * @param WP_MCP_AI_OpenAI_Client       $openai_client        OpenAI client instance.
@@ -396,6 +424,215 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 				default:
 					return $this->openai_client->create_chat_completion( $messages, $options );
 			}
+		}
+
+		/**
+		 * Route a request through tiered model selection.
+		 *
+		 * Selects a draft (fast/cheap) or verification (capable) model based on the
+		 * requested tier, confidence score, and optional depth scheduler hints.
+		 *
+		 * @since 2026.07
+		 *
+		 * @param string $task_type  Task category (e.g. 'chat', 'tool', 'research').
+		 * @param float  $confidence Confidence score between 0.0 and 1.0.
+		 * @param string $tier       Requested tier: self::TIER_DRAFT, self::TIER_VERIFICATION, or self::TIER_AUTO.
+		 * @param array  $options    Additional routing options (provider, model hints, etc.).
+		 * @return array {
+		 *     @type string $model          Selected model identifier.
+		 *     @type string $provider       Selected provider key.
+		 *     @type string $tier           Resolved tier (draft or verification).
+		 *     @type float  $confidence     Confidence score used for the decision.
+		 *     @type bool   $auto_escalated Whether the tier was auto-escalated from draft to verification.
+		 * }
+		 */
+		public function route_with_tier( string $task_type, float $confidence = 0.5, string $tier = 'auto', array $options = array() ): array {
+			$auto_escalated = false;
+
+			// Resolve 'auto' tier via depth scheduler or fallback.
+			if ( self::TIER_AUTO === $tier ) {
+				if ( null !== $this->depth_scheduler ) {
+					$tier = $this->depth_scheduler->determine_tier( $task_type, $confidence );
+				} else {
+					// Fallback: use a simple heuristic.
+					$tier = $confidence >= 0.7 ? self::TIER_DRAFT : self::TIER_VERIFICATION;
+				}
+
+				// Auto-escalate draft to verification when confidence is low.
+				if ( self::TIER_DRAFT === $tier && $confidence < 0.5 ) {
+					$tier           = self::TIER_VERIFICATION;
+					$auto_escalated = true;
+				}
+			}
+
+			// Resolve an explicit or hinted provider, falling back to the priority list.
+			$provider = isset( $options['provider'] ) ? sanitize_key( $options['provider'] ) : '';
+			if ( empty( $provider ) ) {
+				$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+				$priority_list = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
+					? $settings['provider_priority_list']
+					: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'baseten', 'digitalocean', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+				$provider      = isset( $priority_list[0] ) ? sanitize_key( $priority_list[0] ) : 'openai';
+			}
+
+			// Select the appropriate model for the resolved tier and provider.
+			if ( self::TIER_VERIFICATION === $tier ) {
+				$config = $this->get_verification_model_for_provider( $provider );
+			} else {
+				$config = $this->get_draft_model_for_provider( $provider );
+			}
+
+			/**
+			 * Filter the tiered model selection result before returning.
+			 *
+			 * Allows add-ons to override model selection, tier, or confidence for
+			 * specific task types or providers.
+			 *
+			 * @since 2026.07
+			 *
+			 * @param array  $config {
+			 *     @type string $model          Selected model identifier.
+			 *     @type string $provider       Selected provider key.
+			 *     @type string $tier           Resolved tier.
+			 *     @type float  $confidence     Confidence score.
+			 *     @type bool   $auto_escalated Whether auto-escalated.
+			 * }
+			 * @param string $task_type  Task category.
+			 * @param array  $options    Original routing options.
+			 */
+			return apply_filters(
+				'wp_mcp_ai_tiered_model_selection',
+				array(
+					'model'          => $config['model'],
+					'provider'       => $config['provider'],
+					'tier'           => $tier,
+					'confidence'     => $confidence,
+					'auto_escalated' => $auto_escalated,
+				),
+				$task_type,
+				$options
+			);
+		}
+
+		/**
+		 * Get the cheapest (draft-tier) model configuration for a provider.
+		 *
+		 * Returns the fastest, least expensive model that is still capable of
+		 * producing acceptable output for draft / quick-turnaround tasks.
+		 *
+		 * @since 2026.07
+		 *
+		 * @param string $provider Provider key (e.g. 'openai', 'gemini').
+		 * @return array {
+		 *     @type string $model    Draft model identifier.
+		 *     @type string $provider Provider key.
+		 * }
+		 */
+		public function get_draft_model_for_provider( string $provider ): array {
+			$draft_models = array(
+				'openai'       => 'gpt-4o-mini',
+				'gemini'       => 'gemini-2.0-flash',
+				'anthropic'    => 'claude-3-haiku-20240307',
+				'deepseek'     => 'deepseek-chat',
+				'ollama'       => 'llama3.2:3b',
+				'huggingface'  => 'microsoft/phi-4-mini-instruct',
+				'nvidia'       => 'nvidia/llama-3.2-nv-qa-1b',
+				'lm_studio'    => 'llama-3.2-3b-instruct',
+				'cloudflare'   => '@cf/meta/llama-3.2-3b-instruct',
+				'baseten'      => 'llama-3.2-3b-instruct',
+				'digitalocean' => 'llama-3.2-3b-instruct',
+				'kimi'         => 'moonshot-v1-8k',
+				'zai'          => 'glm-4-flash',
+				'openrouter'   => 'openai/gpt-4o-mini',
+				'embedded'     => 'llama-3.2-3b-instruct',
+			);
+
+			/**
+			 * Filter the draft-tier model map.
+			 *
+			 * Allows add-ons to replace or extend the draft model for any provider.
+			 *
+			 * @since 2026.07
+			 *
+			 * @param array  $draft_models Provider-keyed map of draft model identifiers.
+			 * @param string $provider     Provider for which a model is being resolved.
+			 */
+			$draft_models = apply_filters( 'wp_mcp_ai_draft_models', $draft_models, $provider );
+
+			$model = isset( $draft_models[ $provider ] ) ? $draft_models[ $provider ] : 'gpt-4o-mini';
+
+			return array(
+				'model'    => $model,
+				'provider' => $provider,
+			);
+		}
+
+		/**
+		 * Get the most capable (verification-tier) model configuration for a provider.
+		 *
+		 * Returns the most thorough, highest-quality model for tasks requiring
+		 * careful reasoning, complex analysis, or verification of draft output.
+		 *
+		 * @since 2026.07
+		 *
+		 * @param string $provider Provider key (e.g. 'openai', 'gemini').
+		 * @return array {
+		 *     @type string $model    Verification model identifier.
+		 *     @type string $provider Provider key.
+		 * }
+		 */
+		public function get_verification_model_for_provider( string $provider ): array {
+			$verification_models = array(
+				'openai'       => 'gpt-4o',
+				'gemini'       => 'gemini-2.5-pro',
+				'anthropic'    => 'claude-3-opus-20240229',
+				'deepseek'     => 'deepseek-reasoner',
+				'ollama'       => 'qwen2.5:72b',
+				'huggingface'  => 'meta-llama/Llama-3.3-70B-Instruct',
+				'nvidia'       => 'nvidia/llama-3.3-nemotron-70b-instruct',
+				'lm_studio'    => 'qwen2.5-72b-instruct',
+				'cloudflare'   => '@cf/meta/llama-3.3-70b-instruct',
+				'baseten'      => 'llama-3.3-70b-instruct',
+				'digitalocean' => 'llama-3.3-70b-instruct',
+				'kimi'         => 'moonshot-v1-128k',
+				'zai'          => 'glm-4-plus',
+				'openrouter'   => 'anthropic/claude-3.5-sonnet',
+				'embedded'     => 'qwen2.5-72b-instruct',
+			);
+
+			/**
+			 * Filter the verification-tier model map.
+			 *
+			 * Allows add-ons to replace or extend the verification model for any provider.
+			 *
+			 * @since 2026.07
+			 *
+			 * @param array  $verification_models Provider-keyed map of verification model identifiers.
+			 * @param string $provider            Provider for which a model is being resolved.
+			 */
+			$verification_models = apply_filters( 'wp_mcp_ai_verification_models', $verification_models, $provider );
+
+			$model = isset( $verification_models[ $provider ] ) ? $verification_models[ $provider ] : 'gpt-4o';
+
+			return array(
+				'model'    => $model,
+				'provider' => $provider,
+			);
+		}
+
+		/**
+		 * Set the depth scheduler used for auto-tier determination.
+		 *
+		 * When provided, the scheduler's determine_tier() method is called during
+		 * `route_with_tier()` when the tier argument is `auto`.
+		 *
+		 * @since 2026.07
+		 *
+		 * @param WP_MCP_AI_Orchestration_Depth_Scheduler $scheduler Depth scheduler instance.
+		 * @return void
+		 */
+		public function set_depth_scheduler( WP_MCP_AI_Orchestration_Depth_Scheduler $scheduler ): void {
+			$this->depth_scheduler = $scheduler;
 		}
 	}
 }
