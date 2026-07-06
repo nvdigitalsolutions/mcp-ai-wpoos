@@ -820,8 +820,31 @@ class NV_oOS_Docs_Hub_Indexer {
 		}
 
 		// ---- Strategy 2: Fuzzy filename matching ----
-		$all_slugs = array_keys( $this->slug_map );
-		$matches   = $this->fuzzy_match_slug( $target_stem, $all_slugs );
+		// Build two candidate lists:
+		//   (a) full slugs (e.g. "features/pro-toolkit-optimization")
+		//   (b) basenames of each slug (e.g. "pro-toolkit-optimization")
+		$all_slugs     = array_keys( $this->slug_map );
+		$slug_basenames = array();
+		foreach ( $all_slugs as $slug ) {
+			$slug_basenames[] = basename( $slug );
+		}
+
+		$matches       = $this->fuzzy_match_slug( $target_stem, $all_slugs );
+		$basename_matches = $this->fuzzy_match_slug( $target_stem, $slug_basenames );
+
+		// Merge basename matches into the full-slug results, mapping
+		// basenames back to their original slugs for deduplication.
+		foreach ( $basename_matches as $basename => $distance ) {
+			foreach ( $all_slugs as $slug ) {
+				if ( basename( $slug ) === $basename && ! isset( $matches[ $slug ] ) ) {
+					$matches[ $slug ] = $distance;
+					break;
+				}
+			}
+		}
+
+		// Re-sort merged results by distance ascending.
+		asort( $matches, SORT_NUMERIC );
 
 		foreach ( $matches as $match_slug => $distance ) {
 			// Avoid suggesting the same file as the source.
@@ -843,12 +866,18 @@ class NV_oOS_Docs_Hub_Indexer {
 		}
 
 		// ---- Strategy 3: Directory-neighbor fallback ----
-		// Look for .md files in the same directory as the source file that
-		// share a similar stem.
+		// Look for .md files in the same directory as the source file (and
+		// immediate subdirectories) that share a similar stem.
 		$source_dir = dirname( $source_path );
 
 		if ( is_dir( $source_dir ) ) {
-			$neighbor_files = glob( $source_dir . DIRECTORY_SEPARATOR . '*.md' );
+			// Collect .md files from the source directory and one level of
+			// subdirectories so links like "features/target.md" can be
+			// resolved when the source file lives in the parent directory.
+			$neighbor_files = array_merge(
+				glob( $source_dir . DIRECTORY_SEPARATOR . '*.md' ) ?: array(),
+				glob( $source_dir . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.md' ) ?: array()
+			);
 
 			if ( is_array( $neighbor_files ) ) {
 				foreach ( $neighbor_files as $neighbor_path ) {
@@ -862,7 +891,7 @@ class NV_oOS_Docs_Hub_Indexer {
 					// Skip if we already suggested this via fuzzy match.
 					$already_suggested = false;
 					foreach ( $suggestions as $s ) {
-						if ( $s['slug'] === $neighbor_stem ) {
+						if ( isset( $s['slug'] ) && basename( $s['slug'] ) === $neighbor_stem ) {
 							$already_suggested = true;
 							break;
 						}
@@ -895,6 +924,40 @@ class NV_oOS_Docs_Hub_Indexer {
 					}
 				}
 			}
+		}
+
+		// ---- Strategy 4: Exact basename match in any subdirectory ----
+		// If a slug's basename exactly matches the target stem (e.g.
+		// "features/pro-toolkit-optimization" → "pro-toolkit-optimization"),
+		// the file was likely moved into a subdirectory. Suggest the
+		// first match with high confidence.
+		foreach ( $this->slug_map as $slug => $data ) {
+			if ( basename( $slug ) !== $target_stem ) {
+				continue;
+			}
+
+			// Skip if this slug was already suggested.
+			$already_suggested = false;
+			foreach ( $suggestions as $s ) {
+				if ( isset( $s['slug'] ) && $s['slug'] === $slug ) {
+					$already_suggested = true;
+					break;
+				}
+			}
+			if ( $already_suggested ) {
+				continue;
+			}
+
+			$title = isset( $data['title'] ) ? (string) $data['title'] : '';
+
+			$suggestions[] = array(
+				'target'     => $slug . '.md',
+				'slug'       => $slug,
+				'title'      => $title,
+				'confidence' => 0.9,
+				'method'     => 'basename_exact',
+			);
+			break; // First exact match is sufficient.
 		}
 
 		// Sort by confidence descending, then deduplicate by slug.
