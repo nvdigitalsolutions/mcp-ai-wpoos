@@ -42,6 +42,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 env:
   MONITORING_WINDOW_HOURS: 72
@@ -127,6 +128,77 @@ jobs:
   # ===========================================================================
   # Job 2: WordPress Site Health Check (optional — requires secrets)
   # ===========================================================================
+  # ===========================================================================
+  # Job 2b: OWASP ZAP Post-Deploy Baseline Scan (optional)
+  # ===========================================================================
+  # Runs a passive ZAP scan against the live site after deployment.
+  # Requires WP_HEALTH_CHECK_URL variable to be set (used as the scan target).
+  # ===========================================================================
+  zap-post-deploy:
+    name: ZAP Post-Deploy Baseline Scan
+    runs-on: ubuntu-latest
+    needs: validate-artifact
+    if: >
+      (github.event_name == 'push' && vars.WP_HEALTH_CHECK_URL != '') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.check_live_site == 'true')
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine scan target
+        id: target
+        run: |
+          # Use WP_HEALTH_CHECK_URL as the scan target (strip the path to get base URL)
+          HEALTH_URL="${{ vars.WP_HEALTH_CHECK_URL }}"
+          if [ -n "$HEALTH_URL" ]; then
+            BASE_URL=$(echo "$HEALTH_URL" | sed -E 's|(/wp-json/.*)$||')
+            echo "url=${BASE_URL}" >> $GITHUB_OUTPUT
+            echo "Using base URL derived from health check: ${BASE_URL}"
+          else
+            echo "::warning::WP_HEALTH_CHECK_URL not set — cannot determine scan target."
+            echo "url=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: ZAP Baseline Scan against live site
+        if: steps.target.outputs.url != ''
+        id: zap
+        uses: zaproxy/action-baseline@v0.13.0
+        with:
+          target: ${{ steps.target.outputs.url }}
+          fail_action: 'warn'
+          cmd_options: '-m 1 -c .zap-rules.tsv -j -J zap-post-deploy-report.json -r zap-post-deploy-report.html'
+        continue-on-error: true
+
+      - name: Upload ZAP post-deploy report
+        if: always() && steps.target.outputs.url != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-post-deploy-report
+          path: |
+            zap-post-deploy-report.json
+            zap-post-deploy-report.html
+          retention-days: 90
+
+      - name: Report ZAP findings
+        if: always() && steps.target.outputs.url != ''
+        run: |
+          REPORT="zap-post-deploy-report.json"
+          if [ -f "$REPORT" ]; then
+            HIGH=$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' "$REPORT" 2>/dev/null || echo "0")
+            MEDIUM=$(jq '[.site[]?.alerts[]? | select(.riskcode == "2")] | length' "$REPORT" 2>/dev/null || echo "0")
+            if [ "$HIGH" != "0" ]; then
+              echo "::warning::ZAP post-deploy scan found ${HIGH} High-severity finding(s) on live site."
+            elif [ "$MEDIUM" != "0" ]; then
+              echo "::warning::ZAP post-deploy scan found ${MEDIUM} Medium-severity finding(s)."
+            else
+              echo "✅ ZAP post-deploy scan: no High or Medium findings."
+            fi
+          else
+            echo "ℹ️  ZAP scan did not produce a report."
+          fi
+
   wordpress-health:
     name: WordPress Workflow Health Check
     runs-on: ubuntu-latest

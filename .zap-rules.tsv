@@ -1,0 +1,164 @@
+# ==============================================================================
+# OWASP ZAP Alert Rules Configuration for NV oOS
+# ==============================================================================
+#
+# Format: <rule-id>\t<action>\t<reason>
+#
+# Actions:
+#   IGNORE  — Known false positive or accepted risk. Suppressed entirely.
+#   WARN    — Needs review but don't block the build. Emitted as warning.
+#   FAIL    — Block the build. Only for confirmed Critical/High findings.
+#
+# This file is checked into the repository and version-controlled alongside code.
+# It is the single source of truth for what constitutes a blocking finding.
+#
+# Phase 1 (current): All rules default to WARN. After triaging findings, rules
+#                     will be promoted to IGNORE (false positives) or FAIL (real
+#                     vulnerabilities).
+# Phase 2+:           Rules are adjusted based on triaged findings.
+#
+# ==============================================================================
+#
+# RULE ID    ACTION    REASON
+# ==============================================================================
+
+# --- Cross-Site Scripting (XSS) ---
+# XSS is always critical in a plugin that handles user content and AI output.
+# Default WARN during Phase 1; promote to FAIL once baseline is established.
+40012	FAIL	Cross Site Scripting (Reflected) — critical for AI-generated content display
+40014	FAIL	Cross Site Scripting (Persistent) — critical for stored AI output
+40016	FAIL	Cross Site Scripting (DOM Based) — critical for chat UI
+40017	FAIL	Cross Site Scripting (JSON) — relevant for REST API responses
+
+# --- SQL Injection ---
+40018	FAIL	SQL Injection — critical for any plugin with DB queries
+40019	FAIL	SQL Injection — MySQL specific
+40020	FAIL	SQL Injection — Hypersonic specific
+40021	FAIL	SQL Injection — Oracle specific
+40022	FAIL	SQL Injection — PostgreSQL specific
+40023	FAIL	SQL Injection — possible in parameter
+
+# --- Path Traversal ---
+6	FAIL	Path Traversal — critical for file upload/processing tools
+7	FAIL	Remote File Inclusion
+10033	FAIL	Directory Browsing
+
+# --- Server-Side Request Forgery (SSRF) ---
+# The plugin has a central HTTP wrapper with SSRF allowlist (audit R-A-02),
+# but ZAP may find bypasses.
+40028	WARN	Server Side Request Forgery — investigate but may be mitigated by central wrapper
+
+# --- Authentication & Authorization ---
+# These are the most important for a plugin with 4 auth methods + ~30 REST endpoints.
+10011	FAIL	Session ID in URL Rewrite — indicates broken session management
+10040	FAIL	Authentication Bypass — critical for REST API
+10044	FAIL	Authentication Bypass via Parameter Pollution
+10105	FAIL	Weak Authentication Method
+10106	FAIL	HTTP Only Site — no HTTPS (expected in CI Docker, IGNORE there)
+40033	FAIL	Missing Authentication for Critical Function
+
+# --- Information Disclosure ---
+# Stack traces, API keys, server paths must never leak.
+10017	FAIL	Cross-Domain JavaScript Source File Inclusion
+10020	FAIL	Anti-CSRF Tokens Check (missing nonces on state-changing requests)
+10027	FAIL	Information Disclosure — Suspicious Comments
+10029	FAIL	Information Disclosure — Sensitive Data in URL
+10032	FAIL	Information Disclosure — Debug Error Messages
+10034	FAIL	Information Disclosure — Sensitive Data in HTTP Referrer Header
+10045	FAIL	Information Disclosure — Web Server Version
+10048	FAIL	Information Disclosure — Timestamp Disclosure
+10054	FAIL	Information Disclosure — Cookie Poisoning
+10055	FAIL	Information Disclosure — Sensitive Data in Client-Side Source
+10057	FAIL	Information Disclosure — Database Error Message
+10062	FAIL	Information Disclosure — Possible Internal IP Disclosure
+10094	FAIL	Information Disclosure — Server Header Information Leak
+
+# --- Headers (WordPress core sets many of these; IGNORE core-managed headers) ---
+# These are set by WordPress core or the web server, not the plugin.
+10021	IGNORE	X-Content-Type-Options Header Missing — set by WP core / server config
+10036	IGNORE	Server Leaks Version Information via Server Header — WP core behavior
+10015	IGNORE	Incomplete or No Cache-control Header Set — handled by WP core + hosting
+10030	IGNORE	User Agent Fuzzer — informational only
+10037	IGNORE	Server Leaks Information via X-Powered-By Header — WP core behavior
+
+# --- Content Security Policy ---
+# CSP is typically set at the server/reverse-proxy level, not in plugin code.
+# WARN to track it, but don't block builds for missing CSP headers.
+10038	WARN	Content Security Policy (CSP) Header Not Set — typically server-level concern
+10039	IGNORE	X-Frame-Options Header Not Set — WP core concern
+10056	IGNORE	X-Debug-Token Information Leak — Symfony profiler, not applicable
+
+# --- Cookies ---
+10010	IGNORE	Cookie set without SameSite Attribute — WP core cookie handling
+10031	IGNORE	User Controllable HTML Element Attribute (Potential XSS)
+10047	WARN	Cookie set without Secure Flag — warn but may be WP test env (no HTTPS)
+
+# --- CORS ---
+# CORS misconfiguration on REST endpoints is a real risk for this plugin.
+10040	FAIL	CORS Header: Access-Control-Allow-Origin — critical for REST API
+10074	FAIL	CORS Header: Access-Control-Allow-Origin null — critical
+10114	WARN	Cross-Domain Misconfiguration
+
+# --- WordPress-Specific ---
+# XML-RPC is a WordPress core feature. The plugin doesn't control it.
+90001	IGNORE	XML-RPC Enabled — WordPress core concern, not plugin responsibility
+
+# --- Other ---
+2	WARN	Private IP Disclosure — may be false positive in Docker env
+3	WARN	Session ID in URL Rewrite
+10009	WARN	In Page Banner Information Leak
+10019	WARN	Content-Type Header Missing — warn but may be false positive
+10024	WARN	Information Disclosure — Sensitive Data in URL
+10025	WARN	Information Disclosure — Sensitive Data in HTTP Referrer Header
+10026	WARN	Information Disclosure — Sensitive Data in Client-Side Source
+10028	WARN	Information Disclosure — Debug Error Messages
+10042	WARN	Information Disclosure — Suspicious Comments
+10043	WARN	Information Disclosure — Sensitive Data in HTTP Referrer Header
+10046	WARN	Information Disclosure — Web Server Version
+10049	WARN	Information Disclosure — Timestamp Disclosure
+10050	WARN	Information Disclosure — Cookie Poisoning
+10051	WARN	Information Disclosure — Sensitive Data in Client-Side Source
+10052	WARN	Information Disclosure — Database Error Message
+10053	WARN	Information Disclosure — Possible Internal IP Disclosure
+10054	WARN	Information Disclosure — Server Header Information Leak
+10061	WARN	X-Content-Type-Options Header Missing
+10063	WARN	Information Disclosure — Suspicious Comments
+10095	WARN	Information Disclosure — Server Header Information Leak
+10096	WARN	Information Disclosure — Timestamp Disclosure
+10097	WARN	Information Disclosure — Cookie Poisoning
+10098	WARN	Information Disclosure — Sensitive Data in Client-Side Source
+10099	WARN	Information Disclosure — Database Error Message
+10100	WARN	Information Disclosure — Possible Internal IP Disclosure
+10101	WARN	Information Disclosure — Server Header Information Leak
+10102	WARN	Information Disclosure — Timestamp Disclosure
+10103	WARN	Information Disclosure — Cookie Poisoning
+10104	WARN	Information Disclosure — Sensitive Data in Client-Side Source
+10107	WARN	Information Disclosure — Database Error Message
+10108	WARN	Information Disclosure — Possible Internal IP Disclosure
+10109	WARN	Information Disclosure — Server Header Information Leak
+10110	WARN	Information Disclosure — Timestamp Disclosure
+10111	WARN	Information Disclosure — Cookie Poisoning
+10112	WARN	Information Disclosure — Sensitive Data in Client-Side Source
+10113	WARN	Information Disclosure — Database Error Message
+
+# --- Buffer Overflow ---
+30001	FAIL	Buffer Overflow — critical if found
+30002	FAIL	Buffer Overflow — critical if found
+30003	FAIL	Buffer Overflow — critical if found
+
+# --- Format String ---
+40001	FAIL	Format String Error — critical if found
+40002	FAIL	Format String Error — critical if found
+40003	FAIL	Format String Error — critical if found
+
+# --- Command Injection ---
+90018	FAIL	Command Injection — critical for plugin with shell tool support
+90019	FAIL	Remote OS Command Injection — critical
+90020	FAIL	Server Side Include — critical
+
+# --- External Redirect ---
+20012	FAIL	External Redirect — critical for OAuth/Auth0 integration paths
+20013	FAIL	External Redirect — critical for OAuth/Auth0 integration paths
+20014	FAIL	External Redirect — critical for OAuth/Auth0 integration paths
+20015	FAIL	External Redirect — critical for OAuth/Auth0 integration paths
+20016	FAIL	External Redirect — critical for OAuth/Auth0 integration paths

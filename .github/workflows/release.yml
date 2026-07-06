@@ -543,11 +543,112 @@ jobs:
           retention-days: 30
 
   # =============================================================================
-  # Job 3: Create GitHub Release
+  # Job 3: OWASP ZAP Pre-Flight Security Scan
+  # =============================================================================
+  # Runs a ZAP baseline (passive) scan before the release is finalised.
+  # Advisory during Phase 5 rollout — findings are reported but don't block
+  # the deploy. Once the rules baseline (.zap-rules.tsv) is stable, this
+  # gate becomes blocking (remove continue-on-error).
+  #
+  # Set repository variable ZAP_STAGING_URL to scan a staging environment;
+  # otherwise the scan spins up a local Docker stack.
+  # =============================================================================
+  zap-preflight:
+    name: ZAP Pre-Flight Security Scan
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine target URL
+        id: target
+        run: |
+          if [ -n "${{ vars.ZAP_STAGING_URL }}" ]; then
+            echo "url=${{ vars.ZAP_STAGING_URL }}" >> $GITHUB_OUTPUT
+            echo "use_docker=false" >> $GITHUB_OUTPUT
+          else
+            echo "url=http://localhost:8000" >> $GITHUB_OUTPUT
+            echo "use_docker=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Free disk space and pull Docker images
+        if: steps.target.outputs.use_docker == 'true'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          docker pull wordpress:6.9-php8.2-apache mysql:8.0 wordpress:cli-php8.2
+
+      - name: Start QA Docker stack
+        if: steps.target.outputs.use_docker == 'true'
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml up -d wordpress db
+          timeout 120 bash -c '
+            while ! docker compose -f tests/qa/docker/docker-compose.qa.yml ps wordpress | grep -q "healthy"; do
+              sleep 5
+            done
+          '
+          docker compose -f tests/qa/docker/docker-compose.qa.yml run --rm setup
+
+      - name: Smoke test target
+        run: |
+          TARGET="${{ steps.target.outputs.url }}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "${TARGET}" || echo "000")
+          if [ "${HTTP_CODE}" = "000" ]; then
+            echo "::error::Target ${TARGET} unreachable."
+            exit 1
+          fi
+          echo "Target reachable (HTTP ${HTTP_CODE})."
+
+      - name: ZAP Baseline Scan
+        id: zap
+        uses: zaproxy/action-baseline@v0.13.0
+        with:
+          target: ${{ steps.target.outputs.url }}
+          fail_action: 'warn'
+          cmd_options: '-c .zap-rules.tsv -j -J zap-preflight-report.json -r zap-preflight-report.html --auto'
+        continue-on-error: true
+
+      - name: Upload ZAP pre-flight report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-preflight-report
+          path: |
+            zap-preflight-report.json
+            zap-preflight-report.html
+          retention-days: 90
+
+      - name: Parse ZAP findings for release summary
+        id: parse
+        if: always()
+        run: |
+          REPORT="zap-preflight-report.json"
+          if [ -f "$REPORT" ]; then
+            HIGH=$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' "$REPORT" 2>/dev/null || echo "0")
+            MEDIUM=$(jq '[.site[]?.alerts[]? | select(.riskcode == "2")] | length' "$REPORT" 2>/dev/null || echo "0")
+            LOW=$(jq '[.site[]?.alerts[]? | select(.riskcode == "1")] | length' "$REPORT" 2>/dev/null || echo "0")
+            echo "high=${HIGH}" >> $GITHUB_OUTPUT
+            echo "medium=${MEDIUM}" >> $GITHUB_OUTPUT
+            echo "low=${LOW}" >> $GITHUB_OUTPUT
+          else
+            echo "high=N/A" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Tear down QA stack
+        if: always() && steps.target.outputs.use_docker == 'true'
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml down -v --remove-orphans || true
+
+  # =============================================================================
+  # Job 4: Create GitHub Release
   # =============================================================================
   release:
     name: GitHub Release
-    needs: [build, plugin-check]
+    needs: [build, plugin-check, zap-preflight]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     
@@ -652,11 +753,11 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   # =============================================================================
-  # Job 4: Deploy to WordPress.org SVN
+  # Job 5: Deploy to WordPress.org SVN
   # =============================================================================
   deploy-wporg:
     name: WordPress.org Deploy
-    needs: [build, plugin-check, release]
+    needs: [build, plugin-check, release, zap-preflight]
     runs-on: ubuntu-latest
     if: |
       startsWith(github.ref, 'refs/tags/') && 
