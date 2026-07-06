@@ -98,8 +98,26 @@ link_plugin() {
   ln -s "${PLUGIN_SRC}" "${plugin_target}"
 }
 
+install_test_plugins() {
+  local install_script="${PLUGIN_SRC}/bin/install-test-plugins.sh"
+
+  if [ ! -f "$install_script" ]; then
+    echo "Plugin install script not found at ${install_script} — skipping."
+    return
+  fi
+
+  echo "Installing integration test plugins (WooCommerce, Elementor, etc.)..."
+  chmod +x "$install_script"
+
+  # Run the canonical install script with --all for extended CI coverage.
+  # Pass WP_ROOT as the WordPress path so the script can find the install.
+  WP_CORE_DIR="${WP_ROOT}" bash "$install_script" --all || \
+    echo "Some test plugins could not be installed (non-critical)."
+}
+
 install_wp_cli
 ensure_wordpress_downloaded
 create_wp_config
 install_wordpress
 link_plugin
+install_test_plugins
