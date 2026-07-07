@@ -109,7 +109,7 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( array $arguments, array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['name'] ) ) {
 			return array(
@@ -255,7 +255,7 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_flag_capabilities() {
+	public function get_capability_flags() {
 		return array( 'write' );
 	}
 }

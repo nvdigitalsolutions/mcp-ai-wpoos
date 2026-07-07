@@ -141,7 +141,7 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( array $arguments, array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		$required_fields = array( 'event_name', 'event_type', 'event_date', 'start_time', 'end_time', 'venue_name', 'client_name', 'client_email' );
 		foreach ( $required_fields as $field ) {
@@ -310,7 +310,7 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_flag_capabilities() {
+	public function get_capability_flags() {
 		return array( 'write' );
 	}
 }

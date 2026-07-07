@@ -89,7 +89,7 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( array $arguments, array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['booking_id'] ) || empty( $arguments['dj_name'] ) ) {
 			return array(
 				'success' => false,
@@ -250,7 +250,7 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_flag_capabilities() {
+	public function get_capability_flags() {
 		return array( 'write' );
 	}
 }

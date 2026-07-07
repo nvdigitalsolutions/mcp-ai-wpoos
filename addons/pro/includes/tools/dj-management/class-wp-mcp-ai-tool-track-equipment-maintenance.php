@@ -94,7 +94,7 @@ class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Inter
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( array $arguments, array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['equipment_id'] ) || empty( $arguments['maintenance_type'] ) || empty( $arguments['maintenance_date'] ) ) {
 			return array(
@@ -177,7 +177,7 @@ class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Inter
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_flag_capabilities() {
+	public function get_capability_flags() {
 		return array( 'write' );
 	}
 }
