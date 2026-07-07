@@ -74,6 +74,16 @@ class WP_MCP_AI_Site_Health {
 			'test'  => array( $this, 'test_database_schema' ),
 		);
 
+		$tests['direct']['wp_mcp_ai_cache_backend'] = array(
+			'label' => __( 'NV oOS Cache Backend', 'mcp-ai-wpoos' ),
+			'test'  => array( $this, 'test_cache_backend' ),
+		);
+
+		$tests['direct']['wp_mcp_ai_queue_storage'] = array(
+			'label' => __( 'NV oOS Queue Storage Engine', 'mcp-ai-wpoos' ),
+			'test'  => array( $this, 'test_queue_storage' ),
+		);
+
 		return $tests;
 	}
 
@@ -629,6 +639,126 @@ class WP_MCP_AI_Site_Health {
 		return array(
 			'success' => true,
 			'message' => __( 'URL configured', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
+	 * Test cache backend configuration.
+	 *
+	 * Checks whether a persistent object cache (Redis/Memcached) is active.
+	 * A persistent cache is recommended for production deployments to avoid
+	 * wp_options autoload bloat and cache divergence across nodes.
+	 *
+	 * @since 1.1.37
+	 * @return array Test result.
+	 */
+	public function test_cache_backend() {
+		$using_ext_cache = wp_using_ext_object_cache();
+
+		if ( $using_ext_cache ) {
+			$backend = 'unknown';
+			global $wp_object_cache;
+
+			if ( $wp_object_cache && method_exists( $wp_object_cache, 'redis_instance' ) ) {
+				$backend = 'Redis';
+			} elseif ( $wp_object_cache && method_exists( $wp_object_cache, 'get_mc' ) ) {
+				$backend = 'Memcached';
+			}
+
+			return array(
+				'label'       => __( 'Persistent object cache is active', 'mcp-ai-wpoos' ),
+				'status'      => 'good',
+				'badge'       => array(
+					'label' => __( 'Performance', 'mcp-ai-wpoos' ),
+					'color' => 'green',
+				),
+				'description' => sprintf(
+					'<p>%s</p>',
+					sprintf(
+						/* translators: %s: cache backend name */
+						__( 'NV oOS is using %s for object caching. Transients and cache entries are stored outside wp_options, reducing database load and preventing cache divergence in multi-server deployments.', 'mcp-ai-wpoos' ),
+						'<strong>' . esc_html( $backend ) . '</strong>'
+					)
+				),
+				'test'        => 'wp_mcp_ai_cache_backend',
+			);
+		}
+
+		return array(
+			'label'       => __( 'No persistent object cache detected', 'mcp-ai-wpoos' ),
+			'status'      => 'recommended',
+			'badge'       => array(
+				'label' => __( 'Performance', 'mcp-ai-wpoos' ),
+				'color' => 'orange',
+			),
+			'description' => sprintf(
+				'<p>%s</p><p>%s</p>',
+				__( 'NV oOS is using the WordPress database (wp_options) for object caching. This is acceptable for development but may cause performance issues under concurrent load in production.', 'mcp-ai-wpoos' ),
+				sprintf(
+					/* translators: %s: link to Cloudways Redis documentation */
+					__( 'If you are on Cloudways, Redis can be enabled with one click in Server Settings &rarr; Packages. For other hosts, install a Redis object cache plugin. %s', 'mcp-ai-wpoos' ),
+					'<a href="https://support.cloudways.com/en/articles/5120689-how-to-manage-your-server-settings" target="_blank">' . esc_html__( 'Cloudways Redis Guide', 'mcp-ai-wpoos' ) . '</a>'
+				)
+			),
+			'test'        => 'wp_mcp_ai_cache_backend',
+		);
+	}
+
+	/**
+	 * Test queue storage engine.
+	 *
+	 * Checks whether the Job Queue Manager and Dead Letter Queue are using
+	 * custom DB tables (v1.1.37+) or the legacy wp_options storage.
+	 *
+	 * @since 1.1.37
+	 * @return array Test result.
+	 */
+	public function test_queue_storage() {
+		$issues = array();
+
+		// Check Dead Letter Queue storage.
+		if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+			if ( ! method_exists( 'WP_MCP_AI_Dead_Letter_Queue', 'create_table' ) ) {
+				$issues[] = __( 'Dead Letter Queue is using wp_options storage (upgrade recommended).', 'mcp-ai-wpoos' );
+			}
+		}
+
+		// Check Job Queue Manager storage.
+		if ( class_exists( 'WP_MCP_AI_Job_Queue_Manager' ) ) {
+			if ( ! method_exists( 'WP_MCP_AI_Job_Queue_Manager', 'create_table' ) ) {
+				$issues[] = __( 'Job Queue Manager is using wp_options storage (upgrade recommended).', 'mcp-ai-wpoos' );
+			}
+		}
+
+		if ( empty( $issues ) ) {
+			return array(
+				'label'       => __( 'Queue storage uses custom database tables', 'mcp-ai-wpoos' ),
+				'status'      => 'good',
+				'badge'       => array(
+					'label' => __( 'Performance', 'mcp-ai-wpoos' ),
+					'color' => 'green',
+				),
+				'description' => sprintf(
+					'<p>%s</p>',
+					__( 'Job queue and dead letter queue are using dedicated database tables with row-level locking. This prevents data corruption under concurrent writes and allows horizontal worker scaling.', 'mcp-ai-wpoos' )
+				),
+				'test'        => 'wp_mcp_ai_queue_storage',
+			);
+		}
+
+		return array(
+			'label'       => __( 'Queue storage can be improved', 'mcp-ai-wpoos' ),
+			'status'      => 'recommended',
+			'badge'       => array(
+				'label' => __( 'Performance', 'mcp-ai-wpoos' ),
+				'color' => 'orange',
+			),
+			'description' => sprintf(
+				'<p>%s</p><ul><li>%s</li></ul>',
+				__( 'Some queue components are using wp_options for storage, which is not safe for concurrent access:', 'mcp-ai-wpoos' ),
+				implode( '</li><li>', array_map( 'esc_html', $issues ) )
+			),
+			'test'        => 'wp_mcp_ai_queue_storage',
 		);
 	}
 }
