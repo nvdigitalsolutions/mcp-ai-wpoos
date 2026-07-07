@@ -113,7 +113,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
           extensions: mbstring, mysqli, zip
           tools: composer:v2
           coverage: none
@@ -448,7 +448,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
           extensions: mbstring, mysqli, zip, dom, xml, curl
           tools: composer:v2, wp-cli
           coverage: none
@@ -804,7 +804,7 @@ jobs:
         if: steps.check_creds.outputs.has_creds == 'true'
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
           tools: composer:v2
 
       - name: Install production dependencies
