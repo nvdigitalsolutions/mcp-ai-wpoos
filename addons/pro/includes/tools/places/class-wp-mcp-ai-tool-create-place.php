@@ -180,6 +180,26 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'format'      => 'uri',
 					'description' => __( 'Source URL for import deduplication tracking', 'mcp-ai-wpoos-pro' ),
 				),
+				'facebook'          => array(
+					'type'        => 'string',
+					'format'      => 'uri',
+					'description' => __( 'Facebook page URL', 'mcp-ai-wpoos-pro' ),
+				),
+				'instagram'         => array(
+					'type'        => 'string',
+					'format'      => 'uri',
+					'description' => __( 'Instagram profile URL', 'mcp-ai-wpoos-pro' ),
+				),
+				'tripadvisor'       => array(
+					'type'        => 'string',
+					'format'      => 'uri',
+					'description' => __( 'TripAdvisor listing URL', 'mcp-ai-wpoos-pro' ),
+				),
+				'booking'           => array(
+					'type'        => 'string',
+					'format'      => 'uri',
+					'description' => __( 'Booking.com listing URL', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'name' ),
 			'additionalProperties' => false,

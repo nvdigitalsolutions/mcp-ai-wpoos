@@ -1357,6 +1357,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				// Bulk import tools (v1.4.0).
 				'WP_MCP_AI_Tool_Import_Places'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places.php',
 				'WP_MCP_AI_Tool_Import_Places_From_Html' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places-from-html.php',
+				// Enrichment tools (v1.4.2).
+				'WP_MCP_AI_Tool_Enrich_Place_Coordinates' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-enrich-place-coordinates.php',
+				'WP_MCP_AI_Tool_Enrich_Place_Details'    => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-enrich-place-details.php',
 			);
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
 		}

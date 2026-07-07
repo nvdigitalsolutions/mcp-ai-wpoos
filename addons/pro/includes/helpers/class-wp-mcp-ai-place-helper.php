@@ -410,6 +410,20 @@ class WP_MCP_AI_Place_Helper {
 		if ( isset( $arguments['relationship_type'] ) ) {
 			update_post_meta( $place_id, '_place_relationship_type', sanitize_text_field( $arguments['relationship_type'] ) );
 		}
+
+		// Social and booking links.
+		if ( isset( $arguments['facebook'] ) ) {
+			update_post_meta( $place_id, '_place_facebook', esc_url_raw( $arguments['facebook'] ) );
+		}
+		if ( isset( $arguments['instagram'] ) ) {
+			update_post_meta( $place_id, '_place_instagram', esc_url_raw( $arguments['instagram'] ) );
+		}
+		if ( isset( $arguments['tripadvisor'] ) ) {
+			update_post_meta( $place_id, '_place_tripadvisor', esc_url_raw( $arguments['tripadvisor'] ) );
+		}
+		if ( isset( $arguments['booking'] ) ) {
+			update_post_meta( $place_id, '_place_booking', esc_url_raw( $arguments['booking'] ) );
+		}
 	}
 
 	// -------------------------------------------------------------------------
