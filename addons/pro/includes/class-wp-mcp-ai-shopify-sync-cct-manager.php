@@ -94,6 +94,8 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			'sync_hash'          => 'text',
 			'sync_status'        => 'text',
 			'raw_data'           => 'textarea',
+			'tenant_type'        => 'text',
+			'tenant_id'          => 'number',
 		);
 
 		/**
@@ -106,15 +108,87 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		protected $factory = null;
 
 		/**
+		 * Current tenant type (e.g. 'company', 'school').
+		 *
+		 * Empty string means no tenant context (bypass mode).
+		 *
+		 * @since 3.1.0
+		 *
+		 * @var string
+		 */
+		protected $tenant_type = '';
+
+		/**
+		 * Current tenant ID.
+		 *
+		 * 0 means no tenant context (bypass mode).
+		 *
+		 * @since 3.1.0
+		 *
+		 * @var int
+		 */
+		protected $tenant_id = 0;
+
+		/**
 		 * Constructor.
 		 *
 		 * @since 1.3.0
+		 * @since 3.1.0 Resolves tenant context when available.
 		 *
 		 * @param string|null $connection_id Optional. Remote Sites connection ID.
 		 */
 		public function __construct( $connection_id = null ) {
 			$this->connection_id = $connection_id;
 			$this->cct_slug      = $this->get_configured_cct_slug();
+			$this->resolve_tenant_context();
+		}
+
+		/**
+		 * Resolve the current tenant context.
+		 *
+		 * @since 3.1.0
+		 *
+		 * @return void
+		 */
+		protected function resolve_tenant_context(): void {
+			if ( ! class_exists( 'WP_MCP_AI_Tenant_Context' ) ) {
+				return;
+			}
+
+			$context = WP_MCP_AI_Tenant_Context::instance()->resolve();
+			if ( is_wp_error( $context ) ) {
+				return;
+			}
+
+			$this->tenant_type = isset( $context['type'] ) ? $context['type'] : '';
+			$this->tenant_id   = isset( $context['id'] ) ? (int) $context['id'] : 0;
+		}
+
+		/**
+		 * Build a tenant-scoped WHERE clause for CCT queries.
+		 *
+		 * @since 3.1.0
+		 *
+		 * @return array
+		 */
+		protected function tenant_query_clauses(): array {
+			if ( empty( $this->tenant_type ) || $this->tenant_id <= 0 ) {
+				return array();
+			}
+
+			return array(
+				array(
+					'field'    => 'tenant_type',
+					'operator' => '=',
+					'value'    => $this->tenant_type,
+				),
+				array(
+					'field'    => 'tenant_id',
+					'operator' => '=',
+					'value'    => $this->tenant_id,
+					'type'     => 'integer',
+				),
+			);
 		}
 
 		// ------------------------------------------------------------------ //
@@ -847,6 +921,11 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				}
 			}
 
+			// Inject tenant-scoped WHERE clauses when tenant context is active.
+			foreach ( $this->tenant_query_clauses() as $tenant_clause ) {
+				$query_args[] = $tenant_clause;
+			}
+
 			if ( ! empty( $filters['location_name'] ) ) {
 				$query_args[] = array(
 					'field'    => 'location_name',
@@ -1141,6 +1220,12 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			}
 
 			$location_id = isset( $shopify_row['location_id'] ) ? $shopify_row['location_id'] : '';
+
+			// Stamp tenant context on every write when tenant is active.
+			if ( ! empty( $this->tenant_type ) && $this->tenant_id > 0 ) {
+				$shopify_row['tenant_type'] = $this->tenant_type;
+				$shopify_row['tenant_id']   = $this->tenant_id;
+			}
 
 			$handler = $this->get_item_handler();
 			if ( ! $handler ) {

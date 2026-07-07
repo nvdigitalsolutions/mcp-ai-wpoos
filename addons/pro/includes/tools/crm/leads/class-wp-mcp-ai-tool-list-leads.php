@@ -58,7 +58,7 @@ class WP_MCP_AI_Tool_List_Leads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function __construct() {
 		if ( class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
-			$this->data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( 'crm', 'leads' );
+			$this->data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( 'crm', 'leads' );
 		}
 	}
 

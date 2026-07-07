@@ -844,6 +844,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables real-time WebRTC-based video chat integration with room management, participant tracking, and anonymous chat support. Includes 6 tools for creating and managing WebChat rooms, plus message storage with JetEngine CCT support. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// Multi-Tenant Database Isolation.
+				'enable_tenant_isolation'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Multi-Tenant Isolation', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Isolate toolkit data by tenant (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, all tenant-scoped custom post types (CPTs), custom database tables, and CCT caches are automatically filtered to show only the current tenant\'s data. The tenant context is resolved from the user\'s assigned tenant, an HTTP header (X-WP-MCP-AI-Tenant), or the assistant\'s bound tenant. When disabled, all data remains globally visible (backward-compatible default). Requires the Pro addon. See the Multi-Tenant Setup Guide for details.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator requires the Pro addon (addons/pro/). When running without the
@@ -913,7 +922,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Pro Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_dietpi_toolkit', 'enable_ecommerce_toolkit', 'enable_flowhub_toolkit', 'enable_ezuite_toolkit', 'enable_shopify_sync_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_law_firm_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_dietpi_toolkit', 'enable_ecommerce_toolkit', 'enable_flowhub_toolkit', 'enable_ezuite_toolkit', 'enable_shopify_sync_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_law_firm_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration', 'enable_tenant_isolation' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',

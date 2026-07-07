@@ -159,7 +159,7 @@ abstract class WP_MCP_AI_Research_Add_Base {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-toolkit-data-store-factory.php';
 
 		foreach ( array_keys( $this->entity_types ) as $entity_type ) {
-			$this->data_stores[ $entity_type ] = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store(
+			$this->data_stores[ $entity_type ] = WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store(
 				$this->toolkit_slug,
 				$entity_type
 			);
