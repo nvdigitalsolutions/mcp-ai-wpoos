@@ -75,6 +75,11 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 				'rabbitmq_priority_queues'           => 'checkbox',
 				'rabbitmq_parallel_execution'        => 'checkbox',
 				'rabbitmq_dead_letter_enabled'       => 'checkbox',
+				'enable_speculative_execution'        => 'checkbox',
+				'enable_depth_scheduling'             => 'checkbox',
+				'enable_hybrid_planning'              => 'checkbox',
+				'enable_tiered_model_routing'         => 'checkbox',
+				'enable_chain_acceptance_tracking'    => 'checkbox',
 
 				// Password/API key fields.
 				'openai_api_key'                     => 'password',

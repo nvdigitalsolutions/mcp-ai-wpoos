@@ -163,6 +163,17 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 			);
 		}
 
+		/**
+		 * Fires when a hybrid plan has been successfully generated.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @param string $task_id         Generated task ID.
+		 * @param float  $merge_confidence Merge confidence score (0-1).
+		 * @param int    $subtask_count    Number of merged subtasks.
+		 */
+		do_action( 'wp_mcp_ai_hybrid_plan_generated', $task_id, (float) $merged['merge_confidence'], count( $merged['subtasks'] ) );
+
 		return array(
 			'task_id'          => esc_html( $task_id ),
 			'subtasks'         => $this->escape_subtask_array( $merged['subtasks'] ),

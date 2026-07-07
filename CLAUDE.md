@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **June 29, 2026** · Version: **2.7**
+> Last reviewed: **July 7, 2026** · Version: **2.8**
 
 ### Related Files
 
@@ -53,7 +53,7 @@ includes/
 ├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,000+ tools total)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── tools/                              ← base tool implementations (~195 classes; live count is authoritative)
-├── services/                           ← 20+ service classes
+├── services/                           ← 30+ service classes
 ├── admin/                              ← WordPress admin UI
 ├── blueprints/                         ← Unified blueprint installer + import tools
 ├── slash-commands/                     ← /help, /ship, /compact, /context, etc.
@@ -209,6 +209,25 @@ All seven orchestration phases are active as of v1.1.15. The Unix Theory Complia
 - **Sub-agents** (`WP_MCP_AI_Sub_Agent_Dispatcher`), **durable runs** (`WP_MCP_AI_Durable_Run_Store`), **triggers** (`WP_MCP_AI_Workflow_Trigger_CPT`)
 - **JetEngine CCT init priority** — all CCT bootstraps must use `init` at priority 11+ to avoid racing JetEngine's table-cache hydration (priorities 1–10)
 - Pro: `WP_MCP_AI_Vector_Store_Adapter` (openai/pgvector/qdrant), `WP_MCP_AI_Team_Budget_Manager`
+
+### DSpark Execution Optimizations (v1.6.0)
+
+Inspired by DeepSeek V4 DSpark confidence-scheduled speculative decoding, five services collaborate to reduce latency and API cost:
+
+- **Speculative Tool Execution** (`WP_MCP_AI_Speculative_Tool_Executor`) — Drafts tool chains ahead of execution, verifies batch-style, stops at first rejection. Block size 2–6 tools; pauses when historical acceptance rate drops below threshold.
+- **Orchestration Depth Scheduler** (`WP_MCP_AI_Orchestration_Depth_Scheduler`) — Graduated verification depth (Deep → Standard → Shallow → Minimal) based on system capacity and prediction confidence. Filter: `wp_mcp_ai_orchestration_depth_tier`.
+- **Hybrid Plan Generator** (`WP_MCP_AI_Hybrid_Plan_Generator`) — Three-stage pipeline: parallel fan-out to planning agents → lightweight sequential merge → dependency-graph construction. Action: `wp_mcp_ai_hybrid_plan_generated`.
+- **Tiered Model Routing** (`WP_MCP_AI_Language_Model_Router::route_with_tier()`) — Routes to draft (cheap/fast) or verification (capable) models per task. DRAFT tier: gpt-4o-mini, gemini-2.0-flash, claude-3-haiku. VERIFICATION tier: gpt-4o, gemini-2.5-pro, claude-3-opus. Filter: `wp_mcp_ai_tiered_model_selection`.
+- **Chain Acceptance Tracker** (`WP_MCP_AI_Tool_Chain_Acceptance_Tracker`) — Records predicted-vs-actual tool usage; feeds weighted data back to the predictor. Stores rolling history in option `wp_mcp_ai_chain_acceptance_metrics`.
+
+**Admin surface:** All five features are toggleable under **Orchestration → Settings → DSpark Optimizations**. Threshold sliders live under **Orchestration → Thresholds → Depth Scheduler Thresholds**. A real-time **DSpark Efficiency** dashboard tab (conditionally shown) exposes hit-rate gauges, tier distribution bars, cost-savings cards, merge-confidence charts, and acceptance insights. A "DSpark Speculative" orchestration preset ships all five features pre-enabled.
+
+**Hooks:**
+- Filter `wp_mcp_ai_orchestration_depth_tier` — overrides depth tier selection
+- Filter `wp_mcp_ai_tiered_model_selection` — overrides tiered model routing decision
+- Action `wp_mcp_ai_hybrid_plan_generated` — fires when a hybrid plan completes
+
+**Data collectors** (`WP_MCP_AI_DSpark_Hooks`) — light-weight filters that increment tier counters (option `wp_mcp_ai_depth_tier_counts`) and estimate routing cost savings (transient `wp_mcp_ai_routing_cost_data`) for the admin dashboard without per-request overhead.
 
 ### Provider Clients
 

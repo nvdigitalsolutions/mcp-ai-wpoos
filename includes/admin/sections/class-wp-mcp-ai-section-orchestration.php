@@ -496,9 +496,133 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'3' => __( 'Aggressive — Maximum compression, shortest sentences (30-40% savings)', 'mcp-ai-wpoos' ),
 					),
 				),
-				'slider_section_predictive'       => array(
+				'section_dspark'                  => array(
 					'type'    => 'html',
-					'content' => '<h3>' . esc_html__( 'Predictive Analytics', 'mcp-ai-wpoos' ) . '</h3>',
+					'content' => '<h3>' . esc_html__( 'DSpark Optimizations', 'mcp-ai-wpoos' )
+						. '</h3><p class="description">'
+						. esc_html__( 'Speculative execution, tiered model routing, depth-scheduled verification, hybrid planning, and chain acceptance tracking — inspired by DeepSeek V4 DSpark confidence-scheduled decoding. These features work across all AI providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio, etc.).', 'mcp-ai-wpoos' )
+						. '</p>',
+				),
+				'enable_speculative_execution'    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Speculative Tool Execution', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Draft and verify tool chains speculatively (DSpark-inspired)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Predict tool sequences ahead of execution, verify results batch-style, and stop at first rejection. Reduces round-trips for predictable tool chains. Works with all AI providers.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_depth_scheduling'         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Orchestration Depth Scheduling', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Adapt verification depth to system load and confidence', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Automatically switch between Deep, Standard, Shallow, and Minimal verification tiers based on system capacity and prediction confidence. High load + high confidence = fast path; low confidence = thorough verification.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'enable_hybrid_planning'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Hybrid Plan Generation', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Generate plans via parallel agent proposals + merge', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Fan out complex tasks to multiple planning agents, merge their proposals, and discover parallelizable subtask groups. Improves plan quality through agent diversity.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_tiered_model_routing'     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Tiered Model Routing', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Route to draft (cheap) or verification (capable) models per task', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Use fast, inexpensive models for drafting and powerful models for verification. Auto-selects per provider. Saves 40-70% on API costs.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_chain_acceptance_tracking' => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Chain Acceptance Tracking', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Track and learn from prediction-vs-actual tool usage', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Records which predicted tool chains were actually accepted, feeds data back to the predictor for continuous improvement, and surfaces acceptance trends in the dashboard.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'slider_section_depth'            => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Depth Scheduler Thresholds', 'mcp-ai-wpoos' )
+						. '</h3><p class="description">'
+						. esc_html__( 'Control when the depth scheduler escalates from Minimal to Deep verification. Lower spare-capacity thresholds mean more aggressive verification; higher confidence thresholds mean deeper scrutiny is triggered sooner. Inspired by DSpark confidence-scheduled verification budgets.', 'mcp-ai-wpoos' )
+						. '</p>',
+				),
+				'depth_capacity_deep'             => array(
+					'type'        => 'slider',
+					'label'       => __( 'Deep Tier — Spare Capacity Required', 'mcp-ai-wpoos' ),
+					'description' => __( 'Percentage of spare system capacity required before Deep verification is eligible. Default: 70%', 'mcp-ai-wpoos' ),
+					'min'         => 50,
+					'max'         => 90,
+					'step'        => 5,
+					'default'     => 70,
+					'suffix'      => '%',
+				),
+				'depth_capacity_standard'         => array(
+					'type'        => 'slider',
+					'label'       => __( 'Standard Tier — Spare Capacity Required', 'mcp-ai-wpoos' ),
+					'description' => __( 'Spare capacity needed for Standard verification. Falls back to Shallow when capacity is below this. Default: 40%', 'mcp-ai-wpoos' ),
+					'min'         => 20,
+					'max'         => 65,
+					'step'        => 5,
+					'default'     => 40,
+					'suffix'      => '%',
+				),
+				'depth_capacity_shallow'          => array(
+					'type'        => 'slider',
+					'label'       => __( 'Shallow Tier — Spare Capacity Required', 'mcp-ai-wpoos' ),
+					'description' => __( 'Minimum spare capacity for Shallow verification. Below this, the system drops to Minimal (fastest path). Default: 15%', 'mcp-ai-wpoos' ),
+					'min'         => 5,
+					'max'         => 40,
+					'step'        => 5,
+					'default'     => 15,
+					'suffix'      => '%',
+				),
+				'depth_confidence_high'           => array(
+					'type'        => 'slider',
+					'label'       => __( 'High Confidence Threshold', 'mcp-ai-wpoos' ),
+					'description' => __( 'Prediction confidence above this level may allow skipping to a shallower tier. Default: 0.80', 'mcp-ai-wpoos' ),
+					'min'         => 50,
+					'max'         => 95,
+					'step'        => 5,
+					'default'     => 80,
+					'suffix'      => '%',
+				),
+				'depth_confidence_medium'         => array(
+					'type'        => 'slider',
+					'label'       => __( 'Medium Confidence Threshold', 'mcp-ai-wpoos' ),
+					'description' => __( 'Confidence below this level triggers deeper verification when capacity allows. Default: 0.60', 'mcp-ai-wpoos' ),
+					'min'         => 30,
+					'max'         => 75,
+					'step'        => 5,
+					'default'     => 60,
+					'suffix'      => '%',
+				),
+				'depth_confidence_low'            => array(
+					'type'        => 'slider',
+					'label'       => __( 'Low Confidence Threshold', 'mcp-ai-wpoos' ),
+					'description' => __( 'Confidence below this level always escalates verification regardless of capacity. Default: 0.40', 'mcp-ai-wpoos' ),
+					'min'         => 10,
+					'max'         => 55,
+					'step'        => 5,
+					'default'     => 40,
+					'suffix'      => '%',
+				),
+				'speculative_block_size'          => array(
+					'type'        => 'slider',
+					'label'       => __( 'Speculative Block Size', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of tools to speculatively draft per block. Higher = more throughput potential, but more wasted work on rejection. Default: 4', 'mcp-ai-wpoos' ),
+					'min'         => 2,
+					'max'         => 6,
+					'step'        => 1,
+					'default'     => 4,
+				),
+				'speculative_acceptance_threshold' => array(
+					'type'        => 'slider',
+					'label'       => __( 'Speculative Minimum Acceptance Rate', 'mcp-ai-wpoos' ),
+					'description' => __( 'Historical acceptance rate below which speculation pauses automatically. Prevents wasting resources on poor predictions. Default: 60%', 'mcp-ai-wpoos' ),
+					'min'         => 30,
+					'max'         => 90,
+					'step'        => 5,
+					'default'     => 60,
+					'suffix'      => '%',
 				),
 				'prediction_confidence_threshold' => array(
 					'type'        => 'slider',
@@ -1256,7 +1380,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				<?php
 			endif;
 			?>
-</nav>
+
+			<?php
+			// Conditionally show DSpark Efficiency tab if any DSpark feature is enabled.
+			$any_dspark_enabled = WP_MCP_AI_Settings_Registry::get_setting( 'enable_speculative_execution', false )
+				|| WP_MCP_AI_Settings_Registry::get_setting( 'enable_depth_scheduling', false )
+				|| WP_MCP_AI_Settings_Registry::get_setting( 'enable_hybrid_planning', false )
+				|| WP_MCP_AI_Settings_Registry::get_setting( 'enable_tiered_model_routing', false )
+				|| WP_MCP_AI_Settings_Registry::get_setting( 'enable_chain_acceptance_tracking', false );
+
+			if ( $any_dspark_enabled ) :
+				?>
+	<a href="<?php echo esc_url( $this->get_view_url( 'dspark' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'dspark' === $active_view ? 'active' : '' ); ?>">
+	<span class="dashicons dashicons-lightbulb"></span>
+				<?php esc_html_e( 'DSpark Efficiency', 'mcp-ai-wpoos' ); ?>
+	</a>
+				<?php
+			endif;
+			?>
+	</nav>
 
 <!-- Hidden field to preserve view during form submission -->
 <input type="hidden" name="view" value="<?php echo esc_attr( $active_view ); ?>" />
@@ -1318,6 +1460,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
 						echo '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					}
+					break;
+				case 'dspark':
+					$this->render_dspark_efficiency_view();
 					break;
 				case 'overview':
 				default:
@@ -1536,6 +1681,69 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					</div>
 				</div>
 
+				<?php
+				// DSpark mini-cards — shown when any DSpark feature is enabled.
+				$any_dspark = WP_MCP_AI_Settings_Registry::get_setting( 'enable_speculative_execution', false )
+					|| WP_MCP_AI_Settings_Registry::get_setting( 'enable_depth_scheduling', false )
+					|| WP_MCP_AI_Settings_Registry::get_setting( 'enable_tiered_model_routing', false )
+					|| WP_MCP_AI_Settings_Registry::get_setting( 'enable_hybrid_planning', false );
+
+				if ( $any_dspark ) :
+					?>
+				<div class="executive-actions-section">
+					<h3>
+						<span class="dashicons dashicons-lightbulb"></span>
+						<?php esc_html_e( 'DSpark Optimizations', 'mcp-ai-wpoos' ); ?>
+					</h3>
+					<div class="dspark-mini-grid">
+						<?php if ( WP_MCP_AI_Settings_Registry::get_setting( 'enable_speculative_execution', false ) ) : ?>
+						<div class="dspark-mini-card">
+							<span class="dspark-mini-label"><?php esc_html_e( 'Speculative Hit Rate', 'mcp-ai-wpoos' ); ?></span>
+							<span class="dspark-mini-value">
+								<?php
+								$ov_stats = array( 'overall_rate' => 0.0 );
+								if ( class_exists( 'WP_MCP_AI_Tool_Chain_Acceptance_Tracker' ) ) {
+									$ov_tracker = new WP_MCP_AI_Tool_Chain_Acceptance_Tracker();
+									$ov_stats   = $ov_tracker->get_acceptance_stats( null, 3600 );
+								}
+								echo esc_html( round( $ov_stats['overall_rate'] * 100, 1 ) . '%' );
+								?>
+							</span>
+						</div>
+						<?php endif; ?>
+						<?php if ( WP_MCP_AI_Settings_Registry::get_setting( 'enable_depth_scheduling', false ) ) : ?>
+						<div class="dspark-mini-card">
+							<span class="dspark-mini-label"><?php esc_html_e( 'Depth Tier', 'mcp-ai-wpoos' ); ?></span>
+							<span class="dspark-mini-value">
+								<?php
+								if ( class_exists( 'WP_MCP_AI_Orchestration_Depth_Scheduler' ) ) {
+									$ov_scheduler = new WP_MCP_AI_Orchestration_Depth_Scheduler();
+									echo esc_html( ucfirst( $ov_scheduler->determine_tier() ) );
+								} else {
+									esc_html_e( 'N/A', 'mcp-ai-wpoos' );
+								}
+								?>
+							</span>
+						</div>
+						<?php endif; ?>
+						<?php if ( WP_MCP_AI_Settings_Registry::get_setting( 'enable_tiered_model_routing', false ) ) : ?>
+						<div class="dspark-mini-card">
+							<span class="dspark-mini-label"><?php esc_html_e( 'Routing Savings', 'mcp-ai-wpoos' ); ?></span>
+							<span class="dspark-mini-value">
+								<?php
+								$ov_routing = get_transient( 'wp_mcp_ai_routing_cost_data' );
+								$ov_savings = is_array( $ov_routing ) && isset( $ov_routing['estimated_savings'] )
+									? round( (float) $ov_routing['estimated_savings'], 1 ) . '%'
+									: '0%';
+								echo esc_html( $ov_savings );
+								?>
+							</span>
+						</div>
+						<?php endif; ?>
+					</div>
+				</div>
+				<?php endif; ?>
+
 				<!-- Quick Actions Section -->
 				<div class="executive-actions-section">
 					<h3>
@@ -1748,6 +1956,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'slider_section_compression', // Section header.
 				'enable_semantic_compression',
 				'semantic_compression_level',
+				'section_dspark', // Section header.
+				'enable_speculative_execution',
+				'enable_depth_scheduling',
+				'enable_hybrid_planning',
+				'enable_tiered_model_routing',
+				'enable_chain_acceptance_tracking',
 			);
 
 			echo '<h3>' . esc_html__( 'Orchestration Features', 'mcp-ai-wpoos' ) . '</h3>';
@@ -1840,6 +2054,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'slider_section_predictive',
 				'prediction_confidence_threshold',
 				'prediction_safety_buffer',
+				'slider_section_depth',
+				'depth_capacity_deep',
+				'depth_capacity_standard',
+				'depth_capacity_shallow',
+				'depth_confidence_high',
+				'depth_confidence_medium',
+				'depth_confidence_low',
+				'speculative_block_size',
+				'speculative_acceptance_threshold',
 			);
 
 			// Render sliders and section headers.
@@ -3794,6 +4017,267 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			);
 
 			return isset( $icons[ $status ] ) ? $icons[ $status ] : 'info';
+		}
+
+		/**
+		 * Render DSpark Efficiency dashboard view.
+		 *
+		 * Displays speculative hit rate gauge, depth tier distribution,
+		 * tiered routing cost savings, hybrid plan merge confidence,
+		 * and chain acceptance improvement suggestions.
+		 *
+		 * @since 1.6.0
+		 */
+		private function render_dspark_efficiency_view() {
+			?>
+			<div class="wp-mcp-ai-dspark-efficiency-view">
+				<h2><?php esc_html_e( 'DSpark Efficiency Dashboard', 'mcp-ai-wpoos' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Real-time metrics for speculative execution, depth scheduling, tiered model routing, hybrid planning, and chain acceptance tracking. Inspired by DeepSeek V4 DSpark confidence-scheduled decoding.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<div class="dspark-widgets-grid">
+					<?php
+					if ( WP_MCP_AI_Settings_Registry::get_setting( 'enable_speculative_execution', false ) ) {
+						$this->render_speculative_gauge();
+					}
+					if ( WP_MCP_AI_Settings_Registry::get_setting( 'enable_depth_scheduling', false ) ) {
+						$this->render_depth_tier_distribution();
+					}
+					if ( WP_MCP_AI_Settings_Registry::get_setting( 'enable_tiered_model_routing', false ) ) {
+						$this->render_routing_savings();
+					}
+					if ( WP_MCP_AI_Settings_Registry::get_setting( 'enable_hybrid_planning', false ) ) {
+						$this->render_hybrid_plan_confidence();
+					}
+					if ( WP_MCP_AI_Settings_Registry::get_setting( 'enable_chain_acceptance_tracking', false ) ) {
+						$this->render_acceptance_suggestions();
+					}
+					?>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render speculative execution hit rate gauge widget.
+		 *
+		 * @since 1.6.0
+		 */
+		private function render_speculative_gauge() {
+			$stats = array(
+				'overall_rate'          => 0.0,
+				'avg_acceptance_length' => 0.0,
+				'trend'                 => 'stable',
+				'total_entries'         => 0,
+			);
+
+			if ( class_exists( 'WP_MCP_AI_Tool_Chain_Acceptance_Tracker' ) ) {
+				$tracker = new WP_MCP_AI_Tool_Chain_Acceptance_Tracker();
+				$stats   = $tracker->get_acceptance_stats( null, 3600 );
+			}
+
+			$rate        = $stats['overall_rate'] * 100;
+			$gauge_color = $rate >= 80 ? '#46b450' : ( $rate >= 60 ? '#f0b849' : '#dc3232' );
+			$trend_icons = array(
+				'improving' => '&#8593;',
+				'declining' => '&#8595;',
+				'stable'    => '&#8594;',
+			);
+			$trend_icon  = isset( $trend_icons[ $stats['trend'] ] ) ? $trend_icons[ $stats['trend'] ] : '&#8594;';
+			?>
+			<div class="wp-mcp-ai-dspark-widget">
+				<h3><?php esc_html_e( 'Speculative Hit Rate', 'mcp-ai-wpoos' ); ?>
+					<span class="dashicons dashicons-editor-help" title="<?php esc_attr_e( 'Percentage of predicted tool chains accepted during speculative execution. Higher means the predictor is accurate.', 'mcp-ai-wpoos' ); ?>"></span>
+				</h3>
+				<div class="dspark-gauge-container">
+					<div class="dspark-gauge" style="--gauge-value: <?php echo esc_attr( $rate ); ?>%; --gauge-color: <?php echo esc_attr( $gauge_color ); ?>;">
+						<div class="dspark-gauge-cover"><?php echo esc_html( round( $rate, 1 ) ); ?>%</div>
+					</div>
+				</div>
+				<div class="dspark-gauge-metrics">
+					<div class="dspark-metric">
+						<span class="dspark-metric-label"><?php esc_html_e( 'Predictions', 'mcp-ai-wpoos' ); ?></span>
+						<span class="dspark-metric-value"><?php echo esc_html( $stats['total_entries'] ); ?></span>
+					</div>
+					<div class="dspark-metric">
+						<span class="dspark-metric-label"><?php esc_html_e( 'Avg Accept Length', 'mcp-ai-wpoos' ); ?></span>
+						<span class="dspark-metric-value"><?php echo esc_html( $stats['avg_acceptance_length'] ); ?> <?php esc_html_e( 'tools', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div class="dspark-metric">
+						<span class="dspark-metric-label"><?php esc_html_e( 'Trend', 'mcp-ai-wpoos' ); ?></span>
+						<span class="dspark-metric-value dspark-trend-<?php echo esc_attr( $stats['trend'] ); ?>">
+							<?php echo wp_kses_post( $trend_icon ); ?>
+							<?php echo esc_html( ucfirst( $stats['trend'] ) ); ?>
+						</span>
+					</div>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render depth tier distribution widget.
+		 *
+		 * @since 1.6.0
+		 */
+		private function render_depth_tier_distribution() {
+			$counts = get_option(
+				'wp_mcp_ai_depth_tier_counts',
+				array(
+					'deep'     => 0,
+					'standard' => 0,
+					'shallow'  => 0,
+					'minimal'  => 0,
+				)
+			);
+			$total    = array_sum( $counts );
+			$tier_pct = array();
+			foreach ( $counts as $tier => $count ) {
+				$tier_pct[ $tier ] = $total > 0 ? round( ( $count / $total ) * 100, 1 ) : 0;
+			}
+
+			$tier_names  = array(
+				'deep'     => __( 'Deep (thorough)', 'mcp-ai-wpoos' ),
+				'standard' => __( 'Standard', 'mcp-ai-wpoos' ),
+				'shallow'  => __( 'Shallow (fast)', 'mcp-ai-wpoos' ),
+				'minimal'  => __( 'Minimal (fastest)', 'mcp-ai-wpoos' ),
+			);
+			$tier_colors = array(
+				'deep'     => '#dc3232',
+				'standard' => '#2271b1',
+				'shallow'  => '#f0b849',
+				'minimal'  => '#46b450',
+			);
+			?>
+			<div class="wp-mcp-ai-dspark-widget">
+				<h3><?php esc_html_e( 'Depth Tier Distribution', 'mcp-ai-wpoos' ); ?></h3>
+				<?php if ( $total > 0 ) : ?>
+				<div class="dspark-tier-bar">
+					<?php foreach ( $counts as $tier => $count ) : ?>
+					<div class="dspark-tier-segment dspark-tier-<?php echo esc_attr( $tier ); ?>"
+						 style="width: <?php echo esc_attr( $tier_pct[ $tier ] ); ?>%;"
+						 title="<?php echo esc_attr( ucfirst( $tier ) . ': ' . $count . ' (' . $tier_pct[ $tier ] . '%)' ); ?>">
+					</div>
+					<?php endforeach; ?>
+				</div>
+				<div class="dspark-tier-legend">
+					<?php foreach ( $counts as $tier => $count ) : ?>
+					<div class="dspark-legend-item">
+						<span class="dspark-legend-color" style="background: <?php echo esc_attr( $tier_colors[ $tier ] ); ?>;"></span>
+						<span class="dspark-legend-label"><?php echo esc_html( $tier_names[ $tier ] ); ?></span>
+						<span class="dspark-legend-count"><?php echo esc_html( $count ); ?> (<?php echo esc_html( $tier_pct[ $tier ] ); ?>%)</span>
+					</div>
+					<?php endforeach; ?>
+				</div>
+				<?php else : ?>
+				<p class="description"><?php esc_html_e( 'No depth scheduling data yet. Tasks will appear here as the depth scheduler processes requests.', 'mcp-ai-wpoos' ); ?></p>
+				<?php endif; ?>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render tiered model routing cost savings widget.
+		 *
+		 * @since 1.6.0
+		 */
+		private function render_routing_savings() {
+			$data = get_transient( 'wp_mcp_ai_routing_cost_data' );
+			if ( ! is_array( $data ) ) {
+				$data = array(
+					'estimated_savings'     => 0.0,
+					'draft_requests'        => 0,
+					'verification_requests' => 0,
+				);
+			}
+			$savings_pct   = isset( $data['estimated_savings'] ) ? (float) $data['estimated_savings'] : 0.0;
+			$savings_color = $savings_pct > 30 ? '#46b450' : ( $savings_pct > 10 ? '#f0b849' : '#666' );
+			?>
+			<div class="wp-mcp-ai-dspark-widget">
+				<h3><?php esc_html_e( 'Routing Cost Savings', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="dspark-savings-card">
+					<div class="dspark-savings-value" style="color: <?php echo esc_attr( $savings_color ); ?>;">
+						<?php echo esc_html( round( $savings_pct, 1 ) ); ?>%
+					</div>
+					<div class="dspark-savings-label"><?php esc_html_e( 'Est. cost reduction vs all-verification', 'mcp-ai-wpoos' ); ?></div>
+				</div>
+				<div class="dspark-metrics-row">
+					<div class="dspark-metric">
+						<span class="dspark-metric-label"><?php esc_html_e( 'Draft Requests', 'mcp-ai-wpoos' ); ?></span>
+						<span class="dspark-metric-value"><?php echo esc_html( number_format( $data['draft_requests'] ) ); ?></span>
+					</div>
+					<div class="dspark-metric">
+						<span class="dspark-metric-label"><?php esc_html_e( 'Verify Requests', 'mcp-ai-wpoos' ); ?></span>
+						<span class="dspark-metric-value"><?php echo esc_html( number_format( $data['verification_requests'] ) ); ?></span>
+					</div>
+				</div>
+				<p class="description" style="margin-top: 10px;">
+					<?php esc_html_e( 'Draft uses fast/cheap models. Verification uses capable models only when needed.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render hybrid plan merge confidence widget.
+		 *
+		 * @since 1.6.0
+		 */
+		private function render_hybrid_plan_confidence() {
+			$avg_data   = get_transient( 'wp_mcp_ai_hybrid_avg_confidence' );
+			$confidence = null;
+			if ( is_array( $avg_data ) && isset( $avg_data['sum'], $avg_data['count'] ) && $avg_data['count'] > 0 ) {
+				$confidence = $avg_data['sum'] / $avg_data['count'];
+			}
+			?>
+			<div class="wp-mcp-ai-dspark-widget">
+				<h3><?php esc_html_e( 'Hybrid Plan Merge Quality', 'mcp-ai-wpoos' ); ?></h3>
+				<?php if ( null !== $confidence ) : ?>
+				<div class="dspark-confidence-bar">
+					<div class="dspark-confidence-fill"
+						 style="width: <?php echo esc_attr( min( 100, $confidence * 100 ) ); ?>%;
+								background: <?php echo esc_attr( $confidence >= 0.7 ? '#46b450' : ( $confidence >= 0.5 ? '#f0b849' : '#dc3232' ) ); ?>;">
+					</div>
+				</div>
+				<div class="dspark-confidence-value">
+					<?php echo esc_html( round( $confidence * 100, 1 ) ); ?>%
+					<span class="description"><?php esc_html_e( 'avg agent agreement', 'mcp-ai-wpoos' ); ?></span>
+				</div>
+				<?php else : ?>
+				<p class="description"><?php esc_html_e( 'No hybrid plans generated yet. Enable Hybrid Plan Generation and run complex tasks to see merge quality.', 'mcp-ai-wpoos' ); ?></p>
+				<?php endif; ?>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render chain acceptance improvement suggestions widget.
+		 *
+		 * @since 1.6.0
+		 */
+		private function render_acceptance_suggestions() {
+			$suggestions = array();
+			if ( class_exists( 'WP_MCP_AI_Tool_Chain_Acceptance_Tracker' ) ) {
+				$tracker     = new WP_MCP_AI_Tool_Chain_Acceptance_Tracker();
+				$suggestions = $tracker->get_improvement_suggestions();
+			}
+			?>
+			<div class="wp-mcp-ai-dspark-widget">
+				<h3><?php esc_html_e( 'Acceptance Insights', 'mcp-ai-wpoos' ); ?></h3>
+				<?php if ( empty( $suggestions ) ) : ?>
+				<p class="dspark-all-good">
+					<span class="dashicons dashicons-yes-alt" style="color:#46b450;"></span>
+					<?php esc_html_e( 'All systems optimal. Chain predictions are performing well.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<?php else : ?>
+				<ul class="dspark-suggestions-list">
+					<?php foreach ( $suggestions as $suggestion ) : ?>
+					<li><?php echo esc_html( $suggestion ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+				<?php endif; ?>
+			</div>
+			<?php
 		}
 
 		/**
