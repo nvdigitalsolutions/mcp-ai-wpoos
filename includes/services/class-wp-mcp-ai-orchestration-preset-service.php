@@ -48,6 +48,7 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 			'enterprise'          => self::get_enterprise_preset(),
 			'failsafe'            => self::get_failsafe_preset(),
 			'predictive_first'    => self::get_predictive_first_preset(),
+			'speculative'         => self::get_speculative_preset(),
 			'design_professional' => self::get_design_professional_preset(),
 		);
 	}
@@ -432,6 +433,63 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 				'per_session_token_limit'         => 50000,
 				'prediction_confidence_threshold' => 25,
 				'prediction_safety_buffer'        => 12,
+			),
+		);
+	}
+
+	/**
+	 * Speculative preset - DSpark-inspired speculative execution.
+	 *
+	 * Enables depth scheduling, tiered model routing, hybrid planning,
+	 * and chain acceptance tracking for maximum throughput with
+	 * confidence-based verification.
+	 *
+	 * @return array Preset configuration.
+	 */
+	private static function get_speculative_preset() {
+		return array(
+			'name'        => __( 'DSpark Speculative', 'mcp-ai-wpoos' ),
+			'description' => __( 'Enables DSpark-inspired speculative execution, depth scheduling, tiered model routing, hybrid planning, and chain acceptance tracking. Best for maximizing throughput with confidence-based verification.', 'mcp-ai-wpoos' ),
+			'settings'    => array(
+				// Speculative execution features.
+				'enable_speculative_execution'      => true,
+				'enable_depth_scheduling'           => true,
+				'enable_hybrid_planning'            => true,
+				'enable_tiered_model_routing'       => true,
+				'enable_chain_acceptance_tracking'  => true,
+				// Depth scheduling thresholds.
+				'depth_capacity_deep'               => 70,
+				'depth_capacity_standard'           => 40,
+				'depth_capacity_shallow'            => 15,
+				'depth_confidence_high'             => 80,
+				'depth_confidence_medium'           => 60,
+				'depth_confidence_low'              => 40,
+				// Speculative execution settings.
+				'speculative_block_size'            => 4,
+				'speculative_acceptance_threshold'  => 60,
+				// Health monitoring - Balanced defaults.
+				'memory_warning_threshold'          => 70,
+				'memory_critical_threshold'         => 85,
+				'error_rate_warning_threshold'      => 5,
+				'error_rate_critical_threshold'     => 10,
+				// Budget allocation - Balanced defaults.
+				'high_priority_budget'              => 100,
+				'medium_priority_budget'            => 75,
+				'low_priority_budget'               => 50,
+				'critical_health_reduction'         => 50,
+				'warning_health_reduction'          => 75,
+				// Token limits - Balanced defaults.
+				'low_tier_max_tokens'               => 2000,
+				'medium_tier_max_tokens'            => 8000,
+				'high_tier_max_tokens'              => 32000,
+				// Per-call and per-session limits.
+				'enable_per_call_limits'            => true,
+				'per_call_token_limit'              => 10000,
+				'enable_per_session_limits'         => true,
+				'per_session_token_limit'           => 50000,
+				// Predictive analytics - Balanced defaults.
+				'prediction_confidence_threshold'   => 40,
+				'prediction_safety_buffer'          => 15,
 			),
 		);
 	}

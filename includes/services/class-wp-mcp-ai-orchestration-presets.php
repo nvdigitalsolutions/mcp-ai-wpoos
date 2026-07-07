@@ -192,6 +192,33 @@ class WP_MCP_AI_Orchestration_Presets {
 					'load_balancing'             => 'adaptive',
 				),
 			),
+			'dspark_speculative'  => array(
+				'name'        => __( 'DSpark Speculative', 'mcp-ai-wpoos' ),
+				'description' => __( 'Confidence-scheduled speculative execution with tiered model routing. Drafts tool chains ahead of time, verifies batch-style, and auto-selects cheap vs capable models per step. Inspired by DeepSeek V4 DSpark decoding.', 'mcp-ai-wpoos' ),
+				'category'    => 'optimization',
+				'settings'    => array(
+					'enable_speculative_execution'      => true,
+					'enable_depth_scheduling'           => true,
+					'enable_tiered_model_routing'       => true,
+					'enable_hybrid_planning'            => true,
+					'enable_chain_acceptance_tracking'  => true,
+					'load_balancing'                    => 'adaptive',
+					'parallel_execution'                => 'speculative',
+					'model_selection_strategy'          => 'tiered',
+					'verification_strategy'             => 'depth-scheduled',
+					'speculative_block_size'            => 4,
+					'speculative_min_confidence'        => 0.6,
+					'enable_verification'               => true,
+					'enable_caching'                    => true,
+					'enable_prediction'                 => true,
+					'tool_preferences'                  => array(
+						'calculate_orchestration_capacity',
+						'analyze_loop_health',
+						'get_loop_metrics',
+						'detect_completion_indicators',
+					),
+				),
+			),
 		);
 
 		// Merge with custom presets.

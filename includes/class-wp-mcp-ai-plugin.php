@@ -213,6 +213,11 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				WP_MCP_AI_Enhanced_Token_Tracking::init();
 			}
 
+			// Initialize DSpark efficiency data-collection hooks.
+			if ( class_exists( 'WP_MCP_AI_DSpark_Hooks' ) ) {
+				WP_MCP_AI_DSpark_Hooks::register();
+			}
+
 			// Initialize Elementor integration on 'init' to avoid early translation loading.
 			// WordPress 6.7.0+ requires translations to be loaded at init or later.
 			// This prevents "_load_textdomain_just_in_time was called incorrectly" warnings.
