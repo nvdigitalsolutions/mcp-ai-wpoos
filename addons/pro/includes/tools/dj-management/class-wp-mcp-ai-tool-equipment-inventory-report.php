@@ -86,7 +86,7 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( array $arguments, array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments.
 		$status              = ! empty( $arguments['status'] ) ? sanitize_text_field( $arguments['status'] ) : 'all';
 		$type                = ! empty( $arguments['type'] ) ? sanitize_text_field( $arguments['type'] ) : 'all';
@@ -269,7 +269,7 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_flag_capabilities() {
+	public function get_capability_flags() {
 		return array( 'read' );
 	}
 }
