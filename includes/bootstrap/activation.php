@@ -306,6 +306,26 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		if ( class_exists( 'WP_MCP_AI_Metric_Retention' ) ) {
 			WP_MCP_AI_Metric_Retention::schedule();
 		}
+
+		// Create queue infrastructure tables (v1.1.37 — migration from wp_options).
+		// The Job Queue Manager and Dead Letter Queue previously stored data in
+		// serialized wp_options arrays, which are unsafe under concurrent writes.
+		// These custom tables use InnoDB row-level locking for data integrity.
+		$job_queue_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
+		if ( file_exists( $job_queue_file ) ) {
+			require_once $job_queue_file;
+			if ( method_exists( 'WP_MCP_AI_Job_Queue_Manager', 'create_table' ) ) {
+				WP_MCP_AI_Job_Queue_Manager::create_table();
+			}
+		}
+
+		$dlq_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dead-letter-queue.php';
+		if ( file_exists( $dlq_file ) ) {
+			require_once $dlq_file;
+			if ( method_exists( 'WP_MCP_AI_Dead_Letter_Queue', 'create_table' ) ) {
+				WP_MCP_AI_Dead_Letter_Queue::create_table();
+			}
+		}
 	}
 }
 
