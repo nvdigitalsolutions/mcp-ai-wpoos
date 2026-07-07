@@ -47,6 +47,12 @@ class WP_MCP_AI_Tenant_Feature_Flags {
 			return (bool) WP_MCP_AI_TENANT_ISOLATION;
 		}
 
+		// Check the admin settings toggle (Tools → Features → Multi-Tenant Isolation).
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings['enable_tenant_isolation'] ) ) {
+			return true;
+		}
+
 		return (bool) get_option( self::OPTION_KEY, false );
 	}
 

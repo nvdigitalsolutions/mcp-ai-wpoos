@@ -61,7 +61,7 @@ class WP_MCP_AI_Tool_Move_Deal_Stage implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function __construct() {
 		if ( class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
-			$this->data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( 'crm', 'deals' );
+			$this->data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( 'crm', 'deals' );
 		}
 	}
 
@@ -226,7 +226,7 @@ class WP_MCP_AI_Tool_Move_Deal_Stage implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( WP_MCP_AI_CRM_Pipeline_Stages::is_won( $new_stage ) ) {
 			$lead_id = isset( $deal['lead_id'] ) ? absint( $deal['lead_id'] ) : 0;
 			if ( $lead_id && class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
-				$lead_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( 'crm', 'leads' );
+				$lead_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( 'crm', 'leads' );
 				if ( $lead_store ) {
 					$lead_store->update_item(
 						$lead_id,

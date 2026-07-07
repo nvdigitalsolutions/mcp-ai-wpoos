@@ -130,6 +130,8 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			'metrc_uid'              => 'text',
 			'previous_quantity'      => 'number',
 			'quantity_change_reason' => 'text',
+			'tenant_type'            => 'text',
+			'tenant_id'              => 'number',
 		);
 
 		/**
@@ -142,10 +144,33 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		protected $factory = null;
 
 		/**
+		 * Current tenant type (e.g. 'company', 'school').
+		 *
+		 * Empty string means no tenant context (bypass mode).
+		 *
+		 * @since 3.1.0
+		 *
+		 * @var string
+		 */
+		protected $tenant_type = '';
+
+		/**
+		 * Current tenant ID.
+		 *
+		 * 0 means no tenant context (bypass mode).
+		 *
+		 * @since 3.1.0
+		 *
+		 * @var int
+		 */
+		protected $tenant_id = 0;
+
+		/**
 		 * Constructor.
 		 *
 		 * @since 1.2.0
 		 * @since 1.6.0 Added $connection_id parameter for per-connection isolation.
+		 * @since 3.1.0 Resolves tenant context when tenant infrastructure is available.
 		 *
 		 * @param WP_MCP_AI_FlowHub_Client|string|null $client_or_connection FlowHub API client for sync operations,
 		 *                                                                  or a Remote Sites connection ID string.
@@ -163,6 +188,59 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				$this->connection_id = null;
 			}
 			$this->cct_slug = $this->get_configured_cct_slug();
+			$this->resolve_tenant_context();
+		}
+
+		/**
+		 * Resolve the current tenant context.
+		 *
+		 * Reads from the WP_MCP_AI_Tenant_Context singleton when the tenant
+		 * infrastructure is loaded.  In bypass mode tenant_type remains empty
+		 * and tenant_id stays 0 — all queries continue to work as before.
+		 *
+		 * @since 3.1.0
+		 *
+		 * @return void
+		 */
+		protected function resolve_tenant_context(): void {
+			if ( ! class_exists( 'WP_MCP_AI_Tenant_Context' ) ) {
+				return;
+			}
+
+			$context = WP_MCP_AI_Tenant_Context::instance()->resolve();
+			if ( is_wp_error( $context ) ) {
+				return;
+			}
+
+			$this->tenant_type = isset( $context['type'] ) ? $context['type'] : '';
+			$this->tenant_id   = isset( $context['id'] ) ? (int) $context['id'] : 0;
+		}
+
+		/**
+		 * Build a tenant-scoped WHERE clause for CCT queries.
+		 *
+		 * @since 3.1.0
+		 *
+		 * @return array
+		 */
+		protected function tenant_query_clauses(): array {
+			if ( empty( $this->tenant_type ) || $this->tenant_id <= 0 ) {
+				return array();
+			}
+
+			return array(
+				array(
+					'field'    => 'tenant_type',
+					'operator' => '=',
+					'value'    => $this->tenant_type,
+				),
+				array(
+					'field'    => 'tenant_id',
+					'operator' => '=',
+					'value'    => $this->tenant_id,
+					'type'     => 'integer',
+				),
+			);
 		}
 
 		/**
@@ -905,6 +983,11 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				}
 			}
 
+			// Inject tenant-scoped WHERE clauses when tenant context is active.
+			foreach ( $this->tenant_query_clauses() as $tenant_clause ) {
+				$query_args[] = $tenant_clause;
+			}
+
 			if ( ! empty( $filters['location'] ) ) {
 				$query_args[] = array(
 					'field'    => 'location_name',
@@ -1181,6 +1264,12 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			}
 
 			$mapped['cct_status'] = 'publish';
+
+			// Stamp tenant context on every write when tenant is active.
+			if ( ! empty( $this->tenant_type ) && $this->tenant_id > 0 ) {
+				$mapped['tenant_type'] = $this->tenant_type;
+				$mapped['tenant_id']   = $this->tenant_id;
+			}
 
 			// Item_Handler::update_item() creates when no _ID is passed and
 			// updates otherwise; it returns the item ID in both cases.

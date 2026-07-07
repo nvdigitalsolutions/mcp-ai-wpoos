@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function __construct() {
 		if ( class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
-			$this->lead_data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( 'crm', 'leads' );
+			$this->lead_data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( 'crm', 'leads' );
 		}
 	}
 
@@ -76,7 +76,7 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function get_deal_data_store() {
 		if ( null === $this->deal_data_store && class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
-			$this->deal_data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( 'crm', 'deals' );
+			$this->deal_data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( 'crm', 'deals' );
 		}
 		return $this->deal_data_store;
 	}

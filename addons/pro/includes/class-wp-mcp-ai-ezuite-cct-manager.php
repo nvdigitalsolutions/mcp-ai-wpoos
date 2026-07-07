@@ -93,6 +93,8 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			'last_updated'   => 'datetime',
 			'woo_product_id' => 'number',
 			'connection_id'  => 'text',
+			'tenant_type'    => 'text',
+			'tenant_id'      => 'number',
 		);
 
 		/**
@@ -105,9 +107,32 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		protected $factory = null;
 
 		/**
+		 * Current tenant type (e.g. 'company', 'school').
+		 *
+		 * Empty string means no tenant context (bypass mode).
+		 *
+		 * @since 3.1.0
+		 *
+		 * @var string
+		 */
+		protected $tenant_type = '';
+
+		/**
+		 * Current tenant ID.
+		 *
+		 * 0 means no tenant context (bypass mode).
+		 *
+		 * @since 3.1.0
+		 *
+		 * @var int
+		 */
+		protected $tenant_id = 0;
+
+		/**
 		 * Constructor.
 		 *
 		 * @since 1.9.0
+		 * @since 3.1.0 Resolves tenant context when tenant infrastructure is available.
 		 *
 		 * @param string|null $connection_id Optional Remote Sites connection ID.
 		 */
@@ -116,6 +141,64 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				$this->connection_id = $connection_id;
 			}
 			$this->cct_slug = $this->get_configured_cct_slug();
+			$this->resolve_tenant_context();
+		}
+
+		/**
+		 * Resolve the current tenant context.
+		 *
+		 * Reads from the WP_MCP_AI_Tenant_Context singleton when the tenant
+		 * infrastructure is loaded.  In bypass mode (no context available)
+		 * tenant_type remains empty and tenant_id stays 0 — all queries
+		 * continue to work as before.
+		 *
+		 * @since 3.1.0
+		 *
+		 * @return void
+		 */
+		protected function resolve_tenant_context(): void {
+			if ( ! class_exists( 'WP_MCP_AI_Tenant_Context' ) ) {
+				return;
+			}
+
+			$context = WP_MCP_AI_Tenant_Context::instance()->resolve();
+			if ( is_wp_error( $context ) ) {
+				return;
+			}
+
+			$this->tenant_type = isset( $context['type'] ) ? $context['type'] : '';
+			$this->tenant_id   = isset( $context['id'] ) ? (int) $context['id'] : 0;
+		}
+
+		/**
+		 * Build a tenant-scoped WHERE clause for CCT queries.
+		 *
+		 * Returns an array of query clauses suitable for JetEngine's
+		 * db->query() method, or an empty array when no tenant context
+		 * is active (bypass mode).
+		 *
+		 * @since 3.1.0
+		 *
+		 * @return array
+		 */
+		protected function tenant_query_clauses(): array {
+			if ( empty( $this->tenant_type ) || $this->tenant_id <= 0 ) {
+				return array();
+			}
+
+			return array(
+				array(
+					'field'    => 'tenant_type',
+					'operator' => '=',
+					'value'    => $this->tenant_type,
+				),
+				array(
+					'field'    => 'tenant_id',
+					'operator' => '=',
+					'value'    => $this->tenant_id,
+					'type'     => 'integer',
+				),
+			);
 		}
 
 		// ------------------------------------------------------------------ //
@@ -868,6 +951,11 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				}
 			}
 
+			// Inject tenant-scoped WHERE clauses when tenant context is active.
+			foreach ( $this->tenant_query_clauses() as $tenant_clause ) {
+				$query_args[] = $tenant_clause;
+			}
+
 			// Full-text search across name and sku.
 			if ( ! empty( $filters['search'] ) ) {
 				$query_args['_cct_search'] = array(
@@ -1043,6 +1131,12 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			}
 
 			$ezuite_item['cct_status'] = 'publish';
+
+			// Stamp tenant context on every write when tenant is active.
+			if ( ! empty( $this->tenant_type ) && $this->tenant_id > 0 ) {
+				$ezuite_item['tenant_type'] = $this->tenant_type;
+				$ezuite_item['tenant_id']   = $this->tenant_id;
+			}
 
 			// Item_Handler::update_item() creates when no _ID is passed and
 			// updates otherwise; it returns the item ID in both cases.
