@@ -9,17 +9,16 @@
  */
 
 /**
- * Test RabbitMQ client functionality.
+ * Test RabbitMQ Client functionality.
  *
  * @group rabbitmq
  */
 class Test_RabbitMQ_Client extends WP_UnitTestCase {
 
 	/**
-	 * Test client returns singleton instance.
+	 * Test get_instance returns singleton.
 	 */
 	public function test_get_instance_returns_singleton() {
-		// Skip if class doesn't exist.
 		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
 		}
@@ -31,81 +30,336 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test client reports unavailable when AMQP extension not loaded.
+	 * Test is_available returns false when not enabled.
 	 */
-	public function test_is_available_without_amqp_extension() {
+	public function test_is_available_returns_false_when_disabled() {
 		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
 		}
 
-		// If AMQP is not loaded, should return false.
-		if ( ! extension_loaded( 'amqp' ) ) {
-			$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
-			$this->assertFalse( $client->is_available(), 'Should return false when AMQP extension not loaded.' );
-		} else {
-			$this->markTestSkipped( 'AMQP extension is loaded, cannot test unavailable state.' );
-		}
+		// Ensure rabbitmq is disabled.
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_enabled' => false )
+			)
+		);
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$this->assertFalse( $client->is_available(), 'Should return false when RabbitMQ is disabled.' );
 	}
 
 	/**
-	 * Test exchanges constant has correct structure.
+	 * Test health_check returns disabled when not enabled.
 	 */
-	public function test_exchanges_constant_structure() {
+	public function test_health_check_returns_disabled_when_not_enabled() {
+		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
+		}
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_enabled' => false )
+			)
+		);
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$status = $client->health_check();
+
+		$this->assertIsArray( $status );
+		$this->assertEquals( 'disabled', $status['status'] );
+		$this->assertFalse( $status['enabled'] );
+	}
+
+	/**
+	 * Test health_check returns extension_missing when AMQP not loaded.
+	 */
+	public function test_health_check_returns_extension_missing_without_amqp() {
+		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
+		}
+
+		if ( extension_loaded( 'amqp' ) ) {
+			$this->markTestSkipped( 'AMQP extension is loaded — cannot test extension_missing path.' );
+		}
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_enabled' => true )
+			)
+		);
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$status = $client->health_check();
+
+		$this->assertIsArray( $status );
+		$this->assertEquals( 'extension_missing', $status['status'] );
+		$this->assertTrue( $status['enabled'] );
+		$this->assertFalse( $status['extension'] );
+	}
+
+	/**
+	 * Test get_config returns configured values.
+	 */
+	public function test_get_config_returns_values() {
+		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
+		}
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array(
+					'rabbitmq_enabled'      => true,
+					'rabbitmq_host'         => 'my-broker.local',
+					'rabbitmq_port'         => 5673,
+					'rabbitmq_vhost'        => '/test',
+					'rabbitmq_queue_prefix' => 'nvoos_test',
+				)
+			)
+		);
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+
+		$this->assertEquals( true, $client->get_config( 'enabled' ) );
+		$this->assertEquals( 'my-broker.local', $client->get_config( 'host' ) );
+		$this->assertEquals( 5673, $client->get_config( 'port' ) );
+		$this->assertEquals( '/test', $client->get_config( 'vhost' ) );
+		$this->assertEquals( 'nvoos_test', $client->get_config( 'prefix' ) );
+	}
+
+	/**
+	 * Test get_config returns default for unknown key.
+	 */
+	public function test_get_config_returns_default_for_unknown_key() {
+		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
+		}
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+
+		$this->assertNull( $client->get_config( 'nonexistent_key' ) );
+		$this->assertEquals( 'fallback', $client->get_config( 'nonexistent_key', 'fallback' ) );
+	}
+
+	/**
+	 * Test get_queue_name prepends prefix.
+	 */
+	public function test_get_queue_name_prepends_prefix() {
+		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
+		}
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_queue_prefix' => 'my_prefix' )
+			)
+		);
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+
+		$this->assertEquals( 'my_prefix.tool.execution', $client->get_queue_name( 'tool.execution' ) );
+		$this->assertEquals( 'my_prefix.deadletter.queue', $client->get_queue_name( 'deadletter.queue' ) );
+	}
+
+	/**
+	 * Test queue_tool_execution returns false when unavailable.
+	 */
+	public function test_queue_tool_execution_returns_false_when_unavailable() {
+		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
+		}
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_enabled' => false )
+			)
+		);
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$job_id = $client->queue_tool_execution(
+			'test_tool',
+			array( 'param' => 'value' ),
+			array( 'user_id' => 1 ),
+			'normal'
+		);
+
+		$this->assertFalse( $job_id, 'Should return false when RabbitMQ is unavailable.' );
+	}
+
+	/**
+	 * Test get_job_result returns null for unknown job.
+	 */
+	public function test_get_job_result_returns_null_for_unknown_job() {
+		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
+		}
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$result = $client->get_job_result( 'nonexistent-job-id-12345' );
+
+		$this->assertNull( $result, 'Should return null for unknown job IDs.' );
+	}
+
+	/**
+	 * Test exchange definitions are well-formed.
+	 */
+	public function test_exchange_definitions_have_required_keys() {
 		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
 		}
 
 		$exchanges = WP_MCP_AI_RabbitMQ_Client::EXCHANGES;
 
-		$this->assertIsArray( $exchanges, 'EXCHANGES should be an array.' );
-		$this->assertArrayHasKey( 'tools', $exchanges, 'Should have tools exchange.' );
-		$this->assertArrayHasKey( 'chat', $exchanges, 'Should have chat exchange.' );
-		$this->assertArrayHasKey( 'deadletter', $exchanges, 'Should have deadletter exchange.' );
-		$this->assertArrayHasKey( 'analytics', $exchanges, 'Should have analytics exchange.' );
+		$this->assertIsArray( $exchanges );
+		$this->assertNotEmpty( $exchanges );
 
-		// Verify structure of an exchange.
-		$this->assertArrayHasKey( 'name', $exchanges['tools'], 'Exchange should have name.' );
-		$this->assertArrayHasKey( 'type', $exchanges['tools'], 'Exchange should have type.' );
-		$this->assertArrayHasKey( 'durable', $exchanges['tools'], 'Exchange should have durable flag.' );
+		$valid_types = array( 'direct', 'topic', 'fanout', 'headers' );
+
+		foreach ( $exchanges as $key => $config ) {
+			$this->assertArrayHasKey( 'name', $config, "Exchange '$key' should have a name." );
+			$this->assertArrayHasKey( 'type', $config, "Exchange '$key' should have a type." );
+			$this->assertContains( $config['type'], $valid_types, "Exchange '$key' type '{$config['type']}' is invalid." );
+		}
 	}
 
 	/**
-	 * Test queues constant has correct structure.
+	 * Test queue definitions are well-formed.
 	 */
-	public function test_queues_constant_structure() {
+	public function test_queue_definitions_have_required_keys() {
 		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
 		}
 
 		$queues = WP_MCP_AI_RabbitMQ_Client::QUEUES;
 
-		$this->assertIsArray( $queues, 'QUEUES should be an array.' );
-		$this->assertArrayHasKey( 'tool.execution', $queues, 'Should have tool.execution queue.' );
-		$this->assertArrayHasKey( 'tool.execution.priority.high', $queues, 'Should have high priority queue.' );
-		$this->assertArrayHasKey( 'tool.execution.async', $queues, 'Should have async queue.' );
-		$this->assertArrayHasKey( 'deadletter.queue', $queues, 'Should have deadletter queue.' );
+		$this->assertIsArray( $queues );
+		$this->assertNotEmpty( $queues );
 
-		// Verify structure of a queue.
-		$this->assertArrayHasKey( 'exchange', $queues['tool.execution'], 'Queue should have exchange reference.' );
-		$this->assertArrayHasKey( 'routing_key', $queues['tool.execution'], 'Queue should have routing_key.' );
-		$this->assertArrayHasKey( 'durable', $queues['tool.execution'], 'Queue should have durable flag.' );
+		foreach ( $queues as $name => $config ) {
+			$this->assertArrayHasKey( 'exchange', $config, "Queue '$name' should reference an exchange." );
+			$this->assertArrayHasKey( 'routing_key', $config, "Queue '$name' should have a routing key." );
+
+			// Verify the referenced exchange exists.
+			$exchange_key = $config['exchange'];
+			$this->assertArrayHasKey(
+				$exchange_key,
+				WP_MCP_AI_RabbitMQ_Client::EXCHANGES,
+				"Queue '$name' references unknown exchange '$exchange_key'."
+			);
+		}
 	}
 
 	/**
-	 * Test health check returns proper structure when disabled.
+	 * Test publish returns false when unavailable.
 	 */
-	public function test_health_check_structure() {
+	public function test_publish_returns_false_when_unavailable() {
 		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
 		}
 
-		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
-		$health = $client->health_check();
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_enabled' => false )
+			)
+		);
 
-		$this->assertIsArray( $health, 'Health check should return array.' );
-		$this->assertArrayHasKey( 'status', $health, 'Health should have status.' );
-		$this->assertArrayHasKey( 'connection', $health, 'Health should have connection info.' );
-		$this->assertArrayHasKey( 'extension', $health, 'Health should have extension flag.' );
-		$this->assertArrayHasKey( 'enabled', $health, 'Health should have enabled flag.' );
+		$client  = new WP_MCP_AI_RabbitMQ_Client();
+		$success = $client->publish( 'tools', 'test.routing', array( 'test' => 'data' ) );
+
+		$this->assertFalse( $success, 'Should return false when RabbitMQ is unavailable.' );
+	}
+
+	/**
+	 * Test store_job_result creates a retrievable transient.
+	 */
+	public function test_store_job_result_creates_transient() {
+		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
+		}
+
+		$job_id = 'test-job-' . wp_generate_uuid4();
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client->store_job_result( $job_id, array( 'ok' => true ), 'success' );
+
+		$saved = get_transient( 'wp_mcp_ai_job_result_' . $job_id );
+		$this->assertNotFalse( $saved, 'Result should be stored in transient.' );
+		$this->assertEquals( $job_id, $saved['job_id'] );
+		$this->assertEquals( 'success', $saved['status'] );
+		$this->assertEquals( array( 'ok' => true ), $saved['result'] );
+
+		// Clean up.
+		delete_transient( 'wp_mcp_ai_job_result_' . $job_id );
+	}
+
+	/**
+	 * Test get_job_result retrieves and cleans up stored result.
+	 */
+	public function test_get_job_result_retrieves_and_cleans_up() {
+		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
+		}
+
+		$job_id = 'test-job-' . wp_generate_uuid4();
+
+		// Set up both transients.
+		set_transient(
+			'wp_mcp_ai_job_result_' . $job_id,
+			array(
+				'job_id' => $job_id,
+				'result' => array( 'data' => 'value' ),
+				'status' => 'success',
+			),
+			3600
+		);
+		set_transient( 'wp_mcp_ai_job_' . $job_id, array( 'tool_name' => 'test' ), 3600 );
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$result = $client->get_job_result( $job_id );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( $job_id, $result['job_id'] );
+		$this->assertEquals( array( 'data' => 'value' ), $result['result'] );
+
+		// Both transients should be cleaned up.
+		$this->assertFalse( get_transient( 'wp_mcp_ai_job_result_' . $job_id ) );
+		$this->assertFalse( get_transient( 'wp_mcp_ai_job_' . $job_id ) );
+	}
+
+	/**
+	 * Test get_queue_stats returns unavailable when not connected.
+	 */
+	public function test_get_queue_stats_returns_unavailable_when_disabled() {
+		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
+		}
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_enabled' => false )
+			)
+		);
+
+		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$stats  = $client->get_queue_stats();
+
+		$this->assertIsArray( $stats );
+		$this->assertFalse( $stats['available'] );
+		$this->assertArrayHasKey( 'error', $stats );
 	}
 }

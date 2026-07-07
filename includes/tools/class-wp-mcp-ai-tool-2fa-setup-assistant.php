@@ -115,7 +115,10 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		$force_reset  = isset( $arguments['force_reset'] ) ? (bool) $arguments['force_reset'] : false;
 
 		// Before execution hook.
-		$this->do_before_execute( $arguments, $context );
+		$intercepted = $this->do_before_execute( $arguments, $context );
+		if ( null !== $intercepted ) {
+			return $intercepted;
+		}
 
 		// Route to action handler.
 		switch ( $action ) {

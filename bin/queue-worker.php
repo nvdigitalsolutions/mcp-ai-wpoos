@@ -9,11 +9,17 @@
  *
  * ## Usage
  *
- *   # Process one batch and exit
+ *   # Process one batch from DB queue and exit
  *   php bin/queue-worker.php
+ *
+ *   # Process from RabbitMQ (Cloudways with RabbitMQ enabled)
+ *   php bin/queue-worker.php --rabbitmq
  *
  *   # Run as daemon (continuous loop)
  *   php bin/queue-worker.php --daemon
+ *
+ *   # RabbitMQ daemon
+ *   php bin/queue-worker.php --rabbitmq --daemon --memory-limit=256M
  *
  *   # Limit memory usage
  *   php bin/queue-worker.php --memory-limit=256M
@@ -26,14 +32,19 @@
  *
  * ## Deployment
  *
- * ### Cloudways Flexible (VPS)
+ * ### Cloudways Flexible (VPS) — DB Queue
  * Add to Cloudways Cron (every 1 minute):
  *   php /home/master/applications/{app}/public_html/wp-content/plugins/mcp-ai-wpoos/bin/queue-worker.php --timeout=55
  * The script acquires an exclusive lock, so overlapping cron invocations are safe.
  *
+ * ### Cloudways Flexible (VPS) — RabbitMQ
+ * Add to Cloudways Cron (every 1 minute):
+ *   php /home/master/applications/{app}/public_html/wp-content/plugins/mcp-ai-wpoos/bin/queue-worker.php --rabbitmq --timeout=55
+ *
  * ### Cloudways Autonomous (Kubernetes)
  * Run as a long-lived daemon process:
  *   php bin/queue-worker.php --daemon --memory-limit=256M
+ *   php bin/queue-worker.php --rabbitmq --daemon --memory-limit=256M
  *
  * ### Systemd (self-hosted)
  * See docs/operations/queue-worker-systemd.md for a systemd unit file example.
@@ -57,6 +68,7 @@ $options = getopt(
 	'',
 	array(
 		'daemon',
+		'rabbitmq',
 		'memory-limit:',
 		'max-jobs:',
 		'timeout:',
@@ -69,6 +81,7 @@ if ( isset( $options['help'] ) ) {
 	echo "Usage: php bin/queue-worker.php [options]\n\n";
 	echo "Options:\n";
 	echo "  --daemon            Run continuously (default: process one batch and exit)\n";
+	echo "  --rabbitmq          Consume from RabbitMQ instead of DB queue\n";
 	echo "  --memory-limit=N    Set memory limit (e.g., 256M)\n";
 	echo "  --max-jobs=N        Exit after processing N jobs\n";
 	echo "  --timeout=N         Exit after N seconds\n";
@@ -77,6 +90,7 @@ if ( isset( $options['help'] ) ) {
 }
 
 $is_daemon    = isset( $options['daemon'] );
+$use_rabbitmq = isset( $options['rabbitmq'] );
 $max_jobs     = isset( $options['max-jobs'] ) ? absint( $options['max-jobs'] ) : 0;
 $timeout      = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 0;
 $memory_limit = isset( $options['memory-limit'] ) ? $options['memory-limit'] : '256M';
@@ -102,7 +116,7 @@ foreach ( $wp_roots as $candidate ) {
 
 if ( null === $wp_root ) {
 	fwrite( STDERR, "Error: Could not find WordPress installation.\n" );
-	fwrite( STDERR, "Searched: " . implode( ', ', $wp_roots ) . "\n" );
+	fwrite( STDERR, 'Searched: ' . implode( ', ', $wp_roots ) . "\n" );
 	exit( 1 );
 }
 
@@ -146,30 +160,40 @@ if ( ! flock( $lock_fh, LOCK_EX | LOCK_NB ) ) { // phpcs:ignore WordPress.WP.Alt
 $should_exit = false;
 
 if ( function_exists( 'pcntl_signal' ) ) {
-	pcntl_signal( SIGTERM, function () use ( &$should_exit ) {
-		fwrite( STDOUT, "Received SIGTERM, shutting down gracefully...\n" );
-		$should_exit = true;
-	} );
+	pcntl_signal(
+		SIGTERM,
+		function () use ( &$should_exit ) {
+			fwrite( STDOUT, "Received SIGTERM, shutting down gracefully...\n" );
+			$should_exit = true;
+		}
+	);
 
-	pcntl_signal( SIGINT, function () use ( &$should_exit ) {
-		fwrite( STDOUT, "Received SIGINT, shutting down gracefully...\n" );
-		$should_exit = true;
-	} );
+	pcntl_signal(
+		SIGINT,
+		function () use ( &$should_exit ) {
+			fwrite( STDOUT, "Received SIGINT, shutting down gracefully...\n" );
+			$should_exit = true;
+		}
+	);
 }
 
 // ─── Worker loop ─────────────────────────────────────────────────────
-$start_time   = time();
+$start_time     = time();
 $jobs_processed = 0;
 $sleep_seconds  = $is_daemon ? 1 : 0; // Daemon polls every 1s; one-shot exits after processing.
 
-fwrite( STDOUT, sprintf(
-	"[%s] NV oOS Queue Worker started. Daemon: %s, Memory limit: %s, Max jobs: %s, Timeout: %s\n",
-	gmdate( 'Y-m-d H:i:s' ),
-	$is_daemon ? 'yes' : 'no',
-	$memory_limit,
-	$max_jobs > 0 ? $max_jobs : 'unlimited',
-	$timeout > 0 ? "${timeout}s" : 'none'
-) );
+fwrite(
+	STDOUT,
+	sprintf(
+		"[%s] NV oOS Queue Worker started. Mode: %s, Daemon: %s, Memory limit: %s, Max jobs: %s, Timeout: %s\n",
+		gmdate( 'Y-m-d H:i:s' ),
+		$use_rabbitmq ? 'RabbitMQ' : 'DB',
+		$is_daemon ? 'yes' : 'no',
+		$memory_limit,
+		$max_jobs > 0 ? $max_jobs : 'unlimited',
+		$timeout > 0 ? "${timeout}s" : 'none'
+	)
+);
 
 do {
 	// Check exit conditions.
@@ -193,28 +217,38 @@ do {
 	$mem_limit = self::parse_memory_limit( $memory_limit );
 
 	if ( $mem_limit > 0 && $mem_usage > ( $mem_limit * 0.9 ) ) {
-		fwrite( STDERR, sprintf(
-			"Memory limit approaching: %s / %s. Exiting.\n",
-			self::format_bytes( $mem_usage ),
-			self::format_bytes( $mem_limit )
-		) );
+		fwrite(
+			STDERR,
+			sprintf(
+				"Memory limit approaching: %s / %s. Exiting.\n",
+				self::format_bytes( $mem_usage ),
+				self::format_bytes( $mem_limit )
+			)
+		);
 		break;
 	}
 
 	// Process a batch of jobs.
 	try {
-		$result = WP_MCP_AI_Job_Queue_Manager::process_queue( 3 );
+		if ( $use_rabbitmq ) {
+			$result = process_rabbitmq_queue( $should_exit );
+		} else {
+			$result = WP_MCP_AI_Job_Queue_Manager::process_queue( 3 );
+		}
 		$batch_processed = isset( $result['processed'] ) ? (int) $result['processed'] : 0;
 
 		if ( $batch_processed > 0 ) {
 			$jobs_processed += $batch_processed;
-			fwrite( STDOUT, sprintf(
-				"[%s] Processed %d job(s). Total: %d. Queue stats: %s\n",
-				gmdate( 'Y-m-d H:i:s' ),
-				$batch_processed,
-				$jobs_processed,
-				wp_json_encode( isset( $result ) ? array_diff_key( $result, array( 'processed' => 0 ) ) : array() )
-			) );
+			fwrite(
+				STDOUT,
+				sprintf(
+					"[%s] Processed %d job(s). Total: %d. Queue stats: %s\n",
+					gmdate( 'Y-m-d H:i:s' ),
+					$batch_processed,
+					$jobs_processed,
+					wp_json_encode( isset( $result ) ? array_diff_key( $result, array( 'processed' => 0 ) ) : array() )
+				)
+			);
 		}
 
 		// Reset memory after each batch to help with PHP's internal memory management.
@@ -240,16 +274,226 @@ do {
 flock( $lock_fh, LOCK_UN ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_flock
 fclose( $lock_fh ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
-fwrite( STDOUT, sprintf(
-	"[%s] Queue worker exiting. Total jobs processed: %d. Runtime: %ds.\n",
-	gmdate( 'Y-m-d H:i:s' ),
-	$jobs_processed,
-	time() - $start_time
-) );
+fwrite(
+	STDOUT,
+	sprintf(
+		"[%s] Queue worker exiting. Total jobs processed: %d. Runtime: %ds.\n",
+		gmdate( 'Y-m-d H:i:s' ),
+		$jobs_processed,
+		time() - $start_time
+	)
+);
 
 exit( 0 );
 
 // ─── Helper functions ─────────────────────────────────────────────────
+
+/**
+ * Process jobs from RabbitMQ.
+ *
+ * In daemon mode, blocks on AMQPQueue::consume() until a signal is
+ * received. In batch mode, uses AMQPQueue::get() to fetch available
+ * messages without blocking.
+ *
+ * @since 1.2.0
+ *
+ * @param bool &$should_exit Reference to the exit flag modified by signal handlers.
+ * @return array Processing result with 'processed' count.
+ */
+function process_rabbitmq_queue( &$should_exit ) {
+	if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+		fwrite( STDERR, "Error: RabbitMQ client class not available.\n" );
+		return array( 'processed' => 0 );
+	}
+
+	$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
+
+	if ( ! $client->is_available() ) {
+		fwrite( STDERR, "Error: RabbitMQ is not available. Check settings and AMQP extension.\n" );
+		return array( 'processed' => 0 );
+	}
+
+	if ( ! extension_loaded( 'amqp' ) ) {
+		fwrite( STDERR, "Error: PHP AMQP extension is not loaded.\n" );
+		return array( 'processed' => 0 );
+	}
+
+	global $is_daemon;
+
+	$processed = 0;
+	$registry  = WP_MCP_AI_Tool_Registry::get_instance();
+
+	try {
+		$channel = $client->get_channel();
+		$queue   = new AMQPQueue( $channel );
+		$queue->setName( $client->get_queue_name( 'tool.execution' ) );
+
+		if ( $is_daemon ) {
+			// ── Daemon mode: block on consume() ───────────────────────
+			fwrite( STDOUT, "RabbitMQ consumer started. Waiting for messages...\n" );
+
+			$queue->consume(
+				function ( AMQPEnvelope $envelope, AMQPQueue $amqp_queue ) use ( &$processed, &$should_exit, $registry, $client ) {
+					$message = json_decode( $envelope->getBody(), true );
+
+					if ( ! $message || ! isset( $message['tool_name'] ) ) {
+							fwrite( STDERR, "Invalid message received, discarding.\n" );
+							$amqp_queue->ack( $envelope->getDeliveryTag() );
+							return;
+					}
+
+					$job_id    = isset( $message['job_id'] ) ? $message['job_id'] : 'unknown';
+					$tool_name = $message['tool_name'];
+					$arguments = isset( $message['arguments'] ) && is_array( $message['arguments'] )
+					? $message['arguments'] : array();
+					$context   = isset( $message['context'] ) && is_array( $message['context'] )
+					? $message['context'] : array();
+
+					fwrite(
+						STDOUT,
+						sprintf(
+							"[%s] Processing job %s: %s\n",
+							gmdate( 'Y-m-d H:i:s' ),
+							$job_id,
+							$tool_name
+						)
+					);
+
+					try {
+						$result = $registry->execute_tool( $tool_name, $arguments, $context );
+
+						$client->store_job_result(
+							$job_id,
+							$result,
+							is_wp_error( $result ) ? 'error' : 'success'
+						);
+
+							$amqp_queue->ack( $envelope->getDeliveryTag() );
+							$processed++;
+
+						if ( is_wp_error( $result ) ) {
+								fwrite(
+									STDERR,
+									sprintf(
+										"[%s] Job %s completed with error: %s\n",
+										gmdate( 'Y-m-d H:i:s' ),
+										$job_id,
+										$result->get_error_message()
+									)
+								);
+						}
+					} catch ( Exception $e ) {
+							fwrite(
+								STDERR,
+								sprintf(
+									"[%s] Job %s failed: %s\n",
+									gmdate( 'Y-m-d H:i:s' ),
+									$job_id,
+									$e->getMessage()
+								)
+							);
+
+							// Don't requeue — let TTL push to dead-letter exchange.
+							$amqp_queue->nack( $envelope->getDeliveryTag(), AMQP_NOPARAM );
+					}
+
+					// Check exit signal.
+					if ( $should_exit ) {
+						fwrite( STDOUT, "Shutting down RabbitMQ consumer...\n" );
+						$amqp_queue->cancelConsumer();
+					}
+
+					if ( function_exists( 'pcntl_signal_dispatch' ) ) {
+						pcntl_signal_dispatch();
+					}
+				}
+			);
+		} else {
+			// ── Batch mode: consume available messages without blocking ──
+			$batch_size = 5;
+
+			for ( $i = 0; $i < $batch_size; $i++ ) {
+				if ( $should_exit ) {
+					break;
+				}
+
+				$envelope = $queue->get();
+
+				if ( false === $envelope ) {
+					// No messages available.
+					break;
+				}
+
+				$message = json_decode( $envelope->getBody(), true );
+
+				if ( ! $message || ! isset( $message['tool_name'] ) ) {
+					fwrite( STDERR, "Invalid message received, discarding.\n" );
+					$queue->ack( $envelope->getDeliveryTag() );
+					continue;
+				}
+
+				$job_id    = isset( $message['job_id'] ) ? $message['job_id'] : 'unknown';
+				$tool_name = $message['tool_name'];
+				$arguments = isset( $message['arguments'] ) && is_array( $message['arguments'] )
+					? $message['arguments'] : array();
+				$context   = isset( $message['context'] ) && is_array( $message['context'] )
+					? $message['context'] : array();
+
+				fwrite(
+					STDOUT,
+					sprintf(
+						"[%s] Processing job %s: %s\n",
+						gmdate( 'Y-m-d H:i:s' ),
+						$job_id,
+						$tool_name
+					)
+				);
+
+				try {
+					$result = $registry->execute_tool( $tool_name, $arguments, $context );
+
+					$client->store_job_result(
+						$job_id,
+						$result,
+						is_wp_error( $result ) ? 'error' : 'success'
+					);
+
+					$queue->ack( $envelope->getDeliveryTag() );
+					++$processed;
+
+					if ( is_wp_error( $result ) ) {
+						fwrite(
+							STDERR,
+							sprintf(
+								"[%s] Job %s completed with error: %s\n",
+								gmdate( 'Y-m-d H:i:s' ),
+								$job_id,
+								$result->get_error_message()
+							)
+						);
+					}
+				} catch ( Exception $e ) {
+					fwrite(
+						STDERR,
+						sprintf(
+							"[%s] Job %s failed: %s\n",
+							gmdate( 'Y-m-d H:i:s' ),
+							$job_id,
+							$e->getMessage()
+						)
+					);
+					$queue->nack( $envelope->getDeliveryTag(), AMQP_NOPARAM );
+				}
+			}
+		}
+	} catch ( Exception $e ) {
+		fwrite( STDERR, sprintf( "RabbitMQ error: %s\n", $e->getMessage() ) );
+	}
+
+	$client->disconnect();
+
+	return array( 'processed' => $processed );
+}
 
 /**
  * Parse a PHP memory limit string to bytes.

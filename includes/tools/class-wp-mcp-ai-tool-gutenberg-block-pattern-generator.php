@@ -139,7 +139,10 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 		$sync_theme     = isset( $arguments['sync_theme'] ) ? (bool) $arguments['sync_theme'] : true;
 
 		// Before execution hook.
-		$this->do_before_execute( $arguments, $context );
+		$intercepted = $this->do_before_execute( $arguments, $context );
+		if ( null !== $intercepted ) {
+			return $intercepted;
+		}
 
 		// Route to action handler.
 		switch ( $action ) {

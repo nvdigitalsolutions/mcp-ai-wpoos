@@ -19,10 +19,6 @@ class Test_Queue_Manager extends WP_UnitTestCase {
 	 * Test manager returns singleton instance.
 	 */
 	public function test_get_instance_returns_singleton() {
-		if ( ! class_exists( 'WP_MCP_AI_Queue_Manager' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Queue_Manager class not loaded.' );
-		}
-
 		$instance1 = WP_MCP_AI_Queue_Manager::get_instance();
 		$instance2 = WP_MCP_AI_Queue_Manager::get_instance();
 
@@ -33,10 +29,6 @@ class Test_Queue_Manager extends WP_UnitTestCase {
 	 * Test execution mode constants are defined.
 	 */
 	public function test_execution_mode_constants() {
-		if ( ! class_exists( 'WP_MCP_AI_Queue_Manager' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Queue_Manager class not loaded.' );
-		}
-
 		$this->assertEquals( 'sync', WP_MCP_AI_Queue_Manager::MODE_SYNC );
 		$this->assertEquals( 'queue', WP_MCP_AI_Queue_Manager::MODE_QUEUE );
 		$this->assertEquals( 'queue_async', WP_MCP_AI_Queue_Manager::MODE_QUEUE_ASYNC );
@@ -47,10 +39,6 @@ class Test_Queue_Manager extends WP_UnitTestCase {
 	 * Test priority constants are defined.
 	 */
 	public function test_priority_constants() {
-		if ( ! class_exists( 'WP_MCP_AI_Queue_Manager' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Queue_Manager class not loaded.' );
-		}
-
 		$this->assertEquals( 'high', WP_MCP_AI_Queue_Manager::PRIORITY_HIGH );
 		$this->assertEquals( 'normal', WP_MCP_AI_Queue_Manager::PRIORITY_NORMAL );
 		$this->assertEquals( 'async', WP_MCP_AI_Queue_Manager::PRIORITY_LOW );
@@ -60,10 +48,6 @@ class Test_Queue_Manager extends WP_UnitTestCase {
 	 * Test threshold constants are defined.
 	 */
 	public function test_threshold_constants() {
-		if ( ! class_exists( 'WP_MCP_AI_Queue_Manager' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Queue_Manager class not loaded.' );
-		}
-
 		$this->assertEquals( 2000, WP_MCP_AI_Queue_Manager::QUICK_TOOL_THRESHOLD );
 		$this->assertEquals( 10000, WP_MCP_AI_Queue_Manager::ASYNC_TOOL_THRESHOLD );
 	}
@@ -72,9 +56,13 @@ class Test_Queue_Manager extends WP_UnitTestCase {
 	 * Test queue availability returns false when RabbitMQ not configured.
 	 */
 	public function test_is_queue_available_without_rabbitmq() {
-		if ( ! class_exists( 'WP_MCP_AI_Queue_Manager' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Queue_Manager class not loaded.' );
-		}
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_enabled' => false )
+			)
+		);
 
 		$manager = WP_MCP_AI_Queue_Manager::get_instance();
 
@@ -86,9 +74,13 @@ class Test_Queue_Manager extends WP_UnitTestCase {
 	 * Test execution mode defaults to sync when queue unavailable.
 	 */
 	public function test_get_execution_mode_defaults_to_sync() {
-		if ( ! class_exists( 'WP_MCP_AI_Queue_Manager' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Queue_Manager class not loaded.' );
-		}
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_enabled' => false )
+			)
+		);
 
 		$manager = WP_MCP_AI_Queue_Manager::get_instance();
 
@@ -101,9 +93,13 @@ class Test_Queue_Manager extends WP_UnitTestCase {
 	 * Test queue stats return expected structure when unavailable.
 	 */
 	public function test_get_queue_stats_when_unavailable() {
-		if ( ! class_exists( 'WP_MCP_AI_Queue_Manager' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Queue_Manager class not loaded.' );
-		}
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_enabled' => false )
+			)
+		);
 
 		$manager = WP_MCP_AI_Queue_Manager::get_instance();
 		$stats   = $manager->get_queue_stats();
@@ -117,12 +113,54 @@ class Test_Queue_Manager extends WP_UnitTestCase {
 	 * Test can_parallelize returns false for unknown tools.
 	 */
 	public function test_can_parallelize_unknown_tool() {
-		if ( ! class_exists( 'WP_MCP_AI_Queue_Manager' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Queue_Manager class not loaded.' );
-		}
-
 		$manager = WP_MCP_AI_Queue_Manager::get_instance();
 
 		$this->assertFalse( $manager->can_parallelize( 'nonexistent_tool_12345' ) );
+	}
+
+	/**
+	 * Test maybe_queue_tool_execution returns null for sync tools.
+	 */
+	public function test_maybe_queue_tool_execution_returns_null_for_sync() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array_merge(
+				get_option( 'wp_mcp_ai_settings', array() ),
+				array( 'rabbitmq_enabled' => false )
+			)
+		);
+
+		$manager = WP_MCP_AI_Queue_Manager::get_instance();
+		$result  = $manager->maybe_queue_tool_execution(
+			null,
+			'get_current_time',
+			array(),
+			array(
+				'user_id'      => 1,
+				'assistant_id' => 0,
+			)
+		);
+
+		$this->assertNull( $result, 'Should return null for sync-mode tools when queue is unavailable.' );
+	}
+
+	/**
+	 * Test maybe_queue_tool_execution respects upstream filter decisions.
+	 */
+	public function test_maybe_queue_tool_execution_respects_upstream_pre() {
+		$upstream = array( 'intercepted' => true );
+
+		$manager = WP_MCP_AI_Queue_Manager::get_instance();
+		$result  = $manager->maybe_queue_tool_execution(
+			$upstream,
+			'get_current_time',
+			array(),
+			array(
+				'user_id'      => 1,
+				'assistant_id' => 0,
+			)
+		);
+
+		$this->assertSame( $upstream, $result, 'Should pass through upstream filter decisions.' );
 	}
 }

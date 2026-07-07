@@ -96,7 +96,7 @@ class WP_MCP_AI_Necessity_Gate {
 	 * @since 1.9.0
 	 */
 	public static function register() {
-		add_filter( 'wp_mcp_ai_before_tool_execute', array( __CLASS__, 'evaluate' ), 5, 3 );
+		add_filter( 'wp_mcp_ai_before_tool_execute', array( __CLASS__, 'evaluate' ), 5, 4 );
 		add_filter( 'wp_mcp_ai_resolved_system_prompt', array( __CLASS__, 'inject_necessity_instructions' ), 20, 3 );
 	}
 
@@ -111,9 +111,10 @@ class WP_MCP_AI_Necessity_Gate {
 	 * @param mixed  $pre       Pre-execution result (null = continue).
 	 * @param string $tool_slug Tool slug being executed.
 	 * @param array  $arguments Tool arguments.
+	 * @param array  $context   Execution context.
 	 * @return mixed|null WP_Error to block, null to continue, or 'skip' string to skip silently.
 	 */
-	public static function evaluate( $pre, $tool_slug, $arguments ) {
+	public static function evaluate( $pre, $tool_slug, $arguments, $context ) {
 		// If another filter already decided, respect that.
 		if ( null !== $pre ) {
 			return $pre;
