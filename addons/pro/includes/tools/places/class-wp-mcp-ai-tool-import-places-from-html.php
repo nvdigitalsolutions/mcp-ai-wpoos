@@ -1029,7 +1029,6 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			}
 		}
 
-
 		// --- Title ---
 		$title_nodes = $xpath->query( $rules['title_selector'] );
 		if ( $title_nodes->length > 0 ) {
@@ -1202,7 +1201,6 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 
 		return $data;
 	}
-
 
 	/**
 	 * Detect HTTrack meta-refresh redirect stub and resolve target file.
