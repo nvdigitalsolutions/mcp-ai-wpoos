@@ -151,7 +151,10 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 		$start_time = microtime( true );
 
 		// Fire before execute hook.
-		$this->do_before_execute( $arguments, $context );
+		$intercepted = $this->do_before_execute( $arguments, $context );
+		if ( null !== $intercepted ) {
+			return $intercepted;
+		}
 
 		// Check if single post or bulk.
 		if ( ! empty( $arguments['post_id'] ) ) {

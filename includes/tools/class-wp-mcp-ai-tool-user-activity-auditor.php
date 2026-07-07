@@ -181,7 +181,10 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 		$start_time = microtime( true );
 
 		// Fire before execute hook.
-		$this->do_before_execute( $arguments, $context );
+		$intercepted = $this->do_before_execute( $arguments, $context );
+		if ( null !== $intercepted ) {
+			return $intercepted;
+		}
 
 		// Check capability.
 		if ( ! current_user_can( 'manage_options' ) ) {

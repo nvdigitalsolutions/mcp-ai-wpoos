@@ -172,30 +172,54 @@ trait WP_MCP_AI_Tool_WordPress_Native {
 	/**
 	 * Fire WordPress action before tool execution.
 	 *
-	 * Allows developers to hook into tool execution lifecycle.
+	 * Allows developers to hook into tool execution lifecycle. Filter callbacks
+	 * may return a non-null value to intercept and replace the tool's normal
+	 * execution. The dynamic per-tool action is preserved for side-effect
+	 * listeners (logging, metrics) that do not need to intercept.
 	 *
 	 * @since 1.0.0
+	 * @since 1.2.0 Returns intercepted result when a filter callback short-circuits execution.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return void
+	 * @return mixed|null Null to continue normal execution, or an intercepted result.
 	 */
 	protected function do_before_execute( $arguments, $context ) {
 		/**
-		 * Fires before any tool execution.
+		 * Filter before any tool execution.
+		 *
+		 * Return a non-null value to intercept and skip the normal execute()
+		 * call. The returned value is passed directly to the caller as the
+		 * tool result.
 		 *
 		 * @since 1.0.0
+		 * @since 1.2.0 First parameter changed to `$pre` (was `$arguments`);
+		 *              `$tool_slug` moved to second position; `$arguments`
+		 *              moved to third; `$context` added as fourth.
 		 *
+		 * @param mixed  $pre       Null to continue, or an intercepted result.
+		 * @param string $tool_slug Tool slug identifier.
 		 * @param array  $arguments Tool arguments.
 		 * @param array  $context   Execution context.
-		 * @param string $tool_slug Tool slug identifier.
 		 */
-		do_action( 'wp_mcp_ai_before_tool_execute', $arguments, $context, $this->get_slug() );
+		$pre = apply_filters(
+			'wp_mcp_ai_before_tool_execute',
+			null,
+			$this->get_slug(),
+			$arguments,
+			$context
+		);
+
+		if ( null !== $pre ) {
+			return $pre;
+		}
 
 		/**
 		 * Fires before specific tool execution.
 		 *
-		 * Dynamic hook name includes the tool slug.
+		 * Dynamic hook name includes the tool slug. Use this for side-effect
+		 * listeners (logging, metrics, caching) that do not need to intercept
+		 * execution. For interception, use the filter above.
 		 *
 		 * @since 1.0.0
 		 *
@@ -203,6 +227,8 @@ trait WP_MCP_AI_Tool_WordPress_Native {
 		 * @param array $context   Execution context.
 		 */
 		do_action( "wp_mcp_ai_before_tool_execute_{$this->get_slug()}", $arguments, $context );
+
+		return null;
 	}
 
 	/**

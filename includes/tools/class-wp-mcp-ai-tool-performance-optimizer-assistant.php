@@ -124,7 +124,10 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 		$report_format      = isset( $arguments['report_format'] ) ? sanitize_text_field( $arguments['report_format'] ) : 'summary';
 
 		// Before execution hook.
-		$this->do_before_execute( $arguments, $context );
+		$intercepted = $this->do_before_execute( $arguments, $context );
+		if ( null !== $intercepted ) {
+			return $intercepted;
+		}
 
 		// Route to action handler.
 		switch ( $action ) {

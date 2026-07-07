@@ -169,7 +169,10 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 		$start_time = microtime( true );
 
 		// Fire before execute hook.
-		$this->do_before_execute( $arguments, $context );
+		$intercepted = $this->do_before_execute( $arguments, $context );
+		if ( null !== $intercepted ) {
+			return $intercepted;
+		}
 
 		// Validate arguments.
 		$validation = $this->validate_arguments( $arguments );

@@ -90,7 +90,7 @@ class WP_MCP_AI_Queue_Manager {
 	 */
 	private function init_hooks() {
 		// Hook into tool execution.
-		add_filter( 'wp_mcp_ai_before_tool_execute', array( $this, 'maybe_queue_tool_execution' ), 5, 3 );
+		add_filter( 'wp_mcp_ai_before_tool_execute', array( $this, 'maybe_queue_tool_execution' ), 5, 4 );
 
 		// Admin AJAX for queue status.
 		add_action( 'wp_ajax_wp_mcp_ai_queue_status', array( $this, 'ajax_queue_status' ) );
@@ -247,21 +247,32 @@ class WP_MCP_AI_Queue_Manager {
 	/**
 	 * Maybe intercept and queue tool execution.
 	 *
-	 * @param mixed  $result    Current result (null to continue).
+	 * Hooked into {@see 'wp_mcp_ai_before_tool_execute'} at priority 5.
+	 *
+	 * @since 1.0.0
+	 * @since 1.2.0 Signature updated to match new filter parameter order;
+	 *              accepts `$context` from the caller instead of building
+	 *              a minimal context from scratch.
+	 *
+	 * @param mixed  $pre       Pre-execution result (null to continue).
 	 * @param string $tool_name Tool slug.
 	 * @param array  $arguments Tool arguments.
+	 * @param array  $context   Execution context.
 	 * @return mixed Result or null to continue normal execution.
 	 */
-	public function maybe_queue_tool_execution( $result, $tool_name, $arguments ) {
-		// If result is already set, don't interfere.
-		if ( null !== $result ) {
-			return $result;
+	public function maybe_queue_tool_execution( $pre, $tool_name, $arguments, $context ) {
+		// If another filter already decided, respect that.
+		if ( null !== $pre ) {
+			return $pre;
 		}
 
-		$context = array(
-			'user_id'      => get_current_user_id(),
-			'assistant_id' => 0, // Will be set by caller.
-		);
+		// Ensure context has the minimum required keys.
+		if ( ! isset( $context['user_id'] ) ) {
+			$context['user_id'] = get_current_user_id();
+		}
+		if ( ! isset( $context['assistant_id'] ) ) {
+			$context['assistant_id'] = 0;
+		}
 
 		$mode = $this->get_execution_mode( $tool_name, $arguments, $context );
 

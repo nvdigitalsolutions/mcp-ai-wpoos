@@ -72,7 +72,7 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 	 */
 	protected function init_hooks() {
 		// Tool execution caching.
-		add_filter( 'wp_mcp_ai_before_tool_execute', array( $this, 'check_tool_cache' ), 10, 3 );
+		add_filter( 'wp_mcp_ai_before_tool_execute', array( $this, 'check_tool_cache' ), 10, 4 );
 		add_action( 'wp_mcp_ai_after_tool_execute', array( $this, 'cache_tool_result' ), 10, 4 );
 
 		// Performance metrics.
@@ -86,15 +86,25 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 	/**
 	 * Check if tool result is cached.
 	 *
-	 * @param mixed  $result    Current result (null to continue execution).
+	 * @since 1.0.0
+	 * @since 1.2.0 Signature updated for new filter parameter order;
+	 *              added `$context` parameter.
+	 *
+	 * @param mixed  $pre       Pre-execution result (null to continue).
 	 * @param string $tool_name Tool name.
 	 * @param array  $arguments Tool arguments.
+	 * @param array  $context   Execution context.
 	 * @return mixed Cached result or null to continue.
 	 */
-	public function check_tool_cache( $result, $tool_name, $arguments ) {
+	public function check_tool_cache( $pre, $tool_name, $arguments, $context ) {
+		// Respect upstream filter decisions.
+		if ( null !== $pre ) {
+			return $pre;
+		}
+
 		// Only cache idempotent tools (read-only operations).
 		if ( ! $this->is_cacheable_tool( $tool_name ) ) {
-			return $result;
+			return null;
 		}
 
 		$cache_key = $this->get_cache_key( $tool_name, $arguments );
@@ -106,7 +116,7 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 		}
 
 		$this->record_metric( 'cache_miss', $tool_name );
-		return $result;
+		return null;
 	}
 
 	/**

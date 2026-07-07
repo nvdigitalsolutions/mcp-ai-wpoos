@@ -367,12 +367,25 @@ class WP_MCP_AI_RabbitMQ_Client {
 	}
 
 	/**
+	 * Get a single configuration value.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $key      Config key.
+	 * @param mixed  $fallback Optional. Value to return if key not found.
+	 * @return mixed Configuration value.
+	 */
+	public function get_config( $key, $fallback = null ) {
+		return isset( $this->config[ $key ] ) ? $this->config[ $key ] : $fallback;
+	}
+
+	/**
 	 * Get full queue name with prefix.
 	 *
 	 * @param string $queue_name Base queue name.
 	 * @return string Full queue name.
 	 */
-	private function get_queue_name( $queue_name ) {
+	public function get_queue_name( $queue_name ) {
 		return $this->config['prefix'] . '.' . $queue_name;
 	}
 
