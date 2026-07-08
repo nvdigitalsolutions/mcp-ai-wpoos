@@ -142,10 +142,11 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 
 		// Try MCP dispatch if preferred and available.
 		$prefer_mcp = isset( $arguments['prefer_mcp'] ) ? (bool) $arguments['prefer_mcp'] : true;
-		if ( $prefer_mcp && class_exists( 'WP_MCP_AI_JetEngine_Compat' ) && WP_MCP_AI_JetEngine_Compat::has_mcp_server() ) {
+		$mcp_tool   = $prefer_mcp ? WP_MCP_AI_JetEngine_Tool_Handlers::get_mcp_tool_name( $operation ) : null;
+		if ( null !== $mcp_tool && class_exists( 'WP_MCP_AI_JetEngine_Compat' ) && WP_MCP_AI_JetEngine_Compat::has_mcp_server() ) {
 			if ( class_exists( 'WP_MCP_AI_JetEngine_MCP_Client' ) || $this->load_mcp_client() ) {
 				$client     = new WP_MCP_AI_JetEngine_MCP_Client();
-				$mcp_result = $client->tools_call( $operation, $params );
+				$mcp_result = $client->tools_call( $mcp_tool, $params );
 
 				if ( ! is_wp_error( $mcp_result ) ) {
 					$summary_text = sprintf(
@@ -190,6 +191,13 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 			return $result;
 		}
 
+		// Extract JetEngine-level error notices / messages so the AI assistant
+		// can see actionable failure details without digging through raw data.
+		$extracted = self::extract_jetengine_errors( $result );
+		if ( ! empty( $extracted ) ) {
+			$result['_errors'] = $extracted;
+		}
+
 		$summary_text = sprintf(
 			/* translators: %s: JetEngine operation */
 			__( 'Executed JetEngine operation: %s', 'mcp-ai-wpoos' ),
@@ -228,6 +236,56 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 		return false;
 	}
 
+
+	/**
+	 * Extract actionable error messages from a JetEngine REST response.
+	 *
+	 * JetEngine endpoints often return `{ success: false, notices: [...],
+	 * message: "..." }` with HTTP 200.  This helper pulls out user-facing
+	 * error text so the AI assistant sees it immediately without digging
+	 * through the raw response data.
+	 *
+	 * @since 2.1.1
+	 *
+	 * @param array $result Normalised dispatch result.
+	 * @return array<string, mixed> Extracted error info (empty when no errors found).
+	 */
+	private static function extract_jetengine_errors( array $result ) {
+		$errors = array();
+
+		// Only inspect REST / HTTP responses (skip MCP, which has its own format).
+		if ( empty( $result['transport'] ) || ! in_array( $result['transport'], array( 'rest', 'http' ), true ) ) {
+			return $errors;
+		}
+
+		$data = isset( $result['data'] ) ? $result['data'] : array();
+		if ( ! is_array( $data ) ) {
+			return $errors;
+		}
+
+		// JetEngine v2 endpoints: { success: false, message: "...", notices: [...] }
+		if ( isset( $data['success'] ) && false === $data['success'] ) {
+			$errors['jetengine_success'] = false;
+
+			if ( ! empty( $data['message'] ) && is_string( $data['message'] ) ) {
+				$errors['message'] = $data['message'];
+			}
+
+			if ( ! empty( $data['notices'] ) && is_array( $data['notices'] ) ) {
+				$error_messages = array();
+				foreach ( $data['notices'] as $notice ) {
+					if ( ! empty( $notice['type'] ) && 'error' === $notice['type'] && ! empty( $notice['message'] ) ) {
+						$error_messages[] = $notice['message'];
+					}
+				}
+				if ( ! empty( $error_messages ) ) {
+					$errors['notices'] = $error_messages;
+				}
+			}
+		}
+
+		return $errors;
+	}
 
 	/**
 
