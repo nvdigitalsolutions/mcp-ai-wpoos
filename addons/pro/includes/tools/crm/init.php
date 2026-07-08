@@ -60,6 +60,11 @@ if ( $is_enabled && ! $is_base ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-company-cpt.php';
 	WP_MCP_AI_Company_CPT::init();
 
+	// Register Company meta fields with JetEngine for listing/discovery.
+	if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_company' );
+	}
+
 	// Phase B: Load Lead, Deal, Activity, Support Ticket, and Customer CPTs.
 	$_phase_b_cpts = array(
 		'class-wp-mcp-ai-lead-cpt.php',

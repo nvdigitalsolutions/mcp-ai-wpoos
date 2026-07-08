@@ -18,6 +18,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load Quiz CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-quiz-cpt.php';
 
+// Register Quiz meta fields with JetEngine for listing/discovery.
+if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_quiz' );
+}
+
 // Load JetEngine quiz CCT if JetEngine is active.
 if ( function_exists( 'jet_engine' ) ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-quizzes-cct.php';
