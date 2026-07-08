@@ -550,6 +550,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load ECA Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/init.php';
 
+		// JetEngine meta field integration: register _eca_* and _student_* fields
+		// in JetEngine's internal registry so they are discoverable in the
+		// Listing Builder, Dynamic Field selector, and Query Builder.
+		if ( function_exists( 'jet_engine' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-eca-meta-integration.php';
+		}
+
 		// Load Pro Schedule Result REST controller (Scheduled Result widget/block backend).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-schedule-result-controller.php';
 
