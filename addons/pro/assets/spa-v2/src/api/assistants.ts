@@ -38,13 +38,15 @@ export class AssistantsClient {
 	async list( signal?: AbortSignal ): Promise< AssistantsListResponse > {
 		const url = new URL( this.endpoint, window.location.origin );
 		url.searchParams.set( 'per_page', '100' );
-		const data = await this.request< {
-			success: boolean;
-			data: AssistantsListResponse;
-		} >( { method: 'GET', url: url.toString(), signal } );
+		// The REST endpoint returns { assistants: [...], default_assistant, rest } directly.
+		const data = await this.request< AssistantsListResponse >( {
+			method: 'GET',
+			url: url.toString(),
+			signal,
+		} );
 		return {
-			assistants: Array.isArray( data?.data?.assistants ) ? data.data.assistants : [],
-			total: typeof data?.data?.total === 'number' ? data.data.total : 0,
+			assistants: Array.isArray( data?.assistants ) ? data.assistants : [],
+			total: typeof data?.total === 'number' ? data.total : 0,
 		};
 	}
 

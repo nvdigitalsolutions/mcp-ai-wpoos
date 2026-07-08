@@ -15,9 +15,10 @@ import { __, sprintf } from '@wordpress/i18n';
 import { useThreads } from '../../hooks/useThreads';
 import type { TranscriptSession } from '../../api/transcripts';
 import type { ThreadSummary } from '../../api/threads';
-import { useAssistantStore } from '../../stores/assistantStore';
-import { AssistantsClient, type AssistantRecord } from '../../api/assistants';
-import { readProSpaConfig } from '../../api/config';
+	import { useAssistantStore } from '../../stores/assistantStore';
+	import { useModelStore } from '../../stores/modelStore';
+	import { AssistantsClient, type AssistantRecord } from '../../api/assistants';
+	import { readProSpaConfig } from '../../api/config';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -79,6 +80,10 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 	const setActiveAssistant = useAssistantStore( ( s ) => s.setActiveAssistant );
 	const setAssistants = useAssistantStore( ( s ) => s.setAssistants );
 
+	// ---- model store (sync model when assistant changes) ----
+	const setModel = useModelStore( ( s ) => s.setModel );
+	const setAvailableModels = useModelStore( ( s ) => s.setAvailableModels );
+
 	// ---- fetch assistants on mount ----
 	useEffect( () => {
 		if ( ! assistantsEndpoint ) return;
@@ -89,12 +94,30 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 			nonce: runtime?.nonce ?? nonce,
 		} );
 		client.list().then( ( result ) => {
-			if ( ! cancelled ) setAssistants( result.assistants );
+			if ( cancelled ) return;
+			setAssistants( result.assistants );
+
+			// Populate available models from assistant configs.
+			const models = result.assistants
+				.filter( ( a ) => a.provider && a.model )
+				.map( ( a ) => ( { provider: a.provider!, model: a.model! } ) );
+			if ( models.length > 0 ) {
+				setAvailableModels( models );
+			}
+
+			// If an assistant is pre-selected (e.g. from config/localStorage),
+			// sync its model to the model store.
+			if ( assistantId > 0 ) {
+				const current = result.assistants.find( ( a ) => a.id === assistantId );
+				if ( current?.provider && current?.model ) {
+					setModel( { provider: current.provider, model: current.model } );
+				}
+			}
 		} ).catch( () => {
 			// Non-critical — selector just stays empty.
 		} );
 		return () => { cancelled = true; };
-	}, [ assistantsEndpoint, nonce, setAssistants ] );
+	}, [ assistantsEndpoint, nonce, setAssistants, setModel, setAvailableModels ] );
 
 	// ---- active tab ----
 	const [ activeTab, setActiveTab ] = useState< SidebarTab >( 'conversations' );
@@ -196,7 +219,14 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 							value={ assistantId }
 							onChange={ ( e ) => {
 								const id = parseInt( e.target.value, 10 );
-								if ( id > 0 ) setActiveAssistant( id );
+								if ( id > 0 ) {
+									setActiveAssistant( id );
+									// Sync model store with the selected assistant's model.
+									const selected = assistants.find( ( a ) => a.id === id );
+									if ( selected?.provider && selected?.model ) {
+										setModel( { provider: selected.provider, model: selected.model } );
+									}
+								}
 							} }
 							aria-label={ __( 'Select assistant', 'nvoos-pro-spa' ) }
 						>
@@ -336,7 +366,8 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 									}
 								>
 									<span className="nvoos-pro-spa-sidebar__item-title">
-										{ s.assistant_model ??
+										{ s.assistant_title ||
+											s.assistant_model ||
 											s.session_key.slice( 0, 16 ) +
 												'…' }
 									</span>
