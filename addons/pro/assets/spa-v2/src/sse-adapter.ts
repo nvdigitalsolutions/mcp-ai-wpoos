@@ -12,6 +12,9 @@ export interface ChatFetchOptions {
 	nonce: string;
 	assistantId: number;
 	guest: boolean;
+	/** Optional override — when provided, sent to server as options.provider / options.model. */
+	model?: string;
+	provider?: string;
 }
 
 interface NvOosFrame {
@@ -223,11 +226,20 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 				body = {};
 			}
 		}
-		const merged = {
+		const merged: Record< string, unknown > = {
 			...( body as Record< string, unknown > ),
 			assistant_id: opts.assistantId,
 			stream: true,
 		};
+
+		// Forward model/provider overrides when the user has selected a specific model.
+		if ( opts.provider && opts.model ) {
+			merged.options = {
+				...( ( merged.options as Record< string, unknown > ) ?? {} ),
+				provider: opts.provider,
+				model: opts.model,
+			};
+		}
 
 		const upstream = await fetch( opts.endpoint, {
 			method: 'POST',

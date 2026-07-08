@@ -9,7 +9,7 @@
  * Threads data is fetched internally via the read-only `useThreads` hook.
  */
 
-import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { useThreads } from '../../hooks/useThreads';
@@ -84,10 +84,15 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 	const setModel = useModelStore( ( s ) => s.setModel );
 	const setAvailableModels = useModelStore( ( s ) => s.setAvailableModels );
 
-	// ---- fetch assistants on mount ----
+	// ---- fetch assistants on mount / when endpoint changes ----
+	const [ assistantsError, setAssistantsError ] = useState< string | null >( null );
+	const [ assistantsLoaded, setAssistantsLoaded ] = useState( false );
+
 	useEffect( () => {
 		if ( ! assistantsEndpoint ) return;
 		let cancelled = false;
+		setAssistantsError( null );
+		setAssistantsLoaded( false );
 		const runtime = readProSpaConfig();
 		const client = new AssistantsClient( {
 			endpoint: assistantsEndpoint,
@@ -96,6 +101,7 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 		client.list().then( ( result ) => {
 			if ( cancelled ) return;
 			setAssistants( result.assistants );
+			setAssistantsLoaded( true );
 
 			// Populate available models from assistant configs.
 			const models = result.assistants
@@ -104,20 +110,40 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 			if ( models.length > 0 ) {
 				setAvailableModels( models );
 			}
-
-			// If an assistant is pre-selected (e.g. from config/localStorage),
-			// sync its model to the model store.
-			if ( assistantId > 0 ) {
-				const current = result.assistants.find( ( a ) => a.id === assistantId );
-				if ( current?.provider && current?.model ) {
-					setModel( { provider: current.provider, model: current.model } );
-				}
-			}
-		} ).catch( () => {
-			// Non-critical — selector just stays empty.
+		} ).catch( ( err: unknown ) => {
+			if ( cancelled ) return;
+			const msg = err instanceof Error ? err.message : String( err ?? '' );
+			setAssistantsError( msg || __( 'Failed to load assistants.', 'nvoos-pro-spa' ) );
+			setAssistantsLoaded( true );
+			console.error( '[Pro SPA] Assistants fetch failed:', err );
 		} );
 		return () => { cancelled = true; };
-	}, [ assistantsEndpoint, nonce, setAssistants, setModel, setAvailableModels ] );
+	}, [ assistantsEndpoint, nonce, setAssistants, setAvailableModels ] );
+
+	// ---- sync model store when assistantId changes ----
+	const prevAssistantIdRef = useRef( assistantId );
+	useEffect( () => {
+		const prev = prevAssistantIdRef.current;
+		prevAssistantIdRef.current = assistantId;
+		// Only sync when assistantId actually changes (not on mount).
+		if ( prev === assistantId || assistantId <= 0 ) return;
+		const selected = assistants.find( ( a ) => a.id === assistantId );
+		if ( selected?.provider && selected?.model ) {
+			setModel( { provider: selected.provider, model: selected.model } );
+		}
+	}, [ assistantId, assistants, setModel ] );
+
+	// ---- sync model on initial load when assistants are fetched ----
+	const hasSyncedInitialModel = useRef( false );
+	useEffect( () => {
+		if ( hasSyncedInitialModel.current ) return;
+		if ( assistantId <= 0 || assistants.length === 0 ) return;
+		const current = assistants.find( ( a ) => a.id === assistantId );
+		if ( current?.provider && current?.model ) {
+			setModel( { provider: current.provider, model: current.model } );
+			hasSyncedInitialModel.current = true;
+		}
+	}, [ assistantId, assistants, setModel ] );
 
 	// ---- active tab ----
 	const [ activeTab, setActiveTab ] = useState< SidebarTab >( 'conversations' );
@@ -239,9 +265,17 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 								</option>
 							) ) }
 						</select>
-					) : (
+					) : assistantsError ? (
+						<p className="nvoos-pro-spa-sidebar__assistant-error" role="alert">
+							{ assistantsError }
+						</p>
+					) : ! assistantsLoaded ? (
 						<p className="nvoos-pro-spa-sidebar__assistant-loading">
 							{ __( 'Loading assistants…', 'nvoos-pro-spa' ) }
+						</p>
+					) : (
+						<p className="nvoos-pro-spa-sidebar__assistant-empty">
+							{ __( 'No assistants found.', 'nvoos-pro-spa' ) }
 						</p>
 					) }
 				</div>

@@ -20,6 +20,9 @@ export interface UseChatSpokeOptions {
 	transcriptsEndpoint?: string;
 	initialMessages?: Message[];
 	sessionKey?: string;
+	/** Optional model override to send as options.provider / options.model. */
+	model?: string;
+	provider?: string;
 }
 
 export interface UseChatSpokeReturn {
@@ -45,6 +48,8 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		transcriptsEndpoint,
 		initialMessages = [],
 		sessionKey = '',
+		model,
+		provider,
 	} = options;
 
 	const addToast = useUIStore( ( s ) => s.addToast );
@@ -68,8 +73,10 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 				nonce,
 				assistantId,
 				guest: false,
+				model,
+				provider,
 			} ),
-		[ chatClientEndpoint, nonce, assistantId ]
+		[ chatClientEndpoint, nonce, assistantId, model, provider ]
 	);
 
 	const persistFinishedTurn = useCallback(

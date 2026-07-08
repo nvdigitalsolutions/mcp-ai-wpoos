@@ -2065,6 +2065,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $base_check;
 			}
 
+			// Authenticated WordPress users with at least 'read' capability always
+			// have access to the assistant directory via the Pro SPA admin interface.
+			// The rest_enable_assistant_list setting only gates external API access.
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+			if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) && current_user_can( 'read' ) ) {
+				return true;
+			}
+
 			// Then check if REST assistant listing is enabled.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
