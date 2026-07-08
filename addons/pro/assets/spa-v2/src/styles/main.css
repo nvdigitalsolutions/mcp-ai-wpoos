@@ -2126,6 +2126,20 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	margin: 0;
 }
 
+.nvoos-pro-spa-sidebar__assistant-error {
+	font-size: 12px;
+	color: var(--nvoos-danger, #d63638);
+	margin: 0;
+	padding: 4px 0;
+}
+
+.nvoos-pro-spa-sidebar__assistant-empty {
+	font-size: 12px;
+	opacity: 0.5;
+	margin: 0;
+	padding: 4px 0;
+}
+
 /* ── Screen-reader only utility ──────────────────────────────────────── */
 
 .nvoos-pro-spa-screen-reader-only {

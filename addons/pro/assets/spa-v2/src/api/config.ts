@@ -24,6 +24,13 @@ export interface ProSpaEndpoints {
 	approvals: string;
 }
 
+export interface RuntimeAssistantSummary {
+	id: number;
+	title: string;
+	provider?: string;
+	model?: string;
+}
+
 export interface ProSpaRuntime {
 	apiUrl: string;
 	proApi: string;
@@ -32,6 +39,8 @@ export interface ProSpaRuntime {
 	endpoints: ProSpaEndpoints;
 	user: ProSpaUser;
 	mentionTypes: MentionType[];
+	/** Pre-loaded assistants from the server — avoids a separate REST round-trip. */
+	assistants?: RuntimeAssistantSummary[];
 }
 
 export interface ProSpaUser {
@@ -97,5 +106,6 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 		},
 		user: ( g.user ?? { id: 0, login: '', displayName: '', capabilities: [] } ) as ProSpaUser,
 		mentionTypes: Array.isArray( g.mentionTypes ) ? g.mentionTypes : [],
+		assistants: Array.isArray( g.assistants ) ? g.assistants : undefined,
 	};
 }
