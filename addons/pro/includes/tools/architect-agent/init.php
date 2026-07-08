@@ -52,10 +52,14 @@ if ( $is_enabled && ! $is_base ) {
  * @since 1.3.0  (split into git_inspect + git_change; alias registered)
  */
 function wp_mcp_ai_load_architect_agent_tools() {
-	$tools_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/architect-agent/';
+		$tools_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/architect-agent/';
 
-	// Core file management tool.
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-manage-files.php';
+		// Traits shared across all architect-agent tools.
+		require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-envelope.php';
+		require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
+		// Core file management tool.
+		require_once $tools_dir . 'class-wp-mcp-ai-tool-manage-files.php';
 
 	// Development workflow tools (GitHub Copilot CLI-inspired).
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-execute-shell-command.php';

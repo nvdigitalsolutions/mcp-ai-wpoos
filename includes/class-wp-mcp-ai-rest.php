@@ -254,6 +254,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			);
 
+			// Register Health Check REST endpoint (load balancer / monitoring).
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-health.php';
+			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Health', 'register_routes' ) );
+
 			// Register Voice REST endpoints (realtime voice sessions).
 			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-translate-client.php';

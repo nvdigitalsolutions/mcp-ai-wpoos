@@ -163,7 +163,10 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		$start_time = microtime( true );
 
 		// Fire before execute hook.
-		$this->do_before_execute( $arguments, $context );
+		$intercepted = $this->do_before_execute( $arguments, $context );
+		if ( null !== $intercepted ) {
+			return $intercepted;
+		}
 
 		// Determine analysis mode.
 		if ( $arguments['bulk_audit'] ?? false ) {

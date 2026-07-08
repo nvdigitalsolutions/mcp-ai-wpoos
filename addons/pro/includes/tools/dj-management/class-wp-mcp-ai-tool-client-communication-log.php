@@ -98,7 +98,7 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( array $arguments, array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['communication_type'] ) || empty( $arguments['subject'] ) || empty( $arguments['notes'] ) ) {
 			return array(
@@ -200,7 +200,7 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_flag_capabilities() {
+	public function get_capability_flags() {
 		return array( 'write' );
 	}
 }

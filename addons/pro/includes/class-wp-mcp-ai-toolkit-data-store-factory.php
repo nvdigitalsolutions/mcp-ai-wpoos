@@ -105,6 +105,42 @@ class WP_MCP_AI_Toolkit_Data_Store_Factory {
 	}
 
 	/**
+	 * Get a tenant-aware data store.
+	 *
+	 * Creates the store via get_store() and then resolves the current
+	 * tenant context from WP_MCP_AI_Tenant_Context.  When a valid tenant
+	 * is active the store instance is scoped to that tenant so all CRUD
+	 * operations are automatically isolated.
+	 *
+	 * In environments where the tenant context class is not loaded, or
+	 * when no tenant can be resolved, the store is returned unmodified
+	 * (backward-compatible bypass mode).
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string $toolkit_slug Toolkit identifier.
+	 * @param string $entity_type  Entity type.
+	 * @return WP_MCP_AI_Toolkit_Data_Store Data store instance (possibly tenant-scoped).
+	 */
+	public static function get_tenant_store( $toolkit_slug, $entity_type ) {
+		$store = self::get_store( $toolkit_slug, $entity_type );
+
+		// Resolve tenant context when the infrastructure is available.
+		if ( class_exists( 'WP_MCP_AI_Tenant_Context' ) ) {
+			$context = WP_MCP_AI_Tenant_Context::instance();
+			$result  = $context->resolve();
+
+			if ( ! is_wp_error( $result ) && ! empty( $result['type'] ) && $result['id'] > 0 ) {
+				if ( method_exists( $store, 'set_tenant_context' ) ) {
+					$store->set_tenant_context( $result['type'], $result['id'] );
+				}
+			}
+		}
+
+		return $store;
+	}
+
+	/**
 	 * Check if JetEngine is installed.
 	 *
 	 * @return bool True if JetEngine plugin is active.

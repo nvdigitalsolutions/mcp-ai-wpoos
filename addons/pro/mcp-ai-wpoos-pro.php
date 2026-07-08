@@ -496,6 +496,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// WebChat integration has been moved to the NV oOS Embedded addon.
 		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 
+		// JetEngine meta helper — lightweight utility that CPT toolkits call
+		// to register their meta fields in JetEngine's internal registry so
+		// they become discoverable in the Listing Builder, Dynamic Field
+		// selector, and Query Builder.  Each toolkit's init.php adds its
+		// own CPTs behind a function_exists( 'jet_engine' ) guard.
+		// MUST be loaded BEFORE any toolkit init.php that calls it.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-meta-helper.php';
+
 		// Load Media Toolkit if enabled (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/media/init.php';
 
@@ -746,6 +754,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/init.php';
 
+			// Load shared Webhook Context Manager (BME-aware history trimming) used by
+			// all webhook reply job handlers. Must load before any individual controller.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webhook-context-manager.php';
+
 			// Load WhatsApp Webhook Controller for real-time message handling.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
 
@@ -772,6 +784,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 			// Load Google Chat Webhook Controller for Google Chat bot events.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php';
+
+			// Load Outlook Webhook Controller for Microsoft 365 / Exchange Online email events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php';
+
+			// Load Twitter Webhook Controller for Twitter/X DM webhook events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php';
+
+			// Load Apple Messages Webhook Controller for iMessage Business Chat events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php';
+
+			// Load iCloud Webhook Controller for iCloud Drive file change events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php';
 		}
 
 		// Load DietPi Pro Toolkit if enabled (Pro feature — Raspberry Pi / DietPi server and media app management).
@@ -1341,6 +1365,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				// Bulk import tools (v1.4.0).
 				'WP_MCP_AI_Tool_Import_Places'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places.php',
 				'WP_MCP_AI_Tool_Import_Places_From_Html' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places-from-html.php',
+				// Enrichment tools (v1.4.2).
+				'WP_MCP_AI_Tool_Enrich_Place_Coordinates' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-enrich-place-coordinates.php',
+				'WP_MCP_AI_Tool_Enrich_Place_Details'    => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-enrich-place-details.php',
 			);
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
 		}

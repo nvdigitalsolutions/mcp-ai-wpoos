@@ -1,0 +1,326 @@
+# ==============================================================================
+# NV oOS — OWASP ZAP Baseline DAST Scan (Phase 1)
+# ==============================================================================
+#
+# Runs a passive-only ZAP baseline scan against a fresh WordPress instance.
+# Reuses the existing QA Docker Compose stack (tests/qa/docker/docker-compose.qa.yml)
+# — no new infrastructure required.
+#
+# SCAN TYPE: Baseline (passive spider + passive scanning)
+#   • No attack payloads sent — safe for any environment
+#   • Spiders the site for ~1 minute to discover endpoints
+#   • Passive rules inspect traffic for vulnerabilities
+#   • Results are advisory only during Phase 1 (continue-on-error)
+#
+# TRIGGERS:
+#   • Every PR that touches PHP or REST controller files
+#   • Manual dispatch from GitHub Actions UI
+#
+# ARTIFACTS:
+#   • ZAP HTML report (report.html)
+#   • ZAP JSON report (zap-baseline-report.json)
+#   • PR comment with alert severity summary
+#
+# PHASES (see docs/project/proposals/OWASP-ZAP-DAST-INTEGRATION-PROPOSAL.md):
+#   Phase 1 (current): Advisory mode — WARN on findings, don't block builds.
+#   Phase 2:           Create .zap-rules.tsv baseline after triaging findings.
+#   Phase 3:           Full active scan on weekly cron.
+#   Phase 4:           API-specific scan with OpenAPI spec.
+#   Phase 5:           Hardened gates — FAIL on Critical/High, block release.
+#
+# Closes audit roadmap item R-T-06.
+#
+# ==============================================================================
+
+name: DAST — OWASP ZAP Baseline
+
+on:
+  pull_request:
+    paths:
+      - '**.php'
+      - 'includes/rest/**'
+      - 'addons/*/includes/rest/**'
+      - 'tests/qa/docker/**'
+      - '.github/workflows/zap-baseline.yml'
+      - '.zap-rules.tsv'
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Override target URL (default: http://localhost:8000)'
+        required: false
+        default: ''
+      spider_minutes:
+        description: 'Spider duration in minutes (default: 1)'
+        required: false
+        default: '1'
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  zap-baseline:
+    name: ZAP Baseline — Passive Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ------------------------------------------------------------------
+      # 1. Checkout
+      # ------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------
+      # 2. Free disk space + pull Docker images
+      # ------------------------------------------------------------------
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          df -h
+
+      - name: Pull Docker images
+        run: |
+          docker pull wordpress:6.9-php8.2-apache
+          docker pull mysql:8.0
+          docker pull wordpress:cli-php8.2
+
+      # ------------------------------------------------------------------
+      # 3. Start WordPress + MySQL
+      # ------------------------------------------------------------------
+      - name: Start QA Docker stack (WordPress + MySQL)
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml up -d wordpress db
+          echo "Waiting for WordPress to be healthy..."
+          timeout 120 bash -c '
+            while ! docker compose -f tests/qa/docker/docker-compose.qa.yml ps wordpress | grep -q "healthy"; do
+              echo "  ... waiting for WordPress ..."
+              sleep 5
+            done
+          '
+          echo "WordPress is healthy."
+
+      # ------------------------------------------------------------------
+      # 4. Run WordPress setup (install + activate plugin)
+      # ------------------------------------------------------------------
+      - name: Run WordPress setup
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml run --rm setup
+          echo "WordPress setup complete."
+
+      # ------------------------------------------------------------------
+      # 5. Determine target URL
+      # ------------------------------------------------------------------
+      - name: Determine target URL
+        id: target
+        run: |
+          if [ -n "${{ github.event.inputs.target_url }}" ]; then
+            echo "url=${{ github.event.inputs.target_url }}" >> $GITHUB_OUTPUT
+          else
+            echo "url=http://localhost:8000" >> $GITHUB_OUTPUT
+          fi
+
+      # ------------------------------------------------------------------
+      # 6. Quick smoke test — verify WordPress is responding
+      # ------------------------------------------------------------------
+      - name: Smoke test target
+        run: |
+          TARGET="${{ steps.target.outputs.url }}"
+          echo "Smoke-testing: ${TARGET}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "${TARGET}" || echo "000")
+          echo "HTTP status: ${HTTP_CODE}"
+          if [ "${HTTP_CODE}" = "000" ]; then
+            echo "::error::Target ${TARGET} is unreachable. Check Docker stack health."
+            exit 1
+          fi
+          echo "Target is reachable (HTTP ${HTTP_CODE})."
+
+      # ------------------------------------------------------------------
+      # 7. Run ZAP Baseline Scan
+      # ------------------------------------------------------------------
+      - name: ZAP Baseline Scan
+        id: zap
+        uses: zaproxy/action-baseline@v0.13.0
+        with:
+          target: ${{ steps.target.outputs.url }}
+          # Phase 1: advisory only — warn on findings, never fail the build.
+          fail_action: 'warn'
+          rules_file_name: '.zap-rules.tsv'
+          # Increase spider duration for better coverage.
+          cmd_options: >
+            -m ${{ github.event.inputs.spider_minutes || '1' }}
+            -j -J zap-baseline-report.json
+            -r zap-baseline-report.html
+            --auto
+        continue-on-error: true
+
+      # ------------------------------------------------------------------
+      # 8. Upload ZAP reports as artifacts
+      # ------------------------------------------------------------------
+      - name: Create artifact directory
+        if: always()
+        run: mkdir -p zap-artifacts
+
+      - name: Move ZAP reports to artifact directory
+        if: always()
+        run: |
+          # The action-baseline outputs reports to the workspace root.
+          # Gather all ZAP outputs into a single directory for the artifact.
+          for f in zap-baseline-report.json zap-baseline-report.html report.html report.json; do
+            if [ -f "$f" ]; then
+              cp "$f" zap-artifacts/
+            fi
+          done
+          # Also include the rules file if it was used
+          if [ -f ".zap-rules.tsv" ]; then
+            cp .zap-rules.tsv zap-artifacts/
+          fi
+
+      - name: Upload ZAP report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: zap-artifacts/
+          retention-days: 30
+
+      # ------------------------------------------------------------------
+      # 9. Post PR comment with alert summary
+      # ------------------------------------------------------------------
+      - name: Parse ZAP JSON report
+        id: parse
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          REPORT_FILE="zap-artifacts/zap-baseline-report.json"
+          if [ ! -f "$REPORT_FILE" ]; then
+            REPORT_FILE="zap-artifacts/report.json"
+          fi
+
+          if [ -f "$REPORT_FILE" ]; then
+            # Count alerts by risk level using jq
+            HIGH=$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            MEDIUM=$(jq '[.site[]?.alerts[]? | select(.riskcode == "2")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            LOW=$(jq '[.site[]?.alerts[]? | select(.riskcode == "1")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            INFO=$(jq '[.site[]?.alerts[]? | select(.riskcode == "0")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            TOTAL=$((HIGH + MEDIUM + LOW + INFO))
+
+            echo "high=${HIGH}" >> $GITHUB_OUTPUT
+            echo "medium=${MEDIUM}" >> $GITHUB_OUTPUT
+            echo "low=${LOW}" >> $GITHUB_OUTPUT
+            echo "info=${INFO}" >> $GITHUB_OUTPUT
+            echo "total=${TOTAL}" >> $GITHUB_OUTPUT
+            echo "report_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "report_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post PR comment
+        if: always() && github.event_name == 'pull_request' && steps.parse.outputs.report_exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const high   = '${{ steps.parse.outputs.high }}';
+            const medium = '${{ steps.parse.outputs.medium }}';
+            const low    = '${{ steps.parse.outputs.low }}';
+            const info   = '${{ steps.parse.outputs.info }}';
+            const total  = '${{ steps.parse.outputs.total }}';
+            const totalNum = parseInt(total) || 0;
+
+            const statusIcon = totalNum === 0 ? '✅' : (parseInt(high) > 0 ? '🔴' : (parseInt(medium) > 0 ? '🟡' : '🟢'));
+
+            let phaseNote = '';
+            if (totalNum > 0) {
+              phaseNote = `
+            > ⚠️ **Phase 1 — Advisory Mode:** Findings are reported but do not block the build.
+            > After 1–2 weeks of scans, the team will triage findings and create a \`.zap-rules.tsv\` baseline.
+            > See [OWASP-ZAP-DAST-INTEGRATION-PROPOSAL.md](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/blob/${{ github.head_ref }}/docs/project/proposals/OWASP-ZAP-DAST-INTEGRATION-PROPOSAL.md) for the full plan.`;
+            }
+
+            const reportUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const summary = `## ${statusIcon} OWASP ZAP Baseline Scan
+
+            | Risk Level | Count |
+            |------------|-------|
+            | 🔴 High    | ${high} |
+            | 🟡 Medium  | ${medium} |
+            | 🟢 Low     | ${low} |
+            | 🔵 Info    | ${info} |
+            | **Total**  | **${total}** |
+
+            📊 [View Full Report](${reportUrl}) — download the **zap-baseline-report** artifact for the HTML/JSON report.
+            ${phaseNote}
+            `;
+
+            // Find existing ZAP bot comment and update it, or create new.
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('OWASP ZAP Baseline Scan')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: summary,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: summary,
+              });
+            }
+
+      - name: Post PR comment (no report)
+        if: always() && github.event_name == 'pull_request' && steps.parse.outputs.report_exists != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const summary = `## ⚠️ OWASP ZAP Baseline Scan
+
+            No ZAP report was generated. Check the [workflow logs](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for details.
+            `;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('OWASP ZAP Baseline Scan')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: summary,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: summary,
+              });
+            }
+
+      # ------------------------------------------------------------------
+      # 10. Tear down QA Docker stack
+      # ------------------------------------------------------------------
+      - name: Tear down QA stack
+        if: always()
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml down -v --remove-orphans || true

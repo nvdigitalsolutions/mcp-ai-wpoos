@@ -181,7 +181,10 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 		$start_time = microtime( true );
 
 		// Fire before execute hook.
-		$this->do_before_execute( $arguments, $context );
+		$intercepted = $this->do_before_execute( $arguments, $context );
+		if ( null !== $intercepted ) {
+			return $intercepted;
+		}
 
 		// Check if batch mode or single image.
 		if ( $arguments['batch_mode'] ?? false ) {

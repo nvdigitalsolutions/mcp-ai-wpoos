@@ -1,0 +1,351 @@
+# ==============================================================================
+# NV oOS — OWASP ZAP Full Active DAST Scan (Phase 3)
+# ==============================================================================
+#
+# Runs an active (attack payload) ZAP scan against a WordPress instance.
+# Can target a staging URL or spin up the QA Docker stack locally.
+#
+# SCAN TYPE: Full (active spider + active scanning with attack payloads)
+#   ⚠️  Sends real attack payloads (SQLi, XSS, command injection).
+#   ⚠️  NEVER target production. Use staging or the ephemeral Docker env.
+#   • Active spider crawls all discovered pages
+#   • Active scanner sends attack payloads against each parameter
+#   • Uses .zap-rules.tsv for fine-grained alert control
+#
+# TRIGGERS:
+#   • Weekly cron: Sunday at 02:00 UTC
+#   • Manual dispatch from GitHub Actions UI (with target URL input)
+#
+# ARTIFACTS:
+#   • ZAP HTML report (zap-full-report.html)
+#   • ZAP JSON report (zap-full-report.json)
+#   • GitHub Issue auto-created for Critical/High findings
+#
+# SETUP (for staging URL):
+#   Add repository variable: ZAP_STAGING_URL (e.g. https://staging.example.com)
+#   Add repository secret:  ZAP_STAGING_AUTH_TOKEN (Bearer token for auth)
+#
+# PHASES (see docs/project/proposals/OWASP-ZAP-DAST-INTEGRATION-PROPOSAL.md):
+#   Phase 3 (current): Weekly cron + manual dispatch. Findings create Issues.
+#   Phase 5:           Becomes blocking pre-release gate.
+#
+# ==============================================================================
+
+name: DAST — OWASP ZAP Full Scan
+
+on:
+  schedule:
+    # Weekly on Sunday at 02:00 UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Target URL (default: Docker at localhost:8000, or ZAP_STAGING_URL variable)'
+        required: false
+        default: ''
+      use_docker:
+        description: 'Spin up local Docker stack (true) or use external URL (false)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      spider_minutes:
+        description: 'Spider duration in minutes (default: 5)'
+        required: false
+        default: '5'
+      create_issues:
+        description: 'Auto-create GitHub Issues for Critical/High findings'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: read
+  issues: write
+  security-events: write
+
+jobs:
+  zap-full:
+    name: ZAP Full Scan — Active
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # ------------------------------------------------------------------
+      # 1. Checkout
+      # ------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------
+      # 2. Determine target and infrastructure
+      # ------------------------------------------------------------------
+      - name: Determine target URL
+        id: target
+        run: |
+          # Priority: manual input > repository variable > Docker localhost
+          if [ -n "${{ github.event.inputs.target_url }}" ]; then
+            echo "url=${{ github.event.inputs.target_url }}" >> $GITHUB_OUTPUT
+            echo "source=manual_input" >> $GITHUB_OUTPUT
+          elif [ -n "${{ vars.ZAP_STAGING_URL }}" ]; then
+            echo "url=${{ vars.ZAP_STAGING_URL }}" >> $GITHUB_OUTPUT
+            echo "source=repo_variable" >> $GITHUB_OUTPUT
+          else
+            echo "url=http://localhost:8000" >> $GITHUB_OUTPUT
+            echo "source=docker_localhost" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine Docker usage
+        id: docker
+        run: |
+          USE_DOCKER="${{ github.event.inputs.use_docker || 'true' }}"
+          # Force Docker if target is localhost
+          if [ "${{ steps.target.outputs.source }}" = "docker_localhost" ]; then
+            USE_DOCKER="true"
+          fi
+          echo "use_docker=${USE_DOCKER}" >> $GITHUB_OUTPUT
+
+      # ------------------------------------------------------------------
+      # 3. Spin up Docker stack (if needed)
+      # ------------------------------------------------------------------
+      - name: Free disk space
+        if: steps.docker.outputs.use_docker == 'true'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          df -h
+
+      - name: Pull Docker images
+        if: steps.docker.outputs.use_docker == 'true'
+        run: |
+          docker pull wordpress:6.9-php8.2-apache
+          docker pull mysql:8.0
+          docker pull wordpress:cli-php8.2
+
+      - name: Start QA Docker stack
+        if: steps.docker.outputs.use_docker == 'true'
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml up -d wordpress db
+          echo "Waiting for WordPress to be healthy..."
+          timeout 120 bash -c '
+            while ! docker compose -f tests/qa/docker/docker-compose.qa.yml ps wordpress | grep -q "healthy"; do
+              echo "  ... waiting for WordPress ..."
+              sleep 5
+            done
+          '
+          echo "WordPress is healthy."
+
+      - name: Run WordPress setup
+        if: steps.docker.outputs.use_docker == 'true'
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml run --rm setup
+          echo "WordPress setup complete."
+
+      # ------------------------------------------------------------------
+      # 4. Smoke test target
+      # ------------------------------------------------------------------
+      - name: Smoke test target
+        run: |
+          TARGET="${{ steps.target.outputs.url }}"
+          echo "Smoke-testing: ${TARGET}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "${TARGET}" || echo "000")
+          echo "HTTP status: ${HTTP_CODE}"
+          if [ "${HTTP_CODE}" = "000" ]; then
+            echo "::error::Target ${TARGET} is unreachable."
+            exit 1
+          fi
+          echo "Target is reachable (HTTP ${HTTP_CODE})."
+
+      # ------------------------------------------------------------------
+      # 5. Run ZAP Full Scan
+      # ------------------------------------------------------------------
+      - name: ZAP Full Scan
+        id: zap
+        uses: zaproxy/action-full-scan@v0.13.0
+        with:
+          target: ${{ steps.target.outputs.url }}
+          # Phase 3: warn on findings, don't fail the build. Phase 5 makes this FAIL.
+          fail_action: 'warn'
+          rules_file_name: '.zap-rules.tsv'
+          cmd_options: >
+            -m ${{ github.event.inputs.spider_minutes || '5' }}
+            -j -J zap-full-report.json
+            -r zap-full-report.html
+            --auto
+        continue-on-error: true
+
+      # ------------------------------------------------------------------
+      # 6. Upload reports
+      # ------------------------------------------------------------------
+      - name: Create artifact directory
+        if: always()
+        run: mkdir -p zap-artifacts
+
+      - name: Gather ZAP reports
+        if: always()
+        run: |
+          for f in zap-full-report.json zap-full-report.html report.html report.json; do
+            if [ -f "$f" ]; then cp "$f" zap-artifacts/; fi
+          done
+          if [ -f ".zap-rules.tsv" ]; then cp .zap-rules.tsv zap-artifacts/; fi
+
+      - name: Upload ZAP Full Scan Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-full-scan-report
+          path: zap-artifacts/
+          retention-days: 90
+
+      # ------------------------------------------------------------------
+      # 7. Parse findings and create GitHub Issues
+      # ------------------------------------------------------------------
+      - name: Parse ZAP findings
+        id: parse
+        if: always()
+        run: |
+          REPORT_FILE="zap-artifacts/zap-full-report.json"
+          if [ ! -f "$REPORT_FILE" ]; then
+            REPORT_FILE="zap-artifacts/report.json"
+          fi
+
+          if [ -f "$REPORT_FILE" ]; then
+            HIGH=$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            MEDIUM=$(jq '[.site[]?.alerts[]? | select(.riskcode == "2")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            LOW=$(jq '[.site[]?.alerts[]? | select(.riskcode == "1")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+            INFO=$(jq '[.site[]?.alerts[]? | select(.riskcode == "0")] | length' "$REPORT_FILE" 2>/dev/null || echo "0")
+
+            # Extract High/Critical alert details for Issue body
+            HIGH_ALERTS=$(jq -r '[.site[]?.alerts[]? | select(.riskcode == "3") | "### \(.name) (Risk: High)\n- **URL:** \(.instances[0].uri // "N/A")\n- **Description:** \(.description // "N/A")\n- **Solution:** \(.solution // "N/A")\n- **Instances:** \(.instances | length)\n"] | join("\n")' "$REPORT_FILE" 2>/dev/null || echo "")
+
+            echo "high=${HIGH}" >> $GITHUB_OUTPUT
+            echo "medium=${MEDIUM}" >> $GITHUB_OUTPUT
+            echo "low=${LOW}" >> $GITHUB_OUTPUT
+            echo "info=${INFO}" >> $GITHUB_OUTPUT
+            echo "report_exists=true" >> $GITHUB_OUTPUT
+
+            # Save alert details to file for Issue creation
+            echo "${HIGH_ALERTS}" > /tmp/high-alerts.md
+          else
+            echo "report_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Issue for findings
+        if: >
+          always() &&
+          steps.parse.outputs.report_exists == 'true' &&
+          steps.parse.outputs.high != '0' &&
+          github.event.inputs.create_issues != 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const high   = parseInt('${{ steps.parse.outputs.high }}') || 0;
+            const medium = parseInt('${{ steps.parse.outputs.medium }}') || 0;
+            const low    = parseInt('${{ steps.parse.outputs.low }}') || 0;
+            const info   = parseInt('${{ steps.parse.outputs.info }}') || 0;
+
+            const targetUrl = '${{ steps.target.outputs.url }}';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const fs = require('fs');
+            let highAlertsMd = '';
+            try {
+              highAlertsMd = fs.readFileSync('/tmp/high-alerts.md', 'utf8');
+            } catch (e) {
+              highAlertsMd = '(Could not read alert details)';
+            }
+
+            const issueBody = `## 🔴 OWASP ZAP Full Scan — Findings Requiring Action
+
+            **Scan Date:** ${new Date().toISOString().split('T')[0]}
+            **Target:** ${targetUrl}
+            **Workflow Run:** [View Full Report](${runUrl})
+
+            ### Summary
+
+            | Risk Level | Count |
+            |------------|-------|
+            | 🔴 High    | ${high} |
+            | 🟡 Medium  | ${medium} |
+            | 🟢 Low     | ${low} |
+            | 🔵 Info    | ${info} |
+
+            ### High-Severity Findings
+
+            ${highAlertsMd || '(No High-severity findings)'}
+
+            ### Action Required
+
+            1. Download the **zap-full-scan-report** artifact from the [workflow run](${runUrl}) for the full HTML/JSON report.
+            2. Triage each High finding:
+               - **Real vulnerability:** Create a fix PR referencing this issue.
+               - **False positive:** Update \`.zap-rules.tsv\` to IGNORE the rule with justification.
+            3. Re-run the scan after fixes to confirm remediation.
+
+            ---
+            *Auto-created by OWASP ZAP Full Scan workflow (Phase 3). See [ZAP DAST docs](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/docs/operations/security/ZAP_DAST.md).*`;
+
+            // Check for existing open ZAP issues to avoid duplicates
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['security', 'zap-scan'],
+              per_page: 5,
+            });
+
+            // Only create a new issue if there isn't a recent one for the same target
+            const recentDuplicate = existingIssues.some(i =>
+              i.title.includes('ZAP Full Scan') && i.body.includes(targetUrl)
+            );
+
+            if (!recentDuplicate) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🔴 ZAP Full Scan: ${high} High, ${medium} Medium findings on ${targetUrl}`,
+                body: issueBody,
+                labels: ['security', 'zap-scan', 'automated'],
+              });
+              console.log('Created new ZAP findings issue.');
+            } else {
+              console.log('Recent ZAP issue already exists for this target — skipping duplicate.');
+            }
+
+      # ------------------------------------------------------------------
+      # 8. Summary
+      # ------------------------------------------------------------------
+      - name: Workflow summary
+        if: always()
+        run: |
+          {
+            echo "## 🔍 OWASP ZAP Full Scan Summary"
+            echo ""
+            echo "- **Target:** ${{ steps.target.outputs.url }}"
+            echo "- **Source:** ${{ steps.target.outputs.source }}"
+            echo "- **Date:** $(date -u +'%Y-%m-%d %H:%M UTC')"
+            echo ""
+            if [ "${{ steps.parse.outputs.report_exists }}" = "true" ]; then
+              echo "- 🔴 High: ${{ steps.parse.outputs.high }}"
+              echo "- 🟡 Medium: ${{ steps.parse.outputs.medium }}"
+              echo "- 🟢 Low: ${{ steps.parse.outputs.low }}"
+              echo "- 🔵 Info: ${{ steps.parse.outputs.info }}"
+            else
+              echo "⚠️ No report generated. Check logs."
+            fi
+            echo ""
+            echo "📊 Full report available in workflow artifacts (90-day retention)."
+          } >> $GITHUB_STEP_SUMMARY
+
+      # ------------------------------------------------------------------
+      # 9. Tear down Docker stack
+      # ------------------------------------------------------------------
+      - name: Tear down QA stack
+        if: always() && steps.docker.outputs.use_docker == 'true'
+        run: |
+          docker compose -f tests/qa/docker/docker-compose.qa.yml down -v --remove-orphans || true

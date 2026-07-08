@@ -876,7 +876,7 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 			return null;
 		}
 
-		return WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( $toolkit, $entity );
+		return WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( $toolkit, $entity );
 	}
 
 	/**

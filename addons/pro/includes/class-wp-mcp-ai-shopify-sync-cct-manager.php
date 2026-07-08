@@ -94,6 +94,8 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			'sync_hash'          => 'text',
 			'sync_status'        => 'text',
 			'raw_data'           => 'textarea',
+			'tenant_type'        => 'text',
+			'tenant_id'          => 'number',
 		);
 
 		/**
@@ -106,15 +108,87 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		protected $factory = null;
 
 		/**
+		 * Current tenant type (e.g. 'company', 'school').
+		 *
+		 * Empty string means no tenant context (bypass mode).
+		 *
+		 * @since 3.1.0
+		 *
+		 * @var string
+		 */
+		protected $tenant_type = '';
+
+		/**
+		 * Current tenant ID.
+		 *
+		 * 0 means no tenant context (bypass mode).
+		 *
+		 * @since 3.1.0
+		 *
+		 * @var int
+		 */
+		protected $tenant_id = 0;
+
+		/**
 		 * Constructor.
 		 *
 		 * @since 1.3.0
+		 * @since 3.1.0 Resolves tenant context when available.
 		 *
 		 * @param string|null $connection_id Optional. Remote Sites connection ID.
 		 */
 		public function __construct( $connection_id = null ) {
 			$this->connection_id = $connection_id;
 			$this->cct_slug      = $this->get_configured_cct_slug();
+			$this->resolve_tenant_context();
+		}
+
+		/**
+		 * Resolve the current tenant context.
+		 *
+		 * @since 3.1.0
+		 *
+		 * @return void
+		 */
+		protected function resolve_tenant_context(): void {
+			if ( ! class_exists( 'WP_MCP_AI_Tenant_Context' ) ) {
+				return;
+			}
+
+			$context = WP_MCP_AI_Tenant_Context::instance()->resolve();
+			if ( is_wp_error( $context ) ) {
+				return;
+			}
+
+			$this->tenant_type = isset( $context['type'] ) ? $context['type'] : '';
+			$this->tenant_id   = isset( $context['id'] ) ? (int) $context['id'] : 0;
+		}
+
+		/**
+		 * Build a tenant-scoped WHERE clause for CCT queries.
+		 *
+		 * @since 3.1.0
+		 *
+		 * @return array
+		 */
+		protected function tenant_query_clauses(): array {
+			if ( empty( $this->tenant_type ) || $this->tenant_id <= 0 ) {
+				return array();
+			}
+
+			return array(
+				array(
+					'field'    => 'tenant_type',
+					'operator' => '=',
+					'value'    => $this->tenant_type,
+				),
+				array(
+					'field'    => 'tenant_id',
+					'operator' => '=',
+					'value'    => $this->tenant_id,
+					'type'     => 'integer',
+				),
+			);
 		}
 
 		// ------------------------------------------------------------------ //
@@ -847,6 +921,11 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				}
 			}
 
+			// Inject tenant-scoped WHERE clauses when tenant context is active.
+			foreach ( $this->tenant_query_clauses() as $tenant_clause ) {
+				$query_args[] = $tenant_clause;
+			}
+
 			if ( ! empty( $filters['location_name'] ) ) {
 				$query_args[] = array(
 					'field'    => 'location_name',
@@ -1141,6 +1220,12 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			}
 
 			$location_id = isset( $shopify_row['location_id'] ) ? $shopify_row['location_id'] : '';
+
+			// Stamp tenant context on every write when tenant is active.
+			if ( ! empty( $this->tenant_type ) && $this->tenant_id > 0 ) {
+				$shopify_row['tenant_type'] = $this->tenant_type;
+				$shopify_row['tenant_id']   = $this->tenant_id;
+			}
 
 			$handler = $this->get_item_handler();
 			if ( ! $handler ) {
@@ -1817,9 +1902,15 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			$sync_mode = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
 
 			// Get search terms from settings, or use a default broad search.
-			$search_terms = isset( $settings['catalog_search_terms'] ) && is_array( $settings['catalog_search_terms'] )
-				? array_filter( array_map( 'sanitize_text_field', $settings['catalog_search_terms'] ) )
-				: array( '' ); // Empty string = broad match.
+			$configured_terms = isset( $settings['catalog_search_terms'] ) && is_array( $settings['catalog_search_terms'] )
+				? array_values( array_filter( array_map( 'sanitize_text_field', $settings['catalog_search_terms'] ) ) )
+				: array();
+
+			$has_configured_terms = ! empty( $configured_terms );
+
+			// Fall back to a broad match when no terms are configured (or the
+			// saved list is empty) so the sync loop always runs at least once.
+			$search_terms = $has_configured_terms ? $configured_terms : array( '' );
 
 			// Build Catalog API query filters.
 			$filters = array();
@@ -1830,6 +1921,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$total_synced   = 0;
 			$total_searched = 0;
+			$would_insert   = 0;
+			$would_update   = 0;
+			$would_skip     = 0;
+			$request_errors = array();
 
 			foreach ( $search_terms as $term ) {
 				$page = 1;
@@ -1852,6 +1947,11 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 					$result = $client->catalog_request( 'global/v2/search', $query_args );
 
 					if ( is_wp_error( $result ) ) {
+						$request_errors[] = sprintf(
+							'%s: %s',
+							'' === $term ? __( '(broad match)', 'mcp-ai-wpoos-pro' ) : $term,
+							$result->get_error_message()
+						);
 						WP_MCP_AI_Logger::log_event(
 							'shopify_catalog_sync_error',
 							'Catalog API search failed.',
@@ -1874,7 +1974,22 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 						foreach ( $rows as $row ) {
 							if ( $dry_run ) {
-								++$total_synced;
+								// Check if this row already exists in CCT for dry-run hash comparison.
+								$existing = $this->get_cached_item_by_variant_id(
+									$row['shopify_variant_id'],
+									isset( $row['location_id'] ) ? $row['location_id'] : ''
+								);
+								if ( $existing ) {
+									$new_hash = isset( $row['sync_hash'] ) ? $row['sync_hash'] : '';
+									$old_hash = isset( $existing['sync_hash'] ) ? $existing['sync_hash'] : '';
+									if ( $new_hash === $old_hash ) {
+										++$would_skip;
+									} else {
+										++$would_update;
+									}
+								} else {
+									++$would_insert;
+								}
 								continue;
 							}
 
@@ -1898,12 +2013,64 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 
 			$duration = round( microtime( true ) - $start_time, 2 );
 
+			// Every request failed and nothing was found — surface a real error
+			// instead of reporting a successful sync of 0 items.
+			if ( 0 === $total_searched && ! empty( $request_errors ) ) {
+				$message = sprintf(
+					/* translators: %s: error details */
+					__( 'Shopify Catalog API sync failed: %s', 'mcp-ai-wpoos-pro' ),
+					implode( ' | ', array_unique( $request_errors ) )
+				);
+				if ( ! $has_configured_terms ) {
+					$message .= ' ' . __( 'The Catalog API cannot list a full catalog — add one or more search terms under Shopify Sync → Configuration → Catalog API Search Terms.', 'mcp-ai-wpoos-pro' );
+				}
+				return new WP_Error( 'wp_mcp_ai_shopify_catalog_sync_failed', $message );
+			}
+
+			// Build actionable warnings when the sync technically succeeded
+			// but found nothing (or some requests failed).
+			$warnings = array();
+			if ( ! empty( $request_errors ) ) {
+				$warnings[] = sprintf(
+					/* translators: %s: error details */
+					__( 'Some Catalog API requests failed: %s', 'mcp-ai-wpoos-pro' ),
+					implode( ' | ', array_unique( $request_errors ) )
+				);
+			}
+			if ( 0 === $total_searched ) {
+				if ( ! $has_configured_terms ) {
+					$warnings[] = __( 'The Catalog API returned no products for the broad match search. Add search terms that describe your products under Shopify Sync → Configuration → Catalog API Search Terms.', 'mcp-ai-wpoos-pro' );
+				} elseif ( empty( $shop_id ) ) {
+					$warnings[] = __( 'No products matched the configured search terms. Set the Shop ID on the Shopify connection to limit results to your store, and verify your products are published to the Shopify global catalog.', 'mcp-ai-wpoos-pro' );
+				} else {
+					$warnings[] = __( 'No products matched the configured search terms for the configured Shop ID. Verify the Shop ID is correct and that your products are published and discoverable in the Shopify global catalog.', 'mcp-ai-wpoos-pro' );
+				}
+			}
+
+			if ( $dry_run ) {
+				return array(
+					'inserted'  => $would_insert,
+					'updated'   => $would_update,
+					'skipped'   => $would_skip,
+					'errors'    => count( $request_errors ),
+					'total'     => $total_searched,
+					'duration'  => $duration,
+					'sync_type' => 'catalog_api',
+					'warnings'  => $warnings,
+					'dry_run'   => true,
+				);
+			}
+
 			return array(
-				'status'         => 'success',
-				'products_found' => $total_searched,
-				'rows_synced'    => $total_synced,
-				'duration_secs'  => $duration,
-				'sync_type'      => 'catalog_api',
+				'status'    => 'success',
+				'inserted'  => $total_synced,
+				'updated'   => 0,
+				'skipped'   => 0,
+				'errors'    => count( $request_errors ),
+				'total'     => $total_searched,
+				'duration'  => $duration,
+				'sync_type' => 'catalog_api',
+				'warnings'  => $warnings,
 			);
 		}
 

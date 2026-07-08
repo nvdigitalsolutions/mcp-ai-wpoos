@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** July 4, 2026  
-**Plugin Version:** 1.1.36  
+**Last Updated:** July 8, 2026  
+**Plugin Version:** 1.1.37  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,8 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **JULY 8, 2026 UPDATE (v1.1.37):** JETENGINE META HELPER UNIVERSAL, PLACES ENRICHMENT, RABBITMQ + QUEUE INFRASTRUCTURE, MULTI-TENANT DB ISOLATION PHASE 0-4, DSPARK ADMIN UI, CROCOBLOCK DS ADDON, TEST COVERAGE (329 TOOLS / 28 TOOLKITS), DOCS HUB BROKEN LINK ENGINE, OWASP ZAP DAST, 30+ BUG FIXES
+>
 > **JULY 4, 2026 UPDATE (v1.1.36):** EZUITE INVENTORY SYNC, RALPH LOOP ORCHESTRATION, JETBOOKING/JETAPPOINTMENT, MOONSHOT/Z.AI PARITY, SYNC LOG MANAGER, TOOL PRESETS AUTO-SELECT, HTTRACK CACHE, 45+ BUG FIXES
 >
 > **JUNE 29, 2026 UPDATE (v1.1.35):** FLOWHUB INVENTORY SYNC, SHOPIFY SYNC, NECESSITY GATE LAYER J, LOCAL VOICE STT, REMOTE SITE ADMINISTRATOR BLUEPRINT, BULK IMPORT TOOLS, FIXES

@@ -17,6 +17,7 @@
  */
 class WP_MCP_AI_Mock_Pro_Tool implements WP_MCP_AI_Tool_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Get the tool slug.
 	 *
@@ -101,10 +102,8 @@ class WP_MCP_AI_Tool_Registry_Lazy_Init_Tests extends WP_UnitTestCase {
 		$this->original_instance = $property->getValue();
 		$property->setValue( null, null );
 
-		// Reset the bootstrapped flag.
-		$bootstrapped_property = $reflection->getProperty( 'bootstrapped' );
-		$bootstrapped_property->setAccessible( true );
-		$bootstrapped_property->setValue( null, false );
+		// bootstrapped is an instance property — nullifying the singleton
+		// above is sufficient; a fresh instance will default to false.
 
 		$this->pro_tools_registered = false;
 	}

@@ -1,11 +1,11 @@
 # NV oOS Roadmap
 
-**Last Updated:** July 4, 2026
-**Version:** 1.1.36
+**Last Updated:** July 8, 2026
+**Version:** 1.1.37
 
 ---
 
-## Current Capability Snapshot (v1.1.36)
+## Current Capability Snapshot (v1.1.37)
 
 | Dimension | Count |
 |-----------|-------|

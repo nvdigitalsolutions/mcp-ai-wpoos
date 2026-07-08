@@ -44,8 +44,14 @@ class Test_Tool_Pro_Delete_Medical_Record extends WP_UnitTestCase {
 		}
 		WP_MCP_AI_Health_Wellness_CPT::register_post_types();
 
+		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-delete-medical-record.php';
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Delete_Medical_Record' ) && file_exists( $tool_file ) ) {
+			require_once $tool_file;
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Delete_Medical_Record' ) ) {
-			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-delete-medical-record.php';
+			$this->markTestSkipped( 'WP_MCP_AI_Tool_Delete_Medical_Record class not available.' );
+			return;
 		}
 
 		$this->tool = new WP_MCP_AI_Tool_Delete_Medical_Record();

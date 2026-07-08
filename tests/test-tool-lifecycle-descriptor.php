@@ -25,7 +25,7 @@ class Test_Tool_Lifecycle_Descriptor extends WP_UnitTestCase {
 		$descriptor = WP_MCP_AI_Tool_Lifecycle_Descriptor::build(
 			array(
 				'success' => true,
-				'data' => array( 'foo' => 'bar' ),
+				'data'    => array( 'foo' => 'bar' ),
 			),
 			microtime( true ),
 			'example_tool'
@@ -44,9 +44,9 @@ class Test_Tool_Lifecycle_Descriptor extends WP_UnitTestCase {
 	public function test_build_respects_produces_field_in_result() {
 		$descriptor = WP_MCP_AI_Tool_Lifecycle_Descriptor::build(
 			array(
-				'success' => true,
+				'success'  => true,
 				'produces' => 'post_object',
-				'data' => 1,
+				'data'     => 1,
 			),
 			null,
 			'example_tool'
@@ -65,7 +65,7 @@ class Test_Tool_Lifecycle_Descriptor extends WP_UnitTestCase {
 			null
 		);
 
-		$this->assertSame( 'post-object', $descriptor['data_type'] );
+		$this->assertSame( 'postobject', $descriptor['data_type'] );
 	}
 
 	/**

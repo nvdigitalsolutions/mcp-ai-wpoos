@@ -437,6 +437,13 @@ class NV_oOS_Docs_Hub_Settings {
 		);
 	}
 
+	/**
+	 * Handle the synchronous rebuild form submission.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
 	public static function handle_rebuild_action() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -754,6 +761,9 @@ class NV_oOS_Docs_Hub_Settings {
 				<p>
 					<strong><?php esc_html_e( 'Broken Links:', 'nvoos-docs-hub' ); ?></strong>
 					<?php echo esc_html( $broken_links ); ?>
+					<?php if ( $broken_links > 0 && is_array( $manifest ) && ! empty( $manifest['broken_links'] ) ) : ?>
+						<a href="#nvoos-docs-hub-broken-links-table" style="margin-left: 8px;"><?php esc_html_e( 'View details &amp; fix', 'nvoos-docs-hub' ); ?> ↓</a>
+					<?php endif; ?>
 				</p>
 
 				<div id="nvoos-docs-hub-rebuild-panel" data-rest-base="<?php echo esc_attr( $rest_base ); ?>" data-rest-nonce="<?php echo esc_attr( $rest_nonce ); ?>" data-initial-state="<?php echo esc_attr( wp_json_encode( $rebuild_state ) ); ?>">
@@ -801,6 +811,101 @@ class NV_oOS_Docs_Hub_Settings {
 						value="<?php esc_attr_e( 'Rebuild now (synchronous)', 'nvoos-docs-hub' ); ?>" />
 				</form>
 			</div>
+
+		<?php
+		// Broken links detail table.
+		$broken_list = is_array( $manifest ) && ! empty( $manifest['broken_links'] ) ? (array) $manifest['broken_links'] : array();
+		if ( ! empty( $broken_list ) ) :
+			?>
+		<div id="nvoos-docs-hub-broken-links-table" class="card" style="max-width: 960px; margin-bottom: 20px; padding: 15px;">
+			<h2 style="margin-top: 0;"><?php esc_html_e( 'Broken Link Details', 'nvoos-docs-hub' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'These internal documentation links could not be resolved. Accept a suggestion to fix the link in the source file, or run a rebuild to refresh the manifest.', 'nvoos-docs-hub' ); ?>
+			</p>
+
+			<p style="margin-bottom: 8px;">
+				<button type="button" id="nvoos-dh-fix-all" class="button button-primary">
+					<?php esc_html_e( 'Accept All Suggestions', 'nvoos-docs-hub' ); ?>
+				</button>
+				<span id="nvoos-dh-fix-status" style="margin-left: 10px; font-style: italic;"></span>
+			</p>
+
+			<table class="wp-list-table widefat fixed striped" style="margin-top: 12px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Source Page', 'nvoos-docs-hub' ); ?></th>
+						<th><?php esc_html_e( 'Broken Target', 'nvoos-docs-hub' ); ?></th>
+						<th><?php esc_html_e( 'Best Suggestion', 'nvoos-docs-hub' ); ?></th>
+						<th><?php esc_html_e( 'Confidence', 'nvoos-docs-hub' ); ?></th>
+						<th><?php esc_html_e( 'Method', 'nvoos-docs-hub' ); ?></th>
+						<th><?php esc_html_e( 'Action', 'nvoos-docs-hub' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+					foreach ( $broken_list as $i => $link ) :
+						$src   = isset( $link['source'] ) ? (string) $link['source'] : '';
+						$tgt   = isset( $link['target'] ) ? (string) $link['target'] : '';
+						$suggs = isset( $link['suggestions'] ) ? (array) $link['suggestions'] : array();
+						$best  = ! empty( $suggs ) ? $suggs[0] : null;
+						$has_fix = null !== $best && isset( $best['target'] );
+						?>
+						<tr data-index="<?php echo esc_attr( $i ); ?>"
+							data-source="<?php echo esc_attr( $src ); ?>"
+							data-old-target="<?php echo esc_attr( $tgt ); ?>"
+							data-new-target="<?php echo $has_fix ? esc_attr( $best['target'] ) : ''; ?>">
+							<td><code><?php echo esc_html( $src ); ?></code></td>
+							<td><code style="color: #a00;"><?php echo esc_html( $tgt ); ?></code></td>
+							<td>
+								<?php if ( $best ) : ?>
+									<code style="color: #007017;"><?php echo esc_html( $best['target'] ); ?></code>
+								<?php else : ?>
+									<span style="color: #999;">—</span>
+								<?php endif; ?>
+							</td>
+							<td>
+								<?php if ( $best ) : ?>
+									<?php echo esc_html( (int) round( (float) $best['confidence'] * 100 ) . '%' ); ?>
+								<?php else : ?>
+									<span style="color: #999;">—</span>
+								<?php endif; ?>
+							</td>
+							<td>
+								<?php if ( $best ) : ?>
+									<code><?php echo esc_html( $best['method'] ); ?></code>
+								<?php else : ?>
+									<span style="color: #999;">—</span>
+								<?php endif; ?>
+							</td>
+							<td>
+								<?php if ( $has_fix ) : ?>
+									<button type="button" class="button button-small nvoos-dh-accept-fix">
+										<?php esc_html_e( 'Accept fix', 'nvoos-docs-hub' ); ?>
+									</button>
+								<?php else : ?>
+									<span style="color: #999;">—</span>
+								<?php endif; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+
+			<p style="margin-top: 12px;">
+				<em>
+					<?php
+					echo wp_kses_post(
+						sprintf(
+							/* translators: %s: CLI command */
+							__( 'To fix links interactively, run: %s', 'nvoos-docs-hub' ),
+							'<code>wp nvoos-docs fix-links</code>'
+						)
+					);
+					?>
+				</em>
+			</p>
+		</div>
+		<?php endif; ?>
 
 			<script>
 			(function () {
@@ -933,6 +1038,127 @@ class NV_oOS_Docs_Hub_Settings {
 					}() );
 					</script>
 
+					<script>
+					// Broken link fix buttons.
+					( function () {
+						var table  = document.querySelector( '#nvoos-docs-hub-broken-links-table table' );
+						var fixAll = document.getElementById( 'nvoos-dh-fix-all' );
+						var status = document.getElementById( 'nvoos-dh-fix-status' );
+						if ( ! table ) { return; }
+
+						var restBase  = '<?php echo esc_js( $rest_base ); ?>';
+						var restNonce = '<?php echo esc_js( $rest_nonce ); ?>';
+
+						function setStatus( msg, isError ) {
+							if ( ! status ) { return; }
+							status.textContent = msg;
+							status.style.color  = isError ? '#a00' : '#008000';
+						}
+
+						function applyFixes( fixes, btn ) {
+							if ( ! fixes.length ) {
+								setStatus( 'No fixes to apply.', true );
+								return;
+							}
+
+							if ( btn ) { btn.disabled = true; }
+							setStatus( 'Applying...', false );
+
+							fetch( restBase + '/fix-links', {
+								method: 'POST',
+								credentials: 'same-origin',
+								headers: {
+									'X-WP-Nonce': restNonce,
+									'Content-Type': 'application/json'
+								},
+								body: JSON.stringify( { fixes: fixes } )
+							} )
+							.then( function ( r ) {
+								return r.json().then( function ( data ) {
+									return { ok: r.ok, status: r.status, data: data };
+								} );
+							} )
+							.then( function ( result ) {
+								var data = result.data;
+								if ( ! result.ok ) {
+									setStatus( 'Error: ' + ( data.message || 'HTTP ' + result.status ), true );
+									if ( btn ) { btn.disabled = false; }
+									return;
+								}
+
+								// Fade out fixed rows.
+								var rows = table.querySelectorAll( 'tbody tr' );
+								var resultsArr = ( data.results && data.results.results ) ? data.results.results : [];
+								resultsArr.forEach( function ( r ) {
+									if ( r.status !== 'fixed' && r.status !== 'would_fix' ) { return; }
+									rows.forEach( function ( row ) {
+										if ( row.getAttribute( 'data-source' ) === r.source ) {
+											row.style.opacity = '0.35';
+											var acceptBtn = row.querySelector( '.nvoos-dh-accept-fix' );
+											if ( acceptBtn ) { acceptBtn.disabled = true; }
+										}
+									} );
+								} );
+
+								var fixedCount = data.results ? ( data.results.fixed || 0 ) : 0;
+								var skippedCount = data.results ? ( data.results.skipped || 0 ) : 0;
+								setStatus(
+									'Fixed ' + fixedCount + ' link(s).'
+									+ ( skippedCount > 0 ? ' ' + skippedCount + ' skipped.' : '' )
+									+ ( data.dry_run ? ' (dry run)' : ' Rebuild to refresh.' ),
+									skippedCount > 0
+								);
+
+								if ( btn ) { btn.disabled = false; }
+
+								// Disable Accept All if no rows remain.
+								if ( fixAll ) {
+									var remaining = table.querySelectorAll( 'tbody tr .nvoos-dh-accept-fix:not([disabled])' );
+									fixAll.disabled = remaining.length === 0;
+								}
+							} )
+							.catch( function ( err ) {
+								setStatus( 'Network error: ' + ( err.message || 'Request failed' ), true );
+								if ( btn ) { btn.disabled = false; }
+							} );
+						}
+
+						// Single-row accept.
+						table.addEventListener( 'click', function ( e ) {
+							var btn = e.target.closest( '.nvoos-dh-accept-fix' );
+							if ( ! btn || btn.disabled ) { return; }
+
+							var row = btn.closest( 'tr' );
+							var fix = {
+								source:     row.getAttribute( 'data-source' ),
+								old_target: row.getAttribute( 'data-old-target' ),
+								new_target: row.getAttribute( 'data-new-target' )
+							};
+							applyFixes( [ fix ], btn );
+						} );
+
+						// Accept All.
+						if ( fixAll ) {
+							fixAll.addEventListener( 'click', function () {
+								var rows  = table.querySelectorAll( 'tbody tr' );
+								var fixes = [];
+								rows.forEach( function ( row ) {
+									var newTarget = row.getAttribute( 'data-new-target' );
+									if ( ! newTarget || newTarget === '' ) { return; }
+									var acceptBtn = row.querySelector( '.nvoos-dh-accept-fix' );
+									if ( acceptBtn && acceptBtn.disabled ) { return; }
+									fixes.push( {
+										source:     row.getAttribute( 'data-source' ),
+										old_target: row.getAttribute( 'data-old-target' ),
+										new_target: newTarget
+									} );
+								} );
+								applyFixes( fixes, fixAll );
+							} );
+						}
+					}() );
+					</script>
+
 					<form method="post" action="options.php">
 				<?php
 					settings_fields( 'nvoos_docs_hub_settings_group' );
@@ -948,6 +1174,7 @@ class NV_oOS_Docs_Hub_Settings {
 						)
 					);
 					echo '</p></div>';
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- intentional diagnostic
 					error_log(
 						sprintf(
 							'[NV oOS Docs Hub] do_settings_sections fatal: %s in %s:%d',
@@ -1475,6 +1702,7 @@ class NV_oOS_Docs_Hub_Settings {
 				)
 			);
 			echo '</p></div>';
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- intentional diagnostic
 			error_log(
 				sprintf(
 					'[NV oOS Docs Hub] render_remote_repos fatal: %s in %s:%d',

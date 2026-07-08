@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Hosts the plugin's business-logic layer — ~70 service classes that orchestrate repositories and infrastructure adapters to fulfil chat, tool execution, async jobs, memory, model discovery, telemetry, file processing, and multi-agent orchestration requests.
+Hosts the plugin's business-logic layer — ~75 service classes that orchestrate repositories and infrastructure adapters to fulfil chat, tool execution, async jobs, memory, model discovery, telemetry, file processing, and multi-agent orchestration requests.
 
 ## Tier
 
@@ -33,8 +33,13 @@ The chat path and the tool execution path are the two services every other folde
 | `WP_MCP_AI_Gemini_Video_Generation_Service`, `WP_MCP_AI_Gemini_Music_Service`, `WP_MCP_AI_Mubert_Music_Service` | media services | media tools |
 | `services/embedding/` | three `WP_MCP_AI_Embedding_Provider_*` implementations | vector context service |
 | `services/job-sources/` | three `WP_MCP_AI_Job_Source_*` adapters | cron status service |
+| `WP_MCP_AI_Speculative_Tool_Executor` | `class-wp-mcp-ai-speculative-tool-executor.php` | tool execution orchestrator |
+| `WP_MCP_AI_Orchestration_Depth_Scheduler` | `class-wp-mcp-ai-orchestration-depth-scheduler.php` | tool execution orchestrator |
+| `WP_MCP_AI_Hybrid_Plan_Generator` | `class-wp-mcp-ai-hybrid-plan-generator.php` | tool execution orchestrator |
+| `WP_MCP_AI_Orchestration_Preset_Service` | `class-wp-mcp-ai-orchestration-preset-service.php` | admin settings UI |
+| `WP_MCP_AI_DSpark_Hooks` | `class-wp-mcp-ai-dspark-hooks.php` | admin dashboard widgets |
 
-Other classes in this folder (orchestration helpers, load balancers, monitors, validators) are also instantiated via the DI container; consult their PHPDoc before depending on them.
+Other classes in this folder (orchestration helpers, DSpark execution services, load balancers, monitors, validators) are also instantiated via the DI container; consult their PHPDoc before depending on them.
 
 ## Inputs / Outputs / Neighbors
 
@@ -42,7 +47,7 @@ Other classes in this folder (orchestration helpers, load balancers, monitors, v
 - **Writes to:** repositories, options, transients, the transcripts table (via `WP_MCP_AI_Transcript_Repository`), WP-Cron schedules, Action Scheduler queue (when available), outbound HTTP (via provider clients), file uploads dir (via file services).
 - **Upstream callers:** `rest/` controllers, `cli/` commands, `admin/` AJAX handlers, `tools/` (for shared orchestration helpers), `agents/`, `slash-commands/`.
 - **Downstream collaborators:** every adapter in `infrastructure/`, every repository in `repositories/`, traits in `traits/` (notably `WP_MCP_AI_Inline_Async_Tick_Trait`), and the tool registry.
-- **Events fired:** `wp_mcp_ai_inline_kick_completed` (via the inline-async tick trait), `wp_mcp_ai_cron_status_*` actions, plus subsystem-specific filters (chat, memory, tokens) documented per service.
+- **Events fired:** `wp_mcp_ai_inline_kick_completed` (via the inline-async tick trait), `wp_mcp_ai_cron_status_*` actions, plus subsystem-specific filters (chat, memory, tokens, orchestration depth, tiered routing, hybrid planning) documented per service.
 - **Events listened to:** `wp_mcp_ai_cron_status_job_sources` (filter — job-source registration), WP-Cron hooks for async/cleanup jobs, `plugins_loaded` for late init.
 
 ## Conventions

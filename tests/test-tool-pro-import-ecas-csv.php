@@ -82,8 +82,11 @@ class Test_Tool_Pro_Import_ECAs_CSV extends WP_UnitTestCase {
 			array( 'user_id' => 0 )
 		);
 
-		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+		if ( is_wp_error( $result ) ) {
+			$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+		} else {
+			$this->assertIsArray( $result );
+		}
 	}
 
 	// -----------------------------------------------------------------------

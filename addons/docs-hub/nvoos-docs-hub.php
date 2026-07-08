@@ -53,12 +53,13 @@ if ( ! function_exists( 'fnmatch' ) ) {
 	 *                        FNM_CASEFOLD (16). 0 for default.
 	 * @return bool True if the string matches the pattern.
 	 */
-	function fnmatch( $pattern, $string, $flags = 0 ) {
+	function fnmatch( $pattern, $string, $flags = 0 ) { // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames -- $string matches native fnmatch() signature
 		// Translate a shell glob into a PCRE pattern.
 		$regex  = '';
 		$len    = strlen( $pattern );
 		$escape = ! ( $flags & 2 ); // FNM_NOESCAPE = 2.
 
+		// phpcs:ignore Generic.CodeAnalysis.JumbledIncrementer -- inner case blocks intentionally advance $i past character classes
 		for ( $i = 0; $i < $len; $i++ ) {
 			$ch = $pattern[ $i ];
 
@@ -116,6 +117,7 @@ if ( ! function_exists( 'fnmatch' ) ) {
 			$mods .= 'i';
 		}
 
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- intentional; polyfill handles regex errors gracefully
 		$result = @preg_match( $regex . $mods, $string );
 		return false !== $result && $result > 0;
 	}
@@ -134,6 +136,7 @@ require_once NVOOS_DOCS_HUB_PATH . 'includes/rest/class-nvoos-docs-hub-rest.php'
 require_once NVOOS_DOCS_HUB_PATH . 'includes/shortcode/class-nvoos-docs-hub-shortcode.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/block/class-nvoos-docs-hub-block.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-sitemap-provider.php';
+require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-link-fixer.php';
 
 // Register rebuild job-source for the cron-status Tasks Drawer.
 if ( interface_exists( 'Interface_WP_MCP_AI_Cron_Status_Job_Source' ) ) {

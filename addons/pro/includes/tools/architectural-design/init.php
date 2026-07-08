@@ -23,6 +23,13 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-architectural-drawin
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-architectural-specification-cpt.php';
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-architectural-precedent-cpt.php';
 
+// Register architectural meta fields with JetEngine for listing/discovery.
+if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_arch_proj' );
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_arch_draw' );
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_arch_spec' );
+}
+
 // Initialize CPTs - they have their own checks for enabled/base version.
 WP_MCP_AI_Architectural_Project_CPT::init();
 WP_MCP_AI_Architectural_Drawing_CPT::init();

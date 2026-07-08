@@ -46,9 +46,8 @@ class Test_Tool_Manage_Context_Lifecycle extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Action', $result['message'] );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertStringContainsString( 'Action', $result->get_error_message() );
 	}
 
 	/**
@@ -60,9 +59,8 @@ class Test_Tool_Manage_Context_Lifecycle extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Agent ID', $result['message'] );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertStringContainsString( 'Agent ID', $result->get_error_message() );
 	}
 
 	/**
@@ -77,9 +75,8 @@ class Test_Tool_Manage_Context_Lifecycle extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Invalid action', $result['message'] );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertStringContainsString( 'Invalid action', $result->get_error_message() );
 	}
 
 	/**

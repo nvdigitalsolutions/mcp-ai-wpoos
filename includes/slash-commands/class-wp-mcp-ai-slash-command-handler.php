@@ -184,9 +184,15 @@ class WP_MCP_AI_Slash_Command_Handler {
 
 		// Execute command.
 		try {
+			// Merge named flags into positional args so command handlers
+			// that expect a single $args array (2-param signature) receive
+			// all parameters in the first argument. The raw flags are still
+			// passed as the second argument for handlers with a 3-param
+			// ($args, $flags, $context) signature.
+			$merged_args = array_merge( $parsed['flags'], $parsed['args'] );
 			$result = call_user_func(
 				$config['handler'],
-				$parsed['args'],
+				$merged_args,
 				$parsed['flags'],
 				$context
 			);

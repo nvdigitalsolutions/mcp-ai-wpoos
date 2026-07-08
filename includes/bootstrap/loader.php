@@ -195,6 +195,8 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-async-scheduler
 WP_MCP_AI_Async_Scheduler_Bridge::register_hooks();
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-sla-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rabbitmq-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-default-assistants.php';
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
@@ -495,6 +497,11 @@ WP_MCP_AI_Memory_Auto_Capture_Service::bootstrap();
 // without lazy `require_once` calls inside the hot retrieval path.
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-rrf-fusion-service.php';
 
+// DSpark efficiency hooks — data collectors for the orchestration dashboard.
+// Registers filters that count depth tiers and track routing cost savings.
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-dspark-hooks.php';
+WP_MCP_AI_DSpark_Hooks::register();
+
 // Elementor integration is available for all versions.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-quick-actions-handler.php';
@@ -767,3 +774,8 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 		WP_MCP_AI_Comments::get_instance();
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Multi-Tenant Isolation Subsystem
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/tenant/init.php';

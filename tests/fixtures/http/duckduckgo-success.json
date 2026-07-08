@@ -1,0 +1,25 @@
+{
+    "_description": "DuckDuckGo Instant Answer API — typical search result.",
+    "status": 200,
+    "body": {
+        "Heading": "Search Results",
+        "AbstractText": "This is the abstract text for the search.",
+        "AbstractURL": "https://example.com/abstract",
+        "RelatedTopics": [
+            {
+                "Topics": [
+                    {
+                        "FirstURL": "https://example.com/result-1",
+                        "Text": "Result 1 Title",
+                        "Result": "<a href=\"https://example.com/result-1\">Result 1 Title</a> - Description text here."
+                    },
+                    {
+                        "FirstURL": "https://example.com/result-2",
+                        "Text": "Result 2 Title",
+                        "Result": "<a href=\"https://example.com/result-2\">Result 2 Title</a> - Another description."
+                    }
+                ]
+            }
+        ]
+    }
+}

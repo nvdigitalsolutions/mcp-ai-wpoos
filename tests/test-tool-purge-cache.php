@@ -88,10 +88,13 @@ class Test_Tool_Purge_Cache extends WP_UnitTestCase {
 	 */
 	public function test_no_cache_layers_configured_returns_error() {
 		// Ensure no cache settings are configured.
-		update_option( 'wp_mcp_ai_settings', array(
-			'cloudflare_api_key' => '',
-			'varnish_host'       => '',
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'cloudflare_api_key' => '',
+				'varnish_host'       => '',
+			)
+		);
 
 		$result = $this->tool->execute(
 			array( 'purge_everything' => true ),

@@ -61,7 +61,7 @@ class WP_MCP_AI_Tool_Get_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	public function __construct() {
 		if ( class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
-			$this->data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( 'crm', 'deals' );
+			$this->data_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( 'crm', 'deals' );
 		}
 	}
 
@@ -180,7 +180,7 @@ class WP_MCP_AI_Tool_Get_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		// Count associated activities.
 		$activities_count = 0;
 		if ( class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
-			$activities_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( 'crm', 'activities' );
+			$activities_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( 'crm', 'activities' );
 			if ( $activities_store ) {
 				$activities = $activities_store->query_items(
 					array(
@@ -206,7 +206,7 @@ class WP_MCP_AI_Tool_Get_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		// Enrich with lead summary if linked.
 		$lead_id = isset( $deal['lead_id'] ) ? absint( $deal['lead_id'] ) : 0;
 		if ( $lead_id && class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
-			$lead_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( 'crm', 'leads' );
+			$lead_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_tenant_store( 'crm', 'leads' );
 			if ( $lead_store ) {
 				$lead = $lead_store->get_item( $lead_id );
 				if ( ! is_wp_error( $lead ) && is_array( $lead ) ) {

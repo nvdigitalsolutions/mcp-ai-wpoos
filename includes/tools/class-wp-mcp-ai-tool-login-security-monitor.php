@@ -123,7 +123,10 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		$include_analysis = isset( $arguments['include_analysis'] ) ? (bool) $arguments['include_analysis'] : true;
 
 		// Before execution hook.
-		$this->do_before_execute( $arguments, $context );
+		$intercepted = $this->do_before_execute( $arguments, $context );
+		if ( null !== $intercepted ) {
+			return $intercepted;
+		}
 
 		// Check cache.
 		$cached = $this->get_cached_result( $arguments );

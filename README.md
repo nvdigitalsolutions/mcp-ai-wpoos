@@ -11,10 +11,8 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.35  
-**Release Date:** 2026-06-29
-
-**Latest Updates:** June 29, 2026 (v1.1.35) — See [§ Latest Updates (v1.1.35 — June 2026)](#-latest-updates-v1135--june-2026) (FlowHub Inventory Sync + Shopify Sync Pro Toolkits. Necessity Gate Layer J — irreversibility-weighted safety. Local Voice Embedded STT. Remote Site Administrator blueprint. Places & Calendar bulk import. CLI site-import. Voice realtime auto-detect. 7 bug fixes. Plus prior v1.1.34 items below).
+**Version:** 1.1.37  
+**Release Date:** 2026-07-08
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
@@ -147,6 +145,23 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.37)
+
+- 🧩 **JetEngine Meta Helper (Universal).** Unified REST exposure for all 25 Pro CPTs via `show_in_rest` and `register_post_meta`. ECA `_eca_*` and `_student_*` field registration. MCP routing and load-order fixes.
+- 📍 **Places Toolkit Enrichment.** `enrich_place_coordinates` and `enrich_place_details` tools for batch geocoding. Social and booking fields added to Places CCT. HTTrack import fixes (redirect stubs, coordinates, parent linking).
+- 🐇 **RabbitMQ Integration.** RabbitMQ client, queue manager, and async tool interception wired into the plugin. Queue storage migrated to custom DB tables with health endpoint and queue worker.
+- 🏢 **Multi-Tenant Database Isolation (Phase 0–4).** Database isolation primitives, query scoping, schema isolation, cross-tenant safety guards, and admin controls — all 5 phases complete.
+- 📊 **DSpark Admin UI & Orchestration.** Settings page, threshold configuration, efficiency dashboard, presets, and hook system. Speculative orchestration enhancements with configurable execution strategies.
+- 🎨 **Crocoblock Design System Addon.** All 5 phases: unified CSS custom properties, preset templates, and admin-controlled theming for JetEngine, JetSmartFilters, and JetFormBuilder.
+- 🧪 **Massive Test Coverage Campaign.** 301 previously untested tools, 6 untested pro toolkits, 22 toolkits (7 batch tests) now covered. HTTP testing infrastructure for remote tool tests. Docker plugin seed service for integration tests.
+- 🔗 **Docs Hub Broken Link Engine.** Automated detection and repair with Accept fix buttons. Suggestion engine regression fixed.
+- ♿ **SPA Accessibility.** Annotation pills made clickable with meaningful screen-reader labels.
+- 🛡️ **CI/CD Hardening.** OWASP ZAP DAST security scanning. PHP 8.1→8.2 CI bump.
+- 🧠 **Webhook & Agentic-Loop Improvements.** Proactive agentic-loop context compaction. Webhook Context Manager best-practice enhancements. Sliding window context loss fixed across all 11 webhook controllers.
+- 🛒 **Shopify Sync Enhancements.** Catalog API sync for product caching. Minimal mode (title/SKU/stock). Price field added.
+- 💬 **BME Chat History Context Strategy.** RAG memory integration. Settings moved to General → Behavior subtab.
+- 🐛 **30+ Bug Fixes.** Shopify Catalog API silent failures, recurring sync interval, sync log batching, webhook auto-reply, import-blueprints discovery, extended-cognition requires, tool test infrastructure, CRM/PM/DietPi/Cloudways test fixes, js-yaml CVE override, ESLint and WPCS compliance.
 
 ### ✨ What's New at a Glance (v1.1.36)
 
@@ -500,7 +515,27 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.36 — July 2026)
+## 🆕 Latest Updates (v1.1.37 — July 2026)
+
+### July 4–8, 2026 — JetEngine Meta Helper, Places Enrichment, RabbitMQ, Multi-Tenant DB, DSpark UI, Test Coverage, Docs Hub Broken Link Engine 🧩📍🐇🏢📊🧪🔗
+
+- ✅ **JetEngine Meta Helper (Universal).** Unified REST exposure for all 25 Pro CPTs — `show_in_rest` and `register_post_meta` applied across the board. ECA `_eca_*` and `_student_*` fields registered in the JetEngine meta registry. MCP routing and error reporting bugs fixed. Load-order fix ensures the helper is available before dependent toolkit inits.
+- ✅ **Places Toolkit Enrichment.** Two new AI tools — `enrich_place_coordinates` (batch geocoding) and `enrich_place_details` (Google Places API enrichment). Social media and booking fields added to the Places CCT schema. CLI bin scripts for batch enrichment operations. HTTrack import hardened: redirect stub handling, coordinate parsing, parent-child linking, and CLI parameter validation.
+- ✅ **RabbitMQ Client & Queue Infrastructure.** RabbitMQ client wired with queue manager and async tool interception. Queue storage migrated from WordPress options to custom database tables for scalability. Health endpoint for queue monitoring. Dedicated queue worker for background processing.
+- ✅ **Multi-Tenant Database Isolation (Phase 0–4 Complete).** Phase 0 laid the foundation with database isolation primitives and connection routing. Phases 1–4 delivered query scoping, schema isolation, cross-tenant safety guards, and admin controls — the full isolation stack is now operational.
+- ✅ **DSpark Admin UI & Speculative Orchestration.** New admin page with settings, threshold configuration, efficiency dashboard, presets, and a hook system for extensibility. Speculative orchestration enhancements with configurable execution strategies.
+- ✅ **Crocoblock Design System Addon (All 5 Phases).** New standalone addon at `addons/crocoblock-ds/`. Unified CSS custom properties, preset templates, and admin-controlled theming for JetEngine, JetSmartFilters, and JetFormBuilder. Registered in addon inventory and build pipeline.
+- ✅ **Test Coverage — 329 Tools Across 28 Toolkits.** 301 previously untested tools now covered by batch tests. 6 previously untested pro toolkits with full coverage. 22 toolkits covered across 7 batch test files. HTTP testing infrastructure for remote tool tests. Docker plugin seed service for integration test coverage. CRM, PM, DietPi, and Cloudways test suites hardened with recursive file search, dependency resolution, and graceful skipping for abstract/missing classes.
+- ✅ **Docs Hub Broken Link Detection & Repair Engine.** Automated broken link scanning with results table. One-click Accept fix buttons on the detail table. Suggestion engine regression fixed (was producing no suggestions).
+- ✅ **SPA Annotation Pills — Accessible.** Clickable pills with meaningful labels for screen readers.
+- ✅ **CI/CD Hardening.** OWASP ZAP DAST security scanning integrated into the CI pipeline. PHP bumped from 8.1 to 8.2 across all CI workflows. QA Docker setup fixed (unnecessary chmod on bind-mounted script).
+- ✅ **Webhook & Agentic-Loop Resilience.** Proactive agentic-loop context compaction prevents context overflow during long-running agent sessions. Webhook Context Manager enhanced with industry best practices. Sliding window context loss fixed across all 11 webhook controllers. `max_history_messages` section default normalized to match base settings (8).
+- ✅ **Shopify Sync — Catalog API & Minimal Mode.** Catalog API sync support for product caching. Minimal sync mode (title, SKU, stock levels only) for fast updates. Price field added to minimal mode payload.
+- ✅ **BME Chat History Context Strategy.** RAG memory integration for chat history. Settings relocated to General → Behavior subtab on the new dashboard.
+- ✅ **Bug Fixes.** Shopify Catalog API silent failures and result reporting. Recurring sync stuck at old interval with missing connection IDs. Sync log batching via deferred writes to avoid per-item DB timeouts. Webhook auto-reply broken by missing Webhook Context Manager require. Import-blueprints and remaining-pro-tools file discovery. Extended-cognition toolkit missing requires for trait and interface. Tool tests: static data providers, constructor mocks, slug overrides, WP_Error returns. js-yaml DoS vulnerability override. ESLint and WPCS compliance across test files and enrichment tools.
+- 📦 **Versioning** — bumped to **1.1.37** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers.
+
+## 🆕 Previous Updates (v1.1.36 — July 2026)
 
 ### June 29 – July 4, 2026 — EZuite Inventory Sync, Ralph Loop Orchestration, JetBooking/JetAppointment, Moonshot/Z.AI Parity, 45+ Bug Fixes 🏭🔄📅🧠🐛
 
@@ -655,6 +690,8 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **v1.1.37** | Jul 2026 | JetEngine Meta Helper universal (25 CPTs, REST, ECA fields), Places enrichment tools, RabbitMQ + queue infrastructure (custom DB tables, health endpoint, worker), Multi-tenant DB isolation Phase 0–4, DSpark admin UI + speculative orchestration, Crocoblock Design System addon (5 phases), Test coverage: 329 tools across 28 toolkits, Docs Hub broken link engine, OWASP ZAP DAST, 30+ bug fixes |
+| **v1.1.36** | Jul 2026 | EZuite Inventory Sync Pro Toolkit, Ralph Loop CCT migration + circuit breaker, JetBooking/JetAppointment (8 tools), Moonshot/Z.AI provider parity (15 total), Unified Sync Log Manager, Tool Presets Auto-Select + Chips Bar, HTTrack Cache + Place-to-Service Bridge, Generate Default Mapping + read-only sync, 45+ bug fixes |
 | **v1.1.35** | Jun 2026 | FlowHub Inventory Sync Pro Toolkit (6 tools), Shopify Sync Pro Toolkit (5 tools), Necessity Gate Layer J (irreversibility-weighted safety), Local Voice Embedded STT (3 backends, offline-first), Remote Site Administrator blueprint (22 tools), Places & Calendar bulk import, CLI site-import subcommand, voice realtime auto-detect, 7 bug fixes |
 | **v1.1.34** | Jun 2026 | GPT-Realtime-2 voice models with WebRTC + Translate/Whisper + reasoning, multi-channel result delivery UI (11 channels, up from 4), pro scheduler AI/workflow delivery, Graphify ecosystem: remote drivers, WP 7.0 Connectors, wp.org compliance, 3 reasoning-tool fatal bugs fixed, CRM deal import + multi-source auto-import, Upwork/LinkedIn mode toggle, Docs Hub REST + settings sync fixes, http-proxy-middleware CVE, Gemini cache fix, GPT image routing fix, FastAPI porting plan |
 | **v1.1.33** | Jun 2026 | WP 7.0 Connectors credential integration across all 17 AI clients with source badges, nvoos-graphify v1.0.0 release (Plugin Check compliant), 3 guzzlehttp CVEs + undici override, 29 npm alerts across 14 packages, 2 bug fixes (Pro tool paths, JSON-RPC warning leak), 15 dependabot bumps |

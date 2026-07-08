@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **June 12, 2026** (v1.1.29)
+> Last reviewed: **July 7, 2026** (v1.1.36)
 
 ### Related Files
 
@@ -50,6 +50,7 @@ mcp-ai-wpoos.php  (WordPress plugin header + entry point)
                │     │                  shortcodes, federation
                │     └─ Admin-only: cron_manager, dlq_manager, token_manager,
                │                     crawl4ai_monitor
+               │     └─ WP_MCP_AI_DSpark_Hooks::register()
                │
                └─ do_action('wp_mcp_ai_bootstrapped')
 ```
@@ -92,6 +93,7 @@ mcp-ai-wpoos/
 │   ├─ bootstrap/              ← Initialization sequence (constants → loader → activation)
 │   ├─ class-wp-mcp-ai-plugin.php  ← Main singleton, DI container wiring
 │   ├─ class-wp-mcp-ai-container.php + container-helpers.php  ← Service locator / DI
+│   ├─ class-wp-mcp-ai-language-model-router.php  ← DSpark tiered model routing
 │   │
 │   ├─ tools/                  ← Tool classes (~234 class files; ~195 extend the tool base class)
 │   │   └─ class-wp-mcp-ai-tool-{name}.php   (one file per tool)
@@ -105,8 +107,12 @@ mcp-ai-wpoos/
 │   │
 │   ├─ assistants/             ← Assistant CPT registration and metaboxes
 │   ├─ blueprints/             ← Unified blueprint installer + import tools
-│   ├─ services/               ← Business logic (20+ service classes)
-│   │   └─ class-wp-mcp-ai-transcript-mining-job.php  ← Retroactive transcript mining background job
+│   ├─ services/               ← Business logic (30+ service classes)
+│   │   ├─ class-wp-mcp-ai-dspark-hooks.php ← DSpark efficiency data collectors
+│   │   ├─ class-wp-mcp-ai-speculative-tool-executor.php ← DSpark speculative execution
+│   │   ├─ class-wp-mcp-ai-orchestration-depth-scheduler.php ← DSpark depth scheduling
+│   │   ├─ class-wp-mcp-ai-hybrid-plan-generator.php ← DSpark hybrid planning
+│   │   └─ class-wp-mcp-ai-orchestration-preset-service.php ← Orchestration presets
 │   ├─ rest/                   ← REST controllers
 │   │   ├─ class-wp-mcp-ai-rest-chat-memory-controller.php  ← Chat-client memory bridge proxy
 │   │   └─ class-wp-mcp-ai-rest-transcript-mining-controller.php  ← Transcript mining REST API
@@ -118,6 +124,8 @@ mcp-ai-wpoos/
 │   │   ├─ class-wp-mcp-ai-self-refine-loop.php    ← Layer E: self-refine
 │   │   ├─ class-wp-mcp-ai-pii-filter.php          ← Layer F: PII scrubbing
 │   │   └─ class-wp-mcp-ai-harness-eval-scheduler.php  ← Layer G: eval scheduler
+│   ├─ measurement/            ← Metrics, acceptance tracking, OTEL export
+│   │   └─ class-wp-mcp-ai-tool-chain-acceptance-tracker.php ← DSpark chain acceptance
 │   ├─ repositories/           ← Data access layer
 │   ├─ integrations/           ← JetEngine, Elementor, Auth0, ChatKit, Gravatar
 │   ├─ infrastructure/         ← HTTP client, options-store adapter, provider adapters
@@ -354,6 +362,7 @@ The full agent inventory, capabilities, and context-loading strategy are documen
 - **New tool, hook, or REST endpoint** → update `CLAUDE.md` (architecture patterns section)
 - **New BMAD agent or workflow change** → update `.bmad/agents/` YAML + `AGENTS.md`
 - **New subsystem context** → add to `.context/` and reference from `AGENTS.md`
+- **New DSpark feature or orchestration preset** → update `CLAUDE.md` (architecture patterns), `MAINTAINER_MAP.md` (directory map), `includes/services/README.md` (public surface)
 
 ---
 

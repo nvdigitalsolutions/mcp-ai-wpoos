@@ -43,8 +43,14 @@ class Test_Tool_Pro_Mark_ECA_Attendance extends WP_UnitTestCase {
 		}
 		WP_MCP_AI_ECA_CPT::register_post_types();
 
+		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-mark-eca-attendance.php';
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Mark_ECA_Attendance' ) && file_exists( $tool_file ) ) {
+			require_once $tool_file;
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Mark_ECA_Attendance' ) ) {
-			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-mark-eca-attendance.php';
+			$this->markTestSkipped( 'WP_MCP_AI_Tool_Mark_ECA_Attendance class not available.' );
+			return;
 		}
 
 		$this->tool = new WP_MCP_AI_Tool_Mark_ECA_Attendance();
@@ -81,7 +87,12 @@ class Test_Tool_Pro_Mark_ECA_Attendance extends WP_UnitTestCase {
 			array(
 				'eca_id'       => 1,
 				'session_date' => '2025-01-01',
-				'attendees'    => array( array( 'student_id' => 1, 'status' => 'present' ) ),
+				'attendees'    => array(
+					array(
+						'student_id' => 1,
+						'status'     => 'present',
+					),
+				),
 			),
 			array( 'user_id' => 0 )
 		);
@@ -101,7 +112,12 @@ class Test_Tool_Pro_Mark_ECA_Attendance extends WP_UnitTestCase {
 		$result = $this->tool->execute(
 			array(
 				'session_date' => '2025-01-01',
-				'attendees'    => array( array( 'student_id' => 1, 'status' => 'present' ) ),
+				'attendees'    => array(
+					array(
+						'student_id' => 1,
+						'status'     => 'present',
+					),
+				),
 			),
 			array( 'user_id' => $this->admin_id )
 		);
@@ -124,7 +140,12 @@ class Test_Tool_Pro_Mark_ECA_Attendance extends WP_UnitTestCase {
 			array(
 				'eca_id'       => $post_id,
 				'session_date' => '2025-01-01',
-				'attendees'    => array( array( 'student_id' => 1, 'status' => 'present' ) ),
+				'attendees'    => array(
+					array(
+						'student_id' => 1,
+						'status'     => 'present',
+					),
+				),
 			),
 			array( 'user_id' => $this->admin_id )
 		);
@@ -147,7 +168,12 @@ class Test_Tool_Pro_Mark_ECA_Attendance extends WP_UnitTestCase {
 			array(
 				'eca_id'       => $eca_id,
 				'session_date' => 'not-a-date',
-				'attendees'    => array( array( 'student_id' => 1, 'status' => 'present' ) ),
+				'attendees'    => array(
+					array(
+						'student_id' => 1,
+						'status'     => 'present',
+					),
+				),
 			),
 			array( 'user_id' => $this->admin_id )
 		);

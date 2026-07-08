@@ -107,8 +107,30 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 			// Sync / dry-run result notices (set via redirect from admin-post handlers).
 			// phpcs:disable WordPress.Security.NonceVerification.Recommended
 			if ( isset( $_GET['sync_ok'] ) ) :
+				$s_insert = isset( $_GET['sync_insert'] ) ? absint( $_GET['sync_insert'] ) : 0;
+				$s_update = isset( $_GET['sync_update'] ) ? absint( $_GET['sync_update'] ) : 0;
+				$s_skip   = isset( $_GET['sync_skip'] ) ? absint( $_GET['sync_skip'] ) : 0;
+				$s_err    = isset( $_GET['sync_errors'] ) ? absint( $_GET['sync_errors'] ) : 0;
+				$s_dur    = isset( $_GET['sync_dur'] ) ? floatval( $_GET['sync_dur'] ) : 0;
+				$s_warn   = isset( $_GET['sync_warn'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['sync_warn'] ) ) ) : '';
 				?>
-				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Sync completed successfully.', 'mcp-ai-wpoos-pro' ); ?></p></div>
+				<div class="notice <?php echo '' !== $s_warn ? 'notice-warning' : 'notice-success'; ?> is-dismissible">
+					<p><strong><?php esc_html_e( 'Sync Complete', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+					<?php
+					/* translators: 1: inserted count, 2: updated count, 3: skipped count, 4: error count, 5: duration in seconds */
+					printf(
+						esc_html__( '%1$d items inserted, %2$d updated, %3$d skipped, %4$d errors (in %5$ss).', 'mcp-ai-wpoos-pro' ),
+						absint( $s_insert ),
+						absint( $s_update ),
+						absint( $s_skip ),
+						absint( $s_err ),
+						esc_html( (string) $s_dur )
+					);
+					if ( '' !== $s_warn ) {
+						echo '<p><strong>' . esc_html__( 'Warning:', 'mcp-ai-wpoos-pro' ) . '</strong> ' . esc_html( $s_warn ) . '</p>';
+					}
+					?>
+				</div>
 				<?php
 			elseif ( isset( $_GET['sync_error'] ) ) :
 				$sync_msg = isset( $_GET['sync_msg'] ) ? sanitize_text_field( wp_unslash( $_GET['sync_msg'] ) ) : __( 'Unknown error.', 'mcp-ai-wpoos-pro' );
@@ -120,17 +142,23 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				$dr_update = isset( $_GET['dry_run_update'] ) ? absint( $_GET['dry_run_update'] ) : 0;
 				$dr_skip   = isset( $_GET['dry_run_skip'] ) ? absint( $_GET['dry_run_skip'] ) : 0;
 				$dr_dur    = isset( $_GET['dry_run_dur'] ) ? floatval( $_GET['dry_run_dur'] ) : 0;
+				$dr_warn   = isset( $_GET['dry_run_warn'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['dry_run_warn'] ) ) ) : '';
 				?>
-				<div class="notice notice-success is-dismissible">
+				<div class="notice <?php echo '' !== $dr_warn ? 'notice-warning' : 'notice-success'; ?> is-dismissible">
 					<p><strong><?php esc_html_e( 'Dry Run Complete', 'mcp-ai-wpoos-pro' ); ?></strong></p>
-											/* translators: 1: would-insert count, 2: would-update count, 3: would-skip count, 4: duration in seconds */
-											printf(
-												esc_html__( '%1$d items would be inserted, %2$d updated, %3$d skipped (in %4$ss). No data was modified.', 'mcp-ai-wpoos-pro' ),
-												absint( $dr_insert ),
-												absint( $dr_update ),
-												absint( $dr_skip ),
-												esc_html( (string) $dr_dur )
-											);
+					<?php
+					/* translators: 1: would-insert count, 2: would-update count, 3: would-skip count, 4: duration in seconds */
+					printf(
+						esc_html__( '%1$d items would be inserted, %2$d updated, %3$d skipped (in %4$ss). No data was modified.', 'mcp-ai-wpoos-pro' ),
+						absint( $dr_insert ),
+						absint( $dr_update ),
+						absint( $dr_skip ),
+						esc_html( (string) $dr_dur )
+					);
+					if ( '' !== $dr_warn ) {
+						echo '<p><strong>' . esc_html__( 'Warning:', 'mcp-ai-wpoos-pro' ) . '</strong> ' . esc_html( $dr_warn ) . '</p>';
+					}
+					?>
 				</div>
 				<?php
 			elseif ( isset( $_GET['dry_run_error'] ) ) :
@@ -527,15 +555,10 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 							<label for="shopify_catalog_search_terms"><?php esc_html_e( 'Catalog API Search Terms', 'mcp-ai-wpoos-pro' ); ?></label>
 						</th>
 						<td>
+							<?php $terms = isset( $settings['catalog_search_terms'] ) ? $settings['catalog_search_terms'] : array(); ?>
 							<textarea name="shopify_catalog_search_terms" id="shopify_catalog_search_terms"
 								rows="4" cols="50" class="large-text code"
-								placeholder="<?php esc_attr_e( 'One search term per line', 'mcp-ai-wpoos-pro' ); ?>"
-							>
-							<?php
-							$terms = isset( $settings['catalog_search_terms'] ) ? $settings['catalog_search_terms'] : array();
-							echo esc_textarea( is_array( $terms ) ? implode( "\n", $terms ) : $terms );
-							?>
-							</textarea>
+								placeholder="<?php esc_attr_e( 'One search term per line', 'mcp-ai-wpoos-pro' ); ?>"><?php echo esc_textarea( is_array( $terms ) ? implode( "\n", $terms ) : $terms ); ?></textarea>
 							<p class="description">
 								<?php esc_html_e( 'For Catalog API connections only. Enter search terms (one per line) to query the Shopify Catalog. Each term is searched separately (max 50 results per term). Leave blank for a broad default search. Results are cached in the CCT for zero-cost AI tool access.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
@@ -838,16 +861,17 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 					$redirect_url
 				);
 			} else {
-				$redirect_url = add_query_arg(
-					array(
-						'dry_run_ok'     => 1,
-						'dry_run_insert' => isset( $result['data_summary']['items_would_insert'] ) ? absint( $result['data_summary']['items_would_insert'] ) : 0,
-						'dry_run_update' => isset( $result['data_summary']['items_would_update'] ) ? absint( $result['data_summary']['items_would_update'] ) : 0,
-						'dry_run_skip'   => isset( $result['data_summary']['items_would_skip'] ) ? absint( $result['data_summary']['items_would_skip'] ) : 0,
-						'dry_run_dur'    => isset( $result['data_summary']['duration'] ) ? $result['data_summary']['duration'] : 0,
-					),
-					$redirect_url
+				$dry_run_args = array(
+					'dry_run_ok'     => 1,
+					'dry_run_insert' => isset( $result['data_summary']['items_would_insert'] ) ? absint( $result['data_summary']['items_would_insert'] ) : 0,
+					'dry_run_update' => isset( $result['data_summary']['items_would_update'] ) ? absint( $result['data_summary']['items_would_update'] ) : 0,
+					'dry_run_skip'   => isset( $result['data_summary']['items_would_skip'] ) ? absint( $result['data_summary']['items_would_skip'] ) : 0,
+					'dry_run_dur'    => isset( $result['data_summary']['duration'] ) ? $result['data_summary']['duration'] : 0,
 				);
+				if ( ! empty( $result['validation']['warnings'] ) && is_array( $result['validation']['warnings'] ) ) {
+					$dry_run_args['dry_run_warn'] = rawurlencode( implode( ' ', array_map( 'sanitize_text_field', $result['validation']['warnings'] ) ) );
+				}
+				$redirect_url = add_query_arg( $dry_run_args, $redirect_url );
 			}
 		} elseif ( is_wp_error( $result ) ) {
 				$redirect_url = add_query_arg(
@@ -858,10 +882,18 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 					$redirect_url
 				);
 		} else {
-			$redirect_url = add_query_arg(
-				array( 'sync_ok' => 1 ),
-				$redirect_url
+			$sync_args = array(
+				'sync_ok'     => 1,
+				'sync_insert' => isset( $result['inserted'] ) ? absint( $result['inserted'] ) : 0,
+				'sync_update' => isset( $result['updated'] ) ? absint( $result['updated'] ) : 0,
+				'sync_skip'   => isset( $result['skipped'] ) ? absint( $result['skipped'] ) : 0,
+				'sync_errors' => isset( $result['errors'] ) ? absint( $result['errors'] ) : 0,
+				'sync_dur'    => isset( $result['duration'] ) ? $result['duration'] : 0,
 			);
+			if ( ! empty( $result['warnings'] ) && is_array( $result['warnings'] ) ) {
+				$sync_args['sync_warn'] = rawurlencode( implode( ' ', array_map( 'sanitize_text_field', $result['warnings'] ) ) );
+			}
+			$redirect_url = add_query_arg( $sync_args, $redirect_url );
 		}
 
 		wp_safe_redirect( $redirect_url );

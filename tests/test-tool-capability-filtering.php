@@ -36,9 +36,30 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Enable logging so that capability-filtering events are captured.
+		// Must also reset the settings cache so is_logging_enabled() picks up the change.
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array_merge(
+				get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() ),
+				array( 'enable_logging' => true )
+			)
+		);
+		WP_MCP_AI_Admin_Settings_Base::reset_settings_cache();
+
+		// The logger stores recent activity entries only for allowed types.
+		// 'tool_filtered_by_capability' is not in the default list, so
+		// we add it via filter so the test can verify logging behaviour.
+		add_filter(
+			'wp_mcp_ai_recent_activity_types',
+			function ( $types ) {
+				$types[] = 'tool_filtered_by_capability';
+				return $types;
+			}
+		);
+
 		// Create mock admin-only tool.
 		$this->admin_tool = $this->getMockBuilder( 'WP_MCP_AI_Tool_Interface' )
-			->setMockClassName( 'Mock_Admin_Tool' )
 			->getMock();
 
 		$this->admin_tool->method( 'get_slug' )->willReturn( 'admin_tool' );
@@ -54,7 +75,6 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 
 		// Create mock public tool.
 		$this->public_tool = $this->getMockBuilder( 'WP_MCP_AI_Tool_Interface' )
-			->setMockClassName( 'Mock_Public_Tool' )
 			->getMock();
 
 		$this->public_tool->method( 'get_slug' )->willReturn( 'public_tool' );
@@ -68,7 +88,7 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 		);
 
 		// Get tool registry.
-		$this->registry = WP_MCP_AI_Container::get( 'tool_registry' );
+		$this->registry = WP_MCP_AI_Container::get_instance()->get( 'tool_registry' );
 
 		// Register mock tools.
 		$this->registry->register_tool( $this->admin_tool );
@@ -78,7 +98,12 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		}
-		$this->rest_controller = new WP_MCP_AI_REST();
+
+		$mock_client = $this->getMockBuilder( 'WP_MCP_AI_Language_Model_Router' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$this->rest_controller = new WP_MCP_AI_REST( $this->registry, $mock_client );
 	}
 
 	/**
@@ -238,7 +263,7 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 		$filtered_logs = array_filter(
 			$logs,
 			function ( $log ) {
-				return isset( $log['event'] ) && 'tool_filtered_by_capability' === $log['event'];
+				return isset( $log['type'] ) && 'tool_filtered_by_capability' === $log['type'];
 			}
 		);
 

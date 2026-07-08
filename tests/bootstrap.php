@@ -1,8 +1,11 @@
-<?php
+<?php // phpcs:ignoreFile WordPress.Files.FileName, Generic.Files.OneObjectStructurePerFile
 /**
  * PHPUnit bootstrap file.
  *
  * Sets up the WordPress test environment and loads the plugin.
+ *
+ * This is not a class file — it contains bootstrap functions and a
+ * small PHPUnit 11 compatibility shim.
  *
  * @package WP_MCP_AI
  * @author    NV Digital Solutions
@@ -165,11 +168,33 @@ if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 // still calls it. Patch it at bootstrap time.
 // ============================================================
 if ( ! class_exists( 'WP_MCP_AI_PHPUnit11_Compat' ) ) {
+
+	/**
+	 * PHPUnit 11 compatibility shim.
+	 *
+	 * Provides a stub for the removed parseTestMethodAnnotations()
+	 * method, returning empty arrays.
+	 *
+	 * phpcs:disable WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
+	 */
 	class WP_MCP_AI_PHPUnit11_Compat {
+
+		/**
+		 * Stub for removed PHPUnit 9 parseTestMethodAnnotations().
+		 *
+		 * @param string $cn Class name.
+		 * @param string $mn Optional method name.
+		 * @return array<string,array>
+		 */
 		public static function parseTestMethodAnnotations( $cn, $mn = null ) {
-			return array( 'class' => array(), 'method' => array() );
+			return array(
+				'class'  => array(),
+				'method' => array(),
+			);
 		}
 	}
+
+	// phpcs:enable
 }
 
 $abstract_testcase = $plugin_root . '/vendor/wp-phpunit/wp-phpunit/includes/abstract-testcase.php';
@@ -180,7 +205,7 @@ if ( file_exists( $abstract_testcase ) ) {
 		'\WP_MCP_AI_PHPUnit11_Compat::parseTestMethodAnnotations',
 		$atc
 	);
-	// PHPUnit 11 removed TestCase::getName(); use name() instead
+	// PHPUnit 11 removed TestCase::getName(); use name() instead.
 	$atc = str_replace(
 		'$this->getName( false )',
 		'$this->name()',
@@ -193,13 +218,16 @@ if ( file_exists( $abstract_testcase ) ) {
 require_once $_tests_dir . '/includes/functions.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
+require_once __DIR__ . '/helpers/trait-wp-mcp-ai-http-test-helper.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
 
 // NOTE: paper-store trait loaded after WP bootstrap below
-// (it has an ABSPATH guard that requires WordPress to be loaded first)
+// (it has an ABSPATH guard that requires WordPress to be loaded first).
 
 /**
  * Manually load the plugin being tested.
+ *
+ * @return void
  */
 function wp_mcp_ai_manually_load_plugin() {
 	require dirname( __DIR__ ) . '/mcp-ai-wpoos.php';
@@ -281,6 +309,27 @@ function wp_mcp_ai_load_optional_test_plugins() {
 		define( 'WP_MCP_AI_TEST_SIMPLE_JWT_LOGIN_ACTIVE', true );
 	}
 
+	// Load JetFormBuilder if available.
+	if ( file_exists( $plugins_dir . '/jetformbuilder/jet-form-builder.php' ) ) {
+		require_once $plugins_dir . '/jetformbuilder/jet-form-builder.php';
+		$loaded_plugins[] = 'jetformbuilder';
+		define( 'WP_MCP_AI_TEST_JETFORMBUILDER_ACTIVE', true );
+	}
+
+	// Load Newsletter if available.
+	if ( file_exists( $plugins_dir . '/newsletter/plugin.php' ) ) {
+		require_once $plugins_dir . '/newsletter/plugin.php';
+		$loaded_plugins[] = 'newsletter';
+		define( 'WP_MCP_AI_TEST_NEWSLETTER_ACTIVE', true );
+	}
+
+	// Load WP All Import (lite) if available.
+	if ( file_exists( $plugins_dir . '/wp-all-import/plugin.php' ) ) {
+		require_once $plugins_dir . '/wp-all-import/plugin.php';
+		$loaded_plugins[] = 'wp-all-import';
+		define( 'WP_MCP_AI_TEST_WPALLIMPORT_ACTIVE', true );
+	}
+
 	if ( ! empty( $loaded_plugins ) ) {
 		fwrite( STDOUT, "\nLoaded optional test plugins: " . implode( ', ', $loaded_plugins ) . "\n\n" );
 	}
@@ -353,4 +402,5 @@ ob_end_clean();
 // Helpers that depend on classes provided by the WP test bootstrap (e.g.
 // `WP_Ajax_UnitTestCase`) must be loaded after it.
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-ajax-testcase.php';
+require_once __DIR__ . '/helpers/class-wp-mcp-ai-mock-http-client.php';
 require_once __DIR__ . '/paper-store/trait-paper-store-test-helpers.php';

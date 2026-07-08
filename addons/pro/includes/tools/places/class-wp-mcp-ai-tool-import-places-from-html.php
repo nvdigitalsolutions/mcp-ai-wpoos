@@ -1015,6 +1015,20 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		$doc->loadHTML( mb_convert_encoding( $html, 'HTML-ENTITIES', 'UTF-8' ) );
 		$xpath = new DOMXPath( $doc );
 
+		// --- Follow HTTrack meta-refresh redirect stubs ---
+		// Flat index*.html files are often just redirect stubs.
+		// Load the real tree file for content and source URL extraction.
+		$redirect_target = $this->detect_httrack_redirect( $html, $file_path );
+		if ( $redirect_target ) {
+			$real_html = @file_get_contents( $redirect_target );
+			if ( false !== $real_html ) {
+				$html = $real_html;
+				$doc = new DOMDocument();
+				@$doc->loadHTML( mb_convert_encoding( $real_html, 'HTML-ENTITIES', 'UTF-8' ) );
+				$xpath = new DOMXPath( $doc );
+			}
+		}
+
 		// --- Title ---
 		$title_nodes = $xpath->query( $rules['title_selector'] );
 		if ( $title_nodes->length > 0 ) {
@@ -1107,9 +1121,13 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		// --- HTTrack mirrored-from comment fallback ---
 		// HTTrack stores the original URL inside an HTML comment:
 		// <!-- Mirrored from https://www.example.com/page/ by HTTrack ... -->
-		if ( empty( $data['source_url'] ) ) {
-			if ( preg_match( '/Mirrored from (https?:\/\/\S+)/', $html, $m ) ) {
-				$data['source_url'] = trim( $m[1] );
+		if ( empty( $data['source_url'] ) || ! preg_match( '#^https?://#', $data['source_url'] ) ) {
+			if ( preg_match( '/Mirrored from (\S+)/', $html, $m ) ) {
+				$url = trim( $m[1] );
+				if ( ! preg_match( '#^https?://#', $url ) ) {
+					$url = 'https://' . $url;
+				}
+				$data['source_url'] = $url;
 			}
 		}
 
@@ -1184,6 +1202,30 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		return $data;
 	}
 
+	/**
+	 * Detect HTTrack meta-refresh redirect stub and resolve target file.
+	 *
+	 * @param string $html      Raw HTML of the flat file.
+	 * @param string $file_path Path to the flat file.
+	 * @return string|null Resolved path to real content file, or null.
+	 */
+	private function detect_httrack_redirect( $html, $file_path ) {
+		if ( false === stripos( $html, 'Page has moved' ) ) {
+			return null;
+		}
+		if ( ! preg_match( '/<meta[^>]+http-equiv\s*=\s*["\']?\s*refresh\s*["\']?[^>]+url\s*=\s*([^"\'\s>]+)/i', $html, $m ) ) {
+			return null;
+		}
+		$target = trim( $m[1], '"\' ' );
+		if ( empty( $target ) ) {
+			return null;
+		}
+		$dir      = dirname( $file_path );
+		$resolved = $dir . DIRECTORY_SEPARATOR . str_replace( '/', DIRECTORY_SEPARATOR, $target );
+		$resolved = realpath( $resolved );
+		return ( $resolved && is_readable( $resolved ) ) ? $resolved : null;
+	}
+
 	// -------------------------------------------------------------------------
 	// Utilities
 	// -------------------------------------------------------------------------
@@ -1201,11 +1243,19 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 	 * @return array|null {lat, lng} or null.
 	 */
 	private function extract_coords_from_maps_url( $url ) {
-		// Handle the newer embed format.
+		// Handle the newer embed format (!3d LAT !4d LNG).
 		if ( preg_match( '/!3d([-\d.]+)!4d([-\d.]+)/', $url, $m ) ) {
 			return array(
 				'lat' => floatval( $m[1] ),
 				'lng' => floatval( $m[2] ),
+			);
+		}
+
+		// Handle alternative embed format (!2d LNG !3d LAT).
+		if ( preg_match( '/!2d([-\d.]+)!3d([-\d.]+)/', $url, $m ) ) {
+			return array(
+				'lat' => floatval( $m[2] ),
+				'lng' => floatval( $m[1] ),
 			);
 		}
 

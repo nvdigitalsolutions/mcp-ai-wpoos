@@ -61,7 +61,10 @@ class Test_Tool_Query_Remote_Site extends WP_UnitTestCase {
 	 */
 	public function test_unauthenticated_returns_forbidden() {
 		$result = $this->tool->execute(
-			array( 'peer_name' => 'site-a', 'prompt' => 'Hello' ),
+			array(
+				'peer_name' => 'site-a',
+				'prompt'    => 'Hello',
+			),
 			array( 'user_id' => 0 )
 		);
 
@@ -74,7 +77,10 @@ class Test_Tool_Query_Remote_Site extends WP_UnitTestCase {
 	 */
 	public function test_mesh_disabled_returns_error() {
 		$result = $this->tool->execute(
-			array( 'peer_name' => 'site-a', 'prompt' => 'Hello' ),
+			array(
+				'peer_name' => 'site-a',
+				'prompt'    => 'Hello',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 
@@ -86,13 +92,19 @@ class Test_Tool_Query_Remote_Site extends WP_UnitTestCase {
 	 * Mesh enabled but peer not configured returns peer_not_found.
 	 */
 	public function test_peer_not_found_returns_error() {
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_mesh'     => true,
-			'mesh_peer_sites' => array(),
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_mesh'     => true,
+				'mesh_peer_sites' => array(),
+			)
+		);
 
 		$result = $this->tool->execute(
-			array( 'peer_name' => 'nonexistent-peer', 'prompt' => 'Hello' ),
+			array(
+				'peer_name' => 'nonexistent-peer',
+				'prompt'    => 'Hello',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 

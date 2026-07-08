@@ -135,6 +135,11 @@ add_action( 'init', 'wp_mcp_ai_register_places_management_post_type' );
 // Load Place CPT admin enhancements.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-place-cpt.php';
 
+// Register Place meta fields with JetEngine for listing/discovery.
+if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_place' );
+}
+
 // Load Place Research & Add page.
 if ( is_admin() ) {
 	// Check if places management is enabled and not in base version (unless Pro addon is active).

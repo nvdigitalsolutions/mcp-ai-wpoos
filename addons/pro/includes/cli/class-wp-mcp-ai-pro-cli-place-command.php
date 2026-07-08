@@ -211,6 +211,18 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 * default: attraction
 	 * ---
 	 *
+	 * [--auto-create-services]
+	 * : Auto-create bookable services for imported places.
+	 *
+	 * [--service-place-types=<json>]
+	 * : JSON array of place types that trigger service creation.
+	 * ---
+	 * default: ["experience"]
+	 * ---
+	 *
+	 * [--service-defaults=<json>]
+	 * : JSON object of default values for auto-created services.
+	 *
 	 * [--dry-run]
 	 * : Preview without importing.
 	 *
@@ -241,13 +253,30 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 			'default_place_type' => WP_CLI\Utils\get_flag_value( $assoc_args, 'default-type', 'attraction' ),
 			'dry_run'            => $is_dry_run,
 			'skip_existing'      => true,
+			'auto_create_services' => WP_CLI\Utils\get_flag_value( $assoc_args, 'auto-create-services', false ),
 		);
 
 		$type_mapping_json = WP_CLI\Utils\get_flag_value( $assoc_args, 'type-mapping' );
 		if ( $type_mapping_json ) {
-			$mapping = json_decode( $type_mapping_json, true );
+			$mapping = is_array( $type_mapping_json ) ? $type_mapping_json : json_decode( $type_mapping_json, true );
 			if ( is_array( $mapping ) ) {
 				$tool_args['place_type_mapping'] = $mapping;
+			}
+		}
+
+		$service_place_types_json = WP_CLI\Utils\get_flag_value( $assoc_args, 'service-place-types', '' );
+		if ( $service_place_types_json ) {
+			$service_types = is_array( $service_place_types_json ) ? $service_place_types_json : json_decode( $service_place_types_json, true );
+			if ( is_array( $service_types ) ) {
+				$tool_args['service_place_types'] = $service_types;
+			}
+		}
+
+		$service_defaults_json = WP_CLI\Utils\get_flag_value( $assoc_args, 'service-defaults', '' );
+		if ( $service_defaults_json ) {
+			$service_defs = is_array( $service_defaults_json ) ? $service_defaults_json : json_decode( $service_defaults_json, true );
+			if ( is_array( $service_defs ) ) {
+				$tool_args['service_defaults'] = $service_defs;
 			}
 		}
 
@@ -274,6 +303,10 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		WP_CLI::log( sprintf( __( '  Skipped: %d', 'mcp-ai-wpoos-pro' ), $result['skipped'] ) );
 		/* translators: %d: number of places failed */
 		WP_CLI::log( sprintf( __( '  Failed: %d', 'mcp-ai-wpoos-pro' ), $result['failed'] ) );
+		if ( ! empty( $result['services_created'] ) ) {
+			/* translators: %d: number of services */
+			WP_CLI::log( sprintf( __( '  Services created: %d', 'mcp-ai-wpoos-pro' ), $result['services_created'] ) );
+		}
 
 		if ( ! $is_dry_run && ! empty( $result['ids'] ) ) {
 			WP_CLI::success(
@@ -524,9 +557,9 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 			'{"/attractions-in-":"attraction","/hotels-in-":"hotel","/tales-of-":"tale","/experiences-in-":"experience","/plan-your-holiday-in-":"itinerary"}'
 		);
 
-		$city_mapping_decoded  = json_decode( $city_type_mapping_json, true );
+		$city_mapping_decoded  = is_array( $city_type_mapping_json ) ? $city_type_mapping_json : json_decode( $city_type_mapping_json, true );
 		$city_type_mapping     = is_array( $city_mapping_decoded ) ? $city_mapping_decoded : array();
-		$child_mapping_decoded = json_decode( $child_type_mapping_json, true );
+		$child_mapping_decoded = is_array( $child_type_mapping_json ) ? $child_type_mapping_json : json_decode( $child_type_mapping_json, true );
 		$child_type_mapping    = is_array( $child_mapping_decoded ) ? $child_mapping_decoded : array();
 
 		// Ensure tool classes are loaded.

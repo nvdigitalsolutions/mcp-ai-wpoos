@@ -21,7 +21,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 	/**
 	 * REST controller instance.
 	 *
-	 * @var WP_MCP_AI_REST_Controller
+	 * @var WP_MCP_AI_REST
 	 */
 	protected $controller;
 
@@ -39,7 +39,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Load the REST controller class and its dependencies.
-		if ( ! class_exists( 'WP_MCP_AI_REST_Controller' ) ) {
+		if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		}
 
@@ -53,7 +53,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 			->getMock();
 
 		// Create controller with mock dependencies.
-		$this->controller = new WP_MCP_AI_REST_Controller( $mock_registry, $mock_router );
+		$this->controller = new WP_MCP_AI_REST( $mock_registry, $mock_router );
 
 		// Use reflection to access the protected method.
 		$this->extract_method = new ReflectionMethod( $this->controller, 'extract_usage_info_from_tool_result' );

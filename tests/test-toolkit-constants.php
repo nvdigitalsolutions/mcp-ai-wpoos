@@ -8,6 +8,17 @@
  * @license   GPL-3.0-or-later
  */
 
+// Ensure domain classes are loaded (not auto-loaded by plugin bootstrap in tests).
+if ( ! class_exists( 'WP_MCP_AI_Toolkit_Constants' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/domain/class-wp-mcp-ai-toolkit-constants.php';
+}
+if ( ! class_exists( 'WP_MCP_AI_Pattern_Constants' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/domain/class-wp-mcp-ai-pattern-constants.php';
+}
+if ( ! class_exists( 'WP_MCP_AI_Risk_Level_Constants' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/domain/class-wp-mcp-ai-risk-level-constants.php';
+}
+
 /**
  * Test Toolkit Constants.
  */
@@ -97,14 +108,14 @@ class WP_MCP_AI_Toolkit_Constants_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that all 3 risk level constants are defined.
+	 * Test that all 4 risk level constants are defined.
 	 */
 	public function test_all_risk_levels_defined() {
 		$risk_levels = WP_MCP_AI_Risk_Level_Constants::get_all_risk_levels();
 
-		$this->assertCount( 3, $risk_levels, 'Should have exactly 3 risk levels' );
+		$this->assertCount( 4, $risk_levels, 'Should have exactly 4 risk levels' );
 
-		$expected_levels = array( 'info', 'standard', 'destructive' );
+		$expected_levels = array( 'info', 'standard', 'destructive', 'irreversible' );
 
 		foreach ( $expected_levels as $level ) {
 			$this->assertContains( $level, $risk_levels, "Risk level '{$level}' should be defined" );
@@ -118,6 +129,7 @@ class WP_MCP_AI_Toolkit_Constants_Test extends WP_UnitTestCase {
 		$this->assertTrue( WP_MCP_AI_Risk_Level_Constants::is_valid_risk_level( 'info' ) );
 		$this->assertTrue( WP_MCP_AI_Risk_Level_Constants::is_valid_risk_level( 'standard' ) );
 		$this->assertTrue( WP_MCP_AI_Risk_Level_Constants::is_valid_risk_level( 'destructive' ) );
+		$this->assertTrue( WP_MCP_AI_Risk_Level_Constants::is_valid_risk_level( 'irreversible' ) );
 		$this->assertFalse( WP_MCP_AI_Risk_Level_Constants::is_valid_risk_level( 'invalid' ) );
 		$this->assertFalse( WP_MCP_AI_Risk_Level_Constants::is_valid_risk_level( '' ) );
 	}
@@ -146,8 +158,11 @@ class WP_MCP_AI_Toolkit_Constants_Test extends WP_UnitTestCase {
 		$color = WP_MCP_AI_Risk_Level_Constants::get_risk_level_color( 'destructive' );
 		$this->assertSame( '#dc3545', $color, 'Destructive should be red' );
 
+		$color = WP_MCP_AI_Risk_Level_Constants::get_risk_level_color( 'irreversible' );
+		$this->assertSame( '#6f42c1', $color, 'Irreversible should be purple' );
+
 		$color = WP_MCP_AI_Risk_Level_Constants::get_risk_level_color( 'invalid' );
-		$this->assertSame( '#6c757d', $color, 'Invalid should return default gray' );
+		$this->assertNull( $color, 'Invalid should return null' );
 	}
 
 	/**

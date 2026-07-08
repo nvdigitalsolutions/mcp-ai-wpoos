@@ -18,6 +18,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load ECA CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-eca-cpt.php';
 
+// Register ECA and Student meta fields with JetEngine for listing/discovery.
+if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_eca' );
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_student' );
+}
+
+// Load ECA database tables (enrollments + attendance).
+require_once WP_MCP_AI_PRO_PATH . 'includes/eca/init.php';
+
 // Load ECA REST API Controller.
 require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-eca-rest-controller.php';
 

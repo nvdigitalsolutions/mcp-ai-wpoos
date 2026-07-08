@@ -133,6 +133,45 @@ class NV_oOS_Docs_Hub_REST {
 
 		register_rest_route(
 			self::NAMESPACE,
+			'/fix-links',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'fix_links' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+				'args'                => array(
+					'fixes'   => array(
+						'description' => __( 'Array of fix entries.', 'nvoos-docs-hub' ),
+						'type'        => 'array',
+						'required'    => true,
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'source'     => array(
+									'type'     => 'string',
+									'required' => true,
+								),
+								'old_target' => array(
+									'type'     => 'string',
+									'required' => true,
+								),
+								'new_target' => array(
+									'type'     => 'string',
+									'required' => true,
+								),
+							),
+						),
+					),
+					'dry_run' => array(
+						'description' => __( 'Validate without writing changes.', 'nvoos-docs-hub' ),
+						'type'        => 'boolean',
+						'default'     => false,
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
 			'/health',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -531,6 +570,72 @@ class NV_oOS_Docs_Hub_REST {
 	}
 
 	/**
+	 * POST /fix-links — apply broken-link fixes to source Markdown files.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function fix_links( $request ) {
+		// Verify nonce (WordPress REST cookie auth handles this via
+		// admin_permission, but we double-check for belt-and-suspenders).
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return new WP_Error(
+				'nvoos_dh_forbidden',
+				__( 'You do not have permission to fix links.', 'nvoos-docs-hub' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		// Guard: don't allow link-fixing while a rebuild is in progress.
+		$state = NV_oOS_Docs_Hub_Rebuild_State::get();
+		if ( ! in_array( $state['phase'], array( 'idle', 'done' ), true ) ) {
+			return new WP_Error(
+				'nvoos_dh_rebuild_in_progress',
+				__( 'A documentation rebuild is currently in progress. Please wait until it completes before fixing links.', 'nvoos-docs-hub' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		$fixes   = $request->get_param( 'fixes' );
+		$dry_run = (bool) $request->get_param( 'dry_run' );
+
+		if ( ! is_array( $fixes ) || empty( $fixes ) ) {
+			return new WP_Error(
+				'nvoos_dh_missing_fixes',
+				__( 'No fix entries provided.', 'nvoos-docs-hub' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Load the manifest to get the slug_map for absolute path resolution.
+		$cache    = new NV_oOS_Docs_Hub_Cache();
+		$manifest = $cache->get_manifest();
+		$slug_map = is_array( $manifest ) && isset( $manifest['slug_map'] )
+			? (array) $manifest['slug_map']
+			: array();
+
+		$mode       = $dry_run ? 'dry_run' : 'apply';
+		$link_fixer = new NV_oOS_Docs_Hub_Link_Fixer();
+		$results    = $link_fixer->apply_fixes( $fixes, $slug_map, $mode );
+
+		// If fixes were actually applied (non-dry-run), clear the cache so the
+		// next page load picks up the corrected content.
+		if ( ! $dry_run && $results['fixed'] > 0 ) {
+			$cache->clear();
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => empty( $results['errors'] ),
+				'results' => $results,
+				'dry_run' => $dry_run,
+			)
+		);
+	}
+
+	/**
 	 * GET /health — returns system health information.
 	 *
 	 * @since 1.0.0
@@ -614,6 +719,7 @@ class NV_oOS_Docs_Hub_REST {
 
 			return rest_ensure_response( $result );
 		} catch ( \Throwable $e ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- intentional diagnostic
 			error_log(
 				sprintf(
 					'[NV oOS Docs Hub] remote_tree fatal: %s in %s:%d',

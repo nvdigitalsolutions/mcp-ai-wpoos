@@ -34,6 +34,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Vault_Encryption_Service {
 
 	/**
+	 * Tenant type (e.g. 'school', 'company', 'site').
+	 *
+	 * Empty string means no tenant context (backward-compatible).
+	 *
+	 * @since 3.1.0
+	 * @var string
+	 */
+	private $tenant_type = '';
+
+	/**
+	 * Tenant ID.
+	 *
+	 * 0 means no tenant context (backward-compatible).
+	 *
+	 * @since 3.1.0
+	 * @var int
+	 */
+	private $tenant_id = 0;
+
+	/**
 	 * PBKDF2 iteration count (OWASP minimum: 100,000 for PBKDF2-SHA256).
 	 *
 	 * @since 1.3.0
@@ -72,6 +92,92 @@ class WP_MCP_AI_Vault_Encryption_Service {
 	 * @var int
 	 */
 	const TOTP_TIME_DRIFT = 1;
+
+	/**
+	 * Constructor.
+	 *
+	 * Accepts optional tenant context for multi-tenant key isolation.
+	 * When tenant info is provided, encryption keys are scoped to that
+	 * tenant so data encrypted for one tenant cannot be decrypted by another.
+	 *
+	 * @since 1.3.0
+	 * @since 3.1.0 Added $tenant_type and $tenant_id parameters.
+	 *
+	 * @param string $tenant_type Optional tenant type (e.g. 'school').
+	 * @param int    $tenant_id   Optional tenant ID.
+	 */
+	public function __construct( $tenant_type = '', $tenant_id = 0 ) {
+		if ( ! empty( $tenant_type ) && $tenant_id > 0 ) {
+			$this->set_tenant_context( $tenant_type, $tenant_id );
+		}
+	}
+
+	/**
+	 * Set the tenant context for key derivation.
+	 *
+	 * Subsequent encrypt()/decrypt() calls will produce keys scoped to
+	 * this tenant, preventing cross-tenant data access.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string $type Tenant type (e.g. 'school', 'company').
+	 * @param int    $id   Tenant ID.
+	 * @return void
+	 */
+	public function set_tenant_context( $type, $id ) {
+		$this->tenant_type = sanitize_key( $type );
+		$this->tenant_id   = absint( $id );
+	}
+
+	/**
+	 * Create an encryption service instance scoped to a specific tenant.
+	 *
+	 * Static factory that returns a pre-configured instance so callers
+	 * don't need to manually call set_tenant_context().
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string $type Tenant type (e.g. 'school', 'company').
+	 * @param int    $id   Tenant ID.
+	 * @return self
+	 */
+	public static function for_tenant( $type, $id ) {
+		return new self( $type, $id );
+	}
+
+	/**
+	 * Get the effective master key, optionally scoped to a tenant.
+	 *
+	 * When no tenant context is set, returns AUTH_KEY directly
+	 * (backward-compatible).  When a tenant is active, derives a
+	 * tenant-specific key via HMAC so the same user ID produces
+	 * different encryption keys per tenant.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @return string|WP_Error Master key or WP_Error.
+	 */
+	private function get_master_key() {
+		if ( ! defined( 'AUTH_KEY' ) || empty( AUTH_KEY ) ) {
+			return new WP_Error(
+				'auth_key_missing',
+				__( 'WordPress AUTH_KEY constant is not defined. Cannot derive encryption keys.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Backward-compatible: no tenant context → use AUTH_KEY directly.
+		if ( empty( $this->tenant_type ) || $this->tenant_id <= 0 ) {
+			return AUTH_KEY;
+		}
+
+		// Derive a tenant-scoped master key using HMAC.
+		return hash_hmac(
+			'sha256',
+			$this->tenant_type . ':' . $this->tenant_id,
+			AUTH_KEY,
+			true
+		);
+	}
 
 	/**
 	 * Encrypt data using AES-256-GCM.
@@ -203,13 +309,14 @@ class WP_MCP_AI_Vault_Encryption_Service {
 	 * @return string|WP_Error 32-byte encryption key or WP_Error on failure.
 	 */
 	private function get_user_encryption_key( $user_id ) {
-		// Check if WordPress AUTH_KEY is defined (required for security).
-		if ( ! defined( 'AUTH_KEY' ) || empty( AUTH_KEY ) ) {
-			return new WP_Error( 'auth_key_missing', __( 'WordPress AUTH_KEY constant is not defined. Cannot derive encryption keys.', 'mcp-ai-wpoos-pro' ) );
+			// Get the effective master key (tenant-scoped or global).
+			$master_key = $this->get_master_key();
+		if ( is_wp_error( $master_key ) ) {
+			return $master_key;
 		}
 
-		// Get or create user-specific salt.
-		$user_salt = get_user_meta( $user_id, '_vault_encryption_salt', true );
+			// Get or create user-specific salt.
+			$user_salt = get_user_meta( $user_id, '_vault_encryption_salt', true );
 
 		if ( empty( $user_salt ) ) {
 			// Generate new 32-byte random salt for this user.
@@ -224,9 +331,9 @@ class WP_MCP_AI_Vault_Encryption_Service {
 			update_user_meta( $user_id, '_vault_encryption_salt', $user_salt );
 		}
 
-		// Prepare key derivation material.
-		// Combines WordPress master key + user salt + user ID for uniqueness.
-		$key_material = AUTH_KEY . $user_salt . $user_id;
+			// Prepare key derivation material.
+			// Combines master key (tenant-scoped or global) + user salt + user ID for uniqueness.
+			$key_material = $master_key . $user_salt . $user_id;
 
 		// Derive an independent PBKDF2 salt from the user salt using HMAC so that
 		// the salt parameter is distinct from the key material (OWASP requirement).

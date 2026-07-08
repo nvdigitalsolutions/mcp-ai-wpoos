@@ -153,7 +153,9 @@ class Test_Tool_Registry_Enable_Disable extends WP_UnitTestCase {
 	 */
 	public function test_tool_slugs_are_sanitized() {
 		$unsanitized_slug = 'Search Content!@#';
-		$sanitized_slug   = 'search_content';
+		// sanitize_key() strips any character not in [a-z0-9_-], so spaces
+		// and special characters are removed (not converted to underscores).
+		$sanitized_slug   = 'searchcontent';
 
 		// Disable with unsanitized slug.
 		$this->registry->disable_tool( $unsanitized_slug );

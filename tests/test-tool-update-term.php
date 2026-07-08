@@ -60,7 +60,11 @@ class Test_Tool_Update_Term extends WP_UnitTestCase {
 	 */
 	public function test_unauthenticated_returns_forbidden() {
 		$result = $this->tool->execute(
-			array( 'term_id' => $this->term_id, 'taxonomy' => 'category', 'name' => 'New' ),
+			array(
+				'term_id'  => $this->term_id,
+				'taxonomy' => 'category',
+				'name'     => 'New',
+			),
 			array( 'user_id' => 0 )
 		);
 
@@ -73,7 +77,10 @@ class Test_Tool_Update_Term extends WP_UnitTestCase {
 	 */
 	public function test_missing_term_id_returns_error() {
 		$result = $this->tool->execute(
-			array( 'taxonomy' => 'category', 'name' => 'New Name' ),
+			array(
+				'taxonomy' => 'category',
+				'name'     => 'New Name',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 
@@ -86,7 +93,10 @@ class Test_Tool_Update_Term extends WP_UnitTestCase {
 	 */
 	public function test_missing_taxonomy_returns_error() {
 		$result = $this->tool->execute(
-			array( 'term_id' => $this->term_id, 'name' => 'New Name' ),
+			array(
+				'term_id' => $this->term_id,
+				'name'    => 'New Name',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 
@@ -99,7 +109,11 @@ class Test_Tool_Update_Term extends WP_UnitTestCase {
 	 */
 	public function test_nonexistent_term_returns_error() {
 		$result = $this->tool->execute(
-			array( 'term_id' => 999999, 'taxonomy' => 'category', 'name' => 'Ghost' ),
+			array(
+				'term_id'  => 999999,
+				'taxonomy' => 'category',
+				'name'     => 'Ghost',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 

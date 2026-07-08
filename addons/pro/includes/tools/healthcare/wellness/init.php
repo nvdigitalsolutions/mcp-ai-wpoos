@@ -54,6 +54,16 @@ add_action(
 // Load Health and Wellness CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-cpt.php';
 
+// Register healthcare meta fields with JetEngine for listing/discovery.
+if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_member' );
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_med_record' );
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_allergy' );
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_prescription' );
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_checkup' );
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_policy' );
+}
+
 // Load Health and Wellness meta boxes (WP Admin form fields, save hooks, admin columns).
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-meta-boxes.php';
 WP_MCP_AI_Health_Wellness_Meta_Boxes::init();

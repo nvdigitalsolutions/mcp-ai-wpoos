@@ -106,7 +106,7 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( array $arguments, array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['name'] ) || empty( $arguments['email'] ) ) {
 			return array(
 				'success' => false,
@@ -255,7 +255,7 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_flag_capabilities() {
+	public function get_capability_flags() {
 		return array( 'write' );
 	}
 }

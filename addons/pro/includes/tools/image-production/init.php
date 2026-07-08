@@ -20,6 +20,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load Image Template CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-image-template-cpt.php';
 
+// Register Image Template meta fields with JetEngine for listing/discovery.
+if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+	WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_image_tpl' );
+}
+
 // Load Image Production admin pages (always load so menu items appear).
 if ( is_admin() ) {
 	// Load CPT-based settings page.
