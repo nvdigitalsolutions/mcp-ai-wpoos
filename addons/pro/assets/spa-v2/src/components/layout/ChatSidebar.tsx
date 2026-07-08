@@ -86,13 +86,18 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 
 	// ---- fetch assistants on mount / when endpoint changes ----
 	const [ assistantsError, setAssistantsError ] = useState< string | null >( null );
-	const [ assistantsLoaded, setAssistantsLoaded ] = useState( false );
+	const [ assistantsLoaded, setAssistantsLoaded ] = useState(
+		() => assistants.length > 0
+	);
 
 	useEffect( () => {
 		if ( ! assistantsEndpoint ) return;
 		let cancelled = false;
 		setAssistantsError( null );
-		setAssistantsLoaded( false );
+		// Keep loaded=true if we already have pre-loaded assistants.
+		if ( assistants.length === 0 ) {
+			setAssistantsLoaded( false );
+		}
 		const runtime = readProSpaConfig();
 		const client = new AssistantsClient( {
 			endpoint: assistantsEndpoint,

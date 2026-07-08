@@ -150,6 +150,35 @@ class WP_MCP_AI_Pro_SPA_Loader {
 			}
 		}
 
+		// Pre-load published assistants so the SPA sidebar can render the
+		// dropdown immediately without a separate REST API round-trip.
+		$assistants = array();
+		if ( post_type_exists( 'mcp_ai_assistant' ) && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$query = new WP_Query(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+					'no_found_rows'  => true,
+				)
+			);
+
+			foreach ( $query->posts as $post ) {
+				$config   = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post->ID );
+				$provider = isset( $config['provider'] ) ? sanitize_key( $config['provider'] ) : '';
+				$model    = isset( $config['model'] ) ? (string) $config['model'] : '';
+
+				$assistants[] = array(
+					'id'       => $post->ID,
+					'title'    => get_the_title( $post ),
+					'provider' => $provider,
+					'model'    => $model,
+				);
+			}
+		}
+
 		$runtime = array(
 			'apiUrl'       => esc_url_raw( rest_url( 'mcp-ai/v1' ) ),
 			'proApi'       => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
@@ -188,6 +217,8 @@ class WP_MCP_AI_Pro_SPA_Loader {
 				'assistant_id' => $assistant_id,
 			),
 			'mentionTypes' => array(),
+			// Pre-loaded assistants so the sidebar renders immediately.
+			'assistants'   => $assistants,
 		);
 
 		// Populate mention types if the resolver is available.
