@@ -69,6 +69,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		transcriptsEndpoint: endpoints?.transcripts ?? '',
 		initialMessages,
 		sessionKey: transcripts.sessionKey,
+		model: model.model,
+		provider: model.provider,
 	} );
 
 	const {

@@ -608,6 +608,17 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	flex: 1;
 	overflow-y: auto;
 	padding: 16px 20px;
+	/* Reserve space below the messages container so the anchor
+	   leaves clearance above the composer bar. */
+	scroll-padding-bottom: 100px;
+}
+
+/* Scroll anchor — kept at the bottom of the message list.
+   scroll-margin-bottom leaves 100px of breathing room so the
+   streaming response text is not hidden behind the composer. */
+.nvoos-pro-spa-agent-panel__scroll-anchor {
+	scroll-margin-bottom: 100px;
+	height: 0;
 }
 
 .nvoos-pro-spa-agent-panel__empty {
