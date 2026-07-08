@@ -146,9 +146,22 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 			);
 			break;
 		}
-		default: {
-			out.push( encodeChunk( '8', [ { type: 'unknown', frame } ] ) );
-		}
+			// Agentic loop events — forward with native type so the UI labels them.
+			case 'start':
+			case 'tool_start':
+			case 'tool_result': {
+				out.push( encodeChunk( '8', [ frame ] ) );
+				break;
+			}
+			default: {
+				// Completion frames with data — mark as 'data' type.
+				if ( frame.data || frame.choices || frame.model ) {
+					out.push( encodeChunk( '8', [ { ...frame, type: 'data' } ] ) );
+				} else {
+					// Truly unknown — forward but flag.
+					out.push( encodeChunk( '8', [ { type: 'unknown', frame } ] ) );
+				}
+			}
 	}
 	return out;
 }

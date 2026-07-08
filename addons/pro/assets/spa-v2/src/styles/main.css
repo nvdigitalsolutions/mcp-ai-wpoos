@@ -1945,16 +1945,62 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 }
 
 .nvoos-pro-spa-annotation {
-	padding: 1px 6px;
+	display: inline-block;
 	border-radius: 10px;
 	font-size: 10px;
 	background: rgba(0, 0, 0, 0.06);
+	overflow: hidden;
+	transition: border-radius 0.15s, background 0.15s;
+}
+
+.nvoos-pro-spa-annotation[open] {
+	border-radius: 6px;
+	background: rgba(0, 0, 0, 0.08);
+}
+
+.nvoos-pro-spa-annotation__summary {
+	padding: 1px 6px;
+	cursor: pointer;
+	list-style: none;
+	user-select: none;
 	text-transform: uppercase;
+}
+
+.nvoos-pro-spa-annotation__summary::-webkit-details-marker {
+	display: none;
+}
+
+.nvoos-pro-spa-annotation__body {
+	margin: 0;
+	padding: 4px 8px;
+	font-size: 10px;
+	line-height: 1.4;
+	max-height: 200px;
+	overflow-y: auto;
+	background: rgba(0, 0, 0, 0.03);
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	white-space: pre-wrap;
+	word-break: break-word;
 }
 
 .nvoos-pro-spa-annotation--memory_event {
 	background: rgba(0, 163, 42, 0.12);
 	color: var(--nvoos-success, #00a32a);
+}
+
+.nvoos-pro-spa-annotation--thinking {
+	background: rgba(33, 150, 243, 0.12);
+	color: #1565c0;
+}
+
+.nvoos-pro-spa-annotation--generating {
+	background: rgba(76, 175, 80, 0.12);
+	color: #2e7d32;
+}
+
+.nvoos-pro-spa-annotation--unknown {
+	background: rgba(158, 158, 158, 0.15);
+	color: #616161;
 }
 
 /* ── Special content blocks ──────────────────────────────────────────── */

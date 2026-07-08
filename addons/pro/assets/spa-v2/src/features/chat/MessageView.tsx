@@ -532,15 +532,87 @@ function ToolCallCard( { invocation }: { invocation: ToolInvocation } ): JSX.Ele
 	);
 }
 
+/**
+ * Derive a human-readable label from an annotation, handling wrapped unknown
+ * frames that carry sub-type information (start, tool_start, tool_result, etc.).
+ */
+function annotationLabel( ann: Annotation ): string {
+	const type = typeof ann.type === 'string' ? ann.type : '';
+
+	// Status events — use the message text if available
+	if (
+		type === 'thinking' ||
+		type === 'generating' ||
+		type === 'processing_attachments' ||
+		type === 'loading_memory'
+	) {
+		const msg = typeof ann.message === 'string' ? ann.message : '';
+		return msg || type;
+	}
+
+	// Memory event — use title
+	if ( type === 'memory_event' ) {
+		const title = typeof ann.title === 'string' && ann.title ? ann.title : __( 'memory', 'nvoos-pro-spa' );
+		return title;
+	}
+
+	// Tool result as annotation (from completion frame tool_results)
+	if ( ann.role === 'tool' && typeof ann.name === 'string' ) {
+		return ann.name;
+	}
+
+	// Wrapped unknown frames — peek inside to find the real type
+	if ( type === 'unknown' ) {
+		const frame = ann.frame as Record<string, unknown> | undefined;
+		if ( frame && typeof frame.type === 'string' ) {
+			switch ( frame.type ) {
+				case 'start':
+					return __( 'agent loop', 'nvoos-pro-spa' );
+				case 'tool_start':
+					return typeof frame.tool_name === 'string' ? ( frame.tool_name as string ) : __( 'tool start', 'nvoos-pro-spa' );
+				case 'tool_result':
+					return typeof frame.tool_name === 'string'
+						? ( frame.tool_name as string )
+						: __( 'tool result', 'nvoos-pro-spa' );
+				default:
+					return frame.type as string;
+			}
+		}
+		// tool_results array items sometimes come through without the unknown wrapper
+		if ( ann.name && typeof ann.name === 'string' ) {
+			return ann.name;
+		}
+		return __( 'unknown', 'nvoos-pro-spa' );
+	}
+
+	if ( type === 'annotation' || type === '' ) {
+		return typeof ann.name === 'string' ? ann.name : __( 'annotation', 'nvoos-pro-spa' );
+	}
+
+	// Data/completion frames (from SSE adapter data type)
+	if ( type === 'data' ) {
+		return __( 'response info', 'nvoos-pro-spa' );
+	}
+
+	return type;
+}
+
 function AnnotationPill( { annotation }: { annotation: Annotation } ): JSX.Element {
+	const [ open, setOpen ] = useState( false );
 	const type = typeof annotation.type === 'string' ? annotation.type : 'annotation';
+	const label = annotationLabel( annotation );
+
 	return (
-		<span
+		<details
 			className={ `nvoos-pro-spa-annotation nvoos-pro-spa-annotation--${ type }` }
-			title={ safeStringify( annotation, 0 ) }
+			open={ open }
+			onToggle={ ( e ) => setOpen( ( e.currentTarget as HTMLDetailsElement ).open ) }
 		>
-			{ type }
-		</span>
+			<summary className="nvoos-pro-spa-annotation__summary">
+				{ label }
+			</summary>
+			<pre className="nvoos-pro-spa-annotation__body">{ safeStringify( annotation ) }</pre>
+		</details>
 	);
 }
 
