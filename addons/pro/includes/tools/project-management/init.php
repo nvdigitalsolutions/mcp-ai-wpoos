@@ -54,6 +54,13 @@ if ( $is_enabled && ! $is_base ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-cpt.php';
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-event-cpt.php';
 
+	// Register meta fields with JetEngine for listing/discovery.
+	if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_project' );
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_task' );
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_event' );
+	}
+
 	// Register Sprint CPT if not already registered.
 	if ( ! post_type_exists( 'mcp_ai_sprint' ) ) {
 		register_post_type(

@@ -63,6 +63,12 @@ if ( $is_enabled && ! $is_base ) {
 	}
 	unset( $_cc_messages_cpt, $_cc_contacts_cpt );
 
+	// Register CPT meta fields with JetEngine for listing/discovery.
+	if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_chan_contact' );
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_chan_message' );
+	}
+
 	// --- REST API: Chat Channels inbox controller ---
 	$_cc_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php';
 	if ( file_exists( $_cc_rest ) && ! class_exists( 'WP_MCP_AI_Chat_Channels_REST_Controller' ) ) {

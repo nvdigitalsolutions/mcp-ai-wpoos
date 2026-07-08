@@ -423,6 +423,19 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 	);
 
 	/**
+	 * Get the JetEngine MCP tool name for a legacy operation, if mapped.
+	 *
+	 * @since 2.1.1
+	 *
+	 * @param string $operation Legacy operation identifier.
+	 * @return string|null MCP tool name, or null if no mapping exists.
+	 */
+	public static function get_mcp_tool_name( $operation ) {
+		$operation = sanitize_key( $operation );
+		return isset( self::$mcp_operation_map[ $operation ] ) ? self::$mcp_operation_map[ $operation ] : null;
+	}
+
+	/**
 	 * Attempt to dispatch an operation via JetEngine's MCP server.
 	 *
 	 * Returns null when MCP is not available or the operation does not have
@@ -747,7 +760,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 		$sanitized = array();
 
 		foreach ( $params as $key => $value ) {
-			$clean_key = is_string( $key ) ? preg_replace( '/[^a-zA-Z0-9_\-]/', '', $key ) : $key;
+			$clean_key = is_string( $key ) ? preg_replace( '/[^a-zA-Z0-9_\-\.]/', '', $key ) : $key;
 
 			if ( is_array( $value ) ) {
 				$sanitized[ $clean_key ] = self::sanitize_params( $value );

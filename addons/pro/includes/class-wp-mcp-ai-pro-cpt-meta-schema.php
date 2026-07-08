@@ -75,7 +75,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 	 *
 	 * @return array Associative array keyed by CPT slug.
 	 */
-	private static function all_schemas() {
+	public static function all_schemas() {
 		return array(
 
 			// ----------------------------------------------------------------

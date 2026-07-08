@@ -27,6 +27,11 @@ if ( $is_enabled && ! $is_base ) {
 	// CPT creates its own menu automatically.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-financial-account-cpt.php';
 
+	// Register Financial Account meta fields with JetEngine for listing/discovery.
+	if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_fin_account' );
+	}
+
 	// Load Financial Planner settings page (appears under CPT menu).
 	// Uses CPT-based pattern like Quiz, Project, and other toolkits.
 	if ( is_admin() ) {

@@ -300,6 +300,11 @@ class NV_oOS_Embedded {
 		require_once NVOOS_EMBEDDED_PATH . 'includes/webchat/class-wp-mcp-ai-webchat-cpt.php';
 		WP_MCP_AI_WebChat_CPT::init();
 
+		// Register WebChat meta fields with JetEngine for listing/discovery.
+		if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+			WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_webchat' );
+		}
+
 		// Load JetEngine WebChat Messages CCT if JetEngine is active.
 		if ( function_exists( 'jet_engine' ) ) {
 			require_once NVOOS_EMBEDDED_PATH . 'includes/webchat/class-wp-mcp-ai-jetengine-webchat-messages-cct.php';
