@@ -1001,16 +1001,22 @@ echo ""
 echo "To install:"
 echo "  1. Go to WordPress Admin → Plugins → Add New → Upload Plugin"
 echo "  2. Upload the appropriate ZIP file:"
-[ "$BUILD_BASE" = true ] && echo "     - mcp-ai-wpoos-base-${VERSION}.zip (Base version)"
-[ "$BUILD_PRO" = true ] && echo "     - mcp-ai-wpoos-pro-${VERSION}.zip (Pro add-on, requires base)"
-[ "$BUILD_COMBINED" = true ] && echo "     - mcp-ai-wpoos-${VERSION}.zip (Complete: Base + Pro combined)"
+[ "$BUILD_BASE" = true ] && echo "     - mcp-ai-wpoos-base-${VERSION}.zip (Base version — extracts to mcp-ai-wpoos-base/)"
+[ "$BUILD_PRO" = true ] && echo "     - mcp-ai-wpoos-pro-${VERSION}.zip (Pro add-on — extracts to mcp-ai-wpoos-pro/)"
+[ "$BUILD_COMBINED" = true ] && echo "     - mcp-ai-wpoos-${VERSION}.zip (Complete: Base + Pro — extracts to mcp-ai-wpoos/)"
 if [ "$BUILD_CORE_ONLY" = true ]; then
     CORE_VERSION=$(grep -E "^\s*\*\s*Version:" core/mcp-ai-wpoos-core.php 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "1.0.0")
-    echo "     - mcp-ai-wpoos-core-${CORE_VERSION}.zip (Lightweight core plugin)"
+    echo "     - mcp-ai-wpoos-core-${CORE_VERSION}.zip (Lightweight core — extracts to mcp-ai-wpoos-core/)"
 fi
 [ "$BUILD_TOOLKITS" = true ] && echo "     - build/toolkit-addons/oos-toolkit-*-${VERSION}.zip (Individual toolkit add-ons)"
-[ "$BUILD_WP_ORG" = true ] && echo "     - nvdigital-open-operator-system-oos-${VERSION}.zip (WordPress.org submission)"
+[ "$BUILD_WP_ORG" = true ] && echo "     - nvdigital-open-operator-system-oos-${VERSION}.zip (WP.org Base — extracts to nvdigital-open-operator-system-oos/)"
+[ "$BUILD_WP_ORG" = true ] && echo "     - nvdigital-open-operator-system-oos-pro-${VERSION}.zip (WP.org Pro — extracts to nvdigital-open-operator-system-oos-pro/)"
+[ "$BUILD_WP_ORG" = true ] && echo "     - nvdigital-open-operator-system-oos-complete-${VERSION}.zip (WP.org Complete — extracts to nvdigital-open-operator-system-oos-complete/)"
 echo "  3. Click 'Install Now' and then 'Activate'"
+echo ""
+echo "  ℹ️  All ZIP filenames include the version, but the folder inside is"
+echo "     versionless — so WordPress always extracts to the same directory"
+echo "     regardless of the version number. Updating is a simple replace."
 echo ""
 
 # Step: Rebuild production autoloader after all ZIPs are created.

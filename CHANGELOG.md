@@ -1,5 +1,114 @@
 # oOS – Changelog
 
+## [1.1.37] - 2026-07-08
+
+### Added — JetEngine Meta Helper (Universal)
+
+- **Universal meta helper** for all 25 Pro CPTs — unified REST exposure via `show_in_rest` and `register_post_meta`.
+- **MCP routing** — fixed JetEngine MCP routing and error reporting bugs.
+- **Load order** — fixed meta helper loaded after dependent toolkit inits causing silent failures.
+- **ECA field registry** — registered `_eca_*` and `_student_*` fields in JetEngine meta registry.
+
+### Added — Places Toolkit Enrichment
+
+- **`enrich_place_coordinates`** and **`enrich_place_details`** tools — batch geocoding and place detail enrichment via Google Places API.
+- **Social and booking fields** added to Places CCT schema.
+- **Places enrichment bin scripts** for CLI-driven batch operations.
+- **HTTrack import fixes** — redirect stub handling, coordinate parsing, parent linking, CLI parameter validation.
+
+### Added — RabbitMQ Integration
+
+- **RabbitMQ client** wired into the plugin infrastructure.
+- **Queue manager** with async tool interception support.
+- **Custom DB tables** — queue storage migrated from options to dedicated database tables.
+- **Health endpoint** for queue monitoring.
+- **Queue worker** for background processing.
+
+### Added — Multi-Tenant Database Isolation (Phase 0–4)
+
+- **Phase 0 foundation** — database isolation primitives and connection routing.
+- **Phases 1–4 complete** — multi-tenant query scoping, schema isolation, cross-tenant safety guards, and admin controls.
+
+### Added — DSpark Admin UI & Orchestration
+
+- **Admin UI** — settings page, threshold configuration, efficiency dashboard, presets, and hook system.
+- **Speculative orchestration** enhancements with configurable execution strategies.
+
+### Added — Crocoblock Design System Addon
+
+- **All 5 phases** delivered as a standalone addon under `addons/crocoblock-ds/`.
+- **Design token system** — unified CSS custom properties, preset templates, and admin-controlled theming for JetEngine, JetSmartFilters, and JetFormBuilder.
+- Registered in addon inventory and build-addon-zips script.
+
+### Added — Test Coverage Campaign
+
+- **301 previously untested tools** covered with batch tests.
+- **6 previously untested pro toolkits** now have coverage.
+- **22 toolkits** covered across 7 batch test files.
+- **HTTP testing infrastructure** for remote tool tests (`feat/http-test-infrastructure`).
+- **Docker plugin seed service** for integration test coverage.
+
+### Added — CI/CD Hardening
+
+- **OWASP ZAP DAST** security scanning integrated into CI pipeline.
+- **PHP 8.1 → 8.2** bump in CI workflows.
+- **QA Docker setup fix** — removed unnecessary chmod on bind-mounted script.
+
+### Added — Docs Hub Broken Link Engine
+
+- **Broken link detection and repair engine** — automated scanning with results table.
+- **Accept fix buttons** on broken link detail table for one-click repair.
+- **Suggestion engine fix** — resolved issue where engine produced no suggestions.
+
+### Added — SPA Accessibility
+
+- **Annotation pills** made clickable with meaningful labels for screen readers.
+
+### Added — Webhook & Agentic-Loop Improvements
+
+- **Proactive agentic-loop context compaction** to prevent context overflow during long-running agent sessions.
+- **Webhook Context Manager** enhanced with industry best practices.
+- **Sliding window context loss** fixed across all 11 webhook controllers.
+- **`max_history_messages` section default** normalized to match base settings (8).
+
+### Added — Shopify Sync Enhancements
+
+- **Catalog API sync** support for product caching.
+- **Minimal sync mode** — title, SKU, stock levels only for fast updates.
+- **Price field** added to minimal sync mode.
+
+### Added — BME Chat History Context Strategy
+
+- **RAG memory** integration for chat history context.
+- **Settings moved** to General → Behavior subtab on new dashboard.
+
+### Fixed — Post-1.1.36 Bug Fixes
+
+- **Shopify Catalog API** — silent 0-item sync and result reporting fixed.
+- **Recurring sync** — stuck at old interval with missing connection IDs resolved.
+- **Sync log batching** — deferred writes to avoid per-item DB writes causing timeouts.
+- **Webhook auto-reply** — broken by missing Webhook Context Manager require.
+- **Import-blueprints** and remaining-pro-tools file discovery fixed.
+- **Extended-cognition toolkit** — missing requires for trait and interface added.
+- **Tool test errors** — static data providers, constructor mocks, slug overrides, WP_Error returns fixed.
+- **CRM and PM tests** — recursive file search for subdirectory tools.
+- **DietPi and Cloudways tests** — resolved all dependency errors, graceful skip for abstract/missing classes.
+- **Pro test infrastructure** — composer classmap-authoritative, static data providers, graceful skipping.
+- **ESLint fixes** — `prefer-const` over `let`, `let` instead of `var` in BME code.
+- **js-yaml override** — fixed DoS vulnerability in transitive dependencies.
+- **WPCS violations** — docblocks and formatting fixed across all test files and enrichment tools.
+
+### Documentation
+
+- FlowHub and Shopify toolkit docs updated for v1.1.36 features.
+- README version and release date updated.
+
+### Versioning
+
+- Bumped to **1.1.37** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`.
+- Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Moonshot/Kimi).
+
 ## [1.1.36] - 2026-07-04
 
 ### Added — EZuite Inventory Sync Pro Toolkit
