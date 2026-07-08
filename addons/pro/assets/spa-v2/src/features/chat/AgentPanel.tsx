@@ -70,7 +70,8 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 	const messagesEndRef = useRef< HTMLDivElement | null >( null );
 	const composerRef = useRef< HTMLTextAreaElement | null >( null );
 
-	// Auto-scroll to the latest message.
+	// Auto-scroll to the latest message, leaving clearance above
+	// the composer so streaming text is visible as it arrives.
 	const scrollToBottom = useCallback( () => {
 		messagesEndRef.current?.scrollIntoView( { behavior: 'smooth' } );
 	}, [] );
@@ -158,7 +159,11 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 					</div>
 				) }
 
-				<div ref={ messagesEndRef } aria-hidden="true" />
+				<div
+					ref={ messagesEndRef }
+					aria-hidden="true"
+					className="nvoos-pro-spa-agent-panel__scroll-anchor"
+				/>
 			</div>
 
 			{/* Composer */}
