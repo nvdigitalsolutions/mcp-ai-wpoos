@@ -496,6 +496,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// WebChat integration has been moved to the NV oOS Embedded addon.
 		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 
+		// JetEngine meta helper — lightweight utility that CPT toolkits call
+		// to register their meta fields in JetEngine's internal registry so
+		// they become discoverable in the Listing Builder, Dynamic Field
+		// selector, and Query Builder.  Each toolkit's init.php adds its
+		// own CPTs behind a function_exists( 'jet_engine' ) guard.
+		// MUST be loaded BEFORE any toolkit init.php that calls it.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-meta-helper.php';
+
 		// Load Media Toolkit if enabled (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/media/init.php';
 
@@ -549,13 +557,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load ECA Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/init.php';
-
-		// JetEngine meta helper — lightweight utility that CPT toolkits call
-		// to register their meta fields in JetEngine's internal registry so
-		// they become discoverable in the Listing Builder, Dynamic Field
-		// selector, and Query Builder.  Each toolkit's init.php adds its
-		// own CPTs behind a function_exists( 'jet_engine' ) guard.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-meta-helper.php';
 
 		// Load Pro Schedule Result REST controller (Scheduled Result widget/block backend).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-schedule-result-controller.php';
