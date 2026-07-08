@@ -666,16 +666,22 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$query = new WP_Query( $query_args );
 
 		foreach ( $query->posts as $post ) {
+			$provider = get_post_meta( $post->ID, '_wp_mcp_ai_provider', true );
+			$model    = get_post_meta( $post->ID, '_wp_mcp_ai_model', true );
+
 			$assistants[] = array(
 				'id'          => $post->ID,
 				'title'       => $post->post_title,
 				'description' => wp_strip_all_tags( $post->post_content ),
+				'provider'    => is_string( $provider ) ? $provider : '',
+				'model'       => is_string( $model ) ? $model : '',
 			);
 		}
 
 		return $this->success(
 			array(
 				'assistants'        => $assistants,
+				'total'             => count( $assistants ),
 				'default_assistant' => ! empty( $assistants ) ? $assistants[0]['id'] : 0,
 				'rest'              => array(
 					'namespace' => self::REST_NAMESPACE,
