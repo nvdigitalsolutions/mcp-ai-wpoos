@@ -280,8 +280,33 @@ transform_package() {
     
     # Create output package
     echo "Step 4: Creating package..."
+
+    # Determine versionless folder name for the ZIP interior.
+    # The ZIP filename keeps the version (e.g. nvdigital-open-operator-system-oos-1.1.37.zip)
+    # but the folder inside must be versionless so WordPress extracts to a stable directory.
     cd "$EXTRACTED_DIR"
-    zip -r "$ROOT_DIR/$OUTPUT_ZIP" . -q
+    case "$PACKAGE_TYPE" in
+        *PRO*)
+            VERSIONLESS_DIR="nvdigital-open-operator-system-oos-pro"
+            ;;
+        *CORE*)
+            VERSIONLESS_DIR="nvdigital-open-operator-system-oos-core"
+            ;;
+        *COMPLETE*)
+            VERSIONLESS_DIR="nvdigital-open-operator-system-oos-complete"
+            ;;
+        *)
+            VERSIONLESS_DIR="nvdigital-open-operator-system-oos"
+            ;;
+    esac
+
+    # Wrap all files inside a versionless folder before zipping.
+    mkdir -p "../${VERSIONLESS_DIR}"
+    # Move visible files and hidden files (excluding . and ..)
+    find . -mindepth 1 -maxdepth 1 -exec mv {} "../${VERSIONLESS_DIR}/" \;
+    cd ..
+    zip -r "$ROOT_DIR/$OUTPUT_ZIP" "${VERSIONLESS_DIR}" -q
+    echo "   Folder inside ZIP: ${VERSIONLESS_DIR}/"
     
     # Calculate size
     OUTPUT_SIZE=$(du -h "$ROOT_DIR/$OUTPUT_ZIP" | cut -f1)
