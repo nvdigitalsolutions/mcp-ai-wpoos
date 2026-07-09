@@ -84,8 +84,11 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 
 	// When the user submits, scroll to bottom unconditionally so the
 	// composer stays out of the way and the response is visible.
+	// Also scroll when streaming begins — this is when the assistant
+	// message first appears in the DOM, and Effect 2's proximity guard
+	// may block the scroll if the new message height exceeds 200px.
 	useEffect( () => {
-		if ( status === 'submitted' ) {
+		if ( status === 'submitted' || status === 'streaming' ) {
 			scrollToBottom();
 		}
 	}, [ status, scrollToBottom ] );
