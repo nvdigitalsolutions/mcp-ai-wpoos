@@ -15,10 +15,55 @@ import { __, sprintf } from '@wordpress/i18n';
 import { useThreads } from '../../hooks/useThreads';
 import type { TranscriptSession } from '../../api/transcripts';
 import type { ThreadSummary } from '../../api/threads';
-	import { useAssistantStore } from '../../stores/assistantStore';
-	import { useModelStore } from '../../stores/modelStore';
-	import { AssistantsClient, type AssistantRecord } from '../../api/assistants';
-	import { readProSpaConfig } from '../../api/config';
+import { useAssistantStore } from '../../stores/assistantStore';
+import { useModelStore } from '../../stores/modelStore';
+import { AssistantsClient, type AssistantRecord } from '../../api/assistants';
+import { readProSpaConfig } from '../../api/config';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Format an ISO-ish date string to a short display form (e.g. "09-Jul-26"). */
+function formatShortDate( iso: string | undefined ): string {
+	if ( ! iso ) return '';
+	const d = new Date( iso );
+	if ( isNaN( d.getTime() ) ) return '';
+	const months = [
+		'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+		'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+	];
+	const day = String( d.getDate() ).padStart( 2, '0' );
+	const mon = months[ d.getMonth() ];
+	const year = String( d.getFullYear() ).slice( -2 );
+	return `${ day }-${ mon }-${ year }`;
+}
+
+/** Return at most `maxWords` words from `text`, trimmed. */
+function truncateWords( text: string | undefined, maxWords: number ): string {
+	if ( ! text ) return '';
+	const words = text.trim().split( /\s+/ );
+	if ( words.length <= maxWords ) return text.trim();
+	return words.slice( 0, maxWords ).join( ' ' ) + '\u2026';
+}
+
+/** Build a descriptive conversation title from session metadata. */
+function buildConversationTitle( s: TranscriptSession ): string {
+	const name = s.assistant_title || s.assistant_model || '';
+	const date = formatShortDate( s.started_at || s.updated_at );
+	const preview = truncateWords( s.preview, 5 );
+
+	const parts: string[] = [];
+	if ( name ) parts.push( name );
+	if ( date ) parts.push( date );
+	if ( preview ) parts.push( preview );
+
+	if ( parts.length === 0 ) {
+		return s.session_key.slice( 0, 16 ) + '\u2026';
+	}
+
+	return parts.join( ' \u2014 ' );
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -405,14 +450,10 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 									}
 								>
 									<span className="nvoos-pro-spa-sidebar__item-title">
-										{ s.assistant_title ||
-											s.assistant_model ||
-											s.session_key.slice( 0, 16 ) +
-												'…' }
+										{ buildConversationTitle( s ) }
 									</span>
 									{ s.turn_count !== undefined && (
 										<span className="nvoos-pro-spa-sidebar__item-meta">
-											{ s.turn_count }{ ' ' }
 											{ sprintf(
 												/* translators: %d: number of turns */
 												__( '%d turns', 'nvoos-pro-spa' ),
@@ -519,7 +560,6 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 									</span>
 									{ t.message_count !== undefined && (
 										<span className="nvoos-pro-spa-sidebar__item-meta">
-											{ t.message_count }{ ' ' }
 											{ sprintf(
 												/* translators: %d: number of messages */
 												__( '%d msgs', 'nvoos-pro-spa' ),

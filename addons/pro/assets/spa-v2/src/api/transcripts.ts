@@ -14,8 +14,11 @@ export interface TranscriptSession {
 	turn_count?: number;
 	started_at?: string;
 	completed_at?: string;
+	updated_at?: string;
 	first_created?: string;
 	last_created?: string;
+	/** First user message text (max ~100 chars from backend). */
+	preview?: string;
 }
 
 export interface TranscriptListResponse {
