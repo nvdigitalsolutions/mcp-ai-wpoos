@@ -55,7 +55,7 @@ export function AudioRecorderButton( { mode, toolsEndpoint, uploadEndpoint, nonc
 			const media = ( await upResp.json() ) as { id: number };
 			if ( ! cleanRef.current ) return;
 			setBusy( 'transcribing' ); setStatusMsg( __( 'Transcribing…', 'nvoos-pro-spa' ) );
-			const tResp = await fetch( toolsEndpoint, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-WP-Nonce': nonce }, body: JSON.stringify( { tool: 'transcribe', arguments: { attachment_id: media.id }, assistant_id: assistantId } ) } );
+			const tResp = await fetch( toolsEndpoint, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-WP-Nonce': nonce }, body: JSON.stringify( { tool: 'transcribe_openai_audio', arguments: { attachment_id: media.id }, assistant_id: assistantId } ) } );
 			if ( ! tResp.ok ) throw new Error( __( 'Transcription failed.', 'nvoos-pro-spa' ) );
 			const tData = ( await tResp.json() ) as { data?: { text?: string; message?: string } };
 			const text = tData?.data?.text || tData?.data?.message || '';

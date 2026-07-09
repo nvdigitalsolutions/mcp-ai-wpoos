@@ -47,7 +47,7 @@ export function useSpeechPlayback( opts: UseSpeechPlaybackOptions ): UseSpeechPl
 		setState( key, 'loading' );
 		const ctrl = new AbortController(); abortRef.current = ctrl;
 		try {
-			const resp = await fetch( toolsEndpoint, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-WP-Nonce': nonce }, body: JSON.stringify( { tool: 'speech', arguments: { text: n }, assistant_id: assistantId } ), signal: ctrl.signal } );
+			const resp = await fetch( toolsEndpoint, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-WP-Nonce': nonce }, body: JSON.stringify( { tool: 'generate_openai_speech', arguments: { text: n }, assistant_id: assistantId } ), signal: ctrl.signal } );
 			if ( ctrl.signal.aborted ) return;
 			if ( ! resp.ok ) throw new Error( 'Speech request failed' );
 			const data = ( await resp.json() ) as { data?: { url?: string } };
