@@ -108,13 +108,18 @@ class WP_MCP_AI_Pro_SPA_Loader {
 			return;
 		}
 
+		// Use file modification time for cache-busting so browsers pick up
+		// new builds immediately, even on sites where WP_MCP_AI_PRO_VERSION
+		// hasn't been bumped.
 		$version = defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '2.0.0';
+		$js_ver  = filemtime( $js_path ) ?: $version;
+		$css_ver = file_exists( $css_path ) ? filemtime( $css_path ) : $version;
 
 		wp_enqueue_script(
 			'wp-mcp-ai-pro-spa-v2',
 			$js_url,
 			array( 'wp-i18n' ),
-			$version,
+			$js_ver,
 			true
 		);
 
@@ -129,7 +134,7 @@ class WP_MCP_AI_Pro_SPA_Loader {
 				'wp-mcp-ai-pro-spa-v2',
 				$css_url,
 				array(),
-				$version
+				$css_ver
 			);
 		}
 
