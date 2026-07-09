@@ -65,9 +65,15 @@
  * math needed on the nested root element.
  */
 
-/* Prevent body-level scrolling — the SPA handles all internal overflow. */
+/* Prevent document-level scrolling — the SPA handles all internal overflow.
+   overflow:hidden on html AND body locks the viewport so browser focus-scroll
+   (e.g. textarea auto-focus on load) cannot shift the page.
+   html:has() targets the root when this admin page is active since WordPress
+   only adds the body class. */
+html:has(body.toplevel_page_wp-mcp-ai-spa),
 body.toplevel_page_wp-mcp-ai-spa {
 	overflow: hidden;
+	overscroll-behavior: none;
 }
 
 /* WordPress core adds padding-left on #wpcontent (20px default) for the
@@ -80,17 +86,24 @@ body.toplevel_page_wp-mcp-ai-spa #wpcontent {
 
 /* Constrain the outer wrapper to the viewport (minus the 32px admin bar).
    html has margin-top:32px from WP core admin-bar.css, so #wpwrap starts
-   at y=32px and calc(100vh - 32px) fills the remaining viewport. */
+   at y=32px and calc(100vh - 32px) fills the remaining viewport.
+   overflow:hidden on every ancestor in the chain prevents content from
+   leaking past the constrained boundary — without it the browser may
+   scroll the document when a child input receives focus. */
 body.toplevel_page_wp-mcp-ai-spa #wpwrap {
 	height: calc(100vh - 32px);
+	overflow: hidden;
 }
 
 /* Chain height:100% through the content ancestors so the SPA root
-   inherits the exact available space inside #wpbody. */
+   inherits the exact available space inside #wpbody.
+   overflow:hidden is essential: without it any overflow leaks out of
+   the height-constrained container and pushes the SPA off-screen. */
 body.toplevel_page_wp-mcp-ai-spa #wpcontent,
 body.toplevel_page_wp-mcp-ai-spa #wpbody,
 body.toplevel_page_wp-mcp-ai-spa #wpbody-content {
 	height: 100%;
+	overflow: hidden;
 }
 
 /* Unfloat the content area and remove footer padding (the SPA has its
