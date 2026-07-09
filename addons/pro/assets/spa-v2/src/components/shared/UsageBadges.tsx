@@ -25,14 +25,14 @@ export interface UsageBadgesProps {
 }
 
 function formatTokens( n: number | undefined ): string {
-	if ( n === undefined || n === null ) return '';
+	if ( n === undefined || n === null || Number.isNaN( n ) ) return '';
 	if ( n >= 1_000_000 ) return ( n / 1_000_000 ).toFixed( 1 ) + 'M';
 	if ( n >= 1_000 ) return ( n / 1_000 ).toFixed( 1 ) + 'k';
 	return String( n );
 }
 
 function formatCost( usd: number | undefined ): string {
-	if ( usd === undefined || usd === null ) return '';
+	if ( usd === undefined || usd === null || Number.isNaN( usd ) ) return '';
 	if ( usd === 0 ) return '$0.00';
 	if ( usd < 0.01 ) return '<$0.01';
 	return '$' + usd.toFixed( 2 );
@@ -55,9 +55,9 @@ function buildTokenTooltip( usage: UsageData ): string {
 export function UsageBadges( { usage }: UsageBadgesProps ): JSX.Element | null {
 	if ( ! usage ) return null;
 
-	const hasTokens = typeof usage.totalTokens === 'number' || typeof usage.promptTokens === 'number';
-	const hasCost = typeof usage.costUsd === 'number';
-	const hasModel = typeof usage.model === 'string' && usage.model;
+	const hasTokens = ( typeof usage.totalTokens === 'number' && ! Number.isNaN( usage.totalTokens ) ) || ( typeof usage.promptTokens === 'number' && ! Number.isNaN( usage.promptTokens ) );
+	const hasCost = typeof usage.costUsd === 'number' && ! Number.isNaN( usage.costUsd );
+	const hasModel = typeof usage.model === 'string' && usage.model.length > 0;
 	if ( ! hasTokens && ! hasCost && ! hasModel ) return null;
 
 	const tokenLabel = usage.isEstimated

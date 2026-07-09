@@ -121,8 +121,12 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		initialMessages,
 		onFinish: ( message, { usage } ) => {
 			// Capture usage data (v0.9.0).
+			// Guard against NaN token counts that some providers return in edge cases.
 			if ( usage ) {
-				setUsageMap( ( prev ) => ( { ...prev, [ message.id ]: { promptTokens: usage.promptTokens, completionTokens: usage.completionTokens, totalTokens: usage.totalTokens } } ) );
+				const pt = typeof usage.promptTokens === 'number' && ! Number.isNaN( usage.promptTokens ) ? usage.promptTokens : undefined;
+				const ct = typeof usage.completionTokens === 'number' && ! Number.isNaN( usage.completionTokens ) ? usage.completionTokens : undefined;
+				const tt = typeof usage.totalTokens === 'number' && ! Number.isNaN( usage.totalTokens ) ? usage.totalTokens : undefined;
+				setUsageMap( ( prev ) => ( { ...prev, [ message.id ]: { promptTokens: pt, completionTokens: ct, totalTokens: tt } } ) );
 			}
 			// Persist full turn after completion.
 			// Use the ref to avoid the stale-closure problem — `messages`

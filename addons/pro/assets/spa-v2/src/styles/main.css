@@ -2210,6 +2210,199 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border: 0;
 }
 
+/* ── Composer toolbar (v0.9.0) ───────────────────────────────────────── */
+
+.nvoos-pro-spa-agent-panel__composer-toolbar {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	padding: 4px 0;
+}
+
+/* ── Audio recorder button (v0.9.0) ──────────────────────────────────── */
+
+.nvoos-pro-spa-audio-btn {
+	background: none;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	padding: 6px 8px;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+.nvoos-pro-spa-audio-btn:hover:not(:disabled) {
+	background: var(--nvoos-hover-bg, #f0f0f1);
+}
+.nvoos-pro-spa-audio-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+.nvoos-pro-spa-audio-btn--recording {
+	border-color: #d63638;
+	background: #fdf2f2;
+}
+.nvoos-pro-spa-audio-status {
+	font-size: 12px;
+	color: var(--nvoos-muted, #757575);
+	margin-left: 4px;
+}
+
+/* ── File attachment button (v0.9.0) ─────────────────────────────────── */
+
+.nvoos-pro-spa-attach-btn {
+	background: none;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	padding: 6px 8px;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	transition: background 0.15s ease;
+}
+.nvoos-pro-spa-attach-btn:hover:not(:disabled) {
+	background: var(--nvoos-hover-bg, #f0f0f1);
+}
+.nvoos-pro-spa-attach-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* ── Attachment strip (v0.9.0) ───────────────────────────────────────── */
+
+.nvoos-pro-spa-attachment-strip {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	align-items: center;
+	list-style: none;
+	margin: 4px 0;
+	padding: 0;
+	max-height: 72px;
+	overflow-y: auto;
+}
+.nvoos-pro-spa-attachment-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	background: var(--nvoos-chip-bg, #f0f0f1);
+	border-radius: 6px;
+	padding: 3px 8px;
+	font-size: 12px;
+	max-width: 200px;
+}
+.nvoos-pro-spa-attachment-thumb {
+	width: 20px;
+	height: 20px;
+	min-width: 20px;
+	object-fit: cover;
+	border-radius: 3px;
+	flex-shrink: 0;
+}
+.nvoos-pro-spa-attachment-icon {
+	font-size: 14px;
+	flex-shrink: 0;
+}
+.nvoos-pro-spa-attachment-name {
+	max-width: 100px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	flex-shrink: 1;
+	min-width: 0;
+}
+.nvoos-pro-spa-attachment-remove {
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 14px;
+	line-height: 1;
+	padding: 0 2px;
+	color: var(--nvoos-muted, #757575);
+	flex-shrink: 0;
+}
+.nvoos-pro-spa-attachment-remove:hover {
+	color: var(--nvoos-danger, #d63638);
+}
+.nvoos-pro-spa-attachment-clear-all {
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 11px;
+	color: var(--nvoos-muted, #757575);
+	text-decoration: underline;
+	padding: 2px 4px;
+	flex-shrink: 0;
+	margin-left: auto;
+}
+.nvoos-pro-spa-attachment-clear-all:hover {
+	color: var(--nvoos-danger, #d63638);
+}
+.nvoos-pro-spa-attachment-error {
+	font-size: 12px;
+	color: var(--nvoos-danger, #d63638);
+	margin: 2px 0;
+}
+
+/* ── Speech button (v0.9.0) ──────────────────────────────────────────── */
+
+.nvoos-pro-spa-speech-btn {
+	background: none;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	padding: 4px 8px;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	transition: background 0.15s ease;
+}
+.nvoos-pro-spa-speech-btn:hover:not(:disabled) {
+	background: var(--nvoos-hover-bg, #f0f0f1);
+}
+.nvoos-pro-spa-speech-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+.nvoos-pro-spa-speech-btn--error {
+	border-color: var(--nvoos-danger, #d63638);
+	color: var(--nvoos-danger, #d63638);
+}
+.nvoos-pro-spa-speech-btn--loading {
+	border-color: var(--nvoos-primary, #2271b1);
+}
+
+/* ── Usage badges (v0.9.0) ───────────────────────────────────────────── */
+
+.nvoos-pro-spa-usage-badges {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-top: 6px;
+}
+.nvoos-pro-spa-usage-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	padding: 2px 8px;
+	border-radius: 10px;
+	background: var(--nvoos-chip-bg, #f0f0f1);
+	color: var(--nvoos-muted, #757575);
+}
+.nvoos-pro-spa-usage-badge__label {
+	font-weight: 500;
+}
+.nvoos-pro-spa-usage-badge__value {
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+.nvoos-pro-spa-usage-badge--tokens {
+	border: 1px solid var(--nvoos-border, #dcdcde);
+}
+.nvoos-pro-spa-usage-badge--cost {
+	border: 1px solid var(--nvoos-border, #dcdcde);
+}
+
 /* ------------------------------------------------------------------ */
 /* sidebar – action bar (New Chat / New Thread button wrapper)        */
 /* ------------------------------------------------------------------ */
