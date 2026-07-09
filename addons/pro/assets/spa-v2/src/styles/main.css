@@ -58,7 +58,22 @@
  * admin menu.  #wpbody-content is floated which causes height collapse.
  *
  * The body class `toplevel_page_wp-mcp-ai-spa` is specific to this menu page.
+ *
+ * Strategy: Pin <body> to the viewport so it never scrolls.  Every overflow
+ * is handled inside the SPA's own flex layout (the agent-panel messages area,
+ * the sidebar, etc.).  This avoids the classic WordPress double-scrollbar.
  */
+
+/* Prevent body-level scrolling — the SPA handles all internal overflow. */
+body.toplevel_page_wp-mcp-ai-spa {
+	overflow: hidden;
+}
+
+/* WordPress core adds padding-left on #wpcontent (20px default) for the
+   admin menu gutter.  Remove it so the SPA uses the full content area. */
+body.toplevel_page_wp-mcp-ai-spa #wpcontent {
+	padding-left: 0;
+}
 
 /* Unfloat the content area so it stretches to the viewport height.
    Remove footer padding (the SPA has its own status bar). */
@@ -67,10 +82,20 @@ body.toplevel_page_wp-mcp-ai-spa #wpbody-content {
 	padding-bottom: 0;
 }
 
-/* Fill the available viewport below the 32px admin bar.
-   On small screens (≤782px) the admin bar is 46px. */
+/* Hide the WordPress admin footer and any admin notices on this page.
+   The SPA renders its own status bar and toast notification system,
+   so core WP notices would only push content out of the viewport. */
+body.toplevel_page_wp-mcp-ai-spa #wpfooter,
+body.toplevel_page_wp-mcp-ai-spa .notice,
+body.toplevel_page_wp-mcp-ai-spa .update-nag {
+	display: none;
+}
+
+/* Fill the exact viewport below the admin bar (32px desktop, 46px mobile).
+   Using `height` (not `min-height`) enforces the constraint: the root can
+   never grow beyond the viewport, so inner flex children must scroll. */
 body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
-	min-height: calc(100vh - 32px);
+	height: calc(100vh - 32px);
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -78,7 +103,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 @media screen and ( max-width: 782px ) {
 	body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
-		min-height: calc(100vh - 46px);
+		height: calc(100vh - 46px);
 	}
 }
 
