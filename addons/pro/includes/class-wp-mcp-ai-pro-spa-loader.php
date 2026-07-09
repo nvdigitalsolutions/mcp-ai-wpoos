@@ -38,20 +38,6 @@ class WP_MCP_AI_Pro_SPA_Loader {
 	 */
 	public function register() {
 		add_action( 'admin_menu', array( $this, 'add_admin_page' ), 20 );
-		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
-	}
-
-	/**
-	 * Register Pro SPA REST routes (tool shortcuts, slash commands).
-	 *
-	 * @since 2.1.0
-	 * @return void
-	 */
-	public function register_rest_routes() {
-		require_once __DIR__ . '/rest/class-wp-mcp-ai-pro-rest-tool-shortcuts.php';
-		require_once __DIR__ . '/rest/class-wp-mcp-ai-pro-rest-slash-commands.php';
-		WP_MCP_AI_Pro_REST_Tool_Shortcuts::register_routes();
-		WP_MCP_AI_Pro_REST_Slash_Commands::register_routes();
 	}
 
 	/**

@@ -458,6 +458,20 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_SPA_Bootstrap_Controller', 'register_routes' ) );
 		}
 
+		// Tool Shortcuts and Slash Commands REST routes must also be registered
+		// on every request — same reason as the bootstrap controller above.
+		$tool_shortcuts_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-rest-tool-shortcuts.php';
+		if ( file_exists( $tool_shortcuts_rest ) ) {
+			require_once $tool_shortcuts_rest;
+			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_REST_Tool_Shortcuts', 'register_routes' ) );
+		}
+
+		$slash_commands_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-rest-slash-commands.php';
+		if ( file_exists( $slash_commands_rest ) ) {
+			require_once $slash_commands_rest;
+			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_REST_Slash_Commands', 'register_routes' ) );
+		}
+
 		// SPA loader (menu page + asset enqueue) is admin-only.
 		if ( is_admin() ) {
 			$spa_loader = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-spa-loader.php';
