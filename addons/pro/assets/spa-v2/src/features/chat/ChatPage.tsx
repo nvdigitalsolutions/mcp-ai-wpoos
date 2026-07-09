@@ -39,6 +39,22 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const availableModels = useModelStore( ( s ) => s.availableModels );
 	const availableProfiles = useModelStore( ( s ) => s.availableProfiles );
 
+	// Deduplicate models by provider|model combo (backend may send duplicates).
+	const uniqueModels = useMemo(
+		() => {
+			const seen = new Set< string >();
+			return availableModels.filter( ( m ) => {
+				const key = `${ m.provider }|${ m.model }`;
+				if ( seen.has( key ) ) {
+					return false;
+				}
+				seen.add( key );
+				return true;
+			} );
+		},
+		[ availableModels ]
+	);
+
 	// Use assistant store for dynamic selection (with runtime config fallback).
 	const storedAssistantId = useAssistantStore( ( s ) => s.assistantId );
 	const assistantId = storedAssistantId > 0 ? storedAssistantId : ( runtime?.config?.assistantId ?? runtime?.user?.assistant_id ?? 0 );
@@ -196,7 +212,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		>
 			<div className="nvoos-pro-spa-chat-page__toolbar">
 				{/* Model selector */}
-				{ availableModels.length > 0 && (
+				{ uniqueModels.length > 0 && (
 					<div className="nvoos-pro-spa-chat-page__model-select">
 						<label
 							htmlFor="nvoos-pro-spa-model-select"
@@ -215,7 +231,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 								}
 							} }
 						>
-							{ availableModels.map( ( m ) => (
+							{ uniqueModels.map( ( m ) => (
 								<option
 									key={ `${ m.provider }|${ m.model }` }
 									value={ `${ m.provider }|${ m.model }` }

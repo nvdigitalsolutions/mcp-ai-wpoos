@@ -29437,6 +29437,20 @@ ${content}</tr>
     const setProfile = useModelStore((s) => s.setProfile);
     const availableModels = useModelStore((s) => s.availableModels);
     const availableProfiles = useModelStore((s) => s.availableProfiles);
+    const uniqueModels = (0, import_react25.useMemo)(
+      () => {
+        const seen = /* @__PURE__ */ new Set();
+        return availableModels.filter((m) => {
+          const key = `${m.provider}|${m.model}`;
+          if (seen.has(key)) {
+            return false;
+          }
+          seen.add(key);
+          return true;
+        });
+      },
+      [availableModels]
+    );
     const storedAssistantId = useAssistantStore((s) => s.assistantId);
     const assistantId = storedAssistantId > 0 ? storedAssistantId : (_d = (_c = (_a15 = runtime == null ? void 0 : runtime.config) == null ? void 0 : _a15.assistantId) != null ? _c : (_b = runtime == null ? void 0 : runtime.user) == null ? void 0 : _b.assistant_id) != null ? _d : 0;
     const endpoints = runtime == null ? void 0 : runtime.endpoints;
@@ -29559,7 +29573,7 @@ ${content}</tr>
         "aria-label": (0, import_i18n13.__)("Chat conversation", "nvoos-pro-spa"),
         children: [
           /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-chat-page__toolbar", children: [
-            availableModels.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-chat-page__model-select", children: [
+            uniqueModels.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-chat-page__model-select", children: [
               /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
                 "label",
                 {
@@ -29580,7 +29594,7 @@ ${content}</tr>
                       setModel({ provider, model: modelName });
                     }
                   },
-                  children: availableModels.map((m) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+                  children: uniqueModels.map((m) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
                     "option",
                     {
                       value: `${m.provider}|${m.model}`,
