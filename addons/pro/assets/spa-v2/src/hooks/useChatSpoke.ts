@@ -30,6 +30,8 @@ export interface UseChatSpokeReturn {
 	input: string;
 	handleInputChange: ( e: React.ChangeEvent< HTMLTextAreaElement > | string ) => void;
 	handleSubmit: ( e?: { preventDefault?: () => void } ) => void;
+	/** Submit with file attachments (v0.9.0). */
+	handleSubmitWithAttachments: ( attachments: Array< { name?: string; contentType?: string; url: string } > ) => void;
 	status: 'submitted' | 'streaming' | 'ready' | 'error';
 	error: Error | undefined;
 	stop: () => void;
@@ -38,7 +40,6 @@ export interface UseChatSpokeReturn {
 	isStreaming: boolean;
 	fileInputRef: RefObject< HTMLInputElement | null >;
 	sendMessage: ( content: string ) => void;
-	/** Usage tracking: messageId → usage data (v0.9.0). */
 	usageMap: Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number } >;
 }
 
@@ -183,11 +184,19 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		[ chatHandleInputChange, chatHandleSubmit ]
 	);
 
+	const handleSubmitWithAttachments = useCallback(
+		( attachments: Array< { name?: string; contentType?: string; url: string } > ) => {
+			chatHandleSubmit( undefined, { experimental_attachments: attachments } );
+		},
+		[ chatHandleSubmit ]
+	);
+
 	return {
 		messages,
 		input,
 		handleInputChange,
 		handleSubmit,
+		handleSubmitWithAttachments,
 		status,
 		error,
 		stop,

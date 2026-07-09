@@ -114,6 +114,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		isStreaming,
 		sendMessage,
 		usageMap,
+		handleSubmitWithAttachments,
 	} = chatSpoke;
 
 	// ---- Thread read‑only state (populated by ChatSidebar) ----
@@ -433,6 +434,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				uploadEndpoint={ endpoints?.upload }
 				nonce={ nonce }
 				assistantId={ assistantId }
+				onSubmitWithAttachments={ ( atts ) => handleSubmitWithAttachments( atts ) }
 			/>
 
 			{/* Memory drawer */}
