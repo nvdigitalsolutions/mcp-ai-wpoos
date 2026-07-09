@@ -86,13 +86,13 @@ trait WP_MCP_AI_Tool_Markdown_Converter {
 		$text = preg_replace( "/\r\n?/", "\n", $text );
 
 		// 1. Fenced code blocks: ```...``` → <pre><code>...</code></pre>
-		//    Placeholder-protect these first so inner content is untouched.
+		// Placeholder-protect these first so inner content is untouched.
 		$code_blocks = array();
 		$text        = preg_replace_callback(
 			'/```(\w*)\n(.*?)```/s',
 			function ( $m ) use ( &$code_blocks ) {
-				$placeholder  = '<!--CODEBLOCK' . count( $code_blocks ) . '-->';
-				$lang         = $m[1] ? ' class="language-' . esc_attr( $m[1] ) . '"' : '';
+				$placeholder   = '<!--CODEBLOCK' . count( $code_blocks ) . '-->';
+				$lang          = $m[1] ? ' class="language-' . esc_attr( $m[1] ) . '"' : '';
 				$code_blocks[] = '<pre><code' . $lang . '>' . esc_html( trim( $m[2] ) ) . '</code></pre>';
 				return $placeholder;
 			},
@@ -165,14 +165,14 @@ trait WP_MCP_AI_Tool_Markdown_Converter {
 			if ( '' === $trimmed_line ) {
 				if ( '' !== $buffer ) {
 					$output[] = '<p>' . trim( $buffer ) . '</p>';
-					$buffer    = '';
+					$buffer   = '';
 				}
 				continue;
 			}
 			if ( preg_match( '/^<(h[1-6]|ul|ol|li|blockquote|pre|hr|table|div|img)\b/', $trimmed_line ) ) {
 				if ( '' !== $buffer ) {
 					$output[] = '<p>' . trim( $buffer ) . '</p>';
-					$buffer    = '';
+					$buffer   = '';
 				}
 				$output[] = $trimmed_line;
 			} else {
