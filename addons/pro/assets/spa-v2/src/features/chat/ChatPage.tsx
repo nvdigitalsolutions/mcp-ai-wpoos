@@ -21,6 +21,8 @@ import { ThreadsClient } from '../../api/threads';
 import { AgentPanel } from './AgentPanel';
 import { MemoryDrawer, type MemoryTab } from '../../components/shared/MemoryDrawer';
 import { HitlApprovalBar } from '../../components/shared/HitlApprovalBar';
+import { ToolShortcutsDrawer } from './ToolShortcutsDrawer';
+import { SlashCommandsDrawer } from './SlashCommandsDrawer';
 
 export interface ChatPageProps {
 	/** Transcript hook result lifted from Layout. */
@@ -38,6 +40,22 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const setProfile = useModelStore( ( s ) => s.setProfile );
 	const availableModels = useModelStore( ( s ) => s.availableModels );
 	const availableProfiles = useModelStore( ( s ) => s.availableProfiles );
+
+	// Deduplicate models by provider|model combo (backend may send duplicates).
+	const uniqueModels = useMemo(
+		() => {
+			const seen = new Set< string >();
+			return availableModels.filter( ( m ) => {
+				const key = `${ m.provider }|${ m.model }`;
+				if ( seen.has( key ) ) {
+					return false;
+				}
+				seen.add( key );
+				return true;
+			} );
+		},
+		[ availableModels ]
+	);
 
 	// Use assistant store for dynamic selection (with runtime config fallback).
 	const storedAssistantId = useAssistantStore( ( s ) => s.assistantId );
@@ -101,6 +119,24 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const [ memoryTab, setMemoryTab ] = useState< MemoryTab >( 'memories' );
 	const memoryToggleRef = useRef< HTMLButtonElement | null >( null );
 
+	// ---- Tool Shortcuts drawer ----
+	const [ toolsOpen, setToolsOpen ] = useState< boolean >( false );
+	const toolsToggleRef = useRef< HTMLButtonElement | null >( null );
+
+	// ---- Slash Commands drawer ----
+	const [ commandsOpen, setCommandsOpen ] = useState< boolean >( false );
+	const commandsToggleRef = useRef< HTMLButtonElement | null >( null );
+
+	// Shared callback: close one drawer when another opens.
+	const openDrawer = useCallback(
+		( which: 'memory' | 'tools' | 'commands' ) => {
+			setMemoryOpen( which === 'memory' );
+			setToolsOpen( which === 'tools' );
+			setCommandsOpen( which === 'commands' );
+		},
+		[]
+	);
+
 	// ---- Feedback state ----
 	const [ feedbackState, setFeedbackState ] = useState< Record< string, 'up' | 'down' > >( {} );
 
@@ -152,6 +188,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 
 	const hasMemory = typeof endpoints?.memory === 'string' && endpoints.memory.length > 0;
 	const hasApprovals = typeof endpoints?.approvals === 'string' && endpoints.approvals.length > 0;
+	const hasShortcuts = typeof endpoints?.shortcuts === 'string' && endpoints.shortcuts.length > 0;
+	const hasSlashCommands = typeof endpoints?.slashCommands === 'string' && endpoints.slashCommands.length > 0;
 
 	// ---- Render ----
 
@@ -196,7 +234,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		>
 			<div className="nvoos-pro-spa-chat-page__toolbar">
 				{/* Model selector */}
-				{ availableModels.length > 0 && (
+				{ uniqueModels.length > 0 && (
 					<div className="nvoos-pro-spa-chat-page__model-select">
 						<label
 							htmlFor="nvoos-pro-spa-model-select"
@@ -215,7 +253,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 								}
 							} }
 						>
-							{ availableModels.map( ( m ) => (
+							{ uniqueModels.map( ( m ) => (
 								<option
 									key={ `${ m.provider }|${ m.model }` }
 									value={ `${ m.provider }|${ m.model }` }
@@ -262,9 +300,37 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 						aria-expanded={ memoryOpen }
 					>
 						{ __( 'Memory', 'nvoos-pro-spa' ) }
-					</button>
-				) }
-			</div>
+											</button>
+										) }
+
+										{/* Tool Shortcuts drawer toggle */}
+										{ hasShortcuts && (
+											<button
+												type="button"
+												ref={ toolsToggleRef }
+												className="nvoos-pro-spa-chat-page__tools-btn nvoos-pro-spa-btn"
+												onClick={ () => openDrawer( 'tools' ) }
+												aria-label={ __( 'Toggle tool shortcuts drawer', 'nvoos-pro-spa' ) }
+												aria-expanded={ toolsOpen }
+											>
+												{ __( 'Tools', 'nvoos-pro-spa' ) }
+											</button>
+										) }
+
+										{/* Slash Commands drawer toggle */}
+										{ hasSlashCommands && (
+											<button
+												type="button"
+												ref={ commandsToggleRef }
+												className="nvoos-pro-spa-chat-page__commands-btn nvoos-pro-spa-btn"
+												onClick={ () => openDrawer( 'commands' ) }
+												aria-label={ __( 'Toggle slash commands drawer', 'nvoos-pro-spa' ) }
+												aria-expanded={ commandsOpen }
+											>
+												{ __( 'Commands', 'nvoos-pro-spa' ) }
+											</button>
+										) }
+									</div>
 
 			{/* HITL approval bar */}
 			{ hasApprovals && (
@@ -310,6 +376,31 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					toggleRef={ memoryToggleRef }
 				/>
 			) }
-		</div>
-	);
-}
+
+			{/* Tool Shortcuts drawer */}
+			{ hasShortcuts && (
+				<ToolShortcutsDrawer
+					endpoint={ endpoints!.shortcuts }
+					nonce={ nonce }
+					assistantId={ assistantId }
+					isOpen={ toolsOpen }
+					onClose={ () => setToolsOpen( false ) }
+					onInsertPayload={ sendMessage }
+					toggleRef={ toolsToggleRef }
+				/>
+			) }
+
+			{/* Slash Commands drawer */}
+			{ hasSlashCommands && (
+				<SlashCommandsDrawer
+					endpoint={ endpoints!.slashCommands }
+					nonce={ nonce }
+					isOpen={ commandsOpen }
+					onClose={ () => setCommandsOpen( false ) }
+					onInsertPayload={ sendMessage }
+					toggleRef={ commandsToggleRef }
+				/>
+			) }
+			</div>
+		);
+	}

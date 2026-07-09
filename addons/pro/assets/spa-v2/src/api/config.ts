@@ -22,6 +22,8 @@ export interface ProSpaEndpoints {
 	workflows: string;
 	analytics: string;
 	approvals: string;
+	shortcuts: string;
+	slashCommands: string;
 }
 
 export interface RuntimeAssistantSummary {
@@ -103,6 +105,8 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			workflows: typeof e.workflows === 'string' ? e.workflows : '',
 			analytics: typeof e.analytics === 'string' ? e.analytics : '',
 			approvals: typeof e.approvals === 'string' ? e.approvals : '',
+			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
+			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 		},
 		user: ( g.user ?? { id: 0, login: '', displayName: '', capabilities: [] } ) as ProSpaUser,
 		mentionTypes: Array.isArray( g.mentionTypes ) ? g.mentionTypes : [],

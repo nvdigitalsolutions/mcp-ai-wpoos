@@ -38,6 +38,20 @@ class WP_MCP_AI_Pro_SPA_Loader {
 	 */
 	public function register() {
 		add_action( 'admin_menu', array( $this, 'add_admin_page' ), 20 );
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+	}
+
+	/**
+	 * Register Pro SPA REST routes (tool shortcuts, slash commands).
+	 *
+	 * @since 2.1.0
+	 * @return void
+	 */
+	public function register_rest_routes() {
+		require_once __DIR__ . '/rest/class-wp-mcp-ai-pro-rest-tool-shortcuts.php';
+		require_once __DIR__ . '/rest/class-wp-mcp-ai-pro-rest-slash-commands.php';
+		WP_MCP_AI_Pro_REST_Tool_Shortcuts::register_routes();
+		WP_MCP_AI_Pro_REST_Slash_Commands::register_routes();
 	}
 
 	/**
@@ -112,7 +126,7 @@ class WP_MCP_AI_Pro_SPA_Loader {
 		// new builds immediately, even on sites where WP_MCP_AI_PRO_VERSION
 		// hasn't been bumped.
 		$version = defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '2.0.0';
-		$js_ver  = filemtime( $js_path ) ?: $version;
+		$js_ver  = filemtime( $js_path ) ? filemtime( $js_path ) : $version;
 		$css_ver = file_exists( $css_path ) ? filemtime( $css_path ) : $version;
 
 		wp_enqueue_script(
@@ -194,25 +208,27 @@ class WP_MCP_AI_Pro_SPA_Loader {
 			),
 			'endpoints'    => array(
 				// Core chat endpoints (mcp-ai/v1).
-				'chat'        => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
-				'chatClient'  => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
-				'transcripts' => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
-				'memory'      => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
-				'threads'     => esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
-				'tools'       => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
-				'assistants'  => esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
-				'settings'    => esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),
+				'chat'          => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
+				'chatClient'    => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
+				'transcripts'   => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
+				'memory'        => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
+				'threads'       => esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
+				'tools'         => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
+				'assistants'    => esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
+				'settings'      => esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),
 
 				// Pro endpoints (mcp-ai-pro/v1).
-				'workflows'   => class_exists( 'WP_MCP_AI_Pro_Workflow_Controller' )
+				'workflows'     => class_exists( 'WP_MCP_AI_Pro_Workflow_Controller' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflows' ) )
 					: '',
-				'analytics'   => $is_admin
+				'analytics'     => $is_admin
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/analytics' ) )
 					: '',
-				'approvals'   => $is_admin
+				'approvals'     => $is_admin
 					? esc_url_raw( rest_url( 'mcp-ai/v1/approvals' ) )
 					: '',
+				'shortcuts'     => esc_url_raw( rest_url( 'mcp-ai-pro/v1/tool-shortcuts' ) ),
+				'slashCommands' => esc_url_raw( rest_url( 'mcp-ai-pro/v1/slash-commands' ) ),
 			),
 			'user'         => array(
 				'id'           => $user_id,
