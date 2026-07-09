@@ -59,9 +59,10 @@
  *
  * The body class `toplevel_page_wp-mcp-ai-spa` is specific to this menu page.
  *
- * Strategy: Pin <body> to the viewport so it never scrolls.  Every overflow
- * is handled inside the SPA's own flex layout (the agent-panel messages area,
- * the sidebar, etc.).  This avoids the classic WordPress double-scrollbar.
+ * Strategy: Constrain #wpwrap to the viewport height (accounting for the
+ * admin bar via calc).  Chain height:100% from #wpwrap down through every
+ * ancestor so #wp-mcp-ai-pro-spa-root fills #wpbody exactly — no viewport
+ * math needed on the nested root element.
  */
 
 /* Prevent body-level scrolling — the SPA handles all internal overflow. */
@@ -75,34 +76,51 @@ body.toplevel_page_wp-mcp-ai-spa #wpcontent {
 	padding-left: 0;
 }
 
-/* Unfloat the content area so it stretches to the viewport height.
-   Remove footer padding (the SPA has its own status bar). */
+/* ── Height chain: fill #wpbody exactly ──────────────────────────────────── */
+
+/* Constrain the outer wrapper to the viewport (minus the 32px admin bar).
+   html has margin-top:32px from WP core admin-bar.css, so #wpwrap starts
+   at y=32px and calc(100vh - 32px) fills the remaining viewport. */
+body.toplevel_page_wp-mcp-ai-spa #wpwrap {
+	height: calc(100vh - 32px);
+}
+
+/* Chain height:100% through the content ancestors so the SPA root
+   inherits the exact available space inside #wpbody. */
+body.toplevel_page_wp-mcp-ai-spa #wpcontent,
+body.toplevel_page_wp-mcp-ai-spa #wpbody,
+body.toplevel_page_wp-mcp-ai-spa #wpbody-content {
+	height: 100%;
+}
+
+/* Unfloat the content area and remove footer padding (the SPA has its
+   own status bar). */
 body.toplevel_page_wp-mcp-ai-spa #wpbody-content {
 	float: none;
 	padding-bottom: 0;
 }
 
 /* Hide the WordPress admin footer and any admin notices on this page.
-   The SPA renders its own status bar and toast notification system,
-   so core WP notices would only push content out of the viewport. */
+   The SPA renders its own status bar and toast notification system. */
 body.toplevel_page_wp-mcp-ai-spa #wpfooter,
 body.toplevel_page_wp-mcp-ai-spa .notice,
 body.toplevel_page_wp-mcp-ai-spa .update-nag {
 	display: none;
 }
 
-/* Fill the exact viewport below the admin bar (32px desktop, 46px mobile).
-   Using `height` (not `min-height`) enforces the constraint: the root can
-   never grow beyond the viewport, so inner flex children must scroll. */
+/* SPA root fills its parent (#wpbody-content, which is 100% of #wpbody).
+   No calc() needed — the height chain handles the admin bar offset. */
 body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
-	height: calc(100vh - 32px);
+	height: 100%;
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
 }
 
+/* On small screens (≤782px) the admin bar is 46px.  Only #wpwrap needs
+   the adjusted calc; the rest of the 100% chain adapts automatically. */
 @media screen and ( max-width: 782px ) {
-	body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
+	body.toplevel_page_wp-mcp-ai-spa #wpwrap {
 		height: calc(100vh - 46px);
 	}
 }
