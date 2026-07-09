@@ -294,7 +294,7 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 							<input ref={ fileInputRef } type="file" className="nvoos-pro-spa-screen-reader-only" multiple accept={ ACCEPT_ATTR }
 								aria-hidden="true" tabIndex={ -1 }
 								onChange={ ( e ) => { if ( e.target.files ) { attachments.attach( e.target.files ); e.target.value = ''; } } } />
-							<button type="button" className="nvoos-pro-spa-audio-btn"
+							<button type="button" className="nvoos-pro-spa-attach-btn"
 								aria-label={ __( 'Attach file', 'nvoos-pro-spa' ) } title={ __( 'Attach file', 'nvoos-pro-spa' ) }
 								disabled={ isStreaming } onClick={ () => fileInputRef.current?.click() }>📎</button>
 						</div>
@@ -318,9 +318,16 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 								<li key={ pf.key } className="nvoos-pro-spa-attachment-chip">
 									{ pf.previewUrl ? <img src={ pf.previewUrl } alt={ pf.file.name } className="nvoos-pro-spa-attachment-thumb" /> : <span className="nvoos-pro-spa-attachment-icon" aria-hidden="true">📄</span> }
 									<span className="nvoos-pro-spa-attachment-name">{ pf.file.name }</span>
-									<button type="button" className="nvoos-pro-spa-attachment-remove" aria-label={ `${ __( 'Remove', 'nvoos-pro-spa' ) } ${ pf.file.name }` } onClick={ () => attachments.remove( pf.key ) }>×</button>
+									<button type="button" className="nvoos-pro-spa-attachment-remove" aria-label={ `${ __( 'Remove', 'nvoos-pro-spa' ) } ${ pf.file.name }` }
+										onClick={ ( e ) => { e.preventDefault(); e.stopPropagation(); attachments.remove( pf.key ); } }>×</button>
 								</li>
 							) ) }
+							<li className="nvoos-pro-spa-attachment-chip">
+								<button type="button" className="nvoos-pro-spa-attachment-clear-all"
+									onClick={ ( e ) => { e.preventDefault(); e.stopPropagation(); attachments.clear(); } }>
+									{ __( 'Clear all', 'nvoos-pro-spa' ) }
+								</button>
+							</li>
 						</ul>
 					) }
 					{ attachments.attachError && (

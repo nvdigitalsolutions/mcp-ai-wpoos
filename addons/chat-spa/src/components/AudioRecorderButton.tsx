@@ -39,19 +39,19 @@ const MODE_CONFIG: Record<
 	{ idleIcon: string; label: string; toolName: string }
 > = {
 	transcribe: {
-		idleIcon: '🎤',
-		label: 'Transcribe audio',
-		toolName: 'transcribe',
-	},
-	voice: {
-		idleIcon: '🎙',
-		label: 'Voice chat',
-		toolName: 'transcribe',
-	},
-	translate: {
-		idleIcon: '🌐',
-		label: 'Translate audio',
-		toolName: 'transcribe',
+				idleIcon: '🎤',
+				label: 'Transcribe audio',
+				toolName: 'transcribe_openai_audio',
+			},
+			voice: {
+				idleIcon: '🎙',
+				label: 'Voice chat',
+				toolName: 'transcribe_openai_audio',
+			},
+			translate: {
+				idleIcon: '🌐',
+				label: 'Translate audio',
+				toolName: 'transcribe_openai_audio',
 	},
 };
 

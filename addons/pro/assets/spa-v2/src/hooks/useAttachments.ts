@@ -24,9 +24,14 @@ export const ALLOWED_MIME_TYPES = [
 	'application/json',
 	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 	'application/msword',
+	'text/html', 'text/xml', 'application/xml',
+	'application/zip', 'application/x-rar-compressed',
+	'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm',
+	'video/mp4', 'video/webm', 'video/ogg',
 ] as const;
 
-export const ACCEPT_ATTR = ALLOWED_MIME_TYPES.join( ',' );
+/** Browser accept attribute — intentionally broad to allow any file the AI can process. */
+export const ACCEPT_ATTR = '*/*';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 10 * 1024 * 1024;

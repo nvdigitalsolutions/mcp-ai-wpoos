@@ -147,7 +147,7 @@ export function useSpeechPlayback(
 
 			try {
 				const result: ToolExecutionResult = await client.execute(
-					'speech',
+					'generate_openai_speech',
 					{ text: n },
 					assistantId,
 					controller.signal
