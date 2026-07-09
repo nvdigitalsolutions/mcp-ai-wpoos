@@ -70,23 +70,47 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 	const messagesContainerRef = useRef< HTMLDivElement | null >( null );
 	const composerRef = useRef< HTMLTextAreaElement | null >( null );
 
-	// Auto-scroll the messages container to the bottom when new messages
-	// arrive or streaming content grows. We set scrollTop directly on the
-	// container (which has overflow-y:auto) instead of using scrollIntoView,
-	// because ancestor elements now have overflow:hidden (viewport lock).
-	// Only auto-scrolls when the user is already near the bottom to avoid
-	// stealing the scroll position while reading earlier messages.
+	// Helper: scroll the messages container to the bottom.
+	// Uses requestAnimationFrame to wait for any pending layout.
+	const scrollToBottom = useCallback( () => {
+		requestAnimationFrame( () => {
+			const el = messagesContainerRef.current;
+			if ( ! el ) {
+				return;
+			}
+			el.scrollTop = el.scrollHeight;
+		} );
+	}, [] );
+
+	// When the user submits, scroll to bottom unconditionally so the
+	// composer stays out of the way and the response is visible.
 	useEffect( () => {
+		if ( status === 'submitted' ) {
+			scrollToBottom();
+		}
+	}, [ status, scrollToBottom ] );
+
+	// During streaming, keep the view pinned to the bottom as content
+	// grows — but only when the user hasn't scrolled up to read earlier
+	// messages. Uses requestAnimationFrame so scrollHeight reflects the
+	// latest DOM layout after React has flushed.
+	useEffect( () => {
+		if ( ! isStreaming ) {
+			return;
+		}
 		const el = messagesContainerRef.current;
 		if ( ! el ) {
 			return;
 		}
-		const threshold = 150;
-		const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-		if ( distanceFromBottom < threshold ) {
-			el.scrollTop = el.scrollHeight;
-		}
-	}, [ messages ] );
+		requestAnimationFrame( () => {
+			const threshold = 200;
+			const distanceFromBottom =
+				el.scrollHeight - el.scrollTop - el.clientHeight;
+			if ( distanceFromBottom < threshold ) {
+				el.scrollTop = el.scrollHeight;
+			}
+		} );
+	}, [ messages, isStreaming ] );
 
 	// Keyboard shortcut: Enter to send (Shift+Enter for newline).
 	const handleKeyDown = useCallback(
