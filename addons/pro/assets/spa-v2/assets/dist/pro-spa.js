@@ -19371,7 +19371,9 @@ var NVoOSProSpa = (() => {
         settings: e.settings,
         workflows: typeof e.workflows === "string" ? e.workflows : "",
         analytics: typeof e.analytics === "string" ? e.analytics : "",
-        approvals: typeof e.approvals === "string" ? e.approvals : ""
+        approvals: typeof e.approvals === "string" ? e.approvals : "",
+        shortcuts: typeof e.shortcuts === "string" ? e.shortcuts : "",
+        slashCommands: typeof e.slashCommands === "string" ? e.slashCommands : ""
       },
       user: (_b = g.user) != null ? _b : { id: 0, login: "", displayName: "", capabilities: [] },
       mentionTypes: Array.isArray(g.mentionTypes) ? g.mentionTypes : [],
@@ -22305,7 +22307,7 @@ Error message: ${getErrorMessage(cause)}`,
               "The result of getSnapshot should be cached to avoid an infinite loop"
             ), didWarnUncachedGetSnapshot = true);
           }
-          cachedValue = useState20({
+          cachedValue = useState23({
             inst: { value, getSnapshot }
           });
           var inst = cachedValue[0].inst, forceUpdate = cachedValue[1];
@@ -22317,7 +22319,7 @@ Error message: ${getErrorMessage(cause)}`,
             },
             [subscribe, value, getSnapshot]
           );
-          useEffect20(
+          useEffect23(
             function() {
               checkIfSnapshotChanged(inst) && forceUpdate({ inst });
               return subscribe(function() {
@@ -22343,7 +22345,7 @@ Error message: ${getErrorMessage(cause)}`,
           return getSnapshot();
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var React8 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState20 = React8.useState, useEffect20 = React8.useEffect, useLayoutEffect4 = React8.useLayoutEffect, useDebugValue2 = React8.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
+        var React8 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState23 = React8.useState, useEffect23 = React8.useEffect, useLayoutEffect4 = React8.useLayoutEffect, useDebugValue2 = React8.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
         exports.useSyncExternalStore = void 0 !== React8.useSyncExternalStore ? React8.useSyncExternalStore : shim;
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
       })();
@@ -22762,7 +22764,7 @@ Error message: ${getErrorMessage(cause)}`,
           SWRGlobalState.get(provider)[4]
         ];
       };
-      onErrorRetry = (_, __23, config, revalidate, opts) => {
+      onErrorRetry = (_, __25, config, revalidate, opts) => {
         const maxRetryCount = config.errorRetryCount;
         const currentRetryCount = opts.retryCount;
         const timeout2 = ~~((Math.random() + 0.5) * (1 << (currentRetryCount < 8 ? currentRetryCount : 8))) * config.errorRetryInterval;
@@ -29422,6 +29424,627 @@ ${content}</tr>
     }
   });
 
+  // src/api/toolShortcuts.ts
+  var ToolShortcutsClient;
+  var init_toolShortcuts = __esm({
+    "src/api/toolShortcuts.ts"() {
+      "use strict";
+      ToolShortcutsClient = class {
+        constructor(opts) {
+          this.base = opts.endpoint.replace(/\/+$/, "");
+          this.nonce = opts.nonce;
+        }
+        /**
+         * List tool shortcuts, optionally filtered by assistant_id and search.
+         */
+        async list(assistantId, search, signal) {
+          const url = new URL(this.base, window.location.origin);
+          if (assistantId) {
+            url.searchParams.set("assistant_id", String(assistantId));
+          }
+          if (search) {
+            url.searchParams.set("search", search);
+          }
+          return this.request(url.toString(), signal);
+        }
+        /**
+         * Generic fetch wrapper with nonce and error handling.
+         */
+        async request(url, signal) {
+          const headers = {
+            Accept: "application/json"
+          };
+          if (this.nonce) {
+            headers["X-WP-Nonce"] = this.nonce;
+          }
+          const response = await fetch(url, {
+            method: "GET",
+            credentials: "same-origin",
+            headers,
+            signal
+          });
+          if (!response.ok) {
+            let message = `Request failed (${response.status})`;
+            try {
+              const body = await response.json();
+              if (body == null ? void 0 : body.message) {
+                message = body.message;
+              }
+            } catch (e) {
+            }
+            throw new Error(message);
+          }
+          return response.json();
+        }
+      };
+    }
+  });
+
+  // src/features/chat/ToolShortcutsDrawer.tsx
+  function readFavorites(assistantId) {
+    try {
+      const raw = localStorage.getItem(
+        `${FAVORITES_KEY_PREFIX}.${assistantId}`
+      );
+      if (raw) {
+        return new Set(JSON.parse(raw));
+      }
+    } catch (e) {
+    }
+    return /* @__PURE__ */ new Set();
+  }
+  function persistFavorites(assistantId, favorites) {
+    try {
+      localStorage.setItem(
+        `${FAVORITES_KEY_PREFIX}.${assistantId}`,
+        JSON.stringify([...favorites])
+      );
+    } catch (e) {
+    }
+  }
+  function ToolShortcutsDrawer({
+    endpoint,
+    nonce,
+    assistantId,
+    isOpen,
+    onClose,
+    onInsertPayload,
+    toggleRef
+  }) {
+    const client = (0, import_react25.useMemo)(
+      () => new ToolShortcutsClient({ endpoint, nonce }),
+      [endpoint, nonce]
+    );
+    const [shortcuts, setShortcuts] = (0, import_react25.useState)(null);
+    const [error, setError] = (0, import_react25.useState)(null);
+    const [loading, setLoading] = (0, import_react25.useState)(false);
+    const [search, setSearch] = (0, import_react25.useState)("");
+    const [favorites, setFavorites] = (0, import_react25.useState)(
+      () => readFavorites(assistantId)
+    );
+    const drawerRef = (0, import_react25.useRef)(null);
+    const searchRef = (0, import_react25.useRef)(null);
+    const abortRef = (0, import_react25.useRef)(null);
+    const fetchShortcuts = (0, import_react25.useCallback)(async () => {
+      var _a15;
+      if (!assistantId) {
+        return;
+      }
+      (_a15 = abortRef.current) == null ? void 0 : _a15.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await client.list(assistantId, search, controller.signal);
+        if (!controller.signal.aborted) {
+          setShortcuts(data.shortcuts);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setError(
+            err instanceof Error ? err.message : (0, import_i18n13.__)("Failed to load tool shortcuts.", "nvoos-pro-spa")
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }, [client, assistantId, search]);
+    (0, import_react25.useEffect)(() => {
+      if (isOpen) {
+        fetchShortcuts();
+        setTimeout(() => {
+          var _a15;
+          return (_a15 = searchRef.current) == null ? void 0 : _a15.focus();
+        }, 100);
+      }
+      return () => {
+        var _a15;
+        (_a15 = abortRef.current) == null ? void 0 : _a15.abort();
+      };
+    }, [isOpen, fetchShortcuts]);
+    const handleKeyDown = (0, import_react25.useCallback)(
+      (e) => {
+        var _a15;
+        if (e.key === "Escape") {
+          onClose();
+          (_a15 = toggleRef.current) == null ? void 0 : _a15.focus();
+        }
+      },
+      [onClose, toggleRef]
+    );
+    const toggleFavorite = (0, import_react25.useCallback)(
+      (id) => {
+        setFavorites((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) {
+            next.delete(id);
+          } else {
+            next.add(id);
+          }
+          persistFavorites(assistantId, next);
+          return next;
+        });
+      },
+      [assistantId]
+    );
+    const handleShortcutClick = (0, import_react25.useCallback)(
+      (shortcut, shiftKey) => {
+        onInsertPayload(shortcut.payload, shiftKey);
+      },
+      [onInsertPayload]
+    );
+    const grouped = (0, import_react25.useMemo)(() => {
+      if (!shortcuts) {
+        return null;
+      }
+      const favs = [];
+      const groups = {};
+      for (const s of shortcuts) {
+        if (favorites.has(s.id)) {
+          favs.push(s);
+        }
+        const cat = s.category || (0, import_i18n13.__)("General", "nvoos-pro-spa");
+        if (!groups[cat]) {
+          groups[cat] = [];
+        }
+        groups[cat].push(s);
+      }
+      return { favorites: favs, groups };
+    }, [shortcuts, favorites]);
+    if (!isOpen) {
+      return null;
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+      "div",
+      {
+        ref: drawerRef,
+        className: "nvoos-pro-spa-tool-shortcuts-drawer",
+        role: "dialog",
+        "aria-modal": "false",
+        "aria-label": (0, import_i18n13.__)("Tool Shortcuts", "nvoos-pro-spa"),
+        onKeyDown: handleKeyDown,
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-tool-shortcuts-drawer-header", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("h2", { className: "nvoos-pro-spa-tool-shortcuts-drawer-title", children: (0, import_i18n13.__)("Tool Shortcuts", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+              "button",
+              {
+                type: "button",
+                className: "nvoos-pro-spa-tool-shortcuts-drawer-close",
+                onClick: onClose,
+                "aria-label": (0, import_i18n13.__)("Close tool shortcuts", "nvoos-pro-spa"),
+                children: "\u2715"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "nvoos-pro-spa-tool-shortcuts-drawer-search", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+            "input",
+            {
+              ref: searchRef,
+              type: "search",
+              className: "nvoos-pro-spa-tool-shortcuts-drawer-search-input",
+              placeholder: (0, import_i18n13.__)("Search tools\u2026", "nvoos-pro-spa"),
+              value: search,
+              onChange: (e) => setSearch(e.target.value),
+              "aria-label": (0, import_i18n13.__)("Search tool shortcuts", "nvoos-pro-spa")
+            }
+          ) }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-screen-reader-only", role: "status", "aria-live": "polite", children: [
+            loading && (0, import_i18n13.__)("Loading tool shortcuts\u2026", "nvoos-pro-spa"),
+            error && (0, import_i18n13.sprintf)(
+              /* translators: %s: error message */
+              (0, import_i18n13.__)("Error: %s", "nvoos-pro-spa"),
+              error
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-tool-shortcuts-drawer-body", children: [
+            loading && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "nvoos-pro-spa-tool-shortcuts-drawer-loading", children: (0, import_i18n13.__)("Loading\u2026", "nvoos-pro-spa") }),
+            error && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-tool-shortcuts-drawer-error", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { children: error }),
+              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                "button",
+                {
+                  type: "button",
+                  className: "nvoos-pro-spa-btn nvoos-pro-spa-btn--small",
+                  onClick: fetchShortcuts,
+                  children: (0, import_i18n13.__)("Retry", "nvoos-pro-spa")
+                }
+              )
+            ] }),
+            !loading && !error && shortcuts && shortcuts.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "nvoos-pro-spa-tool-shortcuts-drawer-empty", children: search ? (0, import_i18n13.__)("No tools match your search.", "nvoos-pro-spa") : (0, import_i18n13.sprintf)(
+              /* translators: %d: assistant ID */
+              (0, import_i18n13.__)(
+                "No tool shortcuts configured for this assistant. Visit the assistant editor (ID: %d) to add shortcuts.",
+                "nvoos-pro-spa"
+              ),
+              Number(assistantId)
+            ) }),
+            !assistantId && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "nvoos-pro-spa-tool-shortcuts-drawer-empty", children: (0, import_i18n13.__)("Select an assistant to browse tools.", "nvoos-pro-spa") }),
+            grouped && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
+              grouped.favorites.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("section", { className: "nvoos-pro-spa-tool-shortcuts-drawer-section", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("h3", { className: "nvoos-pro-spa-tool-shortcuts-drawer-section-title", children: [
+                  "\u2B50 ",
+                  (0, import_i18n13.__)("Favorites", "nvoos-pro-spa")
+                ] }),
+                grouped.favorites.map((s) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                  ShortcutCard,
+                  {
+                    shortcut: s,
+                    isFavorite: true,
+                    onToggleFavorite: toggleFavorite,
+                    onClick: handleShortcutClick
+                  },
+                  s.id
+                ))
+              ] }),
+              Object.entries(grouped.groups).map(
+                ([category, items]) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+                  "section",
+                  {
+                    className: "nvoos-pro-spa-tool-shortcuts-drawer-section",
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("h3", { className: "nvoos-pro-spa-tool-shortcuts-drawer-section-title", children: category }),
+                      items.map((s) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                        ShortcutCard,
+                        {
+                          shortcut: s,
+                          isFavorite: favorites.has(s.id),
+                          onToggleFavorite: toggleFavorite,
+                          onClick: handleShortcutClick
+                        },
+                        s.id
+                      ))
+                    ]
+                  },
+                  category
+                )
+              )
+            ] })
+          ] })
+        ]
+      }
+    );
+  }
+  function ShortcutCard({
+    shortcut,
+    isFavorite,
+    onToggleFavorite,
+    onClick
+  }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+      "button",
+      {
+        type: "button",
+        className: "nvoos-pro-spa-tool-shortcuts-drawer-card",
+        title: shortcut.description ? `${shortcut.description} (${(0, import_i18n13.__)("Shift+Click to submit", "nvoos-pro-spa")})` : (0, import_i18n13.__)("Shift+Click to submit", "nvoos-pro-spa"),
+        onClick: (e) => onClick(shortcut, e.shiftKey),
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "nvoos-pro-spa-tool-shortcuts-drawer-card-icon", "aria-hidden": "true", children: shortcut.icon }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-tool-shortcuts-drawer-card-text", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "nvoos-pro-spa-tool-shortcuts-drawer-card-label", children: shortcut.label }),
+            shortcut.description && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "nvoos-pro-spa-tool-shortcuts-drawer-card-desc", children: shortcut.description })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+            "button",
+            {
+              type: "button",
+              className: "nvoos-pro-spa-tool-shortcuts-drawer-card-fav",
+              "aria-label": isFavorite ? (0, import_i18n13.__)("Remove from favorites", "nvoos-pro-spa") : (0, import_i18n13.__)("Add to favorites", "nvoos-pro-spa"),
+              onClick: (e) => {
+                e.stopPropagation();
+                onToggleFavorite(shortcut.id);
+              },
+              children: isFavorite ? "\u2605" : "\u2606"
+            }
+          )
+        ]
+      }
+    );
+  }
+  var import_i18n13, import_react25, import_jsx_runtime9, FAVORITES_KEY_PREFIX;
+  var init_ToolShortcutsDrawer = __esm({
+    "src/features/chat/ToolShortcutsDrawer.tsx"() {
+      "use strict";
+      import_i18n13 = __toESM(require_i18n(), 1);
+      import_react25 = __toESM(require_react(), 1);
+      init_toolShortcuts();
+      import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+      FAVORITES_KEY_PREFIX = "nvoos-pro-spa.shortcut-favorites";
+    }
+  });
+
+  // src/api/slashCommands.ts
+  var SlashCommandsClient;
+  var init_slashCommands = __esm({
+    "src/api/slashCommands.ts"() {
+      "use strict";
+      SlashCommandsClient = class {
+        constructor(opts) {
+          this.base = opts.endpoint.replace(/\/+$/, "");
+          this.nonce = opts.nonce;
+        }
+        /**
+         * List all slash commands, optionally filtered by search.
+         */
+        async list(search, signal) {
+          const url = new URL(this.base, window.location.origin);
+          if (search) {
+            url.searchParams.set("search", search);
+          }
+          return this.request(url.toString(), signal);
+        }
+        /**
+         * Generic fetch wrapper with nonce and error handling.
+         */
+        async request(url, signal) {
+          const headers = {
+            Accept: "application/json"
+          };
+          if (this.nonce) {
+            headers["X-WP-Nonce"] = this.nonce;
+          }
+          const response = await fetch(url, {
+            method: "GET",
+            credentials: "same-origin",
+            headers,
+            signal
+          });
+          if (!response.ok) {
+            let message = `Request failed (${response.status})`;
+            try {
+              const body = await response.json();
+              if (body == null ? void 0 : body.message) {
+                message = body.message;
+              }
+            } catch (e) {
+            }
+            throw new Error(message);
+          }
+          return response.json();
+        }
+      };
+    }
+  });
+
+  // src/features/chat/SlashCommandsDrawer.tsx
+  function SlashCommandsDrawer({
+    endpoint,
+    nonce,
+    isOpen,
+    onClose,
+    onInsertPayload,
+    toggleRef
+  }) {
+    const client = (0, import_react26.useMemo)(
+      () => new SlashCommandsClient({ endpoint, nonce }),
+      [endpoint, nonce]
+    );
+    const [commands, setCommands] = (0, import_react26.useState)(null);
+    const [error, setError] = (0, import_react26.useState)(null);
+    const [loading, setLoading] = (0, import_react26.useState)(false);
+    const [search, setSearch] = (0, import_react26.useState)("");
+    const drawerRef = (0, import_react26.useRef)(null);
+    const searchRef = (0, import_react26.useRef)(null);
+    const abortRef = (0, import_react26.useRef)(null);
+    const fetchCommands = (0, import_react26.useCallback)(async () => {
+      var _a15;
+      (_a15 = abortRef.current) == null ? void 0 : _a15.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await client.list(search, controller.signal);
+        if (!controller.signal.aborted) {
+          setCommands(data.commands);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setError(
+            err instanceof Error ? err.message : (0, import_i18n14.__)("Failed to load slash commands.", "nvoos-pro-spa")
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }, [client, search]);
+    (0, import_react26.useEffect)(() => {
+      if (isOpen) {
+        fetchCommands();
+        setTimeout(() => {
+          var _a15;
+          return (_a15 = searchRef.current) == null ? void 0 : _a15.focus();
+        }, 100);
+      }
+      return () => {
+        var _a15;
+        (_a15 = abortRef.current) == null ? void 0 : _a15.abort();
+      };
+    }, [isOpen, fetchCommands]);
+    const handleKeyDown = (0, import_react26.useCallback)(
+      (e) => {
+        var _a15;
+        if (e.key === "Escape") {
+          onClose();
+          (_a15 = toggleRef.current) == null ? void 0 : _a15.focus();
+        }
+      },
+      [onClose, toggleRef]
+    );
+    const handleCommandClick = (0, import_react26.useCallback)(
+      (command, shiftKey) => {
+        const payload = `/${command.command} `;
+        onInsertPayload(payload, shiftKey);
+      },
+      [onInsertPayload]
+    );
+    const grouped = (0, import_react26.useMemo)(() => {
+      if (!commands) {
+        return null;
+      }
+      const groups = {};
+      for (const cmd of commands) {
+        const cat = cmd.category || (0, import_i18n14.__)("General", "nvoos-pro-spa");
+        if (!groups[cat]) {
+          groups[cat] = [];
+        }
+        groups[cat].push(cmd);
+      }
+      const sorted = {};
+      const keys = Object.keys(groups);
+      const systemIdx = keys.indexOf((0, import_i18n14.__)("System", "nvoos-pro-spa"));
+      if (systemIdx > 0) {
+        keys.splice(systemIdx, 1);
+        keys.unshift((0, import_i18n14.__)("System", "nvoos-pro-spa"));
+      }
+      for (const k of keys.sort((a, b) => {
+        if (a === (0, import_i18n14.__)("System", "nvoos-pro-spa")) return -1;
+        if (b === (0, import_i18n14.__)("System", "nvoos-pro-spa")) return 1;
+        return a.localeCompare(b);
+      })) {
+        sorted[k] = groups[k];
+      }
+      return sorted;
+    }, [commands]);
+    if (!isOpen) {
+      return null;
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+      "div",
+      {
+        ref: drawerRef,
+        className: "nvoos-pro-spa-slash-commands-drawer",
+        role: "dialog",
+        "aria-modal": "false",
+        "aria-label": (0, import_i18n14.__)("Slash Commands", "nvoos-pro-spa"),
+        onKeyDown: handleKeyDown,
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-slash-commands-drawer-header", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h2", { className: "nvoos-pro-spa-slash-commands-drawer-title", children: (0, import_i18n14.__)("Slash Commands", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              "button",
+              {
+                type: "button",
+                className: "nvoos-pro-spa-slash-commands-drawer-close",
+                onClick: onClose,
+                "aria-label": (0, import_i18n14.__)("Close slash commands", "nvoos-pro-spa"),
+                children: "\u2715"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "nvoos-pro-spa-slash-commands-drawer-search", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+            "input",
+            {
+              ref: searchRef,
+              type: "search",
+              className: "nvoos-pro-spa-slash-commands-drawer-search-input",
+              placeholder: (0, import_i18n14.__)("Search commands\u2026", "nvoos-pro-spa"),
+              value: search,
+              onChange: (e) => setSearch(e.target.value),
+              "aria-label": (0, import_i18n14.__)("Search slash commands", "nvoos-pro-spa")
+            }
+          ) }),
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+            "div",
+            {
+              className: "nvoos-pro-spa-screen-reader-only",
+              role: "status",
+              "aria-live": "polite",
+              children: [
+                loading && (0, import_i18n14.__)("Loading slash commands\u2026", "nvoos-pro-spa"),
+                error && (0, import_i18n14.sprintf)(
+                  /* translators: %s: error message */
+                  (0, import_i18n14.__)("Error: %s", "nvoos-pro-spa"),
+                  error
+                )
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-slash-commands-drawer-body", children: [
+            loading && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "nvoos-pro-spa-slash-commands-drawer-loading", children: (0, import_i18n14.__)("Loading\u2026", "nvoos-pro-spa") }),
+            error && /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-slash-commands-drawer-error", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { children: error }),
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                "button",
+                {
+                  type: "button",
+                  className: "nvoos-pro-spa-btn nvoos-pro-spa-btn--small",
+                  onClick: fetchCommands,
+                  children: (0, import_i18n14.__)("Retry", "nvoos-pro-spa")
+                }
+              )
+            ] }),
+            !loading && !error && commands && commands.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "nvoos-pro-spa-slash-commands-drawer-empty", children: search ? (0, import_i18n14.__)("No commands match your search.", "nvoos-pro-spa") : (0, import_i18n14.__)("No slash commands available.", "nvoos-pro-spa") }),
+            grouped && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: Object.entries(grouped).map(([category, items]) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+              "section",
+              {
+                className: "nvoos-pro-spa-slash-commands-drawer-section",
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h3", { className: "nvoos-pro-spa-slash-commands-drawer-section-title", children: category }),
+                  items.map((cmd) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                    "button",
+                    {
+                      type: "button",
+                      className: "nvoos-pro-spa-slash-commands-drawer-item",
+                      title: (0, import_i18n14.sprintf)(
+                        /* translators: 1: command usage, 2: description */
+                        (0, import_i18n14.__)("%1$s \u2014 %2$s (Shift+Click to submit)", "nvoos-pro-spa"),
+                        cmd.usage,
+                        cmd.description || ""
+                      ),
+                      onClick: (e) => handleCommandClick(cmd, e.shiftKey),
+                      children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("code", { className: "nvoos-pro-spa-slash-commands-drawer-item-code", children: cmd.usage }),
+                        cmd.description && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: "nvoos-pro-spa-slash-commands-drawer-item-desc", children: cmd.description })
+                      ]
+                    },
+                    cmd.command
+                  ))
+                ]
+              },
+              category
+            )) })
+          ] })
+        ]
+      }
+    );
+  }
+  var import_i18n14, import_react26, import_jsx_runtime10;
+  var init_SlashCommandsDrawer = __esm({
+    "src/features/chat/SlashCommandsDrawer.tsx"() {
+      "use strict";
+      import_i18n14 = __toESM(require_i18n(), 1);
+      import_react26 = __toESM(require_react(), 1);
+      init_slashCommands();
+      import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+    }
+  });
+
   // src/features/chat/ChatPage.tsx
   var ChatPage_exports = {};
   __export(ChatPage_exports, {
@@ -29437,7 +30060,7 @@ ${content}</tr>
     const setProfile = useModelStore((s) => s.setProfile);
     const availableModels = useModelStore((s) => s.availableModels);
     const availableProfiles = useModelStore((s) => s.availableProfiles);
-    const uniqueModels = (0, import_react25.useMemo)(
+    const uniqueModels = (0, import_react27.useMemo)(
       () => {
         const seen = /* @__PURE__ */ new Set();
         return availableModels.filter((m) => {
@@ -29455,7 +30078,7 @@ ${content}</tr>
     const assistantId = storedAssistantId > 0 ? storedAssistantId : (_d = (_c = (_a15 = runtime == null ? void 0 : runtime.config) == null ? void 0 : _a15.assistantId) != null ? _c : (_b = runtime == null ? void 0 : runtime.user) == null ? void 0 : _b.assistant_id) != null ? _d : 0;
     const endpoints = runtime == null ? void 0 : runtime.endpoints;
     const nonce = (_e = runtime == null ? void 0 : runtime.nonce) != null ? _e : "";
-    const initialMessages = (0, import_react25.useMemo)(
+    const initialMessages = (0, import_react27.useMemo)(
       () => transcripts.initialMessages.map((m, idx) => ({
         id: `${transcripts.sessionKey}:${idx}`,
         role: m.role === "system" || m.role === "tool" ? "assistant" : m.role,
@@ -29485,20 +30108,32 @@ ${content}</tr>
       isStreaming,
       sendMessage
     } = chatSpoke;
-    const handleRegenerate = (0, import_react25.useCallback)(() => {
+    const handleRegenerate = (0, import_react27.useCallback)(() => {
       reload();
     }, [reload]);
-    const [memoryOpen, setMemoryOpen] = (0, import_react25.useState)(false);
-    const [memoryTab, setMemoryTab] = (0, import_react25.useState)("memories");
-    const memoryToggleRef = (0, import_react25.useRef)(null);
-    const [feedbackState, setFeedbackState] = (0, import_react25.useState)({});
-    const handleDeleteMessage = (0, import_react25.useCallback)(
+    const [memoryOpen, setMemoryOpen] = (0, import_react27.useState)(false);
+    const [memoryTab, setMemoryTab] = (0, import_react27.useState)("memories");
+    const memoryToggleRef = (0, import_react27.useRef)(null);
+    const [toolsOpen, setToolsOpen] = (0, import_react27.useState)(false);
+    const toolsToggleRef = (0, import_react27.useRef)(null);
+    const [commandsOpen, setCommandsOpen] = (0, import_react27.useState)(false);
+    const commandsToggleRef = (0, import_react27.useRef)(null);
+    const openDrawer = (0, import_react27.useCallback)(
+      (which) => {
+        setMemoryOpen(which === "memory");
+        setToolsOpen(which === "tools");
+        setCommandsOpen(which === "commands");
+      },
+      []
+    );
+    const [feedbackState, setFeedbackState] = (0, import_react27.useState)({});
+    const handleDeleteMessage = (0, import_react27.useCallback)(
       (msgId) => {
         chatSpoke.setMessages(messages.filter((m) => m.id !== msgId));
       },
       [messages, chatSpoke]
     );
-    const handleFeedback = (0, import_react25.useCallback)(
+    const handleFeedback = (0, import_react27.useCallback)(
       (msgId, rating) => {
         setFeedbackState((prev) => {
           if (prev[msgId] === rating) {
@@ -29511,7 +30146,7 @@ ${content}</tr>
       },
       []
     );
-    const handleEditMessage = (0, import_react25.useCallback)(
+    const handleEditMessage = (0, import_react27.useCallback)(
       (msgId) => {
         var _a16;
         const idx = messages.findIndex((m) => m.id === msgId);
@@ -29537,52 +30172,54 @@ ${content}</tr>
     );
     const hasMemory = typeof (endpoints == null ? void 0 : endpoints.memory) === "string" && endpoints.memory.length > 0;
     const hasApprovals = typeof (endpoints == null ? void 0 : endpoints.approvals) === "string" && endpoints.approvals.length > 0;
+    const hasShortcuts = typeof (endpoints == null ? void 0 : endpoints.shortcuts) === "string" && endpoints.shortcuts.length > 0;
+    const hasSlashCommands = typeof (endpoints == null ? void 0 : endpoints.slashCommands) === "string" && endpoints.slashCommands.length > 0;
     if (booting) {
-      return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-chat-page nvoos-pro-spa-chat-page--loading",
           role: "status",
-          "aria-label": (0, import_i18n13.__)("Loading chat", "nvoos-pro-spa"),
+          "aria-label": (0, import_i18n15.__)("Loading chat", "nvoos-pro-spa"),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "nvoos-pro-spa-chat-page__spinner", "aria-hidden": "true" }),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { className: "nvoos-pro-spa-chat-page__loading-text", children: (0, import_i18n13.__)("Loading\u2026", "nvoos-pro-spa") })
+            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "nvoos-pro-spa-chat-page__spinner", "aria-hidden": "true" }),
+            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { className: "nvoos-pro-spa-chat-page__loading-text", children: (0, import_i18n15.__)("Loading\u2026", "nvoos-pro-spa") })
           ]
         }
       );
     }
     if (bootError) {
-      return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         "div",
         {
           className: "nvoos-pro-spa-chat-page nvoos-pro-spa-chat-page--error",
           role: "alert",
-          children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { className: "nvoos-pro-spa-chat-page__error-text", children: (0, import_i18n13.sprintf)(
+          children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { className: "nvoos-pro-spa-chat-page__error-text", children: (0, import_i18n15.sprintf)(
             /* translators: %s: error message */
-            (0, import_i18n13.__)("Failed to initialize chat: %s", "nvoos-pro-spa"),
+            (0, import_i18n15.__)("Failed to initialize chat: %s", "nvoos-pro-spa"),
             bootError
           ) })
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
       "div",
       {
         className: "nvoos-pro-spa-chat-page nvoos-pro-spa-chat-page--active",
         role: "main",
-        "aria-label": (0, import_i18n13.__)("Chat conversation", "nvoos-pro-spa"),
+        "aria-label": (0, import_i18n15.__)("Chat conversation", "nvoos-pro-spa"),
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-chat-page__toolbar", children: [
-            uniqueModels.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-chat-page__model-select", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "nvoos-pro-spa-chat-page__toolbar", children: [
+            uniqueModels.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "nvoos-pro-spa-chat-page__model-select", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                 "label",
                 {
                   htmlFor: "nvoos-pro-spa-model-select",
                   className: "nvoos-pro-spa-chat-page__select-label",
-                  children: (0, import_i18n13.__)("Model", "nvoos-pro-spa")
+                  children: (0, import_i18n15.__)("Model", "nvoos-pro-spa")
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                 "select",
                 {
                   id: "nvoos-pro-spa-model-select",
@@ -29594,7 +30231,7 @@ ${content}</tr>
                       setModel({ provider, model: modelName });
                     }
                   },
-                  children: uniqueModels.map((m) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+                  children: uniqueModels.map((m) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                     "option",
                     {
                       value: `${m.provider}|${m.model}`,
@@ -29609,40 +30246,64 @@ ${content}</tr>
                 }
               )
             ] }),
-            availableProfiles.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "nvoos-pro-spa-chat-page__profile-select", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+            availableProfiles.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "nvoos-pro-spa-chat-page__profile-select", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                 "label",
                 {
                   htmlFor: "nvoos-pro-spa-profile-select",
                   className: "nvoos-pro-spa-chat-page__select-label",
-                  children: (0, import_i18n13.__)("Profile", "nvoos-pro-spa")
+                  children: (0, import_i18n15.__)("Profile", "nvoos-pro-spa")
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                 "select",
                 {
                   id: "nvoos-pro-spa-profile-select",
                   className: "nvoos-pro-spa-chat-page__select",
                   value: profile,
                   onChange: (e) => setProfile(e.target.value),
-                  children: availableProfiles.map((p) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("option", { value: p, children: p }, p))
+                  children: availableProfiles.map((p) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("option", { value: p, children: p }, p))
                 }
               )
             ] }),
-            hasMemory && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+            hasMemory && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
               "button",
               {
                 type: "button",
                 ref: memoryToggleRef,
                 className: "nvoos-pro-spa-chat-page__memory-btn nvoos-pro-spa-btn",
                 onClick: () => setMemoryOpen((prev) => !prev),
-                "aria-label": (0, import_i18n13.__)("Toggle memory drawer", "nvoos-pro-spa"),
+                "aria-label": (0, import_i18n15.__)("Toggle memory drawer", "nvoos-pro-spa"),
                 "aria-expanded": memoryOpen,
-                children: (0, import_i18n13.__)("Memory", "nvoos-pro-spa")
+                children: (0, import_i18n15.__)("Memory", "nvoos-pro-spa")
+              }
+            ),
+            hasShortcuts && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+              "button",
+              {
+                type: "button",
+                ref: toolsToggleRef,
+                className: "nvoos-pro-spa-chat-page__tools-btn nvoos-pro-spa-btn",
+                onClick: () => openDrawer("tools"),
+                "aria-label": (0, import_i18n15.__)("Toggle tool shortcuts drawer", "nvoos-pro-spa"),
+                "aria-expanded": toolsOpen,
+                children: (0, import_i18n15.__)("Tools", "nvoos-pro-spa")
+              }
+            ),
+            hasSlashCommands && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+              "button",
+              {
+                type: "button",
+                ref: commandsToggleRef,
+                className: "nvoos-pro-spa-chat-page__commands-btn nvoos-pro-spa-btn",
+                onClick: () => openDrawer("commands"),
+                "aria-label": (0, import_i18n15.__)("Toggle slash commands drawer", "nvoos-pro-spa"),
+                "aria-expanded": commandsOpen,
+                children: (0, import_i18n15.__)("Commands", "nvoos-pro-spa")
               }
             )
           ] }),
-          hasApprovals && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+          hasApprovals && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
             HitlApprovalBar,
             {
               endpoint: endpoints.approvals,
@@ -29652,7 +30313,7 @@ ${content}</tr>
               isStreaming
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
             AgentPanel,
             {
               messages,
@@ -29674,7 +30335,7 @@ ${content}</tr>
               feedbackState
             }
           ),
-          hasMemory && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+          hasMemory && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
             MemoryDrawer,
             {
               endpoint: endpoints.memory,
@@ -29686,17 +30347,40 @@ ${content}</tr>
               onClose: () => setMemoryOpen(false),
               toggleRef: memoryToggleRef
             }
+          ),
+          hasShortcuts && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+            ToolShortcutsDrawer,
+            {
+              endpoint: endpoints.shortcuts,
+              nonce,
+              assistantId,
+              isOpen: toolsOpen,
+              onClose: () => setToolsOpen(false),
+              onInsertPayload: sendMessage,
+              toggleRef: toolsToggleRef
+            }
+          ),
+          hasSlashCommands && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+            SlashCommandsDrawer,
+            {
+              endpoint: endpoints.slashCommands,
+              nonce,
+              isOpen: commandsOpen,
+              onClose: () => setCommandsOpen(false),
+              onInsertPayload: sendMessage,
+              toggleRef: commandsToggleRef
+            }
           )
         ]
       }
     );
   }
-  var import_react25, import_i18n13, import_jsx_runtime9;
+  var import_react27, import_i18n15, import_jsx_runtime11;
   var init_ChatPage = __esm({
     "src/features/chat/ChatPage.tsx"() {
       "use strict";
-      import_react25 = __toESM(require_react(), 1);
-      import_i18n13 = __toESM(require_i18n(), 1);
+      import_react27 = __toESM(require_react(), 1);
+      import_i18n15 = __toESM(require_i18n(), 1);
       init_useBootstrap();
       init_useChatSpoke();
       init_modelStore();
@@ -29704,16 +30388,18 @@ ${content}</tr>
       init_AgentPanel();
       init_MemoryDrawer();
       init_HitlApprovalBar();
-      import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+      init_ToolShortcutsDrawer();
+      init_SlashCommandsDrawer();
+      import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
     }
   });
 
   // src/api/settings.ts
-  var import_i18n14, SettingsClient;
+  var import_i18n16, SettingsClient;
   var init_settings = __esm({
     "src/api/settings.ts"() {
       "use strict";
-      import_i18n14 = __toESM(require_i18n(), 1);
+      import_i18n16 = __toESM(require_i18n(), 1);
       SettingsClient = class {
         constructor(opts) {
           this.endpoint = opts.endpoint.replace(/\/+$/, "");
@@ -29756,7 +30442,7 @@ ${content}</tr>
           });
           if (!response.ok) {
             throw new Error(
-              (0, import_i18n14.__)("Settings request failed.", "nvoos-pro-spa")
+              (0, import_i18n16.__)("Settings request failed.", "nvoos-pro-spa")
             );
           }
           try {
@@ -29771,15 +30457,15 @@ ${content}</tr>
 
   // src/hooks/useSettings.ts
   function useSettings(options2) {
-    const client = (0, import_react26.useMemo)(
+    const client = (0, import_react28.useMemo)(
       () => new SettingsClient({ endpoint: options2.endpoint, nonce: options2.nonce }),
       [options2.endpoint, options2.nonce]
     );
-    const [settings, setSettings] = (0, import_react26.useState)(null);
-    const [loading, setLoading] = (0, import_react26.useState)(false);
-    const [error, setError] = (0, import_react26.useState)(null);
+    const [settings, setSettings] = (0, import_react28.useState)(null);
+    const [loading, setLoading] = (0, import_react28.useState)(false);
+    const [error, setError] = (0, import_react28.useState)(null);
     const addToast = useUIStore((s) => s.addToast);
-    const fetchSettings = (0, import_react26.useCallback)(async () => {
+    const fetchSettings = (0, import_react28.useCallback)(async () => {
       setLoading(true);
       setError(null);
       try {
@@ -29791,10 +30477,10 @@ ${content}</tr>
         setLoading(false);
       }
     }, [client]);
-    (0, import_react26.useEffect)(() => {
+    (0, import_react28.useEffect)(() => {
       void fetchSettings();
     }, [fetchSettings]);
-    const updateSettings = (0, import_react26.useCallback)(
+    const updateSettings = (0, import_react28.useCallback)(
       async (changes) => {
         try {
           const updated = await client.update(changes);
@@ -29811,11 +30497,11 @@ ${content}</tr>
     );
     return { settings, loading, error, fetchSettings, updateSettings };
   }
-  var import_react26;
+  var import_react28;
   var init_useSettings = __esm({
     "src/hooks/useSettings.ts"() {
       "use strict";
-      import_react26 = __toESM(require_react(), 1);
+      import_react28 = __toESM(require_react(), 1);
       init_settings();
       init_uiStore();
     }
@@ -29864,22 +30550,22 @@ ${content}</tr>
         nonce: runtime.nonce
       } : { endpoint: "", nonce: "" }
     );
-    const [form, setForm] = (0, import_react27.useState)(INITIAL_FORM);
-    const [dirty, setDirty] = (0, import_react27.useState)(false);
-    const [saving, setSaving] = (0, import_react27.useState)(false);
-    const [unmaskKeys, setUnmaskKeys] = (0, import_react27.useState)(false);
-    (0, import_react27.useEffect)(() => {
+    const [form, setForm] = (0, import_react29.useState)(INITIAL_FORM);
+    const [dirty, setDirty] = (0, import_react29.useState)(false);
+    const [saving, setSaving] = (0, import_react29.useState)(false);
+    const [unmaskKeys, setUnmaskKeys] = (0, import_react29.useState)(false);
+    (0, import_react29.useEffect)(() => {
       setForm(mapSettingsToForm(settings));
       setDirty(false);
     }, [settings]);
-    const handleChange = (0, import_react27.useCallback)(
+    const handleChange = (0, import_react29.useCallback)(
       (key, value) => {
         setForm((prev) => __spreadProps(__spreadValues({}, prev), { [key]: value }));
         setDirty(true);
       },
       []
     );
-    const handleSave = (0, import_react27.useCallback)(async () => {
+    const handleSave = (0, import_react29.useCallback)(async () => {
       setSaving(true);
       try {
         await updateSettings(mapFormToSettings(form));
@@ -29888,19 +30574,19 @@ ${content}</tr>
         setSaving(false);
       }
     }, [form, updateSettings]);
-    const handleReset = (0, import_react27.useCallback)(() => {
+    const handleReset = (0, import_react29.useCallback)(() => {
       setForm(mapSettingsToForm(settings));
       setDirty(false);
     }, [settings]);
     if (!runtime) {
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-page nvoos-pro-spa-page--error",
           role: "alert",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n15.__)("Settings", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: (0, import_i18n15.__)(
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n17.__)("Settings", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: (0, import_i18n17.__)(
               "Runtime configuration not available. Please reload the page.",
               "nvoos-pro-spa"
             ) })
@@ -29909,52 +30595,52 @@ ${content}</tr>
       );
     }
     if (loading) {
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-page nvoos-pro-spa-page--loading",
           "aria-busy": "true",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n15.__)("Settings", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-page__loader", role: "status", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: "nvoos-pro-spa-page__spinner" }),
-              (0, import_i18n15.__)("Loading settings\u2026", "nvoos-pro-spa")
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n17.__)("Settings", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-page__loader", role: "status", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "nvoos-pro-spa-page__spinner" }),
+              (0, import_i18n17.__)("Loading settings\u2026", "nvoos-pro-spa")
             ] })
           ]
         }
       );
     }
     if (error) {
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-page nvoos-pro-spa-page--error",
           role: "alert",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n15.__)("Settings", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: error }),
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n17.__)("Settings", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: error }),
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
               "button",
               {
                 type: "button",
                 className: "nvoos-pro-spa-page__retry",
                 onClick: () => void fetchSettings(),
-                children: (0, import_i18n15.__)("Retry", "nvoos-pro-spa")
+                children: (0, import_i18n17.__)("Retry", "nvoos-pro-spa")
               }
             )
           ]
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-page nvoos-pro-spa-settings-page", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("header", { className: "nvoos-pro-spa-settings-page__header", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n15.__)("Settings", "nvoos-pro-spa") }),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "nvoos-pro-spa-page__subtitle", children: (0, import_i18n15.__)(
+    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-page nvoos-pro-spa-settings-page", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("header", { className: "nvoos-pro-spa-settings-page__header", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n17.__)("Settings", "nvoos-pro-spa") }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { className: "nvoos-pro-spa-page__subtitle", children: (0, import_i18n17.__)(
           "Configure API keys and default model behavior for the AI Assistant.",
           "nvoos-pro-spa"
         ) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
         "form",
         {
           className: "nvoos-pro-spa-settings-form",
@@ -29962,26 +30648,26 @@ ${content}</tr>
             e.preventDefault();
             void handleSave();
           },
-          "aria-label": (0, import_i18n15.__)(
+          "aria-label": (0, import_i18n17.__)(
             "Plugin settings",
             "nvoos-pro-spa"
           ),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("fieldset", { className: "nvoos-pro-spa-settings-form__section", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("legend", { className: "nvoos-pro-spa-settings-form__section-title", children: (0, import_i18n15.__)("API Keys", "nvoos-pro-spa") }),
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("fieldset", { className: "nvoos-pro-spa-settings-form__section", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("legend", { className: "nvoos-pro-spa-settings-form__section-title", children: (0, import_i18n17.__)("API Keys", "nvoos-pro-spa") }),
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                   "label",
                   {
                     htmlFor: "nvoos-pro-spa-settings-openai-key",
                     className: "nvoos-pro-spa-settings-form__label",
-                    children: (0, import_i18n15.__)(
+                    children: (0, import_i18n17.__)(
                       "OpenAI API Key",
                       "nvoos-pro-spa"
                     )
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                   "input",
                   {
                     id: "nvoos-pro-spa-settings-openai-key",
@@ -29997,19 +30683,19 @@ ${content}</tr>
                   }
                 )
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                   "label",
                   {
                     htmlFor: "nvoos-pro-spa-settings-google-key",
                     className: "nvoos-pro-spa-settings-form__label",
-                    children: (0, import_i18n15.__)(
+                    children: (0, import_i18n17.__)(
                       "Google API Key (Gemini)",
                       "nvoos-pro-spa"
                     )
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                   "input",
                   {
                     id: "nvoos-pro-spa-settings-google-key",
@@ -30025,19 +30711,19 @@ ${content}</tr>
                   }
                 )
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                   "label",
                   {
                     htmlFor: "nvoos-pro-spa-settings-anthropic-key",
                     className: "nvoos-pro-spa-settings-form__label",
-                    children: (0, import_i18n15.__)(
+                    children: (0, import_i18n17.__)(
                       "Anthropic API Key",
                       "nvoos-pro-spa"
                     )
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                   "input",
                   {
                     id: "nvoos-pro-spa-settings-anthropic-key",
@@ -30053,19 +30739,19 @@ ${content}</tr>
                   }
                 )
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                   "label",
                   {
                     htmlFor: "nvoos-pro-spa-settings-ollama-url",
                     className: "nvoos-pro-spa-settings-form__label",
-                    children: (0, import_i18n15.__)(
+                    children: (0, import_i18n17.__)(
                       "Ollama Endpoint URL",
                       "nvoos-pro-spa"
                     )
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                   "input",
                   {
                     id: "nvoos-pro-spa-settings-ollama-url",
@@ -30080,45 +30766,45 @@ ${content}</tr>
                   }
                 )
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "nvoos-pro-spa-settings-form__field", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "nvoos-pro-spa-settings-form__field", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                 "button",
                 {
                   type: "button",
                   className: "nvoos-pro-spa-settings-form__toggle-visibility",
                   onClick: () => setUnmaskKeys((prev) => !prev),
-                  "aria-label": unmaskKeys ? (0, import_i18n15.__)(
+                  "aria-label": unmaskKeys ? (0, import_i18n17.__)(
                     "Hide API keys",
                     "nvoos-pro-spa"
-                  ) : (0, import_i18n15.__)(
+                  ) : (0, import_i18n17.__)(
                     "Show API keys",
                     "nvoos-pro-spa"
                   ),
-                  children: unmaskKeys ? (0, import_i18n15.__)(
+                  children: unmaskKeys ? (0, import_i18n17.__)(
                     "Hide API keys",
                     "nvoos-pro-spa"
-                  ) : (0, import_i18n15.__)(
+                  ) : (0, import_i18n17.__)(
                     "Show API keys",
                     "nvoos-pro-spa"
                   )
                 }
               ) })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("fieldset", { className: "nvoos-pro-spa-settings-form__section", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("legend", { className: "nvoos-pro-spa-settings-form__section-title", children: (0, import_i18n15.__)("Model Defaults", "nvoos-pro-spa") }),
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__row", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("fieldset", { className: "nvoos-pro-spa-settings-form__section", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("legend", { className: "nvoos-pro-spa-settings-form__section-title", children: (0, import_i18n17.__)("Model Defaults", "nvoos-pro-spa") }),
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__row", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                     "label",
                     {
                       htmlFor: "nvoos-pro-spa-settings-provider",
                       className: "nvoos-pro-spa-settings-form__label",
-                      children: (0, import_i18n15.__)(
+                      children: (0, import_i18n17.__)(
                         "Default Provider",
                         "nvoos-pro-spa"
                       )
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                  /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
                     "select",
                     {
                       id: "nvoos-pro-spa-settings-provider",
@@ -30129,27 +30815,27 @@ ${content}</tr>
                         e.target.value
                       ),
                       children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("option", { value: "openai", children: "OpenAI" }),
-                        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("option", { value: "google", children: "Google Gemini" }),
-                        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("option", { value: "anthropic", children: "Anthropic" }),
-                        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("option", { value: "ollama", children: "Ollama" })
+                        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("option", { value: "openai", children: "OpenAI" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("option", { value: "google", children: "Google Gemini" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("option", { value: "anthropic", children: "Anthropic" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("option", { value: "ollama", children: "Ollama" })
                       ]
                     }
                   )
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                     "label",
                     {
                       htmlFor: "nvoos-pro-spa-settings-model",
                       className: "nvoos-pro-spa-settings-form__label",
-                      children: (0, import_i18n15.__)(
+                      children: (0, import_i18n17.__)(
                         "Default Model",
                         "nvoos-pro-spa"
                       )
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                     "input",
                     {
                       id: "nvoos-pro-spa-settings-model",
@@ -30165,20 +30851,20 @@ ${content}</tr>
                   )
                 ] })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__row", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__row", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                     "label",
                     {
                       htmlFor: "nvoos-pro-spa-settings-max-tokens",
                       className: "nvoos-pro-spa-settings-form__label",
-                      children: (0, import_i18n15.__)(
+                      children: (0, import_i18n17.__)(
                         "Max Tokens",
                         "nvoos-pro-spa"
                       )
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                     "input",
                     {
                       id: "nvoos-pro-spa-settings-max-tokens",
@@ -30194,19 +30880,19 @@ ${content}</tr>
                     }
                   )
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                     "label",
                     {
                       htmlFor: "nvoos-pro-spa-settings-temperature",
                       className: "nvoos-pro-spa-settings-form__label",
-                      children: (0, import_i18n15.__)(
+                      children: (0, import_i18n17.__)(
                         "Temperature",
                         "nvoos-pro-spa"
                       )
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                     "input",
                     {
                       id: "nvoos-pro-spa-settings-temperature",
@@ -30225,11 +30911,11 @@ ${content}</tr>
                 ] })
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("fieldset", { className: "nvoos-pro-spa-settings-form__section", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("legend", { className: "nvoos-pro-spa-settings-form__section-title", children: (0, import_i18n15.__)("Debugging", "nvoos-pro-spa") }),
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field nvoos-pro-spa-settings-form__field--checkbox", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("label", { className: "nvoos-pro-spa-settings-form__checkbox-label", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("fieldset", { className: "nvoos-pro-spa-settings-form__section", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("legend", { className: "nvoos-pro-spa-settings-form__section-title", children: (0, import_i18n17.__)("Debugging", "nvoos-pro-spa") }),
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__field nvoos-pro-spa-settings-form__field--checkbox", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("label", { className: "nvoos-pro-spa-settings-form__checkbox-label", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                     "input",
                     {
                       type: "checkbox",
@@ -30241,35 +30927,35 @@ ${content}</tr>
                       )
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: "nvoos-pro-spa-settings-form__checkbox-text", children: (0, import_i18n15.__)(
+                  /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "nvoos-pro-spa-settings-form__checkbox-text", children: (0, import_i18n17.__)(
                     "Enable logging",
                     "nvoos-pro-spa"
                   ) })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "nvoos-pro-spa-settings-form__help", children: (0, import_i18n15.__)(
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { className: "nvoos-pro-spa-settings-form__help", children: (0, import_i18n17.__)(
                   "Log API requests, tool executions, and errors for debugging purposes.",
                   "nvoos-pro-spa"
                 ) })
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "nvoos-pro-spa-settings-form__actions", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-settings-form__actions", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                 "button",
                 {
                   type: "submit",
                   className: "nvoos-pro-spa-settings-form__save-btn",
                   disabled: saving || !dirty,
-                  children: saving ? (0, import_i18n15.__)("Saving\u2026", "nvoos-pro-spa") : (0, import_i18n15.__)("Save Settings", "nvoos-pro-spa")
+                  children: saving ? (0, import_i18n17.__)("Saving\u2026", "nvoos-pro-spa") : (0, import_i18n17.__)("Save Settings", "nvoos-pro-spa")
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
                 "button",
                 {
                   type: "button",
                   className: "nvoos-pro-spa-settings-form__reset-btn",
                   onClick: handleReset,
                   disabled: saving || !dirty,
-                  children: (0, import_i18n15.__)("Reset", "nvoos-pro-spa")
+                  children: (0, import_i18n17.__)("Reset", "nvoos-pro-spa")
                 }
               )
             ] })
@@ -30278,15 +30964,15 @@ ${content}</tr>
       )
     ] });
   }
-  var import_react27, import_i18n15, import_jsx_runtime10, INITIAL_FORM;
+  var import_react29, import_i18n17, import_jsx_runtime12, INITIAL_FORM;
   var init_SettingsPage = __esm({
     "src/features/settings/SettingsPage.tsx"() {
       "use strict";
-      import_react27 = __toESM(require_react(), 1);
-      import_i18n15 = __toESM(require_i18n(), 1);
+      import_react29 = __toESM(require_react(), 1);
+      import_i18n17 = __toESM(require_i18n(), 1);
       init_useSettings();
       init_useBootstrap();
-      import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+      import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
       INITIAL_FORM = {
         openai_api_key: "",
         google_api_key: "",
@@ -30302,11 +30988,11 @@ ${content}</tr>
   });
 
   // src/api/tools.ts
-  var import_i18n16, ToolsClient;
+  var import_i18n18, ToolsClient;
   var init_tools = __esm({
     "src/api/tools.ts"() {
       "use strict";
-      import_i18n16 = __toESM(require_i18n(), 1);
+      import_i18n18 = __toESM(require_i18n(), 1);
       ToolsClient = class {
         constructor(opts) {
           this.endpoint = opts.endpoint.replace(/\/+$/, "");
@@ -30348,7 +31034,7 @@ ${content}</tr>
           });
           if (!response.ok) {
             throw new Error(
-              (0, import_i18n16.__)("Tools request failed.", "nvoos-pro-spa")
+              (0, import_i18n18.__)("Tools request failed.", "nvoos-pro-spa")
             );
           }
           try {
@@ -30363,15 +31049,15 @@ ${content}</tr>
 
   // src/hooks/useTools.ts
   function useTools(options2) {
-    const client = (0, import_react28.useMemo)(
+    const client = (0, import_react30.useMemo)(
       () => new ToolsClient({ endpoint: options2.endpoint, nonce: options2.nonce }),
       [options2.endpoint, options2.nonce]
     );
-    const [tools, setTools] = (0, import_react28.useState)([]);
-    const [total, setTotal] = (0, import_react28.useState)(0);
-    const [loading, setLoading] = (0, import_react28.useState)(false);
-    const [error, setError] = (0, import_react28.useState)(null);
-    const fetchTools = (0, import_react28.useCallback)(async () => {
+    const [tools, setTools] = (0, import_react30.useState)([]);
+    const [total, setTotal] = (0, import_react30.useState)(0);
+    const [loading, setLoading] = (0, import_react30.useState)(false);
+    const [error, setError] = (0, import_react30.useState)(null);
+    const fetchTools = (0, import_react30.useCallback)(async () => {
       setLoading(true);
       setError(null);
       try {
@@ -30384,10 +31070,10 @@ ${content}</tr>
         setLoading(false);
       }
     }, [client]);
-    (0, import_react28.useEffect)(() => {
+    (0, import_react30.useEffect)(() => {
       void fetchTools();
     }, [fetchTools]);
-    const executeTool = (0, import_react28.useCallback)(
+    const executeTool = (0, import_react30.useCallback)(
       async (slug, args) => {
         try {
           return await client.execute(slug, args);
@@ -30399,11 +31085,11 @@ ${content}</tr>
     );
     return { tools, total, loading, error, fetchTools, executeTool };
   }
-  var import_react28;
+  var import_react30;
   var init_useTools = __esm({
     "src/hooks/useTools.ts"() {
       "use strict";
-      import_react28 = __toESM(require_react(), 1);
+      import_react30 = __toESM(require_react(), 1);
       init_tools();
     }
   });
@@ -30421,14 +31107,14 @@ ${content}</tr>
         nonce: runtime.nonce
       } : { endpoint: "", nonce: "" }
     );
-    const [search, setSearch] = (0, import_react29.useState)("");
-    const [categoryFilter, setCategoryFilter] = (0, import_react29.useState)("");
-    const [sortBy, setSortBy] = (0, import_react29.useState)("name");
-    const categories = (0, import_react29.useMemo)(() => {
+    const [search, setSearch] = (0, import_react31.useState)("");
+    const [categoryFilter, setCategoryFilter] = (0, import_react31.useState)("");
+    const [sortBy, setSortBy] = (0, import_react31.useState)("name");
+    const categories = (0, import_react31.useMemo)(() => {
       const set = new Set(tools.map((t) => t.category).filter(Boolean));
       return Array.from(set).sort();
     }, [tools]);
-    const filteredTools = (0, import_react29.useMemo)(() => {
+    const filteredTools = (0, import_react31.useMemo)(() => {
       const q = search.toLowerCase().trim();
       let result = tools;
       if (q) {
@@ -30455,14 +31141,14 @@ ${content}</tr>
       return result;
     }, [tools, search, categoryFilter, sortBy]);
     if (!runtime) {
-      return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-page nvoos-pro-spa-page--error",
           role: "alert",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n17.__)("Tools", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: (0, import_i18n17.__)(
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n19.__)("Tools", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: (0, import_i18n19.__)(
               "Runtime configuration not available. Please reload the page.",
               "nvoos-pro-spa"
             ) })
@@ -30471,68 +31157,68 @@ ${content}</tr>
       );
     }
     if (loading) {
-      return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-page nvoos-pro-spa-page--loading",
           "aria-busy": "true",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n17.__)("Tools", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "nvoos-pro-spa-page__loader", role: "status", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "nvoos-pro-spa-page__spinner" }),
-              (0, import_i18n17.__)("Loading tools\u2026", "nvoos-pro-spa")
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n19.__)("Tools", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "nvoos-pro-spa-page__loader", role: "status", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "nvoos-pro-spa-page__spinner" }),
+              (0, import_i18n19.__)("Loading tools\u2026", "nvoos-pro-spa")
             ] })
           ]
         }
       );
     }
     if (error) {
-      return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-page nvoos-pro-spa-page--error",
           role: "alert",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n17.__)("Tools", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: error }),
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n19.__)("Tools", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: error }),
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
               "button",
               {
                 type: "button",
                 className: "nvoos-pro-spa-page__retry",
                 onClick: () => void fetchTools(),
-                children: (0, import_i18n17.__)("Retry", "nvoos-pro-spa")
+                children: (0, import_i18n19.__)("Retry", "nvoos-pro-spa")
               }
             )
           ]
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "nvoos-pro-spa-page nvoos-pro-spa-tools-page", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("header", { className: "nvoos-pro-spa-tools-page__header", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n17.__)("Tools", "nvoos-pro-spa") }),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { className: "nvoos-pro-spa-page__subtitle", children: (0, import_i18n17.__)(
+    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "nvoos-pro-spa-page nvoos-pro-spa-tools-page", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("header", { className: "nvoos-pro-spa-tools-page__header", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n19.__)("Tools", "nvoos-pro-spa") }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { className: "nvoos-pro-spa-page__subtitle", children: (0, import_i18n19.__)(
           "Browse registered tools available to AI assistants.",
           "nvoos-pro-spa"
         ) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-tools-page__controls",
           role: "search",
-          "aria-label": (0, import_i18n17.__)("Filter tools", "nvoos-pro-spa"),
+          "aria-label": (0, import_i18n19.__)("Filter tools", "nvoos-pro-spa"),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "nvoos-pro-spa-tools-page__search", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "nvoos-pro-spa-tools-page__search", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                 "label",
                 {
                   htmlFor: "nvoos-pro-spa-tools-search",
                   className: "nvoos-pro-spa-tools-page__label",
-                  children: (0, import_i18n17.__)("Search tools", "nvoos-pro-spa")
+                  children: (0, import_i18n19.__)("Search tools", "nvoos-pro-spa")
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                 "input",
                 {
                   id: "nvoos-pro-spa-tools-search",
@@ -30540,23 +31226,23 @@ ${content}</tr>
                   className: "nvoos-pro-spa-tools-page__input",
                   value: search,
                   onChange: (e) => setSearch(e.target.value),
-                  placeholder: (0, import_i18n17.__)(
+                  placeholder: (0, import_i18n19.__)(
                     "Search by name, description, or slug\u2026",
                     "nvoos-pro-spa"
                   )
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "nvoos-pro-spa-tools-page__filter", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "nvoos-pro-spa-tools-page__filter", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                 "label",
                 {
                   htmlFor: "nvoos-pro-spa-tools-category",
                   className: "nvoos-pro-spa-tools-page__label",
-                  children: (0, import_i18n17.__)("Category", "nvoos-pro-spa")
+                  children: (0, import_i18n19.__)("Category", "nvoos-pro-spa")
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
                 "select",
                 {
                   id: "nvoos-pro-spa-tools-category",
@@ -30564,22 +31250,22 @@ ${content}</tr>
                   value: categoryFilter,
                   onChange: (e) => setCategoryFilter(e.target.value),
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("option", { value: "", children: (0, import_i18n17.__)("All categories", "nvoos-pro-spa") }),
-                    categories.map((cat) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("option", { value: cat, children: cat }, cat))
+                    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("option", { value: "", children: (0, import_i18n19.__)("All categories", "nvoos-pro-spa") }),
+                    categories.map((cat) => /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("option", { value: cat, children: cat }, cat))
                   ]
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "nvoos-pro-spa-tools-page__sort", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "nvoos-pro-spa-tools-page__sort", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                 "label",
                 {
                   htmlFor: "nvoos-pro-spa-tools-sort",
                   className: "nvoos-pro-spa-tools-page__label",
-                  children: (0, import_i18n17.__)("Sort by", "nvoos-pro-spa")
+                  children: (0, import_i18n19.__)("Sort by", "nvoos-pro-spa")
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
                 "select",
                 {
                   id: "nvoos-pro-spa-tools-sort",
@@ -30587,9 +31273,9 @@ ${content}</tr>
                   value: sortBy,
                   onChange: (e) => setSortBy(e.target.value),
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("option", { value: "name", children: (0, import_i18n17.__)("Name", "nvoos-pro-spa") }),
-                    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("option", { value: "category", children: (0, import_i18n17.__)("Category", "nvoos-pro-spa") }),
-                    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("option", { value: "capability", children: (0, import_i18n17.__)("Capability", "nvoos-pro-spa") })
+                    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("option", { value: "name", children: (0, import_i18n19.__)("Name", "nvoos-pro-spa") }),
+                    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("option", { value: "category", children: (0, import_i18n19.__)("Category", "nvoos-pro-spa") }),
+                    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("option", { value: "capability", children: (0, import_i18n19.__)("Capability", "nvoos-pro-spa") })
                   ]
                 }
               )
@@ -30597,101 +31283,101 @@ ${content}</tr>
           ]
         }
       ),
-      filteredTools.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+      filteredTools.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
         "div",
         {
           className: "nvoos-pro-spa-tools-page__empty",
           role: "status",
-          children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: search || categoryFilter ? (0, import_i18n17.__)(
+          children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { children: search || categoryFilter ? (0, import_i18n19.__)(
             "No tools match your search criteria.",
             "nvoos-pro-spa"
-          ) : (0, import_i18n17.__)(
+          ) : (0, import_i18n19.__)(
             "No tools registered.",
             "nvoos-pro-spa"
           ) })
         }
-      ) : /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+      ) : /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-tools-list",
           role: "list",
-          "aria-label": (0, import_i18n17.__)("Tool registry", "nvoos-pro-spa"),
+          "aria-label": (0, import_i18n19.__)("Tool registry", "nvoos-pro-spa"),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
               "div",
               {
                 className: "nvoos-pro-spa-tools-list__header",
                 role: "row",
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                     "div",
                     {
                       className: "nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head",
                       role: "columnheader",
-                      children: (0, import_i18n17.__)("Tool", "nvoos-pro-spa")
+                      children: (0, import_i18n19.__)("Tool", "nvoos-pro-spa")
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                     "div",
                     {
                       className: "nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head",
                       role: "columnheader",
-                      children: (0, import_i18n17.__)("Category", "nvoos-pro-spa")
+                      children: (0, import_i18n19.__)("Category", "nvoos-pro-spa")
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                     "div",
                     {
                       className: "nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head",
                       role: "columnheader",
-                      children: (0, import_i18n17.__)("Required Capability", "nvoos-pro-spa")
+                      children: (0, import_i18n19.__)("Required Capability", "nvoos-pro-spa")
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                     "div",
                     {
                       className: "nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head",
                       role: "columnheader",
-                      children: (0, import_i18n17.__)("Description", "nvoos-pro-spa")
+                      children: (0, import_i18n19.__)("Description", "nvoos-pro-spa")
                     }
                   )
                 ]
               }
             ),
-            filteredTools.map((tool) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+            filteredTools.map((tool) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
               "div",
               {
                 className: "nvoos-pro-spa-tools-list__row",
                 role: "row",
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
                     "div",
                     {
                       className: "nvoos-pro-spa-tools-list__cell",
                       role: "cell",
                       children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("strong", { className: "nvoos-pro-spa-tools-list__name", children: tool.name }),
-                        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("code", { className: "nvoos-pro-spa-tools-list__slug", children: tool.slug })
+                        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("strong", { className: "nvoos-pro-spa-tools-list__name", children: tool.name }),
+                        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("code", { className: "nvoos-pro-spa-tools-list__slug", children: tool.slug })
                       ]
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                     "div",
                     {
                       className: "nvoos-pro-spa-tools-list__cell",
                       role: "cell",
-                      children: tool.category ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "nvoos-pro-spa-tools-list__badge", children: tool.category }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "nvoos-pro-spa-tools-list__badge nvoos-pro-spa-tools-list__badge--empty", children: "\u2014" })
+                      children: tool.category ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "nvoos-pro-spa-tools-list__badge", children: tool.category }) : /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "nvoos-pro-spa-tools-list__badge nvoos-pro-spa-tools-list__badge--empty", children: "\u2014" })
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                     "div",
                     {
                       className: "nvoos-pro-spa-tools-list__cell",
                       role: "cell",
-                      children: tool.required_capability ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("code", { className: "nvoos-pro-spa-tools-list__capability", children: tool.required_capability }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "nvoos-pro-spa-tools-list__badge nvoos-pro-spa-tools-list__badge--empty", children: "\u2014" })
+                      children: tool.required_capability ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("code", { className: "nvoos-pro-spa-tools-list__capability", children: tool.required_capability }) : /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "nvoos-pro-spa-tools-list__badge nvoos-pro-spa-tools-list__badge--empty", children: "\u2014" })
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
                     "div",
                     {
                       className: "nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc",
@@ -30706,42 +31392,42 @@ ${content}</tr>
           ]
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("footer", { className: "nvoos-pro-spa-tools-page__footer", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
-        (0, import_i18n17.__)("Showing", "nvoos-pro-spa"),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("footer", { className: "nvoos-pro-spa-tools-page__footer", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("p", { children: [
+        (0, import_i18n19.__)("Showing", "nvoos-pro-spa"),
         " ",
         filteredTools.length,
         " ",
-        (0, import_i18n17.__)("of", "nvoos-pro-spa"),
+        (0, import_i18n19.__)("of", "nvoos-pro-spa"),
         " ",
         tools.length,
         " ",
-        (0, import_i18n17.__)("tools", "nvoos-pro-spa")
+        (0, import_i18n19.__)("tools", "nvoos-pro-spa")
       ] }) })
     ] });
   }
-  var import_react29, import_i18n17, import_jsx_runtime11;
+  var import_react31, import_i18n19, import_jsx_runtime13;
   var init_ToolsPage = __esm({
     "src/features/tools/ToolsPage.tsx"() {
       "use strict";
-      import_react29 = __toESM(require_react(), 1);
-      import_i18n17 = __toESM(require_i18n(), 1);
+      import_react31 = __toESM(require_react(), 1);
+      import_i18n19 = __toESM(require_i18n(), 1);
       init_useTools();
       init_useBootstrap();
-      import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+      import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
     }
   });
 
   // src/hooks/useAssistants.ts
   function useAssistants(options2) {
-    const client = (0, import_react30.useMemo)(
+    const client = (0, import_react32.useMemo)(
       () => new AssistantsClient({ endpoint: options2.endpoint, nonce: options2.nonce }),
       [options2.endpoint, options2.nonce]
     );
-    const [assistants, setAssistants] = (0, import_react30.useState)([]);
-    const [loading, setLoading] = (0, import_react30.useState)(false);
-    const [error, setError] = (0, import_react30.useState)(null);
+    const [assistants, setAssistants] = (0, import_react32.useState)([]);
+    const [loading, setLoading] = (0, import_react32.useState)(false);
+    const [error, setError] = (0, import_react32.useState)(null);
     const addToast = useUIStore((s) => s.addToast);
-    const fetchAssistants = (0, import_react30.useCallback)(async () => {
+    const fetchAssistants = (0, import_react32.useCallback)(async () => {
       setLoading(true);
       setError(null);
       try {
@@ -30753,10 +31439,10 @@ ${content}</tr>
         setLoading(false);
       }
     }, [client]);
-    (0, import_react30.useEffect)(() => {
+    (0, import_react32.useEffect)(() => {
       void fetchAssistants();
     }, [fetchAssistants]);
-    const createAssistant = (0, import_react30.useCallback)(
+    const createAssistant = (0, import_react32.useCallback)(
       async (fields) => {
         try {
           const created = await client.create(fields);
@@ -30771,7 +31457,7 @@ ${content}</tr>
       },
       [client, addToast]
     );
-    const updateAssistant = (0, import_react30.useCallback)(
+    const updateAssistant = (0, import_react32.useCallback)(
       async (id, changes) => {
         try {
           const updated = await client.update(id, changes);
@@ -30788,7 +31474,7 @@ ${content}</tr>
       },
       [client, addToast]
     );
-    const deleteAssistant = (0, import_react30.useCallback)(
+    const deleteAssistant = (0, import_react32.useCallback)(
       async (id) => {
         try {
           await client.delete(id);
@@ -30810,11 +31496,11 @@ ${content}</tr>
       deleteAssistant
     };
   }
-  var import_react30;
+  var import_react32;
   var init_useAssistants = __esm({
     "src/hooks/useAssistants.ts"() {
       "use strict";
-      import_react30 = __toESM(require_react(), 1);
+      import_react32 = __toESM(require_react(), 1);
       init_assistants();
       init_uiStore();
     }
@@ -30837,23 +31523,23 @@ ${content}</tr>
         nonce: runtime.nonce
       } : { endpoint: "", nonce: "" }
     );
-    const [formOpen, setFormOpen] = (0, import_react31.useState)(false);
-    const [editingId, setEditingId] = (0, import_react31.useState)(null);
-    const [formFields, setFormFields] = (0, import_react31.useState)(EMPTY_FORM);
-    const [saving, setSaving] = (0, import_react31.useState)(false);
-    const [deleteConfirm, setDeleteConfirm] = (0, import_react31.useState)(null);
-    const providers = (0, import_react31.useMemo)(() => {
+    const [formOpen, setFormOpen] = (0, import_react33.useState)(false);
+    const [editingId, setEditingId] = (0, import_react33.useState)(null);
+    const [formFields, setFormFields] = (0, import_react33.useState)(EMPTY_FORM);
+    const [saving, setSaving] = (0, import_react33.useState)(false);
+    const [deleteConfirm, setDeleteConfirm] = (0, import_react33.useState)(null);
+    const providers = (0, import_react33.useMemo)(() => {
       const set = new Set(
         availableModels.map((m) => m.provider).filter(Boolean)
       );
       return Array.from(set).sort();
     }, [availableModels]);
-    const openCreate = (0, import_react31.useCallback)(() => {
+    const openCreate = (0, import_react33.useCallback)(() => {
       setFormFields(EMPTY_FORM);
       setEditingId(null);
       setFormOpen(true);
     }, []);
-    const openEdit = (0, import_react31.useCallback)((assistant) => {
+    const openEdit = (0, import_react33.useCallback)((assistant) => {
       var _a15, _b, _c, _d, _e;
       setFormFields({
         title: (_a15 = assistant.title) != null ? _a15 : "",
@@ -30866,12 +31552,12 @@ ${content}</tr>
       setEditingId(assistant.id);
       setFormOpen(true);
     }, []);
-    const closeForm = (0, import_react31.useCallback)(() => {
+    const closeForm = (0, import_react33.useCallback)(() => {
       setFormOpen(false);
       setEditingId(null);
       setFormFields(EMPTY_FORM);
     }, []);
-    const handleSave = (0, import_react31.useCallback)(async () => {
+    const handleSave = (0, import_react33.useCallback)(async () => {
       if (!formFields.title.trim()) return;
       setSaving(true);
       const payload = {
@@ -30893,7 +31579,7 @@ ${content}</tr>
         setSaving(false);
       }
     }, [formFields, editingId, createAssistant, updateAssistant, closeForm]);
-    const handleDelete = (0, import_react31.useCallback)(
+    const handleDelete = (0, import_react33.useCallback)(
       async (id) => {
         setDeleteConfirm(null);
         await deleteAssistant(id);
@@ -30901,14 +31587,14 @@ ${content}</tr>
       [deleteAssistant]
     );
     if (!runtime) {
-      return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-page nvoos-pro-spa-page--error",
           role: "alert",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n18.__)("Assistants", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: (0, import_i18n18.__)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n20.__)("Assistants", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: (0, import_i18n20.__)(
               "Runtime configuration not available. Please reload the page.",
               "nvoos-pro-spa"
             ) })
@@ -30917,87 +31603,87 @@ ${content}</tr>
       );
     }
     if (loading) {
-      return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-page nvoos-pro-spa-page--loading",
           "aria-busy": "true",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n18.__)("Assistants", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-page__loader", role: "status", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "nvoos-pro-spa-page__spinner" }),
-              (0, import_i18n18.__)("Loading assistants\u2026", "nvoos-pro-spa")
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n20.__)("Assistants", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-page__loader", role: "status", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "nvoos-pro-spa-page__spinner" }),
+              (0, import_i18n20.__)("Loading assistants\u2026", "nvoos-pro-spa")
             ] })
           ]
         }
       );
     }
     if (error) {
-      return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-page nvoos-pro-spa-page--error",
           role: "alert",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n18.__)("Assistants", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: error }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n20.__)("Assistants", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error", children: error }),
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
               "button",
               {
                 type: "button",
                 className: "nvoos-pro-spa-page__retry",
                 onClick: () => void fetchAssistants(),
-                children: (0, import_i18n18.__)("Retry", "nvoos-pro-spa")
+                children: (0, import_i18n20.__)("Retry", "nvoos-pro-spa")
               }
             )
           ]
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-page nvoos-pro-spa-assistants-page", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("header", { className: "nvoos-pro-spa-assistants-page__header", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n18.__)("Assistants", "nvoos-pro-spa") }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-page nvoos-pro-spa-assistants-page", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("header", { className: "nvoos-pro-spa-assistants-page__header", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n20.__)("Assistants", "nvoos-pro-spa") }),
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
           "button",
           {
             type: "button",
             className: "nvoos-pro-spa-assistants-page__add-btn",
             onClick: openCreate,
-            children: (0, import_i18n18.__)("Add Assistant", "nvoos-pro-spa")
+            children: (0, import_i18n20.__)("Add Assistant", "nvoos-pro-spa")
           }
         )
       ] }),
-      assistants.length === 0 && !formOpen ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+      assistants.length === 0 && !formOpen ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "div",
         {
           className: "nvoos-pro-spa-assistants-page__empty",
           role: "status",
-          children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { children: (0, import_i18n18.__)(
+          children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { children: (0, import_i18n20.__)(
             "No assistants configured yet. Create your first assistant to get started.",
             "nvoos-pro-spa"
           ) })
         }
-      ) : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+      ) : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "ul",
         {
           className: "nvoos-pro-spa-assistants-list",
           role: "list",
-          "aria-label": (0, import_i18n18.__)("Assistant list", "nvoos-pro-spa"),
-          children: assistants.map((assistant) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+          "aria-label": (0, import_i18n20.__)("Assistant list", "nvoos-pro-spa"),
+          children: assistants.map((assistant) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
             "li",
             {
               className: "nvoos-pro-spa-assistants-list__item",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-list__body", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("h3", { className: "nvoos-pro-spa-assistants-list__title", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-list__body", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("h3", { className: "nvoos-pro-spa-assistants-list__title", children: [
                     assistant.title,
-                    assistant.is_preset && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "nvoos-pro-spa-assistants-list__badge", children: (0, import_i18n18.__)("Preset", "nvoos-pro-spa") })
+                    assistant.is_preset && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "nvoos-pro-spa-assistants-list__badge", children: (0, import_i18n20.__)("Preset", "nvoos-pro-spa") })
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-list__meta", children: [
-                    assistant.provider && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "nvoos-pro-spa-assistants-list__provider", children: assistant.provider }),
-                    assistant.model && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "nvoos-pro-spa-assistants-list__model", children: assistant.model }),
-                    typeof assistant.temperature === "number" && /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { className: "nvoos-pro-spa-assistants-list__temp", children: [
-                      (0, import_i18n18.__)(
+                  /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-list__meta", children: [
+                    assistant.provider && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "nvoos-pro-spa-assistants-list__provider", children: assistant.provider }),
+                    assistant.model && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "nvoos-pro-spa-assistants-list__model", children: assistant.model }),
+                    typeof assistant.temperature === "number" && /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { className: "nvoos-pro-spa-assistants-list__temp", children: [
+                      (0, import_i18n20.__)(
                         "Temperature:",
                         "nvoos-pro-spa"
                       ),
@@ -31005,28 +31691,28 @@ ${content}</tr>
                       assistant.temperature
                     ] })
                   ] }),
-                  assistant.system_prompt && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { className: "nvoos-pro-spa-assistants-list__prompt", children: assistant.system_prompt })
+                  assistant.system_prompt && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "nvoos-pro-spa-assistants-list__prompt", children: assistant.system_prompt })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-list__actions", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-list__actions", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                     "button",
                     {
                       type: "button",
                       className: "nvoos-pro-spa-assistants-list__edit-btn",
                       onClick: () => openEdit(assistant),
-                      "aria-label": (0, import_i18n18.__)(
+                      "aria-label": (0, import_i18n20.__)(
                         "Edit assistant",
                         "nvoos-pro-spa"
                       ),
-                      children: (0, import_i18n18.__)("Edit", "nvoos-pro-spa")
+                      children: (0, import_i18n20.__)("Edit", "nvoos-pro-spa")
                     }
                   ),
-                  deleteConfirm === assistant.id ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-list__confirm", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { children: (0, import_i18n18.__)(
+                  deleteConfirm === assistant.id ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-list__confirm", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: (0, import_i18n20.__)(
                       "Delete?",
                       "nvoos-pro-spa"
                     ) }),
-                    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                       "button",
                       {
                         type: "button",
@@ -31034,13 +31720,13 @@ ${content}</tr>
                         onClick: () => void handleDelete(
                           assistant.id
                         ),
-                        children: (0, import_i18n18.__)(
+                        children: (0, import_i18n20.__)(
                           "Yes",
                           "nvoos-pro-spa"
                         )
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                       "button",
                       {
                         type: "button",
@@ -31048,13 +31734,13 @@ ${content}</tr>
                         onClick: () => setDeleteConfirm(
                           null
                         ),
-                        children: (0, import_i18n18.__)(
+                        children: (0, import_i18n20.__)(
                           "No",
                           "nvoos-pro-spa"
                         )
                       }
                     )
-                  ] }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+                  ] }) : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                     "button",
                     {
                       type: "button",
@@ -31062,11 +31748,11 @@ ${content}</tr>
                       onClick: () => setDeleteConfirm(
                         assistant.id
                       ),
-                      "aria-label": (0, import_i18n18.__)(
+                      "aria-label": (0, import_i18n20.__)(
                         "Delete assistant",
                         "nvoos-pro-spa"
                       ),
-                      children: (0, import_i18n18.__)(
+                      children: (0, import_i18n20.__)(
                         "Delete",
                         "nvoos-pro-spa"
                       )
@@ -31079,41 +31765,41 @@ ${content}</tr>
           ))
         }
       ),
-      formOpen && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+      formOpen && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "div",
         {
           className: "nvoos-pro-spa-assistants-form-overlay",
           role: "dialog",
           "aria-labelledby": "nvoos-pro-spa-assistant-form-title",
           "aria-modal": "true",
-          children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-form", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+          children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-form", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
               "h3",
               {
                 id: "nvoos-pro-spa-assistant-form-title",
                 className: "nvoos-pro-spa-assistants-form__title",
-                children: editingId !== null ? (0, import_i18n18.__)(
+                children: editingId !== null ? (0, import_i18n20.__)(
                   "Edit Assistant",
                   "nvoos-pro-spa"
-                ) : (0, import_i18n18.__)(
+                ) : (0, import_i18n20.__)(
                   "New Assistant",
                   "nvoos-pro-spa"
                 )
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "label",
                 {
                   htmlFor: "nvoos-pro-spa-assistant-title",
                   className: "nvoos-pro-spa-assistants-form__label",
-                  children: (0, import_i18n18.__)(
+                  children: (0, import_i18n20.__)(
                     "Title",
                     "nvoos-pro-spa"
                   )
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "input",
                 {
                   id: "nvoos-pro-spa-assistant-title",
@@ -31127,20 +31813,20 @@ ${content}</tr>
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__row", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__row", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                   "label",
                   {
                     htmlFor: "nvoos-pro-spa-assistant-provider",
                     className: "nvoos-pro-spa-assistants-form__label",
-                    children: (0, import_i18n18.__)(
+                    children: (0, import_i18n20.__)(
                       "Provider",
                       "nvoos-pro-spa"
                     )
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
                   "select",
                   {
                     id: "nvoos-pro-spa-assistant-provider",
@@ -31151,10 +31837,10 @@ ${content}</tr>
                       model: ""
                     })),
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("option", { value: "openai", children: "OpenAI" }),
-                      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("option", { value: "google", children: "Google Gemini" }),
-                      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("option", { value: "anthropic", children: "Anthropic" }),
-                      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("option", { value: "ollama", children: "Ollama" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("option", { value: "openai", children: "OpenAI" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("option", { value: "google", children: "Google Gemini" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("option", { value: "anthropic", children: "Anthropic" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("option", { value: "ollama", children: "Ollama" }),
                       providers.filter(
                         (p) => ![
                           "openai",
@@ -31162,7 +31848,7 @@ ${content}</tr>
                           "anthropic",
                           "ollama"
                         ].includes(p)
-                      ).map((p) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+                      ).map((p) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                         "option",
                         {
                           value: p,
@@ -31174,19 +31860,19 @@ ${content}</tr>
                   }
                 )
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                   "label",
                   {
                     htmlFor: "nvoos-pro-spa-assistant-model",
                     className: "nvoos-pro-spa-assistants-form__label",
-                    children: (0, import_i18n18.__)(
+                    children: (0, import_i18n20.__)(
                       "Model",
                       "nvoos-pro-spa"
                     )
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                   "input",
                   {
                     id: "nvoos-pro-spa-assistant-model",
@@ -31201,14 +31887,14 @@ ${content}</tr>
                 )
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
                 "label",
                 {
                   htmlFor: "nvoos-pro-spa-assistant-temperature",
                   className: "nvoos-pro-spa-assistants-form__label",
                   children: [
-                    (0, import_i18n18.__)(
+                    (0, import_i18n20.__)(
                       "Temperature",
                       "nvoos-pro-spa"
                     ),
@@ -31219,7 +31905,7 @@ ${content}</tr>
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "input",
                 {
                   id: "nvoos-pro-spa-assistant-temperature",
@@ -31237,19 +31923,19 @@ ${content}</tr>
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "label",
                 {
                   htmlFor: "nvoos-pro-spa-assistant-prompt",
                   className: "nvoos-pro-spa-assistants-form__label",
-                  children: (0, import_i18n18.__)(
+                  children: (0, import_i18n20.__)(
                     "System Prompt",
                     "nvoos-pro-spa"
                   )
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "textarea",
                 {
                   id: "nvoos-pro-spa-assistant-prompt",
@@ -31262,19 +31948,19 @@ ${content}</tr>
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__field", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "label",
                 {
                   htmlFor: "nvoos-pro-spa-assistant-capabilities",
                   className: "nvoos-pro-spa-assistants-form__label",
-                  children: (0, import_i18n18.__)(
+                  children: (0, import_i18n20.__)(
                     "Capabilities",
                     "nvoos-pro-spa"
                   )
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "input",
                 {
                   id: "nvoos-pro-spa-assistant-capabilities",
@@ -31284,40 +31970,40 @@ ${content}</tr>
                   onChange: (e) => setFormFields((f) => __spreadProps(__spreadValues({}, f), {
                     capabilities: e.target.value
                   })),
-                  placeholder: (0, import_i18n18.__)(
+                  placeholder: (0, import_i18n20.__)(
                     "Comma-separated capabilities, e.g. edit_posts, manage_options",
                     "nvoos-pro-spa"
                   )
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__actions", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-assistants-form__actions", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "button",
                 {
                   type: "button",
                   className: "nvoos-pro-spa-assistants-form__save-btn",
                   onClick: () => void handleSave(),
                   disabled: saving || !formFields.title.trim(),
-                  children: saving ? (0, import_i18n18.__)(
+                  children: saving ? (0, import_i18n20.__)(
                     "Saving\u2026",
                     "nvoos-pro-spa"
-                  ) : editingId !== null ? (0, import_i18n18.__)(
+                  ) : editingId !== null ? (0, import_i18n20.__)(
                     "Update",
                     "nvoos-pro-spa"
-                  ) : (0, import_i18n18.__)(
+                  ) : (0, import_i18n20.__)(
                     "Create",
                     "nvoos-pro-spa"
                   )
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "button",
                 {
                   type: "button",
                   className: "nvoos-pro-spa-assistants-form__cancel-btn",
                   onClick: closeForm,
-                  children: (0, import_i18n18.__)("Cancel", "nvoos-pro-spa")
+                  children: (0, import_i18n20.__)("Cancel", "nvoos-pro-spa")
                 }
               )
             ] })
@@ -31326,16 +32012,16 @@ ${content}</tr>
       )
     ] });
   }
-  var import_react31, import_i18n18, import_jsx_runtime12, EMPTY_FORM;
+  var import_react33, import_i18n20, import_jsx_runtime14, EMPTY_FORM;
   var init_AssistantsPage = __esm({
     "src/features/assistants/AssistantsPage.tsx"() {
       "use strict";
-      import_react31 = __toESM(require_react(), 1);
-      import_i18n18 = __toESM(require_i18n(), 1);
+      import_react33 = __toESM(require_react(), 1);
+      import_i18n20 = __toESM(require_i18n(), 1);
       init_useAssistants();
       init_useBootstrap();
       init_modelStore();
-      import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
+      import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
       EMPTY_FORM = {
         title: "",
         model: "",
@@ -31353,19 +32039,19 @@ ${content}</tr>
     WorkflowsPage: () => WorkflowsPage
   });
   function WorkflowsPage() {
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "nvoos-pro-spa-page nvoos-pro-spa-workflows-page", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("header", { className: "nvoos-pro-spa-workflows-page__header", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n19.__)("Workflows", "nvoos-pro-spa") }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "nvoos-pro-spa-page nvoos-pro-spa-workflows-page", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("header", { className: "nvoos-pro-spa-workflows-page__header", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n21.__)("Workflows", "nvoos-pro-spa") }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-workflows-page__placeholder",
           role: "status",
-          "aria-label": (0, import_i18n19.__)(
+          "aria-label": (0, import_i18n21.__)(
             "Workflow builder is coming soon",
             "nvoos-pro-spa"
           ),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "nvoos-pro-spa-workflows-page__icon", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "nvoos-pro-spa-workflows-page__icon", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
               "svg",
               {
                 width: "64",
@@ -31375,7 +32061,7 @@ ${content}</tr>
                 stroke: "currentColor",
                 strokeWidth: "1.5",
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
                     "rect",
                     {
                       x: "3",
@@ -31385,7 +32071,7 @@ ${content}</tr>
                       rx: "1"
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
                     "rect",
                     {
                       x: "14",
@@ -31395,7 +32081,7 @@ ${content}</tr>
                       rx: "1"
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
                     "rect",
                     {
                       x: "8.5",
@@ -31405,20 +32091,20 @@ ${content}</tr>
                       rx: "1"
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: "M10 10v3.5" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: "M17.5 6.5H14v6" })
+                  /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("path", { d: "M10 10v3.5" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("path", { d: "M17.5 6.5H14v6" })
                 ]
               }
             ) }),
-            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h3", { className: "nvoos-pro-spa-workflows-page__coming-soon", children: (0, import_i18n19.__)("Coming Soon", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("h3", { className: "nvoos-pro-spa-workflows-page__coming-soon", children: (0, import_i18n21.__)("Coming Soon", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
               MarkdownContent,
               {
                 content: COMING_SOON_CONTENT,
                 className: "nvoos-pro-spa-workflows-page__description"
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { className: "nvoos-pro-spa-workflows-page__note", children: (0, import_i18n19.__)(
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { className: "nvoos-pro-spa-workflows-page__note", children: (0, import_i18n21.__)(
               "We are actively building this feature. Stay tuned for updates!",
               "nvoos-pro-spa"
             ) })
@@ -31427,29 +32113,29 @@ ${content}</tr>
       )
     ] });
   }
-  var import_i18n19, import_jsx_runtime13, COMING_SOON_CONTENT;
+  var import_i18n21, import_jsx_runtime15, COMING_SOON_CONTENT;
   var init_WorkflowsPage = __esm({
     "src/features/workflows/WorkflowsPage.tsx"() {
       "use strict";
-      import_i18n19 = __toESM(require_i18n(), 1);
+      import_i18n21 = __toESM(require_i18n(), 1);
       init_MarkdownContent();
-      import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
-      COMING_SOON_CONTENT = `### ${(0, import_i18n19.__)("Workflow Builder", "nvoos-pro-spa")}
+      import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
+      COMING_SOON_CONTENT = `### ${(0, import_i18n21.__)("Workflow Builder", "nvoos-pro-spa")}
 
-${(0, import_i18n19.__)(
+${(0, import_i18n21.__)(
         "The Workflow Builder lets you create multi-step AI automation pipelines using a visual drag-and-drop interface. Chain tools, model calls, conditional logic, and human approval steps together to automate complex WordPress workflows.",
         "nvoos-pro-spa"
       )}
 
-**${(0, import_i18n19.__)("Planned features:", "nvoos-pro-spa")}**
+**${(0, import_i18n21.__)("Planned features:", "nvoos-pro-spa")}**
 
-- ${(0, import_i18n19.__)("Visual drag-and-drop workflow canvas", "nvoos-pro-spa")}
-- ${(0, import_i18n19.__)("Multi-step tool chaining with data passthrough", "nvoos-pro-spa")}
-- ${(0, import_i18n19.__)("Conditional branching and loops", "nvoos-pro-spa")}
-- ${(0, import_i18n19.__)("Human-in-the-loop approval gates", "nvoos-pro-spa")}
-- ${(0, import_i18n19.__)("Workflow templates library", "nvoos-pro-spa")}
-- ${(0, import_i18n19.__)("Execution history and debugging", "nvoos-pro-spa")}
-- ${(0, import_i18n19.__)("Scheduled and event-triggered workflows", "nvoos-pro-spa")}
+- ${(0, import_i18n21.__)("Visual drag-and-drop workflow canvas", "nvoos-pro-spa")}
+- ${(0, import_i18n21.__)("Multi-step tool chaining with data passthrough", "nvoos-pro-spa")}
+- ${(0, import_i18n21.__)("Conditional branching and loops", "nvoos-pro-spa")}
+- ${(0, import_i18n21.__)("Human-in-the-loop approval gates", "nvoos-pro-spa")}
+- ${(0, import_i18n21.__)("Workflow templates library", "nvoos-pro-spa")}
+- ${(0, import_i18n21.__)("Execution history and debugging", "nvoos-pro-spa")}
+- ${(0, import_i18n21.__)("Scheduled and event-triggered workflows", "nvoos-pro-spa")}
 `;
     }
   });
@@ -31460,19 +32146,19 @@ ${(0, import_i18n19.__)(
     AnalyticsPage: () => AnalyticsPage
   });
   function AnalyticsPage() {
-    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "nvoos-pro-spa-page nvoos-pro-spa-analytics-page", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("header", { className: "nvoos-pro-spa-analytics-page__header", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n20.__)("Analytics", "nvoos-pro-spa") }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "nvoos-pro-spa-page nvoos-pro-spa-analytics-page", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("header", { className: "nvoos-pro-spa-analytics-page__header", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("h2", { className: "nvoos-pro-spa-page__title", children: (0, import_i18n22.__)("Analytics", "nvoos-pro-spa") }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-analytics-page__placeholder",
           role: "status",
-          "aria-label": (0, import_i18n20.__)(
+          "aria-label": (0, import_i18n22.__)(
             "Analytics dashboard is coming soon",
             "nvoos-pro-spa"
           ),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "nvoos-pro-spa-analytics-page__icon", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "nvoos-pro-spa-analytics-page__icon", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
               "svg",
               {
                 width: "64",
@@ -31482,8 +32168,8 @@ ${(0, import_i18n19.__)(
                 stroke: "currentColor",
                 strokeWidth: "1.5",
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { d: "M3 20h18" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("path", { d: "M3 20h18" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                     "rect",
                     {
                       x: "5",
@@ -31493,7 +32179,7 @@ ${(0, import_i18n19.__)(
                       rx: "0.5"
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                     "rect",
                     {
                       x: "10.5",
@@ -31503,7 +32189,7 @@ ${(0, import_i18n19.__)(
                       rx: "0.5"
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                     "rect",
                     {
                       x: "16",
@@ -31516,15 +32202,15 @@ ${(0, import_i18n19.__)(
                 ]
               }
             ) }),
-            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("h3", { className: "nvoos-pro-spa-analytics-page__coming-soon", children: (0, import_i18n20.__)("Coming Soon", "nvoos-pro-spa") }),
-            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("h3", { className: "nvoos-pro-spa-analytics-page__coming-soon", children: (0, import_i18n22.__)("Coming Soon", "nvoos-pro-spa") }),
+            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
               MarkdownContent,
               {
                 content: COMING_SOON_CONTENT2,
                 className: "nvoos-pro-spa-analytics-page__description"
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "nvoos-pro-spa-analytics-page__note", children: (0, import_i18n20.__)(
+            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { className: "nvoos-pro-spa-analytics-page__note", children: (0, import_i18n22.__)(
               "We are actively building this feature. Stay tuned for updates!",
               "nvoos-pro-spa"
             ) })
@@ -31533,29 +32219,29 @@ ${(0, import_i18n19.__)(
       )
     ] });
   }
-  var import_i18n20, import_jsx_runtime14, COMING_SOON_CONTENT2;
+  var import_i18n22, import_jsx_runtime16, COMING_SOON_CONTENT2;
   var init_AnalyticsPage = __esm({
     "src/features/analytics/AnalyticsPage.tsx"() {
       "use strict";
-      import_i18n20 = __toESM(require_i18n(), 1);
+      import_i18n22 = __toESM(require_i18n(), 1);
       init_MarkdownContent();
-      import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
-      COMING_SOON_CONTENT2 = `### ${(0, import_i18n20.__)("Usage Analytics", "nvoos-pro-spa")}
+      import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
+      COMING_SOON_CONTENT2 = `### ${(0, import_i18n22.__)("Usage Analytics", "nvoos-pro-spa")}
 
-${(0, import_i18n20.__)(
+${(0, import_i18n22.__)(
         "The Analytics dashboard provides insights into your AI assistant usage. Track API consumption across providers, monitor tool execution patterns, review cost estimates, and measure response quality over time.",
         "nvoos-pro-spa"
       )}
 
-**${(0, import_i18n20.__)("Planned features:", "nvoos-pro-spa")}**
+**${(0, import_i18n22.__)("Planned features:", "nvoos-pro-spa")}**
 
-- ${(0, import_i18n20.__)("API call volume and token usage charts", "nvoos-pro-spa")}
-- ${(0, import_i18n20.__)("Per-provider cost estimation and billing alerts", "nvoos-pro-spa")}
-- ${(0, import_i18n20.__)("Tool usage heatmaps and frequency analysis", "nvoos-pro-spa")}
-- ${(0, import_i18n20.__)("Response latency and error rate monitoring", "nvoos-pro-spa")}
-- ${(0, import_i18n20.__)("User activity logs and session replays", "nvoos-pro-spa")}
-- ${(0, import_i18n20.__)("Exportable reports (CSV, PDF)", "nvoos-pro-spa")}
-- ${(0, import_i18n20.__)("Configurable date ranges and filters", "nvoos-pro-spa")}
+- ${(0, import_i18n22.__)("API call volume and token usage charts", "nvoos-pro-spa")}
+- ${(0, import_i18n22.__)("Per-provider cost estimation and billing alerts", "nvoos-pro-spa")}
+- ${(0, import_i18n22.__)("Tool usage heatmaps and frequency analysis", "nvoos-pro-spa")}
+- ${(0, import_i18n22.__)("Response latency and error rate monitoring", "nvoos-pro-spa")}
+- ${(0, import_i18n22.__)("User activity logs and session replays", "nvoos-pro-spa")}
+- ${(0, import_i18n22.__)("Exportable reports (CSV, PDF)", "nvoos-pro-spa")}
+- ${(0, import_i18n22.__)("Configurable date ranges and filters", "nvoos-pro-spa")}
 `;
     }
   });
@@ -64823,7 +65509,7 @@ ${(0, import_i18n20.__)(
   }
 
   // src/components/layout/Layout.tsx
-  var import_react33 = __toESM(require_react(), 1);
+  var import_react35 = __toESM(require_react(), 1);
 
   // node_modules/react-router-dom/dist/index.js
   var React3 = __toESM(require_react());
@@ -66838,7 +67524,7 @@ ${(0, import_i18n20.__)(
   }
 
   // src/components/layout/Layout.tsx
-  var import_i18n21 = __toESM(require_i18n(), 1);
+  var import_i18n23 = __toESM(require_i18n(), 1);
   init_config();
   init_uiStore();
 
@@ -67861,39 +68547,39 @@ ${(0, import_i18n20.__)(
   }
 
   // src/router.tsx
-  var import_react32 = __toESM(require_react(), 1);
-  var import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
-  var ChatPage2 = (0, import_react32.lazy)(() => Promise.resolve().then(() => (init_ChatPage(), ChatPage_exports)).then((m) => ({ default: m.ChatPage })));
-  var SettingsPage2 = (0, import_react32.lazy)(() => Promise.resolve().then(() => (init_SettingsPage(), SettingsPage_exports)).then((m) => ({ default: m.SettingsPage })));
-  var ToolsPage2 = (0, import_react32.lazy)(() => Promise.resolve().then(() => (init_ToolsPage(), ToolsPage_exports)).then((m) => ({ default: m.ToolsPage })));
-  var AssistantsPage2 = (0, import_react32.lazy)(() => Promise.resolve().then(() => (init_AssistantsPage(), AssistantsPage_exports)).then((m) => ({ default: m.AssistantsPage })));
-  var WorkflowsPage2 = (0, import_react32.lazy)(() => Promise.resolve().then(() => (init_WorkflowsPage(), WorkflowsPage_exports)).then((m) => ({ default: m.WorkflowsPage })));
-  var AnalyticsPage2 = (0, import_react32.lazy)(() => Promise.resolve().then(() => (init_AnalyticsPage(), AnalyticsPage_exports)).then((m) => ({ default: m.AnalyticsPage })));
+  var import_react34 = __toESM(require_react(), 1);
+  var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
+  var ChatPage2 = (0, import_react34.lazy)(() => Promise.resolve().then(() => (init_ChatPage(), ChatPage_exports)).then((m) => ({ default: m.ChatPage })));
+  var SettingsPage2 = (0, import_react34.lazy)(() => Promise.resolve().then(() => (init_SettingsPage(), SettingsPage_exports)).then((m) => ({ default: m.SettingsPage })));
+  var ToolsPage2 = (0, import_react34.lazy)(() => Promise.resolve().then(() => (init_ToolsPage(), ToolsPage_exports)).then((m) => ({ default: m.ToolsPage })));
+  var AssistantsPage2 = (0, import_react34.lazy)(() => Promise.resolve().then(() => (init_AssistantsPage(), AssistantsPage_exports)).then((m) => ({ default: m.AssistantsPage })));
+  var WorkflowsPage2 = (0, import_react34.lazy)(() => Promise.resolve().then(() => (init_WorkflowsPage(), WorkflowsPage_exports)).then((m) => ({ default: m.WorkflowsPage })));
+  var AnalyticsPage2 = (0, import_react34.lazy)(() => Promise.resolve().then(() => (init_AnalyticsPage(), AnalyticsPage_exports)).then((m) => ({ default: m.AnalyticsPage })));
   function PageSkeleton() {
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
       "div",
       {
         className: "nvoos-pro-spa-page-skeleton",
         role: "status",
         "aria-label": "Loading page",
-        children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "nvoos-pro-spa-page-skeleton__spinner", "aria-hidden": "true" })
+        children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "nvoos-pro-spa-page-skeleton__spinner", "aria-hidden": "true" })
       }
     );
   }
   function AppRouter({ transcripts }) {
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_react32.Suspense, { fallback: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(PageSkeleton, {}), children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(Routes, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Route, { path: "/chat", element: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ChatPage2, { transcripts }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Route, { path: "/settings", element: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(SettingsPage2, {}) }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Route, { path: "/tools", element: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ToolsPage2, {}) }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Route, { path: "/assistants", element: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(AssistantsPage2, {}) }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Route, { path: "/workflows", element: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(WorkflowsPage2, {}) }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Route, { path: "/analytics", element: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(AnalyticsPage2, {}) }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Route, { path: "*", element: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Navigate, { to: "/chat", replace: true }) })
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_react34.Suspense, { fallback: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(PageSkeleton, {}), children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(Routes, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Route, { path: "/chat", element: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ChatPage2, { transcripts }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Route, { path: "/settings", element: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SettingsPage2, {}) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Route, { path: "/tools", element: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ToolsPage2, {}) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Route, { path: "/assistants", element: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(AssistantsPage2, {}) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Route, { path: "/workflows", element: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(WorkflowsPage2, {}) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Route, { path: "/analytics", element: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(AnalyticsPage2, {}) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Route, { path: "*", element: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Navigate, { to: "/chat", replace: true }) })
     ] }) });
   }
 
   // src/components/layout/Layout.tsx
-  var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
   function LayoutContent(props) {
     const { transcriptsEndpoint, threadsEndpoint, assistantsEndpoint, nonce, assistantId } = props;
     const transcripts = useTranscripts({
@@ -67905,13 +68591,13 @@ ${(0, import_i18n20.__)(
     const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
     const theme2 = useUIStore((s) => s.theme);
     const navigate = useNavigate();
-    const handleSelectThread = (0, import_react33.useCallback)(
+    const handleSelectThread = (0, import_react35.useCallback)(
       (threadId) => {
         navigate("/chat");
       },
       [navigate]
     );
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
       "div",
       {
         className: [
@@ -67921,7 +68607,7 @@ ${(0, import_i18n20.__)(
         ].filter(Boolean).join(" "),
         "data-theme": theme2,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
             ChatSidebar,
             {
               sessions: transcripts.sessions,
@@ -67937,17 +68623,17 @@ ${(0, import_i18n20.__)(
               assistantsEndpoint
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
             "main",
             {
               className: "nvoos-pro-spa-layout__main",
               id: "nvoos-pro-spa-main-content",
               role: "main",
-              children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(AppRouter, { transcripts })
+              children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(AppRouter, { transcripts })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(RightPanel, {}),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(RightPanel, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
             StatusBar,
             {
               transcriptsEndpoint,
@@ -67959,14 +68645,14 @@ ${(0, import_i18n20.__)(
     );
   }
   function Layout() {
-    const runtime = (0, import_react33.useMemo)(() => readProSpaConfig(), []);
+    const runtime = (0, import_react35.useMemo)(() => readProSpaConfig(), []);
     if (!runtime) {
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         "div",
         {
           className: "nvoos-pro-spa-layout nvoos-pro-spa-layout--missing-config",
           role: "alert",
-          children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { children: (0, import_i18n21.__)(
+          children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("p", { children: (0, import_i18n23.__)(
             "Runtime configuration not found. Please refresh the page or contact an administrator.",
             "nvoos-pro-spa"
           ) })
@@ -67978,7 +68664,7 @@ ${(0, import_i18n20.__)(
       nonce,
       config: { assistantId }
     } = runtime;
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(HashRouter, { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(HashRouter, { children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
       LayoutContent,
       {
         transcriptsEndpoint,
@@ -67991,9 +68677,9 @@ ${(0, import_i18n20.__)(
   }
 
   // src/components/shared/CommandPalette.tsx
-  var import_react34 = __toESM(require_react(), 1);
-  var import_i18n22 = __toESM(require_i18n(), 1);
-  var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
+  var import_react36 = __toESM(require_react(), 1);
+  var import_i18n24 = __toESM(require_i18n(), 1);
+  var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
   function CommandPalette() {
     const {
       query,
@@ -68005,18 +68691,18 @@ ${(0, import_i18n20.__)(
       selectPrev,
       executeSelected
     } = useCommandPalette();
-    const inputRef = (0, import_react34.useRef)(null);
-    const listRef = (0, import_react34.useRef)(null);
-    (0, import_react34.useEffect)(() => {
+    const inputRef = (0, import_react36.useRef)(null);
+    const listRef = (0, import_react36.useRef)(null);
+    (0, import_react36.useEffect)(() => {
       var _a15;
       (_a15 = inputRef.current) == null ? void 0 : _a15.focus();
     }, []);
-    (0, import_react34.useEffect)(() => {
+    (0, import_react36.useEffect)(() => {
       var _a15;
       const item = (_a15 = listRef.current) == null ? void 0 : _a15.children[selectedIndex];
       item == null ? void 0 : item.scrollIntoView({ block: "nearest" });
     }, [selectedIndex]);
-    const handleKeyDown = (0, import_react34.useCallback)(
+    const handleKeyDown = (0, import_react36.useCallback)(
       (e) => {
         switch (e.key) {
           case "ArrowDown":
@@ -68039,7 +68725,7 @@ ${(0, import_i18n20.__)(
       },
       [selectNext, selectPrev, executeSelected, close]
     );
-    const handleOverlayClick = (0, import_react34.useCallback)(
+    const handleOverlayClick = (0, import_react36.useCallback)(
       (e) => {
         if (e.target === e.currentTarget) {
           close();
@@ -68047,30 +68733,30 @@ ${(0, import_i18n20.__)(
       },
       [close]
     );
-    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
       "div",
       {
         className: "nvoos-pro-spa-command-palette-overlay",
         onClick: handleOverlayClick,
         role: "dialog",
         "aria-modal": "true",
-        "aria-label": (0, import_i18n22.__)("Command palette", "nvoos-pro-spa"),
-        children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "nvoos-pro-spa-command-palette", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "nvoos-pro-spa-command-palette__input-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        "aria-label": (0, import_i18n24.__)("Command palette", "nvoos-pro-spa"),
+        children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "nvoos-pro-spa-command-palette", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "nvoos-pro-spa-command-palette__input-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
             "input",
             {
               ref: inputRef,
               type: "text",
               className: "nvoos-pro-spa-command-palette__input",
-              placeholder: (0, import_i18n22.__)("Type a command\u2026", "nvoos-pro-spa"),
+              placeholder: (0, import_i18n24.__)("Type a command\u2026", "nvoos-pro-spa"),
               value: query,
               onChange: (e) => setQuery(e.target.value),
               onKeyDown: handleKeyDown,
-              "aria-label": (0, import_i18n22.__)("Search commands", "nvoos-pro-spa"),
+              "aria-label": (0, import_i18n24.__)("Search commands", "nvoos-pro-spa"),
               autoComplete: "off"
             }
           ) }),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "nvoos-pro-spa-command-palette__results", children: results.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "nvoos-pro-spa-command-palette__empty", children: (0, import_i18n22.__)("No matching commands", "nvoos-pro-spa") }) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "nvoos-pro-spa-command-palette__results", children: results.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "nvoos-pro-spa-command-palette__empty", children: (0, import_i18n24.__)("No matching commands", "nvoos-pro-spa") }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
             CommandList,
             {
               ref: listRef,
@@ -68085,11 +68771,11 @@ ${(0, import_i18n20.__)(
   }
   function CommandList({ results, selectedIndex, onSelect, ref }) {
     const grouped = groupByCategory(results);
-    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ul", { ref, className: "nvoos-pro-spa-command-palette__list", role: "listbox", children: Object.entries(grouped).map(([category, commands]) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("li", { className: "nvoos-pro-spa-command-palette__group", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: "nvoos-pro-spa-command-palette__group-label", children: categoryLabel(category) }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ul", { role: "group", children: commands.map((cmd, idx) => {
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("ul", { ref, className: "nvoos-pro-spa-command-palette__list", role: "listbox", children: Object.entries(grouped).map(([category, commands]) => /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("li", { className: "nvoos-pro-spa-command-palette__group", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "nvoos-pro-spa-command-palette__group-label", children: categoryLabel(category) }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("ul", { role: "group", children: commands.map((cmd, idx) => {
         const globalIdx = results.indexOf(cmd);
-        return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
           "li",
           {
             className: [
@@ -68100,8 +68786,8 @@ ${(0, import_i18n20.__)(
             "aria-selected": globalIdx === selectedIndex,
             onClick: onSelect,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "nvoos-pro-spa-command-palette__item-label", children: cmd.label }),
-              cmd.description && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: "nvoos-pro-spa-command-palette__item-desc", children: cmd.description })
+              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "nvoos-pro-spa-command-palette__item-label", children: cmd.label }),
+              cmd.description && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: "nvoos-pro-spa-command-palette__item-desc", children: cmd.description })
             ]
           },
           cmd.id
@@ -68123,13 +68809,13 @@ ${(0, import_i18n20.__)(
   function categoryLabel(category) {
     switch (category) {
       case "navigation":
-        return (0, import_i18n22.__)("Navigation", "nvoos-pro-spa");
+        return (0, import_i18n24.__)("Navigation", "nvoos-pro-spa");
       case "action":
-        return (0, import_i18n22.__)("Actions", "nvoos-pro-spa");
+        return (0, import_i18n24.__)("Actions", "nvoos-pro-spa");
       case "tool":
-        return (0, import_i18n22.__)("Tools", "nvoos-pro-spa");
+        return (0, import_i18n24.__)("Tools", "nvoos-pro-spa");
       case "thread":
-        return (0, import_i18n22.__)("Threads", "nvoos-pro-spa");
+        return (0, import_i18n24.__)("Threads", "nvoos-pro-spa");
       default:
         return category;
     }
@@ -68137,21 +68823,21 @@ ${(0, import_i18n20.__)(
 
   // src/components/shared/Toast.tsx
   init_uiStore();
-  var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
   function ToastContainer() {
     const toasts = useUIStore((s) => s.toasts);
     const removeToast = useUIStore((s) => s.removeToast);
     if (toasts.length === 0) {
       return null;
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "nvoos-pro-spa-toast-container", "aria-live": "polite", children: toasts.map((toast) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { className: "nvoos-pro-spa-toast-container", "aria-live": "polite", children: toasts.map((toast) => /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(
       "div",
       {
         className: `nvoos-pro-spa-toast nvoos-pro-spa-toast--${toast.variant}`,
         role: "status",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "nvoos-pro-spa-toast__message", children: toast.message }),
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: "nvoos-pro-spa-toast__message", children: toast.message }),
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
             "button",
             {
               type: "button",
@@ -68168,39 +68854,39 @@ ${(0, import_i18n20.__)(
   }
 
   // src/App.tsx
-  var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
   function App() {
     const { loading, error } = useBootstrap();
     const { isOpen: paletteOpen } = useCommandPalette();
     if (loading) {
-      return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
         "div",
         {
           className: "nvoos-pro-spa-loading",
           role: "status",
           "aria-label": "Loading NV oOS",
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "nvoos-pro-spa-loading__spinner", "aria-hidden": "true" }),
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("p", { children: "Loading NV oOS\u2026" })
+            /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { className: "nvoos-pro-spa-loading__spinner", "aria-hidden": "true" }),
+            /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("p", { children: "Loading NV oOS\u2026" })
           ]
         }
       );
     }
     if (error) {
-      return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "nvoos-pro-spa-error", role: "alert", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h2", { children: "Failed to load NV oOS" }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("p", { children: error })
+      return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className: "nvoos-pro-spa-error", role: "alert", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("h2", { children: "Failed to load NV oOS" }),
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("p", { children: error })
       ] });
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_jsx_runtime19.Fragment, { children: [
-      paletteOpen && /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CommandPalette, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Layout, {}),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ToastContainer, {})
+    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
+      paletteOpen && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(CommandPalette, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(Layout, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(ToastContainer, {})
     ] });
   }
 
   // src/index.tsx
-  var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
   if (true) {
     Promise.all([
       Promise.resolve().then(() => __toESM(require_react(), 1)),
@@ -68221,7 +68907,7 @@ ${(0, import_i18n20.__)(
     containers.forEach((container) => {
       try {
         const root = (0, import_client.createRoot)(container);
-        root.render(/* @__PURE__ */ (0, import_jsx_runtime20.jsx)(App, {}));
+        root.render(/* @__PURE__ */ (0, import_jsx_runtime22.jsx)(App, {}));
       } catch (e) {
         container.textContent = "Configuration error. Unable to mount Pro SPA.";
       }
