@@ -344,13 +344,16 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	/**
-	 * Ensures post content uses block markup when working with the core `post` post type.
-	 *
-	 * @param string $sanitized_content The sanitized post content.
-	 * @param string $raw_content       The raw post content, prior to sanitization.
-	 *
-	 * @return string
-	 */
+		 * Ensures post content uses block markup when the post type supports the block editor.
+		 *
+		 * Plain text is converted to paragraph blocks; HTML that lacks block markers
+		 * is wrapped in a single wp:html block to prevent block-editor corruption.
+		 *
+		 * @param string $sanitized_content The sanitized post content.
+		 * @param string $raw_content       The raw post content, prior to sanitization.
+		 *
+		 * @return string
+		 */
 	private function ensure_post_content_uses_blocks( $sanitized_content, $raw_content ) {
 		if ( $this->content_contains_blocks( $raw_content ) || $this->content_contains_blocks( $sanitized_content ) ) {
 			return $sanitized_content;
