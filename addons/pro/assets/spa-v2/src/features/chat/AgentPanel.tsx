@@ -9,6 +9,13 @@ import { useCallback, useEffect, useRef, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { type Message } from '@ai-sdk/react';
 import { MessageView } from './MessageView';
+import { AudioRecorderButton } from '../../components/shared/AudioRecorderButton';
+import { WorkflowTracker, type WorkflowState } from '../../components/shared/WorkflowTracker';
+import { DelegationNotice, type DelegationData } from '../../components/shared/DelegationNotice';
+import type { UsageData } from '../../components/shared/UsageBadges';
+import type { SpeechState } from '../../components/shared/SpeechButton';
+import type { JobRecord } from '../../components/shared/JobCard';
+import { useAttachments, ACCEPT_ATTR } from '../../hooks/useAttachments';
 
 export interface AgentPanelProps {
 	/** Ordered list of chat messages from useChat. */
@@ -45,6 +52,26 @@ export interface AgentPanelProps {
 	onEditMessage?: ( msgId: string ) => void;
 	/** Map of message ID → feedback rating. */
 	feedbackState?: Record< string, 'up' | 'down' >;
+	/** Usage data per message (v0.9.0). */
+	usageMap?: Record< string, UsageData >;
+	/** Speech playback (v0.9.0). */
+	onSpeechPlay?: ( text: string ) => void;
+	onSpeechStop?: () => void;
+	speechStateFor?: ( text: string ) => SpeechState;
+	/** Job system (v0.9.0). */
+	jobs?: Record< string, JobRecord >;
+	onCancelJob?: ( id: string ) => void;
+	onRetryJob?: ( id: string ) => void;
+	/** Workflow + delegation (v0.9.0). */
+	workflow?: WorkflowState | null;
+	delegations?: DelegationData[];
+	/** Audio recorder (v0.9.0). */
+	toolsEndpoint?: string;
+	uploadEndpoint?: string;
+	nonce?: string;
+	assistantId?: number;
+	/** Submit with attachments (v0.9.0). */
+	onSubmitWithAttachments?: ( attachments: Array< { name?: string; contentType?: string; url: string } > ) => void;
 }
 
 export function AgentPanel( props: AgentPanelProps ): JSX.Element {
@@ -65,10 +92,28 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 		onFeedback,
 		onEditMessage,
 		feedbackState = {},
+		usageMap,
+		onSpeechPlay,
+		onSpeechStop,
+		speechStateFor,
+		jobs,
+		onCancelJob,
+		onRetryJob,
+		workflow,
+		delegations,
+		toolsEndpoint,
+		uploadEndpoint,
+		nonce,
+		assistantId,
+		onSubmitWithAttachments,
 	} = props;
 
 	const messagesContainerRef = useRef< HTMLDivElement | null >( null );
 	const composerRef = useRef< HTMLTextAreaElement | null >( null );
+
+	// ── Attachments (v0.9.0) ───────────────────────────────────────────
+	const attachments = useAttachments();
+	const fileInputRef = useRef< HTMLInputElement | null >( null );
 
 	// Track whether the user is at the bottom of the messages container.
 	// Updated by the onScroll handler so we know their intent before
@@ -174,16 +219,25 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 
 				{ messages.map( ( message, index ) => (
 				<MessageView
-				key={ message.id ?? `msg-${ index }` }
-				message={ message }
-				index={ index }
-				totalCount={ messages.length }
-				isStreaming={ isStreaming }
-				onRegenerate={ onRegenerate }
-				 onDelete={ onDeleteMessage }
-				  onFeedback={ onFeedback }
+					key={ message.id ?? `msg-${ index }` }
+					message={ message }
+					index={ index }
+					totalCount={ messages.length }
+					isStreaming={ isStreaming }
+					onRegenerate={ onRegenerate }
+					onDelete={ onDeleteMessage }
+					onFeedback={ onFeedback }
 					onEdit={ onEditMessage }
 					feedback={ feedbackState[ message.id ] ?? null }
+					usage={ usageMap?.[ message.id ] ?? null }
+					onSpeechPlay={ onSpeechPlay }
+					onSpeechStop={ onSpeechStop }
+					speechStateFor={ speechStateFor }
+					jobs={ jobs }
+					onCancelJob={ onCancelJob }
+					onRetryJob={ onRetryJob }
+					workflow={ index === messages.length - 1 ? workflow : null }
+					delegations={ delegations }
 				/>
 			) ) }
 
@@ -209,15 +263,42 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 			<div className="nvoos-pro-spa-agent-panel__composer">
 				<form
 					className="nvoos-pro-spa-agent-panel__composer-form"
-					onSubmit={ ( e ) => {
-						e.preventDefault();
-						handleSubmit();
-					} }
-					aria-label={ __( 'Message composer', 'nvoos-pro-spa' ) }
-				>
+						onSubmit={ ( e ) => {
+							e.preventDefault();
+							if ( ! input.trim() && attachments.files.length === 0 ) return;
+							if ( attachments.files.length > 0 && onSubmitWithAttachments ) {
+								void attachments.toPendingAttachments().then( ( atts ) => {
+									onSubmitWithAttachments( atts );
+									attachments.clear();
+								} );
+							} else {
+								handleSubmit();
+							}
+						} }
+						aria-label={ __( 'Message composer', 'nvoos-pro-spa' ) }
+					>
 					<label htmlFor="nvoos-pro-spa-composer-input" className="nvoos-pro-spa-screen-reader-only">
 						{ __( 'Type your message', 'nvoos-pro-spa' ) }
 					</label>
+					{/* Audio recorder buttons (v0.9.0) */}
+					{ toolsEndpoint && nonce && (
+						<div className="nvoos-pro-spa-agent-panel__composer-toolbar">
+							<AudioRecorderButton mode="transcribe" toolsEndpoint={ toolsEndpoint } uploadEndpoint={ uploadEndpoint ?? '' } nonce={ nonce } assistantId={ assistantId ?? 0 } disabled={ isStreaming }
+								onTranscribed={ ( text ) => {
+									const el = document.getElementById( 'nvoos-pro-spa-composer-input' ) as HTMLTextAreaElement | null;
+									if ( el ) { const s = Object.getOwnPropertyDescriptor( window.HTMLTextAreaElement.prototype, 'value' )?.set; if ( s ) { s.call( el, text ); el.dispatchEvent( new Event( 'input', { bubbles: true } ) ); } }
+								} } />
+							<AudioRecorderButton mode="voice" toolsEndpoint={ toolsEndpoint } uploadEndpoint={ uploadEndpoint ?? '' } nonce={ nonce } assistantId={ assistantId ?? 0 } disabled={ isStreaming }
+								onVoiceSubmit={ ( text ) => sendMessage( text ) } />
+							{/* Attach file button (v0.9.0) */}
+							<input ref={ fileInputRef } type="file" className="nvoos-pro-spa-screen-reader-only" multiple accept={ ACCEPT_ATTR }
+								aria-hidden="true" tabIndex={ -1 }
+								onChange={ ( e ) => { if ( e.target.files ) { attachments.attach( e.target.files ); e.target.value = ''; } } } />
+							<button type="button" className="nvoos-pro-spa-audio-btn"
+								aria-label={ __( 'Attach file', 'nvoos-pro-spa' ) } title={ __( 'Attach file', 'nvoos-pro-spa' ) }
+								disabled={ isStreaming } onClick={ () => fileInputRef.current?.click() }>📎</button>
+						</div>
+					) }
 					<textarea
 						id="nvoos-pro-spa-composer-input"
 						ref={ composerRef }
@@ -230,25 +311,29 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 						disabled={ isStreaming }
 						aria-label={ __( 'Message input', 'nvoos-pro-spa' ) }
 					/>
+					{/* Attachment strip (v0.9.0) */}
+					{ attachments.files.length > 0 && (
+						<ul className="nvoos-pro-spa-attachment-strip" aria-label={ __( 'Attachments', 'nvoos-pro-spa' ) }>
+							{ attachments.files.map( ( pf ) => (
+								<li key={ pf.key } className="nvoos-pro-spa-attachment-chip">
+									{ pf.previewUrl ? <img src={ pf.previewUrl } alt={ pf.file.name } className="nvoos-pro-spa-attachment-thumb" /> : <span className="nvoos-pro-spa-attachment-icon" aria-hidden="true">📄</span> }
+									<span className="nvoos-pro-spa-attachment-name">{ pf.file.name }</span>
+									<button type="button" className="nvoos-pro-spa-attachment-remove" aria-label={ `${ __( 'Remove', 'nvoos-pro-spa' ) } ${ pf.file.name }` } onClick={ () => attachments.remove( pf.key ) }>×</button>
+								</li>
+							) ) }
+						</ul>
+					) }
+					{ attachments.attachError && (
+						<p className="nvoos-pro-spa-attachment-error" role="alert">{ attachments.attachError }</p>
+					) }
 					<div className="nvoos-pro-spa-agent-panel__composer-actions">
 						{ isStreaming ? (
-							<button
-								type="button"
-								className="nvoos-pro-spa-agent-panel__stop-btn nvoos-pro-spa-btn nvoos-pro-spa-btn--danger"
-								onClick={ stop }
-								aria-label={ __( 'Stop generating', 'nvoos-pro-spa' ) }
-							>
-								{ __( 'Stop', 'nvoos-pro-spa' ) }
-							</button>
+							<button type="button" className="nvoos-pro-spa-agent-panel__stop-btn nvoos-pro-spa-btn nvoos-pro-spa-btn--danger"
+								onClick={ stop } aria-label={ __( 'Stop generating', 'nvoos-pro-spa' ) }>{ __( 'Stop', 'nvoos-pro-spa' ) }</button>
 						) : (
-							<button
-								type="submit"
-								className="nvoos-pro-spa-agent-panel__send-btn nvoos-pro-spa-btn nvoos-pro-spa-btn--primary"
-								disabled={ ! input.trim() }
-								aria-label={ __( 'Send message', 'nvoos-pro-spa' ) }
-							>
-								{ __( 'Send', 'nvoos-pro-spa' ) }
-							</button>
+							<button type="submit" className="nvoos-pro-spa-agent-panel__send-btn nvoos-pro-spa-btn nvoos-pro-spa-btn--primary"
+								disabled={ ! input.trim() && attachments.files.length === 0 }
+								aria-label={ __( 'Send message', 'nvoos-pro-spa' ) }>{ __( 'Send', 'nvoos-pro-spa' ) }</button>
 						) }
 					</div>
 				</form>

@@ -16,6 +16,7 @@ import { useThreads } from '../../hooks/useThreads';
 import type { TranscriptSession } from '../../api/transcripts';
 import type { ThreadSummary } from '../../api/threads';
 import { useAssistantStore } from '../../stores/assistantStore';
+import { useUIStore } from '../../stores/uiStore';
 import { useModelStore } from '../../stores/modelStore';
 import { AssistantsClient, type AssistantRecord } from '../../api/assistants';
 import { readProSpaConfig } from '../../api/config';
@@ -128,6 +129,9 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 	// ---- model store (sync model when assistant changes) ----
 	const setModel = useModelStore( ( s ) => s.setModel );
 	const setAvailableModels = useModelStore( ( s ) => s.setAvailableModels );
+
+	// ---- UI store (for mobile sidebar close) ----
+	const setSidebarOpen = useUIStore( ( s ) => s.setSidebarOpen );
 
 	// ---- fetch assistants on mount / when endpoint changes ----
 	const [ assistantsError, setAssistantsError ] = useState< string | null >( null );
@@ -277,9 +281,17 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 		<aside
 			className="nvoos-pro-spa-sidebar"
 			id="nvoos-pro-spa-sidebar"
-			role="complementary"
 			aria-label={ __( 'Chat sidebar', 'nvoos-pro-spa' ) }
 		>
+			{/* Close button (mobile) */}
+			<button
+				type="button"
+				className="nvoos-pro-spa-sidebar__close"
+				onClick={ () => setSidebarOpen( false ) }
+				aria-label={ __( 'Close sidebar', 'nvoos-pro-spa' ) }
+			>
+				×
+			</button>
 			{/* ---- assistant selector ---- */}
 			{ assistantsEndpoint && (
 				<div className="nvoos-pro-spa-sidebar__assistant-select">
@@ -408,7 +420,6 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 
 				<ul
 					className="nvoos-pro-spa-sidebar__list"
-					role="list"
 					aria-label={ __(
 						'Conversation sessions',
 						'nvoos-pro-spa'
@@ -524,7 +535,6 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 
 				<ul
 					className="nvoos-pro-spa-sidebar__list"
-					role="list"
 					aria-label={ __( 'Threads', 'nvoos-pro-spa' ) }
 				>
 					{ safeThreads.map( ( t ) => {

@@ -2277,3 +2277,97 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-size: 13px;
 	color: var(--nvoos-text-secondary, #787c82);
 }
+
+/* =========================================================================
+   Mobile sidebar behaviour (v2.0.2)
+   ========================================================================= */
+
+/* Close button inside sidebar (hidden on desktop, visible on mobile) */
+.nvoos-pro-spa-sidebar__close {
+	display: none;
+	position: absolute;
+	top: 8px;
+	right: 12px;
+	background: none;
+	border: none;
+	font-size: 22px;
+	color: #6b7280;
+	cursor: pointer;
+	padding: 4px 8px;
+	line-height: 1;
+	z-index: 10;
+}
+
+.nvoos-pro-spa-sidebar__close:hover {
+	color: #111827;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-sidebar__close {
+	color: #9ca3af;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-sidebar__close:hover {
+	color: #f3f4f6;
+}
+
+/* Overlay behind sidebar on mobile */
+.nvoos-pro-spa-sidebar-overlay {
+	display: none;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-sidebar__close {
+		display: block;
+	}
+
+	.nvoos-pro-spa-sidebar {
+		position: fixed;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		z-index: 1000;
+		width: 300px;
+		max-width: 85vw;
+		transform: translateX( -100% );
+		transition: transform 0.25s ease;
+		overflow-y: auto;
+	}
+
+	.nvoos-pro-spa-layout--sidebar-open .nvoos-pro-spa-sidebar {
+		transform: translateX( 0 );
+	}
+
+	.nvoos-pro-spa-layout:not( .nvoos-pro-spa-layout--sidebar-open ) .nvoos-pro-spa-sidebar {
+		transform: translateX( -100% );
+	}
+
+	.nvoos-pro-spa-sidebar-overlay {
+		display: block;
+		position: fixed;
+		inset: 0;
+		z-index: 999;
+		background: rgba( 0, 0, 0, 0.4 );
+	}
+}
+
+.nvoos-pro-spa-prompts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 8px 16px 0;
+}
+
+.nvoos-pro-spa-prompt-chip {
+	padding: 4px 12px;
+	border: 1px solid #374151;
+	border-radius: 16px;
+	background: #1f2937;
+	font-size: 13px;
+	color: #e5e7eb;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.nvoos-pro-spa-prompt-chip:hover {
+	background: #374151;
+}

@@ -44,6 +44,7 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 
 	// ---- UI store (sidebar / right-panel toggles / theme) ----
 	const sidebarOpen = useUIStore( ( s ) => s.sidebarOpen );
+	const setSidebarOpen = useUIStore( ( s ) => s.setSidebarOpen );
 	const rightPanelOpen = useUIStore( ( s ) => s.rightPanelOpen );
 	const theme = useUIStore( ( s ) => s.theme );
 
@@ -102,6 +103,16 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 				transcriptsEndpoint={ transcriptsEndpoint }
 				nonce={ nonce }
 			/>
+
+			{/* Mobile sidebar overlay */}
+			{ sidebarOpen && (
+				// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+				<div
+					className="nvoos-pro-spa-sidebar-overlay"
+					onClick={ () => setSidebarOpen( false ) }
+					aria-hidden="true"
+				/>
+			) }
 
 		</div>
 	);

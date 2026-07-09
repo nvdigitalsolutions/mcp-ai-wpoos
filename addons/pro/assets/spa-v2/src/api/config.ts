@@ -17,6 +17,8 @@ export interface ProSpaEndpoints {
 	memory: string;
 	threads: string;
 	tools: string;
+	/** WordPress media upload endpoint (v0.9.0). */
+	upload: string;
 	assistants: string;
 	settings: string;
 	workflows: string;
@@ -100,6 +102,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			memory: typeof e.memory === 'string' ? e.memory : '',
 			threads: e.threads,
 			tools: e.tools,
+			upload: typeof e.upload === 'string' ? e.upload : '',
 			assistants: e.assistants,
 			settings: e.settings,
 			workflows: typeof e.workflows === 'string' ? e.workflows : '',

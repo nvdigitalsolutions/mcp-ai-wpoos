@@ -4,7 +4,7 @@
  * This is the core chat hook that replaces the legacy messagesStore + sse.js.
  */
 
-import { useMemo, useCallback, useRef, useEffect, type RefObject } from 'react';
+import { useMemo, useCallback, useRef, useEffect, useState, type RefObject } from 'react';
 import { useChat, type Message } from '@ai-sdk/react';
 import { createChatFetch } from '../sse-adapter';
 import {
@@ -30,6 +30,8 @@ export interface UseChatSpokeReturn {
 	input: string;
 	handleInputChange: ( e: React.ChangeEvent< HTMLTextAreaElement > | string ) => void;
 	handleSubmit: ( e?: { preventDefault?: () => void } ) => void;
+	/** Submit with file attachments (v0.9.0). */
+	handleSubmitWithAttachments: ( attachments: Array< { name?: string; contentType?: string; url: string } > ) => void;
 	status: 'submitted' | 'streaming' | 'ready' | 'error';
 	error: Error | undefined;
 	stop: () => void;
@@ -38,6 +40,7 @@ export interface UseChatSpokeReturn {
 	isStreaming: boolean;
 	fileInputRef: RefObject< HTMLInputElement | null >;
 	sendMessage: ( content: string ) => void;
+	usageMap: Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number } >;
 }
 
 export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn {
@@ -116,7 +119,11 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		fetch: customFetch,
 		streamProtocol: 'data',
 		initialMessages,
-		onFinish: ( message ) => {
+		onFinish: ( message, { usage } ) => {
+			// Capture usage data (v0.9.0).
+			if ( usage ) {
+				setUsageMap( ( prev ) => ( { ...prev, [ message.id ]: { promptTokens: usage.promptTokens, completionTokens: usage.completionTokens, totalTokens: usage.totalTokens } } ) );
+			}
 			// Persist full turn after completion.
 			// Use the ref to avoid the stale-closure problem — `messages`
 			// inside this callback is captured at construction time.
@@ -140,6 +147,9 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 	useEffect( () => {
 		messagesRef.current = messages;
 	}, [ messages ] );
+
+	// Usage tracking (v0.9.0).
+	const [ usageMap, setUsageMap ] = useState< Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number } > >( {} );
 
 	const fileInputRef = useRef< HTMLInputElement | null >( null );
 
@@ -174,11 +184,19 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		[ chatHandleInputChange, chatHandleSubmit ]
 	);
 
+	const handleSubmitWithAttachments = useCallback(
+		( attachments: Array< { name?: string; contentType?: string; url: string } > ) => {
+			chatHandleSubmit( undefined, { experimental_attachments: attachments } );
+		},
+		[ chatHandleSubmit ]
+	);
+
 	return {
 		messages,
 		input,
 		handleInputChange,
 		handleSubmit,
+		handleSubmitWithAttachments,
 		status,
 		error,
 		stop,
@@ -187,5 +205,6 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		isStreaming: status === 'streaming' || status === 'submitted',
 		fileInputRef,
 		sendMessage,
+		usageMap,
 	};
 }

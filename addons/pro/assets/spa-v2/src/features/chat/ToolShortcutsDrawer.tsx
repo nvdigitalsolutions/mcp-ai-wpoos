@@ -13,6 +13,8 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
+
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 import {
 	useCallback,
 	useEffect,

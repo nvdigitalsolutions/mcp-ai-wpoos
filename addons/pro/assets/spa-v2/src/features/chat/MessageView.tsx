@@ -10,6 +10,12 @@ import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { type Message } from '@ai-sdk/react';
 import { renderMarkdown } from '../../components/shared/MarkdownContent';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
+import { UsageBadges, type UsageData } from '../../components/shared/UsageBadges';
+import { CapabilityFlagBadges } from '../../components/shared/CapabilityFlagBadges';
+import { SpeechButton, type SpeechState } from '../../components/shared/SpeechButton';
+import { JobCard, type JobRecord } from '../../components/shared/JobCard';
+import { WorkflowTracker, type WorkflowState } from '../../components/shared/WorkflowTracker';
+import { DelegationNotice, type DelegationData } from '../../components/shared/DelegationNotice';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -36,6 +42,19 @@ export interface MessageViewProps {
 	feedback?: 'up' | 'down' | null;
 	onEdit?: ( msgId: string ) => void;
 	onRegenerate?: () => void;
+	/** Usage data (v0.9.0). */
+	usage?: UsageData | null;
+	/** Speech (v0.9.0). */
+	onSpeechPlay?: ( text: string ) => void;
+	onSpeechStop?: () => void;
+	speechStateFor?: ( text: string ) => SpeechState;
+	/** Job cards (v0.9.0). */
+	jobs?: Record< string, JobRecord >;
+	onCancelJob?: ( id: string ) => void;
+	onRetryJob?: ( id: string ) => void;
+	/** Workflow + delegation (v0.9.0). */
+	workflow?: WorkflowState | null;
+	delegations?: DelegationData[];
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -123,10 +142,10 @@ function messageText( message: Message ): string {
 			.map( ( part ) => {
 				if ( typeof part === 'string' ) return part;
 				if ( part && typeof part === 'object' && 'text' in part ) {
-					return String( ( part as { text: string } ).text );
+					return String( ( part as unknown as { text: string } ).text );
 				}
 				if ( part && typeof part === 'object' && 'type' in part && ( part as { type: string } ).type === 'text' ) {
-					return String( ( part as { text: string } ).text );
+					return String( ( part as unknown as { text: string } ).text );
 				}
 				return '';
 			} )
@@ -164,12 +183,21 @@ export function MessageView( {
 	feedback,
 	onEdit,
 	onRegenerate,
+	usage,
+	onSpeechPlay,
+	onSpeechStop,
+	speechStateFor,
+	jobs,
+	onCancelJob,
+	onRetryJob,
+	workflow,
+	delegations,
 }: MessageViewProps ): JSX.Element {
-	const tools = Array.isArray( ( message as Record<string,unknown> ).toolInvocations )
-		? ( message as Record<string,unknown> ).toolInvocations as ToolInvocation[]
+	const tools = Array.isArray( ( message as unknown as Record<string,unknown> ).toolInvocations )
+		? ( message as unknown as Record<string,unknown> ).toolInvocations as ToolInvocation[]
 		: [];
-	const annotations = Array.isArray( ( message as Record<string,unknown> ).annotations )
-		? ( message as Record<string,unknown> ).annotations as Annotation[]
+	const annotations = Array.isArray( ( message as unknown as Record<string,unknown> ).annotations )
+		? ( message as unknown as Record<string,unknown> ).annotations as Annotation[]
 		: [];
 	const content = messageText( message );
 
@@ -231,9 +259,15 @@ export function MessageView( {
 			{/* Tool invocations */}
 			{ tools.length > 0 && (
 				<div className="nvoos-pro-spa-message-view__tools">
-					{ tools.map( ( inv ) => (
-						<ToolCallCard key={ inv.toolCallId } invocation={ inv } />
-					) ) }
+					{ tools.map( ( inv ) => {
+						const result = inv.result as Record< string, unknown > | undefined;
+						const asyncJobId = inv.state === 'result' && result && ( typeof result.job_id === 'string' || typeof result.jobId === 'string' )
+							? ( ( result.job_id ?? result.jobId ) as string ) : null;
+						if ( asyncJobId && jobs?.[ asyncJobId ] ) {
+							return <JobCard key={ inv.toolCallId } job={ jobs[ asyncJobId ] } onCancel={ onCancelJob } onRetry={ onRetryJob } />;
+						}
+						return <ToolCallCard key={ inv.toolCallId } invocation={ inv } />;
+					} ) }
 				</div>
 			) }
 
@@ -262,6 +296,33 @@ export function MessageView( {
 					onEdit={ onEdit }
 					onRegenerate={ onRegenerate }
 				/>
+			) }
+
+			{/* Usage badges (v0.9.0) */}
+			{ isAssistant && usage && <UsageBadges usage={ usage } /> }
+
+			{/* Capability flags (v0.9.0) */}
+			{ isAssistant && (
+				<CapabilityFlagBadges
+					flags={ annotations
+						.filter( ( a ) => a?.type === 'capabilities' )
+						.flatMap( ( a ) => ( Array.isArray( ( a as Record< string, unknown > ).flags ) ? ( a as Record< string, unknown > ).flags as string[] : [] ) ) }
+				/>
+			) }
+
+			{/* Speech button (v0.9.0) */}
+			{ isAssistant && content !== '' && onSpeechPlay && onSpeechStop && speechStateFor && (
+				<SpeechButton text={ content } state={ speechStateFor( content ) } onPlay={ onSpeechPlay } onStop={ onSpeechStop } />
+			) }
+
+			{/* Delegation notices (v0.9.0) */}
+			{ isAssistant && delegations && delegations.length > 0 && delegations.map( ( d, di ) => (
+				<DelegationNotice key={ di } delegation={ d } />
+			) ) }
+
+			{/* Workflow tracker (v0.9.0) */}
+			{ isLastAssistant && workflow && workflow.steps.length > 0 && (
+				<WorkflowTracker workflow={ workflow } />
 			) }
 		</article>
 	);
@@ -641,7 +702,7 @@ function MessageToolbar( {
 	onEdit,
 	onRegenerate,
 }: MessageToolbarProps ): JSX.Element {
-	const { copy, justCopied } = useCopyToClipboard();
+	const { copy, copied: justCopied } = useCopyToClipboard();
 	const [ saved, setSaved ] = useState( false );
 
 	const handleCopy = useCallback( () => {

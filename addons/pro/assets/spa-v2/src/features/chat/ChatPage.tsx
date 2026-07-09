@@ -10,19 +10,30 @@
  */
 
 import { useCallback, useMemo, useRef, useState, type JSX } from 'react';
+import { type Message } from '@ai-sdk/react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { useBootstrap } from '../../hooks/useBootstrap';
 import { useChatSpoke } from '../../hooks/useChatSpoke';
 import { useTranscripts } from '../../hooks/useTranscripts';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { useSpeechPlayback } from '../../hooks/useSpeechPlayback';
+import { useJobBus } from '../../hooks/useJobBus';
+import { useTabTitleBadge } from '../../hooks/useTabTitleBadge';
 import { useModelStore } from '../../stores/modelStore';
 import { useAssistantStore } from '../../stores/assistantStore';
+import { useUIStore } from '../../stores/uiStore';
 import { ThreadsClient } from '../../api/threads';
+import { exportConversation } from '../../utils/export-conversation';
 import { AgentPanel } from './AgentPanel';
 import { MemoryDrawer, type MemoryTab } from '../../components/shared/MemoryDrawer';
 import { HitlApprovalBar } from '../../components/shared/HitlApprovalBar';
 import { ToolShortcutsDrawer } from './ToolShortcutsDrawer';
 import { SlashCommandsDrawer } from './SlashCommandsDrawer';
+import { KeyboardShortcutsHelp } from '../../components/shared/KeyboardShortcutsHelp';
+import { SuggestedPrompts } from '../../components/shared/SuggestedPrompts';
+import { TasksDrawer } from '../../components/shared/TasksDrawer';
+import { useWorkflowState, useDelegationNotices } from '../../hooks/useAgentTeam';
 
 export interface ChatPageProps {
 	/** Transcript hook result lifted from Layout. */
@@ -102,6 +113,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		reload,
 		isStreaming,
 		sendMessage,
+		usageMap,
+		handleSubmitWithAttachments,
 	} = chatSpoke;
 
 	// ---- Thread read‑only state (populated by ChatSidebar) ----
@@ -190,6 +203,28 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const hasApprovals = typeof endpoints?.approvals === 'string' && endpoints.approvals.length > 0;
 	const hasShortcuts = typeof endpoints?.shortcuts === 'string' && endpoints.shortcuts.length > 0;
 	const hasSlashCommands = typeof endpoints?.slashCommands === 'string' && endpoints.slashCommands.length > 0;
+
+	// ── Keyboard shortcuts (v0.9.0) ────────────────────────────────────────────
+	const ks = useKeyboardShortcuts( {
+		onExport: () => { if ( messages.length > 0 ) exportConversation( messages, 'json', assistantId, transcripts.sessionKey ); },
+		onNewChat: () => transcripts.startNewSession(),
+	} );
+
+	// ── Speech playback (v0.9.0) ──────────────────────────────────────────────
+	const speech = useSpeechPlayback( { toolsEndpoint: endpoints?.tools ?? '', nonce, assistantId } );
+
+	// ── Job system (v0.9.0) ───────────────────────────────────────────────────
+	const cronBase = ( endpoints?.chat ?? '' ).replace( /\/chat\/?$/, '' );
+	const jobBus = useJobBus( cronBase, nonce );
+	useTabTitleBadge( jobBus.runningCount );
+
+	// ── Dark mode (v0.9.0) — uses existing uiStore ────────────────────────────
+	const theme = useUIStore( ( s ) => s.theme );
+	const setTheme = useUIStore( ( s ) => s.setTheme );
+
+	// ── Workflow + delegation (v0.9.0) ──────────────────────────────────────
+	const workflowState = useWorkflowState( messages );
+	const delegationNotices = useDelegationNotices( messages );
 
 	// ---- Render ----
 
@@ -295,7 +330,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 						type="button"
 						ref={ memoryToggleRef }
 						className="nvoos-pro-spa-chat-page__memory-btn nvoos-pro-spa-btn"
-						onClick={ () => setMemoryOpen( ( prev ) => ! prev ) }
+						onClick={ () => openDrawer( 'memory' ) }
 						aria-label={ __( 'Toggle memory drawer', 'nvoos-pro-spa' ) }
 						aria-expanded={ memoryOpen }
 					>
@@ -330,6 +365,25 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 												{ __( 'Commands', 'nvoos-pro-spa' ) }
 											</button>
 										) }
+										{/* Theme toggle (v0.9.0) */}
+										<button type="button" className="nvoos-pro-spa-btn"
+											onClick={ () => setTheme( theme === 'dark' ? 'light' : 'dark' ) }
+											aria-label={ theme === 'dark' ? __( 'Light mode', 'nvoos-pro-spa' ) : __( 'Dark mode', 'nvoos-pro-spa' ) }>
+											{ theme === 'dark' ? '☀️' : '🌙' }
+										</button>
+										{/* Export (v0.9.0) */}
+										<button type="button" className="nvoos-pro-spa-btn"
+											disabled={ messages.length === 0 }
+											onClick={ () => exportConversation( messages, 'json', assistantId, transcripts.sessionKey ) }
+											aria-label={ __( 'Export conversation', 'nvoos-pro-spa' ) }>
+											📥
+										</button>
+										{/* Keyboard shortcuts (v0.9.0) */}
+										<button type="button" className="nvoos-pro-spa-btn"
+											onClick={ ks.toggleHelp }
+											aria-label={ __( 'Keyboard shortcuts', 'nvoos-pro-spa' ) }>
+											⌨
+										</button>
 									</div>
 
 			{/* HITL approval bar */}
@@ -343,24 +397,44 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				/>
 			) }
 
+			{/* Suggested prompts (GAP-07: v0.9.0) */}
+			<SuggestedPrompts
+				prompts={ ( runtime?.config as Record< string, unknown > )?.suggestedPrompts as string[] | undefined }
+				onSelect={ ( prompt ) => sendMessage( prompt ) }
+			/>
+
 			<AgentPanel
-			messages={ messages }
-			input={ input }
-			handleInputChange={ handleInputChange }
-			handleSubmit={ handleSubmit }
-			status={ status }
-			error={ chatError }
-			stop={ stop }
-			reload={ reload }
-			isStreaming={ isStreaming }
-			sendMessage={ sendMessage }
-			threadId={ 0 }
-			threadTitle={ '' }
-			onRegenerate={ handleRegenerate }
-			onDeleteMessage={ handleDeleteMessage }
-			onFeedback={ handleFeedback }
-			onEditMessage={ handleEditMessage }
-			feedbackState={ feedbackState }
+				messages={ messages }
+				input={ input }
+				handleInputChange={ handleInputChange }
+				handleSubmit={ handleSubmit }
+				status={ status }
+				error={ chatError }
+				stop={ stop }
+				reload={ reload }
+				isStreaming={ isStreaming }
+				sendMessage={ sendMessage }
+				threadId={ 0 }
+				threadTitle={ '' }
+				onRegenerate={ handleRegenerate }
+				onDeleteMessage={ handleDeleteMessage }
+				onFeedback={ handleFeedback }
+				onEditMessage={ handleEditMessage }
+				feedbackState={ feedbackState }
+				usageMap={ usageMap }
+				onSpeechPlay={ ( t ) => void speech.play( t ) }
+				onSpeechStop={ speech.stop }
+				speechStateFor={ speech.stateFor }
+				jobs={ jobBus.jobs }
+				onCancelJob={ ( id ) => void jobBus.cancelJob( id ) }
+				onRetryJob={ ( id ) => void jobBus.retryJob( id ) }
+				workflow={ workflowState }
+				delegations={ delegationNotices }
+				toolsEndpoint={ endpoints?.tools }
+				uploadEndpoint={ endpoints?.upload }
+				nonce={ nonce }
+				assistantId={ assistantId }
+				onSubmitWithAttachments={ ( atts ) => handleSubmitWithAttachments( atts ) }
 			/>
 
 			{/* Memory drawer */}
@@ -401,6 +475,16 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					toggleRef={ commandsToggleRef }
 				/>
 			) }
+
+			{/* Tasks drawer (v0.9.0) */}
+			<TasksDrawer
+				jobs={ jobBus.jobs }
+				runningCount={ jobBus.runningCount }
+				onCancelJob={ jobBus.cancelJob }
+				onRetryJob={ jobBus.retryJob }
+				onDismissJob={ jobBus.dismissJob }
+				onDismissAll={ jobBus.dismissAllTerminal }
+			/>
 			</div>
-		);
+	);
 	}

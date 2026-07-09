@@ -123,6 +123,8 @@ class NV_oOS_Chat_Spa_Shortcode {
 					'endpoints' => array(
 						'chat'        => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
 						'chatClient'  => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
+						'tools'       => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
+						'upload'      => esc_url_raw( rest_url( 'wp/v2/media' ) ),
 						'transcripts' => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
 						'memory'      => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
 						'threads'     => esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
