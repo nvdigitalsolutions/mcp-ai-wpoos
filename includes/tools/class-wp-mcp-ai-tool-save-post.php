@@ -12,11 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-markdown-converter.php';
+
 /**
  * Creates a new post or updates an existing one.
  */
 class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Markdown_Converter;
 
 	/**
 	 * {@inheritdoc}
@@ -225,7 +228,12 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		}
 
 		$raw_content = isset( $arguments['content'] ) ? $arguments['content'] : '';
-		$content     = wp_kses_post( $raw_content );
+
+		// Convert Markdown to HTML if the content appears to be Markdown rather
+		// than already-formatted HTML or block markup.
+		$raw_content = $this->maybe_convert_markdown( $raw_content );
+
+		$content = wp_kses_post( $raw_content );
 		if ( '' === $content ) {
 			return new WP_Error( 'wp_mcp_ai_missing_content', __( 'Post content is required.', 'mcp-ai-wpoos' ) );
 		}

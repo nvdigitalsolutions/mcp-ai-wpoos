@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-markdown-converter.php';
 
 /**
  * Creates a new WordPress post.
@@ -23,6 +24,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
 class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Content_Media;
+	use WP_MCP_AI_Tool_Markdown_Converter;
 
 	/**
 	 * {@inheritdoc}
@@ -237,6 +239,12 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			}
 		}
 
+		// Convert Markdown to HTML if the content appears to be Markdown rather
+		// than already-formatted HTML or block markup. LLMs frequently return
+		// Markdown, and raw `# Heading` or `**bold**` stored in paragraph blocks
+		// renders as literal text instead of styled headings/bold.
+		$content = $this->maybe_convert_markdown( $content );
+
 		// Sanitize content.
 		$sanitized_content = wp_kses_post( $content );
 
@@ -247,6 +255,10 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		// Embed content media (images and charts).
 		$sanitized_content = $this->embed_content_media( $sanitized_content, $arguments );
+
+		// Track whether categories/tags were explicitly provided for auto-suggestion logic.
+		$has_explicit_categories = isset( $arguments['categories'] ) && is_array( $arguments['categories'] );
+		$has_explicit_tags       = isset( $arguments['tags'] ) && is_array( $arguments['tags'] );
 
 		// Prepare post data.
 		$post_data = array(
@@ -317,6 +329,50 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			return $post_meta_result;
 		}
 
+		// Auto-suggest and apply categories/tags when none were explicitly provided.
+		$suggested_categories = array();
+		$suggested_tags       = array();
+		$auto_applied_cats    = array();
+		$auto_applied_tags    = array();
+
+		if ( ! $has_explicit_categories ) {
+			$suggested_categories = $this->suggest_taxonomy_terms(
+				$title,
+				$sanitized_content,
+				$post_type,
+				'category',
+				5
+			);
+			// Auto-apply categories with score >= 10 (strong match).
+			foreach ( $suggested_categories as $cat ) {
+				if ( $cat['score'] >= 10 ) {
+					$auto_applied_cats[] = (int) $cat['term_id'];
+				}
+			}
+			if ( ! empty( $auto_applied_cats ) ) {
+				wp_set_post_categories( $created_post->ID, $auto_applied_cats );
+			}
+		}
+
+		if ( ! $has_explicit_tags ) {
+			$suggested_tags = $this->suggest_taxonomy_terms(
+				$title,
+				$sanitized_content,
+				$post_type,
+				'post_tag',
+				10
+			);
+			// Auto-apply tags with score >= 8 (slightly lower bar for tags).
+			foreach ( $suggested_tags as $tag ) {
+				if ( $tag['score'] >= 8 ) {
+					$auto_applied_tags[] = (int) $tag['term_id'];
+				}
+			}
+			if ( ! empty( $auto_applied_tags ) ) {
+				wp_set_post_tags( $created_post->ID, $auto_applied_tags );
+			}
+		}
+
 		$summary_text = sprintf(
 			/* translators: 1: post title, 2: post ID */
 			__( 'Post created: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
@@ -340,20 +396,159 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$response['edit_link'] = $edit_link;
 		}
 
+		// Include category/tag suggestions and auto-applied terms.
+		if ( ! empty( $auto_applied_cats ) || ! empty( $auto_applied_tags ) ) {
+			$applied_names = array();
+			foreach ( $auto_applied_cats as $cat_id ) {
+				$cat = get_term( $cat_id, 'category' );
+				if ( $cat && ! is_wp_error( $cat ) ) {
+					$applied_names[] = $cat->name;
+				}
+			}
+			foreach ( $auto_applied_tags as $tag_id ) {
+				$tag = get_term( $tag_id, 'post_tag' );
+				if ( $tag && ! is_wp_error( $tag ) ) {
+					$applied_names[] = $tag->name;
+				}
+			}
+			$response['auto_applied_terms'] = $applied_names;
+		}
+
+		if ( ! empty( $suggested_categories ) ) {
+			$response['suggested_categories'] = array_map(
+				function ( $c ) {
+					return array(
+						'name'  => $c['name'],
+						'score' => $c['score'],
+					);
+				},
+				$suggested_categories
+			);
+		}
+
+		if ( ! empty( $suggested_tags ) ) {
+			$response['suggested_tags'] = array_map(
+				function ( $t ) {
+					return array(
+						'name'  => $t['name'],
+						'score' => $t['score'],
+					);
+				},
+				$suggested_tags
+			);
+		}
+
 		return $response;
 	}
 
 	/**
-		 * Ensures post content uses block markup when the post type supports the block editor.
-		 *
-		 * Plain text is converted to paragraph blocks; HTML that lacks block markers
-		 * is wrapped in a single wp:html block to prevent block-editor corruption.
-		 *
-		 * @param string $sanitized_content The sanitized post content.
-		 * @param string $raw_content       The raw post content, prior to sanitization.
-		 *
-		 * @return string
-		 */
+	 * Suggests categories and tags based on post title and content.
+	 *
+	 * Extracts meaningful keywords from the content and matches them against
+	 * existing taxonomy terms using word-boundary comparison. Returns scored
+	 * suggestions that the LLM or auto-assignment logic can use.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $title     Post title.
+	 * @param string $content   Post content.
+	 * @param string $post_type Post type.
+	 * @param string $taxonomy  Taxonomy name (category or post_tag).
+	 * @param int    $limit     Maximum suggestions to return.
+	 * @return array Array of arrays with term_id, name, slug, and score keys.
+	 */
+	private function suggest_taxonomy_terms( $title, $content, $post_type, $taxonomy, $limit = 5 ) {
+		if ( ! is_object_in_taxonomy( $post_type, $taxonomy ) ) {
+			return array();
+		}
+
+		// Get all terms for this taxonomy.
+		$terms = get_terms(
+			array(
+				'taxonomy'   => $taxonomy,
+				'hide_empty' => false,
+				'number'     => 200,
+			)
+		);
+
+		if ( is_wp_error( $terms ) || empty( $terms ) ) {
+			return array();
+		}
+
+		// Build a combined text to extract keywords from.
+		$combined = wp_strip_all_tags( $title . ' ' . $content );
+		$combined = mb_strtolower( $combined );
+
+		// Extract meaningful words (3+ chars, skip common stop words).
+		$stop_words = array(
+			'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all',
+			'can', 'had', 'her', 'was', 'one', 'our', 'out', 'has',
+			'have', 'been', 'some', 'than', 'that', 'this', 'will',
+			'with', 'from', 'they', 'them', 'then', 'also', 'into',
+			'just', 'about', 'over', 'such', 'only', 'other', 'more',
+			'very', 'what', 'when', 'where', 'which', 'your', 'their',
+		);
+		$words      = preg_split( '/[\s,.;:!?()\[\]"\']+/', $combined, -1, PREG_SPLIT_NO_EMPTY );
+		$keywords   = array();
+		foreach ( $words as $word ) {
+			$word = trim( $word );
+			if ( mb_strlen( $word ) >= 3 && ! in_array( $word, $stop_words, true ) ) {
+				$keywords[ $word ] = ( $keywords[ $word ] ?? 0 ) + 1;
+			}
+		}
+
+		// Score each term against the keyword set.
+		$scored = array();
+		foreach ( $terms as $term ) {
+			$term_name_lower = mb_strtolower( $term->name );
+			$score           = 0;
+
+			// Full name match (e.g., "artificial intelligence" in content).
+			$name_count = mb_substr_count( $combined, $term_name_lower );
+			if ( $name_count > 0 ) {
+				$score += $name_count * 10;
+			}
+
+			// Individual word matches.
+			$term_words = preg_split( '/[\s-]+/', $term_name_lower, -1, PREG_SPLIT_NO_EMPTY );
+			foreach ( $term_words as $tw ) {
+				if ( isset( $keywords[ $tw ] ) ) {
+					$score += $keywords[ $tw ] * 3;
+				}
+			}
+
+			if ( $score > 0 ) {
+				$scored[] = array(
+					'term_id' => $term->term_id,
+					'name'    => $term->name,
+					'slug'    => $term->slug,
+					'score'   => $score,
+				);
+			}
+		}
+
+		// Sort by score descending.
+		usort(
+			$scored,
+			function ( $a, $b ) {
+				return $b['score'] <=> $a['score'];
+			}
+		);
+
+		return array_slice( $scored, 0, $limit );
+	}
+
+	/**
+	 * Ensures post content uses block markup when the post type supports the block editor.
+	 *
+	 * Plain text is converted to paragraph blocks; HTML that lacks block markers
+	 * is wrapped in a single wp:html block to prevent block-editor corruption.
+	 *
+	 * @param string $sanitized_content The sanitized post content.
+	 * @param string $raw_content       The raw post content, prior to sanitization.
+	 *
+	 * @return string
+	 */
 	private function ensure_post_content_uses_blocks( $sanitized_content, $raw_content ) {
 		if ( $this->content_contains_blocks( $raw_content ) || $this->content_contains_blocks( $sanitized_content ) ) {
 			return $sanitized_content;
@@ -480,7 +675,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Handle categories (only for post types that support 'category' taxonomy).
-		if ( isset( $arguments['categories'] ) && is_array( $arguments['categories'] ) ) {
+		if ( $has_explicit_categories ) {
 			if ( is_object_in_taxonomy( $post_type, 'category' ) ) {
 				$category_ids = $this->resolve_taxonomy_terms( $arguments['categories'], 'category' );
 				if ( ! empty( $category_ids ) ) {
@@ -490,7 +685,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Handle tags (only for post types that support 'post_tag' taxonomy).
-		if ( isset( $arguments['tags'] ) && is_array( $arguments['tags'] ) ) {
+		if ( $has_explicit_tags ) {
 			if ( is_object_in_taxonomy( $post_type, 'post_tag' ) ) {
 				$tag_ids = $this->resolve_taxonomy_terms( $arguments['tags'], 'post_tag' );
 				if ( ! empty( $tag_ids ) ) {
