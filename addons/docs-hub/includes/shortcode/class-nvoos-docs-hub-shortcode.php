@@ -207,18 +207,23 @@ class NV_oOS_Docs_Hub_Shortcode {
 		}
 		$registered = true;
 
+		$js_path  = NVOOS_DOCS_HUB_PATH . 'assets/dist/docs-hub.js';
+		$css_path = NVOOS_DOCS_HUB_PATH . 'assets/dist/docs-hub.css';
+		$js_ver   = file_exists( $js_path ) ? filemtime( $js_path ) : NVOOS_DOCS_HUB_VERSION;
+		$css_ver  = file_exists( $css_path ) ? filemtime( $css_path ) : NVOOS_DOCS_HUB_VERSION;
+
 		wp_register_style(
 			'nvoos-docs-hub',
 			NVOOS_DOCS_HUB_URL . 'assets/dist/docs-hub.css',
 			array(),
-			NVOOS_DOCS_HUB_VERSION
+			$css_ver
 		);
 
 		wp_register_script(
 			'nvoos-docs-hub',
 			NVOOS_DOCS_HUB_URL . 'assets/dist/docs-hub.js',
 			array(),
-			NVOOS_DOCS_HUB_VERSION,
+			$js_ver,
 			true
 		);
 

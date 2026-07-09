@@ -89,17 +89,22 @@ class NV_oOS_Document_Editor_Shortcode {
 	 * @return void
 	 */
 	public static function enqueue_assets( $config ) {
+		$js_path  = NVOOS_DOCUMENT_EDITOR_PATH . 'assets/dist/document-editor.js';
+		$css_path = NVOOS_DOCUMENT_EDITOR_PATH . 'assets/dist/document-editor.css';
+		$js_ver   = file_exists( $js_path ) ? filemtime( $js_path ) : NVOOS_DOCUMENT_EDITOR_VERSION;
+		$css_ver  = file_exists( $css_path ) ? filemtime( $css_path ) : NVOOS_DOCUMENT_EDITOR_VERSION;
+
 		wp_register_style(
 			'nvoos-document-editor',
 			NVOOS_DOCUMENT_EDITOR_URL . 'assets/dist/document-editor.css',
 			array(),
-			NVOOS_DOCUMENT_EDITOR_VERSION
+			$css_ver
 		);
 		wp_register_script(
 			'nvoos-document-editor',
 			NVOOS_DOCUMENT_EDITOR_URL . 'assets/dist/document-editor.js',
 			array( 'wp-i18n' ),
-			NVOOS_DOCUMENT_EDITOR_VERSION,
+			$js_ver,
 			true
 		);
 		wp_set_script_translations(

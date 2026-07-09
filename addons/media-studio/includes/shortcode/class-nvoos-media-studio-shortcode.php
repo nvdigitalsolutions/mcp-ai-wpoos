@@ -87,17 +87,22 @@ class NV_oOS_Media_Studio_Shortcode {
 	 * @return void
 	 */
 	public static function enqueue_assets( $config ) {
+		$js_path  = NVOOS_MEDIA_STUDIO_PATH . 'assets/dist/media-studio.js';
+		$css_path = NVOOS_MEDIA_STUDIO_PATH . 'assets/dist/media-studio.css';
+		$js_ver   = file_exists( $js_path ) ? filemtime( $js_path ) : NVOOS_MEDIA_STUDIO_VERSION;
+		$css_ver  = file_exists( $css_path ) ? filemtime( $css_path ) : NVOOS_MEDIA_STUDIO_VERSION;
+
 		wp_register_style(
 			'nvoos-media-studio',
 			NVOOS_MEDIA_STUDIO_URL . 'assets/dist/media-studio.css',
 			array(),
-			NVOOS_MEDIA_STUDIO_VERSION
+			$css_ver
 		);
 		wp_register_script(
 			'nvoos-media-studio',
 			NVOOS_MEDIA_STUDIO_URL . 'assets/dist/media-studio.js',
 			array( 'wp-i18n' ),
-			NVOOS_MEDIA_STUDIO_VERSION,
+			$js_ver,
 			true
 		);
 		wp_set_script_translations(
