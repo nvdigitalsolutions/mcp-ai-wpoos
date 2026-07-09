@@ -16,6 +16,10 @@ export interface ChatSpaPerInstanceConfig {
 export interface ChatSpaEndpoints {
 	chat: string;
 	chatClient: string;
+	/** Tools execution endpoint (speech, transcribe, etc.). */
+	tools: string;
+	/** WordPress media upload endpoint (FormData POST). */
+	upload: string;
 	transcripts: string;
 	memory: string;
 	threads: string;
@@ -53,6 +57,8 @@ export function readChatSpaConfig(): ChatSpaRuntime | null {
 	if (
 		typeof e.chatClient !== 'string' ||
 		typeof e.chat !== 'string' ||
+		typeof e.tools !== 'string' ||
+		typeof e.upload !== 'string' ||
 		typeof e.transcripts !== 'string' ||
 		typeof e.memory !== 'string' ||
 		typeof e.threads !== 'string'
@@ -67,6 +73,8 @@ export function readChatSpaConfig(): ChatSpaRuntime | null {
 		endpoints: {
 			chat: e.chat,
 			chatClient: e.chatClient,
+			tools: e.tools,
+			upload: e.upload,
 			transcripts: e.transcripts,
 			memory: e.memory,
 			threads: e.threads,

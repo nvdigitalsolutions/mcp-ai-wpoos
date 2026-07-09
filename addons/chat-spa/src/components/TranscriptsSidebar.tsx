@@ -9,7 +9,7 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
-import { type JSX } from 'react';
+import { type JSX, useRef, useState, useEffect } from 'react';
 import type { TranscriptSession } from '../api/transcripts';
 import type { ThreadSummary } from '../api/threads';
 
@@ -37,6 +37,13 @@ interface TranscriptsSidebarProps {
 	onTabChange: ( tab: SidebarTab ) => void;
 	onSelectThread: ( threadId: number ) => void;
 	onDeselectThread: () => void;
+
+	// ── Search + pagination + title edit (GAP-17/18/19: v0.9.0) ──
+	searchTerm?: string;
+	onSearchChange?: ( term: string ) => void;
+	hasMore?: boolean;
+	onLoadMore?: () => void;
+	onUpdateTitle?: ( sessionKey: string, title: string ) => void;
 }
 
 export function TranscriptsSidebar( props: TranscriptsSidebarProps ): JSX.Element {
@@ -59,6 +66,11 @@ export function TranscriptsSidebar( props: TranscriptsSidebarProps ): JSX.Elemen
 		onTabChange,
 		onSelectThread,
 		onDeselectThread,
+		searchTerm,
+		onSearchChange,
+		hasMore,
+		onLoadMore,
+		onUpdateTitle,
 	} = props;
 
 	const isTranscriptsTab = activeTab === 'transcripts';
@@ -124,6 +136,17 @@ export function TranscriptsSidebar( props: TranscriptsSidebarProps ): JSX.Elemen
 					{ /* ── Transcripts panel ──────────────────────────────── */ }
 					{ isTranscriptsTab && (
 						<div className="nvoos-chat-spa-sidebar-panel" role="tabpanel">
+							{ /* Search input (GAP-17: v0.9.0) */ }
+							{ onSearchChange && (
+								<input
+									type="search"
+									className="nvoos-chat-spa-sidebar-search"
+									placeholder={ __( 'Search conversations…', 'nvoos-chat-spa' ) }
+									value={ searchTerm ?? '' }
+									onChange={ ( e ) => onSearchChange( e.target.value ) }
+									aria-label={ __( 'Search conversations', 'nvoos-chat-spa' ) }
+								/>
+							) }
 							{ transcriptError && (
 								<p className="nvoos-chat-spa-sidebar-error" role="alert">
 									{ transcriptError }
@@ -143,6 +166,7 @@ export function TranscriptsSidebar( props: TranscriptsSidebarProps ): JSX.Elemen
 								</p>
 							) }
 							{ ! unavailableMessage && Array.isArray( sessions ) && sessions.length > 0 && (
+								<>
 								<ul className="nvoos-chat-spa-sidebar-list">
 									{ sessions.map( ( session ) => (
 										<SessionRow
@@ -151,9 +175,21 @@ export function TranscriptsSidebar( props: TranscriptsSidebarProps ): JSX.Elemen
 											isActive={ session.session_key === activeSessionKey }
 											onSelect={ onSelect }
 											onDelete={ onDelete }
+											onUpdateTitle={ onUpdateTitle }
 										/>
 									) ) }
 								</ul>
+								{ /* Load more (GAP-19: v0.9.0) */ }
+								{ hasMore && onLoadMore && (
+									<button
+										type="button"
+										className="nvoos-chat-spa-sidebar-load-more"
+										onClick={ onLoadMore }
+									>
+										{ __( 'Load more…', 'nvoos-chat-spa' ) }
+									</button>
+								) }
+								</>
 							) }
 						</div>
 					) }
@@ -208,9 +244,20 @@ interface SessionRowProps {
 	isActive: boolean;
 	onSelect: ( sessionKey: string ) => void;
 	onDelete: ( sessionKey: string ) => void;
+	onUpdateTitle?: ( sessionKey: string, title: string ) => void;
 }
 
-function SessionRow( { session, isActive, onSelect, onDelete }: SessionRowProps ): JSX.Element {
+function SessionRow( { session, isActive, onSelect, onDelete, onUpdateTitle }: SessionRowProps ): JSX.Element {
+	const [ editing, setEditing ] = useState( false );
+	const [ titleDraft, setTitleDraft ] = useState( '' );
+	const inputRef = useRef< HTMLInputElement | null >( null );
+
+	// Focus the input when editing starts.
+	useEffect( () => {
+		if ( editing && inputRef.current ) {
+			inputRef.current.focus();
+		}
+	}, [ editing ] );
 	const turnCount = typeof session.turn_count === 'number' ? session.turn_count : 0;
 	const stamp =
 		session.last_created || session.completed_at || session.first_created || session.started_at;
@@ -236,7 +283,39 @@ function SessionRow( { session, isActive, onSelect, onDelete }: SessionRowProps 
 				onClick={ () => onSelect( session.session_key ) }
 				aria-current={ isActive ? 'true' : undefined }
 			>
-				<span className="nvoos-chat-spa-sidebar-item-label">{ label }</span>
+				{ editing && onUpdateTitle ? (
+					<input
+						ref={ inputRef }
+						className="nvoos-chat-spa-sidebar-item-title-input"
+						value={ titleDraft }
+						onChange={ ( e ) => setTitleDraft( e.target.value ) }
+						onBlur={ () => {
+							setEditing( false );
+							if ( titleDraft.trim() && titleDraft !== label ) {
+								onUpdateTitle( session.session_key, titleDraft.trim() );
+							}
+						} }
+						onKeyDown={ ( e ) => {
+							if ( e.key === 'Enter' ) {
+								( e.target as HTMLInputElement ).blur();
+							} else if ( e.key === 'Escape' ) {
+								setEditing( false );
+							}
+						} }
+						onClick={ ( e ) => e.stopPropagation() }
+					/>
+				) : (
+					<span
+						className="nvoos-chat-spa-sidebar-item-label"
+						title={ onUpdateTitle ? __( 'Double-click to rename', 'nvoos-chat-spa' ) : undefined }
+						onDoubleClick={ onUpdateTitle ? () => {
+							setTitleDraft( label );
+							setEditing( true );
+						} : undefined }
+					>
+						{ label }
+					</span>
+				) }
 				<span className="nvoos-chat-spa-sidebar-item-meta">
 					{ sprintf(
 						/* translators: %d: number of turns in the conversation. */

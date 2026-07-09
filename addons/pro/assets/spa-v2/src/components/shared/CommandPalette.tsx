@@ -6,6 +6,8 @@
 
 import { type JSX, useCallback, useEffect, useRef, type Ref } from 'react';
 import { __ } from '@wordpress/i18n';
+
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events */
 import { useCommandPalette } from '../../hooks/useCommandPalette';
 import type { Command } from '../../stores/commandStore';
 

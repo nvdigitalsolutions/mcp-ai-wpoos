@@ -213,7 +213,6 @@ export function AssistantsPage(): JSX.Element {
 			) : (
 				<ul
 					className="nvoos-pro-spa-assistants-list"
-					role="list"
 					aria-label={ __( 'Assistant list', 'nvoos-pro-spa' ) }
 				>
 					{ assistants.map( ( assistant ) => (

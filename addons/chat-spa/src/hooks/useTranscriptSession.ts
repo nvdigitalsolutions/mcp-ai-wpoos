@@ -56,6 +56,16 @@ export interface UseTranscriptSessionResult {
 	startNewSession: () => void;
 	/** Delete a session from the server + sidebar. */
 	deleteSession: ( sessionKey: string ) => Promise< void >;
+	/** Load more sessions (pagination — GAP-19: v0.9.0). */
+	loadMore: () => Promise< void >;
+	/** Set search term and refresh (GAP-17: v0.9.0). */
+	setSearch: ( term: string ) => void;
+	/** Current search term. */
+	searchTerm: string;
+	/** Whether more pages are available. */
+	hasMore: boolean;
+	/** Update session title (GAP-18: v0.9.0). */
+	updateTitle: ( sessionKey: string, title: string ) => Promise< void >;
 }
 
 /**
@@ -128,6 +138,12 @@ export function useTranscriptSession(
 	const [ unavailableMessage, setUnavailableMessage ] = useState< string | null >( null );
 	const [ error, setError ] = useState< string | null >( null );
 
+	// Pagination & search (GAP-17, GAP-19: v0.9.0).
+	const [ currentPage, setCurrentPage ] = useState( 1 );
+	const [ totalSessions, setTotalSessions ] = useState( 0 );
+	const [ searchTerm, setSearchTerm ] = useState( '' );
+	const perPage = 20;
+
 	// Persist the active session id on every change. We do this in an effect
 	// rather than inside the setters so external callers (e.g. tests) can
 	// drive `setSessionKey` directly and observe the same persistence path.
@@ -152,7 +168,8 @@ export function useTranscriptSession(
 			return;
 		}
 		try {
-			const data = await client.list();
+			setCurrentPage( 1 );
+			const data = await client.list( { search: searchTerm || undefined } );
 			if ( data.message ) {
 				setUnavailableMessage( data.message );
 				setSessions( [] );
@@ -160,11 +177,12 @@ export function useTranscriptSession(
 			}
 			setUnavailableMessage( null );
 			setSessions( data.sessions );
+			setTotalSessions( data.total );
 		} catch ( err ) {
 			setError( err instanceof Error ? err.message : String( err ) );
 			setSessions( [] );
 		}
-	}, [ client, disabled ] );
+	}, [ client, disabled, searchTerm ] );
 
 	// Initial list fetch on mount (and whenever the assistant changes).
 	useEffect( () => {
@@ -231,6 +249,54 @@ export function useTranscriptSession(
 		[ client, disabled, sessionKey, startNewSession ]
 	);
 
+	const loadMore = useCallback( async () => {
+		if ( disabled ) return;
+		try {
+			const nextPage = currentPage + 1;
+			const data = await client.list( { page: nextPage, search: searchTerm || undefined } );
+			if ( data.message ) return;
+			setSessions( ( prev ) =>
+				Array.isArray( prev ) ? [ ...prev, ...data.sessions ] : data.sessions
+			);
+			setCurrentPage( nextPage );
+			setTotalSessions( data.total );
+		} catch ( err ) {
+			setError( err instanceof Error ? err.message : String( err ) );
+		}
+	}, [ client, disabled, currentPage, searchTerm ] );
+
+	const setSearch = useCallback(
+		( term: string ) => {
+			setSearchTerm( term );
+		},
+		[]
+	);
+
+	// Trigger refresh when search term changes (debounced).
+	useEffect( () => {
+		const timer = setTimeout( () => {
+			void refreshList();
+		}, 300 );
+		return () => clearTimeout( timer );
+	}, [ searchTerm, refreshList ] );
+
+	const updateTitle = useCallback(
+		async ( sessionKeyToUpdate: string, title: string ) => {
+			if ( disabled ) return;
+			await client.updateTitle( sessionKeyToUpdate, title );
+			setSessions( ( prev ) =>
+				Array.isArray( prev )
+					? prev.map( ( s ) =>
+							s.session_key === sessionKeyToUpdate ? { ...s, title } : s
+						)
+					: prev
+			);
+		},
+		[ client, disabled ]
+	);
+
+	const hasMore = ( sessions?.length ?? 0 ) < totalSessions;
+
 	return {
 		sessionKey,
 		isLoading,
@@ -242,5 +308,10 @@ export function useTranscriptSession(
 		selectSession,
 		startNewSession,
 		deleteSession,
+		loadMore,
+		setSearch,
+		searchTerm,
+		hasMore,
+		updateTitle,
 	};
 }

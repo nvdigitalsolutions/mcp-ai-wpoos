@@ -9,6 +9,9 @@ import { useCallback, useEffect, useRef, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { type Message } from '@ai-sdk/react';
 import { MessageView } from './MessageView';
+import type { UsageData } from '../../components/shared/UsageBadges';
+import type { SpeechState } from '../../components/shared/SpeechButton';
+import type { JobRecord } from '../../components/shared/JobCard';
 
 export interface AgentPanelProps {
 	/** Ordered list of chat messages from useChat. */
@@ -45,6 +48,16 @@ export interface AgentPanelProps {
 	onEditMessage?: ( msgId: string ) => void;
 	/** Map of message ID → feedback rating. */
 	feedbackState?: Record< string, 'up' | 'down' >;
+	/** Usage data per message (v0.9.0). */
+	usageMap?: Record< string, UsageData >;
+	/** Speech playback (v0.9.0). */
+	onSpeechPlay?: ( text: string ) => void;
+	onSpeechStop?: () => void;
+	speechStateFor?: ( text: string ) => SpeechState;
+	/** Job system (v0.9.0). */
+	jobs?: Record< string, JobRecord >;
+	onCancelJob?: ( id: string ) => void;
+	onRetryJob?: ( id: string ) => void;
 }
 
 export function AgentPanel( props: AgentPanelProps ): JSX.Element {
@@ -65,6 +78,13 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 		onFeedback,
 		onEditMessage,
 		feedbackState = {},
+		usageMap,
+		onSpeechPlay,
+		onSpeechStop,
+		speechStateFor,
+		jobs,
+		onCancelJob,
+		onRetryJob,
 	} = props;
 
 	const messagesContainerRef = useRef< HTMLDivElement | null >( null );
@@ -174,16 +194,23 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 
 				{ messages.map( ( message, index ) => (
 				<MessageView
-				key={ message.id ?? `msg-${ index }` }
-				message={ message }
-				index={ index }
-				totalCount={ messages.length }
-				isStreaming={ isStreaming }
-				onRegenerate={ onRegenerate }
-				 onDelete={ onDeleteMessage }
-				  onFeedback={ onFeedback }
+					key={ message.id ?? `msg-${ index }` }
+					message={ message }
+					index={ index }
+					totalCount={ messages.length }
+					isStreaming={ isStreaming }
+					onRegenerate={ onRegenerate }
+					onDelete={ onDeleteMessage }
+					onFeedback={ onFeedback }
 					onEdit={ onEditMessage }
 					feedback={ feedbackState[ message.id ] ?? null }
+					usage={ usageMap?.[ message.id ] ?? null }
+					onSpeechPlay={ onSpeechPlay }
+					onSpeechStop={ onSpeechStop }
+					speechStateFor={ speechStateFor }
+					jobs={ jobs }
+					onCancelJob={ onCancelJob }
+					onRetryJob={ onRetryJob }
 				/>
 			) ) }
 
