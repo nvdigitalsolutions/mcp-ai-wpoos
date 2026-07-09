@@ -70,6 +70,12 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 	const messagesContainerRef = useRef< HTMLDivElement | null >( null );
 	const composerRef = useRef< HTMLTextAreaElement | null >( null );
 
+	// Track whether the user is at the bottom of the messages container.
+	// Updated by the onScroll handler so we know their intent before
+	// new content arrives — avoids the false-positive "user scrolled up"
+	// when a large content chunk pushes scrollHeight past a static guard.
+	const userAtBottomRef = useRef< boolean >( true );
+
 	// Helper: scroll the messages container to the bottom.
 	// Uses requestAnimationFrame to wait for any pending layout.
 	const scrollToBottom = useCallback( () => {
@@ -82,11 +88,22 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 		} );
 	}, [] );
 
+	// onScroll handler — records whether the user is at the very bottom.
+	const handleMessagesScroll = useCallback( () => {
+		const el = messagesContainerRef.current;
+		if ( ! el ) {
+			return;
+		}
+		// 2px tolerance to absorb sub-pixel rounding in various browsers.
+		const distanceFromBottom =
+			el.scrollHeight - el.scrollTop - el.clientHeight;
+		userAtBottomRef.current = distanceFromBottom < 2;
+	}, [] );
+
 	// When the user submits, scroll to bottom unconditionally so the
 	// composer stays out of the way and the response is visible.
 	// Also scroll when streaming begins — this is when the assistant
-	// message first appears in the DOM, and Effect 2's proximity guard
-	// may block the scroll if the new message height exceeds 200px.
+	// message first appears in the DOM.
 	useEffect( () => {
 		if ( status === 'submitted' || status === 'streaming' ) {
 			scrollToBottom();
@@ -95,10 +112,11 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 
 	// During streaming, keep the view pinned to the bottom as content
 	// grows — but only when the user hasn't scrolled up to read earlier
-	// messages. Uses requestAnimationFrame so scrollHeight reflects the
-	// latest DOM layout after React has flushed.
+	// messages.  The decision is based on the scroll position *before*
+	// this render (captured by onScroll), so a large content chunk won't
+	// fool the guard into thinking the user scrolled up.
 	useEffect( () => {
-		if ( ! isStreaming ) {
+		if ( ! isStreaming || ! userAtBottomRef.current ) {
 			return;
 		}
 		const el = messagesContainerRef.current;
@@ -106,12 +124,7 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 			return;
 		}
 		requestAnimationFrame( () => {
-			const threshold = 200;
-			const distanceFromBottom =
-				el.scrollHeight - el.scrollTop - el.clientHeight;
-			if ( distanceFromBottom < threshold ) {
-				el.scrollTop = el.scrollHeight;
-			}
+			el.scrollTop = el.scrollHeight;
 		} );
 	}, [ messages, isStreaming ] );
 
@@ -146,6 +159,7 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 				role="log"
 				aria-live="polite"
 				aria-label={ __( 'Chat messages', 'nvoos-pro-spa' ) }
+				onScroll={ handleMessagesScroll }
 			>
 				{ messages.length === 0 && (
 					<div className="nvoos-pro-spa-agent-panel__empty">

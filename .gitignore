@@ -221,6 +221,9 @@ lib/*/tests/vendor/
 # Exclude source maps from vendor directories (not needed in production; reduces repo size)
 addons/pro/assets/vendor/**/*.map
 
+# Exclude SPA v2 dev source maps (~5 MB each; rebuild locally when needed)
+addons/pro/assets/spa-v2/assets/dist/*.map
+
 # Exclude canvas native binaries (platform-specific, must be compiled via npm install)
 addons/pro/assets/vendor/canvas/build/
 
