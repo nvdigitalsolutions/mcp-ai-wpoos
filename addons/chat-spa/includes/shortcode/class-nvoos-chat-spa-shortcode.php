@@ -82,17 +82,22 @@ class NV_oOS_Chat_Spa_Shortcode {
 	 * @return void
 	 */
 	public static function enqueue_assets( $config ) {
+		$js_path  = NVOOS_CHAT_SPA_PATH . 'assets/dist/chat-spa.js';
+		$css_path = NVOOS_CHAT_SPA_PATH . 'assets/dist/chat-spa.css';
+		$js_ver   = file_exists( $js_path ) ? filemtime( $js_path ) : NVOOS_CHAT_SPA_VERSION;
+		$css_ver  = file_exists( $css_path ) ? filemtime( $css_path ) : NVOOS_CHAT_SPA_VERSION;
+
 		wp_register_style(
 			'nvoos-chat-spa',
 			NVOOS_CHAT_SPA_URL . 'assets/dist/chat-spa.css',
 			array(),
-			NVOOS_CHAT_SPA_VERSION
+			$css_ver
 		);
 		wp_register_script(
 			'nvoos-chat-spa',
 			NVOOS_CHAT_SPA_URL . 'assets/dist/chat-spa.js',
 			array( 'wp-i18n' ),
-			NVOOS_CHAT_SPA_VERSION,
+			$js_ver,
 			true
 		);
 		wp_set_script_translations(

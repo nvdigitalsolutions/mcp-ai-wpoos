@@ -87,17 +87,22 @@ class NV_oOS_Canvas_Toolkit_Shortcode {
 	 * @return void
 	 */
 	public static function enqueue_assets( $config ) {
+		$js_path  = NVOOS_CANVAS_TOOLKIT_PATH . 'assets/dist/canvas-toolkit.js';
+		$css_path = NVOOS_CANVAS_TOOLKIT_PATH . 'assets/dist/canvas-toolkit.css';
+		$js_ver   = file_exists( $js_path ) ? filemtime( $js_path ) : NVOOS_CANVAS_TOOLKIT_VERSION;
+		$css_ver  = file_exists( $css_path ) ? filemtime( $css_path ) : NVOOS_CANVAS_TOOLKIT_VERSION;
+
 		wp_register_style(
 			'nvoos-canvas-toolkit',
 			NVOOS_CANVAS_TOOLKIT_URL . 'assets/dist/canvas-toolkit.css',
 			array(),
-			NVOOS_CANVAS_TOOLKIT_VERSION
+			$css_ver
 		);
 		wp_register_script(
 			'nvoos-canvas-toolkit',
 			NVOOS_CANVAS_TOOLKIT_URL . 'assets/dist/canvas-toolkit.js',
 			array( 'wp-i18n' ),
-			NVOOS_CANVAS_TOOLKIT_VERSION,
+			$js_ver,
 			true
 		);
 		wp_set_script_translations(
