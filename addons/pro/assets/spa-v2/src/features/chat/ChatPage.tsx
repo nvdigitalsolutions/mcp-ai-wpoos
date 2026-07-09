@@ -32,6 +32,8 @@ import { ToolShortcutsDrawer } from './ToolShortcutsDrawer';
 import { SlashCommandsDrawer } from './SlashCommandsDrawer';
 import { KeyboardShortcutsHelp } from '../../components/shared/KeyboardShortcutsHelp';
 import { SuggestedPrompts } from '../../components/shared/SuggestedPrompts';
+import { TasksDrawer } from '../../components/shared/TasksDrawer';
+import { useWorkflowState, useDelegationNotices } from '../../hooks/useAgentTeam';
 
 export interface ChatPageProps {
 	/** Transcript hook result lifted from Layout. */
@@ -218,6 +220,10 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	// ── Dark mode (v0.9.0) — uses existing uiStore ────────────────────────────
 	const theme = useUIStore( ( s ) => s.theme );
 	const setTheme = useUIStore( ( s ) => s.setTheme );
+
+	// ── Workflow + delegation (v0.9.0) ──────────────────────────────────────
+	const workflowState = useWorkflowState( messages );
+	const delegationNotices = useDelegationNotices( messages );
 
 	// ---- Render ----
 
@@ -421,6 +427,12 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				jobs={ jobBus.jobs }
 				onCancelJob={ ( id ) => void jobBus.cancelJob( id ) }
 				onRetryJob={ ( id ) => void jobBus.retryJob( id ) }
+				workflow={ workflowState }
+				delegations={ delegationNotices }
+				toolsEndpoint={ endpoints?.tools }
+				uploadEndpoint={ endpoints?.upload }
+				nonce={ nonce }
+				assistantId={ assistantId }
 			/>
 
 			{/* Memory drawer */}
@@ -461,7 +473,16 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					toggleRef={ commandsToggleRef }
 				/>
 			) }
-			<KeyboardShortcutsHelp isOpen={ ks.isHelpOpen } onClose={ ks.closeHelp } />
-		</div>
+
+			{/* Tasks drawer (v0.9.0) */}
+			<TasksDrawer
+				jobs={ jobBus.jobs }
+				runningCount={ jobBus.runningCount }
+				onCancelJob={ jobBus.cancelJob }
+				onRetryJob={ jobBus.retryJob }
+				onDismissJob={ jobBus.dismissJob }
+				onDismissAll={ jobBus.dismissAllTerminal }
+			/>
+			</div>
 	);
 	}

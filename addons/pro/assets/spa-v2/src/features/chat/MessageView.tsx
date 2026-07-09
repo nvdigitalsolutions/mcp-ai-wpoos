@@ -14,6 +14,8 @@ import { UsageBadges, type UsageData } from '../../components/shared/UsageBadges
 import { CapabilityFlagBadges } from '../../components/shared/CapabilityFlagBadges';
 import { SpeechButton, type SpeechState } from '../../components/shared/SpeechButton';
 import { JobCard, type JobRecord } from '../../components/shared/JobCard';
+import { WorkflowTracker, type WorkflowState } from '../../components/shared/WorkflowTracker';
+import { DelegationNotice, type DelegationData } from '../../components/shared/DelegationNotice';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -50,6 +52,9 @@ export interface MessageViewProps {
 	jobs?: Record< string, JobRecord >;
 	onCancelJob?: ( id: string ) => void;
 	onRetryJob?: ( id: string ) => void;
+	/** Workflow + delegation (v0.9.0). */
+	workflow?: WorkflowState | null;
+	delegations?: DelegationData[];
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -185,6 +190,8 @@ export function MessageView( {
 	jobs,
 	onCancelJob,
 	onRetryJob,
+	workflow,
+	delegations,
 }: MessageViewProps ): JSX.Element {
 	const tools = Array.isArray( ( message as unknown as Record<string,unknown> ).toolInvocations )
 		? ( message as unknown as Record<string,unknown> ).toolInvocations as ToolInvocation[]
@@ -306,6 +313,16 @@ export function MessageView( {
 			{/* Speech button (v0.9.0) */}
 			{ isAssistant && content !== '' && onSpeechPlay && onSpeechStop && speechStateFor && (
 				<SpeechButton text={ content } state={ speechStateFor( content ) } onPlay={ onSpeechPlay } onStop={ onSpeechStop } />
+			) }
+
+			{/* Delegation notices (v0.9.0) */}
+			{ isAssistant && delegations && delegations.length > 0 && delegations.map( ( d, di ) => (
+				<DelegationNotice key={ di } delegation={ d } />
+			) ) }
+
+			{/* Workflow tracker (v0.9.0) */}
+			{ isLastAssistant && workflow && workflow.steps.length > 0 && (
+				<WorkflowTracker workflow={ workflow } />
 			) }
 		</article>
 	);

@@ -9,6 +9,9 @@ import { useCallback, useEffect, useRef, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { type Message } from '@ai-sdk/react';
 import { MessageView } from './MessageView';
+import { AudioRecorderButton } from '../../components/shared/AudioRecorderButton';
+import { WorkflowTracker, type WorkflowState } from '../../components/shared/WorkflowTracker';
+import { DelegationNotice, type DelegationData } from '../../components/shared/DelegationNotice';
 import type { UsageData } from '../../components/shared/UsageBadges';
 import type { SpeechState } from '../../components/shared/SpeechButton';
 import type { JobRecord } from '../../components/shared/JobCard';
@@ -58,6 +61,14 @@ export interface AgentPanelProps {
 	jobs?: Record< string, JobRecord >;
 	onCancelJob?: ( id: string ) => void;
 	onRetryJob?: ( id: string ) => void;
+	/** Workflow + delegation (v0.9.0). */
+	workflow?: WorkflowState | null;
+	delegations?: DelegationData[];
+	/** Audio recorder (v0.9.0). */
+	toolsEndpoint?: string;
+	uploadEndpoint?: string;
+	nonce?: string;
+	assistantId?: number;
 }
 
 export function AgentPanel( props: AgentPanelProps ): JSX.Element {
@@ -85,6 +96,12 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 		jobs,
 		onCancelJob,
 		onRetryJob,
+		workflow,
+		delegations,
+		toolsEndpoint,
+		uploadEndpoint,
+		nonce,
+		assistantId,
 	} = props;
 
 	const messagesContainerRef = useRef< HTMLDivElement | null >( null );
@@ -211,6 +228,8 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 					jobs={ jobs }
 					onCancelJob={ onCancelJob }
 					onRetryJob={ onRetryJob }
+					workflow={ index === messages.length - 1 ? workflow : null }
+					delegations={ delegations }
 				/>
 			) ) }
 
@@ -245,6 +264,18 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 					<label htmlFor="nvoos-pro-spa-composer-input" className="nvoos-pro-spa-screen-reader-only">
 						{ __( 'Type your message', 'nvoos-pro-spa' ) }
 					</label>
+					{/* Audio recorder buttons (v0.9.0) */}
+					{ toolsEndpoint && nonce && (
+						<div className="nvoos-pro-spa-agent-panel__composer-toolbar">
+							<AudioRecorderButton mode="transcribe" toolsEndpoint={ toolsEndpoint } uploadEndpoint={ uploadEndpoint ?? '' } nonce={ nonce } assistantId={ assistantId ?? 0 } disabled={ isStreaming }
+								onTranscribed={ ( text ) => {
+									const el = document.getElementById( 'nvoos-pro-spa-composer-input' ) as HTMLTextAreaElement | null;
+									if ( el ) { const s = Object.getOwnPropertyDescriptor( window.HTMLTextAreaElement.prototype, 'value' )?.set; if ( s ) { s.call( el, text ); el.dispatchEvent( new Event( 'input', { bubbles: true } ) ); } }
+								} } />
+							<AudioRecorderButton mode="voice" toolsEndpoint={ toolsEndpoint } uploadEndpoint={ uploadEndpoint ?? '' } nonce={ nonce } assistantId={ assistantId ?? 0 } disabled={ isStreaming }
+								onVoiceSubmit={ ( text ) => sendMessage( text ) } />
+						</div>
+					) }
 					<textarea
 						id="nvoos-pro-spa-composer-input"
 						ref={ composerRef }
