@@ -732,6 +732,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	gap: 8px;
 	width: 100%;
 	align-items: flex-end;
+	flex-wrap: wrap;
 }
 
 .nvoos-pro-spa-agent-panel__composer-input {
@@ -2244,6 +2245,35 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	gap: 4px;
 	align-items: center;
 	padding: 4px 0;
+}
+
+/* On mobile, reorder the composer so the toolbar and attachment strip
+   wrap below the textarea and send button instead of sitting beside them. */
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-agent-panel__composer-toolbar {
+		width: 100%;
+		order: 3;
+		padding: 2px 0 0;
+	}
+
+	.nvoos-pro-spa-agent-panel__composer-input {
+		order: 0;
+		flex: 1 1 calc( 100% - 80px );
+		min-width: 0;
+	}
+
+	.nvoos-pro-spa-agent-panel__composer-actions {
+		order: 1;
+	}
+
+	.nvoos-pro-spa-attachment-strip {
+		order: 2;
+		width: 100%;
+	}
+
+	.nvoos-pro-spa-agent-panel__composer {
+		padding: 8px 12px;
+	}
 }
 
 /* ── Audio recorder button (v0.9.0) ──────────────────────────────────── */
