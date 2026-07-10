@@ -2476,6 +2476,37 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
    ========================================================================= */
 
 /* Close button inside sidebar (hidden on desktop, visible on mobile) */
+/* Mobile sidebar toggle — hamburger button fixed to top-left of main content */
+.nvoos-pro-spa-mobile-sidebar-toggle {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 90;
+	background: var(--nvoos-bg-secondary, #fff);
+	border: none;
+	border-right: 1px solid var(--nvoos-border, #dcdcde);
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 0 0 6px 0;
+	cursor: pointer;
+	padding: 10px 14px;
+	font-size: 22px;
+	line-height: 1;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-mobile-sidebar-toggle:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-mobile-sidebar-toggle__icon {
+	font-size: 22px;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-mobile-sidebar-toggle {
+	color: #e0e0e0;
+}
+
 .nvoos-pro-spa-sidebar__close {
 	display: none;
 	position: absolute;
@@ -2540,6 +2571,13 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 		inset: 0;
 		z-index: 999;
 		background: rgba( 0, 0, 0, 0.4 );
+	}
+
+	/* Mobile hamburger button — show as fixed top-left toggle */
+	.nvoos-pro-spa-mobile-sidebar-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 }
 

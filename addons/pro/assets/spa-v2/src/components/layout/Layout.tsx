@@ -44,6 +44,7 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 
 	// ---- UI store (sidebar / right-panel toggles / theme) ----
 	const sidebarOpen = useUIStore( ( s ) => s.sidebarOpen );
+	const toggleSidebar = useUIStore( ( s ) => s.toggleSidebar );
 	const setSidebarOpen = useUIStore( ( s ) => s.setSidebarOpen );
 	const rightPanelOpen = useUIStore( ( s ) => s.rightPanelOpen );
 	const theme = useUIStore( ( s ) => s.theme );
@@ -92,6 +93,23 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 				id="nvoos-pro-spa-main-content"
 				role="main"
 			>
+				{ /* Mobile sidebar toggle (visible only on small screens) */ }
+				<button
+					type="button"
+					className="nvoos-pro-spa-mobile-sidebar-toggle"
+					onClick={ toggleSidebar }
+					aria-label={
+						sidebarOpen
+							? __( 'Close sidebar', 'nvoos-pro-spa' )
+							: __( 'Open sidebar', 'nvoos-pro-spa' )
+					}
+					aria-expanded={ sidebarOpen }
+				>
+					<span className="nvoos-pro-spa-mobile-sidebar-toggle__icon">
+						☰
+					</span>
+				</button>
+
 				<AppRouter transcripts={ transcripts } />
 			</main>
 
