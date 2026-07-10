@@ -15,8 +15,8 @@ import {
 } from '../api/media';
 
 export interface UseMediaLibraryOptions {
-	/** WordPress REST API root URL. */
-	apiRoot: string;
+	/** Full WordPress REST API URL for the media endpoint. */
+	mediaEndpoint: string;
 	/** WordPress REST nonce. */
 	nonce: string;
 	/** Disables server calls when true. */
@@ -61,11 +61,11 @@ const DEBOUNCE_MS = 300;
 export function useMediaLibrary(
 	options: UseMediaLibraryOptions
 ): UseMediaLibraryReturn {
-	const { apiRoot, nonce, disabled = false } = options;
+	const { mediaEndpoint, nonce, disabled = false } = options;
 
 	const client = useMemo(
-		() => new MediaClient( { apiRoot, nonce } ),
-		[ apiRoot, nonce ]
+		() => new MediaClient( { mediaEndpoint, nonce } ),
+		[ mediaEndpoint, nonce ]
 	);
 
 	const [ items, setItems ] = useState< MediaItem[] | null >( null );

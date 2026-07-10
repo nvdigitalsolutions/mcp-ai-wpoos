@@ -94,6 +94,9 @@ export interface ChatSidebarProps {
 
 	/** WordPress REST API root URL (for the Media Library tab). */
 	apiRoot?: string;
+
+	/** Full WordPress REST API URL for the media endpoint (e.g. wp/v2/media). */
+	mediaEndpoint?: string;
 }
 
 type SidebarTab = 'conversations' | 'media';
@@ -114,6 +117,7 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 		nonce,
 		assistantsEndpoint,
 		apiRoot,
+		mediaEndpoint,
 	} = props;
 
 	// ---- assistant store ----
@@ -497,9 +501,9 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 				aria-labelledby="nvoos-pro-spa-sidebar-tab-media"
 				hidden={ activeTab !== 'media' }
 			>
-				{ apiRoot ? (
+				{ mediaEndpoint ? (
 					<MediaTab
-						apiRoot={ apiRoot }
+						mediaEndpoint={ mediaEndpoint }
 						nonce={ nonce }
 						selectedIds={ selectedMediaIds }
 						onAttach={ handleAttachMedia }

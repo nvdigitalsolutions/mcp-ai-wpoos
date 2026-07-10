@@ -55,8 +55,8 @@ export interface MediaListResponse {
 }
 
 export interface MediaClientOptions {
-	/** WordPress REST API root URL (e.g. "https://example.com/wp-json"). */
-	apiRoot: string;
+	/** Full WordPress REST API URL for the media endpoint (e.g. rest_url('wp/v2/media')). */
+	mediaEndpoint: string;
 	nonce: string;
 }
 
@@ -120,11 +120,11 @@ function mapMediaItem( raw: WpRestMediaItem ): MediaItem {
 }
 
 export class MediaClient {
-	private readonly apiRoot: string;
+	private readonly mediaEndpoint: string;
 	private readonly nonce: string;
 
 	constructor( opts: MediaClientOptions ) {
-		this.apiRoot = opts.apiRoot.replace( /\/+$/, '' );
+		this.mediaEndpoint = opts.mediaEndpoint.replace( /\/+$/, '' );
 		this.nonce = opts.nonce;
 	}
 
@@ -142,7 +142,7 @@ export class MediaClient {
 		mimeType: string = '',
 		signal?: AbortSignal
 	): Promise< MediaListResponse > {
-		const url = new URL( `${ this.apiRoot }/wp/v2/media`, window.location.origin );
+		const url = new URL( this.mediaEndpoint, window.location.origin );
 		url.searchParams.set( 'per_page', String( MEDIA_PER_PAGE ) );
 		url.searchParams.set( 'page', String( page ) );
 		url.searchParams.set( '_fields',
@@ -172,7 +172,7 @@ export class MediaClient {
 	 * Get a single media item by ID.
 	 */
 	async get( id: number, signal?: AbortSignal ): Promise< MediaItem > {
-		const url = `${ this.apiRoot }/wp/v2/media/${ id }`;
+		const url = `${ this.mediaEndpoint }/${ id }`;
 		const data = await this.request< WpRestMediaItem >( { method: 'GET', url, signal } );
 		return mapMediaItem( data );
 	}
