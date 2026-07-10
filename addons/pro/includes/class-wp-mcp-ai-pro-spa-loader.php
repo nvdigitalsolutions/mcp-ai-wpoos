@@ -203,6 +203,9 @@ class WP_MCP_AI_Pro_SPA_Loader {
 				'assistants'    => esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
 				'settings'      => esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),
 
+				// WordPress media upload endpoint (matches legacy chat-spa).
+				'upload'        => esc_url_raw( rest_url( 'wp/v2/media' ) ),
+
 				// Pro endpoints (mcp-ai-pro/v1).
 				'workflows'     => class_exists( 'WP_MCP_AI_Pro_Workflow_Controller' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflows' ) )
