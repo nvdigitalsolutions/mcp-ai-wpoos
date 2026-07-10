@@ -1,10 +1,15 @@
 # Page Agent Integration Plan — Alibaba Page Agent → NV oOS
 
-> **Status:** Draft Proposal
-> **Date:** 2026-07-10
+> **Status:** ✅ Phase 1 Delivered (v0.1.0) — See `addons/page-agent/`  
+> **Date:** 2026-07-10  
 > **Target:** New addon `addons/page-agent/` (v0.1.0 → v1.0.0)
 > **Page Agent Version:** 1.12.0 (MIT)
-> **NV oOS Base Version:** 1.1.x+ (no base changes required)
+> **NV oOS Base Version:** 1.1.38+ (shipped in v1.1.38)
+
+> **Note:** Phase 1 (Core Addon) was delivered on July 10, 2026 as part of NV oOS v1.1.38.
+> The addon is live at `addons/page-agent/` with shortcode `[mcp_ai_page_agent]`, Elementor widget,
+> REST endpoints, and MCP tool bridge. Phases 2–4 (Admin Copilot, Workflows, Chrome Extension)
+> remain planned. See the [Addon Inventory](../ADDON_INVENTORY.md) for current status.
 
 ---
 

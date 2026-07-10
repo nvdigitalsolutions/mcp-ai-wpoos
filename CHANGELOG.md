@@ -1,5 +1,64 @@
 # oOS – Changelog
 
+## [1.1.38] - 2026-07-10
+
+### Added — Page Agent Addon v0.1.0
+
+- **Page Agent addon** (`addons/page-agent/`) — AI-powered browser page control copilot powered by Alibaba Page Agent (MIT).
+- Gives any WordPress page its own AI agent that can click, type, and navigate via natural language.
+- Runs entirely client-side with no headless browser, Python, or Chrome extension required.
+- Includes shortcode `[mcp_ai_page_agent]`, Elementor widget, REST endpoints, MCP tool bridge, and admin settings.
+- Bundled `page-agent` library (MIT) by Alibaba.
+
+### Added — Pro SPA v2 Parity & Polish
+
+- **Voice pipeline, tasks drawer, workflow tracker, and file attachments** added to Pro SPA — closing parity gaps with Chat SPA (PR #5610).
+- **File attachment upload** — attachments now upload to WordPress Media Library in Pro SPA v2 (PR #5617).
+- **Tool Shortcuts and Slash Commands drawers** — new UI panels for quick tool access (PR #5607).
+- **Mobile hamburger button** — sidebar toggle for mobile Pro SPA v2 (PR #5619).
+- **Speech/audio button fix** — use ToolsClient for correct REST endpoint (PR #5618).
+- **Conversation titles and turn count** — improved title generation and fixed turn display (PR #5609).
+- **Autoscroll fixes** — scroll-to-bottom on submit, streaming start, user-at-bottom guard; restored with direct scrollTop instead of scrollIntoView (PRs #5600–#5605).
+- **Viewport height fixes** — CSS height chain instead of viewport calc; `overflow:hidden` on ancestors (PRs #5597–#5599).
+- **Cache-busting** — `filemtime` used for cache-busting across all SPA addons (PR #5597).
+- **Assistant preloading** — assistants preloaded in runtime config to fix SPA sidebar loading (PR #5596).
+- **Model sync and auth bypass** — fixed assistant loading, model sync, and auth bypass (PR #5595).
+- **Button issues and token NaN** — fixed button behavior and token NaN display (PR #5611).
+- **Deduplicated model selector** — prevents React duplicate-key warning (PR #5607).
+- **REST route registration** — fixed and rebuilt production assets (PR #5608).
+- **SPA lint errors** — resolved chat-SPA and pro-SPA lint issues.
+
+### Added — User Profile Memory Toggle
+
+- **Per-user chat memory preferences** — users can toggle chat memory on/off from their WordPress user profile (PR #5604).
+- Individual control over AI memory retention without affecting site-wide defaults.
+
+### Added — create_post / save_post Tool Enhancements
+
+- **Markdown-to-HTML conversion** — new `WP_MCP_AI_Tool_Markdown_Converter` trait auto-converts Markdown content to HTML in `create_post` and `save_post` tools (PR #5615).
+- **Smart taxonomy suggestions** — auto-detects relevant categories and tags when creating/updating posts.
+- **Block content corruption fix** — `save_post` tools no longer corrupt block content for non-post post types (PR #5615).
+
+### Added — Workflow Blueprint & Schedule Improvements
+
+- **Existing-content awareness** — Content Publisher and Keyword Pipeline blueprints now check for duplicate content (PR #5614).
+- **Blog schedule presets** — existing-content awareness prevents publishing duplicate posts (PR #5612).
+- **Readable result delivery** — workflow schedules generate human-readable responses in result delivery (PR #5613).
+
+### Added — SPA Accessibility
+
+- **Annotation pills** made clickable with meaningful labels for screen readers (PR #5589).
+
+### Security
+
+- **OWASP ZAP DAST** — all 7 medium findings triaged as IGNORE (false positives).
+
+### Versioning
+
+- Bumped to **1.1.38** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`.
+- Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Moonshot/Kimi).
+
 ## [1.1.37] - 2026-07-08
 
 ### Added — JetEngine Meta Helper (Universal)
