@@ -112,7 +112,7 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 	const composerRef = useRef< HTMLTextAreaElement | null >( null );
 
 	// ── Attachments (v0.9.0) ───────────────────────────────────────────
-	const attachments = useAttachments();
+	const attachments = useAttachments( { uploadEndpoint: uploadEndpoint ?? '', nonce: nonce ?? '' } );
 	const fileInputRef = useRef< HTMLInputElement | null >( null );
 
 	// Track whether the user is at the bottom of the messages container.
@@ -317,7 +317,11 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 							{ attachments.files.map( ( pf ) => (
 								<li key={ pf.key } className="nvoos-pro-spa-attachment-chip">
 									{ pf.previewUrl ? <img src={ pf.previewUrl } alt={ pf.file.name } className="nvoos-pro-spa-attachment-thumb" /> : <span className="nvoos-pro-spa-attachment-icon" aria-hidden="true">📄</span> }
-									<span className="nvoos-pro-spa-attachment-name">{ pf.file.name }</span>
+									<span className="nvoos-pro-spa-attachment-name">
+										{ pf.uploading ? __( 'Uploading…', 'nvoos-pro-spa' ) :
+										  pf.uploadError ? `${ pf.file.name } (${ __( 'failed', 'nvoos-pro-spa' ) })` :
+										  pf.attachmentId ? `#${ pf.attachmentId }` : pf.file.name }
+									</span>
 									<button type="button" className="nvoos-pro-spa-attachment-remove" aria-label={ `${ __( 'Remove', 'nvoos-pro-spa' ) } ${ pf.file.name }` }
 										onClick={ ( e ) => { e.preventDefault(); e.stopPropagation(); attachments.remove( pf.key ); } }>×</button>
 								</li>

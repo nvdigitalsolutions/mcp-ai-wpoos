@@ -1,14 +1,13 @@
 /**
  * Pro SPA v2 — file attachment state hook.
  *
- * Manages pending File objects, validates them, and converts them
- * to AI SDK `Attachment` records (base64 data-URLs) ready for
- * `ChatRequestOptions.experimental_attachments`.
+ * Manages pending File objects, validates them, uploads each file
+ * to the WordPress Media Library (matching the legacy chat-client
+ * pattern), and converts them to AI SDK `Attachment` records with
+ * Media Library attachment IDs.
  *
  * Limits (matching NV oOS server-side constants):
- *   5 MB per file, 10 MB total, MIME allowlist for images/PDFs/text.
- *
- * Mirrors chat-spa's useAttachments with pro namespace.
+ *   5 MB per file, 10 MB total, MIME allowlist.
  *
  * @package NV_oOS_Pro_Spa
  * @since   0.9.0
@@ -41,6 +40,19 @@ export interface PendingFile {
 	key: string;
 	file: File;
 	previewUrl: string | null;
+	/** WordPress media attachment ID (populated after upload). */
+	attachmentId?: number;
+	/** Whether this file is currently being uploaded to the Media Library. */
+	uploading?: boolean;
+	/** Error message if upload failed. */
+	uploadError?: string;
+}
+
+export interface UseAttachmentsOptions {
+	/** WordPress media upload endpoint (e.g. /wp-json/wp/v2/media). */
+	uploadEndpoint?: string;
+	/** WordPress REST nonce. */
+	nonce?: string;
 }
 
 export interface UseAttachmentsReturn {
@@ -49,16 +61,63 @@ export interface UseAttachmentsReturn {
 	attach: ( list: FileList ) => string | null;
 	remove: ( key: string ) => void;
 	clear: () => void;
+	/** Convert pending files to AI SDK Attachment records using Media Library IDs. */
 	toPendingAttachments: () => Promise< Attachment[] >;
 }
 
-function readAsDataURL( file: File ): Promise< string > {
-	return new Promise( ( resolve, reject ) => {
-		const reader = new FileReader();
-		reader.onload = () => resolve( reader.result as string );
-		reader.onerror = () => reject( new Error( `FileReader error: ${ file.name }` ) );
-		reader.readAsDataURL( file );
+/**
+ * Upload a file to the WordPress Media Library via multipart POST.
+ *
+ * Mirrors the `ToolsClient.uploadMedia()` pattern from the legacy chat-spa.
+ *
+ * @returns The media attachment record (id, source_url, mime_type).
+ */
+async function uploadToMediaLibrary(
+	uploadEndpoint: string,
+	nonce: string,
+	file: File,
+): Promise< { id: number; source_url: string; mime_type: string } > {
+	const formData = new FormData();
+	formData.append( 'file', file, file.name );
+
+	const headers: Record< string, string > = {
+		Accept: 'application/json',
+	};
+	if ( nonce ) {
+		headers[ 'X-WP-Nonce' ] = nonce;
+	}
+	// Don't set Content-Type — the browser sets it with the boundary.
+
+	const response = await fetch( uploadEndpoint, {
+		method: 'POST',
+		credentials: 'same-origin',
+		headers,
+		body: formData,
 	} );
+
+	if ( ! response.ok ) {
+		let detail = '';
+		try {
+			const err = ( await response.json() ) as { message?: string };
+			detail = err?.message ?? '';
+		} catch {
+			// Not JSON.
+		}
+		throw new Error(
+			detail || __( 'Media upload failed.', 'nvoos-pro-spa' )
+		);
+	}
+
+	const data = ( await response.json() ) as {
+		id: number;
+		source_url: string;
+		mime_type: string;
+	};
+	return {
+		id: data.id,
+		source_url: data.source_url,
+		mime_type: data.mime_type,
+	};
 }
 
 function isImageMime( mime: string ) { return mime.startsWith( 'image/' ); }
@@ -66,7 +125,10 @@ function isImageMime( mime: string ) { return mime.startsWith( 'image/' ); }
 let keyCounter = 0;
 function nextKey() { return `pa-${ ++keyCounter }`; }
 
-export function useAttachments(): UseAttachmentsReturn {
+export function useAttachments( opts: UseAttachmentsOptions = {} ): UseAttachmentsReturn {
+	const { uploadEndpoint = '', nonce = '' } = opts;
+	const canUpload = uploadEndpoint.length > 0 && nonce.length > 0;
+
 	const [ files, setFiles ] = useState< PendingFile[] >( [] );
 	const [ attachError, setAttachError ] = useState< string | null >( null );
 
@@ -80,15 +142,49 @@ export function useAttachments(): UseAttachmentsReturn {
 		const tooBig = incoming.find( ( f ) => f.size > MAX_FILE_BYTES );
 		if ( tooBig ) { const msg = `${ tooBig.name }: ${ __( 'exceeds the 5 MB limit.', 'nvoos-pro-spa' ) }`; setAttachError( msg ); return msg; }
 
+		// Build the pending file entries first.
+		const newPending: PendingFile[] = incoming.map( ( file ) => ( {
+			key: nextKey(),
+			file,
+			previewUrl: isImageMime( file.type ) ? URL.createObjectURL( file ) : null,
+			uploading: canUpload,
+		} ) );
+
 		setFiles( ( prev ) => {
-			const combined = [ ...prev, ...incoming ];
+			const combined = [ ...prev, ...newPending ];
 			if ( combined.length > MAX_FILES ) { setAttachError( __( 'Maximum 10 attachments per message.', 'nvoos-pro-spa' ) ); return prev; }
 			const totalSize = prev.reduce( ( a, pf ) => a + pf.file.size, 0 ) + incoming.reduce( ( a, f ) => a + f.size, 0 );
 			if ( totalSize > MAX_TOTAL_BYTES ) { setAttachError( __( 'Attachments exceed the 10 MB total limit.', 'nvoos-pro-spa' ) ); return prev; }
-			return [ ...prev, ...incoming.map( ( file ) => ( { key: nextKey(), file, previewUrl: isImageMime( file.type ) ? URL.createObjectURL( file ) : null } ) ) ];
+			return [ ...prev, ...newPending ];
 		} );
+
+		// If upload is available, immediately upload each file to the Media Library.
+		if ( canUpload ) {
+			newPending.forEach( ( pf ) => {
+				uploadToMediaLibrary( uploadEndpoint, nonce, pf.file )
+					.then( ( media ) => {
+						setFiles( ( prevFiles ) =>
+							prevFiles.map( ( f ) =>
+								f.key === pf.key
+									? { ...f, attachmentId: media.id, uploading: false, uploadError: undefined }
+									: f
+							)
+						);
+					} )
+					.catch( ( err: Error ) => {
+						setFiles( ( prevFiles ) =>
+							prevFiles.map( ( f ) =>
+								f.key === pf.key
+									? { ...f, uploading: false, uploadError: err.message }
+									: f
+							)
+						);
+					} );
+			} );
+		}
+
 		return null;
-	}, [] );
+	}, [ canUpload, uploadEndpoint, nonce ] );
 
 	const remove = useCallback( ( key: string ) => {
 		setFiles( ( prev ) => { const removed = prev.find( ( pf ) => pf.key === key ); if ( removed?.previewUrl ) URL.revokeObjectURL( removed.previewUrl ); return prev.filter( ( pf ) => pf.key !== key ); } );
@@ -98,8 +194,23 @@ export function useAttachments(): UseAttachmentsReturn {
 		setFiles( ( prev ) => { prev.forEach( ( pf ) => { if ( pf.previewUrl ) URL.revokeObjectURL( pf.previewUrl ); } ); return []; } );
 	}, [] );
 
-	const toPendingAttachments = useCallback( async () => {
-		return Promise.all( files.map( async ( pf ) => ( { name: pf.file.name, contentType: pf.file.type || 'application/octet-stream', url: await readAsDataURL( pf.file ) } satisfies Attachment ) ) );
+	const toPendingAttachments = useCallback( async (): Promise< Attachment[] > => {
+		return files.map( ( pf ) => {
+			// If we have a Media Library attachment ID, reference it directly.
+			if ( pf.attachmentId ) {
+				return {
+					name: pf.file.name,
+					contentType: pf.file.type || 'application/octet-stream',
+					url: `attachment://${ pf.attachmentId }`,
+				} satisfies Attachment;
+			}
+			// Fallback: include the file name so the server can reference it.
+			return {
+				name: pf.file.name,
+				contentType: pf.file.type || 'application/octet-stream',
+				url: pf.file.name,
+			} satisfies Attachment;
+		} );
 	}, [ files ] );
 
 	return { files, attachError, attach, remove, clear, toPendingAttachments };
