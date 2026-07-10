@@ -2832,31 +2832,32 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 /* ── Grid view ───────────────────────────────────────────────────────── */
 .nvoos-pro-spa-media-grid {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	display: flex;
+	flex-wrap: wrap;
 	gap: 4px;
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-/* On wider sidebars, show 4 columns. */
-@media screen and ( min-width: 400px ) {
-	.nvoos-pro-spa-media-grid {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-	}
-}
-
 .nvoos-pro-spa-media-grid__item {
 	position: relative;
-	min-width: 0;
+	flex: 0 0 calc( 33.333% - 3px );
+	max-width: calc( 33.333% - 3px );
+}
+
+/* On wider sidebars, show 4 columns. */
+@media screen and ( min-width: 400px ) {
+	.nvoos-pro-spa-media-grid__item {
+		flex: 0 0 calc( 25% - 3px );
+		max-width: calc( 25% - 3px );
+	}
 }
 
 .nvoos-pro-spa-media-grid__card {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
-	min-width: 0;
 	padding: 0;
 	border: 2px solid transparent;
 	border-radius: 4px;
@@ -2880,6 +2881,8 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-media-grid__thumb {
 	position: relative;
+	width: 100%;
+	max-width: 80px;
 	aspect-ratio: 1 / 1;
 	overflow: hidden;
 	background: var(--nvoos-bg, #f0f0f1);
@@ -2892,6 +2895,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+	display: block;
 }
 
 .nvoos-pro-spa-media-grid__icon {
