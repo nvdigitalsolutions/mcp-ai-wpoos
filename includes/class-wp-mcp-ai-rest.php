@@ -10520,12 +10520,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					continue;
 				}
 
-				// Skip system-role messages entirely — system prompts are internal
-				// LLM context and must never be exposed to frontend consumers.
-				if ( 'system' === $role ) {
-					continue;
-				}
-
 				$content = $this->prepare_message_text( $message );
 
 				// Check if message has image content (even if text content is empty).
@@ -10533,11 +10527,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Skip messages with empty content, except:
 				// - tool role messages (required for tool responses).
+				// - system role messages (can be empty for context).
 				// - assistant role messages with tool_calls (required for agentic flow).
 				// - messages with image content (required to preserve images in chat).
 				$has_tool_calls = 'assistant' === $role && isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) && ! empty( $message['tool_calls'] );
 
-				if ( '' === $content && 'tool' !== $role && ! $has_tool_calls && ! $has_image_content ) {
+				if ( '' === $content && 'tool' !== $role && 'system' !== $role && ! $has_tool_calls && ! $has_image_content ) {
 					WP_MCP_AI_Logger::log_event(
 						'debug',
 						'extract_request_messages: skipping message with empty content',
