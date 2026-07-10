@@ -580,6 +580,14 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	overflow: hidden;
 }
 
+/* On mobile, add extra top margin so the fixed hamburger button
+   (46px from top) doesn't overlap the chat page content. */
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-chat-page {
+		margin-top: 50px;
+	}
+}
+
 .nvoos-pro-spa-chat-page--loading,
 .nvoos-pro-spa-chat-page--error,
 .nvoos-pro-spa-chat-page--welcome {

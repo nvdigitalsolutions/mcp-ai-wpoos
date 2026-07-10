@@ -30,10 +30,11 @@ interface LayoutContentProps {
 	nonce: string;
 	assistantId: number;
 	apiRoot: string;
+	mediaEndpoint: string;
 }
 
 function LayoutContent( props: LayoutContentProps ): JSX.Element {
-	const { transcriptsEndpoint, assistantsEndpoint, nonce, assistantId, apiRoot } = props;
+	const { transcriptsEndpoint, assistantsEndpoint, nonce, assistantId, apiRoot, mediaEndpoint } = props;
 
 	// ---- transcripts (conversation sessions) — single source of truth ----
 	const transcripts = useTranscripts( {
@@ -73,6 +74,7 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 				nonce={ nonce }
 				assistantsEndpoint={ assistantsEndpoint }
 				apiRoot={ apiRoot }
+				mediaEndpoint={ mediaEndpoint }
 			/>
 
 			{ /* ---- main content ---- */ }
@@ -149,7 +151,7 @@ export function Layout(): JSX.Element {
 	}
 
 	const {
-		endpoints: { transcripts: transcriptsEndpoint, assistants: assistantsEndpoint },
+		endpoints: { transcripts: transcriptsEndpoint, assistants: assistantsEndpoint, upload: mediaEndpoint },
 		nonce,
 		config: { assistantId },
 		apiUrl,
@@ -163,6 +165,7 @@ export function Layout(): JSX.Element {
 				nonce={ nonce }
 				assistantId={ assistantId ?? 0 }
 				apiRoot={ apiUrl }
+				mediaEndpoint={ mediaEndpoint ?? '' }
 			/>
 		</HashRouter>
 	);

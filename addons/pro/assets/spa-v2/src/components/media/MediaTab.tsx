@@ -22,8 +22,8 @@ import { MediaGrid } from './MediaGrid';
 import { MediaList } from './MediaList';
 
 export interface MediaTabProps {
-	/** WordPress REST API root URL. */
-	apiRoot: string;
+	/** Full WordPress REST API URL for the media endpoint. */
+	mediaEndpoint: string;
 	/** WordPress REST nonce. */
 	nonce: string;
 	/** Callback when media items are selected for attachment. */
@@ -41,7 +41,7 @@ const MIME_FILTERS = [
 ];
 
 export function MediaTab( props: MediaTabProps ): JSX.Element {
-	const { apiRoot, nonce, onAttach, selectedIds } = props;
+	const { mediaEndpoint, nonce, onAttach, selectedIds } = props;
 
 	const [ viewMode, setViewMode ] = useState< MediaViewMode >( 'grid' );
 
@@ -59,7 +59,7 @@ export function MediaTab( props: MediaTabProps ): JSX.Element {
 		setSearchTerm,
 		mimeFilter,
 		setMimeFilter,
-	} = useMediaLibrary( { apiRoot, nonce, disabled: ! apiRoot } );
+	} = useMediaLibrary( { mediaEndpoint, nonce, disabled: ! mediaEndpoint } );
 
 	// Observer ref for infinite scroll.
 	const sentinelRef = useRef< HTMLDivElement | null >( null );
