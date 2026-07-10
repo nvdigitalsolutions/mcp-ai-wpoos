@@ -616,9 +616,28 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-chat-page__toolbar {
 	display: flex;
 	align-items: center;
-	gap: 16px;
+	flex-wrap: wrap;
+	gap: 12px 16px;
 	padding: 12px 20px;
 	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+/* On mobile, tighten up the toolbar so Memory / Tools / Commands
+   buttons wrap naturally instead of overflowing off-screen. */
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-chat-page__toolbar {
+		gap: 6px 10px;
+		padding: 10px 12px;
+	}
+
+	.nvoos-pro-spa-chat-page__toolbar .nvoos-pro-spa-btn {
+		padding: 6px 10px;
+		font-size: 12px;
+	}
+
+	.nvoos-pro-spa-chat-page__select {
+		max-width: 160px;
+	}
 }
 
 .nvoos-pro-spa-chat-page__select-label {
@@ -2476,11 +2495,13 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
    ========================================================================= */
 
 /* Close button inside sidebar (hidden on desktop, visible on mobile) */
-/* Mobile sidebar toggle — hamburger button fixed to top-left of main content */
+/* Mobile sidebar toggle — hamburger button fixed to top-left of main content.
+   Offset by the WP admin bar height (32px desktop / 46px mobile) so it
+   does not overlap the admin bar. */
 .nvoos-pro-spa-mobile-sidebar-toggle {
 	display: none;
 	position: fixed;
-	top: 0;
+	top: 32px;
 	left: 0;
 	z-index: 90;
 	background: var(--nvoos-bg-secondary, #fff);
@@ -2544,9 +2565,11 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 		display: block;
 	}
 
+	/* Mobile sidebar — fixed overlay, offset below the admin bar.
+	   On mobile the admin bar is 46px tall. */
 	.nvoos-pro-spa-sidebar {
 		position: fixed;
-		top: 0;
+		top: 32px;
 		left: 0;
 		bottom: 0;
 		z-index: 1000;
@@ -2555,6 +2578,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 		transform: translateX( -100% );
 		transition: transform 0.25s ease;
 		overflow-y: auto;
+		height: calc( 100vh - 32px );
 	}
 
 	.nvoos-pro-spa-layout--sidebar-open .nvoos-pro-spa-sidebar {
@@ -2565,19 +2589,36 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 		transform: translateX( -100% );
 	}
 
+	/* Overlay — offset below the admin bar so it only covers the SPA area.
+	   On mobile the admin bar is 46px tall; use the same calc as #wpwrap. */
 	.nvoos-pro-spa-sidebar-overlay {
 		display: block;
 		position: fixed;
-		inset: 0;
+		top: 32px;
+		right: 0;
+		bottom: 0;
+		left: 0;
 		z-index: 999;
 		background: rgba( 0, 0, 0, 0.4 );
 	}
 
-	/* Mobile hamburger button — show as fixed top-left toggle */
+	/* Mobile hamburger button — show as fixed top-left toggle,
+	   offset by the 46px mobile admin bar. */
 	.nvoos-pro-spa-mobile-sidebar-toggle {
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		top: 46px;
+	}
+
+	/* Push the mobile sidebar and overlay below the 46px admin bar. */
+	.nvoos-pro-spa-sidebar {
+		top: 46px;
+		height: calc( 100vh - 46px );
+	}
+
+	.nvoos-pro-spa-sidebar-overlay {
+		top: 46px;
 	}
 }
 
@@ -2601,4 +2642,325 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-prompt-chip:hover {
 	background: #374151;
+}
+
+/* =========================================================================
+   Media Library tab styles (v2.0.3)
+   ========================================================================= */
+
+/* ── Media tab container ─────────────────────────────────────────────── */
+.nvoos-pro-spa-media-tab {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-media-tab__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding: 8px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-media-tab__search {
+	flex: 1;
+	min-width: 100px;
+}
+
+.nvoos-pro-spa-media-tab__search-input {
+	width: 100%;
+	padding: 4px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	font-size: 12px;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-media-tab__filters {
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-media-tab__filter-select {
+	padding: 4px 6px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	font-size: 11px;
+	font-family: inherit;
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-media-tab__view-toggle {
+	display: flex;
+	gap: 2px;
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-media-tab__view-btn {
+	padding: 4px 6px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 3px;
+	background: var(--nvoos-bg-secondary, #fff);
+	cursor: pointer;
+	font-size: 14px;
+	line-height: 1;
+	color: var(--nvoos-text-secondary, #787c82);
+	transition: background 0.15s, color 0.15s;
+}
+
+.nvoos-pro-spa-media-tab__view-btn--active {
+	background: var(--nvoos-primary, #2271b1);
+	color: #fff;
+	border-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-media-tab__refresh-btn {
+	flex-shrink: 0;
+}
+
+/* ── Body / content area ─────────────────────────────────────────────── */
+.nvoos-pro-spa-media-tab__body {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 4px;
+}
+
+.nvoos-pro-spa-media-tab__state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 24px 8px;
+	text-align: center;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-media-tab__state--notice {
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-media-tab__state--error {
+	color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-media-tab__spinner {
+	width: 24px;
+	height: 24px;
+	border: 3px solid var(--nvoos-border, #dcdcde);
+	border-top-color: var(--nvoos-primary, #2271b1);
+	border-radius: 50%;
+	animation: nvoos-pro-spa-spin 0.8s linear infinite;
+	margin-bottom: 8px;
+}
+
+.nvoos-pro-spa-media-tab__spinner--small {
+	width: 16px;
+	height: 16px;
+	border-width: 2px;
+	margin-bottom: 0;
+}
+
+.nvoos-pro-spa-media-tab__sentinel {
+	height: 1px;
+}
+
+.nvoos-pro-spa-media-tab__loading-more {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 12px 8px;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-media-tab__footer {
+	padding: 6px 8px;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-media-tab__footer p {
+	margin: 0;
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+	text-align: center;
+}
+
+/* ── Grid view ───────────────────────────────────────────────────────── */
+.nvoos-pro-spa-media-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 4px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+/* On wider sidebars, show 4 columns. */
+@media screen and ( min-width: 400px ) {
+	.nvoos-pro-spa-media-grid {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+.nvoos-pro-spa-media-grid__item {
+	position: relative;
+}
+
+.nvoos-pro-spa-media-grid__card {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	padding: 0;
+	border: 2px solid transparent;
+	border-radius: 4px;
+	background: transparent;
+	cursor: pointer;
+	font-family: inherit;
+	text-align: left;
+	transition: border-color 0.15s, background 0.15s;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-media-grid__card:hover {
+	border-color: var(--nvoos-primary, #2271b1);
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-media-grid__item--selected .nvoos-pro-spa-media-grid__card {
+	border-color: var(--nvoos-primary, #2271b1);
+	background: var(--nvoos-selected-bg, #e5e5ff);
+}
+
+.nvoos-pro-spa-media-grid__thumb {
+	position: relative;
+	aspect-ratio: 1 / 1;
+	overflow: hidden;
+	background: var(--nvoos-bg, #f0f0f1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.nvoos-pro-spa-media-grid__img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.nvoos-pro-spa-media-grid__icon {
+	font-size: 24px;
+	opacity: 0.5;
+}
+
+.nvoos-pro-spa-media-grid__check {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: var(--nvoos-primary, #2271b1);
+	color: #fff;
+	font-size: 11px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+}
+
+.nvoos-pro-spa-media-grid__info {
+	padding: 4px 6px;
+	min-height: 36px;
+}
+
+.nvoos-pro-spa-media-grid__name {
+	display: block;
+	font-size: 11px;
+	line-height: 1.3;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-media-grid__meta {
+	display: flex;
+	gap: 6px;
+	font-size: 10px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-media-grid__mime {
+	font-weight: 500;
+}
+
+.nvoos-pro-spa-media-grid__size {
+	opacity: 0.8;
+}
+
+/* ── List view ───────────────────────────────────────────────────────── */
+.nvoos-pro-spa-media-list-wrap {
+	font-size: 12px;
+}
+
+.nvoos-pro-spa-media-list__header {
+	display: flex;
+	border-bottom: 2px solid var(--nvoos-border, #dcdcde);
+	background: var(--nvoos-bg, #f0f0f1);
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.nvoos-pro-spa-media-list__row {
+	display: flex;
+	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
+	transition: background 0.1s;
+}
+
+.nvoos-pro-spa-media-list__row:hover {
+	background: var(--nvoos-bg, #f8f9fa);
+}
+
+.nvoos-pro-spa-media-list__row--selected {
+	background: var(--nvoos-selected-bg, #e5e5ff);
+}
+
+.nvoos-pro-spa-media-list__cell {
+	padding: 6px 8px;
+	font-size: 12px;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-media-list__cell--head {
+	font-weight: 600;
+	font-size: 11px;
+	text-transform: uppercase;
+	color: var(--nvoos-text-secondary, #555);
+}
+
+.nvoos-pro-spa-media-list__cell--name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	background: none;
+	border: none;
+	font-family: inherit;
+	text-align: left;
+	cursor: pointer;
+	color: var(--nvoos-primary, #2271b1);
+	padding: 6px 8px;
+}
+
+.nvoos-pro-spa-media-list__cell--name:hover {
+	text-decoration: underline;
 }

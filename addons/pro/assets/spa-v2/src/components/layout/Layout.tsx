@@ -7,8 +7,8 @@
  * the active conversation session.
  */
 
-import { type JSX, useCallback, useMemo } from 'react';
-import { HashRouter, useNavigate } from 'react-router-dom';
+import { type JSX, useMemo } from 'react';
+import { HashRouter } from 'react-router-dom';
 import { __ } from '@wordpress/i18n';
 
 import { readProSpaConfig } from '../../api/config';
@@ -21,19 +21,19 @@ import { StatusBar } from './StatusBar';
 import { AppRouter } from '../../router';
 
 // ---------------------------------------------------------------------------
-// Inner component — rendered inside HashRouter so useNavigate is available
+// Inner component — rendered inside HashRouter
 // ---------------------------------------------------------------------------
 
 interface LayoutContentProps {
 	transcriptsEndpoint: string;
-	threadsEndpoint: string;
 	assistantsEndpoint: string;
 	nonce: string;
 	assistantId: number;
+	apiRoot: string;
 }
 
 function LayoutContent( props: LayoutContentProps ): JSX.Element {
-	const { transcriptsEndpoint, threadsEndpoint, assistantsEndpoint, nonce, assistantId } = props;
+	const { transcriptsEndpoint, assistantsEndpoint, nonce, assistantId, apiRoot } = props;
 
 	// ---- transcripts (conversation sessions) — single source of truth ----
 	const transcripts = useTranscripts( {
@@ -49,18 +49,7 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 	const rightPanelOpen = useUIStore( ( s ) => s.rightPanelOpen );
 	const theme = useUIStore( ( s ) => s.theme );
 
-	// ---- thread selection callback (no URL navigation needed) ----
-	const navigate = useNavigate();
-	const handleSelectThread = useCallback(
-		( threadId: number ) => {
-			// Navigate to the chat route so ChatPage is rendered.
-			// Thread messages are loaded by the sidebar and injected
-			// into ChatPage via chatSpoke.setMessages() in the router.
-			navigate( '/chat' );
-		},
-		[ navigate ]
-	);
-
+	// ---- UI store (sidebar / right-panel toggles / theme) ----
 	return (
 		<div
 			className={ [
@@ -81,10 +70,9 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 				onSelectSession={ transcripts.selectSession }
 				onDeleteSession={ transcripts.deleteSession }
 				onNewSession={ transcripts.startNewSession }
-				threadsEndpoint={ threadsEndpoint }
 				nonce={ nonce }
-				onSelectThread={ handleSelectThread }
 				assistantsEndpoint={ assistantsEndpoint }
+				apiRoot={ apiRoot }
 			/>
 
 			{ /* ---- main content ---- */ }
@@ -161,19 +149,20 @@ export function Layout(): JSX.Element {
 	}
 
 	const {
-		endpoints: { transcripts: transcriptsEndpoint, threads: threadsEndpoint, assistants: assistantsEndpoint },
+		endpoints: { transcripts: transcriptsEndpoint, assistants: assistantsEndpoint },
 		nonce,
 		config: { assistantId },
+		apiUrl,
 	} = runtime;
 
 	return (
 		<HashRouter>
 			<LayoutContent
 				transcriptsEndpoint={ transcriptsEndpoint }
-				threadsEndpoint={ threadsEndpoint }
 				assistantsEndpoint={ assistantsEndpoint }
 				nonce={ nonce }
 				assistantId={ assistantId ?? 0 }
+				apiRoot={ apiUrl }
 			/>
 		</HashRouter>
 	);
