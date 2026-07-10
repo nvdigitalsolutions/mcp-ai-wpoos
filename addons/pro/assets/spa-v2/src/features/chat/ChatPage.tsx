@@ -9,7 +9,7 @@
  * Threads are a read-only browse view loaded via the sidebar.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useCallback, useMemo, useRef, useState, type JSX } from 'react';
 import { type Message } from '@ai-sdk/react';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -118,72 +118,6 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		usageMap,
 		handleSubmitWithAttachments,
 	} = chatSpoke;
-
-	// Watch for media insert events from the sidebar Media tab.
-	// When the user clicks "Insert into chat", append attachment ID
-	// references to the composer so the image is easily referenced.
-	const mediaInsert = useUIStore( ( s ) => s.mediaInsert );
-	const clearMediaInsert = useUIStore( ( s ) => s.clearMediaInsert );
-	useEffect( () => {
-		if ( ! mediaInsert || mediaInsert.length === 0 ) {
-			return;
-		}
-		const refs = mediaInsert.map( ( id ) => `[attachment:${ id }]` ).join( ' ' );
-		const currentInput = input || '';
-		const newValue = currentInput ? `${ currentInput } ${ refs }` : refs;
-
-		// Programmatically set the composer value and fire an input event
-		// so useChat/AI SDK's internal state stays in sync.
-		const composer = document.getElementById( 'nvoos-pro-spa-composer-input' ) as HTMLTextAreaElement | null;
-		if ( composer ) {
-			const nativeSetter = Object.getOwnPropertyDescriptor(
-				window.HTMLTextAreaElement.prototype,
-				'value'
-			)?.set;
-			if ( nativeSetter ) {
-				nativeSetter.call( composer, newValue );
-				composer.dispatchEvent( new Event( 'input', { bubbles: true } ) );
-				composer.focus();
-			}
-		}
-
-		clearMediaInsert();
-	}, [ mediaInsert, clearMediaInsert, input ] );
-
-	// Callback for drawers (slash commands / tool shortcuts) to insert
-	// payload text into the composer.  Shift+Click auto-submits; a plain
-	// click only inserts — matching the legacy chat client behaviour.
-	const handleInsertPayload = useCallback(
-		( payload: string, autoSubmit?: boolean ) => {
-			if ( autoSubmit ) {
-				sendMessage( payload );
-				return;
-			}
-			// Insert into composer without sending — use native setter so
-			// the AI SDK's internal state stays in sync.
-			const composer = document.getElementById(
-				'nvoos-pro-spa-composer-input'
-			) as HTMLTextAreaElement | null;
-			if ( composer ) {
-				const nativeSetter = Object.getOwnPropertyDescriptor(
-					window.HTMLTextAreaElement.prototype,
-					'value'
-				)?.set;
-				if ( nativeSetter ) {
-					const current = composer.value || '';
-					const newValue = current
-						? `${ current } ${ payload }`
-						: payload;
-					nativeSetter.call( composer, newValue );
-					composer.dispatchEvent(
-						new Event( 'input', { bubbles: true } )
-					);
-					composer.focus();
-				}
-			}
-		},
-		[ sendMessage ]
-	);
 
 	// ---- Thread read‑only state (populated by ChatSidebar) ----
 	// When the sidebar selects a thread, LayoutContent calls
@@ -527,7 +461,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					assistantId={ assistantId }
 					isOpen={ toolsOpen }
 					onClose={ () => setToolsOpen( false ) }
-					onInsertPayload={ handleInsertPayload }
+					onInsertPayload={ sendMessage }
 					toggleRef={ toolsToggleRef }
 				/>
 			) }
@@ -539,7 +473,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					nonce={ nonce }
 					isOpen={ commandsOpen }
 					onClose={ () => setCommandsOpen( false ) }
-					onInsertPayload={ handleInsertPayload }
+					onInsertPayload={ sendMessage }
 					toggleRef={ commandsToggleRef }
 				/>
 			) }

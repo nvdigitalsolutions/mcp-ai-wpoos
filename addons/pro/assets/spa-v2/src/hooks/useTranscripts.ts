@@ -44,9 +44,7 @@ function normaliseMessages( raw: unknown ): TranscriptMessage[] {
 		}
 		const m = item as Record< string, unknown >;
 		const role = typeof m.role === 'string' ? m.role : '';
-		// Skip system messages — they are internal LLM context and must never
-		// be exposed to the frontend conversation view.
-		if ( role !== 'user' && role !== 'assistant' && role !== 'tool' ) {
+		if ( role !== 'user' && role !== 'assistant' && role !== 'system' && role !== 'tool' ) {
 			continue;
 		}
 		const content = typeof m.content === 'string' ? m.content : '';
