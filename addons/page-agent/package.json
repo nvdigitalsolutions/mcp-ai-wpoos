@@ -1,0 +1,25 @@
+{
+  "name": "nvoos-page-agent",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AI-powered page control copilot for NV oOS. Give any WordPress page its own AI agent that can click, type, and navigate via natural language.",
+  "scripts": {
+    "build": "node esbuild.config.js",
+    "test": "echo \"No JS tests configured yet\" && exit 0"
+  },
+  "dependencies": {
+    "page-agent": "^1.11.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.0"
+  },
+  "keywords": [
+    "wordpress",
+    "nvoos",
+    "page-agent",
+    "ai",
+    "browser-automation"
+  ],
+  "author": "NV Digital Solutions",
+  "license": "GPL-3.0-or-later"
+}
