@@ -732,6 +732,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	gap: 8px;
 	width: 100%;
 	align-items: flex-end;
+	flex-wrap: wrap;
 }
 
 .nvoos-pro-spa-agent-panel__composer-input {
@@ -2246,6 +2247,35 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	padding: 4px 0;
 }
 
+/* On mobile, reorder the composer so the toolbar and attachment strip
+   wrap below the textarea and send button instead of sitting beside them. */
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-agent-panel__composer-toolbar {
+		width: 100%;
+		order: 3;
+		padding: 2px 0 0;
+	}
+
+	.nvoos-pro-spa-agent-panel__composer-input {
+		order: 0;
+		flex: 1 1 calc( 100% - 80px );
+		min-width: 0;
+	}
+
+	.nvoos-pro-spa-agent-panel__composer-actions {
+		order: 1;
+	}
+
+	.nvoos-pro-spa-attachment-strip {
+		order: 2;
+		width: 100%;
+	}
+
+	.nvoos-pro-spa-agent-panel__composer {
+		padding: 8px 12px;
+	}
+}
+
 /* ── Audio recorder button (v0.9.0) ──────────────────────────────────── */
 
 .nvoos-pro-spa-audio-btn {
@@ -2803,7 +2833,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 /* ── Grid view ───────────────────────────────────────────────────────── */
 .nvoos-pro-spa-media-grid {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 4px;
 	list-style: none;
 	margin: 0;
@@ -2813,18 +2843,20 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 /* On wider sidebars, show 4 columns. */
 @media screen and ( min-width: 400px ) {
 	.nvoos-pro-spa-media-grid {
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 	}
 }
 
 .nvoos-pro-spa-media-grid__item {
 	position: relative;
+	min-width: 0;
 }
 
 .nvoos-pro-spa-media-grid__card {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
+	min-width: 0;
 	padding: 0;
 	border: 2px solid transparent;
 	border-radius: 4px;
