@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.37
+Stable tag: 1.1.38
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -296,6 +296,50 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.38 - July 10, 2026 =
+
+Bumped to 1.1.38 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, ROADMAP.md, and DOCUMENTATION_INDEX.md. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live registry authoritative).
+
+**Page Agent Addon, Pro SPA v2 Parity, User Memory Toggle, Tool Enhancements, Workflow Improvements**
+
+* **Page Agent Addon v0.1.0.** AI-powered browser page control copilot powered by Alibaba Page Agent (MIT). Client-side only — no headless browser required. Shortcode, Elementor widget, REST endpoints, MCP tool bridge.
+* **Pro SPA v2 — Major Parity & Polish.** Voice pipeline, tasks drawer, workflow tracker, file attachment upload to Media Library. Tool Shortcuts and Slash Commands drawers. Mobile hamburger sidebar. Speech/audio button fixes. Autoscroll fixes. Viewport height chain fixes. filemtime cache-busting. Assistant preloading. Model sync and auth bypass fixes. Conversation title improvements.
+* **Per-User Chat Memory Preferences.** Users can toggle chat memory on/off from WordPress user profile.
+* **create_post / save_post Enhancements.** Markdown-to-HTML conversion via new trait. Smart taxonomy suggestions. Block content corruption fix for non-post post types.
+* **Workflow Blueprint & Schedule Improvements.** Existing-content awareness in Content Publisher and Keyword Pipeline blueprints. Blog schedule presets now check for duplicate content. Readable result delivery responses.
+* **SPA Accessibility.** Annotation pills made clickable with meaningful screen-reader labels.
+
+= 1.1.37 - July 8, 2026 =
+
+Bumped to 1.1.37 across all version-bearing files. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live registry authoritative). Provider count: 15 first-class.
+
+**JetEngine Meta Helper, Places Enrichment, RabbitMQ + Queue Infrastructure, Multi-Tenant DB Isolation, DSpark Admin UI, Crocoblock DS Addon, Test Coverage, Docs Hub Broken Link Engine**
+
+* **JetEngine Meta Helper (Universal).** Unified REST exposure for all 25 Pro CPTs via show_in_rest and register_post_meta. ECA _eca_* and _student_* field registration. MCP routing and load-order fixes.
+* **Places Toolkit Enrichment.** enrich_place_coordinates and enrich_place_details tools for batch geocoding. Social and booking fields added to Places CCT. HTTrack import fixes.
+* **RabbitMQ Integration.** RabbitMQ client, queue manager, and async tool interception wired into the plugin. Queue storage migrated to custom DB tables with health endpoint and queue worker.
+* **Multi-Tenant Database Isolation (Phase 0–4).** Database isolation primitives, query scoping, schema isolation, cross-tenant safety guards, and admin controls.
+* **DSpark Admin UI & Orchestration.** Settings page, threshold configuration, efficiency dashboard, presets, and hook system.
+* **Crocoblock Design System Addon.** All 5 phases: unified CSS custom properties, preset templates, admin-controlled theming.
+* **Test Coverage Campaign.** 301 previously untested tools, 6 untested pro toolkits, 22 toolkits now covered.
+* **Docs Hub Broken Link Engine.** Automated detection and repair with Accept fix buttons.
+* **30+ Bug Fixes.** Shopify Catalog API, recurring sync, sync log batching, webhook auto-reply, import-blueprints, extended-cognition, tool test infrastructure, CRM/PM/DietPi/Cloudways test fixes, js-yaml CVE, ESLint/WPCS compliance.
+
+= 1.1.36 - July 4, 2026 =
+
+Bumped to 1.1.36 across all version-bearing files. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live registry authoritative). Provider count: 15 first-class.
+
+**EZuite Inventory Sync, Ralph Loop Orchestration, JetBooking/JetAppointment, Moonshot/Z.AI Parity, Sync Log Manager, Tool Presets, HTTrack Cache**
+
+* **EZuite Inventory Sync Pro Toolkit.** ERP-integrated inventory sync: product pull, inventory query, item create/update, ERP settings, CLI sync commands.
+* **Ralph Loop CCT Migration & Orchestration.** Circuit breaker pattern, execution logger, CCT migration tools.
+* **JetBooking/JetAppointment Integration (8 tools).** Adapter layer for Crocoblock booking/appointment plugins.
+* **Moonshot AI (Kimi) & Z.AI (GLM) Provider Parity.** Both providers upgraded to full DeepSeek-level chat client capabilities.
+* **Unified Sync Log Manager.** Per-item audit trail with sync history, error tracking, and status dashboards.
+* **Tool Presets Auto-Select & Chips Bar.** Selected tools display as clickable chips with +N overflow.
+* **HTTrack Cache Support & Place-to-Service Bridge.** HTML mirror import supports HTTrack cache directories.
+* **45+ Bug Fixes.** CCT module API mismatches, EZuite sync, FlowHub sync, Shopify sync, duplicate column errors, SQLite meta cache, HTTrack import, Necessity Gate, and more.
 
 = 1.1.35 - June 29, 2026 =
 

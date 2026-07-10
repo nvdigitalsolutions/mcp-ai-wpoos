@@ -11,8 +11,8 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.37  
-**Release Date:** 2026-07-08
+**Version:** 1.1.38  
+**Release Date:** 2026-07-10
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
@@ -121,7 +121,7 @@
 | Directory | Purpose |
 |-----------|---------|
 | `includes/` | Core plugin classes — admin, assistants, tools, services, REST, security, providers (~15 AI backends), harness, data, markup, measurement, skills, professions, teams, slash-commands, A2A/ACP protocols, federation, elementor, blocks, crawler, integrations |
-| `addons/` | 23 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Graphify, Comic Reader, Funiq Bridge, AI Platform, Algorave, Cornerstone3D, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router) |
+| `addons/` | 24 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Graphify, Comic Reader, Funiq Bridge, AI Platform, Algorave, Cornerstone3D, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router, Page Agent) |
 | `assets/` | Frontend JS/CSS, images, CSV templates, examples |
 | `lib/` | Framework-agnostic core library + WordPress/Laravel/Craft CMS adapters |
 | `plugins/` | Standalone plugins: NVOOS Graphify, NVOOS Graphify AI, NVOOS Graphify AI Platform |
@@ -162,7 +162,18 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - 💬 **BME Chat History Context Strategy.** RAG memory integration. Settings moved to General → Behavior subtab.
 - 🐛 **30+ Bug Fixes.** Shopify Catalog API silent failures, recurring sync interval, sync log batching, webhook auto-reply, import-blueprints discovery, extended-cognition requires, tool test infrastructure, CRM/PM/DietPi/Cloudways test fixes, js-yaml CVE override, ESLint and WPCS compliance.
 
-### ✨ What's New at a Glance (v1.1.36)
+### ✨ What's New at a Glance (v1.1.38)
+
+- 🤖 **Page Agent Addon v0.1.0.** New addon (`addons/page-agent/`) — AI-powered browser page control copilot powered by Alibaba Page Agent (MIT). Give any WordPress page its own AI agent that can click, type, and navigate via natural language, running entirely client-side with no headless browser required. Includes shortcode, Elementor widget, REST endpoints, and MCP tool bridge.
+- 💬 **Pro SPA v2 — Major Parity Update.** Voice pipeline, tasks drawer, workflow tracker, and file attachment upload to WordPress Media Library. Tool Shortcuts and Slash Commands drawers. Mobile hamburger sidebar toggle. Speech/audio button fixes using correct REST endpoint. Conversation title improvements and turn count display fix. Button and token NaN display fixes. Model sync and auth bypass fixes. Assistant preloading in runtime config.
+- 🎨 **Pro SPA v2 — UI Polish.** Autoscroll fixes (submit, streaming start, user-at-bottom guard, scrollTop vs scrollIntoView). Viewport height fixes via CSS height chain instead of viewport calc. `overflow:hidden` on height-chain ancestors. `filemtime` cache-busting across all SPA addons. Lint errors resolved.
+- 👤 **Per-User Chat Memory Preferences.** Users can now toggle chat memory on/off from their WordPress user profile. Individual control over AI memory retention without affecting site-wide defaults.
+- 📝 **create_post / save_post Tool Enhancements.** Markdown-to-HTML conversion via new `WP_MCP_AI_Tool_Markdown_Converter` trait. Smart taxonomy suggestions auto-detect relevant categories and tags. Block content corruption fixed for non-post post types.
+- 🔄 **Workflow Blueprint & Schedule Improvements.** Existing-content awareness in Content Publisher and Keyword Pipeline blueprints. Blog schedule presets now check for duplicate content before publishing. Readable response generation for workflow schedule result delivery.
+- ♿ **SPA Accessibility.** Annotation pills made clickable with meaningful screen-reader labels.
+- 🛡️ **Security.** OWASP ZAP DAST medium findings triaged as false positives.
+
+### ✨ What's New at a Glance (v1.1.37)
 
 - 🏭 **EZuite Inventory Sync Pro Toolkit.** ERP-integrated inventory sync bridging EZuite ERP with WooCommerce/WordPress. Pull products, query inventory, create/update items, manage orders, and configure API credentials — all via AI tools. Admin UI with connection selector, field mapping, and sync direction controls. CLI sync commands for batch operations.
 - 🔄 **Ralph Loop CCT Migration & Orchestration.** Circuit breaker pattern with configurable failure thresholds. Execution logger with step-by-step tracking. CCT migration tools for safe cross-environment JetEngine data operations. Orchestration tools for multi-step workflows.
@@ -323,11 +334,11 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/reference/EXTERNAL_SERVICES.md) for all 20 services.  
 
-The plugin works standalone with **~195 base tools** and optionally extends through the **Pro addon**, which adds **~795 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~990 built-in tools** (~195 base + ~795 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+The plugin works standalone with **~195 base tools** and optionally extends through the **Pro addon**, which adds **~830+ Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,025+ built-in tools** (~195 base + ~830+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~195 tools) works standalone. The full version requires the Pro addon and provides ~990 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~195 tools) works standalone. The full version requires the Pro addon and provides ~1,025+ total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
-**Addon Ecosystem:** NV oOS ships a growing family of 23 installable addons: **Pro** (`addons/pro/` — ~795 additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **AI Platform** (`addons/ai-platform/` — AI platform admin dashboard + CPTs), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Graphify** (`plugins/nvoos-graphify/` — visual knowledge graph), **NVOOS Graphify AI** (`plugins/nvoos-graphify-ai/` — AI providers + chat + RAG), **NVOOS Graphify AI Platform** (`plugins/nvoos-graphify-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
+**Addon Ecosystem:** NV oOS ships a growing family of 24 installable addons: **Pro** (`addons/pro/` — ~830+ additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **AI Platform** (`addons/ai-platform/` — AI platform admin dashboard + CPTs), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Page Agent** (`addons/page-agent/` — AI-powered browser page control copilot), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Graphify** (`plugins/nvoos-graphify/` — visual knowledge graph), **NVOOS Graphify AI** (`plugins/nvoos-graphify-ai/` — AI providers + chat + RAG), **NVOOS Graphify AI Platform** (`plugins/nvoos-graphify-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -514,7 +525,21 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.37 — July 2026)
+## 🆕 Latest Updates (v1.1.38 — July 2026)
+
+### July 10, 2026 — Page Agent Addon, Pro SPA v2 Parity, User Memory Toggle, Tool Enhancements, Workflow Improvements 🤖💬👤📝🔄
+
+- ✅ **Page Agent Addon v0.1.0.** New addon at `addons/page-agent/` — AI-powered browser page control copilot powered by Alibaba Page Agent (MIT). Gives any WordPress page its own AI agent that can click, type, and navigate via natural language. Runs entirely client-side with no headless browser, Python, or Chrome extension required. Includes shortcode `[mcp_ai_page_agent]`, Elementor widget, REST endpoints, MCP tool bridge, and admin settings page.
+- ✅ **Pro SPA v2 — Major Parity & Polish.** Voice pipeline, tasks drawer, workflow tracker, and file attachment upload to WordPress Media Library. Tool Shortcuts and Slash Commands drawers for quick tool access. Mobile hamburger sidebar toggle. Speech/audio button fixes using correct ToolsClient REST endpoint. Conversation title improvements and turn count display fix. Button and token NaN fixes. Model sync and auth bypass fixes. Assistant preloading in runtime config to fix sidebar loading.
+- ✅ **Pro SPA v2 — UI Polish.** Autoscroll fixes (scroll-to-bottom on submit, streaming start, user-at-bottom guard, restored via direct scrollTop instead of scrollIntoView). Viewport height fixes via CSS height chain instead of `calc(100vh - Xpx)`. `overflow:hidden` on height-chain ancestors. `filemtime`-based cache-busting across all SPA addons. Lint errors resolved in both chat-SPA and pro-SPA. Deduplicated model selector to prevent React duplicate-key warning. REST route registration fixed and production assets rebuilt.
+- ✅ **Per-User Chat Memory Preferences.** Users can now toggle chat memory on/off from their WordPress user profile. Individual control over AI memory retention without affecting site-wide defaults. Settings page integration.
+- ✅ **create_post / save_post Tool Enhancements.** Markdown-to-HTML conversion via new `WP_MCP_AI_Tool_Markdown_Converter` trait — auto-converts Markdown content to HTML when creating or updating posts. Smart taxonomy suggestions auto-detect relevant categories and tags. Block content corruption fix for non-post post types.
+- ✅ **Workflow Blueprint & Schedule Improvements.** Existing-content awareness in Content Publisher and Keyword Pipeline blueprints. Blog schedule presets now check for duplicate content before publishing. Readable response generation for workflow schedule result delivery.
+- ✅ **SPA Accessibility.** Annotation pills made clickable with meaningful labels for screen readers.
+- ✅ **Security.** OWASP ZAP DAST medium findings triaged as false positives.
+- 📦 **Versioning** — bumped to **1.1.38** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **26**.
+
+## 🆕 Previous Updates (v1.1.37 — July 2026)
 
 ### July 4–8, 2026 — JetEngine Meta Helper, Places Enrichment, RabbitMQ, Multi-Tenant DB, DSpark UI, Test Coverage, Docs Hub Broken Link Engine 🧩📍🐇🏢📊🧪🔗
 
@@ -689,6 +714,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **v1.1.38** | Jul 2026 | Page Agent addon v0.1.0 (AI browser page control copilot), Pro SPA v2 major parity & polish (voice pipeline, tasks drawer, workflow tracker, file attachments, tool shortcuts, slash commands, mobile hamburger, autoscroll/viewport fixes, cache-busting, assistant preloading), Per-user chat memory toggle, create_post/save_post Markdown-to-HTML + taxonomy suggestions, Workflow blueprint existing-content awareness, SPA accessibility: annotation pills, ZAP medium findings triaged |
 | **v1.1.37** | Jul 2026 | JetEngine Meta Helper universal (25 CPTs, REST, ECA fields), Places enrichment tools, RabbitMQ + queue infrastructure (custom DB tables, health endpoint, worker), Multi-tenant DB isolation Phase 0–4, DSpark admin UI + speculative orchestration, Crocoblock Design System addon (5 phases), Test coverage: 329 tools across 28 toolkits, Docs Hub broken link engine, OWASP ZAP DAST, 30+ bug fixes |
 | **v1.1.36** | Jul 2026 | EZuite Inventory Sync Pro Toolkit, Ralph Loop CCT migration + circuit breaker, JetBooking/JetAppointment (8 tools), Moonshot/Z.AI provider parity (15 total), Unified Sync Log Manager, Tool Presets Auto-Select + Chips Bar, HTTrack Cache + Place-to-Service Bridge, Generate Default Mapping + read-only sync, 45+ bug fixes |
 | **v1.1.35** | Jun 2026 | FlowHub Inventory Sync Pro Toolkit (6 tools), Shopify Sync Pro Toolkit (5 tools), Necessity Gate Layer J (irreversibility-weighted safety), Local Voice Embedded STT (3 backends, offline-first), Remote Site Administrator blueprint (22 tools), Places & Calendar bulk import, CLI site-import subcommand, voice realtime auto-detect, 7 bug fixes |
