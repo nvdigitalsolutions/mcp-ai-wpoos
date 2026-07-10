@@ -727,6 +727,14 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	align-items: flex-end;
 }
 
+/* On mobile, add extra bottom padding so the wrapped toolbar
+   buttons (mic, voice, attach) aren't clipped by the viewport edge. */
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-agent-panel__composer {
+		padding: 8px 12px 36px;
+	}
+}
+
 .nvoos-pro-spa-agent-panel__composer-form {
 	display: flex;
 	gap: 8px;
@@ -2269,10 +2277,6 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	.nvoos-pro-spa-attachment-strip {
 		order: 2;
 		width: 100%;
-	}
-
-	.nvoos-pro-spa-agent-panel__composer {
-		padding: 8px 12px;
 	}
 }
 
