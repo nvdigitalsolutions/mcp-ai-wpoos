@@ -1,25 +1,24 @@
 /**
- * ChatSidebar — Left sidebar with two tabs: Conversations (transcripts) and Threads.
+ * ChatSidebar — Left sidebar with two tabs: Chats and Media.
  *
- * Architecture: **Conversations-first** — the "Conversations" tab is the default
- * and the primary way to start, switch, and delete chat sessions. The "Threads"
- * tab provides a read-only browse view of thread-manager threads.
+ * Architecture: **Chats-first** — the "Chats" tab is the default
+ * and the primary way to start, switch, and delete chat sessions. The "Media"
+ * tab provides a browsable WordPress Media Library with grid/list views.
  *
  * Transcripts data is received from the parent Layout component.
- * Threads data is fetched internally via the read-only `useThreads` hook.
  */
 
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { __, sprintf } from '@wordpress/i18n';
 
-import { useThreads } from '../../hooks/useThreads';
 import type { TranscriptSession } from '../../api/transcripts';
-import type { ThreadSummary } from '../../api/threads';
 import { useAssistantStore } from '../../stores/assistantStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useModelStore } from '../../stores/modelStore';
 import { AssistantsClient, type AssistantRecord } from '../../api/assistants';
 import { readProSpaConfig } from '../../api/config';
+import { MediaTab } from '../media/MediaTab';
+import type { MediaItem } from '../../api/media';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -86,20 +85,18 @@ export interface ChatSidebarProps {
 	/** Start a brand-new transcript session. */
 	onNewSession: () => void;
 
-	/** Base URL for the threads REST endpoint (passed to useThreads). */
-	threadsEndpoint: string;
 	/** WordPress REST nonce. */
 	nonce: string;
-
-	/** Navigate to chat page when a thread is selected. */
-	onSelectThread?: ( id: number ) => void;
 
 	/** Base URL for the assistants REST endpoint. When provided, an
 	 *  assistant selector dropdown appears above the tab bar. */
 	assistantsEndpoint?: string;
+
+	/** WordPress REST API root URL (for the Media Library tab). */
+	apiRoot?: string;
 }
 
-type SidebarTab = 'conversations' | 'threads';
+type SidebarTab = 'conversations' | 'media';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -114,10 +111,9 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 		onSelectSession,
 		onDeleteSession,
 		onNewSession,
-		threadsEndpoint,
 		nonce,
-		onSelectThread,
 		assistantsEndpoint,
+		apiRoot,
 	} = props;
 
 	// ---- assistant store ----
@@ -202,81 +198,70 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 	// ---- active tab ----
 	const [ activeTab, setActiveTab ] = useState< SidebarTab >( 'conversations' );
 
-	// ---- threads (read-only browse) ----
-	const {
-		threads,
-		activeThreadId,
-		isLoading: threadsLoading,
-		error: threadsError,
-		unavailable: threadsUnavailable,
-		selectThread,
-		deselectThread,
-	} = useThreads( { endpoint: threadsEndpoint, nonce } );
-
 	// ---- derived ----
 	const safeSessions: TranscriptSession[] = useMemo(
 		() => ( Array.isArray( sessions ) ? sessions : [] ),
 		[ sessions ]
 	);
 
-	const safeThreads: ThreadSummary[] = useMemo(
-		() => ( Array.isArray( threads ) ? threads : [] ),
-		[ threads ]
-	);
-
 	// ---- tab keyboard navigation ----
+	const TAB_ORDER: SidebarTab[] = [ 'conversations', 'media' ];
 	const handleTabKeyDown = useCallback(
-		( tab: SidebarTab ) =>
-			( e: React.KeyboardEvent< HTMLButtonElement > ): void => {
-				if ( e.key === 'ArrowRight' ) {
-					e.preventDefault();
-					setActiveTab( tab === 'conversations' ? 'threads' : 'conversations' );
-				}
-				if ( e.key === 'ArrowLeft' ) {
-					e.preventDefault();
-					setActiveTab( tab === 'threads' ? 'conversations' : 'threads' );
-				}
-			},
-		[]
-	);
+			( tab: SidebarTab ) =>
+				( e: React.KeyboardEvent< HTMLButtonElement > ): void => {
+					const idx = TAB_ORDER.indexOf( tab );
+					if ( e.key === 'ArrowRight' ) {
+						e.preventDefault();
+						setActiveTab( TAB_ORDER[ ( idx + 1 ) % TAB_ORDER.length ] );
+					}
+					if ( e.key === 'ArrowLeft' ) {
+						e.preventDefault();
+						setActiveTab( TAB_ORDER[ ( idx - 1 + TAB_ORDER.length ) % TAB_ORDER.length ] );
+					}
+				},
+			[]
+		);
 
 	// ---- callbacks ----
-	const handleTabChange = useCallback(
-		( tab: SidebarTab ) => {
-			setActiveTab( tab );
-			// Deselect thread when switching to conversations tab.
-			if ( tab === 'conversations' ) {
-				deselectThread();
-			}
-		},
-		[ deselectThread ]
-	);
+		const handleTabChange = useCallback(
+			( tab: SidebarTab ) => {
+				setActiveTab( tab );
+			},
+			[]
+		);
 
-	const handleSessionClick = useCallback(
-		( key: string ) => {
-			// When selecting a conversation, deselect any active thread.
-			deselectThread();
-			void onSelectSession( key );
-		},
-		[ onSelectSession, deselectThread ]
-	);
+		const handleSessionClick = useCallback(
+			( key: string ) => {
+				void onSelectSession( key );
+			},
+			[ onSelectSession ]
+		);
 
-	const handleSessionDelete = useCallback(
-		( key: string ) => {
-			void onDeleteSession( key );
-		},
-		[ onDeleteSession ]
-	);
+		const handleSessionDelete = useCallback(
+			( key: string ) => {
+				void onDeleteSession( key );
+			},
+			[ onDeleteSession ]
+		);
 
-	const handleThreadClick = useCallback(
-		async ( id: number ) => {
-			await selectThread( id );
-			onSelectThread?.( id );
-		},
-		[ selectThread, onSelectThread ]
-	);
+		// ---- media selection (for attaching to chat messages) ----
+		const [ selectedMediaIds, setSelectedMediaIds ] = useState< Set< number > >( new Set() );
+		const handleAttachMedia = useCallback(
+			( item: MediaItem ) => {
+				setSelectedMediaIds( ( prev ) => {
+					const next = new Set( prev );
+					if ( next.has( item.id ) ) {
+						next.delete( item.id );
+					} else {
+						next.add( item.id );
+					}
+					return next;
+				} );
+			},
+			[]
+		);
 
-	// ---- render ----
+		// ---- render ----
 	return (
 		<aside
 			className="nvoos-pro-spa-sidebar"
@@ -362,26 +347,26 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 					onClick={ () => handleTabChange( 'conversations' ) }
 					onKeyDown={ handleTabKeyDown( 'conversations' ) }
 				>
-					{ __( 'Conversations', 'nvoos-pro-spa' ) }
+					{ __( 'Chats', 'nvoos-pro-spa' ) }
 				</button>
 				<button
 					type="button"
 					className={ [
 						'nvoos-pro-spa-sidebar__tab',
-						activeTab === 'threads'
+						activeTab === 'media'
 							? 'nvoos-pro-spa-sidebar__tab--active'
 							: '',
 					]
 						.filter( Boolean )
 						.join( ' ' ) }
 					role="tab"
-					aria-selected={ activeTab === 'threads' }
-					aria-controls="nvoos-pro-spa-sidebar-panel-threads"
-					id="nvoos-pro-spa-sidebar-tab-threads"
-					onClick={ () => handleTabChange( 'threads' ) }
-					onKeyDown={ handleTabKeyDown( 'threads' ) }
+					aria-selected={ activeTab === 'media' }
+					aria-controls="nvoos-pro-spa-sidebar-panel-media"
+					id="nvoos-pro-spa-sidebar-tab-media"
+					onClick={ () => handleTabChange( 'media' ) }
+					onKeyDown={ handleTabKeyDown( 'media' ) }
 				>
-					{ __( 'Threads', 'nvoos-pro-spa' ) }
+					{ __( 'Media', 'nvoos-pro-spa' ) }
 				</button>
 			</div>
 
@@ -504,95 +489,26 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 				</ul>
 			</div>
 
-			{ /* ---- Threads tab panel (read-only) ---- */ }
+			{ /* ---- Media tab panel ---- */ }
 			<div
 				className="nvoos-pro-spa-sidebar__panel"
-				id="nvoos-pro-spa-sidebar-panel-threads"
+				id="nvoos-pro-spa-sidebar-panel-media"
 				role="tabpanel"
-				aria-labelledby="nvoos-pro-spa-sidebar-tab-threads"
-				hidden={ activeTab !== 'threads' }
+				aria-labelledby="nvoos-pro-spa-sidebar-tab-media"
+				hidden={ activeTab !== 'media' }
 			>
-				{ threadsUnavailable && (
+				{ apiRoot ? (
+					<MediaTab
+						apiRoot={ apiRoot }
+						nonce={ nonce }
+						selectedIds={ selectedMediaIds }
+						onAttach={ handleAttachMedia }
+					/>
+				) : (
 					<p className="nvoos-pro-spa-sidebar__notice">
-						{ __( 'Threads are not available.', 'nvoos-pro-spa' ) }
+						{ __( 'Media Library is not available.', 'nvoos-pro-spa' ) }
 					</p>
 				) }
-
-				{ threadsLoading && (
-					<p className="nvoos-pro-spa-sidebar__loading">
-						{ __( 'Loading threads…', 'nvoos-pro-spa' ) }
-					</p>
-				) }
-
-				{ threadsError && (
-					<p
-						className="nvoos-pro-spa-sidebar__error"
-						role="alert"
-					>
-						{ threadsError }
-					</p>
-				) }
-
-				<ul
-					className="nvoos-pro-spa-sidebar__list"
-					aria-label={ __( 'Threads', 'nvoos-pro-spa' ) }
-				>
-					{ safeThreads.map( ( t ) => {
-						const isActive = t.id === activeThreadId;
-						return (
-							<li
-								key={ t.id }
-								className={ [
-									'nvoos-pro-spa-sidebar__item',
-									isActive
-										? 'nvoos-pro-spa-sidebar__item--active'
-										: '',
-									t.status === 'archived'
-										? 'nvoos-pro-spa-sidebar__item--archived'
-										: '',
-								]
-									.filter( Boolean )
-									.join( ' ' ) }
-							>
-								<button
-									type="button"
-									className="nvoos-pro-spa-sidebar__item-btn"
-									onClick={ () =>
-										handleThreadClick( t.id )
-									}
-									aria-current={
-										isActive ? 'true' : undefined
-									}
-								>
-									<span className="nvoos-pro-spa-sidebar__item-title">
-										{ t.title ||
-											`Thread #${ t.id }` }
-									</span>
-									{ t.message_count !== undefined && (
-										<span className="nvoos-pro-spa-sidebar__item-meta">
-											{ sprintf(
-												/* translators: %d: number of messages */
-												__( '%d msgs', 'nvoos-pro-spa' ),
-												t.message_count
-											) }
-										</span>
-									) }
-								</button>
-							</li>
-						);
-					} ) }
-					{ safeThreads.length === 0 &&
-						! threadsLoading &&
-						! threadsUnavailable &&
-						! threadsError && (
-							<li className="nvoos-pro-spa-sidebar__empty">
-								{ __(
-									'No active threads.',
-									'nvoos-pro-spa'
-								) }
-							</li>
-						) }
-				</ul>
 			</div>
 		</aside>
 	);
