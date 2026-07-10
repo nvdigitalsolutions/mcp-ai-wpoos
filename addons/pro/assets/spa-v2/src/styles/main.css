@@ -2803,7 +2803,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 /* ── Grid view ───────────────────────────────────────────────────────── */
 .nvoos-pro-spa-media-grid {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 4px;
 	list-style: none;
 	margin: 0;
@@ -2813,18 +2813,20 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 /* On wider sidebars, show 4 columns. */
 @media screen and ( min-width: 400px ) {
 	.nvoos-pro-spa-media-grid {
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 	}
 }
 
 .nvoos-pro-spa-media-grid__item {
 	position: relative;
+	min-width: 0;
 }
 
 .nvoos-pro-spa-media-grid__card {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
+	min-width: 0;
 	padding: 0;
 	border: 2px solid transparent;
 	border-radius: 4px;
