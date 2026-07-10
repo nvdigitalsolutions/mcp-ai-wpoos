@@ -2,22 +2,23 @@
  * useChatSpoke — Wraps `useChat` from `@ai-sdk/react` with the pro SSE adapter.
  *
  * This is the core chat hook that replaces the legacy messagesStore + sse.js.
+ *
+ * Transcript persistence is handled server-side by
+ * `WP_MCP_AI_Chat_Transcript_Recorder` during every chat request.  The
+ * frontend does NOT independently save transcripts because that would
+ * create duplicate CCT entries (one from the backend during the request
+ * and a second from the SPA after the stream ends).
  */
 
-import { useMemo, useCallback, useRef, useEffect, useState, type RefObject } from 'react';
+import { useMemo, useCallback, useRef, useState, type RefObject } from 'react';
 import { useChat, type Message } from '@ai-sdk/react';
 import { createChatFetch } from '../sse-adapter';
-import {
-	TranscriptsClient,
-	type TranscriptMessage,
-} from '../api/transcripts';
 import { useUIStore } from '../stores/uiStore';
 
 export interface UseChatSpokeOptions {
 	chatClientEndpoint: string;
 	nonce: string;
 	assistantId: number;
-	transcriptsEndpoint?: string;
 	initialMessages?: Message[];
 	sessionKey?: string;
 	/** Optional model override to send as options.provider / options.model. */
@@ -48,7 +49,6 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		chatClientEndpoint,
 		nonce,
 		assistantId,
-		transcriptsEndpoint,
 		initialMessages = [],
 		sessionKey = '',
 		model,
@@ -56,18 +56,6 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 	} = options;
 
 	const addToast = useUIStore( ( s ) => s.addToast );
-
-	const transcriptsClient = useMemo(
-		() =>
-			transcriptsEndpoint && sessionKey
-				? new TranscriptsClient( {
-						endpoint: transcriptsEndpoint,
-						nonce,
-						assistantId,
-				  } )
-				: null,
-		[ transcriptsEndpoint, nonce, assistantId, sessionKey ]
-	);
 
 	const customFetch = useMemo(
 		() =>
@@ -80,27 +68,6 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 				provider,
 			} ),
 		[ chatClientEndpoint, nonce, assistantId, model, provider ]
-	);
-
-	const persistFinishedTurn = useCallback(
-		async ( messages: Message[] ) => {
-			if ( ! transcriptsClient || ! sessionKey ) {
-				return;
-			}
-			try {
-				const wireMessages: TranscriptMessage[] = messages.map( ( m ) => ( {
-					role: m.role,
-					content: typeof m.content === 'string' ? m.content : '',
-				} ) );
-				await transcriptsClient.save( sessionKey, wireMessages, {
-					finish_reason: 'stop',
-					source: 'pro-spa-v2',
-				} );
-			} catch {
-				// Transcript persistence is best-effort.
-			}
-		},
-		[ transcriptsClient, sessionKey ]
 	);
 
 	const {
@@ -119,38 +86,20 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		fetch: customFetch,
 		streamProtocol: 'data',
 		initialMessages,
-		onFinish: ( message, { usage } ) => {
+		onFinish: ( _message, { usage } ) => {
 			// Capture usage data (v0.9.0).
 			// Guard against NaN token counts that some providers return in edge cases.
 			if ( usage ) {
 				const pt = typeof usage.promptTokens === 'number' && ! Number.isNaN( usage.promptTokens ) ? usage.promptTokens : undefined;
 				const ct = typeof usage.completionTokens === 'number' && ! Number.isNaN( usage.completionTokens ) ? usage.completionTokens : undefined;
 				const tt = typeof usage.totalTokens === 'number' && ! Number.isNaN( usage.totalTokens ) ? usage.totalTokens : undefined;
-				setUsageMap( ( prev ) => ( { ...prev, [ message.id ]: { promptTokens: pt, completionTokens: ct, totalTokens: tt } } ) );
+				setUsageMap( ( prev ) => ( { ...prev, [ _message.id ]: { promptTokens: pt, completionTokens: ct, totalTokens: tt } } ) );
 			}
-			// Persist full turn after completion.
-			// Use the ref to avoid the stale-closure problem — `messages`
-			// inside this callback is captured at construction time.
-			const priorMessages = messagesRef.current ?? [];
-			const last = priorMessages[ priorMessages.length - 1 ];
-			const alreadyPresent =
-				last && message.id && last.id === message.id;
-			const updated = alreadyPresent
-				? priorMessages
-				: [ ...priorMessages, message ];
-			void persistFinishedTurn( updated );
 		},
 		onError: ( err ) => {
 			addToast( err.message || 'Chat error', 'error' );
 		},
 	} );
-
-	// Keep a ref to the current message list so `onFinish` (which is
-	// captured at construction time) can read the latest array.
-	const messagesRef = useRef< Message[] >( messages );
-	useEffect( () => {
-		messagesRef.current = messages;
-	}, [ messages ] );
 
 	// Usage tracking (v0.9.0).
 	const [ usageMap, setUsageMap ] = useState< Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number } > >( {} );

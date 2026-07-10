@@ -211,11 +211,36 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 			);
 			break;
 		}
-		// Agentic loop events — forward with native type so the UI labels them.
-			case 'start':
-			case 'tool_start':
-			case 'tool_result': {
+		// Agentic loop start — forward as annotation.
+			case 'start': {
 				out.push( encodeChunk( '8', [ frame ] ) );
+				break;
+			}
+			// Tool call start — emit as AI SDK type 9 (toolCall) so useChat
+			// populates toolInvocations on the assistant message.
+			case 'tool_start': {
+				const tsToolName = typeof frame.tool_name === 'string' ? frame.tool_name : '';
+				const tsToolId = typeof frame.tool_id === 'string' ? frame.tool_id : '';
+				out.push(
+					encodeChunk( '9', {
+						toolCallId: tsToolId || `tool-${ Date.now() }`,
+						toolName: tsToolName,
+						args: {},
+					} )
+				);
+				break;
+			}
+			// Tool result — emit as AI SDK type a (toolResult) so useChat
+			// completes the toolInvocation on the message.
+			case 'tool_result': {
+				const trToolId = typeof frame.tool_id === 'string' ? frame.tool_id : '';
+				const trResult = frame.result ?? null;
+				out.push(
+					encodeChunk( 'a', {
+						toolCallId: trToolId || '',
+						result: trResult,
+					} )
+				);
 				break;
 			}
 			default: {
