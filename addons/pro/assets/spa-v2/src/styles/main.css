@@ -2030,6 +2030,84 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	opacity: 0.6;
 }
 
+/* ── Tool card extended styles ─────────────────────────────────────────── */
+
+.nvoos-pro-spa-tool-result-text {
+	padding: 8px 10px;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	font-size: 13px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+.nvoos-pro-spa-tool-result-prefix { font-weight: 600; }
+
+.nvoos-pro-spa-tool--error { border-color: var(--nvoos-danger, #d63638); }
+.nvoos-pro-spa-tool--error .nvoos-pro-spa-tool-name { color: var(--nvoos-danger, #d63638); }
+.nvoos-pro-spa-tool--pending { border-color: var(--nvoos-warning, #f0c33c); }
+.nvoos-pro-spa-tool--pending .nvoos-pro-spa-tool-name { color: var(--nvoos-warning, #dba617); }
+
+.nvoos-pro-spa-tool-running {
+	display: flex; align-items: center; gap: 8px;
+	padding: 10px; border-top: 1px solid var(--nvoos-border, #dcdcde);
+	font-size: 13px; color: var(--nvoos-text-secondary, #787c82);
+}
+.nvoos-pro-spa-tool-running-spinner {
+	display: inline-block; width: 14px; height: 14px;
+	border: 2px solid var(--nvoos-border, #dcdcde);
+	border-top-color: var(--nvoos-primary, #2271b1);
+	border-radius: 50%;
+	animation: nvoos-pro-spa-spin 0.6s linear infinite;
+}
+@keyframes nvoos-pro-spa-spin { to { transform: rotate(360deg); } }
+
+.nvoos-pro-spa-tool-attachments {
+	display: flex; flex-direction: column; gap: 4px;
+	padding: 6px 10px; border-top: 1px solid var(--nvoos-border, #dcdcde);
+}
+.nvoos-pro-spa-tool-attachment {
+	display: flex; align-items: flex-start; gap: 8px;
+	padding: 6px; border-radius: 4px;
+	background: var(--nvoos-bg, #f0f0f1);
+}
+.nvoos-pro-spa-tool-attachment-thumb img {
+	max-width: 80px; max-height: 60px; border-radius: 3px;
+	object-fit: cover; display: block;
+}
+.nvoos-pro-spa-tool-attachment-video { width: 160px; max-height: 90px; border-radius: 3px; }
+.nvoos-pro-spa-tool-attachment-icon { font-size: 24px; line-height: 1; }
+.nvoos-pro-spa-tool-attachment-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nvoos-pro-spa-tool-attachment-label {
+	font-size: 12px; font-weight: 500;
+	color: var(--nvoos-primary, #2271b1); text-decoration: none; word-break: break-word;
+}
+.nvoos-pro-spa-tool-attachment-label:hover { text-decoration: underline; }
+.nvoos-pro-spa-tool-attachment-meta { font-size: 11px; color: var(--nvoos-text-secondary, #787c82); }
+
+.nvoos-pro-spa-tool-chart { padding: 8px 10px; border-top: 1px solid var(--nvoos-border, #dcdcde); }
+.nvoos-pro-spa-tool-chart-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.nvoos-pro-spa-tool-chart-iframe { border: 1px solid var(--nvoos-border, #dcdcde); border-radius: 3px; max-width: 100%; }
+
+.nvoos-pro-spa-tool-truncated { border-top: 1px solid var(--nvoos-border, #dcdcde); }
+.nvoos-pro-spa-tool-truncated-summary {
+	padding: 6px 10px; cursor: pointer; font-size: 12px;
+	color: var(--nvoos-warning, #dba617); background: var(--nvoos-bg, #f0f0f1);
+}
+.nvoos-pro-spa-tool-truncated pre {
+	margin: 0; padding: 8px 10px; font-size: 11px;
+	max-height: 300px; overflow: auto; background: rgba(0,0,0,0.02);
+}
+
+.nvoos-pro-spa-tool-raw { border-top: 1px solid var(--nvoos-border, #dcdcde); }
+.nvoos-pro-spa-tool-raw-summary {
+	padding: 6px 10px; cursor: pointer; font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82); background: var(--nvoos-bg, #f0f0f1);
+}
+.nvoos-pro-spa-tool-raw pre {
+	margin: 0; padding: 8px 10px; font-size: 11px;
+	max-height: 300px; overflow: auto; background: rgba(0,0,0,0.02);
+}
+
 /* ── Annotation pills ────────────────────────────────────────────────── */
 
 .nvoos-pro-spa-message-view__annotations {

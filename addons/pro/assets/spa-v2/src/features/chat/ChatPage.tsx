@@ -75,11 +75,14 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const nonce = runtime?.nonce ?? '';
 
 	// Map transcript messages to AI SDK Message shape (needs `id`).
+	// Preserve the original role so tool messages are properly surfaced;
+	// only system messages are re-mapped to assistant (the AI SDK does not
+	// render system messages).
 	const initialMessages = useMemo(
 		() =>
 			transcripts.initialMessages.map( ( m, idx ) => ( {
 				id: `${ transcripts.sessionKey }:${ idx }`,
-				role: ( m.role === 'system' || m.role === 'tool' ? 'assistant' : m.role ) as
+				role: ( m.role === 'system' ? 'assistant' : m.role ) as
 					| 'user'
 					| 'assistant'
 					| 'system'
@@ -95,7 +98,6 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		chatClientEndpoint: endpoints?.chatClient ?? '',
 		nonce,
 		assistantId,
-		transcriptsEndpoint: endpoints?.transcripts ?? '',
 		initialMessages,
 		sessionKey: transcripts.sessionKey,
 		model: model.model,
