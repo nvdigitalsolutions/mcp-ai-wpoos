@@ -16,6 +16,7 @@
 import { useCallback, useState } from 'react';
 import { type Attachment } from '@ai-sdk/ui-utils';
 import { __ } from '@wordpress/i18n';
+import { ToolsClient } from '../api/tools';
 
 export const ALLOWED_MIME_TYPES = [
 	'image/jpeg', 'image/png', 'image/gif', 'image/webp',
@@ -65,60 +66,7 @@ export interface UseAttachmentsReturn {
 	toPendingAttachments: () => Promise< Attachment[] >;
 }
 
-/**
- * Upload a file to the WordPress Media Library via multipart POST.
- *
- * Mirrors the `ToolsClient.uploadMedia()` pattern from the legacy chat-spa.
- *
- * @returns The media attachment record (id, source_url, mime_type).
- */
-async function uploadToMediaLibrary(
-	uploadEndpoint: string,
-	nonce: string,
-	file: File,
-): Promise< { id: number; source_url: string; mime_type: string } > {
-	const formData = new FormData();
-	formData.append( 'file', file, file.name );
 
-	const headers: Record< string, string > = {
-		Accept: 'application/json',
-	};
-	if ( nonce ) {
-		headers[ 'X-WP-Nonce' ] = nonce;
-	}
-	// Don't set Content-Type — the browser sets it with the boundary.
-
-	const response = await fetch( uploadEndpoint, {
-		method: 'POST',
-		credentials: 'same-origin',
-		headers,
-		body: formData,
-	} );
-
-	if ( ! response.ok ) {
-		let detail = '';
-		try {
-			const err = ( await response.json() ) as { message?: string };
-			detail = err?.message ?? '';
-		} catch {
-			// Not JSON.
-		}
-		throw new Error(
-			detail || __( 'Media upload failed.', 'nvoos-pro-spa' )
-		);
-	}
-
-	const data = ( await response.json() ) as {
-		id: number;
-		source_url: string;
-		mime_type: string;
-	};
-	return {
-		id: data.id,
-		source_url: data.source_url,
-		mime_type: data.mime_type,
-	};
-}
 
 function isImageMime( mime: string ) { return mime.startsWith( 'image/' ); }
 
@@ -161,7 +109,7 @@ export function useAttachments( opts: UseAttachmentsOptions = {} ): UseAttachmen
 		// If upload is available, immediately upload each file to the Media Library.
 		if ( canUpload ) {
 			newPending.forEach( ( pf ) => {
-				uploadToMediaLibrary( uploadEndpoint, nonce, pf.file )
+				ToolsClient.uploadMedia( uploadEndpoint, nonce, pf.file, pf.file.name )
 					.then( ( media ) => {
 						setFiles( ( prevFiles ) =>
 							prevFiles.map( ( f ) =>
