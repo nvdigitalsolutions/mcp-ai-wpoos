@@ -75,22 +75,24 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const nonce = runtime?.nonce ?? '';
 
 	// Map transcript messages to AI SDK Message shape (needs `id`).
-	// Preserve the original role so tool messages are properly surfaced;
-	// only system messages are re-mapped to assistant (the AI SDK does not
-	// render system messages).
-	const initialMessages = useMemo(
-		() =>
-			transcripts.initialMessages.map( ( m, idx ) => ( {
-				id: `${ transcripts.sessionKey }:${ idx }`,
-				role: ( m.role === 'system' ? 'assistant' : m.role ) as
-					| 'user'
-					| 'assistant'
-					| 'system'
-					| 'data',
-				content: typeof m.content === 'string' ? m.content : '',
-			} ) ),
-		[ transcripts.initialMessages, transcripts.sessionKey ]
-	);
+		// Preserve the original role so tool messages are properly surfaced;
+		// only system messages are re-mapped to assistant (the AI SDK does not
+		// render system messages).  Spread the original message so annotations
+		// and toolInvocations survive the mapping for CCT-loaded history.
+		const initialMessages = useMemo(
+			() =>
+				transcripts.initialMessages.map( ( m, idx ) => ( {
+					...m,
+					id: `${ transcripts.sessionKey }:${ idx }`,
+					role: ( m.role === 'system' ? 'assistant' : m.role ) as
+						| 'user'
+						| 'assistant'
+						| 'system'
+						| 'data',
+					content: typeof m.content === 'string' ? m.content : '',
+				} ) ),
+			[ transcripts.initialMessages, transcripts.sessionKey ]
+		);
 
 	// ---- Chat spoke (conversation-driven) ----
 	// sessionKey owns the useChat `id` — switching conversations rebinds cleanly.
