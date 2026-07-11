@@ -322,13 +322,17 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border-bottom-color: var(--nvoos-primary, #2271b1);
 }
 
-.nvoos-pro-spa-sidebar__panel {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	overflow-y: auto;
-	padding: 8px;
-}
+	.nvoos-pro-spa-sidebar__panel {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow-y: auto;
+		padding: 8px;
+	}
+
+	.nvoos-pro-spa-sidebar__panel[hidden] {
+		display: none;
+	}
 
 .nvoos-pro-spa-sidebar__list {
 	list-style: none;
