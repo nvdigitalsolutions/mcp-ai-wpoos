@@ -89,9 +89,16 @@ export function AudioRecorderButton( {
 
 			if ( ! cleanRef.current ) return;
 
+			// Mirror the legacy chat-client behaviour: the raw server response
+			// has shape {"result": {"text": "...", ...}}.
+			const raw = result as Record< string, unknown >;
+			const inner: Record< string, unknown > | undefined =
+				( raw.result as Record< string, unknown > | undefined ) ??
+				( raw.data as Record< string, unknown > | undefined );
+
 			const text: string =
-				( result?.data?.text as string ) ||
-				( result?.data?.message as string ) ||
+				( inner?.text as string ) ||
+				( inner?.message as string ) ||
 				'';
 			if ( ! text ) throw new Error( __( 'No transcription returned.', 'nvoos-pro-spa' ) );
 

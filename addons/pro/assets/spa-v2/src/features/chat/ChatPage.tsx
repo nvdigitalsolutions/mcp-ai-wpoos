@@ -123,18 +123,23 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 
 	// Enhance usageMap with cost/model data extracted from "data"
 	// annotations that arrive via the SSE adapter's type-8 frames.
+	// Widen the map value type so costUsd can be merged in alongside the
+	// tokens/model/provider fields coming from useChatSpoke's usageMap.
+	type Entry = { promptTokens?: number; completionTokens?: number; totalTokens?: number; model?: string; provider?: string; costUsd?: number };
 	const enhancedUsageMap = useMemo( () => {
-		const map = { ...usageMap };
+		const map: Record< string, Entry > = { ...usageMap };
 		for ( const msg of messages ) {
-			const anns = Array.isArray( ( msg as Record< string, unknown > ).annotations )
-				? ( msg as Record< string, unknown > ).annotations as Array< Record< string, unknown > >
-				: [];
+			// Message from @ai-sdk/react lacks an index signature, so cast
+			// through unknown first (TS2352).
+			const raw = msg as unknown as Record< string, unknown >;
+			const anns: Array< Record< string, unknown > > =
+				Array.isArray( raw.annotations ) ? raw.annotations as Array< Record< string, unknown > > : [];
 			for ( const ann of anns ) {
 				if ( ann.type === 'data' && ann.data && typeof ann.data === 'object' ) {
 					const d = ann.data as Record< string, unknown >;
 					const cost = d.cost as Record< string, unknown > | undefined;
 					const usage = d.usage as Record< string, unknown > | undefined;
-					const existing = map[ msg.id ] || {};
+					const existing: Entry = map[ msg.id ] || {};
 					if ( ! existing.costUsd && cost && typeof cost.cost_usd === 'number' ) {
 						existing.costUsd = cost.cost_usd as number;
 					}
