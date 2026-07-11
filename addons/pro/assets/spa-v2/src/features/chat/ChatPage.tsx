@@ -75,22 +75,24 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const nonce = runtime?.nonce ?? '';
 
 	// Map transcript messages to AI SDK Message shape (needs `id`).
-	// Preserve the original role so tool messages are properly surfaced;
-	// only system messages are re-mapped to assistant (the AI SDK does not
-	// render system messages).
-	const initialMessages = useMemo(
-		() =>
-			transcripts.initialMessages.map( ( m, idx ) => ( {
-				id: `${ transcripts.sessionKey }:${ idx }`,
-				role: ( m.role === 'system' ? 'assistant' : m.role ) as
-					| 'user'
-					| 'assistant'
-					| 'system'
-					| 'data',
-				content: typeof m.content === 'string' ? m.content : '',
-			} ) ),
-		[ transcripts.initialMessages, transcripts.sessionKey ]
-	);
+		// Preserve the original role so tool messages are properly surfaced;
+		// only system messages are re-mapped to assistant (the AI SDK does not
+		// render system messages).  Spread the original message so annotations
+		// and toolInvocations survive the mapping for CCT-loaded history.
+		const initialMessages = useMemo(
+			() =>
+				transcripts.initialMessages.map( ( m, idx ) => ( {
+					...m,
+					id: `${ transcripts.sessionKey }:${ idx }`,
+					role: ( m.role === 'system' ? 'assistant' : m.role ) as
+						| 'user'
+						| 'assistant'
+						| 'system'
+						| 'data',
+					content: typeof m.content === 'string' ? m.content : '',
+				} ) ),
+			[ transcripts.initialMessages, transcripts.sessionKey ]
+		);
 
 	// ---- Chat spoke (conversation-driven) ----
 	// sessionKey owns the useChat `id` — switching conversations rebinds cleanly.
@@ -118,6 +120,45 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		usageMap,
 		handleSubmitWithAttachments,
 	} = chatSpoke;
+
+	// Enhance usageMap with cost/model data extracted from "data"
+	// annotations that arrive via the SSE adapter's type-8 frames.
+	const enhancedUsageMap = useMemo( () => {
+		const map = { ...usageMap };
+		for ( const msg of messages ) {
+			const anns = Array.isArray( ( msg as Record< string, unknown > ).annotations )
+				? ( msg as Record< string, unknown > ).annotations as Array< Record< string, unknown > >
+				: [];
+			for ( const ann of anns ) {
+				if ( ann.type === 'data' && ann.data && typeof ann.data === 'object' ) {
+					const d = ann.data as Record< string, unknown >;
+					const cost = d.cost as Record< string, unknown > | undefined;
+					const usage = d.usage as Record< string, unknown > | undefined;
+					const existing = map[ msg.id ] || {};
+					if ( ! existing.costUsd && cost && typeof cost.cost_usd === 'number' ) {
+						existing.costUsd = cost.cost_usd as number;
+					}
+					if ( ! existing.totalTokens && usage && typeof usage.total_tokens === 'number' ) {
+						existing.totalTokens = usage.total_tokens as number;
+					}
+					if ( ! existing.promptTokens && usage && typeof usage.prompt_tokens === 'number' ) {
+						existing.promptTokens = usage.prompt_tokens as number;
+					}
+					if ( ! existing.completionTokens && usage && typeof usage.completion_tokens === 'number' ) {
+						existing.completionTokens = usage.completion_tokens as number;
+					}
+					if ( ! existing.model && typeof d.model === 'string' && d.model ) {
+						existing.model = d.model as string;
+					}
+					if ( ! existing.provider && typeof d.provider === 'string' && d.provider ) {
+						existing.provider = d.provider as string;
+					}
+					map[ msg.id ] = existing;
+				}
+			}
+		}
+		return map;
+	}, [ usageMap, messages ] );
 
 	// Watch for media insert events from the sidebar Media tab.
 	// When the user clicks "Insert into chat", append attachment ID
@@ -454,7 +495,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				onFeedback={ handleFeedback }
 				onEditMessage={ handleEditMessage }
 				feedbackState={ feedbackState }
-				usageMap={ usageMap }
+				usageMap={ enhancedUsageMap }
 				onSpeechPlay={ ( t ) => void speech.play( t ) }
 				onSpeechStop={ speech.stop }
 				speechStateFor={ speech.stateFor }

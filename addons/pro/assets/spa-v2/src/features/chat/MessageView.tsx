@@ -279,16 +279,16 @@ export function MessageView( {
 			) }
 
 			{/* Annotations */}
-			{ annotations.length > 0 && (
-				<div className="nvoos-pro-spa-message-view__annotations">
-					{ annotations.map( ( ann, idx ) => (
-						<AnnotationPill
-							key={ `${ message.id }-ann-${ idx }` }
-							annotation={ ann }
-						/>
-					) ) }
-				</div>
-			) }
+				{ annotations.length > 0 && (
+					<div className="nvoos-pro-spa-message-view__annotations">
+						{ annotations.map( ( ann, idx ) => (
+							<AnnotationPill
+								key={ `${ message.id }-ann-${ idx }` }
+								annotation={ ann }
+							/>
+						) ) }
+					</div>
+				) }
 
 			{/* Toolbar */}
 			{ showToolbar && content !== '' && (

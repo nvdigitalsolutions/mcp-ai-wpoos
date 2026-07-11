@@ -58,7 +58,7 @@ export function MediaList( props: MediaListProps ): JSX.Element {
 					{ __( 'Size', 'nvoos-pro-spa' ) }
 				</span>
 				<span className="nvoos-pro-spa-media-list__cell nvoos-pro-spa-media-list__cell--head" role="columnheader">
-					{ __( 'Date', 'nvoos-pro-spa' ) }
+					{ __( 'ID', 'nvoos-pro-spa' ) }
 				</span>
 			</div>
 			{ items.map( ( item ) => {
@@ -95,7 +95,7 @@ export function MediaList( props: MediaListProps ): JSX.Element {
 							{ formatFileSize( item.fileSize ) }
 						</span>
 						<span className="nvoos-pro-spa-media-list__cell" role="cell">
-							{ formatDate( item.date ) }
+							{ item.id }
 						</span>
 					</div>
 				);
