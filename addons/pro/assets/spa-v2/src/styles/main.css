@@ -2585,6 +2585,60 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 }
 
 /* ------------------------------------------------------------------ */
+/* Capability flags (v0.9.0)                                          */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-capabilities {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 6px;
+}
+.nvoos-pro-spa-capability {
+	display: inline-block;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 10px;
+	font-weight: 500;
+	text-transform: lowercase;
+	color: #fff;
+	background: #6b7280;
+}
+.nvoos-pro-spa-capability--read-only,
+.nvoos-pro-spa-capability--local-only {
+	background: #10b981;
+}
+.nvoos-pro-spa-capability--write,
+.nvoos-pro-spa-capability--state-changing,
+.nvoos-pro-spa-capability--modifies-data {
+	background: #f59e0b;
+}
+.nvoos-pro-spa-capability--requires-capability,
+.nvoos-pro-spa-capability--requires-credentials {
+	background: #3b82f6;
+}
+.nvoos-pro-spa-capability--external-api,
+.nvoos-pro-spa-capability--network-dependent {
+	background: #8b5cf6;
+}
+.nvoos-pro-spa-capability--consumes-tokens {
+	background: #ec4899;
+}
+.nvoos-pro-spa-capability--async,
+.nvoos-pro-spa-capability--background-only {
+	background: #f97316;
+}
+.nvoos-pro-spa-capability--non-deterministic {
+	background: #ef4444;
+}
+.nvoos-pro-spa-capability--idempotent,
+.nvoos-pro-spa-capability--cacheable {
+	background: #14b8a6;
+}
+.nvoos-pro-spa-capability--pro {
+	background: #6366f1;
+}
+
+/* ------------------------------------------------------------------ */
 /* sidebar – action bar (New Chat / New Thread button wrapper)        */
 /* ------------------------------------------------------------------ */
 .nvoos-pro-spa-sidebar__actions {
