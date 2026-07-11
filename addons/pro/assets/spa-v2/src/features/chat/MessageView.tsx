@@ -278,17 +278,25 @@ export function MessageView( {
 				</div>
 			) }
 
-			{/* Annotations */}
-			{ annotations.length > 0 && (
-				<div className="nvoos-pro-spa-message-view__annotations">
-					{ annotations.map( ( ann, idx ) => (
-						<AnnotationPill
-							key={ `${ message.id }-ann-${ idx }` }
-							annotation={ ann }
-						/>
-					) ) }
-				</div>
-			) }
+			{/* Annotations — filter out "data" frames whose cost/usage is
+			    already extracted into UsageBadges, and tool_result frames
+			    already shown as ToolCallCards. */}
+				{ annotations.length > 0 && ( () => {
+					const visible = annotations.filter(
+						( a ) => a.type !== 'data' && a.type !== 'tool_result'
+					);
+					if ( visible.length === 0 ) return null;
+					return (
+						<div className="nvoos-pro-spa-message-view__annotations">
+							{ visible.map( ( ann, idx ) => (
+								<AnnotationPill
+									key={ `${ message.id }-ann-${ idx }` }
+									annotation={ ann }
+								/>
+							) ) }
+						</div>
+					);
+				} )() }
 
 			{/* Toolbar */}
 			{ showToolbar && content !== '' && (
