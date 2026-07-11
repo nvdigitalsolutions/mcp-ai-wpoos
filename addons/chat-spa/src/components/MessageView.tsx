@@ -297,16 +297,9 @@ export function MessageView( {
 					feedback={ feedback }
 					onDelete={ onDelete }
 					onFeedback={ onFeedback }
-				/>
-			) }
-
-			{ /* Speech button (Phase 2: v0.8.0) — on assistant messages with content */ }
-			{ isAssistant && content !== '' && onSpeechPlay && onSpeechStop && speechStateFor && (
-				<SpeechButton
-					text={ content }
-					state={ speechStateFor( content ) }
-					onPlay={ onSpeechPlay }
-					onStop={ onSpeechStop }
+					onSpeechPlay={ onSpeechPlay }
+					onSpeechStop={ onSpeechStop }
+					speechStateFor={ speechStateFor }
 				/>
 			) }
 
@@ -712,6 +705,10 @@ interface MessageToolbarProps {
 	feedback?: 'up' | 'down' | null;
 	onDelete?: ( msgId: string ) => void;
 	onFeedback?: ( msgId: string, rating: 'up' | 'down' ) => void;
+	/** Speech (v0.8.0). */
+	onSpeechPlay?: ( text: string ) => void;
+	onSpeechStop?: () => void;
+	speechStateFor?: ( text: string ) => SpeechState;
 }
 
 function MessageToolbar( {
@@ -722,6 +719,9 @@ function MessageToolbar( {
 	feedback,
 	onDelete,
 	onFeedback,
+	onSpeechPlay,
+	onSpeechStop,
+	speechStateFor,
 }: MessageToolbarProps ): JSX.Element {
 	const { copy, justCopied } = useCopyToClipboard();
 
@@ -802,6 +802,16 @@ function MessageToolbar( {
 				>
 					🗑
 				</button>
+			) }
+
+			{/* Speech (v0.8.0) */}
+			{ isAssistant && content !== '' && onSpeechPlay && onSpeechStop && speechStateFor && (
+				<SpeechButton
+					text={ content }
+					state={ speechStateFor( content ) }
+					onPlay={ onSpeechPlay }
+					onStop={ onSpeechStop }
+				/>
 			) }
 		</div>
 	);
