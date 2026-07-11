@@ -324,6 +324,8 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-sidebar__panel {
 	flex: 1;
+	display: flex;
+	flex-direction: column;
 	overflow-y: auto;
 	padding: 8px;
 }
@@ -2808,7 +2810,8 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-media-tab {
 	display: flex;
 	flex-direction: column;
-	height: 100%;
+	flex: 1;
+	min-height: 0;
 	overflow: hidden;
 }
 

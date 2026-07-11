@@ -302,6 +302,9 @@ export function MessageView( {
 					onFeedback={ onFeedback }
 					onEdit={ onEdit }
 					onRegenerate={ onRegenerate }
+					onSpeechPlay={ onSpeechPlay }
+					onSpeechStop={ onSpeechStop }
+					speechStateFor={ speechStateFor }
 				/>
 			) }
 
@@ -315,11 +318,6 @@ export function MessageView( {
 						.filter( ( a ) => a?.type === 'capabilities' )
 						.flatMap( ( a ) => ( Array.isArray( ( a as Record< string, unknown > ).flags ) ? ( a as Record< string, unknown > ).flags as string[] : [] ) ) }
 				/>
-			) }
-
-			{/* Speech button (v0.9.0) */}
-			{ isAssistant && content !== '' && onSpeechPlay && onSpeechStop && speechStateFor && (
-				<SpeechButton text={ content } state={ speechStateFor( content ) } onPlay={ onSpeechPlay } onStop={ onSpeechStop } />
 			) }
 
 			{/* Delegation notices (v0.9.0) */}
@@ -836,6 +834,10 @@ interface MessageToolbarProps {
 	onFeedback?: ( msgId: string, rating: 'up' | 'down' ) => void;
 	onEdit?: ( msgId: string ) => void;
 	onRegenerate?: () => void;
+	/** Speech (v0.9.0). */
+	onSpeechPlay?: ( text: string ) => void;
+	onSpeechStop?: () => void;
+	speechStateFor?: ( text: string ) => SpeechState;
 }
 
 function MessageToolbar( {
@@ -848,6 +850,9 @@ function MessageToolbar( {
 	onFeedback,
 	onEdit,
 	onRegenerate,
+	onSpeechPlay,
+	onSpeechStop,
+	speechStateFor,
 }: MessageToolbarProps ): JSX.Element {
 	const { copy, copied: justCopied } = useCopyToClipboard();
 	const [ saved, setSaved ] = useState( false );
@@ -938,6 +943,16 @@ function MessageToolbar( {
 				>
 					🗑
 				</button>
+			) }
+
+			{/* Speech (v0.9.0) */}
+			{ isAssistant && content !== '' && onSpeechPlay && onSpeechStop && speechStateFor && (
+				<SpeechButton
+					text={ content }
+					state={ speechStateFor( content ) }
+					onPlay={ onSpeechPlay }
+					onStop={ onSpeechStop }
+				/>
 			) }
 		</div>
 	);
