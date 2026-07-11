@@ -206,6 +206,9 @@ lib/*/tests/vendor/
 !addons/pro/assets/css/*.min.css
 !addons/pro/assets/css/*.min.css.map
 
+# Generated Node.js bundle map files (debug-only, not needed in production).
+addons/pro/bin/*.bundle.js.map
+
 # Keep vendor production files (pre-built from npm packages)
 !addons/pro/assets/vendor/**/*.min.js
 !addons/pro/assets/vendor/**/*.min.css

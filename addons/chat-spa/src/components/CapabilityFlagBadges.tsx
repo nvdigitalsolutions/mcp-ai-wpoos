@@ -30,6 +30,23 @@ const KNOWN_FLAGS: Record< string, string > = {
 	search: 'Search',
 	reasoning: 'Reasoning',
 	planning: 'Planning',
+	// Tool-level capability flags (v0.9.0).
+	'read-only': 'Read-only',
+	'local-only': 'Local',
+	write: 'Write',
+	'state-changing': 'State-changing',
+	'modifies-data': 'Modifies',
+	'requires-capability': 'Auth',
+	'requires-credentials': 'Auth',
+	'external-api': 'External',
+	'network-dependent': 'Network',
+	'consumes-tokens': 'Tokens',
+	async: 'Async',
+	'background-only': 'Background',
+	'non-deterministic': 'Non-determ',
+	idempotent: 'Idempotent',
+	cacheable: 'Cached',
+	pro: 'Pro',
 };
 
 function flagDisplayName( flag: string ): string {

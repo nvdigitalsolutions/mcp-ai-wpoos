@@ -62,8 +62,15 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 				out.push( encodeChunk( 'g', reasoning ) );
 			}
 		}
+		// If this frame also carries tool_results, emit them as annotations.
 		if ( Array.isArray( frame.tool_results ) && frame.tool_results.length > 0 ) {
 			out.push( encodeChunk( '8', frame.tool_results ) );
+			// Extract capability_flags from each tool result entry and emit
+			// as a 'capabilities' annotation so CapabilityFlagBadges can render them.
+			const caps = extractCapabilityFlags( frame.tool_results );
+			if ( caps.length > 0 ) {
+				out.push( encodeChunk( '8', [ { type: 'capabilities', flags: caps } ] ) );
+			}
 		}
 		return out;
 	}
@@ -195,6 +202,13 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 				// Completion frames with data — mark as 'data' type.
 				if ( frame.data || frame.choices || frame.model ) {
 					out.push( encodeChunk( '8', [ { ...frame, type: 'data' } ] ) );
+					// If this frame also carries tool_results, extract capability_flags.
+					if ( Array.isArray( frame.tool_results ) && frame.tool_results.length > 0 ) {
+						const caps = extractCapabilityFlags( frame.tool_results );
+						if ( caps.length > 0 ) {
+							out.push( encodeChunk( '8', [ { type: 'capabilities', flags: caps } ] ) );
+						}
+					}
 				} else {
 					// Truly unknown — forward but flag.
 					out.push( encodeChunk( '8', [ { type: 'unknown', frame } ] ) );
@@ -202,6 +216,27 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 			}
 	}
 	return out;
+}
+
+/**
+ * Extract unique capability_flags from an array of tool_result entries.
+ * Each entry may carry a `capability_flags: string[]` property.
+ */
+function extractCapabilityFlags(
+	toolResults: Array< Record< string, unknown > >
+): string[] {
+	const seen = new Set< string >();
+	for ( const entry of toolResults ) {
+		const flags = entry.capability_flags;
+		if ( Array.isArray( flags ) ) {
+			for ( const f of flags ) {
+				if ( typeof f === 'string' && f.length > 0 ) {
+					seen.add( f );
+				}
+			}
+		}
+	}
+	return [ ...seen ];
 }
 
 function parseSseBuffer( buffer: string ): { frames: NvOosFrame[]; rest: string } {
