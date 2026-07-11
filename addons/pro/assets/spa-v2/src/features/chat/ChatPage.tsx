@@ -9,7 +9,7 @@
  * Threads are a read-only browse view loaded via the sidebar.
  */
 
-import { useCallback, useMemo, useRef, useState, type JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { type Message } from '@ai-sdk/react';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -118,6 +118,37 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		usageMap,
 		handleSubmitWithAttachments,
 	} = chatSpoke;
+
+	// Watch for media insert events from the sidebar Media tab.
+	// When the user clicks "Insert into chat", append attachment ID
+	// references to the composer so the image is easily referenced.
+	const mediaInsert = useUIStore( ( s ) => s.mediaInsert );
+	const clearMediaInsert = useUIStore( ( s ) => s.clearMediaInsert );
+	useEffect( () => {
+		if ( ! mediaInsert || mediaInsert.length === 0 ) {
+			return;
+		}
+		const refs = mediaInsert.map( ( id ) => `[attachment:${ id }]` ).join( ' ' );
+
+		// Programmatically set the composer value and fire an input event
+		// so useChat/AI SDK's internal state stays in sync.
+		const composer = document.getElementById( 'nvoos-pro-spa-composer-input' ) as HTMLTextAreaElement | null;
+		if ( composer ) {
+			const nativeSetter = Object.getOwnPropertyDescriptor(
+				window.HTMLTextAreaElement.prototype,
+				'value'
+			)?.set;
+			if ( nativeSetter ) {
+				const current = composer.value || '';
+				const newValue = current ? `${ current } ${ refs }` : refs;
+				nativeSetter.call( composer, newValue );
+				composer.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				composer.focus();
+			}
+		}
+
+		clearMediaInsert();
+	}, [ mediaInsert, clearMediaInsert ] );
 
 	// ---- Thread read‑only state (populated by ChatSidebar) ----
 	// When the sidebar selects a thread, LayoutContent calls
