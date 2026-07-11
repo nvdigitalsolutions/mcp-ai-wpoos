@@ -402,6 +402,42 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	margin-top: 8px;
 }
 
+/* ── Media tab insert bar ────────────────────────────────────────────── */
+
+.nvoos-pro-spa-sidebar__media-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 10px;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-sidebar__media-count {
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-sidebar__media-insert-btn {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 12px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.4;
+	color: #fff;
+	background: var(--nvoos-primary, #2271b1);
+	border: none;
+	border-radius: 3px;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.nvoos-pro-spa-sidebar__media-insert-btn:hover {
+	background: var(--nvoos-primary-dark, #135e96);
+}
+
 /* ── Right Panel ──────────────────────────────────────────────────────────── */
 
 .nvoos-pro-spa-right-panel {

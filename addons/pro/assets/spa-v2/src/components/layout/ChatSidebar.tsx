@@ -208,6 +208,28 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 		[ sessions ]
 	);
 
+	// Prepend a virtual entry for the current (unsaved) session so it
+	// appears in the sidebar immediately on page load — matching the
+	// legacy chat client behaviour where a new conversation line is
+	// always visible.
+	const hasActiveSession = useMemo(
+		() => safeSessions.some( ( s ) => s.session_key === activeSessionKey ),
+		[ safeSessions, activeSessionKey ]
+	);
+
+	const displaySessions: TranscriptSession[] = useMemo( () => {
+		if ( hasActiveSession || sessions === null || unavailableMessage || error ) {
+			return safeSessions;
+		}
+		// sessions has loaded (not null) and the active key is not in it.
+		// Insert a placeholder so the user sees a "New Conversation" line.
+		const virtual: TranscriptSession = {
+			session_key: activeSessionKey,
+			turn_count: 0,
+		};
+		return [ virtual, ...safeSessions ];
+	}, [ safeSessions, hasActiveSession, sessions, unavailableMessage, error, activeSessionKey ] );
+
 	// ---- tab keyboard navigation ----
 	const TAB_ORDER: SidebarTab[] = [ 'conversations', 'media' ];
 	const handleTabKeyDown = useCallback(
@@ -250,6 +272,7 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 
 		// ---- media selection (for attaching to chat messages) ----
 		const [ selectedMediaIds, setSelectedMediaIds ] = useState< Set< number > >( new Set() );
+		const insertMediaToChat = useUIStore( ( s ) => s.insertMediaToChat );
 		const handleAttachMedia = useCallback(
 			( item: MediaItem ) => {
 				setSelectedMediaIds( ( prev ) => {
@@ -264,6 +287,15 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 			},
 			[]
 		);
+
+		// Insert selected media IDs into the chat composer and clear selection.
+		const handleInsertSelectedMedia = useCallback( () => {
+			if ( selectedMediaIds.size === 0 ) {
+				return;
+			}
+			insertMediaToChat( [ ...selectedMediaIds ] );
+			setSelectedMediaIds( new Set() );
+		}, [ selectedMediaIds, insertMediaToChat ] );
 
 		// ---- render ----
 	return (
@@ -414,8 +446,9 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 						'nvoos-pro-spa'
 					) }
 				>
-					{ safeSessions.map( ( s ) => {
+					{ displaySessions.map( ( s ) => {
 						const isActive = s.session_key === activeSessionKey;
+						const isSaved = safeSessions.some( ( saved ) => saved.session_key === s.session_key );
 						return (
 							<li
 								key={ s.session_key }
@@ -450,7 +483,9 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 									}
 								>
 									<span className="nvoos-pro-spa-sidebar__item-title">
-										{ buildConversationTitle( s ) }
+									{ ! isSaved
+										? __( 'New Conversation', 'nvoos-pro-spa' )
+										: buildConversationTitle( s ) }
 									</span>
 									{ s.turn_count !== undefined && (
 										<span className="nvoos-pro-spa-sidebar__item-meta">
@@ -462,25 +497,27 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 										</span>
 									) }
 								</button>
-								<button
-									type="button"
-									className="nvoos-pro-spa-sidebar__item-delete"
-									onClick={ () =>
-										handleSessionDelete(
-											s.session_key
-										)
-									}
-									aria-label={ __(
-										'Delete conversation',
-										'nvoos-pro-spa'
-									) }
-								>
-									×
-								</button>
+								{ isSaved && (
+									<button
+										type="button"
+										className="nvoos-pro-spa-sidebar__item-delete"
+										onClick={ () =>
+											handleSessionDelete(
+												s.session_key
+											)
+										}
+										aria-label={ __(
+											'Delete conversation',
+											'nvoos-pro-spa'
+										) }
+									>
+										×
+									</button>
+								) }
 							</li>
 						);
 					} ) }
-					{ safeSessions.length === 0 &&
+					{ displaySessions.length === 0 &&
 						! unavailableMessage &&
 						! error && (
 							<li className="nvoos-pro-spa-sidebar__empty">
@@ -493,7 +530,7 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 				</ul>
 			</div>
 
-			{ /* ---- Media tab panel ---- */ }
+			{/* ---- Media tab panel ---- */}
 			<div
 				className="nvoos-pro-spa-sidebar__panel"
 				id="nvoos-pro-spa-sidebar-panel-media"
@@ -502,12 +539,32 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 				hidden={ activeTab !== 'media' }
 			>
 				{ mediaEndpoint ? (
-					<MediaTab
-						mediaEndpoint={ mediaEndpoint }
-						nonce={ nonce }
-						selectedIds={ selectedMediaIds }
-						onAttach={ handleAttachMedia }
-					/>
+					<>
+						<MediaTab
+							mediaEndpoint={ mediaEndpoint }
+							nonce={ nonce }
+							selectedIds={ selectedMediaIds }
+							onAttach={ handleAttachMedia }
+						/>
+						{ selectedMediaIds.size > 0 && (
+							<div className="nvoos-pro-spa-sidebar__media-actions">
+								<span className="nvoos-pro-spa-sidebar__media-count">
+									{ sprintf(
+										/* translators: %d: number of selected media items */
+										__( '%d selected', 'nvoos-pro-spa' ),
+										selectedMediaIds.size
+									) }
+								</span>
+								<button
+									type="button"
+									className="nvoos-pro-spa-sidebar__media-insert-btn"
+									onClick={ handleInsertSelectedMedia }
+								>
+									{ __( 'Insert into chat', 'nvoos-pro-spa' ) }
+								</button>
+							</div>
+						) }
+					</>
 				) : (
 					<p className="nvoos-pro-spa-sidebar__notice">
 						{ __( 'Media Library is not available.', 'nvoos-pro-spa' ) }
