@@ -41,7 +41,7 @@ export interface UseChatSpokeReturn {
 	isStreaming: boolean;
 	fileInputRef: RefObject< HTMLInputElement | null >;
 	sendMessage: ( content: string ) => void;
-	usageMap: Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; model?: string; provider?: string } >;
+	usageMap: Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; costUsd?: number; model?: string; provider?: string } >;
 }
 
 export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn {
@@ -112,7 +112,7 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 	} );
 
 	// Usage tracking (v0.9.0).
-	const [ usageMap, setUsageMap ] = useState< Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; model?: string; provider?: string } > >( {} );
+	const [ usageMap, setUsageMap ] = useState< Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; costUsd?: number; model?: string; provider?: string } > >( {} );
 
 	const fileInputRef = useRef< HTMLInputElement | null >( null );
 

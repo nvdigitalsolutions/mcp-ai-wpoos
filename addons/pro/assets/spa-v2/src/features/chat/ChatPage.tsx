@@ -126,8 +126,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const enhancedUsageMap = useMemo( () => {
 		const map = { ...usageMap };
 		for ( const msg of messages ) {
-			const anns = Array.isArray( ( msg as Record< string, unknown > ).annotations )
-				? ( msg as Record< string, unknown > ).annotations as Array< Record< string, unknown > >
+			const anns = Array.isArray( ( msg as unknown as Record< string, unknown > ).annotations )
+				? ( msg as unknown as Record< string, unknown > ).annotations as Array< Record< string, unknown > >
 				: [];
 			for ( const ann of anns ) {
 				if ( ann.type === 'data' && ann.data && typeof ann.data === 'object' ) {
