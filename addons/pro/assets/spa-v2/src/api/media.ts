@@ -148,6 +148,8 @@ export class MediaClient {
 		url.searchParams.set( '_fields',
 			'id,title,caption,alt_text,description,mime_type,source_url,media_details,date,status,author'
 		);
+		url.searchParams.set( 'orderby', 'date' );
+		url.searchParams.set( 'order', 'desc' );
 
 		if ( search ) {
 			url.searchParams.set( 'search', search );
