@@ -18,7 +18,24 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { ToolsClient, type ToolExecutionResult } from '../api/tools';
 import type { SpeechState } from '../components/shared/SpeechButton';
 
-function normaliseText( t: string ): string { return t.trim().slice( 0, 500 ); }
+/**
+ * Normalise text for the TTS request, mirroring the legacy
+ * `resolveSpeechText` which extracts `textContent` / `innerText`
+ * from the rendered DOM bubble — inherently stripping HTML tags
+ * and decoding entities before the text reaches the API.
+ */
+function normaliseText( t: string ): string {
+	// Use the DOM to strip HTML tags and decode entities,
+	// matching the legacy behaviour exactly.
+	if ( typeof document !== 'undefined' ) {
+		const el = document.createElement( 'div' );
+		el.innerHTML = t;
+		return ( el.textContent || '' ).trim().slice( 0, 500 );
+	}
+	// Fallback: regex-based tag stripping (SSR / test environments).
+	const stripped = t.replace( /<[^>]*>/g, '' );
+	return stripped.trim().slice( 0, 500 );
+}
 function textKey( t: string ): string { const n = normaliseText( t ); let h = 0; for ( let i = 0; i < n.length; i++ ) h = ( ( h << 5 ) - h + n.charCodeAt( i ) ) | 0; return `speech-${ ( h >>> 0 ).toString( 36 ) }`; }
 
 interface CachedSpeech { audio: HTMLAudioElement; url: string; attachmentId?: number; }
@@ -131,7 +148,19 @@ export function useSpeechPlayback( options: UseSpeechPlaybackOptions ): UseSpeec
 
 				if ( controller.signal.aborted ) return;
 
-				const url = result?.data?.url;
+				// Mirror the legacy chat-client behaviour: the raw server response
+				// has shape {"result": {"url": "...", ...}} (see REST tool controller).
+				// ToolsClient.execute() passes through the parsed JSON directly, so we
+				// check both result.data (ToolsClient's typed envelope) and
+				// result.result (the actual REST envelope) for the audio URL.
+				const raw = result as Record< string, unknown >;
+				const inner: Record< string, unknown > | undefined =
+					( raw.result as Record< string, unknown > | undefined ) ??
+					( raw.data as Record< string, unknown > | undefined );
+
+				const url =
+					typeof inner?.url === 'string' ? ( inner.url as string ) : undefined;
+
 				if ( ! url || typeof url !== 'string' ) {
 					throw new Error( 'No audio URL in speech response.' );
 				}
@@ -144,8 +173,8 @@ export function useSpeechPlayback( options: UseSpeechPlaybackOptions ): UseSpeec
 					audio,
 					url,
 					attachmentId:
-						typeof result?.data?.attachment_id === 'number'
-							? result.data.attachment_id
+						typeof inner?.attachment_id === 'number'
+							? ( inner.attachment_id as number )
 							: undefined,
 				} );
 

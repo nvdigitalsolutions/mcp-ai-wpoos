@@ -40,10 +40,22 @@ export interface UseSpeechPlaybackResult {
 }
 
 /**
- * Normalise text for cache lookup — mirrors legacy `normalizeSpeechText`.
+ * Normalise text for the TTS request, mirroring the legacy
+ * `resolveSpeechText` which extracts `textContent` / `innerText`
+ * from the rendered DOM bubble — inherently stripping HTML tags
+ * and decoding entities before the text reaches the API.
  */
 function normaliseText( text: string ): string {
-	return text.trim().slice( 0, 500 );
+	// Use the DOM to strip HTML tags and decode entities,
+	// matching the legacy behaviour exactly.
+	if ( typeof document !== 'undefined' ) {
+		const el = document.createElement( 'div' );
+		el.innerHTML = text;
+		return ( el.textContent || '' ).trim().slice( 0, 500 );
+	}
+	// Fallback: regex-based tag stripping (SSR / test environments).
+	const stripped = text.replace( /<[^>]*>/g, '' );
+	return stripped.trim().slice( 0, 500 );
 }
 
 function textKey( text: string ): string {
@@ -155,7 +167,16 @@ export function useSpeechPlayback(
 
 				if ( controller.signal.aborted ) return;
 
-				const url = result?.data?.url;
+				// Mirror the legacy chat-client behaviour: the raw server
+				// response has shape {"result": {"url": "...", ...}}.
+				const raw = result as unknown as Record< string, unknown >;
+				const inner: Record< string, unknown > | undefined =
+					( raw.result as Record< string, unknown > | undefined ) ??
+					( raw.data as Record< string, unknown > | undefined );
+
+				const url =
+					typeof inner?.url === 'string' ? ( inner.url as string ) : undefined;
+
 				if ( ! url || typeof url !== 'string' ) {
 					throw new Error( 'No audio URL in speech response.' );
 				}
@@ -168,8 +189,8 @@ export function useSpeechPlayback(
 					audio,
 					url,
 					attachmentId:
-						typeof result?.data?.attachment_id === 'number'
-							? result.data.attachment_id
+						typeof inner?.attachment_id === 'number'
+							? ( inner.attachment_id as number )
 							: undefined,
 				} );
 

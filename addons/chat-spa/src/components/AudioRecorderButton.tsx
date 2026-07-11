@@ -125,11 +125,18 @@ export function AudioRecorderButton( {
 
 				if ( ! cleanRef.current ) return;
 
+				// Mirror the legacy chat-client behaviour: the raw server
+				// response has shape {"result": {"text": "...", ...}}.
+				const raw = result as unknown as Record< string, unknown >;
+				const inner: Record< string, unknown > | undefined =
+					( raw.result as Record< string, unknown > | undefined ) ??
+					( raw.data as Record< string, unknown > | undefined );
+
 				const text =
-					typeof result?.data?.text === 'string'
-						? result.data.text
-						: typeof result?.data?.message === 'string'
-						? result.data.message
+					typeof inner?.text === 'string'
+						? inner.text
+						: typeof inner?.message === 'string'
+						? inner.message
 						: '';
 
 				if ( ! text ) {
