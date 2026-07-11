@@ -363,10 +363,24 @@ function MessageContent( { content }: { content: string } ): JSX.Element {
 		return <VideoBlock url={ videoUrl } />;
 	}
 
-	// Image gallery
+	// Image gallery — when images are present, render both the
+	// accompanying text and the gallery so the LLM's explanatory
+	// response isn't dropped (e.g. after a tool returns an image).
 	const imageUrls = extractImageUrls( content );
 	if ( imageUrls.length > 0 ) {
-		return <ImageGalleryBlock urls={ imageUrls } />;
+		// Strip markdown image syntax and bare image URLs from the
+		// text to avoid duplicating images rendered by the gallery.
+		const textWithoutImages = content
+			.replace( /!\[[^\]]*\]\([^)]*\)/g, '' )
+			.replace( /https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?\S*)?/gi, '' )
+			.trim();
+
+		return (
+			<>
+				{ textWithoutImages && <SafeMarkdownContent text={ textWithoutImages } /> }
+				<ImageGalleryBlock urls={ imageUrls } />
+			</>
+		);
 	}
 
 	// Standard markdown

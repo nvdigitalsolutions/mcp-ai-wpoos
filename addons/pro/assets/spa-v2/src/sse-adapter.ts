@@ -147,6 +147,16 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 					usage: ( frame.usage as object | undefined ) ?? {},
 				} )
 			);
+			// Forward model + cost as a type-8 data annotation so
+			// ChatPage.enhancedUsageMap picks them up for the
+			// UsageBadges component (model badge, cost badge).
+			const data: Record< string, unknown > = {};
+			if ( frame.model ) data.model = frame.model;
+			if ( frame.provider ) data.provider = frame.provider;
+			if ( frame.cost ) data.cost = frame.cost;
+			if ( Object.keys( data ).length > 0 ) {
+				out.push( encodeChunk( '8', [ { type: 'data', data } ] ) );
+			}
 			break;
 		}
 			// Agentic loop start — forward as annotation.

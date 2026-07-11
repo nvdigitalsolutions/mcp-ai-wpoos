@@ -41,7 +41,7 @@ export interface UseChatSpokeReturn {
 	isStreaming: boolean;
 	fileInputRef: RefObject< HTMLInputElement | null >;
 	sendMessage: ( content: string ) => void;
-	usageMap: Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number } >;
+	usageMap: Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; model?: string; provider?: string } >;
 }
 
 export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn {
@@ -95,6 +95,16 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 				const tt = typeof usage.totalTokens === 'number' && ! Number.isNaN( usage.totalTokens ) ? usage.totalTokens : undefined;
 				setUsageMap( ( prev ) => ( { ...prev, [ _message.id ]: { promptTokens: pt, completionTokens: ct, totalTokens: tt } } ) );
 			}
+			// Persist model/provider so UsageBadges can show the model badge.
+			if ( model || provider ) {
+				setUsageMap( ( prev ) => {
+					const existing = prev[ _message.id ] || {};
+					return {
+						...prev,
+						[ _message.id ]: { ...existing, model, provider },
+					};
+				} );
+			}
 		},
 		onError: ( err ) => {
 			addToast( err.message || 'Chat error', 'error' );
@@ -102,7 +112,7 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 	} );
 
 	// Usage tracking (v0.9.0).
-	const [ usageMap, setUsageMap ] = useState< Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number } > >( {} );
+	const [ usageMap, setUsageMap ] = useState< Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; model?: string; provider?: string } > >( {} );
 
 	const fileInputRef = useRef< HTMLInputElement | null >( null );
 
