@@ -318,34 +318,43 @@ function normaliseJetEngineRoutesResult( result: Record< string, unknown > ): No
 // Generic object result extraction
 // ---------------------------------------------------------------------------
 
-function extractGenericToolResponse( result: Record< string, unknown > ): NormalisedToolResult {
-	const text = typeof result.text === 'string' ? result.text
-		: typeof result.message === 'string' ? result.message
-			: typeof result.summary === 'string' ? result.summary
-				: typeof result.content === 'string' ? result.content
-					: typeof result.data === 'string' ? result.data
-						: '';
+	function extractGenericToolResponse( result: Record< string, unknown > ): NormalisedToolResult {
+		const text = typeof result.text === 'string' ? result.text
+			: typeof result.message === 'string' ? result.message
+				: typeof result.summary === 'string' ? result.summary
+					: typeof result.content === 'string' ? result.content
+						: typeof result.data === 'string' ? result.data
+							: '';
 
-	// Check for inline content (base64 image data, etc.)
-	const inlineContent = result.inlineData || result.inline_data || result.b64_json || null;
-	if ( inlineContent && typeof inlineContent === 'string' ) {
+		// Detect when the extracted "text" is actually raw JSON (e.g. from
+		// CCT serialisation) rather than a human-readable summary. When
+		// the text looks like a JSON payload, treat it as truncated so the
+		// UI shows the collapsible block instead of dumping raw JSON inline.
+		const isJsonBlob =
+			text.length > 200 &&
+			( text.startsWith( '{' ) || text.startsWith( '[' ) ) &&
+			! isTruncated( text );
+
+		// Check for inline content (base64 image data, etc.)
+		const inlineContent = result.inlineData || result.inline_data || result.b64_json || null;
+		if ( inlineContent && typeof inlineContent === 'string' ) {
+			return {
+				text: text || 'Inline content',
+				attachments: [ { url: inlineContent, label: 'Inline content', isImage: inlineContent.startsWith( 'data:image/' ) } ],
+				isError: false,
+				isTruncated: false,
+				isAsyncPending: false,
+			};
+		}
+
 		return {
-			text: text || 'Inline content',
-			attachments: [ { url: inlineContent, label: 'Inline content', isImage: inlineContent.startsWith( 'data:image/' ) } ],
-			isError: false,
-			isTruncated: false,
+			text: isJsonBlob ? 'Tool completed successfully' : ( text || 'Tool completed successfully' ),
+			attachments: [],
+			isError: isErrorResult( text ),
+			isTruncated: isJsonBlob || isTruncated( text ),
 			isAsyncPending: false,
 		};
 	}
-
-	return {
-		text: text || 'Tool completed successfully',
-		attachments: [],
-		isError: isErrorResult( text ),
-		isTruncated: isTruncated( text ),
-		isAsyncPending: false,
-	};
-}
 
 // ---------------------------------------------------------------------------
 // Main normalisation entry point
@@ -356,17 +365,30 @@ export function normaliseToolResult(
 	result: unknown
 ): NormalisedToolResult {
 	// --- String result ---
-	if ( typeof result === 'string' ) {
-		const text = result.trim();
-		return {
-			text: text || 'Empty result',
-			attachments: [],
-			isError: isErrorResult( text ),
-			isTruncated: isTruncated( text ),
-			isAsyncPending: false,
-			rawJson: text,
-		};
-	}
+		if ( typeof result === 'string' ) {
+			const text = result.trim();
+
+			// Try to parse as JSON — CCT storage may serialize objects.
+			if ( text.startsWith( '{' ) || text.startsWith( '[' ) ) {
+				try {
+					const parsed = JSON.parse( text );
+					if ( parsed && typeof parsed === 'object' ) {
+						return normaliseToolResult( toolName, parsed );
+					}
+				} catch {
+					// Not valid JSON — fall through to plain text treatment.
+				}
+			}
+
+			return {
+				text: text || 'Empty result',
+				attachments: [],
+				isError: isErrorResult( text ),
+				isTruncated: isTruncated( text ),
+				isAsyncPending: false,
+				rawJson: text,
+			};
+		}
 
 	// --- Non-object ---
 	if ( ! result || typeof result !== 'object' ) {
