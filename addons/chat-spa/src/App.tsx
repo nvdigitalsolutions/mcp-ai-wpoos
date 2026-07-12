@@ -347,10 +347,44 @@ export function App( { config }: AppProps ) {
 	const jobBus = useJobBus( cronStatusBaseUrl, runtime.nonce );
 	useTabTitleBadge( jobBus.runningCount );
 
-	// ── Agent team & workflow (Phase 4: v0.9.0) ───────────────────────────────
+	// ── Agent team & workflow (Phase 4: v0.9.0) ────────
 	const agentTeam = useAgentTeam( messages );
 	const workflowState = useWorkflowState( messages );
 	const delegationNotices = useDelegationNotices( messages );
+
+	// ── Bridge delegation results to job bus so they appear in Tasks drawer ──
+	// delegate_to_agent is synchronous (no cron job), so we create pseudo-job
+	// entries from the tool result.
+	const bridgedDelegations = useRef< Set< string > >( new Set() );
+	useEffect( () => {
+		const bus = ( window as unknown as { wpMcpAiJobBus?: EventTarget } )
+			.wpMcpAiJobBus;
+		if ( ! bus ) return;
+
+		for ( const notice of delegationNotices ) {
+			const key = `${ notice.agentName || 'agent' }::${ notice.task }`;
+			if ( bridgedDelegations.current.has( key ) ) continue;
+			bridgedDelegations.current.add( key );
+
+			const status =
+				notice.status === 'complete' || notice.status === 'completed'
+					? 'completed'
+					: notice.status === 'error' || notice.status === 'failed'
+					? 'failed'
+					: 'running';
+
+			bus.dispatchEvent(
+				new CustomEvent( 'job:started', {
+					detail: {
+						job_id: `delegation-${ notice.agentName || 'agent' }`,
+						tool_name: `Delegate to ${ notice.agentName || 'agent' }`,
+						status,
+						message: notice.task,
+					},
+				} )
+			);
+		}
+	}, [ delegationNotices ] );
 
 	// ── Vector store preload (GAP-16: v0.9.0) ────────────────────────────────
 	useEffect( () => {

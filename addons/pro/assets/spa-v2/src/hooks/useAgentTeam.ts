@@ -37,8 +37,17 @@ export function useDelegationNotices( messages: Message[] ): DelegationData[] {
 				if ( inv.state !== 'result' ) continue;
 				const r = inv.result as Record< string, unknown > | undefined;
 				const tn = String( inv.toolName ?? '' );
-				if ( ( tn === 'delegate_to_agent' || tn === 'delegate_to_a2a_agent' ) && r?.delegated_to ) {
-					notices.push( { agentName: String( r.delegated_to ), task: String( r.task ?? r.message ?? '' ), status: String( r.status ?? 'delegated' ) } );
+				if ( tn === 'delegate_to_agent' || tn === 'delegate_to_a2a_agent' ) {
+					// delegate_to_agent returns delegation info nested under
+					// result.delegation; delegate_to_a2a_agent returns
+					// result.agent. Support both shapes and legacy result.delegated_to.
+					const del = ( r?.delegation as Record< string, unknown > | undefined );
+					const agentName = String( del?.agent_name ?? r?.agent ?? r?.delegated_to ?? '' );
+					const task = String( del?.task ?? r?.task_description ?? r?.task ?? r?.message ?? '' );
+					const status = String( del?.status ?? r?.status ?? r?.state ?? 'delegated' );
+					if ( agentName || task ) {
+						notices.push( { agentName, task, status } );
+					}
 				}
 				if ( tn === 'aggregate_agent_results' && r?.success ) {
 					notices.push( { task: String( r.summary ?? 'Agent results aggregated' ), status: 'complete' } );

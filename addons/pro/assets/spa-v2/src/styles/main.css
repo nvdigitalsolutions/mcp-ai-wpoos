@@ -3224,20 +3224,29 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-tasks-overlay {
 	position: fixed;
-	inset: 0;
+	top: 32px;
+	right: 0;
+	bottom: 0;
+	left: 0;
 	z-index: 900;
 	background: rgba(0, 0, 0, 0.3);
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-tasks-overlay {
+		top: 46px;
+	}
 }
 
 /* ── Drawer Panel ─────────────────────────────────────────────────────── */
 
 .nvoos-pro-spa-tasks-drawer {
 	position: fixed;
-	top: 0;
+	top: 32px;  /* below the WordPress admin bar */
 	right: 0;
-	bottom: 0;
 	width: 340px;
 	max-width: 90vw;
+	height: calc(100vh - 32px);
 	z-index: 950;
 	background: var(--nvoos-bg-secondary, #fff);
 	box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
@@ -3245,6 +3254,13 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	flex-direction: column;
 	transform: translateX(100%);
 	transition: transform 0.25s ease;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-tasks-drawer {
+		top: 46px;
+		height: calc(100vh - 46px);
+	}
 }
 
 .nvoos-pro-spa-tasks-drawer--open {
