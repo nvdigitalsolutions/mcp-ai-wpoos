@@ -3,11 +3,11 @@
  *
  * This is the core chat hook that replaces the legacy messagesStore + sse.js.
  *
- * Transcript persistence is handled server-side by
- * `WP_MCP_AI_Chat_Transcript_Recorder` during every chat request.  The
- * frontend does NOT independently save transcripts because that would
- * create duplicate CCT entries (one from the backend during the request
- * and a second from the SPA after the stream ends).
+ * Transcript auto-save happens client-side on each completed turn (onFinish).
+ * This mirrors chat-spa's App.tsx persistFinishedTurn pattern so conversations
+ * are visible across the Pro SPA, chat-spa, and legacy chat.js transcript lists.
+ * The server-side WP_MCP_AI_Chat_Transcript_Recorder also records transcripts,
+ * and sse-adapter.ts now forwards session_key so both pathways use the same key.
  */
 
 import { useMemo, useCallback, useRef, useState, type RefObject } from 'react';
@@ -72,8 +72,9 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 				guest: false,
 				model,
 				provider,
+				sessionKey,
 			} ),
-		[ chatClientEndpoint, nonce, assistantId, model, provider ]
+		[ chatClientEndpoint, nonce, assistantId, model, provider, sessionKey ]
 	);
 
 	const {
@@ -92,7 +93,7 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		fetch: customFetch,
 		streamProtocol: 'data',
 		initialMessages,
-		onFinish: ( _message, { usage } ) => {
+		onFinish: ( _message, { usage, finishReason } ) => {
 			// Capture usage data (v0.9.0).
 			// Guard against NaN token counts that some providers return in edge cases.
 			if ( usage ) {
@@ -110,6 +111,37 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 						[ _message.id ]: { ...existing, model, provider },
 					};
 				} );
+			}
+
+			// Auto-save transcript after each completed turn (v2.1.0).
+			// Mirrors chat-spa's persistFinishedTurn pattern so conversations
+			// appear in the transcript list across all clients.
+			// Fire-and-forget — failures don't block the chat surface.
+			if ( transcriptsClient && sessionKey ) {
+				// Guard against duplication: if the last message already matches
+				// the just-completed assistant message, use messages as-is;
+				// otherwise append it (onFinish may fire before React
+				// re-renders with the new message in state).
+				const last = messages[ messages.length - 1 ];
+				const alreadyPresent =
+					last && _message.id && last.id === _message.id;
+				const wireMessages = (
+					alreadyPresent ? messages : [ ...messages, _message ]
+				).map( ( m ) => ( {
+					role: m.role as string,
+					content: typeof m.content === 'string' ? m.content : '',
+				} ) );
+				void transcriptsClient
+					.save( sessionKey, wireMessages, {
+						finish_reason:
+							typeof finishReason === 'string'
+								? finishReason
+								: 'stop',
+						source: 'pro-spa-v2',
+					} )
+					.catch( () => {
+						// Silent — matches chat-spa behaviour.
+					} );
 			}
 		},
 		onError: ( err ) => {
@@ -161,10 +193,9 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 	);
 
 	// ── Manual save callback (v2.1.0) ───────────────────────────────────
-	// Server-side WP_MCP_AI_Chat_Transcript_Recorder handles automatic
-	// persistence during every chat request.  This callback provides a
-	// manual save for edge cases (e.g. the user wants to snapshot the
-	// conversation before switching sessions).
+	// Auto-save runs in onFinish after every completed turn.  This
+	// callback provides an explicit manual save for edge cases (e.g.
+	// snapshotting the conversation before switching sessions).
 	const transcriptsClient = useMemo(
 		() =>
 			transcriptsEndpoint
