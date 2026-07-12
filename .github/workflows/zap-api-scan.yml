@@ -213,7 +213,30 @@ jobs:
           fi
 
       # ------------------------------------------------------------------
-      # 6. Upload OpenAPI spec as artifact
+      # 6. Patch OpenAPI server URL for Docker cross-container reachability
+      # ------------------------------------------------------------------
+      # The ZAP action runs inside its own Docker container, where
+      # "localhost" refers to the ZAP container, not the Docker host.
+      # We must rewrite the server URL in the OpenAPI spec and the
+      # ZAP target to use the Docker bridge gateway IP so ZAP can
+      # route back to the WordPress container on the host.
+      - name: Resolve ZAP-accessible target and patch OpenAPI spec
+        id: zap_target
+        if: steps.openapi.outputs.spec_exists == 'true'
+        run: |
+          # Get Docker bridge gateway IP (default: 172.17.0.1)
+          GW=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}' 2>/dev/null || echo "172.17.0.1")
+          echo "Docker gateway: ${GW}"
+          echo "url=http://${GW}:8000" >> $GITHUB_OUTPUT
+
+          # Patch the OpenAPI spec server URL so ZAP uses the gateway
+          if [ -f openapi.json ]; then
+            sed -i "s|http://localhost:8000|http://${GW}:8000|g" openapi.json
+            echo "Patched OpenAPI server URL to http://${GW}:8000"
+          fi
+
+      # ------------------------------------------------------------------
+      # 7. Upload OpenAPI spec as artifact
       # ------------------------------------------------------------------
       - name: Upload OpenAPI spec
         if: steps.openapi.outputs.spec_exists == 'true'
@@ -224,14 +247,14 @@ jobs:
           retention-days: 30
 
       # ------------------------------------------------------------------
-      # 7. Run ZAP API Scan
+      # 8. Run ZAP API Scan (uses resolved target for cross-container reachability)
       # ------------------------------------------------------------------
       - name: ZAP API Scan
         id: zap
         if: steps.openapi.outputs.spec_exists == 'true'
         uses: zaproxy/action-api-scan@v0.10.0
         with:
-          target: 'http://localhost:8000'
+          target: ${{ steps.zap_target.outputs.url }}
           format: 'openapi'
           rules_file_name: '.zap-rules.tsv'
           cmd_options: >
@@ -241,7 +264,7 @@ jobs:
         continue-on-error: true
 
       # ------------------------------------------------------------------
-      # 8. Upload ZAP reports
+      # 9. Upload ZAP reports
       # ------------------------------------------------------------------
       - name: Gather ZAP reports
         if: always() && steps.openapi.outputs.spec_exists == 'true'
@@ -261,7 +284,7 @@ jobs:
           retention-days: 30
 
       # ------------------------------------------------------------------
-      # 9. Parse findings and post PR comment
+      # 10. Parse findings and post PR comment
       # ------------------------------------------------------------------
       - name: Parse ZAP API findings
         id: parse
