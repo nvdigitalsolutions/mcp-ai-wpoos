@@ -198,27 +198,65 @@ class WP_MCP_AI_CRM_Engine {
 			),
 			// External freelancer platform sourcing (since 2.10.0).
 			'external_sourcing'       => array(
-				'upwork'                     => array(
-					'default_connection_id' => '',
-					'auto_import_as'        => 'deal',
-					'auto_import_enabled'   => false,
-					'auto_import_min_score' => 60,
-					'use_profile_context'   => false,
+				'upwork'               => array(
+					'default_connection_id'    => '',
+					'auto_import_as'           => 'deal',
+					'auto_import_enabled'      => false,
+					'auto_import_min_score'    => 60,
+					'use_profile_context'      => false,
+					// Search defaults (since 2.12.0).
+					'default_search_keywords'  => '',
+					'default_location'         => '',
+					'default_job_type'         => '',
+					'default_experience_level' => '',
+					'default_categories'       => '',
+					'search_interval_minutes'  => 0,
+					'max_results_per_search'   => 20,
+					'excluded_keywords'        => '',
 				),
-				'linkedin'                   => array(
-					'default_connection_id'   => '',
-					'auto_import_as'          => 'deal',
-					'auto_import_enabled'     => false,
-					'auto_import_min_score'   => 60,
-					'use_profile_context'     => false,
-					'default_search_keywords' => '',
-					'default_location'        => '',
+				'linkedin'             => array(
+					'default_connection_id'    => '',
+					'auto_import_as'           => 'deal',
+					'auto_import_enabled'      => false,
+					'auto_import_min_score'    => 60,
+					'use_profile_context'      => false,
+					'default_search_keywords'  => '',
+					'default_location'         => '',
+					// Extended search defaults (since 2.12.0).
+					'default_job_type'         => '',
+					'default_experience_level' => '',
+					'default_remote'           => false,
+					'search_interval_minutes'  => 0,
+					'max_results_per_search'   => 20,
+					'excluded_keywords'        => '',
 				),
-				'auto_import_interval_hours' => 6,
-				'ideal_client_profile'       => '',
-				'default_budget_min'         => '',
-				'default_budget_max'         => '',
-				'excluded_keywords'          => '',
+				'ideal_client_profile' => '',
+				'default_budget_min'   => '',
+				'default_budget_max'   => '',
+				'excluded_keywords'    => '',
+				// Result format controls (since 2.12.0).
+				'result_format'        => array(
+					'description_length'  => 200,
+					'include_email'       => false,
+					'include_client_info' => true,
+					'include_budget'      => true,
+					'include_skills'      => true,
+					'include_applicants'  => true,
+					'compact_mode'        => false,
+				),
+				// Notification rules (since 2.12.0).
+				'notification'         => array(
+					'enabled'              => false,
+					'email'                => '',
+					'min_score_alert'      => 80,
+					'max_alerts_per_cycle' => 5,
+				),
+				// Deduplication (since 2.12.0).
+				'deduplication'        => array(
+					'enabled'       => true,
+					'strategy'      => 'title_url',
+					'lookback_days' => 90,
+				),
 			),
 		);
 
