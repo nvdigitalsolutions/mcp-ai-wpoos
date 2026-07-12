@@ -150,14 +150,22 @@ export function useDelegationNotices(
 				// delegate_to_agent / delegate_to_a2a_agent
 				if (
 					( toolName === 'delegate_to_agent' ||
-						toolName === 'delegate_to_a2a_agent' ) &&
-					result.delegated_to
+					toolName === 'delegate_to_a2a_agent' )
 				) {
-					notices.push( {
-						agentName: String( result.delegated_to ),
-						task: String( result.task ?? result.message ?? '' ),
-						status: String( result.status ?? 'delegated' ),
-					} );
+					// delegate_to_agent returns delegation info nested under
+					// result.delegation; delegate_to_a2a_agent returns
+					// result.agent. Support both shapes and legacy result.delegated_to.
+					const del = result.delegation as Record< string, unknown > | undefined;
+					const agentName = String( del?.agent_name ?? result.agent ?? result.delegated_to ?? '' );
+					const task = String( del?.task ?? result.task_description ?? result.task ?? result.message ?? '' );
+					const status = String( del?.status ?? result.status ?? result.state ?? 'delegated' );
+					if ( agentName || task ) {
+						notices.push( {
+							agentName,
+							task,
+							status,
+						} );
+					}
 				}
 
 				// aggregate_agent_results

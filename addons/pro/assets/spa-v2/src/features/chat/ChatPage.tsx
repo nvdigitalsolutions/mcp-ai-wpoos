@@ -301,9 +301,43 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const theme = useUIStore( ( s ) => s.theme );
 	const setTheme = useUIStore( ( s ) => s.setTheme );
 
-	// ── Workflow + delegation (v0.9.0) ──────────────────────────────────────
+	// ── Workflow + delegation (v0.9.0) ─────────────────────────────────
 	const workflowState = useWorkflowState( messages );
 	const delegationNotices = useDelegationNotices( messages );
+
+	// ── Bridge delegation results to job bus so they appear in Tasks drawer ────
+	// delegate_to_agent is synchronous (no cron job), so we create pseudo-job
+	// entries from the tool result so the user can see delegation activity.
+	const bridgedDelegations = useRef< Set< string > >( new Set() );
+	useEffect( () => {
+		const bus = ( window as unknown as { wpMcpAiJobBus?: EventTarget } )
+			.wpMcpAiJobBus;
+		if ( ! bus ) return;
+
+		for ( const notice of delegationNotices ) {
+			const key = `${ notice.agentName || 'agent' }::${ notice.task }`;
+			if ( bridgedDelegations.current.has( key ) ) continue;
+			bridgedDelegations.current.add( key );
+
+			const status =
+				notice.status === 'complete' || notice.status === 'completed'
+					? 'completed'
+					: notice.status === 'error' || notice.status === 'failed'
+					? 'failed'
+					: 'running';
+
+			bus.dispatchEvent(
+				new CustomEvent( 'job:started', {
+					detail: {
+						job_id: `delegation-${ notice.agentName || 'agent' }`,
+						tool_name: `Delegate to ${ notice.agentName || 'agent' }`,
+						status,
+						message: notice.task,
+					},
+				} )
+			);
+		}
+	}, [ delegationNotices ] );
 
 	// ---- Render ----
 
@@ -586,6 +620,9 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				onDismissJob={ jobBus.dismissJob }
 				onDismissAll={ jobBus.dismissAllTerminal }
 			/>
-			</div>
+
+		{/* Keyboard shortcuts help modal (v0.9.0) */}
+		<KeyboardShortcutsHelp isOpen={ ks.isHelpOpen } onClose={ ks.closeHelp } />
+		</div>
 	);
 	}
