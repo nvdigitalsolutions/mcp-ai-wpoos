@@ -242,6 +242,22 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 		}
 
 		/**
+		 * Public static wrapper for generate_job_id.
+		 *
+		 * Allows external services (e.g. delegation retry logic) to compute
+		 * the stable job identifier without instantiating the manager.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $hook Cron hook name.
+		 * @param array  $args Cron arguments.
+		 * @return string
+		 */
+		public static function generate_job_id_static( $hook, $args ) {
+			return self::generate_job_id( $hook, $args );
+		}
+
+		/**
 		 * Load the stored jobs from the options table.
 		 *
 		 * @return array
