@@ -3207,6 +3207,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
 
+					// Ensure tool_call_id is never empty so downstream
+					// tool-result messages are valid for the next turn.
+					if ( '' === $tool_call_id ) {
+						$tool_call_id = uniqid( 'tool_', true );
+					}
+
 					// Check if this is an async pending result (background-only tools like video generation).
 					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop
 					// after processing this iteration. The frontend will handle polling for the async result.
@@ -3251,9 +3257,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name, $tool_instance ),
 					);
 
-					if ( '' !== $tool_call_id ) {
-						$full_tool_message['tool_call_id'] = $tool_call_id;
-					}
+					// Always include tool_call_id so the frontend never sends back
+					// a tool message that fails REST validation on the next turn.
+					$full_tool_message['tool_call_id'] = '' !== $tool_call_id
+						? $tool_call_id
+						: uniqid( 'tool_', true );
 
 					if ( '' !== $tool_name ) {
 						$full_tool_message['name'] = $tool_name;
@@ -3303,9 +3311,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => $sanitized_result,
 					);
 
-					if ( '' !== $tool_call_id ) {
-						$tool_message['tool_call_id'] = $tool_call_id;
-					}
+					// Always include tool_call_id to keep the message valid
+					// for provider payload filtering and subsequent turns.
+					$tool_message['tool_call_id'] = '' !== $tool_call_id
+					? $tool_call_id
+					: uniqid( 'tool_', true );
 
 					if ( '' !== $tool_name ) {
 						$tool_message['name'] = $tool_name;
@@ -3326,15 +3336,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'tool_count'   => count( $tool_result_messages ),
 						)
 					);
-					$this->snapshot_chat_continuation_on_async_pending(
-						$pending_async_jobs,
-						$messages,
-						$assistant_id,
-						$user_id,
-						$options,
-						$transcript_context
-					);
-					break;
+						$this->snapshot_chat_continuation_on_async_pending(
+							$pending_async_jobs,
+							$messages,
+							$assistant_id,
+							$user_id,
+							$options,
+							$transcript_context
+						);
+						break;
 				}
 
 				// Phase 4: Proactive agentic-loop context compaction.
@@ -4105,6 +4115,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
 
+					// Ensure tool_call_id is never empty so downstream
+					// tool-result messages are valid for the next turn.
+					if ( '' === $tool_call_id ) {
+						$tool_call_id = uniqid( 'tool_', true );
+					}
+
 					// Stream tool start event.
 					$this->send_sse_event(
 						'tool_execution',
@@ -4263,9 +4279,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => $result_content,
 					);
 
-					if ( '' !== $tool_call_id ) {
-						$full_tool_message['tool_call_id'] = $tool_call_id;
-					}
+					// Always include tool_call_id so the frontend never sends back
+					// a tool message that fails REST validation on the next turn.
+					$full_tool_message['tool_call_id'] = '' !== $tool_call_id
+						? $tool_call_id
+						: uniqid( 'tool_', true );
 
 					if ( '' !== $tool_name ) {
 						$full_tool_message['name'] = $tool_name;
@@ -4319,9 +4337,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => $sanitized_result,
 					);
 
-					if ( '' !== $tool_call_id ) {
-						$tool_message['tool_call_id'] = $tool_call_id;
-					}
+					// Always include tool_call_id to keep the message valid
+					// for provider payload filtering and subsequent turns.
+					$tool_message['tool_call_id'] = '' !== $tool_call_id
+					? $tool_call_id
+					: uniqid( 'tool_', true );
 
 					if ( '' !== $tool_name ) {
 						$tool_message['name'] = $tool_name;
@@ -4344,15 +4364,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'tool_count'   => count( $tool_result_messages ),
 						)
 					);
-					$this->snapshot_chat_continuation_on_async_pending(
-						$pending_async_jobs,
-						$messages,
-						$assistant_id,
-						$user_id,
-						$options,
-						$transcript_context
-					);
-					break;
+						$this->snapshot_chat_continuation_on_async_pending(
+							$pending_async_jobs,
+							$messages,
+							$assistant_id,
+							$user_id,
+							$options,
+							$transcript_context
+						);
+						break;
 				}
 
 				// Stream thinking status immediately after tool execution completes.
@@ -7401,8 +7421,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'BME summary applied to chat request.',
 				array(
 					'middle_summarized' => count( $middle_messages ),
-					'end_kept'         => count( $end_messages ),
-					'summary_length'   => strlen( $summary ),
+					'end_kept'          => count( $end_messages ),
+					'summary_length'    => strlen( $summary ),
 				)
 			);
 
