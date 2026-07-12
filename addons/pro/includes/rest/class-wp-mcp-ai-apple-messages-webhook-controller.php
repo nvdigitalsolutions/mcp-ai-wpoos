@@ -377,6 +377,7 @@ class WP_MCP_AI_Apple_Messages_Webhook_Controller extends WP_REST_Controller {
 				self::REPLY_CRON_HOOK,
 				array( $conversation_id, $message_text, $connection_id )
 			);
+			spawn_cron();
 		}
 	}
 

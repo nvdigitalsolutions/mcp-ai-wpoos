@@ -360,6 +360,7 @@ class WP_MCP_AI_ICloud_Webhook_Controller extends WP_REST_Controller {
 		$cron_args = array( $user_id, $file_id, $event_summary, $connection_id );
 		if ( ! wp_next_scheduled( self::REPLY_CRON_HOOK, $cron_args ) ) {
 			wp_schedule_single_event( time(), self::REPLY_CRON_HOOK, $cron_args );
+			spawn_cron();
 		}
 	}
 

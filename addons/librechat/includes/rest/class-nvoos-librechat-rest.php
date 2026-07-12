@@ -255,6 +255,9 @@ class NV_oOS_LibreChat_REST {
 			array( $job_id )
 		);
 
+		// Trigger WordPress cron immediately so execution starts without delay.
+		spawn_cron();
+
 		return rest_ensure_response(
 			array(
 				'job_id'  => $job_id,
