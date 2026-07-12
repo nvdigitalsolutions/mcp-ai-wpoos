@@ -232,6 +232,11 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 			array( $job_id, $command, $context )
 		);
 
+		// Trigger WordPress cron immediately so the command executes without delay.
+		// Without this, the slash command sits in the cron queue until the next
+		// HTTP request, which may never arrive (especially on SSE connections).
+		spawn_cron();
+
 		// Register in Cron Manager so the job is visible and monitorable.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			WP_MCP_AI_Cron_Manager::record_job(

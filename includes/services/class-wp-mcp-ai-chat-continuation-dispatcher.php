@@ -211,7 +211,16 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Dispatcher' ) ) {
 				$delay = 0;
 			}
 
-			return false !== wp_schedule_single_event( time() + $delay, self::CRON_HOOK, array( $job_id ) );
+			$scheduled = wp_schedule_single_event( time() + $delay, self::CRON_HOOK, array( $job_id ) );
+
+			// Trigger WordPress cron immediately so the continuation runs without delay.
+			// Without this, the continuation sits in the cron queue until the next
+			// HTTP request, which may never arrive (especially on SSE connections).
+			if ( false !== $scheduled ) {
+				spawn_cron();
+			}
+
+			return false !== $scheduled;
 		}
 
 		/**

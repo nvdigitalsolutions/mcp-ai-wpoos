@@ -479,6 +479,13 @@ class WP_MCP_AI_Agent_Communication_Service {
 		}
 
 		wp_schedule_single_event( time(), self::CRON_HOOK, $args );
+
+		// Trigger WordPress cron immediately so the delegation starts right away.
+		// Without this, the delegation sits in the cron queue until the next
+		// HTTP request, which may never arrive (especially on SSE connections).
+		// This matches the pattern used by the VEO video generation service's
+		// queue_async_polling() which also calls spawn_cron() after scheduling.
+		spawn_cron();
 	}
 
 	/**
