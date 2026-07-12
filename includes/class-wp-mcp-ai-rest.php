@@ -10580,9 +10580,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$message_entry['content'] = $message['content'];
 				}
 
-				// Preserve tool_call_id for tool messages (required by OpenAI for proper request validation).
-				if ( 'tool' === $role && isset( $message['tool_call_id'] ) && '' !== $message['tool_call_id'] ) {
-					$message_entry['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
+				// Always include tool_call_id for tool messages so the frontend never
+				// sends back a tool message that fails REST validation on the next turn.
+				// Use the stored id when present; generate a stable fallback otherwise.
+				if ( 'tool' === $role ) {
+					$message_entry['tool_call_id'] = ( isset( $message['tool_call_id'] ) && '' !== $message['tool_call_id'] )
+						? sanitize_text_field( $message['tool_call_id'] )
+						: uniqid( 'tool_loaded_', true );
 				}
 
 				// Preserve name for tool messages (optional but helpful for debugging).
