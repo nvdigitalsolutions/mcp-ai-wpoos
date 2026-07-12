@@ -64,7 +64,17 @@ interface NvOosFrame {
 	choices?: Array< { delta?: { content?: string; reasoning_content?: string; thinking?: string } } >;
 	code?: string;
 	message?: string;
-	tool_results?: Array< { slug?: string; result?: unknown } >;
+	/** Server-side tool result entries from the agentic loop final payload. */
+	tool_results?: Array< {
+		role?: string;
+		name?: string;
+		tool_call_id?: string;
+		content?: unknown;
+		usage?: unknown;
+		cost?: unknown;
+		capability_flags?: string[];
+		[ k: string ]: unknown;
+	} >;
 	[ k: string ]: unknown;
 }
 
@@ -76,6 +86,78 @@ interface NvOosFrame {
 function encodeChunk( typeId: string, payload: unknown ): Uint8Array {
 	const line = `${ typeId }:${ JSON.stringify( payload ) }\n`;
 	return new TextEncoder().encode( line );
+}
+
+/**
+ * Emit tool call start + result events for each tool_result entry so that
+ * useChat populates `toolInvocations` on the assistant message.  This
+ * allows `ToolCallCard` (in MessageView.tsx) to render rich content
+ * (images, videos, files, charts) instead of the raw-JSON `AnnotationPill`
+ * that type-8 annotations produce.
+ *
+ * Mirrors the legacy chat.js behaviour where `handleChatResponse` iterates
+ * `data.tool_results` and calls `normaliseToolResultForDisplay` on each.
+ */
+function emitToolResultsAsToolCalls(
+	toolResults: Array< Record< string, unknown > >,
+	out: Uint8Array[]
+): void {
+	for ( const tr of toolResults ) {
+		const toolName = typeof tr.name === 'string' ? tr.name : '';
+		if ( ! toolName ) continue;
+
+		// Build a unique, stable toolCallId.  Prefer the server-supplied
+		// tool_call_id; fall back to a synthetic id so downstream
+		// tool-message validators (REST) never see an empty tool_call_id.
+		const toolCallId =
+			typeof tr.tool_call_id === 'string' && tr.tool_call_id.length > 0
+				? tr.tool_call_id
+				: `tool-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2, 8 ) }`;
+
+		// Parse the content field (JSON string on the wire) into an
+		// object so the downstream normaliseToolResult() in
+		// ToolCallCard can extract attachments and rich metadata.
+		let result: unknown = tr.content;
+		if ( typeof result === 'string' && result.trim() ) {
+			try {
+				const parsed = JSON.parse( result );
+				if ( parsed && typeof parsed === 'object' ) {
+					result = parsed;
+				}
+			} catch {
+				// Keep the original string if parsing fails.
+			}
+		}
+
+		// Preserve usage, cost, and capability_flags on the result
+		// object so aggregateToolUsageAndCost-equivalent logic
+		// (via ChatPage.enhancedUsageMap) can discover them.
+		if ( result && typeof result === 'object' ) {
+			const r = result as Record< string, unknown >;
+			if ( tr.usage !== undefined && r.usage === undefined ) r.usage = tr.usage;
+			if ( tr.cost !== undefined && r.cost === undefined ) r.cost = tr.cost;
+			if ( tr.capability_flags !== undefined && r.capability_flags === undefined ) {
+				r.capability_flags = tr.capability_flags;
+			}
+		}
+
+		// Emit tool call start (type 9) …
+		out.push(
+			encodeChunk( '9', {
+				toolCallId,
+				toolName,
+				args: {},
+			} )
+		);
+
+		// … then tool result (type a) so the invocation is completed.
+		out.push(
+			encodeChunk( 'a', {
+				toolCallId,
+				result,
+			} )
+		);
+	}
 }
 
 /**
@@ -118,12 +200,21 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 				out.push( encodeChunk( 'g', reasoning ) );
 			}
 		}
-		// If this frame also carries tool_results, emit them as annotations.
+		// If this frame also carries tool_results, emit individual
+		// tool-call-start + result events (type 9 + type a) so
+		// useChat populates toolInvocations.  ToolCallCard then
+		// renders images, videos, files, and charts inline
+		// instead of showing raw JSON annotation pills.
 		if ( Array.isArray( frame.tool_results ) && frame.tool_results.length > 0 ) {
-			out.push( encodeChunk( '8', frame.tool_results ) );
-			// Extract capability_flags from each tool result entry and emit
-			// as a 'capabilities' annotation so CapabilityFlagBadges can render them.
-			const caps = extractCapabilityFlags( frame.tool_results );
+			emitToolResultsAsToolCalls(
+				frame.tool_results as Array< Record< string, unknown > >,
+				out
+			);
+			// Still emit capability_flags as a type-8 annotation so
+			// CapabilityFlagBadges can render them.
+			const caps = extractCapabilityFlags(
+				frame.tool_results as Array< Record< string, unknown > >
+			);
 			if ( caps.length > 0 ) {
 				out.push( encodeChunk( '8', [ { type: 'capabilities', flags: caps } ] ) );
 			}
@@ -267,9 +358,18 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 				// Completion frames with data — mark as 'data' type.
 				if ( frame.data || frame.choices || frame.model ) {
 					out.push( encodeChunk( '8', [ { ...frame, type: 'data' } ] ) );
-					// If this frame also carries tool_results, extract capability_flags.
+					// Emit tool_results as individual tool-call events
+					// so ToolCallCard renders rich content (images,
+					// videos, files, charts) instead of raw JSON
+					// annotation pills.
 					if ( Array.isArray( frame.tool_results ) && frame.tool_results.length > 0 ) {
-						const caps = extractCapabilityFlags( frame.tool_results );
+						emitToolResultsAsToolCalls(
+							frame.tool_results as Array< Record< string, unknown > >,
+							out
+						);
+						const caps = extractCapabilityFlags(
+							frame.tool_results as Array< Record< string, unknown > >
+						);
 						if ( caps.length > 0 ) {
 							out.push( encodeChunk( '8', [ { type: 'capabilities', flags: caps } ] ) );
 						}
