@@ -150,6 +150,9 @@ export class MediaClient {
 		);
 		url.searchParams.set( 'orderby', 'date' );
 		url.searchParams.set( 'order', 'desc' );
+		// Cache-bust: ensure fresh results after tool-generated files
+		// (images, videos) land in the library during agentic loops.
+		url.searchParams.set( '_t', String( Date.now() ) );
 
 		if ( search ) {
 			url.searchParams.set( 'search', search );

@@ -20,6 +20,7 @@ import { useMediaLibrary, type MediaViewMode } from '../../hooks/useMediaLibrary
 import type { MediaItem } from '../../api/media';
 import { MediaGrid } from './MediaGrid';
 import { MediaList } from './MediaList';
+import { useUIStore } from '../../stores/uiStore';
 
 export interface MediaTabProps {
 	/** Full WordPress REST API URL for the media endpoint. */
@@ -60,6 +61,18 @@ export function MediaTab( props: MediaTabProps ): JSX.Element {
 		mimeFilter,
 		setMimeFilter,
 	} = useMediaLibrary( { mediaEndpoint, nonce, disabled: ! mediaEndpoint } );
+
+	// Auto-refresh after tool-generated files land (e.g. image/video
+	// generation tools).  The counter is bumped by ChatPage when the
+	// streaming response completes.
+	const mediaRefreshCounter = useUIStore( ( s ) => s.mediaRefreshCounter );
+	const prevCounterRef = useRef( mediaRefreshCounter );
+	useEffect( () => {
+		if ( mediaRefreshCounter !== prevCounterRef.current ) {
+			prevCounterRef.current = mediaRefreshCounter;
+			refresh();
+		}
+	}, [ mediaRefreshCounter, refresh ] );
 
 	// Observer ref for infinite scroll.
 	const sentinelRef = useRef< HTMLDivElement | null >( null );

@@ -161,6 +161,29 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		}
 		return map;
 	}, [ usageMap, messages ] );
+		// ── Refresh sidebar after each completed response ──
+		// The server-side WP_MCP_AI_Chat_Transcript_Recorder auto-saves
+		// transcripts during every chat request, and tool-generated files
+		// (images, videos) land in the Media Library during the agentic
+		// loop.  Bump both refresh signals so the sidebar thread list
+		// and media tab re-fetch after the stream ends.
+		const bumpMediaRefresh = useUIStore( ( s ) => s.bumpMediaRefresh );
+		const prevStreamingRef = useRef( isStreaming );
+		useEffect( () => {
+			const wasStreaming = prevStreamingRef.current;
+			prevStreamingRef.current = isStreaming;
+			// Transition from streaming → ready: the LLM has finished and
+			// the server-side transcript + media should now be persisted.
+			if ( wasStreaming && ! isStreaming && status === 'ready' ) {
+				// Small delay to give the server-side recorder a chance to
+				// finish writing before we re-fetch both lists.
+				const timer = setTimeout( () => {
+					void transcripts.refreshList();
+					bumpMediaRefresh();
+				}, 500 );
+				return () => clearTimeout( timer );
+			}
+		}, [ isStreaming, status, transcripts, bumpMediaRefresh ] );
 
 	// Watch for media insert events from the sidebar Media tab.
 	// When the user clicks "Insert into chat", append attachment ID
