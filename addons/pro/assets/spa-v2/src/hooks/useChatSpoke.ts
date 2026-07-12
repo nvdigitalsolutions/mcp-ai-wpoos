@@ -13,6 +13,7 @@
 import { useMemo, useCallback, useRef, useState, type RefObject } from 'react';
 import { useChat, type Message } from '@ai-sdk/react';
 import { createChatFetch } from '../sse-adapter';
+import { TranscriptsClient } from '../api/transcripts';
 import { useUIStore } from '../stores/uiStore';
 
 export interface UseChatSpokeOptions {
@@ -24,6 +25,8 @@ export interface UseChatSpokeOptions {
 	/** Optional model override to send as options.provider / options.model. */
 	model?: string;
 	provider?: string;
+	/** Transcripts REST endpoint for manual save (v2.1.0). */
+	transcriptsEndpoint?: string;
 }
 
 export interface UseChatSpokeReturn {
@@ -42,6 +45,8 @@ export interface UseChatSpokeReturn {
 	fileInputRef: RefObject< HTMLInputElement | null >;
 	sendMessage: ( content: string ) => void;
 	usageMap: Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; costUsd?: number; model?: string; provider?: string } >;
+	/** Manually persist current session messages to the CCT transcripts store (v2.1.0). */
+	saveConversation: () => Promise< void >;
 }
 
 export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn {
@@ -53,6 +58,7 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		sessionKey = '',
 		model,
 		provider,
+		transcriptsEndpoint,
 	} = options;
 
 	const addToast = useUIStore( ( s ) => s.addToast );
@@ -154,6 +160,40 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		[ chatHandleSubmit ]
 	);
 
+	// ── Manual save callback (v2.1.0) ───────────────────────────────────
+	// Server-side WP_MCP_AI_Chat_Transcript_Recorder handles automatic
+	// persistence during every chat request.  This callback provides a
+	// manual save for edge cases (e.g. the user wants to snapshot the
+	// conversation before switching sessions).
+	const transcriptsClient = useMemo(
+		() =>
+			transcriptsEndpoint
+				? new TranscriptsClient( {
+					endpoint: transcriptsEndpoint,
+					nonce,
+					assistantId,
+				  } )
+				: null,
+		[ transcriptsEndpoint, nonce, assistantId ]
+	);
+
+	const saveConversation = useCallback( async () => {
+		if ( ! transcriptsClient || ! sessionKey ) {
+			return;
+		}
+		// Convert AI SDK Message[] to TranscriptMessage[] by stripping
+		// non-serialisable fields (toolInvocations, annotations, parts).
+		const transcriptMessages = messages.map( ( m ) => ( {
+			role: m.role as string,
+			content: typeof m.content === 'string' ? m.content : '',
+		} ) );
+		try {
+			await transcriptsClient.save( sessionKey, transcriptMessages );
+		} catch {
+			// Silently ignore — server-side persistence covers the happy path.
+		}
+	}, [ transcriptsClient, sessionKey, messages ] );
+
 	return {
 		messages,
 		input,
@@ -169,5 +209,6 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		fileInputRef,
 		sendMessage,
 		usageMap,
+		saveConversation,
 	};
 }

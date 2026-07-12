@@ -278,6 +278,28 @@ function parseSseBuffer( buffer: string ): { frames: NvOosFrame[]; rest: string 
 	return { frames, rest };
 }
 
+/**
+ * Strip tool messages that are missing `tool_call_id` from the messages
+ * array. When conversations are loaded from CCT, stored tool messages
+ * lack the AI SDK–specific `tool_call_id` field. The REST endpoint
+ * rejects these messages, so we remove them before forwarding the request
+ * to the server. This matches the legacy chat-client behaviour.
+ *
+ * @since 2.1.0
+ */
+function sanitizeMessages( messages: unknown ): unknown {
+	if ( ! Array.isArray( messages ) ) {
+		return messages;
+	}
+	return ( messages as Array< Record< string, unknown > > ).filter( ( m ) => {
+		if ( m.role !== 'tool' ) {
+			return true;
+		}
+		// Keep tool messages only if they have a valid tool_call_id.
+		return typeof m.tool_call_id === 'string' && m.tool_call_id.length > 0;
+	} );
+}
+
 export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fetch {
 	return async function chatFetch(
 		_input: RequestInfo | URL,
@@ -300,6 +322,13 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 				body = {};
 			}
 		}
+
+		// Strip tool messages that lack tool_call_id (v2.1.0).
+		const bodyObj = body as Record< string, unknown >;
+		if ( Array.isArray( bodyObj.messages ) ) {
+			bodyObj.messages = sanitizeMessages( bodyObj.messages );
+		}
+
 		const merged: Record< string, unknown > = {
 			...( body as Record< string, unknown > ),
 			assistant_id: opts.assistantId,

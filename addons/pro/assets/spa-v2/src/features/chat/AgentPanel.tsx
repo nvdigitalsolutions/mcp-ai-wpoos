@@ -5,7 +5,7 @@
  * the scrollable message list and the input composer area.
  */
 
-import { useCallback, useEffect, useRef, type JSX } from 'react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { type Message } from '@ai-sdk/react';
 import { MessageView } from './MessageView';
@@ -65,6 +65,8 @@ export interface AgentPanelProps {
 	/** Workflow + delegation (v0.9.0). */
 	workflow?: WorkflowState | null;
 	delegations?: DelegationData[];
+	/** Manual save conversation callback (v2.1.0). */
+	onSaveConversation?: () => void;
 	/** Audio recorder (v0.9.0). */
 	toolsEndpoint?: string;
 	uploadEndpoint?: string;
@@ -101,6 +103,7 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 		onRetryJob,
 		workflow,
 		delegations,
+		onSaveConversation,
 		toolsEndpoint,
 		uploadEndpoint,
 		nonce,
@@ -172,6 +175,15 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 			el.scrollTop = el.scrollHeight;
 		} );
 	}, [ messages, isStreaming ] );
+
+	// ── Save conversation handler (v2.1.0) ─────────────────────────────
+	const [ savedIndicator, setSavedIndicator ] = useState< boolean >( false );
+	const handleSaveClick = useCallback( () => {
+		if ( ! onSaveConversation || isStreaming ) return;
+		onSaveConversation();
+		setSavedIndicator( true );
+		setTimeout( () => setSavedIndicator( false ), 1500 );
+	}, [ onSaveConversation, isStreaming ] );
 
 	// Keyboard shortcut: Enter to send (Shift+Enter for newline).
 	const handleKeyDown = useCallback(
@@ -297,7 +309,17 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 							<button type="button" className="nvoos-pro-spa-attach-btn"
 								aria-label={ __( 'Attach file', 'nvoos-pro-spa' ) } title={ __( 'Attach file', 'nvoos-pro-spa' ) }
 								disabled={ isStreaming } onClick={ () => fileInputRef.current?.click() }>📎</button>
-						</div>
+							{/* Save conversation button (v2.1.0) */}
+							{ onSaveConversation && (
+								<button type="button" className="nvoos-pro-spa-save-btn"
+									aria-label={ __( 'Save conversation', 'nvoos-pro-spa' ) }
+									title={ __( 'Save conversation', 'nvoos-pro-spa' ) }
+									disabled={ isStreaming || messages.length === 0 }
+									onClick={ handleSaveClick }>
+									{ savedIndicator ? '✅' : '💾' }
+								</button>
+							) }
+							</div>
 					) }
 					<textarea
 						id="nvoos-pro-spa-composer-input"
