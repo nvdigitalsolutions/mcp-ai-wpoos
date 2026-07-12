@@ -1800,6 +1800,10 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-approval-command.php';
 	}
 
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Harness_Search_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-harness-search-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-harness-search-command.php';
+	}
+
 	WP_CLI::add_command( 'mcp-ai', 'WP_MCP_AI_CLI_Command' );
 	WP_CLI::add_command( 'mcp-ai plugins', 'WP_MCP_AI_CLI_Plugins_Command' );
 	WP_CLI::add_command( 'mcp-ai queue', 'WP_MCP_AI_CLI_Queue_Command' );
@@ -1825,4 +1829,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	WP_CLI::add_command( 'mcp-ai health', 'WP_MCP_AI_CLI_Health_Command' );
 	WP_CLI::add_command( 'mcp-ai cache clear', 'WP_MCP_AI_CLI_Cache_Command' );
 	WP_CLI::add_command( 'mcp-ai version', 'WP_MCP_AI_CLI_Version_Command' );
+
+	// Register harness search command.
+	if ( class_exists( 'WP_MCP_AI_CLI_Harness_Search_Command' ) ) {
+		WP_CLI::add_command( 'mcp-ai harness search', 'WP_MCP_AI_CLI_Harness_Search_Command' );
+		WP_CLI::add_command( 'mcp-ai harness population', 'WP_MCP_AI_CLI_Harness_Search_Command' );
+		WP_CLI::add_command( 'mcp-ai harness trace', 'WP_MCP_AI_CLI_Harness_Search_Command' );
+	}
 }

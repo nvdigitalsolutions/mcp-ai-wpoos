@@ -99,6 +99,18 @@ class WP_MCP_AI_Self_Refine_Loop {
 			$verdicts[] = $verdict['verdict'];
 			$feedback[] = $verdict['feedback'];
 
+			// Record the iteration in the harness trace capture if active.
+			if ( class_exists( 'WP_MCP_AI_Harness_Trace_Capture' ) ) {
+				WP_MCP_AI_Harness_Trace_Capture::record_refine_iteration(
+					array(
+						'iteration'        => $i,
+						'verdict'          => $verdict['verdict'],
+						'feedback'         => $verdict['feedback'],
+						'candidate_length' => strlen( $candidate ),
+					)
+				);
+			}
+
 			if ( 'accept' === $verdict['verdict'] || '' === trim( $verdict['feedback'] ) ) {
 				$stopped_reason = 'accepted';
 				break;

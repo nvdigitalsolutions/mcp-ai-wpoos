@@ -259,6 +259,125 @@ class WP_MCP_AI_Prompt_Cue_Library {
 	}
 
 	/**
+	 * Register a cue discovered through harness search.
+	 *
+	 * Discovered cues carry provenance metadata (search run ID, score delta,
+	 * status) and are persisted in the `wp_mcp_ai_discovered_cues` option
+	 * so they survive plugin updates. They are surfaced in the admin metabox
+	 * with a "Discovered" badge.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param array $cue { Cue data plus discovery metadata.
+	 *   @type string $slug            Required. Lowercase identifier.
+	 *   @type string $label           Required. Human-readable label.
+	 *   @type string $description     Required. One-line description.
+	 *   @type string $template        Required. The cue text.
+	 *   @type array  $task_classes    Optional. Task classes.
+	 *   @type string $discovered_for  Task class this cue was discovered for.
+	 *   @type string $search_run_id   Search run that produced this cue.
+	 *   @type float  $score_delta     Improvement over baseline.
+	 *   @type string $status          'candidate', 'accepted', 'active', or 'deprecated'.
+	 * }
+	 * @return bool True if registered.
+	 */
+	public function register_discovered_cue( array $cue ) {
+		$registered = $this->register( $cue );
+		if ( ! $registered ) {
+			return false;
+		}
+
+		$slug = sanitize_key( (string) $cue['slug'] );
+
+		// Store discovery metadata in the persistent option.
+		$discovered          = self::get_discovered_cues();
+		$discovered[ $slug ] = array(
+			'slug'           => $slug,
+			'discovered_for' => isset( $cue['discovered_for'] ) ? sanitize_key( (string) $cue['discovered_for'] ) : 'general',
+			'search_run_id'  => isset( $cue['search_run_id'] ) ? sanitize_key( (string) $cue['search_run_id'] ) : '',
+			'score_delta'    => isset( $cue['score_delta'] ) ? (float) $cue['score_delta'] : 0.0,
+			'status'         => isset( $cue['status'] ) && in_array( (string) $cue['status'], array( 'candidate', 'accepted', 'active', 'deprecated' ), true )
+				? (string) $cue['status']
+				: 'candidate',
+			'discovered_at'  => time(),
+		);
+
+		update_option( 'wp_mcp_ai_discovered_cues', $discovered, false );
+
+		return true;
+	}
+
+	/**
+	 * Get all discovered cues with their provenance metadata.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $status Optional. Filter by status ('candidate', 'accepted', 'active', 'deprecated').
+	 * @return array<int,array>
+	 */
+	public static function get_discovered_cues( $status = '' ) {
+		$raw = get_option( 'wp_mcp_ai_discovered_cues', array() );
+
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+
+		if ( '' !== $status ) {
+			$status = sanitize_key( $status );
+			$raw    = array_filter(
+				$raw,
+				static function ( $entry ) use ( $status ) {
+					return isset( $entry['status'] ) && $status === $entry['status'];
+				}
+			);
+		}
+
+		return array_values( $raw );
+	}
+
+	/**
+	 * Promote a discovered cue from 'candidate' to 'accepted' or 'active'.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $slug   Cue slug.
+	 * @param string $status New status ('accepted' or 'active').
+	 * @return bool True if updated.
+	 */
+	public static function update_discovered_cue_status( $slug, $status ) {
+		$slug   = sanitize_key( (string) $slug );
+		$status = sanitize_key( (string) $status );
+
+		if ( ! in_array( $status, array( 'accepted', 'active', 'deprecated' ), true ) ) {
+			return false;
+		}
+
+		$discovered = self::get_discovered_cues_raw();
+
+		if ( ! isset( $discovered[ $slug ] ) ) {
+			return false;
+		}
+
+		$discovered[ $slug ]['status'] = $status;
+
+		update_option( 'wp_mcp_ai_discovered_cues', $discovered, false );
+
+		return true;
+	}
+
+	/**
+	 * Get discovered cues as a keyed array (for internal use).
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return array<string,array>
+	 */
+	private static function get_discovered_cues_raw() {
+		$raw = get_option( 'wp_mcp_ai_discovered_cues', array() );
+		return is_array( $raw ) ? $raw : array();
+	}
+
+	/**
 	 * Seed defaults the first time the library is touched.
 	 */
 	private function maybe_seed() {
