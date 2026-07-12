@@ -7421,8 +7421,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'BME summary applied to chat request.',
 				array(
 					'middle_summarized' => count( $middle_messages ),
-					'end_kept'         => count( $end_messages ),
-					'summary_length'   => strlen( $summary ),
+					'end_kept'          => count( $end_messages ),
+					'summary_length'    => strlen( $summary ),
 				)
 			);
 

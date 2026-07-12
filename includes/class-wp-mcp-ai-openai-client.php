@@ -152,7 +152,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 				return 'gpt-4.1';
-			}
+		}
 
 				/**
 				 * Determine whether a model is a GPT chat model that can use the
@@ -2107,11 +2107,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// Different OpenAI image models accept different quality parameter values:
 			// - gpt-image-1/1.5/2 accept: 'low', 'medium', 'high', 'auto'
 			// - DALL-E 2/3 accept: 'standard', 'hd'.
-			$is_gpt_image_model = self::is_gpt_image_model( $model );
-							$is_chat_model  = self::is_chat_model_for_image_gen( $model );
+			$is_gpt_image_model            = self::is_gpt_image_model( $model );
+							$is_chat_model = self::is_chat_model_for_image_gen( $model );
 
-						if ( $is_gpt_image_model || $is_chat_model ) {
-							// For gpt-image / chat models, validate and use quality values directly.
+			if ( $is_gpt_image_model || $is_chat_model ) {
+				// For gpt-image / chat models, validate and use quality values directly.
 				$valid_gpt_qualities = array( 'low', 'medium', 'high', 'auto' );
 
 				// If quality is a DALL-E value, map it to gpt-image values.
@@ -2153,12 +2153,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$response_format = 'b64_json';
 			}
 
-			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout             = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
 						$timeout = max( 5, $timeout );
 
-						if ( $is_chat_model ) {
-							// Chat models use the Responses API endpoint with the
-							// image_generation tool.
+			if ( $is_chat_model ) {
+				// Chat models use the Responses API endpoint with the
+				// image_generation tool.
 				$endpoint = self::RESPONSES_ENDPOINT;
 
 				$payload = array(
