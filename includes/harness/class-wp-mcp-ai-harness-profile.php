@@ -84,13 +84,17 @@ class WP_MCP_AI_Harness_Profile {
 				'allowed_topics' => array(),
 			),
 			'necessity_gate'   => array(
-				'enabled'         => false,
-				'strictness'      => 'medium',
-				'auto_skip'       => true,
+				'enabled'                           => false,
+				'strictness'                        => 'medium',
+				'auto_skip'                         => true,
 				'require_approval_for_irreversible' => true,
 			),
 			'evals_enabled'    => array(),
 			'verifiers'        => array(),
+			'trace_capture'    => array(
+				'enabled'        => false,
+				'retention_runs' => 50,
+			),
 			'cost_ceiling_usd' => self::DEFAULT_COST_CEILING_USD,
 		);
 	}
@@ -222,6 +226,16 @@ class WP_MCP_AI_Harness_Profile {
 				}
 				$out['guardrails']['allowed_topics'] = array_values( array_unique( $topics ) );
 			}
+		}
+
+		if ( isset( $raw['trace_capture'] ) && is_array( $raw['trace_capture'] ) ) {
+			$tc                                     = $raw['trace_capture'];
+			$out['trace_capture']['enabled']        = ! empty( $tc['enabled'] );
+			$out['trace_capture']['retention_runs'] = self::clamp_int(
+				isset( $tc['retention_runs'] ) ? $tc['retention_runs'] : 50,
+				10,
+				200
+			);
 		}
 
 		if ( isset( $raw['evals_enabled'] ) && is_array( $raw['evals_enabled'] ) ) {
