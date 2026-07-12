@@ -104,6 +104,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		sessionKey: transcripts.sessionKey,
 		model: model.model,
 		provider: model.provider,
+		transcriptsEndpoint: endpoints?.transcripts ?? '',
 	} );
 
 	const {
@@ -119,6 +120,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		sendMessage,
 		usageMap,
 		handleSubmitWithAttachments,
+		saveConversation,
 	} = chatSpoke;
 
 	// Enhance usageMap with cost/model data extracted from "data"
@@ -567,6 +569,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				nonce={ nonce }
 				assistantId={ assistantId }
 				onSubmitWithAttachments={ ( atts ) => handleSubmitWithAttachments( atts ) }
+				onSaveConversation={ saveConversation }
 			/>
 
 			{/* Memory drawer */}
