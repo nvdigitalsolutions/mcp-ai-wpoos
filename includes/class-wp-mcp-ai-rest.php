@@ -3305,28 +3305,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 					$budget_tracker->record( $message_bytes );
 
-				$tool_message = array(
-					'role'    => 'tool',
-					// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
-					'content' => $sanitized_result,
-				);
+					$tool_message = array(
+						'role'    => 'tool',
+						// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
+						'content' => $sanitized_result,
+					);
 
-				// Always include tool_call_id to keep the message valid
-				// for provider payload filtering and subsequent turns.
-				$tool_message['tool_call_id'] = '' !== $tool_call_id
+					// Always include tool_call_id to keep the message valid
+					// for provider payload filtering and subsequent turns.
+					$tool_message['tool_call_id'] = '' !== $tool_call_id
 					? $tool_call_id
 					: uniqid( 'tool_', true );
 
-				if ( '' !== $tool_name ) {
-					$tool_message['name'] = $tool_name;
+					if ( '' !== $tool_name ) {
+						$tool_message['name'] = $tool_name;
+					}
+
+					$messages[] = $tool_message;
 				}
 
-				$messages[] = $tool_message;
-			}
-
-			// If any tool returned an async pending result (e.g., video generation),
-			// exit the agentic loop. The frontend will poll for the async job completion.
-			if ( $has_async_pending_result ) {
+				// If any tool returned an async pending result (e.g., video generation),
+				// exit the agentic loop. The frontend will poll for the async job completion.
+				if ( $has_async_pending_result ) {
 					WP_MCP_AI_Logger::log_event(
 						'agentic_loop_exit_async_pending',
 						'Exiting agentic loop due to async pending tool result',
@@ -3336,15 +3336,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'tool_count'   => count( $tool_result_messages ),
 						)
 					);
-					$this->snapshot_chat_continuation_on_async_pending(
-						$pending_async_jobs,
-						$messages,
-						$assistant_id,
-						$user_id,
-						$options,
-						$transcript_context
-					);
-					break;
+						$this->snapshot_chat_continuation_on_async_pending(
+							$pending_async_jobs,
+							$messages,
+							$assistant_id,
+							$user_id,
+							$options,
+							$transcript_context
+						);
+						break;
 				}
 
 				// Phase 4: Proactive agentic-loop context compaction.
@@ -4331,30 +4331,30 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 					$budget_tracker->record( $message_bytes );
 
-				$tool_message = array(
-					'role'    => 'tool',
-					// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
-					'content' => $sanitized_result,
-				);
+					$tool_message = array(
+						'role'    => 'tool',
+						// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
+						'content' => $sanitized_result,
+					);
 
-				// Always include tool_call_id to keep the message valid
-				// for provider payload filtering and subsequent turns.
-				$tool_message['tool_call_id'] = '' !== $tool_call_id
+					// Always include tool_call_id to keep the message valid
+					// for provider payload filtering and subsequent turns.
+					$tool_message['tool_call_id'] = '' !== $tool_call_id
 					? $tool_call_id
 					: uniqid( 'tool_', true );
 
-				if ( '' !== $tool_name ) {
-					$tool_message['name'] = $tool_name;
+					if ( '' !== $tool_name ) {
+						$tool_message['name'] = $tool_name;
+					}
+
+					$messages[] = $tool_message;
 				}
 
-				$messages[] = $tool_message;
-			}
-
-			// If any tool returned an async pending result (e.g., video generation),
-			// exit the agentic loop. The frontend is notified via SSE and will poll
-			// for the async job completion. Continuing to call the LLM with pending
-			// status would cause confusion and potential infinite loops.
-			if ( $has_async_pending_result ) {
+				// If any tool returned an async pending result (e.g., video generation),
+				// exit the agentic loop. The frontend is notified via SSE and will poll
+				// for the async job completion. Continuing to call the LLM with pending
+				// status would cause confusion and potential infinite loops.
+				if ( $has_async_pending_result ) {
 					WP_MCP_AI_Logger::log_event(
 						'agentic_loop_exit_async_pending',
 						'Exiting agentic loop due to async pending tool result',
@@ -4364,15 +4364,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'tool_count'   => count( $tool_result_messages ),
 						)
 					);
-					$this->snapshot_chat_continuation_on_async_pending(
-						$pending_async_jobs,
-						$messages,
-						$assistant_id,
-						$user_id,
-						$options,
-						$transcript_context
-					);
-					break;
+						$this->snapshot_chat_continuation_on_async_pending(
+							$pending_async_jobs,
+							$messages,
+							$assistant_id,
+							$user_id,
+							$options,
+							$transcript_context
+						);
+						break;
 				}
 
 				// Stream thinking status immediately after tool execution completes.
