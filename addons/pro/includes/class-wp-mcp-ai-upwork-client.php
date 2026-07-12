@@ -64,6 +64,26 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 		const MAX_RESPONSE_SIZE = 5242880;
 
 		/**
+		 * Maximum GraphQL requests per rolling 60-second window.
+		 *
+		 * Upwork's GraphQL API enforces rate limits per OAuth application.
+		 * This client-side throttle prevents 429 responses by pausing callers
+		 * before the upstream limit is hit.
+		 *
+		 * @since 2.12.0
+		 * @var int
+		 */
+		const RATE_LIMIT_PER_MINUTE = 30;
+
+		/**
+		 * Minimum backoff in seconds when a 429 response is received.
+		 *
+		 * @since 2.12.0
+		 * @var int
+		 */
+		const MIN_BACKOFF_SECONDS = 5;
+
+		/**
 		 * Remote Sites connection ID.
 		 *
 		 * @var string|null
@@ -214,11 +234,20 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 		/**
 		 * Execute a GraphQL query against the Upwork API.
 		 *
+		 * Enforces a client-side rate limit (per rolling 60 s window) to avoid
+		 * HTTP 429 responses from the Upwork upstream.
+		 *
 		 * @param string $query     GraphQL query string.
 		 * @param array  $variables Optional GraphQL variables.
 		 * @return array|WP_Error Decoded response data or WP_Error on failure.
 		 */
 		public function graphql( $query, $variables = array() ) {
+			// ── Client-side rate limiter ──
+			$rate_error = $this->check_rate_limit();
+			if ( is_wp_error( $rate_error ) ) {
+				return $rate_error;
+			}
+
 			$access_token = $this->get_access_token();
 
 			if ( is_wp_error( $access_token ) ) {
@@ -243,6 +272,10 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 					'body'    => wp_json_encode( $payload ),
 				)
 			);
+
+			// Track the request for rate limiting (success or failure — we count
+			// every outbound call so we don't accidentally flood the upstream).
+			$this->track_request();
 
 			if ( is_wp_error( $response ) ) {
 				return new WP_Error(
@@ -274,6 +307,26 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_upwork_unauthorized',
 					__( 'Upwork API returned 401 Unauthorized. Please re-authorise the connection.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( 429 === (int) $status ) {
+				// Upwork rate limit. Extract Retry-After if provided; otherwise
+				// apply an escalating backoff so the caller pauses before retrying.
+				$retry_after = (int) wp_remote_retrieve_header( $response, 'retry-after' );
+				$backoff     = $retry_after > 0 ? $retry_after : self::MIN_BACKOFF_SECONDS;
+
+				// Record the backoff as a rate-limit signal so subsequent calls
+				// from this connection block for the cooldown period.
+				$this->set_rate_limit_cooldown( $backoff );
+
+				return new WP_Error(
+					'wp_mcp_ai_upwork_rate_limited',
+					sprintf(
+						/* translators: %d: retry-after seconds */
+						__( 'Upwork API rate limit reached. Please wait %d seconds before retrying. Consider reducing call frequency or scheduling searches during off-peak hours.', 'mcp-ai-wpoos-pro' ),
+						$backoff
+					)
 				);
 			}
 
@@ -316,8 +369,8 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 
 		/**
 		 * Test the connection by executing a minimal viewer query.
-		 *
-		 * @return array|WP_Error Test result array or WP_Error on failure.
+	 *
+	 * @return array|WP_Error Test result array or WP_Error on failure.
 		 */
 		public function test_connection() {
 			$result = $this->graphql( '{ viewer { id } }' );
@@ -330,6 +383,108 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 				'success' => true,
 				'message' => __( 'Upwork connection is working.', 'mcp-ai-wpoos-pro' ),
 			);
+		}
+
+		// ------------------------------------------------------------------ //
+		// Rate limiting (client-side throttle)                               //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Check whether the rate limit allows a new GraphQL request.
+		 *
+		 * Uses a rolling 60-second window with a configurable ceiling.
+		 * A cooldown (set after a real 429) blocks all requests regardless
+		 * of the window count.
+		 *
+		 * @since 2.12.0
+		 *
+		 * @return true|WP_Error True when allowed; WP_Error when blocked.
+		 */
+		private function check_rate_limit() {
+			$key = 'wp_mcp_ai_upwork_rl_' . md5( $this->connection_id ?: 'default' );
+
+			// ── Cooldown block (set by a prior 429 response) ──
+			$cooldown = get_transient( $key . '_cooldown' );
+			if ( $cooldown ) {
+				$elapsed = time() - (int) $cooldown;
+				$backoff = (int) get_transient( $key . '_cooldown_secs' );
+				if ( $backoff < 1 ) {
+					$backoff = self::MIN_BACKOFF_SECONDS;
+				}
+				$remaining = max( 0, $backoff - $elapsed );
+				if ( $remaining > 0 ) {
+					return new WP_Error(
+						'wp_mcp_ai_upwork_rate_limit_cooldown',
+						sprintf(
+							/* translators: %d: seconds remaining */
+							__( 'Upwork API is cooling down after a rate-limit response. Please wait %d seconds before making another request.', 'mcp-ai-wpoos-pro' ),
+							$remaining
+						)
+					);
+				}
+				// Cooldown expired — clear it so normal rate limiting resumes.
+				delete_transient( $key . '_cooldown' );
+				delete_transient( $key . '_cooldown_secs' );
+			}
+
+			// ── Rolling window counter ──
+			$count    = get_transient( $key );
+			$max      = apply_filters( 'wp_mcp_ai_upwork_rate_limit', self::RATE_LIMIT_PER_MINUTE );
+
+			if ( false === $count ) {
+				return true;
+			}
+
+			if ( (int) $count >= (int) $max ) {
+				return new WP_Error(
+					'wp_mcp_ai_upwork_rate_limit_exceeded',
+					sprintf(
+						/* translators: %d: maximum requests per minute */
+						__( 'Upwork API rate limit reached. You have made %d requests in the last 60 seconds. Please wait before retrying.', 'mcp-ai-wpoos-pro' ),
+						$max
+					)
+				);
+			}
+
+			return true;
+		}
+
+		/**
+		 * Track a request for rate limiting (rolling 60-second window).
+		 *
+		 * @since 2.12.0
+		 */
+		private function track_request() {
+			$key  = 'wp_mcp_ai_upwork_rl_' . md5( $this->connection_id ?: 'default' );
+			$count = get_transient( $key );
+
+			if ( false === $count ) {
+				$count = 0;
+			}
+
+			++$count;
+			set_transient( $key, $count, MINUTE_IN_SECONDS );
+		}
+
+		/**
+		 * Set a rate-limit cooldown after receiving a genuine 429.
+		 *
+		 * Blocks all subsequent requests for $seconds regardless of the
+		 * rolling window counter.
+		 *
+		 * @since 2.12.0
+		 *
+		 * @param int $seconds Cooldown duration in seconds.
+		 */
+		private function set_rate_limit_cooldown( $seconds ) {
+			$key      = 'wp_mcp_ai_upwork_rl_' . md5( $this->connection_id ?: 'default' );
+			$cooldown = absint( $seconds );
+			if ( $cooldown < 1 ) {
+				$cooldown = self::MIN_BACKOFF_SECONDS;
+			}
+
+			set_transient( $key . '_cooldown', time(), $cooldown );
+			set_transient( $key . '_cooldown_secs', $cooldown, $cooldown );
 		}
 	}
 }

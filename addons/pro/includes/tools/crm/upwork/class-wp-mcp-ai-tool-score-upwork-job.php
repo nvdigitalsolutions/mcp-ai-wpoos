@@ -215,6 +215,7 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			'read-only',
 			'requires-capability',
 			'external-api',
+			'rate-limited',
 		);
 	}
 
@@ -222,10 +223,11 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
-	 * @param array $context   Execution context including user_id.
-	 * @return array|WP_Error Tool results or WP_Error on failure.
+	 * @param array $context   Request context.
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// score_upwork_job
 		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {
