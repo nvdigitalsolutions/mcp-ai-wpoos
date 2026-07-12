@@ -572,66 +572,163 @@ class WP_MCP_AI_Agent_Communication_Service {
 			);
 		}
 
-		// Resolve the target agent's role.
+		// Virtual agents cannot be dispatched to the chat endpoint — they
+		// only exist in team context. The rest of this method is for real
+		// assistant post IDs only.
 		$is_virtual = is_string( $to_agent_id ) && 0 === strpos( $to_agent_id, 'virtual_' );
-		$agent_role = null;
-
-		if ( ! $is_virtual ) {
-			$to_agent_id = absint( $to_agent_id );
-			if ( function_exists( 'wp_mcp_ai_get_assistant_role' ) ) {
-				$agent_role = wp_mcp_ai_get_assistant_role( $to_agent_id );
-			}
-		}
-
-		// For virtual agents or agents without a role, try role from context.
-		if ( ! $agent_role && isset( $context['agent_role'] ) && function_exists( 'wp_mcp_ai_get_agent_role' ) ) {
-			$agent_role = wp_mcp_ai_get_agent_role( $context['agent_role'] );
-		}
-
-		// Fallback: use Executor role.
-		if ( ! $agent_role && function_exists( 'wp_mcp_ai_get_agent_role' ) ) {
-			$agent_role = wp_mcp_ai_get_agent_role( 'executor' );
-		}
-
-		if ( ! $agent_role ) {
+		if ( $is_virtual ) {
 			$data['status']       = 'failed';
-			$data['error']        = __( 'Could not resolve agent role for delegation.', 'mcp-ai-wpoos' );
+			$data['error']        = __( 'Cannot process delegation for virtual agents via cron. Virtual agents must be handled within their team context.', 'mcp-ai-wpoos' );
 			$data['completed_at'] = current_time( 'mysql' );
 			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
 			return;
 		}
 
-		// Build execution context.
-		$execution_context = array_merge(
-			$context,
+		$to_agent_id = absint( $to_agent_id );
+
+		// Verify the target assistant post exists.
+		$assistant_post = get_post( $to_agent_id );
+		if ( ! $assistant_post || 'mcp_ai_assistant' !== $assistant_post->post_type || 'publish' !== $assistant_post->post_status ) {
+			$data['status']       = 'failed';
+			$data['error']        = __( 'Target assistant not found or not published.', 'mcp-ai-wpoos' );
+			$data['completed_at'] = current_time( 'mysql' );
+			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+			return;
+		}
+
+		// Build the chat message from the delegated task.
+		$task_description = isset( $task_data['description'] ) ? $task_data['description'] : '';
+		if ( '' === $task_description ) {
+			$data['status']       = 'failed';
+			$data['error']        = __( 'Delegated task has no description.', 'mcp-ai-wpoos' );
+			$data['completed_at'] = current_time( 'mysql' );
+			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+			return;
+		}
+
+		// Dispatch the assistant run via the internal REST API, following the
+		// same pattern as WP_MCP_AI_Pro_Schedule_Manager::dispatch_assistant_run()
+		// so the full agentic pipeline (AI model, tool execution, response
+		// generation) is exercised.
+		if ( ! function_exists( 'rest_do_request' ) ) {
+			$data['status']       = 'failed';
+			$data['error']        = __( 'REST API is not available for delegation processing.', 'mcp-ai-wpoos' );
+			$data['completed_at'] = current_time( 'mysql' );
+			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+			return;
+		}
+
+		// Pre-flight: verify the REST server is initialised so that
+		// rest_do_request() does not throw a fatal error on a null server.
+		// Matches the pattern in dispatch_assistant_run().
+		$rest_server = rest_get_server();
+		if ( ! $rest_server ) {
+			$data['status']       = 'failed';
+			$data['error']        = __( 'REST API server is not available.', 'mcp-ai-wpoos' );
+			$data['completed_at'] = current_time( 'mysql' );
+			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+			return;
+		}
+
+		// Resolve the user context: use the user who delegated, or the
+		// current user, so the REST request inherits proper capabilities.
+		$delegated_by  = isset( $data['task']['delegated_by'] ) ? absint( $data['task']['delegated_by'] ) : 0;
+		$previous_user = get_current_user_id();
+		if ( $delegated_by > 0 && $delegated_by !== $previous_user ) {
+			wp_set_current_user( $delegated_by );
+		}
+
+		$messages = array(
 			array(
-				'assistant_id'  => $to_agent_id,
-				'delegated_by'  => isset( $data['from_agent_id'] ) ? $data['from_agent_id'] : 0,
-				'delegation_id' => $delegation_id,
+				'role'    => 'user',
+				'content' => $task_description,
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $to_agent_id,
+				'messages'     => $messages,
+				'stream'       => false,
+				'context'      => array(
+					'source'        => 'agent_delegation',
+					'delegation_id' => $delegation_id,
+					'delegated_by'  => isset( $data['from_agent_id'] ) ? $data['from_agent_id'] : 0,
+				),
 			)
 		);
 
-		// Build task for the role executor.
-		$agent_task = array(
-			'description' => isset( $task_data['description'] ) ? $task_data['description'] : '',
-			'type'        => isset( $context['expected_output']['format'] ) ? $context['expected_output']['format'] : 'generic',
-			'id'          => $delegation_id,
-			'parameters'  => isset( $task_data['context']['shared_data'] ) ? $task_data['context']['shared_data'] : array(),
-		);
-
 		try {
-			$result = $agent_role->execute_role_task( $agent_task, $execution_context );
+			$response = rest_do_request( $request );
 
-			if ( is_wp_error( $result ) ) {
-				$data['status'] = 'failed';
-				$data['error']  = $result->get_error_message();
-			} else {
-				$data['status'] = 'completed';
-				$data['result'] = $result;
+			// Restore the previous user context.
+			if ( $delegated_by > 0 && $delegated_by !== $previous_user ) {
+				wp_set_current_user( $previous_user );
 			}
-		} catch ( \Exception $e ) {
+
+			if ( $response->is_error() ) {
+				$error_data     = $response->get_data();
+				$data['status'] = 'failed';
+				$data['error']  = isset( $error_data['message'] )
+					? $error_data['message']
+					: __( 'Chat API request failed.', 'mcp-ai-wpoos' );
+			} else {
+				$response_data = $response->get_data();
+
+				// Extract the assistant reply using the same two-pass
+				// extraction as the pro schedule manager.
+				$reply = '';
+				if ( isset( $response_data['data']['choices'] ) && is_array( $response_data['data']['choices'] ) ) {
+					foreach ( $response_data['data']['choices'] as $choice ) {
+						if ( isset( $choice['finish_reason'] ) && 'stop' === $choice['finish_reason']
+							&& isset( $choice['message']['content'] )
+						) {
+							$reply = $choice['message']['content'];
+							break;
+						}
+					}
+
+					// Fallback: use the last choice's content.
+					if ( '' === $reply ) {
+						$last = end( $response_data['data']['choices'] );
+						if ( isset( $last['message']['content'] ) ) {
+							$reply = $last['message']['content'];
+						}
+					}
+				}
+
+				// Fallback: check agentic_tool_messages for content.
+				if ( '' === $reply && isset( $response_data['agentic_tool_messages'] ) && is_array( $response_data['agentic_tool_messages'] ) ) {
+					foreach ( $response_data['agentic_tool_messages'] as $msg ) {
+						if ( isset( $msg['role'] ) && 'assistant' === $msg['role'] && ! empty( $msg['content'] ) ) {
+							$reply = $msg['content'];
+							break;
+						}
+					}
+				}
+
+				$data['status'] = 'completed';
+				$data['result'] = array(
+					'assistant_id' => $to_agent_id,
+					'message'      => $task_description,
+					'response'     => $reply,
+				);
+			}
+		} catch ( \Throwable $e ) {
+			// Restore the previous user context on exception.
+			if ( $delegated_by > 0 && $delegated_by !== $previous_user ) {
+				wp_set_current_user( $previous_user );
+			}
+
 			$data['status'] = 'failed';
-			$data['error']  = $e->getMessage();
+			$data['error']  = sprintf(
+				'%s in %s:%d',
+				$e->getMessage(),
+				str_replace( ABSPATH, '', $e->getFile() ),
+				$e->getLine()
+			);
 		}
 
 		$data['completed_at'] = current_time( 'mysql' );
