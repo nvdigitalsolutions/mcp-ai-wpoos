@@ -68,6 +68,21 @@ class WP_MCP_AI_Harness_Trace_Capture {
 	);
 
 	/**
+	 * Accumulated DSpark metrics for the current run.
+	 *
+	 * @since 1.9.0
+	 * @var array
+	 */
+	private static $dspark_data = array(
+		'depth_tier_used'         => '',
+		'speculative_blocks'      => 0,
+		'speculative_accepted'    => 0,
+		'draft_tier_calls'        => 0,
+		'verification_tier_calls' => 0,
+		'estimated_savings_usd'   => 0.0,
+	);
+
+	/**
 	 * Self-refine iterations recorded during the request.
 	 *
 	 * @since 1.9.0
@@ -133,6 +148,14 @@ class WP_MCP_AI_Harness_Trace_Capture {
 			'estimated_cost_usd' => 0.0,
 		);
 		self::$refine_iterations = array();
+		self::$dspark_data       = array(
+			'depth_tier_used'         => '',
+			'speculative_blocks'      => 0,
+			'speculative_accepted'    => 0,
+			'draft_tier_calls'        => 0,
+			'verification_tier_calls' => 0,
+			'estimated_savings_usd'   => 0.0,
+		);
 
 		$model = isset( $options['model'] ) ? (string) $options['model'] : '';
 
@@ -195,6 +218,9 @@ class WP_MCP_AI_Harness_Trace_Capture {
 
 		// Write accumulated cost.
 		WP_MCP_AI_Harness_Trace_Store::write_artifact( $run_id, 'cost.json', self::$accumulated_cost );
+
+		// Write DSpark metrics if available.
+		self::capture_dspark_metrics( $run_id );
 
 		// Finish the run.
 		WP_MCP_AI_Harness_Trace_Store::finish_run( $run_id );
@@ -374,6 +400,43 @@ class WP_MCP_AI_Harness_Trace_Capture {
 			'reasoning_trace.json',
 			$trace
 		);
+	}
+
+	/**
+	 * Capture DSpark speculative execution metrics for the trace.
+	 *
+	 * Reads DSpark data from the options and transients maintained by
+	 * the DSpark data collectors (`WP_MCP_AI_DSpark_Hooks`). If DSpark
+	 * is not active, writes an empty artifact to signal that.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $run_id Run ID.
+	 * @return void
+	 */
+	private static function capture_dspark_metrics( $run_id ) {
+		$dspark = self::$dspark_data;
+
+		// Read from DSpark data collectors if available.
+		$tier_counts = get_option( 'wp_mcp_ai_depth_tier_counts', array() );
+		if ( is_array( $tier_counts ) ) {
+			$dspark['tier_counts'] = $tier_counts;
+		}
+
+		$routing_savings = get_transient( 'wp_mcp_ai_routing_cost_data' );
+		if ( is_array( $routing_savings ) ) {
+			$dspark['routing_savings'] = $routing_savings;
+		}
+
+		// Read chain acceptance metrics.
+		$acceptance = get_option( 'wp_mcp_ai_chain_acceptance_metrics', array() );
+		if ( is_array( $acceptance ) ) {
+			$dspark['chain_acceptance'] = $acceptance;
+		}
+
+		$dspark['captured_at'] = time();
+
+		WP_MCP_AI_Harness_Trace_Store::write_artifact( $run_id, 'dspark.json', $dspark );
 	}
 
 	/**
