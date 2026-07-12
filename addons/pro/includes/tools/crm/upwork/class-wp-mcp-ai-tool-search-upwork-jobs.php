@@ -214,7 +214,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return array|WP_Error Tool results or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {
 			return new WP_Error(
@@ -222,6 +222,9 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 				__( 'You do not have permission to search Upwork jobs.', 'mcp-ai-wpoos-pro' )
 			);
 		}
+
+		// Resolve defaults from CRM toolkit settings when arguments are omitted.
+		$arguments = $this->apply_defaults( $arguments );
 
 		// Determine whether the Upwork API is available.
 		$use_api = $this->has_valid_connection( $arguments );
@@ -351,6 +354,8 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
+		$jobs = $this->apply_result_format( $jobs );
+
 		return array(
 			'success'       => true,
 			'mode'          => 'api',
@@ -364,10 +369,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
-	 * Check whether the arguments include a valid, enabled Upwork API connection.
-	 *
-	 * Returns false when the connection is in web_search mode or lacks OAuth credentials,
-	 * causing the tool to fall back to AI-powered web search.
+	 * Check whether the arguments include a valid, enabled Upwork connection.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @return bool True when the Upwork API can be used.
@@ -391,17 +393,6 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			return false;
 		}
 		if ( empty( $connection['enabled'] ) ) {
-			return false;
-		}
-
-		// If explicitly set to web_search mode, never use the API.
-		$mode = isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : 'api';
-		if ( 'web_search' === $mode ) {
-			return false;
-		}
-
-		// API mode: require OAuth credentials (client_id, client_secret, and refresh_token).
-		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) || empty( $connection['refresh_token'] ) ) {
 			return false;
 		}
 
@@ -552,5 +543,132 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return implode( ' ', $parts );
+	}
+
+	/**
+	 * Fill missing search arguments from CRM toolkit settings.
+	 *
+	 * @since 2.12.0
+	 * @param array $arguments Tool arguments.
+	 * @return array Arguments with defaults applied.
+	 */
+	private function apply_defaults( array $arguments ) {
+		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			return $arguments;
+		}
+
+		$crm_settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$upwork_cfg   = isset( $crm_settings['external_sourcing']['upwork'] )
+			? $crm_settings['external_sourcing']['upwork']
+			: array();
+
+		// Resolve the connection_id from defaults if not provided.
+		if ( empty( $arguments['connection_id'] ) && ! empty( $upwork_cfg['default_connection_id'] ) ) {
+			$arguments['connection_id'] = $upwork_cfg['default_connection_id'];
+		}
+
+		// Search keywords.
+		if ( empty( $arguments['query'] ) && ! empty( $upwork_cfg['default_search_keywords'] ) ) {
+			$arguments['query'] = $upwork_cfg['default_search_keywords'];
+		}
+
+		// Job type (hourly / fixed).
+		if ( empty( $arguments['job_type'] ) && ! empty( $upwork_cfg['default_job_type'] ) ) {
+			$arguments['job_type'] = $upwork_cfg['default_job_type'];
+		}
+
+		// Experience level.
+		if ( empty( $arguments['experience_level'] ) && ! empty( $upwork_cfg['default_experience_level'] ) ) {
+			$arguments['experience_level'] = $upwork_cfg['default_experience_level'];
+		}
+
+		// Categories.
+		if ( empty( $arguments['category2'] ) && ! empty( $upwork_cfg['default_categories'] ) ) {
+			$arguments['category2'] = $upwork_cfg['default_categories'];
+		}
+
+		// Budget range from shared defaults.
+		if ( empty( $arguments['budget_min'] ) && ! empty( $crm_settings['external_sourcing']['default_budget_min'] ) ) {
+			$arguments['budget_min'] = (float) $crm_settings['external_sourcing']['default_budget_min'];
+		}
+		if ( empty( $arguments['budget_max'] ) && ! empty( $crm_settings['external_sourcing']['default_budget_max'] ) ) {
+			$arguments['budget_max'] = (float) $crm_settings['external_sourcing']['default_budget_max'];
+		}
+
+		// Max results per search.
+		if ( empty( $arguments['limit'] ) && ! empty( $upwork_cfg['max_results_per_search'] ) ) {
+			$arguments['limit'] = (int) $upwork_cfg['max_results_per_search'];
+		}
+
+		return $arguments;
+	}
+
+	/**
+	 * Apply result format settings to search results.
+	 *
+	 * Reads the result_format configuration from CRM toolkit settings
+	 * and filters the jobs array accordingly — trimming descriptions,
+	 * conditionally removing fields, and applying compact mode.
+	 *
+	 * @since 2.12.0
+	 * @param array $jobs Array of job result arrays.
+	 * @return array Filtered jobs.
+	 */
+	private function apply_result_format( array $jobs ) {
+		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			return $jobs;
+		}
+
+		$crm_settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$fmt          = isset( $crm_settings['external_sourcing']['result_format'] )
+			? $crm_settings['external_sourcing']['result_format']
+			: array();
+
+		if ( empty( $fmt ) ) {
+			return $jobs;
+		}
+
+		// Resolve description trim length.  0 = full, >0 = trim to N words.
+		$trim_length = isset( $fmt['description_length'] ) ? (int) $fmt['description_length'] : 200;
+
+		foreach ( $jobs as &$job ) {
+			// Trim description.
+			if ( $trim_length > 0 && ! empty( $job['description'] ) ) {
+				$job['description'] = wp_trim_words( $job['description'], $trim_length );
+			}
+
+			// Conditionally remove fields.
+			if ( empty( $fmt['include_email'] ) ) {
+				unset( $job['email'] );
+			}
+			if ( empty( $fmt['include_client_info'] ) ) {
+				unset( $job['client'] );
+			}
+			if ( empty( $fmt['include_budget'] ) ) {
+				unset( $job['budget'], $job['hourly_budget'] );
+			}
+			if ( empty( $fmt['include_skills'] ) ) {
+				unset( $job['skills'] );
+			}
+			if ( empty( $fmt['include_applicants'] ) ) {
+				unset( $job['applicants'] );
+			}
+
+			// Compact mode: strip null, empty-string, and empty-array values.
+			if ( ! empty( $fmt['compact_mode'] ) ) {
+				$job = array_filter(
+					$job,
+					function ( $v ) {
+						if ( is_array( $v ) ) {
+							return ! empty( $v );
+						}
+						return null !== $v && '' !== $v;
+					}
+				);
+			}
+		}
+		unset( $job );
+
+		return $jobs;
 	}
 }

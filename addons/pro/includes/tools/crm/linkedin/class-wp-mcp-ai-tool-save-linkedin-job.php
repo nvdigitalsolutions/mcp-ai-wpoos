@@ -143,7 +143,7 @@ class WP_MCP_AI_Tool_Save_LinkedIn_Job implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return array|WP_Error Tool results or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {
 			return new WP_Error(
@@ -159,6 +159,9 @@ class WP_MCP_AI_Tool_Save_LinkedIn_Job implements WP_MCP_AI_Tool_Interface, WP_M
 		$save_as         = ! empty( $arguments['save_as'] ) ? sanitize_text_field( $arguments['save_as'] ) : 'deal';
 		$notes           = ! empty( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '';
 		$job_url         = ! empty( $arguments['job_url'] ) ? esc_url_raw( $arguments['job_url'] ) : '';
+		$skills          = ! empty( $arguments['skills'] ) && is_array( $arguments['skills'] )
+			? array_map( 'sanitize_text_field', $arguments['skills'] )
+			: array();
 
 		if ( empty( $job_title ) ) {
 			return new WP_Error(
@@ -277,6 +280,12 @@ class WP_MCP_AI_Tool_Save_LinkedIn_Job implements WP_MCP_AI_Tool_Interface, WP_M
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
+		}
+
+		// Save external source metadata on the created entity.
+		if ( ! empty( $job_url ) ) {
+			update_post_meta( $post_id, '_external_source_url', esc_url_raw( $job_url ) );
+			update_post_meta( $post_id, '_external_source_platform', 'linkedin' );
 		}
 
 		return array(

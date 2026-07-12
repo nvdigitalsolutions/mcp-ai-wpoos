@@ -574,13 +574,67 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 						</label>
 					</td>
 				</tr>
+
+				<!-- Upwork Search Defaults (since 2.12.0) -->
+				<tr><td colspan="2"><h5 style="margin: 4px 0;"><?php esc_html_e( 'Search Defaults', 'mcp-ai-wpoos-pro' ); ?></h5>
+				<p class="description"><?php esc_html_e( 'These values are used when the search_upwork_jobs tool is called without explicit filter arguments.', 'mcp-ai-wpoos-pro' ); ?></p></td></tr>
+
 				<tr>
-					<th scope="row"><?php esc_html_e( 'Enable Scheduled Auto-Import', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'Default Keywords', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<label>
-							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][auto_import_enabled]" value="1" <?php checked( ! empty( $settings['external_sourcing']['upwork']['auto_import_enabled'] ) ); ?> />
-							<?php esc_html_e( 'Automatically search Upwork, score jobs, and import high-scoring ones into the CRM pipeline on a schedule. Uses the min-score and import-as settings above.', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_search_keywords]" value="<?php echo esc_attr( $settings['external_sourcing']['upwork']['default_search_keywords'] ?? '' ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'e.g. WordPress developer, React, API integration', 'mcp-ai-wpoos-pro' ); ?>" />
+						<p class="description"><?php esc_html_e( 'Comma-separated keywords used as defaults when searching Upwork without specifying a query.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Location', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_location]" value="<?php echo esc_attr( $settings['external_sourcing']['upwork']['default_location'] ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g. Remote, United States', 'mcp-ai-wpoos-pro' ); ?>" />
+						<p class="description"><?php esc_html_e( 'Default location filter for Upwork job searches. Leave blank for worldwide.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Job Type', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_job_type]">
+							<option value="" <?php selected( $settings['external_sourcing']['upwork']['default_job_type'] ?? '', '' ); ?>><?php esc_html_e( '— Any —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="hourly" <?php selected( $settings['external_sourcing']['upwork']['default_job_type'] ?? '', 'hourly' ); ?>><?php esc_html_e( 'Hourly', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="fixed" <?php selected( $settings['external_sourcing']['upwork']['default_job_type'] ?? '', 'fixed' ); ?>><?php esc_html_e( 'Fixed-Price', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default job type filter for Upwork searches.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Experience Level', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_experience_level]">
+							<option value="" <?php selected( $settings['external_sourcing']['upwork']['default_experience_level'] ?? '', '' ); ?>><?php esc_html_e( '— Any —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="entry" <?php selected( $settings['external_sourcing']['upwork']['default_experience_level'] ?? '', 'entry' ); ?>><?php esc_html_e( 'Entry', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="intermediate" <?php selected( $settings['external_sourcing']['upwork']['default_experience_level'] ?? '', 'intermediate' ); ?>><?php esc_html_e( 'Intermediate', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="expert" <?php selected( $settings['external_sourcing']['upwork']['default_experience_level'] ?? '', 'expert' ); ?>><?php esc_html_e( 'Expert', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default experience/tier level for Upwork searches.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Categories', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][default_categories]" value="<?php echo esc_attr( $settings['external_sourcing']['upwork']['default_categories'] ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g. Web, Mobile &amp; Software Dev', 'mcp-ai-wpoos-pro' ); ?>" />
+						<p class="description"><?php esc_html_e( 'Comma-separated Upwork category names. Leave blank for all categories.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Upwork Excluded Keywords', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][excluded_keywords]" rows="3" class="large-text code" placeholder="<?php esc_attr_e( 'crypto\nNFT\nadult\ngambling', 'mcp-ai-wpoos-pro' ); ?>"><?php echo esc_textarea( $settings['external_sourcing']['upwork']['excluded_keywords'] ?? '' ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Upwork-specific excluded keywords (case-insensitive, one per line). Overrides the shared list for Upwork searches.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Max Results Per Search', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][upwork][max_results_per_search]" value="<?php echo esc_attr( $settings['external_sourcing']['upwork']['max_results_per_search'] ?? 20 ); ?>" min="1" max="50" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Maximum results to fetch per search (1–50). Default: 20.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -640,15 +694,6 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					</td>
 				</tr>
 				<tr>
-					<th scope="row"><?php esc_html_e( 'Enable Scheduled Auto-Import', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][auto_import_enabled]" value="1" <?php checked( ! empty( $settings['external_sourcing']['linkedin']['auto_import_enabled'] ) ); ?> />
-							<?php esc_html_e( 'Automatically search LinkedIn, score jobs, and save high-scoring ones into the CRM pipeline on a schedule. Uses the min-score, import-as, and keyword/location defaults above.', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
-					</td>
-				</tr>
-				<tr>
 					<th scope="row"><?php esc_html_e( 'Auto-Import Jobs As', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][auto_import_as]">
@@ -667,14 +712,58 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					</td>
 				</tr>
 
-				<!-- Shared: Scheduled Auto-Import & Search Filters -->
-				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Scheduled Auto-Import', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<p class="description" style="margin: 4px 0 8px 0;"><?php esc_html_e( 'When enabled above, the auto-import background job periodically searches Upwork and LinkedIn for new jobs, scores them, and imports qualifying ones into the CRM pipeline.', 'mcp-ai-wpoos-pro' ); ?></p></td></tr>
+				<!-- LinkedIn Extended Search Defaults (since 2.12.0) -->
+				<tr><td colspan="2"><h5 style="margin: 4px 0;"><?php esc_html_e( 'Extended Search Defaults', 'mcp-ai-wpoos-pro' ); ?></h5>
+				<p class="description"><?php esc_html_e( 'These values are used when the search_linkedin_jobs tool is called without explicit filter arguments.', 'mcp-ai-wpoos-pro' ); ?></p></td></tr>
+
 				<tr>
-					<th scope="row"><?php esc_html_e( 'Import Interval (hours)', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'Default Job Type', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][auto_import_interval_hours]" value="<?php echo esc_attr( $settings['external_sourcing']['auto_import_interval_hours'] ?? 6 ); ?>" min="1" max="24" step="1" class="small-text" />
-						<p class="description"><?php esc_html_e( 'How often to run the automated job import (1–24 hours). Default: 6 hours. Shorter intervals may hit API rate limits on Upwork/LinkedIn.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_job_type]">
+							<option value="" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', '' ); ?>><?php esc_html_e( '— Any —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="full_time" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', 'full_time' ); ?>><?php esc_html_e( 'Full-Time', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="part_time" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', 'part_time' ); ?>><?php esc_html_e( 'Part-Time', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="contract" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', 'contract' ); ?>><?php esc_html_e( 'Contract', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="temporary" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', 'temporary' ); ?>><?php esc_html_e( 'Temporary', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="internship" <?php selected( $settings['external_sourcing']['linkedin']['default_job_type'] ?? '', 'internship' ); ?>><?php esc_html_e( 'Internship', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default employment type filter for LinkedIn searches.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Experience Level', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_experience_level]">
+							<option value="" <?php selected( $settings['external_sourcing']['linkedin']['default_experience_level'] ?? '', '' ); ?>><?php esc_html_e( '— Any —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="entry" <?php selected( $settings['external_sourcing']['linkedin']['default_experience_level'] ?? '', 'entry' ); ?>><?php esc_html_e( 'Entry', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="mid_level" <?php selected( $settings['external_sourcing']['linkedin']['default_experience_level'] ?? '', 'mid_level' ); ?>><?php esc_html_e( 'Mid-Level', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="senior" <?php selected( $settings['external_sourcing']['linkedin']['default_experience_level'] ?? '', 'senior' ); ?>><?php esc_html_e( 'Senior', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="executive" <?php selected( $settings['external_sourcing']['linkedin']['default_experience_level'] ?? '', 'executive' ); ?>><?php esc_html_e( 'Executive', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default experience level filter for LinkedIn searches.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Remote Only', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][default_remote]" value="1" <?php checked( ! empty( $settings['external_sourcing']['linkedin']['default_remote'] ) ); ?> />
+							<?php esc_html_e( 'Filter to remote-only positions by default.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'LinkedIn Excluded Keywords', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<textarea name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][excluded_keywords]" rows="3" class="large-text code" placeholder="<?php esc_attr_e( 'crypto\nNFT\nadult\ngambling', 'mcp-ai-wpoos-pro' ); ?>"><?php echo esc_textarea( $settings['external_sourcing']['linkedin']['excluded_keywords'] ?? '' ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'LinkedIn-specific excluded keywords (case-insensitive, one per line). Overrides the shared list for LinkedIn searches.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Max Results Per Search', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][linkedin][max_results_per_search]" value="<?php echo esc_attr( $settings['external_sourcing']['linkedin']['max_results_per_search'] ?? 20 ); ?>" min="1" max="50" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Maximum results to fetch per search (1–50). Default: 20.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -701,6 +790,141 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					<td>
 						<textarea name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][excluded_keywords]" rows="3" class="large-text code" placeholder="<?php esc_attr_e( 'crypto\\nNFT\\nadult\\ngambling', 'mcp-ai-wpoos-pro' ); ?>"><?php echo esc_textarea( $settings['external_sourcing']['excluded_keywords'] ?? '' ); ?></textarea>
 						<p class="description"><?php esc_html_e( 'Jobs containing any of these keywords (case-insensitive) are filtered out of results and never scored. One per line.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Result Format & Notifications (since 2.12.0) -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Result Format &amp; Notifications', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p class="description" style="margin: 4px 0 8px 0;">
+					<?php esc_html_e( 'Control which fields are included in search results and how they are formatted. Compact mode strips non-essential fields to save AI tokens.', 'mcp-ai-wpoos-pro' ); ?>
+				</p></td></tr>
+
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Description Length (words)', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][description_length]" value="<?php echo esc_attr( $settings['external_sourcing']['result_format']['description_length'] ?? 200 ); ?>" min="0" max="2000" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Number of words for job descriptions in search results. Set to 0 for the full description (may increase token usage). Default: 200.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Include Email in Results', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][include_email]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['include_email'] ) ); ?> />
+							<?php esc_html_e( 'Show email addresses in search results when available from the platform.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Include Client Info', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][include_client_info]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['include_client_info'] ) ); ?> />
+							<?php esc_html_e( 'Show client history, feedback, and verification status in results.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Include Budget', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][include_budget]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['include_budget'] ) ); ?> />
+							<?php esc_html_e( 'Show budget and hourly rate information.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Include Skills', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][include_skills]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['include_skills'] ) ); ?> />
+							<?php esc_html_e( 'Show required skills list.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Include Applicant Count', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][include_applicants]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['include_applicants'] ) ); ?> />
+							<?php esc_html_e( 'Show competitor/applicant count for each job.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Compact Mode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][result_format][compact_mode]" value="1" <?php checked( ! empty( $settings['external_sourcing']['result_format']['compact_mode'] ) ); ?> />
+							<?php esc_html_e( 'Strip null/empty fields from results to reduce token consumption for AI assistants.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+
+				<!-- Notification Rules (since 2.12.0) -->
+				<tr><td colspan="2"><h5 style="margin: 4px 0; padding-top: 8px;"><?php esc_html_e( 'Email Notifications', 'mcp-ai-wpoos-pro' ); ?></h5>
+				<p class="description"><?php esc_html_e( 'Receive email alerts when the auto-import pipeline discovers high-scoring jobs.', 'mcp-ai-wpoos-pro' ); ?></p></td></tr>
+
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable Notifications', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][notification][enabled]" value="1" <?php checked( ! empty( $settings['external_sourcing']['notification']['enabled'] ) ); ?> />
+							<?php esc_html_e( 'Send email alerts when high-scoring jobs are found.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Notification Email', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="email" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][notification][email]" value="<?php echo esc_attr( $settings['external_sourcing']['notification']['email'] ?? '' ); ?>" class="regular-text" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>" />
+						<p class="description"><?php esc_html_e( 'Where to send notifications. Defaults to the site admin email if left blank.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Min Score to Alert', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][notification][min_score_alert]" value="<?php echo esc_attr( $settings['external_sourcing']['notification']['min_score_alert'] ?? 80 ); ?>" min="0" max="100" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Only send alerts for jobs scoring at or above this threshold (0–100). Default: 80.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Max Alerts Per Cycle', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][notification][max_alerts_per_cycle]" value="<?php echo esc_attr( $settings['external_sourcing']['notification']['max_alerts_per_cycle'] ?? 5 ); ?>" min="1" max="50" class="small-text" />
+						<p class="description"><?php esc_html_e( 'Maximum number of notifications per search cycle to avoid flooding your inbox. Default: 5.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Deduplication (since 2.12.0) -->
+				<tr><td colspan="2"><h5 style="margin: 4px 0; padding-top: 8px;"><?php esc_html_e( 'Deduplication', 'mcp-ai-wpoos-pro' ); ?></h5>
+				<p class="description"><?php esc_html_e( 'Prevent the same job from being imported multiple times across search cycles.', 'mcp-ai-wpoos-pro' ); ?></p></td></tr>
+
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable Deduplication', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][deduplication][enabled]" value="1" <?php checked( ! empty( $settings['external_sourcing']['deduplication']['enabled'] ) ); ?> />
+							<?php esc_html_e( 'Skip jobs that were already imported within the lookback window.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Dedup Strategy', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][deduplication][strategy]">
+							<option value="title_url" <?php selected( $settings['external_sourcing']['deduplication']['strategy'] ?? 'title_url', 'title_url' ); ?>><?php esc_html_e( 'Title + URL — match on both title slug and URL', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="url_only" <?php selected( $settings['external_sourcing']['deduplication']['strategy'] ?? '', 'url_only' ); ?>><?php esc_html_e( 'URL Only — match only on job URL', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="none" <?php selected( $settings['external_sourcing']['deduplication']['strategy'] ?? '', 'none' ); ?>><?php esc_html_e( 'None — allow duplicates', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'How to determine if a job is a duplicate.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Lookback Days', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[external_sourcing][deduplication][lookback_days]" value="<?php echo esc_attr( $settings['external_sourcing']['deduplication']['lookback_days'] ?? 90 ); ?>" min="1" max="365" class="small-text" />
+						<p class="description"><?php esc_html_e( 'How many days back to check for duplicates (1–365). Default: 90.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -1146,7 +1370,6 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				$sanitized['external_sourcing']['upwork']['auto_import_min_score'] = min( 100, max( 0, absint( $es['upwork']['auto_import_min_score'] ) ) );
 			}
 			$sanitized['external_sourcing']['upwork']['use_profile_context'] = ! empty( $es['upwork']['use_profile_context'] );
-			$sanitized['external_sourcing']['upwork']['auto_import_enabled'] = ! empty( $es['upwork']['auto_import_enabled'] );
 
 			// LinkedIn.
 			if ( isset( $es['linkedin']['default_connection_id'] ) ) {
@@ -1162,7 +1385,6 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				$sanitized['external_sourcing']['linkedin']['auto_import_min_score'] = min( 100, max( 0, absint( $es['linkedin']['auto_import_min_score'] ) ) );
 			}
 			$sanitized['external_sourcing']['linkedin']['use_profile_context'] = ! empty( $es['linkedin']['use_profile_context'] );
-			$sanitized['external_sourcing']['linkedin']['auto_import_enabled'] = ! empty( $es['linkedin']['auto_import_enabled'] );
 			if ( isset( $es['linkedin']['default_search_keywords'] ) ) {
 				$sanitized['external_sourcing']['linkedin']['default_search_keywords'] = sanitize_text_field( $es['linkedin']['default_search_keywords'] );
 			}
@@ -1170,10 +1392,57 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				$sanitized['external_sourcing']['linkedin']['default_location'] = sanitize_text_field( $es['linkedin']['default_location'] );
 			}
 
-			// Shared fields.
-			if ( isset( $es['auto_import_interval_hours'] ) ) {
-				$sanitized['external_sourcing']['auto_import_interval_hours'] = max( 1, min( 24, absint( $es['auto_import_interval_hours'] ) ) );
+			// Upwork extended fields (since 2.12.0).
+			if ( isset( $es['upwork']['default_search_keywords'] ) ) {
+				$sanitized['external_sourcing']['upwork']['default_search_keywords'] = sanitize_text_field( $es['upwork']['default_search_keywords'] );
 			}
+			if ( isset( $es['upwork']['default_location'] ) ) {
+				$sanitized['external_sourcing']['upwork']['default_location'] = sanitize_text_field( $es['upwork']['default_location'] );
+			}
+			if ( isset( $es['upwork']['default_job_type'] ) ) {
+				$valid_uw_types = array( '', 'hourly', 'fixed' );
+				$sanitized['external_sourcing']['upwork']['default_job_type'] = in_array( $es['upwork']['default_job_type'], $valid_uw_types, true )
+					? $es['upwork']['default_job_type']
+					: '';
+			}
+			if ( isset( $es['upwork']['default_experience_level'] ) ) {
+				$valid_uw_exp = array( '', 'entry', 'intermediate', 'expert' );
+				$sanitized['external_sourcing']['upwork']['default_experience_level'] = in_array( $es['upwork']['default_experience_level'], $valid_uw_exp, true )
+					? $es['upwork']['default_experience_level']
+					: '';
+			}
+			if ( isset( $es['upwork']['default_categories'] ) ) {
+				$sanitized['external_sourcing']['upwork']['default_categories'] = sanitize_text_field( $es['upwork']['default_categories'] );
+			}
+			if ( isset( $es['upwork']['max_results_per_search'] ) ) {
+				$sanitized['external_sourcing']['upwork']['max_results_per_search'] = min( 50, max( 1, absint( $es['upwork']['max_results_per_search'] ) ) );
+			}
+			if ( isset( $es['upwork']['excluded_keywords'] ) ) {
+				$sanitized['external_sourcing']['upwork']['excluded_keywords'] = sanitize_textarea_field( $es['upwork']['excluded_keywords'] );
+			}
+
+			// LinkedIn extended fields (since 2.12.0).
+			if ( isset( $es['linkedin']['default_job_type'] ) ) {
+				$valid_li_types = array( '', 'full_time', 'part_time', 'contract', 'temporary', 'internship' );
+				$sanitized['external_sourcing']['linkedin']['default_job_type'] = in_array( $es['linkedin']['default_job_type'], $valid_li_types, true )
+					? $es['linkedin']['default_job_type']
+					: '';
+			}
+			if ( isset( $es['linkedin']['default_experience_level'] ) ) {
+				$valid_li_exp = array( '', 'entry', 'mid_level', 'senior', 'executive' );
+				$sanitized['external_sourcing']['linkedin']['default_experience_level'] = in_array( $es['linkedin']['default_experience_level'], $valid_li_exp, true )
+					? $es['linkedin']['default_experience_level']
+					: '';
+			}
+			$sanitized['external_sourcing']['linkedin']['default_remote'] = ! empty( $es['linkedin']['default_remote'] );
+			if ( isset( $es['linkedin']['max_results_per_search'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['max_results_per_search'] = min( 50, max( 1, absint( $es['linkedin']['max_results_per_search'] ) ) );
+			}
+			if ( isset( $es['linkedin']['excluded_keywords'] ) ) {
+				$sanitized['external_sourcing']['linkedin']['excluded_keywords'] = sanitize_textarea_field( $es['linkedin']['excluded_keywords'] );
+			}
+
+			// Shared fields.
 			if ( isset( $es['ideal_client_profile'] ) ) {
 				$sanitized['external_sourcing']['ideal_client_profile'] = sanitize_textarea_field( $es['ideal_client_profile'] );
 			}
@@ -1185,6 +1454,50 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			}
 			if ( isset( $es['excluded_keywords'] ) ) {
 				$sanitized['external_sourcing']['excluded_keywords'] = sanitize_textarea_field( $es['excluded_keywords'] );
+			}
+
+			// Result format (since 2.12.0).
+			if ( isset( $es['result_format'] ) && is_array( $es['result_format'] ) ) {
+				$rf = $es['result_format'];
+				if ( isset( $rf['description_length'] ) ) {
+					$sanitized['external_sourcing']['result_format']['description_length'] = min( 2000, max( 0, absint( $rf['description_length'] ) ) );
+				}
+				$sanitized['external_sourcing']['result_format']['include_email']       = ! empty( $rf['include_email'] );
+				$sanitized['external_sourcing']['result_format']['include_client_info'] = ! empty( $rf['include_client_info'] );
+				$sanitized['external_sourcing']['result_format']['include_budget']      = ! empty( $rf['include_budget'] );
+				$sanitized['external_sourcing']['result_format']['include_skills']      = ! empty( $rf['include_skills'] );
+				$sanitized['external_sourcing']['result_format']['include_applicants']  = ! empty( $rf['include_applicants'] );
+				$sanitized['external_sourcing']['result_format']['compact_mode']        = ! empty( $rf['compact_mode'] );
+			}
+
+			// Notification (since 2.12.0).
+			if ( isset( $es['notification'] ) && is_array( $es['notification'] ) ) {
+				$n = $es['notification'];
+				$sanitized['external_sourcing']['notification']['enabled'] = ! empty( $n['enabled'] );
+				if ( isset( $n['email'] ) ) {
+					$sanitized['external_sourcing']['notification']['email'] = sanitize_email( $n['email'] );
+				}
+				if ( isset( $n['min_score_alert'] ) ) {
+					$sanitized['external_sourcing']['notification']['min_score_alert'] = min( 100, max( 0, absint( $n['min_score_alert'] ) ) );
+				}
+				if ( isset( $n['max_alerts_per_cycle'] ) ) {
+					$sanitized['external_sourcing']['notification']['max_alerts_per_cycle'] = min( 50, max( 1, absint( $n['max_alerts_per_cycle'] ) ) );
+				}
+			}
+
+			// Deduplication (since 2.12.0).
+			if ( isset( $es['deduplication'] ) && is_array( $es['deduplication'] ) ) {
+				$d = $es['deduplication'];
+				$sanitized['external_sourcing']['deduplication']['enabled'] = ! empty( $d['enabled'] );
+				if ( isset( $d['strategy'] ) ) {
+					$valid_strategies = array( 'title_url', 'url_only', 'none' );
+					$sanitized['external_sourcing']['deduplication']['strategy'] = in_array( $d['strategy'], $valid_strategies, true )
+						? $d['strategy']
+						: 'title_url';
+				}
+				if ( isset( $d['lookback_days'] ) ) {
+					$sanitized['external_sourcing']['deduplication']['lookback_days'] = min( 365, max( 1, absint( $d['lookback_days'] ) ) );
+				}
 			}
 		}
 

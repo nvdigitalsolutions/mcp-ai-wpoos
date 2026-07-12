@@ -153,7 +153,7 @@ class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, W
 	 * @return array|WP_Error Tool results or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {
 			return new WP_Error(
@@ -161,6 +161,9 @@ class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, W
 				__( 'You do not have permission to search LinkedIn jobs.', 'mcp-ai-wpoos-pro' )
 			);
 		}
+
+		// Resolve defaults from CRM toolkit settings when arguments are omitted.
+		$arguments = $this->apply_defaults( $arguments );
 
 		// Determine whether the LinkedIn API is available.
 		$use_api = $this->has_valid_connection( $arguments );
@@ -211,6 +214,8 @@ class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
+		$jobs = $this->apply_result_format( $jobs );
+
 		return array(
 			'success' => true,
 			'mode'    => 'api',
@@ -218,6 +223,122 @@ class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, W
 			'jobs'    => $jobs,
 			'total'   => isset( $result['paging']['total'] ) ? (int) $result['paging']['total'] : count( $jobs ),
 		);
+	}
+
+	/**
+	 * Fill missing search arguments from CRM toolkit settings.
+	 *
+	 * @since 2.12.0
+	 * @param array $arguments Tool arguments.
+	 * @return array Arguments with defaults applied.
+	 */
+	private function apply_defaults( array $arguments ) {
+		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			return $arguments;
+		}
+
+		$crm_settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$linkedin_cfg = isset( $crm_settings['external_sourcing']['linkedin'] )
+			? $crm_settings['external_sourcing']['linkedin']
+			: array();
+
+		// Resolve the connection_id from defaults if not provided.
+		if ( empty( $arguments['connection_id'] ) && ! empty( $linkedin_cfg['default_connection_id'] ) ) {
+			$arguments['connection_id'] = $linkedin_cfg['default_connection_id'];
+		}
+
+		// Search keywords.
+		if ( empty( $arguments['query'] ) && ! empty( $linkedin_cfg['default_search_keywords'] ) ) {
+			$arguments['query'] = $linkedin_cfg['default_search_keywords'];
+		}
+
+		// Location.
+		if ( empty( $arguments['location'] ) && ! empty( $linkedin_cfg['default_location'] ) ) {
+			$arguments['location'] = $linkedin_cfg['default_location'];
+		}
+
+		// Job type.
+		if ( empty( $arguments['job_type'] ) && ! empty( $linkedin_cfg['default_job_type'] ) ) {
+			$arguments['job_type'] = $linkedin_cfg['default_job_type'];
+		}
+
+		// Experience level.
+		if ( empty( $arguments['experience_level'] ) && ! empty( $linkedin_cfg['default_experience_level'] ) ) {
+			$arguments['experience_level'] = $linkedin_cfg['default_experience_level'];
+		}
+
+		// Remote filter.
+		if ( empty( $arguments['remote'] ) && ! empty( $linkedin_cfg['default_remote'] ) ) {
+			$arguments['remote'] = true;
+		}
+
+		// Max results.
+		if ( empty( $arguments['limit'] ) && ! empty( $linkedin_cfg['max_results_per_search'] ) ) {
+			$arguments['limit'] = (int) $linkedin_cfg['max_results_per_search'];
+		}
+
+		return $arguments;
+	}
+
+	/**
+	 * Apply result format settings to search results.
+	 *
+	 * @since 2.12.0
+	 * @param array $jobs Array of job result arrays.
+	 * @return array Filtered jobs.
+	 */
+	private function apply_result_format( array $jobs ) {
+		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			return $jobs;
+		}
+
+		$crm_settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$fmt          = isset( $crm_settings['external_sourcing']['result_format'] )
+			? $crm_settings['external_sourcing']['result_format']
+			: array();
+
+		if ( empty( $fmt ) ) {
+			return $jobs;
+		}
+
+		$trim_length = isset( $fmt['description_length'] ) ? (int) $fmt['description_length'] : 200;
+
+		foreach ( $jobs as &$job ) {
+			if ( $trim_length > 0 && ! empty( $job['description'] ) ) {
+				$job['description'] = wp_trim_words( $job['description'], $trim_length );
+			}
+
+			if ( empty( $fmt['include_email'] ) ) {
+				unset( $job['email'] );
+			}
+			if ( empty( $fmt['include_client_info'] ) ) {
+				unset( $job['client'] );
+			}
+			if ( empty( $fmt['include_budget'] ) ) {
+				unset( $job['budget'] );
+			}
+			if ( empty( $fmt['include_skills'] ) ) {
+				unset( $job['skills'] );
+			}
+			if ( empty( $fmt['include_applicants'] ) ) {
+				unset( $job['applicants'] );
+			}
+
+			if ( ! empty( $fmt['compact_mode'] ) ) {
+				$job = array_filter(
+					$job,
+					function ( $v ) {
+						if ( is_array( $v ) ) {
+							return ! empty( $v );
+						}
+						return null !== $v && '' !== $v;
+					}
+				);
+			}
+		}
+		unset( $job );
+
+		return $jobs;
 	}
 
 	/**
@@ -248,18 +369,7 @@ class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, W
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
-		if ( empty( $connection ) ) {
-			return false;
-		}
-
-		// If explicitly set to web_search mode, never use the API.
-		$mode = isset( $connection['linkedin_mode'] ) ? $connection['linkedin_mode'] : 'api';
-		if ( 'web_search' === $mode ) {
-			return false;
-		}
-
-		// API mode: require OAuth credentials and a refresh token.
-		return ! empty( $connection['refresh_token'] );
+		return ! empty( $connection ) && ! empty( $connection['refresh_token'] );
 	}
 
 	/**
@@ -276,34 +386,14 @@ class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, W
 		// Build a search query targeting LinkedIn job listings.
 		$query_parts = array( 'site:linkedin.com/jobs' );
 
-		// Load per-connection defaults when a connection_id is provided.
-		$conn_defaults = array();
-		if ( ! empty( $arguments['connection_id'] ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			$conn = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection(
-				sanitize_text_field( $arguments['connection_id'] )
-			);
-			if ( $conn && 'linkedin' === ( isset( $conn['connection_type'] ) ? $conn['connection_type'] : '' ) ) {
-				if ( ! empty( $conn['linkedin_search_query'] ) ) {
-					$conn_defaults['query'] = $conn['linkedin_search_query'];
-				}
-				if ( ! empty( $conn['linkedin_search_location'] ) ) {
-					$conn_defaults['location'] = $conn['linkedin_search_location'];
-				}
-			}
-		}
-
-		// Argument values take precedence; connection defaults fill gaps.
-		$arg_query    = ! empty( $arguments['query'] ) ? $arguments['query'] : ( $conn_defaults['query'] ?? '' );
-		$arg_location = ! empty( $arguments['location'] ) ? $arguments['location'] : ( $conn_defaults['location'] ?? '' );
-
-		if ( ! empty( $arg_query ) ) {
-			$query_parts[] = sanitize_text_field( $arg_query );
+		if ( ! empty( $arguments['query'] ) ) {
+			$query_parts[] = sanitize_text_field( $arguments['query'] );
 		}
 		if ( ! empty( $arguments['keywords'] ) ) {
 			$query_parts[] = sanitize_text_field( $arguments['keywords'] );
 		}
-		if ( ! empty( $arg_location ) ) {
-			$query_parts[] = sanitize_text_field( $arg_location );
+		if ( ! empty( $arguments['location'] ) ) {
+			$query_parts[] = sanitize_text_field( $arguments['location'] );
 		}
 		if ( ! empty( $arguments['remote'] ) ) {
 			$query_parts[] = 'remote';
