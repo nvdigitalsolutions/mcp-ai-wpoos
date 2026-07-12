@@ -123,7 +123,25 @@ jobs:
           fi
 
       # ------------------------------------------------------------------
-      # 6. Quick smoke test — verify WordPress is responding
+      # 6. Resolve ZAP-accessible target (fix Docker network isolation)
+      # ------------------------------------------------------------------
+      # The ZAP action runs inside its own Docker container, where
+      # "localhost" refers to the ZAP container, not the Docker host.
+      # We resolve the Docker bridge gateway IP so ZAP can route back
+      # to the host where port 8000 is mapped to WordPress.
+      - name: Resolve ZAP-accessible target URL
+        id: zap_target
+        run: |
+          RAW_TARGET="${{ steps.target.outputs.url }}"
+          # Get Docker bridge gateway IP (default: 172.17.0.1)
+          GW=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}' 2>/dev/null || echo "172.17.0.1")
+          RESOLVED=$(echo "${RAW_TARGET}" | sed "s|localhost|${GW}|g" | sed "s|127\.0\.0\.1|${GW}|g")
+          echo "Docker gateway: ${GW}"
+          echo "Resolved target: ${RESOLVED}"
+          echo "url=${RESOLVED}" >> $GITHUB_OUTPUT
+
+      # ------------------------------------------------------------------
+      # 7. Quick smoke test — verify WordPress is responding
       # ------------------------------------------------------------------
       - name: Smoke test target
         run: |
@@ -138,13 +156,13 @@ jobs:
           echo "Target is reachable (HTTP ${HTTP_CODE})."
 
       # ------------------------------------------------------------------
-      # 7. Run ZAP Baseline Scan
+      # 8. Run ZAP Baseline Scan (uses resolved target for cross-container reachability)
       # ------------------------------------------------------------------
       - name: ZAP Baseline Scan
         id: zap
         uses: zaproxy/action-baseline@v0.13.0
         with:
-          target: ${{ steps.target.outputs.url }}
+          target: ${{ steps.zap_target.outputs.url }}
           # Phase 1: advisory only — warn on findings, never fail the build.
           fail_action: 'warn'
           rules_file_name: '.zap-rules.tsv'
@@ -157,7 +175,7 @@ jobs:
         continue-on-error: true
 
       # ------------------------------------------------------------------
-      # 8. Upload ZAP reports as artifacts
+      # 9. Upload ZAP reports as artifacts
       # ------------------------------------------------------------------
       - name: Create artifact directory
         if: always()
@@ -187,7 +205,7 @@ jobs:
           retention-days: 30
 
       # ------------------------------------------------------------------
-      # 9. Post PR comment with alert summary
+      # 10. Post PR comment with alert summary
       # ------------------------------------------------------------------
       - name: Parse ZAP JSON report
         id: parse
@@ -318,7 +336,7 @@ jobs:
             }
 
       # ------------------------------------------------------------------
-      # 10. Tear down QA Docker stack
+      # 11. Tear down QA Docker stack
       # ------------------------------------------------------------------
       - name: Tear down QA stack
         if: always()

@@ -147,7 +147,34 @@ jobs:
           echo "WordPress setup complete."
 
       # ------------------------------------------------------------------
-      # 4. Smoke test target
+      # 4. Resolve ZAP-accessible target (fix Docker network isolation)
+      # ------------------------------------------------------------------
+      # The ZAP action runs inside its own Docker container, where
+      # "localhost" refers to the ZAP container, not the Docker host.
+      # When targeting a docker-compose WordPress stack, we must use
+      # the Docker bridge gateway IP so ZAP can route back to the host
+      # where port 8000 is mapped. For external/staging URLs, the
+      # target is used as-is.
+      - name: Resolve ZAP-accessible target URL
+        id: zap_target
+        run: |
+          RAW_TARGET="${{ steps.target.outputs.url }}"
+
+          if [ "${{ steps.docker.outputs.use_docker }}" = "true" ]; then
+            # Get Docker bridge gateway IP (default: 172.17.0.1)
+            GW=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}' 2>/dev/null || echo "172.17.0.1")
+            # Rewrite localhost → gateway IP so ZAP container can reach it
+            RESOLVED=$(echo "${RAW_TARGET}" | sed "s|localhost|${GW}|g" | sed "s|127\.0\.0\.1|${GW}|g")
+            echo "Docker gateway: ${GW}"
+            echo "Resolved target: ${RESOLVED}"
+          else
+            RESOLVED="${RAW_TARGET}"
+          fi
+
+          echo "url=${RESOLVED}" >> $GITHUB_OUTPUT
+
+      # ------------------------------------------------------------------
+      # 5. Smoke test target (runs on runner host, not in a container)
       # ------------------------------------------------------------------
       - name: Smoke test target
         run: |
@@ -162,13 +189,13 @@ jobs:
           echo "Target is reachable (HTTP ${HTTP_CODE})."
 
       # ------------------------------------------------------------------
-      # 5. Run ZAP Full Scan
+      # 6. Run ZAP Full Scan (uses resolved target for cross-container reachability)
       # ------------------------------------------------------------------
       - name: ZAP Full Scan
         id: zap
         uses: zaproxy/action-full-scan@v0.13.0
         with:
-          target: ${{ steps.target.outputs.url }}
+          target: ${{ steps.zap_target.outputs.url }}
           # Phase 3: warn on findings, don't fail the build. Phase 5 makes this FAIL.
           fail_action: 'warn'
           rules_file_name: '.zap-rules.tsv'
@@ -180,7 +207,7 @@ jobs:
         continue-on-error: true
 
       # ------------------------------------------------------------------
-      # 6. Upload reports
+      # 7. Upload reports
       # ------------------------------------------------------------------
       - name: Create artifact directory
         if: always()
@@ -203,7 +230,7 @@ jobs:
           retention-days: 90
 
       # ------------------------------------------------------------------
-      # 7. Parse findings and create GitHub Issues
+      # 8. Parse findings and create GitHub Issues
       # ------------------------------------------------------------------
       - name: Parse ZAP findings
         id: parse
@@ -318,7 +345,7 @@ jobs:
             }
 
       # ------------------------------------------------------------------
-      # 8. Summary
+      # 9. Summary
       # ------------------------------------------------------------------
       - name: Workflow summary
         if: always()
@@ -343,7 +370,7 @@ jobs:
           } >> $GITHUB_STEP_SUMMARY
 
       # ------------------------------------------------------------------
-      # 9. Tear down Docker stack
+      # 10. Tear down Docker stack
       # ------------------------------------------------------------------
       - name: Tear down QA stack
         if: always() && steps.docker.outputs.use_docker == 'true'
