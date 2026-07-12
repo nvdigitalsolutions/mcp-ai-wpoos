@@ -3207,6 +3207,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
 
+					// Ensure tool_call_id is never empty so downstream
+					// tool-result messages are valid for the next turn.
+					if ( '' === $tool_call_id ) {
+						$tool_call_id = uniqid( 'tool_', true );
+					}
+
 					// Check if this is an async pending result (background-only tools like video generation).
 					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop
 					// after processing this iteration. The frontend will handle polling for the async result.
@@ -3251,9 +3257,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name, $tool_instance ),
 					);
 
-					if ( '' !== $tool_call_id ) {
-						$full_tool_message['tool_call_id'] = $tool_call_id;
-					}
+					// Always include tool_call_id so the frontend never sends back
+					// a tool message that fails REST validation on the next turn.
+					$full_tool_message['tool_call_id'] = '' !== $tool_call_id
+						? $tool_call_id
+						: uniqid( 'tool_', true );
 
 					if ( '' !== $tool_name ) {
 						$full_tool_message['name'] = $tool_name;
@@ -3297,26 +3305,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 					$budget_tracker->record( $message_bytes );
 
-					$tool_message = array(
-						'role'    => 'tool',
-						// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
-						'content' => $sanitized_result,
-					);
+				$tool_message = array(
+					'role'    => 'tool',
+					// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
+					'content' => $sanitized_result,
+				);
 
-					if ( '' !== $tool_call_id ) {
-						$tool_message['tool_call_id'] = $tool_call_id;
-					}
+				// Always include tool_call_id to keep the message valid
+				// for provider payload filtering and subsequent turns.
+				$tool_message['tool_call_id'] = '' !== $tool_call_id
+					? $tool_call_id
+					: uniqid( 'tool_', true );
 
-					if ( '' !== $tool_name ) {
-						$tool_message['name'] = $tool_name;
-					}
-
-					$messages[] = $tool_message;
+				if ( '' !== $tool_name ) {
+					$tool_message['name'] = $tool_name;
 				}
 
-				// If any tool returned an async pending result (e.g., video generation),
-				// exit the agentic loop. The frontend will poll for the async job completion.
-				if ( $has_async_pending_result ) {
+				$messages[] = $tool_message;
+			}
+
+			// If any tool returned an async pending result (e.g., video generation),
+			// exit the agentic loop. The frontend will poll for the async job completion.
+			if ( $has_async_pending_result ) {
 					WP_MCP_AI_Logger::log_event(
 						'agentic_loop_exit_async_pending',
 						'Exiting agentic loop due to async pending tool result',
@@ -4105,6 +4115,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
 
+					// Ensure tool_call_id is never empty so downstream
+					// tool-result messages are valid for the next turn.
+					if ( '' === $tool_call_id ) {
+						$tool_call_id = uniqid( 'tool_', true );
+					}
+
 					// Stream tool start event.
 					$this->send_sse_event(
 						'tool_execution',
@@ -4263,9 +4279,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => $result_content,
 					);
 
-					if ( '' !== $tool_call_id ) {
-						$full_tool_message['tool_call_id'] = $tool_call_id;
-					}
+					// Always include tool_call_id so the frontend never sends back
+					// a tool message that fails REST validation on the next turn.
+					$full_tool_message['tool_call_id'] = '' !== $tool_call_id
+						? $tool_call_id
+						: uniqid( 'tool_', true );
 
 					if ( '' !== $tool_name ) {
 						$full_tool_message['name'] = $tool_name;
@@ -4313,28 +4331,30 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 					$budget_tracker->record( $message_bytes );
 
-					$tool_message = array(
-						'role'    => 'tool',
-						// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
-						'content' => $sanitized_result,
-					);
+				$tool_message = array(
+					'role'    => 'tool',
+					// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
+					'content' => $sanitized_result,
+				);
 
-					if ( '' !== $tool_call_id ) {
-						$tool_message['tool_call_id'] = $tool_call_id;
-					}
+				// Always include tool_call_id to keep the message valid
+				// for provider payload filtering and subsequent turns.
+				$tool_message['tool_call_id'] = '' !== $tool_call_id
+					? $tool_call_id
+					: uniqid( 'tool_', true );
 
-					if ( '' !== $tool_name ) {
-						$tool_message['name'] = $tool_name;
-					}
-
-					$messages[] = $tool_message;
+				if ( '' !== $tool_name ) {
+					$tool_message['name'] = $tool_name;
 				}
 
-				// If any tool returned an async pending result (e.g., video generation),
-				// exit the agentic loop. The frontend is notified via SSE and will poll
-				// for the async job completion. Continuing to call the LLM with pending
-				// status would cause confusion and potential infinite loops.
-				if ( $has_async_pending_result ) {
+				$messages[] = $tool_message;
+			}
+
+			// If any tool returned an async pending result (e.g., video generation),
+			// exit the agentic loop. The frontend is notified via SSE and will poll
+			// for the async job completion. Continuing to call the LLM with pending
+			// status would cause confusion and potential infinite loops.
+			if ( $has_async_pending_result ) {
 					WP_MCP_AI_Logger::log_event(
 						'agentic_loop_exit_async_pending',
 						'Exiting agentic loop due to async pending tool result',

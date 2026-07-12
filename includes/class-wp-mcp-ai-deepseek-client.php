@@ -675,6 +675,17 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 
 			if ( ! empty( $tool_calls_by_idx ) ) {
 				ksort( $tool_calls_by_idx );
+				// Ensure every tool call has a non-empty id.
+				// Streaming deltas may not include the id in every chunk;
+				// a missing id causes downstream tool-result messages to
+				// lack tool_call_id, which the REST validator rejects
+				// on the next turn. Generate a stable fallback.
+				foreach ( $tool_calls_by_idx as $idx => &$tc ) {
+					if ( '' === $tc['id'] ) {
+						$tc['id'] = uniqid( 'call_deepseek_', true );
+					}
+				}
+				unset( $tc );
 				$message['tool_calls'] = array_values( $tool_calls_by_idx );
 			}
 

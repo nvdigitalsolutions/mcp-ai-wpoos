@@ -187,12 +187,16 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 			}
 			// Tool result — emit as AI SDK type a (toolResult) so useChat
 			// completes the toolInvocation on the message.
+			// Always supply a non-empty toolCallId even when the server
+			// sends an empty tool_id — otherwise the REST validator on
+			// the next turn rejects the tool message for missing
+			// tool_call_id.
 			case 'tool_result': {
 				const trToolId = typeof frame.tool_id === 'string' ? frame.tool_id : '';
 				const trResult = frame.result ?? null;
 				out.push(
 					encodeChunk( 'a', {
-						toolCallId: trToolId || '',
+						toolCallId: trToolId || `tool-${ Date.now() }`,
 						result: trResult,
 					} )
 				);
