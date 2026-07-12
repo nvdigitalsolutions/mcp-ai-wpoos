@@ -155,10 +155,13 @@ class Test_Virtual_Agent_Delegation extends WP_UnitTestCase {
 
 		$delegate_result = $delegate_tool->execute( $delegate_args, $context );
 
-		// Should fail with appropriate error.
-		$this->assertFalse( $delegate_result['success'], 'Delegation to invalid virtual agent should fail' );
-		$this->assertArrayHasKey( 'message', $delegate_result );
-		$this->assertStringContainsString( 'virtual agent', strtolower( $delegate_result['message'] ) );
+		// Should fail with appropriate WP_Error.
+		$this->assertWPError( $delegate_result, 'Delegation to invalid virtual agent should return WP_Error' );
+		$this->assertStringContainsString(
+			'Virtual agent',
+			$delegate_result->get_error_message(),
+			'Error message should mention virtual agent'
+		);
 	}
 
 	/**
