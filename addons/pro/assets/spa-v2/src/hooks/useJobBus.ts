@@ -11,6 +11,7 @@ import type { JobRecord, JobStatus } from '../components/shared/JobCard';
 export interface UseJobBusResult {
 	jobs: Record< string, JobRecord >;
 	runningCount: number;
+	failedCount: number;
 	cancelJob: ( jobId: string ) => Promise< void >;
 	retryJob: ( jobId: string ) => Promise< void >;
 	dismissJob: ( jobId: string ) => void;
@@ -58,6 +59,7 @@ export function useJobBus( cronStatusBaseUrl: string, nonce: string ): UseJobBus
 	}, [] );
 
 	const runningCount = Object.values( jobs ).filter( ( j ) => ! isTerminal( j.status ) ).length;
+	const failedCount = Object.values( jobs ).filter( ( j ) => j.status === 'failed' ).length;
 
 	const postJobAction = useCallback( async ( jobId: string, action: string ) => {
 		await fetch( `${ cronStatusBaseUrl.replace( /\/+$/, '' ) }/cron-status/${ encodeURIComponent( jobId ) }/${ action }`, {
@@ -71,5 +73,5 @@ export function useJobBus( cronStatusBaseUrl: string, nonce: string ): UseJobBus
 	const dismissJob = useCallback( ( id: string ) => { setJobs( ( p ) => { const n = { ...p }; delete n[ id ]; return n; } ); }, [] );
 	const dismissAllTerminal = useCallback( () => { setJobs( ( p ) => { const n: Record< string, JobRecord > = {}; for ( const [ k, v ] of Object.entries( p ) ) { if ( ! isTerminal( v.status ) ) n[ k ] = v; } return n; } ); }, [] );
 
-	return { jobs, runningCount, cancelJob, retryJob, dismissJob, dismissAllTerminal };
+	return { jobs, runningCount, failedCount, cancelJob, retryJob, dismissJob, dismissAllTerminal };
 }
