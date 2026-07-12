@@ -30,6 +30,39 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Agent_Communication_Service {
 
 	/**
+	 * Cron hook for processing pending delegations.
+	 *
+	 * @since 1.1.0
+	 * @var string
+	 */
+	const CRON_HOOK = 'wp_mcp_ai_process_delegation';
+
+	/**
+	 * Whether the cron hook has been registered.
+	 *
+	 * @since 1.1.0
+	 * @var bool
+	 */
+	private static $cron_registered = false;
+
+	/**
+	 * Bootstrap the delegation processing system.
+	 *
+	 * Registers the cron hook that processes pending delegations.
+	 * Called once per request.
+	 *
+	 * @since 1.1.0
+	 * @return void
+	 */
+	public static function init() {
+		if ( self::$cron_registered ) {
+			return;
+		}
+		add_action( self::CRON_HOOK, array( __CLASS__, 'process_pending_delegation' ) );
+		self::$cron_registered = true;
+	}
+
+	/**
 	 * Delegate a task to another agent
 	 *
 	 * @param int|string $from_agent_id Source agent ID (integer post ID or string virtual ID).
@@ -132,15 +165,21 @@ class WP_MCP_AI_Agent_Communication_Service {
 		// Log delegation.
 		$this->log_delegation( $delegation, 'created' );
 
-		return array(
-			'delegation_id' => $delegation['delegation_id'],
-			'status'        => 'delegated',
-			'agent_id'      => $to_agent_id,
-			'agent_name'    => $to_agent_name,
-			'agent_role'    => $to_agent_role,
-			'delegated_at'  => $delegation['created_at'],
-			'message'       => __( 'Task successfully delegated to target agent.', 'mcp-ai-wpoos' ),
-		);
+		// Schedule cron processing for this delegation.
+		$this->schedule_delegation_processing( $delegation );
+
+		// Register with Cron Manager for visibility in the Tasks drawer.
+		$this->register_delegation_with_cron_manager( $delegation );
+
+			return array(
+				'delegation_id' => $delegation['delegation_id'],
+				'status'        => 'delegated',
+				'agent_id'      => $to_agent_id,
+				'agent_name'    => $to_agent_name,
+				'agent_role'    => $to_agent_role,
+				'delegated_at'  => $delegation['created_at'],
+				'message'       => __( 'Task successfully delegated to target agent.', 'mcp-ai-wpoos' ),
+			);
 	}
 
 	/**
@@ -416,6 +455,192 @@ class WP_MCP_AI_Agent_Communication_Service {
 	 */
 	protected function generate_delegation_id() {
 		return 'del_' . wp_generate_uuid4();
+	}
+
+	/**
+	 * Schedule a cron event to process this delegation.
+	 *
+	 * Ensures the cron hook is registered, then schedules a one-off
+	 * event to execute immediately (on the next WP-Cron cycle).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $delegation Delegation record.
+	 * @return void
+	 */
+	protected function schedule_delegation_processing( $delegation ) {
+		self::init();
+
+		$args = array( $delegation['delegation_id'] );
+
+		// Avoid duplicate scheduling.
+		if ( wp_next_scheduled( self::CRON_HOOK, $args ) ) {
+			return;
+		}
+
+		wp_schedule_single_event( time(), self::CRON_HOOK, $args );
+	}
+
+	/**
+	 * Register the delegation with the Cron Manager for UI visibility.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $delegation Delegation record.
+	 * @return void
+	 */
+	protected function register_delegation_with_cron_manager( $delegation ) {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			return;
+		}
+
+		$user_id = isset( $delegation['task']['delegated_by'] )
+			? absint( $delegation['task']['delegated_by'] )
+			: 0;
+
+		// If delegated_by is a virtual agent or 0, try to get the current user.
+		if ( 0 === $user_id && function_exists( 'get_current_user_id' ) ) {
+			$user_id = get_current_user_id();
+		}
+
+		WP_MCP_AI_Cron_Manager::record_job(
+			self::CRON_HOOK,
+			array( $delegation['delegation_id'] ),
+			'single',
+			time(),
+			$user_id
+		);
+	}
+
+	/**
+	 * Process a pending delegation (cron callback).
+	 *
+	 * Reads the delegation from its transient, executes the task via
+	 * the target agent's role, and updates the delegation status.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $delegation_id The delegation identifier.
+	 * @return void
+	 */
+	public static function process_pending_delegation( $delegation_id ) {
+		$key  = 'wp_mcp_ai_delegation_' . $delegation_id;
+		$data = get_transient( $key );
+
+		if ( ! is_array( $data ) || empty( $data['to_agent_id'] ) ) {
+			// Delegation expired or invalid — nothing to do.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'delegation_cron_miss',
+					'Delegation not found for cron processing',
+					array( 'delegation_id' => $delegation_id )
+				);
+			}
+			return;
+		}
+
+		// Skip if already completed or failed.
+		if ( ! empty( $data['status'] ) && 'pending' !== $data['status'] ) {
+			return;
+		}
+
+		$to_agent_id = $data['to_agent_id'];
+		$task_data   = isset( $data['task'] ) ? $data['task'] : array();
+		$context     = isset( $data['context'] ) ? $data['context'] : array();
+
+		// Mark as in-progress.
+		$data['status']     = 'running';
+		$data['started_at'] = current_time( 'mysql' );
+		set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+
+		// Log delegation execution start.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'delegation_execution_started',
+				'Processing delegated task',
+				array(
+					'delegation_id' => $delegation_id,
+					'to_agent_id'   => $to_agent_id,
+				)
+			);
+		}
+
+		// Resolve the target agent's role.
+		$is_virtual = is_string( $to_agent_id ) && 0 === strpos( $to_agent_id, 'virtual_' );
+		$agent_role = null;
+
+		if ( ! $is_virtual ) {
+			$to_agent_id = absint( $to_agent_id );
+			if ( function_exists( 'wp_mcp_ai_get_assistant_role' ) ) {
+				$agent_role = wp_mcp_ai_get_assistant_role( $to_agent_id );
+			}
+		}
+
+		// For virtual agents or agents without a role, try role from context.
+		if ( ! $agent_role && isset( $context['agent_role'] ) && function_exists( 'wp_mcp_ai_get_agent_role' ) ) {
+			$agent_role = wp_mcp_ai_get_agent_role( $context['agent_role'] );
+		}
+
+		// Fallback: use Executor role.
+		if ( ! $agent_role && function_exists( 'wp_mcp_ai_get_agent_role' ) ) {
+			$agent_role = wp_mcp_ai_get_agent_role( 'executor' );
+		}
+
+		if ( ! $agent_role ) {
+			$data['status']       = 'failed';
+			$data['error']        = __( 'Could not resolve agent role for delegation.', 'mcp-ai-wpoos' );
+			$data['completed_at'] = current_time( 'mysql' );
+			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+			return;
+		}
+
+		// Build execution context.
+		$execution_context = array_merge(
+			$context,
+			array(
+				'assistant_id'  => $to_agent_id,
+				'delegated_by'  => isset( $data['from_agent_id'] ) ? $data['from_agent_id'] : 0,
+				'delegation_id' => $delegation_id,
+			)
+		);
+
+		// Build task for the role executor.
+		$agent_task = array(
+			'description' => isset( $task_data['description'] ) ? $task_data['description'] : '',
+			'type'        => isset( $context['expected_output']['format'] ) ? $context['expected_output']['format'] : 'generic',
+			'id'          => $delegation_id,
+			'parameters'  => isset( $task_data['context']['shared_data'] ) ? $task_data['context']['shared_data'] : array(),
+		);
+
+		try {
+			$result = $agent_role->execute_role_task( $agent_task, $execution_context );
+
+			if ( is_wp_error( $result ) ) {
+				$data['status'] = 'failed';
+				$data['error']  = $result->get_error_message();
+			} else {
+				$data['status'] = 'completed';
+				$data['result'] = $result;
+			}
+		} catch ( \Exception $e ) {
+			$data['status'] = 'failed';
+			$data['error']  = $e->getMessage();
+		}
+
+		$data['completed_at'] = current_time( 'mysql' );
+		set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+
+		// Log result.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'delegation_execution_finished',
+				'Delegated task processing complete',
+				array(
+					'delegation_id' => $delegation_id,
+					'status'        => $data['status'],
+				)
+			);
+		}
 	}
 
 	/**
