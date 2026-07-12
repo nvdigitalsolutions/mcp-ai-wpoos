@@ -151,6 +151,7 @@ class WP_MCP_AI_Tool_List_Upwork_Contracts implements WP_MCP_AI_Tool_Interface, 
 			'read-only',
 			'requires-capability',
 			'external-api',
+			'rate-limited',
 		);
 	}
 

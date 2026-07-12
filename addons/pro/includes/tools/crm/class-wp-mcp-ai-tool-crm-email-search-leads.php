@@ -225,7 +225,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 				'action'           => array(
 					'type'        => 'string',
 					'enum'        => array( 'search', 'get_cached', 'clear_cache', 'schedule', 'unschedule', 'import_from_gmail' ),
-					'description' => __( 'Action to perform: search (execute and cache), get_cached (return cached results), clear_cache (invalidate), schedule (register WP Cron refresh), unschedule (remove schedule), import_from_gmail (search Gmail inbox and import matching emails into CRM pipeline).', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Action to perform. Use "search" as the primary action — it caches results for later retrieval. "get_cached" returns previously cached results, auto-falling back to a fresh search when no cache exists. "clear_cache" invalidates cached data. "schedule" registers a WP Cron job for periodic refresh. "unschedule" removes it. "import_from_gmail" pulls leads from Gmail into the CRM pipeline.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'search',
 				),
 				'lead_status'      => array(
@@ -493,7 +493,13 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
-	 * Return previously cached results without re-querying.
+	 * Return cached results, auto-falling back to a fresh search when no cache exists.
+	 *
+	 * Previously returned a WP_Error on cache miss, which caused agentic loops
+	 * when assistants called get_cached before search. Now transparently delegates
+	 * to run_search() so the caller always receives results.
+	 *
+	 * @since 2.12.0
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @return array
@@ -504,10 +510,13 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 		$cached    = $this->cache_get( $cache_key );
 
 		if ( false === $cached ) {
-			return new WP_Error(
-				'wp_mcp_ai_crm_leads_no_cache',
-				__( 'No cached results found. Run action=search first to populate the cache.', 'mcp-ai-wpoos-pro' )
-			);
+			// Auto-fallback: run a fresh search so the caller never receives an
+			// error, preventing agentic loops when assistants request cached
+			// results before a cache has been populated.
+			$results = $this->run_search( $arguments );
+			$results['auto_fallback'] = true;
+			$results['auto_fallback_reason'] = __( 'No prior cache existed; ran a fresh search instead.', 'mcp-ai-wpoos-pro' );
+			return $results;
 		}
 
 		$cached['from_cache'] = true;

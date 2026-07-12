@@ -128,6 +128,7 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 			'state-changing',
 			'requires-capability',
 			'external-api',
+			'rate-limited',
 		);
 	}
 

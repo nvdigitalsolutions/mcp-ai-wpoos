@@ -203,6 +203,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			'read-only',
 			'requires-capability',
 			'external-api',
+			'rate-limited',
 		);
 	}
 
