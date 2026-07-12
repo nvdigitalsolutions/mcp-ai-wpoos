@@ -1,12 +1,14 @@
 /**
  * StatusBar — Fixed bottom bar showing connection status, model, profile,
- * and conversation (transcript) count.
+ * and localStorage session storage usage.
  *
  * Connection health is derived from the transcripts endpoint availability.
+ *
+ * @since 2.1.0  Replaces conversation count with localStorage quota display.
  */
 
 import { type JSX, useMemo } from 'react';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { useUIStore } from '../../stores/uiStore';
 import { useModelStore } from '../../stores/modelStore';
@@ -45,7 +47,7 @@ export function StatusBar( props: StatusBarProps ): JSX.Element {
 	const model = useModelStore( ( s ) => s.model );
 	const profile = useModelStore( ( s ) => s.profile );
 
-	// Use transcripts to derive connection status and conversation count.
+	// Use transcripts to derive connection status.
 	const {
 		sessions,
 		error: transcriptsError,
@@ -54,18 +56,12 @@ export function StatusBar( props: StatusBarProps ): JSX.Element {
 		endpoint: transcriptsEndpoint,
 		nonce,
 		assistantId: 0,
-		// We only need list, so assistantId isn't critical here.
 	} );
 
 	// ---- derived ----
 	const connectionStatus = useMemo(
 		() => deriveConnectionStatus( sessions, transcriptsError ),
 		[ sessions, transcriptsError ]
-	);
-
-	const conversationCount = useMemo(
-		() => ( Array.isArray( sessions ) ? sessions.length : 0 ),
-		[ sessions ]
 	);
 
 	const connectionLabel: Record< string, string > = useMemo(
@@ -81,6 +77,27 @@ export function StatusBar( props: StatusBarProps ): JSX.Element {
 		() => `${ model.provider } / ${ model.model }`,
 		[ model ]
 	);
+
+	// ── localStorage quota (v2.1.0) ────────────────────────────────────
+	const storageUsed = useMemo( () => {
+		if ( typeof window === 'undefined' ) return 0;
+		let total = 0;
+		try {
+			for ( let i = 0; i < localStorage.length; i++ ) {
+				const key = localStorage.key( i );
+				if (
+					key?.startsWith( 'wp_mcp_ai_' ) ||
+					key?.startsWith( 'nvoos-chat-spa' ) ||
+					key?.startsWith( 'nvoos-pro-spa' )
+				) {
+					total += ( localStorage.getItem( key ) ?? '' ).length;
+				}
+			}
+		} catch {
+			// Ignore storage access errors.
+		}
+		return total;
+	}, [ sessions ] );
 
 	// ---- render ----
 	return (
@@ -145,14 +162,24 @@ export function StatusBar( props: StatusBarProps ): JSX.Element {
 				</span>
 			</span>
 
-			{ /* ---- conversation count ---- */ }
+			{ /* ---- session storage (v2.1.0) ---- */ }
 			<span className="nvoos-pro-spa-status-bar__item">
 				<span className="nvoos-pro-spa-status-bar__label">
-					{ __( 'Conversations', 'nvoos-pro-spa' ) }
+					{ __( 'Sessions', 'nvoos-pro-spa' ) }
 					{ ': ' }
 				</span>
 				<span className="nvoos-pro-spa-status-bar__value">
-					{ conversationCount }
+					{ storageUsed > 1_048_576
+						? sprintf(
+							/* translators: %s: storage used in MB (e.g. "2.3 MB") */
+							__( '%s MB', 'nvoos-pro-spa' ),
+							( storageUsed / 1_048_576 ).toFixed( 1 )
+						  )
+						: sprintf(
+							/* translators: %s: storage used in KB (e.g. "156 KB") */
+							__( '%s KB', 'nvoos-pro-spa' ),
+							Math.round( storageUsed / 1024 )
+						  ) }
 				</span>
 			</span>
 
