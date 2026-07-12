@@ -90,6 +90,10 @@ if ( ! has_action( 'wp_mcp_ai_model_catalog_discovery', 'wp_mcp_ai_model_catalog
 	add_action( 'wp_mcp_ai_model_catalog_discovery', 'wp_mcp_ai_model_catalog_discovery_handler' );
 }
 
+if ( ! has_action( 'wp_mcp_ai_process_delegation', 'wp_mcp_ai_process_delegation_handler' ) ) {
+	add_action( 'wp_mcp_ai_process_delegation', 'wp_mcp_ai_process_delegation_handler', 10, 1 );
+}
+
 if ( ! function_exists( 'wp_mcp_ai_model_catalog_discovery_handler' ) ) {
 	/**
 	 * Cron job handler for the daily model catalog discovery service.
@@ -199,6 +203,26 @@ if ( ! function_exists( 'wp_mcp_ai_deep_research_background_handler' ) ) {
 }
 
 // Initialize async tool executor during plugin bootstrap (registers its cron hook handler).
+if ( ! function_exists( 'wp_mcp_ai_process_delegation_handler' ) ) {
+	/**
+	 * Cron job handler for processing pending agent delegations.
+	 *
+	 * Delegates to
+	 * {@see WP_MCP_AI_Agent_Communication_Service::process_pending_delegation()}.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $delegation_id The delegation identifier.
+	 * @return void
+	 */
+	function wp_mcp_ai_process_delegation_handler( $delegation_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Agent_Communication_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-agent-communication-service.php';
+		}
+		WP_MCP_AI_Agent_Communication_Service::process_pending_delegation( $delegation_id );
+	}
+}
+
 if ( ! has_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor' ) ) {
 	add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor', 5 );
 }
