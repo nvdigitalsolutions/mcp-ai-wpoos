@@ -214,12 +214,17 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const [ commandsOpen, setCommandsOpen ] = useState< boolean >( false );
 	const commandsToggleRef = useRef< HTMLButtonElement | null >( null );
 
+	// ---- Tasks drawer ----
+	const [ tasksOpen, setTasksOpen ] = useState< boolean >( false );
+	const tasksToggleRef = useRef< HTMLButtonElement | null >( null );
+
 	// Shared callback: close one drawer when another opens.
 	const openDrawer = useCallback(
-		( which: 'memory' | 'tools' | 'commands' ) => {
+		( which: 'memory' | 'tools' | 'commands' | 'tasks' ) => {
 			setMemoryOpen( which === 'memory' );
 			setToolsOpen( which === 'tools' );
 			setCommandsOpen( which === 'commands' );
+			setTasksOpen( which === 'tasks' );
 		},
 		[]
 	);
@@ -439,6 +444,25 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 												{ __( 'Commands', 'nvoos-pro-spa' ) }
 											</button>
 										) }
+										{/* Tasks drawer toggle (v0.9.0) */}
+										<button
+											type="button"
+											ref={ tasksToggleRef }
+											className="nvoos-pro-spa-chat-page__tasks-btn nvoos-pro-spa-btn"
+											onClick={ () => openDrawer( 'tasks' ) }
+											aria-label={ __( 'Toggle tasks drawer', 'nvoos-pro-spa' ) }
+											aria-expanded={ tasksOpen }
+										>
+											{ __( 'Tasks', 'nvoos-pro-spa' ) }
+											{ jobBus.runningCount > 0 && (
+												<span className="nvoos-pro-spa-tasks-badge">
+													{ jobBus.runningCount }
+												</span>
+											) }
+											{ jobBus.failedCount > 0 && jobBus.runningCount === 0 && (
+												<span className="nvoos-pro-spa-tasks-badge nvoos-pro-spa-tasks-badge--error">!</span>
+											) }
+										</button>
 										{/* Theme toggle (v0.9.0) */}
 										<button type="button" className="nvoos-pro-spa-btn"
 											onClick={ () => setTheme( theme === 'dark' ? 'light' : 'dark' ) }
@@ -554,6 +578,9 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 			<TasksDrawer
 				jobs={ jobBus.jobs }
 				runningCount={ jobBus.runningCount }
+				isOpen={ tasksOpen }
+				onClose={ () => setTasksOpen( false ) }
+				toggleRef={ tasksToggleRef }
 				onCancelJob={ jobBus.cancelJob }
 				onRetryJob={ jobBus.retryJob }
 				onDismissJob={ jobBus.dismissJob }

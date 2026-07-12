@@ -3187,3 +3187,355 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-media-list__cell--name:hover {
 	text-decoration: underline;
 }
+
+/* ==========================================================================
+   Tasks Drawer (v0.9.0)
+   ========================================================================== */
+
+/* ── Toolbar Tasks Button ─────────────────────────────────────────────── */
+
+.nvoos-pro-spa-chat-page__tasks-btn {
+	position: relative;
+}
+
+/* ── Toolbar Button Badge ─────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-badge {
+	position: absolute;
+	top: -4px;
+	right: -4px;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 4px;
+	border-radius: 8px;
+	background: #3b82f6;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 16px;
+	text-align: center;
+}
+
+.nvoos-pro-spa-tasks-badge--error {
+	background: #ef4444;
+}
+
+/* ── Overlay ──────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 900;
+	background: rgba(0, 0, 0, 0.3);
+}
+
+/* ── Drawer Panel ─────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 340px;
+	max-width: 90vw;
+	z-index: 950;
+	background: var(--nvoos-bg-secondary, #fff);
+	box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	transform: translateX(100%);
+	transition: transform 0.25s ease;
+}
+
+.nvoos-pro-spa-tasks-drawer--open {
+	transform: translateX(0);
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-pro-spa-tasks-drawer-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	border-radius: 10px;
+	background: var(--nvoos-bg, #f0f0f1);
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.nvoos-pro-spa-tasks-drawer-close {
+	background: none;
+	border: none;
+	font-size: 22px;
+	cursor: pointer;
+	color: var(--nvoos-text-secondary, #787c82);
+	line-height: 1;
+	padding: 4px;
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-tasks-drawer-close:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+/* ── Filter Tabs ──────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer-tabs {
+	display: flex;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	padding: 0 12px;
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-tab {
+	flex: 1;
+	padding: 10px 4px;
+	border: none;
+	border-bottom: 2px solid transparent;
+	background: none;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--nvoos-text-secondary, #787c82);
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tasks-drawer-tab:hover {
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-tasks-drawer-tab--active {
+	color: var(--nvoos-text, #1e1e1e);
+	border-bottom-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-tasks-drawer-tab-count {
+	font-size: 11px;
+	background: var(--nvoos-bg, #f0f0f1);
+	padding: 0 5px;
+	border-radius: 4px;
+}
+
+/* ── Batch Bar ────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer-batch {
+	padding: 8px 16px;
+	border-bottom: 1px solid var(--nvoos-border-light, #f3f4f6);
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-batch-btn {
+	background: none;
+	border: none;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 12px;
+	cursor: pointer;
+	padding: 4px 0;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tasks-drawer-batch-btn:hover {
+	color: var(--nvoos-danger, #d63638);
+}
+
+/* ── Job List ─────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer-list {
+	flex: 1;
+	overflow-y: auto;
+	padding: 8px 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-empty {
+	padding: 24px;
+	text-align: center;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 14px;
+}
+
+/* ── Job Item ─────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 16px;
+	border-bottom: 1px solid var(--nvoos-border-light, #f3f4f6);
+	transition: background 0.1s;
+}
+
+.nvoos-pro-spa-tasks-drawer-item:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-tasks-drawer-item-icon {
+	flex-shrink: 0;
+	width: 20px;
+	text-align: center;
+	font-size: 14px;
+	margin-top: 1px;
+}
+
+.nvoos-pro-spa-tasks-drawer-item--running .nvoos-pro-spa-tasks-drawer-item-icon {
+	color: #3b82f6;
+}
+
+.nvoos-pro-spa-tasks-drawer-item--completed .nvoos-pro-spa-tasks-drawer-item-icon {
+	color: #22c55e;
+}
+
+.nvoos-pro-spa-tasks-drawer-item--failed .nvoos-pro-spa-tasks-drawer-item-icon {
+	color: #ef4444;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-name {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-meta {
+	display: block;
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-top: 2px;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-progress {
+	height: 3px;
+	background: var(--nvoos-border, #dcdcde);
+	border-radius: 2px;
+	margin-top: 6px;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-progress-fill {
+	height: 100%;
+	background: #3b82f6;
+	border-radius: 2px;
+	transition: width 0.3s ease;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-actions {
+	display: flex;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn,
+.nvoos-pro-spa-tasks-drawer-item-btn-dismiss {
+	padding: 2px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: #fff;
+	font-size: 11px;
+	cursor: pointer;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn:hover {
+	background: var(--nvoos-danger-bg, #fef2f2);
+	border-color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn--retry {
+	color: var(--nvoos-primary, #2271b1);
+	border-color: var(--nvoos-primary, #2271b1);
+	background: var(--nvoos-primary-bg, #f0f6fc);
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn--retry:hover {
+	filter: brightness(0.95);
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn-dismiss {
+	border: none;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 16px;
+	line-height: 1;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn-dismiss:hover {
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-overlay {
+	background: rgba(0, 0, 0, 0.6);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer {
+	background: var(--nvoos-bg, #1f2937);
+	box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-header {
+	border-color: var(--nvoos-border, #374151);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-close {
+	color: var(--nvoos-text-secondary, #9ca3af);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-tabs {
+	border-color: var(--nvoos-border, #374151);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-tab {
+	color: var(--nvoos-text-secondary, #9ca3af);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-tab--active {
+	color: var(--nvoos-text, #f3f4f6);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-item {
+	border-color: var(--nvoos-border, #374151);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-item:hover {
+	background: var(--nvoos-bg, #1f2937);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-item-btn,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-item-btn-dismiss {
+	background: var(--nvoos-bg, #1f2937);
+	border-color: var(--nvoos-border, #374151);
+	color: var(--nvoos-text, #e5e7eb);
+}
