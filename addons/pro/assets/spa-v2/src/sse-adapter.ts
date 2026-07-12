@@ -15,6 +15,13 @@ export interface ChatFetchOptions {
 	/** Optional override — when provided, sent to server as options.provider / options.model. */
 	model?: string;
 	provider?: string;
+	/**
+	 * Client-side session key forwarded in the chat request body so the
+	 * server-side WP_MCP_AI_Chat_Transcript_Recorder uses the same key.
+	 * When empty, the server generates a new key internally.
+	 * @since 2.1.0
+	 */
+	sessionKey?: string;
 }
 
 interface NvOosFrame {
@@ -332,6 +339,7 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 		const merged: Record< string, unknown > = {
 			...( body as Record< string, unknown > ),
 			assistant_id: opts.assistantId,
+			session_key: opts.sessionKey || '',
 			stream: true,
 		};
 
