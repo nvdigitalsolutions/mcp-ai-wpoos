@@ -29,6 +29,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-guardrails.php';
 require_once __DIR__ . '/class-wp-mcp-ai-necessity-gate.php';
 require_once __DIR__ . '/class-wp-mcp-ai-harness-trace-store.php';
 require_once __DIR__ . '/class-wp-mcp-ai-harness-trace-capture.php';
+require_once __DIR__ . '/class-wp-mcp-ai-harness-search-engine.php';
 
 // Register the chat-client cue injector. Off by default at the profile
 // level — this is just the subscriber wiring.
