@@ -184,6 +184,11 @@ export function useMediaLibrary(
 		setPage( 1 );
 		setItems( null );
 		setError( null );
+		// Clear any active search / filter so the refresh shows all
+		// recent media, matching the behaviour of a hard page reload.
+		setSearchTermRaw( '' );
+		setMimeFilterRaw( '' );
+		setDebouncedSearch( '' );
 	}, [] );
 
 	const hasMore = page < totalPages;

@@ -100,7 +100,8 @@ function encodeChunk( typeId: string, payload: unknown ): Uint8Array {
  */
 function emitToolResultsAsToolCalls(
 	toolResults: Array< Record< string, unknown > >,
-	out: Uint8Array[]
+	out: Uint8Array[],
+	emittedIds?: Set< string >
 ): void {
 	for ( const tr of toolResults ) {
 		const toolName = typeof tr.name === 'string' ? tr.name : '';
@@ -113,6 +114,12 @@ function emitToolResultsAsToolCalls(
 			typeof tr.tool_call_id === 'string' && tr.tool_call_id.length > 0
 				? tr.tool_call_id
 				: `tool-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2, 8 ) }`;
+
+		// Skip if this tool invocation was already streamed in real-time
+		// via tool_start / tool_result SSE events during the agentic loop.
+		if ( emittedIds?.has( toolCallId ) ) {
+			continue;
+		}
 
 		// Parse the content field (JSON string on the wire) into an
 		// object so the downstream normaliseToolResult() in
@@ -172,7 +179,10 @@ function emitToolResultsAsToolCalls(
  *   - Error events: { code: "...", message: "..." }
  *   - Final payload: { data: {...}, choices: [...], tool_results: [...] }
  */
-function translateFrame( frame: NvOosFrame ): Uint8Array[] {
+function translateFrame(
+	frame: NvOosFrame,
+	emittedIds?: Set< string >
+): Uint8Array[] {
 	const out: Uint8Array[] = [];
 
 	// ── Error frames (event: error) ─────────────────────────────────
@@ -208,7 +218,8 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 		if ( Array.isArray( frame.tool_results ) && frame.tool_results.length > 0 ) {
 			emitToolResultsAsToolCalls(
 				frame.tool_results as Array< Record< string, unknown > >,
-				out
+				out,
+				emittedIds
 			);
 			// Still emit capability_flags as a type-8 annotation so
 			// CapabilityFlagBadges can render them.
@@ -328,9 +339,15 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 			case 'tool_start': {
 				const tsToolName = typeof frame.tool_name === 'string' ? frame.tool_name : '';
 				const tsToolId = typeof frame.tool_id === 'string' ? frame.tool_id : '';
+				const resolvedId = tsToolId || `tool-${ Date.now() }`;
+				// Track this id so emitToolResultsAsToolCalls skips the
+				// duplicate in the final message frame.
+				if ( tsToolId ) {
+					emittedIds?.add( tsToolId );
+				}
 				out.push(
 					encodeChunk( '9', {
-						toolCallId: tsToolId || `tool-${ Date.now() }`,
+						toolCallId: resolvedId,
 						toolName: tsToolName,
 						args: {},
 					} )
@@ -365,7 +382,8 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 					if ( Array.isArray( frame.tool_results ) && frame.tool_results.length > 0 ) {
 						emitToolResultsAsToolCalls(
 							frame.tool_results as Array< Record< string, unknown > >,
-							out
+							out,
+							emittedIds
 						);
 						const caps = extractCapabilityFlags(
 							frame.tool_results as Array< Record< string, unknown > >
@@ -505,6 +523,10 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 
 		const translated = new ReadableStream< Uint8Array >( {
 			async start( controller ) {
+				// Deduplication: skip tool_results from the final message
+				// frame when those tools were already streamed in real-time
+				// via tool_start SSE events during the agentic loop.
+				const emittedToolIds = new Set< string >();
 				let buffer = '';
 				try {
 					// eslint-disable-next-line no-constant-condition -- Stream reader loop exits via the `done` check returned by reader.read().
@@ -517,7 +539,7 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 						const { frames, rest } = parseSseBuffer( buffer );
 						buffer = rest;
 						for ( const frame of frames ) {
-							for ( const chunk of translateFrame( frame ) ) {
+							for ( const chunk of translateFrame( frame, emittedToolIds ) ) {
 								controller.enqueue( chunk );
 							}
 						}
@@ -527,7 +549,7 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 					if ( buffer.trim() ) {
 						const { frames } = parseSseBuffer( buffer + '\n\n' );
 						for ( const frame of frames ) {
-							for ( const chunk of translateFrame( frame ) ) {
+							for ( const chunk of translateFrame( frame, emittedToolIds ) ) {
 								controller.enqueue( chunk );
 							}
 						}
