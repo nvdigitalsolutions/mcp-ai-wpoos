@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
+
 /**
  * Agent Communication Service class
  *
@@ -25,9 +27,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Context sharing and propagation
  * - Message queue management
  *
+ * Adopts {@see WP_MCP_AI_Inline_Async_Tick_Trait} so that the first delegation
+ * processing attempt fires inline on the shutdown of the request that created
+ * the delegation, rather than waiting for the next WP-Cron loopback. On hosts
+ * with DISABLE_WP_CRON the cron loopback never fires; the cooperative tick
+ * lock prevents the inline kick and a concurrent cron event from both
+ * executing process_pending_delegation() for the same delegation
+ * simultaneously.
+ *
  * @since 1.1.0
  */
 class WP_MCP_AI_Agent_Communication_Service {
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
 
 	/**
 	 * Cron hook for processing pending delegations.
@@ -478,7 +489,23 @@ class WP_MCP_AI_Agent_Communication_Service {
 			return;
 		}
 
-		wp_schedule_single_event( time(), self::CRON_HOOK, $args );
+		// Schedule 3 seconds in the future to prevent a race condition where
+		// spawn_cron() fires the handler before the delegation transient has
+		// been fully committed (especially on Redis-backed object caches).
+		$result = wp_schedule_single_event( time() + 3, self::CRON_HOOK, $args );
+
+		if ( ! $result ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to schedule delegation cron event',
+					array(
+						'delegation_id' => $delegation['delegation_id'],
+						'hook'          => self::CRON_HOOK,
+					)
+				);
+			}
+			return;
+		}
 
 		// Trigger WordPress cron immediately so the delegation starts right away.
 		// Without this, the delegation sits in the cron queue until the next
@@ -486,6 +513,34 @@ class WP_MCP_AI_Agent_Communication_Service {
 		// This matches the pattern used by the VEO video generation service's
 		// queue_async_polling() which also calls spawn_cron() after scheduling.
 		spawn_cron();
+
+		// Inline-async-tick fallback: fire the delegation processing on the
+		// shutdown of the current request so that delegations on hosts with
+		// DISABLE_WP_CRON (or a firewalled wp-cron.php) are processed
+		// immediately without waiting for the next loopback or page load.
+		// The cooperative tick lock inside process_pending_delegation() (via
+		// the status guard: only processes when status === 'pending') prevents
+		// the shutdown kick and a concurrent cron event from both executing
+		// for the same delegation_id simultaneously.
+		// Pattern: mirrors Tool Async Executor, VEO Video Generation,
+		// Transcript Mining, and SaaS Controller jobs.
+		if ( self::inline_async_kick_enabled( $delegation['delegation_id'], __CLASS__ ) ) {
+			$delegation_id = $delegation['delegation_id'];
+			add_action(
+				'shutdown',
+				static function () use ( $delegation_id ) {
+					self::inline_async_detach_worker_from_client();
+					self::inline_async_run_kick(
+						__CLASS__,
+						$delegation_id,
+						static function () use ( $delegation_id ) {
+							self::process_pending_delegation( $delegation_id );
+						}
+					);
+				},
+				21
+			);
+		}
 	}
 
 	/**
@@ -535,12 +590,63 @@ class WP_MCP_AI_Agent_Communication_Service {
 		$data = get_transient( $key );
 
 		if ( ! is_array( $data ) || empty( $data['to_agent_id'] ) ) {
-			// Delegation expired or invalid — nothing to do.
+			// Delegation expired or invalid — attempt retry before giving up.
+			$retry_key   = 'wp_mcp_ai_delegation_retry_' . $delegation_id;
+			$retries     = (int) get_transient( $retry_key );
+			$max_retries = 3;
+
+			if ( $retries < $max_retries ) {
+				++$retries;
+				set_transient( $retry_key, $retries, 5 * MINUTE_IN_SECONDS );
+
+				// Reschedule with an exponential backoff: 3s, 9s, 27s.
+				$delay = (int) pow( 3, $retries );
+				self::init();
+				wp_schedule_single_event( time() + $delay, self::CRON_HOOK, array( $delegation_id ) );
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'delegation_cron_retry',
+						'Delegation transient not found, rescheduling',
+						array(
+							'delegation_id' => $delegation_id,
+							'retry'         => $retries,
+							'delay_seconds' => $delay,
+						)
+					);
+				}
+				return;
+			}
+
+			// Max retries exceeded — mark tracked job as failed if Cron Manager exists.
+			if ( $retries >= $max_retries && class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+				$job_id = WP_MCP_AI_Cron_Manager::generate_job_id_static(
+					self::CRON_HOOK,
+					array( $delegation_id )
+				);
+				$job    = WP_MCP_AI_Cron_Manager::get_job( $job_id );
+				if ( $job ) {
+					// Store failure in Cron Manager — append error.
+					$jobs = get_option( 'wp_mcp_ai_cron_jobs', array() );
+					if ( isset( $jobs[ $job_id ] ) ) {
+						$jobs[ $job_id ]['last_error'] = sprintf(
+							'Delegation not found after %d retries.',
+							$max_retries
+						);
+						$jobs[ $job_id ]['error_at']   = time();
+						update_option( 'wp_mcp_ai_cron_jobs', $jobs );
+					}
+				}
+			}
+
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'delegation_cron_miss',
-					'Delegation not found for cron processing',
-					array( 'delegation_id' => $delegation_id )
+					'Delegation not found for cron processing (retries exhausted)',
+					array(
+						'delegation_id' => $delegation_id,
+						'retries'       => $retries,
+					)
 				);
 			}
 			return;
@@ -550,6 +656,10 @@ class WP_MCP_AI_Agent_Communication_Service {
 		if ( ! empty( $data['status'] ) && 'pending' !== $data['status'] ) {
 			return;
 		}
+
+		// Clean up retry counter — delegation data was found.
+		$retry_key = 'wp_mcp_ai_delegation_retry_' . $delegation_id;
+		delete_transient( $retry_key );
 
 		$to_agent_id = $data['to_agent_id'];
 		$task_data   = isset( $data['task'] ) ? $data['task'] : array();
@@ -857,5 +967,105 @@ class WP_MCP_AI_Agent_Communication_Service {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Watchdog scanner — find and re-schedule stale pending delegations.
+	 *
+	 * Called periodically (every 5 minutes via cron) to detect delegations
+	 * that were recorded in Cron Manager but whose WP-Cron event was
+	 * consumed without the delegation being processed. This is a safety
+	 * net for when spawn_cron() loopback fails or the cron handler
+	 * encounters a race condition with transient availability.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return int Number of stale delegations re-scheduled.
+	 */
+	public static function watchdog_scan_stale_delegations() {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			return 0;
+		}
+
+		$jobs    = WP_MCP_AI_Cron_Manager::get_jobs();
+		$rescued = 0;
+		$max_age = 2 * HOUR_IN_SECONDS; // Don't bother with very old delegations.
+
+		foreach ( $jobs as $job ) {
+			$hook = isset( $job['hook'] ) ? (string) $job['hook'] : '';
+
+			// Only scan delegation events.
+			if ( self::CRON_HOOK !== $hook ) {
+				continue;
+			}
+
+			$args  = isset( $job['args'] ) ? $job['args'] : array();
+			$event = wp_get_scheduled_event( $hook, $args );
+
+			// Skip if already scheduled.
+			if ( $event ) {
+				continue;
+			}
+
+			// Extract delegation ID from args.
+			$delegation_id = isset( $args[0] ) ? (string) $args[0] : '';
+			if ( '' === $delegation_id ) {
+				continue;
+			}
+
+			// Check if the delegation transient still exists.
+			$key  = 'wp_mcp_ai_delegation_' . $delegation_id;
+			$data = get_transient( $key );
+
+			if ( ! is_array( $data ) ) {
+				// Transient is gone — check age before giving up.
+				$created = isset( $job['created_at'] ) ? (int) $job['created_at'] : 0;
+				if ( $created > 0 && ( time() - $created ) < $max_age ) {
+					// Transient missing but delegation is recent — may indicate
+					// an object-cache inconsistency. Log and skip.
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'delegation_watchdog_transient_missing',
+							'Delegation transient missing for recent delegation',
+							array(
+								'delegation_id' => $delegation_id,
+								'age_seconds'   => time() - $created,
+							)
+						);
+					}
+				}
+				continue;
+			}
+
+			// Only re-schedule if still pending.
+			if ( ! empty( $data['status'] ) && 'pending' !== $data['status'] ) {
+				continue;
+			}
+
+			// Check retry count — don't infinitely re-schedule.
+			$retry_key = 'wp_mcp_ai_delegation_retry_' . $delegation_id;
+			$retries   = (int) get_transient( $retry_key );
+			if ( $retries >= 3 ) {
+				continue;
+			}
+
+			// Re-schedule the delegation processing.
+			self::init();
+			wp_schedule_single_event( time() + 5, self::CRON_HOOK, array( $delegation_id ) );
+			++$rescued;
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'delegation_watchdog_rescued',
+					'Watchdog re-scheduled stale delegation',
+					array(
+						'delegation_id' => $delegation_id,
+						'created_at'    => isset( $job['created_at'] ) ? $job['created_at'] : 0,
+					)
+				);
+			}
+		}
+
+		return $rescued;
 	}
 }
