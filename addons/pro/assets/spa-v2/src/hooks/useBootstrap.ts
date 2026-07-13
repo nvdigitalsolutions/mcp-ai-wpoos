@@ -32,6 +32,29 @@ export function useBootstrap(): BootstrapResult {
 		}
 		setRuntime( config );
 
+		if ( typeof console !== 'undefined' && console.info ) {
+			console.info(
+				'[NV oOS Pro SPA] Initialized',
+				{
+					apiUrl: config.apiUrl,
+					userId: config.user?.id,
+					assistantCount: config.assistants?.length ?? 0,
+				},
+			);
+		}
+
+		// ── Preload vector store info (mirrors legacy chat.js behaviour) ────────
+		const vectorStoreId = config.config?.vectorStoreId;
+		if ( vectorStoreId && typeof console !== 'undefined' && console.info ) {
+			console.info(
+				'[NV oOS Pro SPA] Pre-loading vector store for assistant',
+				{
+					assistantId: config.config?.assistantId,
+					vectorStoreId,
+				},
+			);
+		}
+
 		// ---- seed theme from server config (only when localStorage is empty) ----
 		const serverTheme = config.config?.theme;
 		if (

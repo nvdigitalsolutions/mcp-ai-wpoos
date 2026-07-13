@@ -122,7 +122,80 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		usageMap,
 		handleSubmitWithAttachments,
 		saveConversation,
+		setMessages,
 	} = chatSpoke;
+
+	// ── Slash command execution (v2.1.0) ───────────────────────────────
+	const handleExecuteSlashCommand = useCallback(
+		async ( cmd: string, rawInput: string ) => {
+			if ( ! endpoints?.slashCommands ) return;
+
+			const executeUrl = `${ endpoints.slashCommands.replace( /\/+$/, '' ) }/execute`;
+
+			const userMessage = {
+				id: `slash-usr-${ Date.now() }`,
+				role: 'user' as const,
+				content: rawInput,
+			};
+			setMessages( [ ...messages, userMessage as Message ] );
+
+			try {
+				const resp = await fetch( executeUrl, {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': nonce,
+					},
+					body: JSON.stringify( { command: rawInput } ),
+				} );
+
+				if ( ! resp.ok ) {
+					const errData = await resp.json().catch( () => ( {} ) );
+					throw new Error(
+						( errData as { message?: string } ).message ||
+							`HTTP ${ resp.status }`,
+					);
+				}
+
+				const data = ( await resp.json() ) as {
+					success?: boolean;
+					result?: string;
+					message?: string;
+				};
+
+				const resultText =
+					data.result ??
+					data.message ??
+					__( 'Command executed successfully.', 'nvoos-pro-spa' );
+
+				const assistantMessage = {
+					id: `slash-asst-${ Date.now() }`,
+					role: 'assistant' as const,
+					content: resultText,
+				};
+				setMessages( [
+					...messages,
+					assistantMessage as Message,
+				] );
+			} catch ( err: unknown ) {
+				const errorText =
+					( err as Error )?.message ??
+					__( 'Command execution failed.', 'nvoos-pro-spa' );
+				const errorMessage = {
+					id: `slash-err-${ Date.now() }`,
+					role: 'assistant' as const,
+					content: `\u274C ${ errorText }`,
+				};
+				setMessages( [
+					...messages,
+					errorMessage as Message,
+				] );
+				throw err;
+			}
+		},
+		[ endpoints?.slashCommands, nonce, setMessages ],
+	);
 
 	// Enhance usageMap with cost/model data extracted from "data"
 	// annotations that arrive via the SSE adapter's type-8 frames.
@@ -314,6 +387,19 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const hasApprovals = typeof endpoints?.approvals === 'string' && endpoints.approvals.length > 0;
 	const hasShortcuts = typeof endpoints?.shortcuts === 'string' && endpoints.shortcuts.length > 0;
 	const hasSlashCommands = typeof endpoints?.slashCommands === 'string' && endpoints.slashCommands.length > 0;
+
+	// ── Console: Slash Commands (v2.1.1 — mirrors legacy slash-commands.js) ───
+	useEffect( () => {
+		if ( hasSlashCommands && typeof console !== 'undefined' && console.info ) {
+			console.info(
+				'[NV oOS Pro SPA] SlashCommands endpoint registered',
+				{
+					endpoint: endpoints?.slashCommands,
+					assistantId,
+				},
+			);
+		}
+	}, [ hasSlashCommands, endpoints?.slashCommands, assistantId ] );
 
 	// ── Keyboard shortcuts (v0.9.0) ────────────────────────────────────────────
 	const ks = useKeyboardShortcuts( {
@@ -600,6 +686,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				assistantId={ assistantId }
 				onSubmitWithAttachments={ ( atts ) => handleSubmitWithAttachments( atts ) }
 				onSaveConversation={ saveConversation }
+				slashCommandsEndpoint={ endpoints?.slashCommands }
 			/>
 
 			{/* Memory drawer */}
@@ -637,6 +724,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					isOpen={ commandsOpen }
 					onClose={ () => setCommandsOpen( false ) }
 					onInsertPayload={ sendMessage }
+					onExecuteCommand={ ( cmd, raw ) => handleExecuteSlashCommand( cmd, raw ) }
 					toggleRef={ commandsToggleRef }
 				/>
 			) }

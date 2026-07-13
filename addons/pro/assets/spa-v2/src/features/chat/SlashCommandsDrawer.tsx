@@ -35,8 +35,10 @@ export interface SlashCommandsDrawerProps {
 	nonce: string;
 	isOpen: boolean;
 	onClose: () => void;
-	/** Called when the user clicks a command. */
+	/** Called when the user clicks a command to insert its text into the composer. */
 	onInsertPayload: ( payload: string, autoSubmit?: boolean ) => void;
+	/** Called when a slash command should be executed server-side (v2.1.0). */
+	onExecuteCommand: ( command: string, rawInput: string ) => Promise< void >;
 	/** The toggle button ref — focus returns here on close. */
 	toggleRef: React.RefObject< HTMLButtonElement | null >;
 }
@@ -49,6 +51,7 @@ export function SlashCommandsDrawer( {
 	isOpen,
 	onClose,
 	onInsertPayload,
+	onExecuteCommand,
 	toggleRef,
 }: SlashCommandsDrawerProps ): JSX.Element | null {
 	const client = useMemo(
@@ -59,6 +62,8 @@ export function SlashCommandsDrawer( {
 	const [ commands, setCommands ] = useState< SlashCommand[] | null >( null );
 	const [ error, setError ] = useState< string | null >( null );
 	const [ loading, setLoading ] = useState( false );
+	const [ executing, setExecuting ] = useState< string | null >( null );
+	const [ executeError, setExecuteError ] = useState< string | null >( null );
 	const [ search, setSearch ] = useState( '' );
 
 	const drawerRef = useRef< HTMLDivElement | null >( null );
@@ -116,16 +121,37 @@ export function SlashCommandsDrawer( {
 		[ onClose, toggleRef ]
 	);
 
-	// ── Click handler ────────────────────────────────────────────────────────
+	// ── Click handler: execute command server-side (v2.1.0) ──────────────
 
 	const handleCommandClick = useCallback(
-		( command: SlashCommand, shiftKey: boolean ) => {
-			// Insert "/command " into the composer.
-			const payload = `/${ command.command } `;
-			onInsertPayload( payload, shiftKey );
-		},
-		[ onInsertPayload ]
-	);
+		async ( cmd: SlashCommand, shiftKey: boolean ) => {
+			const rawInput = `${ cmd.usage } `;
+
+			// If Shift is held, just insert into composer (same as before).
+			if ( shiftKey ) {
+				onInsertPayload( rawInput, false );
+				return;
+			}
+
+			// Otherwise, execute the command server-side.
+			setExecuting( cmd.command );
+			setExecuteError( null );
+
+			try {
+			await onExecuteCommand( cmd.command, rawInput );
+		} catch ( err: unknown ) {
+			setExecuteError(
+				( err as Error )?.message ?? __( 'Command execution failed.', 'nvoos-pro-spa' )
+			);
+		} finally {
+			setExecuting( null );
+		}
+
+		// Close the drawer after execution.
+		onClose();
+	},
+	[ onInsertPayload, onExecuteCommand, onClose ]
+);
 
 	// ── Group by category ────────────────────────────────────────────────────
 
@@ -268,9 +294,10 @@ export function SlashCommandsDrawer( {
 										key={ cmd.command }
 										type="button"
 										className="nvoos-pro-spa-slash-commands-drawer-item"
+										disabled={ executing !== null }
 										title={ sprintf(
 											/* translators: 1: command usage, 2: description */
-											__( '%1$s — %2$s (Shift+Click to submit)', 'nvoos-pro-spa' ),
+											__( '%1$s — %2$s (Shift+Click to insert without executing)', 'nvoos-pro-spa' ),
 											cmd.usage,
 											cmd.description || ''
 										) }
@@ -281,7 +308,11 @@ export function SlashCommandsDrawer( {
 										<code className="nvoos-pro-spa-slash-commands-drawer-item-code">
 											{ cmd.usage }
 										</code>
-										{ cmd.description && (
+										{ executing === cmd.command ? (
+											<span className="nvoos-pro-spa-slash-commands-drawer-item-desc">
+												{ __( 'Executing…', 'nvoos-pro-spa' ) }
+											</span>
+										) : cmd.description && (
 											<span className="nvoos-pro-spa-slash-commands-drawer-item-desc">
 												{ cmd.description }
 											</span>

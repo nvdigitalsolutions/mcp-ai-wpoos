@@ -19,6 +19,7 @@ import { AssistantsClient, type AssistantRecord } from '../../api/assistants';
 import { readProSpaConfig } from '../../api/config';
 import { MediaTab } from '../media/MediaTab';
 import type { MediaItem } from '../../api/media';
+import { VectorStoreIndicator } from '../shared/VectorStoreIndicator';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -314,7 +315,7 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 				×
 			</button>
 			{/* ---- assistant selector ---- */}
-			{ assistantsEndpoint && (
+			{ assistantsEndpoint && (<>
 				<div className="nvoos-pro-spa-sidebar__assistant-select">
 					<label
 						htmlFor="nvoos-pro-spa-sidebar-assistant"
@@ -362,7 +363,8 @@ export function ChatSidebar( props: ChatSidebarProps ): JSX.Element {
 						</p>
 					) }
 				</div>
-			) }
+				<VectorStoreIndicator apiRoot={ apiRoot ?? '' } nonce={ nonce } assistantId={ assistantId } />
+			</> ) }
 
 			{/* ---- tab bar ---- */}
 			<div className="nvoos-pro-spa-sidebar__tabs" role="tablist">
