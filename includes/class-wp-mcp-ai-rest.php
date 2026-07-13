@@ -8729,6 +8729,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$tools_truncated_by_token_budget = false;
 				$truncated_tool_count            = 0;
 
+				// Track resolved tool slugs to prevent duplicate entries.
+				// When both a base slug (e.g. generate_openai_image) and its
+				// _validated variant are present in the assistant config, the
+				// registry auto-upgrades both to the validated tool.  Without
+				// deduplication the LLM receives duplicate function names and
+				// rejects the request with "Tool names must be unique".
+				$seen_resolved_slugs = array();
+
 			foreach ( $allowed_tool_slugs as $slug ) {
 				// Enforce the token budget: stop adding tools once the cumulative
 				// token count exceeds the configured maximum.
@@ -8782,10 +8790,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Add provider-specific fallback text for tools that require a different provider.
 					$description = $this->maybe_add_provider_fallback_text( $tool, $description, $chat_provider );
 
+					// Prevent duplicate tool definitions when both base and
+					// _validated variants resolve to the same registered tool.
+					$resolved_slug = $tool->get_slug();
+					if ( isset( $seen_resolved_slugs[ $resolved_slug ] ) ) {
+						continue;
+					}
+					$seen_resolved_slugs[ $resolved_slug ] = true;
+
+					// Use the original config slug as the tool name sent to
+					// the LLM.  The registry transparently auto-upgrades to
+					// the validated variant at execution time via get_tool().
+					// This keeps the naming surface stable so the LLM calls
+					// base slugs that always resolve correctly.
 					$tools_payload[] = array(
 						'type'     => 'function',
 						'function' => array(
-							'name'        => $tool->get_slug(),
+							'name'        => $slug,
 							'description' => $description,
 							'parameters'  => $schema,
 						),
