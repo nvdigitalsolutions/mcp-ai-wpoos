@@ -1,13 +1,14 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.38  
-**Last Updated:** July 10, 2026
+**Version:** 1.1.39  
+**Last Updated:** July 13, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (July 2026)
 
-- **v1.1.38** (July 10): Page Agent addon v0.1.0 (AI browser page control copilot). Pro SPA v2 major parity update (voice pipeline, tasks drawer, workflow tracker, file attachments, tool shortcuts, slash commands, mobile hamburger, autoscroll/viewport fixes, cache-busting, assistant preloading). Per-user chat memory toggle. create_post/save_post Markdown-to-HTML conversion + smart taxonomy suggestions. Workflow blueprint existing-content awareness. SPA accessibility: annotation pills. RabbitMQ + queue infrastructure. Places enrichment tools. JetEngine meta helper universal. Crocoblock DS addon.
+- **v1.1.39** (July 13): Meta-Harness auto-optimization system (all 7 phases). Agent delegation rework (inline execution, REST dispatch, cron resilience, spawn_cron, name-based resolution). Pro SPA v2 polish (20+ PRs: vector store/autocomplete fixes, cost badges, allowSensitiveTools, tool result rendering, auto-save transcripts, attachments/save/storage, tasks drawer toolbar, speech/audio, capability flags, usage badges, sidebar, media, system prompt, layout). Tool presets refactor (essentials layers, auto-upgrade, SSE fix, tool_call_id fallback). CRM fixes (cache loop, Upwork rate limiting, freelance sourcing). Infrastructure (Veo 2.0 → Gemini Omni Flash with deprecation detection, workflow auth, ZAP scan, npm rebuild).
+- **v1.1.38** (July 10): Page Agent addon v0.1.0 (AI browser page control copilot). Pro SPA v2 major parity update (voice pipeline, tasks drawer, workflow tracker, file attachments, tool shortcuts, slash commands, mobile hamburger, autoscroll/viewport fixes, cache-busting, assistant preloading). Per-user chat memory toggle. create_post/save_post Markdown-to-HTML conversion + smart taxonomy suggestions. Workflow blueprint existing-content awareness. SPA accessibility: annotation pills.
 - **v1.1.37** (July 8): JetEngine Meta Helper universal (25 CPTs, REST, ECA), Places enrichment tools, RabbitMQ + queue infrastructure, Multi-tenant DB isolation Phase 0–4, DSpark admin UI + orchestration, Crocoblock DS addon, Test coverage: 329 tools/28 toolkits, Docs Hub broken link engine, OWASP ZAP DAST, 30+ bug fixes.
 - **v1.1.36** (July 4): EZuite Inventory Sync Pro Toolkit, Ralph Loop CCT migration + circuit breaker, JetBooking/JetAppointment (8 tools), Moonshot AI (Kimi) & Z.AI (GLM) → DeepSeek parity, unified sync log manager, tool presets auto-select + chips bar, HTTrack cache + Place-to-Service bridge, Generate Default Mapping + read-only sync, 429 web search retry, 45+ bug fixes across CCT/sync/tools/infrastructure.
 - **v1.1.35** (June 29): FlowHub Inventory Sync Pro Toolkit (6 tools), Shopify Sync Pro Toolkit (5 tools), Necessity Gate Layer J (irreversibility-weighted safety), Local Voice Embedded STT (3 backends, offline-first), Remote Site Administrator blueprint (22 tools), Places & Calendar bulk import, CLI site-import subcommand, voice realtime auto-detect, 7 bug fixes.

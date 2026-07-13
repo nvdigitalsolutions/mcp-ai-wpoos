@@ -1,5 +1,71 @@
 # oOS – Changelog
 
+## [1.1.39] - 2026-07-13
+
+### Added — Meta-Harness Auto-Optimization System (All 7 Phases)
+
+- **Meta-Harness auto-optimization proposal** and full implementation across all 7 phases (PR #5649).
+- **Phases 0-1: Trace Store + Trace Capture.** Execution telemetry infrastructure captures detailed traces of AI agent tool calls, provider interactions, timing data, and error states. Trace Store persists telemetry with queryable indexes for later analysis.
+- **Phase 2: Harness Search Engine.** Telemetry querying layer enables searching and filtering execution traces by agent, tool, outcome, timing, and other dimensions.
+- **Phase 3: Pro Coding-Agent Proposer.** Automated improvement suggestion engine that analyzes execution traces and proposes concrete optimizations — prompt refinements, tool selection changes, temperature adjustments, and model routing improvements.
+- **Phases 4-6: Cues, Population, Auto-Deploy, DSpark.** Cues system triggers optimization runs based on configurable thresholds. Population pipelines batch-process historical traces. Auto-Deploy pushes approved optimizations to production. DSpark speculative orchestration engine coordinates the full optimization lifecycle.
+- **Phase 7: Test files** for the complete harness optimization subsystem.
+
+### Added — Agent Delegation Major Rework
+
+- **Inline execution.** Agent delegation now runs inline instead of async for immediate results (PR #5657). Async scheduling timestamps fixed.
+- **REST-based dispatch.** Delegated agent/task nodes dispatched via REST chat endpoint instead of the no-op role executor (PR #5655).
+- **Cron resilience.** Delegation cron jobs no longer silently fail — retry logic and error reporting added (PR #5656).
+- **Deferred job execution.** `spawn_cron()` added after `wp_schedule_single_event` to start deferred cron jobs immediately without waiting for the next WP-Cron tick (PR #5654).
+- **Name-based agent resolution.** `delegate_to_agent` tool now supports name-based agent resolution in addition to ID-based (PR #5640).
+- **Tasks drawer wire-up.** Delegation wire-up and tasks drawer issues fixed in SPA v2 (PR #5644).
+- **Cron processing.** `delegate_to_agent` now correctly schedules cron to execute delegated tasks (PR #5647).
+
+### Added — Pro SPA v2 Polish & Fixes (20+ PRs)
+
+- **Vector store & autocomplete.** Vector store indicator and slash autocomplete positioning fixed (PR #5666). Double path in vector store preload URL fixed (PR #5665). TDZ crash in CommandAutocomplete resolved by hoisting `activeIndex` declaration (PR #5664). Inline command autocomplete and Zed-style refresh added (PR #5663).
+- **UI fixes.** Cost badges restored in response UI (PR #5661). `allowSensitiveTools` config type definitions added and propagated to chat-spa, Pro SPA v2 frontends, and delegation dispatch (PR #5658).
+- **Tool result rendering.** Rich rendering for embedded tool results, sidebar auto-refresh on new data, media cache-busting via `filemtime` (PR #5651).
+- **Transcripts & storage.** Auto-save transcripts on `onFinish` callback (PR #5650). Attachment support, save button, and storage display (PR #5646).
+- **Tasks drawer.** Toolbar button with failedCount badge for Pro SPA v2 (PR #5642).
+- **Speech/audio.** Response envelope fix in Pro SPA v2 and Chat SPA (PR #5636).
+- **Rendering fixes.** Capability flags rendering fixed in chat-spa and Pro SPA v2 (PR #5635). Usage badges and image+text rendering fixed (PR #5634). Annotations and toolInvocations preserved in `initialMessages` mapping (PR #5633).
+- **Sidebar & media.** Sidebar media panel visibility fixed, Date replaced with ID column (PR #5633). Media insert button visibility restored, speech button moved into message toolbar (PR #5632).
+- **System prompt & state.** System prompt leak fixed, sidebar empty state, media-to-chat bridge (PR #5631).
+- **Layout & mobile.** Tool display and conversation duplication fixed (PR #5626). Composer mobile bottom padding added (PR #5625). Media grid uses flexbox with fixed column widths instead of CSS grid (PR #5624).
+
+### Added — Tool Presets Refactor
+
+- **Essentials layers added**, duplication stripped, auto-upgrade for validated variants (PR #5660).
+- Validated tool auto-upgrade no longer causes duplicate names and not-allowed errors (PR #5662).
+- Double tool execution fixed in SSE adapters with media refresh filter clear (PR #5652).
+- `tool_call_id` fallback for DeepSeek streaming and SPA v2 tool results (PR #5638).
+- Save button added to PR #5646, tool messages without `tool_call_id` stripped (PR #5648).
+- Tool message block indentation auto-fixed via phpcbf (PR #5638).
+
+### Fixed — CRM & Integrations
+
+- CRM cache loop fixed and Upwork rate limiting added (PR #5645).
+- CRM Freelance Platforms & External Sourcing configuration enhanced (PR #5639).
+
+### Fixed — Infrastructure
+
+- **Veo 2.0 deprecated — Gemini Omni Flash replacement (PR #5667).** Google deprecated Veo 2.0 in mid-2026 and may restrict Veo 3.1. Migration path: Veo 2.0/3.1 → `gemini-omni-flash` (10s duration, native audio, multi-turn editing). Deprecation detection: 404/model-not-found errors on Veo models no longer trigger wasteful fallback loops. User-facing error messages now explicitly recommend Gemini Omni Flash. Cost calculator updated for `veo-3.1-generate-preview`, `gemini-omni-flash` ($0.04/sec). Tool schema defaults updated. Admin settings description updated. Tests updated for new model selection logic.
+- Workflow auth and protected method errors fixed (PR #5659).
+- ZAP scan Docker network isolation resolved — bridge gateway IP fixed (PR #5637).
+- npm packages rebuilt and built assets updated (PR #5653).
+
+### Added — Documentation
+
+- Comprehensive OpenMed integration plan v2 with industry best practices (PR #5641).
+
+### Versioning
+
+- Bumped to **1.1.39** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`.
+- Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**.
+
 ## [1.1.38] - 2026-07-10
 
 ### Added — Page Agent Addon v0.1.0
