@@ -32,19 +32,23 @@ export function CommandAutocomplete( {
 
 	const listRef = useRef< HTMLUListElement | null >( null );
 	const popoverRef = useRef< HTMLDivElement | null >( null );
-	const [ pos, setPos ] = useState< { top: number; left: number; width: number } >( { top: 0, left: 0, width: 280 } );
+	const [ pos, setPos ] = useState< { top?: number; bottom?: number; left: number; width: number } >( { bottom: 0, left: 0, width: 280 } );
 
-	// Position the popover relative to the composer textarea.
+	// Position the popover above the composer textarea.
 	useLayoutEffect( () => {
 		if ( ! isOpen ) return;
 		const textarea = document.getElementById( 'nvoos-pro-spa-composer-input' );
 		if ( ! textarea ) return;
 		const rect = textarea.getBoundingClientRect();
-		setPos( {
-			top: rect.bottom + 4,
-			left: rect.left,
-			width: Math.max( 280, rect.width ),
-		} );
+		const width = Math.max( 280, rect.width );
+		const gap = 4;
+		// Preferred: position above the textarea so it's always visible.
+		if ( rect.top > 280 ) {
+			setPos( { bottom: window.innerHeight - rect.top + gap, left: rect.left, width } );
+		} else {
+			// Not enough room above — fall back to below.
+			setPos( { top: rect.bottom + gap, left: rect.left, width } );
+		}
 	}, [ isOpen, matches ] );
 
 	// Local hover override for selected index.
@@ -106,7 +110,8 @@ export function CommandAutocomplete( {
 			aria-label={ __( 'Command suggestions', 'nvoos-pro-spa' ) }
 			style={ {
 				position: 'fixed',
-				top: pos.top,
+				...( pos.top !== undefined ? { top: pos.top } : {} ),
+				...( pos.bottom !== undefined ? { bottom: pos.bottom } : {} ),
 				left: pos.left,
 				width: pos.width,
 			} }

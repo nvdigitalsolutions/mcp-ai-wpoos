@@ -2386,6 +2386,10 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	background: var(--nvoos-danger, #d63638);
 }
 
+.nvoos-pro-spa-sidebar__vs-status--none .nvoos-pro-spa-sidebar__vs-dot {
+	background: var(--nvoos-text-secondary, #787c82);
+}
+
 .nvoos-pro-spa-sidebar__vs-label {
 	font-weight: 500;
 	line-height: 1;
