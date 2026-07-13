@@ -44,6 +44,7 @@ class WP_MCP_AI_Pro_REST_Slash_Commands {
 	 * @return void
 	 */
 	public static function register_routes() {
+		// List slash commands.
 		register_rest_route(
 			self::NAMESPACE,
 			self::ROUTE,
@@ -55,6 +56,24 @@ class WP_MCP_AI_Pro_REST_Slash_Commands {
 					'search' => array(
 						'type'              => 'string',
 						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
+		// Execute a slash command (v2.1.0).
+		register_rest_route(
+			self::NAMESPACE,
+			self::ROUTE . '/execute',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'handle_execute' ),
+				'permission_callback' => array( __CLASS__, 'permission_check' ),
+				'args'                => array(
+					'command' => array(
+						'type'              => 'string',
+						'required'          => true,
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
@@ -192,5 +211,58 @@ class WP_MCP_AI_Pro_REST_Slash_Commands {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Handle POST /slash-commands/execute — execute a slash command.
+	 *
+	 * @since 2.1.0
+	 * @param \WP_REST_Request $request Request object.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public static function handle_execute( $request ) {
+		$command = $request->get_param( 'command' );
+
+		if ( empty( $command ) ) {
+			return new \WP_Error(
+				'rest_invalid_param',
+				__( 'Command is required.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Delegate to the base plugin's slash-command REST controller
+		// which already handles authentication, execution, and formatting.
+		if ( class_exists( 'WP_MCP_AI_REST_Slash_Command_Controller' ) ) {
+			$base_controller = new \WP_MCP_AI_REST_Slash_Command_Controller();
+			return $base_controller->execute_command( $request );
+		}
+
+		// Fallback: use the handler directly.
+		$handler = self::get_handler();
+		if ( ! $handler ) {
+			return new \WP_Error(
+				'rest_not_available',
+				__( 'Slash command handler is not available.', 'mcp-ai-wpoos' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		try {
+			$result = $handler->execute( $command );
+			return new \WP_REST_Response(
+				array(
+					'success' => true,
+					'result'  => $result,
+				),
+				200
+			);
+		} catch ( \Exception $e ) {
+			return new \WP_Error(
+				'rest_execution_failed',
+				$e->getMessage(),
+				array( 'status' => 500 )
+			);
+		}
 	}
 }

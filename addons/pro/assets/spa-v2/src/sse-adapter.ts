@@ -512,7 +512,20 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 			signal: init?.signal,
 		} );
 
+		if ( typeof console !== 'undefined' && console.info ) {
+			console.info(
+				'[NV oOS Pro SPA] Starting streaming request',
+				{ assistant_id: opts.assistantId, model: opts.model, provider: opts.provider },
+			);
+		}
+
 		if ( ! upstream.ok || ! upstream.body ) {
+			if ( typeof console !== 'undefined' && console.warn ) {
+				console.warn(
+					'[NV oOS Pro SPA] Streaming request failed',
+					{ status: upstream.status, statusText: upstream.statusText },
+				);
+			}
 			return upstream;
 		}
 
@@ -552,11 +565,23 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 						}
 					}
 				} catch ( e ) {
+					if ( typeof console !== 'undefined' && console.warn ) {
+						console.warn(
+							'[NV oOS Pro SPA] SSE stream processing error',
+							( e as Error )?.message ?? e,
+						);
+					}
 					controller.enqueue(
 						encodeChunk( '3', String( ( e as Error )?.message ?? e ) )
 					);
 				} finally {
 					controller.close();
+					if ( typeof console !== 'undefined' && console.info ) {
+						console.info(
+							'[NV oOS Pro SPA] SSE stream completed',
+							{ assistant_id: opts.assistantId },
+						);
+					}
 				}
 			},
 			cancel() {

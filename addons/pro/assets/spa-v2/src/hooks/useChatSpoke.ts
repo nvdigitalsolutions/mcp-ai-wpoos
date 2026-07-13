@@ -135,6 +135,12 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 					role: m.role as string,
 					content: typeof m.content === 'string' ? m.content : '',
 				} ) );
+				if ( typeof console !== 'undefined' && console.info ) {
+					console.info(
+						'[NV oOS Pro SPA] Auto-saving conversation transcript',
+						{ session_key: sessionKey, message_count: wireMessages.length },
+					);
+				}
 				void transcriptsClient
 					.save( sessionKey, wireMessages, {
 						finish_reason:
@@ -143,8 +149,20 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 								: 'stop',
 						source: 'pro-spa-v2',
 					} )
-					.catch( () => {
-						// Silent — matches chat-spa behaviour.
+					.then( () => {
+						if ( typeof console !== 'undefined' && console.info ) {
+							console.info(
+								'[NV oOS Pro SPA] Conversation auto-saved successfully',
+							);
+						}
+					} )
+					.catch( ( err: unknown ) => {
+						if ( typeof console !== 'undefined' && console.warn ) {
+							console.warn(
+								'[NV oOS Pro SPA] Failed to auto-save conversation',
+								( err as Error )?.message ?? err,
+							);
+						}
 					} );
 			}
 		},
@@ -216,16 +234,30 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		if ( ! transcriptsClient || ! sessionKey ) {
 			return;
 		}
-		// Convert AI SDK Message[] to TranscriptMessage[] by stripping
-		// non-serialisable fields (toolInvocations, annotations, parts).
 		const transcriptMessages = messages.map( ( m ) => ( {
 			role: m.role as string,
 			content: typeof m.content === 'string' ? m.content : '',
 		} ) );
 		try {
+			if ( typeof console !== 'undefined' && console.info ) {
+				console.info(
+					'[NV oOS Pro SPA] Manually saving conversation',
+					{ session_key: sessionKey, message_count: transcriptMessages.length },
+				);
+			}
 			await transcriptsClient.save( sessionKey, transcriptMessages );
-		} catch {
-			// Silently ignore — server-side persistence covers the happy path.
+			if ( typeof console !== 'undefined' && console.info ) {
+				console.info(
+					'[NV oOS Pro SPA] Conversation saved successfully',
+				);
+			}
+		} catch ( err: unknown ) {
+			if ( typeof console !== 'undefined' && console.warn ) {
+				console.warn(
+					'[NV oOS Pro SPA] Failed to save conversation',
+					( err as Error )?.message ?? err,
+				);
+			}
 		}
 	}, [ transcriptsClient, sessionKey, messages ] );
 
