@@ -6,9 +6,6 @@
  * test data creation/cleanup utilities.
  */
 
-const path = require('path');
-const fs = require('fs');
-
 class WPAdmin {
 	/**
 	 * @param {import('playwright').Page} page

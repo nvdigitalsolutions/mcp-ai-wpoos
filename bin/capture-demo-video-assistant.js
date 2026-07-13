@@ -10,7 +10,7 @@
  *   5. Verifying the assistant appears in the list
  *
  * Usage:   node bin/capture-demo-video-assistant.js
- * Prereq:  docker compose up -d && bash bin/capture-demo-videos.sh (setup only)
+ * Prereq:  docker compose up -d
  * Output:  docs/videos/base/add-assistant-tools.webm
  */
 
@@ -19,10 +19,13 @@ const path = require('path');
 const fs = require('fs');
 const { WPAdmin } = require('./video-helpers/wp-admin');
 const { VIDEO_CONFIG, PAUSE, resolveOutputDir } = require('./video-helpers/video-utils');
+const { SELECTORS, tryClick, tryFill } = require('./utils/video-selectors');
+const { injectCursor, glideCursorTo, removeCursor } = require('./video-helpers/cursor-utils');
+const { showIntroCard, showOutroCard } = require('./video-helpers/card-utils');
+const { showChapter } = require('./video-helpers/annotation-utils');
 
 // ── Configuration ─────────────────────────────────────────────
 
-const ADMIN_URL = VIDEO_CONFIG.adminUrl;
 const OUT_DIR = resolveOutputDir(__dirname, 'base');
 const VIDEO_FILE = 'add-assistant-tools';
 
@@ -34,53 +37,6 @@ const SYSTEM_PROMPT =
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
-// ── Helpers ───────────────────────────────────────────────────
-
-/**
- * Find and click an element using multiple fallback selectors.
- *
- * @param {import('playwright').Page} page
- * @param {string[]} selectors - Ordered by preference.
- * @returns {Promise<boolean>} True if an element was clicked.
- */
-async function tryClick(page, selectors) {
-	for (const sel of selectors) {
-		const el = await page.$(sel);
-		if (el) {
-			try {
-				await el.click();
-				return true;
-			} catch {
-				// selector matched but element not clickable — try next
-			}
-		}
-	}
-	return false;
-}
-
-/**
- * Find and fill a text field using multiple fallback selectors.
- *
- * @param {import('playwright').Page} page
- * @param {string[]} selectors
- * @param {string} text
- * @returns {Promise<boolean>}
- */
-async function tryFill(page, selectors, text) {
-	for (const sel of selectors) {
-		const el = await page.$(sel);
-		if (el) {
-			try {
-				await el.fill(text);
-				return true;
-			} catch {
-				// not fillable — try next
-			}
-		}
-	}
-	return false;
-}
-
 // ── Main ──────────────────────────────────────────────────────
 
 (async () => {
@@ -89,10 +45,7 @@ async function tryFill(page, selectors, text) {
 	const browser = await chromium.launch({ headless: true });
 	const context = await browser.newContext({
 		viewport: VIDEO_CONFIG.viewport,
-		recordVideo: {
-			dir: OUT_DIR,
-			size: VIDEO_CONFIG.size,
-		},
+		recordVideo: { dir: OUT_DIR, size: VIDEO_CONFIG.size },
 	});
 
 	const page = await context.newPage();
@@ -100,10 +53,20 @@ async function tryFill(page, selectors, text) {
 
 	try {
 		// ═══════════════════════════════════════════════════════
+		// 0. Intro Card
+		// ═══════════════════════════════════════════════════════
+		await showIntroCard(page, {
+			title: 'Add Assistant & Assign Tools',
+			subtitle: 'Create an AI assistant and equip it with tools',
+			icon: 'assistant',
+		});
+
+		// ═══════════════════════════════════════════════════════
 		// 1. Login
 		// ═══════════════════════════════════════════════════════
 		console.log('  ▶ Login');
 		await admin.login();
+		await injectCursor(page);
 		await page.waitForTimeout(PAUSE.SHORT);
 
 		// ═══════════════════════════════════════════════════════
@@ -117,53 +80,37 @@ async function tryFill(page, selectors, text) {
 		// 3. Click "Add New"
 		// ═══════════════════════════════════════════════════════
 		console.log('  ▶ Click Add New');
-		const clicked = await tryClick(page, [
-			'a.page-title-action',
-			'.wrap a[href*="post-new"]',
-			'a[href*="post-new.php?post_type=mcp_ai_assistant"]',
-		]);
+		const clicked = await tryClick(page, SELECTORS.admin.addNewButton);
 
 		if (!clicked) {
-			// Fallback: navigate directly
 			await admin.goToPostTypeNew('mcp_ai_assistant');
 		}
 		await page.waitForTimeout(PAUSE.LONG);
 
 		// ═══════════════════════════════════════════════════════
-		// 4. Fill the title
+		// 4. Chapter: Fill Assistant Details
+		// ═══════════════════════════════════════════════════════
+		await showChapter(page, {
+			title: 'Configure Your Assistant',
+			description: 'Set the name, system prompt, and AI model',
+			duration: 2500,
+		});
+
+		// ═══════════════════════════════════════════════════════
+		// 5. Fill the title
 		// ═══════════════════════════════════════════════════════
 		console.log('  ▶ Fill assistant title');
-		await page.waitForSelector('#title', { timeout: 10000 });
-		await page.fill('#title', ASSISTANT_NAME);
+		const titleSelector = SELECTORS.assistant.titleInput[0];
+		await page.waitForSelector(titleSelector, { timeout: 10000 });
+		await glideCursorTo(page, titleSelector);
+		await page.fill(titleSelector, ASSISTANT_NAME);
 		await page.waitForTimeout(PAUSE.SHORT);
 
 		// ═══════════════════════════════════════════════════════
-		// 5. Fill description / content
-		// ═══════════════════════════════════════════════════════
-		console.log('  ▶ Fill description');
-		const filledContent = await tryFill(page, [
-			'#content',
-			'.wp-block-post-content',
-			'[data-testid="assistant-description"]',
-			'textarea[name="post_content"]',
-		], 'A helpful AI assistant for customer support demonstrations.');
-
-		if (!filledContent) {
-			console.log('    ⚠️  No content area found (Gutenberg may be active)');
-		}
-		await page.waitForTimeout(PAUSE.SHORT);
-
-		// ═══════════════════════════════════════════════════════
-		// 6. Fill system prompt (meta box or Gutenberg panel)
+		// 6. Fill system prompt
 		// ═══════════════════════════════════════════════════════
 		console.log('  ▶ Fill system prompt');
-		const filledPrompt = await tryFill(page, [
-			'[data-testid="system-prompt"]',
-			'#mcp_ai_system_prompt',
-			'textarea[name*="system_prompt"]',
-			'textarea[name="_mcp_ai_system_prompt"]',
-			'.mcp-ai-system-prompt textarea',
-		], SYSTEM_PROMPT);
+		const filledPrompt = await tryFill(page, SELECTORS.assistant.systemPrompt, SYSTEM_PROMPT);
 
 		if (filledPrompt) {
 			console.log('    ✅ System prompt filled');
@@ -173,72 +120,51 @@ async function tryFill(page, selectors, text) {
 		await page.waitForTimeout(PAUSE.SHORT);
 
 		// ═══════════════════════════════════════════════════════
-		// 7. Select model (if dropdown exists)
+		// 7. Select model
 		// ═══════════════════════════════════════════════════════
 		console.log('  ▶ Select model');
-		const modelSelected = await (async () => {
-			const selectors = [
-				'select[name*="model"]',
-				'[data-testid="model-select"]',
-				'#mcp_ai_model',
-				'select[name="_mcp_ai_model"]',
-			];
-			for (const sel of selectors) {
-				const el = await page.$(sel);
-				if (el) {
-					try {
-						// Try common model option values
-						await el.selectOption({ label: 'GPT-4o' }).catch(() => {});
-						await el.selectOption({ label: 'gpt-4o' }).catch(() => {});
-						await el.selectOption({ value: 'gpt-4o' }).catch(() => {});
-						// If none matched, select the second option (first is often placeholder)
-						const options = await el.$$eval('option', (opts) =>
-							opts.map((o) => o.value).filter((v) => v)
-						);
-						if (options.length > 0) {
-							await el.selectOption(options[0]);
-						}
-						return true;
-					} catch {
-						// continue
+		let modelSelected = false;
+		for (const sel of SELECTORS.assistant.modelSelect) {
+			const el = await page.$(sel);
+			if (el) {
+				try {
+					await el.selectOption({ label: 'GPT-4o' }).catch(() => {});
+					await el.selectOption({ label: 'gpt-4o' }).catch(() => {});
+					await el.selectOption({ value: 'gpt-4o' }).catch(() => {});
+					const options = await el.$$eval('option', (opts) =>
+						opts.map((o) => o.value).filter((v) => v)
+					);
+					if (options.length > 0 && !modelSelected) {
+						await el.selectOption(options[0]);
+						modelSelected = true;
 					}
-				}
+					modelSelected = true;
+					break;
+				} catch { /* next */ }
 			}
-			return false;
-		})();
-
-		if (modelSelected) {
-			console.log('    ✅ Model selected');
-		} else {
-			console.log('    ⚠️  Model select not found — continuing');
 		}
+		console.log(`    ${modelSelected ? '✅' : '⚠️'} Model ${modelSelected ? 'selected' : 'not found'}`);
 		await page.waitForTimeout(PAUSE.SHORT);
 
 		// ═══════════════════════════════════════════════════════
-		// 8. Assign Tools
+		// 8. Chapter: Assign Tools
+		// ═══════════════════════════════════════════════════════
+		await showChapter(page, {
+			title: 'Assign Tools',
+			description: 'Search and enable the tools your assistant will use',
+			duration: 2500,
+		});
+
+		// ═══════════════════════════════════════════════════════
+		// 9. Open Tools tab and search
 		// ═══════════════════════════════════════════════════════
 		console.log('  ▶ Assign tools');
-
-		// Try to find and click the Tools tab/panel
-		const toolsTabClicked = await tryClick(page, [
-			'[data-testid="tools-tab"]',
-			'.nav-tab-wrapper a[href*="tools"]',
-			'button:has-text("Tools")',
-			'.mcp-ai-tools-tab',
-			'a.nav-tab:has-text("Tools")',
-			'.components-tab-panel__tabs button:has-text("Tools")',
-		]);
+		const toolsTabClicked = await tryClick(page, SELECTORS.assistant.toolsTab);
 
 		if (toolsTabClicked) {
 			await page.waitForTimeout(PAUSE.MEDIUM);
 
-			// Search for tools
-			const searchFilled = await tryFill(page, [
-				'input[type="search"]',
-				'input[placeholder*="search" i]',
-				'input[placeholder*="Search" i]',
-				'.mcp-ai-tool-search input',
-			], 'wp_post');
+			const searchFilled = await tryFill(page, SELECTORS.assistant.toolSearchInput, 'wp_post');
 
 			if (searchFilled) {
 				console.log('    ✅ Searched for wp_post tools');
@@ -246,54 +172,45 @@ async function tryFill(page, selectors, text) {
 			await page.waitForTimeout(PAUSE.MEDIUM);
 
 			// Enable some tools
-			const checkboxes = await page.$$('input[type="checkbox"]:not(:checked)');
+			const checkboxes = await page.$$(SELECTORS.assistant.toolCheckboxes.join(', '));
 			let enabled = 0;
 			for (let i = 0; i < Math.min(5, checkboxes.length); i++) {
 				try {
 					await checkboxes[i].check();
 					enabled++;
 					await page.waitForTimeout(200);
-				} catch {
-					// skip non-checkable checkboxes
-				}
+				} catch { /* skip */ }
 			}
 			console.log(`    ✅ Enabled ${enabled} tools`);
-			await page.waitForTimeout(PAUSE.SHORT);
 		} else {
 			console.log('    ⚠️  Tools tab not found — continuing without tools');
 		}
+		await page.waitForTimeout(PAUSE.SHORT);
 
 		// ═══════════════════════════════════════════════════════
-		// 9. Publish
+		// 10. Publish
 		// ═══════════════════════════════════════════════════════
 		console.log('  ▶ Publish assistant');
-		const published = await tryClick(page, [
-			'#publish',
-			'button.editor-post-publish-button__button',
-			'button.editor-post-publish-button',
-			'[data-testid="publish-button"]',
-			'input#publish',
-		]);
+		const published = await tryClick(page, SELECTORS.admin.publishButton);
 
 		if (!published) {
-			console.log('    ⚠️  Publish button not found — trying to save as draft');
-			await tryClick(page, [
-				'#save-post',
-				'button.editor-post-save-draft',
-				'input#save-post',
-			]);
+			console.log('    ⚠️  Publish button not found — trying save draft');
+			await tryClick(page, SELECTORS.admin.saveDraftButton);
 		}
 		await page.waitForTimeout(PAUSE.LONG);
-
-		// Wait for any post-publish confirmation
 		await page.waitForTimeout(PAUSE.MEDIUM);
 
 		// ═══════════════════════════════════════════════════════
-		// 10. Verify — return to list
+		// 11. Verify — return to list
 		// ═══════════════════════════════════════════════════════
 		console.log('  ▶ Verify assistant in list');
 		await admin.goToPostTypeList('mcp_ai_assistant');
 		await page.waitForTimeout(PAUSE.LONG);
+
+		// ═══════════════════════════════════════════════════════
+		// 12. Outro Card
+		// ═══════════════════════════════════════════════════════
+		await showOutroCard(page);
 
 		console.log(`\n✅ Video captured: ${path.join(OUT_DIR, VIDEO_FILE + '.webm')}\n`);
 
@@ -301,6 +218,7 @@ async function tryFill(page, selectors, text) {
 		console.error(`\n❌ Error during video capture: ${error.message}`);
 		console.error(error.stack);
 	} finally {
+		await removeCursor(page);
 		await context.close(); // ← writes the .webm file
 		await browser.close();
 	}

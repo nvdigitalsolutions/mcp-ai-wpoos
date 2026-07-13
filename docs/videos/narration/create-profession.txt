@@ -1,0 +1,23 @@
+# Narration: Create Profession Template
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~60 seconds
+
+Welcome to NV oOS. In this video, we will create a profession template that other administrators can use to quickly set up new assistants.
+
+Navigate to Professions in the WordPress admin menu and click Add New.
+
+Give your profession a descriptive name. This will appear in the template gallery for other admins to browse.
+
+Write a description that explains what this profession is designed for and who should use it.
+
+Configure the default system prompt. This becomes the baseline personality for any assistant created from this template.
+
+Select a default tool preset. This automatically assigns the right tools when someone uses this template to create an assistant.
+
+Choose a recommended AI model. This guides users toward the best model for this profession's use case.
+
+Click Publish to save your profession template.
+
+Return to the Professions list to verify your template appears. Other administrators can now use it as a starting point.
+
+That's it. Profession templates make it easy to standardize assistant configurations across your team.

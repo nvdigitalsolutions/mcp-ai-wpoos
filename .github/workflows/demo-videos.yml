@@ -1,0 +1,144 @@
+# ───────────────────────────────────────────────────────────
+# NV oOS — Demo Video Generation CI Pipeline
+# ───────────────────────────────────────────────────────────
+#
+# Generates narrated demo videos on every release and on
+# manual trigger. Videos are uploaded as GitHub artifacts
+# and attached to the release.
+#
+# Prerequisites:
+#   - OPENAI_API_KEY secret configured in repository settings
+#   - Docker Compose available on ubuntu-latest runner
+#
+# Architecture:
+#   [checkout] → [npm ci] → [playwright install] → [docker up]
+#   → [capture videos] → [generate narration] → [merge video+audio]
+#   → [upload artifacts] → [attach to release]
+
+name: Generate Demo Videos
+
+on:
+  workflow_dispatch:
+    inputs:
+      narration:
+        description: 'Generate narrated videos with AI voiceover'
+        type: boolean
+        default: true
+      pro:
+        description: 'Include Pro plugin videos'
+        type: boolean
+        default: false
+      force:
+        description: 'Force regenerate narration audio'
+        type: boolean
+        default: false
+  release:
+    types: [published]
+
+env:
+  BASE_URL: http://localhost:8000
+  WP_ADMIN_USER: admin
+  WP_ADMIN_PASS: password
+
+jobs:
+  videos:
+    name: Generate Demo Videos
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg curl
+
+      - name: Install Node.js dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start WordPress with Docker Compose
+        run: |
+          docker compose up -d
+          echo "Waiting for WordPress to become healthy..."
+          for i in $(seq 1 90); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" $BASE_URL 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ]; then
+              echo "WordPress is ready (HTTP $STATUS after ${i}s)."
+              break
+            fi
+            if [ $i -eq 90 ]; then
+              echo "ERROR: WordPress did not become ready within 90s."
+              docker compose logs --tail=50 wordpress
+              exit 1
+            fi
+            sleep 1
+          done
+
+      - name: Run video capture pipeline
+        id: capture
+        run: bash bin/capture-demo-videos.sh
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}
+          CAPTURE_PRO: ${{ inputs.pro || 'false' }}
+
+      - name: Generate narration audio
+        if: ${{ inputs.narration && env.OPENAI_API_KEY != '' }}
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ inputs.force }}" = "true" ]; then
+            FORCE_FLAG="--force"
+          fi
+          node bin/generate-narration-audio.js --all $FORCE_FLAG
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Merge video + narration
+        if: ${{ inputs.narration }}
+        run: |
+          node bin/merge-demo-video.js --all || true
+          echo "Merge complete (some videos may be silent if narration was skipped)."
+
+      - name: Upload video artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: demo-videos
+          path: |
+            docs/videos/base/*.mp4
+            docs/videos/base/*.webm
+            docs/videos/pro/*.mp4
+            docs/videos/pro/*.webm
+          retention-days: 30
+          compression-level: 0
+
+      - name: Attach videos to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            docs/videos/base/*.mp4
+            docs/videos/pro/*.mp4
+          fail_on_unmatched_files: false
+
+      - name: Upload video catalog
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: demo-video-catalog
+          path: docs/videos/CATALOG.md
+          retention-days: 30
+
+      - name: Cleanup Docker
+        if: always()
+        run: docker compose down -v --remove-orphans

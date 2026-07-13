@@ -1,0 +1,25 @@
+# Narration: Guest Mode Chat
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~90 seconds
+
+Welcome to NV oOS. In this video, we will demonstrate guest mode, which lets anonymous visitors chat with your AI assistant.
+
+We are opening the chat page in a fresh browser, just like a first-time visitor to your website.
+
+Notice that no login is required. The chat interface loads immediately and is ready for messages.
+
+Behind the scenes, a temporary guest token is generated automatically. This allows the system to maintain a conversation session.
+
+Let's send a message as an anonymous guest. Type your question and click send.
+
+The AI responds just like it would for a logged-in user. Guests get the same quality experience.
+
+Let's ask a follow-up question to confirm the AI remembers our conversation.
+
+The assistant references our earlier question, demonstrating that guest sessions maintain context.
+
+Now let's reload the page. Watch what happens to our conversation.
+
+The chat history is restored from local browser storage. The guest experience is persistent within the browser session.
+
+That's it. Guest mode lets you offer AI assistance to every visitor without requiring registration.

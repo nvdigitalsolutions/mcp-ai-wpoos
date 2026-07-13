@@ -1,0 +1,29 @@
+# Narration: Workflow Builder
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~100 seconds
+
+Welcome to NV oOS Pro. In this video, we will visually build a multi-step AI pipeline using the Workflow Builder.
+
+Open the Workflow Builder from the Pro admin menu. This visual editor lets you design AI pipelines by connecting nodes.
+
+Start by dragging a Trigger node onto the canvas. This defines what initiates the workflow.
+
+Add a Chat node to process user input through an AI assistant.
+
+Connect the Trigger to the Chat node by dragging a line between them.
+
+Add a Tool Execution node to call WordPress functions like searching posts or creating content.
+
+Connect the Chat output to the Tool node. The AI's decision will determine which tool runs.
+
+Add a Conditional branch node. This lets the workflow take different paths based on the AI's output or tool results.
+
+Configure the condition. For example, route to a success path if the tool returns results, or an error path if it fails.
+
+Add a Response Formatting node to clean up the output before showing it to the user.
+
+Save your workflow. It is now ready to handle incoming requests through your configured trigger.
+
+Test the workflow by sending a sample request and watching the execution flow through each node.
+
+That's it. The Workflow Builder gives you complete control over complex AI interactions without writing code.

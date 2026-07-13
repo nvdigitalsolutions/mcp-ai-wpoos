@@ -273,6 +273,41 @@ optimize_videos() {
 	info "Optimized $count video(s)"
 }
 
+# ── Generate narration audio (Phase 3) ──────────────────────────
+generate_narration() {
+	if [ -z "${OPENAI_API_KEY:-}" ]; then
+		warn "OPENAI_API_KEY not set — skipping narration generation."
+		warn "Videos will remain silent. Set OPENAI_API_KEY for AI voiceover."
+		return
+	fi
+
+	if ! command -v node &>/dev/null; then
+		warn "Node.js not found — skipping narration generation."
+		return
+	fi
+
+	info "Generating narration audio..."
+	node "$SCRIPT_DIR/generate-narration-audio.js" --all || \
+		warn "Narration generation failed — videos will remain silent."
+}
+
+# ── Merge video + narration (Phase 3) ───────────────────────────
+merge_videos() {
+	if ! command -v ffmpeg &>/dev/null; then
+		warn "FFmpeg not found — skipping video merge."
+		return
+	fi
+
+	if ! command -v node &>/dev/null; then
+		warn "Node.js not found — skipping video merge."
+		return
+	fi
+
+	info "Merging video + narration audio..."
+	node "$SCRIPT_DIR/merge-demo-video.js" --all || \
+		warn "Video merge failed — videos remain as separate .webm and .mp3 files."
+}
+
 # ── Print summary ──────────────────────────────────────────────
 print_summary() {
 	echo ""
@@ -295,12 +330,22 @@ print_summary() {
 		done
 	fi
 
+	if [ -d "$VIDEO_DIR/narration/audio" ]; then
+		local narration_count
+		narration_count=$(find "$VIDEO_DIR/narration/audio" -name "durations.json" | wc -l)
+		info "Narration audio: $narration_count video(s)"
+	fi
+
 	echo ""
 	info "To re-record everything:"
 	echo "    docker compose down -v && bash bin/capture-demo-videos.sh"
 	echo ""
 	info "To record a single video:"
 	echo "    node bin/capture-demo-video-assistant.js"
+	echo ""
+	info "To generate narration and merge:"
+	echo "    node bin/generate-narration-audio.js --all"
+	echo "    node bin/merge-demo-video.js --all"
 	echo ""
 }
 
@@ -324,6 +369,16 @@ main() {
 	fi
 
 	optimize_videos
+
+	echo ""
+
+	# Phase 3: Narration (optional — requires OPENAI_API_KEY)
+	if [ "${SKIP_NARRATION:-false}" != "true" ]; then
+		generate_narration
+		echo ""
+		merge_videos
+	fi
+
 	print_summary
 }
 
