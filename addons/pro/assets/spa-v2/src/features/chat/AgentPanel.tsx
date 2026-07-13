@@ -16,6 +16,8 @@ import type { UsageData } from '../../components/shared/UsageBadges';
 import type { SpeechState } from '../../components/shared/SpeechButton';
 import type { JobRecord } from '../../components/shared/JobCard';
 import { useAttachments, ACCEPT_ATTR } from '../../hooks/useAttachments';
+import { useCommandAutocomplete } from '../../hooks/useCommandAutocomplete';
+import { CommandAutocomplete } from '../../components/shared/CommandAutocomplete';
 
 export interface AgentPanelProps {
 	/** Ordered list of chat messages from useChat. */
@@ -74,6 +76,8 @@ export interface AgentPanelProps {
 	assistantId?: number;
 	/** Submit with attachments (v0.9.0). */
 	onSubmitWithAttachments?: ( attachments: Array< { name?: string; contentType?: string; url: string } > ) => void;
+	/** Slash commands endpoint for inline autocomplete (v2.2.0). */
+	slashCommandsEndpoint?: string;
 }
 
 export function AgentPanel( props: AgentPanelProps ): JSX.Element {
@@ -109,6 +113,7 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 		nonce,
 		assistantId,
 		onSubmitWithAttachments,
+		slashCommandsEndpoint,
 	} = props;
 
 	const messagesContainerRef = useRef< HTMLDivElement | null >( null );
@@ -185,15 +190,31 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 		setTimeout( () => setSavedIndicator( false ), 1500 );
 	}, [ onSaveConversation, isStreaming ] );
 
+	// ── Cursor position tracking (v2.2.0 — for autocomplete) ──────────
+	const [ cursorPos, setCursorPos ] = useState< number | null >( null );
+
+	// ── Inline command autocomplete (v2.2.0) ──────────────────────────
+	const autocomplete = useCommandAutocomplete(
+		slashCommandsEndpoint ?? '',
+		nonce ?? '',
+		input,
+		cursorPos,
+		( text: string ) => handleInputChange( text ),
+		isStreaming,
+	);
+
 	// Keyboard shortcut: Enter to send (Shift+Enter for newline).
 	const handleKeyDown = useCallback(
 		( e: React.KeyboardEvent< HTMLTextAreaElement > ) => {
+			// Let autocomplete consume navigation / selection keys first.
+			if ( autocomplete.handleKeyDown( e ) ) return;
+
 			if ( e.key === 'Enter' && ! e.shiftKey ) {
 				e.preventDefault();
 				handleSubmit();
 			}
 		},
-		[ handleSubmit ]
+		[ handleSubmit, autocomplete ]
 	);
 
 	return (
@@ -322,18 +343,23 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 							</div>
 					) }
 					<textarea
-						id="nvoos-pro-spa-composer-input"
-						ref={ composerRef }
-						className="nvoos-pro-spa-agent-panel__composer-input"
-						value={ input }
-						onChange={ handleInputChange }
-						onKeyDown={ handleKeyDown }
-						placeholder={ __( 'Type your message…', 'nvoos-pro-spa' ) }
-						rows={ 1 }
-						disabled={ isStreaming }
-						aria-label={ __( 'Message input', 'nvoos-pro-spa' ) }
-					/>
-					{/* Attachment strip (v0.9.0) */}
+							id="nvoos-pro-spa-composer-input"
+							ref={ composerRef }
+							className="nvoos-pro-spa-agent-panel__composer-input"
+							value={ input }
+							onChange={ handleInputChange }
+							onKeyDown={ handleKeyDown }
+							onSelect={ ( e ) => setCursorPos( ( e.target as HTMLTextAreaElement ).selectionStart ) }
+							placeholder={ __( 'Type your message…', 'nvoos-pro-spa' ) }
+							rows={ 1 }
+							disabled={ isStreaming }
+							aria-label={ __( 'Message input', 'nvoos-pro-spa' ) }
+						/>
+						{/* Inline command autocomplete (v2.2.0) */}
+						{ slashCommandsEndpoint && (
+							<CommandAutocomplete autocomplete={ autocomplete } />
+						) }
+						{/* Attachment strip (v0.9.0) */}
 					{ attachments.files.length > 0 && (
 						<ul className="nvoos-pro-spa-attachment-strip" aria-label={ __( 'Attachments', 'nvoos-pro-spa' ) }>
 							{ attachments.files.map( ( pf ) => (
