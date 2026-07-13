@@ -110,7 +110,10 @@ class NV_oOS_Graphify_Embeddings_On_Ingest {
 		// has it without serialising potentially-large payloads in the
 		// cron schedule.
 		set_transient( self::transient_key( $node_id ), $text, HOUR_IN_SECONDS );
-		$scheduled = wp_schedule_single_event( time() + 5, self::CRON_ACTION, $args );
+		$scheduled = wp_schedule_single_event( time() - 1, self::CRON_ACTION, $args );
+		if ( false !== $scheduled && function_exists( 'spawn_cron' ) ) {
+			spawn_cron();
+		}
 		return false !== $scheduled;
 	}
 

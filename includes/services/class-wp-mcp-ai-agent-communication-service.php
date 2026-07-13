@@ -80,9 +80,12 @@ class WP_MCP_AI_Agent_Communication_Service {
 	 * @param int|string $to_agent_id Target agent ID (integer post ID or string virtual ID).
 	 * @param array      $task Task data to delegate.
 	 * @param array      $context Shared context.
+	 * @param bool       $run_inline When true, skip cron scheduling so the caller
+	 *                               can process the delegation synchronously via
+	 *                               {@see process_pending_delegation()}. Default false.
 	 * @return array|WP_Error Delegation result or error.
 	 */
-	public function delegate_task( $from_agent_id, $to_agent_id, $task, $context = array() ) {
+	public function delegate_task( $from_agent_id, $to_agent_id, $task, $context = array(), $run_inline = false ) {
 		// Validate target agent (required).
 		if ( empty( $to_agent_id ) ) {
 			return new WP_Error(
@@ -176,15 +179,19 @@ class WP_MCP_AI_Agent_Communication_Service {
 		// Log delegation.
 		$this->log_delegation( $delegation, 'created' );
 
-		// Schedule cron processing for this delegation.
-		$this->schedule_delegation_processing( $delegation );
+		// When running inline the caller handles processing synchronously;
+		// skip cron scheduling to avoid a duplicate (and unnecessary) async tick.
+		if ( ! $run_inline ) {
+			// Schedule cron processing for this delegation.
+			$this->schedule_delegation_processing( $delegation );
 
-		// Register with Cron Manager for visibility in the Tasks drawer.
-		$this->register_delegation_with_cron_manager( $delegation );
+			// Register with Cron Manager for visibility in the Tasks drawer.
+			$this->register_delegation_with_cron_manager( $delegation );
+		}
 
 			return array(
 				'delegation_id' => $delegation['delegation_id'],
-				'status'        => 'delegated',
+				'status'        => $run_inline ? 'pending' : 'delegated',
 				'agent_id'      => $to_agent_id,
 				'agent_name'    => $to_agent_name,
 				'agent_role'    => $to_agent_role,
@@ -489,10 +496,12 @@ class WP_MCP_AI_Agent_Communication_Service {
 			return;
 		}
 
-		// Schedule 3 seconds in the future to prevent a race condition where
-		// spawn_cron() fires the handler before the delegation transient has
-		// been fully committed (especially on Redis-backed object caches).
-		$result = wp_schedule_single_event( time() + 3, self::CRON_HOOK, $args );
+		// Schedule in the immediate past so that spawn_cron() always sees the
+		// event in wp_get_ready_cron_jobs(). Previously scheduled at time()+3
+		// which caused spawn_cron() to miss the event when no other cron jobs
+		// were due, leaving the delegation sitting pending indefinitely.
+		// Matches the canonical pattern from the Tool Async Executor.
+		$result = wp_schedule_single_event( time() - 1, self::CRON_HOOK, $args );
 
 		if ( ! $result ) {
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {

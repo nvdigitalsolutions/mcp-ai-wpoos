@@ -196,12 +196,17 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			'delegated_at'    => current_time( 'mysql' ),
 		);
 
-		// Delegate task, passing merged context so virtual agents can be resolved.
+		// Delegate task inline (run_inline = true) so the parent assistant
+		// receives the actual result rather than a fire-and-forget status.
+		// This matches the synchronous behaviour of image generation and
+		// other AI-interactive tools — the tool blocks until the target
+		// agent completes, then returns the agent's response.
 		$result = $communication_service->delegate_task(
 			isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
 			$agent_id,
 			$task_data,
-			$merged_context
+			$merged_context,
+			true // Run inline.
 		);
 
 		if ( is_wp_error( $result ) ) {
@@ -224,15 +229,44 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		// Log successful delegation.
+		$delegation_id = $result['delegation_id'];
+
+		// Log successful delegation record creation.
 		WP_MCP_AI_Logger::log_event(
-			'agent_delegation_successful',
-			'Task successfully delegated to agent',
+			'agent_delegation_created',
+			'Delegation record created; processing inline',
 			array(
-				'delegation_id' => $result['delegation_id'],
+				'delegation_id' => $delegation_id,
 				'agent_id'      => $agent_id,
 				'agent_name'    => $result['agent_name'],
 				'agent_role'    => $result['agent_role'],
+				'mode'          => 'inline',
+			)
+		);
+
+		// Process the delegation synchronously — the parent assistant
+		// waits for the target agent to complete before continuing.
+		// Virtual agents cannot be dispatched to the chat endpoint and
+		// will fail inside process_pending_delegation(); the result is
+		// still captured so callers always see a concrete outcome.
+		WP_MCP_AI_Agent_Communication_Service::process_pending_delegation( $delegation_id );
+
+		// Read the final result from the delegation transient.
+		$delegation_key  = 'wp_mcp_ai_delegation_' . $delegation_id;
+		$delegation_data = get_transient( $delegation_key );
+
+		$final_status = is_array( $delegation_data ) && isset( $delegation_data['status'] )
+			? $delegation_data['status']
+			: 'unknown';
+
+		// Log the final outcome.
+		WP_MCP_AI_Logger::log_event(
+			'agent_delegation_completed',
+			'Inline delegation processing finished',
+			array(
+				'delegation_id' => $delegation_id,
+				'agent_id'      => $agent_id,
+				'status'        => $final_status,
 			)
 		);
 
@@ -243,36 +277,46 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 				$orchestrator->update_workflow_task_status(
 					$merged_context['workflow_id'],
 					$merged_context['task_name'],
-					'completed',
+					'completed' === $final_status ? 'completed' : 'failed',
 					array(
-						'agent_id'       => $agent_id,
-						'agent_name'     => $result['agent_name'],
-						'execution_time' => 0, // Actual execution happens async.
+						'agent_id'      => $agent_id,
+						'agent_name'    => $result['agent_name'],
+						'delegation_id' => $delegation_id,
+						'final_status'  => $final_status,
 					)
 				);
 			}
 		}
 
-		// Format delegation result.
-		return array(
+		// Build the response that the parent assistant sees.
+		$response = array(
 			'success'    => true,
-			'message'    => __( 'Task successfully delegated to agent.', 'mcp-ai-wpoos' ),
+			'message'    => __( 'Task delegated and completed.', 'mcp-ai-wpoos' ),
 			'delegation' => array(
-				'delegation_id' => $result['delegation_id'],
+				'delegation_id' => $delegation_id,
 				'agent_id'      => $agent_id,
 				'agent_name'    => $result['agent_name'],
 				'agent_role'    => $result['agent_role'],
 				'target_type'   => $target_type,
 				'task'          => $task,
-				'status'        => $result['status'],
+				'status'        => $final_status,
 				'delegated_at'  => $result['delegated_at'],
 			),
-			'next_steps' => array(
-				__( 'Wait for agent to complete the task', 'mcp-ai-wpoos' ),
-				__( 'Check delegation status if needed', 'mcp-ai-wpoos' ),
-				__( 'Use aggregate_agent_results to combine with other agent outputs', 'mcp-ai-wpoos' ),
-			),
 		);
+
+		// Surface the agent's actual response when available.
+		if ( 'completed' === $final_status && isset( $delegation_data['result']['response'] ) ) {
+			$response['agent_response'] = $delegation_data['result']['response'];
+		} elseif ( 'failed' === $final_status && isset( $delegation_data['error'] ) ) {
+			$response['error']   = $delegation_data['error'];
+			$response['message'] = sprintf(
+				/* translators: %s: error message from the target agent */
+				__( 'Agent task failed: %s', 'mcp-ai-wpoos' ),
+				$delegation_data['error']
+			);
+		}
+
+		return $response;
 	}
 
 
