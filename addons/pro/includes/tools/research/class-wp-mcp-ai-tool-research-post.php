@@ -838,12 +838,12 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Get a suitable AI model for research.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$provider = $this->get_research_provider( $settings );
-		$model    = $this->get_research_model( $provider, $settings );
 
 		if ( is_wp_error( $provider ) ) {
 			return $provider;
 		}
 
+		$model = $this->get_research_model( $provider, $settings );
 		if ( is_wp_error( $model ) ) {
 			return $model;
 		}
@@ -919,9 +919,48 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return 'anthropic';
 		}
 
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'deepseek' ) ) {
+			return 'deepseek';
+		}
+
+		// Providers requiring multi-field or non-standard credential checks.
+		$settings_raw = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings_raw['cloudflare_api_token'] ) && ! empty( $settings_raw['cloudflare_account_id'] ) && class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
+			return 'cloudflare';
+		}
+		if ( ! empty( $settings_raw['huggingface_api_key'] ) && ! empty( $settings_raw['huggingface_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+			return 'huggingface';
+		}
+		if ( ! empty( $settings_raw['ollama_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
+			return 'ollama';
+		}
+		if ( ! empty( $settings_raw['lm_studio_endpoint_url'] ) && class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
+			return 'lm_studio';
+		}
+
+		// Standard API-key providers.
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'openrouter' ) ) {
+			return 'openrouter';
+		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'nvidia' ) ) {
+			return 'nvidia';
+		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'digitalocean' ) ) {
+			return 'digitalocean';
+		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'kimi' ) ) {
+			return 'kimi';
+		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'baseten' ) ) {
+			return 'baseten';
+		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'zai' ) ) {
+			return 'zai';
+		}
+
 		return new WP_Error(
 			'wp_mcp_ai_no_provider',
-			__( 'No AI provider configured. Please configure OpenAI, Gemini, or Anthropic API keys in plugin settings.', 'mcp-ai-wpoos-pro' )
+			__( 'No AI provider configured. Please configure an AI provider (OpenAI, Gemini, Anthropic, DeepSeek, Cloudflare, HuggingFace, Ollama, OpenRouter, NVIDIA, LM Studio, DigitalOcean, Kimi, Baseten, or Z.AI) in plugin settings.', 'mcp-ai-wpoos-pro' )
 		);
 	}
 
@@ -942,6 +981,39 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 			case 'anthropic':
 				return 'claude-sonnet-4-5-20250929';
+
+			case 'deepseek':
+				return ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-chat';
+
+			case 'cloudflare':
+				return ! empty( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : '@cf/meta/llama-4-scout-17b-16e-instruct';
+
+			case 'huggingface':
+				return ! empty( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : 'meta-llama/Llama-3.3-70B-Instruct';
+
+			case 'ollama':
+				return ! empty( $settings['ollama_model'] ) ? $settings['ollama_model'] : 'llama3.3';
+
+			case 'openrouter':
+				return ! empty( $settings['openrouter_model'] ) ? $settings['openrouter_model'] : 'openrouter/auto';
+
+			case 'nvidia':
+				return ! empty( $settings['nvidia_model'] ) ? $settings['nvidia_model'] : 'meta/llama-3.1-8b-instruct';
+
+			case 'lm_studio':
+				return ! empty( $settings['lm_studio_model'] ) ? $settings['lm_studio_model'] : '';
+
+			case 'digitalocean':
+				return ! empty( $settings['digitalocean_model'] ) ? $settings['digitalocean_model'] : 'llama3.3-70b-instruct';
+
+			case 'kimi':
+				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k2.7-code';
+
+			case 'baseten':
+				return ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';
+
+			case 'zai':
+				return ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-4';
 
 			default:
 				return new WP_Error(
@@ -990,6 +1062,105 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					);
 				}
 				return new WP_MCP_AI_Anthropic_Client();
+
+			case 'deepseek':
+				if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'DeepSeek client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_DeepSeek_Client();
+
+			case 'cloudflare':
+				if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Cloudflare client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Cloudflare_Client();
+
+			case 'huggingface':
+				if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'HuggingFace client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Huggingface_Client();
+
+			case 'ollama':
+				if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Ollama client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Ollama_Client();
+
+			case 'openrouter':
+				if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'OpenRouter client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_OpenRouter_Client();
+
+			case 'nvidia':
+				if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'NVIDIA client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Nvidia_Client();
+
+			case 'lm_studio':
+				if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'LM Studio client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_LM_Studio_Client();
+
+			case 'digitalocean':
+				if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'DigitalOcean client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_DigitalOcean_Client();
+
+			case 'kimi':
+				if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Kimi client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Kimi_Client();
+
+			case 'baseten':
+				if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Baseten client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Baseten_Client();
+
+			case 'zai':
+				if ( ! class_exists( 'WP_MCP_AI_ZAI_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Z.AI client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_ZAI_Client();
 
 			default:
 				return new WP_Error(

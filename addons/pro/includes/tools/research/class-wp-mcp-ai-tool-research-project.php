@@ -596,12 +596,12 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Get a suitable AI model for research.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$provider = $this->get_research_provider( $settings );
-		$model    = $this->get_research_model( $provider, $settings );
 
 		if ( is_wp_error( $provider ) ) {
 			return $provider;
 		}
 
+		$model = $this->get_research_model( $provider, $settings );
 		if ( is_wp_error( $model ) ) {
 			return $model;
 		}
@@ -676,9 +676,64 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 			return 'ollama';
 		}
 
+		// Check if LM Studio is configured.
+		if ( ! empty( $settings['lm_studio_endpoint_url'] ) ) {
+			return 'lm_studio';
+		}
+
+		// Check if DeepSeek is configured.
+		if ( ! empty( $settings['deepseek_api_key'] ) ) {
+			return 'deepseek';
+		}
+
+		// Check if Anthropic is configured.
+		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+			return 'anthropic';
+		}
+
+		// Check if Cloudflare is configured.
+		if ( ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
+			return 'cloudflare';
+		}
+
+		// Check if HuggingFace is configured.
+		if ( ! empty( $settings['huggingface_api_key'] ) && ! empty( $settings['huggingface_endpoint_url'] ) ) {
+			return 'huggingface';
+		}
+
+		// Check if OpenRouter is configured.
+		if ( ! empty( $settings['openrouter_api_key'] ) ) {
+			return 'openrouter';
+		}
+
+		// Check if NVIDIA is configured.
+		if ( ! empty( $settings['nvidia_api_key'] ) ) {
+			return 'nvidia';
+		}
+
+		// Check if DigitalOcean is configured.
+		if ( ! empty( $settings['digitalocean_api_key'] ) ) {
+			return 'digitalocean';
+		}
+
+		// Check if Kimi is configured.
+		if ( ! empty( $settings['kimi_api_key'] ) ) {
+			return 'kimi';
+		}
+
+		// Check if Baseten is configured.
+		if ( ! empty( $settings['baseten_api_key'] ) ) {
+			return 'baseten';
+		}
+
+		// Check if Z.AI is configured.
+		if ( ! empty( $settings['zai_api_key'] ) ) {
+			return 'zai';
+		}
+
 		return new WP_Error(
 			'wp_mcp_ai_no_provider',
-			__( 'No AI provider configured. Please configure OpenAI, Gemini, or Ollama in the plugin settings.', 'mcp-ai-wpoos-pro' )
+			__( 'No AI provider configured. Please configure an AI provider (OpenAI, Gemini, Anthropic, DeepSeek, Cloudflare, HuggingFace, Ollama, OpenRouter, NVIDIA, LM Studio, DigitalOcean, Kimi, Baseten, or Z.AI) in plugin settings.', 'mcp-ai-wpoos-pro' )
 		);
 	}
 
@@ -703,8 +758,38 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 
 			case 'ollama':
 				// Use configured Ollama model.
-				$model = isset( $settings['ollama_model'] ) ? $settings['ollama_model'] : 'llama2';
+				$model = isset( $settings['ollama_model'] ) ? $settings['ollama_model'] : 'llama3.3';
 				return $model;
+
+			case 'deepseek':
+				return ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-chat';
+
+			case 'cloudflare':
+				return ! empty( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : '@cf/meta/llama-4-scout-17b-16e-instruct';
+
+			case 'huggingface':
+				return ! empty( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : 'meta-llama/Llama-3.3-70B-Instruct';
+
+			case 'openrouter':
+				return ! empty( $settings['openrouter_model'] ) ? $settings['openrouter_model'] : 'openrouter/auto';
+
+			case 'nvidia':
+				return ! empty( $settings['nvidia_model'] ) ? $settings['nvidia_model'] : 'meta/llama-3.1-8b-instruct';
+
+			case 'lm_studio':
+				return ! empty( $settings['lm_studio_model'] ) ? $settings['lm_studio_model'] : '';
+
+			case 'digitalocean':
+				return ! empty( $settings['digitalocean_model'] ) ? $settings['digitalocean_model'] : 'llama3.3-70b-instruct';
+
+			case 'kimi':
+				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k2.7-code';
+
+			case 'baseten':
+				return ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';
+
+			case 'zai':
+				return ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-4';
 
 			default:
 				return new WP_Error(
@@ -749,6 +834,96 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 					);
 				}
 				return new WP_MCP_AI_Ollama_Client( $settings['ollama_url'] );
+
+			case 'deepseek':
+				if ( ! empty( $settings['deepseek_api_key'] ) && class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
+					return new WP_MCP_AI_DeepSeek_Client();
+				}
+				return new WP_Error(
+					'wp_mcp_ai_client_unavailable',
+					__( 'DeepSeek client not available.', 'mcp-ai-wpoos-pro' )
+				);
+
+			case 'cloudflare':
+				if ( ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) && class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
+					return new WP_MCP_AI_Cloudflare_Client();
+				}
+				return new WP_Error(
+					'wp_mcp_ai_client_unavailable',
+					__( 'Cloudflare client not available.', 'mcp-ai-wpoos-pro' )
+				);
+
+			case 'huggingface':
+				if ( ! empty( $settings['huggingface_api_key'] ) && ! empty( $settings['huggingface_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+					return new WP_MCP_AI_Huggingface_Client();
+				}
+				return new WP_Error(
+					'wp_mcp_ai_client_unavailable',
+					__( 'HuggingFace client not available.', 'mcp-ai-wpoos-pro' )
+				);
+
+			case 'openrouter':
+				if ( ! empty( $settings['openrouter_api_key'] ) && class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
+					return new WP_MCP_AI_OpenRouter_Client();
+				}
+				return new WP_Error(
+					'wp_mcp_ai_client_unavailable',
+					__( 'OpenRouter client not available.', 'mcp-ai-wpoos-pro' )
+				);
+
+			case 'nvidia':
+				if ( ! empty( $settings['nvidia_api_key'] ) && class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
+					return new WP_MCP_AI_Nvidia_Client();
+				}
+				return new WP_Error(
+					'wp_mcp_ai_client_unavailable',
+					__( 'NVIDIA client not available.', 'mcp-ai-wpoos-pro' )
+				);
+
+			case 'lm_studio':
+				if ( ! empty( $settings['lm_studio_endpoint_url'] ) && class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
+					return new WP_MCP_AI_LM_Studio_Client();
+				}
+				return new WP_Error(
+					'wp_mcp_ai_client_unavailable',
+					__( 'LM Studio client not available.', 'mcp-ai-wpoos-pro' )
+				);
+
+			case 'digitalocean':
+				if ( ! empty( $settings['digitalocean_api_key'] ) && class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
+					return new WP_MCP_AI_DigitalOcean_Client();
+				}
+				return new WP_Error(
+					'wp_mcp_ai_client_unavailable',
+					__( 'DigitalOcean client not available.', 'mcp-ai-wpoos-pro' )
+				);
+
+			case 'kimi':
+				if ( ! empty( $settings['kimi_api_key'] ) && class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
+					return new WP_MCP_AI_Kimi_Client();
+				}
+				return new WP_Error(
+					'wp_mcp_ai_client_unavailable',
+					__( 'Kimi client not available.', 'mcp-ai-wpoos-pro' )
+				);
+
+			case 'baseten':
+				if ( ! empty( $settings['baseten_api_key'] ) && class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
+					return new WP_MCP_AI_Baseten_Client();
+				}
+				return new WP_Error(
+					'wp_mcp_ai_client_unavailable',
+					__( 'Baseten client not available.', 'mcp-ai-wpoos-pro' )
+				);
+
+			case 'zai':
+				if ( ! empty( $settings['zai_api_key'] ) && class_exists( 'WP_MCP_AI_ZAI_Client' ) ) {
+					return new WP_MCP_AI_ZAI_Client();
+				}
+				return new WP_Error(
+					'wp_mcp_ai_client_unavailable',
+					__( 'Z.AI client not available.', 'mcp-ai-wpoos-pro' )
+				);
 
 			default:
 				return new WP_Error(
