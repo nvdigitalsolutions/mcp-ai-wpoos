@@ -47,6 +47,10 @@ export function CommandAutocomplete( {
 		} );
 	}, [ isOpen, matches ] );
 
+	// Local hover override for selected index.
+	const [ hoverIndex, setHoverIndex ] = useState< number | null >( null );
+	const activeIndex = hoverIndex !== null ? hoverIndex : selectedIndex;
+
 	// Scroll selected item into view.
 	useEffect( () => {
 		if ( ! isOpen || ! listRef.current ) return;
@@ -88,10 +92,6 @@ export function CommandAutocomplete( {
 		},
 		[ selectCommand ],
 	);
-
-	// Local hover override for selected index.
-	const [ hoverIndex, setHoverIndex ] = useState< number | null >( null );
-	const activeIndex = hoverIndex !== null ? hoverIndex : selectedIndex;
 
 	// Reset hover when matches change.
 	useEffect( () => { setHoverIndex( null ); }, [ matches ] );
