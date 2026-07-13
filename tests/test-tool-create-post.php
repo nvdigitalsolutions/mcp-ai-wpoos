@@ -147,4 +147,106 @@ class Test_Tool_Create_Post extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertSame( 'publish', $result['status'] );
 	}
+
+	/**
+	 * Response includes the resolved format key.
+	 */
+	public function test_response_includes_format_key() {
+		$result = $this->tool->execute(
+			array(
+				'title'   => 'Format Test ' . uniqid(),
+				'content' => 'Testing format key.',
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'format', $result );
+		$this->assertSame( 'block-editor', $result['format'] );
+	}
+
+	/**
+	 * Format parameter classic-editor skips block wrapping.
+	 */
+	public function test_classic_editor_format_skips_blocks() {
+		$unique  = 'classic-' . uniqid();
+		$content = '<h2>Plain Heading</h2><p>No blocks here.</p>';
+
+		$result = $this->tool->execute(
+			array(
+				'title'   => 'Classic Format: ' . $unique,
+				'content' => $content,
+				'format'  => 'classic-editor',
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'classic-editor', $result['format'] );
+
+		$post = get_post( $result['ID'] );
+		$this->assertNotNull( $post );
+		// Content should NOT contain block markers.
+		$this->assertStringNotContainsString( '<!-- wp:', $post->post_content );
+		$this->assertStringContainsString( '<h2>Plain Heading</h2>', $post->post_content );
+	}
+
+	/**
+	 * Format parameter block-editor wraps content in blocks.
+	 */
+	public function test_block_editor_format_wraps_blocks() {
+		$unique  = 'block-' . uniqid();
+		$content = 'Just plain text.';
+
+		$result = $this->tool->execute(
+			array(
+				'title'   => 'Block Format: ' . $unique,
+				'content' => $content,
+				'format'  => 'block-editor',
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'block-editor', $result['format'] );
+
+		$post = get_post( $result['ID'] );
+		$this->assertNotNull( $post );
+		// Content should contain block markers.
+		$this->assertStringContainsString( '<!-- wp:paragraph -->', $post->post_content );
+	}
+
+	/**
+	 * Invalid format string falls back to block-editor.
+	 */
+	public function test_invalid_format_falls_back_to_block_editor() {
+		$result = $this->tool->execute(
+			array(
+				'title'   => 'Bad Format ' . uniqid(),
+				'content' => 'Fallback test.',
+				'format'  => 'wysiwyg',
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'block-editor', $result['format'] );
+	}
+
+	/**
+	 * Auto format on new post resolves to block-editor.
+	 */
+	public function test_auto_format_new_post_resolves_to_block() {
+		$result = $this->tool->execute(
+			array(
+				'title'   => 'Auto Format ' . uniqid(),
+				'content' => 'Auto-detect test.',
+				'format'  => 'auto',
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'block-editor', $result['format'] );
+	}
 }

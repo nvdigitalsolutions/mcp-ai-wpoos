@@ -272,13 +272,17 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 		$scores = array(
 			'age_score'          => $this->calculate_age_score( $age_days, $age_threshold ),
 			'modification_score' => $this->calculate_modification_score( $post_date, $modified_date ),
-			'content_score'      => $this->analyze_content_freshness( $post->post_content ),
+			'content_score'      => $this->analyze_content_freshness( WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post->ID ) ),
 		);
 
 		// Check links if requested.
 		$broken_links = array();
 		if ( $check_links ) {
-			$broken_links         = $this->check_links_in_content( $post->post_content );
+			$broken_links         = $this->check_links_in_content(
+				WP_MCP_AI_Content_Format_Helper::FORMAT_ELEMENTOR === WP_MCP_AI_Content_Format_Helper::detect_post_format( $post->ID )
+					? WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post->ID )
+					: $post->post_content
+			);
 			$scores['link_score'] = empty( $broken_links ) ? 100 : max( 0, 100 - ( count( $broken_links ) * 10 ) );
 		}
 

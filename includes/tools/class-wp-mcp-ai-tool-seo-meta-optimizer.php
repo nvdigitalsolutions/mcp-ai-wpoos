@@ -287,7 +287,7 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 			return array(
 				'post_id'   => $post->ID,
 				'title'     => $post->post_title,
-				'content'   => wp_strip_all_tags( $post->post_content ),
+				'content'   => WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post->ID ),
 				'excerpt'   => $post->post_excerpt,
 				'post_type' => $post->post_type,
 			);
@@ -547,28 +547,22 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return bool|WP_Error True on success, WP_Error on failure.
 	 */
 	private function save_seo_meta( $post_id, $seo_meta ) {
-		// Check for Rank Math.
-		if ( class_exists( 'RankMath' ) ) {
-			update_post_meta( $post_id, 'rank_math_title', $seo_meta['title'] ?? '' );
-			update_post_meta( $post_id, 'rank_math_description', $seo_meta['meta_description'] ?? '' );
+		$keys = WP_MCP_AI_Content_Format_Helper::get_seo_meta_keys();
 
+		update_post_meta( $post_id, $keys['title'], $seo_meta['title'] ?? '' );
+		update_post_meta( $post_id, $keys['description'], $seo_meta['meta_description'] ?? '' );
+
+		// Focus keyword (plugin-specific key).
+		if ( ! empty( $seo_meta['focus_keyword'] ) ) {
+			update_post_meta( $post_id, $keys['focus_keyword'], sanitize_text_field( $seo_meta['focus_keyword'] ) );
+		}
+
+		// Handle schema type for Rank Math specifically.
+		if ( WP_MCP_AI_Content_Format_Helper::SEO_RANK_MATH === WP_MCP_AI_Content_Format_Helper::detect_seo_plugin() ) {
 			if ( ! empty( $seo_meta['schema_type'] ) ) {
-				update_post_meta( $post_id, 'rank_math_rich_snippet', strtolower( $seo_meta['schema_type'] ) );
+				update_post_meta( $post_id, 'rank_math_rich_snippet', strtolower( sanitize_key( $seo_meta['schema_type'] ) ) );
 			}
-
-			return true;
 		}
-
-		// Check for Yoast SEO.
-		if ( defined( 'WPSEO_VERSION' ) ) {
-			update_post_meta( $post_id, '_yoast_wpseo_title', $seo_meta['title'] ?? '' );
-			update_post_meta( $post_id, '_yoast_wpseo_metadesc', $seo_meta['meta_description'] ?? '' );
-			return true;
-		}
-
-		// Fallback: save to custom meta.
-		update_post_meta( $post_id, '_wp_mcp_ai_seo_title', $seo_meta['title'] ?? '' );
-		update_post_meta( $post_id, '_wp_mcp_ai_meta_description', $seo_meta['meta_description'] ?? '' );
 
 		return true;
 	}

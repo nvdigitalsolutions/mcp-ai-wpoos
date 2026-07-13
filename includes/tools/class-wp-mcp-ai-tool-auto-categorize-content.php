@@ -311,7 +311,7 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 			return array(
 				'post_id' => $post->ID,
 				'title'   => $post->post_title,
-				'content' => $post->post_content,
+				'content' => WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post->ID ),
 				'excerpt' => $post->post_excerpt,
 			);
 		}

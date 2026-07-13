@@ -135,6 +135,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
 require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-profession-search-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-tool-presets-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-user-context-helper.php';
+require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-content-format-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php';
 
 // ---------------------------------------------------------------------------
@@ -535,13 +536,13 @@ require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
 // Admin-only includes
 // ---------------------------------------------------------------------------
 
-	if ( is_admin() ) {
-		// User profile — chat memory preferences (per-user recovery toggle).
-		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-user-profile-memory.php';
-		WP_MCP_AI_User_Profile_Memory::init();
+if ( is_admin() ) {
+	// User profile — chat memory preferences (per-user recovery toggle).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-user-profile-memory.php';
+	WP_MCP_AI_User_Profile_Memory::init();
 
-		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-scripts.php';
-		WP_MCP_AI_Admin_Scripts::init();
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-scripts.php';
+	WP_MCP_AI_Admin_Scripts::init();
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-dlq-manager.php';
