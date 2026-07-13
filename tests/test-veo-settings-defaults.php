@@ -40,7 +40,7 @@ class WP_MCP_AI_Veo_Settings_Defaults_Test extends WP_UnitTestCase {
 		$defaults = $method->invoke( $tool );
 
 		// Verify hardcoded defaults.
-		$this->assertEquals( 'veo-2.0-generate-001', $defaults['model'], 'Default model should be Veo 2.0' );
+		$this->assertEquals( 'gemini-omni-flash', $defaults['model'], 'Default model should be Omni Flash' );
 		$this->assertEquals( '720p', $defaults['resolution'], 'Default resolution should be 720p' );
 		$this->assertEquals( '3:2', $defaults['aspect_ratio'], 'Default aspect ratio should be 16:9' );
 		$this->assertEquals( 5, $defaults['duration'], 'Default duration should be 5 seconds' );
@@ -155,7 +155,7 @@ class WP_MCP_AI_Veo_Settings_Defaults_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'gemini_video_duration', $fields, 'gemini_video_duration setting should exist' );
 
 		// Verify defaults.
-		$this->assertEquals( 'veo-2.0-generate-001', $fields['gemini_video_model']['default'], 'Default model should be Veo 2.0' );
+		$this->assertEquals( 'gemini-omni-flash', $fields['gemini_video_model']['default'], 'Default model should be Omni Flash' );
 		$this->assertEquals( '720p', $fields['gemini_video_resolution']['default'], 'Default resolution should be 720p' );
 		$this->assertEquals( '3:2', $fields['gemini_video_aspect_ratio']['default'], 'Default aspect ratio should be 16:9' );
 		$this->assertEquals( '5', $fields['gemini_video_duration']['default'], 'Default duration should be 5' );
