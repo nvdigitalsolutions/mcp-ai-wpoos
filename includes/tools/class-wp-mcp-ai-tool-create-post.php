@@ -146,9 +146,15 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'description'          => __( 'Array of custom field key-value pairs to set as post meta.', 'mcp-ai-wpoos' ),
 					'additionalProperties' => true,
 				),
+				'format'            => array(
+					'type'        => 'string',
+					'description' => __( 'Content format for the post. Use "block-editor" for Gutenberg (default), "classic-editor" for plain HTML, "elementor" for Elementor page builder, or "auto" to detect based on post type.', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'block-editor', 'classic-editor', 'elementor', 'auto' ),
+					'default'     => 'auto',
+				),
 				'elementor_data'    => array(
 					'type'        => 'object',
-					'description' => __( 'Elementor page builder data (requires Elementor plugin).', 'mcp-ai-wpoos' ),
+					'description' => __( 'Elementor page builder data (requires Elementor plugin). When format is "elementor", the content parameter is converted to a text-editor widget inside an Elementor JSON structure unless elementor_data is explicitly provided.', 'mcp-ai-wpoos' ),
 					'properties'  => array(
 						'template_type' => array(
 							'type'        => 'string',
@@ -239,6 +245,10 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			}
 		}
 
+		// Resolve the content format.
+		$requested_format = isset( $arguments['format'] ) ? sanitize_key( $arguments['format'] ) : WP_MCP_AI_Content_Format_Helper::FORMAT_AUTO;
+		$format           = WP_MCP_AI_Content_Format_Helper::resolve_format( $requested_format );
+
 		// Convert Markdown to HTML if the content appears to be Markdown rather
 		// than already-formatted HTML or block markup. LLMs frequently return
 		// Markdown, and raw `# Heading` or `**bold**` stored in paragraph blocks
@@ -248,13 +258,33 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		// Sanitize content.
 		$sanitized_content = wp_kses_post( $content );
 
-		// Convert to blocks if the post type supports the block editor.
-		if ( post_type_supports( $post_type, 'editor' ) && function_exists( 'use_block_editor_for_post_type' ) && use_block_editor_for_post_type( $post_type ) ) {
+		// Handle content formatting based on the resolved format.
+		$elementor_stored_content = '';
+
+		if ( WP_MCP_AI_Content_Format_Helper::FORMAT_ELEMENTOR === $format ) {
+			if ( ! WP_MCP_AI_Content_Format_Helper::is_elementor_active() ) {
+				return new WP_Error( 'wp_mcp_ai_elementor_not_active', __( 'Elementor is not installed or activated on this site.', 'mcp-ai-wpoos' ) );
+			}
+			// For Elementor posts, store content in _elementor_data meta, not post_content.
+			$elementor_stored_content = $this->build_elementor_content( $sanitized_content, $arguments );
+				$sanitized_content    = '';
+		} elseif ( WP_MCP_AI_Content_Format_Helper::FORMAT_BLOCK_EDITOR === $format
+				|| (
+					WP_MCP_AI_Content_Format_Helper::FORMAT_AUTO === $format
+					&& post_type_supports( $post_type, 'editor' )
+					&& function_exists( 'use_block_editor_for_post_type' )
+					&& use_block_editor_for_post_type( $post_type )
+				)
+			) {
+			// Block editor: wrap in blocks.
 			$sanitized_content = $this->ensure_post_content_uses_blocks( $sanitized_content, $content );
 		}
+			// Classic editor: keep HTML as-is, skip block wrapping (no-op).
 
-		// Embed content media (images and charts).
-		$sanitized_content = $this->embed_content_media( $sanitized_content, $arguments );
+		// Embed content media (images and charts) — only for non-Elementor formats.
+		if ( '' !== $sanitized_content ) {
+			$sanitized_content = $this->embed_content_media( $sanitized_content, $arguments );
+		}
 
 		// Track whether categories/tags were explicitly provided for auto-suggestion logic.
 		$has_explicit_categories = isset( $arguments['categories'] ) && is_array( $arguments['categories'] );
@@ -267,6 +297,16 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'post_content' => $sanitized_content,
 			'post_author'  => $author_id,
 		);
+
+		// Store Elementor data in meta_input so it is written during wp_insert_post.
+		if ( '' !== $elementor_stored_content ) {
+			if ( ! isset( $post_data['meta_input'] ) || ! is_array( $post_data['meta_input'] ) ) {
+				$post_data['meta_input'] = array();
+			}
+			$post_data['meta_input']['_elementor_edit_mode'] = 'builder';
+			$post_data['meta_input']['_elementor_data']      = $elementor_stored_content;
+			$post_data['meta_input']['_elementor_version']   = defined( 'ELEMENTOR_VERSION' ) ? ELEMENTOR_VERSION : '';
+		}
 
 		// Set post status.
 		$status                   = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'draft';
@@ -389,6 +429,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'post_type' => esc_html( $created_post->post_type ),
 			'author_id' => $created_post->post_author,
 			'permalink' => esc_url( get_permalink( $created_post ) ),
+			'format'    => esc_html( $format ),
 		);
 
 		$edit_link = get_edit_post_link( $created_post->ID, '' );
@@ -781,6 +822,63 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		return array_unique( $term_ids );
+	}
+
+	/**
+	 * Build a basic Elementor JSON structure from sanitized content.
+	 *
+	 * Wraps the HTML content in a single container with a text-editor widget
+	 * so that content created via the API renders inside the Elementor editor.
+	 * When explicit elementor_data is provided in the arguments, its template_type
+	 * and edit_mode are preserved in post meta via handle_elementor_metadata().
+	 *
+	 * @since 1.10.0
+	 *
+	 * @param string $content   Sanitized HTML content.
+	 * @param array  $arguments Tool arguments.
+	 * @return string JSON-encoded Elementor data.
+	 */
+	private function build_elementor_content( $content, $arguments ) {
+		// If caller supplied raw Elementor JSON via elementor_data.content, use it as-is.
+		if ( isset( $arguments['elementor_data']['content'] ) && is_string( $arguments['elementor_data']['content'] ) ) {
+			$decoded = json_decode( $arguments['elementor_data']['content'], true );
+			if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
+				return wp_json_encode( $decoded );
+			}
+		}
+
+		// Build a minimal Elementor structure: one container with one text-editor widget.
+		$container_id = substr( md5( uniqid( 'cont', true ) ), 0, 8 );
+		$widget_id    = substr( md5( uniqid( 'widg', true ) ), 0, 8 );
+
+		$elementor_data = array(
+			'title'         => '',
+			'type'          => 'page',
+			'version'       => '0.4',
+			'page_settings' => array(),
+			'content'       => array(
+				array(
+					'id'       => $container_id,
+					'elType'   => 'container',
+					'isInner'  => false,
+					'settings' => array(),
+					'elements' => array(
+						array(
+							'id'         => $widget_id,
+							'elType'     => 'widget',
+							'widgetType' => 'text-editor',
+							'isInner'    => false,
+							'settings'   => array(
+								'editor' => $content,
+							),
+							'elements'   => array(),
+						),
+					),
+				),
+			),
+		);
+
+		return wp_json_encode( $elementor_data );
 	}
 
 	/**
