@@ -776,11 +776,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'gemini_video_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for video generation via Gemini. gemini-omni-flash is the latest any-to-any multimodal model (May 2026) replacing Veo — supports text/images/audio/video → video, 10s duration, native audio, multi-turn conversational editing. Veo 3.1/2.0 remain available as fallback.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for video generation via Gemini. gemini-omni-flash is the latest any-to-any multimodal model (May 2026) replacing Veo — supports text/images/audio/video → video, 10s duration, native audio, multi-turn conversational editing. Veo 3.1 remains available as fallback. Note: Veo 2.0 was deprecated by Google in mid-2026 and is no longer available via the Gemini API.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'gemini-omni-flash'        => 'Gemini Omni Flash (Recommended — 10s, Audio, Editing)',
 						'veo-3.1-generate-preview' => 'Veo 3.1 Generate Preview (Legacy — Audio, 1080p)',
-						'veo-2.0-generate-001'     => 'Veo 2.0 Generate (Legacy — Stable, 720p)',
+						'veo-2.0-generate-001'     => 'Veo 2.0 Generate (Deprecated — No longer available)',
 					),
 					'default'     => 'gemini-omni-flash',
 				),

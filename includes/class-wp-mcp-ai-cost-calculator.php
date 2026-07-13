@@ -206,11 +206,18 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 3.00,   // $3.00 per 1M.
 			),
 			// Veo 3.1 video generation ($0.40/sec standard).
+			'veo-3.1-generate-preview'       => array(
+				'per_second' => 0.040,
+			),
 			'veo-3.1-generate-001'          => array(
 				'per_second' => 0.025,
 			),
 			'veo-2.0-generate-001'          => array(
 				'per_second' => 0.020,
+			),
+			// Gemini Omni Flash video generation (replaces Veo, mid-2026).
+			'gemini-omni-flash'             => array(
+				'per_second' => 0.040,
 			),
 		),
 		'anthropic'    => array(

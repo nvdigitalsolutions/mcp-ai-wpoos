@@ -20,14 +20,16 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-response.php';
 
-/**
- * Generates videos from text prompts using Google's Veo models.
- *
- * Uses Veo 3.1 by default with automatic fallback to Veo 2.0 when:
- * - Veo 3.1 is unavailable
- * - Quota limits are reached
- * - Rate limits are exceeded
- */
+	/**
+	 * Generates videos from text prompts using Google's Gemini models.
+	 *
+	 * Uses Gemini Omni Flash by default with automatic fallback to Veo models when:
+	 * - Omni Flash is unavailable (feature flag not enabled)
+	 * - Veo 3.1 / 2.0 are explicitly requested via the model parameter
+	 *
+	 * Note: Veo 2.0 (veo-2.0-generate-001) was deprecated by Google in mid-2026.
+	 * Use Gemini Omni Flash for best results.
+	 */
 class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
@@ -113,8 +115,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'model'                   => array(
 					'type'        => 'string',
-					'description' => __( 'Force a specific Veo model: "veo-3.1" (default, supports 1080p) or "veo-2.0" (720p max). If not specified, automatically uses Veo 3.1 with fallback to Veo 2.0 on quota/availability issues.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'veo-3.1', 'veo-2.0' ),
+					'description' => __( 'Force a specific model: "omni" (Gemini Omni Flash — recommended, 10s, audio, editing), "veo-3.1" (legacy, 1080p), or "veo-2.0" (legacy, 720p deprecated). If not specified, uses Omni Flash with fallback to Veo on availability issues.', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'omni', 'veo-3.1', 'veo-2.0' ),
 				),
 				'design_context'          => array(
 					'type'        => 'boolean',
@@ -280,12 +282,52 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			$generation_args['image_mime_type'] = $image_data['mime_type'];
 		}
 
-		// Load the video generation service.
-		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+		// Determine which model/service to use.
+		$model = isset( $generation_args['model'] ) ? $generation_args['model'] : '';
+		$use_omni = ( 'gemini-omni-flash' === $model || 'omni' === $model );
 
-		// Generate video.
-		$result = $service->generate_video( $generation_args );
+		if ( $use_omni ) {
+			// Route through Omni service (recommended, replaces Veo).
+			if ( ! class_exists( 'WP_MCP_AI_Gemini_Omni_Service' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-omni-service.php';
+			}
+			$service = new WP_MCP_AI_Gemini_Omni_Service();
+
+			// Map Veo-style args to Omni-style args.
+			$omni_args = array(
+				'prompt'       => $generation_args['prompt'],
+				'aspect_ratio' => $generation_args['aspect_ratio'],
+				'resolution'   => $generation_args['resolution'],
+				'async'        => $generation_args['async'],
+				'user_id'      => $generation_args['user_id'],
+			);
+
+			if ( isset( $generation_args['duration'] ) ) {
+				$omni_args['duration'] = $generation_args['duration'];
+			}
+			if ( ! empty( $generation_args['negative_prompt'] ) ) {
+				$omni_args['negative_prompt'] = $generation_args['negative_prompt'];
+			}
+			if ( $reference_image_id > 0 ) {
+				$omni_args['reference_images'] = array( $reference_image_id );
+			}
+			if ( isset( $generation_args['assistant_id'] ) ) {
+				$omni_args['assistant_id'] = $generation_args['assistant_id'];
+			}
+			if ( isset( $generation_args['parent_job_id'] ) ) {
+				$omni_args['parent_job_id'] = $generation_args['parent_job_id'];
+			}
+			if ( isset( $generation_args['in_async_executor'] ) ) {
+				$omni_args['in_async_executor'] = $generation_args['in_async_executor'];
+			}
+
+			$result = $service->generate_video( $omni_args );
+		} else {
+			// Use legacy Veo service (veo-3.1 or veo-2.0 models).
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+			$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+			$result  = $service->generate_video( $generation_args );
+		}
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -431,7 +473,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	protected function get_default_video_settings() {
 		$defaults = array(
-			'model'        => 'veo-2.0-generate-001', // Conservative default.
+			'model'        => 'gemini-omni-flash', // Omni Flash is the recommended default (Veo 2.0 deprecated mid-2026).
 			'resolution'   => '720p',
 			'aspect_ratio' => '3:2',
 			'duration'     => 5,
