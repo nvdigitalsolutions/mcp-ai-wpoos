@@ -37,10 +37,11 @@ class NV_oOS_Chat_Spa_Shortcode {
 	public static function render( $atts ) {
 		$atts = shortcode_atts(
 			array(
-				'assistant_id' => '',
-				'theme'        => 'auto',
-				'height'       => '',
-				'guest'        => '0',
+				'assistant_id'          => '',
+				'theme'                 => 'auto',
+				'height'                => '',
+				'guest'                 => '0',
+				'allow_sensitive_tools' => '0',
 			),
 			$atts,
 			self::SHORTCODE
@@ -52,10 +53,11 @@ class NV_oOS_Chat_Spa_Shortcode {
 		}
 
 		$config = array(
-			'assistantId' => absint( $atts['assistant_id'] ),
-			'theme'       => in_array( $atts['theme'], array( 'auto', 'light', 'dark' ), true ) ? $atts['theme'] : 'auto',
-			'height'      => sanitize_text_field( $atts['height'] ),
-			'guest'       => ! empty( $atts['guest'] ) && '0' !== (string) $atts['guest'],
+			'assistantId'         => absint( $atts['assistant_id'] ),
+			'theme'               => in_array( $atts['theme'], array( 'auto', 'light', 'dark' ), true ) ? $atts['theme'] : 'auto',
+			'height'              => sanitize_text_field( $atts['height'] ),
+			'guest'               => ! empty( $atts['guest'] ) && '0' !== (string) $atts['guest'],
+			'allowSensitiveTools' => ! empty( $atts['allow_sensitive_tools'] ) && '0' !== (string) $atts['allow_sensitive_tools'],
 		);
 
 		self::enqueue_assets( $config );

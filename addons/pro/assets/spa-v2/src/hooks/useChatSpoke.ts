@@ -25,6 +25,8 @@ export interface UseChatSpokeOptions {
 	/** Optional model override to send as options.provider / options.model. */
 	model?: string;
 	provider?: string;
+	/** When true, forwards allow_sensitive_tools to the chat endpoint. */
+	allowSensitiveTools?: boolean;
 	/** Transcripts REST endpoint for manual save (v2.1.0). */
 	transcriptsEndpoint?: string;
 }
@@ -58,6 +60,7 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		sessionKey = '',
 		model,
 		provider,
+		allowSensitiveTools,
 		transcriptsEndpoint,
 	} = options;
 
@@ -66,15 +69,16 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 	const customFetch = useMemo(
 		() =>
 			createChatFetch( {
-				endpoint: chatClientEndpoint,
-				nonce,
-				assistantId,
-				guest: false,
-				model,
-				provider,
-				sessionKey,
-			} ),
-		[ chatClientEndpoint, nonce, assistantId, model, provider, sessionKey ]
+					endpoint: chatClientEndpoint,
+					nonce,
+					assistantId,
+					guest: false,
+					model,
+					provider,
+					sessionKey,
+					allowSensitiveTools,
+				} ),
+				[ chatClientEndpoint, nonce, assistantId, model, provider, sessionKey, allowSensitiveTools ]
 	);
 
 	const {
