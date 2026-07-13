@@ -388,6 +388,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			$resolved = $this->resolve_deprecated_alias( $slug );
 
+			// Auto-upgrade to validated variant when available.
+			// If a tool has a `_validated` counterpart (e.g. generate_openai_image
+			// → generate_openai_image_validated), the validated variant is always
+			// preferred — it provides the same behaviour with Symfony argument
+			// validation. Presets and stored configs only need to reference the
+			// base slug; the registry transparently resolves to the validated
+			// version at runtime.
+			$validated_slug = $resolved . '_validated';
+			if ( isset( $this->tools[ $validated_slug ] ) ) {
+				$resolved = $validated_slug;
+			}
+
 			return isset( $this->tools[ $resolved ] ) ? $this->tools[ $resolved ] : null;
 		}
 

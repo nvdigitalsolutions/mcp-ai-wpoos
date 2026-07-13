@@ -72,6 +72,97 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	public static function get_presets() {
 		$presets = array(
 			// =================================================================.
+			// ESSENTIALS — Layered foundation presets.
+			// Stack Essentials (Internal) + Essentials (External) + a
+			// profession preset to build a complete tool set without
+			// duplication. These tools were previously copy-pasted into
+			// 15–31 different profession presets.
+			// =================================================================.
+
+			'essentials_internal'       => array(
+				'name'        => __( '📦 Essentials — Internal', 'mcp-ai-wpoos' ),
+				'description' => __( 'Core WordPress tools that work without external API keys: content, users, email, agent memory, tasks, projects, events, forms, and charts', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Content management.
+					'search_content',
+					'search_attachments',
+					'get_recent_posts',
+					'save_post',
+					'create_post',
+					// Users & system.
+					'get_user_info',
+					// Communication.
+					'send_group_email',
+					// Visualization.
+					'create_chart',
+					// Agent memory & context (WP-stored).
+					'store_agent_context',
+					'wake_up_context',
+					'retrieve_agent_memory',
+					// Task planning.
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
+					// Forms & data collection.
+					'get_all_form_submissions',
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					// Project management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					// Task management.
+					'create_task',
+					'update_task',
+					'list_tasks',
+					// Events & calendar (WP-internal).
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					// Human-in-the-loop.
+					'wait_for_user',
+					// Agent coordination (WP-internal).
+					'create_agent_team',
+					'delegate_to_agent',
+					'aggregate_agent_results',
+				),
+			),
+
+			'essentials_external'       => array(
+				'name'        => __( '🌐 Essentials — External', 'mcp-ai-wpoos' ),
+				'description' => __( 'Broadly useful tools that require external API keys: web search, AI research, image generation, geocoding, calendar sync, email/SMS, and document generation', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Search & research.
+					'web_search',
+					'deep_research',
+					'semantic_content_search',
+					// AI image generation.
+					'generate_openai_image',
+					'generate_gemini_image',
+					'generate_image_caption',
+					// Document generation.
+					'pro_pdf_document',
+					'pro_excel',
+					// Calendar (Google API).
+					'create_google_calendar_event',
+					// Location services.
+					'geocode_address',
+					'search_places',
+					'gemini_geospatial_query',
+					// Messaging & notifications.
+					'send_whatsapp_message',
+					'schedule_notify_sms',
+					// Content moderation & analysis.
+					'moderate_content',
+					'submit_document_prompt',
+					'analyze_data_patterns',
+					// Weather.
+					'get_open_meteo_forecast',
+				),
+			),
+
+			// =================================================================.
 			// CORE FUNCTIONALITY PRESETS
 			// =================================================================.
 
@@ -79,16 +170,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '🤖 Agentic Workflow', 'mcp-ai-wpoos' ),
 				'description' => __( 'Multi-agent orchestration tools for team composition, delegation, A2A communication, memory management, and result aggregation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Human-in-the-loop.
+					'wait_for_user',
 					// Agent coordination & delegation.
-					'create_agent_team',
-					'delegate_to_agent',
 					'delegate_to_a2a_agent',
-					'aggregate_agent_results',
 					// Agent memory & context management.
-					'store_agent_context',
-					'wake_up_context',
 					'mine_agent_memory',
-					'retrieve_agent_memory',
 					'manage_context_lifecycle',
 					'prioritize_context',
 					'memory_audit_trail',
@@ -97,10 +184,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'check_workflow_health',
 					'validate_workflow',
 					'visualize_workflow_metrics',
-					// Task planning & tracking.
-					'create_task_plan',
-					'update_task_plan',
-					'get_task_plan',
 					// Supporting tools for agentic operations.
 					'list_professions',
 					'get_profession',
@@ -109,8 +192,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_assistant',
 					'probe_chat',
 					'query_mesh_intelligent',
-					'deep_research',
-					'web_search',
 					// Continual harness (self-improving agent system).
 					'evolve_harness',
 					'apply_prompt_cue',
@@ -146,7 +227,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Embeddings & vectors.
 					'create_text_embeddings',
 					'batch_embed_content',
-					'semantic_content_search',
 					'vectorize_image',
 					// Vector stores.
 					'create_vector_store',
@@ -167,7 +247,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'open_openai_usage',
 					'open_openai_logs',
 					// Content moderation.
-					'moderate_content',
 					'analyze_comment_content',
 					// Client-side AI operations (NEW).
 					'batch_manage_memory',
@@ -198,10 +277,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Image, video, and audio generation tools across multiple AI providers', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Image generation.
-					'generate_openai_image',
-					'generate_openai_image_validated',
-					'generate_gemini_image',
-					'generate_gemini_image_validated',
 					'cloudflareai_text_to_image',
 					// Image generation (Pro).
 					'generate_image_ai',
@@ -210,7 +285,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'text_to_image_prompt_optimizer',
 					// Image editing.
 					'edit_gemini_image',
-					'edit_gemini_image_validated',
 					'edit_openai_image',
 					'create_image_variation',
 					'graphic_editor_plus',
@@ -232,17 +306,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'responsive_image_validator',
 					// Image analysis.
 					'generate_image_alt_text',
-					'generate_image_alt_text_validated',
 					'image_alt_text_optimizer',
-					'generate_image_caption',
-					'generate_image_caption_validated',
 					'vision_object_localization',
 					'vision_product_search',
 					// Video generation.
 					'generate_veo_video',
-					'generate_veo_video_validated',
 					'generate_sora_video',
-					'generate_sora_video_validated',
 					// Video production.
 					'create_video_from_images',
 					'add_watermark_to_video',
@@ -264,11 +333,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_video_thumbnails',
 					// Audio generation.
 					'generate_music',
-					'generate_music_validated',
 					'generate_openai_speech',
-					'generate_openai_speech_validated',
 					'transcribe_openai_audio',
-					'transcribe_openai_audio_validated',
 					'analyze_image',
 					'extract_image_text',
 					'generate_cloudflareai_image',
@@ -302,19 +368,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Tools for creating, managing, and optimizing content, posts, and pages', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Content search & retrieval.
-					'search_content',
-					'search_content_validated',
-					'search_attachments',
-					'get_recent_posts',
-					'get_recent_posts_validated',
 					'get_post',
 					'get_post_type_schema',
-					'semantic_content_search',
 					// Content creation.
-					'save_post',
-					'save_post_validated',
-					'create_post',
-					'create_post_validated',
 					'delete_post',
 					// Content planning (Pro).
 					'create_content_calendar',
@@ -328,11 +384,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Content recommendations.
 					'content_recommendation_engine',
 					// Research.
-					'web_search',
-					'web_search_validated',
-					'deep_research',
 					'research_blog_post',
-					'submit_document_prompt',
 					// Taxonomy management.
 					'create_term',
 					'update_term',
@@ -344,12 +396,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'detect_content_language',
 					'translation_quality_check',
 					// Images for content.
-					'generate_openai_image',
-					'generate_gemini_image',
-					'generate_image_caption',
 					'generate_image_alt_text',
 					// Quality assurance.
-					'moderate_content',
 					'moderate_comments',
 					'analyze_comment_content',
 				),
@@ -363,7 +411,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_woo_recent_orders',
 					'get_woo_products',
 					'create_woo_product',
-					'create_woo_product_validated',
 					'woo_orders',
 					'woo_products',
 					'woo_coupons',
@@ -387,7 +434,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Product operations.
 					'product_actualization',
 					'scrape_product',
-					'scrape_product_validated',
 					'lookup_product_price',
 					'crawl4ai_price_lookup',
 					'vision_product_search',
@@ -440,9 +486,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'trigger_all_import',
 					// Payments.
 					'payhere_get_payment',
-					// Email marketing.
-					'send_group_email',
-					'send_group_email_validated',
 					// Remote connections.
 					'remote_wp_connection',
 				),
@@ -455,7 +498,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Site information.
 					'get_site_summary',
 					'get_system_logs',
-					'get_system_logs_validated',
 					'get_update_status',
 					'get_site_health',
 					'get_environment_status',
@@ -467,7 +509,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'purge_varnish_cache',
 					// Cron jobs.
 					'create_cron_job',
-					'create_cron_job_validated',
 					'list_cron_jobs',
 					'get_cron_job',
 					'delete_cron_job',
@@ -528,7 +569,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'performance_optimizer_assistant',
 					'responsive_image_validator',
 					// Research & competitor analysis (Pro).
-					'web_search',
 					'analyze_competitor_sites',
 					'competitor_analysis',
 					// Social media posting.
@@ -558,15 +598,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'sales_performance_dashboard',
 					'generate_pipeline_report',
 					'generate_country_performance',
-					// Calendar.
-					'create_google_calendar_event',
 					// Messaging.
 					'send_telegram_message',
-					'send_whatsapp_message',
-					'schedule_notify_sms',
 					// Email.
 					'search_gmail',
-					'send_group_email',
 					// CRM email search (Pro).
 					'crm_email_search_leads',
 					'crm_email_search_correspondence',
@@ -600,7 +635,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'media_library_optimizer',
 					// Content for blocks.
 					'generate_post_excerpt',
-					'generate_image_caption',
 					'image_alt_text_optimizer',
 				),
 			),
@@ -648,8 +682,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'run_openai_external_action',
 					// Generic REST.
 					'generic_rest',
-					// User management.
-					'get_user_info',
 					// Remote.
 					'remote_wp_connection',
 					'query_remote_site',
@@ -678,9 +710,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_jetengine_routes',
 					'invoke_jetengine_route',
 					'jetengine',
-					// JetFormBuilder.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
+					// Form submissions (all sources).
+					'get_all_form_submissions',
+					'get_elementor_form_submissions',
 					// Analytics.
 					'google_analytics_report',
 					'quickbooks_report',
@@ -694,11 +726,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_profession_stats',
 					'profession_stats',
 					'save_profession',
-					// Charts.
-					'create_chart',
-					'create_chart_validated',
-					// Excel.
-					'pro_excel',
 					// Hugging Face datasets.
 					'huggingface_dataset_search',
 					'huggingface_dataset_get_info',
@@ -725,8 +752,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Visual design, rendering, branding, AI-compositing/harmonization, creative production, and architectural design tools (Phases A–E).', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Image generation.
-					'generate_openai_image',
-					'generate_gemini_image',
 					'cloudflareai_text_to_image',
 					// Image editing.
 					'edit_gemini_image',
@@ -750,9 +775,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'vision_object_localization',
 					'vision_product_search',
 					'generate_image_alt_text',
-					'generate_image_caption',
-					// Charts & visualization.
-					'create_chart',
 					// Music.
 					'generate_music',
 					// Elementor.
@@ -826,11 +848,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Web scraping, crawling, and data extraction tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'run_crawl4ai_job',
-					'run_crawl4ai_job_validated',
 					'crawl4ai_price_lookup',
 					'scrape_product',
-					'scrape_product_validated',
-					'web_search',
 					'query_remote_site',
 					'product_actualization',
 				),
@@ -863,7 +882,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'track_document_version',
 					'validate_document_checklist',
 					// Document Generation (Pro).
-					'pro_pdf_document',
 					'pro_word_document',
 					'pro_excel_document',
 					// Regulated documents (Pro).
@@ -871,8 +889,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_reg_documents',
 					'update_reg_document',
 					'upload_reg_document',
-					// Document processing.
-					'submit_document_prompt',
 					// Cloud storage (Pro).
 					'get_icloud_drive_file',
 					'list_icloud_drive_files',
@@ -883,14 +899,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// File management.
 					'manage_files',
 					// Search operations.
-					'search_content',
-					'search_content_validated',
-					'search_attachments',
-					'semantic_content_search',
 					'search_drive',
 					'search_gmail',
-					// Legacy Excel.
-					'pro_excel',
 					// Paper Store flat-file storage.
 					'paper_store_write',
 					'paper_store_read',
@@ -907,7 +917,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'tools'       => array(
 					// Cron job management.
 					'create_cron_job',
-					'create_cron_job_validated',
 					'list_cron_jobs',
 					'get_cron_job',
 					'delete_cron_job',
@@ -929,7 +938,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'sync_google_calendar',
 					'sync_outlook_calendar',
 					// Calendar events.
-					'create_google_calendar_event',
 					'export_calendar_ics',
 					// Content scheduling (Pro).
 					'bulk_schedule_posts',
@@ -946,8 +954,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_all_import_templates',
 					'schedule_all_export',
 					'schedule_all_import',
-					// SMS scheduling.
-					'schedule_notify_sms',
 				),
 			),
 
@@ -974,11 +980,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'2fa_setup_assistant',
 					'generate_password',
 					// Content moderation.
-					'moderate_content',
 					'analyze_comment_content',
-					// User management.
-					'get_user_info',
-					'get_user_info_validated',
 				),
 			),
 
@@ -987,8 +989,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Email, SMS, webchat, and all messaging platforms (Discord, Slack, Teams, WhatsApp, Telegram, Apple Messages, Messenger)', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Email.
-					'send_group_email',
-					'send_group_email_validated',
 					'send_mailjet_email',
 					'send_brevo_email',
 					'send_mailgun_email',
@@ -1008,12 +1008,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'newsletter_get_subscribers',
 					'newsletter_unsubscribe',
 					// SMS.
-					'send_whatsapp_message',
 					'send_whatsapp_interactive',
 					'send_whatsapp_media',
 					'send_whatsapp_template',
 					'get_whatsapp_messages',
-					'schedule_notify_sms',
 					// Telegram (Pro).
 					'send_telegram_message',
 					'get_telegram_updates',
@@ -1086,20 +1084,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'AI assistant creation, configuration, agent team management, and A2A delegation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'create_assistant',
-					'create_assistant_validated',
 					'probe_chat',
 					'probe_remote_mcp',
 					'query_mesh_intelligent',
 					'list_professions',
 					'get_profession',
 					'save_profession',
-					'create_agent_team',
-					'delegate_to_agent',
 					'delegate_to_a2a_agent',
-					'aggregate_agent_results',
-					'store_agent_context',
-					'wake_up_context',
-					'retrieve_agent_memory',
 					'manage_context_lifecycle',
 					'execute_workflow',
 					'validate_workflow',
@@ -1117,10 +1108,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '⚕️ Healthcare Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Medical, clinical, health vitals, and healthcare management tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// Agent memory for patient context and medical history.
-					'store_agent_context',
-					'wake_up_context',
-					'retrieve_agent_memory',
 					// Health & Wellness Management (Pro).
 					'create_member',
 					'update_member',
@@ -1173,32 +1160,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'guide_health_record_creation',
 					// FHIR Export (Pro).
 					'export_fhir_data',
-					// Research & information.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
-					// Content creation.
-					'save_post',
-					'create_post',
-					// Communication.
-					'send_group_email',
-					'schedule_notify_sms',
-					'send_whatsapp_message',
-					// Calendar.
-					'create_google_calendar_event',
-					// Forms & data.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
-					// Analytics.
-					'create_chart',
 					// Images.
-					'generate_image_caption',
 					'vision_object_localization',
-					// Moderation.
-					'moderate_content',
-					// User management.
-					'get_user_info',
 				),
 			),
 
@@ -1206,16 +1169,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '⚖️ Legal Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Legal research, document management, regulatory compliance, and compliance tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// Agent memory for case context and precedents.
-					'store_agent_context',
-					'wake_up_context',
-					'retrieve_agent_memory',
-					// Research.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
-					'submit_document_prompt',
 					// Regulatory management (Pro).
 					'add_regulatory_requirement',
 					'get_regulatory_requirements',
@@ -1225,25 +1178,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'check_product_compliance',
 					'generate_compliance_certificate',
 					'generate_compliance_report',
-					// Document management.
-					'save_post',
-					'create_post',
-					'search_attachments',
-					'get_recent_posts',
 					// File analysis.
 					'list_openai_files',
 					'get_openai_file_details',
 					'analyze_file_suitability',
 					// Communication.
-					'send_group_email',
 					'search_gmail',
-					// Calendar.
-					'create_google_calendar_event',
-					// Data collection.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
-					// Moderation.
-					'moderate_content',
 					// Security.
 					'check_site_security',
 				),
@@ -1253,10 +1193,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '🎓 Education Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Educational content, course management, and learning tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// Agent memory for student progress and course context.
-					'store_agent_context',
-					'wake_up_context',
-					'retrieve_agent_memory',
 					// Quiz Management (Pro).
 					'create_quiz',
 					'update_quiz',
@@ -1310,43 +1246,19 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'bulk_enroll_students',
 					'get_student_participation_summary',
 					// Task Management (Pro).
-					'create_task',
-					'update_task',
 					'delete_task',
-					'list_tasks',
-					// Content creation.
-					'save_post',
-					'create_post',
-					'search_content',
-					'get_recent_posts',
 					// Research.
-					'web_search',
-					'deep_research',
-					'semantic_content_search',
 					'isams_query',
 					// Media.
-					'generate_openai_image',
-					'generate_gemini_image',
-					'generate_image_caption',
 					'generate_openai_speech',
 					'transcribe_openai_audio',
 					'generate_video_caption',
-					// Charts & visualization.
-					'create_chart',
 					// Communication.
-					'send_group_email',
 					'newsletter_add_subscriber',
 					'newsletter_create_email',
-					// Forms.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 					// Calendar.
-					'create_google_calendar_event',
 					'export_calendar_ics',
-					// User management.
-					'get_user_info',
 					// Moderation.
-					'moderate_content',
 					'analyze_comment_content',
 					// Registration management (Pro).
 					'create_registration',
@@ -1370,10 +1282,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '💼 Finance & Business', 'mcp-ai-wpoos' ),
 				'description' => __( 'Financial analysis, business intelligence, invoicing, and reporting tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// Agent memory for financial context and client information.
-					'store_agent_context',
-					'wake_up_context',
-					'retrieve_agent_memory',
 					// Financial Planning Toolkit tools.
 					'financial_health_score',
 					'budget_planner',
@@ -1402,31 +1310,18 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_submission_pack',
 					'generate_compliance_report',
 					'generate_pdf_dossier',
-					// Charts & reporting.
-					'create_chart',
-					'pro_excel',
 					// Data collection.
 					'get_jetengine_items',
-					'get_jetformbuilder_submissions',
 					// E-commerce.
 					'get_woo_recent_orders',
 					'get_woo_products',
 					'payhere_get_payment',
-					// Research.
-					'web_search',
-					'search_content',
-					// Content.
-					'save_post',
-					'create_post',
 					// Communication.
-					'send_group_email',
 					'search_gmail',
 					// CRM email search (Pro).
 					'crm_email_search_leads',
 					'crm_email_search_correspondence',
 					'crm_email_search_accounting',
-					// Calendar.
-					'create_google_calendar_event',
 					// Site management.
 					'get_site_summary',
 					'get_environment_status',
@@ -1438,19 +1333,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Scientific research, data analysis, and academic tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Agent memory for research contexts.
-					'store_agent_context',
-					'wake_up_context',
 					'mine_agent_memory',
-					'retrieve_agent_memory',
-					// Research.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
-					'submit_document_prompt',
-					// Data analysis.
-					'create_chart',
-					'pro_excel',
 					// Hugging Face datasets.
 					'huggingface_dataset_search',
 					'huggingface_dataset_get_info',
@@ -1462,23 +1345,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_openai_files',
 					'get_openai_file_details',
 					'analyze_file_suitability',
-					// Content creation.
-					'save_post',
-					'create_post',
 					// Images & visualization.
-					'generate_image_caption',
-					'create_chart',
 					'vision_object_localization',
-					// Geospatial.
-					'gemini_geospatial_query',
-					'geocode_address',
-					'search_places',
 					// Disaster & environmental.
 					'get_gdacs_events',
 					'get_nhc_active_storms',
 					'reliefweb_reports',
-					// Weather.
-					'get_open_meteo_forecast',
 				),
 			),
 
@@ -1486,36 +1358,17 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '🏠 Real Estate', 'mcp-ai-wpoos' ),
 				'description' => __( 'Property management, listings, and real estate operations', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// Location services.
-					'geocode_address',
-					'search_places',
-					'gemini_geospatial_query',
 					// Images.
-					'generate_openai_image',
-					'generate_gemini_image',
-					'generate_image_caption',
 					'generate_image_alt_text',
 					'vision_object_localization',
 					// Video.
 					'generate_veo_video',
 					'analyze_video',
-					// Content.
-					'save_post',
-					'create_post',
-					'search_content',
 					// Communication.
-					'send_group_email',
 					'search_gmail',
-					'schedule_notify_sms',
-					'send_whatsapp_message',
 					// CRM email search (Pro).
 					'crm_email_search_leads',
 					'crm_email_search_correspondence',
-					// Calendar.
-					'create_google_calendar_event',
-					// Forms.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 					// SEO.
 					'get_rankmath_seo',
 					// Social media.
@@ -1586,41 +1439,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Cross-discipline integration (Pro).
 					'integrate_with_architect',
 					// Visual Design & Rendering.
-					'generate_openai_image',
-					'generate_gemini_image',
 					'edit_gemini_image',
 					'generate_veo_video',
 					// Image Processing.
 					'resize_image',
 					'crop_image',
 					'remove_background',
-					// Research & Analysis.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
-					// Document Management.
-					'save_post',
-					'create_post',
-					'search_attachments',
-					'submit_document_prompt',
-					'pro_pdf_document',
-					// Project Management.
-					'create_project',
-					'update_project',
-					'list_projects',
-					'create_task',
-					'list_tasks',
-					// Data & Charts.
-					'create_chart',
-					'pro_excel',
-					// Location Services.
-					'geocode_address',
-					'search_places',
-					'gemini_geospatial_query',
-					// Communication.
-					'send_group_email',
-					'create_google_calendar_event',
 					// CAD/BIM Integration.
 					'get_elementor_templates',
 					'elementor',
@@ -1653,38 +1477,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'calculate_integral',
 					'matrix_operations',
 					'render_math_equation',
-					// Data Analysis & Visualization.
-					'create_chart',
-					'analyze_data_patterns',
-					'pro_excel',
 					// Geospatial Analysis.
-					'geocode_address',
-					'gemini_geospatial_query',
 					'analyze_geospatial',
-					// Research & Technical Documentation.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
-					'submit_document_prompt',
 					// Document Generation.
-					'save_post',
-					'create_post',
-					'pro_pdf_document',
 					'pro_word_document',
-					// Project Management.
-					'create_project',
-					'update_project',
-					'list_projects',
-					'create_task',
-					'list_tasks',
 					// File Management.
-					'search_attachments',
 					'list_openai_files',
 					'get_openai_file_details',
-					// Communication & Collaboration.
-					'send_group_email',
-					'create_google_calendar_event',
 				),
 			),
 
@@ -1701,59 +1500,19 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'analyze_structural_feasibility',
 					'calculate_sustainability_metrics',
 					// Project Management & Coordination.
-					'create_project',
-					'update_project',
 					'delete_project',
-					'list_projects',
 					'research_project',
 					// Task Management & Scheduling.
-					'create_task',
-					'update_task',
 					'delete_task',
-					'list_tasks',
-					'create_task_plan',
-					'get_task_plan',
-					// Calendar & Events.
-					'create_event',
-					'update_event',
-					'list_events',
-					'get_calendar_view',
-					'create_google_calendar_event',
 					// Documentation & Drawings (for review).
 					'generate_construction_drawings',
 					'generate_detail_drawings',
 					'export_architectural_documents',
 					'generate_floor_plan',
 					'generate_3d_model',
-					// Document Management.
-					'save_post',
-					'create_post',
-					'search_attachments',
-					'submit_document_prompt',
-					'pro_pdf_document',
-					'pro_excel',
-					// Analytics & Reporting.
-					'create_chart',
-					'analyze_data_patterns',
 					// Communication & Team Coordination.
-					'send_group_email',
-					'schedule_notify_sms',
 					'send_telegram_message',
-					'send_whatsapp_message',
-					// Location Services.
-					'geocode_address',
-					'search_places',
-					'get_open_meteo_forecast',
-					// Research & Information.
-					'web_search',
-					'search_content',
-					'semantic_content_search',
-					// Forms & Data Collection.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 					// Agent Coordination (for complex projects).
-					'create_agent_team',
-					'delegate_to_agent',
 					'execute_workflow',
 				),
 			),
@@ -1771,8 +1530,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'render_architectural_view',
 					'create_walkthrough_animation',
 					// Visual Design & Mood Boards.
-					'generate_openai_image',
-					'generate_gemini_image',
 					'edit_gemini_image',
 					'cloudflareai_text_to_image',
 					// Image Processing.
@@ -1785,7 +1542,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Image Analysis (for materials & finishes).
 					'vision_object_localization',
 					'vision_product_search',
-					'generate_image_caption',
 					'generate_image_alt_text',
 					// Material & Product Specifications.
 					'generate_material_schedule',
@@ -1805,7 +1561,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_construction_drawings',
 					'generate_detail_drawings',
 					'export_architectural_documents',
-					'pro_pdf_document',
 					// Costing depth.
 					'generate_bill_of_quantities',
 					'propose_value_engineering_options',
@@ -1814,31 +1569,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'import_ifc_model',
 					// Precedent library (mood-board / spec research).
 					'search_architectural_precedents',
-					// Charts & Design Boards.
-					'create_chart',
 					// Research & Inspiration.
-					'web_search',
-					'search_content',
 					'crawl4ai_price_lookup',
-					// Content Management.
-					'save_post',
-					'create_post',
-					'search_attachments',
-					// Project Management.
-					'create_project',
-					'update_project',
-					'list_projects',
-					'create_task',
-					'list_tasks',
-					// Communication.
-					'send_group_email',
-					'create_google_calendar_event',
 					// E-commerce (for furniture/decor).
 					'get_woo_products',
 					'create_woo_product',
-					// Forms & Client Data.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 				),
 			),
 
@@ -1852,8 +1587,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_3d_model',
 					'render_architectural_view',
 					// Visualization & Rendering.
-					'generate_openai_image',
-					'generate_gemini_image',
 					'generate_veo_video',
 					'create_walkthrough_animation',
 					// Documentation & Drawings.
@@ -1861,12 +1594,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_detail_drawings',
 					'export_architectural_documents',
 					// Geospatial & Location Analysis.
-					'geocode_address',
-					'search_places',
-					'gemini_geospatial_query',
 					'analyze_geospatial',
 					// Environmental & Weather Data.
-					'get_open_meteo_forecast',
 					'get_gdacs_events',
 					// Sustainability Analysis.
 					'calculate_sustainability_metrics',
@@ -1875,39 +1604,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_material_schedule',
 					'estimate_construction_cost',
 					'generate_construction_timeline',
-					// Research & Plant Selection.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
 					// Image Analysis (for site conditions).
 					'vision_object_localization',
-					'generate_image_caption',
 					// Image Processing.
 					'resize_image',
 					'crop_image',
 					'remove_background',
-					// Document Management.
-					'save_post',
-					'create_post',
-					'search_attachments',
-					'submit_document_prompt',
-					'pro_pdf_document',
-					// Data & Charts.
-					'create_chart',
-					'pro_excel',
-					// Project Management.
-					'create_project',
-					'update_project',
-					'list_projects',
-					'create_task',
-					'list_tasks',
-					// Communication.
-					'send_group_email',
-					'create_google_calendar_event',
-					// Forms & Client Data.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 				),
 			),
 
@@ -1916,14 +1618,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Comprehensive planning, zoning, land use policy, and community development tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Geospatial Analysis & Mapping.
-					'geocode_address',
-					'search_places',
-					'gemini_geospatial_query',
 					'analyze_geospatial',
 					// Data Analysis & Demographics.
-					'analyze_data_patterns',
-					'create_chart',
-					'pro_excel',
 					'huggingface_dataset_search',
 					'huggingface_dataset_get_info',
 					'huggingface_dataset_get_statistics',
@@ -1935,22 +1631,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_policies',
 					'search_policies',
 					'research_policy',
-					// Research & Analysis.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
-					'submit_document_prompt',
 					// Document Generation.
-					'save_post',
-					'create_post',
-					'pro_pdf_document',
 					'pro_word_document',
-					'pro_excel',
 					// Project & Development Review.
-					'create_project',
-					'update_project',
-					'list_projects',
 					'research_project',
 					// Place Management.
 					'create_place',
@@ -1962,30 +1645,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_gdacs_events',
 					'get_nhc_active_storms',
 					'reliefweb_reports',
-					'get_open_meteo_forecast',
 					// Community Engagement Tools.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
-					'send_group_email',
 					'newsletter_add_subscriber',
 					'newsletter_create_email',
-					// Public Meeting & Calendar Management.
-					'create_event',
-					'update_event',
-					'list_events',
-					'get_calendar_view',
-					'create_google_calendar_event',
-					// Task & Timeline Management.
-					'create_task',
-					'update_task',
-					'list_tasks',
-					'create_task_plan',
-					// Content Management (public outreach).
-					'search_attachments',
-					'moderate_content',
 					// Visualization (for presentations).
-					'generate_openai_image',
-					'generate_gemini_image',
 					'render_architectural_view',
 					// Building Code Reference (for zoning).
 					'check_building_code_compliance',
@@ -2029,35 +1692,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Audio Processing.
 					'transcribe_openai_audio',
 					'generate_openai_speech',
-					// Event Planning.
-					'create_event',
-					'update_event',
-					'list_events',
-					'get_calendar_view',
-					'create_google_calendar_event',
-					// Project Management.
-					'create_project',
-					'update_project',
-					'list_projects',
-					'create_task',
-					'list_tasks',
-					// Communication.
-					'send_group_email',
-					'send_whatsapp_message',
-					'schedule_notify_sms',
-					// Forms & Client Data.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
-					// Document Generation.
-					'pro_pdf_document',
-					'save_post',
-					'create_post',
 					// Social Media.
 					'post_facebook_instagram',
 					'post_tiktok_video',
-					// Media.
-					'generate_image_caption',
-					'generate_openai_image',
 				),
 			),
 
@@ -2067,45 +1704,21 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'tools'       => array(
 					// CRM Tools (Pro).
 					'manage_crm_contact',
-					// Project & Client Management.
-					'create_project',
-					'update_project',
-					'list_projects',
-					// Task & Follow-up Management.
-					'create_task',
-					'update_task',
-					'list_tasks',
-					'create_task_plan',
-					// Calendar & Scheduling.
-					'create_event',
-					'update_event',
-					'list_events',
-					'get_calendar_view',
-					'create_google_calendar_event',
 					// Communication.
-					'send_group_email',
 					'send_mailjet_email',
 					'send_brevo_email',
 					'send_mailgun_email',
 					'search_gmail',
-					'send_whatsapp_message',
 					'send_telegram_message',
-					'schedule_notify_sms',
 					// Newsletter & Marketing.
 					'newsletter_add_subscriber',
 					'newsletter_create_email',
 					'newsletter_get_subscribers',
-					// Forms & Lead Capture.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 					// E-commerce Integration.
 					'get_woo_products',
 					'get_woo_recent_orders',
 					'create_woo_product',
 					// Analytics & Reporting.
-					'create_chart',
-					'pro_excel',
-					'analyze_data_patterns',
 					'revenue_forecast',
 					'churn_prediction',
 					'cohort_analysis',
@@ -2115,8 +1728,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_facebook_instagram_insights',
 					'get_linkedin_insights',
 					// Research & Prospecting.
-					'web_search',
-					'search_content',
 					'crawl4ai_price_lookup',
 					'scrape_product',
 					'research_company',
@@ -2137,9 +1748,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_cost_analysis',
 					'sales_performance_dashboard',
 					// Document Management.
-					'save_post',
-					'create_post',
-					'pro_pdf_document',
 					'pro_word_document',
 					// SEO & Marketing.
 					'get_rankmath_seo',
@@ -2165,8 +1773,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'transcode_video',
 					'generate_video_caption',
 					// Storyboarding & Visualization.
-					'generate_openai_image',
-					'generate_gemini_image',
 					'edit_gemini_image',
 					'create_image_variation',
 					// Image Processing.
@@ -2179,43 +1785,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'transcribe_openai_audio',
 					'generate_openai_speech',
 					'generate_music',
-					// Script & Content Writing.
-					'save_post',
-					'create_post',
-					'search_content',
-					'submit_document_prompt',
-					// Project Management.
-					'create_project',
-					'update_project',
-					'list_projects',
-					'create_task',
-					'list_tasks',
-					'create_task_plan',
-					// Scheduling & Calendar.
-					'create_event',
-					'update_event',
-					'list_events',
-					'get_calendar_view',
-					'create_google_calendar_event',
-					// Communication & Collaboration.
-					'send_group_email',
-					'send_whatsapp_message',
 					// Document Generation.
-					'pro_pdf_document',
 					'pro_word_document',
 					// Social Media Distribution.
 					'post_facebook_instagram',
 					'post_tiktok_video',
 					'post_linkedin_update',
-					// Forms & Casting.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
-					// Location Scouting.
-					'geocode_address',
-					'search_places',
-					'get_open_meteo_forecast',
 					// Asset Management.
-					'search_attachments',
 					'list_openai_files',
 					// Omni video (Gemini).
 					'generate_omni_video',
@@ -2228,12 +1804,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Agriculture, environmental science, forestry, wildlife management, and sustainability', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Geospatial Analysis.
-					'geocode_address',
-					'search_places',
-					'gemini_geospatial_query',
 					'analyze_geospatial',
 					// Weather & Climate.
-					'get_open_meteo_forecast',
 					'get_gdacs_events',
 					// Environmental Data.
 					'get_nhc_active_storms',
@@ -2241,51 +1813,19 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Sustainability Analysis.
 					'calculate_sustainability_metrics',
 					// Research & Data.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
 					'huggingface_dataset_search',
 					'huggingface_dataset_get_info',
 					'huggingface_dataset_get_statistics',
-					// Data Analysis.
-					'analyze_data_patterns',
-					'create_chart',
-					'pro_excel',
 					// Image Analysis (for crop/land assessment).
 					'vision_object_localization',
-					'generate_image_caption',
 					'analyze_video',
-					// Project Management (for land/farm management).
-					'create_project',
-					'update_project',
-					'list_projects',
 					// Place Management (for sites/plots).
 					'create_place',
 					'update_place',
 					'list_places',
 					'research_place',
-					// Task Planning.
-					'create_task',
-					'update_task',
-					'list_tasks',
-					'create_task_plan',
-					// Documentation.
-					'save_post',
-					'create_post',
-					'pro_pdf_document',
-					'pro_excel',
 					// Communication.
-					'send_group_email',
 					'newsletter_add_subscriber',
-					// Calendar.
-					'create_event',
-					'update_event',
-					'get_calendar_view',
-					'create_google_calendar_event',
-					// Forms & Surveys.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 				),
 			),
 
@@ -2297,55 +1837,16 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_gdacs_events',
 					'get_nhc_active_storms',
 					'reliefweb_reports',
-					// Weather & Hazards.
-					'get_open_meteo_forecast',
 					// Location Services.
-					'geocode_address',
-					'search_places',
-					'gemini_geospatial_query',
 					'analyze_geospatial',
 					// Communication & Alerts.
-					'send_group_email',
-					'schedule_notify_sms',
 					'send_telegram_message',
-					'send_whatsapp_message',
-					// Incident Management.
-					'create_event',
-					'update_event',
-					'list_events',
-					'get_calendar_view',
-					// Task Coordination.
-					'create_task',
-					'update_task',
-					'list_tasks',
-					'create_task_plan',
-					// Project Management (operations).
-					'create_project',
-					'update_project',
-					'list_projects',
 					// Documentation & Reporting.
-					'save_post',
-					'create_post',
-					'pro_pdf_document',
 					'pro_word_document',
-					// Forms & Data Collection.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
-					// Research & Intelligence.
-					'web_search',
-					'search_content',
 					// Image Analysis (for damage assessment).
 					'vision_object_localization',
-					'generate_image_caption',
 					'analyze_video',
-					// Charts & Reporting.
-					'create_chart',
-					'analyze_data_patterns',
-					// Calendar.
-					'create_google_calendar_event',
 					// Team Coordination.
-					'create_agent_team',
-					'delegate_to_agent',
 					'execute_workflow',
 				),
 			),
@@ -2355,56 +1856,19 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Maritime operations, aviation, logistics, and transportation management', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Weather & Environmental.
-					'get_open_meteo_forecast',
 					'get_nhc_active_storms',
 					'get_gdacs_events',
 					// Location & Navigation.
-					'geocode_address',
-					'search_places',
-					'gemini_geospatial_query',
 					'analyze_geospatial',
 					// Scheduling & Operations.
-					'create_event',
-					'update_event',
-					'list_events',
-					'get_calendar_view',
-					'create_google_calendar_event',
 					'export_calendar_ics',
-					// Task Management.
-					'create_task',
-					'update_task',
-					'list_tasks',
-					'create_task_plan',
-					// Project Management.
-					'create_project',
-					'update_project',
-					'list_projects',
 					// Communication.
-					'send_group_email',
-					'schedule_notify_sms',
 					'send_telegram_message',
-					'send_whatsapp_message',
 					// Documentation & Logs.
-					'save_post',
-					'create_post',
-					'pro_pdf_document',
 					'pro_word_document',
-					'pro_excel',
-					// Forms & Checklists.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 					// Safety & Compliance.
 					'check_site_security',
 					'get_site_health',
-					// Research & Information.
-					'web_search',
-					'search_content',
-					// Analytics & Reporting.
-					'create_chart',
-					'analyze_data_patterns',
-					// Crew Management.
-					'create_agent_team',
-					'delegate_to_agent',
 				),
 			),
 
@@ -2412,42 +1876,15 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '👨‍🍳 Food Service & Culinary', 'mcp-ai-wpoos' ),
 				'description' => __( 'Restaurant management, culinary arts, food service, and hospitality', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// Menu & Recipe Management.
-					'save_post',
-					'create_post',
-					'search_content',
 					// Image Generation (for menu/food photos).
-					'generate_openai_image',
-					'generate_gemini_image',
-					'generate_image_caption',
 					'vision_product_search',
 					// E-commerce (online ordering).
 					'get_woo_products',
 					'create_woo_product',
 					'get_woo_recent_orders',
-					// Inventory & Supplies.
-					'create_project',
-					'update_project',
-					'list_projects',
-					// Task Management.
-					'create_task',
-					'update_task',
-					'list_tasks',
-					// Scheduling & Staffing.
-					'create_event',
-					'update_event',
-					'list_events',
-					'get_calendar_view',
-					'create_google_calendar_event',
 					// Customer Communication.
-					'send_group_email',
-					'send_whatsapp_message',
-					'schedule_notify_sms',
 					'newsletter_add_subscriber',
 					'newsletter_create_email',
-					// Reservations & Bookings.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 					// Social Media & Marketing.
 					'post_facebook_instagram',
 					'post_tiktok_video',
@@ -2455,20 +1892,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_facebook_instagram_insights',
 					'get_google_business_insights',
 					// Reviews & Reputation.
-					'moderate_content',
 					'analyze_comment_content',
 					// Analytics.
 					'google_analytics_report',
-					'create_chart',
-					// Document Management.
-					'pro_pdf_document',
-					'search_attachments',
-					// Research (recipes, trends).
-					'web_search',
-					'search_content',
 					// Location Services.
-					'geocode_address',
-					'search_places',
 					'post_google_business_update',
 				),
 			),
@@ -2478,57 +1905,19 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Electricians, plumbers, HVAC, carpenters, welders, and skilled tradespeople', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Project Management.
-					'create_project',
-					'update_project',
-					'list_projects',
 					'research_project',
-					// Task & Job Management.
-					'create_task',
-					'update_task',
-					'list_tasks',
-					'create_task_plan',
-					// Scheduling & Appointments.
-					'create_event',
-					'update_event',
-					'list_events',
-					'get_calendar_view',
-					'create_google_calendar_event',
 					// Cost Estimation.
 					'estimate_construction_cost',
 					'generate_material_schedule',
 					// Building Codes & Compliance.
 					'check_building_code_compliance',
-					// Documentation & Photos.
-					'save_post',
-					'create_post',
-					'search_attachments',
-					'generate_image_caption',
 					// Image Processing (before/after photos).
 					'resize_image',
 					'crop_image',
-					// Invoicing & Payments.
-					'pro_pdf_document',
-					'pro_excel',
-					// Communication.
-					'send_group_email',
-					'send_whatsapp_message',
-					'schedule_notify_sms',
-					// Location Services.
-					'geocode_address',
-					'search_places',
-					'get_open_meteo_forecast',
-					// Forms & Customer Data.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
-					// Research & Technical Info.
-					'web_search',
-					'search_content',
 					// Equipment & Inventory.
 					'create_place',
 					'update_place',
 					'list_places',
-					// Analytics & Reporting.
-					'create_chart',
 					// Vehicle Estimates (Pro).
 					'vehicle_repair_estimate',
 					'vehicle_cleaning_estimate',
@@ -2543,35 +1932,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '✈️ Travel & Hospitality', 'mcp-ai-wpoos' ),
 				'description' => __( 'Tourism, hospitality, and travel industry tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// Location & maps.
-					'geocode_address',
-					'search_places',
-					'gemini_geospatial_query',
-					// Weather.
-					'get_open_meteo_forecast',
-					// Images.
-					'generate_openai_image',
-					'generate_gemini_image',
-					'generate_image_caption',
-					// Content.
-					'save_post',
-					'create_post',
-					'search_content',
 					// Communication.
-					'send_group_email',
 					'newsletter_add_subscriber',
-					'send_whatsapp_message',
-					// Calendar.
-					'create_google_calendar_event',
-					// Forms & bookings.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 					// Social media.
 					'post_facebook_instagram',
 					'post_tiktok_video',
 					'post_google_business_update',
 					// Reviews & moderation.
-					'moderate_content',
 					'analyze_comment_content',
 					// Drive & documents.
 					'search_drive',
@@ -2586,30 +1953,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_gdacs_events',
 					'get_nhc_active_storms',
 					'reliefweb_reports',
-					// Geospatial.
-					'geocode_address',
-					'search_places',
-					'gemini_geospatial_query',
 					// Communication.
-					'send_group_email',
-					'schedule_notify_sms',
 					'send_telegram_message',
-					'send_whatsapp_message',
-					// Content management.
-					'save_post',
-					'create_post',
-					'search_content',
-					// Forms & data.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
-					// Analytics & reporting.
-					'create_chart',
-					'pro_excel',
-					// Calendar.
-					'create_google_calendar_event',
 					// Security.
 					'check_site_security',
-					'moderate_content',
 				),
 			),
 
@@ -2622,20 +1969,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Task planning, autonomous sessions, health monitoring, capacity management, and workflow rules for continuous AI workflow loops', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Agent coordination and memory.
-					'create_agent_team',
-					'delegate_to_agent',
 					'delegate_to_a2a_agent',
-					'aggregate_agent_results',
-					'store_agent_context',
-					'wake_up_context',
 					'mine_agent_memory',
-					'retrieve_agent_memory',
 					'manage_context_lifecycle',
 					'prioritize_context',
 					// Core orchestration tools (Base plugin).
-					'create_task_plan',
-					'update_task_plan',
-					'get_task_plan',
 					'manage_autonomous_session',
 					'detect_completion_indicators',
 					'check_exit_conditions',
@@ -2666,14 +2004,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'extract_structured_data',
 					'convert_html_to_markdown',
 					'generate_research_report',
-					'analyze_data_patterns',
 					'verify_information',
-					// Supporting tools.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'create_post',
-					'save_post',
 					// Continual harness (self-improving agent system).
 					'evolve_harness',
 					'apply_prompt_cue',
@@ -2695,16 +2026,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '📋 Task Planning', 'mcp-ai-wpoos' ),
 				'description' => __( 'Create and manage task plans with progress tracking and dependency management', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					'create_task_plan',
-					'update_task_plan',
-					'get_task_plan',
 					// Task dependency management.
 					'add_task_dependency',
 					'get_task_dependencies',
 					'remove_task_dependency',
-					'create_task',
-					'list_tasks',
-					'update_task',
 					'delete_task',
 					// Template management.
 					'create_template',
@@ -2718,24 +2043,14 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Multi-source research with aggregation, verification, professional report generation, and crawling', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Agent coordination and memory.
-					'create_agent_team',
-					'delegate_to_agent',
-					'store_agent_context',
-					'wake_up_context',
 					'mine_agent_memory',
-					'retrieve_agent_memory',
 					// Research enhancement.
 					'aggregate_research_data',
 					'extract_structured_data',
 					'convert_html_to_markdown',
 					'generate_research_report',
-					'analyze_data_patterns',
 					'verify_information',
 					// Core research.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
 					'run_crawl4ai_job',
 					'scrape_product',
 					// Data collection.
@@ -2779,14 +2094,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Central supervisor agent assigns, tracks, and aggregates sub-agent work with quality control and escalation paths', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Supervisor coordination.
-					'create_agent_team',
-					'delegate_to_agent',
 					'delegate_to_a2a_agent',
-					'aggregate_agent_results',
 					// Task management & tracking.
-					'create_task_plan',
-					'update_task_plan',
-					'get_task_plan',
 					'add_task_dependency',
 					'get_task_dependencies',
 					// Session & health oversight.
@@ -2800,9 +2109,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'verify_information',
 					'validate_reasoning_chain',
 					// Agent memory for coordination state.
-					'store_agent_context',
-					'wake_up_context',
-					'retrieve_agent_memory',
 					'prioritize_context',
 				),
 			),
@@ -2812,14 +2118,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Sequential agent assembly line where each agent refines output from the previous step with stage validation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Pipeline orchestration.
-					'create_agent_team',
-					'delegate_to_agent',
 					'execute_workflow',
-					'aggregate_agent_results',
 					// Stage tracking & validation.
-					'create_task_plan',
-					'update_task_plan',
-					'get_task_plan',
 					'add_task_dependency',
 					'get_task_dependencies',
 					'detect_completion_indicators',
@@ -2827,9 +2127,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Data transformation between stages.
 					'extract_structured_data',
 					'convert_html_to_markdown',
-					'store_agent_context',
-					'wake_up_context',
-					'retrieve_agent_memory',
 					// Workflow health.
 					'check_workflow_health',
 					'validate_workflow',
@@ -2842,27 +2139,15 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Autonomous parallel agents work independently and aggregate results for search, analysis, and simulation tasks', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Swarm coordination.
-					'create_agent_team',
-					'delegate_to_agent',
 					'delegate_to_a2a_agent',
-					'aggregate_agent_results',
 					// Parallel data collection.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
 					'run_crawl4ai_job',
 					'scrape_product',
 					// Result aggregation & analysis.
 					'aggregate_research_data',
-					'analyze_data_patterns',
 					'extract_structured_data',
 					'verify_information',
 					'generate_research_report',
-					// Shared context for swarm coordination.
-					'store_agent_context',
-					'wake_up_context',
-					'retrieve_agent_memory',
 					// Health & capacity.
 					'calculate_orchestration_capacity',
 					'analyze_loop_health',
@@ -2874,14 +2159,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Multi-level manager-specialist agent relationships with escalation, delegation depth, and structured reporting', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Hierarchical team management.
-					'create_agent_team',
-					'delegate_to_agent',
 					'delegate_to_a2a_agent',
-					'aggregate_agent_results',
 					// Multi-level task planning.
-					'create_task_plan',
-					'update_task_plan',
-					'get_task_plan',
 					'add_task_dependency',
 					'get_task_dependencies',
 					// Workflow management at each level.
@@ -2890,9 +2169,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'update_workflow_rule',
 					'list_workflow_rules',
 					// Context passing between levels.
-					'store_agent_context',
-					'wake_up_context',
-					'retrieve_agent_memory',
 					'manage_context_lifecycle',
 					'prioritize_context',
 					// Session monitoring across hierarchy.
@@ -2916,22 +2192,14 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'validate_reasoning_chain',
 					'verify_information',
 					'check_workflow_health',
-					// Review agent coordination.
-					'create_agent_team',
-					'delegate_to_agent',
-					'aggregate_agent_results',
 					// Completion & exit criteria.
 					'detect_completion_indicators',
 					'check_exit_conditions',
 					'analyze_loop_health',
 					// Data analysis for QA.
-					'analyze_data_patterns',
 					'extract_structured_data',
 					'generate_research_report',
 					// Context for review state.
-					'store_agent_context',
-					'wake_up_context',
-					'retrieve_agent_memory',
 					'memory_audit_trail',
 				),
 			),
@@ -2961,8 +2229,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Related tools.
 					'google_analytics_report',
 					'quickbooks_report',
-					'create_chart',
-					'pro_excel',
 					'get_profession_stats',
 				),
 			),
@@ -3030,11 +2296,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'translation_quality_check',
 					'find_untranslated_strings',
 					'multilingual_seo_audit',
-					// Related content tools.
-					'save_post',
-					'create_post',
-					'search_content',
-					'get_recent_posts',
 				),
 			),
 
@@ -3085,7 +2346,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Related ML/AI tools.
 					'create_text_embeddings',
 					'batch_embed_content',
-					'semantic_content_search',
 					'vectorize_image',
 					'create_vector_store',
 					'list_vector_stores',
@@ -3134,17 +2394,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '🎥 Content Creator Pro', 'mcp-ai-wpoos' ),
 				'description' => __( 'Complete content creation suite: writing, images, video, audio, and multilingual', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// Content writing.
-					'save_post',
-					'create_post',
-					'search_content',
-					'get_recent_posts',
-					'web_search',
-					'deep_research',
 					// Images.
-					'generate_openai_image',
-					'generate_gemini_image',
-					'generate_image_caption',
 					'generate_image_alt_text',
 					'edit_gemini_image',
 					'edit_openai_image',
@@ -3169,7 +2419,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'detect_content_language',
 					// SEO & optimization.
 					'get_rankmath_seo',
-					'moderate_content',
 				),
 			),
 
@@ -3191,21 +2440,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Reporting.
 					'create_custom_report',
 					'export_analytics_api',
-					'create_chart',
-					// User management.
-					'get_user_info',
 					// Communication.
-					'send_group_email',
-					'schedule_notify_sms',
 					'send_telegram_message',
 					// Billing & payments.
 					'payhere_get_payment',
 					// Financial planning.
 					'financial_health_score',
 					'budget_planner',
-					// Forms & data.
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
 				),
 			),
 
@@ -3254,12 +2495,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'check_jukebox_status',
 					// Audio generation.
 					'generate_music',
-					'generate_music_validated',
 					'generate_openai_speech',
-					'generate_openai_speech_validated',
 					// Audio transcription.
 					'transcribe_openai_audio',
-					'transcribe_openai_audio_validated',
 				),
 			),
 
@@ -3268,10 +2506,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Research tools for posts, products, projects, places, policies, and more', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Agent memory for research contexts.
-					'store_agent_context',
-					'wake_up_context',
 					'mine_agent_memory',
-					'retrieve_agent_memory',
 					// Research tools (Pro).
 					'research_post',
 					'research_product',
@@ -3284,15 +2519,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'research_blog_post',
 					// Data extraction.
 					'extract_structured_data',
-					'analyze_data_patterns',
 					'aggregate_research_data',
 					'generate_research_report',
 					'verify_information',
 					// Deep research.
-					'deep_research',
-					'web_search',
 					'web_browser',
-					'semantic_content_search',
 				),
 			),
 
@@ -3309,10 +2540,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'render_math_equation',
 					'matrix_operations',
 					// Data analysis.
-					'analyze_data_patterns',
 					'analyze_geospatial',
-					// Visualization.
-					'create_chart',
 				),
 			),
 
@@ -3321,29 +2549,16 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Project planning, task management, task dependencies, and team coordination tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Project Management (Pro).
-					'create_project',
-					'update_project',
 					'delete_project',
-					'list_projects',
 					'research_project',
 					// Task Management (Pro).
-					'create_task',
-					'update_task',
 					'delete_task',
-					'list_tasks',
-					'create_task_plan',
-					'get_task_plan',
-					'update_task_plan',
 					// Task dependencies (Pro).
 					'add_task_dependency',
 					'remove_task_dependency',
 					'get_task_dependencies',
 					// Event Management (Pro).
-					'create_event',
-					'update_event',
 					'delete_event',
-					'list_events',
-					'get_calendar_view',
 					'export_calendar_ics',
 					// Templates.
 					'create_template',
@@ -3351,8 +2566,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_templates',
 					'manage_template_versions',
 					// Coordination.
-					'create_agent_team',
-					'delegate_to_agent',
 					'execute_workflow',
 				),
 			),
@@ -3382,17 +2595,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_compliance_report',
 					'validate_document_checklist',
 					// Research & analysis.
-					'web_search',
-					'deep_research',
-					'search_content',
-					'semantic_content_search',
-					'submit_document_prompt',
 					'verify_information',
 					// Document management.
-					'save_post',
-					'create_post',
-					'search_attachments',
-					'get_recent_posts',
 					'convert_html_to_markdown',
 					// File analysis.
 					'list_openai_files',
@@ -3414,12 +2618,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'research_place',
 					'search_and_save_places',
 					// Geospatial.
-					'geocode_address',
-					'search_places',
 					'analyze_geospatial',
-					'gemini_geospatial_query',
 					// Weather & environment.
-					'get_open_meteo_forecast',
 					'get_gdacs_events',
 					'get_nhc_active_storms',
 					// Business listing images (Pro).
@@ -3432,13 +2632,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'description' => __( 'Advanced development, API integration, and system management tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Agent coordination for development workflows.
-					'create_agent_team',
-					'delegate_to_agent',
-					'aggregate_agent_results',
-					'store_agent_context',
-					'wake_up_context',
 					'mine_agent_memory',
-					'retrieve_agent_memory',
 					// Generic integrations (Pro).
 					'generic_rest_api',
 					'remote_wp_connection',
@@ -3523,11 +2717,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// MOH / NMRA sync (Pro).
 					'sync_with_mohap',
 					'sync_with_nmra',
-					// Research.
-					'web_search',
-					'deep_research',
-					// Communication.
-					'send_group_email',
 				),
 			),
 
@@ -3631,17 +2820,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'ff_player_research',
 					'ff_create_league_report',
 					'ff_generate_team_logo',
-					// Research & analysis.
-					'web_search',
-					'deep_research',
-					'search_content',
-					// Content creation.
-					'save_post',
-					'create_post',
-					'generate_openai_image',
-					// Charts & analytics.
-					'create_chart',
-					'create_chart_validated',
 				),
 			),
 		);
